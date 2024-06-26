@@ -1,0 +1,65 @@
+export type PreFolderData = {
+	initialDatePreFolder: string;
+	finalDatePreFolder: string;
+	memberPreFolder: string;
+	amountPreFolder: number;
+	statusPreFolder: string;
+	descriptionPreFolder: string;
+};
+
+export type JudFolderData = {
+	initialDateJudFolder: string;
+	finalDateJudFolder: string;
+	numberJudFolder: string;
+	statusJudFolder: string;
+	/* "En letra" | "En despacho"; */
+	descriptionJudFolder: string;
+};
+
+export type FolderData = {
+	folderId: string;
+	folderName: string;
+	materia: string;
+	orderStatus: string;
+	/* | "Actor"
+		| "Demandado"
+		| "Requirente"
+		| "Requerido"
+		| "Acreedor"
+		| "Deudor"
+		| "Denunciante"
+		| "Denunciado"
+		| "Beneficiario"
+		| "Concursado"
+		| "Síndico"
+		| "Querellante"
+		| "Pres. Fallido"
+		| "Part. Damnificado"
+		| "Imputado"
+		| "Incidentista"
+		| "Heredero/os"; */
+	status: string;
+	//"Nueva" | "En Proceso" | "Finalizada";
+	description: string;
+	initialDateFolder: string;
+	finalDateFolder: string;
+	amount: number;
+	folderJuris: string;
+	folderFuero: string;
+	/* 		| "Civil"
+		| "Laboral"
+		| "Previsional"
+		| "Comercial"
+		| "Aduanero"
+		| "Tributario"
+		| "Comercial"
+		| "Penal"
+		| "Administrativo"
+		| "Constitucional"
+		| "Ambiental"
+		| "Familia"; */
+	preFolder: PreFolderData;
+	judFolder: JudFolderData;
+	isLoader?: boolean;
+	error?: string | null;
+};

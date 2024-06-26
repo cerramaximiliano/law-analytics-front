@@ -1,0 +1,22 @@
+[
+	{ "userId": "321", "_id": "1", "category": "Laboral", "type": "Liquidación Final", "amount": 500000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "2", "category": "Laboral", "type": "Liquidación Final", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "3", "category": "Laboral", "type": "Liquidación Final", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "4", "category": "Laboral", "type": "Liquidación Final", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "5", "category": "Laboral", "type": "Liquidación Final", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "6", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "7", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "8", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "9", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "10", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "11", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "12", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "13", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "14", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "15", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "16", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "17", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "18", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
+	{ "userId": "321", "_id": "19", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" }
+
+]

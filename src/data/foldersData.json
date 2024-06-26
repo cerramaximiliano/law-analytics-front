@@ -1,0 +1,272 @@
+[
+	{
+		"folderId": "1",
+		"folderName": "Caso García vs Pérez",
+		"materia": "Contratos",
+		"orderStatus": "Actor",
+		"status": "Nueva",
+		"description": "Demanda por incumplimiento de contrato",
+		"initialDateFolder": "10/05/2023",
+		"finalDateFolder": "10/05/2024",
+		"amount": 50000,
+		"folderJuris": "Juzgado N° 5",
+		"folderFuero": "Civil",
+		"preFolder": {
+			"initialDatePreFolder": "04/01/2023",
+			"finalDatePreFolder": "30/04/2023",
+			"memberPreFolder": "Juan Pérez",
+			"amountPreFolder": 1000,
+			"statusPreFolder": "Pendiente",
+			"descriptionPreFolder": "Revisión inicial del caso y recopilación de documentación"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/06/2023",
+			"finalDateJudFolder": "01/12/2023",
+			"numberJudFolder": "12345-6789",
+			"statusJudFolder": "En letra",
+			"descriptionJudFolder": "Procedimientos judiciales en curso"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "2",
+		"folderName": "Caso López vs Martínez",
+		"materia": "Derecho Penal",
+		"orderStatus": "Actor",
+		"status": "En Proceso",
+		"description": "Caso de robo a mano armada",
+		"initialDateFolder": "15/10/2022",
+		"finalDateFolder": "20/11/2023",
+		"amount": 75000,
+		"folderJuris": "Juzgado N° 8",
+		"folderFuero": "Penal",
+		"preFolder": {
+			"initialDatePreFolder": "15/08/2022",
+			"finalDatePreFolder": "30/09/2022",
+			"memberPreFolder": "María López",
+			"amountPreFolder": 1500,
+			"statusPreFolder": "Completado",
+			"descriptionPreFolder": "Entrevistas a testigos y recopilación de pruebas"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/12/2022",
+			"finalDateJudFolder": "01/06/2023",
+			"numberJudFolder": "54321-9876",
+			"statusJudFolder": "En letra",
+			"descriptionJudFolder": "Proceso legal en curso"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "3",
+		"folderName": "Caso Rodríguez vs Gómez",
+		"materia": "Derecho Laboral",
+		"orderStatus": "Actor",
+		"status": "Finalizada",
+		"description": "Caso de despido injustificado",
+		"initialDateFolder": "20/02/2023",
+		"finalDateFolder": "15/08/2023",
+		"amount": 30000,
+		"folderJuris": "Juzgado N° 3",
+		"folderFuero": "Laboral",
+		"preFolder": {
+			"initialDatePreFolder": "01/12/2022",
+			"finalDatePreFolder": "31/01/2023",
+			"memberPreFolder": "Luis Rodríguez",
+			"amountPreFolder": 800,
+			"statusPreFolder": "Completado",
+			"descriptionPreFolder": "Recolección de evidencia y preparación de argumentos"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/03/2023",
+			"finalDateJudFolder": "01/07/2023",
+			"numberJudFolder": "98765-4321",
+			"statusJudFolder": "En despacho",
+			"descriptionJudFolder": "Caso concluido con fallo a favor del demandante"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "4",
+		"folderName": "Caso Martínez vs Sánchez",
+		"materia": "Derecho Civil",
+		"orderStatus": "Actor",
+		"status": "En Proceso",
+		"description": "Disputa por propiedad",
+		"initialDateFolder": "10/06/2023",
+		"finalDateFolder": "10/01/2024",
+		"amount": 60000,
+		"folderJuris": "Juzgado N° 6",
+		"folderFuero": "Civil",
+		"preFolder": {
+			"initialDatePreFolder": "01/04/2023",
+			"finalDatePreFolder": "30/05/2023",
+			"memberPreFolder": "Laura Martínez",
+			"amountPreFolder": 1200,
+			"statusPreFolder": "En Proceso",
+			"descriptionPreFolder": "Negociaciones preliminares y recopilación de evidencia"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/07/2023",
+			"finalDateJudFolder": "01/12/2023",
+			"numberJudFolder": "56789-1234",
+			"statusJudFolder": "En letra",
+			"descriptionJudFolder": "Proceso judicial en curso"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "5",
+		"folderName": "Caso García vs Rodríguez",
+		"materia": "Derecho Penal",
+		"orderStatus": "Actor",
+		"status": "Nueva",
+		"description": "Caso de agresión física",
+		"initialDateFolder": "05/03/2024",
+		"finalDateFolder": "30/09/2024",
+		"amount": 45000,
+		"folderJuris": "Juzgado N° 2",
+		"folderFuero": "Penal",
+		"preFolder": {
+			"initialDatePreFolder": "15/01/2024",
+			"finalDatePreFolder": "28/02/2024",
+			"memberPreFolder": "Carlos García",
+			"amountPreFolder": 900,
+			"statusPreFolder": "Pendiente",
+			"descriptionPreFolder": "Investigación inicial y entrevistas a testigos"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/10/2024",
+			"finalDateJudFolder": "01/04/2025",
+			"numberJudFolder": "67890-2345",
+			"statusJudFolder": "En letra",
+			"descriptionJudFolder": "Preparativos para juicio"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "6",
+		"folderName": "Caso Pérez vs Gutiérrez",
+		"materia": "Derecho de Familia",
+		"orderStatus": "Demandado",
+		"status": "Finalizada",
+		"description": "Caso de custodia de menores",
+		"initialDateFolder": "15/08/2023",
+		"finalDateFolder": "28/02/2024",
+		"amount": 20000,
+		"folderJuris": "Juzgado N° 1",
+		"folderFuero": "Familia",
+		"preFolder": {
+			"initialDatePreFolder": "01/06/2023",
+			"finalDatePreFolder": "31/07/2023",
+			"memberPreFolder": "Ana Pérez",
+			"amountPreFolder": 500,
+			"statusPreFolder": "Completado",
+			"descriptionPreFolder": "Recopilación de evidencia y mediaciones"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/09/2023",
+			"finalDateJudFolder": "01/01/2024",
+			"numberJudFolder": "78901-3456",
+			"statusJudFolder": "En letra",
+			"descriptionJudFolder": "Acuerdo alcanzado entre las partes"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "7",
+		"folderName": "Caso Fernández vs Díaz",
+		"materia": "Derecho Laboral",
+		"orderStatus": "Demandado",
+		"status": "En Proceso",
+		"description": "Caso de despido injustificado",
+		"initialDateFolder": "20/01/2023",
+		"finalDateFolder": "15/07/2023",
+		"amount": 35000,
+		"folderJuris": "Juzgado N° 4",
+		"folderFuero": "Laboral",
+		"preFolder": {
+			"initialDatePreFolder": "15/11/2022",
+			"finalDatePreFolder": "31/12/2022",
+			"memberPreFolder": "José Fernández",
+			"amountPreFolder": 700,
+			"statusPreFolder": "Completado",
+			"descriptionPreFolder": "Recopilación de pruebas y entrevistas a testigos"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/02/2023",
+			"finalDateJudFolder": "01/08/2023",
+			"numberJudFolder": "89012-4567",
+			"statusJudFolder": "En despacho",
+			"descriptionJudFolder": "Proceso judicial en curso"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "8",
+		"folderName": "Caso Sánchez vs González",
+		"materia": "Derecho Civil",
+		"orderStatus": "Demandado",
+		"status": "Nueva",
+		"description": "Disputa por propiedad",
+		"initialDateFolder": "10/09/2023",
+		"finalDateFolder": "15/03/2024",
+		"amount": 40000,
+		"folderJuris": "Juzgado N° 7",
+		"folderFuero": "Civil",
+		"preFolder": {
+			"initialDatePreFolder": "01/07/2023",
+			"finalDatePreFolder": "31/08/2023",
+			"memberPreFolder": "María Sánchez",
+			"amountPreFolder": 900,
+			"statusPreFolder": "Pendiente",
+			"descriptionPreFolder": "Investigación inicial y recopilación de pruebas"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/04/2024",
+			"finalDateJudFolder": "01/10/2024",
+			"numberJudFolder": "90123-5678",
+			"statusJudFolder": "En letra",
+			"descriptionJudFolder": "Preparativos para juicio"
+		},
+		"isLoader": false,
+		"error": null
+	},
+	{
+		"folderId": "9",
+		"folderName": "Caso Gómez vs López",
+		"materia": "Derecho de Familia",
+		"orderStatus": "Demandado",
+		"status": "Finalizada",
+		"description": "Caso de división de bienes",
+		"initialDateFolder": "05/04/2023",
+		"finalDateFolder": "30/10/2023",
+		"amount": 25000,
+		"folderJuris": "Juzgado N° 9",
+		"folderFuero": "Familia",
+		"preFolder": {
+			"initialDatePreFolder": "01/02/2023",
+			"finalDatePreFolder": "31/03/2023",
+			"memberPreFolder": "Javier Gómez",
+			"amountPreFolder": 600,
+			"statusPreFolder": "Completado",
+			"descriptionPreFolder": "Negociaciones preliminares y recopilación de documentación"
+		},
+		"judFolder": {
+			"initialDateJudFolder": "01/05/2023",
+			"finalDateJudFolder": "01/11/2023",
+			"numberJudFolder": "34567-8901",
+			"statusJudFolder": "En letra",
+			"descriptionJudFolder": "Acuerdo alcanzado con el demandante"
+		},
+		"isLoader": false,
+		"error": null
+	}
+]

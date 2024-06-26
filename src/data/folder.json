@@ -1,0 +1,1370 @@
+{
+	"materia": [
+		"Ablación de Organos",
+		"Abrigo",
+		"Accidente de Trabajo (Ley 9.688)",
+		"Accidente de Trabajo - Acción Especial",
+		"Accidente In Itinere",
+		"Acción Calificación del Bien",
+		"Acción Compensación Económica",
+		"Acción Confesoria",
+		"Acción Contestación o Usurpación de Nombre",
+		"Acción contra Legatario",
+		"Acción de Colación",
+		"Acción de Complemento de la Partición",
+		"Acción de Deslinde",
+		"Acción de Despojo",
+		"Acción de Entrega de Legítima",
+		"Acción de Fraude (Art. 1298 C. Civil)",
+		"Acción de Impugnacion de Filiación",
+		"Acción de Inconstitucionalidad",
+		"Acción de Matener Tenencia o Posesión",
+		"Acción de Nulidad",
+		"Acción de Reajuste",
+		"Acción de Recomposición Ambiental",
+		"Acción de Reducción",
+		"Acción de Reembolso",
+		"Acción de Restitución",
+		"Acción de Secuestro (art. 39 Ley 12962)",
+		"Acción Declarativa (Art. 322 C.Civil)",
+		"Acción Declarativa (Sumario)",
+		"Acción Negatoria",
+		"Acción por Denegatoria de Nombre",
+		"Acción por Uso Ilícito Impropio del Nombre",
+		"Acción Posesoria",
+		"Acción Preventiva-Daños-",
+		"Acción Reclamación Art.8 Ley 13512 (Tram/Interd)",
+		"Acción Reclamación o Reconocimiento del Nombre",
+		"Acción Reinvndicatoria",
+		"Acción Revocatoria Concursal",
+		"Acción Revocatoria o Pauliana",
+		"Acción Subrogatoria",
+		"Acciones de Negación de Filiación",
+		"Acciones de Reclamación de Filiación",
+		"Acciones Derivadas - Cementerios Privados",
+		"Acciones Derivadas - Conjunto Inmobiliario-",
+		"Acciones Derivadas -Derecho de Superficie-",
+		"Acciones Posesorias",
+		"Aceptación de Prestaciones Fideicomiso",
+		"Acreditación de Vínculo",
+		"Actas de Exposición",
+		"Actas de Exposición/Denuncia",
+		"Actualización de Legado",
+		"Acuerdo Homologación Laboral",
+		"Acuerdo Preventivo Extrajudicial",
+		"Adjudicación de Inmuebles (Ley 9434)",
+		"Administración de Bienes",
+		"Administración de Bienes de los Hijos",
+		"Administración y Liquidación de Herencia",
+		"Adopción",
+		"Adopción. Acciones Vinculadas",
+		"Adquisición Mercaderías p/Cuenta Terceros",
+		"Afectación a la Vivienda",
+		"Afectación al Régimen de la Ley 19.724",
+		"Alimentos",
+		"Alimentos y Litis Expensas",
+		"Alimentos y tenencia",
+		"Alimentos: aumento y cese de cuota",
+		"Alquileres",
+		"Amparo",
+		"Amparo por Mora",
+		"Amparo Sindical",
+		"Apelación",
+		"Apelación de Resolución Administrativa",
+		"Apremio",
+		"Apremio Provincial",
+		"Aseguramiento de bienes",
+		"Asesoramiento",
+		"Asignación por Adopción",
+		"Asignación por Hijo",
+		"Asignación por Matrimonio",
+		"Atribución de la Vivienda Conyugal",
+		"Atribución de Vivienda y/o Asiento Conyugal",
+		"Ausencia con Presunción de Fallecimiento",
+		"Ausencia por Desaparición Forzada (Ley 24321)",
+		"Ausencia Simple",
+		"Autorización",
+		"Autorización Judicial",
+		"Autorización para Mantenimiento de Apellido",
+		"Autorización Recibir Precio por el Vendedor",
+		"Autorizaciones (Excepto Art. 6 Ley 11867)",
+		"Beneficio de Litigar sin Gastos",
+		"Beneficio de Litigar sin Gastos - Empleo Público",
+		"Bien de Familia-Desafectación",
+		"Bien de Familia-Inscripción",
+		"Cambio de Nombre",
+		"Camino de Sirga",
+		"Cancelación de Hipoteca",
+		"Cancelación de Prenda",
+		"Cancelación Inscripción -Leasing-",
+		"Cancelación Plazo Fijo",
+		"Cancelación Título Ejecutivo",
+		"Celebración de Matrimonio en Articulo de Muerte",
+		"Cesación de Cuota Alimentaria",
+		"Cese de Infracción Propidad Horizontal",
+		"Cese de Inmisión",
+		"Cese del Fiduciario",
+		"Cesión de Derechos",
+		"Cesión de Herencia",
+		"Cobranza de alquiler",
+		"Cobro de Alquileres",
+		"Cobro de Alquileres de Bienes Muebles",
+		"Cobro de Aportes de Cuota Sindical",
+		"Cobro de Astreintes",
+		"Cobro de Honorarios",
+		"Cobro de Medianería",
+		"Cobro de Mejoras de Predios Rurales",
+		"Cobro de Pastoreo",
+		"Cobro de Salarios",
+		"Cobro de Suma de Dinero",
+		"Cobro de Valor Locativo",
+		"Cobro Ejecutivo",
+		"Cobro Ejecutivo Arrendamientos",
+		"Cobro Ejecutivo de Alquileres",
+		"Cobro Ejecutivo de Expensas",
+		"Cobro Ejecutivo de Tiempo Compartido",
+		"Cobro Ejecutivode Cánon-Leasing",
+		"Cobro Ordinario de Sumas de Dinero",
+		"Cobro Sumario Alquileres",
+		"Cobro Sumario Arrendamientos",
+		"Cobro Sumario de Créditos Laborales",
+		"Cobro Sumario de Sumas Dinero (Exc.Alquileres, etc)",
+		"Colación",
+		"Compensación por Clientela-Contrato de Agencia",
+		"Comunicación con los hijos",
+		"Concurso Preventivo",
+		"Concurso Preventivo (Grande)",
+		"Concurso Preventivo (Pequeño)",
+		"Condominio Muros, etc.",
+		"Condominio sobre Muros, Cercos y Fosos",
+		"Condominio-Acciones Derivadas (Excepto División)",
+		"Consignación",
+		"Consignación de Alimentos",
+		"Consignación de Alquileres",
+		"Consignación de Cosas",
+		"Consignación de Cosas Muebles",
+		"Consignación de Expensas",
+		"Consignación de Llaves",
+		"Consignación Muebles y Llaves",
+		"Consignación Sumas Dinero, Alq., Arrendamiento",
+		"Conversión en Divorcio Vincular",
+		"Convivencia. Dispensa",
+		"Convocatoria Asamblea Consor. (Ley 13512 Sumaris.)",
+		"Convocatoria Asamblea-Consorio-",
+		"Convocatoria de Acreedores",
+		"Convocatoria de Asamblea",
+		"Copia y Renovación de Títulos",
+		"Cuestión de Competencia - Otros Juicios",
+		"Cuestión de Competencia - Previsión",
+		"Cuestión de Competencia- Empleo Público",
+		"Cuestiones de Vecindad",
+		"Cuestiones Vinculadas con Inmueble Colindante",
+		"Cuidado Personal de Hijos ",
+		"Cumplimiento Contrato de Transporte",
+		"Cumplimiento de Contrato",
+		"Cumplimiento de Contratos Civiles/Comerciales",
+		"Cumplimiento de Funciones del Tutor",
+		"Cumplimiento de Legado",
+		"Cumplimiento de Reglamento de Copropiedad",
+		"Curatela",
+		"Curatela (art. 12 C. Penal)",
+		"Curatela Especial",
+		"Daños y Perj. Estado (Uso Autom. c/Les. o Muerte)",
+		"Daños y Perj. Resp.Estado (Del./Cuas.Exc.Autom.)",
+		"Daños y Perj.Autom. c/Les o Muerte (Exc.Estado)",
+		"Daños y Perj.Autom. s/Lesiones (Exc.Estado)",
+		"Daños y Perj.Del./Cuas.(Exc.Uso Aut.y Estado)",
+		"Daños y Perj.Estado (Uso Autom.s/Lesiones)",
+		"Daños y Perj.Incump. Contractual (Exc.Estado)",
+		"Daños y Perj.Resp.Prof. /Funcionarios",
+		"Daños y Perj.Resp.Profesional (Excluido Estado)",
+		"Daños y Perjuicios",
+		"Daños y Perjuicios Extracontractual (Exc.Autom./Est.)",
+		"Daños y Perjuicios por Afectación a la Dignidad",
+		"Daños y Perjuicios por Enriquecimiento s/Causa",
+		"Daños y Perjuicios Prov.Explotación Agrícola",
+		"Daños y Perjuicios Resp.Contractual Estado",
+		"Deber de Contribución",
+		"Declaratoria de Herederos",
+		"Defraudación",
+		"Delegación de la Responsabilidad Parental",
+		"Denuncia",
+		"Denuncia de Daño Temido",
+		"Denuncia de Impedimento/Oposición Matrimonial",
+		"Denuncia del Registro Civil y Capacidad de las personas",
+		"Denuncia Reg.Civil Capacidad Pers.(Doble Insc.)",
+		"Depósito de Obra",
+		"Derecho a Conocer Origen",
+		"Derecho de Acrecer",
+		"Derecho de Comunicación",
+		"Derecho de Servidumbres en General",
+		"Derecho de Uso y Habitación",
+		"Derecho de Usufructo",
+		"Desafectación a la Vivienda ",
+		"Desafectación de Bien de familia",
+		"Desalojo",
+		"Desalojo (Excepto por Falta de Pago)",
+		"Desalojo Anticipado",
+		"Desalojo Laboral",
+		"Desalojo por Falta de Pago",
+		"Desalojo por Vencimiento de Contrato",
+		"Desalojo Rural",
+		"Designación de Administrador Interino-Fundaciones",
+		"Despido",
+		"Despido Indirecto",
+		"Despido por Embarazo",
+		"Despido por Falta/Disminución de Trabajo o Fuerza Mayor",
+		"Despido por Matrimonio",
+		"Despido por Nacimiento de Hijo",
+		"Despido y Cobro de Pesos",
+		"Determinación de la Capacidad Jurídica",
+		"Determinación Precio Arrendamientos",
+		"Determinación Precio/Alquileres",
+		"Dictamen",
+		"Diferencia Indemnización",
+		"Diferencia Salariales",
+		"Dilgencia Preliminar - Previsión",
+		"Diligencia Preliminar",
+		"Diligencia Preliminar - Empleo Público",
+		"Diligencia Preliminar - Otros Juicios",
+		"Disolución de Socidad Conyugal",
+		"Disolución de Sociedad",
+		"Disolución de Sociedad de Hecho",
+		"Disolución y Liq.de Sociedad (Inc.Soc.de Hecho)",
+		"Dispensa para Contraer Matrimonio",
+		"Dispensa para Reconocer Hijo",
+		"Div.Cond.(Incidente cobro pesos por utilización exclusiva)",
+		"Divergencia en la determinación de la incapacidad",
+		"División de Condominio",
+		"Divorcio por Presentación Conjunta",
+		"Divorcio (art. 214 inc. 2 C.C.)",
+		"Divorcio (art. 215 C.C.)",
+		"Divorcio Contradictorio",
+		"Divorcio Por Presentacion Unilateral",
+		"Divorcio y Alimentos",
+		"Divorcio y Exclusión de conyuge",
+		"Divorcio y Tenencia de Hijos",
+		"Divorcio, Alimentos y Tenencia de Hijos",
+		"Dominio-Acciones Derivadas",
+		"Donacion-Revocacion de",
+		"Dvisión de Herencia/Cese de Indivisión",
+		"Ejecución de Alimentos",
+		"Ejecución de Alquileres",
+		"Ejecución de Convenio",
+		"Ejecución de Expensas",
+		"Ejecución de Honorarios",
+		"Ejecución de Honorarios - Empleo Público",
+		"Ejecución de Honorarios - Previsión",
+		"Ejecución de Honorarios de Mediación Ley 13951",
+		"Ejecución de Resolución Administrativa",
+		"Ejecución de Sentencia",
+		"Ejecución de Sentencia - Empleo Público",
+		"Ejecución de Sentencia - Previsión",
+		"Ejecución Fiscal",
+		"Ejecución Hipotecaria",
+		"Ejecución Laudo Arbitral",
+		"Ejecución Multas Procesales y Astreintes",
+		"Ejecución Prendaria",
+		"Ejecución, Transacciones o Acuerdos Homologados",
+		"Ejecutivo",
+		"Ejercicio de la Patria Potestad",
+		"Ejercicio de la Responsabilidad Parental",
+		"Emancipación",
+		"Emancipación y Habilitación y sus Revocatorias",
+		"Encubrimiento",
+		"Enfermedad Accidente",
+		"Enfermedad Profesional",
+		"Entrega de Legado",
+		"Escrituración",
+		"Evicción",
+		"Exámen de Los Libros del Socio",
+		"Exclusión de la herencia",
+		"Exclusión del Hogar (art. 237 bis del CPCC.)",
+		"Exclusión del Hogar y Violencia Doméstica",
+		"Exclusión Tutela Sindical (Sumarísimo)",
+		"Exequatur",
+		"Exequatur y Reconocimiento de Sentencia Extranjera",
+		"Exequias",
+		"Exhorto",
+		"Exhortos y Oficios",
+		"Exhortos- Empleo Público",
+		"Exhumación de Cadaver",
+		"Expropiación",
+		"Expropiación Directa",
+		"Expropiación Inversa",
+		"Externación",
+		"Extinción de contrato de trabajo",
+		"Extrajudiciales",
+		"Fijación de Plazo",
+		"Fijación de régimen de visitas",
+		"Fijación de valor locativo",
+		"Fijación Honorarios Extrajudiciales",
+		"Fijación Plazo Cumplimiento Obligación",
+		"Fijación Precio Alquileres",
+		"Fijación Precio Arrendamientos",
+		"Filiación",
+		"Fondo de Desempleo",
+		"Gastos de Sepelio",
+		"Gastos Médicos",
+		"Gastos por Provisión de Prótesis",
+		"Guarda",
+		"Guarda a Parientes",
+		"Guarda con Fines de Adopción",
+		"Guarda de Personas (art 234 del CPCC.)",
+		"Habeas Data",
+		"Habitación-Acciones Derivadas",
+		"Hallazgo",
+		"Homicidio",
+		"Homicidio Culposo",
+		"Homologación",
+		"Homologación - Empleo Público",
+		"Homologación - Otros Juicios",
+		"Homologación - Previsión",
+		"Homologación de Convenio",
+		"Homologación Delegación de la Responsabilidad Parental",
+		"Homologación Mediación Ley 13951",
+		"Hurto",
+		"Impugnación",
+		"Impugnación Arbitral",
+		"Impugnación con Actos de Entes Públicos No Estatales",
+		"Impugnación con Resolución del Colegio o Consejo Profesional",
+		"Impugnación con Resolución del Tribunal de Cuentas",
+		"Impugnación con Resolución del Tribunal Fiscal Apel.",
+		"Impugnación de acto administrativo",
+		"Impugnación de maternidad",
+		"Impugnación de paternidad",
+		"Impugnación de Testamento",
+		"Impugnación Directa Actos Admin. Defintivo Colegio o Consejo",
+		"Incapacidad Absoluta (Art. 212 LCT.)",
+		"Incidente",
+		"Incidente (Excepto los Tipificados Expresamente)",
+		"Incidente - Empleo Público",
+		"Incidente - Previsión",
+		"Incidente aumento cuota alimentaria",
+		"Incidente Concurso/Quiebra (Excepto Verificación)",
+		"Incidente de Alimentos",
+		"Incidente de Comunicación con los Hijos",
+		"Incidente de Cuidado Personal de Hijos",
+		"Incidente de Ejecución de Tasa de Justicia",
+		"Incidente de liquidación de Soc.Conyugal",
+		"Incidente de Plan de Parentalidad",
+		"Incidente de retitución de inmueble",
+		"Incidente de Revisón",
+		"Incidente de Verificación de Crédito",
+		"Incidente Determinación de Daños",
+		"Incidente ejecución convenio de alimentos.",
+		"Incidente Ejecución Honorarios",
+		"Incidente Embargo",
+		"Incidente Exclusión del Hogar",
+		"Incidente exclusión vocación hereditaria",
+		"Incidente Redargución de Falsedad",
+		"Incidente reducción cuota alimentos",
+		"Incidente Rendicion de Cuentas",
+		"Inclusión de Bienes",
+		"Indemnización por Clientela",
+		"Indemnización por Muerte (Art. 248 LCT.)",
+		"Indemnización Sustitutiva por Daño Ambiental Colectivo",
+		"Información Sumaria",
+		"Información Sumaria con Expediente",
+		"Información Sumaria Ley 10.996",
+		"Inhabilitación",
+		"Inhabilitación (art. 152 bis inc 3º C.Civil)",
+		"Inhibitoria",
+		"Insania",
+		"Insania y Curatela",
+		"Inscipción Nacimiento Fuera de Término",
+		"Inscripcción de Automotor",
+		"Inscripción",
+		"Inscripción de Nacimiento",
+		"Inscripción de Testamento (Exhorto/Oficio)",
+		"Inscripción Declaratoria Herederos (Exhorto/Oficio)",
+		"Inscripción Registro Automotores",
+		"Inseminación Artificial",
+		"Interdicto de adquirir",
+		"Interdicto de obra nueva",
+		"Interdicto de recobrar",
+		"Interdicto de retener",
+		"Interdicto salida del país de hijos",
+		"Intereses Difusos",
+		"Internación",
+		"Interrupción de Prescripción (Art. 3986 C.Civil)",
+		"Intervención Judicial (Fideicomiso)",
+		"Intervención Judicial (Genérica)",
+		"Intervención Judicial (Ley 21526 T/S Ley 24485)",
+		"Intrusión",
+		"Jubilación Ordinaria IPS",
+		"Jubilación PBU PC PAP",
+		"Juicio Arbitral",
+		"Juicio de Amigables Componedores",
+		"Juicio Pericial- Pericia Arbitral",
+		"Lesiones",
+		"Levantamiento de Embargo",
+		"Licitación de Bienes",
+		"Limitación al Dominio por Razón de Interés Público",
+		"Liquidación de la Comunidad",
+		"Liquidación de Régimen Patrimonial del Matrimonio",
+		"Liquidación de Sociedad",
+		"Liquidación de Sociedad Conyugal",
+		"Liquidación Entidades de Seguros (Ley 20091)",
+		"Litis Expensas",
+		"Locación de Obra",
+		"Locación de Servicios",
+		"Materia a Categorizar",
+		"Materia a Categorizar - Empleo Público",
+		"Materia a Categorizar - Otros Juicios",
+		"Materia a Categorizar - Previsión",
+		"Materia de Otro Fuero",
+		"Matrimonio, Nulidad/Inexistencia",
+		"Mediación Extrajudicial ",
+		"Mediación Judicial",
+		"Medianería",
+		"Medida Autosatisfactiva",
+		"Medida Cautelar Autónoma o Anticipada - Otros Juicios",
+		"Medida Cautelar Autónoma o Anticipada - Empleo Público",
+		"Medida Cautelar Autónoma o Anticipada - Previsión",
+		"Medidas Art. 12 CDPD (Ley 26378)",
+		"Medidas Cautelares",
+		"Medidas Precautorias",
+		"Medidas Precautorias (art. 232 C.Civil)",
+		"Medidas Precautorias (art. 233 C.Civil)",
+		"Medidas Preliminares",
+		"Medidas Preliminares (art. 323 del CPCC)",
+		"Medidas Previas",
+		"Medidas Protectorias",
+		"Medidas Urgentes Procesos Sucesorios",
+		"Mejora U Obra Nueva en Parte Comun-Consorcio",
+		"Mensura y Deslinde",
+		"Ministerio de Trabajo",
+		"Modificación del Reglamento de Copropiedad",
+		"Muerte dudosa",
+		"Muerte por Accidente Ferroviario",
+		"Nulidad",
+		"Nulidad de Acto Administrativo",
+		"Nulidad de Acto Jurídico",
+		"Nulidad de Adopción",
+		"Nulidad de Asamblea",
+		"Nulidad de Cláusulas Contractuales",
+		"Nulidad de Contrato",
+		"Nulidad de Convenio",
+		"Nulidad de Escritura Pública",
+		"Nulidad de Inscripción",
+		"Nulidad de Matrimonio",
+		"Nulidad de Partición de Herencia",
+		"Nulidad de Resolción Municipal",
+		"Nulidad de Testamento",
+		"Nulidad del Acto",
+		"Obligación Dar Cant.Cosas, Valores, etc.",
+		"Oficio",
+		"Oficios - Empleo Público",
+		"Oficios - Previsión",
+		"Oposición a solicitud de Marcas",
+		"Ordinario",
+		"Otras Dispensas",
+		"Pacto de Convivencia",
+		"Pacto de Indivisión",
+		"Partición de Herencia",
+		"Partición de la Comunidad",
+		"Patentamiento",
+		"Patria Potestad.Ejercicio/Sanciones",
+		"Pensiones",
+		"Pérdida de administración de bienes",
+		"Pérdida de vocación hereditaria",
+		"Pérdida Vocación Hereditaria",
+		"Pericia arbitral",
+		"Petición de Herencia",
+		"Plan de Parentalidad",
+		"Posesión Decenal",
+		"Posesión Vicenal",
+		"Precripción Adquisiva Vicenal/Usucapión",
+		"Prehorizontalidad",
+		"Prehorizontalidad(Afectación/Régimen Ley 19274)",
+		"Preparación de la vía ejecutiva",
+		"Prescripción",
+		"Prescripción (art. 4.023 C.Civil)",
+		"Prescripción (art. 4.027 C.Civil inc.3º)",
+		"Prescripción (art. 4.032 C.Civil)",
+		"Prescripción Adquisitiva Breve",
+		"Prescripción Adquisitiva Decenal (Dom.Inmub.)",
+		"Prescripción Adquisitiva Muebles",
+		"Prescripción Adquisiva Larga",
+		"Pretensión Anulatoria - Empleo Público",
+		"Pretensión Anulatoria - Otros Juicios",
+		"Pretensión Anulatoria - Previsión",
+		"Pretensión Cesación de Via de Hecho Administrativa",
+		"Pretensión Declarativa de Certeza - Empleo Público",
+		"Pretensión Declarativa de Certeza - Otros Juicios",
+		"Pretensión Declarativa de Certeza - Previsión",
+		"Pretensión Indemnizatoria - Empleo Público",
+		"Pretensión Indemnizatoria - Otros Juicios",
+		"Pretensión Indemnizatoria - Previsión",
+		"Pretensión Restablec.o Reonoc. Derechos - Empleo Público",
+		"Pretensión Restablec.o Reonoc. Derechos - Otros Juicios",
+		"Pretensión Restablec.o Reonoc. Derechos - Previsión",
+		"Privación de la Patria Potestad",
+		"Privación de visita",
+		"Privación/Suspensión de la Responsabilidad Parental",
+		"Proceso Sumario contra Sanciones en Mat. Empleo Público ",
+		"Proceso Sumario de Ilegitimidad - Empleo Público",
+		"Proceso Sumario de Ilegitimidad - Otros Juicios",
+		"Proceso Sumario de Ilegitimidad - Previsión",
+		"Procesos Informativos",
+		"Propiedad Horizontal-Cuestiones E/Propietarios",
+		"Propiedad intelectual (Ley 11.723)",
+		"Protección Contra la Violencia Familiar (Ley 12569)",
+		"Protección de persona",
+		"Protección y Guarda de Personas",
+		"Protocolización de Testamento",
+		"Prueba Anticipada - Empleo Público",
+		"Prueba Anticipada - Otros Juicios",
+		"Prueba Anticipada - Previsión",
+		"Quiebra",
+		"Quiebra (Grande)",
+		"Quiebra (Pequeña)",
+		"Reajuste de Convenio",
+		"Reajuste de Haberes",
+		"Reclamación de Estado",
+		"Reclamo c/Actos de Particulares (Sumario)",
+		"Reclamo Contra Actos de Particulares",
+		"Reclamos Varios",
+		"Recompensa",
+		"Reconciliación (art. 234 Ley 23.515)",
+		"Reconocimiento de Hijo",
+		"Reconocimiento de la calidad de socio",
+		"Reconocimiento de la categoría autoral",
+		"Reconocimiento de Mercaderias",
+		"Reconocimiento de Servicios",
+		"Reconocimiento y Compensación Mejoras",
+		"Rectificación Asiento Registral",
+		"Rectificación de Partidas",
+		"Rectificación de Título de Propiedad",
+		"Redacción de contrato",
+		"Redargución de Falsedad",
+		"Reducción de precio",
+		"Reducción de valor locativo (art. 5º Ley 23.747)",
+		"Reembolso Empleo Util",
+		"Reforma de Partición de Herencia",
+		"Régimen de Visitas",
+		"Registro de Marcas",
+		"Regulación de Honorarios",
+		"Regulación de Honorarios por Acts. Administrativas - Empleo Público",
+		"Regulación de Honorarios por Acts. Administrativas - Otros Juicios",
+		"Regulación de Honorarios por Acts. Administrativas - Previsión",
+		"Rehabilitación",
+		"Reinstalación (Sumarísimo)",
+		"Reintegro",
+		"Reintegro de Hijos",
+		"Reinvindicación",
+		"Remoción de administrador",
+		"Rendición de Cuentas",
+		"Rendición de Cuentas (Tram.Ordinario)",
+		"Rendición de Cuentas (Tram.Sumario)",
+		"Renovación Inscripción Registral-Leasing",
+		"Repetición",
+		"Repetición Sumas de Dinero",
+		"Rescisión",
+		"Rescisión de Contratos Civiles/Comerciales",
+		"Resolución Contrato Compra/Venta Inmuebles",
+		"Resolución de Contrato",
+		"Resolución de Contratos Civiles/Comerciales",
+		"Responsabilidad Derivada del Divorcio",
+		"Restitución de Comodato",
+		"Restitución de Muebles",
+		"Restitución Internacional de Menores",
+		"Restricciones y Límites al Dominio",
+		"Retiro Policial",
+		"Retiro Transitorio por Invalidez",
+		"Retrocesión",
+		"Reversión de la Donación",
+		"Revisión de Cosa Juzgada",
+		"Revocación Contractual",
+		"Revocación de acto jurídico",
+		"Revocación de adopción",
+		"Revocación de donaciones",
+		"Robo",
+		"Robo y Abuso de Armas",
+		"Salario Familiar",
+		"Salarios por Enfermedad (Art. 208 LCT.)",
+		"Salarios por Suspensión",
+		"Segundo Testimonio",
+		"Seguro de Vida",
+		"Separación Judicial de Bienes",
+		"Separación Personal (art. 203 C.C.)",
+		"Separación Personal(art. 204 C.C.)",
+		"Separación Personal (art. 205 C. C.)",
+		"Separación Personal Contradictoria",
+		"Separación Personal Por Presentación Conjunta",
+		"Separación personal y alimentos",
+		"Separación personal y exclusión de cónyuge",
+		"Separación personal y tenencia de hijos",
+		"Separación personal, alimentos y tenencia",
+		"Servidumbre",
+		"Servidumbre (Excepto de Electroducto)",
+		"Servidumbre de Electroducto",
+		"Servidumbres Administrativas",
+		"Simulación",
+		"Sociedades-Acciones Derivadas de la ley",
+		"Sucesión ab intestato",
+		"Sucesión Testamentaria",
+		"Sucesión vacante",
+		"Suicidio",
+		"Sumario",
+		"Sumarísimo",
+		"Suspensión de la Patria Potestad",
+		"Suspensión de régimen de visitas",
+		"Sustracción, Pérdida, Destrucción Libros de Registro",
+		"Sustracción, Pérdida, Destrucción Títulos Valores",
+		"Técnicas de Reproducción Asistida",
+		"Tenencia de Hijos",
+		"Tenencia de hijos y régimen de visitas",
+		"Tentativa de Homicidio",
+		"Tercería de Dominio",
+		"Tercería de Dominio (Trámite Ordinario)",
+		"Tercería de Dominio (Trámite Sumario)",
+		"Tercería de Mejor Derecho",
+		"Tercería Mejor Derecho (Trámite Ordinario)",
+		"Tercería Mejor Derecho (Trámite Sumario)",
+		"Transferencia de automotor",
+		"Transferencia de Marcas",
+		"Tutela",
+		"Tutela especial",
+		"Uso- Acciones Derivadas",
+		"Usucapión",
+		"Usufructo- Acciones Derivadas",
+		"Usurpación de títulos y honores",
+		"Venia Matrimonial",
+		"Venia supletoria",
+		"Venta de Mercaderías",
+		"Venta Mercaderías por Cuenta de Terceros",
+		"Verificación de Crédito",
+		"Vicios redhibitorios",
+		"Víctima de Hurto",
+		"Violación Art. 146 CP.",
+		"Violación con alevosía",
+		"Violencia de Género (materia Civil)",
+		"Violencia de Género (Penal)"
+	],
+	"fuero": [
+		"Civil",
+		"Laboral",
+		"Previsional",
+		"Comercial",
+		"Aduanero",
+		"Tributario",
+		"Comercial",
+		"Penal",
+		"Administrativo",
+		"Constitucional",
+		"Ambiental",
+		"Familia"
+	],
+	"parte": [
+		"Actor",
+		"Demandado",
+		"Requirente",
+		"Requerido",
+		"Acreedor",
+		"Deudor",
+		"Denunciante",
+		"Denunciado",
+		"Beneficiario",
+		"Concursado",
+		"Síndico",
+		"Querellante",
+		"Pres. Fallido",
+		"Part. Damnificado",
+		"Imputado",
+		"Incidentista",
+		"Heredero/os"
+	],
+	"situacion": ["En letra", "En despacho"],
+	"estado": ["Nueva", "En Proceso", "Finalizada"],
+	"jurisdicciones": [
+		{
+			"item": "Jujuy - San Pedro de Jujuy",
+			"label": "Jujuy"
+		},
+		{
+			"item": "Entre Ríos - Distrito Chajarí",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Buenos Aires - Necochea",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Entre Ríos - Distrito San Salvador",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Buenos Aires - Quilmes",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Justicia Nacional - Civil y Comercial Federal",
+			"label": "CABA"
+		},
+		{
+			"item": "Tucumán - Centro Judicial Concepción",
+			"label": "Tucumán"
+		},
+		{
+			"item": "Chaco - 5º Circunscripción - Gral. San Martín",
+			"label": "Chaco"
+		},
+		{
+			"item": "Chubut - Comodoro Rivadavia",
+			"label": "Chubut"
+		},
+		{
+			"item": "Córdoba - 7º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Jujuy - San Salvador de Jujuy",
+			"label": "Jujuy"
+		},
+		{
+			"item": "Chaco - 4º Circunscripción - Charata",
+			"label": "Chaco"
+		},
+		{
+			"item": "Entre Ríos - Distrito La Paz",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Chaco - 3º Circunscripción - Villa Angela",
+			"label": "Chaco"
+		},
+		{
+			"item": "Buenos Aires - Pergamino",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Entre Ríos - Distrito Federal",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Santiago del Estero - Jurisdicción Capital",
+			"label": "Santiago del Estero"
+		},
+		{
+			"item": "La Pampa - 4º Circunscripción - Victorica",
+			"label": "La Pampa"
+		},
+		{
+			"item": "Misiones - 1ª Circunscripción - Posadas",
+			"label": "Misiones"
+		},
+		{
+			"item": "Río Negro - 1ª Circunscripción - Viedma",
+			"label": "Río Negro"
+		},
+		{
+			"item": "Tucumán - Juzgados de Paz",
+			"label": "Tucumán"
+		},
+		{
+			"item": "Buenos Aires - La Plata",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Neuquén - 5º Circunscripción - Chos Malal",
+			"label": "Neuquén"
+		},
+		{
+			"item": "Buenos Aires - La Matanza",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "La Rioja - 2º Circunscripción - Chilecito",
+			"label": "La Rioja"
+		},
+		{
+			"item": "Formosa - 3º Circunscripción - Las Lomitas",
+			"label": "Formosa"
+		},
+		{
+			"item": "Entre Ríos - Distrito Concordia",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Salta - Distrito Orán",
+			"label": "Salta"
+		},
+		{
+			"item": "Corrientes - 3º Circunscripción - Curuzú Cuatiá",
+			"label": "Corrientes"
+		},
+		{
+			"item": "Justicia Nacional - Comercial",
+			"label": "CABA"
+		},
+		{
+			"item": "Justicia Nacional - C.S.J.N",
+			"label": "CABA"
+		},
+		{
+			"item": "San Juan - 1ª Circunscripción - San Juan",
+			"label": "San Juan"
+		},
+		{
+			"item": "Buenos Aires - San Martín",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Buenos Aires - Trenquelauquen",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "La Rioja - 1ª Circunscripción - La Rioja",
+			"label": "La Rioja"
+		},
+		{
+			"item": "Córdoba - 10º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "La Pampa - 1ª Circunscripción - Santa Rosa",
+			"label": "La Pampa"
+		},
+		{
+			"item": "Corrientes - 4º Circunscripción - Paso de los Libres",
+			"label": "Corrientes"
+		},
+		{
+			"item": "Entre Ríos - Distrito Gualeguaychú",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Tucumán - Centro Judicial Capital",
+			"label": "Tucumán"
+		},
+		{
+			"item": "CABA - Contencioso Administrativo y Tributario",
+			"label": "CABA"
+		},
+		{
+			"item": "Justicia Nacional - Criminal y Correcional Federal",
+			"label": "CABA"
+		},
+		{
+			"item": "Santiago del Estero - Jurisdicción La Banda",
+			"label": "Santiago del Estero"
+		},
+		{
+			"item": "Catamarca - 4º Circunscripción - Charata",
+			"label": "Catamarca"
+		},
+		{
+			"item": "Córdoba - 5º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "La Rioja - 5º Circunscripción - Chepes",
+			"label": "La Rioja"
+		},
+		{
+			"item": "Entre Ríos - Distrito Paraná",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Santa Fe - 1ª Circunscripción - Santa Fe",
+			"label": "Santa Fe"
+		},
+		{
+			"item": "Chubut - Esquel",
+			"label": "Chubut"
+		},
+		{
+			"item": "Misiones - 4º Circunscripción - Puerto Rico",
+			"label": "Misiones"
+		},
+		{
+			"item": "Neuquén - 4º Circunscripción - S.M. de los Andes-Junín de los Andes-V. La Angostura",
+			"label": "Neuquén"
+		},
+		{
+			"item": "Justicia Nacional - Electoral",
+			"label": "CABA"
+		},
+		{
+			"item": "Entre Ríos - Distrito Victoria",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Buenos Aires - Bahía Blanca",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Corrientes - 5º Circunscripción - Santo Tomé",
+			"label": "Corrientes"
+		},
+		{
+			"item": "Jujuy - Delegaciones Rurales",
+			"label": "Jujuy"
+		},
+		{
+			"item": "Córdoba - 1ª Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Justicia Nacional - Trabajo",
+			"label": "CABA"
+		},
+		{
+			"item": "Río Negro - 3º Circunscripción - S.C. Bariloche",
+			"label": "Río Negro"
+		},
+		{
+			"item": "San Juan - Juzgados de Paz Departamentales",
+			"label": "San Juan"
+		},
+		{
+			"item": "Buenos Aires - Mar del Plata",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Corrientes - 2º Circunscripción - Goya",
+			"label": "Corrientes"
+		},
+		{
+			"item": "Misiones - 3º Circunscripción - El Dorado",
+			"label": "Misiones"
+		},
+		{
+			"item": "Salta - Distrito Tartagal",
+			"label": "Salta"
+		},
+		{
+			"item": "CABA - Penal Contravencional y Faltas",
+			"label": "CABA"
+		},
+		{
+			"item": "Mendoza - 2º Circunscripción - San Rafael",
+			"label": "Mendoza"
+		},
+		{
+			"item": "Tucumán - Centro Judicial Monteros",
+			"label": "Tucumán"
+		},
+		{
+			"item": "Formosa - 2º Circunscripción - Clorinda",
+			"label": "Formosa"
+		},
+		{
+			"item": "Justicia Nacional - Criminal y Correccional",
+			"label": "CABA"
+		},
+		{
+			"item": "Catamarca - 3º Circunscripción - Villa Angela",
+			"label": "Catamarca"
+		},
+		{
+			"item": "Neuquén - 2º Circunscripción - Cutral Có",
+			"label": "Neuquén"
+		},
+		{
+			"item": "Buenos Aires - Dolores",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Entre Ríos - Distrito Feliciano",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Santa Cruz - Juzgados de Paz - Zona Norte",
+			"label": "Santa Cruz"
+		},
+		{
+			"item": "Buenos Aires - San Nicolás",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Chaco - 2º Circunscripción - Roque Sáenz Peña",
+			"label": "Chaco"
+		},
+		{
+			"item": "CABA - Tribunal Superior de Justicia",
+			"label": "CABA"
+		},
+		{
+			"item": "Catamarca - 1ª Circunscripción - Resistencia",
+			"label": "Catamarca"
+		},
+		{
+			"item": "La Pampa - 3º Circunscripción - General Acha",
+			"label": "La Pampa"
+		},
+		{
+			"item": "Catamarca - 2º Circunscripción - Roque Sáenz Peña",
+			"label": "Catamarca"
+		},
+		{
+			"item": "Entre Ríos - Distrito Rosario del Tala",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Buenos Aires - Azul",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Córdoba - Capital",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Córdoba - 9º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Buenos Aires - Morón",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Justicia Nacional - Seguridad Social Federal",
+			"label": "CABA"
+		},
+		{
+			"item": "Corrientes - 1ª Circunscripción - Corrientes",
+			"label": "Corrientes"
+		},
+		{
+			"item": "La Rioja - 3º Circunscripción - Chamical",
+			"label": "La Rioja"
+		},
+		{
+			"item": "San Luis - 2º Circunscripción",
+			"label": "San Luis"
+		},
+		{
+			"item": "Córdoba - 6º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Río Negro - Juzgados de Paz",
+			"label": "Río Negro"
+		},
+		{
+			"item": "Buenos Aires - Zarate-Campana",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Río Negro - 4º Circunscripción - Cipolletti",
+			"label": "Río Negro"
+		},
+		{
+			"item": "Justicia Nacional - Contencioso Adm. Federal",
+			"label": "CABA"
+		},
+		{
+			"item": "Justicia Nacional - Casación Penal",
+			"label": "CABA"
+		},
+		{
+			"item": "Tierra del Fuego - Distrito Judicial Sur",
+			"label": "Tierra del Fuego"
+		},
+		{
+			"item": "Santiago del Estero - Jurisdicción Monte Quemado",
+			"label": "Santiago del Estero"
+		},
+		{
+			"item": "Córdoba - 2º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Córdoba - Córdoba (Justicia Federal)",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Chaco - 6º Circunscripción - Juan José Castelli",
+			"label": "Chaco"
+		},
+		{
+			"item": "Buenos Aires - Lomas de Zamora",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Santa Cruz - Juzgados de Paz - Zona Sur",
+			"label": "Santa Cruz"
+		},
+		{
+			"item": "Río Negro - 2º Circunscripción - General Roca",
+			"label": "Río Negro"
+		},
+		{
+			"item": "Entre Ríos - Distrito Nogoyá",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Entre Ríos - Distrito Concepción del Uruguay",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Entre Ríos - Distrito Villaguay",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Santiago del Estero - Jurisdicción Termas de Río Hondo",
+			"label": "Santiago del Estero"
+		},
+		{
+			"item": "San Luis - 3º Circunscripción",
+			"label": "San Luis"
+		},
+		{
+			"item": "Mendoza - 3º Circunscripción - San Martín",
+			"label": "Mendoza"
+		},
+		{
+			"item": "Chubut - Trelew",
+			"label": "Chubut"
+		},
+		{
+			"item": "Santa Fe - 5º Circunscripción - Rafaela",
+			"label": "Santa Fe"
+		},
+		{
+			"item": "Entre Ríos - Distrito Federación",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Santa Cruz - 2º Circunscripción",
+			"label": "Santa Cruz"
+		},
+		{
+			"item": "Formosa - 1ª Circunscripción - Formosa",
+			"label": "Formosa"
+		},
+		{
+			"item": "Justicia Nacional - Civil",
+			"label": "CABA"
+		},
+		{
+			"item": "Córdoba - 3º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Salta - Distrito Centro",
+			"label": "Salta"
+		},
+		{
+			"item": "La Rioja - 4º Circunscripción - Aimogasta",
+			"label": "La Rioja"
+		},
+		{
+			"item": "Córdoba - 8º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Santiago del Estero - Jurisdicción Frías",
+			"label": "Santiago del Estero"
+		},
+		{
+			"item": "Misiones - 2º Circunscripción - Oberá",
+			"label": "Misiones"
+		},
+		{
+			"item": "San Luis - 1ª Circunscripción",
+			"label": "San Luis"
+		},
+		{
+			"item": "Córdoba - 4º Circunscripción",
+			"label": "Córdoba"
+		},
+		{
+			"item": "Mendoza - 1ª Circunscripción - Mendoza",
+			"label": "Mendoza"
+		},
+		{
+			"item": "Santa Fe - 4º Circunscripción - Reconquista",
+			"label": "Santa Fe"
+		},
+		{
+			"item": "Buenos Aires - Junín",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Buenos Aires - San Isidro",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Salta - Distrito Sur",
+			"label": "Salta"
+		},
+		{
+			"item": "Chubut - Sarmiento",
+			"label": "Chubut"
+		},
+		{
+			"item": "Entre Ríos - Distrito Villa Paranacito",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Entre Ríos - Distrito Colón",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Entre Ríos - Distrito Gualeguay",
+			"label": "Entre Ríos"
+		},
+		{
+			"item": "Chubut - Puerto Madryn",
+			"label": "Chubut"
+		},
+		{
+			"item": "La Pampa - 2º Circunscripción - General Pico",
+			"label": "La Pampa"
+		},
+		{
+			"item": "Chaco - 1ª Circunscripción - Resistencia",
+			"label": "Chaco"
+		},
+		{
+			"item": "Neuquén - 1ª Circunscripción - Neuquén",
+			"label": "Neuquén"
+		},
+		{
+			"item": "San Juan - 2º Circunscripción - Jáchal",
+			"label": "San Juan"
+		},
+		{
+			"item": "Buenos Aires - Mercedes",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Justicia Nacional - Penal Económico",
+			"label": "CABA"
+		},
+		{
+			"item": "Catamarca - Juzgados de Paz",
+			"label": "Catamarca"
+		},
+		{
+			"item": "Santa Cruz - 1ª Circunscripción",
+			"label": "Santa Cruz"
+		},
+		{
+			"item": "Santiago del Estero - Jurisdicción Añatuya",
+			"label": "Santiago del Estero"
+		},
+		{
+			"item": "Justicia Nacional - Tribunal Fiscal de la Nación",
+			"label": "CABA"
+		},
+		{
+			"item": "Mendoza - 4º Circunscripción - Tunuyán",
+			"label": "Mendoza"
+		},
+		{
+			"item": "Buenos Aires - Moreno-Gral.Rodríguez",
+			"label": "Buenos Aires"
+		},
+		{
+			"item": "Tierra del Fuego - Distrito Judicial Norte",
+			"label": "Tierra del Fuego"
+		},
+		{
+			"item": "Catamarca - 5º Circunscripción - Gral. San Martín",
+			"label": "Catamarca"
+		},
+		{
+			"item": "Catamarca - 6º Circunscripción - Juan José Castelli",
+			"label": "Catamarca"
+		},
+		{
+			"item": "Santa Fe - 2º Circunscripción - Rosario",
+			"label": "Santa Fe"
+		},
+		{
+			"item": "Santa Fe - 3º Circunscripción - Venado Tuerto",
+			"label": "Santa Fe"
+		},
+		{
+			"item": "Neuquén - 3º Circunscripción - Zapala",
+			"label": "Neuquén"
+		}
+	],
+	"condicionFiscal": ["Monotributo", "Responsable Inscripto", "Exento", "Empleado", "Jubilado", "Desocupado"],
+	"provincias": [
+		"Buenos Aires",
+		"CABA",
+		"Catamarca",
+		"Chaco",
+		"Chubut",
+		"Córdoba",
+		"Corrientes",
+		"Entre Ríos",
+		"Formosa",
+		"Jujuy",
+		"La Pampa",
+		"La Rioja",
+		"Mendoza",
+		"Misiones",
+		"Neuquén",
+		"Río Negro",
+		"Salta",
+		"San Juan",
+		"San Luis",
+		"Santa Cruz",
+		"Santa Fe",
+		"Santiago del Estero",
+		"Tierra del Fuego",
+		"Tucumán"
+	],
+	"categorias": ["Cliente", "Contrario", "Mediador/Conciliador", "Causante", "Abogado", "Perito", "Entidad"],
+	"tipos": ["Humana", "Jurídica"],
+	"estadoCivil": ["Soltero", "Casado", "Viudo", "Conviviente"],
+	"idCodeSeguimiento": [
+		{ "label": "Correo Argentino", "item": "CC" },
+		{ "label": "Correo Argentino", "item": "CD" },
+		{ "label": "Correo Argentino", "item": "CL" },
+		{ "label": "Correo Argentino", "item": "CM" },
+		{ "label": "Correo Argentino", "item": "CO" },
+		{ "label": "Correo Argentino", "item": "CP" },
+		{ "label": "Correo Argentino", "item": "DE" },
+		{ "label": "Correo Argentino", "item": "DI" },
+		{ "label": "Correo Argentino", "item": "EC" },
+		{ "label": "Correo Argentino", "item": "EE" },
+		{ "label": "Correo Argentino", "item": "EO" },
+		{ "label": "Correo Argentino", "item": "EP" },
+		{ "label": "Correo Argentino", "item": "GC" },
+		{ "label": "Correo Argentino", "item": "GD" },
+		{ "label": "Correo Argentino", "item": "GE" },
+		{ "label": "Correo Argentino", "item": "GF" },
+		{ "label": "Correo Argentino", "item": "GO" },
+		{ "label": "Correo Argentino", "item": "GR" },
+		{ "label": "Correo Argentino", "item": "GS" },
+		{ "label": "Correo Argentino", "item": "HC" },
+		{ "label": "Correo Argentino", "item": "HE" },
+		{ "label": "Correo Argentino", "item": "HU" },
+		{ "label": "Correo Argentino", "item": "IN" },
+		{ "label": "Correo Argentino", "item": "IS" },
+		{ "label": "Correo Argentino", "item": "JP" },
+		{ "label": "Correo Argentino", "item": "ND" },
+		{ "label": "Correo Argentino", "item": "OL" },
+		{ "label": "Correo Argentino", "item": "PC" },
+		{ "label": "Correo Argentino", "item": "PP" },
+		{ "label": "Correo Argentino", "item": "RD" },
+		{ "label": "Correo Argentino", "item": "RE" },
+		{ "label": "Correo Argentino", "item": "RR" },
+		{ "label": "Correo Argentino", "item": "SD" },
+		{ "label": "Correo Argentino", "item": "SL" },
+		{ "label": "Correo Argentino", "item": "SP" },
+		{ "label": "Correo Argentino", "item": "SR" },
+		{ "label": "Correo Argentino", "item": "ST" },
+		{ "label": "Correo Argentino", "item": "TC" },
+		{ "label": "Correo Argentino", "item": "TL" },
+		{ "label": "Correo Argentino", "item": "UP" },
+		{ "label": "Correo Argentino", "item": "EE" },
+		{ "label": "Correo Argentino", "item": "CX" },
+		{ "label": "Correo Argentino", "item": "RR" },
+		{ "label": "Correo Argentino", "item": "XP" },
+		{ "label": "Correo Argentino", "item": "XX" },
+		{ "label": "Correo Argentino", "item": "XR" },
+		{ "label": "Correo Argentino", "item": "CU" },
+		{ "label": "Correo Argentino", "item": "SU" },
+		{ "label": "Correo Argentino", "item": "EU" },
+		{ "label": "Correo Argentino", "item": "PU" },
+		{ "label": "Correo Argentino", "item": "XU" }
+	]
+}
