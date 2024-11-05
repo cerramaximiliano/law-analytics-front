@@ -1,5 +1,3 @@
-import { Link as RouterLink } from "react-router-dom";
-
 // material-ui
 import { Badge, Button, CardMedia, Container, Grid, Link, Typography } from "@mui/material";
 
@@ -9,18 +7,14 @@ import { motion } from "framer-motion";
 // project-imports
 import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
-import IconButton from "components/@extended/IconButton";
 
 // assets
-import { DocumentDownload, ExportSquare } from "iconsax-react";
-import techBootstrap from "assets/images/landing/tech-bootstrap.svg";
-import techMui from "assets/images/landing/tech-mui.svg";
-import techCodeigniter from "assets/images/landing/tech-codeigniter.svg";
-import techAngular from "assets/images/landing/tech-angular.svg";
-import techNet from "assets/images/landing/tech-net.svg";
-import techFigma from "assets/images/landing/tech-figma.svg";
-import techVue from "assets/images/landing/tech-vuetify.svg";
-import techNextJS from "assets/images/landing/tech-nextjs.svg";
+import { ExportSquare } from "iconsax-react";
+
+import calendar from "assets/images/landing/calendar.svg";
+import calculator from "assets/images/landing/calculator.svg";
+import folder from "assets/images/landing/folder.svg";
+import notifications from "assets/images/landing/notifications.svg";
 
 let value: string = window.location.search;
 const params = new URLSearchParams(value);
@@ -29,26 +23,27 @@ const ispValue = params.get("isp");
 const Technologies = [
 	{
 		trending: false,
-		icon: techBootstrap,
-		title: "Bootstrap 5",
-		description: "Able Pro - Boost your project's visual appeal and functionality with our Bootstrap 5 dashboard template.",
+		icon: folder,
+		title: "Expedientes",
+		description:
+			"Herramienta de administración de causas o expendientes con administración de clientes, movimientos, datos de tramitación, seguimiento de plazos, alarmas y notificaciones.",
 		preview: ispValue !== null && parseInt(ispValue) === 1 ? "https://ableproadmin.com?isp=1" : "https://ableproadmin.com",
 		free: "https://github.com/phoenixcoded/able-pro-free-admin-dashboard-template",
 	},
 	{
-		trending: true,
-		icon: techMui,
-		title: "React Material-UI",
+		trending: false,
+		icon: notifications,
+		title: "Notificaciones",
 		description:
-			"Able Pro React dashboard template is a powerful tool that utilizes the Material-UI component library to create stunning and intuitive user interfaces.",
+			"Plantillas para armado de notificaciones con almacenamiento de modelos, seguimiento automatizados de envíos y alertas de plazos.",
 		preview: ispValue !== null && parseInt(ispValue) === 1 ? "https://ableproadmin.com/react/?isp=1" : "https://ableproadmin.com/react/",
 		free: "https://github.com/phoenixcoded/able-pro-free-admin-dashboard-template",
 	},
 	{
 		trending: false,
-		icon: techAngular,
-		title: "Angular",
-		description: "Able Pro - Boost your project's visual appeal and functionality with our Angular dashboard template.",
+		icon: calendar,
+		title: "Calendario",
+		description: "Calendario propio y sincronizable con Google Calendar, recordatorios y alertas.",
 		preview:
 			ispValue !== null && parseInt(ispValue) === 1
 				? "https://ableproadmin.com/angular/default/?isp=1"
@@ -57,53 +52,10 @@ const Technologies = [
 	},
 	{
 		trending: false,
-		icon: techVue,
-		title: "Vue",
-		description: "Able Pro - Boost your project's visual appeal and functionality with our Vue Dashboard template.",
+		icon: calculator,
+		title: "Cálculos",
+		description: "Diferentes de tipos de cálculos judiciales laborales, civiles y de actualización de montos.",
 		preview: ispValue !== null && parseInt(ispValue) === 1 ? "https://ableproadmin.com/vue/?isp=1" : "https://ableproadmin.com/vue/",
-		free: null,
-	},
-	{
-		trending: false,
-		icon: techNextJS,
-		title: "Next Js",
-		description:
-			"Able Pro Next Js dashboard template is a powerful tool that utilizes the Material-UI component library to create stunning and intuitive user interfaces.",
-		preview:
-			ispValue !== null && parseInt(ispValue) === 1
-				? "https://able-pro-material-next-ts-navy.vercel.app/?isp=1"
-				: "https://able-pro-material-next-ts-navy.vercel.app/",
-		free: null,
-	},
-	{
-		trending: false,
-		icon: techNet,
-		title: "Asp.net",
-		description:
-			"Able Pro .NET version is a robust dashboard template designed specifically for .NET developers. Its comes with a wide range of pre-built components.",
-		preview:
-			ispValue !== null && parseInt(ispValue) === 1 ? "https://able-pro.azurewebsites.net/?isp=1" : "https://able-pro.azurewebsites.net/",
-		free: "https://github.com/phoenixcoded/able-pro-free-admin-dashboard-template",
-	},
-	{
-		trending: false,
-		icon: techCodeigniter,
-		title: "CodeIgniter",
-		description:
-			"Able Pro CodeIgniter version is a powerful dashboard template built specifically for developers who use the CodeIgniter PHP framework.",
-		preview:
-			ispValue !== null && parseInt(ispValue) === 1
-				? "https://ableproadmin.com/codeigniter/default/public/?isp=1"
-				: "https://ableproadmin.com/codeigniter/default/public/ ",
-		free: "https://github.com/phoenixcoded/able-pro-free-admin-dashboard-template",
-	},
-	{
-		trending: false,
-		icon: techFigma,
-		title: "Figma",
-		description:
-			"Able Pro comes with a Figma design file that allows you to customize and fine-tune your dashboard to meet your specific needs.",
-		preview: "https://www.figma.com/file/6XqmRhRmkr33w0EFD49acY/Able-Pro--v9.0-Figma-Preview?type=design&mode=design&t=4FS2Lw6WxsmJ3RLm-0",
 		free: null,
 	},
 ];
@@ -127,7 +79,7 @@ const TechnologiesPage = () => {
 									delay: 0.2,
 								}}
 							>
-								<Typography variant="h2">Available Technologies</Typography>
+								<Typography variant="h2">Herramientas Disponibles</Typography>
 							</motion.div>
 						</Grid>
 						<Grid item xs={12}>
@@ -141,7 +93,7 @@ const TechnologiesPage = () => {
 									delay: 0.4,
 								}}
 							>
-								<Typography>Explore the Demos of Able Pro in multiple technologies.</Typography>
+								<Typography>Explore todas las herramientas hoy disponibles.</Typography>
 							</motion.div>
 						</Grid>
 					</Grid>
@@ -188,27 +140,6 @@ const TechnologiesPage = () => {
 															Reference
 														</Button>
 													</Grid>
-													{!(tech.free == null) && (
-														<Grid item>
-															<Link component={RouterLink} to={tech.preview}>
-																<IconButton
-																	size="large"
-																	shape="rounded"
-																	color="secondary"
-																	sx={{
-																		bgcolor: "secondary.lighter",
-																		color: "secondary.darker",
-																		"&:hover": {
-																			color: "secondary.lighter",
-																			bgcolor: "secondary.darker",
-																		},
-																	}}
-																>
-																	<DocumentDownload />
-																</IconButton>
-															</Link>
-														</Grid>
-													)}
 												</Grid>
 											</Grid>
 										</Grid>

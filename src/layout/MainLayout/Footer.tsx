@@ -12,18 +12,6 @@ const Footer = () => (
 			<Link component={RouterLink} to="https://www.rumba-dev.com" target="_blank" variant="caption" color="textPrimary">
 				Home
 			</Link>
-			{/* <Link
-				component={RouterLink}
-				to="https://phoenixcoded.gitbook.io/able-pro/v/react/"
-				target="_blank"
-				variant="caption"
-				color="textPrimary"
-			>
-				Documentation
-			</Link>
-			<Link component={RouterLink} to="https://phoenixcoded.authordesk.app/" target="_blank" variant="caption" color="textPrimary">
-				Support
-			</Link> */}
 		</Stack>
 	</Stack>
 );

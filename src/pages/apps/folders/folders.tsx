@@ -181,6 +181,7 @@ const FoldersLayout = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 	const data = useMemo(() => makeData(20), []);
+	console.log(data);
 	const [open, setOpen] = useState<boolean>(false);
 	const [customer, setCustomer] = useState<any>(null);
 	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");

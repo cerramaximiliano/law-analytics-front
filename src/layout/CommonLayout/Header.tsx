@@ -29,11 +29,9 @@ import AnimateButton from "components/@extended/AnimateButton";
 import Logo from "components/logo";
 
 // assets
-import { DocumentDownload, ExportSquare, HambergerMenu, Minus } from "iconsax-react";
+import { ExportSquare, HambergerMenu, Minus } from "iconsax-react";
 
 // types
-import { ThemeDirection } from "types/config";
-
 interface ElevationScrollProps {
 	layout: string;
 	children: ReactElement;
@@ -77,16 +75,7 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 		setDrawerToggle(open);
 	};
 
-	let url;
-	let value: string = window.location.search;
-	const params = new URLSearchParams(value);
-	const ispValue = params.get("isp");
-
-	if (ispValue !== null && parseInt(ispValue) === 1) {
-		url = "https://1.envato.market/OrJ5nn";
-	} else {
-		url = "https://1.envato.market/zNkqj6";
-	}
+	let url = "/login";
 
 	return (
 		<ElevationScroll layout={layout} {...others}>
@@ -104,19 +93,6 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 							<Typography component="div" sx={{ textAlign: "left", display: "inline-block" }}>
 								<Logo reverse to="/" />
 							</Typography>
-							<Chip
-								label={process.env.REACT_APP_VERSION}
-								variant="outlined"
-								size="small"
-								color="secondary"
-								sx={{
-									mt: 0.5,
-									ml: 1,
-									fontSize: "0.725rem",
-									height: 20,
-									"& .MuiChip-label": { px: 0.5 },
-								}}
-							/>
 						</Stack>
 						<Stack
 							direction="row"
@@ -129,49 +105,6 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 							}}
 							spacing={3}
 						>
-							<Link
-								className="header-link"
-								sx={{ ml: theme.direction === ThemeDirection.RTL ? 3 : 0 }}
-								color="secondary.main"
-								component={RouterLink}
-								to="/login"
-								target="_blank"
-								underline="none"
-							>
-								Dashboard
-							</Link>
-							<Link
-								className="header-link"
-								color={handleDrawerOpen ? "primary" : "secondary.main"}
-								component={RouterLink}
-								to="/components-overview/buttons"
-								underline="none"
-							>
-								Components
-							</Link>
-							<Link
-								className="header-link"
-								color="secondary.main"
-								href="https://phoenixcoded.gitbook.io/able-pro/v/react/"
-								target="_blank"
-								underline="none"
-							>
-								Documentation
-							</Link>
-							<Link href="https://github.com/phoenixcoded/able-pro-free-admin-dashboard-template" target="_blank" underline="none">
-								<IconButton
-									size="large"
-									shape="rounded"
-									color="secondary"
-									sx={{
-										bgcolor: "secondary.light",
-										color: "secondary.darker",
-										"&:hover": { color: "secondary.lighter", bgcolor: "secondary.darker" },
-									}}
-								>
-									<DocumentDownload />
-								</IconButton>
-							</Link>
 							<Box sx={{ display: "inline-block" }}>
 								<AnimateButton>
 									<Button
@@ -184,7 +117,7 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 										size="large"
 										variant="contained"
 									>
-										Purchase Now
+										Inicio
 									</Button>
 								</AnimateButton>
 							</Box>

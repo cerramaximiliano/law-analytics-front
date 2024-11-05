@@ -25,7 +25,15 @@ const LogoMain = ({ reverse, ...others }: { reverse?: boolean }) => {
 		 */
 		<>
 			<Stack>
-				<Typography variant="h3">Law||Analytics</Typography>
+				<Typography
+					variant="h3"
+					sx={{
+						fontFamily: "'Cinzel', serif", // Aquí aplicas la fuente Cinzel
+						fontWeight: 400,
+					}}
+				>
+					Law||Analytics
+				</Typography>
 			</Stack>
 		</>
 	);
