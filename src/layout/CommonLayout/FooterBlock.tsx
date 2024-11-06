@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import Logo from "components/logo";
 
 // assets
-import { Facebook } from "iconsax-react";
+import { Facebook, Instagram } from "iconsax-react";
 
 // link - custom style
 const FooterLink = styled(Link)(({ theme }) => ({
@@ -66,8 +66,8 @@ const FooterBlock = ({ isFull }: showProps) => {
 									</Grid>
 									<Grid item xs={12}>
 										<Typography variant="subtitle1" sx={{ fontWeight: 400 }}>
-											Phoenixcoded has gained the trust of over 5.5K customers since 2015, thanks to our commitment to delivering
-											high-quality products. Our experienced team players are responsible for managing Able Pro.
+											Law||Analytics cuenta con más de 500 usuarios en listas de distribución de novedades desde hace más de 4 años gracias
+											a ofrecer herramientas de calidad y actualidad
 										</Typography>
 									</Grid>
 								</Grid>
@@ -77,54 +77,36 @@ const FooterBlock = ({ isFull }: showProps) => {
 							<Grid container spacing={{ xs: 5, md: 2 }}>
 								<Grid item xs={6} sm={4}>
 									<Stack spacing={3}>
-										<Typography variant="h5">Company</Typography>
+										<Typography variant="h5">Empresa</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
-											<FooterLink href="https://1.envato.market/xk3bQd" target="_blank" underline="none">
-												Profile
+											<FooterLink href="https://www.rumba-dev.com/" target="_blank" underline="none">
+												Desarrolladores
 											</FooterLink>
-											<FooterLink href="https://1.envato.market/Qyre4x" target="_blank" underline="none">
-												Portfolio
-											</FooterLink>
-											<FooterLink href="https://1.envato.market/Py9k4X" target="_blank" underline="none">
-												Follow Us
-											</FooterLink>
-											<FooterLink href="https://phoenixcoded.net" target="_blank" underline="none">
-												Website
+											<FooterLink href="https://www.instagram.com/law.analytics.app/" target="_blank" underline="none">
+												Redes sociales
 											</FooterLink>
 										</Stack>
 									</Stack>
 								</Grid>
 								<Grid item xs={6} sm={4}>
 									<Stack spacing={3}>
-										<Typography variant="h5">Help & Support</Typography>
+										<Typography variant="h5">Ayuda & Soporte</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
-											<FooterLink href="https://phoenixcoded.gitbook.io/able-pro/v/react/" target="_blank" underline="none">
-												Documentation
-											</FooterLink>
-											<FooterLink href="https://phoenixcoded.gitbook.io/able-pro/v/react/roadmap/" target="_blank" underline="none">
-												Feature Request
-											</FooterLink>
-											<FooterLink href="https://phoenixcoded.gitbook.io/able-pro/v/react/roadmap/" target="_blank" underline="none">
-												RoadMap
-											</FooterLink>
 											<FooterLink href="https://phoenixcoded.authordesk.app/" target="_blank" underline="none">
-												Support
-											</FooterLink>
-											<FooterLink href="https://themeforest.net/user/phoenixcoded#contact" target="_blank" underline="none">
-												Email Us
+												Soporte
 											</FooterLink>
 										</Stack>
 									</Stack>
 								</Grid>
 								<Grid item xs={6} sm={4}>
 									<Stack spacing={3}>
-										<Typography variant="h5">Useful Resources</Typography>
+										<Typography variant="h5">Recursos útiles</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
 											<FooterLink href="https://themeforest.net/page/item_support_policy" target="_blank" underline="none">
-												Support Policy
+												Política de privacidad
 											</FooterLink>
 											<FooterLink href="https://themeforest.net/licenses/standard" target="_blank" underline="none">
-												Licenses Term
+												Política de cookies
 											</FooterLink>
 										</Stack>
 									</Stack>
@@ -142,20 +124,25 @@ const FooterBlock = ({ isFull }: showProps) => {
 				}}
 			>
 				<Container>
-					<Grid container spacing={2} alignItems="center">
-						<Grid item xs={12} sm={8}>
+					<Grid container spacing={2} alignItems="center" justifyContent="space-between">
+						<Grid item xs={"auto"} sm={8}>
 							<Typography>
-								© Handcrafted by Team{" "}
-								<Link href="https://1.envato.market/xk3bQd" underline="none">
+								© Desarrollado por{" "}
+								<Link href="https://www.rumba-dev.com/" underline="none">
 									{" "}
-									Phoenixcoded
+									RUMBA
 								</Link>
 							</Typography>
 						</Grid>
-						<Grid item xs={12} sm={4}>
+						<Grid item xs={"auto"} sm={4}>
 							<Grid container spacing={2} alignItems="center" sx={{ justifyContent: "flex-end" }}>
 								<Grid item>
-									<Link underline="none" sx={linkSX}>
+									<Link href="https://www.instagram.com/rumballc/" target="_blank" underline="none" sx={linkSX}>
+										<Instagram size="22" variant="Bulk" />
+									</Link>
+								</Grid>
+								<Grid item>
+									<Link href="https://www.facebook.com/profile.php?id=100083498354975" target="_blank" underline="none" sx={linkSX}>
 										<Facebook size="22" variant="Bulk" />
 									</Link>
 								</Grid>

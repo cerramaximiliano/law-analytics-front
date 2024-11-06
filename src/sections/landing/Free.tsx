@@ -25,13 +25,13 @@ const FreePage = () => {
 											color: theme.palette.primary.main,
 										}}
 									>
-										TRY{" "}
+										PRUEBA{" "}
 									</Box>
-									BEFORE BUY
+									ANTES DE PAGAR
 								</Typography>
 							</Grid>
 							<Grid item xs={12}>
-								<Typography>Download the Free MIT Able Pro Dashboard Template before make your purchase decision.</Typography>
+								<Typography>Accede a miles de informes y datos gratuitos que usamos en nuestras aplicaciones.</Typography>
 							</Grid>
 						</Grid>
 					</FadeInWhenVisible>
@@ -41,27 +41,15 @@ const FreePage = () => {
 						<Grid container spacing={2} justifyContent="end" alignItems="center">
 							<Grid item>
 								<Button
-									variant="outlined"
-									color="secondary"
-									size="large"
-									component={Link}
-									href="https://ableproadmin.com/dashboard/index.html"
-									target="_blank"
-								>
-									Check out Pro Version
-								</Button>
-							</Grid>
-							<Grid item>
-								<Button
 									variant="contained"
 									color="primary"
 									size="large"
 									startIcon={<ExportSquare />}
 									component={Link}
-									href="https://github.com/phoenixcoded/able-pro-free-admin-dashboard-template"
-									target="_blank"
+									href="#"
+									target="_self"
 								>
-									Free (Soon)
+									Gratis (próximamente)
 								</Button>
 							</Grid>
 						</Grid>

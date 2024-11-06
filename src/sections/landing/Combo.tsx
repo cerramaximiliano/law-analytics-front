@@ -1,5 +1,5 @@
 // material-ui
-import { Button, CardMedia, Container, Grid, Link, Stack, Typography } from "@mui/material";
+import { CardMedia, Container, Grid, Stack, Typography } from "@mui/material";
 
 // third party
 import { motion } from "framer-motion";
@@ -9,7 +9,7 @@ import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
 
 // assets
-import { ExportSquare } from "iconsax-react";
+//import { ExportSquare } from "iconsax-react";
 import featureFigma from "assets/images/landing/feature-figma.png";
 import featureComponents from "assets/images/landing/feature-components.png";
 import featureDocumentation from "assets/images/landing/feature-documentation.png";
@@ -17,20 +17,20 @@ import featureDocumentation from "assets/images/landing/feature-documentation.pn
 const Technologies = [
 	{
 		icon: featureFigma,
-		title: "Figma Design System",
-		description: "Check the live preview of Able Pro Figma design file. Figma file included in all licenses.",
+		title: "Dashboard de control",
+		description: "Maneja todas las variables de tu negocio desde un solo lugar. Ingresos, honorarios, tareas y más.",
 		preview: "https://www.figma.com/file/6XqmRhRmkr33w0EFD49acY/Able-Pro--v9.0-Figma-Preview?type=design&mode=design&t=4FS2Lw6WxsmJ3RLm-0",
 	},
 	{
 		icon: featureComponents,
-		title: "Explore Components",
-		description: "Access all components of Able Pro in one place to make your development work easier.",
+		title: "Agenda sincronizada",
+		description: "Sincroniza tu agenda con Google Clalendar para tener todos los recordatorios del proceso en un sólo lugar.",
 		preview: "/components-overview/buttons",
 	},
 	{
 		icon: featureDocumentation,
-		title: "Documentation",
-		description: "Find solutions and navigate through our helper guide with ease.",
+		title: "Base de clientes",
+		description: "Administra la base de datos de clientes de forma ordenada y notifica novedades procesales de forma inmediata.",
 		preview: "https://phoenixcoded.gitbook.io/able-pro/v/react/",
 	},
 ];
@@ -54,7 +54,7 @@ const ComboPage = () => {
 									delay: 0.2,
 								}}
 							>
-								<Typography variant="h2">Complete Combo</Typography>
+								<Typography variant="h2">Estudio Jurídico virtual</Typography>
 							</motion.div>
 						</Grid>
 						<Grid item xs={12} md={7}>
@@ -69,7 +69,8 @@ const ComboPage = () => {
 								}}
 							>
 								<Typography>
-									Able Pro caters to the needs of both developers and designers, whether they are beginners or experts.
+									Con Law||Analytics puedes mantener tu estudio jurídico de forma 100% virtual y trabajar de forma remota y colaborativa
+									desde cualquier lugar 🌍
 								</Typography>
 							</motion.div>
 						</Grid>
@@ -91,7 +92,7 @@ const ComboPage = () => {
 											<Grid item xs={12}>
 												<CardMedia component="img" image={tech.icon} sx={{ width: "100%" }} />
 											</Grid>
-											<Grid item xs={12}>
+											{/* 										<Grid item xs={12}>
 												<Button
 													variant="contained"
 													color="secondary"
@@ -109,7 +110,7 @@ const ComboPage = () => {
 												>
 													Reference
 												</Button>
-											</Grid>
+											</Grid> */}
 										</Grid>
 									</MainCard>
 								</FadeInWhenVisible>

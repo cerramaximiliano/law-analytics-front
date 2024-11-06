@@ -1,5 +1,5 @@
 // material-ui
-import { Badge, Button, CardMedia, Container, Grid, Link, Typography } from "@mui/material";
+import { Badge, CardMedia, Container, Grid, Typography } from "@mui/material";
 
 // third party
 import { motion } from "framer-motion";
@@ -9,8 +9,6 @@ import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
 
 // assets
-import { ExportSquare } from "iconsax-react";
-
 import calendar from "assets/images/landing/calendar.svg";
 import calculator from "assets/images/landing/calculator.svg";
 import folder from "assets/images/landing/folder.svg";
@@ -121,25 +119,6 @@ const TechnologiesPage = () => {
 											</Grid>
 											<Grid item xs={12}>
 												<Grid container spacing={2} justifyContent="flex-start">
-													<Grid item>
-														<Button
-															variant="contained"
-															color="secondary"
-															size="large"
-															startIcon={<ExportSquare />}
-															component={Link}
-															href={tech.preview}
-															target="_blank"
-															sx={{
-																fontWeight: 500,
-																bgcolor: "secondary.light",
-																color: "secondary.darker",
-																"&:hover": { color: "secondary.lighter" },
-															}}
-														>
-															Reference
-														</Button>
-													</Grid>
 												</Grid>
 											</Grid>
 										</Grid>

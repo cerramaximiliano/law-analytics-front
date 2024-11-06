@@ -15,11 +15,11 @@ const ContactUsPage = () => {
 						<FadeInWhenVisible>
 							<Grid container spacing={2} justifyContent="center">
 								<Grid item xs={12}>
-									<Typography variant="h2">Stay connected with us</Typography>
+									<Typography variant="h2">Conecta con nosotros</Typography>
 								</Grid>
 								<Grid item xs={12}>
 									<Typography>
-										Simply submit your email, we share you the top news related to Able Pro feature updates, roadmap, and news.
+										Envíanos tu correo para mantenerte en contacto de novedades, actualizaciones, promociones y lanzamientos.
 									</Typography>
 								</Grid>
 							</Grid>
@@ -29,11 +29,11 @@ const ContactUsPage = () => {
 						<FadeInWhenVisible>
 							<Grid container spacing={2} justifyContent={{ md: "end", xs: "center" }} alignItems="center">
 								<Grid item>
-									<TextField id="firstNameBasic" name="firstName" placeholder="Enter your email" fullWidth />
+									<TextField id="firstNameBasic" name="firstName" placeholder="Ingresa tu correo" fullWidth />
 								</Grid>
 								<Grid item>
 									<Button variant="contained" color="primary" size="large">
-										Subscribe
+										Suscríbete
 									</Button>
 								</Grid>
 							</Grid>

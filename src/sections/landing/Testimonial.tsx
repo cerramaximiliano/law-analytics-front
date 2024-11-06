@@ -10,7 +10,7 @@ import Marquee from "react-fast-marquee";
 import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
 // assets
-import Avatar from "components/@extended/Avatar";
+//import Avatar from "components/@extended/Avatar";
 import Avatar1 from "assets/images/users/avatar-6.png";
 import Avatar2 from "assets/images/users/avatar-1.png";
 import Avatar3 from "assets/images/users/avatar-2.png";
@@ -32,7 +32,6 @@ const Item = ({ item }: { item: { image: string; text: string; name: string; des
 		}}
 	>
 		<Stack direction="row" alignItems="flex-start" spacing={2}>
-			<Avatar alt="Avatar" size="lg" src={item.image}></Avatar>
 			<Stack>
 				<Typography>{item.text}</Typography>
 				<Typography>
@@ -52,53 +51,54 @@ const TestimonialPage = () => {
 	const items = [
 		{
 			image: Avatar1,
-			text: "“Amazing template for fast develop.💎“",
-			name: "devbar",
-			designation: "Customizability",
+			text: "“Muy útil para gestionar clientes y expedientes de manera eficiente.💼“",
+			name: "DV",
+			designation: "Personalización",
 		},
 		{
 			image: Avatar2,
-			text: "“Code quality is amazing. Design is astonishing. very easy to customize..😍“",
-			name: "shahabblouch",
-			designation: "Code Quality",
+			text: "“Excelente calidad en el desarrollo, diseño profesional y fácil de usar.🎨“",
+			name: "SB",
+			designation: "Calidad del Código",
 		},
 		{
 			image: Avatar3,
-			text: "“This has been one of my favorite admin dashboards to use. 😍“",
-			name: "htmhell",
-			designation: "Design Quality",
+			text: "“De las mejores plataformas para administrar un despacho jurídico.👏“",
+			name: "HM",
+			designation: "Calidad de Diseño",
 		},
 		{
 			image: Avatar4,
-			text: "“Excellent support, if we need any modification, they are doing immediately“",
-			name: "hemchandkodali",
-			designation: "Customer Support",
+			text: "“El soporte es excelente y siempre responden rápido a las necesidades.🙌“",
+			name: "HK",
+			designation: "Atención al Cliente",
 		},
 		{
 			image: Avatar5,
-			text: "“For developers like me, this is the total package! 😍 “",
-			name: "sumaranjum",
-			designation: "Feature Availability",
+			text: "“Todo lo necesario para desarrolladores jurídicos, ¡una herramienta completa! 💻“",
+			name: "SA",
+			designation: "Disponibilidad de Funciones",
 		},
 		{
 			image: Avatar6,
-			text: "“I love the looks of Able Pro 7.0. I really like the colors you guys have chosen for this theme. It looks really nice.. 💎“",
-			name: "ritelogic",
-			designation: "Other",
+			text: "“El diseño es impecable, con colores bien elegidos para la interfaz. 🎨“",
+			name: "RL",
+			designation: "Otros",
 		},
 		{
 			image: Avatar7,
-			text: "“The author is very nice and solved my problem inmediately 😍 “",
-			name: "richitela",
-			designation: "Customer Support",
+			text: "“Atención al cliente excelente, me ayudaron con rapidez. 👍“",
+			name: "RT",
+			designation: "Atención al Cliente",
 		},
 		{
 			image: Avatar8,
-			text: "“Perfect for my need. Elegant look n feel with blazing fast code. 💎“",
-			name: "Genstiade",
-			designation: "Feature Availability",
+			text: "“Cumple perfectamente con mis necesidades, elegante y rápido. 💼“",
+			name: "GS",
+			designation: "Disponibilidad de Funciones",
 		},
 	];
+	
 	return (
 		<>
 			<Box sx={{ mt: { md: 15, xs: 2.5 } }}>
@@ -116,16 +116,16 @@ const TestimonialPage = () => {
 								}}
 							>
 								<Typography variant="h2">
-									They{" "}
+									Ellos{" "}
 									<Box
 										component="span"
 										sx={{
 											color: theme.palette.primary.main,
 										}}
 									>
-										love{" "}
+										eligen{" "}
 									</Box>{" "}
-									Able Pro, Now your turn 😍
+									Law||Analytics, Ahora es tu turno 😍
 								</Typography>
 							</motion.div>
 						</Grid>
@@ -140,10 +140,6 @@ const TestimonialPage = () => {
 									delay: 0.4,
 								}}
 							>
-								<Typography>
-									We take pride in our Dashboard development, which has been consistently rated 4.6/5 by our satisfied customers. It brings
-									us joy to share the positive feedback we have received from our loyal clients.
-								</Typography>
 							</motion.div>
 						</Grid>
 					</Grid>
