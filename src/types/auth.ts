@@ -79,6 +79,17 @@ export type JWTContextType = {
 	updateProfile: VoidFunction;
 };
 
+export interface ServerContextType {
+    isLoggedIn: boolean;
+    isInitialized?: boolean;
+    user?: UserProfile | null | undefined;
+    login: (email: string, password: string) => Promise<void>;
+    logout: () => void;
+    register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+    resetPassword: (email: string) => Promise<void>;
+    updateProfile: (userData: any) => Promise<void>;
+}
+
 export type Auth0ContextType = {
 	isLoggedIn: boolean;
 	isInitialized?: boolean;

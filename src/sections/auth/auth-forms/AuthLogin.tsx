@@ -55,8 +55,8 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					email: Yup.string().email("Must be a valid email").max(255).required("Email is required"),
-					password: Yup.string().max(255).required("Password is required"),
+					email: Yup.string().email("Debe ser un e-mail válido").max(255).required("El e-mail es requerido"),
+					password: Yup.string().max(255).required("El password es requerido"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
@@ -65,11 +65,10 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 							setStatus({ success: true });
 							setSubmitting(false);
 						}
-					} catch (err: any) {
-						console.error(err);
+					} catch (err: any) {	
 						if (scriptedRef.current) {
 							setStatus({ success: false });
-							setErrors({ submit: err.message });
+							setErrors({ submit: err.response.data.message });
 							setSubmitting(false);
 						}
 					}

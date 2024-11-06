@@ -24,12 +24,12 @@ import {
 
 // project-imports
 import { APP_DEFAULT_PATH } from "config";
-import IconButton from "components/@extended/IconButton";
+//import IconButton from "components/@extended/IconButton";
 import AnimateButton from "components/@extended/AnimateButton";
 import Logo from "components/logo";
 
 // assets
-import { ExportSquare, HambergerMenu, Minus } from "iconsax-react";
+import { ExportSquare, Minus } from "iconsax-react";
 
 // types
 interface ElevationScrollProps {
@@ -139,20 +139,16 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 										Dashboard
 									</Button>
 								)}
-								{layout !== "component" && (
-									<Button variant="outlined" color="warning" component={RouterLink} to="/components-overview/buttons" sx={{ mt: 0.25 }}>
-										All Components
-									</Button>
-								)}
 
-								<IconButton
+
+{/* 								<IconButton
 									size="large"
 									color="secondary"
 									{...(layout === "component" ? { onClick: handleDrawerOpen } : { onClick: drawerToggler(true) })}
 									sx={{ p: 1 }}
 								>
 									<HambergerMenu />
-								</IconButton>
+								</IconButton> */}
 							</Stack>
 							<Drawer
 								anchor="top"

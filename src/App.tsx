@@ -16,7 +16,10 @@ import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
 
 // auth-provider
-import { JWTProvider as AuthProvider } from "contexts/JWTContext";
+//import { JWTProvider as AuthProvider } from "contexts/JWTContext";
+
+import { ServerAuthProvider as AuthProvider } from "contexts/ServerContext";
+
 // import { FirebaseProvider as AuthProvider } from 'contexts/FirebaseContext';
 // import { AWSCognitoProvider as AuthProvider } from 'contexts/AWSCognitoContext';
 // import { Auth0Provider as AuthProvider } from 'contexts/Auth0Context';
