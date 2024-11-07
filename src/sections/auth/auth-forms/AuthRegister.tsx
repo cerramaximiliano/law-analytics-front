@@ -89,12 +89,12 @@ const AuthRegister = () => {
 							dispatch(
 								openSnackbar({
 									open: true,
-									message: "Your registration has been successfully completed.",
+									message: "!Tu registro se ha completado!.",
 									variant: "alert",
 									alert: {
 										color: "success",
 									},
-									close: false,
+									close: true,
 								}),
 							);
 							// Redirigir a la ruta según `needsVerification`

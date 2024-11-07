@@ -16,6 +16,7 @@ import folder from "./folder";
 import calculator from "./calculator";
 import notifications from "./notifications";
 import movements from "./movements";
+import auth from "./auth";
 // ==============================|| COMBINE REDUCERS ||============================== //
 
 const reducers = combineReducers({
@@ -38,6 +39,7 @@ const reducers = combineReducers({
 	notifications,
 	calculator,
 	movements,
+	auth,
 });
 
 export default reducers;

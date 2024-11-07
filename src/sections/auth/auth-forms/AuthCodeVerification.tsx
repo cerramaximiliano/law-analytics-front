@@ -3,17 +3,19 @@ import { useTheme } from "@mui/material/styles";
 import { Button, Grid, Stack, Typography } from "@mui/material";
 import OtpInput from "react18-input-otp";
 import AnimateButton from "components/@extended/AnimateButton";
-import axios from "axios"; // Importa axios para hacer la solicitud HTTP
+import axios from "axios";
 import { ThemeMode } from "types/config";
+import { useSelector } from "react-redux";
+import { RootState } from "store"; // Ajusta la ruta si es necesario
+import { useNavigate } from "react-router-dom";
 import useAuth from "hooks/useAuth";
 
 const AuthCodeVerification = () => {
-	
-	// Ver si llega el email para poder enviarlo en la PETICION
-	const { email } = useAuth();
-	console.log(email);
+	const { isLoggedIn, needsVerification, setIsLoggedIn, setNeedsVerification } = useAuth();
 
-
+	// Obtener el email desde Redux
+	const email = useSelector((state: RootState) => state.auth.email);
+	const navigate = useNavigate();
 	const theme = useTheme();
 	const [otp, setOtp] = useState<string>("");
 	const [error, setError] = useState<string | null>(null); // Para mostrar errores si los hay
@@ -23,16 +25,22 @@ const AuthCodeVerification = () => {
 	// Manejador de envío de código de verificación
 	const handleVerifyCode = async () => {
 		try {
-			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/verify-code`, { code: otp });
-			if (response.data.success) {
-				// Redirigir o mostrar mensaje de éxito si la verificación es correcta
-				console.log("Código verificado exitosamente");
+			const result = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/verify-code`, { code: otp, email: email });
+			if (result && result.data.success) {
+				setError("");
+				setIsLoggedIn(true);
+				setNeedsVerification(false);
+				navigate("/dashboard/default");
 			} else {
 				setError("El código es incorrecto. Inténtalo nuevamente.");
 			}
 		} catch (error) {
-			setError("Hubo un problema al verificar el código. Inténtalo de nuevo más tarde.");
 			console.error("Error de verificación:", error);
+			if (axios.isAxiosError(error) && error.response && error.response.data.message) {
+				setError(error.response.data.message);
+			} else {
+				setError("Hubo un problema al verificar el código. Inténtalo de nuevo más tarde.");
+			}
 		}
 	};
 

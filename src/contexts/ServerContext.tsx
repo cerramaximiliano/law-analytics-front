@@ -2,6 +2,7 @@ import { createContext, useEffect, useReducer, ReactElement } from "react";
 import axios from "axios";
 
 // Importar acciones y reducer para autenticación
+import { dispatch as reduxDispatch } from "store";
 import { LOGIN, LOGOUT, REGISTER } from "store/reducers/actions";
 import authReducer from "store/reducers/auth";
 import Loader from "components/Loader";
@@ -29,9 +30,9 @@ const setSession = (serviceToken?: string | null) => {
 	}
 };
 
-// Proveedor del contexto de autenticación con base de datos propia
+// Proveedor del contexto de autenticación
 export const ServerAuthProvider = ({ children }: { children: ReactElement }) => {
-	const [state, dispatch] = useReducer(authReducer, initialState);
+	const [state, localDispatch] = useReducer(authReducer, initialState);
 
 	useEffect(() => {
 		const init = async () => {
@@ -39,11 +40,18 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 				const serviceToken = localStorage.getItem("serviceToken");
 				if (serviceToken) {
 					setSession(serviceToken);
-					// Solicitar los datos del usuario desde el servidor
 					const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
 					const { user } = response.data;
 
-					dispatch({
+					// Actualizar estado local y Redux
+					localDispatch({
+						type: LOGIN,
+						payload: {
+							isLoggedIn: true,
+							user,
+						},
+					});
+					reduxDispatch({
 						type: LOGIN,
 						payload: {
 							isLoggedIn: true,
@@ -51,22 +59,50 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 						},
 					});
 				} else {
-					dispatch({ type: LOGOUT });
+					localDispatch({ type: LOGOUT });
+					reduxDispatch({ type: LOGOUT });
 				}
 			} catch (err) {
 				console.error("Error durante la inicialización de autenticación", err);
-				dispatch({ type: LOGOUT });
+				localDispatch({ type: LOGOUT });
+				reduxDispatch({ type: LOGOUT });
 			}
 		};
 
 		init();
 	}, []);
 
+	const setIsLoggedIn = (value: boolean) => {
+		localDispatch({
+			type: value ? LOGIN : LOGOUT,
+			payload: { isLoggedIn: value },
+		});
+	};
+
+	const setNeedsVerification = (value: boolean) => {
+		localDispatch({
+			type: LOGIN,
+			payload: { 
+				isLoggedIn: state.isLoggedIn,
+				needsVerification: value 
+			},
+		});
+	};
+
 	const login = async (email: string, password: string) => {
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
 		const { serviceToken, user } = response.data;
 		setSession(serviceToken);
-		dispatch({
+
+		// Actualizar estado local y Redux
+		localDispatch({
+			type: LOGIN,
+			payload: {
+				isLoggedIn: true,
+				user,
+			},
+		});
+		reduxDispatch({
 			type: LOGIN,
 			payload: {
 				isLoggedIn: true,
@@ -83,7 +119,10 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 			lastName,
 		});
 		const { user, needsVerification } = response.data;
-		dispatch({
+
+		console.log("Datos de registro:", user, email, needsVerification); // Verifica que estos datos existan
+
+		localDispatch({
 			type: REGISTER,
 			payload: {
 				isLoggedIn: false,
@@ -92,12 +131,25 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 				needsVerification: needsVerification || false,
 			},
 		});
-		return { email: email, isLoggedIn: false, needsVerification: needsVerification || false };
+
+		reduxDispatch({
+			type: REGISTER,
+			payload: {
+				isLoggedIn: false,
+				user,
+				email,
+				needsVerification: needsVerification || false,
+			},
+		});
+		return { email, isLoggedIn: false, needsVerification: needsVerification || false };
 	};
 
 	const logout = () => {
 		setSession(null);
-		dispatch({ type: LOGOUT });
+
+		// Actualizar estado local y Redux
+		localDispatch({ type: LOGOUT });
+		reduxDispatch({ type: LOGOUT });
 	};
 
 	const resetPassword = async (email: string) => {
@@ -107,7 +159,16 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 	const updateProfile = async (userData: any) => {
 		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/auth/update-profile`, userData);
 		const { user } = response.data;
-		dispatch({
+
+		// Actualizar estado local y Redux
+		localDispatch({
+			type: LOGIN,
+			payload: {
+				isLoggedIn: true,
+				user,
+			},
+		});
+		reduxDispatch({
 			type: LOGIN,
 			payload: {
 				isLoggedIn: true,
@@ -121,7 +182,9 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 	}
 
 	return (
-		<ServerAuthContext.Provider value={{ ...state, login, logout, register, resetPassword, updateProfile }}>
+		<ServerAuthContext.Provider
+			value={{ ...state, login, logout, register, resetPassword, updateProfile, setIsLoggedIn, setNeedsVerification }}
+		>
 			{children}
 		</ServerAuthContext.Provider>
 	);

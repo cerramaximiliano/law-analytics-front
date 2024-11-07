@@ -82,16 +82,23 @@ export type JWTContextType = {
 };
 
 export interface ServerContextType {
-    isLoggedIn: boolean;
-    isInitialized?: boolean;
-    user?: UserProfile | null | undefined;
+	isLoggedIn: boolean;
+	isInitialized?: boolean;
+	user?: UserProfile | null | undefined;
 	needsVerification?: boolean;
 	email?: string;
-    login: (email: string, password: string) => Promise<void>;
-    logout: () => void;
-	register: (email: string, password: string, firstName: string, lastName: string) => Promise<{ isLoggedIn: boolean; needsVerification: boolean }>;
-    resetPassword: (email: string) => Promise<void>;
-    updateProfile: (userData: any) => Promise<void>;
+	login: (email: string, password: string) => Promise<void>;
+	logout: () => void;
+	register: (
+		email: string,
+		password: string,
+		firstName: string,
+		lastName: string,
+	) => Promise<{ isLoggedIn: boolean; needsVerification: boolean }>;
+	resetPassword: (email: string) => Promise<void>;
+	updateProfile: (userData: any) => Promise<void>;
+	setIsLoggedIn: (value: boolean) => void;
+	setNeedsVerification: (value: boolean) => void;
 }
 
 export type Auth0ContextType = {
