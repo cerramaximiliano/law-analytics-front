@@ -13,7 +13,7 @@ const CodeVerification = () => (
 			<Grid item xs={12}>
 				<Stack spacing={1}>
 					<Typography variant="h3">Ingrese el Código de Verificación</Typography>
-					<Typography color="secondary">Te lo enviamos a tu email.</Typography>
+					<Typography color="secondary">Te lo enviamos a tu correo.</Typography>
 				</Stack>
 			</Grid>
 			<Grid item xs={12}>

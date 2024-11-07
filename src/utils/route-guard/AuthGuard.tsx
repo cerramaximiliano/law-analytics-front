@@ -1,31 +1,30 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
-// project-imports
 import useAuth from "hooks/useAuth";
-
-// types
-import { GuardProps } from "types/auth";
 
 // ==============================|| AUTH GUARD ||============================== //
 
-const AuthGuard = ({ children }: GuardProps) => {
-	const { isLoggedIn } = useAuth();
-	const navigate = useNavigate();
-	const location = useLocation();
+const AuthGuard = ({ children }: { children: React.ReactNode }) => {
+    const { isLoggedIn, needsVerification } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-	useEffect(() => {
-		if (!isLoggedIn) {
-			navigate("login", {
-				state: {
-					from: location.pathname,
-				},
-				replace: true,
-			});
-		}
-	}, [isLoggedIn, navigate, location]);
+    useEffect(() => {
+        if (isLoggedIn && needsVerification) {
+            navigate("/code-verification", { replace: true });
+        } else if (!isLoggedIn) {
+            navigate("/login", {
+                state: { from: location.pathname },
+                replace: true,
+            });
+        }
+    }, [isLoggedIn, needsVerification, navigate, location]);
 
-	return children;
+    if (!isLoggedIn || needsVerification) {
+        return null; // Opcionalmente, puedes mostrar un Loader aquí mientras esperas a que se inicialicen los estados
+    }
+
+    return <>{children}</>;
 };
 
 export default AuthGuard;

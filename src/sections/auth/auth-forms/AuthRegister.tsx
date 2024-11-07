@@ -74,14 +74,15 @@ const AuthRegister = () => {
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					firstname: Yup.string().max(255).required("First Name is required"),
-					lastname: Yup.string().max(255).required("Last Name is required"),
-					email: Yup.string().email("Must be a valid email").max(255).required("Email is required"),
-					password: Yup.string().max(255).required("Password is required"),
+					firstname: Yup.string().max(255).required("El nombre es requerido"),
+					lastname: Yup.string().max(255).required("El apellido es requerido"),
+					email: Yup.string().email("Debe ser un correo válido").max(255).required("El correo es requerido"),
+					password: Yup.string().max(255).required("El password es requerido"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
-						await register(values.email, values.password, values.firstname, values.lastname);
+						const {  needsVerification } = await register(values.email, values.password, values.firstname, values.lastname);
+						console.log(needsVerification)
 						if (scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);
@@ -96,16 +97,20 @@ const AuthRegister = () => {
 									close: false,
 								}),
 							);
-
-							setTimeout(() => {
-								navigate("/login", { replace: true });
-							}, 1500);
+							// Redirigir a la ruta según `needsVerification`
+							if (needsVerification) {
+								navigate("/code-verification", { replace: true });
+							} else {
+								navigate("/dashboard", { replace: true });
+							}
 						}
 					} catch (err: any) {
-						console.error(err);
+						console.error("Error", err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
-							setErrors({ submit: err.message });
+							setTimeout(() => {
+								setErrors({ submit: err.response.data.message });
+							}, 1);
 							setSubmitting(false);
 						}
 					}

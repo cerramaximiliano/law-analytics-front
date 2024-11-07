@@ -2,7 +2,7 @@ import { createContext, useEffect, useReducer, ReactElement } from "react";
 import axios from "axios";
 
 // Importar acciones y reducer para autenticación
-import { LOGIN, LOGOUT } from "store/reducers/actions";
+import { LOGIN, LOGOUT, REGISTER } from "store/reducers/actions";
 import authReducer from "store/reducers/auth";
 import Loader from "components/Loader";
 import { AuthProps, ServerContextType } from "types/auth";
@@ -11,11 +11,12 @@ const initialState: AuthProps = {
 	isLoggedIn: false,
 	isInitialized: false,
 	user: null,
+	needsVerification: false, // Agrega esta propiedad
+	email: "",
 };
 
 // Definir el contexto de autenticación
 const ServerAuthContext = createContext<ServerContextType | null>(null);
-
 
 // Configurar la sesión
 const setSession = (serviceToken?: string | null) => {
@@ -63,7 +64,6 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 
 	const login = async (email: string, password: string) => {
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
-		console.log("response")
 		const { serviceToken, user } = response.data;
 		setSession(serviceToken);
 		dispatch({
@@ -82,15 +82,17 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 			firstName,
 			lastName,
 		});
-		const { serviceToken, user } = response.data;
-		setSession(serviceToken);
+		const { user, needsVerification } = response.data;
 		dispatch({
-			type: LOGIN,
+			type: REGISTER,
 			payload: {
-				isLoggedIn: true,
+				isLoggedIn: false,
 				user,
+				email,
+				needsVerification: needsVerification || false,
 			},
 		});
+		return { email: email, isLoggedIn: false, needsVerification: needsVerification || false };
 	};
 
 	const logout = () => {

@@ -23,7 +23,9 @@ export interface AuthProps {
 	isLoggedIn: boolean;
 	isInitialized?: boolean;
 	user?: UserProfile | null;
+	email?: string;
 	token?: string | null;
+	needsVerification?: boolean;
 }
 
 export interface AuthActionProps {
@@ -83,9 +85,11 @@ export interface ServerContextType {
     isLoggedIn: boolean;
     isInitialized?: boolean;
     user?: UserProfile | null | undefined;
+	needsVerification?: boolean;
+	email?: string;
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
-    register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+	register: (email: string, password: string, firstName: string, lastName: string) => Promise<{ isLoggedIn: boolean; needsVerification: boolean }>;
     resetPassword: (email: string) => Promise<void>;
     updateProfile: (userData: any) => Promise<void>;
 }
