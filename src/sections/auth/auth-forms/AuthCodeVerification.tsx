@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import useAuth from "hooks/useAuth";
 
 const AuthCodeVerification = () => {
-	const { isLoggedIn, needsVerification, setIsLoggedIn, setNeedsVerification } = useAuth();
+	const { setIsLoggedIn, setNeedsVerification } = useAuth();
 
 	// Obtener el email desde Redux
 	const email = useSelector((state: RootState) => state.auth.email);

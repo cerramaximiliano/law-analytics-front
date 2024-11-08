@@ -1,23 +1,59 @@
 import { Link } from "react-router-dom";
-
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { useState } from "react";
 // material-ui
-import { Grid, Stack, Typography } from "@mui/material";
+import { Grid, Stack, Alert, Typography } from "@mui/material";
 
 // project-imports
 import Logo from "components/logo";
 import useAuth from "hooks/useAuth";
-import AuthSocButton from "sections/auth/AuthSocButton";
 import AuthDivider from "sections/auth/AuthDivider";
 import AuthWrapper from "sections/auth/AuthWrapper";
 import AuthLogin from "sections/auth/auth-forms/AuthLogin";
 
-// assets
-import imgGoogle from "assets/images/auth/google.svg";
-
 // ================================|| LOGIN ||================================ //
 
 const Login = () => {
-	const { isLoggedIn } = useAuth();
+	const { setIsLoggedIn } = useAuth();
+	const [error, setError] = useState<string | null>(null);
+
+	const responseMessage = async (response: CredentialResponse) => {
+		setError(null);
+
+		try {
+			if (response && response.credential) {
+				// Utiliza access_token o id_token
+				const result = await fetch(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					credentials: "include",
+					body: JSON.stringify({
+						token: response.credential,
+					}),
+				});
+
+				const data = await result.json();
+				console.log("Backend response:", data);
+
+				if (data.success) {
+					// Llama a la función de login para actualizar el estado de autenticación en el frontend
+					setIsLoggedIn(true);
+				} else {
+					setError("No se pudo autenticar. Intenta nuevamente.");
+				}
+			}
+		} catch (error) {
+			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
+			console.error("Error:", error);
+		}
+	};
+
+	const errorMessage = (error?: any) => {
+		console.log(error);
+		setError("Error al iniciar sesión con Google. Intenta nuevamente.");
+	};
 
 	return (
 		<AuthWrapper>
@@ -25,12 +61,34 @@ const Login = () => {
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
 					<Logo />
 				</Grid>
-				<Grid item xs={12}>
-					<Grid container spacing={1}>
-						<Grid item xs={12}>
-							<AuthSocButton>
-								<img src={imgGoogle} alt="Facebook" style={{ margin: "0 10px" }} /> Login con Google
-							</AuthSocButton>
+				<Grid justifyContent={"center"} item xs={12} maxWidth={"400px"}>
+					<Grid container spacing={1} width={"400px"}>
+						<Grid
+							sx={{
+								display: "flex",
+								justifyContent: "center",
+							}}
+							item
+							xs={12}
+							width={"400px"}
+						>
+							{error && (
+								<Alert severity="error" sx={{ mb: 2 }}>
+									{error}
+								</Alert>
+							)}
+
+							<GoogleLogin
+								onSuccess={responseMessage}
+								onError={errorMessage}
+								useOneTap={false}
+								theme="filled_blue"
+								text="signin_with"
+								shape="rectangular"
+								logo_alignment="center"
+								context="signin"
+								width={"300"}
+							/>
 						</Grid>
 					</Grid>
 				</Grid>
@@ -42,13 +100,7 @@ const Login = () => {
 				<Grid item xs={12}>
 					<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
 						<Typography variant="h3">Login</Typography>
-						<Typography
-							component={Link}
-							to={isLoggedIn ? "/auth/register" : "/register"}
-							variant="body1"
-							sx={{ textDecoration: "none" }}
-							color="primary"
-						>
+						<Typography component={Link} to={"/register"} variant="body1" sx={{ textDecoration: "none" }} color="primary">
 							¿No tienes una cuenta?
 						</Typography>
 					</Stack>

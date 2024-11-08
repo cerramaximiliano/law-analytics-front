@@ -87,6 +87,7 @@ export interface ServerContextType {
 	user?: UserProfile | null | undefined;
 	needsVerification?: boolean;
 	email?: string;
+	isGoogleLoggedIn: boolean; // Nuevo campo para el estado de autenticación de Google
 	login: (email: string, password: string) => Promise<void>;
 	logout: () => void;
 	register: (
@@ -99,7 +100,9 @@ export interface ServerContextType {
 	updateProfile: (userData: any) => Promise<void>;
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;
+	loginWithGoogle: () => void; // Nuevo método para iniciar sesión con Google
 }
+
 
 export type Auth0ContextType = {
 	isLoggedIn: boolean;
