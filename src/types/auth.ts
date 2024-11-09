@@ -17,6 +17,7 @@ export type UserProfile = {
 	name?: string;
 	role?: string;
 	tier?: string;
+	picture?: string;
 };
 
 export interface AuthProps {
@@ -100,9 +101,8 @@ export interface ServerContextType {
 	updateProfile: (userData: any) => Promise<void>;
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;
-	loginWithGoogle: () => void; // Nuevo método para iniciar sesión con Google
+	loginWithGoogle: (value: any) => void; // Nuevo método para iniciar sesión con Google
 }
-
 
 export type Auth0ContextType = {
 	isLoggedIn: boolean;

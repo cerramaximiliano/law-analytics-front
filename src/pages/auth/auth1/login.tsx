@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
 // material-ui
 import { Grid, Stack, Alert, Typography } from "@mui/material";
@@ -14,45 +14,17 @@ import AuthLogin from "sections/auth/auth-forms/AuthLogin";
 // ================================|| LOGIN ||================================ //
 
 const Login = () => {
-	const { setIsLoggedIn } = useAuth();
+	const { loginWithGoogle } = useAuth();
 	const [error, setError] = useState<string | null>(null);
 
-	const responseMessage = async (response: CredentialResponse) => {
+	const handleGoogleLogin = async (credentialResponse: any) => {
 		setError(null);
-
 		try {
-			if (response && response.credential) {
-				// Utiliza access_token o id_token
-				const result = await fetch(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					credentials: "include",
-					body: JSON.stringify({
-						token: response.credential,
-					}),
-				});
-
-				const data = await result.json();
-				console.log("Backend response:", data);
-
-				if (data.success) {
-					// Llama a la función de login para actualizar el estado de autenticación en el frontend
-					setIsLoggedIn(true);
-				} else {
-					setError("No se pudo autenticar. Intenta nuevamente.");
-				}
-			}
+			await loginWithGoogle(credentialResponse);
 		} catch (error) {
 			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
 			console.error("Error:", error);
 		}
-	};
-
-	const errorMessage = (error?: any) => {
-		console.log(error);
-		setError("Error al iniciar sesión con Google. Intenta nuevamente.");
 	};
 
 	return (
@@ -61,8 +33,13 @@ const Login = () => {
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
 					<Logo />
 				</Grid>
-				<Grid justifyContent={"center"} item xs={12} maxWidth={"400px"}>
-					<Grid container spacing={1} width={"400px"}>
+				<Grid justifyContent={"center"} item xs={12}>
+					<Grid container spacing={1}>
+						{error && (
+							<Alert severity="error" sx={{ mb: 2 }}>
+								{error}
+							</Alert>
+						)}
 						<Grid
 							sx={{
 								display: "flex",
@@ -70,24 +47,17 @@ const Login = () => {
 							}}
 							item
 							xs={12}
-							width={"400px"}
 						>
-							{error && (
-								<Alert severity="error" sx={{ mb: 2 }}>
-									{error}
-								</Alert>
-							)}
-
 							<GoogleLogin
-								onSuccess={responseMessage}
-								onError={errorMessage}
+								onSuccess={handleGoogleLogin}
+								onError={() => setError("Error al iniciar sesión con Google. Intenta nuevamente.")}
 								useOneTap={false}
 								theme="filled_blue"
 								text="signin_with"
 								shape="rectangular"
 								logo_alignment="center"
 								context="signin"
-								width={"300"}
+								width="300"
 							/>
 						</Grid>
 					</Grid>

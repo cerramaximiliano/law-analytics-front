@@ -15,11 +15,12 @@ import IconButton from "components/@extended/IconButton";
 import useAuth from "hooks/useAuth";
 
 // assets
-import avatar1 from "assets/images/users/avatar-6.png";
 import { Setting2, Profile, Logout } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
+import { useSelector } from "store";
+import { AuthProps } from "types/auth";
 
 // types
 interface TabPanelProps {
@@ -60,7 +61,12 @@ const ProfilePage = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
 
-	const { logout, user } = useAuth();
+	const { logout } = useAuth();
+
+	const authState = useSelector((state: { auth: AuthProps }) => state.auth);
+	console.log(authState);
+	//const pictureProfile = authState.user?.picture || avatar1;
+
 	const handleLogout = async () => {
 		try {
 			await logout();
@@ -113,7 +119,20 @@ const ProfilePage = () => {
 				aria-haspopup="true"
 				onClick={handleToggle}
 			>
-				<Avatar alt="profile user" src={avatar1} />
+				{authState.user?.picture ? (
+					// Si hay una imagen de perfil, úsala
+					<Avatar alt="profile user" src={authState.user.picture} />
+				) : authState.user?.name ? (
+					// Si no hay imagen de perfil pero existe el nombre, usa la primera letra del nombre
+					<Avatar color="error" type="filled" alt="profile user" size="sm">
+						{authState.user.name.charAt(0).toUpperCase()}
+					</Avatar>
+				) : (
+					// Si no hay imagen ni nombre, renderiza el componente <Profile />
+					<Avatar alt="profile user" size="sm" type="filled">
+						<Profile />
+					</Avatar>
+				)}
 			</ButtonBase>
 			<Popper
 				placement="bottom-end"
@@ -153,13 +172,28 @@ const ProfilePage = () => {
 										<Grid container justifyContent="space-between" alignItems="center">
 											<Grid item>
 												<Stack direction="row" spacing={1.25} alignItems="center">
-													<Avatar alt="profile user" src={avatar1} />
+													{authState.user?.picture ? (
+														// Si hay una imagen de perfil, úsala
+														<Avatar alt="profile user" src={authState.user.picture} />
+													) : authState.user?.name ? (
+														// Si no hay imagen de perfil pero existe el nombre, usa la primera letra del nombre
+														<Avatar color="error" type="filled" alt="profile user" size="sm">
+															{authState.user.name.charAt(0).toUpperCase()}
+														</Avatar>
+													) : (
+														// Si no hay imagen ni nombre, renderiza el componente <Profile />
+														<Avatar alt="profile user" size="sm" type="filled">
+															<Profile />
+														</Avatar>
+													)}
+
 													<Stack>
-														<Typography variant="subtitle1">{user?.name}</Typography>
+														<Typography variant="subtitle1">{authState.user?.name || ""}</Typography>
 														<Typography variant="body2" color="secondary">
-															UI/UX Designer
+															Usuario
 														</Typography>
 													</Stack>
+													
 												</Stack>
 											</Grid>
 											<Grid item>

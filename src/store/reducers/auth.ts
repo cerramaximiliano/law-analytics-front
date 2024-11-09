@@ -39,7 +39,7 @@ const auth = (state = initialState, action: AuthActionProps) => {
 				email, // Guarda el correo en el estado
 				needsVerification: needsVerification || false,
 			};
-		}		
+		}
 		case LOGOUT: {
 			return {
 				...state,
@@ -58,23 +58,23 @@ const auth = (state = initialState, action: AuthActionProps) => {
 
 export default auth;
 
-
 // ==============================|| ACTIONS ||============================== //
 
 // Acción para obtener los datos de autenticación desde el store
 export const fetchAuth = () => (dispatch: Dispatch, getState: () => RootState) => {
 	// Obtiene los datos de autenticación desde el estado actual
 	const { user, email, isLoggedIn, needsVerification } = getState().auth;
-
-	dispatch({
-		type: LOGIN,
-		payload: {
-			user,
-			email,
-			isLoggedIn,
-			needsVerification,
-		},
-	});
+	return async () => {
+		dispatch({
+			type: LOGIN,
+			payload: {
+				user,
+				email,
+				isLoggedIn,
+				needsVerification,
+			},
+		});
+	};
 };
 
 // Acción para registrar al usuario en el estado sin hacer una llamada a la API

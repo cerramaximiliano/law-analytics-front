@@ -1,6 +1,6 @@
 import { createContext, useEffect, useReducer, ReactElement, useState } from "react";
 import axios from "axios";
-import { googleLogout, useGoogleLogin } from "@react-oauth/google";
+import { googleLogout } from "@react-oauth/google";
 import { dispatch as reduxDispatch } from "store";
 import { LOGIN, LOGOUT, REGISTER } from "store/reducers/actions";
 import authReducer from "store/reducers/auth";
@@ -32,34 +32,70 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 	const [state, localDispatch] = useReducer(authReducer, initialState);
 	const [isGoogleLoggedIn, setIsGoogleLoggedIn] = useState(false);
 
-	const loginWithGoogle = useGoogleLogin({
-		onSuccess: (tokenResponse) => {
-			const credential = tokenResponse.access_token; // O usa id_token si es lo que necesitas
+	const loginWithGoogle = async (tokenResponse: any) => {
+		try {
+			const credential = tokenResponse.credential;
 			if (credential) {
-				setIsGoogleLoggedIn(true);
-				localStorage.setItem("googleToken", credential);
-				localDispatch({ type: LOGIN, payload: { isLoggedIn: true } });
-				reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true } });
+				const result = await fetch(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					credentials: "include",
+					body: JSON.stringify({
+						token: credential,
+					}),
+				});
+				const data = await result.json();
+				if (data.success) {
+					setIsGoogleLoggedIn(true);
+					localStorage.setItem("googleToken", credential);
+					localDispatch({ type: LOGIN, payload: { isLoggedIn: true } });
+					reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true, user: data.user } });
+				} else {
+					throw new Error("No se pudo autenticar. Intenta nuevamente.");
+				}
 			}
-		},
-		onError: () => console.error("Error al iniciar sesión con Google"),
-	});
+		} catch (error) {
+			console.error("Error:", error);
+			throw error;
+		}
+	};
 
 	useEffect(() => {
 		const init = async () => {
 			const googleToken = localStorage.getItem("googleToken");
 			const serviceToken = localStorage.getItem("serviceToken");
-
-			if (googleToken || serviceToken) {
-				setSession(serviceToken || googleToken);
-				setIsGoogleLoggedIn(!!googleToken);
-
-				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
-				const { user } = response.data;
-
-				localDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
-				reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
-			} else {
+			try {
+				if (googleToken || serviceToken) {
+					setSession(serviceToken || googleToken);
+					setIsGoogleLoggedIn(!!googleToken);
+	
+					const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
+					console.log(response);
+					const { user } = response.data;
+	
+					localDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
+					reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
+				} else {
+					localDispatch({ type: LOGOUT });
+					reduxDispatch({ type: LOGOUT });
+				}
+			}catch(error){
+				if (axios.isAxiosError(error)) {
+					console.error("Axios Error: ", error.message);
+	
+					// Puedes manejar diferentes códigos de error
+					if (error.response && error.response.status === 401) {
+						console.error("Authentication failed, logging out...");
+					} else {
+						console.error("An unexpected Axios error occurred:", error.response?.status);
+					}
+				} else {
+					console.error("An unexpected error occurred:", error);
+				}
+	
+				// Realiza el logout tanto en local como en Redux al ocurrir cualquier error
 				localDispatch({ type: LOGOUT });
 				reduxDispatch({ type: LOGOUT });
 			}

@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 
-
 // material-ui
 import { Grid, Stack, Alert, Typography } from "@mui/material";
 
@@ -61,8 +60,13 @@ const Register = () => {
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
 					<Logo />
 				</Grid>
-				<Grid justifyContent={"center"} item xs={12} maxWidth={"400px"}>
-					<Grid container spacing={1} width={"400px"}>
+				<Grid justifyContent={"center"} item xs={12}>
+					<Grid container spacing={1}>
+						{error && (
+							<Alert severity="error" sx={{ mb: 2 }}>
+								{error}
+							</Alert>
+						)}
 						<Grid
 							sx={{
 								display: "flex",
@@ -70,14 +74,7 @@ const Register = () => {
 							}}
 							item
 							xs={12}
-							width={"400px"}
 						>
-							{error && (
-								<Alert severity="error" sx={{ mb: 2 }}>
-									{error}
-								</Alert>
-							)}
-
 							<GoogleLogin
 								onSuccess={responseMessage}
 								onError={errorMessage}
