@@ -64,8 +64,6 @@ const ProfilePage = () => {
 	const { logout } = useAuth();
 
 	const authState = useSelector((state: { auth: AuthProps }) => state.auth);
-	console.log(authState);
-	//const pictureProfile = authState.user?.picture || avatar1;
 
 	const handleLogout = async () => {
 		try {
@@ -193,7 +191,7 @@ const ProfilePage = () => {
 															Usuario
 														</Typography>
 													</Stack>
-													
+
 												</Stack>
 											</Grid>
 											<Grid item>
