@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -30,9 +30,9 @@ import Avatar from "components/@extended/Avatar";
 
 // types
 import { ThemeMode } from "types/config";
-import { useSelector } from "store";
-
-
+import { dispatch, useSelector } from "store";
+import { fetchUserAlerts } from "store/reducers/alerts";
+import { Alert } from "types/alert";
 
 const actionSX = {
 	mt: "6px",
@@ -40,75 +40,8 @@ const actionSX = {
 	top: "auto",
 	right: "auto",
 	alignSelf: "flex-start",
-
 	transform: "none",
 };
-
-type AvatarTypeProps = "filled" | "outlined" | "combined" | undefined;
-type TypographyVariant =
-	| "h6"
-	| "button"
-	| "caption"
-	| "h1"
-	| "h2"
-	| "h3"
-	| "h4"
-	| "h5"
-	| "inherit"
-	| "subtitle1"
-	| "subtitle2"
-	| "body1"
-	| "body2"
-	| "overline"
-	| undefined;
-interface Alert {
-	avatarType?: AvatarTypeProps;
-	avatarIcon?: "Gift" | "MessageText1" | "Setting2";
-	avatarSize?: number;
-	avatarInitial?: string;
-	primaryText: string;
-	primaryVariant: TypographyVariant;
-	secondaryText: string;
-	actionText: string;
-}
-
-const notificationsArray: Alert[] = [
-	{
-		avatarType: "filled",
-		avatarIcon: "Gift",
-		avatarSize: 20,
-		primaryText: "It's Cristina danny's birthday today.",
-		primaryVariant: "h6",
-		secondaryText: "2 min ago",
-		actionText: "3:00 AM",
-	},
-	{
-		avatarType: "outlined",
-		avatarIcon: "MessageText1",
-		avatarSize: 20,
-		primaryText: "Aida Burg commented your post.",
-		primaryVariant: "h6",
-		secondaryText: "5 August",
-		actionText: "6:00 PM",
-	},
-	{
-		avatarType: undefined, // Cambiado de "default" a undefined
-		avatarIcon: "Setting2",
-		avatarSize: 20,
-		primaryText: "Your Profile is Complete 60%",
-		primaryVariant: "h6",
-		secondaryText: "7 hours ago",
-		actionText: "2:45 PM",
-	},
-	{
-		avatarType: "combined",
-		avatarInitial: "C",
-		primaryText: "Cristina Danny invited to join Meeting.",
-		primaryVariant: "h6",
-		secondaryText: "Daily scrum meeting time",
-		actionText: "9:10 PM",
-	},
-];
 
 // ==============================|| HEADER CONTENT - NOTIFICATION ||============================== //
 
@@ -133,8 +66,29 @@ const NotificationPage = () => {
 	const iconBackColorOpen = theme.palette.mode === ThemeMode.DARK ? "secondary.200" : "secondary.200";
 	const iconBackColor = theme.palette.mode === ThemeMode.DARK ? "background.default" : "secondary.100";
 
-	const notificationData = useSelector(state => state.notifications)
-	console.log(notificationData)
+	const userId = "647b7a2b7b6aad33b30b8de7";
+
+	// Definir el tipo de `alertsData` para que TypeScript reconozca el array y sus elementos
+	let alertsData = useSelector((state) => state.alerts.alerts);
+	console.log(alertsData);
+	/* 	alertsData = [
+		{
+			avatarType: "filled",
+			avatarIcon: "MessageText1",
+			avatarSize: 20,
+			primaryText: "It's Cristina danny's birthday today.",
+			primaryVariant: "h6",
+			secondaryText: "2 min ago",
+			actionText: "3:00 AM",
+		},
+	]; */
+
+	useEffect(() => {
+		const alertData = async () => {
+			await dispatch(fetchUserAlerts(userId));
+		};
+		alertData();
+	}, [dispatch, userId]);
 
 	return (
 		<Box sx={{ flexShrink: 0, ml: 0.5 }}>
@@ -208,7 +162,7 @@ const NotificationPage = () => {
 											},
 										}}
 									>
-										{notificationsArray.map((notification, index) => (
+										{alertsData.map((notification: Alert, index: number) => (
 											<ListItemButton key={index}>
 												<ListItemAvatar>
 													<Avatar type={notification.avatarType}>
@@ -219,46 +173,7 @@ const NotificationPage = () => {
 													</Avatar>
 												</ListItemAvatar>
 												<ListItemText
-													primary={
-														<Typography variant={notification.primaryVariant}>
-															{notification.primaryText.includes("birthday") && (
-																<>
-																	It&apos;s{" "}
-																	<Typography component="span" variant="subtitle1">
-																		Cristina danny&apos;s
-																	</Typography>{" "}
-																	birthday today.
-																</>
-															)}
-															{notification.primaryText.includes("commented") && (
-																<>
-																	<Typography component="span" variant="subtitle1">
-																		Aida Burg
-																	</Typography>{" "}
-																	commented your post.
-																</>
-															)}
-															{notification.primaryText.includes("Profile") && (
-																<>
-																	Your Profile is Complete &nbsp;
-																	<Typography component="span" variant="subtitle1">
-																		60%
-																	</Typography>
-																</>
-															)}
-															{notification.primaryText.includes("invited") && (
-																<>
-																	<Typography component="span" variant="subtitle1">
-																		Cristina Danny
-																	</Typography>{" "}
-																	invited to join{" "}
-																	<Typography component="span" variant="subtitle1">
-																		Meeting.
-																	</Typography>
-																</>
-															)}
-														</Typography>
-													}
+													primary={<Typography variant={notification.primaryVariant}>{notification.primaryText}</Typography>}
 													secondary={notification.secondaryText}
 												/>
 												<ListItemSecondaryAction>
