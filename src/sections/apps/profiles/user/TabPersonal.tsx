@@ -28,7 +28,7 @@ import { Formik } from "formik";
 // project-imports
 import MainCard from "components/MainCard";
 import countries from "data/countries";
-import { dispatch } from "store";
+import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // assets
@@ -49,7 +49,7 @@ const skills = [
 	"Adobe XD",
 	"After Effect",
 	"Angular",
-	"Animation",
+	"Animación",
 	"ASP.Net",
 	"Bootstrap",
 	"C#",
@@ -59,14 +59,14 @@ const skills = [
 	"DIV",
 	"Dreamweaver",
 	"Figma",
-	"Graphics",
+	"Gráficos",
 	"HTML",
 	"Illustrator",
 	"J2Ee",
 	"Java",
 	"Javascript",
 	"JQuery",
-	"Logo Design",
+	"Diseño de Logotipos",
 	"Material UI",
 	"Motion",
 	"MVC",
@@ -77,13 +77,13 @@ const skills = [
 	"PHP",
 	"React",
 	"Redux",
-	"Reduxjs & tooltit",
+	"Reduxjs & toolkit",
 	"SASS",
 	"SCSS",
 	"SQL Server",
 	"SVG",
 	"UI/UX",
-	"User Interface Designing",
+	"Diseño de Interfaz de Usuario",
 	"Wordpress",
 ];
 
@@ -106,61 +106,47 @@ const TabPersonal = () => {
 	maxDate.setFullYear(maxDate.getFullYear() - 18);
 	const inputRef = useInputRef();
 
+	const userData = useSelector((state) => state.auth);
+
 	return (
-		<MainCard content={false} title="Personal Information" sx={{ "& .MuiInputLabel-root": { fontSize: "0.875rem" } }}>
+		<MainCard content={false} title="Información Personal" sx={{ "& .MuiInputLabel-root": { fontSize: "0.875rem" } }}>
 			<Formik
 				initialValues={{
-					firstname: "Stebin",
-					lastname: "Ben",
-					email: "stebin.ben@gmail.com",
+					firstname: userData.user?.firstName || "",
+					lastname: userData.user?.lastName || "",
+					email: userData.user?.email || "",
 					dob: new Date("03-10-1993"),
 					countryCode: "+91",
-					contact: 9652364852,
-					designation: "Full Stack Developer",
-					address: "3801 Chalk Butte Rd, Cut Bank, MT 59427, United States",
-					address1: "301 Chalk Butte Rd, Cut Bank, NY 96572, New York",
-					country: "US",
-					state: "California",
-					skill: [
-						"Adobe XD",
-						"Angular",
-						"Corel Draw",
-						"Figma",
-						"HTML",
-						"Illustrator",
-						"Javascript",
-						"Logo Design",
-						"Material UI",
-						"NodeJS",
-						"npm",
-						"Photoshop",
-						"React",
-						"Reduxjs & tooltit",
-						"SASS",
-					],
-					note: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.`,
+					contact: userData.user?.contact || "",
+					designation: userData.user?.designation || "",
+					address: userData.user?.address || "",
+					address1: userData.user?.address1 || "",
+					country: userData.user?.country || "",
+					state: userData.user?.state || "",
+					skill: userData.user?.skill || "",
+					note: userData.user?.note || "",
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					firstname: Yup.string().max(255).required("First Name is required."),
-					lastname: Yup.string().max(255).required("Last Name is required."),
-					email: Yup.string().email("Invalid email address.").max(255).required("Email is required."),
-					dob: Yup.date().max(maxDate, "Age should be 18+ years.").required("Date of birth is requird."),
+					firstname: Yup.string().max(255).required("El nombre es requerido"),
+					lastname: Yup.string().max(255).required("El apellido es requerido."),
+					email: Yup.string().email("Correo electrónico inválido.").max(255).required("El correo electrónico es requerido."),
+					dob: Yup.date().max(maxDate, "La edad debe ser mayor de 18 años.").required("La fecha de nacimiento es requerida."),
 					contact: Yup.number()
-						.test("len", "Contact should be exactly 10 digit", (val) => val?.toString().length === 10)
-						.required("Phone number is required"),
-					designation: Yup.string().required("Designation is required"),
-					address: Yup.string().min(50, "Address to short.").required("Address is required"),
-					country: Yup.string().required("Country is required"),
-					state: Yup.string().required("State is required"),
-					note: Yup.string().min(150, "Not shoulde be more then 150 char."),
+						.test("len", "El número de contacto debe tener exactamente 10 dígitos", (val) => val?.toString().length === 10)
+						.required("El número de teléfono es requerido"),
+					designation: Yup.string().required("La designación es requerida"),
+					address: Yup.string().min(50, "La dirección es demasiado corta.").required("La dirección es requerida"),
+					country: Yup.string().required("El país es requerido"),
+					state: Yup.string().required("El estado es requerido"),
+					note: Yup.string().min(150, "La nota debe tener más de 150 caracteres."),
 				})}
 				onSubmit={(values, { setErrors, setStatus, setSubmitting }) => {
 					try {
 						dispatch(
 							openSnackbar({
 								open: true,
-								message: "Personal profile updated successfully.",
+								message: "Perfil profesional actualizado satisfactoriamente.",
 								variant: "alert",
 								alert: {
 									color: "success",
@@ -183,7 +169,7 @@ const TabPersonal = () => {
 							<Grid container spacing={3}>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-first-name">First Name</InputLabel>
+										<InputLabel htmlFor="personal-first-name">Nombre</InputLabel>
 										<TextField
 											fullWidth
 											id="personal-first-name"
@@ -191,7 +177,7 @@ const TabPersonal = () => {
 											name="firstname"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="First Name"
+											placeholder="Nombre"
 											autoFocus
 											inputRef={inputRef}
 										/>
@@ -204,7 +190,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-last-name">Last Name</InputLabel>
+										<InputLabel htmlFor="personal-last-name">Apellido</InputLabel>
 										<TextField
 											fullWidth
 											id="personal-last-name"
@@ -212,7 +198,7 @@ const TabPersonal = () => {
 											name="lastname"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="Last Name"
+											placeholder="Apellido"
 										/>
 										{touched.lastname && errors.lastname && (
 											<FormHelperText error id="personal-last-name-helper">
@@ -223,7 +209,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-email">Email Address</InputLabel>
+										<InputLabel htmlFor="personal-email">Correo Electrónico</InputLabel>
 										<TextField
 											type="email"
 											fullWidth
@@ -232,7 +218,7 @@ const TabPersonal = () => {
 											onBlur={handleBlur}
 											onChange={handleChange}
 											id="personal-email"
-											placeholder="Email Address"
+											placeholder="Correo Electrónico"
 										/>
 										{touched.email && errors.email && (
 											<FormHelperText error id="personal-email-helper">
@@ -243,7 +229,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="dob-month">Date of Birth (+18)</InputLabel>
+										<InputLabel htmlFor="dob-month">Fecha de Nacimiento</InputLabel>
 										<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
 											<Select
 												fullWidth
@@ -251,18 +237,18 @@ const TabPersonal = () => {
 												name="dob-month"
 												onChange={(e: SelectChangeEvent<string>) => handleChangeMonth(e, values.dob, setFieldValue)}
 											>
-												<MenuItem value="0">January</MenuItem>
-												<MenuItem value="1">February</MenuItem>
-												<MenuItem value="2">March</MenuItem>
-												<MenuItem value="3">April</MenuItem>
-												<MenuItem value="4">May</MenuItem>
-												<MenuItem value="5">June</MenuItem>
-												<MenuItem value="6">July</MenuItem>
-												<MenuItem value="7">August</MenuItem>
-												<MenuItem value="8">September</MenuItem>
-												<MenuItem value="9">October</MenuItem>
-												<MenuItem value="10">November</MenuItem>
-												<MenuItem value="11">December</MenuItem>
+												<MenuItem value="0">Enero</MenuItem>
+												<MenuItem value="1">Febrero</MenuItem>
+												<MenuItem value="2">Marzo</MenuItem>
+												<MenuItem value="3">Abril</MenuItem>
+												<MenuItem value="4">Mayo</MenuItem>
+												<MenuItem value="5">Junio</MenuItem>
+												<MenuItem value="6">Julio</MenuItem>
+												<MenuItem value="7">Agosto</MenuItem>
+												<MenuItem value="8">Septiembre</MenuItem>
+												<MenuItem value="9">Octubre</MenuItem>
+												<MenuItem value="10">Noviembre</MenuItem>
+												<MenuItem value="11">Diciembre</MenuItem>
 											</Select>
 											<Select
 												fullWidth
@@ -309,22 +295,8 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-phone">Phone Number</InputLabel>
+										<InputLabel htmlFor="personal-phone">Teléfono</InputLabel>
 										<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-											<Select value={values.countryCode} name="countryCode" onBlur={handleBlur} onChange={handleChange}>
-												<MenuItem value="+91">+91</MenuItem>
-												<MenuItem value="1-671">1-671</MenuItem>
-												<MenuItem value="+36">+36</MenuItem>
-												<MenuItem value="(225)">(255)</MenuItem>
-												<MenuItem value="+39">+39</MenuItem>
-												<MenuItem value="1-876">1-876</MenuItem>
-												<MenuItem value="+7">+7</MenuItem>
-												<MenuItem value="(254)">(254)</MenuItem>
-												<MenuItem value="(373)">(373)</MenuItem>
-												<MenuItem value="1-664">1-664</MenuItem>
-												<MenuItem value="+95">+95</MenuItem>
-												<MenuItem value="(264)">(264)</MenuItem>
-											</Select>
 											<TextField
 												fullWidth
 												id="personal-contact"
@@ -332,7 +304,7 @@ const TabPersonal = () => {
 												name="contact"
 												onBlur={handleBlur}
 												onChange={handleChange}
-												placeholder="Contact Number"
+												placeholder="Número de Contacto"
 											/>
 										</Stack>
 										{touched.contact && errors.contact && (
@@ -344,7 +316,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-designation">Designation</InputLabel>
+										<InputLabel htmlFor="personal-designation">Cargo</InputLabel>
 										<TextField
 											fullWidth
 											id="personal-designation"
@@ -352,7 +324,7 @@ const TabPersonal = () => {
 											name="designation"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="Designation"
+											placeholder="Cargo"
 										/>
 										{touched.designation && errors.designation && (
 											<FormHelperText error id="personal-designation-helper">
@@ -363,13 +335,13 @@ const TabPersonal = () => {
 								</Grid>
 							</Grid>
 						</Box>
-						<CardHeader title="Address" />
+						<CardHeader title="Dirección" />
 						<Divider />
 						<Box sx={{ p: 2.5 }}>
 							<Grid container spacing={3}>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-addrees1">Address 01</InputLabel>
+										<InputLabel htmlFor="personal-addrees1">Domicilio</InputLabel>
 										<TextField
 											multiline
 											rows={3}
@@ -379,7 +351,7 @@ const TabPersonal = () => {
 											name="address"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="Address 01"
+											placeholder="Dirección principal"
 										/>
 										{touched.address && errors.address && (
 											<FormHelperText error id="personal-address-helper">
@@ -390,7 +362,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-addrees2">Address 02</InputLabel>
+										<InputLabel htmlFor="personal-addrees2">Domicilio</InputLabel>
 										<TextField
 											multiline
 											rows={3}
@@ -400,13 +372,13 @@ const TabPersonal = () => {
 											name="address1"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="Address 02"
+											placeholder="Dirección alternativo"
 										/>
 									</Stack>
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-country">Country</InputLabel>
+										<InputLabel htmlFor="personal-country">País</InputLabel>
 										<Autocomplete
 											id="personal-country"
 											fullWidth
@@ -437,7 +409,7 @@ const TabPersonal = () => {
 											renderInput={(params) => (
 												<TextField
 													{...params}
-													placeholder="Choose a country"
+													placeholder="Selecciona un país"
 													name="country"
 													inputProps={{
 														...params.inputProps,
@@ -455,7 +427,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-state">State</InputLabel>
+										<InputLabel htmlFor="personal-state">Provincia</InputLabel>
 										<TextField
 											fullWidth
 											id="personal-state"
@@ -463,7 +435,7 @@ const TabPersonal = () => {
 											name="state"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="State"
+											placeholder="Provincia"
 										/>
 										{touched.state && errors.state && (
 											<FormHelperText error id="personal-state-helper">
@@ -474,7 +446,7 @@ const TabPersonal = () => {
 								</Grid>
 							</Grid>
 						</Box>
-						<CardHeader title="Skills" />
+						<CardHeader title="Campos" />
 						<Divider />
 						<Box sx={{ display: "flex", flexWrap: "wrap", listStyle: "none", p: 2.5, m: 0 }} component="ul">
 							<Autocomplete
@@ -482,13 +454,13 @@ const TabPersonal = () => {
 								fullWidth
 								id="tags-outlined"
 								options={skills}
-								value={values.skill}
+								value={Array.isArray(values.skill) ? values.skill : [values.skill]}
 								onBlur={handleBlur}
 								getOptionLabel={(label) => label}
 								onChange={(event, newValue) => {
 									setFieldValue("skill", newValue);
 								}}
-								renderInput={(params) => <TextField {...params} name="skill" placeholder="Add Skills" />}
+								renderInput={(params) => <TextField {...params} name="skill" placeholder="Agregar habilidades" />}
 								renderTags={(value, getTagProps) =>
 									value.map((option, index) => (
 										<Chip
@@ -519,7 +491,7 @@ const TabPersonal = () => {
 								}}
 							/>
 						</Box>
-						<CardHeader title="Note" />
+						<CardHeader title="Nota" />
 						<Divider />
 						<Box sx={{ p: 2.5 }}>
 							<TextField
@@ -531,7 +503,7 @@ const TabPersonal = () => {
 								onBlur={handleBlur}
 								onChange={handleChange}
 								id="personal-note"
-								placeholder="Note"
+								placeholder="Nota"
 							/>
 							{touched.note && errors.note && (
 								<FormHelperText error id="personal-note-helper">
@@ -540,10 +512,10 @@ const TabPersonal = () => {
 							)}
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
 								<Button variant="outlined" color="secondary">
-									Cancel
+									Cancelar
 								</Button>
 								<Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">
-									Save
+									Guardar
 								</Button>
 							</Stack>
 						</Box>

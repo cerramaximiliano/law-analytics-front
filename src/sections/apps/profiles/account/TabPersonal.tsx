@@ -53,7 +53,7 @@ const TabPersonal = () => {
 	return (
 		<Grid container spacing={3}>
 			<Grid item xs={12} sm={6}>
-				<MainCard title="Personal Information">
+				<MainCard title="Información Personal">
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Stack spacing={2.5} alignItems="center" sx={{ m: 3 }}>

@@ -11,13 +11,25 @@ export type GuardProps = {
 
 export type UserProfile = {
 	id?: string;
+	_id?: string;
 	email?: string;
 	avatar?: string;
 	image?: string;
+	firstName?: string;
+	lastName?: string;
 	name?: string;
 	role?: string;
 	tier?: string;
 	picture?: string;
+	dob?: string;
+	contact?: string;
+	designation?: string;
+	address?: string;
+	address1?: string;
+	country?: string;
+	state?: string;
+	skill?: string[];
+	note?: string;
 };
 
 export interface AuthProps {
@@ -31,7 +43,13 @@ export interface AuthProps {
 
 export interface AuthActionProps {
 	type: string;
-	payload?: AuthProps;
+	payload?: {
+		user?: UserProfile;
+		email?: string;
+		needsVerification?: boolean;
+		isLoggedIn?: boolean;
+		picture?: string; // Asegúrate de incluir `picture` aquí para UPDATE_PICTURE
+	};
 }
 
 export type FirebaseContextType = {

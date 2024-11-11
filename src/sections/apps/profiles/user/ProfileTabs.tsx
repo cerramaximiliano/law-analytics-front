@@ -1,22 +1,22 @@
-import { useEffect, useState, ChangeEvent, MouseEvent } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, ChangeEvent } from "react";
+import axios from "axios";
+import { useSelector, dispatch } from "store";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { Box, Divider, FormLabel, Grid, TextField, Menu, MenuItem, Stack, Typography } from "@mui/material";
+import { Box, Divider, FormLabel, Grid, TextField, Stack, Typography } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import ProfileTab from "./ProfileTab";
-import { facebookColor, linkedInColor } from "config";
 
 // assets
-import { Apple, Camera, Facebook, Google, More } from "iconsax-react";
-import IconButton from "components/@extended/IconButton";
+import { Camera } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
+import { updatePicture } from "store/reducers/auth";
 
 const avatarImage = require.context("assets/images/users", true);
 
@@ -29,7 +29,45 @@ interface Props {
 const ProfileTabs = ({ focusInput }: Props) => {
 	const theme = useTheme();
 	const [selectedImage, setSelectedImage] = useState<File | undefined>(undefined);
-	const [avatar, setAvatar] = useState<string | undefined>(avatarImage(`./default.png`));
+	const user = useSelector((state) => state.auth.user);
+	const picture = user?.picture;
+	const [avatar, setAvatar] = useState<string | undefined>(picture || avatarImage(`./default.png`));
+
+	const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		const userId = user?._id; // Obtén el userId desde el estado global o el contexto
+		if (file && userId) {
+			setSelectedImage(file); // Actualiza el estado para vista previa
+
+			// Crear un FormData para enviar el archivo y el userId al backend
+			const formData = new FormData();
+			formData.append("image", file);
+			formData.append("userId", userId); // Añade el userId al FormData
+
+			// Verificar que el FormData tiene el userId
+			console.log("FormData entries:", Array.from(formData.entries()));
+
+			try {
+				// Enviar la imagen al backend
+				const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/cloudinary/upload-avatar`, formData, {
+					headers: {
+						"Content-Type": "multipart/form-data",
+					},
+				});
+
+				// Actualiza la URL de avatar con la URL de Cloudinary
+				if (response.data?.url) {
+					const newPictureUrl = response.data.url;
+					setAvatar(newPictureUrl); // Actualiza la vista previa del avatar
+					dispatch(updatePicture(newPictureUrl));
+				}
+			} catch (error) {
+				console.error("Error al subir la imagen:", error);
+			}
+		} else {
+			console.warn("No se encontró un userId o archivo para enviar");
+		}
+	};
 
 	useEffect(() => {
 		if (selectedImage) {
@@ -37,67 +75,10 @@ const ProfileTabs = ({ focusInput }: Props) => {
 		}
 	}, [selectedImage]);
 
-	const [anchorEl, setAnchorEl] = useState<Element | (() => Element) | null | undefined>(null);
-	const open = Boolean(anchorEl);
-
-	const handleClick = (event: MouseEvent<HTMLButtonElement> | undefined) => {
-		setAnchorEl(event?.currentTarget);
-	};
-
-	const handleClose = () => {
-		setAnchorEl(null);
-	};
-
 	return (
 		<MainCard>
 			<Grid container spacing={6}>
 				<Grid item xs={12}>
-					<Stack direction="row" justifyContent="flex-end">
-						<IconButton
-							variant="light"
-							color="secondary"
-							id="basic-button"
-							aria-controls={open ? "basic-menu" : undefined}
-							aria-haspopup="true"
-							aria-expanded={open ? "true" : undefined}
-							onClick={handleClick}
-						>
-							<More />
-						</IconButton>
-						<Menu
-							id="basic-menu"
-							anchorEl={anchorEl}
-							open={open}
-							onClose={handleClose}
-							MenuListProps={{
-								"aria-labelledby": "basic-button",
-							}}
-							anchorOrigin={{
-								vertical: "bottom",
-								horizontal: "right",
-							}}
-							transformOrigin={{
-								vertical: "top",
-								horizontal: "right",
-							}}
-						>
-							<MenuItem
-								component={Link}
-								to="/apps/profiles/user/personal"
-								onClick={() => {
-									handleClose();
-									setTimeout(() => {
-										focusInput();
-									});
-								}}
-							>
-								Edit
-							</MenuItem>
-							<MenuItem onClick={handleClose} disabled>
-								Delete
-							</MenuItem>
-						</Menu>
-					</Stack>
 					<Stack spacing={2.5} alignItems="center">
 						<FormLabel
 							htmlFor="change-avtar"
@@ -126,7 +107,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 							>
 								<Stack spacing={0.5} alignItems="center">
 									<Camera style={{ color: theme.palette.secondary.lighter, fontSize: "2rem" }} />
-									<Typography sx={{ color: "secondary.lighter" }}>Upload</Typography>
+									<Typography sx={{ color: "secondary.lighter" }}>Subir</Typography>
 								</Stack>
 							</Box>
 						</FormLabel>
@@ -136,16 +117,11 @@ const ProfileTabs = ({ focusInput }: Props) => {
 							placeholder="Outlined"
 							variant="outlined"
 							sx={{ display: "none" }}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setSelectedImage(e.target.files?.[0])}
+							onChange={handleImageUpload}
 						/>
 						<Stack spacing={0.5} alignItems="center">
 							<Typography variant="h5">Stebin Ben</Typography>
 							<Typography color="secondary">Full Stack Developer</Typography>
-						</Stack>
-						<Stack direction="row" spacing={3} sx={{ "& svg": { fontSize: "1.15rem", cursor: "pointer" } }}>
-							<Google variant="Bold" color={theme.palette.error.main} />
-							<Facebook variant="Bold" color={facebookColor} />
-							<Apple variant="Bold" color={linkedInColor} />
 						</Stack>
 					</Stack>
 				</Grid>
@@ -154,17 +130,17 @@ const ProfileTabs = ({ focusInput }: Props) => {
 					<Stack direction="row" justifyContent="space-around" alignItems="center">
 						<Stack spacing={0.5} alignItems="center">
 							<Typography variant="h5">86</Typography>
-							<Typography color="secondary">Post</Typography>
+							<Typography color="secondary">Causas</Typography>
 						</Stack>
 						<Divider orientation="vertical" flexItem />
 						<Stack spacing={0.5} alignItems="center">
 							<Typography variant="h5">40</Typography>
-							<Typography color="secondary">Project</Typography>
+							<Typography color="secondary">Clientes</Typography>
 						</Stack>
 						<Divider orientation="vertical" flexItem />
 						<Stack spacing={0.5} alignItems="center">
 							<Typography variant="h5">4.5K</Typography>
-							<Typography color="secondary">Members</Typography>
+							<Typography color="secondary">Cálculos</Typography>
 						</Stack>
 					</Stack>
 				</Grid>

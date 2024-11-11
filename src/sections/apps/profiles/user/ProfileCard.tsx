@@ -44,16 +44,16 @@ const ProfileCard = ({ focusInput }: Props) => {
 							<ProfileRadialChart />
 						</Box>
 						<Stack spacing={0.75}>
-							<Typography variant="h5">Edit Your Profile</Typography>
+							<Typography variant="h5">Editar tu Perfil</Typography>
 							<Typography variant="body2" color="secondary">
-								Complete your profile to unlock all features
+								Completa tu perfil para desbloquear aplicativos
 							</Typography>
 						</Stack>
 					</Stack>
 				</Grid>
 				<Grid item sx={{ mx: matchDownSM ? 2 : 3, my: matchDownSM ? 1 : 0, mb: matchDownSM ? 2 : 0 }} xs={matchDownSM ? 12 : "auto"}>
 					<Button variant="contained" fullWidth={matchDownSM} component={Link} to="/apps/profiles/user/personal" onClick={focusInput}>
-						Edit Your Profile
+						Editar Perfil
 					</Button>
 				</Grid>
 			</Grid>

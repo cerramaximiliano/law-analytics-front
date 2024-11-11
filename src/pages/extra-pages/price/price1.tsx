@@ -11,36 +11,36 @@ import MainCard from "components/MainCard";
 const plans = [
 	{
 		active: false,
-		title: "Basic",
-		description: "03 Services",
-		price: 69,
+		title: "Free",
+		description: "",
+		price: 0,
 		permission: [0, 1, 2],
 	},
 	{
 		active: true,
 		title: "Standard",
-		description: "05 Services",
-		price: 129,
+		description: "",
+		price: 9.99,
 		permission: [0, 1, 2, 3, 4],
 	},
 	{
 		active: false,
 		title: "Premium",
-		description: "08 Services",
-		price: 599,
+		description: "",
+		price: 15.99,
 		permission: [0, 1, 2, 3, 4, 5, 6, 7],
 	},
 ];
 
 const planList = [
-	"One End Product", // 0
-	"No attribution required", // 1
-	"TypeScript", // 2
-	"Figma Design Resources", // 3
-	"Create Multiple Products", // 4
-	"Create a SaaS Project", // 5
-	"Resale Product", // 6
-	"Separate sale of our UI Elements?", // 7
+	"Calendario",
+	"+500 Causas",
+	"+1000 Cálculos",
+	"+300 Contactos",
+	"Seguimientos automatizados",
+	"+5 Cuentas Administradores",
+	"+10 Cuentas Asociadas",
+	"Acceso Clientes",
 ];
 
 // ==============================|| PRICING ||============================== //
@@ -68,17 +68,14 @@ const Pricing = () => {
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
 				<Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
-					<Stack spacing={0}>
-						<Typography variant="h5">Quality is never an accident. It is always the result of interlligent effort</Typography>
-						<Typography color="textSecondary">It makes no difference what the price is, it all makes senses to us.</Typography>
-					</Stack>
+					<Stack spacing={0}></Stack>
 					<Stack direction="row" spacing={1.5} alignItems="center">
 						<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-							Billed Yearly
+							Cobro Anual
 						</Typography>
 						<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
 						<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-							Billed Monthly
+							Cobro Mensual
 						</Typography>
 					</Stack>
 				</Stack>
@@ -109,19 +106,22 @@ const Pricing = () => {
 															${plan.price}
 														</Typography>
 													)}
-													{!timePeriod && (
-														<Typography variant="h2" sx={price}>
-															${plan.price * 12 - 99}
-														</Typography>
-													)}
-													<Typography variant="h6" color="textSecondary">
-														Lifetime
-													</Typography>
+													{!timePeriod &&
+														(plan.title === "Free" ? (
+															<Typography variant="h2" sx={price}>
+																${plan.price}
+															</Typography>
+														) : (
+															<Typography variant="h2" sx={price}>
+																 ${Math.round(plan.price * 12 - plan.price * 0.25)}
+															</Typography>
+														))}
+													<Typography variant="h6" color="textSecondary"></Typography>
 												</Stack>
 											</Grid>
 											<Grid item xs={12}>
 												<Button color={plan.active ? "primary" : "secondary"} variant={plan.active ? "contained" : "outlined"} fullWidth>
-													Order Now
+													Suscribirme
 												</Button>
 											</Grid>
 										</Grid>

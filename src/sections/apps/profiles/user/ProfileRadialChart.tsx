@@ -47,7 +47,7 @@ const ProfileRadialChart = (props: ApexRedialBarChartProps) => {
 	const grey500 = theme.palette.secondary.main;
 	const grey200 = theme.palette.secondary[200];
 
-	const [series] = useState<number[]>([30]);
+	const [series] = useState<number[]>([45]);
 	const [options, setOptions] = useState<ChartProps>(redialBarChartOptions);
 
 	useEffect(() => {

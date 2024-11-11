@@ -1,5 +1,5 @@
 // action - state management
-import { REGISTER, LOGIN, LOGOUT } from "./actions";
+import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE } from "./actions";
 
 // types
 import { AuthProps, AuthActionProps } from "types/auth";
@@ -10,7 +10,7 @@ import { Dispatch } from "redux";
 export const initialState: AuthProps = {
 	isLoggedIn: false,
 	isInitialized: false,
-	user: null,
+	user: {},
 	email: "",
 	needsVerification: false,
 };
@@ -38,6 +38,16 @@ const auth = (state = initialState, action: AuthActionProps) => {
 				user,
 				email, // Guarda el correo en el estado
 				needsVerification: needsVerification || false,
+			};
+		}
+		case UPDATE_PICTURE: {
+			const { picture } = action.payload!;
+			return {
+				...state,
+				user: {
+					...(state.user || {}), // Usa un objeto vacío si `user` es null o undefined
+					picture, // Actualiza la propiedad picture
+				},
 			};
 		}
 		case LOGOUT: {
@@ -97,6 +107,13 @@ export const loginUser = () => (dispatch: Dispatch, getState: () => RootState) =
 			email,
 			isLoggedIn: true,
 		},
+	});
+};
+
+export const updatePicture = (picture: string) => (dispatch: Dispatch) => {
+	dispatch({
+		type: UPDATE_PICTURE,
+		payload: { picture },
 	});
 };
 

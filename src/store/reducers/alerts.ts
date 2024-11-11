@@ -34,6 +34,10 @@ const alerts = createSlice({
 			state.alerts.push(action.payload);
 			state.isLoader = false;
 		},
+		deleteAlert(state, action: PayloadAction<string>) {
+			state.alerts = state.alerts.filter((alert) => alert._id !== action.payload);
+			state.isLoader = false;
+		},
 		updateAlertField(state, action: PayloadAction<{ field: keyof Alert; value: any }>) {
 			const { field, value } = action.payload;
 			state.alerts = state.alerts.map((alert) => ({ ...alert, [field]: value }));
@@ -46,10 +50,9 @@ const alerts = createSlice({
 
 export default alerts.reducer;
 
-export const { loading, hasError, setAlertData, updateAlertField, resetAlerts, addAlert } = alerts.actions;
+export const { loading, hasError, setAlertData, updateAlertField, resetAlerts, addAlert, deleteAlert } = alerts.actions;
 
 // Async actions
-
 export function fetchUserAlerts(userId: string) {
 	return async () => {
 		dispatch(loading());
@@ -73,13 +76,31 @@ export function addNewAlert(newAlert: Alert) {
 		}
 		dispatch(loading());
 		try {
-			const response = await axios.post("/alert", newAlert);
+			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/alert`, newAlert);
 			if (response.data) {
 				dispatch(addAlert(response.data));
 			} else {
 				dispatch(hasError("Failed to add new alert"));
 			}
 		} catch (error) {
+			dispatch(hasError(error instanceof Error ? error.message : "An unknown error occurred"));
+		}
+	};
+}
+
+export function deleteUserAlert(userId: string, alertId: string) {
+	return async () => {
+		dispatch(loading());
+		try {
+			const url = `${process.env.REACT_APP_BASE_URL}/alert/delete-alert/?alertId=${alertId}&userId=${userId}`;
+			const response = await axios.delete(url);
+			if (response.status === 200 || response.status === 204) {
+				dispatch(deleteAlert(alertId));
+			} else {
+				dispatch(hasError("Failed to delete alert"));
+			}
+		} catch (error) {
+			console.error("Error in axios request:", error);
 			dispatch(hasError(error instanceof Error ? error.message : "An unknown error occurred"));
 		}
 	};

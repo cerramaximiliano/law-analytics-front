@@ -66,7 +66,7 @@ function StickyActionBar() {
 									</Grid>
 									<Grid item xs={12} sm={9} lg={6}>
 										<Typography variant="h3" sx={{ mb: 0 }}>
-											Personal Information
+											Información Personal
 										</Typography>
 										<Typography variant="body2" sx={{ mb: 2 }}>
 											Sticky Action Bar Lorem Ipsum is simply

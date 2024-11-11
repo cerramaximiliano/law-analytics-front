@@ -1,7 +1,19 @@
 // third-party
 import { FormattedMessage } from "react-intl";
 // assets
-import { Calculator, Folder, KyberNetwork, Messages2, Calendar1, Kanban, Profile2User, Bill, UserSquare, ShoppingBag } from "iconsax-react";
+import {
+	DollarSquare,
+	Calculator,
+	Folder,
+	KyberNetwork,
+	Messages2,
+	Calendar1,
+	Kanban,
+	Profile2User,
+	Bill,
+	UserSquare,
+	ShoppingBag,
+} from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
 
@@ -17,6 +29,7 @@ const icons = {
 	invoice: Bill,
 	profile: UserSquare,
 	ecommerce: ShoppingBag,
+	price: DollarSquare,
 };
 
 // ==============================|| MENU ITEMS - APPLICATIONS ||============================== //
@@ -136,6 +149,13 @@ const applications: NavItemType = {
 					url: "/apps/profiles/account/basic",
 				},
 			],
+		},
+		{
+			id: "price",
+			title: <FormattedMessage id="Suscripciones" />,
+			icon: icons.price,
+			type: "item",
+			url: "/price/price1",
 		},
 	],
 };

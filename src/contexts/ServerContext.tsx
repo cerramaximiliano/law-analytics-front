@@ -47,6 +47,7 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 					}),
 				});
 				const data = await result.json();
+				console.log(data);
 				if (data.success) {
 					setIsGoogleLoggedIn(true);
 					localStorage.setItem("googleToken", credential);
@@ -70,21 +71,21 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 				if (googleToken || serviceToken) {
 					setSession(serviceToken || googleToken);
 					setIsGoogleLoggedIn(!!googleToken);
-	
+
 					const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
 					console.log(response);
 					const { user } = response.data;
-	
+
 					localDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
 					reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
 				} else {
 					localDispatch({ type: LOGOUT });
 					reduxDispatch({ type: LOGOUT });
 				}
-			}catch(error){
+			} catch (error) {
 				if (axios.isAxiosError(error)) {
 					console.error("Axios Error: ", error.message);
-	
+
 					// Puedes manejar diferentes códigos de error
 					if (error.response && error.response.status === 401) {
 						console.error("Authentication failed, logging out...");
@@ -94,7 +95,7 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 				} else {
 					console.error("An unexpected error occurred:", error);
 				}
-	
+
 				// Realiza el logout tanto en local como en Redux al ocurrir cualquier error
 				localDispatch({ type: LOGOUT });
 				reduxDispatch({ type: LOGOUT });
@@ -125,7 +126,7 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
 		const { serviceToken, user } = response.data;
 		setSession(serviceToken);
-
+		console.log(user, serviceToken);
 		localDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
 		reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
 	};

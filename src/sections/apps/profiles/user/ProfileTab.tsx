@@ -56,25 +56,25 @@ const ProfileTab = () => {
 				<ListItemIcon>
 					<Profile size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Personal Information" />
+				<ListItemText primary="Información Personal" />
 			</ListItemButton>
 			<ListItemButton selected={selectedIndex === 1} onClick={() => handleListItemClick(1, "/apps/profiles/user/payment")}>
 				<ListItemIcon>
 					<CardCoin size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Payment" />
+				<ListItemText primary="Método de pago" />
 			</ListItemButton>
 			<ListItemButton selected={selectedIndex === 2} onClick={() => handleListItemClick(2, "/apps/profiles/user/password")}>
 				<ListItemIcon>
 					<Lock size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Change Password" />
+				<ListItemText primary="Cambiar Contraseña" />
 			</ListItemButton>
 			<ListItemButton selected={selectedIndex === 3} onClick={() => handleListItemClick(3, "/apps/profiles/user/settings")}>
 				<ListItemIcon>
 					<Setting3 size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Settings" />
+				<ListItemText primary="Configuraciones" />
 			</ListItemButton>
 		</List>
 	);
