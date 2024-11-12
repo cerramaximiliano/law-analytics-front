@@ -21,7 +21,6 @@ const auth = (state = initialState, action: AuthActionProps) => {
 	switch (action.type) {
 		case REGISTER: {
 			const { user, email, needsVerification } = action.payload!;
-			console.log("Datos en REGISTER:", email, needsVerification);
 			return {
 				...state,
 				user,

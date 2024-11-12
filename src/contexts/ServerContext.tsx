@@ -47,10 +47,10 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 					}),
 				});
 				const data = await result.json();
-				console.log(data);
 				if (data.success) {
 					setIsGoogleLoggedIn(true);
 					localStorage.setItem("googleToken", credential);
+					setSession(data.serviceToken);
 					localDispatch({ type: LOGIN, payload: { isLoggedIn: true } });
 					reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true, user: data.user } });
 				} else {
@@ -73,7 +73,6 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 					setIsGoogleLoggedIn(!!googleToken);
 
 					const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
-					console.log(response);
 					const { user } = response.data;
 
 					localDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });

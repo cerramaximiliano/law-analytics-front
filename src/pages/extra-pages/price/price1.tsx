@@ -11,9 +11,9 @@ import MainCard from "components/MainCard";
 const plans = [
 	{
 		active: false,
-		title: "Free",
+		title: "Starter",
 		description: "",
-		price: 0,
+		price: 5.99,
 		permission: [0, 1, 2],
 	},
 	{

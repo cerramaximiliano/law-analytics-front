@@ -52,7 +52,7 @@ const WelcomeBanner = () => {
 							<Button
 								variant="outlined"
 								color="secondary"
-								href="https://1.envato.market/c/1289604/275988/4415?subId1=phoenixcoded&u=https%3A%2F%2Fthemeforest.net%2Fitem%2Fable-pro-responsive-bootstrap-4-admin-template%2F19300403"
+								href="/suscripciones/tables"
 								sx={{
 									color: "background.paper",
 									borderColor: theme.palette.background.paper,
@@ -63,7 +63,7 @@ const WelcomeBanner = () => {
 										bgcolor: "primary.main",
 									},
 								}}
-								target="_blank"
+								target="_self"
 							>
 								Planes Exclusivos
 							</Button>

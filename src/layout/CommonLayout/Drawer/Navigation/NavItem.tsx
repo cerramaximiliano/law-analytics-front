@@ -25,7 +25,7 @@ const NavItem = ({ item, level }: Props) => {
 	const matchesMD = useMediaQuery(theme.breakpoints.down("md"));
 
 	const { openComponent } = useSelector((state) => state.menu);
-
+	
 	let itemTarget: LinkTarget = "_self";
 	if (item.target) {
 		itemTarget = "_blank";
@@ -43,7 +43,6 @@ const NavItem = ({ item, level }: Props) => {
 	}
 
 	const itemHandler = (id: string) => {
-		console.log(id);
 		dispatch(activeComponent({ openComponent: id }));
 		matchesMD && dispatch(openComponentDrawer({ componentDrawerOpen: false }));
 	};

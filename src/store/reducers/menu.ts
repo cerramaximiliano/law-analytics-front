@@ -5,6 +5,7 @@ import axios from "utils/axios";
 
 // types
 import { MenuProps } from "types/menu";
+//import menuData from "data/menu";
 
 // initial state
 const initialState: MenuProps = {

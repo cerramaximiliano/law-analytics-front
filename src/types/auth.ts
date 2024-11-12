@@ -10,26 +10,39 @@ export type GuardProps = {
 };
 
 export type UserProfile = {
-	id?: string;
 	_id?: string;
-	email?: string;
-	avatar?: string;
-	image?: string;
-	firstName?: string;
-	lastName?: string;
-	name?: string;
-	role?: string;
-	tier?: string;
-	picture?: string;
-	dob?: string;
-	contact?: string;
-	designation?: string;
 	address?: string;
 	address1?: string;
+	avatar?: string;
+	contact?: string;
 	country?: string;
-	state?: string;
-	skill?: string[];
+	designation?: string;
+	dob?: string;
+	email?: string;
+	firstName?: string;
+	id?: string;
+	image?: string;
+	lastName?: string;
+	name?: string;
 	note?: string;
+	picture?: string;
+	role?: string;
+	skill?: string[];
+	state?: string;
+	subscription?: string;
+	tier?: string;
+	users?: User[];
+	url?: string;
+	zipCode?: string;
+};
+
+type User = {
+	userId: string;
+	name: string;
+	email: string;
+	role: string;
+	status: string;
+	avatar?: string;
 };
 
 export interface AuthProps {
@@ -39,6 +52,7 @@ export interface AuthProps {
 	email?: string;
 	token?: string | null;
 	needsVerification?: boolean;
+	plan?: string;
 }
 
 export interface AuthActionProps {

@@ -23,6 +23,8 @@ interface Props {
 }
 
 const NavItem = ({ item, level }: Props) => {
+	
+	console.log(item, level);
 	const theme = useTheme();
 	const downLG = useMediaQuery(theme.breakpoints.down("lg"));
 

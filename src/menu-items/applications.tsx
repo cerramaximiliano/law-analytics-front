@@ -97,7 +97,7 @@ const applications: NavItemType = {
 		},
 		{
 			id: "invoice",
-			title: <FormattedMessage id="invoice" />,
+			title: <FormattedMessage id="Facturación" />,
 			url: "/apps/invoice/dashboard",
 			type: "collapse",
 			icon: icons.invoice,
@@ -105,25 +105,25 @@ const applications: NavItemType = {
 			children: [
 				{
 					id: "create",
-					title: <FormattedMessage id="create" />,
+					title: <FormattedMessage id="Nueva" />,
 					type: "item",
 					url: "/apps/invoice/create",
 				},
 				{
 					id: "details",
-					title: <FormattedMessage id="details" />,
+					title: <FormattedMessage id="Detalles" />,
 					type: "item",
 					url: "/apps/invoice/details/1",
 				},
 				{
 					id: "list",
-					title: <FormattedMessage id="list" />,
+					title: <FormattedMessage id="Listados" />,
 					type: "item",
 					url: "/apps/invoice/list",
 				},
 				{
 					id: "edit",
-					title: <FormattedMessage id="edit" />,
+					title: <FormattedMessage id="Editar" />,
 					type: "item",
 					url: "/apps/invoice/edit/1",
 				},
@@ -131,20 +131,20 @@ const applications: NavItemType = {
 		},
 		{
 			id: "profile",
-			title: <FormattedMessage id="profile" />,
+			title: <FormattedMessage id="Perfil" />,
 			type: "collapse",
 			icon: icons.profile,
 			children: [
 				{
 					id: "user-profile",
-					title: <FormattedMessage id="user-profile" />,
+					title: <FormattedMessage id="Usuario" />,
 					type: "item",
 					url: "/apps/profiles/user/personal",
 					breadcrumbs: false,
 				},
 				{
 					id: "account-profile",
-					title: <FormattedMessage id="account-profile" />,
+					title: <FormattedMessage id="Cuenta" />,
 					type: "item",
 					url: "/apps/profiles/account/basic",
 				},
@@ -155,7 +155,7 @@ const applications: NavItemType = {
 			title: <FormattedMessage id="Suscripciones" />,
 			icon: icons.price,
 			type: "item",
-			url: "/price/price1",
+			url: "/suscripciones/tables",
 		},
 	],
 };

@@ -1,8 +1,21 @@
-import { useEffect, useState, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
+import axios from "axios";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { Box, Button, FormLabel, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, Stack, TextField, Typography } from "@mui/material";
+import {
+	Box,
+	Button,
+	FormLabel,
+	Grid,
+	InputLabel,
+	//MenuItem,
+	//Select,
+	//SelectChangeEvent,
+	Stack,
+	TextField,
+	Typography,
+} from "@mui/material";
 
 // third-party
 import { PatternFormat } from "react-number-format";
@@ -10,45 +23,72 @@ import { PatternFormat } from "react-number-format";
 // project-imports
 import Avatar from "components/@extended/Avatar";
 import MainCard from "components/MainCard";
-import { facebookColor, linkedInColor } from "config";
+//import { facebookColor, linkedInColor } from "config";
 
 // assets
-import { Apple, Camera, Facebook, Google } from "iconsax-react";
+import {
+	//Apple,
+	Camera,
+	//Facebook, Google
+} from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
+import { dispatch, useSelector } from "store";
+import { updatePicture } from "store/reducers/auth";
 
 const avatarImage = require.context("assets/images/users", true);
-
-// styles & constant
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-	PaperProps: {
-		style: {
-			maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-		},
-	},
-};
-
 // ==============================|| ACCOUNT PROFILE - PERSONAL ||============================== //
 
 const TabPersonal = () => {
 	const theme = useTheme();
+	const user = useSelector((state) => state.auth.user);
+	console.log(user);
+	const picture = user?.picture;
 	const [selectedImage, setSelectedImage] = useState<File | undefined>(undefined);
-	const [avatar, setAvatar] = useState<string | undefined>(avatarImage(`./default.png`));
+	const [avatar, setAvatar] = useState<string | undefined>(picture || avatarImage(`./default.png`));
+
+	const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		const userId = user?._id; // Obtén el userId desde el estado global o el contexto
+		if (file && userId) {
+			setSelectedImage(file); // Actualiza el estado para vista previa
+
+			// Crear un FormData para enviar el archivo y el userId al backend
+			const formData = new FormData();
+			formData.append("image", file);
+			formData.append("userId", userId); // Añade el userId al FormData
+
+			// Verificar que el FormData tiene el userId
+			console.log("FormData entries:", Array.from(formData.entries()));
+
+			try {
+				// Enviar la imagen al backend
+				const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/cloudinary/upload-avatar`, formData, {
+					headers: {
+						"Content-Type": "multipart/form-data",
+					},
+				});
+
+				// Actualiza la URL de avatar con la URL de Cloudinary
+				if (response.data?.url) {
+					const newPictureUrl = response.data.url;
+					setAvatar(newPictureUrl); // Actualiza la vista previa del avatar
+					dispatch(updatePicture(newPictureUrl));
+				}
+			} catch (error) {
+				console.error("Error al subir la imagen:", error);
+			}
+		} else {
+			console.warn("No se encontró un userId o archivo para enviar");
+		}
+	};
 
 	useEffect(() => {
 		if (selectedImage) {
 			setAvatar(URL.createObjectURL(selectedImage));
 		}
 	}, [selectedImage]);
-
-	const [experience, setExperience] = useState("0");
-
-	const handleChange = (event: SelectChangeEvent<string>) => {
-		setExperience(event.target.value);
-	};
 
 	return (
 		<Grid container spacing={3}>
@@ -96,61 +136,32 @@ const TabPersonal = () => {
 									placeholder="Outlined"
 									variant="outlined"
 									sx={{ display: "none" }}
-									onChange={(e: ChangeEvent<HTMLInputElement>) => setSelectedImage(e.target.files?.[0])}
+									onChange={handleImageUpload}
 								/>
 							</Stack>
 						</Grid>
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="personal-first-name">First Name</InputLabel>
-								<TextField fullWidth defaultValue="Anshan" id="personal-first-name" placeholder="First Name" autoFocus />
+								<InputLabel htmlFor="personal-first-name">Nombre</InputLabel>
+								<TextField fullWidth defaultValue={user?.firstName} id="personal-first-name" placeholder="Ingrese nombre" autoFocus />
 							</Stack>
 						</Grid>
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="personal-first-name">Last Name</InputLabel>
-								<TextField fullWidth defaultValue="Handgun" id="personal-first-name" placeholder="Last Name" />
+								<InputLabel htmlFor="personal-first-name">Apellido</InputLabel>
+								<TextField fullWidth defaultValue={user?.lastName} id="personal-first-name" placeholder="Ingrese apellido" />
 							</Stack>
 						</Grid>
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="personal-location">Country</InputLabel>
-								<TextField fullWidth defaultValue="New York" id="personal-location" placeholder="Location" />
+								<InputLabel htmlFor="personal-location">País</InputLabel>
+								<TextField fullWidth defaultValue={user?.country} id="personal-location" placeholder="País" />
 							</Stack>
 						</Grid>
 						<Grid item xs={12} sm={6}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="personal-zipcode">Zipcode</InputLabel>
-								<TextField fullWidth defaultValue="956754" id="personal-zipcode" placeholder="Zipcode" />
-							</Stack>
-						</Grid>
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="personal-location">Bio</InputLabel>
-								<TextField
-									fullWidth
-									multiline
-									rows={3}
-									defaultValue="Hello, I’m Anshan Handgun Creative Graphic Designer & User Experience Designer based in Website, I create digital Products a more Beautiful and usable place. Morbid accusant ipsum. Nam nec tellus at."
-									id="personal-location"
-									placeholder="Location"
-								/>
-							</Stack>
-						</Grid>
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="personal-experience">Experiance</InputLabel>
-								<Select fullWidth id="personal-experience" value={experience} onChange={handleChange} MenuProps={MenuProps}>
-									<MenuItem value="0">Start Up</MenuItem>
-									<MenuItem value="0.5">6 Months</MenuItem>
-									<MenuItem value="1">1 Year</MenuItem>
-									<MenuItem value="2">2 Years</MenuItem>
-									<MenuItem value="3">3 Years</MenuItem>
-									<MenuItem value="4">4 Years</MenuItem>
-									<MenuItem value="5">5 Years</MenuItem>
-									<MenuItem value="6">6 Years</MenuItem>
-									<MenuItem value="10">10+ Years</MenuItem>
-								</Select>
+								<InputLabel htmlFor="personal-zipcode">Código Postal</InputLabel>
+								<TextField fullWidth defaultValue={user?.zipCode} id="personal-zipcode" placeholder="Ingrese Código Postal" />
 							</Stack>
 						</Grid>
 					</Grid>
@@ -158,7 +169,7 @@ const TabPersonal = () => {
 			</Grid>
 			<Grid item xs={12} sm={6}>
 				<Grid container spacing={3}>
-					<Grid item xs={12}>
+					{/* 					<Grid item xs={12}>
 						<MainCard title="Social Network">
 							<Stack spacing={1}>
 								<Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -195,35 +206,21 @@ const TabPersonal = () => {
 								</Stack>
 							</Stack>
 						</MainCard>
-					</Grid>
+					</Grid> */}
 					<Grid item xs={12}>
-						<MainCard title="Contact Information">
+						<MainCard title="Información de Contacto">
 							<Grid container spacing={3}>
 								<Grid item xs={12} md={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-phone">Phone Number</InputLabel>
+										<InputLabel htmlFor="personal-phone">Teléfono</InputLabel>
 										<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-											<Select defaultValue="1-876">
-												<MenuItem value="91">+91</MenuItem>
-												<MenuItem value="1-671">1-671</MenuItem>
-												<MenuItem value="36">+36</MenuItem>
-												<MenuItem value="225">(255)</MenuItem>
-												<MenuItem value="39">+39</MenuItem>
-												<MenuItem value="1-876">1-876</MenuItem>
-												<MenuItem value="7">+7</MenuItem>
-												<MenuItem value="254">(254)</MenuItem>
-												<MenuItem value="373">(373)</MenuItem>
-												<MenuItem value="1-664">1-664</MenuItem>
-												<MenuItem value="95">+95</MenuItem>
-												<MenuItem value="264">(264)</MenuItem>
-											</Select>
 											<PatternFormat
 												format="+1 (###) ###-####"
 												mask="_"
 												fullWidth
 												customInput={TextField}
-												placeholder="Phone Number"
-												defaultValue="8654239581"
+												placeholder="Ingrese teléfono"
+												defaultValue={user?.contact}
 												onBlur={() => {}}
 												onChange={() => {}}
 											/>
@@ -232,25 +229,26 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} md={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-email">Email Address</InputLabel>
-										<TextField type="email" fullWidth defaultValue="stebin.ben@gmail.com" id="personal-email" placeholder="Email Address" />
-									</Stack>
-								</Grid>
-								<Grid item xs={12}>
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-email">Portfolio URL</InputLabel>
-										<TextField fullWidth defaultValue="https://anshan.dh.url" id="personal-url" placeholder="Portfolio URL" />
-									</Stack>
-								</Grid>
-								<Grid item xs={12}>
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-address">Address</InputLabel>
+										<InputLabel htmlFor="personal-email">Email</InputLabel>
 										<TextField
+											type="email"
 											fullWidth
-											defaultValue="Street 110-B Kalians Bag, Dewan, M.P. New York"
-											id="personal-address"
-											placeholder="Address"
+											defaultValue={user?.email}
+											id="personal-email"
+											placeholder="Ingrese correo electrónico"
 										/>
+									</Stack>
+								</Grid>
+								<Grid item xs={12}>
+									<Stack spacing={1.25}>
+										<InputLabel htmlFor="personal-email">URL</InputLabel>
+										<TextField fullWidth defaultValue={user?.url} id="personal-url" placeholder="Ingrese su URL" />
+									</Stack>
+								</Grid>
+								<Grid item xs={12}>
+									<Stack spacing={1.25}>
+										<InputLabel htmlFor="personal-address">Domicilio</InputLabel>
+										<TextField fullWidth defaultValue={user?.address} id="personal-address" placeholder="Ingrese un domicilio" />
 									</Stack>
 								</Grid>
 							</Grid>
@@ -261,9 +259,9 @@ const TabPersonal = () => {
 			<Grid item xs={12}>
 				<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
 					<Button variant="outlined" color="secondary">
-						Cancel
+						Cancelar
 					</Button>
-					<Button variant="contained">Update Profile</Button>
+					<Button variant="contained">Actualizar Perfil</Button>
 				</Stack>
 			</Grid>
 		</Grid>

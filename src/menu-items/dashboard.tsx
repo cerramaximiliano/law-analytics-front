@@ -17,7 +17,31 @@ const icons = {
 // ==============================|| MENU ITEMS - API ||============================== //
 
 export const Menu = () => {
-	const { menu } = useSelector((state) => state.menu);
+	let { menu } = useSelector((state) => state.menu);
+
+	menu = {
+		id: "group-dashboard",
+		title: "dashboard",
+		type: "group",
+		icon: "dashboard",
+		children: [
+			{
+				id: "dashboard",
+				title: "dashboard",
+				type: "collapse",
+				icon: "dashboard",
+				children: [
+					{
+						id: "default",
+						title: "Inicio",
+						type: "item",
+						url: "/dashboard/default",
+						breadcrumbs: false,
+					},
+				],
+			},
+		],
+	};
 
 	const SubChildrenLis = (SubChildrenLis: NavItemType[]) => {
 		return SubChildrenLis?.map((subList: NavItemType) => {

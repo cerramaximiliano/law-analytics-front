@@ -34,7 +34,6 @@ const Register = () => {
 				});
 
 				const data = await result.json();
-				console.log("Backend response:", data);
 
 				if (data.success) {
 					// Llama a la función de login para actualizar el estado de autenticación en el frontend
@@ -50,7 +49,6 @@ const Register = () => {
 	};
 
 	const errorMessage = (error?: any) => {
-		console.log(error);
 		setError("Error al iniciar sesión con Google. Intenta nuevamente.");
 	};
 
