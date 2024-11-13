@@ -1313,7 +1313,7 @@
 	],
 	"categorias": ["Cliente", "Contrario", "Mediador/Conciliador", "Causante", "Abogado", "Perito", "Entidad"],
 	"tipos": ["Humana", "Jurídica"],
-	"estadoCivil": ["Soltero", "Casado", "Viudo", "Conviviente"],
+	"estadoCivil": ["Soltero", "Casado", "Viudo", "Conviviente", "Divorciado"],
 	"idCodeSeguimiento": [
 		{ "label": "Correo Argentino", "item": "CC" },
 		{ "label": "Correo Argentino", "item": "CD" },

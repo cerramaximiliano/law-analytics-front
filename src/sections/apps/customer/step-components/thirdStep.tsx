@@ -25,8 +25,8 @@ const ThirdStep = () => {
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="nacionality">Nacionalidad</InputLabel>
-								<InputField fullWidth sx={customInputStyles} id="nacionality" name="nacionality" placeholder="Ingrese una Nacionalidad" />
+								<InputLabel htmlFor="nationality">Nacionalidad</InputLabel>
+								<InputField fullWidth sx={customInputStyles} id="nationality" name="nationality" placeholder="Ingrese una Nacionalidad" />
 							</Stack>
 						</Grid>
 

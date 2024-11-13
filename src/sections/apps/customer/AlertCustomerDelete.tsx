@@ -7,17 +7,28 @@ import { PopupTransition } from "components/@extended/Transitions";
 
 // assets
 import { Trash } from "iconsax-react";
+import { dispatch } from "store";
+import { deleteContact } from "store/reducers/contacts";
 
 // types
 interface Props {
 	title: string;
 	open: boolean;
 	handleClose: (status: boolean) => void;
+	id?: string;
 }
 
 // ==============================|| CUSTOMER - DELETE ||============================== //
 
-export default function AlertCustomerDelete({ title, open, handleClose }: Props) {
+export default function AlertCustomerDelete({ title, open, handleClose, id }: Props) {
+	console.log(title, id);
+	const handleClick = () => {
+		handleClose(true);
+		if (id) {
+			dispatch(deleteContact(id));
+		}
+	};
+
 	return (
 		<Dialog
 			open={open}
@@ -38,7 +49,7 @@ export default function AlertCustomerDelete({ title, open, handleClose }: Props)
 							¿Estás seguro que deseas eliminarlo?
 						</Typography>
 						<Typography align="center">
-							Eliminando la causa
+							Eliminando el elemento
 							<Typography variant="subtitle1" component="span">
 								{" "}
 								"{title}"{" "}
@@ -51,7 +62,15 @@ export default function AlertCustomerDelete({ title, open, handleClose }: Props)
 						<Button fullWidth onClick={() => handleClose(false)} color="secondary" variant="outlined">
 							Cancelar
 						</Button>
-						<Button fullWidth color="error" variant="contained" onClick={() => handleClose(true)} autoFocus>
+						<Button
+							fullWidth
+							color="error"
+							variant="contained"
+							onClick={() => {
+								handleClick();
+							}}
+							autoFocus
+						>
 							Eliminar
 						</Button>
 					</Stack>

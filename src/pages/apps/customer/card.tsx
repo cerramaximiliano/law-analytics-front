@@ -198,7 +198,7 @@ const CustomerCardPage = () => {
 				open={add}
 				sx={{ "& .MuiDialog-paper": { p: 0 } }}
 			>
-				<AddCustomer open={add} customer={customer} onCancel={handleAdd} onAddMember={() => {}} />
+				<AddCustomer open={add} customer={customer} onCancel={handleAdd} onAddMember={() => {}} mode="add" />
 			</Dialog>
 		</>
 	);

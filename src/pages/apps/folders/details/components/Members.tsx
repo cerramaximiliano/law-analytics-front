@@ -119,7 +119,7 @@ const Members: React.FC<MembersProps> = ({ title, membersData }) => {
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			>
-				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} />
+				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" />
 			</Dialog>
 			<ModalMembers open={openModal} setOpen={setOpenModal} handlerAddress={handlerAddress} />
 			<CardContent>

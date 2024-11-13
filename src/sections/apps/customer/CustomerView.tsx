@@ -3,9 +3,7 @@ import { useTheme } from "@mui/material/styles";
 import {
 	useMediaQuery,
 	Grid,
-	Chip,
 	Divider,
-	Link,
 	List,
 	ListItem,
 	ListItemIcon,
@@ -21,13 +19,10 @@ import { PatternFormat } from "react-number-format";
 
 // project-imports
 import MainCard from "components/MainCard";
-import Avatar from "components/@extended/Avatar";
 import Transitions from "components/@extended/Transitions";
 
 // assets
-import { Link2, Location, Mobile, Sms } from "iconsax-react";
-
-const avatarImage = require.context("assets/images/users", true);
+import { Location, Mobile, Sms } from "iconsax-react";
 
 // ==============================|| CUSTOMER - VIEW ||============================== //
 
@@ -42,45 +37,12 @@ const CustomerView = ({ data }: any) => {
 					<Grid container spacing={2.5} sx={{ pl: { xs: 0, sm: 5, md: 6, lg: 10, xl: 12 } }}>
 						<Grid item xs={12} sm={5} md={4} lg={4} xl={3}>
 							<MainCard>
-								<Chip
-									label={data.status}
-									size="small"
-									color="primary"
-									sx={{
-										position: "absolute",
-										right: 10,
-										top: 10,
-										fontSize: "0.675rem",
-									}}
-								/>
 								<Grid container spacing={3}>
 									<Grid item xs={12}>
 										<Stack spacing={2.5} alignItems="center">
-											<Avatar alt="Avatar 1" size="xl" src={avatarImage(`./avatar-${data.avatar}.png`)} />
 											<Stack spacing={0.5} alignItems="center">
-												<Typography variant="h5">{data.fatherName}</Typography>
+												<Typography variant="h5">{"Datos de Contacto	"}</Typography>
 												<Typography color="secondary">{data.role}</Typography>
-											</Stack>
-										</Stack>
-									</Grid>
-									<Grid item xs={12}>
-										<Divider />
-									</Grid>
-									<Grid item xs={12}>
-										<Stack direction="row" justifyContent="space-around" alignItems="center">
-											<Stack spacing={0.5} alignItems="center">
-												<Typography variant="h5">{data.age}</Typography>
-												<Typography color="secondary">Age</Typography>
-											</Stack>
-											<Divider orientation="vertical" flexItem />
-											<Stack spacing={0.5} alignItems="center">
-												<Typography variant="h5">{data.progress}%</Typography>
-												<Typography color="secondary">Progress</Typography>
-											</Stack>
-											<Divider orientation="vertical" flexItem />
-											<Stack spacing={0.5} alignItems="center">
-												<Typography variant="h5">{data.visits}</Typography>
-												<Typography color="secondary">Visits</Typography>
 											</Stack>
 										</Stack>
 									</Grid>
@@ -103,7 +65,7 @@ const CustomerView = ({ data }: any) => {
 												</ListItemIcon>
 												<ListItemSecondaryAction>
 													<Typography align="right">
-														<PatternFormat displayType="text" format="+1 (###) ###-####" mask="_" defaultValue={data.contact} />
+														<PatternFormat displayType="text" format="+1 (###) ###-####" mask="_" defaultValue={data.phone} />
 													</Typography>
 												</ListItemSecondaryAction>
 											</ListItem>
@@ -115,16 +77,6 @@ const CustomerView = ({ data }: any) => {
 													<Typography align="right">{data.country}</Typography>
 												</ListItemSecondaryAction>
 											</ListItem>
-											<ListItem>
-												<ListItemIcon>
-													<Link2 size={18} />
-												</ListItemIcon>
-												<ListItemSecondaryAction>
-													<Link align="right" href="https://google.com" target="_blank">
-														https://anshan.dh.url
-													</Link>
-												</ListItemSecondaryAction>
-											</ListItem>
 										</List>
 									</Grid>
 								</Grid>
@@ -132,21 +84,21 @@ const CustomerView = ({ data }: any) => {
 						</Grid>
 						<Grid item xs={12} sm={7} md={8} lg={8} xl={9}>
 							<Stack spacing={2.5}>
-								<MainCard title="Personal Details">
+								<MainCard title="Datos Personales">
 									<List sx={{ py: 0 }}>
 										<ListItem divider={!matchDownMD}>
 											<Grid container spacing={3}>
 												<Grid item xs={12} md={6}>
 													<Stack spacing={0.5}>
-														<Typography color="secondary">Full Name</Typography>
-														<Typography>{data.fatherName}</Typography>
+														<Typography color="secondary">Nombre</Typography>
+														<Typography>{data.name}</Typography>
 													</Stack>
 												</Grid>
 												<Grid item xs={12} md={6}>
 													<Stack spacing={0.5}>
-														<Typography color="secondary">Father Name</Typography>
+														<Typography color="secondary">Apellido</Typography>
 														<Typography>
-															Mr. {data.firstName} {data.lastName}
+															{data.firstName} {data.lastName}
 														</Typography>
 													</Stack>
 												</Grid>
@@ -156,32 +108,53 @@ const CustomerView = ({ data }: any) => {
 											<Grid container spacing={3}>
 												<Grid item xs={12} md={6}>
 													<Stack spacing={0.5}>
-														<Typography color="secondary">Country</Typography>
+														<Typography color="secondary">País</Typography>
 														<Typography>{data.country}</Typography>
 													</Stack>
 												</Grid>
 												<Grid item xs={12} md={6}>
 													<Stack spacing={0.5}>
-														<Typography color="secondary">Zip Code</Typography>
+														<Typography color="secondary">Código Postal</Typography>
 														<Typography>
-															<PatternFormat displayType="text" format="### ###" mask="_" defaultValue={data.contact} />
+															<PatternFormat displayType="text" format="### ###" mask="_" defaultValue={data.zipCode} />
 														</Typography>
 													</Stack>
 												</Grid>
 											</Grid>
 										</ListItem>
 										<ListItem>
-											<Stack spacing={0.5}>
-												<Typography color="secondary">Address</Typography>
-												<Typography>{data.address}</Typography>
-											</Stack>
+											<Grid container spacing={3}>
+												<Grid item xs={12} md={6}>
+													<Stack spacing={0.5}>
+														<Typography color="secondary">Domicilio</Typography>
+														<Typography>{data.address}</Typography>
+													</Stack>
+												</Grid>
+												<Grid item xs={12} md={6}>
+													<Stack spacing={0.5}>
+														<Typography color="secondary">Estado</Typography>
+														<Typography>{data.status}</Typography>
+													</Stack>
+												</Grid>
+											</Grid>
+										</ListItem>
+										<ListItem>
+											<Grid container spacing={3}>
+												<Grid item xs={12} md={6}>
+													<Stack spacing={0.5}>
+														<Typography color="secondary">DNI</Typography>
+														<Typography>{data.document}</Typography>
+													</Stack>
+												</Grid>
+												<Grid item xs={12} md={6}>
+													<Stack spacing={0.5}>
+														<Typography color="secondary">CUIT/CUIL</Typography>
+														<Typography>{data.cuit}</Typography>
+													</Stack>
+												</Grid>
+											</Grid>
 										</ListItem>
 									</List>
-								</MainCard>
-								<MainCard title="About me">
-									<Typography color="secondary">
-										Hello, I’m {data.fatherName} {data.role} based in international company, {data.about}
-									</Typography>
 								</MainCard>
 							</Stack>
 						</Grid>

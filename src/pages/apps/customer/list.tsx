@@ -2,20 +2,7 @@ import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } f
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
-import {
-	Button,
-	Chip,
-	Dialog,
-	Stack,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-	Typography,
-	useMediaQuery,
-} from "@mui/material";
+import { Button, Dialog, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography, useMediaQuery } from "@mui/material";
 
 // third-party
 import { PatternFormat } from "react-number-format";
@@ -37,7 +24,6 @@ import {
 // project-imports
 import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
-import Avatar from "components/@extended/Avatar";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
 import {
@@ -53,7 +39,6 @@ import AddCustomer from "sections/apps/customer/AddCustomer";
 import CustomerView from "sections/apps/customer/CustomerView";
 import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
 
-import makeData from "data/react-table";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
@@ -61,24 +46,25 @@ import { Add, UserAdd, Edit, Eye, Trash } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-
-const avatarImage = require.context("assets/images/users", true);
+import { dispatch, useSelector } from "store";
+import { getContactsByUserId } from "store/reducers/contacts";
+import { Contact } from "types/contact";
 
 // ==============================|| REACT TABLE ||============================== //
 
 interface Props {
 	columns: Column[];
-	data: [];
-	handleAdd: () => void;
+	data: Contact[];
 	renderRowSubComponent: FC<any>;
+	handleAddContact: () => void;
 }
 
-function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) {
+function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
-	const sortBy = { id: "fatherName", desc: false };
+	const sortBy = { id: "name", desc: false };
 
 	const {
 		getTableProps,
@@ -105,7 +91,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 			initialState: {
 				pageIndex: 0,
 				pageSize: 10,
-				hiddenColumns: ["avatar", "email"],
+				hiddenColumns: ["email", "lastName", "_id"],
 				sortBy: [sortBy],
 			},
 		},
@@ -119,9 +105,37 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 
 	useEffect(() => {
 		if (matchDownSM) {
-			setHiddenColumns(["age", "contact", "visits", "email", "status", "avatar"]);
+			setHiddenColumns([
+				"address",
+				"phone",
+				"lastName",
+				"email",
+				"status",
+				"state",
+				"_id",
+				"zipCode",
+				"nationality",
+				"document",
+				"cuit",
+				"activity",
+				"company",
+				"fiscal",
+			]);
 		} else {
-			setHiddenColumns(["avatar", "email"]);
+			setHiddenColumns([
+				"email",
+				"lastName",
+				"_id",
+				"address",
+				"state",
+				"zipCode",
+				"nationality",
+				"document",
+				"cuit",
+				"activity",
+				"company",
+				"fiscal",
+			]);
 		}
 		// eslint-disable-next-line
 	}, [matchDownSM]);
@@ -140,12 +154,18 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 					<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
 						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<Button variant="contained" startIcon={<UserAdd />} onClick={handleAdd} size="small">
+						<Button
+							variant="contained"
+							startIcon={<UserAdd />}
+							onClick={handleAddContact} // Usando la nueva función sin argumentos
+							size="small"
+						>
 							Agregar Contacto
 						</Button>
+
 						<CSVExport
 							data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data}
-							filename={"customer-list.csv"}
+							filename={"contact-list.csv"}
 						/>
 					</Stack>
 				</Stack>
@@ -203,20 +223,50 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 const CustomerListPage = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
-	const data = useMemo(() => makeData(200), []);
 	const [open, setOpen] = useState<boolean>(false);
 	const [customer, setCustomer] = useState<any>(null);
 	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
+	const [customerId, setCustomerId] = useState<any>("");
 	const [add, setAdd] = useState<boolean>(false);
 
-	const handleAdd = () => {
-		setAdd(!add);
-		if (customer && !add) setCustomer(null);
+	const handleCloseDialog = () => {
+		setAdd(false);
+	};
+
+	const [addCustomerMode, setAddCustomerMode] = useState<"add" | "edit">("add");
+
+	const handleAddContact = () => {
+		setAdd(true);
+		setAddCustomerMode("add");
+		setCustomer(null);
+	};
+
+	// Nueva función específica para manejar la edición de un contacto
+	const handleEditContact = (customer: any) => {
+		setAdd(true);
+		setAddCustomerMode("edit");
+		setCustomer(customer);
 	};
 
 	const handleClose = () => {
 		setOpen(!open);
 	};
+
+	const user = useSelector((state) => state.auth.user);
+	const userId = user?._id;
+	const contacts = useSelector((state) => state.contacts.contacts);
+
+	useEffect(() => {
+		if (userId) {
+			(async () => {
+				try {
+					dispatch(getContactsByUserId(userId));
+				} catch (error) {
+					console.log(error);
+				}
+			})();
+		}
+	}, [userId]);
 
 	const columns = useMemo(
 		() => [
@@ -230,20 +280,14 @@ const CustomerListPage = () => {
 				disableSortBy: true,
 			},
 			{
-				Header: "#",
-				accessor: "id",
-				className: "cell-center",
-			},
-			{
-				Header: "Customer Name",
-				accessor: "fatherName",
+				Header: "Nombre",
+				accessor: "name",
 				Cell: ({ row }: { row: Row }) => {
 					const { values } = row;
 					return (
 						<Stack direction="row" spacing={1.5} alignItems="center">
-							<Avatar alt="Avatar 1" size="sm" src={avatarImage(`./avatar-${!values.avatar ? 1 : values.avatar}.png`)} />
 							<Stack spacing={0}>
-								<Typography variant="subtitle1">{values.fatherName}</Typography>
+								<Typography variant="subtitle1">{`${values.name} ${values.lastName}`}</Typography>
 								<Typography color="text.secondary">{values.email}</Typography>
 							</Stack>
 						</Stack>
@@ -251,47 +295,81 @@ const CustomerListPage = () => {
 				},
 			},
 			{
-				Header: "Avatar",
-				accessor: "avatar",
-				disableSortBy: true,
-			},
-			{
 				Header: "Email",
 				accessor: "email",
 			},
 			{
-				Header: "Contact",
-				accessor: "contact",
-				Cell: ({ value }: { value: number }) => (
-					<PatternFormat displayType="text" format="+1 (###) ###-####" mask="_" defaultValue={value} />
+				Header: "Nacionalidad",
+				accessor: "nationality",
+			},
+
+			{
+				Header: "DNI",
+				accessor: "document",
+			},
+			{
+				Header: "CUIT/CUIL",
+				accessor: "cuit",
+			},
+			{
+				Header: "Actividad",
+				accessor: "activity",
+			},
+			{
+				Header: "Empresa",
+				accessor: "company",
+			},
+			{
+				Header: "Fiscal",
+				accessor: "fiscal",
+			},
+			{
+				Header: "Provincia",
+				accessor: "state",
+			},
+			{
+				Header: "Código Postal",
+				accessor: "zipCode",
+			},
+
+			{
+				Header: "Rol",
+				accessor: "role",
+			},
+			{
+				Header: "Apellido",
+				accessor: "lastName",
+			},
+			{
+				Header: "Teléfono",
+				accessor: "phone",
+				Cell: ({ value }: { value: string }) => (
+					<PatternFormat displayType="text" format="+54 (###) ###-####" mask="_" defaultValue={value} />
 				),
 			},
 			{
-				Header: "Age",
-				accessor: "age",
-				className: "cell-right",
+				Header: "Ciudad",
+				accessor: "city",
 			},
 			{
-				Header: "Country",
-				accessor: "country",
+				Header: "Domicilio",
+				accessor: "address",
 			},
+
 			{
-				Header: "Status",
+				Header: "Estado",
 				accessor: "status",
-				Cell: ({ value }: { value: string }) => {
-					switch (value) {
-						case "Complicated":
-							return <Chip color="error" label="Complicated" size="small" variant="light" />;
-						case "Relationship":
-							return <Chip color="success" label="Relationship" size="small" variant="light" />;
-						case "Single":
-						default:
-							return <Chip color="info" label="Single" size="small" variant="light" />;
-					}
-				},
 			},
 			{
-				Header: "Actions",
+				Header: "Tipo",
+				accessor: "type",
+			},
+			{
+				Header: "id",
+				accessor: "_id",
+			},
+			{
+				Header: "Acciones",
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: { row: Row<{}> }) => {
@@ -307,7 +385,7 @@ const CustomerListPage = () => {
 										},
 									},
 								}}
-								title="View"
+								title="Ver"
 							>
 								<IconButton
 									color="secondary"
@@ -328,14 +406,14 @@ const CustomerListPage = () => {
 										},
 									},
 								}}
-								title="Edit"
+								title="Editar"
 							>
 								<IconButton
 									color="primary"
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
+										console.log(row);
 										e.stopPropagation();
-										setCustomer(row.values);
-										handleAdd();
+										handleEditContact(row.values);
 									}}
 								>
 									<Edit />
@@ -350,14 +428,16 @@ const CustomerListPage = () => {
 										},
 									},
 								}}
-								title="Delete"
+								title="Eliminar"
 							>
 								<IconButton
 									color="error"
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										handleClose();
-										setCustomerDeleteId(row.values.id);
+										console.log(row.values);
+										setCustomerDeleteId(`${row.values.name} ${row.values.lastName}`);
+										setCustomerId(row.values._id);
 									}}
 								>
 									<Trash />
@@ -371,27 +451,26 @@ const CustomerListPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[theme],
 	);
-
-	const renderRowSubComponent = useCallback(({ row }: { row: Row<{}> }) => <CustomerView data={data[Number(row.id)]} />, [data]);
+	/* Renderiza la vista ampliada del elemento seleccionado  */
+	const renderRowSubComponent = useCallback(({ row }: { row: Row<{}> }) => <CustomerView data={contacts[Number(row.id)]} />, [contacts]);
 
 	return (
 		<MainCard content={false}>
 			<ScrollX>
-				<ReactTable columns={columns} data={data} handleAdd={handleAdd} renderRowSubComponent={renderRowSubComponent} />
+				<ReactTable columns={columns} data={contacts} renderRowSubComponent={renderRowSubComponent} handleAddContact={handleAddContact} />
 			</ScrollX>
-			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} />
+			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} id={customerId} />
 			{/* add customer dialog */}
 			<Dialog
 				maxWidth="sm"
 				TransitionComponent={PopupTransition}
 				keepMounted
 				fullWidth
-				onClose={handleAdd}
 				open={add}
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			>
-				<AddCustomer open={add} customer={customer} onCancel={handleAdd} onAddMember={() => {}} />
+				<AddCustomer open={add} customer={customer} mode={addCustomerMode} onCancel={handleCloseDialog} onAddMember={() => {}} />
 			</Dialog>
 		</MainCard>
 	);

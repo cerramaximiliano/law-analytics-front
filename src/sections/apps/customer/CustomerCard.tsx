@@ -247,7 +247,7 @@ const CustomerCard = ({ customer }: { customer: UserCardProps }) => {
 				open={add}
 				sx={{ "& .MuiDialog-paper": { p: 0 } }}
 			>
-				<AddCustomer open={add} customer={customer} onCancel={handleAdd} onAddMember={() => {}} />
+				<AddCustomer open={add} customer={customer} onCancel={handleAdd} onAddMember={() => {}} mode="add" />
 			</Dialog>
 			<CustomerPreview customer={customer} open={open} onClose={handleClose} />
 			<AlertCustomerDelete title={customer.fatherName} open={openAlert} handleClose={handleAlertClose} />

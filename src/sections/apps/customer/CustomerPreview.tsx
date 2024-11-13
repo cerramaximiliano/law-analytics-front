@@ -292,7 +292,7 @@ export default function CustomerPreview({ customer, open, onClose }: { customer:
 				open={add}
 				sx={{ "& .MuiDialog-paper": { p: 0 } }}
 			>
-				<AddCustomer open={add} customer={customer} onCancel={handleAdd} onAddMember={() => {}} />
+				<AddCustomer open={add} customer={customer} onCancel={handleAdd} onAddMember={() => {}} mode="add" />
 			</Dialog>
 
 			<AlertCustomerDelete title={customer.fatherName} open={openAlert} handleClose={handleClose} />
