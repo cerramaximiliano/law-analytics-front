@@ -210,7 +210,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 					title={`${customer.name} ${customer.lastName}`}
 					open={openAlert}
 					handleClose={handleAlertClose}
-					id={customer.id}
+					id={customer._id}
 				/>
 			)}
 		</>
