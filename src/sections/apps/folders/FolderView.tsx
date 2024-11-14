@@ -21,14 +21,15 @@ import Transitions from "components/@extended/Transitions";
 
 // assets
 import { Chart, DollarSquare, TaskSquare, SmsNotification, FolderCross } from "iconsax-react";
+import { memo } from "react";
 
 // ==============================|| CUSTOMER - VIEW ||============================== //
 
-const FolderView = ({ data }: any) => {
+const FolderView = memo(({ data }: any) => {
 	const theme = useTheme();
 	const matchDownMD = useMediaQuery(theme.breakpoints.down("md"));
 	const notAvailableMsg = "No disponible";
-	console.log(data);
+
 	return (
 		<TableRow sx={{ "&:hover": { bgcolor: `transparent !important` }, overflow: "hidden" }}>
 			<TableCell colSpan={8} sx={{ p: 2.5, overflow: "hidden" }}>
@@ -165,6 +166,6 @@ const FolderView = ({ data }: any) => {
 			</TableCell>
 		</TableRow>
 	);
-};
+});
 
 export default FolderView;

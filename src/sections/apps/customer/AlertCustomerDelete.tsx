@@ -21,7 +21,6 @@ interface Props {
 // ==============================|| CUSTOMER - DELETE ||============================== //
 
 export default function AlertCustomerDelete({ title, open, handleClose, id }: Props) {
-	console.log(title, id);
 	const handleClick = () => {
 		handleClose(true);
 		if (id) {

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 
 // material-ui
-import { Button, DialogActions, DialogTitle, Divider, Grid, Stack, Tooltip } from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { Button, DialogActions, DialogTitle, Divider, Grid, Stack, Tooltip, Zoom } from "@mui/material";
 
 // third-party
 import _ from "lodash";
@@ -11,11 +9,14 @@ import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
 
 // project-imports
-import AlertCustomerDelete from "./AlertCustomerDelete";
 import IconButton from "components/@extended/IconButton";
 import { Trash } from "iconsax-react";
 import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
+import { useSelector, dispatch } from "store";
+import { addFolder, updateFolder } from "store/reducers/folders";
+import { enqueueSnackbar } from "notistack";
+import AlertFolderDelete from "./AlertFolderDelete";
 
 const getInitialValues = (folder: FormikValues | null) => {
 	const newFolder = {
@@ -26,11 +27,16 @@ const getInitialValues = (folder: FormikValues | null) => {
 		materia: null,
 		initialDateFolder: "",
 		finalDateFolder: "",
-		folderJuris: null,
+		folderJurisItem: "",
+		folderJurisLabel: "",
 		folderFuero: null,
 	};
 	if (folder) {
-		return _.merge({}, newFolder, folder);
+		return _.merge({}, newFolder, {
+			...folder,
+			folderJurisItem: folder?.folderJuris?.item ?? "",
+			folderJurisLabel: folder?.folderJuris?.label ?? "",
+		});
 	}
 	return newFolder;
 };
@@ -47,15 +53,18 @@ function getStepContent(step: number, values: any) {
 }
 
 export interface Props {
-	customer?: any;
+	folder?: any;
 	onCancel: () => void;
+	onAddFolder: (folder: any) => void;
 	open: boolean; // Add this prop to detect modal open state
+	mode: "add" | "edit";
 }
 
-const AddFolder = ({ customer, onCancel, open }: Props) => {
-	const isCreating = !customer;
+const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: Props) => {
+	const auth = useSelector((state) => state.auth);
+	const isCreating = mode === "add";
 
-	const CustomerSchema = [
+	const FolderSchema = [
 		Yup.object().shape({
 			folderName: Yup.string().max(255).required("La carátula es requerida"),
 			materia: Yup.string().max(255).required("La materia es requerida"),
@@ -81,11 +90,13 @@ const AddFolder = ({ customer, onCancel, open }: Props) => {
 		}),
 	];
 
+	const [initialValues, setInitialValues] = useState(getInitialValues(folder));
+
 	const steps = ["Datos requeridos", "Cálculos opcionales"];
 	const [openAlert, setOpenAlert] = useState(false);
 	const [activeStep, setActiveStep] = useState(0);
-	const currentValidationSchema = CustomerSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
+	const currentValidationSchema = FolderSchema[activeStep];
 
 	const handleAlertClose = () => {
 		setOpenAlert(!openAlert);
@@ -94,23 +105,60 @@ const AddFolder = ({ customer, onCancel, open }: Props) => {
 
 	useEffect(() => {
 		if (open) {
-			setActiveStep(0); // Reset step to 0 when modal opens
+			const timer = setTimeout(() => {
+				setActiveStep(0);
+			}, 0);
+			return () => clearTimeout(timer);
 		}
 	}, [open]);
 
-	const initialValues = getInitialValues(customer!);
+	// Actualiza los valores iniciales cuando `customer` cambie
+	useEffect(() => {
+		if (folder) {
+			setInitialValues(getInitialValues(folder));
+		}
+	}, [folder]);
 
-	async function _submitForm(values: any, actions: any) {
-		alert(JSON.stringify(values, null, 2));
+	async function _submitForm(values: any, actions: any, mode: string | undefined) {
+		const userId = auth.user?._id;
+		const id = values._id;
+		setActiveStep(0);
+		let results;
+		let message;
+		if (mode === "add") {
+			results = await dispatch(addFolder({ ...values, userId }));
+			message = "agregar";
+		}
+		if (mode === "edit") {
+			results = await dispatch(updateFolder(id, values));
+			message = "editar";
+		}
+
+		if (results && results.success) {
+			enqueueSnackbar(`Éxito al ${message} la causa`, {
+				variant: "success",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				TransitionComponent: Zoom,
+				autoHideDuration: 3000,
+			});
+		} else {
+			enqueueSnackbar(`Error al ${message} la causa`, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				TransitionComponent: Zoom,
+				autoHideDuration: 3000,
+			});
+		}
+
 		actions.setSubmitting(false);
 		setActiveStep(activeStep + 1);
+		onAddFolder(values);
 	}
 
 	function _handleSubmit(values: any, actions: any) {
 		if (isLastStep) {
-			_submitForm(values, actions);
+			_submitForm(values, actions, mode);
 			onCancel();
-			setActiveStep(0);
 		} else {
 			setActiveStep(activeStep + 1);
 			actions.setTouched({});
@@ -120,47 +168,45 @@ const AddFolder = ({ customer, onCancel, open }: Props) => {
 
 	return (
 		<>
-			<LocalizationProvider dateAdapter={AdapterDateFns}>
-				<DialogTitle>{customer ? "Editar Causa" : "Nueva Causa"}</DialogTitle>
-				<Divider />
+			<DialogTitle>{isCreating ? "Nueva Causa" : "Editar Causa"}</DialogTitle>
+			<Divider />
 
-				<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
-					{({ isSubmitting, values }) => {
-						return (
-							<Form autoComplete="off" noValidate>
-								{getStepContent(activeStep, values)}
-								<Divider />
-								<DialogActions sx={{ p: 2.5 }}>
-									<Grid container justifyContent="space-between" alignItems="center">
-										<Grid item>
-											{!isCreating && (
-												<Tooltip title="Eliminar Causa" placement="top">
-													<IconButton onClick={() => setOpenAlert(true)} size="large" color="error">
-														<Trash variant="Bold" />
-													</IconButton>
-												</Tooltip>
-											)}
-										</Grid>
-										<Grid item>
-											<Stack direction="row" spacing={2} alignItems="center">
-												<Button color="error" onClick={onCancel}>
-													Cancelar
-												</Button>
-												<Button type="submit" variant="contained" disabled={isSubmitting}>
-													{customer && isLastStep && "Editar"}
-													{!customer && isLastStep && "Crear"}
-													{!isLastStep && "Siguiente"}
-												</Button>
-											</Stack>
-										</Grid>
+			<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
+				{({ isSubmitting, values }) => {
+					return (
+						<Form autoComplete="off" noValidate>
+							{getStepContent(activeStep, values)}
+							<Divider />
+							<DialogActions sx={{ p: 2.5 }}>
+								<Grid container justifyContent="space-between" alignItems="center">
+									<Grid item>
+										{!isCreating && (
+											<Tooltip title="Eliminar Causa" placement="top">
+												<IconButton onClick={() => setOpenAlert(true)} size="large" color="error">
+													<Trash variant="Bold" />
+												</IconButton>
+											</Tooltip>
+										)}
 									</Grid>
-								</DialogActions>
-							</Form>
-						);
-					}}
-				</Formik>
-			</LocalizationProvider>
-			{!isCreating && <AlertCustomerDelete title={customer.fatherName} open={openAlert} handleClose={handleAlertClose} />}
+									<Grid item>
+										<Stack direction="row" spacing={2} alignItems="center">
+											<Button color="error" onClick={onCancel}>
+												Cancelar
+											</Button>
+											<Button type="submit" variant="contained" disabled={isSubmitting}>
+												{folder && isLastStep && "Editar"}
+												{!folder && isLastStep && "Crear"}
+												{!isLastStep && "Siguiente"}
+											</Button>
+										</Stack>
+									</Grid>
+								</Grid>
+							</DialogActions>
+						</Form>
+					);
+				}}
+			</Formik>
+			{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
 		</>
 	);
 };

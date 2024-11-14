@@ -30,7 +30,7 @@ import FolderView from "sections/apps/folders/FolderView";
 
 import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
 
-import makeData from "data/react-table";
+//import makeData from "data/react-table";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
@@ -38,12 +38,14 @@ import { Add, FolderAdd, Edit, Eye, Trash, Maximize } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-
+import { dispatch, useSelector } from "store";
+import { getFoldersByUserId } from "store/reducers/folders";
+import { Folder } from "types/folders";
 // ==============================|| REACT TABLE ||============================== //
 
 interface Props {
 	columns: Column[];
-	data: [];
+	data: Folder[];
 	handleAdd: () => void;
 	renderRowSubComponent: FC<any>;
 }
@@ -180,21 +182,61 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 const FoldersLayout = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
-	const data = useMemo(() => makeData(20), []);
-	console.log(data);
+
 	const [open, setOpen] = useState<boolean>(false);
-	const [customer, setCustomer] = useState<any>(null);
-	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
+	const [folder, setFolder] = useState<any>(null);
+	const [folderDeleteId, setFolderDeleteId] = useState<any>("");
+	const [folderId, setFolderId] = useState<any>("");
 	const [add, setAdd] = useState<boolean>(false);
 
-	const handleAdd = () => {
-		setAdd(!add);
-		if (customer && !add) setCustomer(null);
+	const handleCloseDialog = () => {
+		setAdd(false);
+	};
+
+	const [addFolderMode, setAddFolderMode] = useState<"add" | "edit">("add");
+
+	const handleAddFolder = () => {
+		setAdd(true);
+		setAddFolderMode("add");
+		setFolder(null);
+	};
+
+	const handleEditContact = (customer: any) => {
+		setAdd(true);
+		setAddFolderMode("edit");
+		setFolder(folder);
 	};
 
 	const handleClose = () => {
 		setOpen(!open);
 	};
+
+	const user = useSelector((state) => state.auth.user);
+	const userId = user?._id;
+	const folders = useSelector((state) => state.folders.folders);
+
+	const fetchFolders = useCallback(async () => {
+		if (userId) {
+			try {
+				await dispatch(getFoldersByUserId(userId));
+			} catch (error) {
+				console.error(error);
+			}
+		}
+	}, [userId]);
+
+	useEffect(() => {
+		let mounted = true;
+
+		if (mounted) {
+			fetchFolders();
+		}
+
+		return () => {
+			mounted = false;
+		};
+	}, [fetchFolders]);
+
 	const navigate = useNavigate();
 	const columns = useMemo(
 		() => [
@@ -235,7 +277,11 @@ const FoldersLayout = () => {
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: { row: Row<{}> }) => {
-					const collapseIcon = row.isExpanded ? <Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} /> : <Eye />;
+					const collapseIcon = row.isExpanded ? (
+						<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
+					) : (
+						<Eye variant="Bulk" />
+					);
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
 							<Tooltip
@@ -274,8 +320,7 @@ const FoldersLayout = () => {
 									color="primary"
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
-										setCustomer(row.values);
-										handleAdd();
+										handleEditContact(row.values);
 									}}
 								>
 									<Edit />
@@ -297,10 +342,11 @@ const FoldersLayout = () => {
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										handleClose();
-										setCustomerDeleteId(row.values.id);
+										setFolderDeleteId(row.values.folderName);
+										setFolderId(row.values._id);
 									}}
 								>
-									<Trash />
+									<Trash variant="Bulk" />
 								</IconButton>
 							</Tooltip>
 							<Tooltip
@@ -334,27 +380,39 @@ const FoldersLayout = () => {
 		[theme],
 	);
 
-	const renderRowSubComponent = useCallback(({ row }: { row: Row<{}> }) => <FolderView data={data[Number(row.id)]} />, [data]);
+	const renderRowSubComponent = useCallback(
+		({ row }: { row: Row<{}> }) => {
+			const folderData = folders[Number(row.id)];
+			return folderData ? <FolderView data={folderData} /> : null;
+		},
+		[], // Remove folders dependency since it's coming from useSelector
+	);
 
-	return (
-		<MainCard content={false}>
-			<ScrollX>
-				<ReactTable columns={columns} data={data} handleAdd={handleAdd} renderRowSubComponent={renderRowSubComponent} />
-			</ScrollX>
-			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} />
-			{/* add customer dialog */}
+	const renderAddFolder = useMemo(() => {
+		if (!add) return null;
+		return (
 			<Dialog
 				maxWidth="sm"
 				TransitionComponent={PopupTransition}
 				keepMounted
 				fullWidth
-				onClose={handleAdd}
 				open={add}
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			>
-				<AddFolder open={add} customer={customer} onCancel={handleAdd} />
+				<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={() => {}} />
 			</Dialog>
+		);
+	}, [add, folder]);
+
+	return (
+		<MainCard content={false}>
+			<ScrollX>
+				<ReactTable columns={columns} data={folders} handleAdd={handleAddFolder} renderRowSubComponent={renderRowSubComponent} />
+			</ScrollX>
+			<AlertCustomerDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} />
+			{/* add folder dialog */}
+			{renderAddFolder}
 		</MainCard>
 	);
 };

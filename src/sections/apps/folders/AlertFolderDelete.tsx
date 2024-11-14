@@ -13,11 +13,12 @@ interface Props {
 	title: string;
 	open: boolean;
 	handleClose: (status: boolean) => void;
+	id?: string;
 }
 
 // ==============================|| CUSTOMER - DELETE ||============================== //
 
-export default function AlertCustomerDelete({ title, open, handleClose }: Props) {
+export default function AlertFolderDelete({ title, open, handleClose, id }: Props) {
 	return (
 		<Dialog
 			open={open}

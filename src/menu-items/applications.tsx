@@ -89,7 +89,7 @@ const applications: NavItemType = {
 			children: [
 				{
 					id: "customer-list",
-					title: <FormattedMessage id="Clientes" />,
+					title: <FormattedMessage id="contactos" />,
 					type: "item",
 					url: "/apps/customer/customer-list",
 				},

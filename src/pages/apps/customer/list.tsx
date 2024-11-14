@@ -42,13 +42,14 @@ import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, UserAdd, Edit, Eye, Trash } from "iconsax-react";
+import { Add, UserAdd, Edit2, Eye, Trash, Link1 } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
 import { dispatch, useSelector } from "store";
 import { getContactsByUserId } from "store/reducers/contacts";
 import { Contact } from "types/contact";
+import LinkToCause from "sections/apps/customer/LinkToCause";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -223,6 +224,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 const CustomerListPage = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
+	
 	const [open, setOpen] = useState<boolean>(false);
 	const [customer, setCustomer] = useState<any>(null);
 	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
@@ -231,6 +233,14 @@ const CustomerListPage = () => {
 
 	const handleCloseDialog = () => {
 		setAdd(false);
+	};
+
+	const [link, setLink] = useState<boolean>(false);
+	const handleOpenLink = () => setLink(true);
+	const handleCloseLink = () => setLink(false);
+
+	const handleLink = () => {
+		console.log(true);
 	};
 
 	const [addCustomerMode, setAddCustomerMode] = useState<"add" | "edit">("add");
@@ -373,7 +383,11 @@ const CustomerListPage = () => {
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: { row: Row<{}> }) => {
-					const collapseIcon = row.isExpanded ? <Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} /> : <Eye />;
+					const collapseIcon = row.isExpanded ? (
+						<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
+					) : (
+						<Eye variant="Bulk" />
+					);
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
 							<Tooltip
@@ -406,6 +420,28 @@ const CustomerListPage = () => {
 										},
 									},
 								}}
+								title="Vincular"
+							>
+								<IconButton
+									color="success"
+									onClick={(e: MouseEvent<HTMLButtonElement>) => {
+										console.log(row);
+										e.stopPropagation();
+										handleOpenLink();
+									}}
+								>
+									<Link1 variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								componentsProps={{
+									tooltip: {
+										sx: {
+											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
+											opacity: 0.9,
+										},
+									},
+								}}
 								title="Editar"
 							>
 								<IconButton
@@ -416,7 +452,7 @@ const CustomerListPage = () => {
 										handleEditContact(row.values);
 									}}
 								>
-									<Edit />
+									<Edit2 variant="Bulk" />
 								</IconButton>
 							</Tooltip>
 							<Tooltip
@@ -435,12 +471,11 @@ const CustomerListPage = () => {
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										handleClose();
-										console.log(row.values);
 										setCustomerDeleteId(`${row.values.name} ${row.values.lastName}`);
 										setCustomerId(row.values._id);
 									}}
 								>
-									<Trash />
+									<Trash variant="Bulk" />
 								</IconButton>
 							</Tooltip>
 						</Stack>
@@ -471,6 +506,7 @@ const CustomerListPage = () => {
 				aria-describedby="alert-dialog-slide-description"
 			>
 				<AddCustomer open={add} customer={customer} mode={addCustomerMode} onCancel={handleCloseDialog} onAddMember={() => {}} />
+				<LinkToCause openLink={link} onCancelLink={handleCloseLink} onLink={handleLink} />
 			</Dialog>
 		</MainCard>
 	);

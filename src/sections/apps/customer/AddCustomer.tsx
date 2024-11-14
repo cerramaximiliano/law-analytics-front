@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { Button, DialogActions, DialogTitle, Divider, Grid, Stack, Tooltip, Zoom } from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import _ from "lodash";
 import * as Yup from "yup";
 import { Formik, Form, FormikValues } from "formik";
@@ -167,44 +165,42 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 	return (
 		<>
-			<LocalizationProvider dateAdapter={AdapterDateFns}>
-				<DialogTitle>{isCreating ? "Agregar Nuevo" : "Editar"}</DialogTitle>
-				<Divider />
+			<DialogTitle>{isCreating ? "Agregar Nuevo" : "Editar"}</DialogTitle>
+			<Divider />
 
-				<Formik initialValues={initialValues} enableReinitialize validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
-					{({ isSubmitting, values }) => (
-						<Form autoComplete="off" noValidate>
-							{getStepContent(activeStep, values)}
-							<Divider />
-							<DialogActions sx={{ p: 2.5 }}>
-								<Grid container justifyContent="space-between" alignItems="center">
-									<Grid item>
-										{!isCreating && (
-											<Tooltip title="Eliminar" placement="top">
-												<IconButton onClick={() => setOpenAlert(true)} size="large" color="error">
-													<Trash variant="Bold" />
-												</IconButton>
-											</Tooltip>
-										)}
-									</Grid>
-									<Grid item>
-										<Stack direction="row" spacing={2} alignItems="center">
-											<Button color="error" onClick={onCancel}>
-												Cancelar
-											</Button>
-											<Button type="submit" variant="contained" disabled={isSubmitting}>
-												{customer && isLastStep && "Editar"}
-												{!customer && isLastStep && "Crear"}
-												{!isLastStep && "Siguiente"}
-											</Button>
-										</Stack>
-									</Grid>
+			<Formik initialValues={initialValues} enableReinitialize validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
+				{({ isSubmitting, values }) => (
+					<Form autoComplete="off" noValidate>
+						{getStepContent(activeStep, values)}
+						<Divider />
+						<DialogActions sx={{ p: 2.5 }}>
+							<Grid container justifyContent="space-between" alignItems="center">
+								<Grid item>
+									{!isCreating && (
+										<Tooltip title="Eliminar" placement="top">
+											<IconButton onClick={() => setOpenAlert(true)} size="large" color="error">
+												<Trash variant="Bold" />
+											</IconButton>
+										</Tooltip>
+									)}
 								</Grid>
-							</DialogActions>
-						</Form>
-					)}
-				</Formik>
-			</LocalizationProvider>
+								<Grid item>
+									<Stack direction="row" spacing={2} alignItems="center">
+										<Button color="error" onClick={onCancel}>
+											Cancelar
+										</Button>
+										<Button type="submit" variant="contained" disabled={isSubmitting}>
+											{customer && isLastStep && "Editar"}
+											{!customer && isLastStep && "Crear"}
+											{!isLastStep && "Siguiente"}
+										</Button>
+									</Stack>
+								</Grid>
+							</Grid>
+						</DialogActions>
+					</Form>
+				)}
+			</Formik>
 			{!isCreating && (
 				<AlertCustomerDelete
 					title={`${customer.name} ${customer.lastName}`}
