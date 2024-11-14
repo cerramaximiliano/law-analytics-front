@@ -16,6 +16,7 @@ import {
 	HeaderGroup,
 	Row,
 	Cell,
+	HeaderProps,
 } from "react-table";
 
 // project-imports
@@ -23,12 +24,19 @@ import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
-import { CSVExport, EmptyTable, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
+import {
+	IndeterminateCheckbox,
+	CSVExport,
+	EmptyTable,
+	HeaderSort,
+	SortingSelect,
+	TablePagination,
+	TableRowSelection,
+} from "components/third-party/ReactTable";
 
 import AddFolder from "sections/apps/folders/AddFolder";
 import FolderView from "sections/apps/folders/FolderView";
-
-import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
+import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 
 //import makeData from "data/react-table";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
@@ -96,9 +104,22 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 
 	useEffect(() => {
 		if (matchDownSM) {
-			setHiddenColumns(["age", "contact", "visits", "email", "status", "avatar"]);
+			setHiddenColumns([
+				"age",
+				"contact",
+				"visits",
+				"email",
+				"status",
+				"avatar",
+				"_id",
+				"description",
+				"initialDateFolder",
+				"finalDateFolder",
+				"folderJuris",
+				"folderFuero",
+			]);
 		} else {
-			setHiddenColumns(["avatar", "email"]);
+			setHiddenColumns(["avatar", "email", "_id", "description", "initialDateFolder", "finalDateFolder", "folderJuris", "folderFuero"]);
 		}
 		// eslint-disable-next-line
 	}, [matchDownSM]);
@@ -201,7 +222,7 @@ const FoldersLayout = () => {
 		setFolder(null);
 	};
 
-	const handleEditContact = (customer: any) => {
+	const handleEditContact = (folder: any) => {
 		setAdd(true);
 		setAddFolderMode("edit");
 		setFolder(folder);
@@ -241,8 +262,17 @@ const FoldersLayout = () => {
 	const columns = useMemo(
 		() => [
 			{
-				Header: "#",
-				accessor: "id",
+				title: "Row Selection",
+				Header: ({ getToggleAllPageRowsSelectedProps }: HeaderProps<{}>) => (
+					<IndeterminateCheckbox indeterminate {...getToggleAllPageRowsSelectedProps()} />
+				),
+				accessor: "selection",
+				Cell: ({ row }: any) => <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />,
+				disableSortBy: true,
+			},
+			{
+				Header: "Id",
+				accessor: "_id",
 				className: "cell-center",
 			},
 			{
@@ -251,11 +281,33 @@ const FoldersLayout = () => {
 			},
 			{
 				Header: "Materia",
-				accessor: "materiaSelect",
+				accessor: "materia",
 			},
 			{
 				Header: "Parte",
 				accessor: "orderStatus",
+			},
+			{
+				Header: "Descripción",
+				accessor: "description",
+			},
+
+			{
+				Header: "Fecha de Inicio",
+				accessor: "initialDateFolder",
+			},
+			{
+				Header: "Fecha Final",
+				accessor: "finalDateFolder",
+			},
+			{
+				Header: "Jurisdicción",
+				accessor: "folderJuris",
+			},
+
+			{
+				Header: "Fuero",
+				accessor: "folderFuero",
 			},
 			{
 				Header: "Estado",
@@ -323,7 +375,7 @@ const FoldersLayout = () => {
 										handleEditContact(row.values);
 									}}
 								>
-									<Edit />
+									<Edit variant="Bulk" />
 								</IconButton>
 							</Tooltip>
 							<Tooltip
@@ -368,7 +420,7 @@ const FoldersLayout = () => {
 										navigate(`../details/${row.values.id}`);
 									}}
 								>
-									<Maximize />
+									<Maximize variant="Bulk" />
 								</IconButton>
 							</Tooltip>
 						</Stack>
@@ -410,7 +462,7 @@ const FoldersLayout = () => {
 			<ScrollX>
 				<ReactTable columns={columns} data={folders} handleAdd={handleAddFolder} renderRowSubComponent={renderRowSubComponent} />
 			</ScrollX>
-			<AlertCustomerDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} />
+			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} />
 			{/* add folder dialog */}
 			{renderAddFolder}
 		</MainCard>

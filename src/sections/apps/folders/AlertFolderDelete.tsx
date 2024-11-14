@@ -7,6 +7,8 @@ import { PopupTransition } from "components/@extended/Transitions";
 
 // assets
 import { Trash } from "iconsax-react";
+import { dispatch } from "store";
+import { deleteFolder } from "store/reducers/folders";
 
 // types
 interface Props {
@@ -19,6 +21,13 @@ interface Props {
 // ==============================|| CUSTOMER - DELETE ||============================== //
 
 export default function AlertFolderDelete({ title, open, handleClose, id }: Props) {
+	const handleClick = () => {
+		handleClose(true);
+		if (id) {
+			dispatch(deleteFolder(id));
+		}
+	};
+
 	return (
 		<Dialog
 			open={open}
@@ -36,24 +45,32 @@ export default function AlertFolderDelete({ title, open, handleClose, id }: Prop
 					</Avatar>
 					<Stack spacing={2}>
 						<Typography variant="h4" align="center">
-							Are you sure you want to delete?
+							¿Estás seguro que deseas eliminarlo?
 						</Typography>
 						<Typography align="center">
-							By deleting
+							Eliminando el elemento
 							<Typography variant="subtitle1" component="span">
 								{" "}
 								"{title}"{" "}
 							</Typography>
-							user, all task assigned to that user will also be deleted.
+							no podrás luego recuperar sus datos.
 						</Typography>
 					</Stack>
 
 					<Stack direction="row" spacing={2} sx={{ width: 1 }}>
 						<Button fullWidth onClick={() => handleClose(false)} color="secondary" variant="outlined">
-							Cancel
+							Cancelar
 						</Button>
-						<Button fullWidth color="error" variant="contained" onClick={() => handleClose(true)} autoFocus>
-							Delete
+						<Button
+							fullWidth
+							color="error"
+							variant="contained"
+							onClick={() => {
+								handleClick();
+							}}
+							autoFocus
+						>
+							Eliminar
 						</Button>
 					</Stack>
 				</Stack>
