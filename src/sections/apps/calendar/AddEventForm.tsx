@@ -193,8 +193,14 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 	const EventSchema = Yup.object().shape({
 		title: Yup.string().max(255).required("El título es requerido"),
 		description: Yup.string().max(5000),
-		end: Yup.date().when("start", (start, schema) => start && schema.min(start, "La fecha final debe ser posterior a la inicial")),
-		start: Yup.date(),
+		start: Yup.date().required("La fecha inicial es requerida"),
+		end: Yup.date()
+			.required("La fecha final es requerida")
+			.test("is-after-start", "La fecha final debe ser posterior a la inicial", function (value) {
+				const { start } = this.parent;
+				if (!start || !value) return true; // Si no hay fechas, no validamos
+				return new Date(value) >= new Date(start);
+			}),
 		color: Yup.string().max(255),
 		textColor: Yup.string().max(255),
 		type: Yup.string().required("Debe seleccionar un tipo"),
@@ -348,7 +354,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 								<Stack spacing={1.25}>
 									<InputLabel htmlFor="cal-start-date">Fecha Inicio</InputLabel>
 									<MobileDateTimePicker
-										value={new Date(values.start)}
+										value={values.start}
 										format="dd/MM/yyyy hh:mm a"
 										onChange={(date) => setFieldValue("start", date)}
 										slotProps={{
@@ -363,14 +369,14 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 											},
 										}}
 									/>
-									{touched.start && errors.start && <FormHelperText error={true}>{errors.start as string}</FormHelperText>}
+									{touched.start && typeof errors.start === "string" && <FormHelperText>{errors.start as string}</FormHelperText>}
 								</Stack>
 							</Grid>
 							<Grid item xs={12} md={6}>
 								<Stack spacing={1.25}>
 									<InputLabel htmlFor="cal-end-date">Fecha Fin</InputLabel>
 									<MobileDateTimePicker
-										value={new Date(values.end)}
+										value={values.end}
 										format="dd/MM/yyyy hh:mm a"
 										onChange={(date) => setFieldValue("end", date)}
 										slotProps={{
@@ -385,7 +391,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 											},
 										}}
 									/>
-									{touched.start && errors.start && <FormHelperText error={true}>{errors.start as string}</FormHelperText>}
+									{touched.end && typeof errors.end === "string" && <FormHelperText error={true}>{errors.end}</FormHelperText>}
 								</Stack>
 							</Grid>
 							<Grid item xs={12}>

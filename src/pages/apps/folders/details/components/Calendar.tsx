@@ -204,7 +204,7 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 										overflowY: "auto",
 									}}
 								>
-									<CalendarStyled>
+									<CalendarStyled sx={{ minHeight: "250px", height: "auto" }}>
 										<CalendarToolbar
 											date={date}
 											view={"listWeek"}
