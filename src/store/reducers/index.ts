@@ -20,6 +20,7 @@ import auth from "./auth";
 import alerts from "./alerts";
 import contacts from "./contacts";
 import folders from "./folders";
+import events from "./events";
 // ==============================|| COMBINE REDUCERS ||============================== //
 
 const reducers = combineReducers({
@@ -46,6 +47,7 @@ const reducers = combineReducers({
 	alerts,
 	contacts,
 	folders,
+	events,
 });
 
 export default reducers;

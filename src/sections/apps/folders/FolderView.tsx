@@ -26,6 +26,7 @@ import { memo } from "react";
 // ==============================|| CUSTOMER - VIEW ||============================== //
 
 const FolderView = memo(({ data }: any) => {
+	console.log(data);
 	const theme = useTheme();
 	const matchDownMD = useMediaQuery(theme.breakpoints.down("md"));
 	const notAvailableMsg = "No disponible";
@@ -37,17 +38,50 @@ const FolderView = memo(({ data }: any) => {
 					<Grid container spacing={2.5} sx={{ pl: { xs: 0, sm: 5, md: 6, lg: 10, xl: 12 } }}>
 						<Grid item xs={12} sm={5} md={4} lg={4} xl={3}>
 							<MainCard>
-								<Chip
-									label={data.status}
-									size="small"
-									color="primary"
-									sx={{
-										position: "absolute",
-										right: 10,
-										top: 10,
-										fontSize: "0.675rem",
-									}}
-								/>
+								{data.status === "Finalizado" && (
+									<Chip
+										color="error"
+										label="Finalizada"
+										size="small"
+										variant="light"
+										sx={{
+											position: "absolute",
+											right: 10,
+											top: 10,
+											fontSize: "0.675rem",
+										}}
+									/>
+								)}
+
+								{data.status === "Nueva" && (
+									<Chip
+										color="success"
+										label="Nueva"
+										size="small"
+										variant="light"
+										sx={{
+											position: "absolute",
+											right: 10,
+											top: 10,
+											fontSize: "0.675rem",
+										}}
+									/>
+								)}
+								{data.status === "En proceso" && (
+									<Chip
+										color="info"
+										label="En proceso"
+										size="small"
+										variant="light"
+										sx={{
+											position: "absolute",
+											right: 10,
+											top: 10,
+											fontSize: "0.675rem",
+										}}
+									/>
+								)}
+
 								<Grid container spacing={3}>
 									<Grid item xs={12}></Grid>
 									<Grid item xs={12}>
@@ -120,7 +154,7 @@ const FolderView = memo(({ data }: any) => {
 												<Grid item xs={12} md={6}>
 													<Stack spacing={0.5}>
 														<Typography color="secondary">Materia</Typography>
-														<Typography>{data.materiaSelect || notAvailableMsg}</Typography>
+														<Typography>{data.materia || notAvailableMsg}</Typography>
 													</Stack>
 												</Grid>
 											</Grid>
@@ -130,13 +164,13 @@ const FolderView = memo(({ data }: any) => {
 												<Grid item xs={12} md={6}>
 													<Stack spacing={0.5}>
 														<Typography color="secondary">Fuero</Typography>
-														<Typography>{data.fuero || notAvailableMsg}</Typography>
+														<Typography>{data.folderFuero || notAvailableMsg}</Typography>
 													</Stack>
 												</Grid>
 												<Grid item xs={12} md={6}>
 													<Stack spacing={0.5}>
 														<Typography color="secondary">Jurisdicción</Typography>
-														<Typography>{data.jurisdiccion || notAvailableMsg}</Typography>
+														<Typography>{data.folderJuris.item || notAvailableMsg}</Typography>
 													</Stack>
 												</Grid>
 											</Grid>

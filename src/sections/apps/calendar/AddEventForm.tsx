@@ -18,13 +18,14 @@ import {
 	TextField,
 	Tooltip,
 	Typography,
+	Select,
+	MenuItem,
 } from "@mui/material";
 import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
 
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 // third-party
-import _ from "lodash";
 import * as Yup from "yup";
 import { useFormik, Form, FormikProvider, FormikValues } from "formik";
 
@@ -33,7 +34,7 @@ import ColorPalette from "./ColorPalette";
 import IconButton from "components/@extended/IconButton";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
-import { createEvent, deleteEvent, updateEvent } from "store/reducers/calendar";
+import { deleteEvent, updateEvent } from "store/reducers/events";
 
 // assets
 import { Calendar, Trash } from "iconsax-react";
@@ -41,10 +42,27 @@ import { Calendar, Trash } from "iconsax-react";
 // types
 import { ThemeMode } from "types/config";
 import { DateRange } from "types/calendar";
+import { addEvent } from "store/reducers/events";
+import { useMemo } from "react";
 
 // constant
 const getInitialValues = (event: FormikValues | null, range: DateRange | null) => {
-	const newEvent = {
+	if (event) {
+		// Si hay un evento, significa que estamos en modo de edición, así que usamos sus valores
+		return {
+			title: event.title || "",
+			description: event.description || "",
+			color: event.color || "#1890ff",
+			textColor: event.textColor || "#fff",
+			allDay: event.allDay || false,
+			start: event.start ? new Date(event.start) : new Date(),
+			end: event.end ? new Date(event.end) : new Date(),
+			type: event.type || "",
+		};
+	}
+
+	// Si no hay evento, estamos creando uno nuevo, así que devolvemos valores predeterminados
+	return {
 		title: "",
 		description: "",
 		color: "#1890ff",
@@ -52,13 +70,8 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null) =
 		allDay: false,
 		start: range ? new Date(range.start) : new Date(),
 		end: range ? new Date(range.end) : new Date(),
+		type: "",
 	};
-
-	if (event || range) {
-		return _.merge({}, newEvent, event);
-	}
-
-	return newEvent;
 };
 
 // ==============================|| CALENDAR - EVENT ADD / EDIT / DELETE ||============================== //
@@ -67,12 +80,15 @@ export interface AddEventFormProps {
 	event?: FormikValues | null;
 	range: DateRange | null;
 	onCancel: () => void;
+	userId?: string;
+	folderId?: string;
 }
 
-const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
+const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventFormProps) => {
 	const theme = useTheme();
-	const isCreating = !event;
+	const isCreating = useMemo(() => event == null || Object.keys(event).length === 0, [event]);
 
+	console.log(isCreating, event);
 	const backgroundColor = [
 		{
 			value: theme.palette.primary.main,
@@ -181,6 +197,7 @@ const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
 		start: Yup.date(),
 		color: Yup.string().max(255),
 		textColor: Yup.string().max(255),
+		type: Yup.string().required("Debe seleccionar un tipo"),
 	});
 
 	const deleteHandler = () => {
@@ -198,12 +215,18 @@ const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
 		);
 	};
 
+	const initialValues = useMemo(() => getInitialValues(event || null, range), [event, range]);
+
 	const formik = useFormik({
-		initialValues: getInitialValues(event!, range),
+		initialValues: initialValues,
+		enableReinitialize: true,
 		validationSchema: EventSchema,
 		onSubmit: (values, { setSubmitting }) => {
+			console.log("submit");
 			try {
 				const newEvent = {
+					userId: userId || undefined,
+					folderId: folderId || undefined,
 					title: values.title,
 					description: values.description,
 					color: values.color,
@@ -211,10 +234,11 @@ const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
 					allDay: values.allDay,
 					start: values.start,
 					end: values.end,
+					type: values.type,
 				};
 
 				if (event) {
-					dispatch(updateEvent(event.id, newEvent));
+					dispatch(updateEvent(event._id, newEvent));
 					dispatch(
 						openSnackbar({
 							open: true,
@@ -227,7 +251,7 @@ const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
 						}),
 					);
 				} else {
-					dispatch(createEvent(newEvent));
+					dispatch(addEvent(newEvent));
 					dispatch(
 						openSnackbar({
 							open: true,
@@ -236,15 +260,26 @@ const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
 							alert: {
 								color: "success",
 							},
-							close: false,
+							close: true,
 						}),
 					);
 				}
 
 				setSubmitting(false);
 			} catch (error) {
-				console.error(error);
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Ha ocurrido un error. Intente más tarde.",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
 			}
+			onCancel();
 		},
 	});
 
@@ -267,7 +302,7 @@ const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
 										placeholder="Agregue un título"
 										{...getFieldProps("title")}
 										error={Boolean(touched.title && errors.title)}
-										helperText={touched.title && errors.title}
+										helperText={touched.title && typeof errors.title === "string" ? errors.title : ""}
 									/>
 								</Stack>
 							</Grid>
@@ -282,13 +317,33 @@ const AddEventFrom = ({ event, range, onCancel }: AddEventFormProps) => {
 										placeholder="Agregue una descripción"
 										{...getFieldProps("description")}
 										error={Boolean(touched.description && errors.description)}
-										helperText={touched.description && errors.description}
+										helperText={touched.description && typeof errors.description === "string" ? errors.description : ""}
 									/>
 								</Stack>
 							</Grid>
-							<Grid item xs={12}>
-								<FormControlLabel control={<Switch checked={values.allDay} {...getFieldProps("allDay")} />} label="Todo el dia" />
+
+							<Grid container spacing={3} sx={{ marginLeft: 0, marginTop: 0.2 }}>
+								<Grid item xs={12} md={6} sx={{ paddingLeft: 2 }}>
+									<Stack spacing={1.25}>
+										<FormControlLabel control={<Switch checked={values.allDay} {...getFieldProps("allDay")} />} label="Todo el día" />
+									</Stack>
+								</Grid>
+								<Grid item xs={12} md={6} sx={{ paddingLeft: 2 }}>
+									<Stack spacing={1.25}>
+										<InputLabel id="demo-simple-select-label">Seleccione un tipo</InputLabel>
+										<FormControl fullWidth error={Boolean(touched.type && errors.type)}>
+											<Select fullWidth labelId="demo-simple-select-label" id="demo-simple-select" {...getFieldProps("type")}>
+												<MenuItem value={"audiencia"}>Audiencia</MenuItem>
+												<MenuItem value={"vencimiento"}>Vencimiento</MenuItem>
+												<MenuItem value={"reunion"}>Reunión</MenuItem>
+												<MenuItem value={"otro"}>Otro</MenuItem>
+											</Select>
+											{touched.type && typeof errors.type === "string" && <FormHelperText error>{errors.type}</FormHelperText>}
+										</FormControl>
+									</Stack>
+								</Grid>
 							</Grid>
+
 							<Grid item xs={12} md={6}>
 								<Stack spacing={1.25}>
 									<InputLabel htmlFor="cal-start-date">Fecha Inicio</InputLabel>

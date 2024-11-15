@@ -105,21 +105,17 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 	useEffect(() => {
 		if (matchDownSM) {
 			setHiddenColumns([
-				"age",
-				"contact",
-				"visits",
+				"_id",
 				"email",
 				"status",
-				"avatar",
-				"_id",
 				"description",
 				"initialDateFolder",
 				"finalDateFolder",
-				"folderJuris",
+				"folderJuris.label",
 				"folderFuero",
 			]);
 		} else {
-			setHiddenColumns(["avatar", "email", "_id", "description", "initialDateFolder", "finalDateFolder", "folderJuris", "folderFuero"]);
+			setHiddenColumns([ "email", "_id", "description", "finalDateFolder"]);
 		}
 		// eslint-disable-next-line
 	}, [matchDownSM]);
@@ -302,7 +298,7 @@ const FoldersLayout = () => {
 			},
 			{
 				Header: "Jurisdicción",
-				accessor: "folderJuris",
+				accessor: "folderJuris.label",
 			},
 
 			{
@@ -416,8 +412,7 @@ const FoldersLayout = () => {
 									color="success"
 									onClick={(e: MouseEvent) => {
 										e.stopPropagation();
-										console.log(row.values.id);
-										navigate(`../details/${row.values.id}`);
+										navigate(`../details/${row.values._id}`);
 									}}
 								>
 									<Maximize variant="Bulk" />
@@ -437,7 +432,7 @@ const FoldersLayout = () => {
 			const folderData = folders[Number(row.id)];
 			return folderData ? <FolderView data={folderData} /> : null;
 		},
-		[], // Remove folders dependency since it's coming from useSelector
+		[folder]
 	);
 
 	const renderAddFolder = useMemo(() => {
