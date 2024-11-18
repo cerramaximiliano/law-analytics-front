@@ -50,7 +50,7 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 					{eventInfo.event.title}
 				</Typography>
 				<IconButton color="primary" size="small" onClick={() => handleEditEvent(_id)}>
-					<Edit2 variant="Bold" />
+					<Edit2 variant="Bulk" />
 				</IconButton>
 				<IconButton color="error" size="small" onClick={() => handleDeleteEvent(_id)}>
 					<Trash variant="Bulk" />
