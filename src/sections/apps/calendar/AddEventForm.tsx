@@ -1,5 +1,4 @@
 // material-ui
-import { useTheme } from "@mui/material/styles";
 import {
 	Button,
 	DialogActions,
@@ -12,12 +11,10 @@ import {
 	Grid,
 	InputAdornment,
 	InputLabel,
-	RadioGroup,
 	Stack,
 	Switch,
 	TextField,
 	Tooltip,
-	Typography,
 	Select,
 	MenuItem,
 } from "@mui/material";
@@ -30,7 +27,6 @@ import * as Yup from "yup";
 import { useFormik, Form, FormikProvider, FormikValues } from "formik";
 
 // project-imports
-import ColorPalette from "./ColorPalette";
 import IconButton from "components/@extended/IconButton";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -40,7 +36,6 @@ import { deleteEvent, updateEvent } from "store/reducers/events";
 import { Calendar, Trash } from "iconsax-react";
 
 // types
-import { ThemeMode } from "types/config";
 import { DateRange } from "types/calendar";
 import { addEvent } from "store/reducers/events";
 import { useMemo } from "react";
@@ -85,11 +80,9 @@ export interface AddEventFormProps {
 }
 
 const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventFormProps) => {
-	const theme = useTheme();
 	const isCreating = useMemo(() => event == null || Object.keys(event).length === 0, [event]);
-
 	console.log(isCreating, event);
-	const backgroundColor = [
+	/* 	const backgroundColor = [
 		{
 			value: theme.palette.primary.main,
 			color: "primary.main",
@@ -136,8 +129,8 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 			isLight: true,
 		},
 	];
-
-	const textColor = [
+ */
+	/* 	const textColor = [
 		{
 			value: "#fff",
 			color: "white",
@@ -189,7 +182,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 			color: "warning.main",
 		},
 	];
-
+ */
 	const EventSchema = Yup.object().shape({
 		title: Yup.string().max(255).required("El título es requerido"),
 		description: Yup.string().max(5000),
@@ -201,8 +194,6 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 				if (!start || !value) return true; // Si no hay fechas, no validamos
 				return new Date(value) >= new Date(start);
 			}),
-		color: Yup.string().max(255),
-		textColor: Yup.string().max(255),
 		type: Yup.string().required("Debe seleccionar un tipo"),
 	});
 
@@ -236,7 +227,6 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 					title: values.title,
 					description: values.description,
 					color: values.color,
-					textColor: values.textColor,
 					allDay: values.allDay,
 					start: values.start,
 					end: values.end,
@@ -393,52 +383,6 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 									/>
 									{touched.end && typeof errors.end === "string" && <FormHelperText error={true}>{errors.end}</FormHelperText>}
 								</Stack>
-							</Grid>
-							<Grid item xs={12}>
-								<Grid container spacing={2}>
-									<Grid item xs={12}>
-										<Typography variant="subtitle1">Color Fondo</Typography>
-									</Grid>
-									<Grid item xs={12}>
-										<FormControl>
-											<RadioGroup
-												row
-												aria-label="color"
-												{...getFieldProps("color")}
-												onChange={(e) => setFieldValue("color", e.target.value)}
-												name="color-radio-buttons-group"
-												sx={{ "& .MuiFormControlLabel-root": { mr: 2 } }}
-											>
-												{backgroundColor.map((item, index) => (
-													<ColorPalette key={index} value={item.value} color={item.color} isLight={item.isLight} />
-												))}
-											</RadioGroup>
-										</FormControl>
-									</Grid>
-								</Grid>
-							</Grid>
-							<Grid item xs={12}>
-								<Grid container spacing={2}>
-									<Grid item xs={12}>
-										<Typography variant="subtitle1">Color Texto</Typography>
-									</Grid>
-									<Grid item xs={12}>
-										<FormControl component="fieldset">
-											<RadioGroup
-												row
-												aria-label="textColor"
-												{...getFieldProps("textColor")}
-												onChange={(e) => setFieldValue("textColor", e.target.value)}
-												name="text-color-radio-buttons-group"
-												sx={{ "& .MuiFormControlLabel-root": { mr: 2 } }}
-											>
-												{textColor.map((item, index) => (
-													<ColorPalette key={index} value={item.value} color={item.color} isLight={item.isLight} />
-												))}
-											</RadioGroup>
-										</FormControl>
-									</Grid>
-								</Grid>
 							</Grid>
 						</Grid>
 					</DialogContent>
