@@ -12,7 +12,7 @@ import listPlugin from "@fullcalendar/list";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import timelinePlugin from "@fullcalendar/timeline";
-
+import esLocale from "@fullcalendar/core/locales/es";
 // project imports
 import Loader from "components/Loader";
 import { PopupTransition } from "components/@extended/Transitions";
@@ -20,11 +20,19 @@ import CalendarStyled from "sections/apps/calendar/CalendarStyled";
 import Toolbar from "sections/apps/calendar/Toolbar";
 import AddEventForm from "sections/apps/calendar/AddEventForm";
 
-import { getEvents, selectEvent, selectRange, toggleModal, updateCalendarView, updateEvent } from "store/reducers/calendar";
+import {
+	//getEvents,
+	selectEvent,
+	selectRange,
+	toggleModal,
+	updateCalendarView,
+	updateEvent,
+} from "store/reducers/calendar";
 
 // types
 import { Add } from "iconsax-react";
 import { dispatch, useSelector } from "store";
+import { getEventsByUserId } from "store/reducers/events";
 
 // ==============================|| CALENDAR - MAIN ||============================== //
 
@@ -32,7 +40,12 @@ const Calendar = () => {
 	const matchDownSM = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
 	const [loading, setLoading] = useState<boolean>(true);
-	const { calendarView, events, isModalOpen, selectedRange } = useSelector((state) => state.calendar);
+
+	const { calendarView, isModalOpen, selectedRange } = useSelector((state) => state.calendar);
+	const { events } = useSelector((state) => state.events);
+
+	const auth = useSelector((state) => state.auth);
+	const id = auth.user?._id;
 
 	console.log(events, calendarView);
 	const selectedEvent = useSelector((state) => {
@@ -44,12 +57,19 @@ const Calendar = () => {
 	});
 
 	useEffect(() => {
-		const newView = matchDownSM ? "listWeek" : "dayGridMonth";
-		const viewCall = dispatch(updateCalendarView(newView));
-		const eventCall = dispatch(getEvents(null));
-		Promise.all([viewCall, eventCall]).then(() => setLoading(false));
-		// eslint-disable-next-line
-	}, []);
+		if (id && id !== "undefined") {
+			const fetchData = async () => {
+				setLoading(true);
+				try {
+					await dispatch(getEventsByUserId(id));
+					setLoading(false);
+				} catch (error) {
+					console.error(error);
+				}
+			};
+			fetchData();
+		}
+	}, [id, dispatch]);
 
 	useEffect(() => {
 		const calendarEl = calendarRef.current;
@@ -81,7 +101,7 @@ const Calendar = () => {
 
 	const handleViewChange = (newView: string) => {
 		const calendarEl = calendarRef.current;
-
+		console.log("change");
 		if (calendarEl) {
 			const calendarApi = calendarEl.getApi();
 
@@ -178,6 +198,7 @@ const Calendar = () => {
 					eventDrop={handleEventUpdate}
 					eventClick={handleEventSelect}
 					eventResize={handleEventUpdate}
+					locale={esLocale}
 					height={matchDownSM ? "auto" : 720}
 					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
 				/>
@@ -194,7 +215,7 @@ const Calendar = () => {
 			>
 				<AddEventForm event={selectedEvent} range={selectedRange} onCancel={handleModal} />
 			</Dialog>
-			<Tooltip title="Add New Event">
+			<Tooltip title="Agregar Nuevo Evento">
 				<SpeedDial
 					ariaLabel="add-event-fab"
 					sx={{

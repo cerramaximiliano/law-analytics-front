@@ -132,17 +132,18 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 	try {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/user/${userId}`);
 
-		if (Array.isArray(response.data)) {
+		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
-				type: GET_EVENTS_BY_USER,
-				payload: response.data,
+				type: GET_EVENTS_BY_ID,
+				payload: response.data.events,
 			});
 		} else {
 			dispatch({
 				type: SET_EVENT_ERROR,
-				payload: "Formato de datos inválido recibido desde el servidor",
+				payload: "No se encontraron eventos para este id",
 			});
 		}
+
 	} catch (error) {
 		dispatch({
 			type: SET_EVENT_ERROR,

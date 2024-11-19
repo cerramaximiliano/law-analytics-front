@@ -1,4 +1,4 @@
-import { Box, Skeleton, Grid, CardContent, IconButton, Typography, Dialog } from "@mui/material";
+import { Box, Skeleton, Grid, CardContent, IconButton, Typography, Dialog, Tooltip } from "@mui/material";
 import { Trash, Edit2 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
@@ -164,9 +164,11 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 			title={title}
 			content={false}
 			secondary={
-				<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleModal}>
-					<Add />
-				</IconButton>
+				<Tooltip title="Agregar Evento">
+					<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleModal}>
+						<Add />
+					</IconButton>
+				</Tooltip>
 			}
 		>
 			<Dialog
