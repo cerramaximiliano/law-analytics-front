@@ -1,134 +1,174 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import axios from "utils/axios";
-import { dispatch } from "store";
+import axios from "axios";
+import { Dispatch } from "redux";
 import { FolderData } from "types/folder";
-import data from "data/foldersData.json";
 
-const initialState: FolderData & { isLoader: boolean; error?: string } = {
-	folderId: "1",
-	folderName: "Caso García vs Pérez",
-	materia: "Contratos",
-	orderStatus: "Actor",
-	status: "Nueva",
-	description: "Demanda por incumplimiento de contrato",
-	initialDateFolder: "2023-05-10",
-	finalDateFolder: "2024-05-10",
-	amount: 50000,
-	folderJuris: "Juzgado N° 5",
-	folderFuero: "Civil",
-	preFolder: {
-		initialDatePreFolder: "04/01/2023",
-		finalDatePreFolder: "30/04/2023",
-		memberPreFolder: "Juan Pérez",
-		amountPreFolder: 1000,
-		statusPreFolder: "Pendiente",
-		descriptionPreFolder: "Revisión inicial del caso y recopilación de documentación",
-	},
-	judFolder: {
-		initialDateJudFolder: "01/06/2023",
-		finalDateJudFolder: "01/12/2023",
-		numberJudFolder: "12345-6789",
-		statusJudFolder: "En letra",
-		descriptionJudFolder: "Procedimientos judiciales en curso",
-	},
+// Action types
+const ADD_FOLDER = "ADD_FOLDER";
+const GET_FOLDERS_BY_USER = "GET_FOLDERS_BY_USER";
+const GET_FOLDERS_BY_GROUP = "GET_FOLDERS_BY_GROUP";
+const GET_FOLDER_BY_ID = "GET_FOLDER_BY_ID";
+const DELETE_FOLDER = "DELETE_FOLDER";
+const UPDATE_FOLDER = "UPDATE_FOLDER";
+const SET_FOLDER_ERROR = "SET_FOLDER_ERROR";
+
+// Initial state
+const initialFolderState = {
+	folders: [],
+	folder: null,
 	isLoader: false,
 	error: undefined,
 };
 
-// ==============================|| SLICE - FOLDER ||============================== //
+// Reducer
+const folder = (state = initialFolderState, action: any) => {
+	switch (action.type) {
+		case ADD_FOLDER:
+			return {
+				...state,
+				folders: [...state.folders, action.payload],
+			};
+		case GET_FOLDERS_BY_USER:
+		case GET_FOLDERS_BY_GROUP:
+			return {
+				...state,
+				folders: action.payload,
+			};
+		case GET_FOLDER_BY_ID:
+			return {
+				...state,
+				folder: action.payload,
+			};
+		case DELETE_FOLDER:
+			return {
+				...state,
+				folders: state.folders.filter((folder: FolderData) => folder._id !== action.payload),
+			};
+		case UPDATE_FOLDER:
+			return {
+				...state,
+				folder: action.payload,
+				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+			};
+		case SET_FOLDER_ERROR:
+			return {
+				...state,
+				error: action.payload,
+			};
+		default:
+			return state;
+	}
+};
 
-const folder = createSlice({
-	name: "folder",
-	initialState,
-	reducers: {
-		loading(state) {
-			state.isLoader = true;
-		},
-		hasError(state, action) {
-			state.isLoader = false;
-			state.error = action.payload;
-		},
-		setFolderData(state, action) {
-			state.isLoader = false;
-			Object.assign(state, action.payload);
-		},
-		updateFolderField(state, action: PayloadAction<{ field: keyof FolderData; value: any }>) {
-			const { field, value } = action.payload;
-			if (field in state) {
-				(state as any)[field] = value;
-			}
-		},
-		resetFolder(state) {
-			Object.assign(state, initialState);
-		},
-	},
-});
+// Action creators
 
-export default folder.reducer;
-
-export const { loading, hasError, setFolderData, updateFolderField, resetFolder } = folder.actions;
-
-// Async actions
-
-export function fetchFolderData(id: string) {
-	return async () => {
-		dispatch(folder.actions.loading());
-		try {
-			const response = await new Promise<{ data: FolderData | undefined }>((resolve) => {
-				setTimeout(() => {
-					const folder = data.find((ele) => ele.folderId === id);
-					return resolve({ data: folder });
-				}, 5000);
+export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/folders`, folderData);
+		if (response.data.success) {
+			dispatch({
+				type: ADD_FOLDER,
+				payload: response.data.folder,
 			});
-			dispatch(folder.actions.setFolderData(response.data));
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(folder.actions.hasError(error.toString()));
-			} else {
-				dispatch(folder.actions.hasError("An unknown error occurred"));
-			}
 		}
-	};
-}
+	} catch (error) {
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al crear folder" : "Error desconocido",
+		});
+	}
+};
 
-export function saveFolderData(folderData: FolderData) {
-	return async () => {
-		dispatch(loading());
-		try {
-			const response = await axios.post("/api/folder/save", folderData);
-			dispatch(setFolderData(response.data.folder));
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(hasError(error.toString()));
-			} else {
-				dispatch(hasError("An unknown error occurred"));
-			}
-		}
-	};
-}
-
-export function updateFolderAsync(folderId: string, newData: Partial<FolderData>) {
-	return async () => {
-		dispatch(folder.actions.loading());
-		try {
-			const response = await new Promise<{ data: FolderData | undefined }>((resolve) => {
-				setTimeout(() => {
-					const updatedData = data.map((folder) => {
-						if (folder.folderId === folderId) {
-							return { ...folder, ...newData }; // Actualizamos el folder con los nuevos datos
-						}
-						return folder;
-					});
-					return resolve({ data: updatedData.find((folder) => folder.folderId === folderId) });
-				}, 1000);
+export const getFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`);
+		if (response.data.success) {
+			dispatch({
+				type: GET_FOLDERS_BY_USER,
+				payload: response.data.folders,
 			});
-			dispatch(folder.actions.setFolderData(response.data));
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(folder.actions.hasError(error.toString()));
-			} else {
-				dispatch(folder.actions.hasError("An unknown error occurred"));
-			}
 		}
-	};
-}
+	} catch (error) {
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders por usuario" : "Error desconocido",
+		});
+	}
+};
+
+export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/group/${groupId}`);
+		if (response.data.success) {
+			dispatch({
+				type: GET_FOLDERS_BY_GROUP,
+				payload: response.data.folders,
+			});
+		}
+	} catch (error) {
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders por grupo" : "Error desconocido",
+		});
+	}
+};
+
+export const getFolderById = (folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
+		if (response.data.success) {
+			dispatch({
+				type: GET_FOLDER_BY_ID,
+				payload: response.data.folder,
+			});
+		}
+	} catch (error) {
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folder" : "Error desconocido",
+		});
+	}
+};
+
+export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
+		if (response.data.success) {
+			dispatch({
+				type: DELETE_FOLDER,
+				payload: folderId,
+			});
+		}
+	} catch (error) {
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al eliminar folder" : "Error desconocido",
+		});
+	}
+};
+
+export const updateFolderById = (folderId: string, updatedData: Partial<FolderData>) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`, updatedData);
+		if (response.data.success) {
+			dispatch({
+				type: UPDATE_FOLDER,
+				payload: response.data.folder,
+			});
+			return { success: true, folder: response.data.folder };
+		} else {
+			return { success: false, message: "No se pudo actualizar el folder." };
+		}
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al actualizar folder."
+			: "Error desconocido.";
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: errorMessage,
+		});
+		return { success: false, message: errorMessage };
+	}
+};
+
+
+export default folder;

@@ -16,7 +16,11 @@ import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
-import { fetchFolderData, updateFolderAsync } from "store/reducers/folder";
+import { getFolderById, updateFolderById } from "store/reducers/folder";
+
+import "moment/locale/es"; // Importa el idioma español
+moment.locale("es"); // Configura moment a español
+
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
 const customInputStyles = {
@@ -44,27 +48,41 @@ const customTextareaStyles = {
 const FolderData = (props: any) => {
 	const { type } = props;
 	const { id } = useParams<{ id: string }>();
-	const folderData = useSelector((state: any) => state.folder);
-	const initialValues = { ...folderData };
-	const [isEditing, setIsEditing] = useState(false);
+
+	const { folder, isLoader } = useSelector((state: any) => state.folder);
 
 	useEffect(() => {
-		if (id) {
+		if (id && id !== "undefined") {
 			const fetchData = async () => {
-				await dispatch(fetchFolderData(id));
+				await dispatch(getFolderById(id));
 			};
 			fetchData();
 		}
 	}, [id, dispatch]);
 
+	const initialValues = {
+		...folder,
+		initialDateFolder: folder?.initialDateFolder ? moment(folder.initialDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
+		finalDateFolder: folder?.finalDateFolder ? moment(folder.finalDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
+	};
+	const [isEditing, setIsEditing] = useState(false);
+
+	console.log(folder);
+
 	const status = ["Nueva", "En Proceso", "Finalizada"];
-	const [statusFolder, setStatusFolder] = useState(folderData.status);
+	const [statusFolder, setStatusFolder] = useState("Nueva");
 
 	const handleStatus = (e: MouseEvent<HTMLButtonElement>) => {
-		if (folderData.isLoader) return;
+		if (folder.isLoader) return;
 		const filterStatus = status.filter((e) => e !== statusFolder);
 		const newStatus = filterStatus[Math.floor(Math.random() * filterStatus.length)];
-		folderData.finalDateFolder = folderData.finalDateFolder || moment().format("DD/MM/YYYY");
+
+		if (newStatus === "Finalizada") {
+			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
+		} else {
+			folder.finalDateFolder = "";
+		}
+
 		setStatusFolder(newStatus);
 	};
 
@@ -74,17 +92,45 @@ const FolderData = (props: any) => {
 	};
 
 	const _submitForm = async (values: any, actions: any) => {
-		enqueueSnackbar("Se actualizó correctamente", {
-			variant: "success",
-			anchorOrigin: { vertical: "bottom", horizontal: "right" },
-			TransitionComponent: Zoom,
-			autoHideDuration: 3000,
-		});
-
+		console.log(values);
 		if (id) {
-			await dispatch(updateFolderAsync(id, values));
+			try {
+				const result = await dispatch(updateFolderById(id, values));
+
+				if (result.success) {
+					enqueueSnackbar("Se actualizó correctamente", {
+						variant: "success",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+						TransitionComponent: Zoom,
+						autoHideDuration: 3000,
+					});
+					console.log("Folder actualizado con éxito:", result.folder);
+				} else {
+					enqueueSnackbar(result.message || "Error al actualizar el folder", {
+						variant: "error",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+						TransitionComponent: Zoom,
+						autoHideDuration: 3000,
+					});
+					console.error("Error al actualizar folder:", result.message);
+				}
+			} catch (error) {
+				enqueueSnackbar("Ocurrió un error inesperado. Por favor, intente nuevamente más tarde.", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+				console.error("Error inesperado:", error);
+			}
 		} else {
 			console.error("ID is undefined, unable to update folder");
+			enqueueSnackbar("No se puede actualizar. Intente nuevamente más tarde.", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				TransitionComponent: Zoom,
+				autoHideDuration: 3000,
+			});
 		}
 		actions.setSubmitting(false);
 	};
@@ -131,7 +177,7 @@ const FolderData = (props: any) => {
 			title={
 				<List disablePadding>
 					<ListItem sx={{ p: 0 }} secondaryAction={secondaryAction}>
-						{folderData.isLoader ? (
+						{isLoader ? (
 							<Skeleton variant="rectangular" width={40} height={40} style={{ marginRight: 10 }} />
 						) : (
 							<ListItemAvatar>
@@ -162,7 +208,7 @@ const FolderData = (props: any) => {
 								)}
 							</ListItemAvatar>
 						)}
-						{folderData.isLoader ? (
+						{isLoader ? (
 							<Grid>
 								<Skeleton variant="rectangular" width={120} height={16} style={{ marginBottom: 5 }} />
 								<Skeleton variant="rectangular" width={120} height={16} />
@@ -177,7 +223,7 @@ const FolderData = (props: any) => {
 										{type === "mediacion" && "Información Prejudicial"}
 									</Typography>
 								}
-								secondary={<Typography variant="subtitle1">{folderData.folderName}</Typography>}
+								secondary={<Typography variant="subtitle1">{folder?.folderName || "-"}</Typography>}
 							/>
 						)}
 					</ListItem>
@@ -190,7 +236,7 @@ const FolderData = (props: any) => {
 						<Grid container spacing={1}>
 							<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Grid item xs={5}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton />
 											<Skeleton />
@@ -207,13 +253,13 @@ const FolderData = (props: any) => {
 													style={{ maxHeight: "39.91px" }}
 												/>
 											) : (
-												<Typography variant="body2">{folderData.orderStatus}</Typography>
+												<Typography variant="body2">{folder?.orderStatus || " - "}</Typography>
 											)}
 										</>
 									)}
 								</Grid>
 								<Grid item xs={5}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton />
 											<Skeleton />
@@ -224,7 +270,7 @@ const FolderData = (props: any) => {
 											{isEditing ? (
 												<SelectField label="Seleccione el fuero" style={{ maxHeight: "39.91px" }} name="folderFuero" data={data.fuero} />
 											) : (
-												<Typography variant="body2">{folderData.folderFuero}</Typography>
+												<Typography variant="body2">{folder?.folderFuero || " - "}</Typography>
 											)}
 										</>
 									)}
@@ -232,7 +278,7 @@ const FolderData = (props: any) => {
 							</Grid>
 							<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Grid item xs={5}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton />
 											<Skeleton />
@@ -243,13 +289,13 @@ const FolderData = (props: any) => {
 											{isEditing ? (
 												<AsynchronousAutocomplete placeholder="Seleccione una materia" options={data.materia} name="materia" />
 											) : (
-												<Typography variant="body2">{folderData.materia}</Typography>
+												<Typography variant="body2">{folder?.materia || " - "}</Typography>
 											)}
 										</>
 									)}
 								</Grid>
 								<Grid item xs={5}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton />
 											<Skeleton />
@@ -270,7 +316,7 @@ const FolderData = (props: any) => {
 													sx={customInputStyles}
 												/>
 											) : (
-												<Typography variant="body2">{`$ ${folderData.amount}`}</Typography>
+												<Typography variant="body2">{`$ ${folder?.amount || " - "}`}</Typography>
 											)}
 										</>
 									)}
@@ -278,7 +324,7 @@ const FolderData = (props: any) => {
 							</Grid>
 							<Grid item columns={4} xs={12} sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Grid item xs={5}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton />
 											<Skeleton />
@@ -289,13 +335,15 @@ const FolderData = (props: any) => {
 											{isEditing ? (
 												<DateInputField customInputStyles={customInputStyles} name="initialDateFolder" />
 											) : (
-												<Typography variant="body2">{folderData.initialDateFolder}</Typography>
+												<Typography variant="body2">
+													{folder?.initialDateFolder ? moment(folder?.initialDateFolder, "DD-MM-YYYY").format("DD-MM-YYYY") : "-"}
+												</Typography>
 											)}
 										</>
 									)}
 								</Grid>
 								<Grid item xs={5}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton />
 											<Skeleton />
@@ -306,7 +354,11 @@ const FolderData = (props: any) => {
 											{isEditing ? (
 												<DateInputField customInputStyles={customInputStyles} name="finalDateFolder" />
 											) : (
-												type === "general" && <Typography variant="body2">{folderData.finalDateFolder}</Typography>
+												type === "general" && (
+													<Typography variant="body2">
+														{folder?.finalDateFolder ? moment(folder?.finalDateFolder, "DD-MM-YYYY").format("DD-MM-YYYY") : "-"}
+													</Typography>
+												)
 											)}
 										</>
 									)}
@@ -314,7 +366,7 @@ const FolderData = (props: any) => {
 							</Grid>
 							<Grid item columns={4} xs={12} sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Grid item xs={5}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton />
 											<Skeleton />
@@ -328,7 +380,7 @@ const FolderData = (props: any) => {
 								</Grid>
 								{(type === "general" || type === "judicial") && (
 									<Grid item xs={5}>
-										{folderData.isLoader ? (
+										{isLoader ? (
 											<>
 												<Skeleton />
 												<Skeleton />
@@ -344,7 +396,7 @@ const FolderData = (props: any) => {
 														style={{ maxHeight: "39.91px" }}
 													/>
 												) : (
-													<Typography variant="body2">{folderData.situationFolder || "-"}</Typography>
+													<Typography variant="body2">{folder?.situationFolder || "-"}</Typography>
 												)}
 											</>
 										)}
@@ -353,7 +405,7 @@ const FolderData = (props: any) => {
 							</Grid>
 							<Grid item xs={12} sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Grid>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton width={100} />
 											<Skeleton width={100} />
@@ -364,7 +416,7 @@ const FolderData = (props: any) => {
 											{isEditing ? (
 												<InputField name="description" sx={customTextareaStyles} id="description" multiline rows={2} />
 											) : (
-												<Typography variant="body2">{folderData.description}</Typography>
+												<Typography variant="body2">{folder?.description || ""}</Typography>
 											)}
 										</>
 									)}
@@ -372,14 +424,15 @@ const FolderData = (props: any) => {
 							</Grid>
 							<Grid item xs={12}>
 								<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mt: 1.5 }}>
-									{folderData.isLoader ? (
+									{isLoader ? (
 										<>
 											<Skeleton width={100} />
 										</>
 									) : (
 										<>
 											<Typography sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-												<Clock size={14} style={{ marginLeft: 8 }} /> 2 days ago
+												<Clock size={14} style={{ marginLeft: 8 }} />
+												{folder?.updatedAt ? moment(folder.updatedAt).fromNow() : "Sin actualizaciones recientes"}
 											</Typography>
 										</>
 									)}
@@ -387,11 +440,11 @@ const FolderData = (props: any) => {
 									<Stack direction="row" spacing={2}>
 										<Grid>
 											{isEditing ? (
-												<Button type="submit" variant="contained" disabled={folderData.isLoader}>
+												<Button type="submit" variant="contained" disabled={isLoader}>
 													Aplicar
 												</Button>
 											) : (
-												<Button type="button" onClick={handleEdit} disabled={folderData.isLoader}>
+												<Button type="button" onClick={handleEdit} disabled={isLoader}>
 													Editar
 												</Button>
 											)}

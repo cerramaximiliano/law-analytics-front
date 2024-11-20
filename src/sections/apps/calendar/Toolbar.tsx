@@ -6,6 +6,7 @@ import { useMediaQuery, Button, ButtonGroup, Grid, Stack, Tooltip, Typography, G
 
 // third-party
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 // project-imports
 import IconButton from "components/@extended/IconButton";
@@ -16,17 +17,17 @@ import { ArrowLeft2, ArrowRight2, Calendar1, Category, Grid6, TableDocument } fr
 // constant
 const viewOptions = [
 	{
-		label: "Month",
+		label: "Mes",
 		value: "dayGridMonth",
 		icon: Category,
 	},
 	{
-		label: "Week",
+		label: "Semana",
 		value: "timeGridWeek",
 		icon: Grid6,
 	},
 	{
-		label: "Day",
+		label: "Día",
 		value: "timeGridDay",
 		icon: Calendar1,
 	},
@@ -63,11 +64,15 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 		}
 	}, [matchDownSM]);
 
+	const capitalizeFirstLetter = (string: string) => {
+		return string.charAt(0).toUpperCase() + string.slice(1);
+	};
+
 	return (
 		<Grid alignItems="center" container justifyContent="space-between" spacing={matchDownSM ? 1 : 3} {...others} sx={{ pb: 3 }}>
 			<Grid item>
 				<Button variant="outlined" onClick={onClickToday} size={matchDownSM ? "small" : "medium"}>
-					Today
+					Hoy
 				</Button>
 			</Grid>
 			<Grid item>
@@ -76,7 +81,7 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 						<ArrowLeft2 />
 					</IconButton>
 					<Typography variant={matchDownSM ? "h5" : "h3"} color="textPrimary">
-						{format(date, "MMMM yyyy")}
+						{capitalizeFirstLetter(format(date, "MMMM yyyy", { locale: es }))}
 					</Typography>
 					<IconButton onClick={onClickNext} size={matchDownSM ? "small" : "large"}>
 						<ArrowRight2 />

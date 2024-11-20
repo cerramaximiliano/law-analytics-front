@@ -143,7 +143,6 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 				payload: "No se encontraron eventos para este id",
 			});
 		}
-
 	} catch (error) {
 		dispatch({
 			type: SET_EVENT_ERROR,
@@ -156,7 +155,6 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 	try {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/id/${_id}`);
-		console.log(response);
 		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
 				type: GET_EVENTS_BY_ID,

@@ -221,7 +221,7 @@ const Breadcrumbs = ({
 							<MuiBreadcrumbs aria-label="breadcrumb" maxItems={maxItems || 8} separator={separatorIcon}>
 								<Typography
 									component={Link}
-									to="/"
+									to="/dashboard/default"
 									color="textPrimary"
 									variant="h6"
 									sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}

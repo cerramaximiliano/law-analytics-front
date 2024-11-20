@@ -17,6 +17,7 @@ export type JudFolderData = {
 };
 
 export type FolderData = {
+	_id: string;
 	folderId: string;
 	folderName: string;
 	materia: string;

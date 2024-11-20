@@ -17,6 +17,7 @@ import {
 	Tooltip,
 	Select,
 	MenuItem,
+	Typography,
 } from "@mui/material";
 import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
 
@@ -69,6 +70,13 @@ const getInitialValues = (event: FormikValues | null, range: DateRange | null) =
 	};
 };
 
+const eventTypes = [
+	{ label: "Audiencia", value: "audiencia", color: "#1890ff" },
+	{ label: "Vencimiento", value: "vencimiento", color: "#ff4d4f" },
+	{ label: "Reunión", value: "reunion", color: "#52c41a" },
+	{ label: "Otro", value: "otro", color: "#faad14" },
+];
+
 // ==============================|| CALENDAR - EVENT ADD / EDIT / DELETE ||============================== //
 
 export interface AddEventFormProps {
@@ -81,7 +89,7 @@ export interface AddEventFormProps {
 
 const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventFormProps) => {
 	const isCreating = useMemo(() => event == null || Object.keys(event).length === 0, [event]);
-	console.log(isCreating, event);
+	//console.log(isCreating, event);
 	/* 	const backgroundColor = [
 		{
 			value: theme.palette.primary.main,
@@ -328,11 +336,33 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId }: AddEventForm
 									<Stack spacing={1.25}>
 										<InputLabel id="demo-simple-select-label">Seleccione un tipo</InputLabel>
 										<FormControl fullWidth error={Boolean(touched.type && errors.type)}>
-											<Select fullWidth labelId="demo-simple-select-label" id="demo-simple-select" {...getFieldProps("type")}>
-												<MenuItem value={"audiencia"}>Audiencia</MenuItem>
-												<MenuItem value={"vencimiento"}>Vencimiento</MenuItem>
-												<MenuItem value={"reunion"}>Reunión</MenuItem>
-												<MenuItem value={"otro"}>Otro</MenuItem>
+											<Select
+												fullWidth
+												labelId="demo-simple-select-label"
+												id="demo-simple-select"
+												{...getFieldProps("type")}
+												onChange={(e) => {
+													const selectedType = eventTypes.find((type) => type.value === e.target.value);
+													setFieldValue("type", selectedType?.value || "");
+													setFieldValue("color", selectedType?.color || "#1890ff"); // Guarda el color como valor
+												}}
+											>
+												{eventTypes.map((type) => (
+													<MenuItem value={type.value} key={type.value}>
+														{/* Contenedor de la opción */}
+														<Grid container alignItems="center" justifyContent="space-between">
+															<Typography>{type.label}</Typography>
+															<div
+																style={{
+																	width: "12px",
+																	height: "12px",
+																	borderRadius: "50%",
+																	backgroundColor: type.color,
+																}}
+															></div>
+														</Grid>
+													</MenuItem>
+												))}
 											</Select>
 											{touched.type && typeof errors.type === "string" && <FormHelperText error>{errors.type}</FormHelperText>}
 										</FormControl>
