@@ -1,6 +1,8 @@
+// reducers/folder.ts
+
 import axios from "axios";
 import { Dispatch } from "redux";
-import { FolderData } from "types/folder";
+import { FolderData, FolderState } from "types/folder";
 
 // Action types
 const ADD_FOLDER = "ADD_FOLDER";
@@ -12,7 +14,7 @@ const UPDATE_FOLDER = "UPDATE_FOLDER";
 const SET_FOLDER_ERROR = "SET_FOLDER_ERROR";
 
 // Initial state
-const initialFolderState = {
+const initialFolderState: FolderState = {
 	folders: [],
 	folder: null,
 	isLoader: false,
@@ -81,6 +83,7 @@ export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) 
 export const getFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`);
+		console.log(response);
 		if (response.data.success) {
 			dispatch({
 				type: GET_FOLDERS_BY_USER,
@@ -159,9 +162,7 @@ export const updateFolderById = (folderId: string, updatedData: Partial<FolderDa
 			return { success: false, message: "No se pudo actualizar el folder." };
 		}
 	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al actualizar folder."
-			: "Error desconocido.";
+		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al actualizar folder." : "Error desconocido.";
 		dispatch({
 			type: SET_FOLDER_ERROR,
 			payload: errorMessage,
@@ -169,6 +170,5 @@ export const updateFolderById = (folderId: string, updatedData: Partial<FolderDa
 		return { success: false, message: errorMessage };
 	}
 };
-
 
 export default folder;

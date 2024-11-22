@@ -1,4 +1,4 @@
-import { useState, Dispatch, SetStateAction } from "react";
+import { useState, Dispatch, SetStateAction, useEffect } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -20,6 +20,9 @@ import {
 // third-party
 import { SearchNormal1 } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
+import { dispatch, useSelector } from "store";
+import { filterContactsByFolder, updateMultipleContacts } from "store/reducers/contacts";
+import { openSnackbar } from "store/reducers/snackbar";
 
 type AddressModalType = {
 	open: boolean;
@@ -29,9 +32,9 @@ type AddressModalType = {
 
 // ==============================|| INVOICE - SELECT ADDRESS ||============================== //
 
-const ModalMembers = ({ open, setOpen, handlerAddress }: AddressModalType) => {
+const ModalMembers = ({ open, setOpen, handlerAddress, folderId }: AddressModalType & { folderId: string }) => {
 	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedAddress, setSelectedAddress] = useState<{ email: string } | null>(null);
+	const [selectedAddresses, setSelectedAddresses] = useState<any[]>([]);
 
 	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setSearchTerm(event.target.value);
@@ -41,17 +44,82 @@ const ModalMembers = ({ open, setOpen, handlerAddress }: AddressModalType) => {
 		setOpen(false);
 	};
 
-	const handleClick = (address: any) => {
-		console.log(address);
-		setSelectedAddress(address);
+	const toggleSelection = (address: any) => {
+		setSelectedAddresses((prev) =>
+			prev.some((selected) => selected.email === address.email)
+				? prev.filter((selected) => selected.email !== address.email)
+				: [...prev, address],
+		);
 	};
 
 	const handleVincular = () => {
-		if (selectedAddress) {
-			handlerAddress(selectedAddress);
+		const contactsToUpdate = selectedAddresses
+			.filter((address) => address._id) // Filtra solo aquellos con id definido
+			.map((address) => ({
+				id: address._id,
+				updateData: { ...address, folderId },
+			}));
+
+		if (contactsToUpdate.length === 0) {
+			console.error("No hay contactos válidos para actualizar.");
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Debe seleccionar un contacto para vincular.",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: true,
+				}),
+			);
 			closeAddressModal();
+			return;
 		}
+
+		dispatch(updateMultipleContacts(contactsToUpdate))
+			.then((response) => {
+				if (response.success) {
+					console.log("Contactos actualizados:", response.contacts);
+
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: "Contacto vinculado correctamente.",
+							variant: "alert",
+							alert: {
+								color: "success",
+							},
+							close: true,
+						}),
+					);
+
+					dispatch(filterContactsByFolder(folderId));
+				}
+			})
+			.catch((error) => {
+				console.error("Error al actualizar contactos:", error);
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Error al vincular el contacto.",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
+			});
+
+		closeAddressModal();
 	};
+	// Resetea el estado al abrir el modal
+	useEffect(() => {
+		if (open) {
+			setSelectedAddresses([]);
+		}
+	}, [open]);
 
 	return (
 		<Dialog
@@ -62,7 +130,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress }: AddressModalType) => {
 		>
 			<DialogTitle>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Typography variant="h5">Seleccione Interviniente</Typography>
+					<Typography variant="h5">Seleccione Intervinientes</Typography>
 				</Stack>
 			</DialogTitle>
 			<Divider />
@@ -85,7 +153,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress }: AddressModalType) => {
 					/>
 				</FormControl>
 				<Stack spacing={2}>
-					<Address handlerAddress={handleClick} searchTerm={searchTerm} selectedAddress={selectedAddress} />
+					<Address handlerAddress={toggleSelection} searchTerm={searchTerm} selectedAddresses={selectedAddresses} />
 				</Stack>
 			</DialogContent>
 			<Divider />
@@ -104,52 +172,15 @@ const ModalMembers = ({ open, setOpen, handlerAddress }: AddressModalType) => {
 type AddressProps = {
 	handlerAddress: (e: any) => void;
 	searchTerm: string;
-	selectedAddress: { email: string } | null;
+	selectedAddresses: any[];
 };
 
-const Address = ({ handlerAddress, searchTerm, selectedAddress }: AddressProps) => {
+const Address = ({ handlerAddress, searchTerm, selectedAddresses }: AddressProps) => {
 	const theme = useTheme();
 
-	const addressData = [
-		{
-			name: "Ian Carpenter",
-			address: "1754 Ureate, RhodSA5 5BO",
-			phone: "+91 1234567890",
-			email: "iacrpt65@gmail.com",
-		},
-		{
-			name: "Belle J. Richter",
-			address: "1300 Mine RoadQuemado, NM 87829",
-			phone: "305-829-7809",
-			email: "belljrc23@gmail.com",
-		},
-		{
-			name: "Ritika Yohannan",
-			address: "3488 Arbutus DriveMiami, FL",
-			phone: "+91 1234567890",
-			email: "rtyhn65@gmail.com",
-		},
-		{
-			name: "Jesse G. Hassen",
-			address: "3488 Arbutus DriveMiami, FL 33012",
-			phone: "+91 1234567890",
-			email: "jessghs78@gmail.com",
-		},
-		{
-			name: "Christopher P. Iacovelli",
-			address: "4388 House DriveWesrville, OH",
-			phone: "+91 1234567890",
-			email: "crpthl643@gmail.com",
-		},
-		{
-			name: "Thomas D. Johnson",
-			address: "4388 House DriveWestville, OH +91",
-			phone: "1234567890",
-			email: "thomshj56@gmail.com",
-		},
-	];
+	const { contacts } = useSelector((state: any) => state.contacts);
 
-	const filteredAddressData = addressData.filter((address) => address.name.toLowerCase().includes(searchTerm.toLowerCase()));
+	const filteredAddressData = contacts.filter((address: any) => address.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
 	return (
 		<SimpleBar
@@ -160,17 +191,19 @@ const Address = ({ handlerAddress, searchTerm, selectedAddress }: AddressProps) 
 				overflowY: "auto",
 			}}
 		>
-			{filteredAddressData.map((address) => (
+			{filteredAddressData.map((address: any, index: number) => (
 				<Box
 					onClick={() => handlerAddress(address)}
-					key={address.email}
+					key={index}
 					sx={{
 						width: "100%",
 						border: "1px solid",
-						borderColor: selectedAddress && selectedAddress.email === address.email ? theme.palette.primary.lighter : "secondary.200",
+						borderColor: selectedAddresses.some((selected) => selected.email === address.email)
+							? theme.palette.primary.lighter
+							: "secondary.200",
 						borderRadius: 1,
 						p: 1.25,
-						bgcolor: selectedAddress && selectedAddress.email === address.email ? theme.palette.primary.lighter : "inherit",
+						bgcolor: selectedAddresses.some((selected) => selected.email === address.email) ? theme.palette.primary.lighter : "inherit",
 						cursor: "pointer",
 						"&:hover": {
 							bgcolor: theme.palette.primary.lighter,

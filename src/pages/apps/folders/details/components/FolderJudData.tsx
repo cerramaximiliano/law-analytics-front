@@ -6,12 +6,12 @@ import Avatar from "components/@extended/Avatar";
 import IconButton from "components/@extended/IconButton";
 import moment from "moment";
 import data from "data/folder.json";
-import { FolderCross, Folder, FolderOpen, Clock, Notepad } from "iconsax-react";
+import { Clock, Notepad, Judge } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
-import AsynchronousAutocomplete from "components/UI/AsynchronousAutocomplete";
+//import AsynchronousAutocomplete from "components/UI/AsynchronousAutocomplete";
 import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
@@ -45,15 +45,36 @@ const customTextareaStyles = {
 	},
 };
 
-const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
+const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
+	const formatDate = (date: string | null | undefined) => {
+		if (!date) return "";
+		return moment(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
+	};
+	const defaultJudFolder = {
+		initialDateJudFolder: "",
+		finalDateJudFolder: "",
+		numberJudFolder: "",
+		amountJudFolder: "",
+		statusJudFolder: "Nueva",
+		descriptionJudFolder: "",
+	};
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? moment(folder.initialDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? moment(folder.finalDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
+		judFolder: {
+			initialDateJudFolder: formatDate(folder?.judFolder?.initialDateJudFolder) || defaultJudFolder.initialDateJudFolder,
+			finalDateJudFolder: formatDate(folder?.judFolder?.finalDateJudFolder) || defaultJudFolder.finalDateJudFolder,
+			numberJudFolder: folder?.judFolder?.numberJudFolder || defaultJudFolder.numberJudFolder,
+			amountJudFolder: folder?.judFolder?.amountJudFolder || defaultJudFolder.amountJudFolder,
+			statusJudFolder: folder?.judFolder?.statusJudFolder || defaultJudFolder.statusJudFolder,
+			descriptionJudFolder: folder?.judFolder?.descriptionJudFolder || defaultJudFolder.descriptionJudFolder,
+		},
 	};
+
 	const [isEditing, setIsEditing] = useState(false);
+
+	console.log(folder);
 
 	const status = ["Nueva", "En Proceso", "Finalizada"];
 	const [statusFolder, setStatusFolder] = useState(folder?.status || "Nueva");
@@ -135,11 +156,11 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 		materia: Yup.string().max(255).required("La materia es requerida"),
 		orderStatus: Yup.string().required("La parte es requerida"),
 		status: Yup.string().required("El estado es requerido"),
-		description: Yup.string().max(500),
-		initialDateFolder: Yup.string().matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
+		descriptionJudFolder: Yup.string().max(500),
+		initialDateJudFolder: Yup.string().matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
 			message: "El formato de fecha debe ser DD/MM/AAAA",
 		}),
-		finalDateFolder: Yup.string().when("status", {
+		finalDateJudFolder: Yup.string().when("status", {
 			is: (status: any) => status === "Finalizada",
 			then: () =>
 				Yup.string()
@@ -164,35 +185,14 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 		<MainCard
 			title={
 				<List disablePadding>
-					<ListItem
-						sx={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "space-between", // Asegura que el texto y el botón estén correctamente alineados
-							gap: 1, // Opcional: espacio entre elementos
-						}}
-						disablePadding
-						secondaryAction={secondaryAction}
-					>
+					<ListItem sx={{ p: 0 }} secondaryAction={secondaryAction}>
 						{isLoader ? (
 							<Skeleton variant="rectangular" width={40} height={40} style={{ marginRight: 10 }} />
 						) : (
 							<ListItemAvatar>
-								{statusFolder === "Finalizada" && type === "general" && (
-									<Avatar color="error" variant="rounded">
-										<FolderCross variant="Bold" />
-									</Avatar>
-								)}
-								{statusFolder === "Nueva" && type === "general" && (
-									<Avatar color="success" variant="rounded">
-										<Folder variant="Bold" />
-									</Avatar>
-								)}
-								{statusFolder === "En Proceso" && type === "general" && (
-									<Avatar color="primary" variant="rounded">
-										<FolderOpen variant="Bold" />
-									</Avatar>
-								)}
+								<Avatar color="primary" variant="rounded">
+									<Judge variant="Bold" />
+								</Avatar>
 							</ListItemAvatar>
 						)}
 						{isLoader ? (
@@ -202,28 +202,9 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 							</Grid>
 						) : (
 							<ListItemText
-								sx={{
-									my: 0,
-									overflow: "hidden", // Oculta el contenido que excede
-									textOverflow: "ellipsis", // Muestra "..." cuando el contenido se corta
-									whiteSpace: "nowrap", // Evita que el texto envuelva en varias líneas
-									maxWidth: "calc(100% - 48px)",
-								}}
-								primary={<Typography>Información General</Typography>}
-								secondary={
-									<Typography
-										variant="subtitle1"
-										sx={{
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											whiteSpace: "nowrap",
-											display: "block", // Asegura que el truncado se aplique correctamente
-											maxWidth: "calc(100% - 48px)", // Ajusta según el espacio disponible
-										}}
-									>
-										{folder?.folderName || "-"}
-									</Typography>
-								}
+								sx={{ my: 0 }}
+								primary={<Typography>Información Judicial</Typography>}
+								secondary={<Typography variant="subtitle1">{folder?.folderName || "-"}</Typography>}
 							/>
 						)}
 					</ListItem>
@@ -285,11 +266,11 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										</>
 									) : (
 										<>
-											<Typography variant="subtitle1">Materia</Typography>
+											<Typography variant="subtitle1">Expediente Nª</Typography>
 											{isEditing ? (
-												<AsynchronousAutocomplete placeholder="Seleccione una materia" options={data.materia} name="materia" />
+												<InputField name="judFolder.numberJudFolder" sx={customInputStyles} id="judFolder.numberJudFolder" />
 											) : (
-												<Typography variant="body2">{folder?.materia || " - "}</Typography>
+												<Typography variant="body2">{folder?.judFolder?.numberJudFolder || " - "}</Typography>
 											)}
 										</>
 									)}
@@ -312,11 +293,11 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 													fullWidth
 													placeholder="00.00"
 													InputProps={{ startAdornment: "$" }}
-													name="amount"
+													name="judFolder.amountJudFolder"
 													sx={customInputStyles}
 												/>
 											) : (
-												<Typography variant="body2">{`$ ${folder?.amount || " - "}`}</Typography>
+												<Typography variant="body2">{`$ ${folder?.judFolder?.amountJudFolder || " - "}`}</Typography>
 											)}
 										</>
 									)}
@@ -333,10 +314,12 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										<>
 											<Typography variant="subtitle1">Fecha Inicio</Typography>
 											{isEditing ? (
-												<DateInputField customInputStyles={customInputStyles} name="initialDateFolder" />
+												<DateInputField customInputStyles={customInputStyles} name="judFolder.initialDateJudFolder" />
 											) : (
 												<Typography variant="body2">
-													{folder?.initialDateFolder ? moment(folder?.initialDateFolder, "DD-MM-YYYY").format("DD-MM-YYYY") : "-"}
+													{folder?.judFolder?.initialDateJudFolder
+														? moment(folder.judFolder?.initialDateJudFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
+														: "-"}
 												</Typography>
 											)}
 										</>
@@ -352,13 +335,13 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										<>
 											<Typography variant="subtitle1">Fecha Fin</Typography>
 											{isEditing ? (
-												<DateInputField customInputStyles={customInputStyles} name="finalDateFolder" />
+												<DateInputField customInputStyles={customInputStyles} name="judFolder.finalDateJudFolder" />
 											) : (
-												type === "general" && (
-													<Typography variant="body2">
-														{folder?.finalDateFolder ? moment(folder?.finalDateFolder, "DD-MM-YYYY").format("DD-MM-YYYY") : "-"}
-													</Typography>
-												)
+												<Typography variant="body2">
+													{folder?.judFolder?.finalDateJudFolder
+														? moment(folder.judFolder?.finalDateJudFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
+														: "-"}
+												</Typography>
 											)}
 										</>
 									)}
@@ -414,9 +397,9 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										<>
 											<Typography variant="subtitle1">Descripción</Typography>
 											{isEditing ? (
-												<InputField name="description" sx={customTextareaStyles} id="description" multiline rows={2} />
+												<InputField name="judFolder.description" sx={customTextareaStyles} id="description" multiline rows={2} />
 											) : (
-												<Typography variant="body2">{folder?.description || ""}</Typography>
+												<Typography variant="body2">{folder?.judFolder?.description || " - "}</Typography>
 											)}
 										</>
 									)}
@@ -432,7 +415,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										<>
 											<Typography sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
 												<Clock size={14} style={{ marginLeft: 8 }} />
-												{folder?.updatedAt ? moment(folder.updatedAt).fromNow() : "Sin actualizaciones recientes"}
+												{folder?.judFolder?.updatedAt ? moment(folder.judFolder.updatedAt).fromNow() : "Sin actualizaciones recientes"}
 											</Typography>
 										</>
 									)}
@@ -460,4 +443,4 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 	);
 };
 
-export default FolderData;
+export default FolderJudData;

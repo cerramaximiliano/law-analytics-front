@@ -47,7 +47,7 @@ import { Add, FolderAdd, Edit, Eye, Trash, Maximize } from "iconsax-react";
 // types
 import { ThemeMode } from "types/config";
 import { dispatch, useSelector } from "store";
-import { getFoldersByUserId } from "store/reducers/folders";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { Folder } from "types/folders";
 // ==============================|| REACT TABLE ||============================== //
 
@@ -115,7 +115,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 				"folderFuero",
 			]);
 		} else {
-			setHiddenColumns([ "email", "_id", "description", "finalDateFolder"]);
+			setHiddenColumns(["email", "_id", "description", "finalDateFolder"]);
 		}
 		// eslint-disable-next-line
 	}, [matchDownSM]);
@@ -230,7 +230,7 @@ const FoldersLayout = () => {
 
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
-	const folders = useSelector((state) => state.folders.folders);
+	const folders = useSelector((state) => state.folder.folders);
 
 	const fetchFolders = useCallback(async () => {
 		if (userId) {
@@ -432,7 +432,7 @@ const FoldersLayout = () => {
 			const folderData = folders[Number(row.id)];
 			return folderData ? <FolderView data={folderData} /> : null;
 		},
-		[folder]
+		[folder],
 	);
 
 	const renderAddFolder = useMemo(() => {

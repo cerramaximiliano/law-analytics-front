@@ -1,3 +1,5 @@
+// types/folder.ts
+
 export type PreFolderData = {
 	initialDatePreFolder: string;
 	finalDatePreFolder: string;
@@ -12,6 +14,7 @@ export type JudFolderData = {
 	finalDateJudFolder: string;
 	numberJudFolder: string;
 	statusJudFolder: string;
+	amountJudFolder: string;
 	/* "En letra" | "En despacho"; */
 	descriptionJudFolder: string;
 };
@@ -63,4 +66,11 @@ export type FolderData = {
 	judFolder: JudFolderData;
 	isLoader?: boolean;
 	error?: string | null;
+};
+
+export type FolderState = {
+	folders: FolderData[];
+	folder: FolderData | null;
+	isLoader: boolean;
+	error?: string;
 };

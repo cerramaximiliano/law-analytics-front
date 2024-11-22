@@ -11,41 +11,29 @@ import {
 	Typography,
 	Button,
 	Dialog,
+	Tooltip,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import { Add, UserSquare, Trash } from "iconsax-react"; // Importa el icono Trash
+import { Add, UserSquare, Trash, Link1 } from "iconsax-react"; // Importa el icono Trash
 import { PopupTransition } from "components/@extended/Transitions";
 import { useState } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import ModalMembers from "../modals/ModalMembers";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 
+import { Contact } from "types/contact";
+import { deleteContact, updateContact } from "store/reducers/contacts";
+import { dispatch } from "store";
+import { openSnackbar } from "store/reducers/snackbar";
+
 // Tipo para los miembros
-export interface Member {
-	name: string;
-	lastName: string;
-	email: string;
-	role: "Cliente" | "Abogado" | "Contrario" | "Mediador/Conciliador" | "Causante" | "Perito" | "Entidad";
-	type?: "Humana" | "Jurídica";
-	time?: string;
-	address?: string;
-	state?: string;
-	zipCode?: string;
-	avatar?: string;
-	phone?: string;
-	nacionality?: string;
-	document?: string;
-	cuit?: string;
-	status?: string;
-	activity?: string;
-	company?: string;
-	fiscal?: string;
-}
 
 interface MembersProps {
 	title: string;
-	membersData: Member[];
+	membersData: Contact[];
+	isLoader: boolean;
+	folderId: string;
 }
 
 const getColorByRole = (role: string) => {
@@ -69,15 +57,15 @@ const getColorByRole = (role: string) => {
 	}
 };
 
-const Members: React.FC<MembersProps> = ({ title, membersData }) => {
-	const [members, setMembers] = useState<Member[]>(membersData);
+const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId }) => {
+	const [members, setMembers] = useState<Contact[]>(membersData);
+
 	const [add, setAdd] = useState<boolean>(false);
 	const [openModal, setOpenModal] = useState<boolean>(false);
 	const [parent] = useAutoAnimate({ duration: 200 });
-	const [isLoading, setIsLoading] = useState(true);
-	console.log(isLoading, setIsLoading);
+
 	const handleAdd = () => {
-		if (isLoading === true) {
+		if (isLoader === true) {
 			return;
 		} else {
 			setAdd(!add);
@@ -95,9 +83,55 @@ const Members: React.FC<MembersProps> = ({ title, membersData }) => {
 		}
 	};
 
-	const handleDelete = (email: string) => {
-		setMembers((prevMembers) => prevMembers.filter((member) => member.email !== email));
+	const handleDelete = async (_id: string) => {
+		try {
+			const response = await dispatch(deleteContact(_id));
+			if (response?.success) {
+				setMembers((prevMembers) => prevMembers.filter((member) => member._id !== _id));
+			} else {
+				console.error("Error al eliminar el contacto:", response?.error);
+			}
+		} catch (error) {
+			console.error("Error inesperado al eliminar el contacto:", error);
+		}
 	};
+
+	const handleUnlink = (contactId: string) => {
+		dispatch(updateContact(contactId, { folderId: null })).then((response) => {
+			if (response.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Contacto desvinculado correctamente.",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: true,
+					}),
+				);
+				setMembers((prevMembers) => prevMembers.filter((member) => member._id !== contactId));
+			} else {
+				// Manejo de errores más seguro
+				const errorMessage =
+					typeof response.error === "string"
+						? response.error
+						: response.error?.message || "Error al desvincular el contacto.";
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: errorMessage,
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
+			}
+		});
+	};
+	
 
 	return (
 		<MainCard
@@ -121,18 +155,16 @@ const Members: React.FC<MembersProps> = ({ title, membersData }) => {
 			>
 				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" />
 			</Dialog>
-			<ModalMembers open={openModal} setOpen={setOpenModal} handlerAddress={handlerAddress} />
+			<ModalMembers open={openModal} setOpen={setOpenModal} handlerAddress={handlerAddress} folderId={folderId} />
 			<CardContent>
-				{isLoading ? (
+				{isLoader ? (
 					<>
 						<Stack direction={"row"} style={{ marginLeft: 24, marginRight: 24, marginTop: 12, marginBottom: 12 }}>
 							<Grid>
 								<Skeleton variant="rectangular" width={52} height={52} />
 							</Grid>
 							<Grid style={{ marginLeft: 20 }}>
-								<Skeleton width={100} />
-								<Skeleton width={100} />
-								<Skeleton width={100} />
+								<SkeletonList />
 							</Grid>
 						</Stack>
 						<Stack direction={"row"} style={{ marginLeft: 24, marginRight: 24, marginTop: 12, marginBottom: 12 }}>
@@ -149,9 +181,9 @@ const Members: React.FC<MembersProps> = ({ title, membersData }) => {
 				) : (
 					<>
 						<List disablePadding sx={{ "& .MuiListItem-root": { px: 3, py: 1.5 } }} ref={parent}>
-							{members.length > 0 ? (
-								members.map((member, index) => (
-									<ListItem key={index} divider={index < members.length - 1}>
+							{membersData.length > 0 ? (
+								membersData.map((member, index) => (
+									<ListItem key={index} divider={index < membersData.length - 1}>
 										<ListItemAvatar sx={{ mr: 1 }}>
 											<Avatar alt={member.name} src={member.avatar} variant="rounded" size="lg" color={getColorByRole(member.role)} />
 										</ListItemAvatar>
@@ -159,21 +191,21 @@ const Members: React.FC<MembersProps> = ({ title, membersData }) => {
 											primary={<Typography variant="subtitle1">{`${member.name || ""} ${member.lastName || ""}`}</Typography>}
 											secondary={<Typography sx={{ mt: 0.25 }}>{member.role}</Typography>}
 										/>
-										<IconButton edge="end" aria-label="delete" onClick={() => handleDelete(member.email)} color="error">
-											<Trash />
-										</IconButton>
+										<Tooltip title="Desvincular">
+											<IconButton edge="end" color="primary" aria-label="unlink" onClick={() => handleUnlink(member._id)}>
+												<Link1 variant="Broken" />
+											</IconButton>
+										</Tooltip>
+										<Tooltip title="Eliminar">
+											<IconButton edge="end" aria-label="delete" onClick={() => handleDelete(member._id)} color="error">
+												<Trash variant="Bulk" />
+											</IconButton>
+										</Tooltip>
 									</ListItem>
 								))
 							) : (
 								<>
-									<Grid container justifyContent="center">
-										<Avatar color="error" variant="rounded">
-											<UserSquare variant="Bold" />
-										</Avatar>
-									</Grid>
-									<Typography variant="body1" color="text.secondary" align="center">
-										No hay intervinientes
-									</Typography>
+									<NoMembersPlaceholder />
 								</>
 							)}
 						</List>
@@ -181,7 +213,7 @@ const Members: React.FC<MembersProps> = ({ title, membersData }) => {
 				)}
 
 				<Grid marginTop={2}>
-					<Button variant="outlined" fullWidth color="secondary" onClick={handleOpen} disabled={isLoading}>
+					<Button variant="outlined" fullWidth color="secondary" onClick={handleOpen} disabled={isLoader}>
 						Vincular
 					</Button>
 				</Grid>
@@ -191,3 +223,41 @@ const Members: React.FC<MembersProps> = ({ title, membersData }) => {
 };
 
 export default Members;
+
+const SkeletonList = () => (
+	<>
+		<Stack direction={"row"} style={{ marginLeft: 24, marginRight: 24, marginTop: 12, marginBottom: 12 }}>
+			<Grid>
+				<Skeleton variant="rectangular" width={52} height={52} />
+			</Grid>
+			<Grid style={{ marginLeft: 20 }}>
+				<Skeleton width={100} />
+				<Skeleton width={100} />
+				<Skeleton width={100} />
+			</Grid>
+		</Stack>
+		<Stack direction={"row"} style={{ marginLeft: 24, marginRight: 24, marginTop: 12, marginBottom: 12 }}>
+			<Grid>
+				<Skeleton variant="rectangular" width={52} height={52} />
+			</Grid>
+			<Grid style={{ marginLeft: 20 }}>
+				<Skeleton width={100} />
+				<Skeleton width={100} />
+				<Skeleton width={100} />
+			</Grid>
+		</Stack>
+	</>
+);
+
+const NoMembersPlaceholder = () => (
+	<>
+		<Grid container justifyContent="center">
+			<Avatar color="error" variant="rounded">
+				<UserSquare variant="Bold" />
+			</Avatar>
+		</Grid>
+		<Typography variant="body1" color="text.secondary" align="center">
+			No hay intervinientes
+		</Typography>
+	</>
+);

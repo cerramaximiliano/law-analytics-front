@@ -1,4 +1,4 @@
-import { useState, MouseEvent } from "react";
+import { useState, MouseEvent, useEffect } from "react";
 
 /* import { 
 	dispatch, 
@@ -12,13 +12,21 @@ import { Category, TableDocument } from "iconsax-react";
 import { CalcAmounts } from "./components/CalcTable";
 import Movements from "./components/Movements";
 import FolderData from "./components/FolderData";
+import FolderPreJudData from "./components/FolderPreJudData";
+import FolderJudData from "./components/FolderJudData";
 import Notifications from "./components/Notifications";
-import { Member } from "./components/Members";
+
 import Members from "./components/Members";
 import CalcTable from "./components/CalcTable";
 //import Payment from "./components/Payment";
 import TaskList from "./components/TaskList";
 import Calendar from "./components/Calendar";
+import { dispatch } from "store";
+import { getFolderById } from "store/reducers/folder";
+import { useSelector } from "react-redux";
+import { useParams } from "react-router";
+import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
+
 /* 
 import { Member } from "./components/Members";
 import { CalcAmounts } from "./components/CalcTable";
@@ -361,7 +369,7 @@ const data = {
 	situationFolder: "En letra",
 	monto: 200000,
 };
-const membersData: Member[] = [
+/* const membersData: Member[] = [
 	{
 		name: "Ian",
 		lastName: "Carpenter",
@@ -378,7 +386,7 @@ const membersData: Member[] = [
 		role: "Abogado",
 		email: "belljrc23@gmail.com",
 	},
-];
+]; */
 const viewOptions = [
 	{
 		label: "Expandir",
@@ -618,6 +626,7 @@ const taskData = [
 		date: "26/04/2024",
 	},
 ];
+
 /* const eventsData = [
 	{
 		id: "5e8882f1f0c9216397e05a9b",
@@ -756,24 +765,54 @@ const taskData = [
 	},
 ]; */
 const Details = () => {
-	//const folderData = useSelector((state: any) => state.folder);
-	//const { id } = useParams();
+	const { id } = useParams<{ id: string }>();
 
-	//const [isLoading, setIsLoading] = useState(true);
-	//console.log(isLoading, folderData);
+	const { folder, isLoader } = useSelector((state: any) => state.folder);
+	const contact = useSelector((state: any) => state.contacts);
+	const auth = useSelector((state: any) => state.auth);
+	console.log(auth.user._id);
+
+	useEffect(() => {
+		const fetchFolderData = async () => {
+			try {
+				if (id && id !== "undefined") {
+					await dispatch(getFolderById(id));
+				}
+			} catch (error) {
+				console.error("Error fetching folder data:", error);
+			}
+		};
+
+		fetchFolderData();
+	}, [id]);
+
+	useEffect(() => {
+		const fetchUserContacts = async () => {
+			try {
+				if (auth.user._id) {
+					await dispatch(getContactsByUserId(auth.user._id));
+				}
+			} catch (error) {
+				console.error("Error fetching user contacts:", error);
+			}
+		};
+
+		fetchUserContacts();
+	}, [auth.user._id]);
+
+	// Efecto para filtrar los contactos cuando ambos (folder y contactos) estén disponibles
+	useEffect(() => {
+		const filterFolderContacts = () => {
+			if (id && id !== "undefined" && contact.contacts?.length > 0) {
+				dispatch(filterContactsByFolder(id));
+			}
+		};
+
+		filterFolderContacts();
+	}, [id, contact.contacts]);
+
 	const [alignment, setAlignment] = useState<string | null>("two");
 	const [isColumn, setIsColumn] = useState<boolean>(false);
-
-	/* 	useEffect(() => {
-		if (id) {
-			const fetchData = async () => {
-				setIsLoading(true);
-				await dispatch(fetchFolderData(id));
-				setIsLoading(false);
-			};
-			fetchData();
-		}
-	}, [id, dispatch]); */
 
 	const handleAlignment = (event: MouseEvent<HTMLElement>, newAlignment: string | null) => {
 		if (newAlignment === "one") {
@@ -814,7 +853,7 @@ const Details = () => {
 						transition: "all 0.5s ease-in-out",
 					}}
 				>
-					<FolderData type="general" />
+					<FolderData isLoader={isLoader} folder={folder} type="general" />
 				</Grid>
 				<Grid
 					item
@@ -848,7 +887,7 @@ const Details = () => {
 						transition: "all 0.7s ease-in-out",
 					}}
 				>
-					<FolderData folderData={data} type="mediacion" />
+					<FolderPreJudData isLoader={isLoader} folder={folder} type="mediacion" />
 				</Grid>
 				<Grid
 					item
@@ -859,7 +898,7 @@ const Details = () => {
 						transition: "all 0.7s ease-in-out",
 					}}
 				>
-					{/* <FolderData folderData={data} type="judicial" /> */}
+					<FolderJudData isLoader={isLoader} folder={folder} type="judicial" />
 				</Grid>
 				<Grid
 					item
@@ -882,7 +921,7 @@ const Details = () => {
 						transition: "all 0.7s ease-in-out",
 					}}
 				>
-					<Members title={"Intervinientes"} membersData={membersData} />
+					{id && <Members title={"Intervinientes"} membersData={contact.selectedContacts} isLoader={contact.isLoader} folderId={id} />}
 				</Grid>
 				<Grid
 					item

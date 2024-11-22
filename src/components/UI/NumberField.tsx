@@ -18,8 +18,6 @@ export default function NumberField(props: any) {
 		//field.onChange({ target: { name: field.name, value: floatValue } });
 		setValue(floatValue);
 	};
-	console.log(props);
-	console.log(field);
 	return (
 		<NumericFormat
 			valueIsNumericString={true}
