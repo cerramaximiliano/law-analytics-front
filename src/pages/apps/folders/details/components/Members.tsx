@@ -83,17 +83,52 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 		}
 	};
 
-	const handleDelete = async (_id: string) => {
-		try {
-			const response = await dispatch(deleteContact(_id));
-			if (response?.success) {
-				setMembers((prevMembers) => prevMembers.filter((member) => member._id !== _id));
-			} else {
-				console.error("Error al eliminar el contacto:", response?.error);
-			}
-		} catch (error) {
-			console.error("Error inesperado al eliminar el contacto:", error);
-		}
+	const handleDelete = (contactId: string) => {
+		dispatch(deleteContact(contactId))
+			.then((response) => {
+				if (response.success) {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: "Contacto eliminado correctamente.",
+							variant: "alert",
+							alert: {
+								color: "success",
+							},
+							close: true,
+						}),
+					);
+					setMembers((prevMembers) => prevMembers.filter((member) => member._id !== contactId));
+				} else {
+					// Manejo de errores más seguro
+					const errorMessage =
+						typeof response.error === "string" ? response.error : response.error?.message || "Error al eliminar el contacto.";
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: errorMessage,
+							variant: "alert",
+							alert: {
+								color: "error",
+							},
+							close: true,
+						}),
+					);
+				}
+			})
+			.catch((error) => {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Error inesperado al eliminar el contacto.",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
+			});
 	};
 
 	const handleUnlink = (contactId: string) => {
@@ -114,9 +149,7 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 			} else {
 				// Manejo de errores más seguro
 				const errorMessage =
-					typeof response.error === "string"
-						? response.error
-						: response.error?.message || "Error al desvincular el contacto.";
+					typeof response.error === "string" ? response.error : response.error?.message || "Error al desvincular el contacto.";
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -131,7 +164,6 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 			}
 		});
 	};
-	
 
 	return (
 		<MainCard

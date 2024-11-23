@@ -770,7 +770,6 @@ const Details = () => {
 	const { folder, isLoader } = useSelector((state: any) => state.folder);
 	const contact = useSelector((state: any) => state.contacts);
 	const auth = useSelector((state: any) => state.auth);
-	console.log(auth.user._id);
 
 	useEffect(() => {
 		const fetchFolderData = async () => {

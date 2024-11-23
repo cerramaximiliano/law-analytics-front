@@ -8,7 +8,6 @@ import Loader from "components/Loader";
 import Locales from "components/Locales";
 import RTLLayout from "components/RTLLayout";
 import ScrollTop from "components/ScrollTop";
-// import Customization from 'components/Customization';
 import Snackbar from "components/@extended/Snackbar";
 import Notistack from "components/third-party/Notistack";
 
@@ -19,12 +18,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // auth-provider
 import { ServerAuthProvider as AuthProvider } from "contexts/ServerContext";
-//import { JWTProvider as AuthProvider } from "contexts/JWTContext";
-// import { FirebaseProvider as AuthProvider } from 'contexts/FirebaseContext';
-// import { AWSCognitoProvider as AuthProvider } from 'contexts/AWSCognitoContext';
-// import { Auth0Provider as AuthProvider } from 'contexts/Auth0Context';
-
-// ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
+import { UnauthorizedProvider } from "contexts/UnauthorizedContext";
 
 const googleClientId = process.env.REACT_APP_AUTH0_GOOGLE_ID;
 if (!googleClientId) {
@@ -49,13 +43,12 @@ const App = () => {
 					<ScrollTop>
 						<GoogleOAuthProvider clientId={googleClientId}>
 							<AuthProvider>
-								<>
+								<UnauthorizedProvider>
 									<Notistack>
 										<Routes />
-										{/* <Customization /> */}
 										<Snackbar />
 									</Notistack>
-								</>
+								</UnauthorizedProvider>
 							</AuthProvider>
 						</GoogleOAuthProvider>
 					</ScrollTop>

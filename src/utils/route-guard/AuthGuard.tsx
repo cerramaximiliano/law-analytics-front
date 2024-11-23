@@ -6,7 +6,7 @@ import useAuth from "hooks/useAuth";
 
 const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 	const { isLoggedIn, needsVerification } = useAuth();
-	console.log(isLoggedIn, needsVerification);
+
 	const navigate = useNavigate();
 	const location = useLocation();
 

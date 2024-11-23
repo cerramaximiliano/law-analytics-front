@@ -65,7 +65,7 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 							setStatus({ success: true });
 							setSubmitting(false);
 						}
-					} catch (err: any) {	
+					} catch (err: any) {
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setTimeout(() => {
