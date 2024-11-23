@@ -31,6 +31,7 @@ const TaskList = (props: { title: string; tasks: TaskDataType[] }) => {
 	const [parent] = useAutoAnimate({ duration: 200 });
 	const [isLoading, setIsLoading] = useState(true);
 	console.log(isLoading, setIsLoading);
+
 	const [taskCompletion, setTaskCompletion] = useState<TaskCompletionType>(() => {
 		const initialState: TaskCompletionType = {};
 		initialTasks.forEach((task) => {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
@@ -17,16 +17,17 @@ import {
 	FormHelperText,
 	InputAdornment,
 	Divider,
+	CircularProgress,
 } from "@mui/material";
 import { Eye, EyeSlash } from "iconsax-react";
 import * as Yup from "yup";
-import { Formik } from "formik";
+import { Formik, FormikHelpers } from "formik";
 import IconButton from "components/@extended/IconButton";
 import useAuth from "hooks/useAuth";
-import useScriptRef from "hooks/useScriptRef";
 import { dispatch as reduxDispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { GoogleLogin } from "@react-oauth/google";
+import { CredentialResponse } from "@react-oauth/google";
 
 // Types
 interface UnauthorizedContextType {
@@ -35,55 +36,36 @@ interface UnauthorizedContextType {
 	handleLogout: () => void;
 }
 
-interface UnauthorizedProviderProps {
-	children: React.ReactNode;
+interface FormValues {
+	email: string;
+	password: string;
+	submit: null;
 }
 
+// Create context with type
 const UnauthorizedContext = createContext<UnauthorizedContextType | null>(null);
 
 const validationSchema = Yup.object().shape({
-	email: Yup.string().email("Debe ser un e-mail válido").max(255).required("El e-mail es requerido"),
-	password: Yup.string().max(255).required("El password es requerido"),
+	email: Yup.string().email("Debe ser un e-mail válido").required("El e-mail es requerido").trim(),
+	password: Yup.string().required("El password es requerido").min(6, "El password debe tener al menos 6 caracteres"),
 });
 
-const initialValues = {
+const initialValues: FormValues = {
 	email: "",
 	password: "",
 	submit: null,
 };
 
-export const UnauthorizedProvider: React.FC<UnauthorizedProviderProps> = ({ children }) => {
+export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [showUnauthorizedModal, setShowUnauthorizedModal] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const submitAttempts = useRef(0);
+	const maxRetries = 3;
+
 	const { logout, login, loginWithGoogle } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const scriptedRef = useScriptRef();
-
-	const handleClickShowPassword = useCallback(() => {
-		setShowPassword((prev) => !prev);
-	}, []);
-
-	const handleMouseDownPassword = useCallback((event: React.SyntheticEvent) => {
-		event.preventDefault();
-	}, []);
-
-	useEffect(() => {
-		const interceptor = axios.interceptors.response.use(
-			(response) => response,
-			(error) => {
-				if (error.response?.status === 401 && !error.config.url?.includes("/api/auth/") && !error.config._retry) {
-					error.config._retry = true;
-					setShowUnauthorizedModal(true);
-				}
-				return Promise.reject(error);
-			},
-		);
-
-		return () => {
-			axios.interceptors.response.eject(interceptor);
-		};
-	}, []);
 
 	const showSnackbar = useCallback((message: string, color: "success" | "error" | "info") => {
 		reduxDispatch(
@@ -97,100 +79,102 @@ export const UnauthorizedProvider: React.FC<UnauthorizedProviderProps> = ({ chil
 		);
 	}, []);
 
-	const handleCloseModal = useCallback(async () => {
+	useEffect(() => {
+		if (!showUnauthorizedModal) {
+			setIsSubmitting(false);
+			submitAttempts.current = 0;
+		}
+	}, [showUnauthorizedModal]);
+
+	useEffect(() => {
+		const interceptor = axios.interceptors.response.use(
+			(response) => response,
+			(error) => {
+				if (error.response?.status === 401 && !error.config.url?.includes("/api/auth/") && !error.config._retry) {
+					error.config._retry = true;
+					setShowUnauthorizedModal(true);
+				}
+				return Promise.reject(error);
+			},
+		);
+
+		return () => axios.interceptors.response.eject(interceptor);
+	}, []);
+
+	const handleFormSubmit = async (values: FormValues, { setErrors, setStatus }: FormikHelpers<FormValues>) => {
+		if (isSubmitting) return;
+
+		try {
+			setIsSubmitting(true);
+			submitAttempts.current += 1;
+
+			await validationSchema.validate(values, { abortEarly: false });
+			await login(values.email.trim(), values.password);
+
+			setStatus({ success: true });
+			setShowUnauthorizedModal(false);
+			showSnackbar("¡Inicio de sesión exitoso!", "success");
+		} catch (err: any) {
+			console.error("Login error:", err);
+
+			setStatus({ success: false });
+
+			const errorMessage = err?.response?.data?.message || err.message || "Error al iniciar sesión";
+
+			setErrors({
+				submit: `${errorMessage}${submitAttempts.current >= maxRetries ? ". Demasiados intentos, serás redirigido." : ""}`,
+			});
+
+			showSnackbar(errorMessage, "error");
+
+			if (submitAttempts.current >= maxRetries) {
+				setTimeout(handleLogout, 2000);
+			}
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const handleLogout = async () => {
 		try {
 			setShowUnauthorizedModal(false);
 			await logout();
 			showSnackbar("Por favor, inicie sesión nuevamente", "info");
-			navigate("/login", {
-				state: { from: location.pathname },
-				replace: true,
-			});
 		} catch (error) {
-			console.error("Error during modal close:", error);
+			console.error("Logout error:", error);
 			showSnackbar("Error al cerrar sesión", "error");
+		} finally {
 			navigate("/login", {
 				state: { from: location.pathname },
 				replace: true,
 			});
 		}
-	}, [logout, navigate, location.pathname, showSnackbar]);
+	};
 
-	const handleGoogleSuccess = useCallback(
-		async (tokenResponse: any) => {
-			try {
-				await loginWithGoogle(tokenResponse);
-				setShowUnauthorizedModal(false);
-				showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
-			} catch (error) {
-				console.error("Error en login con Google:", error);
-				showSnackbar("Error al iniciar sesión con Google", "error");
-			}
-		},
-		[loginWithGoogle, showSnackbar],
-	);
-
-	const handleGoogleError = useCallback(() => {
-		showSnackbar("Error al iniciar sesión con Google", "error");
-	}, [showSnackbar]);
-
-	const handleFormSubmit = useCallback(
-		async (values: typeof initialValues, { setErrors, setStatus, setSubmitting }: any) => {
-			try {
-				await login(values.email, values.password);
-				if (scriptedRef.current) {
-					setStatus({ success: true });
-					setSubmitting(false);
-					setShowUnauthorizedModal(false);
-					showSnackbar("¡Inicio de sesión exitoso!", "success");
-				}
-			} catch (err: any) {
-				console.log("Error en login:", err);
-
-				// Manejar el error sin depender de scriptedRef
-				setStatus({ success: false });
-				setSubmitting(false);
-
-				// Obtener el mensaje de error
-				const errorMessage = err?.response?.data?.message || "Error al iniciar sesión";
-
-				// Mostrar errores
-				setErrors({ submit: errorMessage });
-				showSnackbar(errorMessage, "error");
-
-				// Cerrar sesión y redirigir después de 3 segundos
-				setTimeout(async () => {
-					try {
-						setShowUnauthorizedModal(false);
-						await logout();
-						navigate("/login", {
-							state: { from: location.pathname },
-							replace: true,
-						});
-					} catch (logoutError) {
-						console.error("Error during logout:", logoutError);
-						// Redirigir aunque falle el logout
-						navigate("/login", {
-							state: { from: location.pathname },
-							replace: true,
-						});
-					}
-				}, 3000);
-			}
-		},
-		[login, scriptedRef, showSnackbar, navigate, location.pathname],
-	);
+	const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+		try {
+			setIsSubmitting(true);
+			await loginWithGoogle(credentialResponse);
+			setShowUnauthorizedModal(false);
+			showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
+		} catch (error) {
+			console.error("Google login error:", error);
+			showSnackbar("Error al iniciar sesión con Google", "error");
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
 
 	return (
 		<UnauthorizedContext.Provider
 			value={{
 				showUnauthorizedModal,
 				setShowUnauthorizedModal,
-				handleLogout: handleCloseModal,
+				handleLogout,
 			}}
 		>
 			{children}
-			<Dialog open={showUnauthorizedModal} onClose={handleCloseModal} maxWidth="xs" fullWidth disableEscapeKeyDown={false}>
+			<Dialog open={showUnauthorizedModal} maxWidth="xs" fullWidth disableEscapeKeyDown={isSubmitting}>
 				<DialogTitle>
 					<Box display="flex" alignItems="center">
 						<Typography variant="h5">Sesión Expirada</Typography>
@@ -203,7 +187,7 @@ export const UnauthorizedProvider: React.FC<UnauthorizedProviderProps> = ({ chil
 					</Alert>
 
 					<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleFormSubmit}>
-						{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+						{({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
 							<form noValidate onSubmit={handleSubmit}>
 								<Grid container spacing={3}>
 									<Grid item xs={12}>
@@ -219,14 +203,12 @@ export const UnauthorizedProvider: React.FC<UnauthorizedProviderProps> = ({ chil
 												placeholder="Ingresa tu email"
 												fullWidth
 												error={Boolean(touched.email && errors.email)}
+												disabled={isSubmitting}
 											/>
-											{touched.email && errors.email && (
-												<FormHelperText error id="standard-weight-helper-text-email-login">
-													{errors.email}
-												</FormHelperText>
-											)}
+											{touched.email && errors.email && <FormHelperText error>{errors.email}</FormHelperText>}
 										</Stack>
 									</Grid>
+
 									<Grid item xs={12}>
 										<Stack spacing={1}>
 											<InputLabel htmlFor="password-login">Password</InputLabel>
@@ -239,37 +221,30 @@ export const UnauthorizedProvider: React.FC<UnauthorizedProviderProps> = ({ chil
 												name="password"
 												onBlur={handleBlur}
 												onChange={handleChange}
+												disabled={isSubmitting}
 												endAdornment={
 													<InputAdornment position="end">
-														<IconButton
-															aria-label="toggle password visibility"
-															onClick={handleClickShowPassword}
-															onMouseDown={handleMouseDownPassword}
-															edge="end"
-															color="secondary"
-														>
+														<IconButton onClick={() => setShowPassword(!showPassword)} edge="end" color="secondary" disabled={isSubmitting}>
 															{showPassword ? <Eye /> : <EyeSlash />}
 														</IconButton>
 													</InputAdornment>
 												}
 												placeholder="Ingresa tu password"
 											/>
-											{touched.password && errors.password && (
-												<FormHelperText error id="standard-weight-helper-text-password-login">
-													{errors.password}
-												</FormHelperText>
-											)}
+											{touched.password && errors.password && <FormHelperText error>{errors.password}</FormHelperText>}
 										</Stack>
 									</Grid>
+
 									{errors.submit && (
 										<Grid item xs={12}>
 											<FormHelperText error>{errors.submit}</FormHelperText>
 										</Grid>
 									)}
+
 									<Grid item xs={12}>
-										<Stack spacing={2} sx={{ width: "100%" }}>
+										<Stack spacing={2}>
 											<Button variant="contained" type="submit" fullWidth disabled={isSubmitting}>
-												Iniciar Sesión
+												{isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Iniciar Sesión"}
 											</Button>
 
 											<Divider>
@@ -278,52 +253,23 @@ export const UnauthorizedProvider: React.FC<UnauthorizedProviderProps> = ({ chil
 												</Typography>
 											</Divider>
 
-											<Box
-												sx={{
-													width: "100%",
-													"& > div": {
-														width: "100% !important",
-														display: "flex !important",
-														justifyContent: "center !important",
-													},
-													"& > div > div": {
-														width: "100% !important",
-													},
-													"& > div > div > div": {
-														width: "100% !important",
-													},
-													"& > div > div > div > div": {
-														width: "100% !important",
-													},
-													"& > div > div > div > div > div": {
-														width: "100% !important",
-													},
-													"& > div > div > div > div > div > div": {
-														width: "100% !important",
-													},
-													"& > div > div > div > div > div > div > iframe": {
-														width: "100% !important",
-														margin: "0 !important",
-													},
-												}}
-											>
+											<Box sx={{ width: "100%" }}>
 												<GoogleLogin
 													onSuccess={handleGoogleSuccess}
-													onError={handleGoogleError}
+													onError={() => showSnackbar("Error al iniciar sesión con Google", "error")}
 													theme="filled_blue"
 													size="large"
 													shape="rectangular"
 													useOneTap={false}
 													text="continue_with"
 													type="standard"
-													width="400"
+													width={400}
 												/>
 											</Box>
-											<Box sx={{ width: "100%", mt: 2 }}>
-												<Button variant="outlined" color="secondary" onClick={handleCloseModal} fullWidth>
-													Cancelar
-												</Button>
-											</Box>
+
+											<Button variant="outlined" color="secondary" onClick={handleLogout} fullWidth disabled={isSubmitting}>
+												Cancelar
+											</Button>
 										</Stack>
 									</Grid>
 								</Grid>

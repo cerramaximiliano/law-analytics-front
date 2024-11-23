@@ -125,7 +125,6 @@ export const ServerAuthProvider = ({ children }: { children: ReactElement }) => 
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
 		const { serviceToken, user } = response.data;
 		setSession(serviceToken);
-		console.log(user, serviceToken);
 		localDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
 		reduxDispatch({ type: LOGIN, payload: { isLoggedIn: true, user } });
 	};
