@@ -5,6 +5,7 @@ import { useTheme } from "@mui/material/styles";
 import {
 	Box,
 	Button,
+	Chip,
 	Divider,
 	Dialog,
 	DialogActions,
@@ -18,23 +19,34 @@ import {
 } from "@mui/material";
 
 // third-party
-import { SearchNormal1 } from "iconsax-react";
+import { SearchNormal1, TickCircle } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { dispatch, useSelector } from "store";
 import { filterContactsByFolder, updateMultipleContacts } from "store/reducers/contacts";
 import { openSnackbar } from "store/reducers/snackbar";
 
+interface Contact {
+	_id: string;
+	name: string;
+	lastName?: string;
+	email: string;
+	phone: string;
+	address?: string;
+}
+
 type AddressModalType = {
 	open: boolean;
 	setOpen: Dispatch<SetStateAction<boolean>>;
-	handlerAddress: (a: any) => void;
+	handlerAddress: (address: Contact) => void;
+	folderId: string;
+	membersData: Contact[];
 };
 
-// ==============================|| INVOICE - SELECT ADDRESS ||============================== //
-
-const ModalMembers = ({ open, setOpen, handlerAddress, folderId }: AddressModalType & { folderId: string }) => {
+const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: AddressModalType) => {
+	const theme = useTheme();
 	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedAddresses, setSelectedAddresses] = useState<any[]>([]);
+	const [selectedAddresses, setSelectedAddresses] = useState<Contact[]>([]);
+	const { contacts } = useSelector((state: any) => state.contacts);
 
 	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setSearchTerm(event.target.value);
@@ -44,7 +56,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 		setOpen(false);
 	};
 
-	const toggleSelection = (address: any) => {
+	const toggleSelection = (address: Contact) => {
 		setSelectedAddresses((prev) =>
 			prev.some((selected) => selected.email === address.email)
 				? prev.filter((selected) => selected.email !== address.email)
@@ -52,93 +64,161 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 		);
 	};
 
-	const handleVincular = () => {
-		const contactsToUpdate = selectedAddresses
-			.filter((address) => address._id) // Filtra solo aquellos con id definido
-			.map((address) => ({
-				id: address._id,
-				updateData: { ...address, folderId },
-			}));
+	const handleVincular = async () => {
+		try {
+			const contactsToUpdate = selectedAddresses
+				.filter((address) => address._id)
+				.map((address) => ({
+					id: address._id,
+					updateData: { ...address, folderIds: [folderId] },
+				}));
 
-		if (contactsToUpdate.length === 0) {
-			console.error("No hay contactos válidos para actualizar.");
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Debe seleccionar un contacto para vincular.",
-					variant: "alert",
-					alert: {
-						color: "error",
-					},
-					close: true,
-				}),
-			);
-			closeAddressModal();
-			return;
-		}
-
-		dispatch(updateMultipleContacts(contactsToUpdate))
-			.then((response) => {
-				if (response.success) {
-					console.log("Contactos actualizados:", response.contacts);
-
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: "Contacto vinculado correctamente.",
-							variant: "alert",
-							alert: {
-								color: "success",
-							},
-							close: true,
-						}),
-					);
-
-					dispatch(filterContactsByFolder(folderId));
-				}
-			})
-			.catch((error) => {
-				console.error("Error al actualizar contactos:", error);
+			if (contactsToUpdate.length === 0) {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Error al vincular el contacto.",
+						message: "Debe seleccionar un contacto para vincular.",
 						variant: "alert",
-						alert: {
-							color: "error",
-						},
+						alert: { color: "error" },
 						close: true,
 					}),
 				);
-			});
+				closeAddressModal();
+				return;
+			}
 
-		closeAddressModal();
+			const result = await dispatch(updateMultipleContacts(contactsToUpdate));
+
+			if (result.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message:
+							contactsToUpdate.length === 1
+								? "Contacto vinculado correctamente."
+								: `${result.contacts?.length} contactos vinculados correctamente.`,
+						variant: "alert",
+						alert: { color: "success" },
+						close: true,
+					}),
+				);
+
+				dispatch(filterContactsByFolder(folderId));
+			} else if (result.contacts?.length) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: `Contacto vinculado correctamente.`,
+						variant: "alert",
+						alert: { color: "success" },
+						close: true,
+					}),
+				);
+
+				if (result.errors) {
+					console.error("Errores específicos:", result.errors);
+				}
+
+				dispatch(filterContactsByFolder(folderId));
+			} else {
+				let errorMessage = "Error al vincular los contactos";
+
+				if (result.errors && result.errors.length > 0) {
+					errorMessage = result.errors[0].message || errorMessage;
+				} else if (result.error) {
+					errorMessage = result.error;
+				}
+
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: errorMessage,
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+			}
+		} catch (error) {
+			console.error("Error inesperado al vincular contactos:", error);
+
+			let errorMessage = "Error inesperado al vincular los contactos";
+			if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: errorMessage,
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		} finally {
+			closeAddressModal();
+		}
 	};
-	// Resetea el estado al abrir el modal
+
 	useEffect(() => {
 		if (open) {
 			setSelectedAddresses([]);
+			setSearchTerm("");
 		}
 	}, [open]);
+
+	const filteredContacts = contacts.filter((contact: Contact) => {
+		const matchesSearch =
+			contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			contact.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			contact.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+		const isNotMember = !membersData.some((member) => member._id === contact._id);
+
+		return matchesSearch && isNotMember;
+	});
 
 	return (
 		<Dialog
 			maxWidth="sm"
 			open={open}
 			onClose={closeAddressModal}
-			sx={{ "& .MuiDialog-paper": { p: 0 }, "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
+			sx={{
+				"& .MuiDialog-paper": { p: 0 },
+				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
+			}}
 		>
 			<DialogTitle>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Typography variant="h5">Seleccione Intervinientes</Typography>
+					<Typography variant="h5">Seleccione Contactos</Typography>
+					<Typography color="textSecondary" variant="subtitle2">
+						{selectedAddresses.length} seleccionados
+					</Typography>
 				</Stack>
 			</DialogTitle>
 			<Divider />
+
 			<DialogContent sx={{ p: 2.5 }}>
+				{selectedAddresses.length > 0 && (
+					<Box sx={{ mb: 2 }}>
+						<Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+							{selectedAddresses.map((address) => (
+								<Chip
+									key={address.email}
+									label={`${address.name} ${address.lastName || ""}`}
+									onDelete={() => toggleSelection(address)}
+									color="primary"
+									variant="outlined"
+								/>
+							))}
+						</Stack>
+					</Box>
+				)}
+
 				<FormControl sx={{ width: "100%", pb: 2 }}>
 					<TextField
 						autoFocus
-						id="name"
 						value={searchTerm}
 						onChange={handleSearchChange}
 						InputProps={{
@@ -148,86 +228,79 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 								</InputAdornment>
 							),
 						}}
-						placeholder="Buscar"
+						placeholder="Buscar intervinientes..."
 						fullWidth
 					/>
 				</FormControl>
-				<Stack spacing={2}>
-					<Address handlerAddress={toggleSelection} searchTerm={searchTerm} selectedAddresses={selectedAddresses} />
-				</Stack>
+
+				<SimpleBar
+					sx={{
+						maxHeight: "420px",
+						width: "100%",
+						overflowX: "hidden",
+						overflowY: "auto",
+					}}
+				>
+					<Stack spacing={1}>
+						{filteredContacts.length > 0 ? (
+							filteredContacts.map((contact: Contact) => {
+								const isSelected = selectedAddresses.some((selected) => selected.email === contact.email);
+								return (
+									<Box
+										key={contact.email}
+										onClick={() => toggleSelection(contact)}
+										sx={{
+											width: "100%",
+											border: "1px solid",
+											borderColor: isSelected ? theme.palette.primary.main : "divider",
+											borderRadius: 1,
+											p: 2,
+											cursor: "pointer",
+											bgcolor: isSelected ? `${theme.palette.primary.lighter}` : "background.paper",
+											transition: "all 0.3s ease",
+											"&:hover": {
+												borderColor: theme.palette.primary.main,
+												bgcolor: isSelected ? theme.palette.primary.lighter : theme.palette.primary.lighter + "80",
+											},
+											position: "relative",
+										}}
+									>
+										<Stack spacing={1}>
+											<Stack direction="row" alignItems="center" spacing={1}>
+												<Typography variant="h6" sx={{ flex: 1 }}>
+													{`${contact.name} ${contact.lastName || ""}`}
+												</Typography>
+												{isSelected && <TickCircle variant="Bold" size={24} style={{ color: theme.palette.primary.main }} />}
+											</Stack>
+											<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ color: "text.secondary" }}>
+												{contact.address && <Typography variant="body2">{contact.address}</Typography>}
+												<Typography variant="body2">{contact.phone}</Typography>
+												<Typography variant="body2">{contact.email}</Typography>
+											</Stack>
+										</Stack>
+									</Box>
+								);
+							})
+						) : (
+							<Box sx={{ textAlign: "center", py: 3 }}>
+								<Typography color="textSecondary">No se encontraron intervinientes</Typography>
+							</Box>
+						)}
+					</Stack>
+				</SimpleBar>
 			</DialogContent>
+
 			<Divider />
+
 			<DialogActions sx={{ p: 2.5 }}>
 				<Button color="error" onClick={closeAddressModal}>
 					Cancelar
 				</Button>
-				<Button onClick={handleVincular} color="primary" variant="contained">
-					Vincular
+				<Button onClick={handleVincular} color="primary" variant="contained" disabled={selectedAddresses.length === 0}>
+					Vincular {selectedAddresses.length > 0 && `(${selectedAddresses.length})`}
 				</Button>
 			</DialogActions>
 		</Dialog>
-	);
-};
-
-type AddressProps = {
-	handlerAddress: (e: any) => void;
-	searchTerm: string;
-	selectedAddresses: any[];
-};
-
-const Address = ({ handlerAddress, searchTerm, selectedAddresses }: AddressProps) => {
-	const theme = useTheme();
-
-	const { contacts } = useSelector((state: any) => state.contacts);
-
-	const filteredAddressData = contacts.filter((address: any) => address.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-	return (
-		<SimpleBar
-			sx={{
-				height: "420px",
-				width: "380px",
-				overflowX: "hidden",
-				overflowY: "auto",
-			}}
-		>
-			{filteredAddressData.map((address: any, index: number) => (
-				<Box
-					onClick={() => handlerAddress(address)}
-					key={index}
-					sx={{
-						width: "100%",
-						border: "1px solid",
-						borderColor: selectedAddresses.some((selected) => selected.email === address.email)
-							? theme.palette.primary.lighter
-							: "secondary.200",
-						borderRadius: 1,
-						p: 1.25,
-						bgcolor: selectedAddresses.some((selected) => selected.email === address.email) ? theme.palette.primary.lighter : "inherit",
-						cursor: "pointer",
-						"&:hover": {
-							bgcolor: theme.palette.primary.lighter,
-							borderColor: theme.palette.primary.lighter,
-						},
-					}}
-				>
-					<Typography textAlign="left" variant="subtitle1">
-						{address.name}
-					</Typography>
-					<Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-						<Typography textAlign="left" variant="body2" color="secondary">
-							{address.address}
-						</Typography>
-						<Typography textAlign="left" variant="body2" color="secondary">
-							{address.phone}
-						</Typography>
-						<Typography textAlign="left" variant="body2" color="secondary">
-							{address.email}
-						</Typography>
-					</Stack>
-				</Box>
-			))}
-		</SimpleBar>
 	);
 };
 

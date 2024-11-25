@@ -92,7 +92,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 			initialState: {
 				pageIndex: 0,
 				pageSize: 10,
-				hiddenColumns: ["email", "lastName", "_id"],
+				hiddenColumns: ["email", "lastName", "_id", "folderIds"],
 				sortBy: [sortBy],
 			},
 		},
@@ -121,6 +121,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 				"activity",
 				"company",
 				"fiscal",
+				"folderIds",
 			]);
 		} else {
 			setHiddenColumns([
@@ -136,6 +137,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 				"activity",
 				"company",
 				"fiscal",
+				"folderIds",
 			]);
 		}
 		// eslint-disable-next-line
@@ -224,11 +226,12 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 const CustomerListPage = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
-	
+
 	const [open, setOpen] = useState<boolean>(false);
 	const [customer, setCustomer] = useState<any>(null);
 	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
 	const [customerId, setCustomerId] = useState<any>("");
+	const [folderIds, setFolderIds] = useState<[]>([]);
 	const [add, setAdd] = useState<boolean>(false);
 
 	const handleCloseDialog = () => {
@@ -238,10 +241,6 @@ const CustomerListPage = () => {
 	const [link, setLink] = useState<boolean>(false);
 	const handleOpenLink = () => setLink(true);
 	const handleCloseLink = () => setLink(false);
-
-	const handleLink = () => {
-		console.log(true);
-	};
 
 	const [addCustomerMode, setAddCustomerMode] = useState<"add" | "edit">("add");
 
@@ -379,6 +378,10 @@ const CustomerListPage = () => {
 				accessor: "_id",
 			},
 			{
+				Header: "folderIds",
+				accessor: "folderIds",
+			},
+			{
 				Header: "Acciones",
 				className: "cell-center",
 				disableSortBy: true,
@@ -427,6 +430,8 @@ const CustomerListPage = () => {
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										console.log(row);
 										e.stopPropagation();
+										setCustomerId(row.values._id);
+										setFolderIds(row.values.folderIds);
 										handleOpenLink();
 									}}
 								>
@@ -487,7 +492,13 @@ const CustomerListPage = () => {
 		[theme],
 	);
 	/* Renderiza la vista ampliada del elemento seleccionado  */
-	const renderRowSubComponent = useCallback(({ row }: { row: Row<{}> }) => <CustomerView data={contacts[Number(row.id)]} />, [contacts]);
+	const renderRowSubComponent = useCallback(
+		({ row }: { row: Row<{}> }) => {
+			const contact = contacts[Number(row.id)];
+			return <CustomerView key={`${contact._id}-${JSON.stringify(contact.folderIds)}`} data={contact} />;
+		},
+		[contacts],
+	);
 
 	return (
 		<MainCard content={false}>
@@ -506,7 +517,7 @@ const CustomerListPage = () => {
 				aria-describedby="alert-dialog-slide-description"
 			>
 				<AddCustomer open={add} customer={customer} mode={addCustomerMode} onCancel={handleCloseDialog} onAddMember={() => {}} />
-				<LinkToCause openLink={link} onCancelLink={handleCloseLink} onLink={handleLink} />
+				<LinkToCause openLink={link} onCancelLink={handleCloseLink} contactId={customerId} folderIds={folderIds} />
 			</Dialog>
 		</MainCard>
 	);

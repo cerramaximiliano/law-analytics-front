@@ -4,12 +4,20 @@ import { Skeleton, Button, CardContent, Grid, IconButton, Link, Typography, Stac
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import { ColorProps } from "types/extended";
-import { Add, Maximize4, TableDocument, DocumentText, Judge, NotificationStatus, Status } from "iconsax-react";
+import {
+	Add,
+	//Maximize4,
+	TableDocument,
+	DocumentText,
+	Judge,
+	NotificationStatus,
+	Status,
+} from "iconsax-react";
 import ModalMovements from "../modals/ModalMovements";
 import { useEffect, useState } from "react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { fetchMovementsData } from "store/reducers/movements";
+import { getMovementsByFolderId } from "store/reducers/movements";
 
 interface MovementsProps {
 	title: string;
@@ -22,6 +30,7 @@ const Movements = ({ title }: MovementsProps) => {
 	const { id } = useParams();
 
 	const movementsData = useSelector((state: any) => state.movements);
+
 	const handleOpen = () => {
 		if (movementsData.isLoader === true) {
 			return;
@@ -32,7 +41,7 @@ const Movements = ({ title }: MovementsProps) => {
 	useEffect(() => {
 		if (id) {
 			const fetchData = async () => {
-				await dispatch(fetchMovementsData(id));
+				await dispatch(getMovementsByFolderId(id));
 			};
 			fetchData();
 		}
@@ -65,6 +74,7 @@ const Movements = ({ title }: MovementsProps) => {
 
 	return (
 		<MainCard
+			shadow={3}
 			title={title}
 			content={false}
 			secondary={
@@ -72,9 +82,9 @@ const Movements = ({ title }: MovementsProps) => {
 					<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleOpen}>
 						<Add />
 					</IconButton>
-					<IconButton color="secondary" sx={{ color: "secondary.darker" }}>
+					{/* <IconButton color="secondary" sx={{ color: "secondary.darker" }}>
 						<Maximize4 />
-					</IconButton>
+					</IconButton> */}
 				</>
 			}
 		>

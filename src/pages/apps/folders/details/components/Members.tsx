@@ -23,7 +23,7 @@ import ModalMembers from "../modals/ModalMembers";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 import { Contact } from "types/contact";
-import { deleteContact, updateContact } from "store/reducers/contacts";
+import { deleteContact, unlinkFolderFromContact } from "store/reducers/contacts";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 
@@ -59,7 +59,7 @@ const getColorByRole = (role: string) => {
 
 const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId }) => {
 	const [members, setMembers] = useState<Contact[]>(membersData);
-
+	console.log(membersData);
 	const [add, setAdd] = useState<boolean>(false);
 	const [openModal, setOpenModal] = useState<boolean>(false);
 	const [parent] = useAutoAnimate({ duration: 200 });
@@ -131,13 +131,15 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 			});
 	};
 
-	const handleUnlink = (contactId: string) => {
-		dispatch(updateContact(contactId, { folderId: null })).then((response) => {
-			if (response.success) {
+	const handleUnlink = async (contactId: string) => {
+		try {
+			const result = await dispatch(unlinkFolderFromContact(contactId, folderId));
+
+			if (result.success) {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Contacto desvinculado correctamente.",
+						message: "Contacto desvinculado correctamente",
 						variant: "alert",
 						alert: {
 							color: "success",
@@ -145,15 +147,13 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 						close: true,
 					}),
 				);
+
 				setMembers((prevMembers) => prevMembers.filter((member) => member._id !== contactId));
 			} else {
-				// Manejo de errores más seguro
-				const errorMessage =
-					typeof response.error === "string" ? response.error : response.error?.message || "Error al desvincular el contacto.";
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: errorMessage,
+						message: result.error || "Error al desvincular el contacto",
 						variant: "alert",
 						alert: {
 							color: "error",
@@ -162,11 +162,25 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 					}),
 				);
 			}
-		});
+		} catch (error) {
+			console.error("Error en handleUnlink:", error);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error inesperado al desvincular el contacto",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: true,
+				}),
+			);
+		}
 	};
 
 	return (
 		<MainCard
+			shadow={3}
 			title={title}
 			content={false}
 			secondary={
@@ -187,7 +201,7 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 			>
 				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" />
 			</Dialog>
-			<ModalMembers open={openModal} setOpen={setOpenModal} handlerAddress={handlerAddress} folderId={folderId} />
+			<ModalMembers open={openModal} setOpen={setOpenModal} handlerAddress={handlerAddress} folderId={folderId} membersData={membersData} />
 			<CardContent>
 				{isLoader ? (
 					<>

@@ -10,10 +10,12 @@ const GET_FOLDERS_BY_GROUP = "GET_FOLDERS_BY_GROUP";
 const DELETE_FOLDER = "DELETE_FOLDER";
 const UPDATE_FOLDER = "UPDATE_FOLDER";
 const SET_FOLDER_ERROR = "SET_FOLDER_ERROR";
+const GET_FOLDERS_BY_IDS = "GET_FOLDERS_BY_IDS";
 
 // initial state
 const initialFolderState: FolderState = {
 	folders: [], // Array vacío para almacenar los folders
+	selectedFolders: [],
 	isLoader: false, // Estado inicial del loader
 	error: undefined, // No hay error inicialmente
 };
@@ -43,6 +45,12 @@ const folderReducer = (state = initialFolderState, action: Action): FolderState 
 			return {
 				...state,
 				folders: state.folders.map((folder) => (folder._id === action.payload._id ? action.payload : folder)),
+			};
+		case GET_FOLDERS_BY_IDS:
+			return {
+				...state,
+				selectedFolders: action.payload,
+				isLoader: false,
 			};
 		case SET_FOLDER_ERROR:
 			return {
@@ -155,6 +163,69 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 		});
 	}
 };
+
+export interface GetFoldersByIdsResponse {
+	success: boolean;
+	folders: Folder[];
+	error?: string;
+}
+
+export const getFoldersByIds =
+	(folderIds: string[]) =>
+	async (dispatch: Dispatch): Promise<GetFoldersByIdsResponse> => {
+		try {
+			if (!folderIds || folderIds.length === 0) {
+				dispatch({
+					type: GET_FOLDERS_BY_IDS,
+					payload: [],
+				});
+				return {
+					success: true,
+					folders: [],
+				};
+			}
+
+			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/folders/batch`, { folderIds });
+
+			if (Array.isArray(response.data.folders)) {
+				dispatch({
+					type: GET_FOLDERS_BY_IDS,
+					payload: response.data.folders,
+				});
+				return { success: true, folders: response.data.folders };
+			}
+
+			dispatch({
+				type: GET_FOLDERS_BY_IDS,
+				payload: [],
+			});
+			return {
+				success: false,
+				folders: [], // Array vacío en lugar de undefined
+				error: "Formato de respuesta inválido",
+			};
+		} catch (error) {
+			console.error("Error fetching folders by ids:", error);
+			let errorMessage = "Error al obtener los folders";
+
+			if (axios.isAxiosError(error) && error.response) {
+				errorMessage = error.response.data?.message || errorMessage;
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+
+			return { 
+				success: false, 
+				folders: [], // Siempre retornamos un array
+				error: errorMessage 
+			  };
+		}
+	};
 
 // Eliminar folder por _id
 export const deleteFolder = (folderId: string) => async (dispatch: Dispatch) => {

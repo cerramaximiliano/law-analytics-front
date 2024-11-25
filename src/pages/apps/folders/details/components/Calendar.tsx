@@ -228,6 +228,7 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 
 	return (
 		<MainCard
+			shadow={3}
 			title={title}
 			content={false}
 			secondary={

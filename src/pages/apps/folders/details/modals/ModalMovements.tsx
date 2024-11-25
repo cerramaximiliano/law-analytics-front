@@ -6,9 +6,9 @@ import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
 import { Form, Formik } from "formik";
 import { Link1, TableDocument } from "iconsax-react";
-import { dispatch } from "store";
-import { addNewMovement } from "store/reducers/movements";
-import { MovementsType } from "types/movements";
+import { dispatch, useSelector } from "store";
+import { addMovement } from "store/reducers/movements";
+import { Movement } from "types/movements";
 import { enqueueSnackbar } from "notistack";
 
 type AddressModalType = {
@@ -41,6 +41,9 @@ const customTextareaStyles = {
 };
 
 const ModalMovements = ({ open, setOpen, folderId }: AddressModalType) => {
+	const auth = useSelector((state) => state.auth);
+	const userId = auth.user?._id;
+
 	function closeTaskModal() {
 		setOpen(false);
 	}
@@ -62,7 +65,9 @@ const ModalMovements = ({ open, setOpen, folderId }: AddressModalType) => {
 
 	const currentValidationSchema = CustomerSchema[0];
 
-	const initialValues: MovementsType = {
+	type MovementFormValues = Omit<Movement, '_id'>;
+
+	const initialValues: MovementFormValues = {
 		time: "",
 		dateExpiration: "",
 		title: "",
@@ -70,21 +75,65 @@ const ModalMovements = ({ open, setOpen, folderId }: AddressModalType) => {
 		movement: "",
 		link: "",
 		folderId: folderId,
-		userId: "defaultUserId", // Asegúrate de asignar un userId por defecto o real
+		userId: "", // Asegúrate de asignar un userId por defecto o real
 	};
 
 	async function _submitForm(values: any, actions: any) {
-		actions.setSubmitting(false);
-		const addMovement = async () => {
-			await dispatch(addNewMovement(values));
-		};
-		addMovement();
-		enqueueSnackbar("Se agregó correctamente", {
-			variant: "success",
-			anchorOrigin: { vertical: "bottom", horizontal: "right" },
-			TransitionComponent: Zoom,
-			autoHideDuration: 3000,
-		});
+		try {
+			actions.setSubmitting(true);
+
+			const result = await dispatch(
+				addMovement({
+					...values,
+					userId: userId,
+				}),
+			);
+
+			if (result.success) {
+				enqueueSnackbar("Se agregó correctamente", {
+					variant: "success",
+					anchorOrigin: {
+						vertical: "bottom",
+						horizontal: "right",
+					},
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+
+				// Opcional: puedes usar el movement retornado si lo necesitas
+				// const newMovement = result.movement;
+
+				// Aquí podrías hacer algo adicional con el resultado exitoso
+				// Como cerrar un modal, limpiar el formulario, etc.
+				actions.resetForm();
+			} else {
+				// Si hay un error, mostramos el mensaje de error
+				enqueueSnackbar(result.error || "Error al crear el movimiento", {
+					variant: "error",
+					anchorOrigin: {
+						vertical: "bottom",
+						horizontal: "right",
+					},
+					TransitionComponent: Zoom,
+					autoHideDuration: 4000,
+				});
+			}
+		} catch (error) {
+			// Manejo de errores inesperados
+			console.error("Error en _submitForm:", error);
+			enqueueSnackbar("Error inesperado al crear el movimiento", {
+				variant: "error",
+				anchorOrigin: {
+					vertical: "bottom",
+					horizontal: "right",
+				},
+				TransitionComponent: Zoom,
+				autoHideDuration: 4000,
+			});
+		} finally {
+			// Siempre finalizamos el estado de envío
+			actions.setSubmitting(false);
+		}
 	}
 
 	function _handleSubmit(values: any, actions: any) {

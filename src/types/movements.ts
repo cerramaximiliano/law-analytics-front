@@ -1,6 +1,7 @@
-export type MovementsType = {
+export type Movement = {
 	_id?: string;
-	userId?: string;
+	userId: string;
+	groupId?: string;
 	folderId: string;
 	time: string;
 	dateExpiration?: string;
@@ -9,3 +10,10 @@ export type MovementsType = {
 	description?: string;
 	link?: string;
 };
+
+
+export interface MovementState {
+	movements: Movement[];
+	isLoading: boolean;
+	error?: string;
+  }

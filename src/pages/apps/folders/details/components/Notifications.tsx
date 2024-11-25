@@ -93,6 +93,7 @@ const Notifications: React.FC<NotificationsProps> = ({ title }) => {
 
 	return (
 		<MainCard
+			shadow={3}
 			title={title}
 			content={false}
 			secondary={

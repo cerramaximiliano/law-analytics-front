@@ -1,6 +1,19 @@
 import { useState, MouseEvent } from "react";
 import { dispatch } from "store";
-import { Skeleton, Tooltip, Button, Grid, List, ListItem, ListItemAvatar, ListItemText, Stack, Typography, Zoom } from "@mui/material";
+import {
+	Skeleton,
+	Tooltip,
+	Button,
+	Grid,
+	List,
+	ListItem,
+	ListItemAvatar,
+	ListItemText,
+	Stack,
+	Typography,
+	Zoom,
+	Divider,
+} from "@mui/material";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import IconButton from "components/@extended/IconButton";
@@ -183,6 +196,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 
 	return (
 		<MainCard
+			shadow={3}
 			title={
 				<List disablePadding>
 					<ListItem sx={{ p: 0 }} secondaryAction={secondaryAction}>
@@ -405,6 +419,15 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 									)}
 								</Grid>
 							</Grid>
+							<Divider
+								variant="fullWidth"
+								sx={{
+									mt: 4,
+									borderBottomWidth: 1,
+									borderColor: "rgba(0, 0, 0, 0.12)",
+									width: "100%",
+								}}
+							/>
 							<Grid item xs={12}>
 								<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mt: 1.5 }}>
 									{isLoader ? (

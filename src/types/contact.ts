@@ -11,7 +11,7 @@ export type Contact = {
 	zipCode: string;
 	email: string;
 	phone: string;
-	nacionality: string;
+	nationality: string;
 	document: string;
 	cuit: string;
 	status: string;
@@ -20,7 +20,7 @@ export type Contact = {
 	fiscal: string;
 	userId: string;
 	groupId?: string;
-	folderId?: string | null;
+	folderIds?: string[] | null;
 };
 
 export type ContactState = {

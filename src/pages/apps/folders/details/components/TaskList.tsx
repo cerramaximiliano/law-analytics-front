@@ -93,6 +93,7 @@ const TaskList = (props: { title: string; tasks: TaskDataType[] }) => {
 
 	return (
 		<MainCard
+			shadow={3}
 			title={title}
 			secondary={
 				<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleOpen}>

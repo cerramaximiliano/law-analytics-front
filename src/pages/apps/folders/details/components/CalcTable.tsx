@@ -67,6 +67,7 @@ const CalcTable = (props: { title: string; folderData: { folderName: string; mon
 
 	return (
 		<MainCard
+			shadow={3}
 			title={
 				<List disablePadding>
 					<ListItem sx={{ p: 0 }}>

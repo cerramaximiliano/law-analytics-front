@@ -26,7 +26,6 @@ import { memo } from "react";
 // ==============================|| CUSTOMER - VIEW ||============================== //
 
 const FolderView = memo(({ data }: any) => {
-	console.log(data);
 	const theme = useTheme();
 	const matchDownMD = useMediaQuery(theme.breakpoints.down("md"));
 	const notAvailableMsg = "No disponible";
@@ -37,7 +36,7 @@ const FolderView = memo(({ data }: any) => {
 				<Transitions type="slide" direction="down" in={true}>
 					<Grid container spacing={2.5} sx={{ pl: { xs: 0, sm: 5, md: 6, lg: 10, xl: 12 } }}>
 						<Grid item xs={12} sm={5} md={4} lg={4} xl={3}>
-							<MainCard>
+							<MainCard shadow={3}>
 								{data.status === "Finalizado" && (
 									<Chip
 										color="error"
@@ -141,7 +140,7 @@ const FolderView = memo(({ data }: any) => {
 						</Grid>
 						<Grid item xs={12} sm={7} md={8} lg={8} xl={9}>
 							<Stack spacing={2.5}>
-								<MainCard title="Detalles de la Causa">
+								<MainCard title="Detalles de la Causa" shadow={3}>
 									<List sx={{ py: 0 }}>
 										<ListItem divider={!matchDownMD}>
 											<Grid container spacing={3}>
@@ -183,7 +182,7 @@ const FolderView = memo(({ data }: any) => {
 										</ListItem>
 									</List>
 								</MainCard>
-								<MainCard title="Últimos Movimientos">
+								<MainCard title="Últimos Movimientos" shadow={3}>
 									{data.lastMovement ? (
 										<Typography color="secondary">{data.lastMovement}</Typography>
 									) : (

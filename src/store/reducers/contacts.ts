@@ -48,7 +48,14 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 		case UPDATE_CONTACT:
 			return {
 				...state,
-				contacts: state.contacts.map((contact) => (contact._id === action.payload._id ? action.payload : contact)),
+				contacts: state.contacts.map((contact) =>
+					contact._id === action.payload._id
+						? {
+								...contact,
+								folderIds: action.payload.folderIds, // Asegurarse de que esto se mantiene como array
+						  }
+						: contact,
+				),
 			};
 		case SET_CONTACT_ERROR:
 			return {
@@ -133,28 +140,74 @@ export const updateContact =
 		}
 	};
 
+interface UpdateResponse {
+	success: boolean;
+	message?: string;
+	contacts?: Contact[];
+	errors?: Array<{
+		contactId: string;
+		message: string;
+	}>;
+}
+
 export const updateMultipleContacts = (contacts: { id: string; updateData: Partial<Contact> }[]) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/contacts/batch-update`, {
-			contacts,
-		});
+		const response = await axios.put<UpdateResponse>(`${process.env.REACT_APP_BASE_URL}/api/contacts/batch-update`, { contacts });
 
-		if (response.data && response.data.contacts) {
+		// Si la respuesta indica éxito y hay contactos actualizados
+		if (response.data.success && response.data.contacts?.length) {
 			response.data.contacts.forEach((contact: Contact) => {
 				dispatch({
 					type: UPDATE_CONTACT,
 					payload: contact,
 				});
 			});
-			return { success: true, contacts: response.data.contacts };
-		} else {
-			return { success: false };
+			return {
+				success: true,
+				contacts: response.data.contacts,
+			};
 		}
-	} catch (error) {
-		console.error("Error", error);
+
+		// Si hay errores pero algunos contactos se actualizaron
+		if (!response.data.success && response.data.contacts?.length) {
+			// Actualizar los contactos que sí se actualizaron
+			response.data.contacts.forEach((contact: Contact) => {
+				dispatch({
+					type: UPDATE_CONTACT,
+					payload: contact,
+				});
+			});
+
+			// Despachar error para los que fallaron
+			dispatch({
+				type: SET_CONTACT_ERROR,
+				payload: response.data.message || "Algunos contactos no pudieron actualizarse",
+			});
+
+			return {
+				success: false,
+				contacts: response.data.contacts,
+				errors: response.data.errors,
+			};
+		}
+
+		// Si no hay éxito y no hay contactos actualizados
+		dispatch({
+			type: SET_CONTACT_ERROR,
+			payload: response.data.message || "No se pudo actualizar ningún contacto",
+		});
+
+		return {
+			success: false,
+			errors: response.data.errors,
+		};
+	} catch (error: any) {
+		console.error("Error en updateMultipleContacts:", error);
+
 		let errorMessage = "Error al actualizar los contactos";
-		if (axios.isAxiosError(error) && error.response) {
-			errorMessage = error.response.data?.message || errorMessage;
+
+		if (axios.isAxiosError(error) && error.response?.data) {
+			errorMessage = error.response.data.message || errorMessage;
 		} else if (error instanceof Error) {
 			errorMessage = error.message;
 		}
@@ -163,7 +216,12 @@ export const updateMultipleContacts = (contacts: { id: string; updateData: Parti
 			type: SET_CONTACT_ERROR,
 			payload: errorMessage,
 		});
-		return { success: false, error };
+
+		return {
+			success: false,
+			error: errorMessage,
+			errors: error.response?.data?.errors,
+		};
 	}
 };
 
@@ -224,17 +282,132 @@ export const deleteContact = (contactId: string) => async (dispatch: Dispatch) =
 };
 
 export const filterContactsByFolder = (folderId: string) => (dispatch: Dispatch, getState: () => { contacts: ContactState }) => {
-	// Obtiene el estado actual
-	const { contacts } = getState();
+	try {
+		// Obtiene el estado actual
+		const { contacts } = getState();
 
-	// Filtra los contactos según el folderId
-	const filteredContacts = contacts.contacts.filter((contact) => contact.folderId === folderId);
+		// Verifica que contacts.contacts existe y es un array
+		if (!Array.isArray(contacts.contacts)) {
+			console.error("contacts.contacts no es un array:", contacts.contacts);
+			return;
+		}
 
-	// Despacha la acción para actualizar los contactos seleccionados
-	dispatch({
-		type: FILTER_CONTACTS_BY_FOLDER,
-		payload: filteredContacts,
-	});
+		// Filtra los contactos que tienen el folderId en su array de folderIds
+		const filteredContacts = contacts.contacts.filter((contact) => {
+			// Verifica que folderIds existe y es un array
+			if (!Array.isArray(contact.folderIds)) {
+				console.warn(`Contact ${contact._id} no tiene folderIds válido:`, contact.folderIds);
+				return false;
+			}
+
+			// Comprueba si el folderId está en el array de folderIds
+			return contact.folderIds.includes(folderId);
+		});
+
+		// Despacha la acción con los contactos filtrados
+		dispatch({
+			type: FILTER_CONTACTS_BY_FOLDER,
+			payload: filteredContacts,
+		});
+	} catch (error) {
+		console.error("Error al filtrar contactos por folder:", error);
+		// Opcionalmente, podrías despachar una acción de error
+		/* dispatch({
+		  type: FILTER_CONTACTS_ERROR,
+		  payload: error.message,
+		}); */
+	}
+};
+
+interface UnlinkResponse {
+	success: boolean;
+	message: string;
+	contact?: Contact;
+}
+
+export const unlinkFolderFromContact = (contactId: string, folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.delete<UnlinkResponse>(`${process.env.REACT_APP_BASE_URL}/api/contacts/${contactId}/folders/${folderId}`);
+
+		if (response.data.success && response.data.contact) {
+			dispatch({
+				type: UPDATE_CONTACT,
+				payload: response.data.contact,
+			});
+
+			return { success: true, contact: response.data.contact };
+		}
+
+		throw new Error(response.data.message);
+	} catch (error) {
+		console.error("Error al desvincular folder:", error);
+
+		let errorMessage = "Error al desvincular el contacto";
+		if (axios.isAxiosError(error) && error.response?.data) {
+			errorMessage = error.response.data.message;
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+		}
+
+		dispatch({
+			type: SET_CONTACT_ERROR,
+			payload: errorMessage,
+		});
+
+		return {
+			success: false,
+			error: errorMessage,
+		};
+	}
+};
+
+interface LinkFoldersResponse {
+	success: boolean;
+	message: string;
+	contact?: any;
+	error?: string;
+}
+
+export const linkFoldersToContact = (contactId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.post<LinkFoldersResponse>(`${process.env.REACT_APP_BASE_URL}/api/contacts/${contactId}/link-folders`, {
+			folderIds,
+		});
+
+		if (response.data.success && response.data.contact) {
+			// Actualizar el contacto en el store
+			dispatch({
+				type: UPDATE_CONTACT,
+				payload: response.data.contact,
+			});
+
+			return {
+				success: true,
+				contact: response.data.contact,
+			};
+		}
+
+		throw new Error(response.data.message || "Error al vincular folders");
+	} catch (error) {
+		console.error("Error linking folders:", error);
+
+		let errorMessage = "Error al vincular las causas";
+		if (axios.isAxiosError(error) && error.response?.data) {
+			errorMessage = error.response.data.message || errorMessage;
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+		}
+
+		dispatch({
+			type: SET_CONTACT_ERROR,
+			payload: errorMessage,
+		});
+
+		return {
+			success: false,
+			error: errorMessage,
+		};
+	}
 };
 
 export default contacts;

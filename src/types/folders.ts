@@ -47,6 +47,7 @@ export type FolderStatus = "Nueva" | "En Progreso" | "Cerrada" | "Pendiente"; //
 // Estado extendido del folder (usado como estado inicial)
 export interface FolderState {
 	folders: Folder[]; // Lista de folders
+	selectedFolders: Folder[];
 	isLoader: boolean; // Si hay un loader en curso
 	error?: string; // Posibles errores
 }
