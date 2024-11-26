@@ -1,161 +1,158 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { dispatch } from "store";
-import data from "data/notifications.json";
-import { NotificationsType } from "types/notifications";
-import moment from "moment";
+import axios, { AxiosError } from "axios";
+import { Dispatch } from "redux";
 
-interface NotificationsState {
-	notifications: NotificationsType[];
-	isLoader: boolean;
-	error?: string;
-}
+import { NotificationType, NotificationsState, Action } from "types/notifications";
 
 const initialState: NotificationsState = {
 	notifications: [],
 	isLoader: false,
-	error: undefined,
+	error: null,
 };
-const notifications = createSlice({
-	name: "notifications",
-	initialState,
-	reducers: {
-		loading(state) {
-			state.isLoader = true;
-		},
-		hasError(state, action: PayloadAction<string>) {
-			state.isLoader = false;
-			state.error = action.payload;
-		},
-		setNotificationData(state, action: PayloadAction<NotificationsType[]>) {
-			state.isLoader = false;
-			Object.assign(state, { ...state, notifications: action.payload });
-		},
-		addNotifications(state, action: PayloadAction<NotificationsType>) {
-			const newNotification = action.payload;
-			const newDate = moment(newNotification.time, "DD/MM/YYYY");
-			const index = state.notifications.findIndex((notification) => {
-				const existingDate = moment(notification.time, "DD/MM/YYYY");
-				return newDate.isAfter(existingDate);
-			});
-			if (index === -1) {
-				state.notifications.push(newNotification);
-			} else {
-				state.notifications.splice(index, 0, newNotification);
-			}
-			state.isLoader = false;
-		},
-		updateFolderField(state, action: PayloadAction<{ field: keyof NotificationsType; value: any }>) {
-			const { field, value } = action.payload;
-			if (field in state) {
-				(state as any)[field] = value;
-			}
-		},
-		resetFolder(state) {
-			Object.assign(state, initialState);
-		},
-	},
-});
 
-export default notifications.reducer;
+const SET_LOADING = "SET_LOADING";
+const SET_ERROR = "SET_ERROR";
+const ADD_NOTIFICATION = "ADD_NOTIFICATION";
+const SET_NOTIFICATIONS = "SET_NOTIFICATIONS";
+const UPDATE_NOTIFICATION = "UPDATE_NOTIFICATION";
+const DELETE_NOTIFICATION = "DELETE_NOTIFICATION";
 
-export const { loading, hasError, setNotificationData, updateFolderField, resetFolder, addNotifications } = notifications.actions;
+const notificationsReducer = (state = initialState, action: Action): NotificationsState => {
+	switch (action.type) {
+		case SET_LOADING:
+			return { ...state, isLoader: true, error: null };
+		case SET_ERROR:
+			return { ...state, isLoader: false, error: action.payload };
+		case ADD_NOTIFICATION:
+			return {
+				...state,
+				notifications: [...state.notifications, action.payload],
+				isLoader: false,
+			};
+		case SET_NOTIFICATIONS:
+			return {
+				...state,
+				notifications: action.payload,
+				isLoader: false,
+			};
+		case UPDATE_NOTIFICATION:
+			return {
+				...state,
+				notifications: state.notifications.map((notif) => (notif._id === action.payload._id ? action.payload : notif)),
+				isLoader: false,
+			};
+		case DELETE_NOTIFICATION:
+			return {
+				...state,
+				notifications: state.notifications.filter((notif) => notif._id !== action.payload),
+				isLoader: false,
+			};
+		default:
+			return state;
+	}
+};
 
-// Async actions
+const handleError = (error: unknown): string => {
+	if (error instanceof AxiosError) {
+		return error.response?.data?.message || "Error en la operación";
+	}
+	return "Error en la operación";
+};
 
-export function fetchNotificationsData(folderId: string) {
-	return async () => {
-		// Tipado correcto de dispatch
-		dispatch(loading());
-		try {
-			const response = await new Promise<{ data: NotificationsType[] }>((resolve) => {
-				setTimeout(() => {
-					const notifications = data.filter((ele) => ele.folderId === folderId);
-					console.log(notifications);
-					resolve({ data: notifications });
-				}, 5000);
-			});
-			if (response.data) {
-				dispatch(setNotificationData(response.data));
-			} else {
-				dispatch(hasError("No data found"));
-			}
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(hasError(error.toString()));
-			} else {
-				dispatch(hasError("An unknown error occurred"));
-			}
-		}
-	};
-}
+export const addNotification = (data: Omit<NotificationType, "_id">) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/notifications`, data);
+		dispatch({
+			type: ADD_NOTIFICATION,
+			payload: response.data.notification,
+		});
+		return { success: true, notification: response.data.notification };
+	} catch (error: unknown) {
+		const errorMessage = handleError(error);
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
 
-export function addNewNotification(newMovement: NotificationsType) {
-	return async () => {
-		if (!newMovement.folderId || !newMovement.time || !newMovement.title) {
-			throw new Error("Missing required fields in newMovement");
-		}
-		dispatch(loading());
-		try {
-			const response = await new Promise<{ fetchData: NotificationsType }>((resolve) => {
-				setTimeout(() => {
-					console.log(newMovement);
-					resolve({ fetchData: newMovement });
-				}, 5000);
-			});
-			if (response.fetchData) {
-				dispatch(addNotifications(response.fetchData));
-			} else {
-				dispatch(hasError("No data found"));
-			}
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(hasError(error.toString()));
-			} else {
-				dispatch(hasError("An unknown error occurred"));
-			}
-		}
-	};
-}
+export const getNotificationsByUserId = (userId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/notifications/user/${userId}`);
+		dispatch({
+			type: SET_NOTIFICATIONS,
+			payload: response.data.notifications,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage = handleError(error);
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
 
-/* export function saveFolderData(calculatorData: FolderData) {
-	return async () => {
-		dispatch(loading());
-		try {
-			const response = await axios.post("/api/folder/save", folderData);
-			dispatch(setFolderData(response.data.calculator));
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(hasError(error.toString()));
-			} else {
-				dispatch(hasError("An unknown error occurred"));
-			}
-		}
-	};
-} */
+export const getNotificationsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/notifications/group/${groupId}`);
+		dispatch({
+			type: SET_NOTIFICATIONS,
+			payload: response.data.notifications,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage = handleError(error);
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
 
-/* export function updateFolderAsync(folderId: string, newData: Partial<FolderData>) {
-	return async () => {
-		dispatch(calculator.actions.loading());
-		try {
-			const response = await new Promise<{ data: FolderData | undefined }>((resolve) => {
-				setTimeout(() => {
-					const updatedData = data.map((folder) => {
-						if (folder.folderId === folderId) {
-							return { ...folder, ...newData }; // Actualizamos el folder con los nuevos datos
-						}
-						return folder;
-					});
-					return resolve({ data: updatedData.find((folder) => folder.folderId === folderId) });
-				}, 1000);
-			});
-			dispatch(calculator.actions.setFolderData(response.data));
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(calculator.actions.hasError(error.toString()));
-			} else {
-				dispatch(calculator.actions.hasError("An unknown error occurred"));
-			}
-		}
-	};
-}
- */
+
+export const getNotificationsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/notifications/folder/${folderId}`);
+		dispatch({
+			type: SET_NOTIFICATIONS,
+			payload: response.data.notifications,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage = handleError(error);
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+export const updateNotification = (id: string, data: Partial<NotificationType>) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/notifications/${id}`, data);
+		dispatch({
+			type: UPDATE_NOTIFICATION,
+			payload: response.data.notification,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage = handleError(error);
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+export const deleteNotification = (id: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/notifications/${id}`);
+		dispatch({
+			type: DELETE_NOTIFICATION,
+			payload: id,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage = handleError(error);
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+export default notificationsReducer;

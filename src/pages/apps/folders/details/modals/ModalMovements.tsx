@@ -7,15 +7,17 @@ import * as Yup from "yup";
 import { Form, Formik } from "formik";
 import { Link1, TableDocument } from "iconsax-react";
 import { dispatch, useSelector } from "store";
-import { addMovement } from "store/reducers/movements";
+import { addMovement, updateMovement } from "store/reducers/movements";
 import { Movement } from "types/movements";
 import { enqueueSnackbar } from "notistack";
 
-type AddressModalType = {
+interface AddressModalType {
 	open: boolean;
 	setOpen: Dispatch<SetStateAction<boolean>>;
 	folderId: any;
-};
+	editMode?: boolean;
+	movementData?: Movement | null;
+}
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -40,7 +42,7 @@ const customTextareaStyles = {
 	},
 };
 
-const ModalMovements = ({ open, setOpen, folderId }: AddressModalType) => {
+const ModalMovements = ({ open, setOpen, folderId, editMode = false, movementData = null }: AddressModalType) => {
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 
@@ -65,68 +67,51 @@ const ModalMovements = ({ open, setOpen, folderId }: AddressModalType) => {
 
 	const currentValidationSchema = CustomerSchema[0];
 
-	type MovementFormValues = Omit<Movement, '_id'>;
+	type MovementFormValues = Omit<Movement, "_id">;
 
 	const initialValues: MovementFormValues = {
-		time: "",
-		dateExpiration: "",
-		title: "",
-		description: "",
-		movement: "",
-		link: "",
+		time: movementData?.time || "",
+		dateExpiration: movementData?.dateExpiration || "",
+		title: movementData?.title || "",
+		description: movementData?.description || "",
+		movement: movementData?.movement || "",
+		link: movementData?.link || "",
 		folderId: folderId,
-		userId: "", // Asegúrate de asignar un userId por defecto o real
+		userId: userId || "",
 	};
 
 	async function _submitForm(values: any, actions: any) {
 		try {
 			actions.setSubmitting(true);
 
-			const result = await dispatch(
-				addMovement({
-					...values,
-					userId: userId,
-				}),
-			);
+			const result =
+				editMode && movementData?._id
+					? await dispatch(updateMovement(movementData._id, { ...values, userId }))
+					: await dispatch(addMovement({ ...values, userId }));
 
 			if (result.success) {
-				enqueueSnackbar("Se agregó correctamente", {
+				enqueueSnackbar(`Se ${editMode ? "actualizó" : "agregó"} correctamente`, {
 					variant: "success",
-					anchorOrigin: {
-						vertical: "bottom",
-						horizontal: "right",
-					},
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
-
-				// Opcional: puedes usar el movement retornado si lo necesitas
-				// const newMovement = result.movement;
-
-				// Aquí podrías hacer algo adicional con el resultado exitoso
-				// Como cerrar un modal, limpiar el formulario, etc.
 				actions.resetForm();
 			} else {
 				// Si hay un error, mostramos el mensaje de error
-				enqueueSnackbar(result.error || "Error al crear el movimiento", {
+				enqueueSnackbar(result.error || `Error al ${editMode ? "actualizar" : "crear"} el movimiento`, {
 					variant: "error",
-					anchorOrigin: {
-						vertical: "bottom",
-						horizontal: "right",
-					},
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 					TransitionComponent: Zoom,
-					autoHideDuration: 4000,
+					autoHideDuration: 3000,
 				});
 			}
 		} catch (error) {
 			// Manejo de errores inesperados
 			console.error("Error en _submitForm:", error);
-			enqueueSnackbar("Error inesperado al crear el movimiento", {
+			enqueueSnackbar(`Error inesperado al ${editMode ? "actualizar" : "crear"} el movimiento`, {
 				variant: "error",
-				anchorOrigin: {
-					vertical: "bottom",
-					horizontal: "right",
-				},
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				TransitionComponent: Zoom,
 				autoHideDuration: 4000,
 			});
@@ -144,7 +129,7 @@ const ModalMovements = ({ open, setOpen, folderId }: AddressModalType) => {
 	}
 
 	return (
-		<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
+		<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
 			{({ isSubmitting, resetForm }) => {
 				const handleClose = () => {
 					closeTaskModal();
@@ -158,7 +143,7 @@ const ModalMovements = ({ open, setOpen, folderId }: AddressModalType) => {
 						onClose={handleClose}
 						sx={{ "& .MuiDialog-paper": { p: 0 }, "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
 					>
-						<DialogTitle>Agregar Movimiento</DialogTitle>
+						<DialogTitle>{editMode ? "Editar Movimiento" : "Agregar Movimiento"}</DialogTitle>
 						<Divider />
 						<Form autoComplete="off" noValidate>
 							<DialogContent sx={{ p: 2.5 }}>

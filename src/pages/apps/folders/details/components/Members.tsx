@@ -238,12 +238,12 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 											secondary={<Typography sx={{ mt: 0.25 }}>{member.role}</Typography>}
 										/>
 										<Tooltip title="Desvincular">
-											<IconButton edge="end" color="primary" aria-label="unlink" onClick={() => handleUnlink(member._id)}>
+											<IconButton size="small" edge="end" color="primary" aria-label="unlink" onClick={() => handleUnlink(member._id)}>
 												<Link1 variant="Broken" />
 											</IconButton>
 										</Tooltip>
 										<Tooltip title="Eliminar">
-											<IconButton edge="end" aria-label="delete" onClick={() => handleDelete(member._id)} color="error">
+											<IconButton size="small" edge="end" aria-label="delete" onClick={() => handleDelete(member._id)} color="error">
 												<Trash variant="Bulk" />
 											</IconButton>
 										</Tooltip>

@@ -1,21 +1,51 @@
 import { Dispatch, SetStateAction } from "react";
-import { dispatch } from "store";
-import { addNewNotification } from "store/reducers/notifications";
+import { dispatch, useSelector } from "store";
+//import { addNotification } from "store/reducers/notifications";
 import { Dialog, DialogTitle, Divider, Button, Grid, Stack, DialogContent, InputLabel, DialogActions, Box, Zoom } from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import * as Yup from "yup";
-import { Form, Formik, FormikValues } from "formik";
+import { Form, Formik } from "formik";
 import { Notification1, ArrowForwardSquare } from "iconsax-react";
 import PatternField from "components/UI/PatternField";
 import { enqueueSnackbar } from "notistack";
+import { addNotification, updateNotification } from "store/reducers/notifications";
+import { NotificationType } from "types/notifications";
 
-type AddressModalType = {
+interface FormValues {
+	date: string;
+	title: string;
+	notification: string;
+	user: string;
+	code: string;
+	idCode: string;
+	description: string;
+	dateExpiration: string;
+}
+
+// Tipo para los datos de la notificación
+interface NotificationData {
+	_id?: string;
+	folderId: string;
+	time: string;
+	title: string;
+	dateExpiration: string;
+	notification: string;
+	userId: string;
+	description: string;
+	user: string;
+	code: string;
+	idCode: string;
+}
+
+interface ModalNotificationsProps {
 	open: boolean;
 	setOpen: Dispatch<SetStateAction<boolean>>;
-	folderId: any;
-};
+	folderId?: string;
+	editMode?: boolean;
+	notificationData?: NotificationType | null;
+}
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -40,13 +70,24 @@ const customTextareaStyles = {
 	},
 };
 
-const ModalNotifications: React.FC<AddressModalType> = ({ open, setOpen, folderId }) => {
-	function closeTaskModal() {
+const ModalNotifications: React.FC<ModalNotificationsProps> = ({
+	open,
+	setOpen,
+	folderId = "",
+	editMode = false,
+	notificationData = null,
+}) => {
+	const auth = useSelector((state) => state.auth);
+	const userId = auth.user?._id || "";
+
+	console.log(editMode);
+
+	function closeModal() {
 		setOpen(false);
 	}
 
-	const CustomerSchema = Yup.object().shape({
-		title: Yup.string().max(255).required("Campo requerida"),
+	const validationSchema = Yup.object().shape({
+		title: Yup.string().max(255).required("Campo requerido"),
 		user: Yup.string().max(255).required("Campo requerido"),
 		notification: Yup.string().max(255).required("Campo requerido"),
 		date: Yup.string()
@@ -59,8 +100,21 @@ const ModalNotifications: React.FC<AddressModalType> = ({ open, setOpen, folderI
 		}),
 	});
 
-	const getInitialValues = (folderId: FormikValues | null) => {
-		const newTask = {
+	const getInitialValues = (): FormValues => {
+		if (editMode && notificationData) {
+			return {
+				date: notificationData.time || "",
+				title: notificationData.title || "",
+				notification: notificationData.notification || "",
+				user: notificationData.user || "",
+				code: notificationData.code || "",
+				idCode: notificationData.idCode || "",
+				description: notificationData.description || "", // Añadido el valor por defecto
+				dateExpiration: notificationData.dateExpiration || "",
+			};
+		}
+
+		return {
 			date: "",
 			title: "",
 			notification: "",
@@ -69,51 +123,70 @@ const ModalNotifications: React.FC<AddressModalType> = ({ open, setOpen, folderI
 			idCode: "",
 			description: "",
 			dateExpiration: "",
-			folderId: folderId,
 		};
-		return newTask;
 	};
 
-	const initialValues = getInitialValues(folderId);
+	const initialValues = getInitialValues();
 
 	async function _submitForm(values: any, actions: any) {
-		const newEvent = {
-			folderId: folderId,
-			time: values.date,
-			title: values.title,
-			dateExpiration: values.dateExpiration,
-			notification: values.notification,
-			user: values.user,
-			description: values.description,
-			icon: <Notification1 />,
-			iconColor: "secondary",
-		};
-		console.log(newEvent);
-		const addNotification = async () => {
-			await dispatch(addNewNotification(newEvent));
-		};
-		addNotification();
-		actions.setSubmitting(false);
-		enqueueSnackbar("Se agregó correctamente", {
-			variant: "success",
-			anchorOrigin: { vertical: "bottom", horizontal: "right" },
-			TransitionComponent: Zoom,
-			autoHideDuration: 3000,
-		});
+		try {
+			const notificationPayload: NotificationData = {
+				folderId,
+				time: values.date,
+				title: values.title,
+				dateExpiration: values.dateExpiration,
+				notification: values.notification,
+				userId,
+				description: values.description,
+				user: values.user,
+				code: values.code,
+				idCode: values.idCode,
+			};
+
+			const result =
+				editMode && notificationData?._id
+					? await dispatch(updateNotification(notificationData._id, notificationPayload))
+					: await dispatch(addNotification(notificationPayload));
+
+			if (result.success) {
+				enqueueSnackbar(`Se ${editMode ? "actualizó" : "agregó"} correctamente`, {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+				closeModal();
+				actions.resetForm();
+			} else {
+				enqueueSnackbar(result.error || `Error al ${editMode ? "actualizar" : "crear"} la notificación`, {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+		} catch (error) {
+			console.error("Error en _submitForm:", error);
+			enqueueSnackbar(`Error inesperado al ${editMode ? "actualizar" : "crear"} la notificación`, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				TransitionComponent: Zoom,
+				autoHideDuration: 3000,
+			});
+		} finally {
+			actions.setSubmitting(false);
+		}
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		_submitForm(values, actions);
-		closeTaskModal();
-		actions.resetForm();
 	}
 
 	return (
-		<Formik initialValues={initialValues} validationSchema={CustomerSchema} onSubmit={_handleSubmit}>
+		<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
 			{({ isSubmitting, resetForm, values }) => {
 				const handleClose = () => {
-					closeTaskModal();
+					closeModal();
 					resetForm();
 				};
 

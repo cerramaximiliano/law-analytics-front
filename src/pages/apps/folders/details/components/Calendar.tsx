@@ -1,4 +1,4 @@
-import { Box, Skeleton, Grid, CardContent, IconButton, Typography, Dialog, Tooltip } from "@mui/material";
+import { Box, Skeleton, Grid, CardContent, IconButton, Typography, Dialog, Tooltip, Stack } from "@mui/material";
 import { Trash, Edit2, Eye, Add, CalendarRemove } from "iconsax-react";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
@@ -316,14 +316,26 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 							</Grid>
 						) : (
 							<>
-								<Grid container justifyContent="center">
-									<Avatar color="error" variant="rounded">
+								<Stack spacing={2} alignItems="center" py={4}>
+									<Avatar
+										color="error"
+										variant="rounded"
+										sx={{
+											width: 64,
+											height: 64,
+											bgcolor: "error.lighter",
+										}}
+									>
 										<CalendarRemove variant="Bold" />
 									</Avatar>
-								</Grid>
-								<Typography variant="body1" color="text.secondary" align="center">
-									No hay eventos agendados
-								</Typography>
+
+									<Typography variant="subtitle1" color="textSecondary" align="center">
+										No hay eventos registrados
+									</Typography>
+									<Typography variant="body2" color="textSecondary" align="center">
+										Comienza agregando un nuevo evento usando el botón +
+									</Typography>
+								</Stack>
 							</>
 						)}
 					</>
