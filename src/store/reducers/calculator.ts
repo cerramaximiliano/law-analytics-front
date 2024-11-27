@@ -1,120 +1,191 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { dispatch } from "store";
-import data from "data/calculator.json";
+import axios, { AxiosError } from "axios";
+import { Dispatch } from "redux";
 
-import { CalculatorType } from "types/calculator";
+import { CalculatorType, CalculatorState, FilterParams } from "types/calculator";
 
-interface CalculatorState {
-	calculator: CalculatorType[];
-	isLoader: boolean;
-	error?: string;
-}
+const SET_LOADING = "calculators/SET_LOADING";
+const SET_ERROR = "calculators/SET_ERROR";
+const ADD_CALCULATOR = "calculators/ADD_CALCULATOR";
+const SET_CALCULATORS = "calculators/SET_CALCULATORS";
+const UPDATE_CALCULATOR = "calculators/UPDATE_CALCULATOR";
+const DELETE_CALCULATOR = "calculators/DELETE_CALCULATOR";
 
 const initialState: CalculatorState = {
-	calculator: [],
+	calculators: [],
 	isLoader: false,
-	error: undefined,
+	error: null,
 };
-const calculator = createSlice({
-	name: "calculator",
-	initialState,
-	reducers: {
-		loading(state) {
-			state.isLoader = true;
-		},
-		hasError(state, action: PayloadAction<string>) {
-			state.isLoader = false;
-			state.error = action.payload;
-		},
-		setFolderData(state, action: PayloadAction<CalculatorType[]>) {
-			state.isLoader = false;
 
-			Object.assign(state, { ...state, calculator: action.payload });
-		},
-		updateFolderField(state, action: PayloadAction<{ field: keyof CalculatorType; value: any }>) {
-			const { field, value } = action.payload;
-			if (field in state) {
-				(state as any)[field] = value;
-			}
-		},
-		resetFolder(state) {
-			Object.assign(state, initialState);
-		},
-	},
-});
+const calculatorsReducer = (state = initialState, action: any) => {
+	switch (action.type) {
+		case SET_LOADING:
+			return { ...state, isLoader: true, error: null };
+		case SET_ERROR:
+			return { ...state, isLoader: false, error: action.payload };
+		case ADD_CALCULATOR:
+			return {
+				...state,
+				calculators: [...state.calculators, action.payload],
+				isLoader: false,
+			};
+		case SET_CALCULATORS:
+			return {
+				...state,
+				calculators: action.payload,
+				isLoader: false,
+			};
+		case UPDATE_CALCULATOR:
+			return {
+				...state,
+				calculators: state.calculators.map((calc) => (calc._id === action.payload._id ? action.payload : calc)),
+				isLoader: false,
+			};
+		case DELETE_CALCULATOR:
+			return {
+				...state,
+				calculators: state.calculators.filter((calc) => calc._id !== action.payload),
+				isLoader: false,
+			};
+		default:
+			return state;
+	}
+};
 
-export default calculator.reducer;
+// Actions
+export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "error">) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/calculators`, data);
+		dispatch({
+			type: ADD_CALCULATOR,
+			payload: response.data.calculator,
+		});
+		return { success: true, calculator: response.data.calculator };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al crear el cálculo" : "Error al crear el cálculo";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
 
-export const { loading, hasError, setFolderData, updateFolderField, resetFolder } = calculator.actions;
+export const getCalculatorsByUserId = (userId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`);
+		dispatch({
+			type: SET_CALCULATORS,
+			payload: response.data.calculators,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
 
-// Async actions
+export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/group/${groupId}`);
+		dispatch({
+			type: SET_CALCULATORS,
+			payload: response.data.calculators,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
 
-export function fetchCalculatorData(userId: string, category: string) {
-	return async () => {
-		// Tipado correcto de dispatch
-		dispatch(loading());
+export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/folder/${folderId}`);
+		dispatch({
+			type: SET_CALCULATORS,
+			payload: response.data.calculators,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch: Dispatch) => {
+	try {
+		const { userId = "", groupId = "", folderId = "", type = "", classType = "" } = params;
+		if (!folderId && !userId && !groupId) {
+			const errorMessage = "Debe proporcionar al menos uno de los siguientes filtros: folderId, userId o groupId.";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+
+		dispatch({ type: SET_LOADING });
+
+		const queryParams = new URLSearchParams({
+			...(folderId && { folderId }),
+			...(type && { type }),
+			...(classType && { classType }),
+			...(groupId && { groupId }),
+			...(userId && { userId }),
+		}).toString();
+
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/filter?${queryParams}`);
+		dispatch({
+			type: SET_CALCULATORS,
+			payload: response.data.calculators,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+export const updateCalculator =
+	(id: string, data: Partial<Omit<CalculatorType, "_id" | "isLoader" | "error">>) => async (dispatch: Dispatch) => {
 		try {
-			const response = await new Promise<{ data: CalculatorType[] }>((resolve) => {
-				setTimeout(() => {
-					const calculators = data.filter((ele) => ele.userId === userId && ele.category === category);
-					console.log(calculators);
-					resolve({ data: calculators });
-				}, 1000);
+			dispatch({ type: SET_LOADING });
+			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/calculators/${id}`, data);
+			dispatch({
+				type: UPDATE_CALCULATOR,
+				payload: response.data.calculator,
 			});
-			if (response.data) {
-				dispatch(setFolderData(response.data));
-			} else {
-				dispatch(hasError("No data found"));
-			}
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(hasError(error.toString()));
-			} else {
-				dispatch(hasError("An unknown error occurred"));
-			}
+			return { success: true };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al actualizar el cálculo" : "Error al actualizar el cálculo";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
 		}
 	};
-}
 
-/* export function saveFolderData(calculatorData: FolderData) {
-	return async () => {
-		dispatch(loading());
-		try {
-			const response = await axios.post("/api/folder/save", folderData);
-			dispatch(setFolderData(response.data.calculator));
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(hasError(error.toString()));
-			} else {
-				dispatch(hasError("An unknown error occurred"));
-			}
-		}
-	};
-} */
+export const deleteCalculator = (id: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/calculators/${id}`);
+		dispatch({
+			type: DELETE_CALCULATOR,
+			payload: id,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al eliminar el cálculo" : "Error al eliminar el cálculo";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
 
-/* export function updateFolderAsync(folderId: string, newData: Partial<FolderData>) {
-	return async () => {
-		dispatch(calculator.actions.loading());
-		try {
-			const response = await new Promise<{ data: FolderData | undefined }>((resolve) => {
-				setTimeout(() => {
-					const updatedData = data.map((folder) => {
-						if (folder.folderId === folderId) {
-							return { ...folder, ...newData }; // Actualizamos el folder con los nuevos datos
-						}
-						return folder;
-					});
-					return resolve({ data: updatedData.find((folder) => folder.folderId === folderId) });
-				}, 1000);
-			});
-			dispatch(calculator.actions.setFolderData(response.data));
-		} catch (error) {
-			if (error instanceof Error) {
-				dispatch(calculator.actions.hasError(error.toString()));
-			} else {
-				dispatch(calculator.actions.hasError("An unknown error occurred"));
-			}
-		}
-	};
-}
- */
+export default calculatorsReducer;

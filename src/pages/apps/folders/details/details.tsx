@@ -22,6 +22,8 @@ import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 
 // Types
+/* import { CalcAmounts } from "./components/CalcTable"; */
+
 interface StateType {
 	folder: {
 		folder: any;
@@ -70,6 +72,15 @@ const Details = () => {
 	const contactsLoading = useSelector((state: StateType) => state.contacts.isLoader);
 	const contacts = useSelector((state: StateType) => state.contacts.contacts);
 	const userId = useSelector((state: StateType) => state.auth.user?._id);
+	const calculators = useSelector((state: any) => state.calculator.calculators);
+
+/* 	const tableData: CalcAmounts[] = [
+		{ date: "21/02/2022", type: "Calculado", user: "Actora", amount: 926.23 },
+		{ date: "14/03/2022", type: "Calculado", user: "Actora", amount: 743.23 },
+		{ date: "24/05/2022", type: "Calculado", user: "Actora", amount: 642.23 },
+		{ date: "24/05/2022", type: "Ofertado", user: "Demandada", amount: 642.23 },
+		{ date: "24/05/2022", type: "Reclamado", user: "Actora", amount: 642.23 },
+	]; */
 
 	// Memoized data fetching function
 	const fetchData = useCallback(async () => {
@@ -150,7 +161,7 @@ const Details = () => {
 	const MemoizedJudData = useMemo(() => <FolderJudData isLoader={isLoader} folder={folder} type="judicial" />, [isLoader, folder]);
 
 	const MemoizedCalcTable = useMemo(
-		() => <CalcTable title="Montos, Cálculos y Ofrecimientos" folderData={folder} tableData={[]} />,
+		() => <CalcTable title="Montos, Cálculos y Ofrecimientos" folderData={folder} tableData={calculators} />,
 		[folder],
 	);
 

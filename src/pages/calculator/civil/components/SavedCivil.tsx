@@ -38,7 +38,7 @@ import { Add, Eye, Trash, Maximize } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-import { fetchCalculatorData } from "store/reducers/calculator";
+import { getCalculatorsByFilter } from "store/reducers/calculator";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -195,12 +195,16 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 		</>
 	);
 }
+
 const SavedCivil = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 	const [isLoading, setIsLoading] = useState(true);
-	console.log(isLoading);
+
 	const calculatorData = useSelector((state: any) => state.calculator);
+	const auth = useSelector((state) => state.auth);
+	const userId = auth.user?._id;
+
 	console.log(calculatorData);
 
 	const data = useMemo(() => makeData(20), []);
@@ -212,7 +216,13 @@ const SavedCivil = () => {
 	useEffect(() => {
 		const fetchData = async () => {
 			setIsLoading(true);
-			await dispatch(fetchCalculatorData("321", "Civil"));
+			await dispatch(
+				getCalculatorsByFilter({
+					userId,
+					type: "calculado",
+					classType: "civil",
+				}),
+			);
 			setIsLoading(false);
 		};
 		fetchData();

@@ -38,7 +38,7 @@ import { Add, Eye, Trash, Maximize } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-import { fetchCalculatorData } from "store/reducers/calculator";
+import { getCalculatorsByFilter } from "store/reducers/calculator";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -201,8 +201,11 @@ const SavedIntereses = () => {
 	const mode = theme.palette.mode;
 	const [isLoading, setIsLoading] = useState(true);
 	console.log(isLoading);
+
 	const calculatorData = useSelector((state: any) => state.calculator);
 	console.log(calculatorData);
+	const auth = useSelector((state) => state.auth);
+	const userId = auth.user?._id;
 
 	const data = useMemo(() => makeData(20), []);
 	const [open, setOpen] = useState<boolean>(false);
@@ -213,7 +216,13 @@ const SavedIntereses = () => {
 	useEffect(() => {
 		const fetchData = async () => {
 			setIsLoading(true);
-			await dispatch(fetchCalculatorData("321", "Intereses"));
+			await dispatch(
+				getCalculatorsByFilter({
+					userId,
+					type: "calculado",
+					classType: "intereses",
+				}),
+			);
 			setIsLoading(false);
 		};
 		fetchData();
