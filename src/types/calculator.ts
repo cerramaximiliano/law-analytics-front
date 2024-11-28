@@ -1,9 +1,10 @@
 export type CalculatorType = {
-	userId: string;
-	groupId: string;
+	userId?: string;
+	groupId?: string;
 	_id: string;
+	date: string;
 	folderId?: string;
-	type: "calculado" | "ofertado" | "reclamado";
+	type: "Calculado" | "Ofertado" | "Reclamado";
 	classType?: "laboral" | "civil" | "intereses";
 	amount: number;
 	user: string;
@@ -25,4 +26,4 @@ export interface FilterParams {
 	folderId?: string;
 	type?: string;
 	classType?: string;
-  }
+}

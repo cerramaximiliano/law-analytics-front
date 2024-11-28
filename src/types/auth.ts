@@ -11,6 +11,7 @@ export type GuardProps = {
 
 export type UserProfile = {
 	_id?: string;
+	groupId?: string;
 	address?: string;
 	address1?: string;
 	avatar?: string;

@@ -1,4 +1,4 @@
-import { Dialog, DialogTitle, Divider, Button, Grid, Stack, DialogContent, InputLabel, DialogActions } from "@mui/material";
+import { Dialog, DialogTitle, Divider, Button, Grid, Stack, DialogContent, InputLabel, DialogActions, Zoom } from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import NumberField from "components/UI/NumberField";
@@ -7,6 +7,9 @@ import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
 import { CalcAmounts } from "../components/CalcTable";
+import { addCalculator } from "store/reducers/calculator";
+import { dispatch, useSelector } from "store";
+import { enqueueSnackbar } from "notistack";
 
 type AddressModalType = {
 	open: boolean;
@@ -56,6 +59,7 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId }: AddressModal
 		}),
 	];
 
+	const auth = useSelector((state) => state.auth);
 	const currentValidationSchema = CustomerSchema[0];
 
 	const getInitialValues = (folderId: FormikValues | null) => {
@@ -73,10 +77,51 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId }: AddressModal
 	const initialValues = getInitialValues(folderId);
 
 	async function _submitForm(values: any, actions: any) {
-		alert(JSON.stringify(values, null, 2));
-		actions.setSubmitting(false);
-		if (handlerAddress) {
-			handlerAddress({ ...values, time: values.date }); // Ajuste para que `time` reciba la fecha correcta
+		try {
+			const calculatorData = {
+				type: values.type,
+				user: values.user,
+				userId: auth.user?._id,
+				amount: Number(values.amount),
+				folderId: folderId,
+				date: values.date,
+				description: values.description,
+				...(auth.user?.groupId && { groupId: auth.user.groupId }),
+			};
+
+			const result = await dispatch(addCalculator(calculatorData));
+
+			if (result.success) {
+				enqueueSnackbar("Elemento agregado correctamente.", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+
+				if (handlerAddress) {
+					handlerAddress(result.calculator);
+				}
+
+				closeTaskModal();
+				actions.resetForm();
+			} else {
+				enqueueSnackbar("Ha ocurrido un error al guardar el elemento.", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+		} catch (error) {
+			enqueueSnackbar("Error al guardar el elemento.", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				TransitionComponent: Zoom,
+				autoHideDuration: 3000,
+			});
+		} finally {
+			actions.setSubmitting(false);
 		}
 	}
 
@@ -102,7 +147,7 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId }: AddressModal
 						onClose={handleClose}
 						sx={{ "& .MuiDialog-paper": { p: 0 }, "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
 					>
-						<DialogTitle>Agregar Monto, Ofrecimiento, Cálculo</DialogTitle>
+						<DialogTitle>Agregar Montos de Reclamo y Ofrecimientos</DialogTitle>
 						<Divider />
 						<Form autoComplete="off" noValidate>
 							<DialogContent sx={{ p: 2.5 }}>
@@ -115,7 +160,7 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId }: AddressModal
 													<SelectField
 														required={true}
 														label="Seleccione un tipo"
-														data={["Calculado", "Reclamado", "Ofertado"]}
+														data={["Reclamado", "Ofertado"]}
 														name="type"
 														style={{ maxHeight: "39.91px" }}
 													/>

@@ -18,6 +18,9 @@ import {
 	ListItem,
 	ListItemAvatar,
 	ListItemText,
+	IconButton,
+	Tooltip,
+	Zoom,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import SimpleBar from "components/third-party/SimpleBar";
@@ -25,7 +28,11 @@ import Avatar from "components/@extended/Avatar";
 import { Calculator } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
-
+import { dispatch, useSelector } from "store";
+import { deleteCalculator, getCalculatorsByFolderId } from "store/reducers/calculator";
+import { CalculatorType } from "types/calculator";
+import { Trash } from "iconsax-react";
+import { enqueueSnackbar } from "notistack";
 interface LoadingContentProps {
 	isLoading: boolean;
 	content: React.ReactNode;
@@ -41,41 +48,45 @@ export type CalcAmounts = {
 	description?: string;
 };
 
-{
-	/* <ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} handlerAddress={addItem} />
-<ModalCalcTable open={open} setOpen={setOpen} folderId={id} handlerAddress={addItem} /> */
-}
-
 const LoadingContent = ({ isLoading, content, skeleton }: LoadingContentProps): JSX.Element =>
 	isLoading ? <>{skeleton}</> : <>{content}</>;
 
 const CalcTable = ({
 	title,
 	folderData,
-	tableData,
 }: {
 	title: string;
 	folderData: { folderName: string; monto: number };
-	tableData: CalcAmounts[];
 }) => {
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
-	const [data, setData] = useState(tableData);
+	const calculators = useSelector((state) => state.calculator.calculators);
+	const [data, setData] = useState<CalculatorType[]>(calculators);
+	console.log(data);
 	const { id } = useParams();
 	const [latestOfferedAmount, setLatestOfferedAmount] = useState<number | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	console.log(isLoading, setIsLoading);
 
-	const sortedData = useMemo(() => data.slice().sort((a, b) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))), [data]);
+	const sortedData = useMemo(
+		() => data.slice().sort((a: CalculatorType, b: CalculatorType) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
+		[data],
+	);
 
 	useEffect(() => {
-		if (tableData.length > 0 || folderData) {
+		if (calculators.length > 0 || folderData) {
 			setIsLoading(false);
 		}
-	}, [tableData, folderData]);
+	}, [calculators, folderData]);
 
 	useEffect(() => {
-		const latestOffered = sortedData.find((item) => item.type === "Ofertado");
+		if (id) {
+			dispatch(getCalculatorsByFolderId(id));
+		}
+	}, [id]);
+
+	useEffect(() => {
+		const latestOffered = sortedData.find((item: CalculatorType) => item.type === "Ofertado");
 		setLatestOfferedAmount(latestOffered?.amount ?? null);
 	}, [sortedData]);
 
@@ -100,9 +111,39 @@ const CalcTable = ({
 	);
 
 	const addItem = (newEvent: CalcAmounts) => {
-		setData((prevEvents) => [...prevEvents, newEvent]);
+		setData((prevEvents: any) => [...prevEvents, newEvent]);
 	};
 
+	const handleDelete = async (id: string) => {
+		try {
+			const result = await dispatch(deleteCalculator(id));
+
+			if (result.success) {
+				enqueueSnackbar("Cálculo eliminado correctamente", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+				setData((prev) => prev.filter((calc) => calc._id !== id));
+			} else {
+				enqueueSnackbar(result.error || "Error al eliminar el cálculo", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+		} catch (error) {
+			enqueueSnackbar("Error inesperado al eliminar el cálculo", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				TransitionComponent: Zoom,
+				autoHideDuration: 3000,
+			});
+			console.error("Error al eliminar:", error);
+		}
+	};
 	return (
 		<MainCard
 			shadow={3}
@@ -204,8 +245,8 @@ const CalcTable = ({
 						>
 							<TableHead>
 								<TableRow>
-									{["Fecha", "Tipo", "Parte", "Monto"].map((header, index) => (
-										<TableCell key={header} sx={{ p: 1 }} align={index === 3 ? "right" : "left"}>
+									{["Fecha", "Tipo", "Parte", "Monto", ""].map((header, index) => (
+										<TableCell key={header} sx={{ p: 1 }} align={index >= 3 ? "right" : "left"}>
 											<LoadingContent isLoading={isLoading} content={header} skeleton={<Skeleton />} />
 										</TableCell>
 									))}
@@ -215,19 +256,49 @@ const CalcTable = ({
 								{showEmptyState ? (
 									<EmptyState />
 								) : (
-									sortedData.map((row, index) => (
+									sortedData.map((row: CalculatorType, index: number) => (
 										<TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-											{Object.entries(row)
-												.slice(0, 4)
-												.map(([key, value], cellIndex) => (
+											{Object.entries({
+												date: row.date || "N/D",
+												type: row.type || "N/D",
+												user: row.user || "N/D",
+												amount: row.amount || "N/D",
+											}).map(([key, value], cellIndex) => (
+												<>
 													<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
 														<LoadingContent
 															isLoading={isLoading}
-															content={<Typography variant="body2">{value}</Typography>}
+															content={<Typography variant="body2">{cellIndex === 3 ? `$${value}` : String(value)}</Typography>}
 															skeleton={<Skeleton width={60} />}
 														/>
 													</TableCell>
-												))}
+												</>
+											))}
+											<TableCell align="right" sx={{ p: 1 }}>
+												<LoadingContent
+													isLoading={isLoading}
+													content={
+														<Tooltip title="Eliminar cálculo">
+															<IconButton
+																color="error"
+																size="small"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	handleDelete(row._id);
+																}}
+																sx={{
+																	"&:hover": {
+																		bgcolor: "error.lighter",
+																	},
+																}}
+															>
+																<Trash variant="Bulk" size={18} />
+															</IconButton>
+														</Tooltip>
+													}
+													skeleton={<Skeleton width={40} />}
+												/>
+											</TableCell>
 										</TableRow>
 									))
 								)}
@@ -254,71 +325,3 @@ const CalcTable = ({
 };
 
 export default CalcTable;
-
-{
-	/* <Grid sx={{ pb: 2 }} container direction="row" justifyContent="space-around" alignItems="center">
-<Grid item>
-	<Grid container direction="column" spacing={0} alignItems="center" justifyContent="center">
-		{isLoading ? (
-			<>
-				<Skeleton width={80} />
-				<Skeleton width={80} />
-			</>
-		) : (
-			<>
-				<Grid item>
-					<Typography variant="subtitle2" color="secondary">
-						Monto Reclamo
-					</Typography>
-				</Grid>
-				<Grid item>
-					<Typography variant="h5">{`$${folderData.monto}`}</Typography>
-				</Grid>
-			</>
-		)}
-	</Grid>
-</Grid>
-<Grid item>
-	<Grid container direction="column" spacing={0} alignItems="center" justifyContent="center">
-		{isLoading ? (
-			<>
-				<Skeleton width={80} />
-				<Skeleton width={80} />
-			</>
-		) : (
-			<>
-				<Grid item>
-					<Typography variant="subtitle2" color="secondary">
-						Ofrecimiento
-					</Typography>
-				</Grid>
-				<Grid item>
-					<Typography variant="h5">{latestOfferedAmount !== null ? `$${latestOfferedAmount}` : "No ofertado"}</Typography>
-				</Grid>
-			</>
-		)}
-	</Grid>
-</Grid>
-</Grid> */
-}
-
-{
-	/* <Stack direction="row" justifyContent={"right"} spacing={2} marginTop={2}>
-					<Grid item>
-						<Button onClick={() => setOpen(true)} disabled={isLoading}>
-							Vincular
-						</Button>
-					</Grid>
-					<Grid item>
-						<Button variant="contained" color="primary" onClick={() => setOpenItemModal(true)} disabled={isLoading}>
-							Agregar
-						</Button>
-					</Grid>
-				</Stack> */
-}
-
-/* 				"&.MuiTable-root": {
-					paddingLeft: "1px",
-					paddingRight: "1px",
-					borderCollapse: "separate",
-				}, */
