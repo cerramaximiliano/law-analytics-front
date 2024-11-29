@@ -51,26 +51,20 @@ export type CalcAmounts = {
 const LoadingContent = ({ isLoading, content, skeleton }: LoadingContentProps): JSX.Element =>
 	isLoading ? <>{skeleton}</> : <>{content}</>;
 
-const CalcTable = ({
-	title,
-	folderData,
-}: {
-	title: string;
-	folderData: { folderName: string; monto: number };
-}) => {
+const CalcTable = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
 	const calculators = useSelector((state) => state.calculator.calculators);
-	const [data, setData] = useState<CalculatorType[]>(calculators);
-	console.log(data);
+
 	const { id } = useParams();
 	const [latestOfferedAmount, setLatestOfferedAmount] = useState<number | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	console.log(isLoading, setIsLoading);
 
 	const sortedData = useMemo(
-		() => data.slice().sort((a: CalculatorType, b: CalculatorType) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
-		[data],
+		() =>
+			calculators.slice().sort((a: CalculatorType, b: CalculatorType) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
+		[calculators],
 	);
 
 	useEffect(() => {
@@ -81,6 +75,7 @@ const CalcTable = ({
 
 	useEffect(() => {
 		if (id) {
+			console.log("ID", id);
 			dispatch(getCalculatorsByFolderId(id));
 		}
 	}, [id]);
@@ -110,14 +105,9 @@ const CalcTable = ({
 		</TableRow>
 	);
 
-	const addItem = (newEvent: CalcAmounts) => {
-		setData((prevEvents: any) => [...prevEvents, newEvent]);
-	};
-
 	const handleDelete = async (id: string) => {
 		try {
 			const result = await dispatch(deleteCalculator(id));
-
 			if (result.success) {
 				enqueueSnackbar("Cálculo eliminado correctamente", {
 					variant: "success",
@@ -125,7 +115,6 @@ const CalcTable = ({
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
-				setData((prev) => prev.filter((calc) => calc._id !== id));
 			} else {
 				enqueueSnackbar(result.error || "Error al eliminar el cálculo", {
 					variant: "error",
@@ -141,9 +130,9 @@ const CalcTable = ({
 				TransitionComponent: Zoom,
 				autoHideDuration: 3000,
 			});
-			console.error("Error al eliminar:", error);
 		}
 	};
+
 	return (
 		<MainCard
 			shadow={3}
@@ -183,8 +172,8 @@ const CalcTable = ({
 			content={false}
 		>
 			{/* ... Modales ... */}
-			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} handlerAddress={addItem} />
-			<ModalCalcTable open={open} setOpen={setOpen} folderId={id} handlerAddress={addItem} />
+			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} />
+			<ModalCalcTable open={open} setOpen={setOpen} folderId={id} />
 			<CardContent>
 				{/* ... Grid de montos ... */}
 				<Grid sx={{ pb: 2 }} container direction="row" justifyContent="space-around" alignItems="center">

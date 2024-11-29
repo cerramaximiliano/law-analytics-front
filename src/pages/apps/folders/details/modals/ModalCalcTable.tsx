@@ -20,7 +20,6 @@ import SimpleBar from "components/third-party/SimpleBar";
 type CalcModalType = {
 	open: boolean;
 	setOpen: Dispatch<SetStateAction<boolean>>;
-	handlerAddress: (a: any) => void;
 	folderId: any;
 };
 type CalcProps = {
@@ -30,7 +29,7 @@ type CalcProps = {
 };
 // ==============================|| INVOICE - SELECT ADDRESS ||============================== //
 
-const ModalCalcTable = ({ open, setOpen, handlerAddress, folderId }: CalcModalType) => {
+const ModalCalcTable = ({ open, setOpen, folderId }: CalcModalType) => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedAddress, setSelectedAddress] = useState<{ _id: string } | null>(null);
 
@@ -49,7 +48,6 @@ const ModalCalcTable = ({ open, setOpen, handlerAddress, folderId }: CalcModalTy
 
 	const handleVincular = () => {
 		if (selectedAddress) {
-			handlerAddress(selectedAddress);
 			closeAddressModal();
 		}
 	};

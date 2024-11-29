@@ -86,8 +86,8 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId }: AddressModal
 				folderId: folderId,
 				date: values.date,
 				description: values.description,
-				...(auth.user?.groupId && { groupId: auth.user.groupId }),
-			};
+				...(auth.user?.groupId && { groupId: auth.user.groupId })
+			  };
 
 			const result = await dispatch(addCalculator(calculatorData));
 
