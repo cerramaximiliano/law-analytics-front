@@ -48,6 +48,11 @@ export type CalcAmounts = {
 	description?: string;
 };
 
+const formatAmount = (amount: number | null | undefined): string => {
+	if (amount == null) return "No Disponible";
+	return `$${amount.toLocaleString("es-AR")}`;
+};
+
 const LoadingContent = ({ isLoading, content, skeleton }: LoadingContentProps): JSX.Element =>
 	isLoading ? <>{skeleton}</> : <>{content}</>;
 
@@ -192,7 +197,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 										</Typography>
 									</Grid>
 									<Grid item>
-										<Typography variant="h5">{`${folderData.monto ? `$${folderData.monto}` : "No Disponible"}`}</Typography>
+										<Typography variant="h5">{formatAmount(folderData.monto)}</Typography>
 									</Grid>
 								</>
 							)}
@@ -213,7 +218,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 										</Typography>
 									</Grid>
 									<Grid item>
-										<Typography variant="h5">{latestOfferedAmount !== null ? `$${latestOfferedAmount}` : "No ofertado"}</Typography>
+										<Typography variant="h5">{latestOfferedAmount !== null ? formatAmount(latestOfferedAmount) : "No ofertado"}</Typography>
 									</Grid>
 								</>
 							)}
@@ -257,7 +262,9 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 													<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
 														<LoadingContent
 															isLoading={isLoading}
-															content={<Typography variant="body2">{cellIndex === 3 ? `$${value}` : String(value)}</Typography>}
+															content={
+																<Typography variant="body2">{cellIndex === 3 ? formatAmount(value as number) : String(value)}</Typography>
+															}
 															skeleton={<Skeleton width={60} />}
 														/>
 													</TableCell>
