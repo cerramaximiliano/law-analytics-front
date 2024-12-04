@@ -217,9 +217,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 							<ListItemText
 								sx={{
 									my: 0,
-									overflow: "hidden", // Oculta el contenido que excede
-									textOverflow: "ellipsis", // Muestra "..." cuando el contenido se corta
-									whiteSpace: "nowrap", // Evita que el texto envuelva en varias líneas
+									overflow: "hidden",
 									maxWidth: "calc(100% - 48px)",
 								}}
 								primary={<Typography>Información General</Typography>}
@@ -229,9 +227,12 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										sx={{
 											overflow: "hidden",
 											textOverflow: "ellipsis",
-											whiteSpace: "nowrap",
-											display: "block", // Asegura que el truncado se aplique correctamente
-											maxWidth: "calc(100% - 48px)", // Ajusta según el espacio disponible
+											display: "-webkit-box",
+											WebkitLineClamp: 2, // Limita a 2 líneas
+											WebkitBoxOrient: "vertical",
+											lineHeight: 1.2, // Ajusta según necesites
+											maxHeight: "2.4em", // 2 líneas * lineHeight
+											maxWidth: "calc(100% - 48px)",
 										}}
 									>
 										{folder?.folderName || "-"}

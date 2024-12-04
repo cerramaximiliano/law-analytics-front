@@ -1,9 +1,10 @@
 // material-ui
-import { Button, Grid, Stack, Typography, GridProps } from "@mui/material";
+import { Button, Grid, Stack, Typography, GridProps, ButtonGroup } from "@mui/material";
 
 // third-party
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
 // project-imports
 import IconButton from "components/@extended/IconButton";
 
@@ -26,19 +27,45 @@ const CalendarToolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, o
 	return (
 		<Grid alignItems="center" container justifyContent="space-around" spacing={0} {...others} sx={{ pb: 2 }}>
 			<Grid item>
-				<Button variant="outlined" onClick={onClickToday} size={"small"}>
-					Hoy
-				</Button>
+				<Stack direction="row" spacing={1}>
+					<Button variant="outlined" onClick={onClickToday} size="small">
+						Hoy
+					</Button>
+					<ButtonGroup size="small" variant="outlined">
+						<Button
+							onClick={() => onChangeView("listYear")}
+							variant={view === "listYear" ? "contained" : "outlined"}
+							sx={{
+								"&.MuiButton-contained": {
+									borderRight: "1px solid rgba(255, 255, 255, 0.5) !important",
+								},
+							}}
+						>
+							Anual
+						</Button>
+						<Button
+							onClick={() => onChangeView("listMonth")}
+							variant={view === "listMonth" ? "contained" : "outlined"}
+							sx={{
+								"&.MuiButton-contained": {
+									borderLeft: "1px solid rgba(255, 255, 255, 0.5) !important",
+								},
+							}}
+						>
+							Mensual
+						</Button>
+					</ButtonGroup>
+				</Stack>
 			</Grid>
 			<Grid item>
 				<Stack direction="row" alignItems="center" spacing={1}>
-					<IconButton onClick={onClickPrev} size={"small"}>
+					<IconButton onClick={onClickPrev} size="small">
 						<ArrowLeft2 />
 					</IconButton>
-					<Typography variant={"body1"} color="textPrimary">
-						{format(date, "MMM yyyy", { locale: es })}
+					<Typography variant="body1" color="textPrimary">
+						{view === "listYear" ? format(date, "yyyy", { locale: es }) : format(date, "MMM yyyy", { locale: es })}
 					</Typography>
-					<IconButton onClick={onClickNext} size={"small"}>
+					<IconButton onClick={onClickNext} size="small">
 						<ArrowRight2 />
 					</IconButton>
 				</Stack>

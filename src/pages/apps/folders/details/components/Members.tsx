@@ -229,24 +229,70 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 						<List disablePadding sx={{ "& .MuiListItem-root": { px: 3, py: 1.5 } }} ref={parent}>
 							{membersData.length > 0 ? (
 								membersData.map((member, index) => (
-									<ListItem key={index} divider={index < membersData.length - 1}>
-										<ListItemAvatar sx={{ mr: 1 }}>
-											<Avatar alt={member.name} src={member.avatar} variant="rounded" size="lg" color={getColorByRole(member.role)} />
-										</ListItemAvatar>
-										<ListItemText
-											primary={<Typography variant="subtitle1">{`${member.name || ""} ${member.lastName || ""}`}</Typography>}
-											secondary={<Typography sx={{ mt: 0.25 }}>{member.role}</Typography>}
-										/>
-										<Tooltip title="Desvincular">
-											<IconButton size="small" edge="end" color="primary" aria-label="unlink" onClick={() => handleUnlink(member._id)}>
-												<Link1 variant="Broken" />
-											</IconButton>
-										</Tooltip>
-										<Tooltip title="Eliminar">
-											<IconButton size="small" edge="end" aria-label="delete" onClick={() => handleDelete(member._id)} color="error">
-												<Trash variant="Bulk" />
-											</IconButton>
-										</Tooltip>
+									<ListItem
+										key={index}
+										divider={index < membersData.length - 1}
+										sx={{
+											flexDirection: "column",
+											alignItems: "flex-start",
+											gap: 1,
+										}}
+									>
+										<Stack direction="row" alignItems="center" spacing={2} sx={{ width: "100%" }}>
+											<ListItemAvatar sx={{ minWidth: "auto" }}>
+												<Avatar alt={member.name} src={member.avatar} variant="rounded" size="lg" color={getColorByRole(member.role)} />
+											</ListItemAvatar>
+											<ListItemText
+												primary={
+													<Typography
+														sx={{
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+															display: "-webkit-box",
+															WebkitLineClamp: 2,
+															WebkitBoxOrient: "vertical",
+															lineHeight: 1.2,
+															minHeight: "2.4em", // Para mantener consistente el espacio incluso con texto corto
+														}}
+														variant="subtitle1"
+													>{`${member.name || ""} ${member.lastName || ""}`}</Typography>
+												}
+												secondary={
+													<Typography
+														sx={{
+															mt: 0.25,
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+															whiteSpace: "nowrap",
+														}}
+													>
+														{member.role}
+													</Typography>
+												}
+												sx={{ flex: 1, minWidth: 0 }}
+											/>
+										</Stack>
+
+										<Stack
+											direction="row"
+											spacing={1}
+											sx={{
+												width: "100%",
+												justifyContent: "flex-end",
+												mt: { xs: 1, sm: 0 },
+											}}
+										>
+											<Tooltip title="Desvincular">
+												<IconButton size="small" color="primary" aria-label="unlink" onClick={() => handleUnlink(member._id)}>
+													<Link1 variant="Broken" />
+												</IconButton>
+											</Tooltip>
+											<Tooltip title="Eliminar">
+												<IconButton size="small" aria-label="delete" onClick={() => handleDelete(member._id)} color="error">
+													<Trash variant="Bulk" />
+												</IconButton>
+											</Tooltip>
+										</Stack>
 									</ListItem>
 								))
 							) : (

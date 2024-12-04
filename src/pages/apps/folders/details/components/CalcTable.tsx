@@ -197,7 +197,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 										</Typography>
 									</Grid>
 									<Grid item>
-										<Typography variant="h5">{formatAmount(folderData.monto)}</Typography>
+										<Typography variant="h5">{formatAmount(folderData.monto || null)}</Typography>
 									</Grid>
 								</>
 							)}

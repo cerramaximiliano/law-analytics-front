@@ -12,6 +12,8 @@ import CalendarStyled from "sections/apps/calendar/CalendarStyled";
 import FullCalendar from "@fullcalendar/react";
 import esLocale from "@fullcalendar/core/locales/es";
 import listPlugin from "@fullcalendar/list";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
 import { useSelector, dispatch } from "store";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CalendarToolbar from "./CalendarToolbar";
@@ -103,9 +105,15 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 						borderRadius={1}
 						boxShadow={1}
 						sx={{
-							transition: "max-height 0.3s ease", // Animación para expandir
-							maxHeight: expandedEventId === _id ? "300px" : "0px", // Altura dinámica basada en estado
-							overflow: "hidden", // Evita overflow visual
+							animation: expandedEventId === _id ? "expand 0.3s ease forwards" : "collapse 0.3s ease forwards",
+							"@keyframes expand": {
+								"0%": { maxHeight: 0, opacity: 0 },
+								"100%": { maxHeight: "300px", opacity: 1 },
+							},
+							"@keyframes collapse": {
+								"0%": { maxHeight: "300px", opacity: 1 },
+								"100%": { maxHeight: 0, opacity: 0 },
+							},
 						}}
 					>
 						<Typography variant="body1">
@@ -189,13 +197,14 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 		}
 	}, []);
 
+	const [currentView, setCurrentView] = useState<string>("listMonth");
 	const handleViewChange = (newView: string) => {
-		/* 		const calendarEl = calendarRef.current;
+		const calendarEl = calendarRef.current;
 		if (calendarEl) {
 			const calendarApi = calendarEl.getApi();
 			calendarApi.changeView(newView);
-			dispatch(updateCalendarView(newView));
-		} */
+			setCurrentView(newView);
+		}
 	};
 
 	const selectedEvent = useSelector((state) => {
@@ -290,7 +299,7 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 									>
 										<CalendarToolbar
 											date={date}
-											view={"listWeek"}
+											view={currentView}
 											onClickNext={handleDateNext}
 											onClickPrev={handleDatePrev}
 											onClickToday={handleDateToday}
@@ -298,7 +307,7 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 										/>
 										<FullCalendar
 											events={events}
-											initialView="listWeek"
+											initialView="listMonth"
 											ref={calendarRef}
 											rerenderDelay={10}
 											initialDate={date}
@@ -307,9 +316,20 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 											allDayMaintainDuration
 											eventResizableFromStart
 											locale={esLocale}
-											plugins={[listPlugin]}
+											plugins={[listPlugin, dayGridPlugin, timeGridPlugin]}
 											height={"auto"}
 											eventContent={(eventInfo) => renderEventContent(eventInfo)}
+											views={{
+												listMonth: {
+													buttonText: "Mes",
+													titleFormat: { year: "numeric", month: "long" },
+												},
+												listYear: {
+													buttonText: "Año",
+													titleFormat: { year: "numeric" },
+													duration: { years: 1 },
+												},
+											}}
 										/>
 									</CalendarStyled>
 								</SimpleBar>

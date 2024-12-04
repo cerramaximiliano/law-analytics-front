@@ -3,13 +3,25 @@ import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
-import { Form, Formik, FormikValues } from "formik";
+import { Form, Formik } from "formik";
+import { dispatch, useSelector } from "store";
+import { openSnackbar } from "store/reducers/snackbar";
+import { addTask } from "store/reducers/tasks";
 
 type AddressModalType = {
 	open: boolean;
 	setOpen: Dispatch<SetStateAction<boolean>>;
 	handlerAddress?: (task: any) => void;
-	folderId: any;
+	folderId: string;
+};
+
+type TaskFormValues = {
+	date: string;
+	name: string;
+	description: string;
+	checked: boolean;
+	folderId: string;
+	userId?: string;
 };
 
 const customInputStyles = {
@@ -36,53 +48,95 @@ const customTextareaStyles = {
 };
 
 const ModalTasks = ({ open, setOpen, handlerAddress, folderId }: AddressModalType) => {
+	const userId = useSelector((state: any) => state.auth?.user?._id);
 	function closeTaskModal() {
 		setOpen(false);
 	}
 
-	const CustomerSchema = [
-		Yup.object().shape({
-			name: Yup.string().max(255).required("La tarea es requerida"),
-			date: Yup.string()
-				.required("La fecha es requerida")
-				.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-					message: "El formato de fecha debe ser DD/MM/AAAA",
+	const CustomerSchema = Yup.object().shape({
+		name: Yup.string().max(255).required("La tarea es requerida"),
+		date: Yup.string()
+			.required("La fecha es requerida")
+			.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
+				message: "El formato de fecha debe ser DD/MM/AAAA",
+			}),
+		description: Yup.string().max(500),
+	});
+
+	const getInitialValues = (folderId: string, userId: string | undefined): TaskFormValues => ({
+		date: "",
+		name: "",
+		description: "",
+		checked: false,
+		folderId,
+		userId,
+	});
+	const initialValues = getInitialValues(folderId, userId);
+
+	async function _submitForm(values: TaskFormValues, actions: any) {
+		try {
+			const result = await dispatch(addTask(values));
+			if (result.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Tarea creada exitosamente.",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: true,
+					}),
+				);
+
+				if (handlerAddress) {
+					handlerAddress(result.task);
+				}
+				closeTaskModal();
+				actions.resetForm();
+				return true;
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Error al crear la tarea.",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
+				closeTaskModal();
+				actions.resetForm();
+				return false;
+			}
+		} catch (error) {
+			console.log(error);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al crear la tarea.",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: true,
 				}),
-		}),
-	];
-
-	const currentValidationSchema = CustomerSchema[0];
-
-	const getInitialValues = (folderId: FormikValues | null) => {
-		const newTask = {
-			date: null,
-			name: "",
-			description: "",
-			checked: false,
-			folderId: folderId,
-		};
-		return newTask;
-	};
-
-	const initialValues = getInitialValues(folderId);
-
-	async function _submitForm(values: any, actions: any) {
-		alert(JSON.stringify(values, null, 2));
-		actions.setSubmitting(false);
-		if (handlerAddress) {
-			handlerAddress({ ...values, _id: Date.now().toString() }); // assuming id is generated here
+			);
+			closeTaskModal();
+			actions.resetForm();
+			return false;
+		} finally {
+			actions.setSubmitting(false);
 		}
 	}
 
-	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
-		_submitForm(values, actions);
-		closeTaskModal();
-		actions.resetForm();
+	async function _handleSubmit(values: TaskFormValues, actions: any) {
+		await _submitForm(values, actions);
 	}
-
 	return (
-		<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
+		<Formik initialValues={initialValues} validationSchema={CustomerSchema} onSubmit={_handleSubmit} enableReinitialize>
 			{({ isSubmitting, resetForm }) => {
 				const handleClose = () => {
 					closeTaskModal();
