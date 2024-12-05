@@ -75,7 +75,7 @@ const FinalStep: React.FC<Props> = (props) => {
 				<Card key={index} variant="outlined" sx={{ mb: 2 }}>
 					<CardContent sx={{ position: "relative" }}>
 						{type !== "reclamo" && (
-							<Tooltip title="Delete" sx={{ position: "absolute", top: 8, right: 8 }}>
+							<Tooltip title="Eliminar" sx={{ position: "absolute", top: 8, right: 8 }}>
 								<IconButton color="error" onClick={() => handleDeleteType(type)}>
 									<Trash />
 								</IconButton>

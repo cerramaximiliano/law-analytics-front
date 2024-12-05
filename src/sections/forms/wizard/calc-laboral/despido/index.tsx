@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 // material-ui
-import { Button, Step, Stepper, StepLabel, Stack, Typography } from "@mui/material";
+import { Button, Step, Stepper, StepLabel, Stack } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -16,6 +16,7 @@ import { Formik, Form } from "formik";
 
 // third party
 import moment from "moment";
+import ResultsView from "./resultsView";
 
 // step options
 const steps = ["Datos requeridos", "Cálculos opcionales", "Resultados"];
@@ -43,6 +44,7 @@ const BasicWizard = () => {
 	const handleBack = () => {
 		setActiveStep(activeStep - 1);
 	};
+	const [formResults, setFormResults] = useState<Record<string, any> | null>(null);
 
 	function _sleep(ms: number) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
@@ -96,6 +98,161 @@ const BasicWizard = () => {
 
 		return diasTrabajados;
 	}
+
+	function calcularVacacionesProporcionales(
+		remuneracion: number,
+		fechaInicioRelacion: string,
+		fechaFin: string,
+		antiguedad: number,
+	): { diasVacacionesProporcionales: number; montoVacaciones: number } {
+		// Días de vacaciones según antigüedad
+		const diasVacacionesPorAntiguedad: { [key: string]: number } = {
+			"0-4": 14,
+			"5-9": 21,
+			"10-19": 28,
+			"20+": 35,
+		};
+
+		// Determinar los días de vacaciones por antigüedad
+		let diasVacaciones = 0;
+		if (antiguedad >= 0 && antiguedad <= 4) {
+			diasVacaciones = diasVacacionesPorAntiguedad["0-4"];
+		} else if (antiguedad >= 5 && antiguedad <= 9) {
+			diasVacaciones = diasVacacionesPorAntiguedad["5-9"];
+		} else if (antiguedad >= 10 && antiguedad <= 19) {
+			diasVacaciones = diasVacacionesPorAntiguedad["10-19"];
+		} else if (antiguedad >= 20) {
+			diasVacaciones = diasVacacionesPorAntiguedad["20+"];
+		}
+
+		// Convertir fechas a objetos Moment
+		const fechaInicioRelacionMoment = moment(fechaInicioRelacion, "DD/MM/YYYY");
+		const fechaFinMoment = moment(fechaFin, "DD/MM/YYYY");
+
+		// Validar fechas
+		if (!fechaInicioRelacionMoment.isValid() || !fechaFinMoment.isValid()) {
+			throw new Error("Las fechas proporcionadas no son válidas.");
+		}
+
+		// Obtener el inicio del año calendario o la fecha de inicio de la relación, lo que sea más reciente
+		const inicioAnoCalendario = moment(`01-01-${fechaFinMoment.year()}`, "DD-MM-YYYY");
+		const inicioComputo = moment.max(fechaInicioRelacionMoment, inicioAnoCalendario);
+
+		// Calcular los días trabajados en el año calendario
+		const diasTrabajados = fechaFinMoment.diff(inicioComputo, "days") + 1;
+
+		// Calcular los días de vacaciones proporcionales
+		const diasVacacionesProporcionales = (diasTrabajados / 365) * diasVacaciones;
+
+		// Calcular el monto por vacaciones proporcionales
+		const montoVacaciones = (remuneracion / 25) * diasVacacionesProporcionales;
+
+		// Retornar el resultado
+		return {
+			diasVacacionesProporcionales: parseFloat(diasVacacionesProporcionales.toFixed(2)),
+			montoVacaciones: parseFloat(montoVacaciones.toFixed(2)),
+		};
+	}
+
+	function calcularTopeVizzoti(mejorRemuneracionBruta: number, topeLegalVigente: number): number {
+		// Calcular el tope Vizzoti (67% de la mejor remuneración bruta)
+		const topeVizzoti = mejorRemuneracionBruta * 0.67;
+
+		// Determinar el menor valor entre el tope legal vigente y el tope Vizzoti
+		return Math.min(topeVizzoti, topeLegalVigente);
+	}
+	function calcularMultaArt1Ley25323(indemnizacionTotal: number): number {
+		return indemnizacionTotal * 0.5;
+	}
+	function calcularMultaArt2Ley25323(indemnizacionTotal: number): number {
+		return indemnizacionTotal * 1;
+	}
+	function calcularMultaArt80LCT(mejorRemuneracionMensual: number): number {
+		return mejorRemuneracionMensual * 3;
+	}
+	function calcularMultaArt15Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
+		// Convertir las fechas a objetos Moment
+		const inicio = moment(fechaInicio, "DD/MM/YYYY");
+		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+
+		// Validar las fechas
+		if (!inicio.isValid() || !egreso.isValid()) {
+			throw new Error("Las fechas proporcionadas no son válidas.");
+		}
+
+		// Calcular la diferencia en meses completos
+		const mesesTrabajados = egreso.diff(inicio, "months", true);
+
+		// Calcular el total de remuneraciones no registradas
+		const remuneracionesNoRegistradas = mesesTrabajados * mejorRemuneracion;
+
+		// Calcular la multa (25% de las remuneraciones no registradas)
+		const multa = remuneracionesNoRegistradas * 0.25;
+
+		// Redondear a dos decimales y retornar
+		return parseFloat(multa.toFixed(2));
+	}
+	function calcularMultaArt8Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
+		const inicio = moment(fechaInicio, "DD/MM/YYYY");
+		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+
+		if (!inicio.isValid() || !egreso.isValid()) {
+			throw new Error("Las fechas proporcionadas no son válidas.");
+		}
+
+		const mesesTrabajados = egreso.diff(inicio, "months", true);
+		const totalRemuneraciones = mesesTrabajados * mejorRemuneracion;
+
+		return parseFloat((totalRemuneraciones * 0.25).toFixed(2));
+	}
+	function calcularMultaArt9Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
+		const inicio = moment(fechaInicio, "DD/MM/YYYY");
+		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+
+		if (!inicio.isValid() || !egreso.isValid()) {
+			throw new Error("Las fechas proporcionadas no son válidas.");
+		}
+
+		const mesesTrabajados = egreso.diff(inicio, "months", true);
+		const totalRemuneraciones = mesesTrabajados * mejorRemuneracion;
+
+		return parseFloat((totalRemuneraciones * 0.25).toFixed(2));
+	}
+	function calcularMultaArt10Ley24013(
+		fechaInicioNoRegistrada: string,
+		fechaEgreso: string,
+		remuneracionPercibida: number,
+		remuneracionConsignada: number,
+	): number {
+		// Convertir fechas a objetos Moment
+		const inicio = moment(fechaInicioNoRegistrada, "DD/MM/YYYY");
+		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+
+		// Validar fechas
+		if (!inicio.isValid() || !egreso.isValid()) {
+			throw new Error("Las fechas proporcionadas no son válidas.");
+		}
+
+		// Calcular meses trabajados en el período no registrado
+		const mesesNoRegistrados = egreso.diff(inicio, "months", true);
+
+		// Calcular el monto mensual no registrado
+		const montoNoRegistradoMensual = remuneracionPercibida - remuneracionConsignada;
+
+		// Validar que haya un monto no registrado positivo
+		if (montoNoRegistradoMensual <= 0) {
+			throw new Error("No hay remuneración no registrada para calcular la multa.");
+		}
+
+		// Calcular el total no registrado
+		const totalNoRegistrado = montoNoRegistradoMensual * mesesNoRegistrados;
+
+		// Calcular la multa (25% del total no registrado)
+		const multa = totalNoRegistrado * 0.25;
+
+		// Retornar el resultado redondeado a dos decimales
+		return parseFloat(multa.toFixed(2));
+	}
 	async function _submitForm(values: any, actions: any) {
 		await _sleep(1000);
 		const calcularPeriodos = (fechaIngreso: Date | null, fechaEgreso: Date | null) => {
@@ -104,26 +261,26 @@ const BasicWizard = () => {
 			const inicio = moment(fechaIngreso);
 			const fin = moment(fechaEgreso);
 
-			// Obtener años y meses de diferencia
 			const años = fin.diff(inicio, "years");
 			const mesesRestantes = fin.subtract(años, "years").diff(inicio, "months");
 
-			// Si hay más de 3 meses, sumar un año adicional
 			const añosFinales = mesesRestantes > 3 ? años + 1 : años;
 
 			return añosFinales;
 		};
 
-		// Calcular períodos
 		const periodos = calcularPeriodos(values.fechaIngreso, values.fechaEgreso);
 
-		// Calcular la remuneración incluyendo SAC si corresponde
 		const remuneracionBase = parseFloat(values.remuneracion);
-		const remuneracionCalculada = values.incluirSAC
-			? remuneracionBase + remuneracionBase / 12 // Suma una doceava parte si incluirSAC es true
-			: remuneracionBase;
+		let remuneracionCalculada;
 
-		// Calcular indemnización con la remuneración ajustada
+		if (values.isTopes) {
+			const remuneracionTope = calcularTopeVizzoti(remuneracionBase, values.topeLegalVigente);
+			remuneracionCalculada = values.incluirSAC ? remuneracionTope + remuneracionTope / 12 : remuneracionTope;
+		} else {
+			remuneracionCalculada = values.incluirSAC ? remuneracionBase + remuneracionBase / 12 : remuneracionBase;
+		}
+
 		const indemnizacion = periodos * remuneracionCalculada;
 
 		const resultado = {
@@ -133,16 +290,12 @@ const BasicWizard = () => {
 			...(values.otrasSumas && { "Otras Sumas": parseFloat(values.otrasSumas) }),
 		};
 
-		// Si isLiquidacion es true, verificamos los valores en el array liquidacion
 		if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
 			if (values.liquidacion.includes("preaviso")) {
 				resultado.Preaviso = calcularPreaviso(values.fechaIngreso, values.fechaEgreso, remuneracionCalculada);
 			}
 			if (values.liquidacion.includes("integracionMes")) {
-				resultado["Integracion Mes"] = calcularIntegracionMes(
-					values.fechaEgreso,
-					remuneracionBase, // Usamos remuneracionBase sin SAC para este cálculo
-				);
+				resultado["Integracion Mes"] = calcularIntegracionMes(values.fechaEgreso, remuneracionBase);
 			}
 			if (values.liquidacion.includes("sacPreaviso") && resultado.Preaviso) {
 				resultado["SAC s/ Preaviso"] = resultado.Preaviso / 12;
@@ -151,9 +304,50 @@ const BasicWizard = () => {
 				const diasTrabajados = calcularDiasTrabajados(values.fechaEgreso);
 				resultado["SAC proporcional"] = (diasTrabajados / 365) * (remuneracionBase / 12);
 			}
+			if (values.liquidacion.includes("diasTrabajados")) {
+				const fin = moment(values.fechaEgreso);
+				const diasEnMes = fin.daysInMonth();
+				const diaDelMes = fin.date();
+				resultado["Días Trabajados"] = diaDelMes * (remuneracionBase / diasEnMes);
+			}
+			if (values.liquidacion.includes("vacaciones")) {
+				const antiguedad = calcularPeriodos(values.fechaIngreso, values.fechaEgreso);
+				const vacaciones = calcularVacacionesProporcionales(remuneracionBase, values.fechaIngreso, values.fechaEgreso, antiguedad);
+				resultado["Días Vacaciones"] = vacaciones.diasVacacionesProporcionales;
+				resultado["Monto Vacaciones"] = vacaciones.montoVacaciones;
+			}
+		}
+
+		if (values.isMultas && Array.isArray(values.multas)) {
+			if (values.multas.includes("multaArt1")) {
+				resultado["Multa Art. 1º Ley 25.323"] = calcularMultaArt1Ley25323(indemnizacion);
+			}
+			if (values.multas.includes("multaArt2")) {
+				resultado["Multa Art. 2º Ley 25.323"] = calcularMultaArt2Ley25323(indemnizacion);
+			}
+			if (values.multas.includes("multaArt80")) {
+				resultado["Multa Art. 80 LCT"] = calcularMultaArt80LCT(remuneracionBase);
+			}
+			if (values.multas.includes("multaArt15")) {
+				resultado["Multa Art. 15 Ley 24.013"] = calcularMultaArt15Ley24013(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
+			}
+		}
+
+		if (values.multaLE === 1) {
+			resultado["Multa Art. 8 Ley 24.013"] = calcularMultaArt8Ley24013(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
+		} else if (values.multaLE === 2 && values.fechaFalsa) {
+			resultado["Multa Art. 9 Ley 24.013"] = calcularMultaArt9Ley24013(values.fechaFalsa, values.fechaIngreso, remuneracionBase);
+		} else if (values.multaLE === 3) {
+			resultado["Multa Art. 10 Ley 24.013"] = calcularMultaArt10Ley24013(
+				values.fechaIngreso,
+				values.fechaEgreso,
+				remuneracionBase,
+				values.salarioFalso,
+			);
 		}
 
 		alert(JSON.stringify(resultado, null, 2));
+		setFormResults(resultado);
 		actions.setSubmitting(false);
 		setActiveStep(activeStep + 1);
 	}
@@ -179,22 +373,13 @@ const BasicWizard = () => {
 			</Stepper>
 			<>
 				{activeStep === steps.length ? (
-					<>
-						<Typography variant="h5" gutterBottom>
-							Resultados.
-						</Typography>
-						<Typography variant="subtitle1">
-							Your order number is #2001539. We have emailed your order confirmation, and will send you an update when your order has
-							shipped.
-						</Typography>
-						<Stack direction="row" justifyContent="flex-end">
-							<AnimateButton>
-								<Button variant="contained" color="error" onClick={() => setActiveStep(0)} sx={{ my: 3, ml: 1 }}>
-									Reset
-								</Button>
-							</AnimateButton>
-						</Stack>
-					</>
+					<ResultsView
+						values={formResults || {}}
+						onReset={() => {
+							setActiveStep(0);
+							setFormResults(null);
+						}}
+					/>
 				) : (
 					<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
 						{({ isSubmitting, values }) => (

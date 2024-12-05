@@ -12200,12 +12200,10 @@ react-timer-hook@^3.0.6:
   resolved "https://registry.npmjs.org/react-timer-hook/-/react-timer-hook-3.0.6.tgz"
   integrity sha512-6O1gcBT7R5gm2W14mGAu35KfX0tdJ9s817UDJTL7/IQUXqK6wkYgZzy1mSLa6N+AQGEhgoVCtTsP7tIhBmSD6A==
 
-react-to-print@^2.14.12:
-  version "2.14.12"
-  resolved "https://registry.npmjs.org/react-to-print/-/react-to-print-2.14.12.tgz"
-  integrity sha512-qFJAwvDFd95Z+FWNqitt+HaB1/z+Zdd0MMrNOPUSus3fG32vqv512yB+HXhQ94J3HKoyqaIg44v0Zfc6xUBqlg==
-  dependencies:
-    prop-types "^15.8.1"
+react-to-print@^2.15.1:
+  version "2.15.1"
+  resolved "https://registry.npmjs.org/react-to-print/-/react-to-print-2.15.1.tgz"
+  integrity sha512-1foogIFbCpzAVxydkhBiDfMiFYhIMphiagDOfcG4X/EcQ+fBPqJ0rby9Wv/emzY1YLkIQy/rEgOrWQT+rBKhjw==
 
 react-transition-group@^4.4.5:
   version "4.4.5"

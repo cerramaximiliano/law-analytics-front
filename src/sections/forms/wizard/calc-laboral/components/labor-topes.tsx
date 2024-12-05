@@ -10,7 +10,7 @@ interface Props {
 }
 const LaborTopes: React.FC<Props> = (props) => {
 	const [aplicaFalloVizzoti, setAplicaFalloVizzoti] = useState(false);
-	const [aplicaFalloTorrisi, setAplicaFalloTorrisi] = useState(false);
+	//const [aplicaFalloTorrisi, setAplicaFalloTorrisi] = useState(false);
 	const { nameRemuneracion, name, options } = props;
 	const [field, meta, helper] = useField(name);
 	const { setValue } = helper;
@@ -55,23 +55,6 @@ const LaborTopes: React.FC<Props> = (props) => {
 							/>
 						}
 						label="Aplica Vizzoti"
-						sx={{ width: "100%" }}
-					/>
-
-					<FormControlLabel
-						name={field.name}
-						value={options[1].value}
-						control={
-							<Checkbox
-								{...field}
-								checked={field.value.includes(options[1].value)}
-								onChange={(e) => {
-									setAplicaFalloTorrisi(!aplicaFalloTorrisi);
-									_onChange(options[1].value, e.target.checked);
-								}}
-							/>
-						}
-						label="Aplica Torrisi"
 						sx={{ width: "100%" }}
 					/>
 					{_renderHelperText()}

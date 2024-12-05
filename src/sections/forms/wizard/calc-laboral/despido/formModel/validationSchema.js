@@ -89,9 +89,9 @@ const schema = [
 		[remuneracionTopes.name]: Yup.number().when(topes.name, {
 			is: (topes) => topes && topes.length > 0,
 			then: () => {
-				return Yup.string()
-					.matches(/^0*(\d{1,3})(,\d{3})*(\.\d{1,2})?$/, "La remuneración debe ser un número válido")
-					.test("greaterThanZero", "La remuneración debe ser mayor a 0", (value) => parseFloat(value.replace(",", ".")) > 0)
+				return Yup.number()
+					.typeError("La remuneración debe ser un número")
+					.test("greaterThanZero", "La remuneración debe ser mayor a 0", (value) => parseFloat(value) > 0)
 					.required("La remuneración es requerida");
 			},
 			otherwise: () => Yup.number(),
