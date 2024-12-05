@@ -9,6 +9,7 @@ const {
 		remuneracion,
 		otrasSumas,
 		dias,
+		incluirSAC,
 		isLiquidacion,
 		liquidacion,
 		isTopes,
@@ -23,13 +24,14 @@ const {
 } = despidoFormModel;
 
 const initialValues = {
-	[reclamante.name]: "asdf",
-	[reclamado.name]: "asdf",
+	[reclamante.name]: "",
+	[reclamado.name]: "",
 	[fechaIngreso.name]: null,
 	[fechaEgreso.name]: null,
 	[remuneracion.name]: "",
 	[otrasSumas.name]: "",
 	[dias.name]: "",
+	[incluirSAC.name]: false,
 	[isLiquidacion.name]: false,
 	[liquidacion.name]: [],
 	[isTopes.name]: false,

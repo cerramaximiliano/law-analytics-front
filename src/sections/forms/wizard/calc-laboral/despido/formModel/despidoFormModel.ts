@@ -15,6 +15,7 @@ interface FormModel {
 		remuneracion: FormField;
 		otrasSumas: FormField;
 		dias: FormField;
+		incluirSAC: FormField;
 		liquidacion: FormField;
 		isLiquidacion: FormField;
 		topes: FormField;
@@ -69,6 +70,11 @@ const despidoFormModel: FormModel = {
 		dias: {
 			name: "dias",
 			label: "Dias de Descuento",
+			type: "reclamo",
+		},
+		incluirSAC: {
+			name: "incluirSAC",
+			label: "Incluir SAC",
 			type: "reclamo",
 		},
 		isLiquidacion: {

@@ -5,8 +5,8 @@ const {
 } = despidoFormModel;
 
 const initialValues = {
-	[reclamante.name]: "asdf",
-	[reclamado.name]: "asdf",
+	[reclamante.name]: "",
+	[reclamado.name]: "",
 	[fechaIngreso.name]: "10/10/2020",
 	[fechaEgreso.name]: "15/10/2020",
 	[remuneracion.name]: "3215",
