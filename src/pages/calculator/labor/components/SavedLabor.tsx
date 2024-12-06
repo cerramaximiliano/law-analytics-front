@@ -55,6 +55,7 @@ import { getCalculatorsByFilter } from "store/reducers/calculator";
 import { openSnackbar } from "store/reducers/snackbar";
 import axios from "axios";
 import { useReactToPrint } from "react-to-print";
+import despidoFormModel from "sections/forms/wizard/calc-laboral/despido/formModel/despidoFormModel";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -87,6 +88,7 @@ interface CalculationDetailsProps {
 }
 
 const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
+	console.log(data);
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
 	const [email, setEmail] = useState("");
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -94,6 +96,13 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	const [updateModalOpen, setUpdateModalOpen] = useState(false);
 	const [interestRate, setInterestRate] = useState("");
 	const printRef = useRef<HTMLDivElement>(null);
+
+	const { formField } = despidoFormModel;
+
+	const getLabelForKey = (key: string): string => {
+		const field = formField[key as keyof typeof formField];
+		return field?.label || key;
+	};
 
 	// Función para generar texto plano
 	const generatePlainText = () => {
@@ -104,7 +113,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			if (items.length) {
 				text += `${group.toUpperCase()}\n`;
 				items.forEach((item: ResultItem) => {
-					text += `${item.key}: ${
+					text += `${getLabelForKey(item.key)}: ${
 						typeof item.value === "number"
 							? new Intl.NumberFormat("es-AR", {
 									style: "currency",
@@ -180,7 +189,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				.map(
 					({ key, value }) => `
             <div class="row">
-                <span class="label">${key}:</span>
+                <span class="label">${getLabelForKey(key) || key}:</span>
                 <span class="value">${
 									typeof value === "number"
 										? new Intl.NumberFormat("es-AR", {
@@ -443,7 +452,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 					{items.map(({ key, value }) => (
 						<Stack key={key} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.5 }}>
 							<Typography variant="body2" color="text.secondary">
-								{key}:
+								{getLabelForKey(key) || key}:
 							</Typography>
 							<Typography variant="body2">
 								{typeof value === "number"
