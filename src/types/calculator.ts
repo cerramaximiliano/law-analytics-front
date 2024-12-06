@@ -4,8 +4,10 @@ export type CalculatorType = {
 	_id: string;
 	date: string;
 	folderId?: string;
+	folderName?: string;
 	type: "Calculado" | "Ofertado" | "Reclamado";
 	classType?: "laboral" | "civil" | "intereses";
+	subClassType?: "despido" | "liquidación final" | "intereses";
 	amount: number;
 	user?: string;
 	interest?: number;

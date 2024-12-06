@@ -395,6 +395,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 				date: moment().format("YYYY-MM-DD"),
 				type: "Calculado" as const,
 				classType: "laboral" as const,
+				subClassType: "despido" as const,
 				amount: total, // El total ya calculado
 				userId: userId,
 				variables: {
