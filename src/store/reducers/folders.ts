@@ -127,24 +127,28 @@ export const updateFolder = (folderId: string, updateData: Partial<Folder>) => a
 export const getFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`);
-
+		console.log(response);
 		// Add data validation before dispatching
-		if (Array.isArray(response.data)) {
+		if (Array.isArray(response.data.folders)) {
 			dispatch({
 				type: GET_FOLDERS_BY_USER,
-				payload: response.data,
+				payload: response.data.folders,
 			});
+			return { success: true, folders: response.data.folders };
 		} else {
 			dispatch({
 				type: SET_FOLDER_ERROR,
 				payload: "Invalid data format received from server",
 			});
+			return { success: false };
 		}
 	} catch (error) {
+		console.error(error);
 		dispatch({
 			type: SET_FOLDER_ERROR,
 			payload: (error as any).response?.data?.message || "Error al obtener folders del usuario",
 		});
+		return { success: false, error: error };
 	}
 };
 
@@ -219,11 +223,11 @@ export const getFoldersByIds =
 				payload: errorMessage,
 			});
 
-			return { 
-				success: false, 
+			return {
+				success: false,
 				folders: [], // Siempre retornamos un array
-				error: errorMessage 
-			  };
+				error: errorMessage,
+			};
 		}
 	};
 

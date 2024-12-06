@@ -56,14 +56,28 @@ import { openSnackbar } from "store/reducers/snackbar";
 import axios from "axios";
 import { useReactToPrint } from "react-to-print";
 import despidoFormModel from "sections/forms/wizard/calc-laboral/despido/formModel/despidoFormModel";
+import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
 
 // ==============================|| REACT TABLE ||============================== //
 
+interface CalculatorData {
+	_id: string;
+	date: string;
+	folderName?: string;
+	folderId?: string;
+	type: string;
+	subClassType: string;
+	amount: number;
+	interest?: number;
+	variables?: Record<string, any>;
+}
+
+// Update Props interface
 interface Props {
-	columns: Column[];
-	data: [];
+	columns: Column<CalculatorData>[];
+	data: CalculatorData[];
 	handleAdd: () => void;
-	renderRowSubComponent: FC<any>;
+	renderRowSubComponent: FC<{ row: Row<CalculatorData> }>;
 	isLoading: boolean;
 }
 
@@ -82,17 +96,25 @@ interface GroupedResults {
 
 interface CalculationDetailsProps {
 	data: {
+		_id: string;
+		folderId?: string;
 		amount: number;
 		variables?: Record<string, any>;
 	};
 }
 
+const CustomGlobalFilter = GlobalFilter as any;
+const CustomTablePagination = TablePagination as any;
+
+// Update the HeaderSort component
+const CustomHeaderSort = HeaderSort as any;
+
+const CustomSortingSelect = SortingSelect as any;
+
 const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
-	console.log(data);
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
 	const [email, setEmail] = useState("");
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
-	const [causeNumber, setCauseNumber] = useState("");
 	const [updateModalOpen, setUpdateModalOpen] = useState(false);
 	const [interestRate, setInterestRate] = useState("");
 	const printRef = useRef<HTMLDivElement>(null);
@@ -114,7 +136,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				text += `${group.toUpperCase()}\n`;
 				items.forEach((item: ResultItem) => {
 					text += `${getLabelForKey(item.key)}: ${
-						typeof item.value === "number"
+						typeof item.value === "number" && item.key !== "Periodos" && item.key !== "Días Vacaciones"
 							? new Intl.NumberFormat("es-AR", {
 									style: "currency",
 									currency: "ARS",
@@ -191,7 +213,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
             <div class="row">
                 <span class="label">${getLabelForKey(key) || key}:</span>
                 <span class="value">${
-									typeof value === "number"
+									typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
 										? new Intl.NumberFormat("es-AR", {
 												style: "currency",
 												currency: "ARS",
@@ -254,34 +276,6 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	};
 
 	// Manejadores de eventos
-	const handleLinkToCause = async () => {
-		try {
-			console.log("Vinculando causa:", causeNumber);
-			// Aquí iría la lógica para vincular a la causa
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Causa vinculada correctamente",
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-			setLinkModalOpen(false);
-			setCauseNumber("");
-		} catch (error) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Error al vincular la causa",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
-
 	const handleUpdateWithInterest = async () => {
 		try {
 			console.log("Actualizando con tasa:", interestRate);
@@ -455,7 +449,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 								{getLabelForKey(key) || key}:
 							</Typography>
 							<Typography variant="body2">
-								{typeof value === "number"
+								{typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
 									? new Intl.NumberFormat("es-AR", {
 											style: "currency",
 											currency: "ARS",
@@ -532,25 +526,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				</Dialog>
 
 				{/* Link Modal */}
-				<Dialog open={linkModalOpen} onClose={() => setLinkModalOpen(false)}>
-					<DialogTitle>Vincular a Causa</DialogTitle>
-					<DialogContent>
-						<TextField
-							autoFocus
-							margin="dense"
-							label="Número de Causa"
-							fullWidth
-							value={causeNumber}
-							onChange={(e) => setCauseNumber(e.target.value)}
-						/>
-					</DialogContent>
-					<DialogActions>
-						<Button onClick={() => setLinkModalOpen(false)}>Cancelar</Button>
-						<Button onClick={handleLinkToCause} variant="contained">
-							Vincular
-						</Button>
-					</DialogActions>
-				</Dialog>
+				<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={data._id} folderId={data.folderId} />
 
 				{/* Interest Modal */}
 				<Dialog open={updateModalOpen} onClose={() => setUpdateModalOpen(false)}>
@@ -592,12 +568,12 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 		prepareRow,
 		setHiddenColumns,
 		allColumns,
-		visibleColumns,
+
 		rows,
 		page,
 		gotoPage,
 		setPageSize,
-		state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded },
+		state: { globalFilter, selectedRowIds, pageIndex, pageSize },
 		preGlobalFilteredRows,
 		setGlobalFilter,
 		setSortBy,
@@ -610,7 +586,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 			initialState: {
 				pageIndex: 0,
 				pageSize: 10,
-				hiddenColumns: ["_id"],
+				hiddenColumns: ["_id", "folderId"],
 				sortBy: [sortBy],
 			},
 		},
@@ -624,9 +600,9 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 
 	useEffect(() => {
 		if (matchDownSM) {
-			setHiddenColumns(["_id"]);
+			setHiddenColumns(["_id", "folderId"]);
 		} else {
-			setHiddenColumns(["_id"]);
+			setHiddenColumns(["_id", "folderId"]);
 		}
 		// eslint-disable-next-line
 	}, [matchDownSM]);
@@ -642,19 +618,23 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 					alignItems="center"
 					sx={{ p: 3, pb: 0 }}
 				>
-					<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+					<CustomGlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+
 					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
-						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<CSVExport data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data} filename={"causas.csv"} />
+						<CustomSortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
+						<CSVExport
+							data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<CalculatorData>) => d.original) : data}
+							filename={"calculos-laborales.csv"}
+						/>
 					</Stack>
 				</Stack>
 				<Table {...getTableProps()}>
 					<TableHead>
-						{headerGroups.map((headerGroup: HeaderGroup<{}>) => (
+						{headerGroups.map((headerGroup: HeaderGroup<CalculatorData>) => (
 							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
-								{headerGroup.headers.map((column: HeaderGroup) => (
+								{headerGroup.headers.map((column: HeaderGroup<CalculatorData>) => (
 									<TableCell {...column.getHeaderProps([{ className: column.className }])}>
-										<HeaderSort column={column} sort />
+										<CustomHeaderSort column={column} sort />
 									</TableCell>
 								))}
 							</TableRow>
@@ -677,9 +657,9 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 							<>
 								{data.length > 0 ? (
 									<>
-										{page.map((row: Row, i: number) => {
+										{page.map((row: Row<CalculatorData>, i: number) => {
 											prepareRow(row);
-											const rowProps = row.getRowProps();
+
 											return (
 												<Fragment key={i}>
 													<TableRow
@@ -692,17 +672,17 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 															bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
 														}}
 													>
-														{row.cells.map((cell: Cell) => (
+														{row.cells.map((cell: Cell<CalculatorData>) => (
 															<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
 														))}
 													</TableRow>
-													{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
+													{row.isExpanded && renderRowSubComponent({ row })}
 												</Fragment>
 											);
 										})}
 										<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
 											<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-												<TablePagination
+												<CustomTablePagination
 													gotoPage={gotoPage}
 													rows={rows}
 													setPageSize={setPageSize}
@@ -732,6 +712,9 @@ const SavedLabor = () => {
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 
+	const [linkModalOpen, setLinkModalOpen] = useState(false);
+	const [selectedCalculationId, setSelectedCalculationId] = useState("");
+
 	const [open, setOpen] = useState<boolean>(false);
 	const [customer, setCustomer] = useState<any>(null);
 	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
@@ -760,6 +743,7 @@ const SavedLabor = () => {
 	const handleClose = () => {
 		setOpen(!open);
 	};
+
 	const columns = useMemo(
 		() => [
 			{
@@ -768,32 +752,50 @@ const SavedLabor = () => {
 				className: "cell-center",
 			},
 			{
+				Header: "folderId",
+				accessor: "folderId",
+				className: "cell-center",
+			},
+			{
 				Header: "Fecha",
 				accessor: "date",
-				Cell: ({ value }: { value: unknown }) => (
-					<Typography noWrap>{typeof value === "string" ? moment(value).format("DD/MM/YYYY") : value?.toString() || ""}</Typography>
-				),
+				Cell: ({ row }: { row: Row<CalculatorData> }) => <Typography noWrap>{moment(row.original.date).format("DD/MM/YYYY")}</Typography>,
 			},
 			{
 				Header: "Carátula",
 				accessor: "folderName",
-				Cell: ({ value }: { value: unknown }) => {
-					if (!value) {
+				Cell: ({ row }: { row: Row<CalculatorData> }) => {
+					if (!row.original.folderName) {
 						return (
 							<Button
 								variant="contained"
 								size="small"
 								onClick={(e) => {
 									e.stopPropagation();
-									console.log("Vincular carátula");
+									setSelectedCalculationId(row.original._id);
+									setLinkModalOpen(true);
 								}}
 							>
 								Vincular
 							</Button>
 						);
 					}
-
-					return <Typography noWrap>{value?.toString() || ""}</Typography>;
+					return (
+						<Tooltip title={row.original.folderName}>
+							<Typography
+								noWrap
+								sx={{
+									maxWidth: "200px", // Ajusta este valor según tus necesidades
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									display: "block",
+								}}
+							>
+								{row.original.folderName}
+							</Typography>
+						</Tooltip>
+					);
 				},
 			},
 			{
@@ -803,39 +805,34 @@ const SavedLabor = () => {
 			{
 				Header: "Categoría",
 				accessor: "subClassType",
-				Cell: ({ value }: { value: unknown }) => {
+				Cell: ({ row }: { row: Row<CalculatorData> }) => {
 					const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-
-					const formattedValue = value ? (typeof value === "string" ? capitalizeFirst(value) : capitalizeFirst(value.toString())) : "";
-
-					return <Typography noWrap>{formattedValue}</Typography>;
+					return <Typography noWrap>{capitalizeFirst(row.original.subClassType)}</Typography>;
 				},
 			},
 			{
 				Header: "Capital",
 				accessor: "amount",
-				Cell: ({ value }: { value: unknown }) => (
+				Cell: ({ row }: { row: Row<CalculatorData> }) => (
 					<Typography>
-						{typeof value === "number"
-							? new Intl.NumberFormat("es-AR", {
-									style: "currency",
-									currency: "ARS",
-							  }).format(value)
-							: value?.toString() || ""}
+						{new Intl.NumberFormat("es-AR", {
+							style: "currency",
+							currency: "ARS",
+						}).format(row.original.amount)}
 					</Typography>
 				),
 			},
 			{
 				Header: "Intereses",
 				accessor: "interest",
-				Cell: ({ value }: { value: unknown }) => {
-					if (!value) {
+				Cell: ({ row }: { row: Row<CalculatorData> }) => {
+					if (!row.original.interest) {
 						return (
 							<Button
 								variant="contained"
 								size="small"
 								onClick={(e) => {
-									e.stopPropagation(); // Evita que se expanda la fila
+									e.stopPropagation();
 									console.log("Calcular intereses");
 								}}
 							>
@@ -846,21 +843,20 @@ const SavedLabor = () => {
 
 					return (
 						<Typography>
-							{typeof value === "number"
-								? new Intl.NumberFormat("es-AR", {
-										style: "currency",
-										currency: "ARS",
-								  }).format(value)
-								: value?.toString() || ""}
+							{new Intl.NumberFormat("es-AR", {
+								style: "currency",
+								currency: "ARS",
+							}).format(row.original.interest)}
 						</Typography>
 					);
 				},
 			},
 			{
 				Header: "Acciones",
+				accessor: "actions",
 				className: "cell-center",
 				disableSortBy: true,
-				Cell: ({ row }: { row: Row<{}> }) => {
+				Cell: ({ row }: { row: Row<CalculatorData> }) => {
 					const collapseIcon = row.isExpanded ? (
 						<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
 					) : (
@@ -905,7 +901,7 @@ const SavedLabor = () => {
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										handleClose();
-										setCustomerDeleteId(row.values.id);
+										setCustomerDeleteId(row.original._id);
 									}}
 								>
 									<Trash variant="Bulk" />
@@ -916,20 +912,17 @@ const SavedLabor = () => {
 				},
 			},
 		],
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[theme],
-	);
+	) as Column<CalculatorData>[];
 
 	const renderRowSubComponent = useCallback(
-		({ row }: { row: Row<{}> }) => (
+		({ row }: { row: Row<CalculatorData> }) => (
 			<TableRow>
-				<TableCell colSpan={3} /> {/* Este es el desplazamiento */}
+				<TableCell colSpan={3} />
 				<TableCell colSpan={6}>
-					{" "}
-					{/* Ajusta este número según la cantidad de columnas restantes */}
 					<Stack direction="row" justifyContent="flex-end" sx={{ width: "100%" }}>
 						<Box sx={{ width: "100%" }}>
-							<CalculationDetails data={row.original as CalculationDetailsProps["data"]} />
+							<CalculationDetails data={row.original} />
 						</Box>
 					</Stack>
 				</TableCell>
@@ -951,6 +944,7 @@ const SavedLabor = () => {
 			</ScrollX>
 			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} />
 			{/* add customer dialog */}
+			<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={selectedCalculationId} />
 			<Dialog
 				maxWidth="sm"
 				TransitionComponent={PopupTransition}

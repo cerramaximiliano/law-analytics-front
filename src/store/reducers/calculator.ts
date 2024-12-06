@@ -154,10 +154,10 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 };
 
 export const updateCalculator =
-	(id: string, data: Partial<Omit<CalculatorType, "_id" | "isLoader" | "error">>) => async (dispatch: Dispatch) => {
+	(_id: string, data: Partial<Omit<CalculatorType, "_id" | "isLoader" | "error">>) => async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_LOADING });
-			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/calculators/${id}`, data);
+			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/calculators/${_id}`, data);
 			dispatch({
 				type: UPDATE_CALCULATOR,
 				payload: response.data.calculator,

@@ -24,6 +24,7 @@ import { dispatch, useSelector } from "store";
 import moment from "moment";
 import axios from "axios";
 import { addCalculator } from "store/reducers/calculator";
+import LinkCauseModal from "../components/linkCauseModal";
 
 // Tipos
 interface ResultItem {
@@ -82,6 +83,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 	const [causeNumber, setCauseNumber] = useState("");
 	const [updateModalOpen, setUpdateModalOpen] = useState(false);
 	const [interestRate, setInterestRate] = useState("");
+
+	const [savedCalculationId, setSavedCalculationId] = useState<string | null>(null);
 
 	const userId = useSelector((state) => state.auth.user?._id);
 
@@ -378,7 +381,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 
 	const handleLinkToCause = () => {
 		console.log("Vinculando a causa:", causeNumber);
-		setLinkModalOpen(false);
+		setLinkModalOpen(true);
 		setCauseNumber("");
 	};
 
@@ -407,6 +410,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			const result = await dispatch(addCalculator(calculatorData));
 
 			if (result.success) {
+				setSavedCalculationId(result.calculator._id);
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -447,10 +451,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 					<Printer size={24} />
 				</IconButton>
 			</Tooltip>
-			<Tooltip title="Vincular a causa">
-				<IconButton onClick={() => setLinkModalOpen(true)} color="primary">
-					<Link21 size={24} />
-				</IconButton>
+			<Tooltip title={savedCalculationId ? "Vincular a causa" : "Guarde el cálculo primero"}>
+				<span>
+					<IconButton onClick={handleLinkToCause} color="primary" disabled={!savedCalculationId}>
+						<Link21 size={24} />
+					</IconButton>
+				</span>
 			</Tooltip>
 			<Tooltip title="Actualizar con intereses">
 				<IconButton onClick={() => setUpdateModalOpen(true)} color="primary">
@@ -554,25 +560,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 					</DialogActions>
 				</Dialog>
 
-				<Dialog open={linkModalOpen} onClose={() => setLinkModalOpen(false)}>
-					<DialogTitle>Vincular a Causa</DialogTitle>
-					<DialogContent>
-						<TextField
-							autoFocus
-							margin="dense"
-							label="Número de Causa"
-							fullWidth
-							value={causeNumber}
-							onChange={(e) => setCauseNumber(e.target.value)}
-						/>
-					</DialogContent>
-					<DialogActions>
-						<Button onClick={() => setLinkModalOpen(false)}>Cancelar</Button>
-						<Button onClick={handleLinkToCause} variant="contained">
-							Vincular
-						</Button>
-					</DialogActions>
-				</Dialog>
+				<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={savedCalculationId || ""} />
 
 				<Dialog open={updateModalOpen} onClose={() => setUpdateModalOpen(false)}>
 					<DialogTitle>Actualizar con Intereses</DialogTitle>

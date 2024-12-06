@@ -3,8 +3,8 @@ export type CalculatorType = {
 	groupId?: string;
 	_id: string;
 	date: string;
-	folderId?: string;
-	folderName?: string;
+	folderId?: string | null;
+	folderName?: string | null;
 	type: "Calculado" | "Ofertado" | "Reclamado";
 	classType?: "laboral" | "civil" | "intereses";
 	subClassType?: "despido" | "liquidación final" | "intereses";
