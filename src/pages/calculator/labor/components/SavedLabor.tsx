@@ -1,8 +1,19 @@
 import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
-import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
-import { Skeleton, Dialog, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, useMediaQuery } from "@mui/material";
+import {
+	Skeleton,
+	Dialog,
+	Stack,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableRow,
+	Typography,
+	Tooltip,
+	useMediaQuery,
+} from "@mui/material";
 import { dispatch, useSelector } from "store";
 
 import {
@@ -30,11 +41,10 @@ import FolderView from "sections/apps/folders/FolderView";
 
 import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
 
-import makeData from "data/react-table";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, Eye, Trash, Maximize } from "iconsax-react";
+import { Add, Eye, Trash } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
@@ -82,7 +92,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 			initialState: {
 				pageIndex: 0,
 				pageSize: 10,
-				hiddenColumns: ["avatar", "email"],
+				hiddenColumns: ["_id"],
 				sortBy: [sortBy],
 			},
 		},
@@ -96,9 +106,9 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 
 	useEffect(() => {
 		if (matchDownSM) {
-			setHiddenColumns(["age", "contact", "visits", "email", "status", "avatar"]);
+			setHiddenColumns(["_id"]);
 		} else {
-			setHiddenColumns(["avatar", "email"]);
+			setHiddenColumns(["_id"]);
 		}
 		// eslint-disable-next-line
 	}, [matchDownSM]);
@@ -200,13 +210,11 @@ const SavedLabor = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	console.log(isLoading);
-	const calculatorData = useSelector((state: any) => state.calculator);
-	console.log(calculatorData);
+	const calculatorData = useSelector((state: any) => state.calculator.calculators);
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 
-	const data = useMemo(() => makeData(20), []);
+	const data = useMemo(() => calculatorData, []);
 	const [open, setOpen] = useState<boolean>(false);
 	const [customer, setCustomer] = useState<any>(null);
 	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
@@ -218,7 +226,7 @@ const SavedLabor = () => {
 			await dispatch(
 				getCalculatorsByFilter({
 					userId,
-					type: "calculado",
+					type: "Calculado",
 					classType: "laboral",
 				}),
 			);
@@ -235,7 +243,6 @@ const SavedLabor = () => {
 	const handleClose = () => {
 		setOpen(!open);
 	};
-	const navigate = useNavigate();
 	const columns = useMemo(
 		() => [
 			{
@@ -258,6 +265,16 @@ const SavedLabor = () => {
 			{
 				Header: "Monto",
 				accessor: "amount",
+				Cell: ({ value }: { value: unknown }) => (
+					<Typography>
+						{typeof value === "number"
+							? new Intl.NumberFormat("es-AR", {
+									style: "currency",
+									currency: "ARS",
+							  }).format(value)
+							: value?.toString() || ""}
+					</Typography>
+				),
 			},
 			{
 				Header: "Acciones",
@@ -286,28 +303,6 @@ const SavedLabor = () => {
 									}}
 								>
 									{collapseIcon}
-								</IconButton>
-							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Abrir"
-							>
-								<IconButton
-									color="success"
-									onClick={(e: MouseEvent) => {
-										e.stopPropagation();
-										console.log(row.values.id);
-										navigate(`../details/${row.values.id}`);
-									}}
-								>
-									<Maximize />
 								</IconButton>
 							</Tooltip>
 							<Tooltip
@@ -348,7 +343,7 @@ const SavedLabor = () => {
 			<ScrollX>
 				<ReactTable
 					columns={columns}
-					data={calculatorData.calculator}
+					data={data}
 					handleAdd={handleAdd}
 					renderRowSubComponent={renderRowSubComponent}
 					isLoading={isLoading}

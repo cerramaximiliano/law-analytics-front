@@ -17,7 +17,13 @@ import { Copy, Sms, Printer, Link21, Calculator, Save2 } from "iconsax-react";
 import despidoFormModel from "./formModel/despidoFormModel";
 import styled from "@emotion/styled";
 import { useReactToPrint } from "react-to-print";
+import { openSnackbar } from "store/reducers/snackbar";
+import { dispatch, useSelector } from "store";
+
+//third party
 import moment from "moment";
+import axios from "axios";
+import { addCalculator } from "store/reducers/calculator";
 
 // Tipos
 interface ResultItem {
@@ -76,6 +82,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 	const [causeNumber, setCauseNumber] = useState("");
 	const [updateModalOpen, setUpdateModalOpen] = useState(false);
 	const [interestRate, setInterestRate] = useState("");
+
+	const userId = useSelector((state) => state.auth.user?._id);
 
 	const printRef = useRef<HTMLDivElement>(null);
 	const { formField } = despidoFormModel;
@@ -166,10 +174,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 		return Object.entries(groupedResults)
 			.filter(([group]) => sumableGroups.includes(group))
 			.flatMap(([_, items]) => items)
-			.reduce(
-				(sum, { value }) => sum + (typeof value === "number" && !["Periodos", "Días Vacaciones"].includes(value.toString()) ? value : 0),
-				0,
-			);
+			.reduce((sum, { key, value }) => {
+				// No sumar si la key es Periodos o Días Vacaciones
+				if (key === "Periodos" || key === "Días Vacaciones") {
+					return sum;
+				}
+				// Solo sumar si es un número
+				return sum + (typeof value === "number" ? value : 0);
+			}, 0);
 	}, [groupedResults]);
 
 	const generatePlainText = () => {
@@ -187,12 +199,140 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 		return text;
 	};
 
+	const generateHtmlContent = () => {
+		const styles = `
+		  <style>
+			.container { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+			.header { text-align: center; margin-bottom: 24px; }
+			.header h2 { color: #333; margin: 0; }
+			.card { 
+			  border: 1px solid #ddd; 
+			  border-radius: 8px; 
+			  margin-bottom: 16px; 
+			  break-inside: avoid;
+			  page-break-inside: avoid;
+			  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			}
+			.card-header { 
+			  background-color: #f5f5f5; 
+			  padding: 12px 16px; 
+			  border-bottom: 1px solid #ddd;
+			  border-radius: 8px 8px 0 0;
+			  font-weight: bold;
+			  color: #333;
+			}
+			.card-content { padding: 16px; }
+			.row { 
+			  display: flex; 
+			  justify-content: space-between; 
+			  padding: 8px 0;
+			  border-bottom: 1px solid #eee;
+			}
+			.row:last-child { border-bottom: none; }
+			.label { color: #666; }
+			.value { font-weight: 500; color: #333; }
+			.total-card {
+			  background-color: #1976d2;
+			  color: white;
+			  margin-top: 24px;
+			}
+			.total-content {
+			  display: flex;
+			  justify-content: space-between;
+			  padding: 16px;
+			  font-size: 1.2em;
+			  font-weight: bold;
+			}
+		  </style>
+		`;
+
+		const renderCard = (title: string, items: ResultItem[]) => {
+			if (!items.length) return "";
+
+			const rows = items
+				.map(
+					({ key, value }) => `
+			<div class="row">
+			  <span class="label">${getLabelForKey(key)}:</span>
+			  <span class="value">${formatValue(key, value)}</span>
+			</div>
+		  `,
+				)
+				.join("");
+
+			return `
+			<div class="card">
+			  <div class="card-header">${title}</div>
+			  <div class="card-content">
+				${rows}
+			  </div>
+			</div>
+		  `;
+		};
+
+		const groupSections = [
+			{ title: "Datos del Reclamo", data: groupedResults.reclamo },
+			{ title: "Indemnización", data: groupedResults.indemnizacion },
+			{ title: "Liquidación Final", data: groupedResults.liquidacion },
+			{ title: "Multas", data: groupedResults.multas },
+			{ title: "Otros Conceptos", data: groupedResults.otros },
+		];
+
+		const cardsHtml = groupSections
+			.map((section) => renderCard(section.title, section.data))
+			.filter((card) => card !== "")
+			.join("");
+
+		return `
+		  <!DOCTYPE html>
+		  <html>
+			<head>
+			  <meta charset="utf-8">
+			  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+			  ${styles}
+			</head>
+			<body>
+			  <div class="container">
+				<div class="header">
+				  <h2>Resultados de la Liquidación</h2>
+				</div>
+				
+				${cardsHtml}
+				
+				<div class="card total-card">
+				  <div class="total-content">
+					<span>TOTAL</span>
+					<span>${formatValue("total", total)}</span>
+				  </div>
+				</div>
+			  </div>
+			</body>
+		  </html>
+		`;
+	};
+
 	const handleCopyToClipboard = async () => {
 		try {
 			await navigator.clipboard.writeText(generatePlainText());
-			alert("Contenido copiado al portapapeles");
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: `Liquidación copiada correctamente.`,
+					variant: "alert",
+					alert: { color: "success" },
+					close: true,
+				}),
+			);
 		} catch (err) {
-			console.error("Error al copiar:", err);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Ha ocurrido un error al copiar. Intente más tarde.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
 		}
 	};
 
@@ -200,10 +340,40 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 		content: () => printRef.current,
 	});
 
-	const handleEmailSend = () => {
-		console.log("Enviando email a:", email);
-		setEmailModalOpen(false);
-		setEmail("");
+	const handleEmailSend = async () => {
+		try {
+			const htmlBody = generateHtmlContent();
+			const textBody = generatePlainText();
+			const subject = "Liquidación por Despido - Law||Analytics";
+
+			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/send-email`, {
+				to: email,
+				subject,
+				htmlBody,
+				textBody,
+			});
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: `Liquidación enviada correctamente.`,
+					variant: "alert",
+					alert: { color: "success" },
+					close: true,
+				}),
+			);
+			setEmailModalOpen(false);
+			setEmail("");
+		} catch (error: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Ha ocurrido un error. Intente más tarde.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		}
 	};
 
 	const handleLinkToCause = () => {
@@ -218,8 +388,45 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 		setInterestRate("");
 	};
 
-	const handleSaveCalculation = () => {
+	const handleSaveCalculation = async () => {
 		console.log("Guardando cálculo");
+		try {
+			const calculatorData = {
+				date: moment().format("YYYY-MM-DD"),
+				type: "Calculado" as const,
+				classType: "laboral" as const,
+				amount: total, // El total ya calculado
+				userId: userId,
+				variables: {
+					...values,
+					groupedResults,
+					total,
+				},
+			};
+			const result = await dispatch(addCalculator(calculatorData));
+
+			if (result.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Cálculo guardado correctamente",
+						variant: "alert",
+						alert: { color: "success" },
+						close: true,
+					}),
+				);
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: result.error || "Error al guardar el cálculo",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+			}
+		} catch (error) {}
 	};
 
 	const renderActionButtons = () => (

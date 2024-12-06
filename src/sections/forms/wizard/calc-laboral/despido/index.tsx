@@ -287,7 +287,6 @@ const BasicWizard = () => {
 			...values,
 			Periodos: periodos,
 			Indemnizacion: indemnizacion,
-			...(values.otrasSumas && { "Otras Sumas": parseFloat(values.otrasSumas) }),
 		};
 
 		if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
@@ -295,7 +294,7 @@ const BasicWizard = () => {
 				resultado.Preaviso = calcularPreaviso(values.fechaIngreso, values.fechaEgreso, remuneracionCalculada);
 			}
 			if (values.liquidacion.includes("integracionMes")) {
-				resultado["Integracion Mes"] = calcularIntegracionMes(values.fechaEgreso, remuneracionBase);
+				resultado["Integración Mes"] = calcularIntegracionMes(values.fechaEgreso, remuneracionBase);
 			}
 			if (values.liquidacion.includes("sacPreaviso") && resultado.Preaviso) {
 				resultado["SAC s/ Preaviso"] = resultado.Preaviso / 12;

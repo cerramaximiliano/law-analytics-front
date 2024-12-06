@@ -7,7 +7,7 @@ export type CalculatorType = {
 	type: "Calculado" | "Ofertado" | "Reclamado";
 	classType?: "laboral" | "civil" | "intereses";
 	amount: number;
-	user: string;
+	user?: string;
 	interest?: number;
 	variables?: object;
 	isLoader?: boolean;
