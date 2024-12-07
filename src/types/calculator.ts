@@ -18,6 +18,7 @@ export type CalculatorType = {
 
 export interface CalculatorState {
 	calculators: CalculatorType[];
+	selectedCalculators: CalculatorType[];
 	isLoader: boolean;
 	error: string | null;
 }

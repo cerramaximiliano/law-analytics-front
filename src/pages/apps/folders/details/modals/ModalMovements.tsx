@@ -1,10 +1,10 @@
-import { Dialog, DialogTitle, Divider, Button, Grid, Stack, DialogContent, InputLabel, DialogActions, Zoom } from "@mui/material";
+import { Dialog, DialogTitle, Divider, Button, Stack, DialogContent, Typography, DialogActions, Zoom, useTheme } from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
-import { Form, Formik } from "formik";
+import { Formik } from "formik";
 import { Link1, TableDocument } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { addMovement, updateMovement } from "store/reducers/movements";
@@ -15,34 +15,13 @@ interface AddressModalType {
 	open: boolean;
 	setOpen: Dispatch<SetStateAction<boolean>>;
 	folderId: any;
+	folderName?: string;
 	editMode?: boolean;
 	movementData?: Movement | null;
 }
 
-const customInputStyles = {
-	"& .MuiInputBase-root": {
-		height: 39.91,
-	},
-	"& .MuiInputBase-input": {
-		fontSize: 12,
-	},
-	"& input::placeholder": {
-		color: "#000000",
-		opacity: 0.6,
-	},
-};
-
-const customTextareaStyles = {
-	"& .MuiInputBase-input": {
-		fontSize: 12,
-	},
-	"& textarea::placeholder": {
-		color: "#000000",
-		opacity: 0.6,
-	},
-};
-
-const ModalMovements = ({ open, setOpen, folderId, editMode = false, movementData = null }: AddressModalType) => {
+const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = false, movementData = null }: AddressModalType) => {
+	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 
@@ -141,99 +120,191 @@ const ModalMovements = ({ open, setOpen, folderId, editMode = false, movementDat
 						maxWidth="sm"
 						open={open}
 						onClose={handleClose}
-						sx={{ "& .MuiDialog-paper": { p: 0 }, "& .MuiBackdrop-root": { opacity: "0.5 !important" } }}
+						PaperProps={{
+							sx: {
+								width: "600px",
+								maxWidth: "600px",
+								p: 0,
+								borderRadius: 2,
+								boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+							},
+						}}
+						sx={{
+							"& .MuiBackdrop-root": { opacity: "0.5 !important" },
+						}}
 					>
-						<DialogTitle>{editMode ? "Editar Movimiento" : "Agregar Movimiento"}</DialogTitle>
+						<DialogTitle
+							sx={{
+								bgcolor: theme.palette.primary.lighter,
+								p: 3,
+								borderBottom: `1px solid ${theme.palette.divider}`,
+							}}
+						>
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+									{editMode ? "Editar Movimiento" : "Agregar Movimiento"}
+								</Typography>
+								<Typography color="textSecondary" variant="subtitle2">
+									Carpeta: {folderName}
+								</Typography>
+							</Stack>
+						</DialogTitle>
+
 						<Divider />
-						<Form autoComplete="off" noValidate>
-							<DialogContent sx={{ p: 2.5 }}>
-								<Grid container spacing={3} justifyContent="center">
-									<Grid item xs={12} md={8}>
-										<Grid container spacing={3}>
-											<Grid item xs={12}>
-												<Stack spacing={1.25}>
-													<InputLabel htmlFor="title">Título del Movimiento</InputLabel>
-													<InputField
-														fullWidth
-														sx={customInputStyles}
-														id="title"
-														placeholder="Identifique un movimiento"
-														name="title"
-														InputProps={{ startAdornment: <TableDocument /> }}
-													/>
-												</Stack>
-											</Grid>
-											<Grid item xs={12}>
-												<Stack spacing={1.25}>
-													<InputLabel htmlFor="movement">Tipo</InputLabel>
-													<SelectField
-														required={true}
-														label="Seleccione un tipo"
-														data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
-														name="movement"
-														style={{ maxHeight: "39.91px" }}
-													/>
-												</Stack>
-											</Grid>
-											<Grid item xs={12}>
-												<Stack spacing={1.25}>
-													<InputLabel htmlFor="time">Fecha</InputLabel>
-													<DateInputField name="time" customInputStyles={customInputStyles} />
-												</Stack>
-											</Grid>
-											<Grid item xs={12}>
-												<Stack spacing={1.25}>
-													<InputLabel htmlFor="dateExpiration">Vencimiento</InputLabel>
-													<DateInputField name="dateExpiration" customInputStyles={customInputStyles} />
-												</Stack>
-											</Grid>
-											<Grid item xs={12}>
-												<Stack spacing={1.25}>
-													<InputLabel htmlFor="link">Link</InputLabel>
-													<InputField
-														fullWidth
-														sx={customInputStyles}
-														id="link"
-														placeholder="Añada un link"
-														name="link"
-														InputProps={{ startAdornment: <Link1 /> }}
-													/>
-												</Stack>
-											</Grid>
-											<Grid item xs={12}>
-												<Stack spacing={1.25}>
-													<InputLabel htmlFor="description">Descripción</InputLabel>
-													<InputField
-														fullWidth
-														sx={customTextareaStyles}
-														id="description"
-														multiline
-														rows={2}
-														placeholder="Ingrese una descripción"
-														name="description"
-													/>
-												</Stack>
-											</Grid>
-										</Grid>
-									</Grid>
-								</Grid>
-							</DialogContent>
-							<Divider />
-							<DialogActions sx={{ p: 2.5 }}>
-								<Grid container justifyContent="right" alignItems="right">
-									<Grid item>
-										<Stack direction="row" spacing={2} alignItems="rigth">
-											<Button color="error" onClick={handleClose}>
-												Cancelar
-											</Button>
-											<Button type="submit" variant="contained" disabled={isSubmitting}>
-												Guardar
-											</Button>
-										</Stack>
-									</Grid>
-								</Grid>
-							</DialogActions>
-						</Form>
+
+						<DialogContent
+							sx={{
+								p: 3,
+								display: "flex",
+								flexDirection: "column",
+								gap: 3,
+							}}
+						>
+							<InputField
+								fullWidth
+								label="Título del Movimiento"
+								id="title"
+								placeholder="Identifique un movimiento"
+								name="title"
+								startAdornment={<TableDocument />}
+								customInputStyles={{
+									"& .MuiInputBase-root": {
+										height: 39.91,
+									},
+									"& .MuiInputBase-input": {
+										fontSize: 12,
+									},
+									"& input::placeholder": {
+										color: "#000000",
+										opacity: 0.6,
+									},
+								}}
+							/>
+							<SelectField
+								required={true}
+								label="Tipo"
+								data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
+								name="movement"
+								style={{
+									maxHeight: "39.91px",
+									"& .MuiInputBase-root": {
+										height: "39.91px",
+										fontSize: 12,
+									},
+									"& .MuiSelect-select": {
+										fontSize: 12,
+									},
+									"& .MuiInputLabel-root": {
+										fontSize: 12,
+									},
+								}}
+							/>
+							<DateInputField
+								name="time"
+								label="Fecha"
+								customInputStyles={{
+									"& .MuiInputBase-root": {
+										height: 39.91,
+									},
+									"& .MuiInputBase-input": {
+										fontSize: 12,
+									},
+									"& input::placeholder": {
+										color: "#000000",
+										opacity: 0.6,
+									},
+								}}
+							/>
+							<DateInputField
+								name="dateExpiration"
+								label="Vencimiento"
+								customInputStyles={{
+									"& .MuiInputBase-root": {
+										height: 39.91,
+									},
+									"& .MuiInputBase-input": {
+										fontSize: 12,
+									},
+									"& input::placeholder": {
+										color: "#000000",
+										opacity: 0.6,
+									},
+								}}
+							/>
+							<InputField
+								fullWidth
+								label="Link"
+								id="link"
+								placeholder="Añada un link"
+								name="link"
+								startAdornment={<Link1 />}
+								customInputStyles={{
+									"& .MuiInputBase-root": {
+										height: 39.91,
+									},
+									"& .MuiInputBase-input": {
+										fontSize: 12,
+									},
+									"& input::placeholder": {
+										color: "#000000",
+										opacity: 0.6,
+									},
+								}}
+							/>
+							<InputField
+								fullWidth
+								label="Descripción"
+								id="description"
+								multiline
+								rows={2}
+								placeholder="Ingrese una descripción"
+								name="description"
+								customInputStyles={{
+									"& .MuiInputBase-input": {
+										fontSize: 12,
+									},
+									"& textarea::placeholder": {
+										color: "#000000",
+										opacity: 0.6,
+									},
+								}}
+							/>
+						</DialogContent>
+
+						<Divider />
+
+						<DialogActions
+							sx={{
+								p: 2.5,
+								bgcolor: theme.palette.background.default,
+								borderTop: `1px solid ${theme.palette.divider}`,
+							}}
+						>
+							<Button
+								color="inherit"
+								onClick={handleClose}
+								sx={{
+									color: theme.palette.text.secondary,
+									"&:hover": {
+										bgcolor: theme.palette.action.hover,
+									},
+								}}
+							>
+								Cancelar
+							</Button>
+							<Button
+								type="submit"
+								variant="contained"
+								disabled={isSubmitting}
+								sx={{
+									minWidth: 120,
+									py: 1.25,
+									fontWeight: 600,
+								}}
+							>
+								Guardar
+							</Button>
+						</DialogActions>
 					</Dialog>
 				);
 			}}

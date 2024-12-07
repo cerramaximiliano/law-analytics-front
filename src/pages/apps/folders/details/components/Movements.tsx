@@ -19,6 +19,7 @@ import { Movement } from "types/movements";
 
 interface MovementsProps {
 	title: string;
+	folderName?: string;
 }
 
 const formatDate = (dateString: string) => {
@@ -70,7 +71,7 @@ const MovementsLoader = () => (
 	</Stack>
 );
 
-const Movements = ({ title }: MovementsProps) => {
+const Movements = ({ title, folderName = "" }: MovementsProps) => {
 	const theme = useTheme();
 	const [open, setOpen] = useState<boolean>(false);
 
@@ -333,7 +334,14 @@ const Movements = ({ title }: MovementsProps) => {
 				</Stack>
 			}
 		>
-			<ModalMovements open={open} setOpen={setOpen} folderId={id} editMode={!!editMovement} movementData={editMovement} />
+			<ModalMovements
+				open={open}
+				setOpen={setOpen}
+				folderId={id}
+				editMode={!!editMovement}
+				movementData={editMovement}
+				folderName={folderName}
+			/>
 			<AlertMemberDelete title={""} open={openModal} handleClose={handleClose} id={selectedMovementId} />
 			<CardContent>
 				{movementsData.isLoader ? (

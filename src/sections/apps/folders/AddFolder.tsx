@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
-
-// material-ui
-import { Button, DialogActions, DialogTitle, Divider, Grid, Stack, Tooltip, Zoom } from "@mui/material";
-
-// third-party
+import {
+	Button,
+	DialogActions,
+	DialogTitle,
+	DialogContent,
+	Divider,
+	Grid,
+	Stack,
+	Tooltip,
+	Typography,
+	Box,
+	IconButton,
+	Zoom,
+} from "@mui/material";
 import _ from "lodash";
 import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
-
-// project-imports
-import IconButton from "components/@extended/IconButton";
-import { Trash } from "iconsax-react";
+import { Trash, ArrowRight2, ArrowLeft2 } from "iconsax-react";
 import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
 import { useSelector, dispatch } from "store";
@@ -31,6 +37,7 @@ const getInitialValues = (folder: FormikValues | null) => {
 		folderJurisLabel: "",
 		folderFuero: null,
 	};
+
 	if (folder) {
 		return _.merge({}, newFolder, {
 			...folder,
@@ -56,7 +63,7 @@ export interface Props {
 	folder?: any;
 	onCancel: () => void;
 	onAddFolder: (folder: any) => void;
-	open: boolean; // Add this prop to detect modal open state
+	open: boolean;
 	mode: "add" | "edit";
 }
 
@@ -91,8 +98,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: Props) => {
 	];
 
 	const [initialValues, setInitialValues] = useState(getInitialValues(folder));
-
-	const steps = ["Datos requeridos", "Cálculos opcionales"];
+	const steps = ["Datos requeridos", "Datos opcionales"];
 	const [openAlert, setOpenAlert] = useState(false);
 	const [activeStep, setActiveStep] = useState(0);
 	const isLastStep = activeStep === steps.length - 1;
@@ -112,19 +118,24 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: Props) => {
 		}
 	}, [open]);
 
-	// Actualiza los valores iniciales cuando `customer` cambie
 	useEffect(() => {
 		if (folder) {
 			setInitialValues(getInitialValues(folder));
 		}
 	}, [folder]);
 
+	const handleBack = () => {
+		setActiveStep((prevStep) => prevStep - 1);
+	};
+
 	async function _submitForm(values: any, actions: any, mode: string | undefined) {
 		const userId = auth.user?._id;
 		const id = values._id;
 		setActiveStep(0);
+
 		let results;
 		let message;
+
 		if (mode === "add") {
 			results = await dispatch(addFolder({ ...values, userId }));
 			message = "agregar";
@@ -168,44 +179,105 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: Props) => {
 
 	return (
 		<>
-			<DialogTitle>{isCreating ? "Nueva Causa" : "Editar Causa"}</DialogTitle>
+			<DialogTitle>
+				<Stack spacing={1}>
+					<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+						{isCreating ? "Nueva Causa" : "Editar Causa"}
+					</Typography>
+					<Typography variant="body2" color="textSecondary">
+						{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
+					</Typography>
+				</Stack>
+			</DialogTitle>
 			<Divider />
 
 			<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
-				{({ isSubmitting, values }) => {
-					return (
-						<Form autoComplete="off" noValidate>
-							{getStepContent(activeStep, values)}
-							<Divider />
-							<DialogActions sx={{ p: 2.5 }}>
-								<Grid container justifyContent="space-between" alignItems="center">
-									<Grid item>
-										{!isCreating && (
-											<Tooltip title="Eliminar Causa" placement="top">
-												<IconButton onClick={() => setOpenAlert(true)} size="large" color="error">
-													<Trash variant="Bold" />
-												</IconButton>
-											</Tooltip>
-										)}
-									</Grid>
-									<Grid item>
-										<Stack direction="row" spacing={2} alignItems="center">
-											<Button color="error" onClick={onCancel}>
-												Cancelar
-											</Button>
-											<Button type="submit" variant="contained" disabled={isSubmitting}>
-												{folder && isLastStep && "Editar"}
-												{!folder && isLastStep && "Crear"}
-												{!isLastStep && "Siguiente"}
-											</Button>
-										</Stack>
-									</Grid>
+				{({ isSubmitting, values }) => (
+					<Form autoComplete="off" noValidate>
+						<DialogContent sx={{ p: 2.5 }}>
+							<Box sx={{ minHeight: 400 }}>
+								{/* Steps Progress */}
+								<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+									{steps.map((label, index) => (
+										<Box key={label} sx={{ position: "relative", width: "100%" }}>
+											<Box
+												sx={{
+													height: 4,
+													bgcolor: index <= activeStep ? "primary.main" : "divider",
+													borderRadius: 1,
+													transition: "all 0.3s ease",
+												}}
+											/>
+											<Typography
+												variant="caption"
+												sx={{
+													position: "absolute",
+													top: 8,
+													color: index <= activeStep ? "primary.main" : "text.secondary",
+												}}
+											>
+												{label}
+											</Typography>
+										</Box>
+									))}
+								</Stack>
+
+								{/* Form Content */}
+								<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+							</Box>
+						</DialogContent>
+
+						<Divider />
+
+						<DialogActions sx={{ p: 2.5 }}>
+							<Grid container justifyContent="space-between" alignItems="center">
+								<Grid item>
+									{!isCreating && (
+										<Tooltip title="Eliminar Causa" placement="top">
+											<IconButton
+												onClick={() => setOpenAlert(true)}
+												size="large"
+												sx={{
+													color: "error.main",
+													"&:hover": {
+														bgcolor: "error.lighter",
+													},
+												}}
+											>
+												<Trash variant="Bold" />
+											</IconButton>
+										</Tooltip>
+									)}
 								</Grid>
-							</DialogActions>
-						</Form>
-					);
-				}}
+								<Grid item>
+									<Stack direction="row" spacing={2} alignItems="center">
+										{activeStep > 0 && (
+											<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
+												Atrás
+											</Button>
+										)}
+										<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
+											Cancelar
+										</Button>
+										<Button
+											type="submit"
+											variant="contained"
+											disabled={isSubmitting}
+											endIcon={!isLastStep && <ArrowRight2 size={18} />}
+											sx={{ minWidth: 100 }}
+										>
+											{folder && isLastStep && "Editar"}
+											{!folder && isLastStep && "Crear"}
+											{!isLastStep && "Siguiente"}
+										</Button>
+									</Stack>
+								</Grid>
+							</Grid>
+						</DialogActions>
+					</Form>
+				)}
 			</Formik>
+
 			{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
 		</>
 	);

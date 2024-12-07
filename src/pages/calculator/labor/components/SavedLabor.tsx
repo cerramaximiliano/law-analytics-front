@@ -708,7 +708,7 @@ const SavedLabor = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const calculatorData = useSelector((state: any) => state.calculator.calculators);
+	const calculatorData = useSelector((state: any) => state.calculator.selectedCalculators);
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 
@@ -759,7 +759,9 @@ const SavedLabor = () => {
 			{
 				Header: "Fecha",
 				accessor: "date",
-				Cell: ({ row }: { row: Row<CalculatorData> }) => <Typography noWrap>{moment(row.original.date).format("DD/MM/YYYY")}</Typography>,
+				Cell: ({ row }: { row: Row<CalculatorData> }) => (
+					<Typography noWrap>{row.original.date ? moment(row.original.date).format("DD/MM/YYYY") : "-"}</Typography>
+				),
 			},
 			{
 				Header: "Carátula",
@@ -785,7 +787,7 @@ const SavedLabor = () => {
 							<Typography
 								noWrap
 								sx={{
-									maxWidth: "200px", // Ajusta este valor según tus necesidades
+									maxWidth: "200px",
 									overflow: "hidden",
 									textOverflow: "ellipsis",
 									whiteSpace: "nowrap",
@@ -806,7 +808,10 @@ const SavedLabor = () => {
 				Header: "Categoría",
 				accessor: "subClassType",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
-					const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+					const capitalizeFirst = (str: string | undefined) => {
+						if (!str) return "-";
+						return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+					};
 					return <Typography noWrap>{capitalizeFirst(row.original.subClassType)}</Typography>;
 				},
 			},
@@ -815,10 +820,12 @@ const SavedLabor = () => {
 				accessor: "amount",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => (
 					<Typography>
-						{new Intl.NumberFormat("es-AR", {
-							style: "currency",
-							currency: "ARS",
-						}).format(row.original.amount)}
+						{row.original.amount
+							? new Intl.NumberFormat("es-AR", {
+									style: "currency",
+									currency: "ARS",
+							  }).format(row.original.amount)
+							: "-"}
 					</Typography>
 				),
 			},

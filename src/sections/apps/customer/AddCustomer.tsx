@@ -1,15 +1,28 @@
 import { useEffect, useState } from "react";
-import { Button, DialogActions, DialogTitle, Divider, Grid, Stack, Tooltip, Zoom } from "@mui/material";
+import {
+	Box,
+	Button,
+	DialogActions,
+	DialogTitle,
+	DialogContent,
+	Divider,
+	Grid,
+	Stack,
+	Tooltip,
+	Typography,
+	IconButton,
+	Zoom,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import _ from "lodash";
 import * as Yup from "yup";
 import { Formik, Form, FormikValues } from "formik";
 import AlertCustomerDelete from "./AlertCustomerDelete";
-import IconButton from "components/@extended/IconButton";
-import { Trash } from "iconsax-react";
+import { Trash, ArrowRight2, ArrowLeft2, Profile2User } from "iconsax-react";
 import SecondStep from "./step-components/secondStep";
 import FirstStep from "./step-components/firstStep";
 import ThirdStep from "./step-components/thirdStep";
-import { dispatch, useSelector } from "store"; // Usa el dispatch directamente del store
+import { dispatch, useSelector } from "store";
 import { addContact, updateContact } from "store/reducers/contacts";
 import { enqueueSnackbar } from "notistack";
 
@@ -59,11 +72,9 @@ export interface Props {
 }
 
 const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => {
+	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
-
 	const isCreating = mode === "add";
-
-	// Maneja los valores iniciales como un estado para que se actualicen con el `customer`
 	const [initialValues, setInitialValues] = useState(getInitialValues(customer));
 
 	const CustomerSchema = [
@@ -162,23 +173,80 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			actions.setSubmitting(false);
 		}
 	}
+	const handleBack = () => {
+		setActiveStep((prevStep) => prevStep - 1);
+	};
 
 	return (
 		<>
-			<DialogTitle>{isCreating ? "Agregar Nuevo" : "Editar"}</DialogTitle>
+			<DialogTitle>
+				<Stack spacing={1}>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<Profile2User size={24} color={theme.palette.primary.main} />
+						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+							{isCreating ? "Agregar Nuevo Contacto" : "Editar Contacto"}
+						</Typography>
+					</Stack>
+					<Typography variant="body2" color="textSecondary">
+						{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
+					</Typography>
+				</Stack>
+			</DialogTitle>
 			<Divider />
 
 			<Formik initialValues={initialValues} enableReinitialize validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
 				{({ isSubmitting, values }) => (
 					<Form autoComplete="off" noValidate>
-						{getStepContent(activeStep, values)}
+						<DialogContent sx={{ p: 2.5 }}>
+							<Box sx={{ minHeight: 400 }}>
+								{/* Progress Steps */}
+								<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+									{steps.map((label, index) => (
+										<Box key={label} sx={{ position: "relative", width: "100%" }}>
+											<Box
+												sx={{
+													height: 4,
+													bgcolor: index <= activeStep ? "primary.main" : "divider",
+													borderRadius: 1,
+													transition: "all 0.3s ease",
+												}}
+											/>
+											<Typography
+												variant="caption"
+												sx={{
+													position: "absolute",
+													top: 8,
+													color: index <= activeStep ? "primary.main" : "text.secondary",
+												}}
+											>
+												{label}
+											</Typography>
+										</Box>
+									))}
+								</Stack>
+
+								{/* Form Content */}
+								<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+							</Box>
+						</DialogContent>
+
 						<Divider />
+
 						<DialogActions sx={{ p: 2.5 }}>
 							<Grid container justifyContent="space-between" alignItems="center">
 								<Grid item>
 									{!isCreating && (
-										<Tooltip title="Eliminar" placement="top">
-											<IconButton onClick={() => setOpenAlert(true)} size="large" color="error">
+										<Tooltip title="Eliminar Contacto" placement="top">
+											<IconButton
+												onClick={() => setOpenAlert(true)}
+												size="large"
+												sx={{
+													color: "error.main",
+													"&:hover": {
+														bgcolor: "error.lighter",
+													},
+												}}
+											>
 												<Trash variant="Bold" />
 											</IconButton>
 										</Tooltip>
@@ -186,11 +254,22 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 								</Grid>
 								<Grid item>
 									<Stack direction="row" spacing={2} alignItems="center">
-										<Button color="error" onClick={onCancel}>
+										{activeStep > 0 && (
+											<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
+												Atrás
+											</Button>
+										)}
+										<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
 											Cancelar
 										</Button>
-										<Button type="submit" variant="contained" disabled={isSubmitting}>
-											{customer && isLastStep && "Editar"}
+										<Button
+											type="submit"
+											variant="contained"
+											disabled={isSubmitting}
+											endIcon={!isLastStep && <ArrowRight2 size={18} />}
+											sx={{ minWidth: 100 }}
+										>
+											{customer && isLastStep && "Guardar"}
 											{!customer && isLastStep && "Crear"}
 											{!isLastStep && "Siguiente"}
 										</Button>
@@ -201,6 +280,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 					</Form>
 				)}
 			</Formik>
+
 			{!isCreating && (
 				<AlertCustomerDelete
 					title={`${customer.name} ${customer.lastName}`}

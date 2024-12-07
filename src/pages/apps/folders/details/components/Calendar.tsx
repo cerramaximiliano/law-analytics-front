@@ -26,9 +26,10 @@ import { parseISO, format } from "date-fns";
 
 interface CalendarProps {
 	title: string;
+	folderName: string;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ title }) => {
+const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
@@ -258,7 +259,14 @@ const Calendar: React.FC<CalendarProps> = ({ title }) => {
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			>
-				<AddEventFrom event={selectedEvent} range={selectedRange} onCancel={handleModal} userId={userId} folderId={id} />
+				<AddEventFrom
+					event={selectedEvent}
+					range={selectedRange}
+					onCancel={handleModal}
+					userId={userId}
+					folderId={id}
+					folderName={folderName}
+				/>
 			</Dialog>
 
 			<CardContent

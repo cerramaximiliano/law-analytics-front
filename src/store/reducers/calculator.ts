@@ -7,11 +7,13 @@ const SET_LOADING = "calculators/SET_LOADING";
 const SET_ERROR = "calculators/SET_ERROR";
 const ADD_CALCULATOR = "calculators/ADD_CALCULATOR";
 const SET_CALCULATORS = "calculators/SET_CALCULATORS";
+const SET_SELECTED_CALCULATORS = "calculators/SET_SELECTED_CALCULATORS";
 const UPDATE_CALCULATOR = "calculators/UPDATE_CALCULATOR";
 const DELETE_CALCULATOR = "calculators/DELETE_CALCULATOR";
 
 const initialState: CalculatorState = {
 	calculators: [],
+	selectedCalculators: [],
 	isLoader: false,
 	error: null,
 };
@@ -32,6 +34,12 @@ const calculatorsReducer = (state = initialState, action: any) => {
 			return {
 				...state,
 				calculators: action.payload,
+				isLoader: false,
+			};
+		case SET_SELECTED_CALCULATORS:
+			return {
+				...state,
+				selectedCalculators: action.payload,
 				isLoader: false,
 			};
 		case UPDATE_CALCULATOR:
@@ -140,10 +148,18 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 		}).toString();
 
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/filter?${queryParams}`);
-		dispatch({
-			type: SET_CALCULATORS,
-			payload: response.data.calculators,
-		});
+
+		// Si hay tipo y classType específicos, actualizar selectedCalculators
+		if (type || classType) {
+			const filteredCalculators = response.data.calculators.filter(
+				(calc: CalculatorType) => (!type || calc.type === type) && (!classType || calc.classType === classType),
+			);
+			dispatch({
+				type: SET_SELECTED_CALCULATORS,
+				payload: filteredCalculators,
+			});
+		}
+
 		return { success: true };
 	} catch (error: unknown) {
 		const errorMessage =

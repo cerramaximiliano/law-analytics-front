@@ -25,7 +25,7 @@ type TaskCompletionType = {
 	[key: string]: boolean;
 };
 
-const TaskList = (props: { title: string }) => {
+const TaskList = (props: { title: string; folderName: string }) => {
 	const { title } = props;
 	const { id } = useParams();
 
@@ -170,7 +170,7 @@ const TaskList = (props: { title: string }) => {
 				</IconButton>
 			}
 		>
-			<ModalTasks open={open} setOpen={setOpen} folderId={id || ""} />
+			<ModalTasks open={open} setOpen={setOpen} folderId={id || ""} folderName={""} />
 			{isLoading ? (
 				<>
 					<Skeleton />

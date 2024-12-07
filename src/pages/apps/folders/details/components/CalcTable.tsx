@@ -28,6 +28,7 @@ import Avatar from "components/@extended/Avatar";
 import { Calculator } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
+
 import { dispatch, useSelector } from "store";
 import { deleteCalculator, getCalculatorsByFolderId } from "store/reducers/calculator";
 import { CalculatorType } from "types/calculator";
@@ -178,7 +179,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 		>
 			{/* ... Modales ... */}
 			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} />
-			<ModalCalcTable open={open} setOpen={setOpen} folderId={id} />
+			<ModalCalcTable open={open} setOpen={setOpen} folderName={folderData?.folderName} folderId={id} />
 			<CardContent>
 				{/* ... Grid de montos ... */}
 				<Grid sx={{ pb: 2 }} container direction="row" justifyContent="space-around" alignItems="center">
@@ -197,7 +198,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 										</Typography>
 									</Grid>
 									<Grid item>
-										<Typography variant="h5">{formatAmount(folderData.monto || null)}</Typography>
+										<Typography variant="h5">{formatAmount(folderData?.monto || null)}</Typography>
 									</Grid>
 								</>
 							)}

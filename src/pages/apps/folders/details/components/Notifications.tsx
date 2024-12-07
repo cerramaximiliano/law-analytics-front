@@ -25,6 +25,7 @@ import AlertNotificationDelete from "../modals/alertNotificationDelete";
 
 interface NotificationsProps {
 	title: string;
+	folderName?: string;
 }
 
 const getIconAndColor = (notification: string, user: string) => {
@@ -107,7 +108,8 @@ const LoaderComponent = () => (
 	</Stack>
 );
 
-const Notifications: React.FC<NotificationsProps> = ({ title }) => {
+const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
+
 	const [open, setOpen] = useState(false);
 	const [openDeleteModal, setOpenDeleteModal] = useState(false);
 	const [editNotification, setEditNotification] = useState<NotificationType | null>(null);
@@ -249,6 +251,7 @@ const Notifications: React.FC<NotificationsProps> = ({ title }) => {
 				folderId={id}
 				editMode={!!editNotification}
 				notificationData={editNotification}
+				folderName={folderName}
 			/>
 			<AlertNotificationDelete
 				title="Eliminar Notificación"

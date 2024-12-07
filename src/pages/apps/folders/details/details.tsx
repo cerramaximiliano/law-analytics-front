@@ -295,6 +295,7 @@ const Details = () => {
 
 	// Optimized selectors with specific state slices
 	const folder = useSelector((state: StateType) => state.folder.folder);
+	console.log(folder);
 	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
 	const selectedContacts = useSelector((state: StateType) => state.contacts.selectedContacts);
 	const contactsLoading = useSelector((state: StateType) => state.contacts.isLoader);
@@ -371,9 +372,9 @@ const Details = () => {
 	// Memoized components
 	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);
 
-	const MemoizedMovements = useMemo(() => <Movements title="Movimientos" />, []);
+	const MemoizedMovements = useMemo(() => <Movements title="Movimientos" folderName={folder?.folderName} />, []);
 
-	const MemoizedNotifications = useMemo(() => <Notifications title="Notificaciones" />, []);
+	const MemoizedNotifications = useMemo(() => <Notifications title="Notificaciones" folderName={folder?.folderName} />, []);
 
 	const MemoizedPreJudData = useMemo(() => <FolderPreJudData isLoader={isLoader} folder={folder} type="mediacion" />, [isLoader, folder]);
 
@@ -386,9 +387,9 @@ const Details = () => {
 		[id, selectedContacts, contactsLoading],
 	);
 
-	const MemoizedTaskList = useMemo(() => <TaskList title="Tareas" />, []);
+	const MemoizedTaskList = useMemo(() => <TaskList title="Tareas" folderName={folder?.folderName} />, [folder]);
 
-	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" />, []);
+	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" folderName={folder?.folderName} />, []);
 
 	return (
 		<MainCard title="Detalles de la Causa" secondary={renderViewOptions}>

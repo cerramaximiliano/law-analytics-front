@@ -18,7 +18,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { SearchNormal1, TickCircle } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
-import { useSelector, dispatch } from "store";
+import { useSelector, useDispatch } from "store";
 import { Folder } from "types/folders";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -33,6 +33,7 @@ interface LinkToCauseProps {
 
 const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCauseProps) => {
 	const theme = useTheme();
+	const dispatch = useDispatch();
 	const [isLoading, setIsLoading] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedFolders, setSelectedFolders] = useState<Folder[]>([]);
@@ -55,7 +56,7 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 		};
 
 		loadFolders();
-	}, [folders.length, user?._id, openLink]);
+	}, [folders.length, user?._id, openLink, dispatch]);
 
 	// Resetear selección cuando se abre el modal
 	useEffect(() => {
@@ -79,8 +80,6 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 			}
 		});
 	};
-
-	// En LinkToCause.tsx
 
 	const handleLink = async () => {
 		if (selectedFolders.length > 0) {
@@ -132,7 +131,7 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 
 	const filteredFolders = folders.filter((folder: Folder) => {
 		const nameMatches = folder.folderName.toLowerCase().includes(searchTerm.toLowerCase());
-		const isNotLinked = !folderIds?.includes(folder._id); // Agregado operador opcional
+		const isNotLinked = !folderIds?.includes(folder._id);
 		return nameMatches && isNotLinked;
 	});
 
@@ -142,13 +141,25 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 			open={openLink}
 			onClose={onCancelLink}
 			sx={{
-				"& .MuiDialog-paper": { p: 0 },
+				"& .MuiDialog-paper": {
+					p: 0,
+					borderRadius: 2,
+					boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+				},
 				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
 			}}
 		>
-			<DialogTitle>
+			<DialogTitle
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Typography variant="h5">Seleccione Causas</Typography>
+					<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+						Seleccione Causas
+					</Typography>
 					<Typography color="textSecondary" variant="subtitle2">
 						{selectedFolders.length} seleccionadas
 					</Typography>
@@ -156,7 +167,13 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 			</DialogTitle>
 			<Divider />
 
-			<DialogContent sx={{ p: 2.5 }}>
+			<DialogContent
+				sx={{
+					p: 3,
+					maxHeight: "70vh",
+					overflowY: "auto",
+				}}
+			>
 				{selectedFolders.length > 0 && (
 					<Box sx={{ mb: 2 }}>
 						<Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
@@ -167,13 +184,22 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 									onDelete={() => removeFolder(folder._id)}
 									color="primary"
 									variant="outlined"
+									sx={{
+										maxWidth: "200px",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+										"&:hover": {
+											bgcolor: `${theme.palette.primary.lighter} !important`,
+										},
+									}}
 								/>
 							))}
 						</Stack>
 					</Box>
 				)}
 
-				<FormControl sx={{ width: "100%", pb: 2 }}>
+				<FormControl sx={{ width: "100%", mb: 3 }}>
 					<TextField
 						autoFocus
 						value={searchTerm}
@@ -181,9 +207,15 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
-									<SearchNormal1 size={18} />
+									<SearchNormal1 size={18} color={theme.palette.primary.main} />
 								</InputAdornment>
 							),
+							sx: {
+								bgcolor: theme.palette.background.paper,
+								"&:hover": {
+									bgcolor: theme.palette.action.hover,
+								},
+							},
 						}}
 						placeholder="Buscar causas..."
 						fullWidth
@@ -210,7 +242,7 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 							<CircularProgress />
 						</Box>
 					) : (
-						<Stack spacing={1}>
+						<Stack spacing={1.5}>
 							{filteredFolders.length > 0 ? (
 								filteredFolders.map((folder: Folder) => {
 									const isSelected = selectedFolders.some((f) => f._id === folder._id);
@@ -232,11 +264,20 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 													bgcolor: isSelected ? theme.palette.primary.lighter : theme.palette.primary.lighter + "80",
 												},
 												position: "relative",
+												maxWidth: "100%",
 											}}
 										>
 											<Stack spacing={1}>
 												<Stack direction="row" alignItems="center" spacing={1}>
-													<Typography variant="h6" sx={{ flex: 1 }}>
+													<Typography
+														variant="h6"
+														sx={{
+															flex: 1,
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+															whiteSpace: "nowrap",
+														}}
+													>
 														{folder.folderName}
 													</Typography>
 													{isSelected && (
@@ -250,15 +291,30 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 													)}
 												</Stack>
 												<Stack direction="row" spacing={2} sx={{ color: "text.secondary" }}>
-													<Typography variant="body2">Estado: {folder.status || "Sin estado"}</Typography>
-													{folder.materia && <Typography variant="body2">Materia: {folder.materia}</Typography>}
+													<Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+														Estado: {folder.status || "Sin estado"}
+													</Typography>
+													{folder.materia && (
+														<Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+															Materia: {folder.materia}
+														</Typography>
+													)}
 												</Stack>
 											</Stack>
 										</Box>
 									);
 								})
 							) : (
-								<Box sx={{ textAlign: "center", py: 3 }}>
+								<Box
+									sx={{
+										textAlign: "center",
+										py: 4,
+										bgcolor: theme.palette.background.paper,
+										borderRadius: 2,
+										border: "1px dashed",
+										borderColor: theme.palette.divider,
+									}}
+								>
 									<Typography color="textSecondary">{searchTerm ? "No se encontraron causas" : "No hay causas disponibles"}</Typography>
 								</Box>
 							)}
@@ -269,11 +325,37 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 
 			<Divider />
 
-			<DialogActions sx={{ p: 2.5 }}>
-				<Button color="error" onClick={onCancelLink} disabled={isLoading}>
+			<DialogActions
+				sx={{
+					p: 2.5,
+					bgcolor: theme.palette.background.default,
+					borderTop: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Button
+					color="inherit"
+					onClick={onCancelLink}
+					disabled={isLoading}
+					sx={{
+						color: theme.palette.text.secondary,
+						"&:hover": {
+							bgcolor: theme.palette.action.hover,
+						},
+					}}
+				>
 					Cancelar
 				</Button>
-				<Button onClick={handleLink} color="primary" variant="contained" disabled={selectedFolders.length === 0 || isLoading}>
+				<Button
+					onClick={handleLink}
+					color="primary"
+					variant="contained"
+					disabled={selectedFolders.length === 0 || isLoading}
+					sx={{
+						minWidth: 120,
+						py: 1.25,
+						fontWeight: 600,
+					}}
+				>
 					Vincular {selectedFolders.length > 0 && `(${selectedFolders.length})`}
 				</Button>
 			</DialogActions>
