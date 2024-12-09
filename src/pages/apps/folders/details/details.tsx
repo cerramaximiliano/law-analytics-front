@@ -295,7 +295,6 @@ const Details = () => {
 
 	// Optimized selectors with specific state slices
 	const folder = useSelector((state: StateType) => state.folder.folder);
-	console.log(folder);
 	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
 	const selectedContacts = useSelector((state: StateType) => state.contacts.selectedContacts);
 	const contactsLoading = useSelector((state: StateType) => state.contacts.isLoader);
