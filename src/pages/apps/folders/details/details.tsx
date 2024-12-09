@@ -372,9 +372,9 @@ const Details = () => {
 	// Memoized components
 	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);
 
-	const MemoizedMovements = useMemo(() => <Movements title="Movimientos" folderName={folder?.folderName} />, []);
+	const MemoizedMovements = useMemo(() => <Movements title="Movimientos" folderName={folder?.folderName} />, [folder]);
 
-	const MemoizedNotifications = useMemo(() => <Notifications title="Notificaciones" folderName={folder?.folderName} />, []);
+	const MemoizedNotifications = useMemo(() => <Notifications title="Notificaciones" folderName={folder?.folderName} />, [folder]);
 
 	const MemoizedPreJudData = useMemo(() => <FolderPreJudData isLoader={isLoader} folder={folder} type="mediacion" />, [isLoader, folder]);
 
@@ -389,7 +389,7 @@ const Details = () => {
 
 	const MemoizedTaskList = useMemo(() => <TaskList title="Tareas" folderName={folder?.folderName} />, [folder]);
 
-	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" folderName={folder?.folderName} />, []);
+	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" folderName={folder?.folderName} />, [folder]);
 
 	return (
 		<MainCard title="Detalles de la Causa" secondary={renderViewOptions}>

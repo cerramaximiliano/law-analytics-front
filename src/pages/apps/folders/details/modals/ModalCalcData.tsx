@@ -3,21 +3,13 @@ import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import NumberField from "components/UI/NumberField";
 import SelectField from "components/UI/SelectField";
-import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
 import { Formik, FormikValues } from "formik";
-import { CalcAmounts } from "../components/CalcTable";
 import { addCalculator } from "store/reducers/calculator";
 import { dispatch, useSelector } from "store";
 import { enqueueSnackbar } from "notistack";
 
-type ModalCalcType = {
-	open: boolean;
-	setOpen: Dispatch<SetStateAction<boolean>>;
-	handlerAddress?: (movement: CalcAmounts) => void;
-	folderId: any;
-	folderName?: string;
-};
+import { ModalCalcType } from "types/calculator";
 
 const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: ModalCalcType) => {
 	const theme = useTheme();
@@ -106,11 +98,26 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		_submitForm(values, actions);
 		closeTaskModal();
 		actions.resetForm();
 	}
+
+	const truncatedFolderName = folderName ? (folderName.length > 15 ? `${folderName.slice(0, 15)}...` : folderName) : "";
+	const folderNameLines = truncatedFolderName
+		? truncatedFolderName.split(" ").reduce(
+				(lines, word, index) => {
+					const currentLine = lines[lines.length - 1];
+					if (currentLine && currentLine.length + word.length <= 25) {
+						lines[lines.length - 1] = `${currentLine} ${word}`;
+					} else {
+						lines.push(word);
+					}
+					return lines;
+				},
+				["", ""],
+		  )
+		: ["", ""];
 
 	return (
 		<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
@@ -150,7 +157,7 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 									Agregar Montos de Reclamo y Ofrecimientos
 								</Typography>
 								<Typography color="textSecondary" variant="subtitle2">
-									Carpeta: {folderName}
+									Carpeta: {folderNameLines}
 								</Typography>
 							</Stack>
 						</DialogTitle>

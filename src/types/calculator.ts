@@ -1,3 +1,16 @@
+import { Dispatch, SetStateAction } from "react";
+
+
+export type CalcAmounts = {
+	date: string;
+	type: "Calculado" | "Reclamado" | "Ofertado";
+	amount: number;
+	user: "Actora" | "Demandada";
+	link?: string;
+	description?: string;
+};
+
+
 export type CalculatorType = {
 	userId?: string;
 	groupId?: string;
@@ -30,3 +43,13 @@ export interface FilterParams {
 	type?: string;
 	classType?: string;
 }
+
+
+
+export type ModalCalcType = {
+	open: boolean;
+	setOpen: Dispatch<SetStateAction<boolean>>;
+	handlerAddress?: (movement: CalcAmounts) => void;
+	folderId: any;
+	folderName: string;
+};

@@ -1,31 +1,17 @@
 import { Dialog, DialogTitle, Divider, Button, Stack, DialogContent, DialogActions, useTheme, Typography } from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
-import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
 import { Formik } from "formik";
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { addTask } from "store/reducers/tasks";
 
-type AddressModalType = {
-	open: boolean;
-	setOpen: Dispatch<SetStateAction<boolean>>;
-	handlerAddress?: (task: any) => void;
-	folderId: string;
-	folderName: string;
-};
+// types
+import { TaskModalType } from "types/task";
+import { TaskFormValues } from "types/task";
 
-type TaskFormValues = {
-	date: string;
-	name: string;
-	description: string;
-	checked: boolean;
-	folderId: string;
-	userId?: string;
-};
-
-const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: AddressModalType) => {
+const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: TaskModalType) => {
 	const theme = useTheme();
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	function closeTaskModal() {
@@ -114,6 +100,22 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Add
 	async function _handleSubmit(values: TaskFormValues, actions: any) {
 		await _submitForm(values, actions);
 	}
+
+	const folderNameLines = folderName
+		? folderName.split(" ").reduce(
+				(lines, word, index) => {
+					const currentLine = lines[lines.length - 1];
+					if (currentLine && currentLine.length + word.length <= 50) {
+						lines[lines.length - 1] = `${currentLine} ${word}`;
+					} else {
+						lines.push(word);
+					}
+					return lines;
+				},
+				["", ""],
+		  )
+		: ["", ""];
+
 	return (
 		<Formik initialValues={initialValues} validationSchema={CustomerSchema} onSubmit={_handleSubmit} enableReinitialize>
 			{({ isSubmitting, resetForm }) => {
@@ -145,15 +147,30 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Add
 								bgcolor: theme.palette.primary.lighter,
 								p: 3,
 								borderBottom: `1px solid ${theme.palette.divider}`,
+								display: "flex",
+								flexDirection: "row",
+								justifyContent: "space-between",
+								alignItems: "center",
 							}}
 						>
-							<Stack direction="row" justifyContent="space-between" alignItems="center">
-								<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-									Agregar Tarea
-								</Typography>
-								<Typography color="textSecondary" variant="subtitle2">
-									Carpeta: {folderName}
-								</Typography>
+							<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600, flex: 0.7 }}>
+								Agregar Tarea
+							</Typography>
+							<Stack direction="row" spacing={1} sx={{ flex: 0.3 }}>
+								{folderNameLines.map((line, index) => (
+									<Typography
+										key={index}
+										color="textSecondary"
+										variant="subtitle2"
+										sx={{
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
+										{line}
+									</Typography>
+								))}
 							</Stack>
 						</DialogTitle>
 

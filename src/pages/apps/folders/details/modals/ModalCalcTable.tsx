@@ -46,6 +46,7 @@ type CalcFormProps = {
 };
 
 const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcModalType) => {
+	console.log(folderName);
 	const theme = useTheme();
 	const dispatch = useDispatch<AppDispatch>();
 	const [searchTerm, setSearchTerm] = useState("");

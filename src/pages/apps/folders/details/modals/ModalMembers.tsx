@@ -5,7 +5,6 @@ import { useTheme } from "@mui/material/styles";
 import {
 	Box,
 	Button,
-	Chip,
 	Divider,
 	Dialog,
 	DialogActions,
@@ -16,6 +15,7 @@ import {
 	Stack,
 	TextField,
 	Typography,
+	Tooltip,
 } from "@mui/material";
 
 // third-party
@@ -184,14 +184,31 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 			maxWidth="sm"
 			open={open}
 			onClose={closeAddressModal}
+			PaperProps={{
+				sx: {
+					width: "600px",
+					maxWidth: "600px",
+					p: 0,
+					borderRadius: 2,
+					boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+				},
+			}}
 			sx={{
 				"& .MuiDialog-paper": { p: 0 },
 				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
 			}}
 		>
-			<DialogTitle>
+			<DialogTitle
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Typography variant="h5">Seleccione Contactos</Typography>
+					<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+						Seleccione Contactos
+					</Typography>
 					<Typography color="textSecondary" variant="subtitle2">
 						{selectedAddresses.length} seleccionados
 					</Typography>
@@ -199,24 +216,53 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 			</DialogTitle>
 			<Divider />
 
-			<DialogContent sx={{ p: 2.5 }}>
+			<DialogContent
+				sx={{
+					p: 2.5,
+					width: "100%",
+					overflow: "visible",
+				}}
+			>
 				{selectedAddresses.length > 0 && (
-					<Box sx={{ mb: 2 }}>
-						<Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-							{selectedAddresses.map((address) => (
-								<Chip
-									key={address.email}
-									label={`${address.name} ${address.lastName || ""}`}
-									onDelete={() => toggleSelection(address)}
-									color="primary"
-									variant="outlined"
-								/>
-							))}
+					<Box sx={{ mb: 2.5 }}>
+						<Stack spacing={1}>
+							<Typography variant="subtitle2" color="textSecondary">
+								Contactos Seleccionados:
+							</Typography>
+							<Box
+								sx={{
+									p: 2,
+									border: `2px solid ${theme.palette.primary.main}`,
+									borderRadius: 2,
+									bgcolor: theme.palette.primary.lighter,
+								}}
+							>
+								<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+									{selectedAddresses.map((address) => (
+										<Tooltip key={address.email} title={`${address.name} ${address.lastName || ""}`}>
+											<Box
+												sx={{
+													p: 1,
+													bgcolor: theme.palette.background.paper,
+													borderRadius: 1,
+													border: "1px solid",
+													borderColor: theme.palette.primary.main,
+													display: "flex",
+													alignItems: "center",
+													gap: 1,
+												}}
+											>
+												<Typography variant="body2">{`${address.name} ${address.lastName || ""}`}</Typography>
+											</Box>
+										</Tooltip>
+									))}
+								</Stack>
+							</Box>
 						</Stack>
 					</Box>
 				)}
 
-				<FormControl sx={{ width: "100%", pb: 2 }}>
+				<FormControl sx={{ width: "100%", mb: 2.5 }}>
 					<TextField
 						autoFocus
 						value={searchTerm}
@@ -224,9 +270,15 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
-									<SearchNormal1 size={18} />
+									<SearchNormal1 size={18} color={theme.palette.primary.main} />
 								</InputAdornment>
 							),
+							sx: {
+								bgcolor: theme.palette.background.paper,
+								"&:hover": {
+									bgcolor: theme.palette.action.hover,
+								},
+							},
 						}}
 						placeholder="Buscar intervinientes..."
 						fullWidth
@@ -235,13 +287,14 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 
 				<SimpleBar
 					sx={{
-						maxHeight: "420px",
+						maxHeight: "500px",
 						width: "100%",
 						overflowX: "hidden",
 						overflowY: "auto",
+						position: "relative",
 					}}
 				>
-					<Stack spacing={1}>
+					<Stack spacing={1.5}>
 						{filteredContacts.length > 0 ? (
 							filteredContacts.map((contact: Contact) => {
 								const isSelected = selectedAddresses.some((selected) => selected.email === contact.email);
@@ -253,26 +306,49 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 											width: "100%",
 											border: "1px solid",
 											borderColor: isSelected ? theme.palette.primary.main : "divider",
-											borderRadius: 1,
-											p: 2,
+											borderRadius: 2,
+											p: 3,
 											cursor: "pointer",
 											bgcolor: isSelected ? `${theme.palette.primary.lighter}` : "background.paper",
-											transition: "all 0.3s ease",
+											transition: "all 0.2s ease-in-out",
 											"&:hover": {
 												borderColor: theme.palette.primary.main,
 												bgcolor: isSelected ? theme.palette.primary.lighter : theme.palette.primary.lighter + "80",
+												transform: "translateY(-2px)",
+												boxShadow: `0 4px 8px ${theme.palette.primary.lighter}`,
+												zIndex: 10,
+												marginTop: "10px",
+												marginBottom: "6px",
 											},
-											position: "relative",
 										}}
 									>
-										<Stack spacing={1}>
+										<Stack spacing={1.5}>
 											<Stack direction="row" alignItems="center" spacing={1}>
-												<Typography variant="h6" sx={{ flex: 1 }}>
-													{`${contact.name} ${contact.lastName || ""}`}
-												</Typography>
-												{isSelected && <TickCircle variant="Bold" size={24} style={{ color: theme.palette.primary.main }} />}
+												<Tooltip title={`${contact.name} ${contact.lastName || ""}`}>
+													<Typography
+														variant="subtitle1"
+														sx={{
+															flex: 1,
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+															whiteSpace: "nowrap",
+															fontWeight: isSelected ? 600 : 500,
+														}}
+													>
+														{`${contact.name} ${contact.lastName || ""}`}
+													</Typography>
+												</Tooltip>
+												{isSelected && (
+													<TickCircle
+														variant="Bold"
+														size={24}
+														style={{
+															color: theme.palette.primary.main,
+														}}
+													/>
+												)}
 											</Stack>
-											<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ color: "text.secondary" }}>
+											<Stack direction="row" spacing={2} sx={{ color: "text.secondary" }}>
 												{contact.address && <Typography variant="body2">{contact.address}</Typography>}
 												<Typography variant="body2">{contact.phone}</Typography>
 												<Typography variant="body2">{contact.email}</Typography>
@@ -282,7 +358,16 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 								);
 							})
 						) : (
-							<Box sx={{ textAlign: "center", py: 3 }}>
+							<Box
+								sx={{
+									textAlign: "center",
+									py: 4,
+									bgcolor: theme.palette.background.paper,
+									borderRadius: 2,
+									border: "1px dashed",
+									borderColor: theme.palette.divider,
+								}}
+							>
 								<Typography color="textSecondary">No se encontraron intervinientes</Typography>
 							</Box>
 						)}
@@ -292,12 +377,27 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 
 			<Divider />
 
-			<DialogActions sx={{ p: 2.5 }}>
-				<Button color="error" onClick={closeAddressModal}>
+			<DialogActions
+				sx={{
+					p: 2.5,
+					bgcolor: theme.palette.background.default,
+					borderTop: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Button
+					color="inherit"
+					onClick={closeAddressModal}
+					sx={{
+						color: theme.palette.text.secondary,
+						"&:hover": {
+							bgcolor: theme.palette.action.hover,
+						},
+					}}
+				>
 					Cancelar
 				</Button>
 				<Button onClick={handleVincular} color="primary" variant="contained" disabled={selectedAddresses.length === 0}>
-					Vincular {selectedAddresses.length > 0 && `(${selectedAddresses.length})`}
+					Vincular ({selectedAddresses.length})
 				</Button>
 			</DialogActions>
 		</Dialog>

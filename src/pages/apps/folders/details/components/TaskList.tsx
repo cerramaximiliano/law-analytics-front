@@ -12,21 +12,12 @@ import { getTasksByFolderId, deleteTask, toggleTaskStatus } from "store/reducers
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 
-type TaskDataType = {
-	name: string;
-	_id: string;
-	progress?: number;
-	done?: number;
-	checked: boolean;
-	date: string;
-};
+//types
+import { TaskDataType } from "types/task";
+import { TaskCompletionType } from "types/task";
+import { TaskListProps } from "types/task";
 
-type TaskCompletionType = {
-	[key: string]: boolean;
-};
-
-const TaskList = (props: { title: string; folderName: string }) => {
-	const { title } = props;
+const TaskList = ({ title, folderName }: TaskListProps) => {
 	const { id } = useParams();
 
 	// Añadimos un valor por defecto de array vacío
@@ -170,7 +161,7 @@ const TaskList = (props: { title: string; folderName: string }) => {
 				</IconButton>
 			}
 		>
-			<ModalTasks open={open} setOpen={setOpen} folderId={id || ""} folderName={""} />
+			<ModalTasks open={open} setOpen={setOpen} folderId={id || ""} folderName={folderName} />
 			{isLoading ? (
 				<>
 					<Skeleton />

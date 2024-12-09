@@ -35,37 +35,26 @@ import { CalculatorType } from "types/calculator";
 import { Trash } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 interface LoadingContentProps {
-	isLoading: boolean;
+	isLoader: boolean;
 	content: React.ReactNode;
 	skeleton: React.ReactNode;
 }
 
-export type CalcAmounts = {
-	date: string;
-	type: "Calculado" | "Reclamado" | "Ofertado";
-	amount: number;
-	user: "Actora" | "Demandada";
-	link?: string;
-	description?: string;
-};
 
 const formatAmount = (amount: number | null | undefined): string => {
 	if (amount == null) return "No Disponible";
 	return `$${amount.toLocaleString("es-AR")}`;
 };
 
-const LoadingContent = ({ isLoading, content, skeleton }: LoadingContentProps): JSX.Element =>
-	isLoading ? <>{skeleton}</> : <>{content}</>;
+const LoadingContent = ({ isLoader, content, skeleton }: LoadingContentProps): JSX.Element => (isLoader ? <>{skeleton}</> : <>{content}</>);
 
 const CalcTable = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
-	const calculators = useSelector((state) => state.calculator.calculators);
+	const { calculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
 	const [latestOfferedAmount, setLatestOfferedAmount] = useState<number | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	console.log(isLoading, setIsLoading);
 
 	const sortedData = useMemo(
 		() =>
@@ -74,14 +63,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 	);
 
 	useEffect(() => {
-		if (calculators.length > 0 || folderData) {
-			setIsLoading(false);
-		}
-	}, [calculators, folderData]);
-
-	useEffect(() => {
 		if (id) {
-			console.log("ID", id);
 			dispatch(getCalculatorsByFolderId(id));
 		}
 	}, [id]);
@@ -91,7 +73,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 		setLatestOfferedAmount(latestOffered?.amount ?? null);
 	}, [sortedData]);
 
-	const showEmptyState = !isLoading && sortedData.length === 0;
+	const showEmptyState = !isLoader && sortedData.length === 0;
 
 	const EmptyState = () => (
 		<TableRow>
@@ -146,7 +128,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 				<List disablePadding>
 					<ListItem sx={{ p: 0 }}>
 						<LoadingContent
-							isLoading={isLoading}
+							isLoader={isLoader}
 							content={
 								<ListItemAvatar>
 									<Avatar color="success" variant="rounded">
@@ -157,7 +139,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 							skeleton={<Skeleton variant="rectangular" width={40} height={40} style={{ marginRight: 10 }} />}
 						/>
 						<LoadingContent
-							isLoading={isLoading}
+							isLoader={isLoader}
 							content={
 								<ListItemText
 									sx={{ my: 0 }}
@@ -178,14 +160,14 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 			content={false}
 		>
 			{/* ... Modales ... */}
-			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} />
+			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} folderName={folderData?.folderName} />
 			<ModalCalcTable open={open} setOpen={setOpen} folderName={folderData?.folderName} folderId={id} />
 			<CardContent>
 				{/* ... Grid de montos ... */}
 				<Grid sx={{ pb: 2 }} container direction="row" justifyContent="space-around" alignItems="center">
 					<Grid item>
 						<Grid container direction="column" spacing={0} alignItems="center" justifyContent="center">
-							{isLoading ? (
+							{isLoader ? (
 								<>
 									<Skeleton width={80} />
 									<Skeleton width={80} />
@@ -206,7 +188,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 					</Grid>
 					<Grid item>
 						<Grid container direction="column" spacing={0} alignItems="center" justifyContent="center">
-							{isLoading ? (
+							{isLoader ? (
 								<>
 									<Skeleton width={80} />
 									<Skeleton width={80} />
@@ -242,7 +224,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 								<TableRow>
 									{["Fecha", "Tipo", "Parte", "Monto", ""].map((header, index) => (
 										<TableCell key={header} sx={{ p: 1 }} align={index >= 3 ? "right" : "left"}>
-											<LoadingContent isLoading={isLoading} content={header} skeleton={<Skeleton />} />
+											<LoadingContent isLoader={isLoader} content={header} skeleton={<Skeleton />} />
 										</TableCell>
 									))}
 								</TableRow>
@@ -262,7 +244,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 												<>
 													<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
 														<LoadingContent
-															isLoading={isLoading}
+															isLoader={isLoader}
 															content={
 																<Typography variant="body2">{cellIndex === 3 ? formatAmount(value as number) : String(value)}</Typography>
 															}
@@ -273,7 +255,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 											))}
 											<TableCell align="right" sx={{ p: 1 }}>
 												<LoadingContent
-													isLoading={isLoading}
+													isLoader={isLoader}
 													content={
 														<Tooltip title="Eliminar cálculo">
 															<IconButton
@@ -306,12 +288,12 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 				{/* ... Stack de botones ... */}
 				<Stack direction="row" justifyContent={"right"} spacing={2} marginTop={2}>
 					<Grid item>
-						<Button onClick={() => setOpen(true)} disabled={isLoading}>
+						<Button onClick={() => setOpen(true)} disabled={isLoader}>
 							Vincular
 						</Button>
 					</Grid>
 					<Grid item>
-						<Button variant="contained" color="primary" onClick={() => setOpenItemModal(true)} disabled={isLoading}>
+						<Button variant="contained" color="primary" onClick={() => setOpenItemModal(true)} disabled={isLoader}>
 							Agregar
 						</Button>
 					</Grid>
