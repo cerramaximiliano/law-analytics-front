@@ -1,5 +1,11 @@
 import { Dispatch, SetStateAction } from "react";
 
+export interface LoadingContentProps {
+	isLoader: boolean;
+	content: React.ReactNode;
+	skeleton: React.ReactNode;
+}
+
 
 export type CalcAmounts = {
 	date: string;

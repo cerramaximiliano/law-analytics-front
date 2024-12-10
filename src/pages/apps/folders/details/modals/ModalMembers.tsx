@@ -1,4 +1,4 @@
-import { useState, Dispatch, SetStateAction, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -25,24 +25,10 @@ import { dispatch, useSelector } from "store";
 import { filterContactsByFolder, updateMultipleContacts } from "store/reducers/contacts";
 import { openSnackbar } from "store/reducers/snackbar";
 
-interface Contact {
-	_id: string;
-	name: string;
-	lastName?: string;
-	email: string;
-	phone: string;
-	address?: string;
-}
+//types
+import { MembersModalType, Contact } from "types/movements";
 
-type AddressModalType = {
-	open: boolean;
-	setOpen: Dispatch<SetStateAction<boolean>>;
-	handlerAddress: (address: Contact) => void;
-	folderId: string;
-	membersData: Contact[];
-};
-
-const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: AddressModalType) => {
+const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: MembersModalType) => {
 	const theme = useTheme();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedAddresses, setSelectedAddresses] = useState<Contact[]>([]);

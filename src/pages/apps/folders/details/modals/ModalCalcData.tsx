@@ -8,7 +8,7 @@ import { Formik, FormikValues } from "formik";
 import { addCalculator } from "store/reducers/calculator";
 import { dispatch, useSelector } from "store";
 import { enqueueSnackbar } from "notistack";
-
+//types
 import { ModalCalcType } from "types/calculator";
 
 const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: ModalCalcType) => {

@@ -8,8 +8,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { addTask } from "store/reducers/tasks";
 
 // types
-import { TaskModalType } from "types/task";
-import { TaskFormValues } from "types/task";
+import { TaskModalType, TaskFormValues } from "types/task";
 
 const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: TaskModalType) => {
 	const theme = useTheme();

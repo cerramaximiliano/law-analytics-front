@@ -1,4 +1,3 @@
-import { Dispatch, SetStateAction } from "react";
 import { dispatch, useSelector } from "store";
 import { Dialog, DialogTitle, Divider, Button, Stack, DialogContent, DialogActions, Box, Zoom, useTheme, Typography } from "@mui/material";
 import InputField from "components/UI/InputField";
@@ -10,42 +9,8 @@ import { Notification1, ArrowForwardSquare } from "iconsax-react";
 import PatternField from "components/UI/PatternField";
 import { enqueueSnackbar } from "notistack";
 import { addNotification, updateNotification } from "store/reducers/notifications";
-import { NotificationType } from "types/notifications";
-
-interface FormValues {
-	date: string;
-	title: string;
-	notification: string;
-	user: string;
-	code: string;
-	idCode: string;
-	description: string;
-	dateExpiration: string;
-}
-
-// Tipo para los datos de la notificación
-interface NotificationData {
-	_id?: string;
-	folderId: string;
-	time: string;
-	title: string;
-	dateExpiration: string;
-	notification: string;
-	userId: string;
-	description: string;
-	user: string;
-	code: string;
-	idCode: string;
-}
-
-interface ModalNotificationsProps {
-	open: boolean;
-	setOpen: Dispatch<SetStateAction<boolean>>;
-	folderId?: string;
-	editMode?: boolean;
-	notificationData?: NotificationType | null;
-	folderName?: string;
-}
+// types
+import { ModalNotificationsProps, FormValues, NotificationData } from "types/notifications";
 
 const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 	open,

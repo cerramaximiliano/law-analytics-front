@@ -2,7 +2,6 @@ import { Dialog, DialogTitle, Divider, Button, Stack, DialogContent, Typography,
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
-import { Dispatch, SetStateAction } from "react";
 import * as Yup from "yup";
 import { Formik } from "formik";
 import { Link1, TableDocument } from "iconsax-react";
@@ -10,17 +9,10 @@ import { dispatch, useSelector } from "store";
 import { addMovement, updateMovement } from "store/reducers/movements";
 import { Movement } from "types/movements";
 import { enqueueSnackbar } from "notistack";
+// types
+import { MovementsModalType } from "types/movements";
 
-interface AddressModalType {
-	open: boolean;
-	setOpen: Dispatch<SetStateAction<boolean>>;
-	folderId: any;
-	folderName: string;
-	editMode?: boolean;
-	movementData?: Movement | null;
-}
-
-const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = false, movementData = null }: AddressModalType) => {
+const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = false, movementData = null }: MovementsModalType) => {
 	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
@@ -106,7 +98,6 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 		closeTaskModal();
 		actions.resetForm();
 	}
-
 
 	const truncatedFolderName = folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName;
 	const folderNameLines = truncatedFolderName.split(" ").reduce(

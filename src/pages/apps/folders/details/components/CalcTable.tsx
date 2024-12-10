@@ -28,18 +28,13 @@ import Avatar from "components/@extended/Avatar";
 import { Calculator } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
-
 import { dispatch, useSelector } from "store";
 import { deleteCalculator, getCalculatorsByFolderId } from "store/reducers/calculator";
-import { CalculatorType } from "types/calculator";
 import { Trash } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
-interface LoadingContentProps {
-	isLoader: boolean;
-	content: React.ReactNode;
-	skeleton: React.ReactNode;
-}
 
+// types
+import { CalculatorType, LoadingContentProps } from "types/calculator";
 
 const formatAmount = (amount: number | null | undefined): string => {
 	if (amount == null) return "No Disponible";
