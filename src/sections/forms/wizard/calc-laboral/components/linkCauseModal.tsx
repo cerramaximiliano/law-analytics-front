@@ -326,8 +326,6 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 			</Dialog>
 		);
 	}
-	// ... imports y código anterior ...
-
 	// El modal principal (cuando no hay causa vinculada)
 	return (
 		<Dialog

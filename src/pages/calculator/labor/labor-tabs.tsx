@@ -42,35 +42,23 @@ function a11yProps(index: number) {
 export default function LaborTabs() {
 	const [value, setValue] = useState(0);
 	const [searchParams] = useSearchParams();
-	const [currentFolder, setCurrentFolder] = useState<any>(null);
-	const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
-
-	const { folders, loading } = useSelector((state: any) => state.folders);
+	const { folders } = useSelector((state: any) => state.folders);
 	const { id } = useSelector((state: any) => state.auth?.user);
+
 	const folderParam = searchParams.get("folder");
+	const currentFolder = folderParam ? folders.find((f: any) => f._id === folderParam) : null;
 
-	// Primer useEffect para cargar los folders si es necesario
 	useEffect(() => {
-		if (id && !hasAttemptedFetch && folderParam) {
+		if (id && folderParam) {
 			dispatch(getFoldersByUserId(id));
-			setHasAttemptedFetch(true);
 		}
-	}, [id, hasAttemptedFetch, folderParam]);
-
-	// Segundo useEffect para buscar el folder una vez que los datos están cargados
-	useEffect(() => {
-		if (!folderParam || loading) return;
-
-		const foundFolder = folders.find((f: any) => f._id === folderParam);
-		setCurrentFolder(foundFolder || null);
-	}, [folderParam, folders, loading]);
+	}, [id, folderParam]);
 
 	const handleChange = (event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 	};
 
-	const shouldShowFolderName = value !== 2 && currentFolder?.folderName;
-
+	const shouldShowFolderName = value !== 2 && folderParam && currentFolder?.folderName;
 	return (
 		<MainCard>
 			<Box sx={{ width: "100%" }}>

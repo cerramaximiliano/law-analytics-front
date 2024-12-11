@@ -46,6 +46,7 @@ const calculatorsReducer = (state = initialState, action: any) => {
 			return {
 				...state,
 				calculators: state.calculators.map((calc) => (calc._id === action.payload._id ? action.payload : calc)),
+				selectedCalculators: state.selectedCalculators.map((calc) => (calc._id === action.payload._id ? action.payload : calc)),
 				isLoader: false,
 			};
 		case DELETE_CALCULATOR:

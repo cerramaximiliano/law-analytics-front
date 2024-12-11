@@ -25,6 +25,7 @@ import moment from "moment";
 import axios from "axios";
 import { addCalculator } from "store/reducers/calculator";
 import LinkCauseModal from "../components/linkCauseModal";
+import { useNavigate } from "react-router";
 
 // Tipos
 interface ResultItem {
@@ -87,10 +88,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 
 	const [savedCalculationId, setSavedCalculationId] = useState<string | null>(null);
 
+	const [isSaved, setIsSaved] = useState(false);
+	const navigate = useNavigate();
+
 	const userId = useSelector((state) => state.auth.user?._id);
 
 	const printRef = useRef<HTMLDivElement>(null);
 	const { formField } = despidoFormModel;
+
+	const isLinkedToFolder = useMemo(() => {
+		return Boolean(values.folderId && values.folderName);
+	}, [values.folderId, values.folderName]);
 
 	const getLabelForKey = (key: string): string => {
 		const field = formField[key as keyof typeof formField];
@@ -394,6 +402,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 
 	const handleSaveCalculation = async () => {
 		console.log("Guardando cálculo");
+		if (isSaved) return;
+
 		try {
 			const calculatorData = {
 				date: moment().format("YYYY-MM-DD"),
@@ -414,6 +424,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 
 			if (result.success) {
 				setSavedCalculationId(result.calculator._id);
+				setIsSaved(true);
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -434,7 +445,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 					}),
 				);
 			}
-		} catch (error) {}
+		} catch (error) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al guardar el cálculo",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		}
 	};
 
 	const renderActionButtons = () => (
@@ -454,9 +475,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 					<Printer size={24} />
 				</IconButton>
 			</Tooltip>
-			<Tooltip title={savedCalculationId ? "Vincular a causa" : "Guarde el cálculo primero"}>
+			<Tooltip
+				title={
+					isLinkedToFolder ? "Ya está vinculado a una carpeta" : !savedCalculationId ? "Guarde el cálculo primero" : "Vincular a causa"
+				}
+			>
 				<span>
-					<IconButton onClick={handleLinkToCause} color="primary" disabled={!savedCalculationId}>
+					<IconButton onClick={handleLinkToCause} color="primary" disabled={!savedCalculationId || isLinkedToFolder}>
 						<Link21 size={24} />
 					</IconButton>
 				</span>
@@ -466,10 +491,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 					<Calculator size={24} />
 				</IconButton>
 			</Tooltip>
-			<Tooltip title="Guardar cálculo">
-				<IconButton onClick={handleSaveCalculation} color="primary">
-					<Save2 size={24} />
-				</IconButton>
+			<Tooltip title={isSaved ? "El cálculo ya fue guardado" : "Guardar cálculo"}>
+				<span>
+					<IconButton onClick={handleSaveCalculation} color="primary" disabled={isSaved}>
+						<Save2 size={24} />
+					</IconButton>
+				</span>
 			</Tooltip>
 		</Stack>
 	);
@@ -529,6 +556,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 		</div>
 	));
 
+	const handleReset = () => {
+		navigate(".", { replace: true }); // This removes query parameters
+		onReset();
+	};
+
 	return (
 		<PrintContainer>
 			{renderActionButtons()}
@@ -536,7 +568,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			<PrintableContent ref={printRef} />
 
 			<Stack direction="row" justifyContent="flex-end" className="no-print">
-				<Button variant="contained" color="error" onClick={onReset} sx={{ mt: 3 }}>
+				<Button variant="contained" color="error" onClick={handleReset} sx={{ mt: 3 }}>
 					Nueva Liquidación
 				</Button>
 			</Stack>
