@@ -196,7 +196,16 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 									Agregar Evento
 								</Typography>
 							)}
-							<Typography color="textSecondary" variant="subtitle2">
+							<Typography
+								color="textSecondary"
+								variant="subtitle2"
+								sx={{
+									maxWidth: "30%",
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+								}}
+							>
 								Carpeta: {folderName}
 							</Typography>
 						</Stack>

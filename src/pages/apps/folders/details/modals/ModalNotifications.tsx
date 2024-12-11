@@ -126,20 +126,6 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 		_submitForm(values, actions);
 	}
 
-	const truncatedFolderName = folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName;
-	const folderNameLines = truncatedFolderName.split(" ").reduce(
-		(lines, word, index) => {
-			const currentLine = lines[lines.length - 1];
-			if (currentLine && currentLine.length + word.length <= 25) {
-				lines[lines.length - 1] = `${currentLine} ${word}`;
-			} else {
-				lines.push(word);
-			}
-			return lines;
-		},
-		["", ""],
-	);
-
 	return (
 		<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
 			{({ isSubmitting, resetForm, values }) => {
@@ -174,13 +160,29 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 							}}
 						>
 							<Stack direction="row" justifyContent="space-between" alignItems="center">
-								<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+								<Typography
+									variant="h5"
+									sx={{
+										color: theme.palette.primary.main,
+										fontWeight: 600,
+									}}
+								>
 									Agregar Notificación
 								</Typography>
-								<Typography color="textSecondary" variant="subtitle2">
-									Carpeta: {folderNameLines}
+								<Typography
+									color="textSecondary"
+									variant="subtitle2"
+									sx={{
+										maxWidth: "30%",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
+									Carpeta: {folderName}
 								</Typography>
 							</Stack>
+							
 						</DialogTitle>
 
 						<Divider />

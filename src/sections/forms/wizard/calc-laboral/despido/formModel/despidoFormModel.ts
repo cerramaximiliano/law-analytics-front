@@ -26,6 +26,8 @@ interface FormModel {
 		multaLE: FormField;
 		fechaFalsa: FormField;
 		salarioFalso: FormField;
+		folderId: FormField;
+		folderName: FormField;
 	};
 }
 
@@ -132,6 +134,14 @@ const despidoFormModel: FormModel = {
 			label: "Salario Falso",
 			requiredErrorMsg: "Debe consignar un salario",
 			type: "multas",
+		},
+		folderId: {
+			name: "folderId",
+			label: "Folder ID",
+		},
+		folderName: {
+			name: "folderName",
+			label: "reclamo",
 		},
 	},
 };

@@ -77,6 +77,7 @@ const PrintContainer = styled("div")`
 `;
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
+	console.log(values);
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
 	const [email, setEmail] = useState("");
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -399,8 +400,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 				type: "Calculado" as const,
 				classType: "laboral" as const,
 				subClassType: "despido" as const,
-				amount: total, // El total ya calculado
+				amount: total,
 				userId: userId,
+				folderId: values.folderId,
+				folderName: values.folderName,
 				variables: {
 					...values,
 					groupedResults,

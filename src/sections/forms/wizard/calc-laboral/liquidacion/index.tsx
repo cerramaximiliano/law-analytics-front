@@ -13,6 +13,8 @@ import initialValues from "./formModel/formInitialValues";
 import validationSchema from "./formModel/validationSchema";
 import { Formik, Form } from "formik";
 
+//types
+import { WizardProps } from "types/wizards";
 // step options
 const steps = ["Datos requeridos", "Resultados"];
 const { formId, formField } = despidoFormModel;
@@ -30,7 +32,8 @@ function getStepContent(step: number, values: any) {
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 
-const BasicWizard = () => {
+const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
+	console.log(folder);
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;

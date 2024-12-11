@@ -99,20 +99,6 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 		actions.resetForm();
 	}
 
-	const truncatedFolderName = folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName;
-	const folderNameLines = truncatedFolderName.split(" ").reduce(
-		(lines, word, index) => {
-			const currentLine = lines[lines.length - 1];
-			if (currentLine && currentLine.length + word.length <= 25) {
-				lines[lines.length - 1] = `${currentLine} ${word}`;
-			} else {
-				lines.push(word);
-			}
-			return lines;
-		},
-		["", ""],
-	);
-
 	return (
 		<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
 			{({ isSubmitting, resetForm }) => {
@@ -150,8 +136,17 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 								<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
 									{editMode ? "Editar Movimiento" : "Agregar Movimiento"}
 								</Typography>
-								<Typography color="textSecondary" variant="subtitle2">
-									Carpeta: {folderNameLines}
+								<Typography
+									color="textSecondary"
+									variant="subtitle2"
+									sx={{
+										maxWidth: "30%",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
+									Carpeta: {folderName}
 								</Typography>
 							</Stack>
 						</DialogTitle>

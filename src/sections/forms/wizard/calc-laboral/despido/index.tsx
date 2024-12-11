@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // material-ui
 import { Button, Step, Stepper, StepLabel, Stack } from "@mui/material";
@@ -18,6 +18,8 @@ import { Formik, Form } from "formik";
 import moment from "moment";
 import ResultsView from "./resultsView";
 
+import { WizardProps } from "types/wizards";
+
 // step options
 const steps = ["Datos requeridos", "Cálculos opcionales", "Resultados"];
 const { formId, formField } = despidoFormModel;
@@ -36,14 +38,31 @@ function getStepContent(step: number, values: any) {
 }
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
-
-const BasicWizard = () => {
+const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
+	console.log(folder?._id);
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
+
 	const handleBack = () => {
 		setActiveStep(activeStep - 1);
 	};
+
+	const [formInitialValues, setFormInitialValues] = useState(() => ({
+		...initialValues,
+		folderId: folder?._id || "",
+		folderName: folder?.folderName || "",
+	}));
+
+	useEffect(() => {
+		console.log("Folder cambiado:", folder);
+		setFormInitialValues((currentValues) => ({
+			...currentValues,
+			folderId: folder?._id || "",
+			folderName: folder?.folderName || "",
+		}));
+	}, [folder?._id, folder?.folderName]);
+
 	const [formResults, setFormResults] = useState<Record<string, any> | null>(null);
 
 	function _sleep(ms: number) {
@@ -254,6 +273,7 @@ const BasicWizard = () => {
 		return parseFloat(multa.toFixed(2));
 	}
 	async function _submitForm(values: any, actions: any) {
+		console.log(values);
 		await _sleep(1000);
 		const calcularPeriodos = (fechaIngreso: Date | null, fechaEgreso: Date | null) => {
 			if (!fechaIngreso || !fechaEgreso) return 0;
@@ -284,10 +304,12 @@ const BasicWizard = () => {
 		const indemnizacion = periodos * remuneracionCalculada;
 
 		const resultado = {
+			folderId: values.folderId,
 			...values,
 			Periodos: periodos,
 			Indemnizacion: indemnizacion,
 		};
+		console.log("Resultado antes de cálculos adicionales:", resultado); // Debug intermedio
 
 		if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
 			if (values.liquidacion.includes("preaviso")) {
@@ -380,7 +402,7 @@ const BasicWizard = () => {
 						}}
 					/>
 				) : (
-					<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
+					<Formik initialValues={formInitialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
 						{({ isSubmitting, values }) => (
 							<Form id={formId}>
 								{getStepContent(activeStep, values)}

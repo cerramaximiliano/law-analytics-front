@@ -59,3 +59,28 @@ export type ModalCalcType = {
 	folderId: any;
 	folderName: string;
 };
+
+export type CalcModalType = {
+	open: boolean;
+	setOpen: (open: boolean) => void;
+	folderId: string | undefined;
+	folderName?: string; // hacerlo opcional
+};
+
+export type Calculator = {
+	_id: string;
+	folderId?: string;
+	reclamante: string;
+	reclamado: string;
+	amount: number;
+	date: string;
+	type: string;
+	category: string;
+	subcategory: string;
+};
+
+export type CalcFormProps = {
+	handlerAddress: (calc: Calculator) => void;
+	searchTerm: string;
+	selectedCalculators: Calculator[];
+};

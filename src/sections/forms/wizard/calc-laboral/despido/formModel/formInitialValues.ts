@@ -20,6 +20,7 @@ const {
 		multaLE,
 		fechaFalsa,
 		salarioFalso,
+		folderId,
 	},
 } = despidoFormModel;
 
@@ -42,5 +43,6 @@ const initialValues = {
 	[multaLE.name]: 0,
 	[fechaFalsa.name]: "",
 	[salarioFalso.name]: "",
+	[folderId.name]: "",
 };
 export default initialValues;

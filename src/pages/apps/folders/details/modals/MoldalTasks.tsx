@@ -100,21 +100,6 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 		await _submitForm(values, actions);
 	}
 
-	const folderNameLines = folderName
-		? folderName.split(" ").reduce(
-				(lines, word, index) => {
-					const currentLine = lines[lines.length - 1];
-					if (currentLine && currentLine.length + word.length <= 50) {
-						lines[lines.length - 1] = `${currentLine} ${word}`;
-					} else {
-						lines.push(word);
-					}
-					return lines;
-				},
-				["", ""],
-		  )
-		: ["", ""];
-
 	return (
 		<Formik initialValues={initialValues} validationSchema={CustomerSchema} onSubmit={_handleSubmit} enableReinitialize>
 			{({ isSubmitting, resetForm }) => {
@@ -146,30 +131,30 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 								bgcolor: theme.palette.primary.lighter,
 								p: 3,
 								borderBottom: `1px solid ${theme.palette.divider}`,
-								display: "flex",
-								flexDirection: "row",
-								justifyContent: "space-between",
-								alignItems: "center",
 							}}
 						>
-							<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600, flex: 0.7 }}>
-								Agregar Tarea
-							</Typography>
-							<Stack direction="row" spacing={1} sx={{ flex: 0.3 }}>
-								{folderNameLines.map((line, index) => (
-									<Typography
-										key={index}
-										color="textSecondary"
-										variant="subtitle2"
-										sx={{
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											whiteSpace: "nowrap",
-										}}
-									>
-										{line}
-									</Typography>
-								))}
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography
+									variant="h5"
+									sx={{
+										color: theme.palette.primary.main,
+										fontWeight: 600,
+									}}
+								>
+									Agregar Tarea
+								</Typography>
+								<Typography
+									color="textSecondary"
+									variant="subtitle2"
+									sx={{
+										maxWidth: "30%",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+									}}
+								>
+									Carpeta: {folderName}
+								</Typography>
 							</Stack>
 						</DialogTitle>
 
