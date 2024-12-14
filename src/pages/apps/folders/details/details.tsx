@@ -293,9 +293,8 @@ const Details = () => {
 	const [isColumn, setIsColumn] = useState(false);
 	const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-	// Optimized selectors with specific state slices
-	const folder = useSelector((state: StateType) => state.folder.folder);
-	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
+	const { folder, isLoader } = useSelector((state: StateType) => state.folder);
+
 	const selectedContacts = useSelector((state: StateType) => state.contacts.selectedContacts);
 	const contactsLoading = useSelector((state: StateType) => state.contacts.isLoader);
 	const contacts = useSelector((state: StateType) => state.contacts.contacts);

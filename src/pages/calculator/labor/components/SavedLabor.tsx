@@ -707,8 +707,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 const SavedLabor = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const calculatorData = useSelector((state: any) => state.calculator.selectedCalculators);
+	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 
@@ -722,7 +721,6 @@ const SavedLabor = () => {
 
 	useEffect(() => {
 		const fetchData = async () => {
-			setIsLoading(true);
 			await dispatch(
 				getCalculatorsByFilter({
 					userId,
@@ -730,7 +728,6 @@ const SavedLabor = () => {
 					classType: "laboral",
 				}),
 			);
-			setIsLoading(false);
 		};
 		fetchData();
 	}, [dispatch]);
@@ -943,10 +940,10 @@ const SavedLabor = () => {
 			<ScrollX>
 				<ReactTable
 					columns={columns}
-					data={calculatorData}
+					data={selectedCalculators}
 					handleAdd={handleAdd}
 					renderRowSubComponent={renderRowSubComponent}
-					isLoading={isLoading}
+					isLoading={isLoader}
 				/>
 			</ScrollX>
 			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { SearchNormal1 } from "iconsax-react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import {
 	Box,
 	Button,
@@ -20,9 +20,10 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { getCalculatorsByUserId } from "store/reducers/calculator";
-import { RootState, AppDispatch } from "store";
+import { RootState, dispatch } from "store";
 import { Add } from "iconsax-react";
 import { useNavigate, useParams } from "react-router";
+
 //types
 import { CalcModalType, Calculator, CalcFormProps } from "types/calculator";
 
@@ -32,12 +33,11 @@ const NoCalculatorsFound = () => {
 	const open = Boolean(anchorEl);
 	const navigate = useNavigate();
 	const { id } = useParams();
-	console.log(id);
+
 	const calculatorTypes = [
 		{ name: "Cálculo Laboral", path: `/apps/calc/labor?folder=${id}` },
 		{ name: "Cálculo Civil", path: `/apps/calc/civil?folder=${id}` },
 		{ name: "Cálculo de Intereses", path: `/apps/calc/intereses?folder=${id}` },
-		// Agregar más tipos según sea necesario
 	];
 
 	const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -219,7 +219,6 @@ const CalcForm = ({ handlerAddress, searchTerm, selectedCalculators }: CalcFormP
 
 const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcModalType) => {
 	const theme = useTheme();
-	const dispatch = useDispatch<AppDispatch>();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedCalculators, setSelectedCalculators] = useState<Calculator[]>([]);
 

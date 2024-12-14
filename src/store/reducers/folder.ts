@@ -5,6 +5,7 @@ import { Dispatch } from "redux";
 import { FolderData, FolderState } from "types/folder";
 
 // Action types
+const SET_LOADING = "SET_LOADING";
 const ADD_FOLDER = "ADD_FOLDER";
 const GET_FOLDERS_BY_USER = "GET_FOLDERS_BY_USER";
 const GET_FOLDERS_BY_GROUP = "GET_FOLDERS_BY_GROUP";
@@ -24,37 +25,45 @@ const initialFolderState: FolderState = {
 // Reducer
 const folder = (state = initialFolderState, action: any) => {
 	switch (action.type) {
+		case SET_LOADING:
+			return { ...state, isLoader: true, error: null };
 		case ADD_FOLDER:
 			return {
 				...state,
 				folders: [...state.folders, action.payload],
+				isLoader: false,
 			};
 		case GET_FOLDERS_BY_USER:
 		case GET_FOLDERS_BY_GROUP:
 			return {
 				...state,
 				folders: action.payload,
+				isLoader: false,
 			};
 		case GET_FOLDER_BY_ID:
 			return {
 				...state,
 				folder: action.payload,
+				isLoader: false,
 			};
 		case DELETE_FOLDER:
 			return {
 				...state,
 				folders: state.folders.filter((folder: FolderData) => folder._id !== action.payload),
+				isLoader: false,
 			};
 		case UPDATE_FOLDER:
 			return {
 				...state,
 				folder: action.payload,
 				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+				isLoader: false,
 			};
 		case SET_FOLDER_ERROR:
 			return {
 				...state,
 				error: action.payload,
+				isLoader: false,
 			};
 		default:
 			return state;
@@ -65,6 +74,7 @@ const folder = (state = initialFolderState, action: any) => {
 
 export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) => {
 	try {
+		dispatch({ type: SET_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/folders`, folderData);
 		if (response.data.success) {
 			dispatch({
@@ -82,8 +92,8 @@ export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) 
 
 export const getFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
+		dispatch({ type: SET_LOADING });
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`);
-		console.log(response);
 		if (response.data.success) {
 			dispatch({
 				type: GET_FOLDERS_BY_USER,
@@ -100,6 +110,7 @@ export const getFoldersByUserId = (userId: string) => async (dispatch: Dispatch)
 
 export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
+		dispatch({ type: SET_LOADING });
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/group/${groupId}`);
 		if (response.data.success) {
 			dispatch({
@@ -117,6 +128,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 
 export const getFolderById = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
+		dispatch({ type: SET_LOADING });
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
 		if (response.data.success) {
 			dispatch({
@@ -134,6 +146,7 @@ export const getFolderById = (folderId: string) => async (dispatch: Dispatch) =>
 
 export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
+		dispatch({ type: SET_LOADING });
 		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
 		if (response.data.success) {
 			dispatch({
@@ -151,6 +164,7 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 
 export const updateFolderById = (folderId: string, updatedData: Partial<FolderData>) => async (dispatch: Dispatch) => {
 	try {
+		dispatch({ type: SET_LOADING });
 		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`, updatedData);
 		if (response.data.success) {
 			dispatch({

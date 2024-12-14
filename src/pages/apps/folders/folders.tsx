@@ -2,7 +2,20 @@ import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } f
 import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
-import { Button, Chip, Dialog, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, useMediaQuery } from "@mui/material";
+import {
+	Button,
+	Chip,
+	Dialog,
+	Stack,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableRow,
+	Tooltip,
+	useMediaQuery,
+	Skeleton,
+} from "@mui/material";
 
 import {
 	useFilters,
@@ -56,9 +69,10 @@ interface Props {
 	data: Folder[];
 	handleAdd: () => void;
 	renderRowSubComponent: FC<any>;
+	isLoading: boolean;
 }
 
-function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) {
+function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -153,39 +167,61 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 						))}
 					</TableHead>
 					<TableBody {...getTableBodyProps()}>
-						{data.length > 0 ? (
+						{isLoading ? (
 							<>
-								{page.map((row: Row, i: number) => {
-									prepareRow(row);
-									const rowProps = row.getRowProps();
-									return (
-										<Fragment key={i}>
-											<TableRow
-												{...row.getRowProps()}
-												onClick={() => {
-													row.toggleRowSelected();
-												}}
-												sx={{
-													cursor: "pointer",
-													bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
-												}}
-											>
-												{row.cells.map((cell: Cell) => (
-													<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
-												))}
-											</TableRow>
-											{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
-										</Fragment>
-									);
-								})}
-								<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-									<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-										<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
-									</TableCell>
-								</TableRow>
+								{Array.from({ length: 10 }).map((_, rowIndex) => (
+									<TableRow key={rowIndex}>
+										{headerGroups[0].headers.map((column, cellIndex) => (
+											<TableCell key={cellIndex}>
+												<Skeleton />
+											</TableCell>
+										))}
+									</TableRow>
+								))}
 							</>
 						) : (
-							<EmptyTable msg="No Hay Datos" colSpan={7} />
+							<>
+								{data.length > 0 ? (
+									<>
+										{page.map((row: Row, i: number) => {
+											prepareRow(row);
+											const rowProps = row.getRowProps();
+											return (
+												<Fragment key={i}>
+													<TableRow
+														{...row.getRowProps()}
+														onClick={() => {
+															row.toggleRowSelected();
+														}}
+														sx={{
+															cursor: "pointer",
+															bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
+														}}
+													>
+														{row.cells.map((cell: Cell) => (
+															<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
+														))}
+													</TableRow>
+													{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
+												</Fragment>
+											);
+										})}
+										<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
+											<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
+												<TablePagination
+													gotoPage={gotoPage}
+													rows={rows}
+													setPageSize={setPageSize}
+													pageSize={pageSize}
+													pageIndex={pageIndex}
+												/>
+											</TableCell>
+										</TableRow>
+									</>
+								) : (
+									<EmptyTable msg="No Hay Datos" colSpan={7} />
+								)}
+							</>
 						)}
 					</TableBody>
 				</Table>
@@ -194,7 +230,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd }: Props) 
 	);
 }
 
-// ==============================|| CUSTOMER - LIST ||============================== //
+// ==============================|| FOLDER - LIST ||============================== //
 
 const FoldersLayout = () => {
 	const theme = useTheme();
@@ -230,7 +266,7 @@ const FoldersLayout = () => {
 
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
-	const folders = useSelector((state) => state.folder.folders);
+	const { folders, isLoader } = useSelector((state) => state.folder);
 
 	const fetchFolders = useCallback(async () => {
 		if (userId) {
@@ -240,18 +276,10 @@ const FoldersLayout = () => {
 				console.error(error);
 			}
 		}
-	}, [userId]);
+	}, [userId, dispatch]);
 
 	useEffect(() => {
-		let mounted = true;
-
-		if (mounted) {
-			fetchFolders();
-		}
-
-		return () => {
-			mounted = false;
-		};
+		fetchFolders();
 	}, [fetchFolders]);
 
 	const navigate = useNavigate();
@@ -428,11 +456,11 @@ const FoldersLayout = () => {
 	);
 
 	const renderRowSubComponent = useCallback(
-		({ row }: { row: Row<{}> }) => {
-			const folderData = folders[Number(row.id)];
+		({ row }: { row: Row<Folder> }) => {
+			const folderData = folders.find((f: any) => f._id === row.original._id);
 			return folderData ? <FolderView data={folderData} /> : null;
 		},
-		[folder],
+		[folders],
 	);
 
 	const renderAddFolder = useMemo(() => {
@@ -455,7 +483,13 @@ const FoldersLayout = () => {
 	return (
 		<MainCard content={false}>
 			<ScrollX>
-				<ReactTable columns={columns} data={folders} handleAdd={handleAddFolder} renderRowSubComponent={renderRowSubComponent} />
+				<ReactTable
+					columns={columns}
+					data={folders}
+					handleAdd={handleAddFolder}
+					renderRowSubComponent={renderRowSubComponent}
+					isLoading={isLoader}
+				/>
 			</ScrollX>
 			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} />
 			{/* add folder dialog */}

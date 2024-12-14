@@ -53,6 +53,7 @@ const calculatorsReducer = (state = initialState, action: any) => {
 			return {
 				...state,
 				calculators: state.calculators.filter((calc) => calc._id !== action.payload),
+				selectedCalculators: state.selectedCalculators.filter((calc) => calc._id !== action.payload),
 				isLoader: false,
 			};
 		default:
@@ -117,7 +118,7 @@ export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: D
 		dispatch({ type: SET_LOADING });
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/folder/${folderId}`);
 		dispatch({
-			type: SET_CALCULATORS,
+			type: SET_SELECTED_CALCULATORS,
 			payload: response.data.calculators,
 		});
 		return { success: true };

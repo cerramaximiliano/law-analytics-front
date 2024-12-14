@@ -46,15 +46,15 @@ const LoadingContent = ({ isLoader, content, skeleton }: LoadingContentProps): J
 const CalcTable = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
-	const { calculators, isLoader } = useSelector((state) => state.calculator);
+	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
 	const [latestOfferedAmount, setLatestOfferedAmount] = useState<number | null>(null);
 
 	const sortedData = useMemo(
 		() =>
-			calculators.slice().sort((a: CalculatorType, b: CalculatorType) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
-		[calculators],
+			selectedCalculators.slice().sort((a: CalculatorType, b: CalculatorType) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
+		[selectedCalculators],
 	);
 
 	useEffect(() => {
