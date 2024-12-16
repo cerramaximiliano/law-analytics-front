@@ -282,7 +282,7 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 							}}
 						>
 							<Button
-								color="inherit"
+								color="error"
 								onClick={handleClose}
 								sx={{
 									color: theme.palette.text.secondary,

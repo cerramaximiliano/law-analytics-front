@@ -373,7 +373,7 @@ const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcM
 
 			<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
 				<Button
-					color="inherit"
+					color="error"
 					onClick={closeModal}
 					sx={{
 						color: theme.palette.text.secondary,
