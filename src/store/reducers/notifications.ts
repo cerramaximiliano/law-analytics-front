@@ -9,12 +9,12 @@ const initialState: NotificationsState = {
 	error: null,
 };
 
-const SET_LOADING = "SET_LOADING";
-const SET_ERROR = "SET_ERROR";
-const ADD_NOTIFICATION = "ADD_NOTIFICATION";
-const SET_NOTIFICATIONS = "SET_NOTIFICATIONS";
-const UPDATE_NOTIFICATION = "UPDATE_NOTIFICATION";
-const DELETE_NOTIFICATION = "DELETE_NOTIFICATION";
+const SET_LOADING = "notifications/SET_LOADING";
+const SET_ERROR = "notifications/SET_ERROR";
+const ADD_NOTIFICATION = "notifications/ADD_NOTIFICATION";
+const SET_NOTIFICATIONS = "notifications/SET_NOTIFICATIONS";
+const UPDATE_NOTIFICATION = "notifications/UPDATE_NOTIFICATION";
+const DELETE_NOTIFICATION = "notifications/DELETE_NOTIFICATION";
 
 const notificationsReducer = (state = initialState, action: Action): NotificationsState => {
 	switch (action.type) {
@@ -105,7 +105,6 @@ export const getNotificationsByGroupId = (groupId: string) => async (dispatch: D
 		return { success: false, error: errorMessage };
 	}
 };
-
 
 export const getNotificationsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
 	try {

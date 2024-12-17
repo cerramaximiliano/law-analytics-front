@@ -2,13 +2,13 @@ import axios from "axios";
 import { Dispatch } from "redux";
 import { Movement, MovementState } from "types/movements";
 
-export const GET_MOVEMENTS_BY_FOLDER = "GET_MOVEMENTS_BY_FOLDER";
-export const GET_MOVEMENTS = "GET_MOVEMENTS";
-export const UPDATE_MOVEMENT = "UPDATE_MOVEMENT";
-export const DELETE_MOVEMENT = "DELETE_MOVEMENT";
-export const SET_MOVEMENT_ERROR = "SET_MOVEMENT_ERROR";
-export const SET_LOADING = "SET_LOADING";
-export const ADD_MOVEMENT = "ADD_MOVEMENT";
+export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
+export const GET_MOVEMENTS = "movements/GET_MOVEMENTS";
+export const UPDATE_MOVEMENT = "movements/UPDATE_MOVEMENT";
+export const DELETE_MOVEMENT = "movements/DELETE_MOVEMENT";
+export const SET_MOVEMENT_ERROR = "movements/SET_MOVEMENT_ERROR";
+export const SET_LOADING = "movements/SET_LOADING";
+export const ADD_MOVEMENT = "movements/ADD_MOVEMENT";
 
 const initialMovementState: MovementState = {
 	movements: [],

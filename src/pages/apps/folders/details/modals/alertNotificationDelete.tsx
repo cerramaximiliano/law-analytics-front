@@ -79,7 +79,7 @@ export default function AlertNotificationDelete({ title, open, handleClose, id }
 									"{title}"{" "}
 								</Typography>
 							) : (
-								false
+								" "
 							)}
 							no podrás luego recuperar sus datos.
 						</Typography>

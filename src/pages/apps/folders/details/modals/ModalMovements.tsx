@@ -3,7 +3,7 @@ import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import * as Yup from "yup";
-import { Formik } from "formik";
+import { Formik, Form } from "formik";
 import { Link1, TableDocument } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { addMovement, updateMovement } from "store/reducers/movements";
@@ -98,218 +98,221 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 		closeTaskModal();
 		actions.resetForm();
 	}
+	const customInputStyles = {
+		"& .MuiInputBase-root": {
+			height: 39.91,
+		},
+		"& .MuiInputBase-input": {
+			fontSize: 12,
+		},
+		"& input::placeholder": {
+			color: "#000000",
+			opacity: 0.6,
+		},
+	};
 
 	return (
-		<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
-			{({ isSubmitting, resetForm }) => {
-				const handleClose = () => {
-					closeTaskModal();
-					resetForm();
-				};
-
-				return (
-					<Dialog
-						maxWidth="sm"
-						open={open}
-						onClose={handleClose}
-						PaperProps={{
-							sx: {
-								width: "600px",
-								maxWidth: "600px",
-								p: 0,
-								borderRadius: 2,
-								boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
-							},
-						}}
-						sx={{
-							"& .MuiBackdrop-root": { opacity: "0.5 !important" },
-						}}
-					>
-						<DialogTitle
-							sx={{
-								bgcolor: theme.palette.primary.lighter,
-								p: 3,
-								borderBottom: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							<Stack direction="row" justifyContent="space-between" alignItems="center">
-								<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-									{editMode ? "Editar Movimiento" : "Agregar Movimiento"}
-								</Typography>
-								<Typography
-									color="textSecondary"
-									variant="subtitle2"
+		<>
+			<Dialog
+				maxWidth="sm"
+				open={open}
+				PaperProps={{
+					sx: {
+						width: "600px",
+						maxWidth: "600px",
+						p: 0,
+						borderRadius: 2,
+						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+					},
+				}}
+				sx={{
+					"& .MuiBackdrop-root": {
+						opacity: "0.5 !important",
+					},
+				}}
+			>
+				<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
+					{({ isSubmitting, resetForm }) => (
+						<Form autoComplete="off" noValidate>
+							<>
+								<DialogTitle
 									sx={{
-										maxWidth: "30%",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										whiteSpace: "nowrap",
+										bgcolor: theme.palette.primary.lighter,
+										p: 3,
+										borderBottom: `1px solid ${theme.palette.divider}`,
 									}}
 								>
-									Carpeta: {folderName}
-								</Typography>
-							</Stack>
-						</DialogTitle>
+									<Stack direction="row" justifyContent="space-between" alignItems="center">
+										<Typography
+											variant="h5"
+											sx={{
+												color: theme.palette.primary.main,
+												fontWeight: 600,
+											}}
+										>
+											{editMode ? "Editar Movimiento" : "Agregar Movimiento"}
+										</Typography>
+										<Typography
+											color="textSecondary"
+											variant="subtitle2"
+											sx={{
+												maxWidth: "30%",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+											}}
+										>
+											Carpeta: {folderName}
+										</Typography>
+									</Stack>
+								</DialogTitle>
 
-						<Divider />
+								<Divider />
 
-						<DialogContent
-							sx={{
-								p: 3,
-								display: "flex",
-								flexDirection: "column",
-								gap: 3,
-							}}
-						>
-							<InputField
-								fullWidth
-								label="Título del Movimiento"
-								id="title"
-								placeholder="Identifique un movimiento"
-								name="title"
-								startAdornment={<TableDocument />}
-								customInputStyles={{
-									"& .MuiInputBase-root": {
-										height: 39.91,
-									},
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& input::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-							<SelectField
-								required={true}
-								label="Tipo"
-								data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
-								name="movement"
-								style={{
-									maxHeight: "39.91px",
-									"& .MuiInputBase-root": {
-										height: "39.91px",
-										fontSize: 12,
-									},
-									"& .MuiSelect-select": {
-										fontSize: 12,
-									},
-									"& .MuiInputLabel-root": {
-										fontSize: 12,
-									},
-								}}
-							/>
-							<DateInputField
-								name="time"
-								label="Fecha"
-								customInputStyles={{
-									"& .MuiInputBase-root": {
-										height: 39.91,
-									},
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& input::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-							<DateInputField
-								name="dateExpiration"
-								label="Vencimiento"
-								customInputStyles={{
-									"& .MuiInputBase-root": {
-										height: 39.91,
-									},
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& input::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-							<InputField
-								fullWidth
-								label="Link"
-								id="link"
-								placeholder="Añada un link"
-								name="link"
-								startAdornment={<Link1 />}
-								customInputStyles={{
-									"& .MuiInputBase-root": {
-										height: 39.91,
-									},
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& input::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-							<InputField
-								fullWidth
-								label="Descripción"
-								id="description"
-								multiline
-								rows={2}
-								placeholder="Ingrese una descripción"
-								name="description"
-								customInputStyles={{
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& textarea::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-						</DialogContent>
+								<DialogContent
+									sx={{
+										p: 3,
+										display: "flex",
+										flexDirection: "column",
+										gap: 3,
+									}}
+								>
+									<InputField
+										fullWidth
+										placeholder="Título del Movimiento"
+										id="title"
+										name="title"
+										startAdornment={<TableDocument />}
+										sx={customInputStyles}
+									/>
 
-						<Divider />
+									<SelectField
+										required={true}
+										label="Tipo"
+										data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
+										name="movement"
+										style={{
+											maxHeight: "39.91px",
+											"& .MuiInputBase-root": {
+												height: "39.91px",
+												fontSize: 12,
+											},
+											"& .MuiSelect-select": {
+												fontSize: 12,
+											},
+											"& .MuiInputLabel-root": {
+												fontSize: 12,
+											},
+										}}
+									/>
 
-						<DialogActions
-							sx={{
-								p: 2.5,
-								bgcolor: theme.palette.background.default,
-								borderTop: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							<Button
-								color="error"
-								onClick={handleClose}
-								sx={{
-									color: theme.palette.text.secondary,
-									"&:hover": {
-										bgcolor: theme.palette.action.hover,
-									},
-								}}
-							>
-								Cancelar
-							</Button>
-							<Button
-								type="submit"
-								variant="contained"
-								disabled={isSubmitting}
-								sx={{
-									minWidth: 120,
-									py: 1.25,
-									fontWeight: 600,
-								}}
-							>
-								Guardar
-							</Button>
-						</DialogActions>
-					</Dialog>
-				);
-			}}
-		</Formik>
+									<DateInputField
+										name="time"
+										label="Fecha"
+										customInputStyles={{
+											"& .MuiInputBase-root": {
+												height: 39.91,
+											},
+											"& .MuiInputBase-input": {
+												fontSize: 12,
+											},
+											"& input::placeholder": {
+												color: "#000000",
+												opacity: 0.6,
+											},
+										}}
+									/>
+
+									<DateInputField
+										name="dateExpiration"
+										label="Vencimiento"
+										customInputStyles={{
+											"& .MuiInputBase-root": {
+												height: 39.91,
+											},
+											"& .MuiInputBase-input": {
+												fontSize: 12,
+											},
+											"& input::placeholder": {
+												color: "#000000",
+												opacity: 0.6,
+											},
+										}}
+									/>
+
+									<InputField
+										fullWidth
+										label="Link"
+										id="link"
+										placeholder="Añada un link"
+										name="link"
+										startAdornment={<Link1 />}
+										sx={customInputStyles}
+									/>
+
+									<InputField
+										fullWidth
+										label="Descripción"
+										id="description"
+										multiline
+										rows={2}
+										placeholder="Ingrese una descripción"
+										name="description"
+										customInputStyles={{
+											"& .MuiInputBase-input": {
+												fontSize: 12,
+											},
+											"& textarea::placeholder": {
+												color: "#000000",
+												opacity: 0.6,
+											},
+										}}
+									/>
+								</DialogContent>
+
+								<Divider />
+
+								<DialogActions
+									sx={{
+										p: 2.5,
+										bgcolor: theme.palette.background.default,
+										borderTop: `1px solid ${theme.palette.divider}`,
+									}}
+								>
+									<Button
+										color="error"
+										onClick={() => {
+											setOpen(false);
+											resetForm();
+										}}
+										sx={{
+											color: theme.palette.text.secondary,
+											"&:hover": {
+												bgcolor: theme.palette.action.hover,
+											},
+										}}
+									>
+										Cancelar
+									</Button>
+									<Button
+										type="submit"
+										variant="contained"
+										disabled={isSubmitting}
+										sx={{
+											minWidth: 120,
+											py: 1.25,
+											fontWeight: 600,
+										}}
+									>
+										Guardar
+									</Button>
+								</DialogActions>
+							</>
+						</Form>
+					)}
+				</Formik>
+			</Dialog>
+		</>
 	);
 };
 

@@ -79,7 +79,7 @@ export default function AlertMemberDelete({ title, open, handleClose, id }: Prop
 									"{title}"{" "}
 								</Typography>
 							) : (
-								false
+								" "
 							)}
 							no podrás luego recuperar sus datos.
 						</Typography>

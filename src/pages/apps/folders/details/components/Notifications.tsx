@@ -1,19 +1,21 @@
-//Notifications.tsx
+// Notifications.tsx
 import React, { useEffect, useState } from "react";
-import Typography from "@mui/material/Typography";
 import {
-	Timeline,
-	TimelineConnector,
-	TimelineContent,
-	TimelineDot,
-	TimelineItem,
-	TimelineOppositeContent,
-	TimelineSeparator,
-} from "@mui/lab";
-import { Stack, Skeleton, Grid, Button, IconButton, CardContent, Tooltip, Box } from "@mui/material";
+	Stack,
+	Skeleton,
+	Grid,
+	Button,
+	IconButton,
+	CardContent,
+	Tooltip,
+	Box,
+	Typography,
+	Paper,
+	Chip, // Agregar esta importación
+} from "@mui/material";
 import Avatar from "components/@extended/Avatar";
 import MainCard from "components/MainCard";
-import { Add, Notification1, SmsNotification, NotificationStatus, Edit, Trash, ArrowUp, ArrowDown } from "iconsax-react";
+import { Add, Notification1, SmsNotification, NotificationStatus, Edit, Trash, ArrowUp, ArrowDown, Calendar } from "iconsax-react";
 import ModalNotifications from "../modals/ModalNotifications";
 import { useParams } from "react-router";
 import SimpleBar from "components/third-party/SimpleBar";
@@ -22,94 +24,89 @@ import { dispatch, useSelector } from "store";
 import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { NotificationType } from "types/notifications";
 import AlertNotificationDelete from "../modals/alertNotificationDelete";
+import { useTheme } from "@mui/material/styles";
 
 interface NotificationsProps {
 	title: string;
 	folderName?: string;
 }
 
-const getIconAndColor = (notification: string, user: string) => {
-	let icon, iconColor;
-
+const getIconAndColor = (
+	notification: string,
+	user: string,
+): { icon: React.ReactElement; color: "error" | "default" | "primary" | "secondary" | "info" | "success" | "warning" } => {
 	switch (notification) {
 		case "Carta Documento":
 		case "Telegrama":
-			icon = <SmsNotification />;
-			iconColor = user === "Actora" ? "success" : user === "Demandada" ? "error" : "default";
-			break;
+			return {
+				icon: <SmsNotification />,
+				color: user === "Actora" ? "success" : user === "Demandada" ? "error" : "default",
+			};
 		case "Cédula":
-			icon = <Notification1 />;
-			iconColor = "primary";
-			break;
+			return {
+				icon: <Notification1 />,
+				color: "primary",
+			};
 		case "Notarial":
-			icon = <NotificationStatus />;
-			iconColor = "warning";
-			break;
+			return {
+				icon: <NotificationStatus />,
+				color: "warning",
+			};
 		default:
-			icon = <Notification1 />;
-			iconColor = "secondary";
+			return {
+				icon: <Notification1 />,
+				color: "secondary",
+			};
 	}
-
-	return { icon, iconColor };
 };
-
 const EmptyState = () => (
-	<Stack
-		spacing={2}
-		alignItems="center"
-		justifyContent="center"
-		py={4}
-		sx={{
-			height: "100%",
-			minHeight: 250, // Para mantener consistencia con el contenedor normal
-			width: "100%",
-			textAlign: "center",
-		}}
-	>
-		<Avatar
-			color="error"
-			variant="rounded"
-			sx={{
-				width: 64,
-				height: 64,
-				bgcolor: "error.lighter",
-			}}
-		>
-			<Notification1 variant="Bold" size={32} />
-		</Avatar>
-		<Typography variant="subtitle1" color="textSecondary" align="center">
-			No hay notificaciones registradas
-		</Typography>
-		<Typography
-			variant="body2"
-			color="textSecondary"
-			align="center"
-			sx={{ maxWidth: "80%" }} // Para asegurar que el texto largo se mantenga centrado
-		>
-			Comienza agregando una nueva notificación usando el botón +
-		</Typography>
-	</Stack>
+	<Paper elevation={0} sx={{ p: 4, textAlign: "center", bgcolor: "transparent" }}>
+		<Stack spacing={3} alignItems="center">
+			<Avatar
+				color="error"
+				variant="rounded"
+				sx={{
+					width: 80,
+					height: 80,
+					bgcolor: "error.lighter",
+					transition: "transform 0.3s ease-in-out",
+					"&:hover": {
+						transform: "scale(1.1)",
+					},
+				}}
+			>
+				<Notification1 variant="Bulk" size={40} />
+			</Avatar>
+			<Box>
+				<Typography variant="h5" gutterBottom>
+					No hay notificaciones registradas
+				</Typography>
+				<Typography variant="body2" color="textSecondary">
+					Comienza agregando una nueva notificación usando el botón +
+				</Typography>
+			</Box>
+		</Stack>
+	</Paper>
 );
-const LoaderComponent = () => (
-	<Stack direction={"row"}>
-		<Grid>
-			<Skeleton width={80} />
-			<Skeleton width={80} />
-			<Skeleton width={80} />
-		</Grid>
-		<Grid>
-			<Skeleton variant="rectangular" width={32} height={32} style={{ marginTop: 20, marginLeft: 10, marginRight: 10 }} />
-		</Grid>
-		<Grid>
-			<Skeleton width={80} />
-			<Skeleton width={80} />
-			<Skeleton width={80} />
-		</Grid>
-	</Stack>
+
+const NotificationSkeleton = () => (
+	<Paper elevation={0} sx={{ p: 2, mb: 2 }}>
+		<Stack direction="row" spacing={3} alignItems="flex-start">
+			<Stack spacing={1} alignItems="center" width={100}>
+				<Skeleton width={70} height={20} />
+				<Skeleton variant="circular" width={48} height={48} />
+			</Stack>
+			<Stack spacing={1.5} flex={1}>
+				<Skeleton variant="text" width="70%" height={28} />
+				<Skeleton variant="text" width="90%" height={20} />
+				<Skeleton variant="rounded" width="40%" height={32} />
+			</Stack>
+		</Stack>
+	</Paper>
 );
 
 const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
-
+	const theme = useTheme();
 	const [open, setOpen] = useState(false);
 	const [openDeleteModal, setOpenDeleteModal] = useState(false);
 	const [editNotification, setEditNotification] = useState<NotificationType | null>(null);
@@ -121,19 +118,16 @@ const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
 	const { id } = useParams();
 	const notificationsData = useSelector((state: any) => state.notifications);
 
-	console.log(notificationsData);
-
 	const handleCloseModal = () => {
 		setOpen(false);
 		setEditNotification(null);
 	};
 
 	const handleOpen = () => {
-		if (notificationsData.isLoader) {
-			return;
+		if (!notificationsData.isLoader) {
+			setEditNotification(null);
+			setOpen(true);
 		}
-		setEditNotification(null); // Reiniciamos el estado de edición
-		setOpen(true);
 	};
 
 	const handleEditClick = (notification: NotificationType) => {
@@ -143,6 +137,11 @@ const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
 
 	const handleNotificationSelect = (notificationId: string) => {
 		setSelectedNotificationId((currentId) => (currentId === notificationId ? null : notificationId));
+	};
+
+	const toggleShowAll = () => {
+		setShowAll((prev) => !prev);
+		setContainerHeight((prev) => (prev === 250 ? notificationsData.notifications.length * 110 : 250));
 	};
 
 	useEffect(() => {
@@ -155,79 +154,191 @@ const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
 		setSelectedNotificationId(null);
 	}, [notificationsData.notifications]);
 
-	const toggleShowAll = () => {
-		setShowAll((prev) => !prev);
-		setContainerHeight((prev) => (prev === 250 ? notificationsData.notifications.length * 110 : 250));
-	};
-
 	const displayedNotifications = showAll ? notificationsData.notifications : notificationsData.notifications.slice(0, 2);
 
+	const NotificationItem = ({ notification, isFirst }: { notification: NotificationType; isFirst: boolean }) => {
+		const { icon, color } = getIconAndColor(notification.notification || "", notification.user || "");
+		const isSelected = selectedNotificationId === notification._id;
+
+		return (
+			<Grid item xs={12}>
+				<Paper
+					elevation={isSelected ? 2 : 0}
+					onClick={() => handleNotificationSelect(notification._id!)}
+					sx={{
+						p: 2.5,
+						transition: "all 0.3s ease-in-out",
+						cursor: "pointer",
+						position: "relative",
+						bgcolor: isSelected ? "primary.lighter" : "background.paper",
+						borderLeft: `4px solid ${isSelected ? theme.palette.primary.main : "transparent"}`,
+						"&:hover": {
+							bgcolor: isSelected ? "primary.lighter" : "action.hover",
+							transform: "translateX(4px)",
+							boxShadow: theme.shadows[2],
+						},
+					}}
+				>
+					<Grid container spacing={3}>
+						<Grid item>
+							<Stack spacing={1} alignItems="center">
+								<Typography
+									variant="caption"
+									color="secondary"
+									sx={{
+										fontWeight: 500,
+										bgcolor: "secondary.lighter",
+										px: 1.5,
+										py: 0.5,
+										borderRadius: 1,
+										whiteSpace: "nowrap",
+									}}
+								>
+									{notification.time}
+								</Typography>
+								<Avatar
+									color={color}
+									sx={{
+										width: 48,
+										height: 48,
+										bgcolor: `${color}.lighter`,
+										transition: "transform 0.2s ease",
+										"&:hover": {
+											transform: "scale(1.1)",
+										},
+									}}
+								>
+									<Tooltip title={`${notification.notification}/${notification.user}`}>{icon}</Tooltip>
+								</Avatar>
+							</Stack>
+						</Grid>
+						<Grid item xs>
+							<Stack spacing={1.5}>
+								<Typography
+									variant="h6"
+									sx={{
+										fontSize: "1.1rem",
+										fontWeight: isSelected ? 600 : 500,
+									}}
+								>
+									{notification.title}
+								</Typography>
+								{notification.description && (
+									<Typography
+										color="textSecondary"
+										sx={{
+											fontSize: "0.95rem",
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+										}}
+									>
+										{notification.description}
+									</Typography>
+								)}
+								{notification.dateExpiration && (
+									<Stack direction="row" spacing={2} alignItems="center">
+										<Chip
+											icon={<Calendar variant="Bold" size={16} />}
+											label={`Vence: ${notification.dateExpiration}`}
+											color="warning"
+											variant="outlined"
+											size="small"
+											sx={{
+												borderRadius: 1,
+												"& .MuiChip-label": {
+													px: 1,
+													fontSize: "0.85rem",
+												},
+											}}
+										/>
+									</Stack>
+								)}
+							</Stack>
+						</Grid>
+					</Grid>
+				</Paper>
+			</Grid>
+		);
+	};
+
 	const FooterActions = () => (
-		<Box
+		<Paper
+			elevation={0}
 			sx={{
-				mt: 2,
+				mt: 3,
 				pt: 2,
-				borderTop: 1,
-				borderColor: "divider",
-				display: "flex",
-				alignItems: "center",
-				gap: 2,
+				px: 2,
+				pb: 2,
+				borderTop: `1px solid ${theme.palette.divider}`,
+				bgcolor: "background.default",
+				borderBottomLeftRadius: theme.shape.borderRadius,
+				borderBottomRightRadius: theme.shape.borderRadius,
 			}}
 		>
-			<Button
-				variant="outlined"
-				color="secondary"
-				onClick={toggleShowAll}
-				endIcon={showAll ? <ArrowUp /> : <ArrowDown />}
-				sx={{
-					flexGrow: 1,
-					"&:hover": {
-						bgcolor: "secondary.lighter",
-					},
-				}}
-			>
-				{showAll ? "Mostrar menos" : `Ver todos (${notificationsData.notifications.length})`}
-			</Button>
+			<Stack direction="row" spacing={2} alignItems="center">
+				<Button
+					variant="outlined"
+					color="secondary"
+					onClick={toggleShowAll}
+					endIcon={showAll ? <ArrowUp /> : <ArrowDown />}
+					sx={{
+						flexGrow: 1,
+						py: 1,
+						fontWeight: 500,
+						borderWidth: 1.5,
+						"&:hover": {
+							borderWidth: 1.5,
+							bgcolor: "secondary.lighter",
+						},
+					}}
+				>
+					{showAll ? "Mostrar menos" : `Ver todos (${notificationsData.notifications.length})`}
+				</Button>
 
-			<Tooltip title={selectedNotificationId ? "Editar notificación" : "Seleccione una notificación para editar"}>
-				<span>
-					<IconButton
-						color="primary"
-						disabled={!selectedNotificationId}
-						size="small"
-						onClick={() => {
-							const notification = notificationsData.notifications.find((n: NotificationType) => n._id === selectedNotificationId);
-							if (notification) handleEditClick(notification);
-						}}
-						sx={{
-							"&:hover": {
-								bgcolor: "primary.lighter",
-							},
-						}}
-					>
-						<Edit variant="Bulk" />
-					</IconButton>
-				</span>
-			</Tooltip>
+				<Tooltip title={selectedNotificationId ? "Editar notificación" : "Seleccione una notificación para editar"}>
+					<span>
+						<IconButton
+							color="primary"
+							disabled={!selectedNotificationId}
+							size="medium"
+							onClick={() => {
+								const notification = notificationsData.notifications.find((n: NotificationType) => n._id === selectedNotificationId);
+								if (notification) handleEditClick(notification);
+							}}
+							sx={{
+								border: `1.5px solid ${theme.palette.primary.main}`,
+								"&:hover": {
+									bgcolor: "primary.lighter",
+								},
+							}}
+						>
+							<Edit variant="Bulk" size={20} />
+						</IconButton>
+					</span>
+				</Tooltip>
 
-			<Tooltip title={selectedNotificationId ? "Eliminar notificación" : "Seleccione una notificación para eliminar"}>
-				<span>
-					<IconButton
-						color="error"
-						disabled={!selectedNotificationId}
-						size="small"
-						onClick={() => setOpenDeleteModal(true)}
-						sx={{
-							"&:hover": {
-								bgcolor: "error.lighter",
-							},
-						}}
-					>
-						<Trash variant="Bulk" />
-					</IconButton>
-				</span>
-			</Tooltip>
-		</Box>
+				<Tooltip title={selectedNotificationId ? "Eliminar notificación" : "Seleccione una notificación para eliminar"}>
+					<span>
+						<IconButton
+							color="error"
+							disabled={!selectedNotificationId}
+							size="medium"
+							onClick={() => setOpenDeleteModal(true)}
+							sx={{
+								border: `1.5px solid ${theme.palette.error.main}`,
+								"&:hover": {
+									bgcolor: "error.lighter",
+								},
+							}}
+						>
+							<Trash variant="Bulk" size={20} />
+						</IconButton>
+					</span>
+				</Tooltip>
+			</Stack>
+		</Paper>
 	);
 
 	return (
@@ -238,16 +349,31 @@ const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
 			secondary={
 				<Stack direction="row" spacing={1}>
 					<Tooltip title="Agregar notificación">
-						<IconButton onClick={handleOpen} disabled={notificationsData.isLoader}>
+						<IconButton
+							onClick={handleOpen}
+							disabled={notificationsData.isLoader}
+							color="primary"
+							sx={{
+								border: `1.5px solid ${theme.palette.primary.main}`,
+								"&:hover": {
+									bgcolor: "primary.lighter",
+								},
+							}}
+						>
 							<Add />
 						</IconButton>
 					</Tooltip>
 				</Stack>
 			}
+			sx={{
+				"& .MuiCardContent-root": {
+					p: 0,
+				},
+			}}
 		>
 			<ModalNotifications
 				open={open}
-				setOpen={handleCloseModal} // Usamos la nueva función
+				setOpen={handleCloseModal}
 				folderId={id}
 				editMode={!!editNotification}
 				notificationData={editNotification}
@@ -259,109 +385,33 @@ const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
 				handleClose={() => setOpenDeleteModal(false)}
 				id={selectedNotificationId}
 			/>
-			<CardContent>
+			<CardContent sx={{ p: 3 }}>
 				{notificationsData.isLoader ? (
 					<Stack spacing={3}>
-						<LoaderComponent />
-						<LoaderComponent />
+						<NotificationSkeleton />
+						<NotificationSkeleton />
 					</Stack>
 				) : notificationsData.notifications.length > 0 ? (
 					<>
 						<SimpleBar
 							sx={{
-								overflowX: "hidden",
 								height: `${containerHeight}px`,
 								transition: "height 0.3s ease-in-out",
-								overflowY: "auto",
+								pr: 2,
+								mr: -2,
 								"& .simplebar-track.simplebar-vertical": {
-									width: "8px",
+									width: 8,
 								},
 								"& .simplebar-scrollbar:before": {
-									background: "secondary.lighter",
+									background: theme.palette.secondary.lighter,
 								},
 							}}
 						>
-							<Timeline
-								position="alternate"
-								ref={parent}
-								sx={{
-									padding: "0px",
-									"& .MuiTimelineItem-root": { minHeight: 90 },
-									"& .MuiTimelineOppositeContent-root": { mt: 0.5 },
-									"& .MuiTimelineDot-root": {
-										borderRadius: 1.25,
-										boxShadow: "none",
-										margin: 0,
-										ml: 1.25,
-										mr: 1.25,
-										p: 1,
-										cursor: "pointer",
-										"&:hover": {
-											bgcolor: "action.hover",
-										},
-									},
-									"& .MuiTimelineContent-root": {
-										borderRadius: 1,
-										height: "100%",
-										cursor: "pointer",
-										transition: "all 0.3s ease-in-out",
-										"&:hover": {
-											transform: "translateX(4px)",
-										},
-									},
-									"& .MuiTimelineConnector-root": {
-										border: "1px dashed",
-										borderColor: "secondary.light",
-										bgcolor: "transparent",
-									},
-								}}
-							>
-								{displayedNotifications.map((event: NotificationType, index: number) => {
-									const { icon, iconColor } = getIconAndColor(event.notification || "", event.user || "");
-									const isSelected = selectedNotificationId === event._id;
-
-									return (
-										<TimelineItem key={event._id || index} onClick={() => handleNotificationSelect(event._id!)}>
-											<TimelineOppositeContent align="right" variant="caption" color="text.secondary" sx={{ padding: "0px" }}>
-												{event.time}
-											</TimelineOppositeContent>
-											<TimelineSeparator>
-												<Tooltip title={`${event.notification}/${event.user}`}>
-													<TimelineDot
-														sx={{
-															color: `${iconColor}.darker`,
-															bgcolor: isSelected ? `${iconColor}.main` : `${iconColor}.lighter`,
-														}}
-													>
-														{icon}
-													</TimelineDot>
-												</Tooltip>
-												<TimelineConnector />
-											</TimelineSeparator>
-											<TimelineContent
-												sx={{
-													padding: "5px",
-													marginBottom: "20px",
-													borderLeft: isSelected ? "4px solid" : "none",
-													borderColor: "primary.main",
-												}}
-											>
-												<Typography variant="subtitle1" component="span">
-													{event.title}
-												</Typography>
-												<Typography variant="body2" color="textSecondary">
-													{event.description}
-												</Typography>
-												{event.dateExpiration && (
-													<Typography variant="caption" color="warning.main" sx={{ display: "block", mt: 1 }}>
-														Vence: {event.dateExpiration}
-													</Typography>
-												)}
-											</TimelineContent>
-										</TimelineItem>
-									);
-								})}
-							</Timeline>
+							<Grid container spacing={2} ref={parent}>
+								{displayedNotifications.map((notification: NotificationType, index: number) => (
+									<NotificationItem key={notification._id || index} notification={notification} isFirst={index === 0} />
+								))}
+							</Grid>
 						</SimpleBar>
 						<FooterActions />
 					</>

@@ -1,20 +1,47 @@
-//Movements.tsx
+// Movements.tsx
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { dispatch, useSelector } from "store";
-import { Skeleton, Button, CardContent, Grid, IconButton, Link, Typography, Stack, Tooltip, Box, Chip, useTheme } from "@mui/material";
+import {
+	Skeleton,
+	Button,
+	CardContent,
+	Grid,
+	IconButton,
+	Link,
+	Typography,
+	Stack,
+	Tooltip,
+	Box,
+	Chip,
+	useTheme,
+	Paper,
+	Badge,
+} from "@mui/material";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import { ColorProps } from "types/extended";
-import { Add, TableDocument, DocumentText, Judge, NotificationStatus, Status, Link2, ArrowUp, ArrowDown, Edit, Trash } from "iconsax-react";
+import {
+	Add,
+	TableDocument,
+	DocumentText,
+	Judge,
+	NotificationStatus,
+	Status,
+	Link2,
+	ArrowUp,
+	ArrowDown,
+	Edit,
+	Trash,
+	Calendar,
+} from "iconsax-react";
 import ModalMovements from "../modals/ModalMovements";
 import { useEffect, useState } from "react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { getMovementsByFolderId } from "store/reducers/movements";
-import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { parse, format } from "date-fns";
 import AlertMemberDelete from "../modals/alertMemberDelete";
-
 import { Movement } from "types/movements";
 
 interface MovementsProps {
@@ -22,51 +49,69 @@ interface MovementsProps {
 	folderName?: string;
 }
 
+const parseDate = (dateString: string) => {
+	try {
+		return parse(dateString, "dd/MM/yyyy", new Date());
+	} catch (error) {
+		return new Date(0);
+	}
+};
+
 const formatDate = (dateString: string) => {
 	try {
-		const date = new Date(dateString);
-		return format(date, "d 'de' MMMM, yyyy", { locale: es });
+		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
+		return format(parsedDate, "dd/MM/yyyy", { locale: es });
 	} catch (error) {
 		return dateString;
 	}
 };
 
 const EmptyState = () => (
-	<Stack spacing={2} alignItems="center" py={4}>
-		<Avatar
-			color="error"
-			variant="rounded"
-			sx={{
-				width: 64,
-				height: 64,
-				bgcolor: "error.lighter",
-			}}
-		>
-			<TableDocument variant="Bold" size={32} />
-		</Avatar>
-		<Typography variant="subtitle1" color="textSecondary" align="center">
-			No hay movimientos registrados
-		</Typography>
-		<Typography variant="body2" color="textSecondary" align="center">
-			Comienza agregando un nuevo movimiento usando el botón +
-		</Typography>
-	</Stack>
+	<Paper elevation={0} sx={{ p: 4, textAlign: "center", bgcolor: "transparent" }}>
+		<Stack spacing={3} alignItems="center">
+			<Avatar
+				color="error"
+				variant="rounded"
+				sx={{
+					width: 80,
+					height: 80,
+					bgcolor: "error.lighter",
+					transition: "transform 0.3s ease-in-out",
+					"&:hover": {
+						transform: "scale(1.1)",
+					},
+				}}
+			>
+				<TableDocument variant="Bulk" size={40} />
+			</Avatar>
+			<Box>
+				<Typography variant="h5" gutterBottom>
+					No hay movimientos registrados
+				</Typography>
+				<Typography variant="body2" color="textSecondary">
+					Comienza agregando un nuevo movimiento usando el botón +
+				</Typography>
+			</Box>
+		</Stack>
+	</Paper>
 );
 
 const MovementsLoader = () => (
-	<Stack spacing={3} px={2}>
+	<Stack spacing={3} px={3}>
 		{[1, 2].map((item) => (
-			<Stack key={item} direction="row" spacing={2} alignItems="flex-start">
-				<Stack spacing={1} alignItems="center" width={100}>
-					<Skeleton width={60} height={16} />
-					<Skeleton variant="circular" width={40} height={40} />
+			<Paper key={item} elevation={0} sx={{ p: 2, bgcolor: "background.default" }}>
+				<Stack direction="row" spacing={3} alignItems="flex-start">
+					<Stack spacing={1} alignItems="center" width={100}>
+						<Skeleton width={70} height={20} />
+						<Skeleton variant="circular" width={48} height={48} />
+					</Stack>
+					<Stack spacing={1.5} flex={1}>
+						<Skeleton variant="text" width="70%" height={28} />
+						<Skeleton variant="text" width="90%" height={20} />
+						<Skeleton variant="rounded" width="40%" height={32} />
+					</Stack>
 				</Stack>
-				<Stack spacing={1} flex={1}>
-					<Skeleton variant="text" width="60%" height={24} />
-					<Skeleton variant="text" width="90%" height={16} />
-					<Skeleton variant="text" width="40%" height={16} />
-				</Stack>
-			</Stack>
+			</Paper>
 		))}
 	</Stack>
 );
@@ -74,15 +119,11 @@ const MovementsLoader = () => (
 const Movements = ({ title, folderName = "" }: MovementsProps) => {
 	const theme = useTheme();
 	const [open, setOpen] = useState<boolean>(false);
-
 	const [openModal, setOpenModal] = useState(false);
-
 	const [editMovement, setEditMovement] = useState<Movement | null>(null);
-
 	const [showAll, setShowAll] = useState(false);
 	const [containerHeight, setContainerHeight] = useState(250);
 	const [parent] = useAutoAnimate({ duration: 200 });
-
 	const [selectedMovementId, setSelectedMovementId] = useState<string | null>(null);
 	const { id } = useParams();
 	const movementsData = useSelector((state: any) => state.movements);
@@ -138,65 +179,99 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 		}
 	};
 
-	const displayedMovements = showAll ? movementsData.movements : movementsData.movements.slice(0, 2);
+	const sortedMovements = [...movementsData.movements].sort((a, b) => {
+		const dateA = parseDate(a.time);
+		const dateB = parseDate(b.time);
+		return dateB.getTime() - dateA.getTime();
+	});
+
+	const displayedMovements = showAll ? sortedMovements : sortedMovements.slice(0, 2);
 
 	const MovementItem = ({ message, isFirst, isLast }: any) => {
 		const { icon, color } = getIconAndColor(message.movement);
 		const isSelected = selectedMovementId === message._id;
+		const hasExpiration = !!message.dateExpiration;
+		const badgeColor = color === "inherit" ? "default" : color;
 
 		return (
 			<Grid item xs={12}>
-				<Box
+				<Paper
+					elevation={isSelected ? 2 : 0}
 					onClick={() => handleMovementSelect(message._id)}
 					sx={{
-						p: 2,
+						p: 2.5,
 						transition: "all 0.3s ease-in-out",
-						borderRadius: 1,
 						cursor: "pointer",
 						position: "relative",
-						bgcolor: isSelected ? "primary.lighter" : "transparent",
-						borderLeft: isSelected ? `4px solid ${theme.palette.primary.main}` : "4px solid transparent",
+						bgcolor: isSelected ? "primary.lighter" : "background.paper",
+						borderLeft: `4px solid ${isSelected ? theme.palette.primary.main : "transparent"}`,
 						"&:hover": {
 							bgcolor: isSelected ? "primary.lighter" : "action.hover",
 							transform: "translateX(4px)",
+							boxShadow: theme.shadows[2],
 						},
 					}}
 				>
-					<Grid container spacing={2}>
+					<Grid container spacing={3}>
 						<Grid item>
-							<Stack spacing={0.5} alignItems="center">
-								<Typography variant="caption" color="secondary" sx={{ whiteSpace: "nowrap" }}>
+							<Stack spacing={1} alignItems="center">
+								<Typography
+									variant="caption"
+									color="secondary"
+									sx={{
+										fontWeight: 500,
+										bgcolor: "secondary.lighter",
+										px: 1.5,
+										py: 0.5,
+										borderRadius: 1,
+										whiteSpace: "nowrap",
+									}}
+								>
 									{formatDate(message.time)}
 								</Typography>
-								<Avatar
-									color={color}
+								<Badge
+									variant="dot"
+									color={badgeColor}
+									invisible={!isFirst}
 									sx={{
-										position: "relative",
-										"&:after": {
-											content: '""',
-											position: "absolute",
-											width: 10,
-											height: 10,
-											borderRadius: "50%",
-											bgcolor: `${color}.main`,
-											top: -5,
-											right: -5,
-											display: isFirst ? "block" : "none",
+										"& .MuiBadge-badge": {
+											top: -4,
+											right: -4,
 										},
 									}}
 								>
-									<Tooltip title={message.movement}>{icon}</Tooltip>
-								</Avatar>
+									<Avatar
+										color={color}
+										sx={{
+											width: 48,
+											height: 48,
+											transition: "transform 0.2s ease",
+											"&:hover": {
+												transform: "scale(1.1)",
+											},
+										}}
+									>
+										<Tooltip title={message.movement}>{icon}</Tooltip>
+									</Avatar>
+								</Badge>
 							</Stack>
 						</Grid>
 						<Grid item xs>
-							<Stack spacing={1}>
-								<Typography variant="subtitle1">{message.title}</Typography>
+							<Stack spacing={1.5}>
+								<Typography
+									variant="h6"
+									sx={{
+										fontSize: "1.1rem",
+										fontWeight: isSelected ? 600 : 500,
+									}}
+								>
+									{message.title}
+								</Typography>
 								{message.description && (
 									<Typography
 										color="textSecondary"
-										variant="body2"
 										sx={{
+											fontSize: "0.95rem",
 											display: "-webkit-box",
 											WebkitLineClamp: 2,
 											WebkitBoxOrient: "vertical",
@@ -206,113 +281,140 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 										{message.description}
 									</Typography>
 								)}
-								{message.link && (
-									<Link
-										component={RouterLink}
-										to={message.link}
-										underline="hover"
-										onClick={(e) => e.stopPropagation()}
-										sx={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: 0.5,
-											color: "primary.main",
-											"&:hover": {
-												color: "primary.dark",
-											},
-										}}
-									>
-										<Link2 size={16} />
-										Ver documento
-									</Link>
-								)}
-								{message.dateExpiration && (
-									<Chip
-										size="small"
-										label={`Vence: ${formatDate(message.dateExpiration)}`}
-										color="warning"
-										variant="outlined"
-										sx={{ alignSelf: "flex-start" }}
-									/>
-								)}
+								<Stack direction="row" spacing={2} alignItems="center">
+									{message.link && (
+										<Link
+											component={RouterLink}
+											to={message.link}
+											underline="none"
+											onClick={(e) => e.stopPropagation()}
+											sx={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: 1,
+												color: "primary.main",
+												fontSize: "0.9rem",
+												fontWeight: 500,
+												px: 2,
+												py: 0.75,
+												borderRadius: 1,
+												bgcolor: "primary.lighter",
+												transition: "all 0.2s ease",
+												"&:hover": {
+													bgcolor: "primary.light",
+													transform: "translateY(-2px)",
+												},
+											}}
+										>
+											<Link2 size={18} />
+											Ver documento
+										</Link>
+									)}
+									{hasExpiration && (
+										<Chip
+											icon={<Calendar variant="Bold" size={16} />}
+											label={`Vence: ${formatDate(message.dateExpiration)}`}
+											color="warning"
+											variant="outlined"
+											size="small"
+											sx={{
+												borderRadius: 1,
+												"& .MuiChip-label": {
+													px: 1,
+													fontSize: "0.85rem",
+												},
+											}}
+										/>
+									)}
+								</Stack>
 							</Stack>
 						</Grid>
 					</Grid>
-				</Box>
+				</Paper>
 			</Grid>
 		);
 	};
 
 	const FooterActions = () => (
-		<Box
+		<Paper
+			elevation={0}
 			sx={{
-				mt: 2,
+				mt: 3,
 				pt: 2,
-				borderTop: 1,
-				borderColor: "divider",
-				display: "flex",
-				alignItems: "center",
-				gap: 2,
+				px: 2,
+				pb: 2,
+				borderTop: `1px solid ${theme.palette.divider}`,
+				bgcolor: "background.default",
+				borderBottomLeftRadius: theme.shape.borderRadius,
+				borderBottomRightRadius: theme.shape.borderRadius,
 			}}
 		>
-			<Button
-				variant="outlined"
-				color="secondary"
-				onClick={toggleShowAll}
-				endIcon={showAll ? <ArrowUp /> : <ArrowDown />}
-				sx={{
-					flexGrow: 1,
-					"&:hover": {
-						bgcolor: "secondary.lighter",
-					},
-				}}
-			>
-				{showAll ? "Mostrar menos" : `Ver todos (${movementsData.movements.length})`}
-			</Button>
+			<Stack direction="row" spacing={2} alignItems="center">
+				<Button
+					variant="outlined"
+					color="secondary"
+					onClick={toggleShowAll}
+					endIcon={showAll ? <ArrowUp /> : <ArrowDown />}
+					sx={{
+						flexGrow: 1,
+						py: 1,
+						fontWeight: 500,
+						borderWidth: 1.5,
+						"&:hover": {
+							borderWidth: 1.5,
+							bgcolor: "secondary.lighter",
+						},
+					}}
+				>
+					{showAll ? "Mostrar menos" : `Ver todos (${movementsData.movements.length})`}
+				</Button>
 
-			<Tooltip title={selectedMovementId ? "Editar movimiento" : "Seleccione un movimiento para editar"}>
-				<span>
-					<IconButton
-						color="primary"
-						disabled={!selectedMovementId}
-						size="small"
-						onClick={() => {
-							const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
-							if (movement) handleEditClick(movement);
-						}}
-						sx={{
-							"&:hover": {
-								bgcolor: "primary.lighter",
-							},
-						}}
-					>
-						<Edit variant="Bulk" />
-					</IconButton>
-				</span>
-			</Tooltip>
+				<Tooltip title={selectedMovementId ? "Editar movimiento" : "Seleccione un movimiento para editar"}>
+					<span>
+						<IconButton
+							color="primary"
+							disabled={!selectedMovementId}
+							size="medium"
+							onClick={() => {
+								const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
+								if (movement) handleEditClick(movement);
+							}}
+							sx={{
+								border: `1.5px solid ${theme.palette.primary.main}`,
+								"&:hover": {
+									bgcolor: "primary.lighter",
+								},
+							}}
+						>
+							<Edit variant="Bulk" size={20} />
+						</IconButton>
+					</span>
+				</Tooltip>
 
-			<Tooltip title={selectedMovementId ? "Eliminar movimiento" : "Seleccione un movimiento para eliminar"}>
-				<span>
-					<IconButton
-						color="error"
-						disabled={!selectedMovementId}
-						size="small"
-						sx={{
-							"&:hover": {
-								bgcolor: "error.lighter",
-							},
-						}}
-						onClick={(e) => {
-							e.stopPropagation();
-							handleClose();
-							setOpenModal(!openModal);
-						}}
-					>
-						<Trash variant="Bulk" />
-					</IconButton>
-				</span>
-			</Tooltip>
-		</Box>
+				<Tooltip title={selectedMovementId ? "Eliminar movimiento" : "Seleccione un movimiento para eliminar"}>
+					<span>
+						<IconButton
+							color="error"
+							disabled={!selectedMovementId}
+							size="medium"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleClose();
+								setOpenModal(!openModal);
+							}}
+							sx={{
+								border: `1.5px solid ${theme.palette.error.main}`,
+								"&:hover": {
+									bgcolor: "error.lighter",
+								},
+							}}
+						>
+							<Trash variant="Bulk" size={20} />
+						</IconButton>
+					</span>
+				</Tooltip>
+			</Stack>
+		</Paper>
 	);
 
 	useEffect(() => {
@@ -327,12 +429,27 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 			secondary={
 				<Stack direction="row" spacing={1}>
 					<Tooltip title="Agregar movimiento">
-						<IconButton onClick={handleOpen} disabled={movementsData.isLoader}>
+						<IconButton
+							onClick={handleOpen}
+							disabled={movementsData.isLoader}
+							color="primary"
+							sx={{
+								border: `1.5px solid ${theme.palette.primary.main}`,
+								"&:hover": {
+									bgcolor: "primary.lighter",
+								},
+							}}
+						>
 							<Add />
 						</IconButton>
 					</Tooltip>
 				</Stack>
 			}
+			sx={{
+				"& .MuiCardContent-root": {
+					p: 0,
+				},
+			}}
 		>
 			<ModalMovements
 				open={open}
@@ -342,45 +459,27 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 				movementData={editMovement}
 				folderName={folderName}
 			/>
-			<AlertMemberDelete title={""} open={openModal} handleClose={handleClose} id={selectedMovementId} />
-			<CardContent>
+			<AlertMemberDelete title="" open={openModal} handleClose={handleClose} id={selectedMovementId} />
+			<CardContent sx={{ p: 3 }}>
 				{movementsData.isLoader ? (
 					<MovementsLoader />
 				) : movementsData.movements.length > 0 ? (
 					<>
 						<SimpleBar
 							sx={{
-								overflowX: "hidden",
 								height: `${containerHeight}px`,
 								transition: "height 0.3s ease-in-out",
-								overflowY: "auto",
 								pr: 2,
+								mr: -2,
 								"& .simplebar-track.simplebar-vertical": {
-									width: "8px",
+									width: 8,
 								},
 								"& .simplebar-scrollbar:before": {
 									background: theme.palette.secondary.lighter,
 								},
 							}}
 						>
-							<Grid
-								container
-								spacing={2}
-								sx={{
-									position: "relative",
-									"&:after": {
-										content: '""',
-										position: "absolute",
-										top: 16,
-										left: 120,
-										width: 2,
-										height: "calc(100% - 32px)",
-										background: `linear-gradient(${theme.palette.divider} 50%, transparent 100%)`,
-										zIndex: 1,
-									},
-								}}
-								ref={parent}
-							>
+							<Grid container spacing={2} ref={parent}>
 								{displayedMovements.map((message: any, index: number) => (
 									<MovementItem
 										key={message._id || index}

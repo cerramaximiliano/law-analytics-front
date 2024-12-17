@@ -4,7 +4,7 @@ import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import * as Yup from "yup";
-import { Formik } from "formik";
+import { Formik, Form } from "formik";
 import { Notification1, ArrowForwardSquare } from "iconsax-react";
 import PatternField from "components/UI/PatternField";
 import { enqueueSnackbar } from "notistack";
@@ -126,319 +126,318 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 		_submitForm(values, actions);
 	}
 
-	return (
-		<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
-			{({ isSubmitting, resetForm, values }) => {
-				const handleClose = () => {
-					closeModal();
-					resetForm();
-				};
+	const customInputStyles = {
+		"& .MuiInputBase-root": {
+			height: 39.91,
+		},
+		"& .MuiInputBase-input": {
+			fontSize: 12,
+		},
+		"& input::placeholder": {
+			color: "#000000",
+			opacity: 0.6,
+		},
+	};
 
-				return (
-					<Dialog
-						maxWidth="sm"
-						open={open}
-						onClose={handleClose}
-						PaperProps={{
-							sx: {
-								width: "600px",
-								maxWidth: "600px",
-								p: 0,
-								borderRadius: 2,
-								boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
-							},
-						}}
-						sx={{
-							"& .MuiBackdrop-root": { opacity: "0.5 !important" },
-						}}
-					>
-						<DialogTitle
-							sx={{
-								bgcolor: theme.palette.primary.lighter,
-								p: 3,
-								borderBottom: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							<Stack direction="row" justifyContent="space-between" alignItems="center">
-								<Typography
-									variant="h5"
+	return (
+		<>
+			<Dialog
+				maxWidth="sm"
+				open={open}
+				PaperProps={{
+					sx: {
+						width: "600px",
+						maxWidth: "600px",
+						p: 0,
+						borderRadius: 2,
+						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+					},
+				}}
+				sx={{
+					"& .MuiBackdrop-root": { opacity: "0.5 !important" },
+				}}
+			>
+				<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
+					{({ isSubmitting, resetForm, values }) => (
+						<Form autoComplete="off" noValidate>
+							<DialogTitle
+								sx={{
+									bgcolor: theme.palette.primary.lighter,
+									p: 3,
+									borderBottom: `1px solid ${theme.palette.divider}`,
+								}}
+							>
+								<Stack direction="row" justifyContent="space-between" alignItems="center">
+									<Typography
+										variant="h5"
+										sx={{
+											color: theme.palette.primary.main,
+											fontWeight: 600,
+										}}
+									>
+										Agregar Notificación
+									</Typography>
+									<Typography
+										color="textSecondary"
+										variant="subtitle2"
+										sx={{
+											maxWidth: "30%",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
+										Carpeta: {folderName}
+									</Typography>
+								</Stack>
+							</DialogTitle>
+
+							<Divider />
+
+							<DialogContent
+								sx={{
+									p: 3,
+									display: "flex",
+									flexDirection: "column",
+									gap: 3,
+								}}
+							>
+								<InputField
+									fullWidth
+									id="title"
+									placeholder="Identifique la notificación"
+									name="title"
+									startAdornment={<Notification1 />}
+									sx={customInputStyles}
+								/>
+								<SelectField
+									required={true}
+									label="Tipo"
+									data={["Cédula", "Carta Documento", "Telegrama", "Notarial"]}
+									name="notification"
+									style={{
+										maxHeight: "39.91px",
+										"& .MuiInputBase-root": {
+											height: "39.91px",
+											fontSize: 12,
+										},
+										"& .MuiSelect-select": {
+											fontSize: 12,
+										},
+										"& .MuiInputLabel-root": {
+											fontSize: 12,
+										},
+									}}
+								/>
+								<SelectField
+									required={true}
+									label="Interviniente"
+									data={["Actora", "Demandada", "Organismo"]}
+									name="user"
+									style={{
+										maxHeight: "39.91px",
+										"& .MuiInputBase-root": {
+											height: "39.91px",
+											fontSize: 12,
+										},
+										"& .MuiSelect-select": {
+											fontSize: 12,
+										},
+										"& .MuiInputLabel-root": {
+											fontSize: 12,
+										},
+									}}
+								/>
+								<DateInputField
+									name="date"
+									label="Fecha"
+									customInputStyles={{
+										"& .MuiInputBase-root": {
+											height: 39.91,
+										},
+										"& .MuiInputBase-input": {
+											fontSize: 12,
+										},
+										"& input::placeholder": {
+											color: "#000000",
+											opacity: 0.6,
+										},
+									}}
+								/>
+								<DateInputField
+									name="dateExpiration"
+									label="Vencimiento"
+									customInputStyles={{
+										"& .MuiInputBase-root": {
+											height: 39.91,
+										},
+										"& .MuiInputBase-input": {
+											fontSize: 12,
+										},
+										"& input::placeholder": {
+											color: "#000000",
+											opacity: 0.6,
+										},
+									}}
+								/>
+								{(values.notification === "Carta Documento" || values.notification === "Telegrama") && (
+									<Box display="flex" alignItems="center" gap={2}>
+										<SelectField
+											required={true}
+											label="Código de Seguimiento"
+											data={[
+												"CC",
+												"CD",
+												"CL",
+												"CM",
+												"CO",
+												"CP",
+												"DE",
+												"DI",
+												"EC",
+												"EE",
+												"EO",
+												"EP",
+												"GC",
+												"GD",
+												"GE",
+												"GF",
+												"GO",
+												"GR",
+												"GS",
+												"HC",
+												"HE",
+												"HU",
+												"IN",
+												"IS",
+												"JP",
+												"ND",
+												"OL",
+												"PC",
+												"PP",
+												"RD",
+												"RE",
+												"RR",
+												"SD",
+												"SL",
+												"SP",
+												"SR",
+												"ST",
+												"TC",
+												"TL",
+												"UP",
+												"EE",
+												"CX",
+												"RR",
+												"XP",
+												"XX",
+												"XR",
+												"CU",
+												"SU",
+												"EU",
+												"PU",
+												"XU",
+											]}
+											name="idCode"
+											style={{
+												maxHeight: "39.91px",
+												"& .MuiInputBase-root": {
+													height: "39.91px",
+													fontSize: 12,
+												},
+												"& .MuiSelect-select": {
+													fontSize: 12,
+												},
+												"& .MuiInputLabel-root": {
+													fontSize: 12,
+												},
+											}}
+											defaultValue={values.notification}
+										/>
+										<PatternField
+											fullWidth
+											format={"#########"}
+											sx={{
+												"& .MuiInputBase-root": {
+													height: 39.91,
+												},
+												"& .MuiInputBase-input": {
+													fontSize: 12,
+												},
+												"& input::placeholder": {
+													color: "#000000",
+													opacity: 0.6,
+												},
+											}}
+											id="idCode"
+											placeholder="Ingrese un código de seguimiento"
+											name="idCode"
+											InputProps={{ startAdornment: <ArrowForwardSquare /> }}
+										/>
+									</Box>
+								)}
+								<InputField
+									fullWidth
+									label="Descripción"
+									id="description"
+									multiline
+									rows={2}
+									placeholder="Ingrese una descripción"
+									name="description"
+									customInputStyles={{
+										"& .MuiInputBase-input": {
+											fontSize: 12,
+										},
+										"& textarea::placeholder": {
+											color: "#000000",
+											opacity: 0.6,
+										},
+									}}
+								/>
+							</DialogContent>
+
+							<Divider />
+
+							<DialogActions
+								sx={{
+									p: 2.5,
+									bgcolor: theme.palette.background.default,
+									borderTop: `1px solid ${theme.palette.divider}`,
+								}}
+							>
+								<Button
+									color="error"
+									onClick={() => {
+										closeModal();
+										resetForm();
+									}}
 									sx={{
-										color: theme.palette.primary.main,
+										color: theme.palette.text.secondary,
+										"&:hover": {
+											bgcolor: theme.palette.action.hover,
+										},
+									}}
+								>
+									Cancelar
+								</Button>
+								<Button
+									type="submit"
+									variant="contained"
+									disabled={isSubmitting}
+									sx={{
+										minWidth: 120,
+										py: 1.25,
 										fontWeight: 600,
 									}}
 								>
-									Agregar Notificación
-								</Typography>
-								<Typography
-									color="textSecondary"
-									variant="subtitle2"
-									sx={{
-										maxWidth: "30%",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										whiteSpace: "nowrap",
-									}}
-								>
-									Carpeta: {folderName}
-								</Typography>
-							</Stack>
-							
-						</DialogTitle>
-
-						<Divider />
-
-						<DialogContent
-							sx={{
-								p: 3,
-								display: "flex",
-								flexDirection: "column",
-								gap: 3,
-							}}
-						>
-							<InputField
-								fullWidth
-								label="Título de la Notificación"
-								id="title"
-								placeholder="Identifique la notificación"
-								name="title"
-								startAdornment={<Notification1 />}
-								customInputStyles={{
-									"& .MuiInputBase-root": {
-										height: 39.91,
-									},
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& input::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-							<SelectField
-								required={true}
-								label="Tipo"
-								data={["Cédula", "Carta Documento", "Telegrama", "Notarial"]}
-								name="notification"
-								style={{
-									maxHeight: "39.91px",
-									"& .MuiInputBase-root": {
-										height: "39.91px",
-										fontSize: 12,
-									},
-									"& .MuiSelect-select": {
-										fontSize: 12,
-									},
-									"& .MuiInputLabel-root": {
-										fontSize: 12,
-									},
-								}}
-							/>
-							<SelectField
-								required={true}
-								label="Interviniente"
-								data={["Actora", "Demandada", "Organismo"]}
-								name="user"
-								style={{
-									maxHeight: "39.91px",
-									"& .MuiInputBase-root": {
-										height: "39.91px",
-										fontSize: 12,
-									},
-									"& .MuiSelect-select": {
-										fontSize: 12,
-									},
-									"& .MuiInputLabel-root": {
-										fontSize: 12,
-									},
-								}}
-							/>
-							<DateInputField
-								name="date"
-								label="Fecha"
-								customInputStyles={{
-									"& .MuiInputBase-root": {
-										height: 39.91,
-									},
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& input::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-							<DateInputField
-								name="dateExpiration"
-								label="Vencimiento"
-								customInputStyles={{
-									"& .MuiInputBase-root": {
-										height: 39.91,
-									},
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& input::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-							{(values.notification === "Carta Documento" || values.notification === "Telegrama") && (
-								<Box display="flex" alignItems="center" gap={2}>
-									<SelectField
-										required={true}
-										label="Código de Seguimiento"
-										data={[
-											"CC",
-											"CD",
-											"CL",
-											"CM",
-											"CO",
-											"CP",
-											"DE",
-											"DI",
-											"EC",
-											"EE",
-											"EO",
-											"EP",
-											"GC",
-											"GD",
-											"GE",
-											"GF",
-											"GO",
-											"GR",
-											"GS",
-											"HC",
-											"HE",
-											"HU",
-											"IN",
-											"IS",
-											"JP",
-											"ND",
-											"OL",
-											"PC",
-											"PP",
-											"RD",
-											"RE",
-											"RR",
-											"SD",
-											"SL",
-											"SP",
-											"SR",
-											"ST",
-											"TC",
-											"TL",
-											"UP",
-											"EE",
-											"CX",
-											"RR",
-											"XP",
-											"XX",
-											"XR",
-											"CU",
-											"SU",
-											"EU",
-											"PU",
-											"XU",
-										]}
-										name="idCode"
-										style={{
-											maxHeight: "39.91px",
-											"& .MuiInputBase-root": {
-												height: "39.91px",
-												fontSize: 12,
-											},
-											"& .MuiSelect-select": {
-												fontSize: 12,
-											},
-											"& .MuiInputLabel-root": {
-												fontSize: 12,
-											},
-										}}
-										defaultValue={values.notification}
-									/>
-									<PatternField
-										fullWidth
-										format={"#########"}
-										sx={{
-											"& .MuiInputBase-root": {
-												height: 39.91,
-											},
-											"& .MuiInputBase-input": {
-												fontSize: 12,
-											},
-											"& input::placeholder": {
-												color: "#000000",
-												opacity: 0.6,
-											},
-										}}
-										id="idCode"
-										placeholder="Ingrese un código de seguimiento"
-										name="idCode"
-										InputProps={{ startAdornment: <ArrowForwardSquare /> }}
-									/>
-								</Box>
-							)}
-							<InputField
-								fullWidth
-								label="Descripción"
-								id="description"
-								multiline
-								rows={2}
-								placeholder="Ingrese una descripción"
-								name="description"
-								customInputStyles={{
-									"& .MuiInputBase-input": {
-										fontSize: 12,
-									},
-									"& textarea::placeholder": {
-										color: "#000000",
-										opacity: 0.6,
-									},
-								}}
-							/>
-						</DialogContent>
-
-						<Divider />
-
-						<DialogActions
-							sx={{
-								p: 2.5,
-								bgcolor: theme.palette.background.default,
-								borderTop: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							<Button
-								color="inherit"
-								onClick={handleClose}
-								sx={{
-									color: theme.palette.text.secondary,
-									"&:hover": {
-										bgcolor: theme.palette.action.hover,
-									},
-								}}
-							>
-								Cancelar
-							</Button>
-							<Button
-								type="submit"
-								variant="contained"
-								disabled={isSubmitting}
-								sx={{
-									minWidth: 120,
-									py: 1.25,
-									fontWeight: 600,
-								}}
-							>
-								Guardar
-							</Button>
-						</DialogActions>
-					</Dialog>
-				);
-			}}
-		</Formik>
+									Guardar
+								</Button>
+							</DialogActions>
+						</Form>
+					)}
+				</Formik>
+			</Dialog>
+		</>
 	);
 };
 
