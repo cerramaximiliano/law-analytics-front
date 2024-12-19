@@ -235,54 +235,53 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 const FoldersLayout = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
+	const navigate = useNavigate();
 
+	// Estados
 	const [open, setOpen] = useState<boolean>(false);
 	const [folder, setFolder] = useState<any>(null);
-	const [folderDeleteId, setFolderDeleteId] = useState<any>("");
-	const [folderId, setFolderId] = useState<any>("");
+	const [folderDeleteId, setFolderDeleteId] = useState<string>("");
+	const [folderId, setFolderId] = useState<string>("");
 	const [add, setAdd] = useState<boolean>(false);
-
-	const handleCloseDialog = () => {
-		setAdd(false);
-	};
-
 	const [addFolderMode, setAddFolderMode] = useState<"add" | "edit">("add");
 
-	const handleAddFolder = () => {
+	// Selectores
+	const user = useSelector((state) => state.auth.user);
+	const { folders, isLoader } = useSelector((state) => state.folder);
+
+	// Handlers
+	const handleCloseDialog = useCallback(() => {
+		setAdd(false);
+	}, []);
+
+	const handleAddFolder = useCallback(() => {
 		setAdd(true);
 		setAddFolderMode("add");
 		setFolder(null);
-	};
+	}, []);
 
-	const handleEditContact = (folder: any) => {
+	const handleEditContact = useCallback((folderData: any) => {
 		setAdd(true);
 		setAddFolderMode("edit");
-		setFolder(folder);
-	};
+		setFolder(folderData);
+	}, []);
 
-	const handleClose = () => {
-		setOpen(!open);
-	};
+	const handleClose = useCallback(() => {
+		setOpen((prev) => !prev);
+	}, []);
 
-	const user = useSelector((state) => state.auth.user);
-	const userId = user?._id;
-	const { folders, isLoader } = useSelector((state) => state.folder);
-
-	const fetchFolders = useCallback(async () => {
-		if (userId) {
-			try {
-				await dispatch(getFoldersByUserId(userId));
-			} catch (error) {
-				console.error(error);
-			}
+	// Fetch folders
+	const fetchFolders = useCallback(() => {
+		if (user?._id) {
+			dispatch(getFoldersByUserId(user._id));
 		}
-	}, [userId, dispatch]);
+	}, [user?._id]); // Removido dispatch de las dependencias
 
 	useEffect(() => {
 		fetchFolders();
 	}, [fetchFolders]);
 
-	const navigate = useNavigate();
+	// Columnas memoizadas
 	const columns = useMemo(
 		() => [
 			{
@@ -315,7 +314,6 @@ const FoldersLayout = () => {
 				Header: "Descripción",
 				accessor: "description",
 			},
-
 			{
 				Header: "Fecha de Inicio",
 				accessor: "initialDateFolder",
@@ -328,7 +326,6 @@ const FoldersLayout = () => {
 				Header: "Jurisdicción",
 				accessor: "folderJuris.label",
 			},
-
 			{
 				Header: "Fuero",
 				accessor: "folderFuero",
@@ -358,6 +355,12 @@ const FoldersLayout = () => {
 					) : (
 						<Eye variant="Bulk" />
 					);
+
+					const handleRowAction = (e: MouseEvent<HTMLButtonElement>, action: () => void) => {
+						e.stopPropagation();
+						action();
+					};
+
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
 							<Tooltip
@@ -371,13 +374,7 @@ const FoldersLayout = () => {
 								}}
 								title="Ver"
 							>
-								<IconButton
-									color="secondary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										row.toggleRowExpanded();
-									}}
-								>
+								<IconButton color="secondary" onClick={(e) => handleRowAction(e, () => row.toggleRowExpanded())}>
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
@@ -392,13 +389,7 @@ const FoldersLayout = () => {
 								}}
 								title="Editar"
 							>
-								<IconButton
-									color="primary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleEditContact(row.values);
-									}}
-								>
+								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.values))}>
 									<Edit variant="Bulk" />
 								</IconButton>
 							</Tooltip>
@@ -415,12 +406,13 @@ const FoldersLayout = () => {
 							>
 								<IconButton
 									color="error"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleClose();
-										setFolderDeleteId(row.values.folderName);
-										setFolderId(row.values._id);
-									}}
+									onClick={(e) =>
+										handleRowAction(e, () => {
+											handleClose();
+											setFolderDeleteId(row.values.folderName);
+											setFolderId(row.values._id);
+										})
+									}
 								>
 									<Trash variant="Bulk" />
 								</IconButton>
@@ -436,13 +428,7 @@ const FoldersLayout = () => {
 								}}
 								title="Abrir"
 							>
-								<IconButton
-									color="success"
-									onClick={(e: MouseEvent) => {
-										e.stopPropagation();
-										navigate(`../details/${row.values._id}`);
-									}}
-								>
+								<IconButton color="success" onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}>
 									<Maximize variant="Bulk" />
 								</IconButton>
 							</Tooltip>
@@ -451,10 +437,10 @@ const FoldersLayout = () => {
 				},
 			},
 		],
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[theme],
+		[theme, mode, handleEditContact, handleClose, navigate],
 	);
 
+	// Row sub component memoizado
 	const renderRowSubComponent = useCallback(
 		({ row }: { row: Row<Folder> }) => {
 			const folderData = folders.find((f: any) => f._id === row.original._id);
@@ -463,6 +449,7 @@ const FoldersLayout = () => {
 		[folders],
 	);
 
+	// Dialog memoizado
 	const renderAddFolder = useMemo(() => {
 		if (!add) return null;
 		return (
@@ -475,10 +462,10 @@ const FoldersLayout = () => {
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			>
-				<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={() => {}} />
+				<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={fetchFolders} />
 			</Dialog>
 		);
-	}, [add, folder]);
+	}, [add, folder, addFolderMode, handleCloseDialog, fetchFolders]);
 
 	return (
 		<MainCard content={false}>
@@ -492,7 +479,6 @@ const FoldersLayout = () => {
 				/>
 			</ScrollX>
 			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} />
-			{/* add folder dialog */}
 			{renderAddFolder}
 		</MainCard>
 	);

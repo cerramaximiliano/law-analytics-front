@@ -17,7 +17,7 @@ import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import { Add, UserSquare, Trash, Link1 } from "iconsax-react"; // Importa el icono Trash
 import { PopupTransition } from "components/@extended/Transitions";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import ModalMembers from "../modals/ModalMembers";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
@@ -64,17 +64,15 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 	const [openModal, setOpenModal] = useState<boolean>(false);
 	const [parent] = useAutoAnimate({ duration: 200 });
 
-	const handleAdd = () => {
-		if (isLoader === true) {
-			return;
-		} else {
-			setAdd(!add);
+	const handleAdd = useCallback(() => {
+		if (!isLoader) {
+			setAdd((prev) => !prev);
 		}
-	};
+	}, [isLoader]);
 
-	const handleOpen = () => {
-		setOpenModal(!openModal);
-	};
+	const handleOpen = useCallback(() => {
+		setOpenModal((prev) => !prev);
+	}, []);
 
 	const handlerAddress = (newMember: any) => {
 		const foundMember = members.find((member) => member.email === newMember.email);
@@ -83,7 +81,7 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 		}
 	};
 
-	const handleDelete = (contactId: string) => {
+	const handleDelete = useCallback(async (contactId: string) => {
 		dispatch(deleteContact(contactId))
 			.then((response) => {
 				if (response.success) {
@@ -129,7 +127,7 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 					}),
 				);
 			});
-	};
+	}, []);
 
 	const handleUnlink = async (contactId: string) => {
 		try {

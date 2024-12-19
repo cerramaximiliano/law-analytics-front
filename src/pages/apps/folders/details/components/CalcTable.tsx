@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "react-router";
 import moment from "moment";
 import {
@@ -49,24 +49,22 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
-	const [latestOfferedAmount, setLatestOfferedAmount] = useState<number | null>(null);
 
 	const sortedData = useMemo(
-		() =>
-			selectedCalculators.slice().sort((a: CalculatorType, b: CalculatorType) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
+		() => selectedCalculators.slice().sort((a: any, b: any) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
 		[selectedCalculators],
 	);
+
+	const latestOfferedAmount = useMemo(() => {
+		const latestOffered = sortedData.find((item: any) => item.type === "Ofertado");
+		return latestOffered?.amount ?? null;
+	}, [sortedData]);
 
 	useEffect(() => {
 		if (id) {
 			dispatch(getCalculatorsByFolderId(id));
 		}
 	}, [id]);
-
-	useEffect(() => {
-		const latestOffered = sortedData.find((item: CalculatorType) => item.type === "Ofertado");
-		setLatestOfferedAmount(latestOffered?.amount ?? null);
-	}, [sortedData]);
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
 
@@ -88,7 +86,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 		</TableRow>
 	);
 
-	const handleDelete = async (id: string) => {
+	const handleDelete = useCallback(async (id: string) => {
 		try {
 			const result = await dispatch(deleteCalculator(id));
 			if (result.success) {
@@ -114,7 +112,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 				autoHideDuration: 3000,
 			});
 		}
-	};
+	}, []);
 
 	return (
 		<MainCard
