@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, Fragment, MouseEvent, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
@@ -25,7 +25,6 @@ import {
 	useSortBy,
 	useTable,
 	usePagination,
-	Column,
 	HeaderGroup,
 	Row,
 	Cell,
@@ -51,184 +50,209 @@ import AddFolder from "sections/apps/folders/AddFolder";
 import FolderView from "sections/apps/folders/FolderView";
 import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 
-//import makeData from "data/react-table";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
 import { Add, FolderAdd, Edit, Eye, Trash, Maximize } from "iconsax-react";
 
 // types
-import { ThemeMode } from "types/config";
 import { dispatch, useSelector } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
-import { Folder } from "types/folders";
+import { Folder, Props } from "types/folders";
 // ==============================|| REACT TABLE ||============================== //
-
-interface Props {
-	columns: Column[];
-	data: Folder[];
-	handleAdd: () => void;
-	renderRowSubComponent: FC<any>;
-	isLoading: boolean;
-}
 
 function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
-
+	const [isColumnsReady, setIsColumnsReady] = useState(false);
+  
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
-
+  
+	const defaultHiddenColumns = useMemo(() => 
+	  matchDownSM 
+		? ["_id", "email", "status", "description", "initialDateFolder", "finalDateFolder", "folderJuris.label", "folderFuero"]
+		: ["email", "_id", "description", "finalDateFolder"],
+	  [matchDownSM]
+	);
+  
 	const {
-		getTableProps,
-		getTableBodyProps,
-		headerGroups,
-		prepareRow,
-		setHiddenColumns,
-		allColumns,
-		visibleColumns,
-		rows,
-		page,
-		gotoPage,
-		setPageSize,
-		state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded },
-		preGlobalFilteredRows,
-		setGlobalFilter,
-		setSortBy,
-		selectedFlatRows,
+	  getTableProps,
+	  getTableBodyProps,
+	  headerGroups,
+	  prepareRow,
+	  setHiddenColumns,
+	  allColumns,
+	  visibleColumns,
+	  rows,
+	  page,
+	  gotoPage,
+	  setPageSize,
+	  state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded },
+	  preGlobalFilteredRows,
+	  setGlobalFilter,
+	  setSortBy,
+	  selectedFlatRows,
 	} = useTable(
-		{
-			columns,
-			data,
-			filterTypes,
-			initialState: {
-				pageIndex: 0,
-				pageSize: 10,
-				hiddenColumns: ["avatar", "email"],
-				sortBy: [sortBy],
-			},
+	  {
+		columns,
+		data,
+		filterTypes,
+		initialState: {
+		  pageIndex: 0,
+		  pageSize: 10,
+		  hiddenColumns: defaultHiddenColumns,
+		  sortBy: [sortBy],
 		},
-		useGlobalFilter,
-		useFilters,
-		useSortBy,
-		useExpanded,
-		usePagination,
-		useRowSelect,
+	  },
+	  useGlobalFilter,
+	  useFilters,
+	  useSortBy,
+	  useExpanded,
+	  usePagination,
+	  useRowSelect
 	);
-
+  
 	useEffect(() => {
-		if (matchDownSM) {
-			setHiddenColumns([
-				"_id",
-				"email",
-				"status",
-				"description",
-				"initialDateFolder",
-				"finalDateFolder",
-				"folderJuris.label",
-				"folderFuero",
-			]);
-		} else {
-			setHiddenColumns(["email", "_id", "description", "finalDateFolder"]);
-		}
-		// eslint-disable-next-line
-	}, [matchDownSM]);
-
-	return (
+	  setHiddenColumns(defaultHiddenColumns);
+	  setIsColumnsReady(true);
+  
+	  return () => {
+		setIsColumnsReady(false);
+	  };
+	}, [setHiddenColumns, defaultHiddenColumns]);
+  
+	if (!isColumnsReady || isLoading) {
+	  return (
 		<>
-			<TableRowSelection selected={Object.keys(selectedRowIds).length} />
-			<Stack spacing={3}>
-				<Stack
-					direction={matchDownSM ? "column" : "row"}
-					spacing={1}
-					justifyContent="space-between"
-					alignItems="center"
-					sx={{ p: 3, pb: 0 }}
-				>
-					<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
-					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
-						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
-							Agregar Causa
-						</Button>
-						<CSVExport data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data} filename={"causas.csv"} />
-					</Stack>
-				</Stack>
-				<Table {...getTableProps()}>
-					<TableHead>
-						{headerGroups.map((headerGroup: HeaderGroup<{}>) => (
-							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
-								{headerGroup.headers.map((column: HeaderGroup) => (
-									<TableCell {...column.getHeaderProps([{ className: column.className }])}>
-										<HeaderSort column={column} sort />
-									</TableCell>
-								))}
-							</TableRow>
-						))}
-					</TableHead>
-					<TableBody {...getTableBodyProps()}>
-						{isLoading ? (
-							<>
-								{Array.from({ length: 10 }).map((_, rowIndex) => (
-									<TableRow key={rowIndex}>
-										{headerGroups[0].headers.map((column, cellIndex) => (
-											<TableCell key={cellIndex}>
-												<Skeleton />
-											</TableCell>
-										))}
-									</TableRow>
-								))}
-							</>
-						) : (
-							<>
-								{data.length > 0 ? (
-									<>
-										{page.map((row: Row, i: number) => {
-											prepareRow(row);
-											const rowProps = row.getRowProps();
-											return (
-												<Fragment key={i}>
-													<TableRow
-														{...row.getRowProps()}
-														onClick={() => {
-															row.toggleRowSelected();
-														}}
-														sx={{
-															cursor: "pointer",
-															bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
-														}}
-													>
-														{row.cells.map((cell: Cell) => (
-															<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
-														))}
-													</TableRow>
-													{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
-												</Fragment>
-											);
-										})}
-										<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-											<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-												<TablePagination
-													gotoPage={gotoPage}
-													rows={rows}
-													setPageSize={setPageSize}
-													pageSize={pageSize}
-													pageIndex={pageIndex}
-												/>
-											</TableCell>
-										</TableRow>
-									</>
-								) : (
-									<EmptyTable msg="No Hay Datos" colSpan={7} />
-								)}
-							</>
-						)}
-					</TableBody>
-				</Table>
+		  <TableRowSelection selected={0} />
+		  <Stack spacing={3}>
+			<Stack
+			  direction={matchDownSM ? "column" : "row"}
+			  spacing={1}
+			  justifyContent="space-between"
+			  alignItems="center"
+			  sx={{ p: 3, pb: 0 }}
+			>
+			  <Skeleton width={200} height={40} />
+			  <Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
+				<Skeleton width={120} height={40} />
+				<Skeleton width={150} height={40} />
+				<Skeleton width={100} height={40} />
+			  </Stack>
 			</Stack>
+			<Table>
+			  <TableHead>
+				<TableRow>
+				  {Array(6).fill(0).map((_, index) => (
+					<TableCell key={index}>
+					  <Skeleton width={100} height={24} />
+					</TableCell>
+				  ))}
+				</TableRow>
+			  </TableHead>
+			  <TableBody>
+				{Array(5).fill(0).map((_, rowIndex) => (
+				  <TableRow key={rowIndex}>
+					{Array(6).fill(0).map((_, cellIndex) => (
+					  <TableCell key={cellIndex}>
+						<Skeleton width={100} height={24} />
+					  </TableCell>
+					))}
+				  </TableRow>
+				))}
+			  </TableBody>
+			</Table>
+		  </Stack>
 		</>
+	  );
+	}
+  
+	return (
+	  <>
+		<TableRowSelection selected={Object.keys(selectedRowIds).length} />
+		<Stack spacing={3}>
+		  <Stack
+			direction={matchDownSM ? "column" : "row"}
+			spacing={1}
+			justifyContent="space-between"
+			alignItems="center"
+			sx={{ p: 3, pb: 0 }}
+		  >
+			<GlobalFilter
+			  preGlobalFilteredRows={preGlobalFilteredRows}
+			  globalFilter={globalFilter}
+			  setGlobalFilter={setGlobalFilter}
+			/>
+			<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
+			  <SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
+			  <Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
+				Agregar Causa
+			  </Button>
+			  <CSVExport
+				data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data}
+				filename={"causas.csv"}
+			  />
+			</Stack>
+		  </Stack>
+		  <Table {...getTableProps()}>
+			<TableHead>
+			  {headerGroups.map((headerGroup: HeaderGroup<{}>) => (
+				<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
+				  {headerGroup.headers.map((column: HeaderGroup) => (
+					<TableCell {...column.getHeaderProps([{ className: column.className }])}>
+					  <HeaderSort column={column} sort />
+					</TableCell>
+				  ))}
+				</TableRow>
+			  ))}
+			</TableHead>
+			<TableBody {...getTableBodyProps()}>
+			  {page.map((row: Row, i: number) => {
+				prepareRow(row);
+				const rowProps = row.getRowProps();
+				return (
+				  <Fragment key={i}>
+					<TableRow
+					  {...row.getRowProps()}
+					  onClick={() => {
+						row.toggleRowSelected();
+					  }}
+					  sx={{
+						cursor: "pointer",
+						bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
+					  }}
+					>
+					  {row.cells.map((cell: Cell) => (
+						<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>
+						  {cell.render("Cell")}
+						</TableCell>
+					  ))}
+					</TableRow>
+					{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
+				  </Fragment>
+				);
+			  })}
+			</TableBody>
+		  </Table>
+		  {page.length > 0 && (
+			<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
+			  <TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
+				<TablePagination
+				  gotoPage={gotoPage}
+				  rows={rows}
+				  setPageSize={setPageSize}
+				  pageSize={pageSize}
+				  pageIndex={pageIndex}
+				/>
+			  </TableCell>
+			</TableRow>
+		  )}
+		  {page.length === 0 && <EmptyTable msg="No Hay Datos" colSpan={7} />}
+		</Stack>
+	  </>
 	);
-}
+  }
 
 // ==============================|| FOLDER - LIST ||============================== //
 
@@ -238,16 +262,50 @@ const FoldersLayout = () => {
 	const navigate = useNavigate();
 
 	// Estados
-	const [open, setOpen] = useState<boolean>(false);
-	const [folder, setFolder] = useState<any>(null);
-	const [folderDeleteId, setFolderDeleteId] = useState<string>("");
-	const [folderId, setFolderId] = useState<string>("");
-	const [add, setAdd] = useState<boolean>(false);
+	const [open, setOpen] = useState(false);
+	const [folder, setFolder] = useState(null);
+	const [folderDeleteId, setFolderDeleteId] = useState("");
+	const [folderId, setFolderId] = useState("");
+	const [add, setAdd] = useState(false);
 	const [addFolderMode, setAddFolderMode] = useState<"add" | "edit">("add");
+	const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+	// Referencias
+	const mountedRef = useRef(false);
+	const loadingRef = useRef(false);
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
 	const { folders, isLoader } = useSelector((state) => state.folder);
+
+	// Efecto para la carga inicial
+	useEffect(() => {
+		// Solo ejecutar en el primer montaje
+		if (!mountedRef.current) {
+			mountedRef.current = true;
+
+			const initialLoad = async () => {
+				if (!user?._id || loadingRef.current) return;
+
+				try {
+					loadingRef.current = true;
+					await dispatch(getFoldersByUserId(user._id));
+				} catch (error) {
+					console.error("Error loading folders:", error);
+				} finally {
+					loadingRef.current = false;
+					setIsInitialLoad(false);
+				}
+			};
+
+			initialLoad();
+		}
+
+		return () => {
+			mountedRef.current = false;
+			loadingRef.current = false;
+		};
+	}, [user?._id]);
 
 	// Handlers
 	const handleCloseDialog = useCallback(() => {
@@ -270,16 +328,20 @@ const FoldersLayout = () => {
 		setOpen((prev) => !prev);
 	}, []);
 
-	// Fetch folders
-	const fetchFolders = useCallback(() => {
-		if (user?._id) {
-			dispatch(getFoldersByUserId(user._id));
-		}
-	}, [user?._id]); // Removido dispatch de las dependencias
+	const handleRefreshData = useCallback(async () => {
+		if (!user?._id || loadingRef.current) return;
 
-	useEffect(() => {
-		fetchFolders();
-	}, [fetchFolders]);
+		try {
+			loadingRef.current = true;
+			await dispatch(getFoldersByUserId(user._id));
+		} finally {
+			loadingRef.current = false;
+		}
+	}, [user?._id]);
+	const handleRowAction = useCallback((e: MouseEvent<HTMLButtonElement>, action: () => void) => {
+		e.stopPropagation();
+		action();
+	}, []);
 
 	// Columnas memoizadas
 	const columns = useMemo(
@@ -356,54 +418,19 @@ const FoldersLayout = () => {
 						<Eye variant="Bulk" />
 					);
 
-					const handleRowAction = (e: MouseEvent<HTMLButtonElement>, action: () => void) => {
-						e.stopPropagation();
-						action();
-					};
-
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Ver"
-							>
+							<Tooltip title="Ver">
 								<IconButton color="secondary" onClick={(e) => handleRowAction(e, () => row.toggleRowExpanded())}>
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Editar"
-							>
+							<Tooltip title="Editar">
 								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.values))}>
 									<Edit variant="Bulk" />
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Eliminar"
-							>
+							<Tooltip title="Eliminar">
 								<IconButton
 									color="error"
 									onClick={(e) =>
@@ -417,17 +444,7 @@ const FoldersLayout = () => {
 									<Trash variant="Bulk" />
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Abrir"
-							>
+							<Tooltip title="Abrir">
 								<IconButton color="success" onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}>
 									<Maximize variant="Bulk" />
 								</IconButton>
@@ -437,7 +454,7 @@ const FoldersLayout = () => {
 				},
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, navigate],
+		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction],
 	);
 
 	// Row sub component memoizado
@@ -449,23 +466,9 @@ const FoldersLayout = () => {
 		[folders],
 	);
 
-	// Dialog memoizado
-	const renderAddFolder = useMemo(() => {
-		if (!add) return null;
-		return (
-			<Dialog
-				maxWidth="sm"
-				TransitionComponent={PopupTransition}
-				keepMounted
-				fullWidth
-				open={add}
-				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
-				aria-describedby="alert-dialog-slide-description"
-			>
-				<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={fetchFolders} />
-			</Dialog>
-		);
-	}, [add, folder, addFolderMode, handleCloseDialog, fetchFolders]);
+	if (isInitialLoad) {
+		return null; // O un componente de loading si prefieres
+	}
 
 	return (
 		<MainCard content={false}>
@@ -478,8 +481,19 @@ const FoldersLayout = () => {
 					isLoading={isLoader}
 				/>
 			</ScrollX>
-			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} />
-			{renderAddFolder}
+			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={handleRefreshData} />
+			{add && (
+				<Dialog
+					maxWidth="sm"
+					TransitionComponent={PopupTransition}
+					keepMounted
+					fullWidth
+					open={add}
+					sx={{ "& .MuiDialog-paper": { p: 0 } }}
+				>
+					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleRefreshData} />
+				</Dialog>
+			)}
 		</MainCard>
 	);
 };

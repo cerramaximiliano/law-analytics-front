@@ -1,4 +1,5 @@
-// Tipos relacionados con la información del folder
+import { Column } from "react-table";
+import { FC } from "react";
 
 // Estado de la pre carpeta (preFolder)
 interface PreFolder {
@@ -56,4 +57,27 @@ export interface FolderState {
 export interface Action {
 	type: string; // Tipo de la acción
 	payload?: any; // Datos adicionales que acompañan la acción
+}
+
+export interface Props {
+	columns: Column[];
+	data: Folder[];
+	handleAdd: () => void;
+	renderRowSubComponent: FC<any>;
+	isLoading: boolean;
+}
+export interface PropsAlert {
+	title: string;
+	open: boolean;
+	handleClose: (status: boolean) => void;
+	id?: string;
+	onDelete?: () => Promise<void>; 
+  }
+
+export interface PropsAddFolder {
+	folder?: any;
+	onCancel: () => void;
+	onAddFolder: (folder: any) => void;
+	open: boolean;
+	mode: "add" | "edit";
 }

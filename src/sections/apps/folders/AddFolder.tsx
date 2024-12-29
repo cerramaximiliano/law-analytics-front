@@ -1,3 +1,4 @@
+//AddFolder.tsx
 import { useEffect, useState } from "react";
 import {
 	Button,
@@ -23,6 +24,7 @@ import { useSelector, dispatch } from "store";
 import { addFolder, updateFolder } from "store/reducers/folders";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
+import { PropsAddFolder } from "types/folders";
 
 const getInitialValues = (folder: FormikValues | null) => {
 	const newFolder = {
@@ -59,15 +61,9 @@ function getStepContent(step: number, values: any) {
 	}
 }
 
-export interface Props {
-	folder?: any;
-	onCancel: () => void;
-	onAddFolder: (folder: any) => void;
-	open: boolean;
-	mode: "add" | "edit";
-}
 
-const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: Props) => {
+
+const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder) => {
 	const auth = useSelector((state) => state.auth);
 	const isCreating = mode === "add";
 

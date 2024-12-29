@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "react-router";
 import { useSelector } from "react-redux";
 import { ToggleButtonGroup, ToggleButton, Tooltip, Grid } from "@mui/material";
@@ -293,13 +293,9 @@ const Details = () => {
 	const [isColumn, setIsColumn] = useState(false);
 	const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-	// Ref para controlar la carga inicial
-	const hasInitiallyLoaded = useRef(false);
-	// Ref para el último estado de los contactos
-	const lastContactsState = useRef<any[]>([]);
-
-	const { folder, isLoader } = useSelector((state: StateType) => state.folder);
-
+	// Optimized selectors with specific state slices
+	const folder = useSelector((state: StateType) => state.folder.folder);
+	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
 	const selectedContacts = useSelector((state: StateType) => state.contacts.selectedContacts);
 	const contactsLoading = useSelector((state: StateType) => state.contacts.isLoader);
 	const contacts = useSelector((state: StateType) => state.contacts.contacts);
@@ -310,10 +306,11 @@ const Details = () => {
 		if (!id || id === "undefined") return;
 
 		try {
-			await dispatch(getFolderById(id));
+			const promises = [dispatch(getFolderById(id))];
 			if (userId) {
-				await dispatch(getContactsByUserId(userId));
+				promises.push(dispatch(getContactsByUserId(userId)));
 			}
+			await Promise.all(promises);
 		} catch (error) {
 			console.error("Error fetching data:", error);
 		}
@@ -327,25 +324,9 @@ const Details = () => {
 		}
 	}, [fetchData, isInitialLoad]);
 
-	// Carga inicial de datos
-	useEffect(() => {
-		if (!hasInitiallyLoaded.current && id && id !== "undefined") {
-			fetchData();
-			hasInitiallyLoaded.current = true;
-		}
-	}, [fetchData, id]);
-
 	// Contacts filtering with debounce
 	useEffect(() => {
 		if (!id || id === "undefined" || !contacts?.length) return;
-
-		// Verificar si los contactos realmente cambiaron
-		const contactsChanged = JSON.stringify(contacts) !== JSON.stringify(lastContactsState.current);
-
-		if (!contactsChanged) return;
-
-		// Actualizar la referencia del último estado
-		lastContactsState.current = contacts;
 
 		const timeoutId = setTimeout(() => {
 			dispatch(filterContactsByFolder(id));
@@ -388,80 +369,61 @@ const Details = () => {
 	);
 
 	// Memoized components
-	const MemoizedComponents = useMemo(
-		() => ({
-			// Datos generales de la carpeta
-			FolderData: folder ? <FolderData isLoader={isLoader} folder={folder} type="general" /> : null,
+	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);
 
-			// Movimientos
-			Movements: folder?.folderName ? <Movements title="Movimientos" folderName={folder.folderName} /> : null,
+	const MemoizedMovements = useMemo(() => <Movements title="Movimientos" folderName={folder?.folderName} />, [folder]);
 
-			// Notificaciones
-			Notifications: folder?.folderName ? <Notifications title="Notificaciones" folderName={folder.folderName} /> : null,
+	const MemoizedNotifications = useMemo(() => <Notifications title="Notificaciones" folderName={folder?.folderName} />, [folder]);
 
-			// Datos de Pre Judicial
-			PreJudData: folder ? <FolderPreJudData isLoader={isLoader} folder={folder} type="mediacion" /> : null,
+	const MemoizedPreJudData = useMemo(() => <FolderPreJudData isLoader={isLoader} folder={folder} type="mediacion" />, [isLoader, folder]);
 
-			// Datos Judiciales
-			JudData: folder ? <FolderJudData isLoader={isLoader} folder={folder} type="judicial" /> : null,
+	const MemoizedJudData = useMemo(() => <FolderJudData isLoader={isLoader} folder={folder} type="judicial" />, [isLoader, folder]);
 
-			// Tabla de Cálculos
-			CalcTable: folder ? (
-				<CalcTable
-					title="Montos, Cálculos y Ofrecimientos"
-					folderData={{
-						folderName: folder.folderName,
-						monto: folder.monto,
-					}}
-				/>
-			) : null,
+	const MemoizedCalcTable = useMemo(() => <CalcTable title="Montos, Cálculos y Ofrecimientos" folderData={folder} />, [folder]);
 
-			// Miembros/Intervinientes
-			Members: id ? <Members title="Intervinientes" membersData={selectedContacts} isLoader={contactsLoading} folderId={id} /> : null,
-
-			// Lista de Tareas
-			TaskList: folder?.folderName ? <TaskList title="Tareas" folderName={folder.folderName} /> : null,
-
-			// Calendario
-			Calendar: folder?.folderName ? <Calendar title="Calendario" folderName={folder.folderName} /> : null,
-		}),
-		[folder, isLoader, selectedContacts, contactsLoading, id],
+	const MemoizedMembers = useMemo(
+		() => (id ? <Members title="Intervinientes" membersData={selectedContacts} isLoader={contactsLoading} folderId={id} /> : null),
+		[id, selectedContacts, contactsLoading],
 	);
+
+	const MemoizedTaskList = useMemo(() => <TaskList title="Tareas" folderName={folder?.folderName} />, [folder]);
+
+	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" folderName={folder?.folderName} />, [folder]);
 
 	return (
 		<MainCard title="Detalles de la Causa" secondary={renderViewOptions}>
 			<Grid container spacing={3}>
 				{/* Row 1 */}
 				<Grid item {...getGridSize(6)} sx={GRID_STYLES}>
-					{MemoizedComponents.FolderData}
+					{MemoizedFolderData}
 				</Grid>
 				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedComponents.Movements}
+					{MemoizedMovements}
 				</Grid>
 				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedComponents.Notifications}
+					{MemoizedNotifications}
 				</Grid>
 
 				{/* Row 2 */}
 				<Grid item {...getGridSize(4)} sx={GRID_STYLES}>
-					{MemoizedComponents.PreJudData}
+					{MemoizedPreJudData}
 				</Grid>
 				<Grid item {...getGridSize(4)} sx={GRID_STYLES}>
-					{MemoizedComponents.JudData}
+					{MemoizedJudData}
 				</Grid>
 				<Grid item {...getGridSize(4)} sx={GRID_STYLES}>
-					{MemoizedComponents.CalcTable}
+					{MemoizedCalcTable}
 				</Grid>
 
 				{/* Row 3 */}
 				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedComponents.Members}
+					{MemoizedMembers}
 				</Grid>
 				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedComponents.TaskList}
+					{MemoizedTaskList}
 				</Grid>
 				<Grid item {...getGridSize(6)} sx={GRID_STYLES}>
-					{MemoizedComponents.Calendar}
+					{MemoizedCalendar}
 				</Grid>
 			</Grid>
 		</MainCard>

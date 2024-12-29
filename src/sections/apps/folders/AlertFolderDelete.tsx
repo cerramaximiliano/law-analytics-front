@@ -1,33 +1,22 @@
-// material-ui
+//AlertFolderDelete.tsx
 import { Button, Dialog, DialogContent, Stack, Typography } from "@mui/material";
-
-// project-imports
 import Avatar from "components/@extended/Avatar";
 import { PopupTransition } from "components/@extended/Transitions";
-
 // assets
 import { Trash } from "iconsax-react";
 import { dispatch } from "store";
 import { deleteFolder } from "store/reducers/folders";
 
 // types
-interface Props {
-	title: string;
-	open: boolean;
-	handleClose: (status: boolean) => void;
-	id?: string;
-}
-
-// ==============================|| CUSTOMER - DELETE ||============================== //
-
-export default function AlertFolderDelete({ title, open, handleClose, id }: Props) {
+import { PropsAlert } from "types/folders";
+// ==============================|| FOLDER - DELETE ||============================== //
+export default function AlertFolderDelete({ title, open, handleClose, id }: PropsAlert) {
 	const handleClick = () => {
 		handleClose(true);
 		if (id) {
 			dispatch(deleteFolder(id));
 		}
 	};
-
 	return (
 		<Dialog
 			open={open}
