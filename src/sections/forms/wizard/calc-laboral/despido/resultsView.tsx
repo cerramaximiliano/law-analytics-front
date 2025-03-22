@@ -213,50 +213,50 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 
 	const generateHtmlContent = () => {
 		const styles = `
-		  <style>
-			.container { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-			.header { text-align: center; margin-bottom: 24px; }
-			.header h2 { color: #333; margin: 0; }
-			.card { 
-			  border: 1px solid #ddd; 
-			  border-radius: 8px; 
-			  margin-bottom: 16px; 
-			  break-inside: avoid;
-			  page-break-inside: avoid;
-			  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-			}
-			.card-header { 
-			  background-color: #f5f5f5; 
-			  padding: 12px 16px; 
-			  border-bottom: 1px solid #ddd;
-			  border-radius: 8px 8px 0 0;
-			  font-weight: bold;
-			  color: #333;
-			}
-			.card-content { padding: 16px; }
-			.row { 
-			  display: flex; 
-			  justify-content: space-between; 
-			  padding: 8px 0;
-			  border-bottom: 1px solid #eee;
-			}
-			.row:last-child { border-bottom: none; }
-			.label { color: #666; }
-			.value { font-weight: 500; color: #333; }
-			.total-card {
-			  background-color: #1976d2;
-			  color: white;
-			  margin-top: 24px;
-			}
-			.total-content {
-			  display: flex;
-			  justify-content: space-between;
-			  padding: 16px;
-			  font-size: 1.2em;
-			  font-weight: bold;
-			}
-		  </style>
-		`;
+			<style>
+				.container { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+				.header { text-align: center; margin-bottom: 24px; }
+				.header h2 { color: #333; margin: 0; }
+				.card { 
+				border: 1px solid #ddd; 
+				border-radius: 8px; 
+				margin-bottom: 16px; 
+				break-inside: avoid;
+				page-break-inside: avoid;
+				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+				}
+				.card-header { 
+				background-color: #f5f5f5; 
+				padding: 12px 16px; 
+				border-bottom: 1px solid #ddd;
+				border-radius: 8px 8px 0 0;
+				font-weight: bold;
+				color: #333;
+				}
+				.card-content { padding: 16px; }
+				.row { 
+				display: flex; 
+				justify-content: space-between; 
+				padding: 8px 0;
+				border-bottom: 1px solid #eee;
+				}
+				.row:last-child { border-bottom: none; }
+				.label { color: #666; }
+				.value { font-weight: 500; color: #333; }
+				.total-card {
+				background-color: #1976d2;
+				color: white;
+				margin-top: 24px;
+				}
+				.total-content {
+				display: flex;
+				justify-content: space-between;
+				padding: 16px;
+				font-size: 1.2em;
+				font-weight: bold;
+				}
+			</style>
+			`;
 
 		const renderCard = (title: string, items: ResultItem[]) => {
 			if (!items.length) return "";
@@ -264,22 +264,22 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			const rows = items
 				.map(
 					({ key, value }) => `
-			<div class="row">
-			  <span class="label">${getLabelForKey(key)}:</span>
-			  <span class="value">${formatValue(key, value)}</span>
-			</div>
-		  `,
+				<div class="row">
+				<span class="label">${getLabelForKey(key)}:</span>
+				<span class="value">${formatValue(key, value)}</span>
+				</div>
+			`,
 				)
 				.join("");
 
 			return `
-			<div class="card">
-			  <div class="card-header">${title}</div>
-			  <div class="card-content">
-				${rows}
-			  </div>
-			</div>
-		  `;
+				<div class="card">
+				<div class="card-header">${title}</div>
+				<div class="card-content">
+					${rows}
+				</div>
+				</div>
+			`;
 		};
 
 		const groupSections = [
@@ -296,31 +296,31 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			.join("");
 
 		return `
-		  <!DOCTYPE html>
-		  <html>
-			<head>
-			  <meta charset="utf-8">
-			  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-			  ${styles}
-			</head>
-			<body>
-			  <div class="container">
-				<div class="header">
-				  <h2>Resultados de la Liquidación</h2>
+			<!DOCTYPE html>
+			<html>
+				<head>
+				<meta charset="utf-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				${styles}
+				</head>
+				<body>
+				<div class="container">
+					<div class="header">
+					<h2>Resultados de la Liquidación</h2>
+					</div>
+					
+					${cardsHtml}
+					
+					<div class="card total-card">
+					<div class="total-content">
+						<span>TOTAL</span>
+						<span>${formatValue("total", total)}</span>
+					</div>
+					</div>
 				</div>
-				
-				${cardsHtml}
-				
-				<div class="card total-card">
-				  <div class="total-content">
-					<span>TOTAL</span>
-					<span>${formatValue("total", total)}</span>
-				  </div>
-				</div>
-			  </div>
-			</body>
-		  </html>
-		`;
+				</body>
+			</html>
+			`;
 	};
 
 	const handleCopyToClipboard = async () => {

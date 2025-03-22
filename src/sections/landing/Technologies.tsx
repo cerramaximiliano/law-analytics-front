@@ -118,8 +118,7 @@ const TechnologiesPage = () => {
 												<Typography>{tech.description}</Typography>
 											</Grid>
 											<Grid item xs={12}>
-												<Grid container spacing={2} justifyContent="flex-start">
-												</Grid>
+												<Grid container spacing={2} justifyContent="flex-start"></Grid>
 											</Grid>
 										</Grid>
 									</MainCard>

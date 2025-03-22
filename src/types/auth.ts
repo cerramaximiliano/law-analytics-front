@@ -1,4 +1,5 @@
 import { ReactElement } from "react";
+import { CredentialResponse } from "@react-oauth/google";
 
 // third-party
 import firebase from "firebase/compat/app";
@@ -35,6 +36,7 @@ export type UserProfile = {
 	users?: User[];
 	url?: string;
 	zipCode?: string;
+	isVerified?: boolean;
 };
 
 type User = {
@@ -48,7 +50,7 @@ type User = {
 
 export interface AuthProps {
 	isLoggedIn: boolean;
-	isInitialized?: boolean;
+	isInitialized: boolean;
 	user?: UserProfile | null;
 	email?: string;
 	token?: string | null;
@@ -63,7 +65,8 @@ export interface AuthActionProps {
 		email?: string;
 		needsVerification?: boolean;
 		isLoggedIn?: boolean;
-		picture?: string; // Asegúrate de incluir `picture` aquí para UPDATE_PICTURE
+		isInitialized?: boolean;
+		picture?: string;
 	};
 }
 
@@ -115,26 +118,64 @@ export type JWTContextType = {
 	updateProfile: VoidFunction;
 };
 
+// Interfaces para respuestas de la API
+export interface LoginResponse {
+	user: UserProfile;
+	success?: boolean;
+	message?: string;
+	accessToken?: string;
+	refreshToken?: string;
+	needsVerification?: boolean;
+}
+
+export interface RegisterResponse {
+	user: UserProfile;
+	token?: string;
+	needsVerification: boolean;
+}
+
+export interface VerifyCodeResponse {
+	success: boolean;
+	message: string;
+}
+
+// Interfaz actualizada para el contexto del servidor
 export interface ServerContextType {
 	isLoggedIn: boolean;
 	isInitialized?: boolean;
 	user?: UserProfile | null | undefined;
 	needsVerification?: boolean;
 	email?: string;
-	isGoogleLoggedIn: boolean; // Nuevo campo para el estado de autenticación de Google
-	login: (email: string, password: string) => Promise<void>;
-	logout: () => void;
+	isGoogleLoggedIn: boolean;
+	login: (email: string, password: string) => Promise<boolean>;
+	logout: (showMessage?: boolean) => Promise<void>;
 	register: (
 		email: string,
 		password: string,
 		firstName: string,
 		lastName: string,
-	) => Promise<{ isLoggedIn: boolean; needsVerification: boolean }>;
+	) => Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }>;
+	verifyCode?: (email: string, code: string) => Promise<boolean>;
 	resetPassword: (email: string) => Promise<void>;
-	updateProfile: (userData: any) => Promise<void>;
+	updateProfile: (userData: Partial<UserProfile>) => Promise<void>;
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;
-	loginWithGoogle: (value: any) => void; // Nuevo método para iniciar sesión con Google
+	loginWithGoogle: (tokenResponse: CredentialResponse) => Promise<boolean>;
+	handleLogoutAndRedirect?: () => Promise<void>;
+}
+
+export interface UnauthorizedModalProps {
+	open: boolean;
+	onClose: () => void;
+	onLogin: (email: string, password: string) => Promise<boolean>;
+	onGoogleLogin: (response: CredentialResponse) => Promise<boolean>;
+	onLogout: () => void;
+}
+
+export interface FormValues {
+	email: string;
+	password: string;
+	submit: string | null;
 }
 
 export type Auth0ContextType = {

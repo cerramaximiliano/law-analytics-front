@@ -18,5 +18,4 @@
 	{ "userId": "321", "_id": "17", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
 	{ "userId": "321", "_id": "18", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" },
 	{ "userId": "321", "_id": "19", "category": "Laboral", "type": "Despido", "amount": 250000, "date": "01/02/2023" }
-
 ]

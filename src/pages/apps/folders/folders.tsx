@@ -65,194 +65,186 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
-  
+
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
-  
-	const defaultHiddenColumns = useMemo(() => 
-	  matchDownSM 
-		? ["_id", "email", "status", "description", "initialDateFolder", "finalDateFolder", "folderJuris.label", "folderFuero"]
-		: ["email", "_id", "description", "finalDateFolder"],
-	  [matchDownSM]
+
+	const defaultHiddenColumns = useMemo(
+		() =>
+			matchDownSM
+				? ["_id", "email", "status", "description", "initialDateFolder", "finalDateFolder", "folderJuris.label", "folderFuero"]
+				: ["email", "_id", "description", "finalDateFolder"],
+		[matchDownSM],
 	);
-  
+
 	const {
-	  getTableProps,
-	  getTableBodyProps,
-	  headerGroups,
-	  prepareRow,
-	  setHiddenColumns,
-	  allColumns,
-	  visibleColumns,
-	  rows,
-	  page,
-	  gotoPage,
-	  setPageSize,
-	  state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded },
-	  preGlobalFilteredRows,
-	  setGlobalFilter,
-	  setSortBy,
-	  selectedFlatRows,
+		getTableProps,
+		getTableBodyProps,
+		headerGroups,
+		prepareRow,
+		setHiddenColumns,
+		allColumns,
+		visibleColumns,
+		rows,
+		page,
+		gotoPage,
+		setPageSize,
+		state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded },
+		preGlobalFilteredRows,
+		setGlobalFilter,
+		setSortBy,
+		selectedFlatRows,
 	} = useTable(
-	  {
-		columns,
-		data,
-		filterTypes,
-		initialState: {
-		  pageIndex: 0,
-		  pageSize: 10,
-		  hiddenColumns: defaultHiddenColumns,
-		  sortBy: [sortBy],
+		{
+			columns,
+			data,
+			filterTypes,
+			initialState: {
+				pageIndex: 0,
+				pageSize: 10,
+				hiddenColumns: defaultHiddenColumns,
+				sortBy: [sortBy],
+			},
 		},
-	  },
-	  useGlobalFilter,
-	  useFilters,
-	  useSortBy,
-	  useExpanded,
-	  usePagination,
-	  useRowSelect
+		useGlobalFilter,
+		useFilters,
+		useSortBy,
+		useExpanded,
+		usePagination,
+		useRowSelect,
 	);
-  
+
 	useEffect(() => {
-	  setHiddenColumns(defaultHiddenColumns);
-	  setIsColumnsReady(true);
-  
-	  return () => {
-		setIsColumnsReady(false);
-	  };
+		setHiddenColumns(defaultHiddenColumns);
+		setIsColumnsReady(true);
+
+		return () => {
+			setIsColumnsReady(false);
+		};
 	}, [setHiddenColumns, defaultHiddenColumns]);
-  
+
 	if (!isColumnsReady || isLoading) {
-	  return (
-		<>
-		  <TableRowSelection selected={0} />
-		  <Stack spacing={3}>
-			<Stack
-			  direction={matchDownSM ? "column" : "row"}
-			  spacing={1}
-			  justifyContent="space-between"
-			  alignItems="center"
-			  sx={{ p: 3, pb: 0 }}
-			>
-			  <Skeleton width={200} height={40} />
-			  <Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
-				<Skeleton width={120} height={40} />
-				<Skeleton width={150} height={40} />
-				<Skeleton width={100} height={40} />
-			  </Stack>
-			</Stack>
-			<Table>
-			  <TableHead>
-				<TableRow>
-				  {Array(6).fill(0).map((_, index) => (
-					<TableCell key={index}>
-					  <Skeleton width={100} height={24} />
-					</TableCell>
-				  ))}
-				</TableRow>
-			  </TableHead>
-			  <TableBody>
-				{Array(5).fill(0).map((_, rowIndex) => (
-				  <TableRow key={rowIndex}>
-					{Array(6).fill(0).map((_, cellIndex) => (
-					  <TableCell key={cellIndex}>
-						<Skeleton width={100} height={24} />
-					  </TableCell>
-					))}
-				  </TableRow>
-				))}
-			  </TableBody>
-			</Table>
-		  </Stack>
-		</>
-	  );
-	}
-  
-	return (
-	  <>
-		<TableRowSelection selected={Object.keys(selectedRowIds).length} />
-		<Stack spacing={3}>
-		  <Stack
-			direction={matchDownSM ? "column" : "row"}
-			spacing={1}
-			justifyContent="space-between"
-			alignItems="center"
-			sx={{ p: 3, pb: 0 }}
-		  >
-			<GlobalFilter
-			  preGlobalFilteredRows={preGlobalFilteredRows}
-			  globalFilter={globalFilter}
-			  setGlobalFilter={setGlobalFilter}
-			/>
-			<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
-			  <SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-			  <Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
-				Agregar Causa
-			  </Button>
-			  <CSVExport
-				data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data}
-				filename={"causas.csv"}
-			  />
-			</Stack>
-		  </Stack>
-		  <Table {...getTableProps()}>
-			<TableHead>
-			  {headerGroups.map((headerGroup: HeaderGroup<{}>) => (
-				<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
-				  {headerGroup.headers.map((column: HeaderGroup) => (
-					<TableCell {...column.getHeaderProps([{ className: column.className }])}>
-					  <HeaderSort column={column} sort />
-					</TableCell>
-				  ))}
-				</TableRow>
-			  ))}
-			</TableHead>
-			<TableBody {...getTableBodyProps()}>
-			  {page.map((row: Row, i: number) => {
-				prepareRow(row);
-				const rowProps = row.getRowProps();
-				return (
-				  <Fragment key={i}>
-					<TableRow
-					  {...row.getRowProps()}
-					  onClick={() => {
-						row.toggleRowSelected();
-					  }}
-					  sx={{
-						cursor: "pointer",
-						bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
-					  }}
+		return (
+			<>
+				<TableRowSelection selected={0} />
+				<Stack spacing={3}>
+					<Stack
+						direction={matchDownSM ? "column" : "row"}
+						spacing={1}
+						justifyContent="space-between"
+						alignItems="center"
+						sx={{ p: 3, pb: 0 }}
 					>
-					  {row.cells.map((cell: Cell) => (
-						<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>
-						  {cell.render("Cell")}
+						<Skeleton width={200} height={40} />
+						<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
+							<Skeleton width={120} height={40} />
+							<Skeleton width={150} height={40} />
+							<Skeleton width={100} height={40} />
+						</Stack>
+					</Stack>
+					<Table>
+						<TableHead>
+							<TableRow>
+								{Array(6)
+									.fill(0)
+									.map((_, index) => (
+										<TableCell key={index}>
+											<Skeleton width={100} height={24} />
+										</TableCell>
+									))}
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{Array(5)
+								.fill(0)
+								.map((_, rowIndex) => (
+									<TableRow key={rowIndex}>
+										{Array(6)
+											.fill(0)
+											.map((_, cellIndex) => (
+												<TableCell key={cellIndex}>
+													<Skeleton width={100} height={24} />
+												</TableCell>
+											))}
+									</TableRow>
+								))}
+						</TableBody>
+					</Table>
+				</Stack>
+			</>
+		);
+	}
+
+	return (
+		<>
+			<TableRowSelection selected={Object.keys(selectedRowIds).length} />
+			<Stack spacing={3}>
+				<Stack
+					direction={matchDownSM ? "column" : "row"}
+					spacing={1}
+					justifyContent="space-between"
+					alignItems="center"
+					sx={{ p: 3, pb: 0 }}
+				>
+					<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
+						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
+						<Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
+							Agregar Causa
+						</Button>
+						<CSVExport data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data} filename={"causas.csv"} />
+					</Stack>
+				</Stack>
+				<Table {...getTableProps()}>
+					<TableHead>
+						{headerGroups.map((headerGroup: HeaderGroup<{}>) => (
+							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
+								{headerGroup.headers.map((column: HeaderGroup) => (
+									<TableCell {...column.getHeaderProps([{ className: column.className }])}>
+										<HeaderSort column={column} sort />
+									</TableCell>
+								))}
+							</TableRow>
+						))}
+					</TableHead>
+					<TableBody {...getTableBodyProps()}>
+						{page.map((row: Row, i: number) => {
+							prepareRow(row);
+							const rowProps = row.getRowProps();
+							return (
+								<Fragment key={i}>
+									<TableRow
+										{...row.getRowProps()}
+										onClick={() => {
+											row.toggleRowSelected();
+										}}
+										sx={{
+											cursor: "pointer",
+											bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
+										}}
+									>
+										{row.cells.map((cell: Cell) => (
+											<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
+										))}
+									</TableRow>
+									{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
+								</Fragment>
+							);
+						})}
+					</TableBody>
+				</Table>
+				{page.length > 0 && (
+					<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
+						<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
+							<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
 						</TableCell>
-					  ))}
 					</TableRow>
-					{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
-				  </Fragment>
-				);
-			  })}
-			</TableBody>
-		  </Table>
-		  {page.length > 0 && (
-			<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-			  <TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-				<TablePagination
-				  gotoPage={gotoPage}
-				  rows={rows}
-				  setPageSize={setPageSize}
-				  pageSize={pageSize}
-				  pageIndex={pageIndex}
-				/>
-			  </TableCell>
-			</TableRow>
-		  )}
-		  {page.length === 0 && <EmptyTable msg="No Hay Datos" colSpan={7} />}
-		</Stack>
-	  </>
+				)}
+				{page.length === 0 && <EmptyTable msg="No Hay Datos" colSpan={7} />}
+			</Stack>
+		</>
 	);
-  }
+}
 
 // ==============================|| FOLDER - LIST ||============================== //
 

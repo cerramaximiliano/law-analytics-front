@@ -87,6 +87,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 	}, [showUnauthorizedModal]);
 
 	useEffect(() => {
+		console.log("interceptor unauth context");
 		const interceptor = axios.interceptors.response.use(
 			(response) => response,
 			(error) => {

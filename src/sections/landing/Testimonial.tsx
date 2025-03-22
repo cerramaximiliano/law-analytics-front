@@ -98,7 +98,7 @@ const TestimonialPage = () => {
 			designation: "Disponibilidad de Funciones",
 		},
 	];
-	
+
 	return (
 		<>
 			<Box sx={{ mt: { md: 15, xs: 2.5 } }}>
@@ -139,8 +139,7 @@ const TestimonialPage = () => {
 									damping: 30,
 									delay: 0.4,
 								}}
-							>
-							</motion.div>
+							></motion.div>
 						</Grid>
 					</Grid>
 				</Container>

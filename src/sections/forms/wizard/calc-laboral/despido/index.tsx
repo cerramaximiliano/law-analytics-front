@@ -39,7 +39,6 @@ function getStepContent(step: number, values: any) {
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
-	console.log(folder?._id);
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
@@ -367,7 +366,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 			);
 		}
 
-		alert(JSON.stringify(resultado, null, 2));
+		//alert(JSON.stringify(resultado, null, 2));
 		setFormResults(resultado);
 		actions.setSubmitting(false);
 		setActiveStep(activeStep + 1);

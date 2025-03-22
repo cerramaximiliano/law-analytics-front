@@ -199,11 +199,9 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 const SavedIntereses = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
-	const [isLoading, setIsLoading] = useState(true);
-	console.log(isLoading);
 
-	const calculatorData = useSelector((state: any) => state.calculator);
-	console.log(calculatorData);
+	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
+
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
 
@@ -215,7 +213,6 @@ const SavedIntereses = () => {
 
 	useEffect(() => {
 		const fetchData = async () => {
-			setIsLoading(true);
 			await dispatch(
 				getCalculatorsByFilter({
 					userId,
@@ -223,7 +220,6 @@ const SavedIntereses = () => {
 					classType: "intereses",
 				}),
 			);
-			setIsLoading(false);
 		};
 		fetchData();
 	}, [dispatch]);
@@ -349,10 +345,10 @@ const SavedIntereses = () => {
 			<ScrollX>
 				<ReactTable
 					columns={columns}
-					data={calculatorData.calculator}
+					data={selectedCalculators}
 					handleAdd={handleAdd}
 					renderRowSubComponent={renderRowSubComponent}
-					isLoading={isLoading}
+					isLoading={isLoader}
 				/>
 			</ScrollX>
 			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} />

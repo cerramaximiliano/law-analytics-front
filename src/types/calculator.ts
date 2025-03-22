@@ -6,7 +6,6 @@ export interface LoadingContentProps {
 	skeleton: React.ReactNode;
 }
 
-
 export type CalcAmounts = {
 	date: string;
 	type: "Calculado" | "Reclamado" | "Ofertado";
@@ -15,7 +14,6 @@ export type CalcAmounts = {
 	link?: string;
 	description?: string;
 };
-
 
 export type CalculatorType = {
 	userId?: string;
@@ -49,8 +47,6 @@ export interface FilterParams {
 	type?: string;
 	classType?: string;
 }
-
-
 
 export type ModalCalcType = {
 	open: boolean;

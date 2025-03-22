@@ -92,7 +92,7 @@ const MobileSection = () => {
 								<AppBar color="inherit">
 									<Toolbar>
 										<Search />
-{/* 										<Localization /> */}
+										{/* 										<Localization /> */}
 										<Profile />
 									</Toolbar>
 								</AppBar>

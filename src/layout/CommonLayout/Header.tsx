@@ -140,8 +140,7 @@ const Header = ({ handleDrawerOpen, layout = "landing", ...others }: Props) => {
 									</Button>
 								)}
 
-
-{/* 								<IconButton
+								{/* 								<IconButton
 									size="large"
 									color="secondary"
 									{...(layout === "component" ? { onClick: handleDrawerOpen } : { onClick: drawerToggler(true) })}

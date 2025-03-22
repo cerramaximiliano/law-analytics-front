@@ -84,8 +84,6 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 
 			const result = await dispatch(addCalculator(calculatorData));
 
-			
-
 			if (folderId) {
 				await dispatch(getCalculatorsByFolderId(folderId));
 			}

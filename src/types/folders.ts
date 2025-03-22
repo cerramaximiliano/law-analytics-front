@@ -71,8 +71,8 @@ export interface PropsAlert {
 	open: boolean;
 	handleClose: (status: boolean) => void;
 	id?: string;
-	onDelete?: () => Promise<void>; 
-  }
+	onDelete?: () => Promise<void>;
+}
 
 export interface PropsAddFolder {
 	folder?: any;

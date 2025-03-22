@@ -113,7 +113,7 @@ const Pricing = () => {
 															</Typography>
 														) : (
 															<Typography variant="h2" sx={price}>
-																 ${Math.round(plan.price * 12 - plan.price * 0.25)}
+																${Math.round(plan.price * 12 - plan.price * 0.25)}
 															</Typography>
 														))}
 													<Typography variant="h6" color="textSecondary"></Typography>

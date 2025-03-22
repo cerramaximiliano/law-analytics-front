@@ -23,7 +23,6 @@ const initialState: AuthProps = {
 	user: null,
 };
 
-
 const verifyToken: (st: string) => boolean = (serviceToken) => {
 	if (!serviceToken) {
 		return false;

@@ -300,7 +300,7 @@ const MainRoutes = {
 				},
 			],
 		},
-/* 		{
+		/* 		{
 			path: "/",
 			element: <CommonLayout layout="landing" />,
 			children: [
@@ -310,7 +310,7 @@ const MainRoutes = {
 				},
 			],
 		}, */
-/* 		{
+		/* 		{
 			path: "/",
 			element: <CommonLayout layout="simple" />,
 			children: [
@@ -320,7 +320,7 @@ const MainRoutes = {
 				},
 			],
 		}, */
-/* 		{
+		/* 		{
 			path: "/maintenance",
 			element: <CommonLayout />,
 			children: [

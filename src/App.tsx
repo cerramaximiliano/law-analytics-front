@@ -17,8 +17,8 @@ import { fetchMenu } from "store/reducers/menu";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // auth-provider
-import { ServerAuthProvider as AuthProvider } from "contexts/ServerContext";
-import { UnauthorizedProvider } from "contexts/UnauthorizedContext";
+import { AuthProvider } from "contexts/ServerContext";
+//import { UnauthorizedProvider } from "contexts/UnauthorizedContext";
 
 const googleClientId = process.env.REACT_APP_AUTH0_GOOGLE_ID;
 if (!googleClientId) {
@@ -43,12 +43,10 @@ const App = () => {
 					<ScrollTop>
 						<GoogleOAuthProvider clientId={googleClientId}>
 							<AuthProvider>
-								<UnauthorizedProvider>
-									<Notistack>
-										<Routes />
-										<Snackbar />
-									</Notistack>
-								</UnauthorizedProvider>
+								<Notistack>
+									<Routes />
+									<Snackbar />
+								</Notistack>
 							</AuthProvider>
 						</GoogleOAuthProvider>
 					</ScrollTop>

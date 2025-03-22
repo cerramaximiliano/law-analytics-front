@@ -9,8 +9,8 @@ import { Dispatch } from "redux";
 // initial state
 export const initialState: AuthProps = {
 	isLoggedIn: false,
-	isInitialized: false,
-	user: {},
+	isInitialized: true, // Cambiar a true por defecto
+	user: null, // Cambiar a null en lugar de objeto vacío
 	email: "",
 	needsVerification: false,
 };
@@ -24,7 +24,8 @@ const auth = (state = initialState, action: AuthActionProps) => {
 			return {
 				...state,
 				user,
-				email, // Guarda el correo en el estado
+				isInitialized: true,
+				email,
 				needsVerification: needsVerification || false,
 			};
 		}
@@ -51,12 +52,8 @@ const auth = (state = initialState, action: AuthActionProps) => {
 		}
 		case LOGOUT: {
 			return {
-				...state,
+				...initialState, // Usar initialState directamente
 				isInitialized: true,
-				isLoggedIn: false,
-				user: null,
-				email: "", // Limpia el correo al hacer logout
-				needsVerification: false,
 			};
 		}
 		default: {
@@ -68,6 +65,11 @@ const auth = (state = initialState, action: AuthActionProps) => {
 export default auth;
 
 // ==============================|| ACTIONS ||============================== //
+interface LoginPayload {
+	user?: any;
+	email?: string;
+	needsVerification?: boolean;
+}
 
 // Acción para obtener los datos de autenticación desde el store
 export const fetchAuth = () => (dispatch: Dispatch, getState: () => RootState) => {
@@ -87,23 +89,25 @@ export const fetchAuth = () => (dispatch: Dispatch, getState: () => RootState) =
 };
 
 // Acción para registrar al usuario en el estado sin hacer una llamada a la API
-export const registerUser = (user: any, email: string, needsVerification: boolean) => (dispatch: Dispatch) => {
-	dispatch({
-		type: REGISTER,
-		payload: { user, email, needsVerification },
-	});
-};
+export const registerUser =
+	(user: any, email: string, needsVerification: boolean = false) =>
+	(dispatch: Dispatch) => {
+		dispatch({
+			type: REGISTER,
+			payload: {
+				user,
+				email,
+				needsVerification,
+			},
+		});
+	};
 
 // Acción para iniciar sesión y actualizar el estado usando los datos actuales del store
-export const loginUser = () => (dispatch: Dispatch, getState: () => RootState) => {
-	// Obtiene los datos de autenticación actuales desde el estado
-	const { user, email } = getState().auth;
-
+export const loginUser = (payload: LoginPayload) => (dispatch: Dispatch) => {
 	dispatch({
 		type: LOGIN,
 		payload: {
-			user,
-			email,
+			...payload,
 			isLoggedIn: true,
 		},
 	});

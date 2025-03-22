@@ -199,13 +199,10 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 const SavedCivil = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
-	const [isLoading, setIsLoading] = useState(true);
 
-	const calculatorData = useSelector((state: any) => state.calculator);
+	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
-
-	console.log(calculatorData);
 
 	const data = useMemo(() => makeData(20), []);
 	const [open, setOpen] = useState<boolean>(false);
@@ -215,7 +212,6 @@ const SavedCivil = () => {
 
 	useEffect(() => {
 		const fetchData = async () => {
-			setIsLoading(true);
 			await dispatch(
 				getCalculatorsByFilter({
 					userId,
@@ -223,7 +219,6 @@ const SavedCivil = () => {
 					classType: "civil",
 				}),
 			);
-			setIsLoading(false);
 		};
 		fetchData();
 	}, [dispatch]);
@@ -349,10 +344,10 @@ const SavedCivil = () => {
 			<ScrollX>
 				<ReactTable
 					columns={columns}
-					data={calculatorData.calculator}
+					data={selectedCalculators}
 					handleAdd={handleAdd}
 					renderRowSubComponent={renderRowSubComponent}
-					isLoading={isLoading}
+					isLoading={isLoader}
 				/>
 			</ScrollX>
 			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} />

@@ -61,8 +61,6 @@ function getStepContent(step: number, values: any) {
 	}
 }
 
-
-
 const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder) => {
 	const auth = useSelector((state) => state.auth);
 	const isCreating = mode === "add";

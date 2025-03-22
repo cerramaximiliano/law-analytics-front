@@ -8,9 +8,14 @@ import { Box, Tab, Tabs } from "@mui/material";
 import MainCard from "components/MainCard";
 
 // assets
-import { DocumentText, Lock, Profile, Profile2User, Setting3, 
+import {
+	DocumentText,
+	Lock,
+	Profile,
+	Profile2User,
+	Setting3,
 	//TableDocument
- } from "iconsax-react";
+} from "iconsax-react";
 
 // ==============================|| PROFILE - ACCOUNT ||============================== //
 

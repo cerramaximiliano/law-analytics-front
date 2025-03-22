@@ -81,7 +81,7 @@ const AuthRegister = () => {
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
-						const {  needsVerification } = await register(values.email, values.password, values.firstname, values.lastname);
+						const { needsVerification } = await register(values.email, values.password, values.firstname, values.lastname);
 						if (scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);

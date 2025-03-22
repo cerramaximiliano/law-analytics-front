@@ -191,7 +191,6 @@ const ProfilePage = () => {
 															Usuario
 														</Typography>
 													</Stack>
-
 												</Stack>
 											</Grid>
 											<Grid item>
