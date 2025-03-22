@@ -91,9 +91,9 @@ const CompensacionWizard = () => {
 			const fechaDesde = values.fechaInicial;
 			const fechaHasta = values.fechaFinal;
 			const campo = values.tasa;
-			const completo = true;
+			const calcular = true;
 
-			const url = `${process.env.REACT_APP_BASE_URL}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&completo=${completo}`;
+			const url = `${process.env.REACT_APP_BASE_URL}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&calcular=${calcular}`;
 
 			const response = await axios.get(url, {
 				withCredentials: true,
