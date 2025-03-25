@@ -11,10 +11,10 @@ import IconButton from "components/@extended/IconButton";
 import SalesChart from "sections/dashboard/SalesChart";
 import AcquisitionChannels from "sections/dashboard/analytics/AcquisitionChannels";
 
-import EcommerceDataCard from "components/cards/statistics/EcommerceDataCard";
-import EcommerceDataChart from "sections/widget/chart/EcommerceDataChart";
+import EcommerceDataCard from "components/cards/statistics/WidgetDataCard";
+import EcommerceDataChart from "sections/widget/chart/BarsDataWidget";
 
-import RepeatCustomerRate from "sections/widget/chart/RepeatCustomerRate";
+import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
 import ProjectOverview from "sections/widget/chart/ProjectOverview";
 import EcommerceIncome from "sections/widget/chart/EcommerceIncome";
 import EcommerceRadial from "sections/widget/chart/EcommerceRadial";

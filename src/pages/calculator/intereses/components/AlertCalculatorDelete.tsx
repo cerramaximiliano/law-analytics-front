@@ -69,13 +69,7 @@ export default function AlertCalculatorDelete({ id, title, open, handleClose }: 
 						<Button fullWidth onClick={handleClose} color="secondary" variant="outlined">
 							Cancelar
 						</Button>
-						<Button
-							fullWidth
-							color="error"
-							variant="contained"
-							onClick={handleDelete}
-							autoFocus
-						>
+						<Button fullWidth color="error" variant="contained" onClick={handleDelete} autoFocus>
 							Eliminar
 						</Button>
 					</Stack>

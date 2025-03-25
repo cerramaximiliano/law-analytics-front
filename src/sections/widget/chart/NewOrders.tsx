@@ -5,7 +5,7 @@ import { useTheme } from "@mui/material/styles";
 import { Box, Button, FormControl, Grid, MenuItem, Select, SelectChangeEvent, Stack, Typography } from "@mui/material";
 
 // project-imports
-import EcommerceDataChart from "./EcommerceDataChart";
+import EcommerceDataChart from "./BarsDataWidget";
 import MainCard from "components/MainCard";
 
 // assets

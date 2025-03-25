@@ -135,13 +135,14 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			if (items.length) {
 				text += `${group.toUpperCase()}\n`;
 				items.forEach((item: ResultItem) => {
-					text += `${getLabelForKey(item.key)}: ${typeof item.value === "number" && item.key !== "Periodos" && item.key !== "Días Vacaciones"
-						? new Intl.NumberFormat("es-AR", {
-							style: "currency",
-							currency: "ARS",
-						}).format(item.value)
-						: item.value
-						}\n`;
+					text += `${getLabelForKey(item.key)}: ${
+						typeof item.value === "number" && item.key !== "Periodos" && item.key !== "Días Vacaciones"
+							? new Intl.NumberFormat("es-AR", {
+									style: "currency",
+									currency: "ARS",
+							  }).format(item.value)
+							: item.value
+					}\n`;
 				});
 				text += "\n";
 			}
@@ -211,13 +212,14 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 					({ key, value }) => `
             <div class="row">
                 <span class="label">${getLabelForKey(key) || key}:</span>
-                <span class="value">${typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
-							? new Intl.NumberFormat("es-AR", {
-								style: "currency",
-								currency: "ARS",
-							}).format(value)
-							: value
-						}</span>
+                <span class="value">${
+									typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
+										? new Intl.NumberFormat("es-AR", {
+												style: "currency",
+												currency: "ARS",
+										  }).format(value)
+										: value
+								}</span>
             </div>
         `,
 				)
@@ -262,9 +264,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
                         <div class="total-content">
                             <span>TOTAL</span>
                             <span>${new Intl.NumberFormat("es-AR", {
-			style: "currency",
-			currency: "ARS",
-		}).format(data.amount)}</span>
+															style: "currency",
+															currency: "ARS",
+														}).format(data.amount)}</span>
                         </div>
                     </div>
                 </div>
@@ -449,9 +451,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 							<Typography variant="body2">
 								{typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
 									? new Intl.NumberFormat("es-AR", {
-										style: "currency",
-										currency: "ARS",
-									}).format(value)
+											style: "currency",
+											currency: "ARS",
+									  }).format(value)
 									: value}
 							</Typography>
 						</Stack>
@@ -821,9 +823,9 @@ const SavedLabor = () => {
 					<Typography>
 						{row.original.amount
 							? new Intl.NumberFormat("es-AR", {
-								style: "currency",
-								currency: "ARS",
-							}).format(row.original.amount)
+									style: "currency",
+									currency: "ARS",
+							  }).format(row.original.amount)
 							: "-"}
 					</Typography>
 				),
@@ -947,11 +949,7 @@ const SavedLabor = () => {
 					isLoading={isLoader}
 				/>
 			</ScrollX>
-			<AlertCalculatorDelete
-				id={calculatorIdToDelete}
-				open={deleteModalOpen}
-				handleClose={handleCloseDeleteModal}
-			/>
+			<AlertCalculatorDelete id={calculatorIdToDelete} open={deleteModalOpen} handleClose={handleCloseDeleteModal} />
 			{/* add customer dialog */}
 			<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={selectedCalculationId} />
 			<Dialog

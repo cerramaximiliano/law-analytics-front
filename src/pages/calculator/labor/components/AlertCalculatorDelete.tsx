@@ -52,22 +52,14 @@ export default function AlertCalculatorDelete({ id, open, handleClose }: Props) 
 						<Typography variant="h4" align="center">
 							¿Estás seguro que deseas eliminar este cálculo?
 						</Typography>
-						<Typography align="center">
-							Al eliminar este cálculo no podrás recuperar sus datos después.
-						</Typography>
+						<Typography align="center">Al eliminar este cálculo no podrás recuperar sus datos después.</Typography>
 					</Stack>
 
 					<Stack direction="row" spacing={2} sx={{ width: 1 }}>
 						<Button fullWidth onClick={handleClose} color="secondary" variant="outlined">
 							Cancelar
 						</Button>
-						<Button
-							fullWidth
-							color="error"
-							variant="contained"
-							onClick={handleDelete}
-							autoFocus
-						>
+						<Button fullWidth color="error" variant="contained" onClick={handleDelete} autoFocus>
 							Eliminar
 						</Button>
 					</Stack>

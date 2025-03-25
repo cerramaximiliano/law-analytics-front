@@ -1,4 +1,6 @@
-import { useState, MouseEvent, ReactNode } from "react";
+import { useState, 
+	//MouseEvent, 
+	ReactNode } from "react";
 
 // material-ui
 import { Box, Grid, ListItemButton, Menu, Stack, Typography } from "@mui/material";
@@ -6,10 +8,10 @@ import { Box, Grid, ListItemButton, Menu, Stack, Typography } from "@mui/materia
 // project-imports
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import IconButton from "components/@extended/IconButton";
+//import IconButton from "components/@extended/IconButton";
 
 // assets
-import { More } from "iconsax-react";
+//	import { More } from "iconsax-react";
 
 // types
 import { ColorProps } from "types/extended";
@@ -25,13 +27,13 @@ interface Props {
 
 // ==============================|| CHART WIDGET - ECOMMERCE CARD  ||============================== //
 
-const EcommerceDataCard = ({ title, count, percentage, color, iconPrimary, children }: Props) => {
+const WidgetDataCard = ({ title, count, percentage, color, iconPrimary, children }: Props) => {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 
-	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+	/* const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
 		setAnchorEl(event.currentTarget);
-	};
+	}; */
 
 	const handleClose = () => {
 		setAnchorEl(null);
@@ -48,16 +50,16 @@ const EcommerceDataCard = ({ title, count, percentage, color, iconPrimary, child
 							</Avatar>
 							<Typography variant="subtitle1">{title}</Typography>
 						</Stack>
-						<IconButton
-							color="secondary"
-							id="wallet-button"
-							aria-controls={open ? "wallet-menu" : undefined}
-							aria-haspopup="true"
-							aria-expanded={open ? "true" : undefined}
-							onClick={handleClick}
-						>
-							<More style={{ transform: "rotate(90deg)" }} />
-						</IconButton>
+						{/* 							<IconButton
+								color="secondary"
+								id="wallet-button"
+								aria-controls={open ? "wallet-menu" : undefined}
+								aria-haspopup="true"
+								aria-expanded={open ? "true" : undefined}
+								onClick={handleClick}
+							>
+								<More style={{ transform: "rotate(90deg)" }} />
+							</IconButton> */}
 						<Menu
 							id="wallet-menu"
 							anchorEl={anchorEl}
@@ -104,4 +106,4 @@ const EcommerceDataCard = ({ title, count, percentage, color, iconPrimary, child
 	);
 };
 
-export default EcommerceDataCard;
+export default WidgetDataCard;

@@ -707,7 +707,6 @@ const SavedIntereses = () => {
 		if (customer && !add) setCustomer(null);
 	};
 
-
 	const columns = useMemo(
 		() => [
 			{
@@ -968,12 +967,7 @@ const SavedIntereses = () => {
 					isLoading={isLoader}
 				/>
 			</ScrollX>
-			<AlertCalculatorDelete
-				id={calculatorIdToDelete}
-				title={`Cálculo de Intereses`}
-				open={open}
-				handleClose={handleDeleteDialogClose}
-			/>
+			<AlertCalculatorDelete id={calculatorIdToDelete} title={`Cálculo de Intereses`} open={open} handleClose={handleDeleteDialogClose} />
 			{/* add customer dialog */}
 			<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={selectedCalculationId} />
 			<Dialog

@@ -95,7 +95,7 @@ const applications: NavItemType = {
 				},
 			],
 		},
-		{
+		/* 		{
 			id: "invoice",
 			title: <FormattedMessage id="Facturación" />,
 			url: "/apps/invoice/dashboard",
@@ -128,7 +128,7 @@ const applications: NavItemType = {
 					url: "/apps/invoice/edit/1",
 				},
 			],
-		},
+		}, */
 		{
 			id: "profile",
 			title: <FormattedMessage id="Perfil" />,

@@ -1,53 +1,128 @@
-import { useEffect, useState, MouseEvent } from "react";
+// MUESTRA DATOS DE TENDENCIA MOVIMIENTOS Y CARPETAS
 
-// material-ui
-import { Button, useTheme } from "@mui/material";
-import { Grid, ListItemButton, Menu, Stack, Typography } from "@mui/material";
-
-// third-party
-import ReactApexChart, { Props as ChartProps } from "react-apexcharts";
-
-// project-imports
+import { useState, useEffect } from "react";
+import { useTheme } from "@mui/material/styles";
+import { Box, CircularProgress, ListItemButton, Menu, Stack, Typography, Chip } from "@mui/material";
+import ReactApexChart from "react-apexcharts";
+import { ApexOptions } from "apexcharts";
 import MainCard from "components/MainCard";
 import IconButton from "components/@extended/IconButton";
+import { More } from "iconsax-react";
+import StatsService from "store/reducers/ApiService";
+import { useSelector } from "store";
 
-// assets
-import { Add, More } from "iconsax-react";
-
-// types
-import { ThemeMode } from "types/config";
-
-// ==============================|| CHART ||============================== //
-
-interface Props {
-	color: string;
-	data: number[];
+interface TrendEntry {
+	month: string;
+	count: number;
 }
 
-const TaskStatusChart = ({ color, data }: Props) => {
-	const theme = useTheme();
-	const mode = theme.palette.mode;
+interface TrendsData {
+	newFolders: TrendEntry[];
+	movements: TrendEntry[];
+}
 
-	// chart options
-	const areaChartOptions = {
+const ProjectOverview = () => {
+	const theme = useTheme();
+	const [loading, setLoading] = useState(true);
+	const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
+
+	const [anchorEl, setAnchorEl] = useState(null);
+
+	const open = Boolean(anchorEl);
+
+	// Obtener userId del usuario actualmente autenticado
+	const user = useSelector((state) => state.auth.user);
+	const userId = user?._id;
+
+	useEffect(() => {
+		const fetchTrendsData = async () => {
+			try {
+				setLoading(true);
+				const dashboardData = await StatsService.getDashboardSummary(userId);
+				setTrendsData(dashboardData.trends);
+			} catch (error) {
+				console.error("Error fetching trends data:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchTrendsData();
+	}, [userId]);
+
+	const handleClick = (event: any) => {
+		setAnchorEl(event.currentTarget);
+	};
+
+	const handleClose = () => {
+		setAnchorEl(null);
+	};
+
+	if (loading) {
+		return (
+			<MainCard>
+				<Stack alignItems="center" justifyContent="center" spacing={1} sx={{ minHeight: 300 }}>
+					<CircularProgress />
+				</Stack>
+			</MainCard>
+		);
+	}
+
+	if (!trendsData || !trendsData.newFolders || !trendsData.movements) {
+		return (
+			<MainCard>
+				<Stack alignItems="center" justifyContent="center" spacing={1} sx={{ minHeight: 300 }}>
+					<Typography variant="h6">No hay datos de tendencias disponibles</Typography>
+				</Stack>
+			</MainCard>
+		);
+	}
+
+	// Opciones para el gráfico de área
+	const areaChartOptions: ApexOptions = {
 		chart: {
-			id: "new-stack-chart",
+			id: "trends-chart",
 			type: "area",
-			stacked: true,
-			sparkline: {
-				enabled: true,
+			height: 315, // Reducido para dar más espacio a las leyendas
+			toolbar: {
+				show: false,
 			},
-			offsetX: -20,
+			parentHeightOffset: 0, // Aumentar el padding superior del gráfico
 		},
-		plotOptions: {
-			bar: {
-				borderRadius: 0,
-			},
-		},
+		colors: [theme.palette.primary.main, theme.palette.success.main],
 		dataLabels: {
 			enabled: false,
 		},
-
+		stroke: {
+			curve: "smooth",
+			width: 2,
+		},
+		grid: {
+			strokeDashArray: 3,
+			borderColor: theme.palette.divider,
+		},
+		xaxis: {
+			categories: trendsData.newFolders.map((item) => item.month),
+			axisBorder: {
+				show: false,
+			},
+			axisTicks: {
+				show: false,
+			},
+		},
+		yaxis: {
+			labels: {
+				formatter: (value: number) => Math.round(value).toString(),
+			},
+		},
+		// Desactivar las leyendas integradas de ApexCharts
+		legend: {
+			show: false,
+		},
+		tooltip: {
+			theme: theme.palette.mode,
+			shared: true,
+		},
 		fill: {
 			type: "gradient",
 			gradient: {
@@ -58,60 +133,28 @@ const TaskStatusChart = ({ color, data }: Props) => {
 				opacityTo: 0,
 			},
 		},
-		stroke: { curve: "smooth", width: 2 },
-		tooltip: {
-			x: {
-				show: false,
-			},
+	};
+
+	// Datos para el gráfico de área
+	const chartData = [
+		{
+			name: "Nuevas Carpetas",
+			data: trendsData.newFolders.map((item) => item.count),
 		},
-		grid: {
-			show: false,
+		{
+			name: "Movimientos",
+			data: trendsData.movements.map((item) => item.count),
 		},
-	};
-	const { primary, secondary } = theme.palette.text;
-	const line = theme.palette.divider;
-
-	const [options, setOptions] = useState<ChartProps>(areaChartOptions);
-
-	useEffect(() => {
-		setOptions((prevState) => ({
-			...prevState,
-			colors: [color],
-			theme: {
-				mode: mode === ThemeMode.DARK ? "dark" : "light",
-			},
-		}));
-	}, [color, mode, primary, secondary, line, theme]);
-
-	const [series] = useState([{ name: "Orders", data }]);
-
-	return <ReactApexChart options={options} series={series} type="area" height={60} />;
-};
-
-// ==============================|| CHART - PROJECT OVERVIEW ||============================== //
-
-const ProjectOverview = () => {
-	const theme = useTheme();
-	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-	const open = Boolean(anchorEl);
-
-	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-		setAnchorEl(event.currentTarget);
-	};
-
-	const handleClose = () => {
-		setAnchorEl(null);
-	};
+	];
 
 	return (
 		<MainCard>
 			<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-				<Typography variant="h5">Project overview</Typography>
+				<Typography variant="h5">Tendencias Mensuales</Typography>
 				<IconButton
 					color="secondary"
-					id="wallet-button"
-					aria-controls={open ? "wallet-menu" : undefined}
+					id="trends-button"
+					aria-controls={open ? "trends-menu" : undefined}
 					aria-haspopup="true"
 					aria-expanded={open ? "true" : undefined}
 					onClick={handleClick}
@@ -119,12 +162,12 @@ const ProjectOverview = () => {
 					<More />
 				</IconButton>
 				<Menu
-					id="wallet-menu"
+					id="trends-menu"
 					anchorEl={anchorEl}
 					open={open}
 					onClose={handleClose}
 					MenuListProps={{
-						"aria-labelledby": "wallet-button",
+						"aria-labelledby": "trends-button",
 						sx: { p: 1.25, minWidth: 150 },
 					}}
 					anchorOrigin={{
@@ -136,44 +179,39 @@ const ProjectOverview = () => {
 						horizontal: "right",
 					}}
 				>
-					<ListItemButton onClick={handleClose}>Today</ListItemButton>
-					<ListItemButton onClick={handleClose}>Weekly</ListItemButton>
-					<ListItemButton onClick={handleClose}>Monthly</ListItemButton>
+					<ListItemButton onClick={handleClose}>Actualizar</ListItemButton>
 				</Menu>
 			</Stack>
-			<Grid container spacing={3} sx={{ mt: 1 }}>
-				<Grid item xs={12} sm={6} md={4}>
-					<Grid container spacing={1} alignItems="flex-end">
-						<Grid item xs={6}>
-							<Stack spacing={0.25}>
-								<Typography color="text.secondary">Total Tasks</Typography>
-								<Typography variant="h5">34,686</Typography>
-							</Stack>
-						</Grid>
-						<Grid item xs={6}>
-							<TaskStatusChart color={theme.palette.primary.main} data={[5, 25, 3, 10, 4, 50, 0]} />
-						</Grid>
-					</Grid>
-				</Grid>
-				<Grid item xs={12} sm={6} md={4}>
-					<Grid container spacing={1}>
-						<Grid item xs={6}>
-							<Stack spacing={0.25}>
-								<Typography color="text.secondary">Pending Tasks</Typography>
-								<Typography variant="h5">3,6786</Typography>
-							</Stack>
-						</Grid>
-						<Grid item xs={6}>
-							<TaskStatusChart color={theme.palette.error.main} data={[0, 50, 4, 10, 3, 25, 5]} />
-						</Grid>
-					</Grid>
-				</Grid>
-				<Grid item xs={12} md={4}>
-					<Button fullWidth variant="contained" startIcon={<Add />} size="large">
-						Add project
-					</Button>
-				</Grid>
-			</Grid>
+
+			{/* Leyendas personalizadas fuera del gráfico */}
+			{/* Leyendas personalizadas con mejor contraste */}
+			<Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 1, mb: 1 }}>
+				<Chip
+					label="Nuevas Carpetas"
+					size="small"
+					sx={{
+						bgcolor: "transparent", // Fondo transparente
+						color: theme.palette.primary.main, // Color de texto = color de la línea
+						border: `1px solid ${theme.palette.primary.main}`,
+						fontWeight: "medium",
+						"& .MuiChip-label": { px: 1.5 },
+					}}
+				/>
+				<Chip
+					label="Movimientos"
+					size="small"
+					sx={{
+						bgcolor: "transparent", // Fondo transparente
+						color: theme.palette.success.main, // Color de texto = color de la línea
+						border: `1px solid ${theme.palette.success.main}`,
+						fontWeight: "medium",
+						"& .MuiChip-label": { px: 1.5 },
+					}}
+				/>
+			</Stack>
+			<Box sx={{ mt: 1 }}>
+				<ReactApexChart options={areaChartOptions} series={chartData} type="area" height={315} />
+			</Box>
 		</MainCard>
 	);
 };
