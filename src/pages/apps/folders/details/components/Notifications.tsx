@@ -349,11 +349,7 @@ const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
 			secondary={
 				<Stack direction="row" spacing={1}>
 					<Tooltip title="Agregar notificación">
-						<IconButton
-							onClick={handleOpen}
-							disabled={notificationsData.isLoader}
-							color="secondary" sx={{ color: "secondary.darker" }}
-						>
+						<IconButton onClick={handleOpen} disabled={notificationsData.isLoader} color="secondary" sx={{ color: "secondary.darker" }}>
 							<Add />
 						</IconButton>
 					</Tooltip>

@@ -394,10 +394,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 							</Grid>
 							<Grid item>
 								<Stack direction="row" spacing={2} alignItems="center">
-									<Button
-										color="error"
-										onClick={onCancel}
-									>
+									<Button color="error" onClick={onCancel}>
 										Cancelar
 									</Button>
 									<Button

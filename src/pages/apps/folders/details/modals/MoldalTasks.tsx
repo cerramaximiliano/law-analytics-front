@@ -178,7 +178,9 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 									gap: 3,
 								}}
 							>
-								<Stack spacing={1}> {/* Contenedor con menor espacio para cada grupo label-input */}
+								<Stack spacing={1}>
+									{" "}
+									{/* Contenedor con menor espacio para cada grupo label-input */}
 									<InputLabel htmlFor="name">Tarea</InputLabel>
 									<InputField
 										fullWidth
@@ -250,10 +252,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 									borderTop: `1px solid ${theme.palette.divider}`,
 								}}
 							>
-								<Button
-									color="error"
-									onClick={handleClose}
-								>
+								<Button color="error" onClick={handleClose}>
 									Cancelar
 								</Button>
 								<Button

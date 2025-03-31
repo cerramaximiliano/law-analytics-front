@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Box,
 	Button,
@@ -16,7 +16,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import _ from "lodash";
 import * as Yup from "yup";
-import { Formik, Form, FormikValues } from "formik";
+import { Formik, Form, FormikValues, FormikProps } from "formik";
 import AlertCustomerDelete from "./AlertCustomerDelete";
 import { Trash, ArrowRight2, ArrowLeft2, Profile2User } from "iconsax-react";
 import SecondStep from "./step-components/secondStep";
@@ -25,6 +25,27 @@ import ThirdStep from "./step-components/thirdStep";
 import { dispatch, useSelector } from "store";
 import { addContact, updateContact } from "store/reducers/contacts";
 import { enqueueSnackbar } from "notistack";
+
+interface CustomerFormValues {
+	name: string;
+	lastName: string;
+	role: string;
+	type: string;
+	address: string;
+	state: string;
+	city: string;
+	zipCode: string;
+	email: string;
+	phone: string;
+	nationality: string;
+	document: string;
+	cuit: string;
+	status: string;
+	activity: string;
+	company: string;
+	fiscal: string;
+	_id?: string;
+}
 
 const getInitialValues = (customer: FormikValues | null) => {
 	const newCustomer = {
@@ -76,6 +97,46 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	const auth = useSelector((state) => state.auth);
 	const isCreating = mode === "add";
 	const [initialValues, setInitialValues] = useState(getInitialValues(customer));
+	const formikRef = React.useRef<FormikProps<CustomerFormValues>>(null);
+
+	const handleCancel = () => {
+		// Resetea el formulario a los valores iniciales correspondientes a un nuevo contacto
+		if (formikRef.current) {
+			formikRef.current.resetForm();
+			formikRef.current.setValues(getInitialValues(null));
+		}
+
+		// Resetea el paso activo
+		setActiveStep(0);
+
+		// Llama a la función onCancel proporcionada por el componente padre
+		onCancel();
+	};
+
+	const cleanArgentinePhoneNumber = (phone: string) => {
+		if (!phone) return phone;
+
+		let cleanNumber = phone.replace(/[^0-9]/g, "");
+
+		if (cleanNumber.startsWith("0")) {
+			cleanNumber = cleanNumber.substring(1);
+		}
+
+		// Variante para códigos de área de 2 dígitos (ej: 11)
+		if (cleanNumber.length >= 4 && cleanNumber.substring(2, 4) === "15") {
+			cleanNumber = cleanNumber.substring(0, 2) + cleanNumber.substring(4);
+		}
+		// Variante para códigos de área de 3 dígitos (ej: 221)
+		else if (cleanNumber.length >= 5 && cleanNumber.substring(3, 5) === "15") {
+			cleanNumber = cleanNumber.substring(0, 3) + cleanNumber.substring(5);
+		}
+		// Variante para códigos de área de 4 dígitos (ej: 2202)
+		else if (cleanNumber.length >= 6 && cleanNumber.substring(4, 6) === "15") {
+			cleanNumber = cleanNumber.substring(0, 4) + cleanNumber.substring(6);
+		}
+
+		return cleanNumber;
+	};
 
 	const CustomerSchema = [
 		Yup.object().shape({
@@ -89,16 +150,20 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			city: Yup.string().required("La localidad es requerida"),
 			zipCode: Yup.string().required("El código postal es requerido"),
 			email: Yup.string().email("Correo electrónico inválido").required("El correo electrónico es requerido"),
-			phone: Yup.string().required("El teléfono es requerido"),
-		}),
-		Yup.object().shape({
-			nationality: Yup.string().required("La nacionalidad es requerida"),
-			document: Yup.string().required("El documento es requerido"),
-			cuit: Yup.string().required("El CUIT es requerido"),
-			status: Yup.string().required("El estado civil es requerido"),
-			activity: Yup.string().required("La profesión es requerida"),
-			company: Yup.string().required("La empresa es requerida"),
-			fiscal: Yup.string().required("La condición fiscal es requerida"),
+			phone: Yup.string()
+				.required("El teléfono es requerido")
+				.test("phone-format", "Complete el código de área sin el 0 y móvil sin el 15", function (value) {
+					if (!value) return true; // Skip validation if no value
+
+					const cleanNumber = cleanArgentinePhoneNumber(value);
+					const originalDigitsOnly = value.replace(/[^0-9]/g, "");
+
+					return (
+						cleanNumber.length === originalDigitsOnly.length ||
+						(originalDigitsOnly.startsWith("0") && cleanNumber.length === originalDigitsOnly.length - 1) ||
+						(originalDigitsOnly.includes("15") && cleanNumber.length <= originalDigitsOnly.length - 2)
+					);
+				}),
 		}),
 	];
 
@@ -119,8 +184,36 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	useEffect(() => {
 		if (open) {
 			setActiveStep(0);
+
+			// Configura los valores iniciales según el modo
+			if (mode === "add") {
+				// Si es modo agregar, siempre resetea a valores vacíos
+				const emptyValues = getInitialValues(null);
+				setInitialValues(emptyValues);
+
+				// Si la referencia a Formik ya existe, resetea también los valores del formulario
+				if (formikRef.current) {
+					formikRef.current.resetForm();
+					formikRef.current.setValues(emptyValues);
+				}
+			} else if (mode === "edit" && customer) {
+				// Si es modo editar, usa los valores del cliente proporcionado
+				const customerValues = getInitialValues(customer);
+				setInitialValues(customerValues);
+
+				// Si la referencia a Formik ya existe, actualiza los valores
+				if (formikRef.current) {
+					formikRef.current.resetForm();
+					formikRef.current.setValues(customerValues);
+				}
+			}
+		} else {
+			// Cuando se cierra el modal, podríamos opcionalmente limpiar el formulario
+			if (formikRef.current) {
+				formikRef.current.resetForm();
+			}
 		}
-	}, [open]);
+	}, [open, mode, customer]);
 
 	const handleAlertClose = () => {
 		setOpenAlert(!openAlert);
@@ -128,45 +221,78 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	};
 
 	async function _submitForm(values: any, actions: any, mode: string | undefined) {
-		const userId = auth.user?._id;
-		const id = values._id;
+		try {
+			const userId = auth.user?._id;
+			setActiveStep(0);
 
-		setActiveStep(0);
-		let results;
-		let message;
-		if (mode === "add") {
-			results = await dispatch(addContact({ ...values, userId }));
-			message = "agregar";
-		}
-		if (mode === "edit") {
-			results = await dispatch(updateContact(id, values));
-			message = "editar";
-		}
+			const cleanedValues = {
+				...values,
+				phone: cleanArgentinePhoneNumber(values.phone),
+			};
 
-		if (results && results.success) {
-			enqueueSnackbar(`Éxito al ${message} el contacto`, {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" },
-				TransitionComponent: Zoom,
-				autoHideDuration: 3000,
-			});
-		} else {
-			enqueueSnackbar(`Error al ${message} el contacto`, {
+			let results;
+			let message;
+
+			if (mode === "add") {
+				const newContactData = { ...cleanedValues, userId };
+				delete newContactData._id;
+
+				results = await dispatch(addContact(newContactData));
+				message = "agregar";
+			} else if (mode === "edit") {
+				const id = values._id;
+				results = await dispatch(updateContact(id, cleanedValues));
+				message = "editar";
+			}
+
+			if (results && results.success) {
+				// Primero resetea el formulario ANTES de cualquier otra acción
+				actions.resetForm();
+
+				// Luego muestra la notificación y establece el estado
+				enqueueSnackbar(`Éxito al ${message} el contacto`, {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+
+				// Ahora notificamos al componente padre y reiniciamos el paso
+				onAddMember(cleanedValues);
+				setActiveStep(0);
+
+				// Opcional: forzar un reseteo adicional con setTimeout
+				setTimeout(() => {
+					if (actions && actions.resetForm) {
+						actions.resetForm();
+					}
+				}, 0);
+
+				return true; // Indica éxito para que _handleSubmit pueda actuar en consecuencia
+			} else {
+				throw new Error(`Error en la respuesta al ${message} el contacto`);
+			}
+		} catch (error) {
+			console.error("Error en el proceso de envío:", error);
+			enqueueSnackbar(`Error al procesar el contacto. Intente nuevamente más tarde.`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				TransitionComponent: Zoom,
-				autoHideDuration: 3000,
+				autoHideDuration: 4000,
 			});
+		} finally {
+			actions.setSubmitting(false);
 		}
-		actions.setSubmitting(false);
-		setActiveStep(activeStep + 1);
-		onAddMember(values);
 	}
 
-	function _handleSubmit(values: any, actions: any) {
+	async function _handleSubmit(values: any, actions: any) {
 		if (isLastStep) {
-			_submitForm(values, actions, mode);
-			onCancel();
+			const success = await _submitForm(values, actions, mode);
+			if (success) {
+				setTimeout(() => {
+					handleCancel();
+				}, 100);
+			}
 		} else {
 			setActiveStep(activeStep + 1);
 			actions.setTouched({});
@@ -179,18 +305,24 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 	return (
 		<>
-			<DialogTitle sx={{
-				bgcolor: theme.palette.primary.lighter,
-				p: 3,
-				borderBottom: `1px solid ${theme.palette.divider}`,
-			}}>
+			<DialogTitle
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
 				<Stack spacing={1}>
 					<Stack direction="row" alignItems="center" spacing={1}>
 						<Profile2User size={24} color={theme.palette.primary.main} />
-						<Typography variant="h5" color="primary" sx={{
-							color: theme.palette.primary.main,
-							fontWeight: 600,
-						}}>
+						<Typography
+							variant="h5"
+							color="primary"
+							sx={{
+								color: theme.palette.primary.main,
+								fontWeight: 600,
+							}}
+						>
 							{isCreating ? "Agregar Nuevo Contacto" : "Editar Contacto"}
 						</Typography>
 					</Stack>
@@ -201,7 +333,13 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			</DialogTitle>
 			<Divider />
 
-			<Formik initialValues={initialValues} enableReinitialize validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
+			<Formik
+				initialValues={initialValues}
+				enableReinitialize
+				validationSchema={currentValidationSchema}
+				onSubmit={_handleSubmit}
+				innerRef={formikRef}
+			>
 				{({ isSubmitting, values }) => (
 					<Form autoComplete="off" noValidate>
 						<DialogContent sx={{ p: 2.5 }}>
@@ -266,7 +404,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 												Atrás
 											</Button>
 										)}
-										<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
+										<Button color="error" onClick={handleCancel} sx={{ minWidth: 100 }}>
 											Cancelar
 										</Button>
 										<Button

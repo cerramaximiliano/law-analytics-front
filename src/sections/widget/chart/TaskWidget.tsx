@@ -199,10 +199,10 @@ const TaskWidget = () => {
 								sx={{
 									py: 0.75,
 									opacity: task.checked ? 0.7 : 1,
-									cursor: 'pointer',
-									'&:hover': {
+									cursor: "pointer",
+									"&:hover": {
 										bgcolor: theme.palette.action.hover,
-									}
+									},
 								}}
 								onClick={() => handleOpenTask(task._id)}
 								secondaryAction={
@@ -240,8 +240,11 @@ const TaskWidget = () => {
 									}
 									secondary={
 										<Typography variant="caption" color="textSecondary">
-											{task.dueDate ? new Date(task.dueDate).toLocaleDateString() :
-												(task.date ? new Date(task.date).toLocaleDateString() : 'Sin fecha')}
+											{task.dueDate
+												? new Date(task.dueDate).toLocaleDateString()
+												: task.date
+												? new Date(task.date).toLocaleDateString()
+												: "Sin fecha"}
 											{task.priority && ` • ${task.priority}`}
 										</Typography>
 									}

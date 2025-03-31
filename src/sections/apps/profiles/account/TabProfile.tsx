@@ -121,22 +121,22 @@ const TabProfile = () => {
 					<Grid item xs={12}>
 						<MainCard title="Campos">
 							<Grid container spacing={1.25}>
-								{user?.skill && user.skill.length > 0 ? (
-									user.skill.map((skill, index) => (
-										<Grid key={index}>
-											<Grid item xs={6}>
-												<Typography color="secondary">{skill}</Typography>
+								{user?.skill && (
+									<Grid container spacing={2}>
+										{(user.skill as any[]).map((skill, index) => (
+											<Grid container key={index}>
+												<Grid item xs={6}>
+													{typeof skill === "object" && skill !== null && "name" in skill ? (
+														<Typography color="secondary">{skill.name}</Typography>
+													) : (
+														<Typography color="secondary">{String(skill)}</Typography>
+													)}
+												</Grid>
+												<Grid item xs={6}>
+													<LinearWithLabel value={0} />
+												</Grid>
 											</Grid>
-											<Grid item xs={6}>
-												<LinearWithLabel value={0} />
-											</Grid>
-										</Grid>
-									))
-								) : (
-									<Grid item xs={12}>
-										<Typography color="textSecondary" align="center">
-											No se han encontrado áreas de trabajo
-										</Typography>
+										))}
 									</Grid>
 								)}
 							</Grid>

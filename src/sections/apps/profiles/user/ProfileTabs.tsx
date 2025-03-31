@@ -150,7 +150,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 						<Divider orientation="vertical" flexItem />
 						<Stack spacing={0.5} alignItems="center">
 							<Typography variant="h5">{clientesCount}</Typography>
-							<Typography color="secondary">Clientes</Typography>
+							<Typography color="secondary">Contactos</Typography>
 						</Stack>
 						<Divider orientation="vertical" flexItem />
 						<Stack spacing={0.5} alignItems="center">

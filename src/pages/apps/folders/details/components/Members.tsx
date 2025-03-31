@@ -12,7 +12,6 @@ import {
 	Button,
 	Dialog,
 	Tooltip,
-	Box,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
@@ -187,7 +186,6 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 					<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleAdd}>
 						<Add />
 					</IconButton>
-
 				</Tooltip>
 			}
 		>
@@ -344,23 +342,25 @@ const SkeletonList = () => (
 );
 
 const NoMembersPlaceholder = () => (
-	<>
-		<Grid container justifyContent="center">
-			<Avatar color="error" variant="rounded">
-				<UserSquare variant="Bold" />
-			</Avatar>
-		</Grid>
-		<Box>
-			<Typography variant="h5" gutterBottom>
-				No hay intervinientes
-			</Typography>
-			<Typography variant="body2" color="textSecondary">
-				Comienza creando un interviniente usando el botón +
-			</Typography>
-			<Typography variant="body2" color="textSecondary">
-				o vincula uno ya existente
-			</Typography>
+	<Stack spacing={2} alignItems="center" py={4}>
+		<Avatar
+			color="error"
+			variant="rounded"
+			sx={{
+				width: 64,
+				height: 64,
+				bgcolor: "error.lighter",
+			}}
+		>
+			<UserSquare variant="Bold" />
+		</Avatar>
 
-		</Box>
-	</>
+		<Typography variant="subtitle1" color="textSecondary" align="center">
+			No hay intervinientes
+		</Typography>
+
+		<Typography variant="body2" color="textSecondary" align="center">
+			Comienza creando un interviniente usando el botón + o vincula uno ya existente
+		</Typography>
+	</Stack>
 );

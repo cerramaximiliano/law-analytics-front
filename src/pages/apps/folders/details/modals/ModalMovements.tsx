@@ -1,4 +1,16 @@
-import { Dialog, DialogTitle, Divider, Button, Stack, DialogContent, Typography, DialogActions, Zoom, useTheme } from "@mui/material";
+import {
+	Dialog,
+	DialogTitle,
+	Divider,
+	Button,
+	Stack,
+	DialogContent,
+	Typography,
+	DialogActions,
+	Zoom,
+	useTheme,
+	InputLabel,
+} from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
@@ -177,100 +189,120 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 										p: 3,
 										display: "flex",
 										flexDirection: "column",
-										gap: 3,
+										gap: 2, // Reducido de 3 a 2 para disminuir el espaciado general, como en ModalNotifications
 									}}
 								>
-									<InputField
-										fullWidth
-										placeholder="Título del Movimiento"
-										id="title"
-										name="title"
-										startAdornment={<TableDocument />}
-										sx={customInputStyles}
-									/>
+									{/* Título */}
+									<Stack spacing={1}>
+										<InputLabel htmlFor="title">Título del Movimiento</InputLabel>
+										<InputField
+											fullWidth
+											placeholder="Título del Movimiento"
+											id="title"
+											name="title"
+											startAdornment={<TableDocument />}
+											sx={customInputStyles}
+										/>
+									</Stack>
 
-									<SelectField
-										required={true}
-										label="Tipo"
-										data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
-										name="movement"
-										style={{
-											maxHeight: "39.91px",
-											"& .MuiInputBase-root": {
-												height: "39.91px",
-												fontSize: 12,
-											},
-											"& .MuiSelect-select": {
-												fontSize: 12,
-											},
-											"& .MuiInputLabel-root": {
-												fontSize: 12,
-											},
-										}}
-									/>
+									{/* Tipo de movimiento */}
+									<Stack spacing={1}>
+										<InputLabel htmlFor="movement">Tipo</InputLabel>
+										<SelectField
+											required={true}
+											label="Seleccione tipo de Movimiento"
+											data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
+											name="movement"
+											style={{
+												maxHeight: "39.91px",
+												"& .MuiInputBase-root": {
+													height: "39.91px",
+													fontSize: 12,
+												},
+												"& .MuiSelect-select": {
+													fontSize: 12,
+												},
+												"& .MuiInputLabel-root": {
+													fontSize: 12,
+												},
+											}}
+										/>
+									</Stack>
 
-									<DateInputField
-										name="time"
-										label="Fecha"
-										customInputStyles={{
-											"& .MuiInputBase-root": {
-												height: 39.91,
-											},
-											"& .MuiInputBase-input": {
-												fontSize: 12,
-											},
-											"& input::placeholder": {
-												color: "#000000",
-												opacity: 0.6,
-											},
-										}}
-									/>
+									{/* Fecha */}
+									<Stack spacing={1}>
+										<InputLabel htmlFor="time">Fecha de Dictado</InputLabel>
+										<DateInputField
+											name="time"
+											customInputStyles={{
+												"& .MuiInputBase-root": {
+													height: 39.91,
+												},
+												"& .MuiInputBase-input": {
+													fontSize: 12,
+												},
+												"& input::placeholder": {
+													color: "#000000",
+													opacity: 0.6,
+												},
+											}}
+										/>
+									</Stack>
 
-									<DateInputField
-										name="dateExpiration"
-										label="Vencimiento"
-										customInputStyles={{
-											"& .MuiInputBase-root": {
-												height: 39.91,
-											},
-											"& .MuiInputBase-input": {
-												fontSize: 12,
-											},
-											"& input::placeholder": {
-												color: "#000000",
-												opacity: 0.6,
-											},
-										}}
-									/>
+									{/* Vencimiento */}
+									<Stack spacing={1}>
+										<InputLabel htmlFor="dateExpiration">Fecha de Vencimiento</InputLabel>
+										<DateInputField
+											name="dateExpiration"
+											customInputStyles={{
+												"& .MuiInputBase-root": {
+													height: 39.91,
+												},
+												"& .MuiInputBase-input": {
+													fontSize: 12,
+												},
+												"& input::placeholder": {
+													color: "#000000",
+													opacity: 0.6,
+												},
+											}}
+										/>
+									</Stack>
 
-									<InputField
-										fullWidth
-										label="Link"
-										id="link"
-										placeholder="Añada un link"
-										name="link"
-										startAdornment={<Link1 />}
-										sx={customInputStyles}
-									/>
+									{/* Link */}
+									<Stack spacing={1}>
+										<InputLabel htmlFor="link">Link</InputLabel>
+										<InputField
+											fullWidth
+											placeholder="Añada un link"
+											id="link"
+											name="link"
+											startAdornment={<Link1 />}
+											sx={customInputStyles}
+										/>
+									</Stack>
 
-									<InputField
-										fullWidth
-										label="Descripción"
-										id="description"
-										multiline
-										rows={2}
-										placeholder="Ingrese una descripción"
-										name="description"
-										customInputStyles={{
-											"& .MuiInputBase-input": {
-												fontSize: 12,
-											},
-											"& textarea::placeholder": {
-												color: "#000000",
-												opacity: 0.6,
-											},
-										}}
-									/>
+									{/* Descripción */}
+									<Stack spacing={1}>
+										<InputLabel htmlFor="description">Descripción</InputLabel>
+										<InputField
+											fullWidth
+											id="description"
+											multiline
+											rows={2}
+											placeholder="Ingrese una descripción"
+											name="description"
+											customInputStyles={{
+												"& .MuiInputBase-input": {
+													fontSize: 12,
+												},
+												"& textarea::placeholder": {
+													color: "#000000",
+													opacity: 0.6,
+												},
+											}}
+										/>
+									</Stack>
 								</DialogContent>
 
 								<Divider />

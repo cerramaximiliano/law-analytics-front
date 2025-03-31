@@ -1,5 +1,18 @@
 import { dispatch, useSelector } from "store";
-import { Dialog, DialogTitle, Divider, Button, Stack, DialogContent, DialogActions, Box, Zoom, useTheme, Typography, InputLabel } from "@mui/material";
+import {
+	Dialog,
+	DialogTitle,
+	Divider,
+	Button,
+	Stack,
+	DialogContent,
+	DialogActions,
+	Box,
+	Zoom,
+	useTheme,
+	Typography,
+	InputLabel,
+} from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
@@ -211,7 +224,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 									<InputField
 										fullWidth
 										id="title"
-										placeholder="Identifique la notificación"
+										placeholder="Indique una identificación"
 										name="title"
 										startAdornment={<Notification1 />}
 										sx={customInputStyles}
@@ -223,7 +236,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 									<InputLabel htmlFor="notification">Tipo</InputLabel>
 									<SelectField
 										required={true}
-										label="Tipo"
+										label="Tipo de Notificación"
 										name="notification"
 										data={["Cédula", "Carta Documento", "Telegrama", "Notarial"]}
 										style={{
@@ -248,7 +261,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 									<SelectField
 										required={true}
 										name="user"
-										label="Interviniente"
+										label="Selección interviniente"
 										data={["Actora", "Demandada", "Organismo"]}
 										style={{
 											maxHeight: "39.91px",
@@ -268,7 +281,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 
 								{/* Fecha */}
 								<Stack spacing={1}>
-									<InputLabel htmlFor="date">Fecha</InputLabel>
+									<InputLabel htmlFor="date">Fecha de Notificación</InputLabel>
 									<DateInputField
 										name="date"
 										customInputStyles={{
@@ -288,7 +301,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 
 								{/* Vencimiento */}
 								<Stack spacing={1}>
-									<InputLabel htmlFor="dateExpiration">Vencimiento</InputLabel>
+									<InputLabel htmlFor="dateExpiration">Fecha de Vencimiento</InputLabel>
 									<DateInputField
 										name="dateExpiration"
 										customInputStyles={{
@@ -316,12 +329,57 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 												name="code"
 												label="Código de Seguimiento"
 												data={[
-													"CC", "CD", "CL", "CM", "CO", "CP", "DE", "DI", "EC",
-													"EE", "EO", "EP", "GC", "GD", "GE", "GF", "GO", "GR",
-													"GS", "HC", "HE", "HU", "IN", "IS", "JP", "ND", "OL",
-													"PC", "PP", "RD", "RE", "RR", "SD", "SL", "SP", "SR",
-													"ST", "TC", "TL", "UP", "EE", "CX", "RR", "XP", "XX",
-													"XR", "CU", "SU", "EU", "PU", "XU",
+													"CC",
+													"CD",
+													"CL",
+													"CM",
+													"CO",
+													"CP",
+													"DE",
+													"DI",
+													"EC",
+													"EE",
+													"EO",
+													"EP",
+													"GC",
+													"GD",
+													"GE",
+													"GF",
+													"GO",
+													"GR",
+													"GS",
+													"HC",
+													"HE",
+													"HU",
+													"IN",
+													"IS",
+													"JP",
+													"ND",
+													"OL",
+													"PC",
+													"PP",
+													"RD",
+													"RE",
+													"RR",
+													"SD",
+													"SL",
+													"SP",
+													"SR",
+													"ST",
+													"TC",
+													"TL",
+													"UP",
+													"EE",
+													"CX",
+													"RR",
+													"XP",
+													"XX",
+													"XR",
+													"CU",
+													"SU",
+													"EU",
+													"PU",
+													"XU",
 												]}
 												style={{
 													maxHeight: "39.91px",

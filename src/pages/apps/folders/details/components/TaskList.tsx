@@ -1,4 +1,16 @@
-import { Skeleton, Button, Chip, Grid, LinearProgress, Stack, Typography, IconButton, FormControlLabel, Checkbox, Tooltip } from "@mui/material";
+import {
+	Skeleton,
+	Button,
+	Chip,
+	Grid,
+	LinearProgress,
+	Stack,
+	Typography,
+	IconButton,
+	FormControlLabel,
+	Checkbox,
+	Tooltip,
+} from "@mui/material";
 import { useState, useEffect } from "react";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
@@ -60,10 +72,10 @@ const TaskList = ({ title, folderName }: TaskListProps) => {
 
 	const sortedTasks = tasks
 		? [...tasks].sort((a: TaskDataType, b: TaskDataType) => {
-			const dateA = moment(a.date, "DD/MM/YYYY");
-			const dateB = moment(b.date, "DD/MM/YYYY");
-			return dateB.diff(dateA);
-		})
+				const dateA = moment(a.date, "DD/MM/YYYY");
+				const dateB = moment(b.date, "DD/MM/YYYY");
+				return dateB.diff(dateA);
+		  })
 		: [];
 
 	const handleToggleTasks = () => {
@@ -146,9 +158,9 @@ const TaskList = ({ title, folderName }: TaskListProps) => {
 	};
 	const currentMonthTasksCount = tasks
 		? tasks.filter((task: TaskDataType) => {
-			const taskDate = moment(task.date, "DD/MM/YYYY");
-			return taskDate.isSame(moment(), "month");
-		}).length
+				const taskDate = moment(task.date, "DD/MM/YYYY");
+				return taskDate.isSame(moment(), "month");
+		  }).length
 		: 0;
 
 	return (

@@ -7,7 +7,6 @@ import {
 	Box,
 	Button,
 	CardHeader,
-	Chip,
 	CircularProgress,
 	Divider,
 	FormHelperText,
@@ -33,7 +32,6 @@ import { dispatch, useSelector } from "store";
 import { updateUserProfile } from "store/reducers/auth"; // Importamos la acción
 
 // assets
-import { Add } from "iconsax-react";
 import moment from "moment";
 
 // styles & constant
@@ -46,48 +44,6 @@ const MenuProps = {
 		},
 	},
 };
-
-const skills = [
-	"Adobe XD",
-	"After Effect",
-	"Angular",
-	"Animación",
-	"ASP.Net",
-	"Bootstrap",
-	"C#",
-	"CC",
-	"Corel Draw",
-	"CSS",
-	"DIV",
-	"Dreamweaver",
-	"Figma",
-	"Gráficos",
-	"HTML",
-	"Illustrator",
-	"J2Ee",
-	"Java",
-	"Javascript",
-	"JQuery",
-	"Diseño de Logotipos",
-	"Material UI",
-	"Motion",
-	"MVC",
-	"MySQL",
-	"NodeJS",
-	"npm",
-	"Photoshop",
-	"PHP",
-	"React",
-	"Redux",
-	"Reduxjs & toolkit",
-	"SASS",
-	"SCSS",
-	"SQL Server",
-	"SVG",
-	"UI/UX",
-	"Diseño de Interfaz de Usuario",
-	"Wordpress",
-];
 
 function useInputRef() {
 	return useOutletContext<RefObject<HTMLInputElement>>();
@@ -142,7 +98,7 @@ const TabPersonal = () => {
 					address1: userData.user?.address1 || "",
 					country: userData.user?.country || "",
 					state: userData.user?.state || "",
-					skill: userData.user?.skill || [],
+					colleges: userData.user?.skill || [], // Cambiamos skill por colleges
 					note: userData.user?.note || "",
 					submit: null,
 				}}
@@ -168,7 +124,7 @@ const TabPersonal = () => {
 							address1: values.address1,
 							country: values.country,
 							state: values.state,
-							skill: values.skill,
+							skill: values.colleges, // Enviamos colleges como skill para mantener compatibilidad
 							note: values.note,
 						};
 						// Utilizamos la acción de Redux para actualizar el perfil
@@ -482,51 +438,6 @@ const TabPersonal = () => {
 								</Grid>
 							</Grid>
 						</Box>
-						<CardHeader title="Campos" />
-						<Divider />
-						<Box sx={{ display: "flex", flexWrap: "wrap", listStyle: "none", p: 2.5, m: 0 }} component="ul">
-							<Autocomplete
-								multiple
-								fullWidth
-								id="tags-outlined"
-								options={skills}
-								value={Array.isArray(values.skill) ? values.skill : values.skill ? [values.skill] : []}
-								onBlur={handleBlur}
-								getOptionLabel={(label) => label}
-								onChange={(event, newValue) => {
-									setFieldValue("skill", newValue);
-								}}
-								renderInput={(params) => <TextField {...params} name="skill" placeholder="Agregar habilidades" />}
-								renderTags={(value, getTagProps) =>
-									value.map((option, index) => (
-										<Chip
-											{...getTagProps({ index })}
-											variant="combined"
-											label={option}
-											deleteIcon={<Add style={{ fontSize: "0.75rem", transform: "rotate(45deg)" }} />}
-											sx={{ color: "text.primary" }}
-										/>
-									))
-								}
-								sx={{
-									"& .MuiOutlinedInput-root": {
-										p: 0,
-										"& .MuiAutocomplete-tag": {
-											m: 1,
-										},
-										"& fieldset": {
-											display: "none",
-										},
-										"& .MuiAutocomplete-endAdornment": {
-											display: "none",
-										},
-										"& .MuiAutocomplete-popupIndicator": {
-											display: "none",
-										},
-									},
-								}}
-							/>
-						</Box>
 						<CardHeader title="Nota" />
 						<Divider />
 						<Box sx={{ p: 2.5 }}>
@@ -539,7 +450,7 @@ const TabPersonal = () => {
 								onBlur={handleBlur}
 								onChange={handleChange}
 								id="personal-note"
-								placeholder="Nota"
+								placeholder="Puede agregar notas en este espacio"
 								error={Boolean(touched.note && errors.note)}
 							/>
 							{touched.note && errors.note && (

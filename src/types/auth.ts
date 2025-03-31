@@ -10,6 +10,15 @@ export type GuardProps = {
 	children: ReactElement | null;
 };
 
+// Definimos la interfaz para el objeto de colegio con matrícula
+interface LawyerCollegeWithRegistration {
+	name: string;
+	registrationNumber: string;
+}
+
+// Definimos el tipo para las skills que pueden ser string[] o LawyerCollegeWithRegistration[]
+type UserSkills = string[] | LawyerCollegeWithRegistration[];
+
 export type UserProfile = {
 	_id?: string;
 	groupId?: string;
@@ -29,7 +38,7 @@ export type UserProfile = {
 	note?: string;
 	picture?: string;
 	role?: string;
-	skill?: string[];
+	skill?: UserSkills;
 	state?: string;
 	subscription?: string;
 	tier?: string;

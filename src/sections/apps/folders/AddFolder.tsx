@@ -13,11 +13,12 @@ import {
 	Box,
 	IconButton,
 	Zoom,
+	useTheme,
 } from "@mui/material";
 import _ from "lodash";
 import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
-import { Trash, ArrowRight2, ArrowLeft2 } from "iconsax-react";
+import { Trash, ArrowRight2, ArrowLeft2, FolderAdd } from "iconsax-react";
 import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
 import { useSelector, dispatch } from "store";
@@ -64,6 +65,8 @@ function getStepContent(step: number, values: any) {
 const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder) => {
 	const auth = useSelector((state) => state.auth);
 	const isCreating = mode === "add";
+
+	const theme = useTheme();
 
 	const FolderSchema = [
 		Yup.object().shape({
@@ -173,11 +176,20 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 	return (
 		<>
-			<DialogTitle>
+			<DialogTitle
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
 				<Stack spacing={1}>
-					<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-						{isCreating ? "Nueva Causa" : "Editar Causa"}
-					</Typography>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<FolderAdd size={24} color={theme.palette.primary.main} />
+						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+							{isCreating ? "Nueva Causa" : "Editar Causa"}
+						</Typography>
+					</Stack>
 					<Typography variant="body2" color="textSecondary">
 						{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
 					</Typography>
@@ -223,7 +235,13 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 						<Divider />
 
-						<DialogActions sx={{ p: 2.5 }}>
+						<DialogActions
+							sx={{
+								p: 2.5,
+								bgcolor: theme.palette.background.default,
+								borderTop: `1px solid ${theme.palette.divider}`,
+							}}
+						>
 							<Grid container justifyContent="space-between" alignItems="center">
 								<Grid item>
 									{!isCreating && (

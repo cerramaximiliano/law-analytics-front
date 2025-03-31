@@ -36,6 +36,7 @@ const UserTabPersonal = Loadable(lazy(() => import("sections/apps/profiles/user/
 const UserTabPayment = Loadable(lazy(() => import("sections/apps/profiles/user/TabPayment")));
 const UserTabPassword = Loadable(lazy(() => import("sections/apps/profiles/user/TabPassword")));
 const UserTabSettings = Loadable(lazy(() => import("sections/apps/profiles/user/TabSettings")));
+const UserTabProfessional = Loadable(lazy(() => import("sections/apps/profiles/user/TabProfessional")));
 
 const AccountProfile = Loadable(lazy(() => import("pages/apps/profiles/account")));
 const AccountTabProfile = Loadable(lazy(() => import("sections/apps/profiles/account/TabProfile")));
@@ -278,6 +279,11 @@ const MainRoutes = {
 										{
 											path: "password",
 											element: <UserTabPassword />,
+										},
+
+										{
+											path: "professional",
+											element: <UserTabProfessional />,
 										},
 										{
 											path: "settings",

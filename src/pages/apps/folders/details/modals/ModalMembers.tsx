@@ -373,10 +373,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 					borderTop: `1px solid ${theme.palette.divider}`,
 				}}
 			>
-				<Button
-					color="error"
-					onClick={closeAddressModal}
-				>
+				<Button color="error" onClick={closeAddressModal}>
 					Cancelar
 				</Button>
 				<Button onClick={handleVincular} color="primary" variant="contained" disabled={selectedAddresses.length === 0}>

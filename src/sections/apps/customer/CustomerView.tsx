@@ -39,16 +39,40 @@ interface ContactViewProps {
 	data: Contact;
 }
 
+
 // ==============================|| CUSTOMER - VIEW ||============================== //
 const CustomerView = React.memo(
 	({ data }: ContactViewProps) => {
 		const theme = useTheme();
+
 		const matchDownMD = useMediaQuery(theme.breakpoints.down("md"));
 
 		const [linkedFolders, setLinkedFolders] = useState<Folder[]>([]);
 		const [isLoadingFolders, setIsLoadingFolders] = useState(false);
 		const [error, setError] = useState<string | null>(null);
 		const [isProcessing, setIsProcessing] = useState<string | null>(null);
+
+
+
+		const EmptyFoldersMessage = () => (
+			<Stack
+				direction="column"
+				spacing={1.5}
+				alignItems="center"
+				justifyContent="center"
+				sx={{ py: 3 }}
+			>
+				<Link1 size={32} variant="Bulk" color={theme.palette.text.secondary} opacity={0.4} />
+				<Typography
+					color="textSecondary"
+					variant="body2"
+					sx={{ fontStyle: 'italic', textAlign: 'center' }}
+				>
+					No hay causas vinculadas
+				</Typography>
+			</Stack>
+		)
+
 
 		const handleUnlink = useCallback(
 			async (folderId: string) => {
@@ -165,9 +189,7 @@ const CustomerView = React.memo(
 							</ListItem>
 						))
 					) : (
-						<ListItem>
-							<Typography color="textSecondary">No hay causas vinculadas</Typography>
-						</ListItem>
+						<EmptyFoldersMessage />
 					)}
 				</List>
 			),
@@ -234,7 +256,19 @@ const CustomerView = React.memo(
 															<Sms size={18} />
 														</ListItemIcon>
 														<ListItemSecondaryAction>
-															<Typography align="right">{data.email}</Typography>
+															<Tooltip title={data.email} placement="top">
+																<Typography
+																	align="right"
+																	sx={{
+																		maxWidth: 180,
+																		overflow: 'hidden',
+																		textOverflow: 'ellipsis',
+																		whiteSpace: 'nowrap'
+																	}}
+																>
+																	{data.email}
+																</Typography>
+															</Tooltip>
 														</ListItemSecondaryAction>
 													</ListItem>
 													<ListItem>
@@ -365,5 +399,9 @@ const CustomerView = React.memo(
 		);
 	},
 );
+
+
+
+
 
 export default React.memo(CustomerView);

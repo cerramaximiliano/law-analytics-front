@@ -429,11 +429,7 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 			secondary={
 				<Stack direction="row" spacing={1}>
 					<Tooltip title="Agregar movimiento">
-						<IconButton
-							onClick={handleOpen}
-							disabled={movementsData.isLoader}
-							color="secondary" sx={{ color: "secondary.darker" }}
-						>
+						<IconButton onClick={handleOpen} disabled={movementsData.isLoader} color="secondary" sx={{ color: "secondary.darker" }}>
 							<Add />
 						</IconButton>
 					</Tooltip>

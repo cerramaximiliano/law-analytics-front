@@ -16,14 +16,11 @@ import {
 function getPathIndex(pathname: string) {
 	let selectedTab = 0;
 	switch (pathname) {
-		case "/apps/profiles/user/payment":
+		case "/apps/profiles/user/professional":
 			selectedTab = 1;
 			break;
-		case "/apps/profiles/user/password":
-			selectedTab = 2;
-			break;
 		case "/apps/profiles/user/settings":
-			selectedTab = 3;
+			selectedTab = 2;
 			break;
 		case "/apps/profiles/user/personal":
 		default:
@@ -63,19 +60,13 @@ const ProfileTab = () => {
 				</ListItemIcon>
 				<ListItemText primary="Información Personal" />
 			</ListItemButton>
-			{/* 			<ListItemButton selected={selectedIndex === 1} onClick={() => handleListItemClick(1, "/apps/profiles/user/payment")}>
-				<ListItemIcon>
-					<CardCoin size={18} />
-				</ListItemIcon>
-				<ListItemText primary="Método de pago" />
-			</ListItemButton> */}
-			<ListItemButton selected={selectedIndex === 2} onClick={() => handleListItemClick(2, "/apps/profiles/user/password")}>
+			<ListItemButton selected={selectedIndex === 1} onClick={() => handleListItemClick(2, "/apps/profiles/user/professional")}>
 				<ListItemIcon>
 					<Lock size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Cambiar Contraseña" />
+				<ListItemText primary="Información Profesional" />
 			</ListItemButton>
-			<ListItemButton selected={selectedIndex === 3} onClick={() => handleListItemClick(3, "/apps/profiles/user/settings")}>
+			<ListItemButton selected={selectedIndex === 2} onClick={() => handleListItemClick(3, "/apps/profiles/user/settings")}>
 				<ListItemIcon>
 					<Setting3 size={18} />
 				</ListItemIcon>

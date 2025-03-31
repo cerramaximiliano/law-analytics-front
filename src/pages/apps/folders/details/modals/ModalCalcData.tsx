@@ -23,7 +23,6 @@ import { enqueueSnackbar } from "notistack";
 import { ModalCalcType } from "types/calculator";
 import { Moneys } from "iconsax-react";
 
-
 const customInputStyles = {
 	"& .MuiInputBase-root": {
 		height: 39.91,

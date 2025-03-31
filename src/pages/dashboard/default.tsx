@@ -21,7 +21,7 @@ import { useSelector } from "store";
 import StatsService from "store/reducers/ApiService";
 
 interface TrendItem {
-	month: string; // Añadido esta propiedad que faltaba
+	month: string;
 	count: number;
 }
 
@@ -45,6 +45,7 @@ interface DashboardData {
 	trends: {
 		[key: string]: TrendItem[];
 	};
+	lastUpdated?: string;
 }
 
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
@@ -66,21 +67,11 @@ const DashboardDefault = () => {
 				setLoading(true);
 				setError(null);
 
-				// Simulación de llamada a la API
-				// En un entorno real, esto sería:
-				const summaryDatas = await StatsService.getDashboardSummary(userId);
-				console.log(summaryDatas);
+				// Usar directamente StatsService en lugar de hacer una llamada fetch adicional
+				const summaryData = await StatsService.getDashboardSummary(userId);
+				console.log("SUMMARY", summaryData);
 
-				// Usando un enfoque más directo que evita problemas con el tipo de StatsService
-				const response = await fetch(`/api/stats/dashboard${userId ? `/${userId}` : ""}`);
-
-				if (!response.ok) {
-					throw new Error("Error al cargar datos del dashboard");
-				}
-				const data = await response.json();
-				console.log("DATA", data);
-				const summaryData = data.summary;
-
+				// Asignar datos directamente
 				setDashboardData(summaryData);
 			} catch (err) {
 				console.error("Error loading dashboard data:", err);
@@ -157,6 +148,27 @@ const DashboardDefault = () => {
 		<Grid container rowSpacing={4.5} columnSpacing={2.75}>
 			<Grid item xs={12}>
 				<WelcomeBanner />
+				{dashboardData.lastUpdated && (
+					<Typography
+						variant="caption"
+						sx={{
+							display: "flex",
+							justifyContent: "flex-end",
+							mt: 1,
+							color: "text.secondary",
+							fontStyle: "italic",
+						}}
+					>
+						Última actualización:{" "}
+						{new Date(dashboardData.lastUpdated).toLocaleString("es-AR", {
+							day: "2-digit",
+							month: "2-digit",
+							year: "numeric",
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</Typography>
+				)}
 			</Grid>
 
 			{/* row 1 - Mostrar estadísticas clave del dashboard */}
