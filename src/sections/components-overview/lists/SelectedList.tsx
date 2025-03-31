@@ -190,7 +190,7 @@ const SelectedList = () => {
 						<ListItemIcon>
 							<Setting3 size={18} />
 						</ListItemIcon>
-						<ListItemText primary="Settings" />
+						<ListItemText primary="Configuración" />
 						{open === "settings" ? <ArrowDown2 size={14} /> : <ArrowUp2 size={14} />}
 					</ListItemButton>
 				</ListItem>

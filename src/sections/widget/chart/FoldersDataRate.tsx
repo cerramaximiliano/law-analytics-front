@@ -100,10 +100,10 @@ const FoldersDataRate = () => {
 		plotOptions: {
 			pie: {
 				donut: {
-					size: '0%',
+					size: "0%",
 				},
-				expandOnClick: false
-			}
+				expandOnClick: false,
+			},
 		},
 	};
 

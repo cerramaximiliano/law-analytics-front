@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 
 // third-party
-import { SearchNormal1, TickCircle } from "iconsax-react";
+import { SearchNormal1, TickCircle, UserAdd } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { dispatch, useSelector } from "store";
 import { filterContactsByFolder, updateMultipleContacts } from "store/reducers/contacts";
@@ -192,9 +192,12 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				}}
 			>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-						Seleccione Contactos
-					</Typography>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<UserAdd size={24} color={theme.palette.primary.main} />
+						<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+							Seleccione Contactos
+						</Typography>
+					</Stack>
 					<Typography color="textSecondary" variant="subtitle2">
 						{selectedAddresses.length} seleccionados
 					</Typography>
@@ -371,14 +374,8 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				}}
 			>
 				<Button
-					color="inherit"
+					color="error"
 					onClick={closeAddressModal}
-					sx={{
-						color: theme.palette.text.secondary,
-						"&:hover": {
-							bgcolor: theme.palette.action.hover,
-						},
-					}}
 				>
 					Cancelar
 				</Button>

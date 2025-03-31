@@ -17,9 +17,12 @@ import {
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import { TaskType } from "types/task";
-import { useSelector } from "store";
-import { ArrowRight, Task, TaskSquare, TickCircle } from "iconsax-react";
+import { useSelector, dispatch, RootState } from "store";
+import { ArrowRight, Task, TaskSquare, TickCircle, Calendar } from "iconsax-react";
 import { useNavigate } from "react-router-dom";
+
+// Importar acción para obtener tareas próximas
+import { getUpcomingTasks, toggleTaskStatus } from "store/reducers/tasks";
 
 import StatsService, { TaskMetrics } from "store/reducers/ApiService";
 
@@ -29,21 +32,28 @@ const TaskWidget = () => {
 	const navigate = useNavigate();
 	const [loading, setLoading] = useState<boolean>(true);
 	const [showAllTasks, setShowAllTasks] = useState<boolean>(false);
-	const [taskData, setTaskData] = useState<{
-		tasks: TaskType[];
+	const [taskMetrics, setTaskMetrics] = useState<{
 		pendingTasks: number;
 		completionRate: number;
+		overdueTasks: number;
 	}>({
-		tasks: [],
 		pendingTasks: 0,
 		completionRate: 0,
+		overdueTasks: 0,
 	});
 
+	// Constante para los días a mostrar
+	const DAYS_TO_SHOW = 7;
+
 	// Obtener userId del usuario actual
-	const user = useSelector((state) => state.auth.user);
+	const user = useSelector((state: RootState) => state.auth.user);
 	const userId = user?._id;
 
-	// Cargar datos de tareas usando el dashboard summary
+	// Obtener tareas próximas del estado con el nombre correcto del reducer
+	const upcomingTasks = useSelector((state: RootState) => state.tasksReducer.upcomingTasks);
+	const isTasksLoading = useSelector((state: RootState) => state.tasksReducer.isLoader);
+
+	// Cargar datos de tareas y métricas
 	useEffect(() => {
 		const fetchData = async () => {
 			if (userId) {
@@ -54,45 +64,23 @@ const TaskWidget = () => {
 					const summary = await StatsService.getDashboardSummary(userId);
 
 					// Obtener métricas de tareas más detalladas
-					let taskMetrics: TaskMetrics | null = null;
+					let taskMetricsData: TaskMetrics | null = null;
 					try {
-						taskMetrics = await StatsService.getCategoryAnalysis<TaskMetrics>("tasks", userId);
+						taskMetricsData = await StatsService.getCategoryAnalysis<TaskMetrics>("tasks", userId);
 					} catch (error) {
 						console.warn("No se pudieron obtener métricas detalladas de tareas:", error);
 						// Continuamos con las métricas del dashboard summary
 					}
 
-					// Intentar obtener datos de actividad - esta parte es opcional
-					try {
-						// Solo llamamos a este endpoint para estar seguros de que funciona
-						await StatsService.getCategoryAnalysis<any>("activity", userId);
-						// No necesitamos almacenar estos datos ahora
-					} catch (error) {
-						console.warn("No se pudieron obtener datos de actividad:", error);
-						// Continuamos sin problemas
-					}
-
-					// Crear datos simulados de tareas a partir de la información disponible
-					// Esto es un ejemplo; ajusta según tu API real
-					const mockTasks: TaskType[] = [];
-
-					// Si hay tareas pendientes según las métricas, creamos entradas simuladas
-					const pendingTaskCount = taskMetrics?.pendingTasks || summary.taskMetrics.pendingTasks || 0;
-
-					for (let i = 0; i < Math.min(pendingTaskCount, 10); i++) {
-						mockTasks.push({
-							_id: `task-${i}`,
-							name: `Tarea pendiente ${i + 1}`,
-							checked: false,
-							date: new Date(Date.now() + i * 86400000).toISOString(), // Distribuir fechas
-						});
-					}
-
-					setTaskData({
-						tasks: mockTasks,
-						pendingTasks: pendingTaskCount,
-						completionRate: taskMetrics?.completionRate || summary.taskMetrics.completionRate || 0,
+					// Actualizar métricas de tareas
+					setTaskMetrics({
+						pendingTasks: taskMetricsData?.pendingTasks || summary.taskMetrics.pendingTasks || 0,
+						completionRate: taskMetricsData?.completionRate || summary.taskMetrics.completionRate || 0,
+						overdueTasks: taskMetricsData?.overdueTasks || 0,
 					});
+
+					// Cargar tareas próximas a vencer
+					dispatch(getUpcomingTasks(userId, DAYS_TO_SHOW));
 				} catch (error) {
 					console.error("Error al cargar datos de tareas:", error);
 				} finally {
@@ -110,17 +98,28 @@ const TaskWidget = () => {
 		navigate("/tasks");
 	};
 
+	// Función para cambiar el estado de una tarea
+	const handleToggleTask = (id: string, event: React.MouseEvent) => {
+		event.stopPropagation();
+		dispatch(toggleTaskStatus(id));
+	};
+
+	// Función para abrir el detalle de una tarea
+	const handleOpenTask = (id: string) => {
+		navigate(`/tasks/${id}`);
+	};
+
 	// Decidir qué tareas mostrar
-	const tasksToShow = showAllTasks ? taskData.tasks : taskData.tasks.slice(0, 5);
+	const tasksToShow = showAllTasks ? upcomingTasks : upcomingTasks.slice(0, 5);
 
 	// Estado de carga
-	if (loading) {
+	if (loading || isTasksLoading) {
 		return (
 			<MainCard>
 				<CardContent>
 					<Stack spacing={2}>
 						<Stack spacing={0.75}>
-							<Typography variant="h5">Mis Tareas</Typography>
+							<Typography variant="h5">Tareas Próximas</Typography>
 							<Typography variant="caption" color="secondary">
 								Cargando información...
 							</Typography>
@@ -135,15 +134,15 @@ const TaskWidget = () => {
 	}
 
 	// No hay tareas
-	if (taskData.tasks.length === 0) {
+	if (upcomingTasks.length === 0) {
 		return (
 			<MainCard>
 				<CardContent>
 					<Stack spacing={2}>
 						<Stack spacing={0.75}>
-							<Typography variant="h5">Mis Tareas</Typography>
+							<Typography variant="h5">Tareas Próximas</Typography>
 							<Typography variant="caption" color="secondary">
-								No hay tareas pendientes
+								Próximos {DAYS_TO_SHOW} días
 							</Typography>
 						</Stack>
 
@@ -157,9 +156,9 @@ const TaskWidget = () => {
 								gap: 2,
 							}}
 						>
-							<TaskSquare size={32} variant="Bulk" color={theme.palette.text.secondary} />
+							<Calendar size={32} variant="Bulk" color={theme.palette.text.secondary} />
 							<Typography variant="body2" color="text.secondary" align="center">
-								No tienes tareas asignadas en este momento.
+								No tienes tareas para los próximos {DAYS_TO_SHOW} días.
 							</Typography>
 						</Box>
 					</Stack>
@@ -174,9 +173,14 @@ const TaskWidget = () => {
 				<Stack spacing={2}>
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
 						<Stack spacing={0.5}>
-							<Typography variant="h5">Mis Tareas</Typography>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="h5">Tareas Próximas</Typography>
+								<Tooltip title={`Tareas que vencen en los próximos ${DAYS_TO_SHOW} días`}>
+									<Calendar size={16} variant="Linear" style={{ marginTop: 2 }} />
+								</Tooltip>
+							</Stack>
 							<Typography variant="caption" color="secondary">
-								{taskData.pendingTasks} tareas pendientes
+								Próximos {DAYS_TO_SHOW} días • {taskMetrics.pendingTasks} pendientes • {taskMetrics.overdueTasks} vencidas
 							</Typography>
 						</Stack>
 
@@ -195,10 +199,20 @@ const TaskWidget = () => {
 								sx={{
 									py: 0.75,
 									opacity: task.checked ? 0.7 : 1,
+									cursor: 'pointer',
+									'&:hover': {
+										bgcolor: theme.palette.action.hover,
+									}
 								}}
+								onClick={() => handleOpenTask(task._id)}
 								secondaryAction={
 									<Tooltip title={task.checked ? "Completada" : "Pendiente"}>
-										<IconButton edge="end" size="small" color={task.checked ? "success" : "default"}>
+										<IconButton
+											edge="end"
+											size="small"
+											color={task.checked ? "success" : "default"}
+											onClick={(e) => handleToggleTask(task._id, e)}
+										>
 											{task.checked ? <TickCircle size={18} variant="Bold" /> : <Task size={18} />}
 										</IconButton>
 									</Tooltip>
@@ -226,7 +240,9 @@ const TaskWidget = () => {
 									}
 									secondary={
 										<Typography variant="caption" color="textSecondary">
-											{new Date(task.date).toLocaleDateString()}
+											{task.dueDate ? new Date(task.dueDate).toLocaleDateString() :
+												(task.date ? new Date(task.date).toLocaleDateString() : 'Sin fecha')}
+											{task.priority && ` • ${task.priority}`}
 										</Typography>
 									}
 								/>
@@ -234,9 +250,9 @@ const TaskWidget = () => {
 						))}
 					</List>
 
-					{!showAllTasks && taskData.tasks.length > 5 && (
+					{!showAllTasks && upcomingTasks.length > 5 && (
 						<Button fullWidth variant="text" color="primary" onClick={handleViewAllTasks} sx={{ mt: 1 }}>
-							Ver {taskData.tasks.length - 5} tareas más
+							Ver {upcomingTasks.length - 5} tareas más
 						</Button>
 					)}
 				</Stack>

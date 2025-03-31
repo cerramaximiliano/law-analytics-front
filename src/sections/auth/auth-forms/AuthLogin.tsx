@@ -28,6 +28,8 @@ import AnimateButton from "components/@extended/AnimateButton";
 
 // assets
 import { Eye, EyeSlash } from "iconsax-react";
+import { dispatch } from "store";
+import { openSnackbar } from "store/reducers/snackbar";
 
 // ============================|| JWT - LOGIN ||============================ //
 
@@ -50,13 +52,13 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 		<>
 			<Formik
 				initialValues={{
-					email: "cerramaximiliano@gmail.com",
-					password: "12345678",
+					email: "",
+					password: "",
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
 					email: Yup.string().email("Debe ser un e-mail válido").max(255).required("El e-mail es requerido"),
-					password: Yup.string().max(255).required("El password es requerido"),
+					password: Yup.string().max(255).required("La contraseña es requerida"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
@@ -68,9 +70,30 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 					} catch (err: any) {
 						if (scriptedRef.current) {
 							setStatus({ success: false });
-							setTimeout(() => {
-								setErrors({ submit: err.response.data.message });
-							}, 1);
+
+							// Safely extract error message with proper checks
+							let errorMessage = "Error al iniciar sesión";
+
+							if (err && err.response && err.response.data && err.response.data.message) {
+								errorMessage = err.response.data.message;
+							} else if (err && err.message) {
+								errorMessage = err.message;
+							} else if (typeof err === "string") {
+								errorMessage = err;
+							}
+							dispatch(
+								openSnackbar({
+									open: true,
+									message: errorMessage,
+									variant: "alert",
+									alert: {
+										color: "error",
+									},
+									close: false,
+								}),
+							);
+							setErrors({ submit: errorMessage });
+
 							setSubmitting(false);
 						}
 					}
@@ -89,7 +112,7 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 										name="email"
 										onBlur={handleBlur}
 										onChange={handleChange}
-										placeholder="Enter email address"
+										placeholder="Ingrese su dirección de correo electrónico"
 										fullWidth
 										error={Boolean(touched.email && errors.email)}
 									/>
@@ -102,7 +125,7 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 							</Grid>
 							<Grid item xs={12}>
 								<Stack spacing={1}>
-									<InputLabel htmlFor="password-login">Password</InputLabel>
+									<InputLabel htmlFor="password-login">Contraseña</InputLabel>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.password && errors.password)}
@@ -125,7 +148,7 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 												</IconButton>
 											</InputAdornment>
 										}
-										placeholder="Enter password"
+										placeholder="Ingrese una contraseña"
 									/>
 									{touched.password && errors.password && (
 										<FormHelperText error id="standard-weight-helper-text-password-login">
@@ -155,11 +178,6 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 									</Link>
 								</Stack>
 							</Grid>
-							{errors.submit && (
-								<Grid item xs={12}>
-									<FormHelperText error>{errors.submit}</FormHelperText>
-								</Grid>
-							)}
 							<Grid item xs={12}>
 								<AnimateButton>
 									<Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">

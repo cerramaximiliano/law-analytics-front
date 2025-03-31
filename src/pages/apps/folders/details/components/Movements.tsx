@@ -432,13 +432,7 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 						<IconButton
 							onClick={handleOpen}
 							disabled={movementsData.isLoader}
-							color="primary"
-							sx={{
-								border: `1.5px solid ${theme.palette.primary.main}`,
-								"&:hover": {
-									bgcolor: "primary.lighter",
-								},
-							}}
+							color="secondary" sx={{ color: "secondary.darker" }}
 						>
 							<Add />
 						</IconButton>

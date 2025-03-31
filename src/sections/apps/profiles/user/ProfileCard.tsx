@@ -2,11 +2,12 @@ import { Link } from "react-router-dom";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { useMediaQuery, Box, Button, Grid, Stack, Typography } from "@mui/material";
+import { useMediaQuery, Box, Button, Grid, Stack, Typography, Tooltip } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
 import ProfileRadialChart from "./ProfileRadialChart";
+import { useSelector } from "store";
 
 // assets
 import BackLeft from "assets/images/profile/UserProfileBackLeft";
@@ -25,6 +26,68 @@ const ProfileCard = ({ focusInput }: Props) => {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 
+	// Obtener la información del usuario del store de Redux
+	const user = useSelector((state) => state.auth.user);
+
+	const calculateProfileCompletion = () => {
+		if (!user) {
+			console.log("No hay usuario disponible");
+			return 0;
+		}
+
+		console.log("Datos del usuario para verificación:", JSON.stringify(user, null, 2));
+
+		// Array de campos requeridos para un perfil completo
+		const requiredFields = ["firstName", "lastName", "email", "dob", "contact", "designation", "address", "country", "state"] as const;
+
+		// Contador de campos completados
+		let completedFields = 0;
+		const fieldStatus: Record<string, boolean> = {};
+
+		// Verificar cada campo y registrar su estado
+		for (const field of requiredFields) {
+			// Verificación especial para 'dob' ya que puede ser un objeto Date o string
+			if (field === "dob") {
+				fieldStatus[field] = Boolean(user[field]);
+			} else {
+				fieldStatus[field] = Boolean(user[field] !== undefined && user[field] !== null && String(user[field]).trim() !== "");
+			}
+
+			if (fieldStatus[field]) {
+				completedFields++;
+			}
+		}
+
+		console.log("Estado de completitud de campos:", fieldStatus);
+		console.log(`Campos completados: ${completedFields}/${requiredFields.length}`);
+
+		// Calcular porcentaje de completitud (asegurar que sea al menos 1 si hay algún campo)
+		const percentage = Math.round((completedFields / requiredFields.length) * 100);
+		console.log("Porcentaje calculado:", percentage);
+
+		return percentage > 0 ? percentage : user.firstName ? 10 : 0; // Dar al menos 10% si tiene nombre
+	};
+
+	// Determinar mensaje según el porcentaje de completitud
+	const getProfileMessage = () => {
+		if (completionPercentage < 30) {
+			return "Completa tu perfil para desbloquear aplicativos";
+		} else if (completionPercentage < 70) {
+			return "Continúa completando tu perfil para desbloquear todas las funcionalidades";
+		} else if (completionPercentage < 100) {
+			return "Tu perfil está casi completo. Agrega los últimos detalles";
+		} else {
+			return "¡Perfil completo! Todas las funcionalidades están disponibles";
+		}
+	};
+
+	let completionPercentage = 0;
+	if (user?.profileCompletionScore !== undefined && typeof user.profileCompletionScore === "number") {
+		completionPercentage = user.profileCompletionScore;
+	} else if (user) {
+		completionPercentage = calculateProfileCompletion();
+	}
+
 	return (
 		<MainCard
 			border={false}
@@ -40,13 +103,15 @@ const ProfileCard = ({ focusInput }: Props) => {
 			<Grid container justifyContent="space-between" alignItems="center" sx={{ position: "relative", zIndex: 5 }}>
 				<Grid item>
 					<Stack direction="row" spacing={matchDownSM ? 1 : 2} alignItems="center">
-						<Box sx={{ ml: { xs: 0, sm: 1 } }}>
-							<ProfileRadialChart />
-						</Box>
+						<Tooltip title={`Completitud: ${completionPercentage}%`}>
+							<Box sx={{ ml: { xs: 0, sm: 1 } }}>
+								<ProfileRadialChart />
+							</Box>
+						</Tooltip>
 						<Stack spacing={0.75}>
 							<Typography variant="h5">Editar tu Perfil</Typography>
 							<Typography variant="body2" color="secondary">
-								Completa tu perfil para desbloquear aplicativos
+								{getProfileMessage()}
 							</Typography>
 						</Stack>
 					</Stack>

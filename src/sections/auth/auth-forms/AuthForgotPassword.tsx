@@ -14,13 +14,13 @@ import AnimateButton from "components/@extended/AnimateButton";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 
-// ============================|| FIREBASE - FORGOT PASSWORD ||============================ //
+// ============================|| AUTH - FORGOT PASSWORD ||============================ //
 
 const AuthForgotPassword = () => {
 	const scriptedRef = useScriptRef();
 	const navigate = useNavigate();
 
-	const { isLoggedIn, resetPassword } = useAuth();
+	const { resetPassword } = useAuth();
 
 	return (
 		<>
@@ -30,7 +30,7 @@ const AuthForgotPassword = () => {
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					email: Yup.string().email("Must be a valid email").max(255).required("Email is required"),
+					email: Yup.string().email("Debe ser un formato válido").max(255).required("El correo es requerido"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
@@ -41,7 +41,7 @@ const AuthForgotPassword = () => {
 								dispatch(
 									openSnackbar({
 										open: true,
-										message: "Check mail for reset password link",
+										message: "Revisa tu correo electrónico para obtener el código de verificación",
 										variant: "alert",
 										alert: {
 											color: "success",
@@ -49,14 +49,15 @@ const AuthForgotPassword = () => {
 										close: false,
 									}),
 								);
-								setTimeout(() => {
-									navigate(isLoggedIn ? "/auth/check-mail" : "/check-mail", { replace: true });
-								}, 1500);
 
-								// WARNING: do not set any formik state here as formik might be already destroyed here. You may get following error by doing so.
-								// Warning: Can't perform a React state update on an unmounted component. This is a no-op, but it indicates a memory leak in your application.
-								// To fix, cancel all subscriptions and asynchronous tasks in a useEffect cleanup function.
-								// github issue: https://github.com/formium/formik/issues/2430
+								// Navegar a la página de verificación de código con el email
+								// Usar la ruta correcta: /auth/code-verification
+								setTimeout(() => {
+									navigate("/auth/code-verification", {
+										state: { email: values.email, mode: "reset" },
+										replace: true,
+									});
+								}, 1500);
 							},
 							(err: any) => {
 								setStatus({ success: false });
@@ -79,7 +80,7 @@ const AuthForgotPassword = () => {
 						<Grid container spacing={3}>
 							<Grid item xs={12}>
 								<Stack spacing={1}>
-									<InputLabel htmlFor="email-forgot">Email</InputLabel>
+									<InputLabel htmlFor="email-forgot">Correo Electrónico</InputLabel>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.email && errors.email)}
@@ -89,7 +90,7 @@ const AuthForgotPassword = () => {
 										name="email"
 										onBlur={handleBlur}
 										onChange={handleChange}
-										placeholder="Enter email address"
+										placeholder="Ingrese su correo electrónico"
 										inputProps={{}}
 									/>
 									{touched.email && errors.email && (
@@ -99,18 +100,20 @@ const AuthForgotPassword = () => {
 									)}
 								</Stack>
 							</Grid>
+							<Grid item xs={12} sx={{ mb: -2 }}>
+								<Typography variant="caption">
+									Recibirás un código de verificación en tu correo. No olvides revisar la casilla de SPAM.
+								</Typography>
+							</Grid>
 							{errors.submit && (
 								<Grid item xs={12}>
 									<FormHelperText error>{errors.submit}</FormHelperText>
 								</Grid>
 							)}
-							<Grid item xs={12} sx={{ mb: -2 }}>
-								<Typography variant="caption">No olvides revisar la casilla de SPAM.</Typography>
-							</Grid>
 							<Grid item xs={12}>
 								<AnimateButton>
 									<Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-										Enviar Email de Reseteo de Password
+										Enviar Código de Verificación
 									</Button>
 								</AnimateButton>
 							</Grid>

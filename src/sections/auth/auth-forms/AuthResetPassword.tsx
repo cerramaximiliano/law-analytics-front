@@ -1,5 +1,5 @@
 import { useEffect, useState, SyntheticEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // material-ui
 import {
@@ -35,16 +35,53 @@ import { StringColorProps } from "types/password";
 // assets
 import { Eye, EyeSlash } from "iconsax-react";
 
-// ============================|| FIREBASE - RESET PASSWORD ||============================ //
+// ============================|| RESET PASSWORD ||============================ //
 
 const AuthResetPassword = () => {
 	const scriptedRef = useScriptRef();
 	const navigate = useNavigate();
+	const location = useLocation();
 
-	const { isLoggedIn } = useAuth();
+	const auth = useAuth();
+	if (!auth) {
+		throw new Error("Auth context is not available");
+	}
+
+	const { setNewPassword } = auth;
+
+	// Obtener el email y código de verificación desde location state
+	const locationState = location.state as {
+		email?: string;
+		code?: string;
+		verified?: boolean;
+		from?: string;
+	} | null;
+
+	// Obtener datos de localStorage
+	const storedEmail = localStorage.getItem("reset_email");
+	const storedCode = localStorage.getItem("reset_code");
+	const storedVerified = localStorage.getItem("reset_verified") === "true";
+
+	// Usar datos de location.state o localStorage
+	const email = locationState?.email || storedEmail;
+	const code = locationState?.code || storedCode;
+	const verified = locationState?.verified || storedVerified;
+
+	// Log para depuración
+	console.log("AuthResetPassword - Datos:", {
+		locationState,
+		storedEmail,
+		storedCode,
+		storedVerified,
+		email,
+		code,
+		verified,
+	});
 
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
+	const [redirected, setRedirected] = useState(false);
+
 	const handleClickShowPassword = () => {
 		setShowPassword(!showPassword);
 	};
@@ -60,7 +97,46 @@ const AuthResetPassword = () => {
 
 	useEffect(() => {
 		changePassword("");
+
+		// IMPORTANTE: Solo redireccionar una vez para evitar ciclos infinitos
+		if (!redirected && !verified && !storedVerified) {
+			console.log("No hay verificación previa, redirigiendo a forgot-password");
+			setRedirected(true);
+			// Intentar determinar la ruta correcta
+			const forgotPasswordPath = "/forgot-password";
+			navigate(forgotPasswordPath);
+		}
 	}, []);
+
+	// Si no hay información de verificación, mostrar mensaje
+	if (!email || !code || (!verified && !storedVerified)) {
+		return (
+			<Grid container spacing={3}>
+				<Grid item xs={12}>
+					<Typography variant="h3" textAlign="center" gutterBottom>
+						Información incompleta
+					</Typography>
+					<Typography variant="body1" textAlign="center" gutterBottom>
+						Se requiere verificación antes de restablecer la contraseña.
+					</Typography>
+				</Grid>
+				<Grid item xs={12}>
+					<AnimateButton>
+						<Button
+							disableElevation
+							fullWidth
+							size="large"
+							variant="contained"
+							color="primary"
+							onClick={() => navigate("/forgot-password")}
+						>
+							Solicitar restablecimiento
+						</Button>
+					</AnimateButton>
+				</Grid>
+			</Grid>
+		);
+	}
 
 	return (
 		<>
@@ -71,22 +147,40 @@ const AuthResetPassword = () => {
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					password: Yup.string().max(255).required("Password is required"),
+					password: Yup.string().max(255).required("La contraseña es requerida"),
 					confirmPassword: Yup.string()
-						.required("Confirm Password is required")
-						.test("confirmPassword", "Both Password must be match!", (confirmPassword, yup) => yup.parent.password === confirmPassword),
+						.required("La confirmación de contraseña es requerida")
+						.test(
+							"confirmPassword",
+							"Ambas constraseñas deben ser iguales",
+							(confirmPassword, yup) => yup.parent.password === confirmPassword,
+						),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
-						// password reset
-						if (scriptedRef.current) {
+						console.log("Enviando solicitud de restablecimiento de contraseña");
+
+						if (!email || !code) {
+							throw new Error("Información de verificación incompleta");
+						}
+
+						// Usar la función del provider para cambiar la contraseña
+						const success = await setNewPassword(email, code, values.password);
+
+						if (success && scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);
 
+							// Limpiar datos de localStorage
+							localStorage.removeItem("reset_email");
+							localStorage.removeItem("reset_code");
+							localStorage.removeItem("reset_verified");
+
+							// Mensaje de éxito
 							dispatch(
 								openSnackbar({
 									open: true,
-									message: "Successfuly reset password.",
+									message: "Contraseña restablecida con éxito.",
 									variant: "alert",
 									alert: {
 										color: "success",
@@ -95,12 +189,14 @@ const AuthResetPassword = () => {
 								}),
 							);
 
+							// Redirigir al login después de restablecer la contraseña
 							setTimeout(() => {
-								navigate(isLoggedIn ? "/auth/login" : "/login", { replace: true });
+								console.log("Redirigiendo al login");
+								navigate("/login", { replace: true });
 							}, 1500);
 						}
 					} catch (err: any) {
-						console.error(err);
+						console.error("Error al restablecer contraseña:", err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setErrors({ submit: err.message });

@@ -44,6 +44,7 @@
 	"contact-us": "Contact US",
 	"contactos": "Contactos",
 	"create": "Create",
+	"Cuenta": "Account",
 	"custom": "Custom",
 	"customer": "Customer",
 	"dashboard": "Dashboard",
@@ -143,7 +144,12 @@
 	"user-card": "User Card",
 	"user-list": "User List",
 	"user-profile": "User Profile",
+	"Usuario": "Usuario",
 	"utils": "Utils",
 	"widgets": "Widgets",
-	"More Items": "More Items"
+	"More Items": "More Items",
+	"Suscripciones": "Suscripciones",
+	"Perfil": "Perfil",
+	"Informes": "Informes",
+	"Inicio": "Inicio"
 }

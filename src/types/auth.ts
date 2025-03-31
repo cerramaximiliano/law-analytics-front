@@ -37,6 +37,7 @@ export type UserProfile = {
 	url?: string;
 	zipCode?: string;
 	isVerified?: boolean;
+	profileCompletionScore?: number;
 };
 
 type User = {
@@ -140,12 +141,7 @@ export interface VerifyCodeResponse {
 }
 
 // Interfaz actualizada para el contexto del servidor
-export interface ServerContextType {
-	isLoggedIn: boolean;
-	isInitialized?: boolean;
-	user?: UserProfile | null | undefined;
-	needsVerification?: boolean;
-	email?: string;
+export interface ServerContextType extends AuthProps {
 	isGoogleLoggedIn: boolean;
 	login: (email: string, password: string) => Promise<boolean>;
 	logout: (showMessage?: boolean) => Promise<void>;
@@ -156,12 +152,14 @@ export interface ServerContextType {
 		lastName: string,
 	) => Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }>;
 	verifyCode?: (email: string, code: string) => Promise<boolean>;
-	resetPassword: (email: string) => Promise<void>;
 	updateProfile: (userData: Partial<UserProfile>) => Promise<void>;
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;
 	loginWithGoogle: (tokenResponse: CredentialResponse) => Promise<boolean>;
 	handleLogoutAndRedirect?: () => Promise<void>;
+	resetPassword: (email: string) => Promise<void>;
+	verifyResetCode: (email: string, code: string) => Promise<boolean>;
+	setNewPassword: (email: string, code: string, newPassword: string) => Promise<boolean>;
 }
 
 export interface UnauthorizedModalProps {

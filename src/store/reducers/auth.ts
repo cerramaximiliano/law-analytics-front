@@ -1,10 +1,13 @@
 // action - state management
-import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE } from "./actions";
+import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE, UPDATE_USER, CHANGE_PASSWORD_SUCCESS } from "./actions";
+import axios from "axios";
 
 // types
 import { AuthProps, AuthActionProps } from "types/auth";
 import { RootState } from "store";
 import { Dispatch } from "redux";
+import { openSnackbar } from "store/reducers/snackbar";
+import { UserProfile } from "types/auth";
 
 // initial state
 export const initialState: AuthProps = {
@@ -50,9 +53,30 @@ const auth = (state = initialState, action: AuthActionProps) => {
 				},
 			};
 		}
+		case UPDATE_USER: {
+			const payload = action.payload as { userData: Partial<UserProfile> };
+			const { userData } = payload;
+			return {
+				...state,
+				user: state.user
+					? {
+							...state.user,
+							...userData,
+					  }
+					: (userData as UserProfile),
+			};
+		}
+		case CHANGE_PASSWORD_SUCCESS: {
+			// No necesitamos modificar el estado cuando se cambia la contraseña
+			// pero podríamos agregar un indicador si fuera necesario
+			return {
+				...state,
+				// passwordChanged: true (opcional)
+			};
+		}
 		case LOGOUT: {
 			return {
-				...initialState, // Usar initialState directamente
+				...initialState,
 				isInitialized: true,
 			};
 		}
@@ -69,6 +93,11 @@ interface LoginPayload {
 	user?: any;
 	email?: string;
 	needsVerification?: boolean;
+}
+
+interface PasswordChangeData {
+	currentPassword: string;
+	newPassword: string;
 }
 
 // Acción para obtener los datos de autenticación desde el store
@@ -118,6 +147,141 @@ export const updatePicture = (picture: string) => (dispatch: Dispatch) => {
 		type: UPDATE_PICTURE,
 		payload: { picture },
 	});
+};
+
+// NUEVA ACCIÓN: Actualizar usuario con llamada a la API
+export const updateUser = (userData: any) => (dispatch: Dispatch) => {
+	// Solo actualizar el estado con los datos recibidos
+	dispatch({
+		type: UPDATE_USER,
+		payload: { userData },
+	});
+};
+
+// Acción para actualizar el perfil del usuario con llamada a la API
+export const updateUserProfile = (profileData: any) => async (dispatch: Dispatch, getState: () => RootState) => {
+	try {
+		// Realizar la llamada a la API
+		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/auth/update`, profileData, {
+			withCredentials: true,
+		});
+
+		// Si la actualización fue exitosa
+		if (response.data && response.data.success) {
+			// Obtener los datos actualizados del usuario
+			const userData = response.data.data;
+
+			// Verificar si hay un puntaje de completitud en la respuesta
+			// Si no existe, calcularlo manualmente basado en los campos completados
+			if (userData && !userData.profileCompletionScore) {
+				// Array de campos requeridos para un perfil completo
+				const requiredFields = ["firstName", "lastName", "email", "dob", "contact", "designation", "address", "country", "state"];
+
+				// Contar cuántos campos están completos
+				const completedFields = requiredFields.filter((field) => userData[field] && userData[field].toString().trim() !== "").length;
+
+				// Calcular porcentaje de completitud
+				const completionScore = Math.round((completedFields / requiredFields.length) * 100);
+
+				// Añadir el puntaje calculado a los datos del usuario
+				userData.profileCompletionScore = completionScore;
+			}
+
+			// Actualizar el estado con los datos actualizados
+			dispatch({
+				type: UPDATE_USER,
+				payload: { userData },
+			});
+
+			// Mostrar mensaje de éxito
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Perfil actualizado satisfactoriamente",
+					variant: "alert",
+					alert: {
+						color: "success",
+					},
+					close: false,
+				}),
+			);
+
+			return response.data;
+		} else {
+			throw new Error(response.data.message || "Error al actualizar el perfil");
+		}
+	} catch (error: any) {
+		console.error("Error al actualizar el perfil:", error);
+
+		// Mostrar mensaje de error
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: error.response?.data?.message || error.message || "Error al actualizar el perfil",
+				variant: "alert",
+				alert: {
+					color: "error",
+				},
+				close: false,
+			}),
+		);
+
+		throw error;
+	}
+};
+// Acción para cambiar la contraseña del usuario
+export const changeUserPassword = (passwordData: PasswordChangeData) => async (dispatch: Dispatch) => {
+	try {
+		// Realizar la llamada a la API
+		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/auth/change-password`, passwordData, {
+			headers: {
+				"Content-Type": "application/json",
+			},
+			withCredentials: true,
+		});
+
+		// Si el cambio fue exitoso
+		if (response.data && response.data.success) {
+			// Despachar acción de éxito
+			dispatch({
+				type: CHANGE_PASSWORD_SUCCESS,
+			});
+
+			// Mostrar mensaje de éxito
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Contraseña actualizada correctamente",
+					variant: "alert",
+					alert: {
+						color: "success",
+					},
+					close: false,
+				}),
+			);
+
+			return response.data;
+		} else {
+			throw new Error(response.data.message || "Error al cambiar la contraseña");
+		}
+	} catch (error: any) {
+		console.error("Error al cambiar la contraseña:", error);
+
+		// Mostrar mensaje de error
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: error.response?.data?.message || error.message || "Error al cambiar la contraseña",
+				variant: "alert",
+				alert: {
+					color: "error",
+				},
+				close: false,
+			}),
+		);
+
+		throw error;
+	}
 };
 
 // Acción para cerrar sesión

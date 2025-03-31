@@ -6,7 +6,12 @@ import { useTheme } from "@mui/material/styles";
 import { List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 
 // assets
-import { CardCoin, Lock, Profile, Setting3 } from "iconsax-react";
+import {
+	//CardCoin,
+	Lock,
+	Profile,
+	Setting3,
+} from "iconsax-react";
 
 function getPathIndex(pathname: string) {
 	let selectedTab = 0;
@@ -58,12 +63,12 @@ const ProfileTab = () => {
 				</ListItemIcon>
 				<ListItemText primary="Información Personal" />
 			</ListItemButton>
-			<ListItemButton selected={selectedIndex === 1} onClick={() => handleListItemClick(1, "/apps/profiles/user/payment")}>
+			{/* 			<ListItemButton selected={selectedIndex === 1} onClick={() => handleListItemClick(1, "/apps/profiles/user/payment")}>
 				<ListItemIcon>
 					<CardCoin size={18} />
 				</ListItemIcon>
 				<ListItemText primary="Método de pago" />
-			</ListItemButton>
+			</ListItemButton> */}
 			<ListItemButton selected={selectedIndex === 2} onClick={() => handleListItemClick(2, "/apps/profiles/user/password")}>
 				<ListItemIcon>
 					<Lock size={18} />

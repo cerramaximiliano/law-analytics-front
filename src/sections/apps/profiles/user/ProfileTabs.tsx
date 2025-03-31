@@ -1,6 +1,6 @@
 import { useEffect, useState, ChangeEvent } from "react";
 import axios from "axios";
-import { useSelector, dispatch } from "store";
+import { RootState, useSelector, dispatch } from "store";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -29,9 +29,20 @@ interface Props {
 const ProfileTabs = ({ focusInput }: Props) => {
 	const theme = useTheme();
 	const [selectedImage, setSelectedImage] = useState<File | undefined>(undefined);
-	const user = useSelector((state) => state.auth.user);
+	const user = useSelector((state: RootState) => state.auth.user);
 	const picture = user?.picture;
 	const [avatar, setAvatar] = useState<string | undefined>(picture || avatarImage(`./default.png`));
+
+	// Usar datos del usuario en lugar de hardcodearlos
+	const userName = user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+	const userDesignation = user?.designation || "Usuario";
+
+	// Actualizar avatar cuando cambie la imagen del usuario en el estado global
+	useEffect(() => {
+		if (user?.picture) {
+			setAvatar(user.picture);
+		}
+	}, [user?.picture]);
 
 	const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -43,9 +54,6 @@ const ProfileTabs = ({ focusInput }: Props) => {
 			const formData = new FormData();
 			formData.append("image", file);
 			formData.append("userId", userId); // Añade el userId al FormData
-
-			// Verificar que el FormData tiene el userId
-			console.log("FormData entries:", Array.from(formData.entries()));
 
 			try {
 				// Enviar la imagen al backend
@@ -69,11 +77,18 @@ const ProfileTabs = ({ focusInput }: Props) => {
 		}
 	};
 
+	// Actualizar el avatar local cuando se seleccione una imagen
 	useEffect(() => {
 		if (selectedImage) {
 			setAvatar(URL.createObjectURL(selectedImage));
 		}
 	}, [selectedImage]);
+
+	const userStats = useSelector((state: RootState) => state.userStats.data);
+
+	const causasCount = userStats?.counts?.folders || 0;
+	const clientesCount = userStats?.counts?.contacts || 0;
+	const calculosCount = userStats?.counts?.calculators || 0;
 
 	return (
 		<MainCard>
@@ -90,7 +105,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 								cursor: "pointer",
 							}}
 						>
-							<Avatar alt="Avatar 1" src={avatar} sx={{ width: 124, height: 124, border: "1px dashed" }} />
+							<Avatar alt={userName} src={avatar} sx={{ width: 124, height: 124, border: "1px dashed" }} />
 							<Box
 								sx={{
 									position: "absolute",
@@ -120,8 +135,8 @@ const ProfileTabs = ({ focusInput }: Props) => {
 							onChange={handleImageUpload}
 						/>
 						<Stack spacing={0.5} alignItems="center">
-							<Typography variant="h5">Stebin Ben</Typography>
-							<Typography color="secondary">Full Stack Developer</Typography>
+							<Typography variant="h5">{userName}</Typography>
+							<Typography color="secondary">{userDesignation}</Typography>
 						</Stack>
 					</Stack>
 				</Grid>
@@ -129,17 +144,17 @@ const ProfileTabs = ({ focusInput }: Props) => {
 				<Grid item xs={12} sm={6} md={12}>
 					<Stack direction="row" justifyContent="space-around" alignItems="center">
 						<Stack spacing={0.5} alignItems="center">
-							<Typography variant="h5">86</Typography>
+							<Typography variant="h5">{causasCount}</Typography>
 							<Typography color="secondary">Causas</Typography>
 						</Stack>
 						<Divider orientation="vertical" flexItem />
 						<Stack spacing={0.5} alignItems="center">
-							<Typography variant="h5">40</Typography>
+							<Typography variant="h5">{clientesCount}</Typography>
 							<Typography color="secondary">Clientes</Typography>
 						</Stack>
 						<Divider orientation="vertical" flexItem />
 						<Stack spacing={0.5} alignItems="center">
-							<Typography variant="h5">4.5K</Typography>
+							<Typography variant="h5">{calculosCount}</Typography>
 							<Typography color="secondary">Cálculos</Typography>
 						</Stack>
 					</Stack>

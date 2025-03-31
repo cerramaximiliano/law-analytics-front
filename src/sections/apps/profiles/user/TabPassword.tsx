@@ -15,13 +15,14 @@ import {
 	OutlinedInput,
 	Stack,
 	Typography,
+	CircularProgress,
 } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
 import IconButton from "components/@extended/IconButton";
 import { dispatch } from "store";
-import { openSnackbar } from "store/reducers/snackbar";
+import { changeUserPassword } from "store/reducers/auth"; // Importamos la acción
 import { isNumber, isLowercaseChar, isUppercaseChar, isSpecialChar, minLength } from "utils/password-validation";
 
 // third-party
@@ -37,6 +38,7 @@ const TabPassword = () => {
 	const [showOldPassword, setShowOldPassword] = useState(false);
 	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+	const [loading, setLoading] = useState(false);
 
 	const handleClickShowOldPassword = () => {
 		setShowOldPassword(!showOldPassword);
@@ -53,7 +55,7 @@ const TabPassword = () => {
 	};
 
 	return (
-		<MainCard title="Change Password">
+		<MainCard title="Cambiar Contraseña">
 			<Formik
 				initialValues={{
 					old: "",
@@ -62,37 +64,44 @@ const TabPassword = () => {
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					old: Yup.string().required("Old Password is required"),
+					old: Yup.string().required("La contraseña actual es requerida"),
 					password: Yup.string()
-						.required("New Password is required")
+						.required("La nueva contraseña es requerida")
 						.matches(
 							/^.*(?=.{8,})((?=.*[!@#$%^&*()\-_=+{};:,<.>]){1})(?=.*\d)((?=.*[a-z]){1})((?=.*[A-Z]){1}).*$/,
-							"Password must contain at least 8 characters, one uppercase, one number and one special case character",
+							"La contraseña debe contener al menos 8 caracteres, una letra mayúscula, un número y un carácter especial.",
 						),
 					confirm: Yup.string()
-						.required("Confirm Password is required")
-						.test("confirm", `Passwords don't match.`, (confirm: string, yup: any) => yup.parent.password === confirm),
+						.required("La confirmación es requerida.")
+						.test("confirm", `No coinciden las contraseñas.`, (confirm: string, yup: any) => yup.parent.password === confirm),
 				})}
 				onSubmit={async (values, { resetForm, setErrors, setStatus, setSubmitting }) => {
 					try {
-						dispatch(
-							openSnackbar({
-								open: true,
-								message: "Password changed successfully.",
-								variant: "alert",
-								alert: {
-									color: "success",
-								},
-								close: false,
+						setLoading(true);
+
+						// Llamar a la acción de cambio de contraseña
+						await dispatch(
+							changeUserPassword({
+								currentPassword: values.old,
+								newPassword: values.password,
 							}),
 						);
 
+						// Si llegamos aquí, la acción fue exitosa
 						resetForm();
-						setStatus({ success: false });
-						setSubmitting(false);
+						setStatus({ success: true });
 					} catch (err: any) {
+						console.error("Error al cambiar la contraseña:", err);
 						setStatus({ success: false });
-						setErrors({ submit: err.message });
+
+						// Si el error tiene un mensaje de respuesta del servidor, mostrar ese
+						if (err.response && err.response.data && err.response.data.message) {
+							setErrors({ submit: err.response.data.message });
+						} else {
+							setErrors({ submit: err.message || "Error al cambiar la contraseña" });
+						}
+					} finally {
+						setLoading(false);
 						setSubmitting(false);
 					}
 				}}
@@ -103,9 +112,9 @@ const TabPassword = () => {
 							<Grid item container spacing={3} xs={12} sm={6}>
 								<Grid item xs={12}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="password-old">Old Password</InputLabel>
+										<InputLabel htmlFor="password-old">Contraseña actual</InputLabel>
 										<OutlinedInput
-											placeholder="Enter Old Password"
+											placeholder="Ingrese contraseña actual"
 											id="password-old"
 											type={showOldPassword ? "text" : "password"}
 											value={values.old}
@@ -126,7 +135,7 @@ const TabPassword = () => {
 													</IconButton>
 												</InputAdornment>
 											}
-											autoComplete="password-old"
+											autoComplete="current-password"
 										/>
 										{touched.old && errors.old && (
 											<FormHelperText error id="password-old-helper">
@@ -137,9 +146,9 @@ const TabPassword = () => {
 								</Grid>
 								<Grid item xs={12}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="password-password">New Password</InputLabel>
+										<InputLabel htmlFor="password-password">Contraseña nueva</InputLabel>
 										<OutlinedInput
-											placeholder="Enter New Password"
+											placeholder="Ingrese nueva contraseña"
 											id="password-password"
 											type={showNewPassword ? "text" : "password"}
 											value={values.password}
@@ -160,7 +169,7 @@ const TabPassword = () => {
 													</IconButton>
 												</InputAdornment>
 											}
-											autoComplete="password-password"
+											autoComplete="new-password"
 										/>
 										{touched.password && errors.password && (
 											<FormHelperText error id="password-password-helper">
@@ -171,9 +180,9 @@ const TabPassword = () => {
 								</Grid>
 								<Grid item xs={12}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="password-confirm">Confirm Password</InputLabel>
+										<InputLabel htmlFor="password-confirm">Confirme contraseña</InputLabel>
 										<OutlinedInput
-											placeholder="Enter Confirm Password"
+											placeholder="Ingrese contraseña de confirmación"
 											id="password-confirm"
 											type={showConfirmPassword ? "text" : "password"}
 											value={values.confirm}
@@ -194,7 +203,7 @@ const TabPassword = () => {
 													</IconButton>
 												</InputAdornment>
 											}
-											autoComplete="password-confirm"
+											autoComplete="new-password"
 										/>
 										{touched.confirm && errors.confirm && (
 											<FormHelperText error id="password-confirm-helper">
@@ -203,16 +212,21 @@ const TabPassword = () => {
 										)}
 									</Stack>
 								</Grid>
+								{errors.submit && (
+									<Grid item xs={12}>
+										<FormHelperText error>{errors.submit}</FormHelperText>
+									</Grid>
+								)}
 							</Grid>
 							<Grid item xs={12} sm={6}>
 								<Box sx={{ p: { xs: 0, sm: 2, md: 4, lg: 5 } }}>
-									<Typography variant="h5">New password must contain:</Typography>
+									<Typography variant="h5">La nueva contraseña debe contener:</Typography>
 									<List sx={{ p: 0, mt: 1 }}>
 										<ListItem divider>
 											<ListItemIcon sx={{ color: minLength(values.password) ? "success.main" : "inherit" }}>
 												{minLength(values.password) ? <TickCircle /> : <Minus />}
 											</ListItemIcon>
-											<ListItemText primary="At least 8 characters" />
+											<ListItemText primary="Al menos 8 caractéres" />
 										</ListItem>
 										<ListItem divider>
 											<ListItemIcon
@@ -222,7 +236,7 @@ const TabPassword = () => {
 											>
 												{isLowercaseChar(values.password) ? <TickCircle /> : <Minus />}
 											</ListItemIcon>
-											<ListItemText primary="At least 1 lower letter (a-z)" />
+											<ListItemText primary="Al menos una letra minúscula (a-z)" />
 										</ListItem>
 										<ListItem divider>
 											<ListItemIcon
@@ -232,30 +246,33 @@ const TabPassword = () => {
 											>
 												{isUppercaseChar(values.password) ? <TickCircle /> : <Minus />}
 											</ListItemIcon>
-											<ListItemText primary="At least 1 uppercase letter (A-Z)" />
+											<ListItemText primary="Al menos una letra mayúscula (A-Z)" />
 										</ListItem>
 										<ListItem divider>
 											<ListItemIcon sx={{ color: isNumber(values.password) ? "success.main" : "inherit" }}>
 												{isNumber(values.password) ? <TickCircle /> : <Minus />}
 											</ListItemIcon>
-											<ListItemText primary="At least 1 number (0-9)" />
+											<ListItemText primary="Al menos un número (0-9)" />
 										</ListItem>
 										<ListItem>
 											<ListItemIcon sx={{ color: isSpecialChar(values.password) ? "success.main" : "inherit" }}>
 												{isSpecialChar(values.password) ? <TickCircle /> : <Minus />}
 											</ListItemIcon>
-											<ListItemText primary="At least 1 special characters" />
+											<ListItemText primary="Al menos un caracter especial" />
 										</ListItem>
 									</List>
 								</Box>
 							</Grid>
 							<Grid item xs={12}>
 								<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
-									<Button variant="outlined" color="secondary">
-										Cancel
-									</Button>
-									<Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">
-										Save
+									<Button color="error">Cancelar</Button>
+									<Button
+										disabled={isSubmitting || loading || Object.keys(errors).length !== 0}
+										type="submit"
+										variant="contained"
+										startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+									>
+										{loading ? "Guardando..." : "Guardar"}
 									</Button>
 								</Stack>
 							</Grid>

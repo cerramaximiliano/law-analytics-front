@@ -21,6 +21,8 @@ import { addCalculator, getCalculatorsByFolderId } from "store/reducers/calculat
 import { dispatch, useSelector } from "store";
 import { enqueueSnackbar } from "notistack";
 import { ModalCalcType } from "types/calculator";
+import { Moneys } from "iconsax-react";
+
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -148,9 +150,12 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 								}}
 							>
 								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-										Agregar Montos de Reclamo y Ofrecimientos
-									</Typography>
+									<Stack direction="row" alignItems="center" spacing={1}>
+										<Moneys size={24} color={theme.palette.primary.main} />
+										<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+											Agregar Montos de Reclamo y Ofrecimientos
+										</Typography>
+									</Stack>
 									<Typography color="textSecondary" variant="subtitle2">
 										Carpeta: {folderName?.length > 15 ? `${folderName.slice(0, 15)}...` : folderName}
 									</Typography>
@@ -230,12 +235,6 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 									onClick={() => {
 										setOpen(false);
 										resetForm();
-									}}
-									sx={{
-										color: theme.palette.text.secondary,
-										"&:hover": {
-											bgcolor: theme.palette.action.hover,
-										},
 									}}
 								>
 									Cancelar

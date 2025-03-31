@@ -12,6 +12,7 @@ import {
 	Button,
 	Dialog,
 	Tooltip,
+	Box,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
@@ -182,9 +183,12 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 			title={title}
 			content={false}
 			secondary={
-				<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleAdd}>
-					<Add />
-				</IconButton>
+				<Tooltip title="Agregar interviniente">
+					<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleAdd}>
+						<Add />
+					</IconButton>
+
+				</Tooltip>
 			}
 		>
 			<Dialog
@@ -346,8 +350,17 @@ const NoMembersPlaceholder = () => (
 				<UserSquare variant="Bold" />
 			</Avatar>
 		</Grid>
-		<Typography variant="body1" color="text.secondary" align="center">
-			No hay intervinientes
-		</Typography>
+		<Box>
+			<Typography variant="h5" gutterBottom>
+				No hay intervinientes
+			</Typography>
+			<Typography variant="body2" color="textSecondary">
+				Comienza creando un interviniente usando el botón +
+			</Typography>
+			<Typography variant="body2" color="textSecondary">
+				o vincula uno ya existente
+			</Typography>
+
+		</Box>
 	</>
 );

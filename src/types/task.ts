@@ -6,16 +6,45 @@ export interface TaskType {
 	progress?: number;
 	done?: number;
 	checked: boolean;
-	date: string;
+	date?: string; // Ahora opcional ya que usamos dueDate
+	dueDate: Date | string; // Fecha de vencimiento (puede ser string al recibir de API)
+	priority?: "baja" | "media" | "alta"; // Valores enumerados para prioridad
+	status?: "pendiente" | "en_progreso" | "revision" | "completada" | "cancelada"; // Estados posibles
+	attachments?: Array<{
+		name: string;
+		url: string;
+		type: string;
+	}>;
+	comments?: Array<{
+		text: string;
+		author: string;
+		date: Date | string;
+		_id?: string; // MongoDB puede asignar IDs a los elementos de arrays
+	}>;
 	folderId?: string;
 	userId?: string;
 	groupId?: string;
+	description?: string;
+	assignedTo?: string[];
+	reminders?: Array<{
+		date: Date | string;
+		sent: boolean;
+		_id?: string;
+	}>;
+	subtasks?: Array<{
+		name: string;
+		completed: boolean;
+		_id?: string;
+	}>;
+	createdAt?: Date | string; // De timestamps
+	updatedAt?: Date | string; // De timestamps
 }
 
 export interface TaskState {
 	tasks: TaskType[];
 	isLoader: boolean;
 	error: string | null;
+	upcomingTasks: TaskType[];
 }
 
 export type TaskDataType = {
@@ -45,7 +74,7 @@ export type TaskModalType = {
 };
 
 export type TaskFormValues = {
-	date: string;
+	dueDate: string;
 	name: string;
 	description: string;
 	checked: boolean;

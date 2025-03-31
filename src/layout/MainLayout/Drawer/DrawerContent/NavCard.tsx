@@ -38,11 +38,7 @@ const NavCard = () => {
 					</Stack>
 					<AnimateButton>
 						{/* Cambiamos el href por onClick para abrir el modal */}
-						<Button
-							variant="shadow"
-							size="small"
-							onClick={handleOpenModal}
-						>
+						<Button variant="shadow" size="small" onClick={handleOpenModal}>
 							Soporte
 						</Button>
 					</AnimateButton>
@@ -50,10 +46,7 @@ const NavCard = () => {
 			</MainCard>
 
 			{/* Modal de Soporte */}
-			<SupportModal
-				open={openModal}
-				onClose={handleCloseModal}
-			/>
+			<SupportModal open={openModal} onClose={handleCloseModal} />
 		</>
 	);
 };

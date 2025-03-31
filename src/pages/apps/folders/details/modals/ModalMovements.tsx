@@ -143,15 +143,18 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 									}}
 								>
 									<Stack direction="row" justifyContent="space-between" alignItems="center">
-										<Typography
-											variant="h5"
-											sx={{
-												color: theme.palette.primary.main,
-												fontWeight: 600,
-											}}
-										>
-											{editMode ? "Editar Movimiento" : "Agregar Movimiento"}
-										</Typography>
+										<Stack direction="row" alignItems="center" spacing={1}>
+											<TableDocument size={24} color={theme.palette.primary.main} />
+											<Typography
+												variant="h5"
+												sx={{
+													color: theme.palette.primary.main,
+													fontWeight: 600,
+												}}
+											>
+												{editMode ? "Editar Movimiento" : "Agregar Movimiento"}
+											</Typography>
+										</Stack>
 										<Typography
 											color="textSecondary"
 											variant="subtitle2"
@@ -284,12 +287,6 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 										onClick={() => {
 											setOpen(false);
 											resetForm();
-										}}
-										sx={{
-											color: theme.palette.text.secondary,
-											"&:hover": {
-												bgcolor: theme.palette.action.hover,
-											},
 										}}
 									>
 										Cancelar

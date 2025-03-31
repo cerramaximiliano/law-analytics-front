@@ -10,6 +10,7 @@ import authReducer from "store/reducers/auth";
 import Loader from "components/Loader";
 import { UnauthorizedModal } from "../sections/auth/UnauthorizedModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
+import { fetchUserStats } from "store/reducers/userStats";
 
 const initialState: AuthProps = {
 	isLoggedIn: false,
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const [showUnauthorizedModal, setShowUnauthorizedModal] = useState<boolean>(false);
 	const navigate = useNavigate();
 	const location = useLocation();
+	const [isLogoutProcess, setIsLogoutProcess] = useState(false);
 
 	// Configuración global de axios
 	useEffect(() => {
@@ -54,6 +56,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	// Función unificada de logout
 	const logout = async (showMessage = true): Promise<void> => {
 		try {
+			setIsLogoutProcess(true);
+			navigate("/login", { replace: true });
+
 			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/logout`);
 
 			// Limpiar estado local
@@ -72,8 +77,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			}
 
 			setShowUnauthorizedModal(false);
+
+			setTimeout(() => {
+				setIsLogoutProcess(false);
+			}, 1000);
 		} catch (error) {
 			console.error("Logout error:", error);
+			setTimeout(() => {
+				setIsLogoutProcess(false);
+			}, 1000);
 		}
 	};
 
@@ -115,6 +127,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						},
 					});
 
+					reduxDispatch(fetchUserStats());
+
 					showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
 					return true;
 				} else {
@@ -154,6 +168,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						isInitialized: true,
 					},
 				});
+
+				reduxDispatch(fetchUserStats());
 			} catch (error) {
 				// No redirigir al login, solo inicializar el estado como logged out
 				console.log("Error en la inicialización:", error);
@@ -175,15 +191,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	}, []);
 
 	// Interceptor unificado de axios
+	// Interceptor unificado de axios
 	useEffect(() => {
 		// Variable para almacenar los IDs de interceptores (para limpieza)
 		const interceptors: number[] = [];
 
-		// Crear un nuevo interceptor
-		const interceptor = axios.interceptors.response.use(
-			(response) => response,
+		// Interceptor de solicitud para ver qué peticiones se están haciendo
+		const requestInterceptor = axios.interceptors.request.use(
+			(config) => {
+				console.log(`[Petición] ${config.method?.toUpperCase()} ${config.url}`, config);
+				return config;
+			},
+			(error) => {
+				console.error("[Error de petición]", error);
+				return Promise.reject(error);
+			},
+		);
+
+		interceptors.push(requestInterceptor);
+
+		// Crear un nuevo interceptor de respuesta para ver errores
+		const responseInterceptor = axios.interceptors.response.use(
+			(response) => {
+				console.log(`[Respuesta] ${response.config.method?.toUpperCase()} ${response.config.url}`, response);
+				return response;
+			},
 			async (error: AxiosError) => {
-				console.log("Interceptor error:", error);
+				console.log(`[Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: ${error.response?.status}`, error);
 
 				if (!error.config) {
 					return Promise.reject(error);
@@ -194,28 +228,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 				// Para evitar bucles infinitos
 				if (originalRequest._hasBeenHandled) {
+					console.log(`[Interceptor] Petición ya fue manejada: ${url}`);
 					return Promise.reject(error);
 				}
 
 				originalRequest._hasBeenHandled = true;
+
+				if (isLogoutProcess) {
+					return Promise.reject(error);
+				}
 
 				// Si es un error 401 y no es una petición de autenticación
 				if (
 					error.response?.status === 401 &&
 					!url.includes("/api/auth/login") &&
 					!url.includes("/api/auth/google") &&
-					!url.includes("/api/auth/refresh-token")
+					!url.includes("/api/auth/refresh-token") &&
+					!url.includes("/api/auth/logout")
+					//&&
+					//!url.includes("/api/stats/")
+					//&&
+					//!url.includes("/api/auth/me")
 				) {
-					console.log("Detectado error 401", error.response?.data);
+					console.log("[Interceptor] Detectado error 401 en:", url, error.response?.data);
 
 					// Si el backend indica que necesita refresh
 					if (error.response?.data && (error.response.data as any).needRefresh === true) {
 						try {
-							console.log("Intentando refresh token");
+							console.log("[Interceptor] Intentando refresh token");
 							// Intentar refrescar el token automáticamente
 							const refreshResponse = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/refresh-token`);
 
-							console.log("Refresh exitoso", refreshResponse);
+							console.log("[Interceptor] Refresh exitoso", refreshResponse);
 
 							// Si el refresh es exitoso, reintentar la petición original
 							if (refreshResponse.status === 200) {
@@ -225,17 +269,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 								});
 							}
 						} catch (refreshError) {
-							console.error("Error al refrescar token:", refreshError);
+							console.error("[Interceptor] Error al refrescar token:", refreshError);
 
 							// Si falla el refresh, mostrar el modal
-							console.log("Mostrando modal de reautenticación");
+							console.log("[Interceptor] Mostrando modal de reautenticación");
 							setShowUnauthorizedModal(true);
 
 							return Promise.reject(refreshError);
 						}
 					} else {
 						// Si no necesita refresh, solo mostrar el modal
-						console.log("Mostrando modal sin intentar refresh");
+						console.log("[Interceptor] Mostrando modal sin intentar refresh");
 						setShowUnauthorizedModal(true);
 					}
 				}
@@ -245,7 +289,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		);
 
 		// Añadir el ID del interceptor a la lista para limpieza
-		interceptors.push(interceptor);
+		interceptors.push(responseInterceptor);
 
 		// Limpiar todos los interceptores al desmontar
 		return () => {
@@ -253,7 +297,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				axios.interceptors.response.eject(id);
 			});
 		};
-	}, []); // Eliminamos la dependencia showUnauthorizedModal para evitar reinstalación del interceptor
+	}, [isLogoutProcess]);
 
 	// Login normal
 	const login = async (email: string, password: string): Promise<boolean> => {
@@ -278,6 +322,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				},
 			});
 
+			reduxDispatch(fetchUserStats());
 			showSnackbar("¡Inicio de sesión exitoso!", "success");
 			return true;
 		} catch (error) {
@@ -363,7 +408,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	// Restablecer contraseña
 	const resetPassword = async (email: string): Promise<void> => {
 		try {
-			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/reset-password`, { email });
+			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/reset-request`, { email });
 			showSnackbar("Instrucciones enviadas a tu correo", "success");
 		} catch (error) {
 			showSnackbar("Error al solicitar restablecimiento de contraseña", "error");
@@ -406,6 +451,53 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		});
 	};
 
+	const setNewPassword = async (email: string, code: string, newPassword: string): Promise<boolean> => {
+		try {
+			const response = await axios.post<{ success: boolean; message: string }>(`${process.env.REACT_APP_BASE_URL}/api/auth/reset`, {
+				email,
+				code,
+				newPassword,
+			});
+
+			if (response.data.success) {
+				showSnackbar("Contraseña restablecida correctamente", "success");
+				return true;
+			} else {
+				throw new Error(response.data.message || "Error al restablecer la contraseña");
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? (error.response?.data as any)?.message || "Error al restablecer la contraseña"
+				: "Error al restablecer la contraseña";
+
+			showSnackbar(errorMessage, "error");
+			throw error;
+		}
+	};
+
+	const verifyResetCode = async (email: string, code: string): Promise<boolean> => {
+		try {
+			const response = await axios.post<{ success: boolean; message: string }>(`${process.env.REACT_APP_BASE_URL}/api/auth/verify-code`, {
+				email,
+				code,
+			});
+
+			if (response.data.success) {
+				showSnackbar("Código verificado correctamente", "success");
+				return true;
+			} else {
+				throw new Error(response.data.message || "Error al verificar el código");
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? (error.response?.data as any)?.message || "Error al verificar el código"
+				: "Error al verificar el código";
+
+			showSnackbar(errorMessage, "error");
+			throw error;
+		}
+	};
+
 	if (!state.isInitialized) {
 		return <Loader />;
 	}
@@ -425,6 +517,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				setIsLoggedIn,
 				setNeedsVerification,
 				handleLogoutAndRedirect,
+				verifyResetCode,
+				setNewPassword,
 			}}
 		>
 			{children}

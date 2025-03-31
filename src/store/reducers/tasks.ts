@@ -2,15 +2,21 @@ import axios, { AxiosError } from "axios";
 import { Dispatch } from "redux";
 import { TaskType, TaskState } from "types/task";
 
+// Action types
 const SET_LOADING = "tasks/SET_LOADING";
 const SET_ERROR = "tasks/SET_ERROR";
 const ADD_TASK = "tasks/ADD_TASK";
 const SET_TASKS = "tasks/SET_TASKS";
 const UPDATE_TASK = "tasks/UPDATE_TASK";
 const DELETE_TASK = "tasks/DELETE_TASK";
+const ADD_COMMENT = "tasks/ADD_COMMENT";
+const UPDATE_SUBTASK = "tasks/UPDATE_SUBTASK";
+const SET_UPCOMING_TASKS = "tasks/SET_UPCOMING_TASKS";
+const UPDATE_TASK_ASSIGNMENTS = "tasks/UPDATE_TASK_ASSIGNMENTS";
 
 const initialState: TaskState = {
 	tasks: [],
+	upcomingTasks: [], // Nueva propiedad para tareas próximas
 	isLoader: false,
 	error: null,
 };
@@ -45,12 +51,36 @@ const tasksReducer = (state = initialState, action: any) => {
 				tasks: state.tasks.filter((task) => task._id !== action.payload),
 				isLoader: false,
 			};
+		case ADD_COMMENT:
+			return {
+				...state,
+				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
+				isLoader: false,
+			};
+		case UPDATE_SUBTASK:
+			return {
+				...state,
+				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
+				isLoader: false,
+			};
+		case SET_UPCOMING_TASKS:
+			return {
+				...state,
+				upcomingTasks: action.payload,
+				isLoader: false,
+			};
+		case UPDATE_TASK_ASSIGNMENTS:
+			return {
+				...state,
+				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
+				isLoader: false,
+			};
 		default:
 			return state;
 	}
 };
 
-// Actions
+// Acciones existentes
 export const addTask = (data: Omit<TaskType, "_id">) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
@@ -169,6 +199,115 @@ export const deleteTask = (id: string) => async (dispatch: Dispatch) => {
 	} catch (error: unknown) {
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al eliminar la tarea" : "Error al eliminar la tarea";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+// Nuevas acciones
+
+/**
+ * Añade un comentario a una tarea
+ */
+export const addComment = (id: string, commentData: { text: string; author: string }) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/comments`, commentData);
+		dispatch({
+			type: ADD_COMMENT,
+			payload: response.data,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al añadir el comentario" : "Error al añadir el comentario";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+/**
+ * Añade una nueva subtarea
+ */
+export const addSubtask = (id: string, subtaskData: { name: string; completed?: boolean }) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/subtasks`, subtaskData);
+		dispatch({
+			type: UPDATE_SUBTASK,
+			payload: response.data,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al añadir la subtarea" : "Error al añadir la subtarea";
+		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+/**
+ * Actualiza una subtarea existente
+ */
+export const updateSubtask =
+	(id: string, subtaskData: { subtaskId: string; name?: string; completed?: boolean }) => async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_LOADING });
+			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/subtasks`, subtaskData);
+			dispatch({
+				type: UPDATE_SUBTASK,
+				payload: response.data,
+			});
+			return { success: true };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError
+					? error.response?.data?.message || "Error al actualizar la subtarea"
+					: "Error al actualizar la subtarea";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+	};
+
+/**
+ * Obtiene tareas próximas a vencer
+ */
+export const getUpcomingTasks =
+	(userId: string, days: number = 7) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_LOADING });
+			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/upcoming/${userId}?days=${days}`);
+			dispatch({
+				type: SET_UPCOMING_TASKS,
+				payload: response.data,
+			});
+			return { success: true };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError
+					? error.response?.data?.message || "Error al obtener las tareas próximas"
+					: "Error al obtener las tareas próximas";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+	};
+
+/**
+ * Asigna una tarea a uno o más usuarios
+ */
+export const assignTask = (id: string, userIds: string[]) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/assign`, { userIds });
+		dispatch({
+			type: UPDATE_TASK_ASSIGNMENTS,
+			payload: response.data,
+		});
+		return { success: true };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al asignar la tarea" : "Error al asignar la tarea";
 		dispatch({ type: SET_ERROR, payload: errorMessage });
 		return { success: false, error: errorMessage };
 	}

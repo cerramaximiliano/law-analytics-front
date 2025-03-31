@@ -179,11 +179,18 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 	return (
 		<>
-			<DialogTitle>
+			<DialogTitle sx={{
+				bgcolor: theme.palette.primary.lighter,
+				p: 3,
+				borderBottom: `1px solid ${theme.palette.divider}`,
+			}}>
 				<Stack spacing={1}>
 					<Stack direction="row" alignItems="center" spacing={1}>
 						<Profile2User size={24} color={theme.palette.primary.main} />
-						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+						<Typography variant="h5" color="primary" sx={{
+							color: theme.palette.primary.main,
+							fontWeight: 600,
+						}}>
 							{isCreating ? "Agregar Nuevo Contacto" : "Editar Contacto"}
 						</Typography>
 					</Stack>

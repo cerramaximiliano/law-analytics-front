@@ -187,15 +187,18 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 						}}
 					>
 						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							{event ? (
-								<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-									Editar Evento
-								</Typography>
-							) : (
-								<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-									Agregar Evento
-								</Typography>
-							)}
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Calendar size={24} color={theme.palette.primary.main} />
+								{event ? (
+									<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+										Editar Evento
+									</Typography>
+								) : (
+									<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+										Agregar Evento
+									</Typography>
+								)}
+							</Stack>
 							<Typography
 								color="textSecondary"
 								variant="subtitle2"
@@ -392,14 +395,8 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 							<Grid item>
 								<Stack direction="row" spacing={2} alignItems="center">
 									<Button
-										color="inherit"
+										color="error"
 										onClick={onCancel}
-										sx={{
-											color: theme.palette.text.secondary,
-											"&:hover": {
-												bgcolor: theme.palette.action.hover,
-											},
-										}}
 									>
 										Cancelar
 									</Button>

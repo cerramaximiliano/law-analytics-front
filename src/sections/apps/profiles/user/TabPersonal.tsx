@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 import { useOutletContext } from "react-router";
 
 // material-ui
@@ -8,6 +8,7 @@ import {
 	Button,
 	CardHeader,
 	Chip,
+	CircularProgress,
 	Divider,
 	FormHelperText,
 	Grid,
@@ -29,10 +30,11 @@ import { Formik } from "formik";
 import MainCard from "components/MainCard";
 import countries from "data/countries";
 import { dispatch, useSelector } from "store";
-import { openSnackbar } from "store/reducers/snackbar";
+import { updateUserProfile } from "store/reducers/auth"; // Importamos la acción
 
 // assets
 import { Add } from "iconsax-react";
+import moment from "moment";
 
 // styles & constant
 const ITEM_HEIGHT = 48;
@@ -94,6 +96,8 @@ function useInputRef() {
 // ==============================|| USER PROFILE - PERSONAL ||============================== //
 
 const TabPersonal = () => {
+	const [loading, setLoading] = useState(false);
+
 	const handleChangeDay = (event: SelectChangeEvent<string>, date: Date, setFieldValue: (field: string, value: any) => void) => {
 		setFieldValue("dob", new Date(date.setDate(parseInt(event.target.value, 10))));
 	};
@@ -108,57 +112,77 @@ const TabPersonal = () => {
 
 	const userData = useSelector((state) => state.auth);
 
+	// Formatear fecha para inicialización
+	const formatInitialDate = () => {
+		if (userData.user?.dob) {
+			// Extraer los componentes de la fecha en UTC
+			const utcDate = moment.utc(userData.user.dob);
+			const year = utcDate.year();
+			const month = utcDate.month();
+			const day = utcDate.date();
+			// Crear una nueva fecha local con esos componentes exactos
+			const parsedDate = moment().year(year).month(month).date(day).hour(0).minute(0).second(0).millisecond(0).toDate();
+
+			return parsedDate;
+		}
+		return null; // Fecha por defecto vacía
+	};
+
 	return (
 		<MainCard content={false} title="Información Personal" sx={{ "& .MuiInputLabel-root": { fontSize: "0.875rem" } }}>
 			<Formik
 				initialValues={{
-					firstname: userData.user?.firstName || "",
-					lastname: userData.user?.lastName || "",
+					firstName: userData.user?.firstName || "",
+					lastName: userData.user?.lastName || "",
 					email: userData.user?.email || "",
-					dob: new Date("03-10-1993"),
-					countryCode: "+91",
+					dob: formatInitialDate(),
 					contact: userData.user?.contact || "",
 					designation: userData.user?.designation || "",
 					address: userData.user?.address || "",
 					address1: userData.user?.address1 || "",
 					country: userData.user?.country || "",
 					state: userData.user?.state || "",
-					skill: userData.user?.skill || "",
+					skill: userData.user?.skill || [],
 					note: userData.user?.note || "",
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					firstname: Yup.string().max(255).required("El nombre es requerido"),
-					lastname: Yup.string().max(255).required("El apellido es requerido."),
+					firstName: Yup.string().max(255).required("El nombre es requerido"),
+					lastName: Yup.string().max(255).required("El apellido es requerido."),
 					email: Yup.string().email("Correo electrónico inválido.").max(255).required("El correo electrónico es requerido."),
-					dob: Yup.date().max(maxDate, "La edad debe ser mayor de 18 años.").required("La fecha de nacimiento es requerida."),
-					contact: Yup.number()
-						.test("len", "El número de contacto debe tener exactamente 10 dígitos", (val) => val?.toString().length === 10)
-						.required("El número de teléfono es requerido"),
-					designation: Yup.string().required("La designación es requerida"),
-					address: Yup.string().min(50, "La dirección es demasiado corta.").required("La dirección es requerida"),
-					country: Yup.string().required("El país es requerido"),
-					state: Yup.string().required("El estado es requerido"),
-					note: Yup.string().min(150, "La nota debe tener más de 150 caracteres."),
+					note: Yup.string().min(5, "La nota debe tener más de 5 caracteres."),
 				})}
-				onSubmit={(values, { setErrors, setStatus, setSubmitting }) => {
+				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+					setLoading(true);
 					try {
-						dispatch(
-							openSnackbar({
-								open: true,
-								message: "Perfil profesional actualizado satisfactoriamente.",
-								variant: "alert",
-								alert: {
-									color: "success",
-								},
-								close: false,
-							}),
-						);
-						setStatus({ success: false });
-						setSubmitting(false);
+						const formattedDate = moment(values.dob).format("YYYY-MM-DD");
+						// Preparar datos para enviar al servidor
+						const updateData = {
+							firstName: values.firstName,
+							lastName: values.lastName,
+							email: values.email,
+							dob: formattedDate,
+							contact: values.contact,
+							designation: values.designation,
+							address: values.address,
+							address1: values.address1,
+							country: values.country,
+							state: values.state,
+							skill: values.skill,
+							note: values.note,
+						};
+						// Utilizamos la acción de Redux para actualizar el perfil
+						await dispatch(updateUserProfile(updateData));
+						setStatus({ success: true });
 					} catch (err: any) {
+						console.error("Error al actualizar el perfil:", err);
+
 						setStatus({ success: false });
-						setErrors({ submit: err.message });
+						setErrors({
+							submit: err.response?.data?.message || err.message || "Error al actualizar el perfil",
+						});
+					} finally {
+						setLoading(false);
 						setSubmitting(false);
 					}
 				}}
@@ -173,17 +197,18 @@ const TabPersonal = () => {
 										<TextField
 											fullWidth
 											id="personal-first-name"
-											value={values.firstname}
-											name="firstname"
+											value={values.firstName}
+											name="firstName"
 											onBlur={handleBlur}
 											onChange={handleChange}
 											placeholder="Nombre"
 											autoFocus
 											inputRef={inputRef}
+											error={Boolean(touched.firstName && errors.firstName)}
 										/>
-										{touched.firstname && errors.firstname && (
+										{touched.firstName && errors.firstName && (
 											<FormHelperText error id="personal-first-name-helper">
-												{errors.firstname}
+												{errors.firstName}
 											</FormHelperText>
 										)}
 									</Stack>
@@ -194,15 +219,16 @@ const TabPersonal = () => {
 										<TextField
 											fullWidth
 											id="personal-last-name"
-											value={values.lastname}
-											name="lastname"
+											value={values.lastName}
+											name="lastName"
 											onBlur={handleBlur}
 											onChange={handleChange}
 											placeholder="Apellido"
+											error={Boolean(touched.lastName && errors.lastName)}
 										/>
-										{touched.lastname && errors.lastname && (
+										{touched.lastName && errors.lastName && (
 											<FormHelperText error id="personal-last-name-helper">
-												{errors.lastname}
+												{errors.lastName}
 											</FormHelperText>
 										)}
 									</Stack>
@@ -219,6 +245,7 @@ const TabPersonal = () => {
 											onChange={handleChange}
 											id="personal-email"
 											placeholder="Correo Electrónico"
+											error={Boolean(touched.email && errors.email)}
 										/>
 										{touched.email && errors.email && (
 											<FormHelperText error id="personal-email-helper">
@@ -233,9 +260,9 @@ const TabPersonal = () => {
 										<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
 											<Select
 												fullWidth
-												value={values.dob.getMonth().toString()}
+												value={values.dob ? values.dob.getMonth().toString() : ""}
 												name="dob-month"
-												onChange={(e: SelectChangeEvent<string>) => handleChangeMonth(e, values.dob, setFieldValue)}
+												onChange={(e: SelectChangeEvent<string>) => handleChangeMonth(e, values.dob || new Date(), setFieldValue)}
 											>
 												<MenuItem value="0">Enero</MenuItem>
 												<MenuItem value="1">Febrero</MenuItem>
@@ -250,12 +277,13 @@ const TabPersonal = () => {
 												<MenuItem value="10">Noviembre</MenuItem>
 												<MenuItem value="11">Diciembre</MenuItem>
 											</Select>
+
 											<Select
 												fullWidth
-												value={values.dob.getDate().toString()}
+												value={values.dob ? values.dob.getDate().toString() : ""}
 												name="dob-date"
 												onBlur={handleBlur}
-												onChange={(e: SelectChangeEvent<string>) => handleChangeDay(e, values.dob, setFieldValue)}
+												onChange={(e: SelectChangeEvent<string>) => handleChangeDay(e, values.dob || new Date(), setFieldValue)}
 												MenuProps={MenuProps}
 											>
 												{[
@@ -265,15 +293,18 @@ const TabPersonal = () => {
 														key={i}
 														value={i}
 														disabled={
-															(values.dob.getMonth() === 1 && i > (values.dob.getFullYear() % 4 === 0 ? 29 : 28)) ||
-															(values.dob.getMonth() % 2 !== 0 && values.dob.getMonth() < 7 && i > 30) ||
-															(values.dob.getMonth() % 2 === 0 && values.dob.getMonth() > 7 && i > 30)
+															values.dob
+																? (values.dob.getMonth() === 1 && i > (values.dob.getFullYear() % 4 === 0 ? 29 : 28)) ||
+																  (values.dob.getMonth() % 2 !== 0 && values.dob.getMonth() < 7 && i > 30) ||
+																  (values.dob.getMonth() % 2 === 0 && values.dob.getMonth() > 7 && i > 30)
+																: false
 														}
 													>
 														{i}
 													</MenuItem>
 												))}
 											</Select>
+
 											<LocalizationProvider dateAdapter={AdapterDateFns}>
 												<DatePicker
 													views={["year"]}
@@ -288,7 +319,7 @@ const TabPersonal = () => {
 										</Stack>
 										{touched.dob && errors.dob && (
 											<FormHelperText error id="personal-dob-helper">
-												{errors.dob as String}
+												{errors.dob as string}
 											</FormHelperText>
 										)}
 									</Stack>
@@ -305,6 +336,7 @@ const TabPersonal = () => {
 												onBlur={handleBlur}
 												onChange={handleChange}
 												placeholder="Número de Contacto"
+												error={Boolean(touched.contact && errors.contact)}
 											/>
 										</Stack>
 										{touched.contact && errors.contact && (
@@ -325,6 +357,7 @@ const TabPersonal = () => {
 											onBlur={handleBlur}
 											onChange={handleChange}
 											placeholder="Cargo"
+											error={Boolean(touched.designation && errors.designation)}
 										/>
 										{touched.designation && errors.designation && (
 											<FormHelperText error id="personal-designation-helper">
@@ -352,6 +385,7 @@ const TabPersonal = () => {
 											onBlur={handleBlur}
 											onChange={handleChange}
 											placeholder="Dirección principal"
+											error={Boolean(touched.address && errors.address)}
 										/>
 										{touched.address && errors.address && (
 											<FormHelperText error id="personal-address-helper">
@@ -382,7 +416,7 @@ const TabPersonal = () => {
 										<Autocomplete
 											id="personal-country"
 											fullWidth
-											value={countries.filter((item) => item.code === values?.country)[0]}
+											value={countries.find((item) => item.code === values?.country) || null}
 											onBlur={handleBlur}
 											onChange={(event, newValue) => {
 												setFieldValue("country", newValue === null ? "" : newValue.code);
@@ -411,6 +445,7 @@ const TabPersonal = () => {
 													{...params}
 													placeholder="Selecciona un país"
 													name="country"
+													error={Boolean(touched.country && errors.country)}
 													inputProps={{
 														...params.inputProps,
 														autoComplete: "new-password", // disable autocomplete and autofill
@@ -436,6 +471,7 @@ const TabPersonal = () => {
 											onBlur={handleBlur}
 											onChange={handleChange}
 											placeholder="Provincia"
+											error={Boolean(touched.state && errors.state)}
 										/>
 										{touched.state && errors.state && (
 											<FormHelperText error id="personal-state-helper">
@@ -454,7 +490,7 @@ const TabPersonal = () => {
 								fullWidth
 								id="tags-outlined"
 								options={skills}
-								value={Array.isArray(values.skill) ? values.skill : [values.skill]}
+								value={Array.isArray(values.skill) ? values.skill : values.skill ? [values.skill] : []}
 								onBlur={handleBlur}
 								getOptionLabel={(label) => label}
 								onChange={(event, newValue) => {
@@ -504,18 +540,27 @@ const TabPersonal = () => {
 								onChange={handleChange}
 								id="personal-note"
 								placeholder="Nota"
+								error={Boolean(touched.note && errors.note)}
 							/>
 							{touched.note && errors.note && (
 								<FormHelperText error id="personal-note-helper">
 									{errors.note}
 								</FormHelperText>
 							)}
+							{errors.submit && (
+								<Box sx={{ mt: 2 }}>
+									<FormHelperText error>{errors.submit}</FormHelperText>
+								</Box>
+							)}
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-								<Button variant="outlined" color="secondary">
-									Cancelar
-								</Button>
-								<Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">
-									Guardar
+								<Button color="error">Cancelar</Button>
+								<Button
+									disabled={isSubmitting || loading || Object.keys(errors).length !== 0}
+									type="submit"
+									variant="contained"
+									startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+								>
+									{loading ? "Guardando..." : "Guardar"}
 								</Button>
 							</Stack>
 						</Box>

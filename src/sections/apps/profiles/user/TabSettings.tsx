@@ -28,7 +28,7 @@ const TabSettings = () => {
 	};
 
 	return (
-		<MainCard title="Settings">
+		<MainCard title="Configuración">
 			<List sx={{ "& .MuiListItem-root": { p: 2 } }}>
 				<ListItem divider>
 					<ListItemIcon sx={{ color: "primary.main", mr: 2, display: { xs: "none", sm: "block" } }}>
@@ -104,10 +104,8 @@ const TabSettings = () => {
 				</ListItem>
 			</List>
 			<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-				<Button variant="outlined" color="secondary">
-					Cancel
-				</Button>
-				<Button variant="contained">Save</Button>
+				<Button color="error">Cancelar</Button>
+				<Button variant="contained">Guardar</Button>
 			</Stack>
 		</MainCard>
 	);
