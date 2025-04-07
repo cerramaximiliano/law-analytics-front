@@ -31,13 +31,12 @@ const avatarImage = require.context("assets/images/users", true);
 
 const TabRole = () => {
 	const auth = useSelector((state) => state.auth);
-	console.log(auth);
 	const users = auth.user?.users;
 
 	return (
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
-				<MainCard title="Invite Team Members" content={false}>
+				<MainCard title="Invitar Miembros a la Cuenta" content={false}>
 					<Stack spacing={2.5} sx={{ p: 2.5 }}>
 						<Typography variant="h4">
 							{auth.user?.role === "USER_ROLE"
@@ -58,8 +57,8 @@ const TabRole = () => {
 							sx={{ width: { xs: 1, md: "80%", lg: "60%" } }}
 						>
 							<Stack spacing={1} sx={{ width: `calc(100% - 110px)` }}>
-								<InputLabel htmlFor="outlined-email">Email</InputLabel>
-								<TextField fullWidth id="outlined-email" variant="outlined" placeholder="Ingrese su email" />
+								<InputLabel htmlFor="outlined-email">Correo Electrónico</InputLabel>
+								<TextField fullWidth id="outlined-email" variant="outlined" placeholder="Ingrese el correo del invitado" />
 							</Stack>
 							<Button variant="contained" size="large">
 								Enviar

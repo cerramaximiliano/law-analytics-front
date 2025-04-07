@@ -9,12 +9,9 @@ import MainCard from "components/MainCard";
 
 // assets
 import {
-	DocumentText,
-	Lock,
-	Profile,
 	Profile2User,
-	Setting3,
-	//TableDocument
+	//Setting3,
+	TableDocument,
 } from "iconsax-react";
 
 // ==============================|| PROFILE - ACCOUNT ||============================== //
@@ -24,22 +21,15 @@ const AccountProfile = () => {
 
 	let selectedTab = 0;
 	switch (pathname) {
-		case "/apps/profiles/account/personal":
-			selectedTab = 1;
-			break;
 		case "/apps/profiles/account/my-account":
-			selectedTab = 2;
-			break;
-		case "/apps/profiles/account/password":
-			selectedTab = 3;
+			selectedTab = 0;
 			break;
 		case "/apps/profiles/account/role":
-			selectedTab = 4;
+			selectedTab = 1;
 			break;
-		case "/apps/profiles/account/settings":
-			selectedTab = 5;
-			break;
-		case "/apps/profiles/account/basic":
+		/* 		case "/apps/profiles/account/settings":
+					selectedTab = 2;
+					break; */
 		default:
 			selectedTab = 0;
 	}
@@ -54,12 +44,15 @@ const AccountProfile = () => {
 		<MainCard border={false}>
 			<Box sx={{ borderBottom: 1, borderColor: "divider", width: "100%" }}>
 				<Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons="auto" aria-label="account profile tab">
-					<Tab label="Perfil" component={Link} to="/apps/profiles/account/basic" icon={<Profile />} iconPosition="start" />
-					<Tab label="Personal" component={Link} to="/apps/profiles/account/personal" icon={<DocumentText />} iconPosition="start" />
-					{/* <Tab label="Mi cuenta" component={Link} to="/apps/profiles/account/my-account" icon={<TableDocument />} iconPosition="start" /> */}
-					<Tab label="Cambiar Password" component={Link} to="/apps/profiles/account/password" icon={<Lock />} iconPosition="start" />
+					<Tab label="Mi cuenta" component={Link} to="/apps/profiles/account/my-account" icon={<TableDocument />} iconPosition="start" />
 					<Tab label="Roles" component={Link} to="/apps/profiles/account/role" icon={<Profile2User />} iconPosition="start" />
-					<Tab label="Configuración" component={Link} to="/apps/profiles/account/settings" icon={<Setting3 />} iconPosition="start" />
+					{/* 					<Tab
+						label="Configuración"
+						component={Link}
+						to="/apps/profiles/account/settings"
+						icon={<Setting3 />}
+						iconPosition="start"
+					/> */}
 				</Tabs>
 			</Box>
 			<Box sx={{ mt: 2.5 }}>

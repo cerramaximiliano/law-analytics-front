@@ -15,7 +15,7 @@ import IconButton from "components/@extended/IconButton";
 import useAuth from "hooks/useAuth";
 
 // assets
-import { Setting2, Profile, Logout } from "iconsax-react";
+import { Profile, Logout } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
@@ -214,10 +214,10 @@ const ProfilePage = () => {
 													textTransform: "capitalize",
 												}}
 												icon={<Profile size={18} style={{ marginBottom: 0, marginRight: "10px" }} />}
-												label="Profile"
+												label="Perfil"
 												{...a11yProps(0)}
 											/>
-											<Tab
+											{/* 										<Tab
 												sx={{
 													display: "flex",
 													flexDirection: "row",
@@ -226,9 +226,10 @@ const ProfilePage = () => {
 													textTransform: "capitalize",
 												}}
 												icon={<Setting2 size={18} style={{ marginBottom: 0, marginRight: "10px" }} />}
-												label="Setting"
+												label="Configuración"
 												{...a11yProps(1)}
 											/>
+										 */}
 										</Tabs>
 									</Box>
 									<TabPanel value={value} index={0} dir={theme.direction}>

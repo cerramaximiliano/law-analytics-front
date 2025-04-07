@@ -24,7 +24,7 @@ import { useNavigate } from "react-router-dom";
 // Importar acción para obtener tareas próximas
 import { getUpcomingTasks, toggleTaskStatus } from "store/reducers/tasks";
 
-import StatsService, { TaskMetrics } from "store/reducers/ApiService";
+import ApiService, { TaskMetrics } from "store/reducers/ApiService";
 
 // Componente para mostrar un listado simple de tareas
 const TaskWidget = () => {
@@ -61,12 +61,12 @@ const TaskWidget = () => {
 					setLoading(true);
 
 					// Obtener el resumen del dashboard que incluye taskMetrics
-					const summary = await StatsService.getDashboardSummary(userId);
+					const summary = await ApiService.getDashboardSummary(userId);
 
 					// Obtener métricas de tareas más detalladas
 					let taskMetricsData: TaskMetrics | null = null;
 					try {
-						taskMetricsData = await StatsService.getCategoryAnalysis<TaskMetrics>("tasks", userId);
+						taskMetricsData = await ApiService.getCategoryAnalysis<TaskMetrics>("tasks", userId);
 					} catch (error) {
 						console.warn("No se pudieron obtener métricas detalladas de tareas:", error);
 						// Continuamos con las métricas del dashboard summary
@@ -206,7 +206,7 @@ const TaskWidget = () => {
 								}}
 								onClick={() => handleOpenTask(task._id)}
 								secondaryAction={
-									<Tooltip title={task.checked ? "Completada" : "Pendiente"}>
+									<Tooltip title={task.checked ? "Completada" : "Marcar como completa"}>
 										<IconButton
 											edge="end"
 											size="small"

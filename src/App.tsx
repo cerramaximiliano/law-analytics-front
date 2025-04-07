@@ -18,6 +18,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // auth-provider
 import { AuthProvider } from "contexts/ServerContext";
+import { WebSocketProvider } from "contexts/WebSocketContext";
 //import { UnauthorizedProvider } from "contexts/UnauthorizedContext";
 
 const googleClientId = process.env.REACT_APP_AUTH0_GOOGLE_ID;
@@ -43,10 +44,12 @@ const App = () => {
 					<ScrollTop>
 						<GoogleOAuthProvider clientId={googleClientId}>
 							<AuthProvider>
-								<Notistack>
-									<Routes />
-									<Snackbar />
-								</Notistack>
+								<WebSocketProvider>
+									<Notistack>
+										<Routes />
+										<Snackbar />
+									</Notistack>
+								</WebSocketProvider>
 							</AuthProvider>
 						</GoogleOAuthProvider>
 					</ScrollTop>

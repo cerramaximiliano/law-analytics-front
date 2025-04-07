@@ -3,7 +3,7 @@ import { useTheme } from "@mui/material/styles";
 import { Box, CardContent, CircularProgress, Grid, LinearProgress, Stack, Typography, Alert } from "@mui/material";
 import MainCard from "components/MainCard";
 import { UpcomingDeadlines } from "types/stats";
-import StatsService from "store/reducers/ApiService";
+import ApiService from "store/reducers/ApiService";
 import { useSelector } from "store";
 import { Calendar, Timer1 } from "iconsax-react";
 
@@ -19,7 +19,7 @@ const ProjectRelease = () => {
 		const fetchDeadlinesData = async () => {
 			try {
 				setLoading(true);
-				const folderData = await StatsService.getCategoryAnalysis<{ deadlines: UpcomingDeadlines }>("folders", userId);
+				const folderData = await ApiService.getCategoryAnalysis<{ deadlines: UpcomingDeadlines }>("folders", userId);
 				setDeadlinesData(folderData.deadlines);
 			} catch (error) {
 				console.error("Error fetching deadlines data:", error);

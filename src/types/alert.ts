@@ -18,7 +18,7 @@ type TypographyVariant =
 
 export type Alert = {
 	avatarType?: AvatarTypeProps;
-	avatarIcon?: "Gift" | "MessageText1" | "Setting2";
+	avatarIcon?: "Gift" | "MessageText1" | "Setting2" | "TableDocument" | "CalendarRemove" | "TaskSquare";
 	avatarSize?: number;
 	avatarInitial?: string;
 	primaryText: string;
@@ -26,10 +26,14 @@ export type Alert = {
 	secondaryText: string;
 	actionText: string;
 	_id: string;
+	userId: string;
+	folderId: string;
+	expirationDate: string;
+	read: string;
 };
 
 export interface AlertsState {
-	alerts: Notification[];
+	alerts: Alert[];
 	isLoader: boolean;
 	error?: string;
 }

@@ -146,7 +146,7 @@ const applications: NavItemType = {
 					id: "account-profile",
 					title: <FormattedMessage id="Cuenta" />,
 					type: "item",
-					url: "/apps/profiles/account/basic",
+					url: "/apps/profiles/account/my-account",
 				},
 			],
 		},

@@ -13,6 +13,12 @@ export const DRAWER_WIDTH = 280;
 export const MINI_DRAWER_WIDTH = 90;
 export const HEADER_HEIGHT = 74;
 
+// ==============================|| API ENDPOINTS ||============================== //
+
+// API Base URLs
+export const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://api.example.com";
+export const WS_BASE_URL = process.env.REACT_APP_WS_URL || "wss://api.example.com/ws";
+
 // ==============================|| THEME CONFIG ||============================== //
 
 const config: DefaultConfigProps = {

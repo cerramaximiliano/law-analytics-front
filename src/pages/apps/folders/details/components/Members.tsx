@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import { Add, UserSquare, Trash, Link1 } from "iconsax-react"; // Importa el icono Trash
+import { Add, UserSquare, Trash, Link1 } from "iconsax-react";
 import { PopupTransition } from "components/@extended/Transitions";
 import { useCallback, useState } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";

@@ -39,8 +39,8 @@ const UserTabSettings = Loadable(lazy(() => import("sections/apps/profiles/user/
 const UserTabProfessional = Loadable(lazy(() => import("sections/apps/profiles/user/TabProfessional")));
 
 const AccountProfile = Loadable(lazy(() => import("pages/apps/profiles/account")));
-const AccountTabProfile = Loadable(lazy(() => import("sections/apps/profiles/account/TabProfile")));
-const AccountTabPersonal = Loadable(lazy(() => import("sections/apps/profiles/account/TabPersonal")));
+//const AccountTabProfile = Loadable(lazy(() => import("sections/apps/profiles/account/TabProfile")));
+//const AccountTabPersonal = Loadable(lazy(() => import("sections/apps/profiles/account/TabPersonal")));
 const AccountTabAccount = Loadable(lazy(() => import("sections/apps/profiles/account/TabAccount")));
 const AccountTabPassword = Loadable(lazy(() => import("sections/apps/profiles/account/TabPassword")));
 const AccountTabRole = Loadable(lazy(() => import("sections/apps/profiles/account/TabRole")));
@@ -238,14 +238,6 @@ const MainRoutes = {
 									path: "account",
 									element: <AccountProfile />,
 									children: [
-										{
-											path: "basic",
-											element: <AccountTabProfile />,
-										},
-										{
-											path: "personal",
-											element: <AccountTabPersonal />,
-										},
 										{
 											path: "my-account",
 											element: <AccountTabAccount />,

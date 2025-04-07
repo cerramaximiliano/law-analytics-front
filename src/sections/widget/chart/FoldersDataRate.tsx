@@ -6,7 +6,7 @@ import ReactApexChart from "react-apexcharts";
 import MainCard from "components/MainCard";
 import IconButton from "components/@extended/IconButton";
 import { More } from "iconsax-react";
-import StatsService from "store/reducers/ApiService";
+import ApiService from "store/reducers/ApiService";
 import { useSelector } from "store";
 import {
 	FolderAnalytics,
@@ -30,7 +30,7 @@ const FoldersDataRate = () => {
 		const fetchFolderData = async () => {
 			try {
 				setLoading(true);
-				const categoryData = await StatsService.getCategoryAnalysis<FolderAnalytics>("folders", userId);
+				const categoryData = await ApiService.getCategoryAnalysis<FolderAnalytics>("folders", userId);
 				console.log(categoryData);
 				setFolderData(categoryData);
 			} catch (error) {

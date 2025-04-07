@@ -21,7 +21,6 @@ import { dispatch } from "store";
 import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 
-
 interface StateType {
 	folder: {
 		folder: any;

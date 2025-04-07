@@ -39,7 +39,6 @@ interface ContactViewProps {
 	data: Contact;
 }
 
-
 // ==============================|| CUSTOMER - VIEW ||============================== //
 const CustomerView = React.memo(
 	({ data }: ContactViewProps) => {
@@ -52,27 +51,14 @@ const CustomerView = React.memo(
 		const [error, setError] = useState<string | null>(null);
 		const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-
-
 		const EmptyFoldersMessage = () => (
-			<Stack
-				direction="column"
-				spacing={1.5}
-				alignItems="center"
-				justifyContent="center"
-				sx={{ py: 3 }}
-			>
+			<Stack direction="column" spacing={1.5} alignItems="center" justifyContent="center" sx={{ py: 3 }}>
 				<Link1 size={32} variant="Bulk" color={theme.palette.text.secondary} opacity={0.4} />
-				<Typography
-					color="textSecondary"
-					variant="body2"
-					sx={{ fontStyle: 'italic', textAlign: 'center' }}
-				>
+				<Typography color="textSecondary" variant="body2" sx={{ fontStyle: "italic", textAlign: "center" }}>
 					No hay causas vinculadas
 				</Typography>
 			</Stack>
-		)
-
+		);
 
 		const handleUnlink = useCallback(
 			async (folderId: string) => {
@@ -261,9 +247,9 @@ const CustomerView = React.memo(
 																	align="right"
 																	sx={{
 																		maxWidth: 180,
-																		overflow: 'hidden',
-																		textOverflow: 'ellipsis',
-																		whiteSpace: 'nowrap'
+																		overflow: "hidden",
+																		textOverflow: "ellipsis",
+																		whiteSpace: "nowrap",
 																	}}
 																>
 																	{data.email}
@@ -399,9 +385,5 @@ const CustomerView = React.memo(
 		);
 	},
 );
-
-
-
-
 
 export default React.memo(CustomerView);

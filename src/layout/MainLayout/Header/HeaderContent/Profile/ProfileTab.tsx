@@ -4,7 +4,7 @@ import { useState, MouseEvent } from "react";
 import { List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 
 // assets
-import { Card, Edit2, Logout, Profile, Profile2User } from "iconsax-react";
+import { Card, Logout, Profile, TableDocument } from "iconsax-react";
 
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
@@ -20,36 +20,30 @@ const ProfileTab = ({ handleLogout }: Props) => {
 
 	return (
 		<List component="nav" sx={{ p: 0, "& .MuiListItemIcon-root": { minWidth: 32 } }}>
-			<ListItemButton selected={selectedIndex === 0} onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 0)}>
-				<ListItemIcon>
-					<Edit2 variant="Bulk" size={18} />
-				</ListItemIcon>
-				<ListItemText primary="Edit Profile" />
-			</ListItemButton>
 			<ListItemButton selected={selectedIndex === 1} onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 1)}>
 				<ListItemIcon>
 					<Profile variant="Bulk" size={18} />
 				</ListItemIcon>
-				<ListItemText primary="View Profile" />
+				<ListItemText primary="Ver Perfil" />
 			</ListItemButton>
 
 			<ListItemButton selected={selectedIndex === 3} onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 3)}>
 				<ListItemIcon>
-					<Profile2User variant="Bulk" size={18} />
+					<TableDocument variant="Bulk" size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Social Profile" />
+				<ListItemText primary="Ver Cuenta" />
 			</ListItemButton>
 			<ListItemButton selected={selectedIndex === 4} onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 4)}>
 				<ListItemIcon>
 					<Card variant="Bulk" size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Billing" />
+				<ListItemText primary="Suscripción" />
 			</ListItemButton>
 			<ListItemButton selected={selectedIndex === 2} onClick={handleLogout}>
 				<ListItemIcon>
 					<Logout variant="Bulk" size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Logout" />
+				<ListItemText primary="Cerrar Sesión" />
 			</ListItemButton>
 		</List>
 	);
