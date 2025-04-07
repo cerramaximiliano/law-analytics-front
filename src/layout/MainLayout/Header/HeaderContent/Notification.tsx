@@ -207,8 +207,9 @@ const NotificationPage = () => {
 			const itemType = isTask ? "Tarea" : isEvent ? "Evento" : "Movimiento";
 
 			if (diffDays < 0) {
-				primaryText = `${itemType} vencido${isTask || isMovement ? "a" : ""} hace ${Math.abs(diffDays)} día${Math.abs(diffDays) !== 1 ? "s" : ""
-					}`;
+				primaryText = `${itemType} vencido${isTask || isMovement ? "a" : ""} hace ${Math.abs(diffDays)} día${
+					Math.abs(diffDays) !== 1 ? "s" : ""
+				}`;
 				typographyColor = "error";
 				avatarColor = "error";
 			} else if (diffDays === 0) {
@@ -398,9 +399,7 @@ const NotificationPage = () => {
 											"&:hover": {
 												transform: "rotate(90deg)",
 												// Modificar esta línea para usar un color con mayor transparencia
-												bgcolor: notification.read
-													? alpha(theme.palette.secondary.light, 0.3)
-													: alpha(theme.palette.error.light, 0.3),
+												bgcolor: notification.read ? alpha(theme.palette.secondary.light, 0.3) : alpha(theme.palette.error.light, 0.3),
 											},
 											"&:active": {
 												transform: "rotate(90deg) scale(0.9)",
@@ -458,9 +457,7 @@ const NotificationPage = () => {
 											"&:hover": {
 												transform: "rotate(90deg)",
 												// Modificar esta línea para usar un color con mayor transparencia
-												bgcolor: notification.read
-													? alpha(theme.palette.secondary.light, 0.3)
-													: alpha(theme.palette.error.light, 0.3),
+												bgcolor: notification.read ? alpha(theme.palette.secondary.light, 0.3) : alpha(theme.palette.error.light, 0.3),
 											},
 											"&:active": {
 												transform: "rotate(90deg) scale(0.9)",

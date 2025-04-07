@@ -145,6 +145,92 @@ export interface UserAnalytics {
 	// ...otros campos
 }
 
+
+// Añadir nuevas interfaces para los planes
+
+export interface ResourceLimit {
+	name: string;
+	limit: number;
+	description: string;
+}
+
+
+
+export interface PlanFeature {
+	name: string;
+	enabled: boolean;
+	description: string;
+}
+
+
+export interface Plan {
+	_id?: {
+	  $oid: string;
+	};
+	planId: string;
+	displayName: string;
+	description: string;
+	isActive: boolean;
+	isDefault: boolean;
+	resourceLimits: ResourceLimit[];
+	features: PlanFeature[];
+	pricingInfo: PlanPricingInfo;
+	createdAt?: {
+	  $date: string;
+	};
+	updatedAt?: {
+	  $date: string;
+	};
+	__v?: number;
+  }
+
+
+export interface PlanResourceLimits {
+	folders?: number;
+	calculations?: number;
+	contacts?: number;
+	adminAccounts?: number;
+	associatedAccounts?: number;
+}
+
+export interface PlanFeatures {
+	calendar?: boolean;
+	automatedTracking?: boolean;
+	clientAccess?: boolean;
+}
+
+export interface PlanPricingInfo {
+	basePrice: number;
+	currency: string;
+	billingPeriod: 'monthly' | 'yearly';
+}
+
+
+export interface Subscription {
+	_id: string;
+	user: string;
+	stripeCustomerId: string;
+	plan: string;  // Este es el ID del plan actual
+	status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete';
+	cancelAtPeriodEnd: boolean;
+	limits: {
+	  maxFolders: number;
+	  maxCalculators: number;
+	  maxContacts: number;
+	  storageLimit: number;
+	};
+	features: {
+	  advancedAnalytics: boolean;
+	  exportReports: boolean;
+	  taskAutomation: boolean;
+	  bulkOperations: boolean;
+	  prioritySupport: boolean;
+	};
+	createdAt: string;
+	updatedAt: string;
+	__v: number;
+  }
+
 // ===============================
 // Servicio principal de API
 // ===============================
@@ -452,6 +538,58 @@ class ApiService {
 		}
 		return false;
 	}
+
+	// ================================
+	// Gestión de planes y suscripciones
+	// ================================
+	/**
+	 * Obtiene los planes públicos disponibles
+	 */
+
+	static async getPublicPlans(): Promise<ApiResponse<Plan[]>> {
+		try {
+		  const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
+			withCredentials: true,
+		  });
+		  return response.data;
+		} catch (error) {
+		  console.error("Error fetching public plans:", error);
+		  throw this.handleAxiosError(error);
+		}
+	  }
+
+	/**
+	 * Obtiene el plan actual del usuario
+	 */
+	static async getCurrentSubscription(): Promise<ApiResponse> {
+		try {
+		  const response = await axios.get(`${API_BASE_URL}/api/subscriptions/current`, {
+			withCredentials: true,
+		  });
+		  return response.data;
+		} catch (error) {
+		  console.error("Error fetching current subscription:", error);
+		  throw this.handleAxiosError(error);
+		}
+	  }
+
+	/**
+	 * Inicia el proceso de suscripción a un plan
+	 * @param planId - ID del plan al que se quiere suscribir
+	 */
+	static async subscribeToPlan(planId: string): Promise<ApiResponse<{checkoutUrl?: string}>> {
+		try {
+		  const response = await axios.post<ApiResponse<{checkoutUrl?: string}>>(
+			`${API_BASE_URL}/api/subscriptions/subscribe`,
+			{ planId },
+			{ withCredentials: true }
+		  );
+		  return response.data;
+		} catch (error) {
+		  console.error("Error subscribing to plan:", error);
+		  throw this.handleAxiosError(error);
+		}
+	  }
 }
 
 export default ApiService;

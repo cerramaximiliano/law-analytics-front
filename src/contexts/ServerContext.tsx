@@ -271,8 +271,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						} catch (refreshError) {
 							console.error("[Interceptor] Error al refrescar token:", refreshError);
 
-							// Si falla el refresh, mostrar el modal
-							console.log("[Interceptor] Mostrando modal de reautenticación");
 							setShowUnauthorizedModal(true);
 
 							return Promise.reject(refreshError);
