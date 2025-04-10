@@ -3,28 +3,55 @@ import { useState, Fragment, useEffect } from "react";
 // material-ui
 import { useTheme } from "@mui/material/styles";
 import {
-	Box, Button, Chip, Grid, List, ListItem, ListItemText,
-	Stack, Switch, Typography, CircularProgress, Alert
+	Box,
+	Button,
+	Chip,
+	Grid,
+	List,
+	ListItem,
+	ListItemText,
+	Stack,
+	Switch,
+	Typography,
+	CircularProgress,
+	Alert,
+	Link,
+	Dialog,
+	DialogContent,
+	DialogActions,
+	DialogTitle,
+	Radio,
+	RadioGroup,
+	FormControl,
+	Paper,
 } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
+import { dispatch } from "store";
+import { openSnackbar } from "store/reducers/snackbar";
+import TabLegalDocuments from "./TabPanel";
 
 // ==============================|| PRICING ||============================== //
 
 const featureOrder = [
-	"folders",       // Causas
-	"calculators",   // Cálculos
-	"contacts",      // Contactos
-	"storage",       // Almacenamiento
-	"exportReports",     // Exportación de reportes
-	"bulkOperations",    // Operaciones masivas
+	"folders", // Causas
+	"calculators", // Cálculos
+	"contacts", // Contactos
+	"storage", // Almacenamiento
+	"exportReports", // Exportación de reportes
+	"bulkOperations", // Operaciones masivas
 	"advancedAnalytics", // Análisis avanzados
-	"taskAutomation",    // Automatización de tareas
-	"prioritySupport"    // Soporte prioritario
-]
+	"taskAutomation", // Automatización de tareas
+	"prioritySupport", // Soporte prioritario
+];
 
+// Interfaz para las opciones de downgrade
+interface DowngradeOption {
+	type: string;
+	description: string;
+}
 
 const Pricing = () => {
 	const theme = useTheme();
@@ -33,291 +60,739 @@ const Pricing = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
-  
+	// Estado para el diálogo de documentos legales
+	const [legalDocsDialogOpen, setLegalDocsDialogOpen] = useState(false);
+	// Estado para el diálogo de opciones de downgrade
+	const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
+	const [downgradeOptions, setDowngradeOptions] = useState<DowngradeOption[]>([]);
+	const [selectedOption, setSelectedOption] = useState<string>("");
+	const [targetPlanId, setTargetPlanId] = useState<string>("");
+
 	// Obtener los planes al cargar el componente
 	useEffect(() => {
-	  const fetchPlans = async () => {
-		try {
-		  setLoading(true);
-		  const response = await ApiService.getPublicPlans();
-		  if (response.success && response.data) {
-			setPlans(response.data);
-		  } else {
-			setError("No se pudieron cargar los planes");
-		  }
-  
-		  // Obtener la suscripción actual del usuario
-		  try {
-			const subscriptionResponse = await ApiService.getCurrentSubscription();
-			// Hacer una aserción de tipo para decirle a TypeScript que la estructura es la esperada
-			const responseData = subscriptionResponse as unknown as { 
-			  success: boolean; 
-			  subscription?: { plan: string } 
-			};
-			
-			if (responseData.success && responseData.subscription) {
-			  // El planId está en el campo "plan" de la suscripción
-			  setCurrentPlanId(responseData.subscription.plan);
+		const fetchPlans = async () => {
+			try {
+				setLoading(true);
+				const response = await ApiService.getPublicPlans();
+				if (response.success && response.data) {
+					setPlans(response.data);
+				} else {
+					setError("No se pudieron cargar los planes");
+				}
+
+				// Obtener la suscripción actual del usuario
+				try {
+					const subscriptionResponse = await ApiService.getCurrentSubscription();
+					// Hacer una aserción de tipo para decirle a TypeScript que la estructura es la esperada
+					const responseData = subscriptionResponse as unknown as {
+						success: boolean;
+						subscription?: { plan: string };
+					};
+
+					if (responseData.success && responseData.subscription) {
+						// El planId está en el campo "plan" de la suscripción
+						setCurrentPlanId(responseData.subscription.plan);
+					}
+				} catch (err) {
+					console.error("Error al obtener suscripción actual:", err);
+					// No mostramos error si falla esto, solo para el listado de planes
+				}
+			} catch (err) {
+				setError("Error al cargar los planes. Por favor, intenta más tarde.");
+				console.error(err);
+			} finally {
+				setLoading(false);
 			}
-		  } catch (err) {
-			console.error("Error al obtener suscripción actual:", err);
-			// No mostramos error si falla esto, solo para el listado de planes
-		  }
-		} catch (err) {
-		  setError("Error al cargar los planes. Por favor, intenta más tarde.");
-		  console.error(err);
-		} finally {
-		  setLoading(false);
-		}
-	  };
-  
-	  fetchPlans();
+		};
+
+		fetchPlans();
 	}, []);
-  
+
 	const handleSubscribe = async (planId: string) => {
-	  try {
-		const response = await ApiService.subscribeToPlan(planId);
-		if (response.success && response.data?.checkoutUrl) {
-		  window.location.href = response.data.checkoutUrl;
-		} else {
-		  alert("Error al iniciar el proceso de suscripción");
+		try {
+			// URLs de redirección según el resultado de la operación
+			const successUrl = `${window.location.origin}/apps/subscription/success`;
+			const errorUrl = `${window.location.origin}/apps/subscription/error`;
+			//const cancelUrl = `${window.location.origin}/plans`;
+
+			// Verificar si es un downgrade a plan gratuito
+			const isDowngradeToFree = planId === "free" && currentPlanId && currentPlanId !== "free";
+
+			// Si es un downgrade a plan gratuito, guardar el targetPlanId
+			if (isDowngradeToFree) {
+				setTargetPlanId(planId);
+			}
+
+			// Asegúrate de que la respuesta se reciba como cualquier tipo para acceder a sus propiedades
+			const response = (await ApiService.subscribeToPlan(planId, successUrl, errorUrl)) as any;
+
+			// Si devuelve opciones, mostrar el diálogo
+			if (response.success && response.options && response.options.length > 0) {
+				setDowngradeOptions(response.options);
+				setTargetPlanId(planId);
+				setOptionsDialogOpen(true);
+				return;
+			}
+
+			if (response.success && response.freePlan) {
+				// Si está pendiente de cancelación
+				if (response.pendingCancellation) {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: `Tu suscripción se cancelará automáticamente el ${new Date(response.currentPeriodEnd).toLocaleDateString()}. Faltan ${response.remainingDays} días.`,
+							variant: "alert",
+							alert: {
+								color: "success",
+							},
+							close: false,
+						}),
+					);
+				}
+				// Si fue un downgrade inmediato o ya estaba en plan gratuito
+				else if (response.immediateDowngrade || response.alreadyFree) {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: response.message || "Tu plan ha sido actualizado a gratuito correctamente.",
+							variant: "alert",
+							alert: {
+								color: "success",
+							},
+							close: false,
+						}),
+					);
+				}
+				// Cualquier otro caso de plan gratuito
+				else {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: response.message || "Operación de plan gratuito completada.",
+							variant: "alert",
+							alert: {
+								color: "success",
+							},
+							close: false,
+						}),
+					);
+				}
+				return; // Finalizamos la ejecución después de manejar el plan gratuito
+			}
+
+			// Manejo de planes pagos o respuestas normales
+			if (response.success && response.url) {
+				// Redirigir al usuario a la URL de checkout proporcionada por Stripe
+				console.log('Redirigiendo a URL de Stripe:', response.url);
+				window.location.href = response.url;
+			}
+			else if (response.success && response.sessionId) {
+				// En caso de que solo devuelva el sessionId sin URL
+				console.log('Obtenido sessionId de Stripe:', response.sessionId);
+				alert("Proceso de suscripción iniciado. Serás redirigido a la página de pago.");
+			}
+			// Caso para suscripción pendiente de cancelación (no relacionado con plan gratuito)
+			else if (response.success && response.pendingCancellation) {
+				console.log('Suscripción pendiente de cancelación detectada');
+				// Mostrar mensaje informativo
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Ya tienes una suscripción programada para cancelarse.",
+						variant: "alert",
+						alert: {
+							color: "info",
+						},
+						close: false,
+					}),
+				);
+
+				// Si hay opciones disponibles, mostrar diálogo
+				if (response.options && response.options.length > 0) {
+					setDowngradeOptions(response.options);
+					setTargetPlanId(planId);
+					setOptionsDialogOpen(true);
+				}
+			}
+			else if (response.success) {
+				// Respuesta exitosa pero sin URL ni sessionId
+				console.log('Respuesta exitosa sin URL ni sessionId');
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Operación completada, pero no se pudo iniciar el proceso de pago.",
+						variant: "alert",
+						alert: {
+							color: "warning",
+						},
+						close: false,
+					}),
+				);
+			}
+			else {
+				// Respuesta no exitosa
+				console.error('Error en la respuesta:', response);
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Error al iniciar el proceso de suscripción.",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: false,
+					}),
+				);
+				// Redireccionar a la página de error
+				window.location.href = errorUrl;
+			}
+		} catch (error) {
+			console.error("Error al suscribirse:", error);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al procesar la solicitud de suscripción. Por favor, intenta de nuevo más tarde.",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: false,
+				}),
+			);
 		}
-	  } catch (error) {
-		console.error("Error al suscribirse:", error);
-		alert("Error al procesar la solicitud de suscripción");
-	  }
 	};
-  
+
+	// Procesar la opción seleccionada para el downgrade
+	const handleOptionSelection = (optionType: string) => {
+		setSelectedOption(optionType);
+	};
+
+	// Confirmar y procesar la opción de downgrade seleccionada
+	const handleOptionConfirm = async () => {
+		if (!selectedOption) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Por favor, selecciona una opción para continuar.",
+					variant: "alert",
+					alert: {
+						color: "warning",
+					},
+					close: false,
+				}),
+			);
+			return;
+		}
+
+		// Mostrar loader mientras se procesa
+		setLoading(true);
+
+		try {
+			let response;
+
+			// Llamar a la API correspondiente según la opción seleccionada
+			switch (selectedOption) {
+				case 'cancel_downgrade':
+					response = await ApiService.cancelScheduledDowngrade();
+					break;
+				case 'immediate_change':
+					response = await ApiService.changeImmediate(targetPlanId);
+					break;
+				case 'change_after_current':
+					response = await ApiService.scheduleChange(targetPlanId);
+					break;
+				default:
+					throw new Error('Opción no reconocida');
+			}
+
+			// Cerrar el diálogo
+			setOptionsDialogOpen(false);
+
+			// Mostrar mensaje de éxito
+			if (response.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Operación completada con éxito.",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: false,
+					}),
+				);
+
+				// Actualizar la página para reflejar los cambios
+				setTimeout(() => {
+					window.location.reload();
+				}, 1500);
+			} else {
+				throw new Error(response.message || "Error al procesar la solicitud");
+			}
+		} catch (error) {
+			console.error('Error al procesar la opción:', error);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al procesar la solicitud. Por favor, intenta nuevamente.",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: false,
+				}),
+			);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Abrir el diálogo de documentos legales
+	const handleOpenLegalDocs = () => {
+		setLegalDocsDialogOpen(true);
+	};
+
+	// Cerrar el diálogo de documentos legales
+	const handleCloseLegalDocs = () => {
+		setLegalDocsDialogOpen(false);
+	};
+
 	// Obtener un orden global para todas las características
 	// Primero las habilitadas en cualquier plan, luego las no habilitadas
 	const getGlobalFeatureOrder = () => {
-	  if (!plans.length) return [];
-	  
-	  // Recopilar todos los tipos de características
-	  const allFeatureTypes = featureOrder.filter(type => {
-		return plans.some(plan => {
-		  // Verificar límites de recursos
-		  if (["folders", "calculators", "contacts", "storage"].includes(type)) {
-			const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === type);
-			return resource && resource.limit > 0;
-		  }
-		  // Verificar características
-		  const feature = plan.features.find((f: PlanFeature) => f.name === type);
-		  return feature && feature.enabled;
+		if (!plans.length) return [];
+
+		// Recopilar todos los tipos de características
+		const allFeatureTypes = featureOrder.filter((type) => {
+			return plans.some((plan) => {
+				// Verificar límites de recursos
+				if (["folders", "calculators", "contacts", "storage"].includes(type)) {
+					const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === type);
+					return resource && resource.limit > 0;
+				}
+				// Verificar características
+				const feature = plan.features.find((f: PlanFeature) => f.name === type);
+				return feature && feature.enabled;
+			});
 		});
-	  });
-	  
-	  // Recopilar los tipos que no están habilitados en ningún plan
-	  const disabledTypes = featureOrder.filter(type => !allFeatureTypes.includes(type));
-	  
-	  // Combinar ambas listas
-	  return [...allFeatureTypes, ...disabledTypes];
+
+		// Recopilar los tipos que no están habilitados en ningún plan
+		const disabledTypes = featureOrder.filter((type) => !allFeatureTypes.includes(type));
+
+		// Combinar ambas listas
+		return [...allFeatureTypes, ...disabledTypes];
 	};
-  
+
 	// Verificar si un plan tiene una característica específica y obtener su valor
 	const planFeatureValue = (plan: Plan, featureType: string) => {
-	  // Para límites de recursos
-	  if (featureType === "folders") {
-		const folders = plan.resourceLimits.find((r: ResourceLimit) => r.name === "folders");
-		return folders ? `+${folders.limit} Causas` : null;
-	  }
-	  
-	  if (featureType === "calculators") {
-		const calculators = plan.resourceLimits.find((r: ResourceLimit) => r.name === "calculators");
-		return calculators ? `+${calculators.limit} Cálculos` : null;
-	  }
-	  
-	  if (featureType === "contacts") {
-		const contacts = plan.resourceLimits.find((r: ResourceLimit) => r.name === "contacts");
-		return contacts ? `+${contacts.limit} Contactos` : null;
-	  }
-	  
-	  if (featureType === "storage") {
-		const storage = plan.resourceLimits.find((r: ResourceLimit) => r.name === "storage");
-		return storage ? `${storage.limit} MB de Almacenamiento` : null;
-	  }
-	  
-	  // Para características booleanas
-	  const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
-	  if (feature) {
-		return feature.enabled ? feature.description : null;
-	  }
-	  
-	  return null;
+		// Para límites de recursos
+		if (featureType === "folders") {
+			const folders = plan.resourceLimits.find((r: ResourceLimit) => r.name === "folders");
+			return folders ? `+${folders.limit} Causas` : null;
+		}
+
+		if (featureType === "calculators") {
+			const calculators = plan.resourceLimits.find((r: ResourceLimit) => r.name === "calculators");
+			return calculators ? `+${calculators.limit} Cálculos` : null;
+		}
+
+		if (featureType === "contacts") {
+			const contacts = plan.resourceLimits.find((r: ResourceLimit) => r.name === "contacts");
+			return contacts ? `+${contacts.limit} Contactos` : null;
+		}
+
+		if (featureType === "storage") {
+			const storage = plan.resourceLimits.find((r: ResourceLimit) => r.name === "storage");
+			return storage ? `${storage.limit} MB de Almacenamiento` : null;
+		}
+
+		// Para características booleanas
+		const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
+		if (feature) {
+			return feature.enabled ? feature.description : null;
+		}
+
+		return null;
 	};
-  
+
+	// Función para obtener el color y el estilo según el tipo de plan
+	const getPlanStyle = (planId: string, isCurrentPlan: boolean) => {
+		if (isCurrentPlan) {
+			return {
+				padding: 3,
+				borderRadius: 1,
+				bgcolor: theme.palette.primary.lighter,
+			};
+		}
+
+		switch (planId) {
+			case "free":
+				return {
+					padding: 3,
+					borderRadius: 1,
+					bgcolor: theme.palette.info.lighter,
+				};
+			case "standard":
+				return {
+					padding: 3,
+					borderRadius: 1,
+					bgcolor: theme.palette.success.lighter,
+				};
+			case "premium":
+				return {
+					padding: 3,
+					borderRadius: 1,
+					bgcolor: theme.palette.secondary.lighter,
+				};
+			default:
+				return { padding: 3 };
+		}
+	};
+
+	// Función para obtener el color del botón según el tipo de plan
+	const getButtonColor = (planId: string, isCurrentPlan: boolean) => {
+		if (isCurrentPlan) {
+			return "primary";
+		}
+
+		switch (planId) {
+			case "free":
+				return "info";
+			case "standard":
+				return "success";
+			case "premium":
+				return "secondary";
+			default:
+				return "secondary";
+		}
+	};
+
+	// Función para obtener el chip distintivo según el plan
+	const getPlanChip = (planId: string, isCurrentPlan: boolean, isDefault: boolean) => {
+		if (isCurrentPlan) {
+			return <Chip label="Plan Actual" color="primary" />;
+		}
+
+		switch (planId) {
+			case "standard":
+				return <Chip label="Popular" color="success" />;
+			case "premium":
+				return <Chip label="Recomendado" color="secondary" />;
+			case "free":
+				if (isDefault) {
+					return <Chip label="Básico" color="info" />;
+				}
+				return null;
+			default:
+				if (isDefault) {
+					return <Chip label="Predeterminado" color="default" />;
+				}
+				return null;
+		}
+	};
+
 	// Estilos
 	const priceListDisable = {
-	  opacity: 0.4,
-	  textDecoration: "line-through",
+		opacity: 0.4,
+		textDecoration: "line-through",
 	};
-  
-	const priceActivePlan = {
-	  padding: 3,
-	  borderRadius: 1,
-	  bgcolor: theme.palette.primary.lighter,
-	};
-	
+
 	const price = {
-	  fontSize: "40px",
-	  fontWeight: 700,
-	  lineHeight: 1,
+		fontSize: "40px",
+		fontWeight: 700,
+		lineHeight: 1,
 	};
-  
+
 	// Si está cargando, mostrar indicador
 	if (loading) {
-	  return (
-		<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
-		  <CircularProgress />
-		</Box>
-	  );
+		return (
+			<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "300px" }}>
+				<CircularProgress />
+			</Box>
+		);
 	}
-  
+
 	// Si hay error, mostrar mensaje
 	if (error) {
-	  return (
-		<Alert severity="error" sx={{ mt: 2 }}>
-		  {error}
-		</Alert>
-	  );
+		return (
+			<Alert severity="error" sx={{ mt: 2 }}>
+				{error}
+			</Alert>
+		);
 	}
-  
+
 	// Obtener texto predeterminado para un tipo de característica
 	const getDefaultFeatureText = (featureType: string): string => {
-	  switch (featureType) {
-		case "folders":
-		  return "+0 Causas";
-		case "calculators":
-		  return "+0 Cálculos";
-		case "contacts":
-		  return "+0 Contactos";
-		case "storage":
-		  return "0 MB de Almacenamiento";
-		default:
-		  // Buscar la descripción en cualquier plan
-		  for (const plan of plans) {
-			const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
-			if (feature) {
-			  return feature.description;
-			}
-		  }
-		  return featureType; // Si no se encuentra una descripción, usar el nombre del tipo
-	  }
+		switch (featureType) {
+			case "folders":
+				return "+0 Causas";
+			case "calculators":
+				return "+0 Cálculos";
+			case "contacts":
+				return "+0 Contactos";
+			case "storage":
+				return "0 MB de Almacenamiento";
+			default:
+				// Buscar la descripción en cualquier plan
+				for (const plan of plans) {
+					const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
+					if (feature) {
+						return feature.description;
+					}
+				}
+				return featureType; // Si no se encuentra una descripción, usar el nombre del tipo
+		}
 	};
-  
+
 	return (
-	  <Grid container spacing={3}>
-		<Grid item xs={12}>
-		  <Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
-			<Stack spacing={0}></Stack>
-			<Stack direction="row" spacing={1.5} alignItems="center">
-			  <Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-				Cobro Anual
-			  </Typography>
-			  <Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
-			  <Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-				Cobro Mensual
-			  </Typography>
-			</Stack>
-		  </Stack>
-		</Grid>
-		<Grid item container spacing={3} xs={12} alignItems="center">
-		  {plans.map((plan) => {
-			// Determinar si este es el plan activo del usuario
-			const isCurrentPlan = currentPlanId === plan.planId;
-			
-			// Calcular el precio según el periodo seleccionado
-			const displayPrice = !timePeriod && plan.pricingInfo.billingPeriod === 'monthly' 
-			  ? Math.round(plan.pricingInfo.basePrice * 12 * 0.75) // Descuento anual del 25%
-			  : plan.pricingInfo.basePrice;
-			
-			return (
-			  <Grid item xs={12} sm={6} md={4} key={plan.planId}>
-				<MainCard>
-				  <Grid container spacing={3}>
-					<Grid item xs={12}>
-					  <Box sx={isCurrentPlan ? priceActivePlan : (plan.planId === "standard" ? { 
-						padding: 3,
-						borderRadius: 1,
-						bgcolor: theme.palette.success.lighter
-					  } : { padding: 3 })}>
-						<Grid container spacing={3}>
-						{(plan.isDefault || isCurrentPlan || plan.planId === "standard") && (
-							<Grid item xs={12} sx={{ textAlign: "center" }}>
-							  <Chip 
-								label={isCurrentPlan ? "Plan Actual" : (plan.planId === "standard" ? "Popular" : "Predeterminado")} 
-								color={isCurrentPlan ? "primary" : (plan.planId === "standard" ? "success" : "default")} 
-							  />
-							</Grid>
-						  )}
-						  <Grid item xs={12}>
-							<Stack spacing={0} textAlign="center">
-							  <Typography variant="h4">{plan.displayName}</Typography>
-							  <Typography>{plan.description}</Typography>
-							</Stack>
-						  </Grid>
-						  <Grid item xs={12}>
-							<Stack spacing={0} alignItems="center">
-							  <Typography variant="h2" sx={price}>
-								${displayPrice}
-							  </Typography>
-							  <Typography variant="h6" color="textSecondary">
-								{timePeriod ? "/mes" : "/año"}
-							  </Typography>
-							</Stack>
-						  </Grid>
-						  <Grid item xs={12}>
-							<Button 
-							  color={isCurrentPlan ? "primary" : (plan.planId === "standard" ? "success" : "secondary")} 
-							  variant={isCurrentPlan || plan.planId === "standard" ? "contained" : "outlined"} 
-							  fullWidth
-							  disabled={isCurrentPlan}
-							  onClick={() => handleSubscribe(plan.planId)}
-							>
-							  {isCurrentPlan ? "Plan Actual" : "Suscribirme"}
-							</Button>
-						  </Grid>
+		<Grid container spacing={3}>
+			<Grid item xs={12}>
+				<Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
+					<Stack spacing={0}></Stack>
+					<Stack direction="row" spacing={1.5} alignItems="center">
+						<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
+							Cobro Anual
+						</Typography>
+						<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
+						<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
+							Cobro Mensual
+						</Typography>
+					</Stack>
+				</Stack>
+			</Grid>
+			<Grid item container spacing={3} xs={12} alignItems="center">
+				{plans.map((plan) => {
+					// Determinar si este es el plan activo del usuario
+					const isCurrentPlan = currentPlanId === plan.planId;
+
+					// Determinar si es plan Free y hay otro plan activo (para el caso de downgrade)
+					const isDowngradeToFree = plan.planId === "free" && currentPlanId && currentPlanId !== "free";
+
+					// Calcular el precio según el periodo seleccionado
+					const displayPrice =
+						!timePeriod && plan.pricingInfo.billingPeriod === "monthly"
+							? Math.round(plan.pricingInfo.basePrice * 12 * 0.75) // Descuento anual del 25%
+							: plan.pricingInfo.basePrice;
+
+					return (
+						<Grid item xs={12} sm={6} md={4} key={plan.planId}>
+							<MainCard>
+								<Grid container spacing={3}>
+									<Grid item xs={12}>
+										<Box sx={getPlanStyle(plan.planId, isCurrentPlan)}>
+											<Grid container spacing={3}>
+												{/* Mostramos el chip correspondiente */}
+												<Grid item xs={12} sx={{ textAlign: "center" }}>
+													{getPlanChip(plan.planId, isCurrentPlan, plan.isDefault)}
+												</Grid>
+												<Grid item xs={12}>
+													<Stack spacing={0} textAlign="center">
+														<Typography variant="h4">{plan.displayName}</Typography>
+														<Typography>{plan.description}</Typography>
+													</Stack>
+												</Grid>
+												<Grid item xs={12}>
+													<Stack spacing={0} alignItems="center">
+														<Typography variant="h2" sx={price}>
+															${displayPrice}
+														</Typography>
+														<Typography variant="h6" color="textSecondary">
+															{timePeriod ? "/mes" : "/año"}
+														</Typography>
+													</Stack>
+												</Grid>
+												<Grid item xs={12}>
+													<Button
+														color={getButtonColor(plan.planId, isCurrentPlan)}
+														variant={isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined"}
+														fullWidth
+														disabled={isCurrentPlan}
+														onClick={() => handleSubscribe(plan.planId)}
+													>
+														{isCurrentPlan
+															? "Plan Actual"
+															: isDowngradeToFree
+																? "Bajar a Free"
+																: "Suscribirme"}
+													</Button>
+												</Grid>
+											</Grid>
+										</Box>
+									</Grid>
+									<Grid item xs={12}>
+										<List
+											sx={{
+												m: 0,
+												p: 0,
+												"&> li": {
+													px: 0,
+													py: 0.625,
+												},
+											}}
+											component="ul"
+										>
+											{/* Mostrar todas las características en el mismo orden para todos los planes */}
+											{getGlobalFeatureOrder().map((featureType, i) => {
+												const featureValue = planFeatureValue(plan, featureType);
+												const hasFeature = !!featureValue;
+
+												return (
+													<Fragment key={i}>
+														<ListItem sx={!hasFeature ? priceListDisable : {}}>
+															<ListItemText
+																primary={hasFeature ? featureValue : getDefaultFeatureText(featureType)}
+																sx={{ textAlign: "center", fontWeight: hasFeature ? "medium" : "normal" }}
+															/>
+														</ListItem>
+													</Fragment>
+												);
+											})}
+										</List>
+									</Grid>
+								</Grid>
+							</MainCard>
 						</Grid>
-					  </Box>
-					</Grid>
-					<Grid item xs={12}>
-					  <List
-						sx={{
-						  m: 0,
-						  p: 0,
-						  "&> li": {
-							px: 0,
-							py: 0.625,
-						  },
-						}}
-						component="ul"
-					  >
-						{/* Mostrar todas las características en el mismo orden para todos los planes */}
-						{getGlobalFeatureOrder().map((featureType, i) => {
-						  const featureValue = planFeatureValue(plan, featureType);
-						  const hasFeature = !!featureValue;
-						  
-						  return (
-							<Fragment key={i}>
-							  <ListItem sx={!hasFeature ? priceListDisable : {}}>
-								<ListItemText 
-								  primary={hasFeature ? featureValue : getDefaultFeatureText(featureType)} 
-								  sx={{ textAlign: "center", fontWeight: hasFeature ? 'medium' : 'normal' }} 
-								/>
-							  </ListItem>
-							</Fragment>
-						  );
-						})}
-					  </List>
-					</Grid>
-				  </Grid>
-				</MainCard>
-			  </Grid>
-			);
-		  })}
+					);
+				})}
+			</Grid>
+
+			{/* Sección de documentos legales */}
+			<Grid item xs={12}>
+				<Box sx={{ textAlign: "center", mt: 4, mb: 2 }}>
+					<Typography variant="body2" color="text.secondary">
+						Al suscribirte, aceptas nuestros{" "}
+						<Link component="button" variant="body2" onClick={handleOpenLegalDocs} sx={{ textDecoration: "none" }}>
+							términos y condiciones de suscripción
+						</Link>
+						, así como nuestra{" "}
+						<Link component="button" variant="body2" onClick={handleOpenLegalDocs} sx={{ textDecoration: "none" }}>
+							política de reembolsos
+						</Link>{" "}
+						y{" "}
+						<Link component="button" variant="body2" onClick={handleOpenLegalDocs} sx={{ textDecoration: "none" }}>
+							términos de facturación
+						</Link>
+						.
+					</Typography>
+				</Box>
+			</Grid>
+
+			{/* Diálogo para mostrar los documentos legales */}
+			<Dialog open={legalDocsDialogOpen} onClose={handleCloseLegalDocs} maxWidth="lg" fullWidth>
+				<DialogContent sx={{ p: 0 }}>
+					<TabLegalDocuments />
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCloseLegalDocs} color="error">
+						Cerrar
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Diálogo para mostrar las opciones de downgrade */}
+			<Dialog
+				open={optionsDialogOpen}
+				onClose={() => setOptionsDialogOpen(false)}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle sx={{ pb: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+					<Typography variant="h4">Opciones de cambio de plan</Typography>
+				</DialogTitle>
+				<DialogContent sx={{ pt: 3 }}>
+					<Typography variant="body1" sx={{ mb: 3 }}>
+						Selecciona cómo quieres proceder con tu cambio de plan:
+					</Typography>
+
+					<FormControl component="fieldset" sx={{ width: '100%' }}>
+						<RadioGroup
+							aria-label="opciones-downgrade"
+							name="opciones-downgrade"
+							value={selectedOption}
+							onChange={(e) => handleOptionSelection(e.target.value)}
+						>
+							{downgradeOptions.map((option, index) => (
+								<Paper
+									key={index}
+									elevation={1}
+									onClick={() => handleOptionSelection(option.type)}
+									sx={{
+										mb: 2,
+										p: 2,
+										border: selectedOption === option.type
+											? `2px solid ${theme.palette.primary.main}`
+											: '1px solid transparent',
+										borderRadius: 1,
+										transition: 'all 0.2s ease-in-out',
+										cursor: 'pointer',
+										'&:hover': {
+											borderColor: theme.palette.primary.light,
+											bgcolor: theme.palette.background.paper,
+											boxShadow: 3
+										}
+									}}
+								>
+									<Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+										<Radio
+											checked={selectedOption === option.type}
+											onChange={() => handleOptionSelection(option.type)}
+											value={option.type}
+											name="radio-option"
+											sx={{ mt: -0.5, mr: 1 }}
+										/>
+										<Box>
+											<Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+												{(() => {
+													switch (option.type) {
+														case 'cancel_downgrade':
+															return 'Cancelar el cambio programado';
+														case 'immediate_change':
+															return 'Cambiar inmediatamente';
+														case 'change_after_current':
+															return 'Cambiar al finalizar el período actual';
+														default:
+															return option.type;
+													}
+												})()}
+											</Typography>
+											<Typography variant="body2" color="textSecondary">
+												{option.description}
+											</Typography>
+										</Box>
+									</Box>
+								</Paper>
+							))}
+						</RadioGroup>
+					</FormControl>
+				</DialogContent>
+				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+					<Button
+						onClick={() => setOptionsDialogOpen(false)}
+						color="error"
+						variant="outlined"
+						disabled={loading}
+					>
+						Cancelar
+					</Button>
+					<Button
+						onClick={handleOptionConfirm}
+						color="primary"
+						variant="contained"
+						disabled={!selectedOption || loading}
+					>
+						{loading ? (
+							<>
+								<CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+								Procesando...
+							</>
+						) : (
+							'Confirmar selección'
+						)}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Grid>
-	  </Grid>
 	);
-  };
-  
-  export default Pricing;
+};
+
+export default Pricing;

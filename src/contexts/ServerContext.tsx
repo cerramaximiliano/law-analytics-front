@@ -191,7 +191,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	}, []);
 
 	// Interceptor unificado de axios
-	// Interceptor unificado de axios
 	useEffect(() => {
 		// Variable para almacenar los IDs de interceptores (para limpieza)
 		const interceptors: number[] = [];

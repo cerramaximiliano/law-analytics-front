@@ -9,6 +9,7 @@ const API_BASE_URL = process.env.REACT_APP_BASE_URL; // Ajusta esto según tu co
 export interface ApiResponse<T = any> {
 	success: boolean;
 	data?: T;
+	document?: T;
 	message?: string;
 	requireLogin?: boolean;
 	accountDeactivated?: boolean;
@@ -145,7 +146,6 @@ export interface UserAnalytics {
 	// ...otros campos
 }
 
-
 // Añadir nuevas interfaces para los planes
 
 export interface ResourceLimit {
@@ -154,18 +154,15 @@ export interface ResourceLimit {
 	description: string;
 }
 
-
-
 export interface PlanFeature {
 	name: string;
 	enabled: boolean;
 	description: string;
 }
 
-
 export interface Plan {
 	_id?: {
-	  $oid: string;
+		$oid: string;
 	};
 	planId: string;
 	displayName: string;
@@ -176,14 +173,13 @@ export interface Plan {
 	features: PlanFeature[];
 	pricingInfo: PlanPricingInfo;
 	createdAt?: {
-	  $date: string;
+		$date: string;
 	};
 	updatedAt?: {
-	  $date: string;
+		$date: string;
 	};
 	__v?: number;
-  }
-
+}
 
 export interface PlanResourceLimits {
 	folders?: number;
@@ -202,34 +198,113 @@ export interface PlanFeatures {
 export interface PlanPricingInfo {
 	basePrice: number;
 	currency: string;
-	billingPeriod: 'monthly' | 'yearly';
+	billingPeriod: "monthly" | "yearly";
 }
-
 
 export interface Subscription {
 	_id: string;
 	user: string;
 	stripeCustomerId: string;
-	plan: string;  // Este es el ID del plan actual
-	status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete';
+	plan: string; // Este es el ID del plan actual
+	status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
 	cancelAtPeriodEnd: boolean;
 	limits: {
-	  maxFolders: number;
-	  maxCalculators: number;
-	  maxContacts: number;
-	  storageLimit: number;
+		maxFolders: number;
+		maxCalculators: number;
+		maxContacts: number;
+		storageLimit: number;
 	};
 	features: {
-	  advancedAnalytics: boolean;
-	  exportReports: boolean;
-	  taskAutomation: boolean;
-	  bulkOperations: boolean;
-	  prioritySupport: boolean;
+		advancedAnalytics: boolean;
+		exportReports: boolean;
+		taskAutomation: boolean;
+		bulkOperations: boolean;
+		prioritySupport: boolean;
 	};
 	createdAt: string;
 	updatedAt: string;
 	__v: number;
-  }
+}
+
+export interface PaymentItem {
+	description: string;
+	amount: number;
+	currency: string;
+	period: {
+		start: Date | null;
+		end: Date | null;
+	};
+}
+
+export interface Payment {
+	id: string;
+	paymentId: string;
+	amount: number;
+	currency: string;
+	status: string;
+	createdAt: Date;
+	paidAt: Date | null;
+	invoiceUrl: string;
+	pdfUrl: string;
+	description: string;
+	receiptEmail: string;
+	receiptNumber: string;
+	period: {
+		start: Date | null;
+		end: Date | null;
+	};
+	subscription: {
+		id: string;
+		plan: string;
+	};
+	items: PaymentItem[];
+}
+
+export interface PaymentHistoryResponse {
+	success: boolean;
+	payments: Payment[];
+	customer?: {
+		id: string;
+		email: string | null;
+	};
+}
+
+export interface LegalDocumentSection {
+	title: string;
+	content: string;
+	order: number;
+	visibleFor: string[];
+}
+
+export interface LegalDocumentCompanyDetails {
+	name: string;
+	address: string;
+	email: string;
+	phone: string;
+	registrationNumber: string;
+}
+
+export interface LegalDocument {
+	documentType: "terms" | "privacy" | "subscription" | "cookies" | "refund" | "billing";
+	version: string;
+	effectiveDate: Date;
+	isActive: boolean;
+	language: string;
+	region: string;
+	title: string;
+	introduction: string;
+	sections: LegalDocumentSection[];
+	conclusion: string;
+	companyDetails: LegalDocumentCompanyDetails;
+	planDetails?: {
+		name: string;
+		description: string;
+		price: number;
+		currency: string;
+		billingPeriod: string;
+		resourceLimits: Record<string, { limit: number; description: string }>;
+	};
+}
 
 // ===============================
 // Servicio principal de API
@@ -548,48 +623,181 @@ class ApiService {
 
 	static async getPublicPlans(): Promise<ApiResponse<Plan[]>> {
 		try {
-		  const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
-			withCredentials: true,
-		  });
-		  return response.data;
+			const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
+				withCredentials: true,
+			});
+			return response.data;
 		} catch (error) {
-		  console.error("Error fetching public plans:", error);
-		  throw this.handleAxiosError(error);
+			console.error("Error fetching public plans:", error);
+			throw this.handleAxiosError(error);
 		}
-	  }
+	}
 
 	/**
 	 * Obtiene el plan actual del usuario
 	 */
 	static async getCurrentSubscription(): Promise<ApiResponse> {
 		try {
-		  const response = await axios.get(`${API_BASE_URL}/api/subscriptions/current`, {
-			withCredentials: true,
-		  });
-		  return response.data;
+			const response = await axios.get(`${API_BASE_URL}/api/subscriptions/current`, {
+				withCredentials: true,
+			});
+			return response.data;
 		} catch (error) {
-		  console.error("Error fetching current subscription:", error);
-		  throw this.handleAxiosError(error);
+			console.error("Error fetching current subscription:", error);
+			throw this.handleAxiosError(error);
 		}
-	  }
+	}
+
+	/**
+	 * Cancela la suscripción actual del usuario
+	 * @param atPeriodEnd - Si es true, la suscripción se cancela al finalizar el período actual
+	 */
+	static async cancelSubscription(atPeriodEnd: boolean = true): Promise<ApiResponse> {
+		try {
+			const response = await axios.post<ApiResponse>(
+				`${API_BASE_URL}/api/subscriptions/cancel`,
+				{ atPeriodEnd },
+				{ withCredentials: true },
+			);
+			return response.data;
+		} catch (error) {
+			console.error("Error al cancelar suscripción:", error);
+			throw this.handleAxiosError(error);
+		}
+	}
 
 	/**
 	 * Inicia el proceso de suscripción a un plan
 	 * @param planId - ID del plan al que se quiere suscribir
 	 */
-	static async subscribeToPlan(planId: string): Promise<ApiResponse<{checkoutUrl?: string}>> {
+	static async subscribeToPlan(
+		planId: string,
+		successUrl: string,
+		cancelUrl: string,
+	): Promise<ApiResponse<{ sessionId?: string; url?: string }>> {
 		try {
-		  const response = await axios.post<ApiResponse<{checkoutUrl?: string}>>(
-			`${API_BASE_URL}/api/subscriptions/subscribe`,
-			{ planId },
-			{ withCredentials: true }
-		  );
-		  return response.data;
+			const response = await axios.post<ApiResponse<{ sessionId?: string; url?: string }>>(
+				`${API_BASE_URL}/api/subscriptions/checkout`,
+				{
+					planId,
+					successUrl,
+					cancelUrl,
+				},
+				{ withCredentials: true },
+			);
+			return response.data;
 		} catch (error) {
-		  console.error("Error subscribing to plan:", error);
-		  throw this.handleAxiosError(error);
+			console.error("Error subscribing to plan:", error);
+			throw this.handleAxiosError(error);
 		}
-	  }
+	}
+
+	static async getPaymentHistory(): Promise<ApiResponse<PaymentHistoryResponse>> {
+		try {
+			const response = await axios.get<ApiResponse<PaymentHistoryResponse>>(`${API_BASE_URL}/api/subscriptions/payments`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			console.error("Error obteniendo historial de pagos:", error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+ * Cancela un downgrade programado
+ * @returns {Promise<Object>} Resultado de la operación
+ */
+	static async cancelScheduledDowngrade(): Promise<any> {
+		try {
+			const response = await axios.post('/api/subscriptions/cancel-downgrade', {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error: any) {
+			console.error('Error al cancelar downgrade programado:', error);
+			return {
+				success: false,
+				message: error.response?.data?.message || 'Error al cancelar el downgrade programado'
+			};
+		}
+	};
+
+	/**
+	 * Cambia inmediatamente a un nuevo plan
+	 * @param {string} planId - ID del nuevo plan
+	 * @returns {Promise<Object>} Resultado de la operación
+	 */
+	static async changeImmediate(planId: string): Promise<any> {
+		try {
+			const response = await axios.post('/api/subscriptions/change-immediate', { planId }, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error: any) {
+			console.error('Error al cambiar plan inmediatamente:', error);
+			return {
+				success: false,
+				message: error.response?.data?.message || 'Error al cambiar el plan'
+			};
+		}
+	};
+
+	/**
+	 * Programa un cambio de plan para cuando finalice el período actual
+	 * @param {string} planId - ID del nuevo plan
+	 * @returns {Promise<Object>} Resultado de la operación
+	 */
+	static async scheduleChange(planId: string): Promise<any> {
+		try {
+			const response = await axios.post('/api/subscriptions/schedule-change', { planId }, { withCredentials: true, });
+			return response.data;
+		} catch (error: any) {
+			console.error('Error al programar cambio de plan:', error);
+			return {
+				success: false,
+				message: error.response?.data?.message || 'Error al programar el cambio de plan'
+			};
+		}
+	};
+
+	static async getLegalDocument(documentType: "subscription" | "refund" | "billing", planId?: string): Promise<ApiResponse<LegalDocument>> {
+		try {
+			const params = planId ? { planId } : {};
+			const response = await axios.get<ApiResponse<LegalDocument>>(`${API_BASE_URL}/api/legal/${documentType}`, {
+				params,
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			console.error(`Error obteniendo documento legal (${documentType}):`, error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Obtiene los términos de suscripción
+	 * @param planId - ID del plan para personalizar los términos (opcional)
+	 */
+	static async getSubscriptionTerms(planId?: string): Promise<ApiResponse<LegalDocument>> {
+		return this.getLegalDocument("subscription", planId);
+	}
+
+	/**
+	 * Obtiene la política de reembolsos
+	 * @param planId - ID del plan para personalizar la política (opcional)
+	 */
+	static async getRefundPolicy(planId?: string): Promise<ApiResponse<LegalDocument>> {
+		return this.getLegalDocument("refund", planId);
+	}
+
+	/**
+	 * Obtiene los términos de facturación
+	 * @param planId - ID del plan para personalizar los términos (opcional)
+	 */
+	static async getBillingTerms(planId?: string): Promise<ApiResponse<LegalDocument>> {
+		return this.getLegalDocument("billing", planId);
+	}
 }
 
 export default ApiService;

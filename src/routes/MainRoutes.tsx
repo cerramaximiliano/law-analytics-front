@@ -134,6 +134,10 @@ const Details = Loadable(lazy(() => import("pages/apps/folders/details/details")
 const PricingPage = Loadable(lazy(() => import("pages/extra-pages/price/price1")));
 //const PricingPage2 = Loadable(lazy(() => import("pages/extra-pages/price/price2")));
 
+// subscription pages
+const SubscriptionSuccess = Loadable(lazy(() => import("pages/apps/subscription/success")));
+const SubscriptionError = Loadable(lazy(() => import("pages/apps/subscription/error")));
+
 // ==============================|| MAIN ROUTES ||============================== //
 
 const MainRoutes = {
@@ -282,6 +286,19 @@ const MainRoutes = {
 											element: <UserTabSettings />,
 										},
 									],
+								},
+							],
+						},
+						{
+							path: "subscription",
+							children: [
+								{
+									path: "success",
+									element: <SubscriptionSuccess />,
+								},
+								{
+									path: "error",
+									element: <SubscriptionError />,
 								},
 							],
 						},
