@@ -383,7 +383,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	// Verificar código
 	const verifyCode = async (email: string, code: string): Promise<boolean> => {
 		try {
-			const response = await axios.post<VerifyCodeResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/verify-code`, { email, code });
+			// Enviar email y code directamente al endpoint verify-code
+			const response = await axios.post<VerifyCodeResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/verify-code`, {
+				email,
+				code,
+			});
 
 			if (response.data.success) {
 				setNeedsVerification(false);
@@ -474,10 +478,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 	const verifyResetCode = async (email: string, code: string): Promise<boolean> => {
 		try {
-			const response = await axios.post<{ success: boolean; message: string }>(`${process.env.REACT_APP_BASE_URL}/api/auth/verify-code`, {
-				email,
-				code,
-			});
+			console.log("Verificando código de reseteo para:", email);
+
+			const response = await axios.post<{ success: boolean; message: string }>(
+				`${process.env.REACT_APP_BASE_URL}/api/auth/verify-reset-code`,
+				{
+					email,
+					code,
+				},
+			);
 
 			if (response.data.success) {
 				showSnackbar("Código verificado correctamente", "success");
@@ -486,6 +495,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				throw new Error(response.data.message || "Error al verificar el código");
 			}
 		} catch (error) {
+			console.error("Error al verificar código de reseteo:", error);
+
 			const errorMessage = axios.isAxiosError(error)
 				? (error.response?.data as any)?.message || "Error al verificar el código"
 				: "Error al verificar el código";

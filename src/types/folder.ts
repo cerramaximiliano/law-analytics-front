@@ -70,6 +70,7 @@ export type FolderData = {
 
 export type FolderState = {
 	folders: FolderData[];
+	archivedFolders: FolderData[];
 	folder: FolderData | null;
 	isLoader: boolean;
 	error?: string;

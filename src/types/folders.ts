@@ -63,6 +63,8 @@ export interface Props {
 	columns: Column[];
 	data: Folder[];
 	handleAdd: () => void;
+	handleArchiveSelected?: (selectedRows: any[]) => void;
+	handleOpenArchivedModal?: () => void;
 	renderRowSubComponent: FC<any>;
 	isLoading: boolean;
 }

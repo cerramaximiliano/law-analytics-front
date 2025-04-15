@@ -705,23 +705,23 @@ class ApiService {
 	}
 
 	/**
- * Cancela un downgrade programado
- * @returns {Promise<Object>} Resultado de la operación
- */
+	 * Cancela un downgrade programado
+	 * @returns {Promise<Object>} Resultado de la operación
+	 */
 	static async cancelScheduledDowngrade(): Promise<any> {
 		try {
-			const response = await axios.post('/api/subscriptions/cancel-downgrade', {
+			const response = await axios.post("/api/subscriptions/cancel-downgrade", {
 				withCredentials: true,
 			});
 			return response.data;
 		} catch (error: any) {
-			console.error('Error al cancelar downgrade programado:', error);
+			console.error("Error al cancelar downgrade programado:", error);
 			return {
 				success: false,
-				message: error.response?.data?.message || 'Error al cancelar el downgrade programado'
+				message: error.response?.data?.message || "Error al cancelar el downgrade programado",
 			};
 		}
-	};
+	}
 
 	/**
 	 * Cambia inmediatamente a un nuevo plan
@@ -730,18 +730,22 @@ class ApiService {
 	 */
 	static async changeImmediate(planId: string): Promise<any> {
 		try {
-			const response = await axios.post('/api/subscriptions/change-immediate', { planId }, {
-				withCredentials: true,
-			});
+			const response = await axios.post(
+				"/api/subscriptions/change-immediate",
+				{ planId },
+				{
+					withCredentials: true,
+				},
+			);
 			return response.data;
 		} catch (error: any) {
-			console.error('Error al cambiar plan inmediatamente:', error);
+			console.error("Error al cambiar plan inmediatamente:", error);
 			return {
 				success: false,
-				message: error.response?.data?.message || 'Error al cambiar el plan'
+				message: error.response?.data?.message || "Error al cambiar el plan",
 			};
 		}
-	};
+	}
 
 	/**
 	 * Programa un cambio de plan para cuando finalice el período actual
@@ -750,16 +754,16 @@ class ApiService {
 	 */
 	static async scheduleChange(planId: string): Promise<any> {
 		try {
-			const response = await axios.post('/api/subscriptions/schedule-change', { planId }, { withCredentials: true, });
+			const response = await axios.post("/api/subscriptions/schedule-change", { planId }, { withCredentials: true });
 			return response.data;
 		} catch (error: any) {
-			console.error('Error al programar cambio de plan:', error);
+			console.error("Error al programar cambio de plan:", error);
 			return {
 				success: false,
-				message: error.response?.data?.message || 'Error al programar el cambio de plan'
+				message: error.response?.data?.message || "Error al programar el cambio de plan",
 			};
 		}
-	};
+	}
 
 	static async getLegalDocument(documentType: "subscription" | "refund" | "billing", planId?: string): Promise<ApiResponse<LegalDocument>> {
 		try {

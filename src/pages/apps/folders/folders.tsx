@@ -15,6 +15,8 @@ import {
 	Tooltip,
 	useMediaQuery,
 	Skeleton,
+	Snackbar,
+	Alert,
 } from "@mui/material";
 
 import {
@@ -53,15 +55,18 @@ import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, FolderAdd, Edit, Eye, Trash, Maximize } from "iconsax-react";
+import { Add, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1 } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
-import { getFoldersByUserId } from "store/reducers/folder";
+import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
+
+// sections
+import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
 // ==============================|| REACT TABLE ||============================== //
 
-function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading }: Props) {
+function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArchiveSelected, isLoading, handleOpenArchivedModal }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
@@ -192,6 +197,47 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 						<Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
 							Agregar Causa
 						</Button>
+
+						{/* Botón para ver elementos archivados */}
+						<Button
+							variant="outlined"
+							color="secondary"
+							startIcon={<Box1 />}
+							onClick={handleOpenArchivedModal}
+							size="small"
+							sx={{
+								borderWidth: "1px",
+							}}
+						>
+							Ver Archivados
+						</Button>
+
+						{handleArchiveSelected && (
+							<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
+								<span>
+									<Button
+										variant="outlined"
+										color="primary"
+										startIcon={<Archive />}
+										onClick={() => handleArchiveSelected(selectedFlatRows)}
+										size="small"
+										disabled={Object.keys(selectedRowIds).length === 0}
+										sx={{
+											borderWidth: "1px",
+											"&.Mui-disabled": {
+												borderColor: "rgba(0, 0, 0, 0.12)",
+												color: "text.disabled",
+											},
+										}}
+									>
+										Archivar{" "}
+										{Object.keys(selectedRowIds).length > 0
+											? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
+											: "causas"}
+									</Button>
+								</span>
+							</Tooltip>
+						)}
 						<CSVExport data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data} filename={"causas.csv"} />
 					</Stack>
 				</Stack>
@@ -261,6 +307,11 @@ const FoldersLayout = () => {
 	const [add, setAdd] = useState(false);
 	const [addFolderMode, setAddFolderMode] = useState<"add" | "edit">("add");
 	const [isInitialLoad, setIsInitialLoad] = useState(true);
+	const [snackbarOpen, setSnackbarOpen] = useState(false);
+	const [snackbarMessage, setSnackbarMessage] = useState("");
+	const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info" | "warning">("success");
+	const [archivedModalOpen, setArchivedModalOpen] = useState(false);
+	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -268,7 +319,7 @@ const FoldersLayout = () => {
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
-	const { folders, isLoader } = useSelector((state) => state.folder);
+	const { folders, archivedFolders, isLoader } = useSelector((state) => state.folder);
 
 	// Efecto para la carga inicial
 	useEffect(() => {
@@ -330,10 +381,98 @@ const FoldersLayout = () => {
 			loadingRef.current = false;
 		}
 	}, [user?._id]);
+
 	const handleRowAction = useCallback((e: MouseEvent<HTMLButtonElement>, action: () => void) => {
 		e.stopPropagation();
 		action();
 	}, []);
+
+	const handleSnackbarClose = useCallback(() => {
+		setSnackbarOpen(false);
+	}, []);
+
+	const handleArchiveSelected = useCallback(
+		async (selectedRows: Row<any>[]) => {
+			if (!user?._id || selectedRows.length === 0 || loadingRef.current) return;
+
+			const folderIds = selectedRows.map((row) => row.original._id);
+
+			try {
+				loadingRef.current = true;
+				const result = await dispatch(archiveFolders(user._id, folderIds));
+
+				if (result.success) {
+					setSnackbarMessage(`${folderIds.length} ${folderIds.length === 1 ? "causa archivada" : "causas archivadas"} correctamente`);
+					setSnackbarSeverity("success");
+				} else {
+					setSnackbarMessage(result.message || "Error al archivar causas");
+					setSnackbarSeverity("error");
+				}
+
+				setSnackbarOpen(true);
+			} catch (error) {
+				console.error("Error al archivar causas:", error);
+				setSnackbarMessage("Error al archivar causas");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			} finally {
+				loadingRef.current = false;
+			}
+		},
+		[user?._id],
+	);
+
+	// Manejadores para elementos archivados
+	const handleOpenArchivedModal = useCallback(async () => {
+		if (!user?._id || loadingRef.current) return;
+
+		try {
+			loadingRef.current = true;
+			await dispatch(getArchivedFoldersByUserId(user._id));
+			setArchivedModalOpen(true);
+		} catch (error) {
+			console.error("Error al obtener causas archivadas:", error);
+			setSnackbarMessage("Error al obtener causas archivadas");
+			setSnackbarSeverity("error");
+			setSnackbarOpen(true);
+		} finally {
+			loadingRef.current = false;
+		}
+	}, [user?._id]);
+
+	const handleCloseArchivedModal = useCallback(() => {
+		setArchivedModalOpen(false);
+	}, []);
+
+	const handleUnarchiveSelected = useCallback(
+		async (folderIds: string[]) => {
+			if (!user?._id || folderIds.length === 0 || loadingRef.current) return;
+
+			try {
+				setLoadingUnarchive(true);
+				const result = await dispatch(unarchiveFolders(user._id, folderIds));
+
+				if (result.success) {
+					setSnackbarMessage(`${folderIds.length} ${folderIds.length === 1 ? "causa desarchivada" : "causas desarchivadas"} correctamente`);
+					setSnackbarSeverity("success");
+					setArchivedModalOpen(false);
+				} else {
+					setSnackbarMessage(result.message || "Error al desarchivar causas");
+					setSnackbarSeverity("error");
+				}
+
+				setSnackbarOpen(true);
+			} catch (error) {
+				console.error("Error al desarchivar causas:", error);
+				setSnackbarMessage("Error al desarchivar causas");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			} finally {
+				setLoadingUnarchive(false);
+			}
+		},
+		[user?._id],
+	);
 
 	// Columnas memoizadas
 	const columns = useMemo(
@@ -469,6 +608,8 @@ const FoldersLayout = () => {
 					columns={columns}
 					data={folders}
 					handleAdd={handleAddFolder}
+					handleArchiveSelected={handleArchiveSelected}
+					handleOpenArchivedModal={handleOpenArchivedModal}
 					renderRowSubComponent={renderRowSubComponent}
 					isLoading={isLoader}
 				/>
@@ -486,6 +627,36 @@ const FoldersLayout = () => {
 					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleRefreshData} />
 				</Dialog>
 			)}
+
+			{/* Modal para elementos archivados */}
+			<ArchivedItemsModal
+				open={archivedModalOpen}
+				onClose={handleCloseArchivedModal}
+				title="Causas Archivadas"
+				items={archivedFolders || []}
+				onUnarchive={handleUnarchiveSelected}
+				loading={loadingUnarchive}
+				itemType="folders"
+			/>
+
+			<Snackbar
+				open={snackbarOpen}
+				autoHideDuration={6000}
+				onClose={handleSnackbarClose}
+				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+			>
+				<Alert
+					onClose={handleSnackbarClose}
+					severity={snackbarSeverity}
+					variant="filled"
+					sx={{
+						width: "100%",
+						fontWeight: 500,
+					}}
+				>
+					{snackbarMessage}
+				</Alert>
+			</Snackbar>
 		</MainCard>
 	);
 };

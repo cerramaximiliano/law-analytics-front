@@ -130,6 +130,13 @@ const applications: NavItemType = {
 			],
 		}, */
 		{
+			id: "price",
+			title: <FormattedMessage id="Planes" />,
+			icon: icons.price,
+			type: "item",
+			url: "/suscripciones/tables",
+		},
+		{
 			id: "profile",
 			title: <FormattedMessage id="Perfil" />,
 			type: "collapse",
@@ -149,13 +156,6 @@ const applications: NavItemType = {
 					url: "/apps/profiles/account/my-account",
 				},
 			],
-		},
-		{
-			id: "price",
-			title: <FormattedMessage id="Suscripciones" />,
-			icon: icons.price,
-			type: "item",
-			url: "/suscripciones/tables",
 		},
 	],
 };

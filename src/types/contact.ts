@@ -25,6 +25,7 @@ export type Contact = {
 
 export type ContactState = {
 	contacts: Contact[];
+	archivedContacts: Contact[];
 	selectedContacts: Contact[];
 	isLoader: boolean;
 	error: string | null;

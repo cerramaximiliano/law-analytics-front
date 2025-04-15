@@ -16,6 +16,7 @@ interface Props {
 	open: boolean;
 	handleClose: (status: boolean) => void;
 	id?: string;
+	onDelete?: () => Promise<void>;
 }
 
 // ==============================|| CUSTOMER - DELETE ||============================== //

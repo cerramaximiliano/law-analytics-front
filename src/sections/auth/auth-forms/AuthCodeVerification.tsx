@@ -90,6 +90,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 
 	// Manejador de verificación de código según el modo
 	const handleVerifyCode = async () => {
+		console.log(emailToUse);
 		if (!otp || otp.length !== 6) {
 			setError("Por favor, ingresa el código completo de 6 dígitos.");
 			return;
@@ -115,7 +116,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 					if (onVerificationSuccess) onVerificationSuccess();
 				}
 			} else if (mode === "reset" && verifyResetCode) {
-				console.log("Verificando código para reseteo de contraseña");
+				console.log("Verificando código para reseteo de contraseña", emailToUse);
 
 				// Para reseteo de contraseña, usa verifyResetCode
 				const success = await verifyResetCode(emailToUse, otp);

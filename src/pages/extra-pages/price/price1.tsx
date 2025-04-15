@@ -140,7 +140,9 @@ const Pricing = () => {
 					dispatch(
 						openSnackbar({
 							open: true,
-							message: `Tu suscripción se cancelará automáticamente el ${new Date(response.currentPeriodEnd).toLocaleDateString()}. Faltan ${response.remainingDays} días.`,
+							message: `Tu suscripción se cancelará automáticamente el ${new Date(
+								response.currentPeriodEnd,
+							).toLocaleDateString()}. Faltan ${response.remainingDays} días.`,
 							variant: "alert",
 							alert: {
 								color: "success",
@@ -183,17 +185,16 @@ const Pricing = () => {
 			// Manejo de planes pagos o respuestas normales
 			if (response.success && response.url) {
 				// Redirigir al usuario a la URL de checkout proporcionada por Stripe
-				console.log('Redirigiendo a URL de Stripe:', response.url);
+				console.log("Redirigiendo a URL de Stripe:", response.url);
 				window.location.href = response.url;
-			}
-			else if (response.success && response.sessionId) {
+			} else if (response.success && response.sessionId) {
 				// En caso de que solo devuelva el sessionId sin URL
-				console.log('Obtenido sessionId de Stripe:', response.sessionId);
+				console.log("Obtenido sessionId de Stripe:", response.sessionId);
 				alert("Proceso de suscripción iniciado. Serás redirigido a la página de pago.");
 			}
 			// Caso para suscripción pendiente de cancelación (no relacionado con plan gratuito)
 			else if (response.success && response.pendingCancellation) {
-				console.log('Suscripción pendiente de cancelación detectada');
+				console.log("Suscripción pendiente de cancelación detectada");
 				// Mostrar mensaje informativo
 				dispatch(
 					openSnackbar({
@@ -213,10 +214,9 @@ const Pricing = () => {
 					setTargetPlanId(planId);
 					setOptionsDialogOpen(true);
 				}
-			}
-			else if (response.success) {
+			} else if (response.success) {
 				// Respuesta exitosa pero sin URL ni sessionId
-				console.log('Respuesta exitosa sin URL ni sessionId');
+				console.log("Respuesta exitosa sin URL ni sessionId");
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -228,10 +228,9 @@ const Pricing = () => {
 						close: false,
 					}),
 				);
-			}
-			else {
+			} else {
 				// Respuesta no exitosa
-				console.error('Error en la respuesta:', response);
+				console.error("Error en la respuesta:", response);
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -292,17 +291,17 @@ const Pricing = () => {
 
 			// Llamar a la API correspondiente según la opción seleccionada
 			switch (selectedOption) {
-				case 'cancel_downgrade':
+				case "cancel_downgrade":
 					response = await ApiService.cancelScheduledDowngrade();
 					break;
-				case 'immediate_change':
+				case "immediate_change":
 					response = await ApiService.changeImmediate(targetPlanId);
 					break;
-				case 'change_after_current':
+				case "change_after_current":
 					response = await ApiService.scheduleChange(targetPlanId);
 					break;
 				default:
-					throw new Error('Opción no reconocida');
+					throw new Error("Opción no reconocida");
 			}
 
 			// Cerrar el diálogo
@@ -330,7 +329,7 @@ const Pricing = () => {
 				throw new Error(response.message || "Error al procesar la solicitud");
 			}
 		} catch (error) {
-			console.error('Error al procesar la opción:', error);
+			console.error("Error al procesar la opción:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -609,11 +608,7 @@ const Pricing = () => {
 														disabled={isCurrentPlan}
 														onClick={() => handleSubscribe(plan.planId)}
 													>
-														{isCurrentPlan
-															? "Plan Actual"
-															: isDowngradeToFree
-																? "Bajar a Free"
-																: "Suscribirme"}
+														{isCurrentPlan ? "Plan Actual" : isDowngradeToFree ? "Bajar a Free" : "Suscribirme"}
 													</Button>
 												</Grid>
 											</Grid>
@@ -690,12 +685,7 @@ const Pricing = () => {
 			</Dialog>
 
 			{/* Diálogo para mostrar las opciones de downgrade */}
-			<Dialog
-				open={optionsDialogOpen}
-				onClose={() => setOptionsDialogOpen(false)}
-				maxWidth="sm"
-				fullWidth
-			>
+			<Dialog open={optionsDialogOpen} onClose={() => setOptionsDialogOpen(false)} maxWidth="sm" fullWidth>
 				<DialogTitle sx={{ pb: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
 					<Typography variant="h4">Opciones de cambio de plan</Typography>
 				</DialogTitle>
@@ -704,7 +694,7 @@ const Pricing = () => {
 						Selecciona cómo quieres proceder con tu cambio de plan:
 					</Typography>
 
-					<FormControl component="fieldset" sx={{ width: '100%' }}>
+					<FormControl component="fieldset" sx={{ width: "100%" }}>
 						<RadioGroup
 							aria-label="opciones-downgrade"
 							name="opciones-downgrade"
@@ -719,20 +709,18 @@ const Pricing = () => {
 									sx={{
 										mb: 2,
 										p: 2,
-										border: selectedOption === option.type
-											? `2px solid ${theme.palette.primary.main}`
-											: '1px solid transparent',
+										border: selectedOption === option.type ? `2px solid ${theme.palette.primary.main}` : "1px solid transparent",
 										borderRadius: 1,
-										transition: 'all 0.2s ease-in-out',
-										cursor: 'pointer',
-										'&:hover': {
+										transition: "all 0.2s ease-in-out",
+										cursor: "pointer",
+										"&:hover": {
 											borderColor: theme.palette.primary.light,
 											bgcolor: theme.palette.background.paper,
-											boxShadow: 3
-										}
+											boxShadow: 3,
+										},
 									}}
 								>
-									<Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+									<Box sx={{ display: "flex", alignItems: "flex-start" }}>
 										<Radio
 											checked={selectedOption === option.type}
 											onChange={() => handleOptionSelection(option.type)}
@@ -741,15 +729,15 @@ const Pricing = () => {
 											sx={{ mt: -0.5, mr: 1 }}
 										/>
 										<Box>
-											<Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+											<Typography variant="subtitle1" sx={{ fontWeight: "medium" }}>
 												{(() => {
 													switch (option.type) {
-														case 'cancel_downgrade':
-															return 'Cancelar el cambio programado';
-														case 'immediate_change':
-															return 'Cambiar inmediatamente';
-														case 'change_after_current':
-															return 'Cambiar al finalizar el período actual';
+														case "cancel_downgrade":
+															return "Cancelar el cambio programado";
+														case "immediate_change":
+															return "Cambiar inmediatamente";
+														case "change_after_current":
+															return "Cambiar al finalizar el período actual";
 														default:
 															return option.type;
 													}
@@ -766,27 +754,17 @@ const Pricing = () => {
 					</FormControl>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-					<Button
-						onClick={() => setOptionsDialogOpen(false)}
-						color="error"
-						variant="outlined"
-						disabled={loading}
-					>
+					<Button onClick={() => setOptionsDialogOpen(false)} color="error" variant="outlined" disabled={loading}>
 						Cancelar
 					</Button>
-					<Button
-						onClick={handleOptionConfirm}
-						color="primary"
-						variant="contained"
-						disabled={!selectedOption || loading}
-					>
+					<Button onClick={handleOptionConfirm} color="primary" variant="contained" disabled={!selectedOption || loading}>
 						{loading ? (
 							<>
 								<CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
 								Procesando...
 							</>
 						) : (
-							'Confirmar selección'
+							"Confirmar selección"
 						)}
 					</Button>
 				</DialogActions>

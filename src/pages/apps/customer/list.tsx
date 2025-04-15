@@ -1,8 +1,23 @@
-import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, Fragment, MouseEvent, useRef } from "react";
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
-import { Button, Dialog, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import {
+	Button,
+	Dialog,
+	Stack,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableRow,
+	Tooltip,
+	Typography,
+	useMediaQuery,
+	Skeleton,
+	Snackbar,
+	Alert,
+} from "@mui/material";
 
 // third-party
 import { PatternFormat } from "react-number-format";
@@ -33,39 +48,81 @@ import {
 	SortingSelect,
 	TablePagination,
 	TableRowSelection,
+	EmptyTable,
 } from "components/third-party/ReactTable";
 
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import CustomerView from "sections/apps/customer/CustomerView";
 import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
+import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
+import LinkToCause from "sections/apps/customer/LinkToCause";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, UserAdd, Edit2, Eye, Trash, Link1 } from "iconsax-react";
+import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1 } from "iconsax-react";
 
 // types
-import { ThemeMode } from "types/config";
 import { dispatch, useSelector } from "store";
-import { getContactsByUserId } from "store/reducers/contacts";
+import { getContactsByUserId, archiveContacts, getArchivedContactsByUserId, unarchiveContacts } from "store/reducers/contacts";
 import { Contact } from "types/contact";
-import LinkToCause from "sections/apps/customer/LinkToCause";
 
 // ==============================|| REACT TABLE ||============================== //
 
 interface Props {
-	columns: Column[];
+	columns: Column<Contact>[];
 	data: Contact[];
-	renderRowSubComponent: FC<any>;
-	handleAddContact: () => void;
+	renderRowSubComponent: (props: { row: Row<Contact>; rowProps: any; visibleColumns: any; expanded: any }) => React.ReactNode;
+	handleAdd: () => void;
+	handleArchiveSelected?: (selectedRows: Row<Contact>[]) => void;
+	isLoading?: boolean;
+	handleOpenArchivedModal: () => void;
 }
 
-function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: Props) {
+function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArchiveSelected, isLoading, handleOpenArchivedModal }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
+	const [isColumnsReady, setIsColumnsReady] = useState(false);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "name", desc: false };
+
+	const defaultHiddenColumns = useMemo(
+		() =>
+			matchDownSM
+				? [
+						"email",
+						"lastName",
+						"_id",
+						"address",
+						"status",
+						"state",
+						"zipCode",
+						"nationality",
+						"document",
+						"cuit",
+						"activity",
+						"company",
+						"fiscal",
+						"folderIds",
+				  ]
+				: [
+						"email",
+						"lastName",
+						"_id",
+						"address",
+						"state",
+						"zipCode",
+						"nationality",
+						"document",
+						"cuit",
+						"activity",
+						"company",
+						"fiscal",
+						"folderIds",
+				  ],
+		[matchDownSM],
+	);
 
 	const {
 		getTableProps,
@@ -84,7 +141,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 		setGlobalFilter,
 		setSortBy,
 		selectedFlatRows,
-	} = useTable(
+	}: any = useTable(
 		{
 			columns,
 			data,
@@ -92,7 +149,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 			initialState: {
 				pageIndex: 0,
 				pageSize: 10,
-				hiddenColumns: ["email", "lastName", "_id", "folderIds"],
+				hiddenColumns: defaultHiddenColumns,
 				sortBy: [sortBy],
 			},
 		},
@@ -105,43 +162,65 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 	);
 
 	useEffect(() => {
-		if (matchDownSM) {
-			setHiddenColumns([
-				"address",
-				"phone",
-				"lastName",
-				"email",
-				"status",
-				"state",
-				"_id",
-				"zipCode",
-				"nationality",
-				"document",
-				"cuit",
-				"activity",
-				"company",
-				"fiscal",
-				"folderIds",
-			]);
-		} else {
-			setHiddenColumns([
-				"email",
-				"lastName",
-				"_id",
-				"address",
-				"state",
-				"zipCode",
-				"nationality",
-				"document",
-				"cuit",
-				"activity",
-				"company",
-				"fiscal",
-				"folderIds",
-			]);
-		}
-		// eslint-disable-next-line
-	}, [matchDownSM]);
+		setHiddenColumns(defaultHiddenColumns);
+		setIsColumnsReady(true);
+
+		return () => {
+			setIsColumnsReady(false);
+		};
+	}, [setHiddenColumns, defaultHiddenColumns]);
+
+	if (!isColumnsReady || isLoading) {
+		return (
+			<>
+				<TableRowSelection selected={0} />
+				<Stack spacing={3}>
+					<Stack
+						direction={matchDownSM ? "column" : "row"}
+						spacing={1}
+						justifyContent="space-between"
+						alignItems="center"
+						sx={{ p: 3, pb: 0 }}
+					>
+						<Skeleton width={200} height={40} />
+						<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
+							<Skeleton width={120} height={40} />
+							<Skeleton width={150} height={40} />
+							<Skeleton width={100} height={40} />
+						</Stack>
+					</Stack>
+					<Table>
+						<TableHead>
+							<TableRow>
+								{Array(6)
+									.fill(0)
+									.map((_, index) => (
+										<TableCell key={index}>
+											<Skeleton width={100} height={24} />
+										</TableCell>
+									))}
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{Array(5)
+								.fill(0)
+								.map((_, rowIndex) => (
+									<TableRow key={rowIndex}>
+										{Array(6)
+											.fill(0)
+											.map((_, cellIndex) => (
+												<TableCell key={cellIndex}>
+													<Skeleton width={100} height={24} />
+												</TableCell>
+											))}
+									</TableRow>
+								))}
+						</TableBody>
+					</Table>
+				</Stack>
+			</>
+		);
+	}
 
 	return (
 		<>
@@ -157,26 +236,61 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 					<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
 						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<Button
-							variant="contained"
-							startIcon={<UserAdd />}
-							onClick={handleAddContact} // Usando la nueva función sin argumentos
-							size="small"
-						>
+						<Button variant="contained" startIcon={<UserAdd />} onClick={handleAdd} size="small">
 							Agregar Contacto
 						</Button>
 
+						{/* Botón para ver elementos archivados */}
+						<Button
+							variant="outlined"
+							color="secondary"
+							startIcon={<Box1 />}
+							onClick={handleOpenArchivedModal}
+							size="small"
+							sx={{
+								borderWidth: "1px",
+							}}
+						>
+							Ver Archivados
+						</Button>
+
+						{handleArchiveSelected && (
+							<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona contactos para archivar" : ""} placement="top">
+								<span>
+									<Button
+										variant="outlined"
+										color="primary"
+										startIcon={<Archive />}
+										onClick={() => handleArchiveSelected(selectedFlatRows)}
+										size="small"
+										disabled={Object.keys(selectedRowIds).length === 0}
+										sx={{
+											borderWidth: "1px",
+											"&.Mui-disabled": {
+												borderColor: "rgba(0, 0, 0, 0.12)",
+												color: "text.disabled",
+											},
+										}}
+									>
+										Archivar{" "}
+										{Object.keys(selectedRowIds).length > 0
+											? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "contacto" : "contactos"}`
+											: "contactos"}
+									</Button>
+								</span>
+							</Tooltip>
+						)}
 						<CSVExport
-							data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data}
-							filename={"contact-list.csv"}
+							data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
+							filename={"contactos.csv"}
 						/>
 					</Stack>
 				</Stack>
 				<Table {...getTableProps()}>
 					<TableHead>
-						{headerGroups.map((headerGroup: HeaderGroup<{}>) => (
-							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "58px" } }}>
-								{headerGroup.headers.map((column: HeaderGroup) => (
+						{headerGroups.map((headerGroup: HeaderGroup<Contact>) => (
+							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
+								{headerGroup.headers.map((column: any) => (
 									<TableCell {...column.getHeaderProps([{ className: column.className }])}>
 										<HeaderSort column={column} sort />
 									</TableCell>
@@ -185,10 +299,9 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 						))}
 					</TableHead>
 					<TableBody {...getTableBodyProps()}>
-						{page.map((row: Row, i: number) => {
+						{page.map((row: Row<Contact>, i: number) => {
 							prepareRow(row);
 							const rowProps = row.getRowProps();
-
 							return (
 								<Fragment key={i}>
 									<TableRow
@@ -201,7 +314,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 											bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
 										}}
 									>
-										{row.cells.map((cell: Cell) => (
+										{row.cells.map((cell: Cell<Contact>) => (
 											<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
 										))}
 									</TableRow>
@@ -209,13 +322,16 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAddContact }: 
 								</Fragment>
 							);
 						})}
-						<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-							<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-								<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
-							</TableCell>
-						</TableRow>
 					</TableBody>
 				</Table>
+				{page.length > 0 && (
+					<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
+						<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
+							<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
+						</TableCell>
+					</TableRow>
+				)}
+				{page.length === 0 && <EmptyTable msg="No Hay Datos" colSpan={7} />}
 			</Stack>
 		</>
 	);
@@ -227,77 +343,222 @@ const CustomerListPage = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 
-	const [open, setOpen] = useState<boolean>(false);
+	// Estados
+	const [open, setOpen] = useState(false);
 	const [customer, setCustomer] = useState<any>(null);
-	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
-	const [customerId, setCustomerId] = useState<any>("");
-	const [folderIds, setFolderIds] = useState<[]>([]);
-	const [add, setAdd] = useState<boolean>(false);
-
-	const handleCloseDialog = () => {
-		setAdd(false);
-	};
-
-	const [link, setLink] = useState<boolean>(false);
-	const handleOpenLink = () => setLink(true);
-	const handleCloseLink = () => setLink(false);
-
+	const [customerDeleteId, setCustomerDeleteId] = useState("");
+	const [customerId, setCustomerId] = useState("");
+	const [folderIds, setFolderIds] = useState<string[]>([]);
+	const [add, setAdd] = useState(false);
+	const [link, setLink] = useState(false);
 	const [addCustomerMode, setAddCustomerMode] = useState<"add" | "edit">("add");
+	const [isInitialLoad, setIsInitialLoad] = useState(true);
+	const [snackbarOpen, setSnackbarOpen] = useState(false);
+	const [snackbarMessage, setSnackbarMessage] = useState("");
+	const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info" | "warning">("success");
+	const [archivedModalOpen, setArchivedModalOpen] = useState(false);
+	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 
-	const handleAddContact = () => {
+	// Referencias
+	const mountedRef = useRef(false);
+	const loadingRef = useRef(false);
+
+	// Selectores
+	const user = useSelector((state) => state.auth.user);
+	const { contacts, archivedContacts, isLoader } = useSelector((state) => state.contacts);
+
+	// Efecto para la carga inicial
+	useEffect(() => {
+		// Solo ejecutar en el primer montaje
+		if (!mountedRef.current) {
+			mountedRef.current = true;
+
+			const initialLoad = async () => {
+				if (!user?._id || loadingRef.current) return;
+
+				try {
+					loadingRef.current = true;
+					await dispatch(getContactsByUserId(user._id));
+				} catch (error) {
+					console.error("Error loading contacts:", error);
+				} finally {
+					loadingRef.current = false;
+					setIsInitialLoad(false);
+				}
+			};
+
+			initialLoad();
+		}
+
+		return () => {
+			mountedRef.current = false;
+			loadingRef.current = false;
+		};
+	}, [user?._id]);
+
+	// Handlers
+	const handleCloseDialog = useCallback(() => {
+		setAdd(false);
+	}, []);
+
+	const handleOpenLink = useCallback(() => {
+		setLink(true);
+	}, []);
+
+	const handleCloseLink = useCallback(() => {
+		setLink(false);
+	}, []);
+
+	const handleAddContact = useCallback(() => {
 		setAdd(true);
 		setAddCustomerMode("add");
 		setCustomer(null);
-	};
+	}, []);
 
-	// Nueva función específica para manejar la edición de un contacto
-	const handleEditContact = (customer: any) => {
+	const handleEditContact = useCallback((contactData: any) => {
 		setAdd(true);
 		setAddCustomerMode("edit");
-		setCustomer(customer);
-	};
+		setCustomer(contactData);
+	}, []);
 
-	const handleClose = () => {
-		setOpen(!open);
-	};
+	const handleClose = useCallback(() => {
+		setOpen((prev) => !prev);
+	}, []);
 
-	const user = useSelector((state) => state.auth.user);
-	const userId = user?._id;
-	const contacts = useSelector((state) => state.contacts.contacts);
+	const handleRefreshData = useCallback(async () => {
+		if (!user?._id || loadingRef.current) return;
 
-	useEffect(() => {
-		if (userId) {
-			(async () => {
-				try {
-					dispatch(getContactsByUserId(userId));
-				} catch (error) {
-					console.log(error);
-				}
-			})();
+		try {
+			loadingRef.current = true;
+			await dispatch(getContactsByUserId(user._id));
+		} finally {
+			loadingRef.current = false;
 		}
-	}, [userId]);
+	}, [user?._id]);
 
-	const columns = useMemo(
+	const handleRowAction = useCallback((e: MouseEvent<HTMLButtonElement>, action: () => void) => {
+		e.stopPropagation();
+		action();
+	}, []);
+
+	const handleSnackbarClose = useCallback(() => {
+		setSnackbarOpen(false);
+	}, []);
+
+	const handleArchiveSelected = useCallback(
+		async (selectedRows: Row<Contact>[]) => {
+			if (!user?._id || selectedRows.length === 0 || loadingRef.current) return;
+
+			const contactIds = selectedRows.map((row) => row.original._id);
+
+			try {
+				loadingRef.current = true;
+				const result = await dispatch(archiveContacts(user._id, contactIds));
+
+				if (result.success) {
+					setSnackbarMessage(
+						`${contactIds.length} ${contactIds.length === 1 ? "contacto archivado" : "contactos archivados"} correctamente`,
+					);
+					setSnackbarSeverity("success");
+				} else {
+					setSnackbarMessage(result.message || "Error al archivar contactos");
+					setSnackbarSeverity("error");
+				}
+
+				setSnackbarOpen(true);
+			} catch (error) {
+				console.error("Error al archivar contactos:", error);
+				setSnackbarMessage("Error al archivar contactos");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			} finally {
+				loadingRef.current = false;
+			}
+		},
+		[user?._id],
+	);
+
+	// Manejadores para elementos archivados
+	const handleOpenArchivedModal = useCallback(async () => {
+		if (!user?._id || loadingRef.current) return;
+
+		try {
+			loadingRef.current = true;
+			await dispatch(getArchivedContactsByUserId(user._id));
+			setArchivedModalOpen(true);
+		} catch (error) {
+			console.error("Error al obtener contactos archivados:", error);
+			setSnackbarMessage("Error al obtener contactos archivados");
+			setSnackbarSeverity("error");
+			setSnackbarOpen(true);
+		} finally {
+			loadingRef.current = false;
+		}
+	}, [user?._id]);
+
+	const handleCloseArchivedModal = useCallback(() => {
+		setArchivedModalOpen(false);
+	}, []);
+
+	const handleUnarchiveSelected = useCallback(
+		async (contactIds: string[]) => {
+			if (!user?._id || contactIds.length === 0 || loadingRef.current) return;
+
+			try {
+				setLoadingUnarchive(true);
+				const result = await dispatch(unarchiveContacts(user._id, contactIds));
+
+				if (result.success) {
+					setSnackbarMessage(
+						`${contactIds.length} ${contactIds.length === 1 ? "contacto desarchivado" : "contactos desarchivados"} correctamente`,
+					);
+					setSnackbarSeverity("success");
+					setArchivedModalOpen(false);
+				} else {
+					setSnackbarMessage(result.message || "Error al desarchivar contactos");
+					setSnackbarSeverity("error");
+				}
+
+				setSnackbarOpen(true);
+			} catch (error) {
+				console.error("Error al desarchivar contactos:", error);
+				setSnackbarMessage("Error al desarchivar contactos");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			} finally {
+				setLoadingUnarchive(false);
+			}
+		},
+		[user?._id],
+	);
+
+	// Columnas memoizadas
+	const columns = useMemo<Column<Contact>[]>(
 		() => [
 			{
-				title: "Row Selection",
-				Header: ({ getToggleAllPageRowsSelectedProps }: HeaderProps<{}>) => (
+				id: "selection",
+				Header: ({ getToggleAllPageRowsSelectedProps }: HeaderProps<Contact>) => (
 					<IndeterminateCheckbox indeterminate {...getToggleAllPageRowsSelectedProps()} />
 				),
-				accessor: "selection",
 				Cell: ({ row }: any) => <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />,
+				className: "cell-center",
 				disableSortBy: true,
+			},
+			{
+				Header: "Id",
+				accessor: "_id",
+				className: "cell-center",
 			},
 			{
 				Header: "Nombre",
 				accessor: "name",
-				Cell: ({ row }: { row: Row }) => {
-					const { values } = row;
+				Cell: ({ row }: any) => {
+					const { original } = row;
 					return (
 						<Stack direction="row" spacing={1.5} alignItems="center">
 							<Stack spacing={0}>
-								<Typography variant="subtitle1">{`${values.name} ${values.lastName}`}</Typography>
-								<Typography color="text.secondary">{values.email}</Typography>
+								<Typography variant="subtitle1">{`${original.name || ""} ${original.lastName || ""}`}</Typography>
+								<Typography color="text.secondary">{original.email || ""}</Typography>
 							</Stack>
 						</Stack>
 					);
@@ -311,7 +572,6 @@ const CustomerListPage = () => {
 				Header: "Nacionalidad",
 				accessor: "nationality",
 			},
-
 			{
 				Header: "DNI",
 				accessor: "document",
@@ -340,10 +600,10 @@ const CustomerListPage = () => {
 				Header: "Código Postal",
 				accessor: "zipCode",
 			},
-
 			{
 				Header: "Rol",
 				accessor: "role",
+				Cell: ({ value }: any) => <Typography>{value || ""}</Typography>,
 			},
 			{
 				Header: "Apellido",
@@ -352,30 +612,26 @@ const CustomerListPage = () => {
 			{
 				Header: "Teléfono",
 				accessor: "phone",
-				Cell: ({ value }: { value: string }) => (
-					<PatternFormat displayType="text" format="+54 (###) ###-####" mask="_" defaultValue={value} />
-				),
+				Cell: ({ value }: any) => <PatternFormat displayType="text" format="+54 (###) ###-####" mask="_" defaultValue={value || ""} />,
 			},
 			{
 				Header: "Ciudad",
 				accessor: "city",
+				Cell: ({ value }: any) => <Typography>{value || ""}</Typography>,
 			},
 			{
 				Header: "Domicilio",
 				accessor: "address",
 			},
-
 			{
 				Header: "Estado",
 				accessor: "status",
+				Cell: ({ value }: any) => <Typography>{value || ""}</Typography>,
 			},
 			{
 				Header: "Tipo",
 				accessor: "type",
-			},
-			{
-				Header: "id",
-				accessor: "_id",
+				Cell: ({ value }: any) => <Typography>{value || ""}</Typography>,
 			},
 			{
 				Header: "folderIds",
@@ -383,102 +639,53 @@ const CustomerListPage = () => {
 			},
 			{
 				Header: "Acciones",
-				className: "cell-center",
-				disableSortBy: true,
-				Cell: ({ row }: { row: Row<{}> }) => {
+				id: "actions",
+				Cell: ({ row }: any) => {
 					const collapseIcon = row.isExpanded ? (
 						<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
 					) : (
 						<Eye variant="Bulk" />
 					);
+
+					// Usar original que contiene los datos completos sin ambigüedades
+					const { original } = row;
+
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Ver"
-							>
-								<IconButton
-									color="secondary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										row.toggleRowExpanded();
-									}}
-								>
+							<Tooltip title="Ver">
+								<IconButton color="secondary" onClick={(e) => handleRowAction(e, () => row.toggleRowExpanded())}>
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Vincular"
-							>
+							<Tooltip title="Vincular">
 								<IconButton
 									color="success"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										console.log(row);
-										e.stopPropagation();
-										setCustomerId(row.values._id);
-										setFolderIds(row.values.folderIds);
-										handleOpenLink();
-									}}
+									onClick={(e) =>
+										handleRowAction(e, () => {
+											setCustomerId(original._id);
+											setFolderIds(original.folderIds || []);
+											handleOpenLink();
+										})
+									}
 								>
 									<Link1 variant="Bulk" />
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Editar"
-							>
-								<IconButton
-									color="primary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										console.log(row);
-										e.stopPropagation();
-										handleEditContact(row.values);
-									}}
-								>
+							<Tooltip title="Editar">
+								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(original))}>
 									<Edit2 variant="Bulk" />
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
-										},
-									},
-								}}
-								title="Eliminar"
-							>
+							<Tooltip title="Eliminar">
 								<IconButton
 									color="error"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleClose();
-										setCustomerDeleteId(`${row.values.name} ${row.values.lastName}`);
-										setCustomerId(row.values._id);
-									}}
+									onClick={(e) =>
+										handleRowAction(e, () => {
+											handleClose();
+											setCustomerDeleteId(`${original.name || ""} ${original.lastName || ""}`);
+											setCustomerId(original._id);
+										})
+									}
 								>
 									<Trash variant="Bulk" />
 								</IconButton>
@@ -486,39 +693,86 @@ const CustomerListPage = () => {
 						</Stack>
 					);
 				},
+				className: "cell-center",
+				disableSortBy: true,
 			},
 		],
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[theme],
+		[theme, mode, handleEditContact, handleClose, handleOpenLink, handleRowAction],
 	);
-	/* Renderiza la vista ampliada del elemento seleccionado  */
+
+	// Row sub component memoizado
 	const renderRowSubComponent = useCallback(
-		({ row }: { row: Row<{}> }) => {
-			const contact = contacts[Number(row.id)];
-			return <CustomerView key={`${contact._id}-${JSON.stringify(contact.folderIds)}`} data={contact} />;
+		({ row }: { row: Row<Contact>; rowProps: any; visibleColumns: any; expanded: any }) => {
+			const contactData = contacts.find((c: Contact) => c._id === row.original._id);
+			return contactData ? <CustomerView data={contactData} /> : null;
 		},
 		[contacts],
 	);
 
+	if (isInitialLoad) {
+		return null; // O un componente de loading si prefieres
+	}
+
 	return (
 		<MainCard content={false}>
 			<ScrollX>
-				<ReactTable columns={columns} data={contacts} renderRowSubComponent={renderRowSubComponent} handleAddContact={handleAddContact} />
+				<ReactTable
+					columns={columns}
+					data={contacts}
+					handleAdd={handleAddContact}
+					handleArchiveSelected={handleArchiveSelected}
+					handleOpenArchivedModal={handleOpenArchivedModal}
+					renderRowSubComponent={renderRowSubComponent}
+					isLoading={isLoader}
+				/>
 			</ScrollX>
-			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} id={customerId} />
-			{/* add customer dialog */}
-			<Dialog
-				maxWidth="sm"
-				TransitionComponent={PopupTransition}
-				keepMounted
-				fullWidth
-				open={add}
-				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
-				aria-describedby="alert-dialog-slide-description"
-			>
-				<AddCustomer open={add} customer={customer} mode={addCustomerMode} onCancel={handleCloseDialog} onAddMember={() => {}} />
+			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} id={customerId} onDelete={handleRefreshData} />
+			{add && (
+				<Dialog
+					maxWidth="sm"
+					TransitionComponent={PopupTransition}
+					keepMounted
+					fullWidth
+					open={add}
+					sx={{ "& .MuiDialog-paper": { p: 0 } }}
+				>
+					<AddCustomer open={add} customer={customer} mode={addCustomerMode} onCancel={handleCloseDialog} onAddMember={handleRefreshData} />
+				</Dialog>
+			)}
+
+			<Dialog maxWidth="sm" TransitionComponent={PopupTransition} keepMounted fullWidth open={link} sx={{ "& .MuiDialog-paper": { p: 0 } }}>
 				<LinkToCause openLink={link} onCancelLink={handleCloseLink} contactId={customerId} folderIds={folderIds} />
 			</Dialog>
+
+			{/* Modal para elementos archivados */}
+			<ArchivedItemsModal
+				open={archivedModalOpen}
+				onClose={handleCloseArchivedModal}
+				title="Contactos Archivados"
+				items={archivedContacts || []}
+				onUnarchive={handleUnarchiveSelected}
+				loading={loadingUnarchive}
+				itemType="contacts"
+			/>
+
+			<Snackbar
+				open={snackbarOpen}
+				autoHideDuration={6000}
+				onClose={handleSnackbarClose}
+				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+			>
+				<Alert
+					onClose={handleSnackbarClose}
+					severity={snackbarSeverity}
+					variant="filled"
+					sx={{
+						width: "100%",
+						fontWeight: 500,
+					}}
+				>
+					{snackbarMessage}
+				</Alert>
+			</Snackbar>
 		</MainCard>
 	);
 };
