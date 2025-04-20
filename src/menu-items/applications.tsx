@@ -13,6 +13,7 @@ import {
 	Bill,
 	UserSquare,
 	ShoppingBag,
+	InfoCircle,
 } from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
@@ -30,6 +31,7 @@ const icons = {
 	profile: UserSquare,
 	ecommerce: ShoppingBag,
 	price: DollarSquare,
+	help: InfoCircle,
 };
 
 // ==============================|| MENU ITEMS - APPLICATIONS ||============================== //
@@ -55,22 +57,30 @@ const applications: NavItemType = {
 			icon: icons.calculator,
 			children: [
 				{
+					id: "all-calculators",
+					title: <FormattedMessage id="Todos los Cálculos" />,
+					type: "item",
+					url: "/apps/calc",
+				},
+				{
 					id: "labor-calculator",
 					title: <FormattedMessage id="laboral" />,
 					type: "item",
 					url: "/apps/calc/labor",
 				},
 				{
-					id: "civil-calculator",
-					title: <FormattedMessage id="civil" />,
-					type: "item",
-					url: "/apps/calc/civil",
-				},
-				{
 					id: "intereses-calculator",
 					title: <FormattedMessage id="intereses" />,
 					type: "item",
 					url: "/apps/calc/intereses",
+				},
+				{
+					id: "civil-calculator",
+					title: <FormattedMessage id="civil" />,
+					type: "item",
+					url: "/apps/calc/civil",
+					disabled: true,
+					chip: { label: "Próximamente", color: "secondary", size: "small", variant: "outlined" },
 				},
 			],
 		},
@@ -95,7 +105,8 @@ const applications: NavItemType = {
 				},
 			],
 		},
-		/* 		{
+		/* 
+		{
 			id: "invoice",
 			title: <FormattedMessage id="Facturación" />,
 			url: "/apps/invoice/dashboard",
@@ -135,6 +146,13 @@ const applications: NavItemType = {
 			icon: icons.price,
 			type: "item",
 			url: "/suscripciones/tables",
+		},
+		{
+			id: "help",
+			title: <FormattedMessage id="Ayuda" />,
+			icon: icons.help,
+			type: "item",
+			url: "/ayuda",
 		},
 		{
 			id: "profile",

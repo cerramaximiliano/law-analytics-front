@@ -59,6 +59,7 @@ const FoldersLayout = Loadable(lazy(() => import("pages/apps/folders/folders")))
 const LaborLayout = Loadable(lazy(() => import("pages/calculator/labor/index")));
 const CivilLayouts = Loadable(lazy(() => import("pages/calculator/civil/index")));
 const InteresesLayouts = Loadable(lazy(() => import("pages/calculator/intereses/index")));
+const AllCalculatorsLayout = Loadable(lazy(() => import("pages/calculator/all/index")));
 
 // render - forms & tables
 //const FormsValidation = Loadable(lazy(() => import("pages/forms/validation")));
@@ -138,6 +139,9 @@ const PricingPage = Loadable(lazy(() => import("pages/extra-pages/price/price1")
 const SubscriptionSuccess = Loadable(lazy(() => import("pages/apps/subscription/success")));
 const SubscriptionError = Loadable(lazy(() => import("pages/apps/subscription/error")));
 
+// help page
+const HelpPage = Loadable(lazy(() => import("pages/help")));
+
 // ==============================|| MAIN ROUTES ||============================== //
 
 const MainRoutes = {
@@ -183,6 +187,10 @@ const MainRoutes = {
 						{
 							path: "calc",
 							children: [
+								{
+									path: "",
+									element: <AllCalculatorsLayout />,
+								},
 								{
 									path: "labor",
 									element: <LaborLayout />,
@@ -312,6 +320,10 @@ const MainRoutes = {
 							element: <PricingPage />,
 						},
 					],
+				},
+				{
+					path: "ayuda",
+					element: <HelpPage />,
 				},
 			],
 		},

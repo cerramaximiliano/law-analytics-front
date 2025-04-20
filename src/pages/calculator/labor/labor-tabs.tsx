@@ -3,18 +3,19 @@ import BasicWizard from "sections/forms/wizard/calc-laboral/despido";
 import LiquidacionWizard from "sections/forms/wizard/calc-laboral/liquidacion";
 
 // material-ui
-import { Box, Tab, Tabs, Typography } from "@mui/material";
+import { Box, Tab, Tabs, Typography, Button } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
 
 // assets
-import { Calculator, DocumentCloud } from "iconsax-react";
+import { Calculator, DocumentCloud, InfoCircle } from "iconsax-react";
 import SavedLabor from "./components/SavedLabor";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { dispatch } from "store";
 import { getFoldersByUserId } from "store/reducers/folders";
+import { GuideLaboral } from "components/guides";
 
 interface TabPanelProps {
 	children?: ReactNode;
@@ -44,6 +45,7 @@ export default function LaborTabs() {
 	const [searchParams] = useSearchParams();
 	const { folders } = useSelector((state: any) => state.folders);
 	const { id } = useSelector((state: any) => state.auth?.user);
+	const [guideOpen, setGuideOpen] = useState(false);
 
 	const folderParam = searchParams.get("folder");
 	const currentFolder = folderParam ? folders.find((f: any) => f._id === folderParam) : null;
@@ -83,6 +85,9 @@ export default function LaborTabs() {
 						<Tab label="Liquidación" icon={<Calculator />} iconPosition="start" {...a11yProps(1)} />
 						<Tab label="Guardados" icon={<DocumentCloud />} iconPosition="start" {...a11yProps(2)} />
 					</Tabs>
+					<Button variant="text" color="primary" startIcon={<InfoCircle />} onClick={() => setGuideOpen(true)} sx={{ mr: 2 }}>
+						Ver Guía
+					</Button>
 					{shouldShowFolderName && (
 						<Typography
 							variant="subtitle1"
@@ -110,6 +115,7 @@ export default function LaborTabs() {
 					<SavedLabor />
 				</TabPanel>
 			</Box>
+			<GuideLaboral open={guideOpen} onClose={() => setGuideOpen(false)} />
 		</MainCard>
 	);
 }

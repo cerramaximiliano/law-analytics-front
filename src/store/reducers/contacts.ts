@@ -70,12 +70,10 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 		case ARCHIVE_CONTACTS:
 			// Los IDs de los contactos a archivar
 			const contactIdsToArchive = action.payload;
-			
+
 			// Encontrar los contactos completos que se van a archivar
-			const contactsToArchive = state.contacts.filter((contact) => 
-				contactIdsToArchive.includes(contact._id)
-			);
-			
+			const contactsToArchive = state.contacts.filter((contact) => contactIdsToArchive.includes(contact._id));
+
 			return {
 				...state,
 				// Remover de los contactos activos
@@ -86,29 +84,18 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 			};
 		case UNARCHIVE_CONTACTS:
 			// Los IDs o contactos parciales a desarchivar
-			const contactIdsToUnarchive = action.payload.map((c: any) => 
-				typeof c === 'string' ? c : c._id
-			);
-			
+			const contactIdsToUnarchive = action.payload.map((c: any) => (typeof c === "string" ? c : c._id));
+
 			// Buscar los contactos completos en archivedContacts
-			const contactsToUnarchive = state.archivedContacts.filter((contact) => 
-				contactIdsToUnarchive.includes(contact._id)
-			);
-			
+			const contactsToUnarchive = state.archivedContacts.filter((contact) => contactIdsToUnarchive.includes(contact._id));
+
 			return {
 				...state,
 				// Añadir los contactos desarchivados a la lista de contactos activos
 				// Si encontramos el contacto completo en archivedContacts, lo usamos, sino usamos la versión parcial
-				contacts: [
-					...state.contacts, 
-					...contactsToUnarchive.length > 0 
-						? contactsToUnarchive 
-						: action.payload
-				],
+				contacts: [...state.contacts, ...(contactsToUnarchive.length > 0 ? contactsToUnarchive : action.payload)],
 				// Remover los contactos desarchivados de la lista de archivados
-				archivedContacts: state.archivedContacts.filter(
-					(contact) => !contactIdsToUnarchive.includes(contact._id)
-				),
+				archivedContacts: state.archivedContacts.filter((contact) => !contactIdsToUnarchive.includes(contact._id)),
 				isLoader: false,
 			};
 		case UPDATE_CONTACT:
@@ -121,7 +108,7 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 								folderIds: action.payload.folderIds, // Asegurarse de que esto se mantiene como array
 								...action.payload, // Asegurar que todos los campos actualizados se mantienen
 						  }
-						: contact
+						: contact,
 				),
 				isLoader: false,
 			};
@@ -579,29 +566,29 @@ export const unarchiveContacts = (userId: string, contactIds: string[]) => async
 		if (response.data.success) {
 			// Obtener los IDs de los contactos que realmente fueron desarchivados
 			const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
-			
+
 			if (unarchivedIds.length > 0) {
 				// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedContacts
 				dispatch({
 					type: UNARCHIVE_CONTACTS,
 					payload: unarchivedIds,
 				});
-				
-				return { 
-					success: true, 
-					message: `${unarchivedIds.length} contactos desarchivados exitosamente` 
+
+				return {
+					success: true,
+					message: `${unarchivedIds.length} contactos desarchivados exitosamente`,
 				};
 			} else {
 				// Ningún contacto fue desarchivado (posiblemente por límites)
-				return { 
-					success: false, 
-					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan." 
+				return {
+					success: false,
+					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
 				};
 			}
 		} else {
-			return { 
-				success: false, 
-				message: response.data.message || "No se pudieron desarchivar los contactos." 
+			return {
+				success: false,
+				message: response.data.message || "No se pudieron desarchivar los contactos.",
 			};
 		}
 	} catch (error) {

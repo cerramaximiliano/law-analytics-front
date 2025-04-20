@@ -66,12 +66,10 @@ const folder = (state = initialFolderState, action: any) => {
 		case ARCHIVE_FOLDERS:
 			// Los IDs de las carpetas a archivar
 			const folderIdsToArchive = action.payload;
-			
+
 			// Encontrar las carpetas completas que se van a archivar
-			const foldersToArchive = state.folders.filter((folder: FolderData) => 
-				folderIdsToArchive.includes(folder._id)
-			);
-			
+			const foldersToArchive = state.folders.filter((folder: FolderData) => folderIdsToArchive.includes(folder._id));
+
 			return {
 				...state,
 				// Remover de las carpetas activas
@@ -82,29 +80,18 @@ const folder = (state = initialFolderState, action: any) => {
 			};
 		case UNARCHIVE_FOLDERS:
 			// Los IDs o folders parciales a desarchivar
-			const folderIdsToUnarchive = action.payload.map((f: any) => 
-				typeof f === 'string' ? f : f._id
-			);
-			
+			const folderIdsToUnarchive = action.payload.map((f: any) => (typeof f === "string" ? f : f._id));
+
 			// Buscar las carpetas completas en archivedFolders
-			const foldersToUnarchive = state.archivedFolders.filter((folder: FolderData) => 
-				folderIdsToUnarchive.includes(folder._id)
-			);
-			
+			const foldersToUnarchive = state.archivedFolders.filter((folder: FolderData) => folderIdsToUnarchive.includes(folder._id));
+
 			return {
 				...state,
 				// Añadir las carpetas desarchivadas a la lista de carpetas activas
 				// Si encontramos la carpeta completa en archivedFolders, la usamos, sino usamos la versión parcial
-				folders: [
-					...state.folders, 
-					...foldersToUnarchive.length > 0 
-						? foldersToUnarchive 
-						: action.payload
-				],
+				folders: [...state.folders, ...(foldersToUnarchive.length > 0 ? foldersToUnarchive : action.payload)],
 				// Remover las carpetas desarchivadas de la lista de archivados
-				archivedFolders: state.archivedFolders.filter(
-					(folder: FolderData) => !folderIdsToUnarchive.includes(folder._id)
-				),
+				archivedFolders: state.archivedFolders.filter((folder: FolderData) => !folderIdsToUnarchive.includes(folder._id)),
 				isLoader: false,
 			};
 		case UPDATE_FOLDER:
@@ -299,29 +286,29 @@ export const unarchiveFolders = (userId: string, folderIds: string[]) => async (
 		if (response.data.success) {
 			// Obtener los IDs de las carpetas que realmente fueron desarchivadas
 			const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
-			
+
 			if (unarchivedIds.length > 0) {
 				// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedFolders
 				dispatch({
 					type: UNARCHIVE_FOLDERS,
 					payload: unarchivedIds,
 				});
-				
-				return { 
-					success: true, 
-					message: `${unarchivedIds.length} causas desarchivadas exitosamente` 
+
+				return {
+					success: true,
+					message: `${unarchivedIds.length} causas desarchivadas exitosamente`,
 				};
 			} else {
 				// Ninguna carpeta fue desarchivada (posiblemente por límites)
-				return { 
-					success: false, 
-					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan." 
+				return {
+					success: false,
+					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
 				};
 			}
 		} else {
-			return { 
-				success: false, 
-				message: response.data.message || "No se pudieron desarchivar las causas." 
+			return {
+				success: false,
+				message: response.data.message || "No se pudieron desarchivar las causas.",
 			};
 		}
 	} catch (error) {

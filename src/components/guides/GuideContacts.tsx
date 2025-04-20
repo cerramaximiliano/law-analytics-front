@@ -1,0 +1,451 @@
+import { useState } from "react";
+
+// material-ui
+import { 
+    Typography, 
+    Button, 
+    Box, 
+    Alert, 
+    AlertTitle, 
+    Stack, 
+    Step, 
+    Stepper, 
+    StepLabel, 
+    Paper,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    useMediaQuery
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+
+// project imports
+import { ArrowRight2, Next, ArrowLeft, ArrowRight, Profile2User, CloseCircle } from "iconsax-react";
+
+// ==============================|| COMPONENTES PARA CONTENIDOS DE GUÍAS ||============================== //
+
+// Componente de paso de la guía
+interface GuideStepProps {
+    title: string;
+    content: React.ReactNode;
+    image?: string;
+}
+
+const GuideStep: React.FC<GuideStepProps> = ({ title, content, image }) => {
+    return (
+        <Box sx={{ p: 3 }}>
+            <Typography variant="h4" gutterBottom color="primary">
+                {title}
+            </Typography>
+            <Box sx={{ mb: 3 }}>{content}</Box>
+            {image && (
+                <Box sx={{ mt: 2, mb: 2, textAlign: "center" }}>
+                    <img
+                        src={image}
+                        alt={title}
+                        style={{ maxWidth: "100%", maxHeight: "300px", borderRadius: "8px", boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}
+                    />
+                </Box>
+            )}
+        </Box>
+    );
+};
+
+// ==============================|| CONTENIDO PARA LA GUÍA DE CONTACTOS ||============================== //
+
+interface GuideContactsProps {
+    open: boolean;
+    onClose: () => void;
+}
+
+const GuideContacts: React.FC<GuideContactsProps> = ({ open, onClose }) => {
+    const [activeStep, setActiveStep] = useState(0);
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
+
+    const handleNext = () => {
+        setActiveStep((prevStep) => prevStep + 1);
+    };
+
+    const handleBack = () => {
+        setActiveStep((prevStep) => prevStep - 1);
+    };
+
+    // Reiniciar el paso activo cuando se cierra el diálogo
+    const handleCloseWithReset = () => {
+        onClose();
+        // Reiniciamos el paso después de que se cierre el diálogo
+        setTimeout(() => setActiveStep(0), 300);
+    };
+
+    const steps = [
+        {
+            title: "Gestión de Contactos",
+            content: (
+                <>
+                    <Typography paragraph>
+                        El módulo de Contactos te permite organizar y gestionar todas las personas y organizaciones relacionadas con tus casos legales.
+                    </Typography>
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                        <AlertTitle>Con el módulo de Contactos puedes:</AlertTitle>
+                        <Typography component="div">
+                            <ul>
+                                <li>Crear perfiles detallados para clientes, oponentes, testigos y otros contactos</li>
+                                <li>Categorizar contactos para facilitar su búsqueda y organización</li>
+                                <li>Vincular contactos a carpetas específicas y casos</li>
+                                <li>Registrar información de contacto, historia del cliente y notas importantes</li>
+                                <li>Exportar datos de contactos para uso en otros sistemas</li>
+                            </ul>
+                        </Typography>
+                    </Alert>
+                </>
+            ),
+        },
+        {
+            title: "Creación y Edición de Contactos",
+            content: (
+                <>
+                    <Typography paragraph>Para agregar un nuevo contacto a tu base de datos:</Typography>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Creación de contacto
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Navega a la sección "Contactos" y haz clic en el botón "Nuevo Contacto"</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Selecciona el tipo de contacto: Persona física o Persona jurídica/Organización</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Completa los campos obligatorios: Nombre, tipo de relación, información de contacto básica</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Agrega información adicional: Dirección, datos fiscales, categorías personalizadas</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Edición de contactos
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Localiza el contacto en la lista y haz clic en el ícono de edición</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Modifica los campos necesarios en el formulario de edición</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Utiliza la opción de historial para ver cambios anteriores en la información del contacto</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                            Tipos de contactos disponibles
+                        </Typography>
+                        <Box sx={{ pl: 2 }}>
+                            <Typography variant="body2" component="div">
+                                <ul>
+                                    <li>
+                                        <strong>Cliente</strong>: Persona o entidad que recibe tus servicios legales
+                                    </li>
+                                    <li>
+                                        <strong>Contraparte</strong>: Persona o entidad con intereses opuestos a tu cliente
+                                    </li>
+                                    <li>
+                                        <strong>Testigo</strong>: Persona que puede proveer testimonio en un caso
+                                    </li>
+                                    <li>
+                                        <strong>Perito</strong>: Especialista que brinda opinión técnica sobre aspectos del caso
+                                    </li>
+                                    <li>
+                                        <strong>Juez</strong>: Autoridad judicial asignada al caso
+                                    </li>
+                                    <li>
+                                        <strong>Otro</strong>: Cualquier otro tipo de relación personalizable
+                                    </li>
+                                </ul>
+                            </Typography>
+                        </Box>
+                    </Paper>
+                </>
+            ),
+        },
+        {
+            title: "Búsqueda y Organización",
+            content: (
+                <>
+                    <Typography paragraph>El sistema de contactos ofrece potentes herramientas de búsqueda y organización:</Typography>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Búsqueda avanzada
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Utiliza la barra de búsqueda para encontrar contactos por nombre, email o teléfono</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Filtra contactos por tipo, categoría, carpeta asociada o fecha de creación</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Guarda búsquedas frecuentes para acceder rápidamente a ellas en el futuro</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Categorización
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Asigna etiquetas personalizadas a los contactos para organizarlos por área legal, estado, etc.</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Crea grupos de contactos relacionados para casos o proyectos específicos</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Marca contactos como favoritos para acceso rápido desde el panel principal</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Alert severity="success" sx={{ mt: 3 }}>
+                        <AlertTitle>Consejo de productividad</AlertTitle>
+                        Utiliza las vistas guardadas para acceder rápidamente a grupos de contactos que consultas con frecuencia, como "Clientes
+                        activos", "Contactos recientes" o "Peritos disponibles".
+                    </Alert>
+                </>
+            ),
+        },
+        {
+            title: "Vinculación con Carpetas y Casos",
+            content: (
+                <>
+                    <Typography paragraph>
+                        Para aprovechar al máximo el sistema, vincula tus contactos con las carpetas de casos correspondientes:
+                    </Typography>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Vinculación desde la vista de contacto
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Abre el perfil del contacto que deseas vincular</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Navega a la sección "Carpetas asociadas"</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Haz clic en "Vincular a carpeta" y selecciona la carpeta deseada</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Especifica el rol del contacto en esa carpeta específica (puede variar por caso)</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Vinculación desde la vista de carpeta
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Abre la carpeta a la que deseas agregar contactos</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Navega a la pestaña "Contactos" dentro de la carpeta</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Haz clic en "Agregar contacto" y selecciona de tu lista de contactos existentes</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>También puedes crear un nuevo contacto directamente desde esta vista</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Paper variant="outlined" sx={{ p: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                            Beneficios de la vinculación
+                        </Typography>
+                        <Box sx={{ pl: 2 }}>
+                            <Typography variant="body2" component="div">
+                                <ul>
+                                    <li>Acceso rápido a toda la información relevante del contacto desde la carpeta del caso</li>
+                                    <li>Visualización inmediata de todos los casos en los que participa un contacto específico</li>
+                                    <li>Posibilidad de aplicar filtros cruzados entre contactos y carpetas</li>
+                                    <li>Generación de reportes integrados que incluyen datos de contactos y casos</li>
+                                </ul>
+                            </Typography>
+                        </Box>
+                    </Paper>
+                </>
+            ),
+        },
+        {
+            title: "Exportación e Importación",
+            content: (
+                <>
+                    <Typography paragraph>
+                        El sistema permite importar y exportar contactos para facilitar la migración desde otros sistemas o compartir datos:
+                    </Typography>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Exportación de contactos
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Desde la vista principal de contactos, selecciona los contactos a exportar</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Haz clic en el botón "Exportar" en la barra de herramientas</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Elige el formato deseado: CSV, Excel o vCard (para agendas)</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Selecciona los campos a incluir en la exportación</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                            Importación de contactos
+                        </Typography>
+                        <Stack spacing={1.5}>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Haz clic en "Importar contactos" en la barra de herramientas</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Selecciona el archivo (CSV, Excel o vCard) con los datos a importar</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Mapea los campos del archivo con los campos del sistema</Typography>
+                            </Box>
+                            <Box display="flex" alignItems="center">
+                                <ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+                                <Typography>Revisa y confirma la importación, con opción de actualizar contactos existentes</Typography>
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Alert severity="warning" sx={{ mt: 3 }}>
+                        <AlertTitle>Importante</AlertTitle>
+                        Al importar contactos, asegúrate de cumplir con las normativas de protección de datos aplicables, especialmente si los datos
+                        provienen de fuentes externas. El sistema no verifica automáticamente el consentimiento para el procesamiento de datos
+                        personales.
+                    </Alert>
+                </>
+            ),
+        },
+    ];
+
+    return (
+        <Dialog 
+            open={open} 
+            onClose={handleCloseWithReset} 
+            fullScreen={fullScreen}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    p: 2,
+                    height: fullScreen ? '100%' : 'calc(100% - 64px)',
+                    maxHeight: '90vh',
+                    overflowY: 'auto'
+                }
+            }}
+        >
+            <DialogTitle sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                p: 2,
+                mb: 1
+            }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Profile2User variant="Bulk" size={28} style={{ marginRight: 12, color: theme.palette.info.dark }} />
+                    <Typography variant="h3">Guía de Contactos</Typography>
+                </Box>
+                <IconButton 
+                    edge="end" 
+                    color="inherit" 
+                    onClick={handleCloseWithReset} 
+                    aria-label="close"
+                >
+                    <CloseCircle />
+                </IconButton>
+            </DialogTitle>
+            
+            <DialogContent sx={{ p: 2 }}>
+                <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+                    {steps.map((step, index) => (
+                        <Step key={index}>
+                            <StepLabel>{step.title}</StepLabel>
+                        </Step>
+                    ))}
+                </Stepper>
+
+                <Box sx={{ bgcolor: "background.paper", borderRadius: 2, mb: 3, boxShadow: theme.shadows[4] }}>
+                    {steps[activeStep] && <GuideStep title={steps[activeStep].title} content={steps[activeStep].content} />}
+                </Box>
+
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+                    <Button variant="outlined" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
+                        Anterior
+                    </Button>
+                    {activeStep === steps.length - 1 ? (
+                        <Button variant="contained" color="primary" onClick={() => setActiveStep(0)} endIcon={<Next />}>
+                            Volver al inicio
+                        </Button>
+                    ) : (
+                        <Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
+                            Siguiente
+                        </Button>
+                    )}
+                </Box>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+export default GuideContacts;

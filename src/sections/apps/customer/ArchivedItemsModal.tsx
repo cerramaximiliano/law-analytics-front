@@ -20,11 +20,17 @@ import {
 	CircularProgress,
 	Paper,
 	Alert,
+	AlertTitle,
+	Box,
+	Chip,
+	useTheme,
+	alpha,
 } from "@mui/material";
 
 // project-imports
 import { PopupTransition } from "components/@extended/Transitions";
 import EmptyResults from "./EmptyResults";
+import { Warning2 } from "iconsax-react"; // Asumiendo que estás utilizando iconsax-react para los íconos
 
 // types
 interface ArchivedItemsModalProps {
@@ -42,6 +48,7 @@ interface ArchivedItemsModalProps {
 const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading, itemType }: ArchivedItemsModalProps) => {
 	const [selected, setSelected] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
+	const theme = useTheme();
 
 	// Resetear selección cuando cambia el modal
 	useEffect(() => {
@@ -115,15 +122,46 @@ const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading,
 			maxWidth="md"
 			fullWidth
 			aria-labelledby="archived-items-modal-title"
+			PaperProps={{
+				elevation: 5,
+				sx: {
+					borderRadius: 2,
+					overflow: "hidden",
+				},
+			}}
 		>
-			<DialogTitle id="archived-items-modal-title">
-				<Typography variant="h5">{title}</Typography>
+			<DialogTitle
+				id="archived-items-modal-title"
+				sx={{
+					bgcolor: alpha(theme.palette.primary.main, 0.05),
+					py: 2.5,
+				}}
+			>
+				<Typography variant="h5" sx={{ fontWeight: 600 }}>
+					{title}
+				</Typography>
 			</DialogTitle>
 			<Divider />
 
-			<DialogContent>
+			<DialogContent sx={{ p: 3 }}>
+				{/* Nuevo aviso informativo */}
+				<Alert severity="info" icon={<Warning2 variant="Bulk" />} sx={{ mb: 3, borderRadius: 1.5 }}>
+					<AlertTitle>{itemType === "contacts" ? "Selección de contactos" : "Selección de causas"}</AlertTitle>
+					Selecciona {itemType === "contacts" ? "los contactos" : "las causas"} que deseas desarchivar marcando las casillas
+					correspondientes.
+				</Alert>
+
 				{error && (
-					<Alert severity="error" sx={{ mb: 2 }}>
+					<Alert
+						severity="error"
+						sx={{
+							mb: 2,
+							borderRadius: 1.5,
+							"& .MuiAlert-icon": {
+								alignItems: "center",
+							},
+						}}
+					>
 						{error}
 					</Alert>
 				)}
@@ -135,21 +173,44 @@ const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading,
 				) : items.length === 0 ? (
 					<EmptyResults message={`No hay ${itemType === "contacts" ? "contactos" : "causas"} archivados`} />
 				) : (
-					<Paper sx={{ width: "100%", overflow: "hidden" }}>
+					<Paper
+						sx={{
+							width: "100%",
+							overflow: "hidden",
+							borderRadius: 2,
+							boxShadow: theme.shadows[2],
+						}}
+					>
 						<TableContainer sx={{ maxHeight: 440 }}>
 							<Table stickyHeader>
 								<TableHead>
-									<TableRow>
+									<TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08) }}>
 										<TableCell padding="checkbox">
 											<Checkbox
 												indeterminate={selected.length > 0 && selected.length < items.length}
 												checked={items.length > 0 && selected.length === items.length}
 												onChange={handleSelectAllClick}
 												inputProps={{ "aria-label": "select all items" }}
+												sx={{
+													"&.Mui-checked": {
+														color: theme.palette.primary.main,
+													},
+													"&.MuiCheckbox-indeterminate": {
+														color: theme.palette.primary.main,
+													},
+												}}
 											/>
 										</TableCell>
 										{columns.map((column) => (
-											<TableCell key={column.id} style={{ minWidth: column.minWidth }}>
+											<TableCell
+												key={column.id}
+												style={{ minWidth: column.minWidth }}
+												sx={{
+													fontWeight: 600,
+													py: 2,
+													color: theme.palette.text.secondary,
+												}}
+											>
 												{column.label}
 											</TableCell>
 										))}
@@ -168,25 +229,64 @@ const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading,
 												tabIndex={-1}
 												key={item._id}
 												selected={isItemSelected}
-												sx={{ cursor: "pointer" }}
+												sx={{
+													cursor: "pointer",
+													"&.Mui-selected": {
+														bgcolor: alpha(theme.palette.primary.main, 0.12),
+														"&:hover": {
+															bgcolor: alpha(theme.palette.primary.main, 0.16),
+														},
+													},
+													"&:hover": {
+														bgcolor: alpha(theme.palette.primary.main, 0.04),
+													},
+												}}
 											>
 												<TableCell padding="checkbox">
-													<Checkbox checked={isItemSelected} />
+													<Checkbox
+														checked={isItemSelected}
+														sx={{
+															"&.Mui-checked": {
+																color: theme.palette.primary.main,
+															},
+														}}
+													/>
 												</TableCell>
 
 												{itemType === "contacts" ? (
 													<>
 														<TableCell>
-															<Typography variant="body2">{`${item.name} ${item.lastName || ""}`}</Typography>
+															<Typography variant="body2" fontWeight={500}>{`${item.name} ${item.lastName || ""}`}</Typography>
 														</TableCell>
-														<TableCell>{item.email}</TableCell>
-														<TableCell>{item.phone}</TableCell>
+														<TableCell>
+															<Typography variant="body2" color="text.secondary">
+																{item.email}
+															</Typography>
+														</TableCell>
+														<TableCell>
+															<Typography variant="body2">{item.phone}</Typography>
+														</TableCell>
 													</>
 												) : (
 													<>
-														<TableCell>{item.folderName}</TableCell>
-														<TableCell>{item.materia}</TableCell>
-														<TableCell>{item.status}</TableCell>
+														<TableCell>
+															<Typography variant="body2" fontWeight={500}>
+																{item.folderName}
+															</Typography>
+														</TableCell>
+														<TableCell>
+															<Typography variant="body2" color="text.secondary">
+																{item.materia}
+															</Typography>
+														</TableCell>
+														<TableCell>
+															<Chip
+																label={item.status}
+																size="small"
+																color={item.status === "Activo" ? "success" : "default"}
+																sx={{ borderRadius: 1 }}
+															/>
+														</TableCell>
 													</>
 												)}
 											</TableRow>
@@ -199,19 +299,39 @@ const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading,
 				)}
 			</DialogContent>
 
-			<DialogActions sx={{ p: 2.5, justifyContent: "space-between" }}>
-				<Button onClick={onClose} disabled={loading} color="secondary" variant="outlined">
-					Cancelar
-				</Button>
-				<Button
-					onClick={handleUnarchive}
-					variant="contained"
-					color="primary"
-					disabled={selected.length === 0 || loading}
-					startIcon={loading && <CircularProgress size={16} color="inherit" />}
-				>
-					{loading ? "Procesando..." : `Desarchivar ${selected.length > 0 ? `(${selected.length})` : ""}`}
-				</Button>
+			<DialogActions
+				sx={{
+					p: 3,
+					bgcolor: alpha(theme.palette.background.default, 0.7),
+				}}
+			>
+				<Box sx={{ display: "flex", gap: 2, ml: "auto" }}>
+					<Button
+						onClick={onClose}
+						disabled={loading}
+						color="error"
+						sx={{
+							borderRadius: 1.5,
+							px: 3,
+						}}
+					>
+						Cancelar
+					</Button>
+					<Button
+						onClick={handleUnarchive}
+						variant="contained"
+						color="primary"
+						disabled={selected.length === 0 || loading}
+						startIcon={loading && <CircularProgress size={16} color="inherit" />}
+						sx={{
+							borderRadius: 1.5,
+							px: 3,
+							boxShadow: theme.shadows[1],
+						}}
+					>
+						{loading ? "Procesando..." : `Desarchivar ${selected.length > 0 ? `(${selected.length})` : ""}`}
+					</Button>
+				</Box>
 			</DialogActions>
 		</Dialog>
 	);

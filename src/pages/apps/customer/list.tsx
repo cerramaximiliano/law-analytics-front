@@ -17,6 +17,7 @@ import {
 	Skeleton,
 	Snackbar,
 	Alert,
+	Box,
 } from "@mui/material";
 
 // third-party
@@ -60,12 +61,13 @@ import LinkToCause from "sections/apps/customer/LinkToCause";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1 } from "iconsax-react";
+import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1, InfoCircle } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
 import { getContactsByUserId, archiveContacts, getArchivedContactsByUserId, unarchiveContacts } from "store/reducers/contacts";
 import { Contact } from "types/contact";
+import { GuideContacts } from "components/guides";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -77,9 +79,19 @@ interface Props {
 	handleArchiveSelected?: (selectedRows: Row<Contact>[]) => void;
 	isLoading?: boolean;
 	handleOpenArchivedModal: () => void;
+	handleOpenGuide: () => void;
 }
 
-function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArchiveSelected, isLoading, handleOpenArchivedModal }: Props) {
+function ReactTable({ 
+	columns, 
+	data, 
+	renderRowSubComponent, 
+	handleAdd, 
+	handleArchiveSelected, 
+	isLoading, 
+	handleOpenArchivedModal,
+	handleOpenGuide
+}: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
@@ -175,12 +187,14 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArc
 			<>
 				<TableRowSelection selected={0} />
 				<Stack spacing={3}>
-					<Stack
-						direction={matchDownSM ? "column" : "row"}
-						spacing={1}
-						justifyContent="space-between"
-						alignItems="center"
-						sx={{ p: 3, pb: 0 }}
+					<Box
+						sx={{
+							p: 3,
+							pb: 0,
+							display: "flex",
+							flexDirection: "column",
+							gap: 2,
+						}}
 					>
 						<Skeleton width={200} height={40} />
 						<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
@@ -188,7 +202,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArc
 							<Skeleton width={150} height={40} />
 							<Skeleton width={100} height={40} />
 						</Stack>
-					</Stack>
+					</Box>
 					<Table>
 						<TableHead>
 							<TableRow>
@@ -228,62 +242,101 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArc
 			<Stack spacing={3}>
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
-					spacing={1}
+					spacing={2}
 					justifyContent="space-between"
-					alignItems="center"
+					alignItems={matchDownSM ? "flex-start" : "flex-start"}
 					sx={{ p: 3, pb: 0 }}
 				>
-					<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
-					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
-						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<Button variant="contained" startIcon={<UserAdd />} onClick={handleAdd} size="small">
-							Agregar Contacto
-						</Button>
+					{/* Lado izquierdo - Filtro y ordenamiento */}
+					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+						{/* Primera línea: Barra de búsqueda */}
+						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 
-						{/* Botón para ver elementos archivados */}
-						<Button
-							variant="outlined"
-							color="secondary"
-							startIcon={<Box1 />}
-							onClick={handleOpenArchivedModal}
-							size="small"
+						{/* Segunda línea: Selector de ordenamiento */}
+						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
+					</Stack>
+
+					{/* Lado derecho - Botones de acción */}
+					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+						{/* Primera línea: Agregar Contacto, Ver Archivados, Archivar seleccionados */}
+						<Stack
+							direction={matchDownSM ? "column" : "row"}
+							alignItems="center"
+							spacing={2}
 							sx={{
-								borderWidth: "1px",
+								width: "100%",
+								justifyContent: matchDownSM ? "flex-start" : "flex-end",
 							}}
 						>
-							Ver Archivados
-						</Button>
+							{/* Acción principal */}
+							<Button variant="contained" startIcon={<UserAdd />} onClick={handleAdd} size="small">
+								Agregar Contacto
+							</Button>
 
-						{handleArchiveSelected && (
-							<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona contactos para archivar" : ""} placement="top">
-								<span>
-									<Button
-										variant="outlined"
-										color="primary"
-										startIcon={<Archive />}
-										onClick={() => handleArchiveSelected(selectedFlatRows)}
-										size="small"
-										disabled={Object.keys(selectedRowIds).length === 0}
-										sx={{
-											borderWidth: "1px",
-											"&.Mui-disabled": {
-												borderColor: "rgba(0, 0, 0, 0.12)",
-												color: "text.disabled",
-											},
-										}}
-									>
-										Archivar{" "}
-										{Object.keys(selectedRowIds).length > 0
-											? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "contacto" : "contactos"}`
-											: "contactos"}
-									</Button>
-								</span>
-							</Tooltip>
-						)}
-						<CSVExport
-							data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
-							filename={"contactos.csv"}
-						/>
+							{/* Botón para ver elementos archivados */}
+							<Button
+								variant="outlined"
+								color="secondary"
+								startIcon={<Box1 />}
+								onClick={handleOpenArchivedModal}
+								size="small"
+								sx={{
+									borderWidth: "1px",
+								}}
+							>
+								Ver Archivados
+							</Button>
+
+							{/* Botón para archivar seleccionados */}
+							{handleArchiveSelected && (
+								<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona contactos para archivar" : ""} placement="top">
+									<span>
+										<Button
+											variant="outlined"
+											color="primary"
+											startIcon={<Archive />}
+											onClick={() => handleArchiveSelected(selectedFlatRows)}
+											size="small"
+											disabled={Object.keys(selectedRowIds).length === 0}
+											sx={{
+												borderWidth: "1px",
+												"&.Mui-disabled": {
+													borderColor: "rgba(0, 0, 0, 0.12)",
+													color: "text.disabled",
+												},
+											}}
+										>
+											Archivar{" "}
+											{Object.keys(selectedRowIds).length > 0
+												? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "contacto" : "contactos"}`
+												: "contactos"}
+										</Button>
+									</span>
+								</Tooltip>
+							)}
+						</Stack>
+
+						{/* Segunda línea: Exportación CSV y Ver Guía */}
+						<Stack
+							direction={matchDownSM ? "column" : "row"}
+							alignItems="center"
+							spacing={2}
+							sx={{
+								width: "100%",
+								justifyContent: matchDownSM ? "flex-start" : "flex-end",
+							}}
+						>
+							{/* Exportación */}
+							<CSVExport
+								data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
+								filename={"contactos.csv"}
+							/>
+
+							{/* Botón para ver la guía */}
+							<Button variant="text" color="primary" startIcon={<InfoCircle />} onClick={handleOpenGuide} size="small">
+								Ver Guía
+							</Button>
+						</Stack>
 					</Stack>
 				</Stack>
 				<Table {...getTableProps()}>
@@ -358,6 +411,7 @@ const CustomerListPage = () => {
 	const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info" | "warning">("success");
 	const [archivedModalOpen, setArchivedModalOpen] = useState(false);
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
+	const [guideOpen, setGuideOpen] = useState(false);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -498,6 +552,10 @@ const CustomerListPage = () => {
 
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
+	}, []);
+
+	const handleOpenGuide = useCallback(() => {
+		setGuideOpen(true);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -722,6 +780,7 @@ const CustomerListPage = () => {
 					handleAdd={handleAddContact}
 					handleArchiveSelected={handleArchiveSelected}
 					handleOpenArchivedModal={handleOpenArchivedModal}
+					handleOpenGuide={handleOpenGuide}
 					renderRowSubComponent={renderRowSubComponent}
 					isLoading={isLoader}
 				/>
@@ -754,6 +813,9 @@ const CustomerListPage = () => {
 				loading={loadingUnarchive}
 				itemType="contacts"
 			/>
+
+			{/* Guía de contactos */}
+			<GuideContacts open={guideOpen} onClose={() => setGuideOpen(false)} />
 
 			<Snackbar
 				open={snackbarOpen}

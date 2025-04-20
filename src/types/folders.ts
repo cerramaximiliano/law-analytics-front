@@ -65,6 +65,7 @@ export interface Props {
 	handleAdd: () => void;
 	handleArchiveSelected?: (selectedRows: any[]) => void;
 	handleOpenArchivedModal?: () => void;
+	handleOpenGuide?: () => void;
 	renderRowSubComponent: FC<any>;
 	isLoading: boolean;
 }

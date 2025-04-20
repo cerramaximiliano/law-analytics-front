@@ -17,6 +17,7 @@ import {
 	Skeleton,
 	Snackbar,
 	Alert,
+	Box,
 } from "@mui/material";
 
 import {
@@ -55,7 +56,7 @@ import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1 } from "iconsax-react";
+import { Add, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
@@ -64,9 +65,19 @@ import { Folder, Props } from "types/folders";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
+import { GuideFolders } from "components/guides";
 // ==============================|| REACT TABLE ||============================== //
 
-function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArchiveSelected, isLoading, handleOpenArchivedModal }: Props) {
+function ReactTable({
+	columns,
+	data,
+	renderRowSubComponent,
+	handleAdd,
+	handleArchiveSelected,
+	isLoading,
+	handleOpenArchivedModal,
+	handleOpenGuide,
+}: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
@@ -133,12 +144,14 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArc
 			<>
 				<TableRowSelection selected={0} />
 				<Stack spacing={3}>
-					<Stack
-						direction={matchDownSM ? "column" : "row"}
-						spacing={1}
-						justifyContent="space-between"
-						alignItems="center"
-						sx={{ p: 3, pb: 0 }}
+					<Box
+						sx={{
+							p: 3,
+							pb: 0,
+							display: "flex",
+							flexDirection: "column",
+							gap: 2,
+						}}
 					>
 						<Skeleton width={200} height={40} />
 						<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
@@ -146,7 +159,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArc
 							<Skeleton width={150} height={40} />
 							<Skeleton width={100} height={40} />
 						</Stack>
-					</Stack>
+					</Box>
 					<Table>
 						<TableHead>
 							<TableRow>
@@ -186,59 +199,98 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, handleArc
 			<Stack spacing={3}>
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
-					spacing={1}
+					spacing={2}
 					justifyContent="space-between"
-					alignItems="center"
+					alignItems={matchDownSM ? "flex-start" : "flex-start"}
 					sx={{ p: 3, pb: 0 }}
 				>
-					<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
-					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
-						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
-							Agregar Causa
-						</Button>
+					{/* Lado izquierdo - Filtro y ordenamiento */}
+					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+						{/* Primera línea: Barra de búsqueda */}
+						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 
-						{/* Botón para ver elementos archivados */}
-						<Button
-							variant="outlined"
-							color="secondary"
-							startIcon={<Box1 />}
-							onClick={handleOpenArchivedModal}
-							size="small"
+						{/* Segunda línea: Selector de ordenamiento */}
+						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
+					</Stack>
+
+					{/* Lado derecho - Botones de acción */}
+					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+						{/* Primera línea: Agregar Causa, Ver Archivados, Archivar seleccionados */}
+						<Stack
+							direction={matchDownSM ? "column" : "row"}
+							alignItems="center"
+							spacing={2}
 							sx={{
-								borderWidth: "1px",
+								width: "100%",
+								justifyContent: matchDownSM ? "flex-start" : "flex-end",
 							}}
 						>
-							Ver Archivados
-						</Button>
+							{/* Acción principal */}
+							<Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
+								Agregar Causa
+							</Button>
 
-						{handleArchiveSelected && (
-							<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
-								<span>
-									<Button
-										variant="outlined"
-										color="primary"
-										startIcon={<Archive />}
-										onClick={() => handleArchiveSelected(selectedFlatRows)}
-										size="small"
-										disabled={Object.keys(selectedRowIds).length === 0}
-										sx={{
-											borderWidth: "1px",
-											"&.Mui-disabled": {
-												borderColor: "rgba(0, 0, 0, 0.12)",
-												color: "text.disabled",
-											},
-										}}
-									>
-										Archivar{" "}
-										{Object.keys(selectedRowIds).length > 0
-											? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
-											: "causas"}
-									</Button>
-								</span>
-							</Tooltip>
-						)}
-						<CSVExport data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data} filename={"causas.csv"} />
+							{/* Botón para ver elementos archivados */}
+							<Button
+								variant="outlined"
+								color="secondary"
+								startIcon={<Box1 />}
+								onClick={handleOpenArchivedModal}
+								size="small"
+								sx={{
+									borderWidth: "1px",
+								}}
+							>
+								Ver Archivados
+							</Button>
+
+							{/* Botón para archivar seleccionados */}
+							{handleArchiveSelected && (
+								<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
+									<span>
+										<Button
+											variant="outlined"
+											color="primary"
+											startIcon={<Archive />}
+											onClick={() => handleArchiveSelected(selectedFlatRows)}
+											size="small"
+											disabled={Object.keys(selectedRowIds).length === 0}
+											sx={{
+												borderWidth: "1px",
+												"&.Mui-disabled": {
+													borderColor: "rgba(0, 0, 0, 0.12)",
+													color: "text.disabled",
+												},
+											}}
+										>
+											Archivar{" "}
+											{Object.keys(selectedRowIds).length > 0
+												? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
+												: "causas"}
+										</Button>
+									</span>
+								</Tooltip>
+							)}
+						</Stack>
+
+						{/* Segunda línea: Exportación CSV y Ver Guía */}
+						<Stack
+							direction={matchDownSM ? "column" : "row"}
+							alignItems="center"
+							spacing={2}
+							sx={{
+								width: "100%",
+								justifyContent: matchDownSM ? "flex-start" : "flex-end",
+							}}
+						>
+							{/* Exportación */}
+							<CSVExport data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data} filename={"causas.csv"} />
+
+							{/* Botón para ver la guía */}
+							<Button variant="text" color="primary" startIcon={<InfoCircle />} onClick={handleOpenGuide} size="small">
+								Ver Guía
+							</Button>
+						</Stack>
 					</Stack>
 				</Stack>
 				<Table {...getTableProps()}>
@@ -312,6 +364,7 @@ const FoldersLayout = () => {
 	const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info" | "warning">("success");
 	const [archivedModalOpen, setArchivedModalOpen] = useState(false);
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
+	const [guideOpen, setGuideOpen] = useState(false);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -442,6 +495,10 @@ const FoldersLayout = () => {
 
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
+	}, []);
+
+	const handleOpenGuide = useCallback(() => {
+		setGuideOpen(true);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -609,6 +666,7 @@ const FoldersLayout = () => {
 					data={folders}
 					handleAdd={handleAddFolder}
 					handleArchiveSelected={handleArchiveSelected}
+					handleOpenGuide={handleOpenGuide}
 					handleOpenArchivedModal={handleOpenArchivedModal}
 					renderRowSubComponent={renderRowSubComponent}
 					isLoading={isLoader}
@@ -638,6 +696,9 @@ const FoldersLayout = () => {
 				loading={loadingUnarchive}
 				itemType="folders"
 			/>
+
+			{/* Guía de causas */}
+			<GuideFolders open={guideOpen} onClose={() => setGuideOpen(false)} />
 
 			<Snackbar
 				open={snackbarOpen}
