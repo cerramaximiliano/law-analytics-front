@@ -12,7 +12,6 @@ import {
 	DialogTitle,
 	DialogContent,
 	DialogActions,
-	IconButton,
 	Step,
 	Stepper,
 	StepLabel,
@@ -25,20 +24,7 @@ import { useTheme } from "@mui/material/styles";
 
 // project imports
 import { PopupTransition } from "components/@extended/Transitions";
-import {
-	Coin,
-	ArrowRight2,
-	CloseCircle,
-	Next,
-	ArrowLeft,
-	ArrowRight,
-	Copy,
-	Sms,
-	Printer,
-	Save2,
-	DocumentText,
-	Link21,
-} from "iconsax-react";
+import { Coin, ArrowRight2, Next, ArrowLeft, ArrowRight, Copy, Sms, Printer, Save2, DocumentText, Link21 } from "iconsax-react";
 
 // ==============================|| GUÍA INTERESES - COMPONENTES INTERNOS ||============================== //
 
@@ -422,9 +408,7 @@ const GuideIntereses: React.FC<GuideInteresesProps> = ({ open, onClose }) => {
 					<Coin variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.success.main }} />
 					<Typography variant="h3">Guía de Calculadora de Intereses</Typography>
 				</Box>
-				<IconButton edge="end" onClick={handleClose} aria-label="close">
-					<CloseCircle size={24} />
-				</IconButton>
+				{/* El botón de cierre ha sido eliminado de aquí */}
 			</DialogTitle>
 
 			<DialogContent sx={{ p: 0 }}>
@@ -444,6 +428,9 @@ const GuideIntereses: React.FC<GuideInteresesProps> = ({ open, onClose }) => {
 					Anterior
 				</Button>
 				<Box sx={{ flex: "1 1 auto" }} />
+				<Button color="error" onClick={handleClose}>
+					Cerrar
+				</Button>
 				{activeStep === steps.length - 1 ? (
 					<Button variant="contained" color="primary" onClick={handleClose} endIcon={<Next />}>
 						Finalizar

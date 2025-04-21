@@ -41,6 +41,10 @@ export interface Folder {
 	judFolder?: JudFolder; // Información del juicio (opcional)
 	userId: string; // ID del usuario asociado
 	groupId?: string; // ID del grupo asociado (opcional)
+	entryMethod?: "manual" | "automatic"; // Método de ingreso de la causa
+	expedientNumber?: string; // Número de expediente para ingreso automático
+	expedientYear?: string; // Año del expediente para ingreso automático
+	pjn?: boolean; // Indica si los datos provienen del Poder Judicial de la Nación
 }
 // Tipos del estado de la carpeta
 export type FolderStatus = "Nueva" | "En Progreso" | "Cerrada" | "Pendiente"; // Diferentes estados de una carpeta

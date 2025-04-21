@@ -147,13 +147,7 @@ const applications: NavItemType = {
 			type: "item",
 			url: "/suscripciones/tables",
 		},
-		{
-			id: "help",
-			title: <FormattedMessage id="Ayuda" />,
-			icon: icons.help,
-			type: "item",
-			url: "/ayuda",
-		},
+
 		{
 			id: "profile",
 			title: <FormattedMessage id="Perfil" />,
@@ -174,6 +168,13 @@ const applications: NavItemType = {
 					url: "/apps/profiles/account/my-account",
 				},
 			],
+		},
+		{
+			id: "help",
+			title: <FormattedMessage id="Ayuda" />,
+			icon: icons.help,
+			type: "item",
+			url: "/ayuda",
 		},
 	],
 };

@@ -12,7 +12,6 @@ import {
 	DialogTitle,
 	DialogContent,
 	DialogActions,
-	IconButton,
 	Step,
 	Stepper,
 	StepLabel,
@@ -28,7 +27,6 @@ import { PopupTransition } from "components/@extended/Transitions";
 import {
 	FolderAdd,
 	ArrowRight2,
-	CloseCircle,
 	Next,
 	ArrowLeft,
 	ArrowRight,
@@ -608,9 +606,7 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 					<FolderAdd variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.primary.main }} />
 					<Typography variant="h3">Guía de Gestión de Causas</Typography>
 				</Box>
-				<IconButton edge="end" onClick={handleClose} aria-label="close">
-					<CloseCircle size={24} />
-				</IconButton>
+				{/* El botón de cierre ha sido eliminado de aquí */}
 			</DialogTitle>
 
 			<DialogContent sx={{ p: 0 }}>
@@ -630,6 +626,9 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 					Anterior
 				</Button>
 				<Box sx={{ flex: "1 1 auto" }} />
+				<Button color="error" onClick={handleClose}>
+					Cerrar
+				</Button>
 				{activeStep === steps.length - 1 ? (
 					<Button variant="contained" color="primary" onClick={handleClose} endIcon={<Next />}>
 						Finalizar

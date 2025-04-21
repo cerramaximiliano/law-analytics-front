@@ -41,7 +41,7 @@ export function GlobalFilter({ preGlobalFilteredRows, globalFilter, setGlobalFil
 			placeholder={`Buscar en ${count} registros...`}
 			id="start-adornment-email"
 			startAdornment={<SearchNormal1 size={18} />}
-			style={{ maxHeight: "30.75px" }}
+			style={{ maxHeight: "30.75px", width: "100%" }}
 			{...other}
 		/>
 	);

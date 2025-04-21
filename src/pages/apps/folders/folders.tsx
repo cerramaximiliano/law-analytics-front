@@ -205,7 +205,7 @@ function ReactTable({
 					sx={{ p: 3, pb: 0 }}
 				>
 					{/* Lado izquierdo - Filtro y ordenamiento */}
-					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "300px" }}>
 						{/* Primera línea: Barra de búsqueda */}
 						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 

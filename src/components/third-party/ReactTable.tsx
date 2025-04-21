@@ -447,7 +447,7 @@ export const SortingSelect = ({ sortBy, setSortBy, allColumns }: SortingSelectPr
 	};
 
 	return (
-		<FormControl sx={{ width: 200 }}>
+		<FormControl sx={{ width: "100%" }}>
 			<Select
 				id="column-hiding"
 				displayEmpty

@@ -82,15 +82,15 @@ interface Props {
 	handleOpenGuide: () => void;
 }
 
-function ReactTable({ 
-	columns, 
-	data, 
-	renderRowSubComponent, 
-	handleAdd, 
-	handleArchiveSelected, 
-	isLoading, 
+function ReactTable({
+	columns,
+	data,
+	renderRowSubComponent,
+	handleAdd,
+	handleArchiveSelected,
+	isLoading,
 	handleOpenArchivedModal,
-	handleOpenGuide
+	handleOpenGuide,
 }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
