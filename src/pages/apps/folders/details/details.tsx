@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { ToggleButtonGroup, ToggleButton, Tooltip, Grid } from "@mui/material";
 import { Category, TableDocument } from "iconsax-react";
 import MainCard from "components/MainCard";
+import { useBreadcrumb } from "contexts/BreadcrumbContext";
 
 // Components
 import CalcTable from "./components/CalcTable";
@@ -61,6 +62,18 @@ const Details = () => {
 	const [alignment, setAlignment] = useState<string>("two");
 	const [isColumn, setIsColumn] = useState(false);
 	const [isInitialLoad, setIsInitialLoad] = useState(true);
+	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
+
+	// Format folder name with first letter of each word capitalized
+	const formatFolderName = (name: string) => {
+		if (!name) return '';
+		// Split by spaces, capitalize each word, then join back
+		return name
+			.toLowerCase()
+			.split(' ')
+			.map(word => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(' ');
+	};
 
 	// Optimized selectors with specific state slices
 	const folder = useSelector((state: StateType) => state.folder.folder);
@@ -103,6 +116,18 @@ const Details = () => {
 
 		return () => clearTimeout(timeoutId);
 	}, [id, contacts]);
+	
+	// Update breadcrumb with folder name
+	useEffect(() => {
+		if (folder?.folderName) {
+			// Use formatted folder name for the breadcrumb
+			setCustomLabel(`apps/folders/details/${id}`, formatFolderName(folder.folderName));
+		}
+		
+		return () => {
+			clearCustomLabel(`apps/folders/details/${id}`);
+		};
+	}, [folder, id, setCustomLabel, clearCustomLabel, formatFolderName]);
 
 	// Memoized grid size calculation
 	const getGridSize = useMemo(
@@ -137,6 +162,11 @@ const Details = () => {
 		[alignment, handleAlignment],
 	);
 
+	// Create a dynamic title that shows just the formatted folder name
+	const dynamicTitle = useMemo(() => 
+		folder?.folderName ? formatFolderName(folder.folderName) : "Detalles de la Causa", 
+	[folder, formatFolderName]);
+
 	// Memoized components
 	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);
 
@@ -160,7 +190,7 @@ const Details = () => {
 	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" folderName={folder?.folderName} />, [folder]);
 
 	return (
-		<MainCard title="Detalles de la Causa" secondary={renderViewOptions}>
+		<MainCard title={dynamicTitle} secondary={renderViewOptions}>
 			<Grid container spacing={3}>
 				{/* Row 1 */}
 				<Grid item {...getGridSize(6)} sx={GRID_STYLES}>

@@ -8,6 +8,7 @@ import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 
 // project-imports
 import MainCard from "components/MainCard";
+import { useBreadcrumb } from "contexts/BreadcrumbContext";
 
 // assets
 import { ArrowRight2, Buildings2, Home3 } from "iconsax-react";
@@ -53,6 +54,7 @@ const Breadcrumbs = ({
 }: Props) => {
 	const theme = useTheme();
 	const location = useLocation();
+	const { customLabels } = useBreadcrumb();
 	const [main, setMain] = useState<NavItemType | undefined>();
 	const [item, setItem] = useState<NavItemType>();
 
@@ -171,7 +173,7 @@ const Breadcrumbs = ({
 					{title && titleBottom && (
 						<Grid item sx={{ mt: card === false ? 0 : 1 }}>
 							<Typography variant="h2" sx={{ fontWeight: 700 }}>
-								{main.title}
+								{itemTitle}
 							</Typography>
 						</Grid>
 					)}
@@ -183,7 +185,9 @@ const Breadcrumbs = ({
 
 	// items
 	if (item && item.type === "item") {
-		itemTitle = item.title;
+		// Use custom label if available, otherwise use item title
+		const pathWithoutPrefix = location.pathname.startsWith('/') ? location.pathname.substring(1) : location.pathname;
+		itemTitle = customLabels[pathWithoutPrefix] || item.title;
 
 		ItemIcon = item.icon ? item.icon : Buildings2;
 		itemContent = (
@@ -213,7 +217,7 @@ const Breadcrumbs = ({
 						{title && !titleBottom && (
 							<Grid item>
 								<Typography variant="h2" sx={{ fontWeight: 700 }}>
-									{item.title}
+									{itemTitle}
 								</Typography>
 							</Grid>
 						)}
@@ -230,14 +234,38 @@ const Breadcrumbs = ({
 									{icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
 									{(!icon || icons) && "Home"}
 								</Typography>
-								{mainContent}
-								{itemContent}
+
+								{/* Custom breadcrumb path for folder details and calculator pages */}
+								{location.pathname.includes("/apps/folders/details/") ? (
+									<Typography
+										component={Link}
+										to="/apps/folders/list"
+										variant="h6"
+										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+										color="secondary"
+									>
+										Causas
+									</Typography>
+								) : location.pathname.includes("/calculator/") || location.pathname.includes("/apps/calc") ? (
+									<Typography
+										component={location.pathname === "/apps/calc" ? "span" : Link}
+										to={location.pathname === "/apps/calc" ? undefined : "/apps/calc"}
+										variant="h6"
+										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+										color="secondary"
+									>
+										Cálculos
+									</Typography>
+								) : mainContent}
+								
+								{/* Solo mostrar itemContent si no estamos en la raíz de calculadoras */}
+								{location.pathname === "/apps/calc" ? null : itemContent}
 							</MuiBreadcrumbs>
 						</Grid>
 						{title && titleBottom && (
 							<Grid item sx={{ mt: card === false ? 0 : 1 }}>
 								<Typography variant="h2" sx={{ fontWeight: 700 }}>
-									{item.title}
+									{itemTitle}
 								</Typography>
 							</Grid>
 						)}

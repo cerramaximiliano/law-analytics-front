@@ -401,11 +401,6 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 										type="submit"
 										variant="contained"
 										disabled={isSubmitting}
-										sx={{
-											minWidth: 120,
-											py: 1.25,
-											fontWeight: 600,
-										}}
 									>
 										{event ? "Editar" : "Agregar"}
 									</Button>

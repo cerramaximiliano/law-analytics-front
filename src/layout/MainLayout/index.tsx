@@ -11,6 +11,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import HorizontalBar from "./Drawer/HorizontalBar";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
+import { BreadcrumbProvider } from "contexts/BreadcrumbContext";
 
 import { DRAWER_WIDTH } from "config";
 import navigation from "menu-items";
@@ -47,21 +48,23 @@ const MainLayout = () => {
 
 			<Box component="main" sx={{ width: `calc(100% - ${DRAWER_WIDTH}px)`, flexGrow: 1, p: { xs: 2, md: 3 } }}>
 				<Toolbar sx={{ mt: isHorizontal ? 8 : "inherit", mb: isHorizontal ? 2 : "inherit" }} />
-				<Container
-					maxWidth={container ? "xl" : false}
-					sx={{
-						xs: 0,
-						...(container && { px: { xs: 0, md: 2 } }),
-						position: "relative",
-						minHeight: "calc(100vh - 110px)",
-						display: "flex",
-						flexDirection: "column",
-					}}
-				>
-					<Breadcrumbs navigation={navigation} title titleBottom card={false} divider={false} />
-					<Outlet />
-					<Footer />
-				</Container>
+				<BreadcrumbProvider>
+					<Container
+						maxWidth={container ? "xl" : false}
+						sx={{
+							xs: 0,
+							...(container && { px: { xs: 0, md: 2 } }),
+							position: "relative",
+							minHeight: "calc(100vh - 110px)",
+							display: "flex",
+							flexDirection: "column",
+						}}
+					>
+						<Breadcrumbs navigation={navigation} title titleBottom card={false} divider={false} />
+						<Outlet />
+						<Footer />
+					</Container>
+				</BreadcrumbProvider>
 			</Box>
 		</Box>
 	);

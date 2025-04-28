@@ -13,6 +13,7 @@ export interface Event {
 	userId?: string; // ID del usuario asociado
 	groupId?: string; // ID del grupo asociado (opcional)
 	folderId?: string;
+	folderName?: string;
 }
 
 // Estado del reducer de eventos
