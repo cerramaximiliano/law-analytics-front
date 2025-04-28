@@ -19,6 +19,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import CalendarStyled from "sections/apps/calendar/CalendarStyled";
 import Toolbar from "sections/apps/calendar/Toolbar";
 import AddEventForm from "sections/apps/calendar/AddEventForm";
+import { GuideCalendar } from "components/guides";
 
 import {
 	//getEvents,
@@ -30,7 +31,7 @@ import {
 } from "store/reducers/calendar";
 
 // types
-import { Add } from "iconsax-react";
+import { Add, InfoCircle } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { getEventsByUserId } from "store/reducers/events";
 
@@ -40,6 +41,7 @@ const Calendar = () => {
 	const matchDownSM = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
 	const [loading, setLoading] = useState<boolean>(true);
+	const [guideOpen, setGuideOpen] = useState<boolean>(false);
 
 	const { calendarView, isModalOpen, selectedRange } = useSelector((state) => state.calendar);
 	const { events } = useSelector((state) => state.events);
@@ -229,6 +231,24 @@ const Calendar = () => {
 					onClick={handleModal}
 				/>
 			</Tooltip>
+			
+			<Tooltip title="Ver Guía">
+				<SpeedDial
+					ariaLabel="guide-fab"
+					sx={{
+						display: "inline-flex",
+						position: "fixed",
+						bottom: 24,
+						right: 24,
+						transform: "translate(0, 0)",
+					}}
+					icon={<InfoCircle variant="Bold" />}
+					onClick={() => setGuideOpen(true)}
+				/>
+			</Tooltip>
+
+			{/* Guía del Calendario */}
+			<GuideCalendar open={guideOpen} onClose={() => setGuideOpen(false)} />
 		</Box>
 	);
 };

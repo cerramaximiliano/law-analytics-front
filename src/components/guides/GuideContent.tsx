@@ -20,6 +20,7 @@ import {
 	Coin,
 	Folder,
 	Profile2User,
+	Calendar,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES PARA CONTENIDOS DE GUÍAS ||============================== //
@@ -900,6 +901,202 @@ export const FoldersContent = () => {
 			<Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
 				<Folder variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.warning.main }} />
 				<Typography variant="h3">Guía de Carpetas</Typography>
+			</Box>
+
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+				{steps.map((step, index) => (
+					<Step key={index}>
+						<StepLabel>{step.title}</StepLabel>
+					</Step>
+				))}
+			</Stepper>
+
+			<Box sx={{ bgcolor: "background.paper", borderRadius: 2, mb: 3, boxShadow: theme.shadows[4] }}>
+				{steps[activeStep] && <GuideStep title={steps[activeStep].title} content={steps[activeStep].content} />}
+			</Box>
+
+			<Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+				<Button variant="outlined" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
+					Anterior
+				</Button>
+				{activeStep === steps.length - 1 ? (
+					<Button variant="contained" color="primary" onClick={() => setActiveStep(0)} endIcon={<Next />}>
+						Volver al inicio
+					</Button>
+				) : (
+					<Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
+						Siguiente
+					</Button>
+				)}
+			</Box>
+		</Box>
+	);
+};
+
+// ==============================|| CONTENIDO PARA LA GUÍA DEL CALENDARIO ||============================== //
+
+export const CalendarContent = () => {
+	const [activeStep, setActiveStep] = useState(0);
+	const theme = useTheme();
+
+	const handleNext = () => {
+		setActiveStep((prevStep) => prevStep + 1);
+	};
+
+	const handleBack = () => {
+		setActiveStep((prevStep) => prevStep - 1);
+	};
+
+	const steps = [
+		{
+			title: "Calendario y Agenda",
+			content: (
+				<>
+					<Typography paragraph>
+						El calendario es una herramienta esencial que te permite organizar tus eventos legales, gestionar recordatorios y vincular
+						actividades a tus causas.
+					</Typography>
+					<Alert severity="info" sx={{ mt: 2 }}>
+						<AlertTitle>Características principales:</AlertTitle>
+						<Typography component="div">
+							<ul>
+								<li>Gestión de diferentes tipos de eventos: audiencias, vencimientos, reuniones</li>
+								<li>Sistema de notificaciones y recordatorios por email y web</li>
+								<li>Integración completa con el módulo de causas</li>
+								<li>Múltiples vistas para organizar tu tiempo (día, semana, mes, agenda)</li>
+							</ul>
+						</Typography>
+					</Alert>
+				</>
+			),
+		},
+		{
+			title: "Creación de Eventos",
+			content: (
+				<>
+					<Typography paragraph>El sistema ofrece diferentes formas de crear eventos en tu calendario:</Typography>
+
+					<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Desde el Calendario
+						</Typography>
+						<Stack spacing={1.5}>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>Haz clic en el botón "+" en la esquina inferior derecha</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>Selecciona directamente una fecha o rango de tiempo en el calendario</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>Completa los detalles del evento y selecciona el tipo apropiado</Typography>
+							</Box>
+						</Stack>
+					</Box>
+
+					<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Desde una Causa
+						</Typography>
+						<Stack spacing={1.5}>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>Accede a la vista detallada de la causa</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>Navega a la sección de calendario o eventos</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>Crea eventos que quedarán automáticamente vinculados a esa causa</Typography>
+							</Box>
+						</Stack>
+					</Box>
+
+					<Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+							Tipos de eventos disponibles
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2" component="div">
+								<ul>
+									<li>
+										<strong>Audiencia:</strong> Para eventos judiciales (color azul)
+									</li>
+									<li>
+										<strong>Vencimiento:</strong> Para plazos procesales y fechas límite (color rojo)
+									</li>
+									<li>
+										<strong>Reunión:</strong> Para encuentros con clientes o colegas (color verde)
+									</li>
+									<li>
+										<strong>Otro:</strong> Para cualquier otro tipo de evento (color amarillo)
+									</li>
+								</ul>
+							</Typography>
+						</Box>
+					</Paper>
+				</>
+			),
+		},
+		{
+			title: "Notificaciones y Recordatorios",
+			content: (
+				<>
+					<Typography paragraph>
+						El sistema incluye diversas opciones de notificación para que nunca pierdas un evento importante:
+					</Typography>
+
+					<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Sistema de recordatorios
+						</Typography>
+						<Stack spacing={1.5}>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>
+									<strong>Notificaciones por correo:</strong> Recibe alertas en tu email con la anticipación que configures
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>
+									<strong>Notificaciones en la plataforma:</strong> Alertas dentro de la aplicación cuando estés conectado
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>
+									<strong>Notificaciones push:</strong> Alertas en tu navegador incluso cuando no tengas la aplicación abierta
+								</Typography>
+							</Box>
+						</Stack>
+					</Box>
+
+					<Alert severity="success" sx={{ mt: 3 }}>
+						<AlertTitle>Personalización</AlertTitle>
+						<Typography paragraph>
+							Puedes configurar tus preferencias de notificación en la sección de configuración de tu perfil, donde podrás elegir:
+						</Typography>
+						<ul>
+							<li>El tiempo de anticipación de los recordatorios (1 día, 3 días, 1 semana)</li>
+							<li>Qué tipos de eventos generan notificaciones</li>
+							<li>Los canales por los que prefieres recibir las alertas</li>
+						</ul>
+					</Alert>
+				</>
+			),
+		},
+	];
+
+	return (
+		<Box>
+			<Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+				<Calendar variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.info.main }} />
+				<Typography variant="h3">Guía del Calendario</Typography>
 			</Box>
 
 			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>

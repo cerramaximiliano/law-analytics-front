@@ -5,11 +5,11 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MainCard from "components/MainCard";
-import { LaboralContent, InteresesContent, FoldersContent, ContactsContent } from "components/guides/GuideContent";
+import { LaboralContent, InteresesContent, FoldersContent, ContactsContent, CalendarContent } from "components/guides/GuideContent";
 import { useTheme } from "@mui/material/styles";
 
 // Icons
-import { Book1, ArrowRight2, Folder, Calculator, Coin, DocumentText, InfoCircle, MessageQuestion, Profile2User } from "iconsax-react";
+import { Book1, ArrowRight2, Folder, Calculator, Coin, DocumentText, InfoCircle, MessageQuestion, Profile2User, Calendar } from "iconsax-react";
 
 // ==============================|| COMPONENTES DE AYUDA ||============================== //
 
@@ -39,7 +39,7 @@ const GuidesSection = () => {
 
 			<Grid container spacing={3} sx={{ mt: 1 }}>
 				{/* Guía Laboral */}
-				<Grid item xs={12} md={3}>
+				<Grid item xs={12} md={4} lg={2.4}>
 					<Card
 						sx={{
 							height: "100%",
@@ -74,7 +74,7 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Intereses */}
-				<Grid item xs={12} md={3}>
+				<Grid item xs={12} md={4} lg={2.4}>
 					<Card
 						sx={{
 							height: "100%",
@@ -109,7 +109,7 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Carpetas */}
-				<Grid item xs={12} md={3}>
+				<Grid item xs={12} md={4} lg={2.4}>
 					<Card
 						sx={{
 							height: "100%",
@@ -144,7 +144,7 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Contactos */}
-				<Grid item xs={12} md={3}>
+				<Grid item xs={12} md={4} lg={2.4}>
 					<Card
 						sx={{
 							height: "100%",
@@ -177,7 +177,42 @@ const GuidesSection = () => {
 						</CardActionArea>
 					</Card>
 				</Grid>
-			</Grid>
+				
+				{/* Guía Calendario */}
+				<Grid item xs={12} md={4} lg={2.4}>
+						<Card
+							sx={{
+								height: "100%",
+								transition: "all 0.2s",
+								"&:hover": {
+									boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+								},
+							}}
+						>
+							<CardActionArea onClick={() => handleExpandGuide("calendario")}>
+								<CardContent sx={{ textAlign: "center", pb: 3 }}>
+									<Calendar
+										variant="Bulk"
+										size={48}
+										style={{
+											color: theme.palette.secondary.main,
+											marginBottom: 16,
+										}}
+									/>
+									<Typography variant="h4" gutterBottom>
+										Calendario
+									</Typography>
+									<Typography variant="body2" color="textSecondary">
+										Aprende a gestionar tu agenda, eventos judiciales y recibir recordatorios de fechas importantes.
+									</Typography>
+									<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+										{expandedGuide === "calendario" ? "Cerrar guía" : "Ver guía"}
+									</Button>
+								</CardContent>
+							</CardActionArea>
+						</Card>
+					</Grid>
+				</Grid>
 
 			{/* Contenidos expandidos de las guías */}
 			<Collapse in={expandedGuide === "laboral"} timeout="auto" unmountOnExit>
@@ -233,6 +268,20 @@ const GuidesSection = () => {
 					}}
 				>
 					<ContactsContent />
+				</Paper>
+			</Collapse>
+
+			<Collapse in={expandedGuide === "calendario"} timeout="auto" unmountOnExit>
+				<Paper
+					elevation={3}
+					sx={{
+						mt: 3,
+						mb: 2,
+						p: 2,
+						borderTop: `3px solid ${theme.palette.secondary.main}`,
+					}}
+				>
+					<CalendarContent />
 				</Paper>
 			</Collapse>
 		</Box>
