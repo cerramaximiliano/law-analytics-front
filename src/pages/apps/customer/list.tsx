@@ -43,7 +43,6 @@ import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
 import {
-	CSVExport,
 	HeaderSort,
 	IndeterminateCheckbox,
 	SortingSelect,
@@ -51,6 +50,7 @@ import {
 	TableRowSelection,
 	EmptyTable,
 } from "components/third-party/ReactTable";
+import { CSVLink } from "react-csv";
 
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import CustomerView from "sections/apps/customer/CustomerView";
@@ -61,7 +61,7 @@ import LinkToCause from "sections/apps/customer/LinkToCause";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1, InfoCircle } from "iconsax-react";
+import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1, InfoCircle, DocumentDownload } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
@@ -103,36 +103,36 @@ function ReactTable({
 		() =>
 			matchDownSM
 				? [
-						"email",
-						"lastName",
-						"_id",
-						"address",
-						"status",
-						"state",
-						"zipCode",
-						"nationality",
-						"document",
-						"cuit",
-						"activity",
-						"company",
-						"fiscal",
-						"folderIds",
-				  ]
+					"email",
+					"lastName",
+					"_id",
+					"address",
+					"status",
+					"state",
+					"zipCode",
+					"nationality",
+					"document",
+					"cuit",
+					"activity",
+					"company",
+					"fiscal",
+					"folderIds",
+				]
 				: [
-						"email",
-						"lastName",
-						"_id",
-						"address",
-						"state",
-						"zipCode",
-						"nationality",
-						"document",
-						"cuit",
-						"activity",
-						"company",
-						"fiscal",
-						"folderIds",
-				  ],
+					"email",
+					"lastName",
+					"_id",
+					"address",
+					"state",
+					"zipCode",
+					"nationality",
+					"document",
+					"cuit",
+					"activity",
+					"company",
+					"fiscal",
+					"folderIds",
+				],
 		[matchDownSM],
 	);
 
@@ -326,16 +326,36 @@ function ReactTable({
 								justifyContent: matchDownSM ? "flex-start" : "flex-end",
 							}}
 						>
-							{/* Exportación */}
-							<CSVExport
-								data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
-								filename={"contactos.csv"}
-							/>
+							{/* Exportación CSV personalizada */}
+							<Tooltip title="Exportar a CSV">
+								<IconButton
+									color="primary"
+									size="medium"
+									sx={{
+										position: 'relative',
+									}}
+								>
+									<CSVLink
+										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
+										filename={"contactos.csv"}
+										style={{
+											color: 'inherit',
+											display: 'flex',
+											alignItems: 'center',
+											textDecoration: 'none'
+										}}
+									>
+										<DocumentDownload variant="Bulk" size={22} />
+									</CSVLink>
+								</IconButton>
+							</Tooltip>
 
 							{/* Botón para ver la guía */}
-							<Button variant="text" color="primary" startIcon={<InfoCircle />} onClick={handleOpenGuide} size="small">
-								Ver Guía
-							</Button>
+							<Tooltip title="Ver Guía">
+								<IconButton color="success" onClick={handleOpenGuide}>
+									<InfoCircle variant="Bulk" />
+								</IconButton>
+							</Tooltip>
 						</Stack>
 					</Stack>
 				</Stack>

@@ -36,6 +36,7 @@ export type CalculatorType = {
 export interface CalculatorState {
 	calculators: CalculatorType[];
 	selectedCalculators: CalculatorType[];
+	archivedCalculators: CalculatorType[];
 	isLoader: boolean;
 	error: string | null;
 }

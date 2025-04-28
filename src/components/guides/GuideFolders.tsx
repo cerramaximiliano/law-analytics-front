@@ -40,6 +40,7 @@ import {
 	Sms,
 	Calculator,
 	Link21,
+	DocumentUpload,
 } from "iconsax-react";
 
 // ==============================|| GUÍA CARPETAS - COMPONENTES INTERNOS ||============================== //
@@ -118,6 +119,7 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 						<Typography component="div">
 							<ul>
 								<li>Crear y gestionar causas judiciales</li>
+								<li>Importar causas automáticamente desde el Poder Judicial</li>
 								<li>Organizar documentos y cálculos asociados a cada causa</li>
 								<li>Manejar el estado y seguimiento de tus expedientes</li>
 								<li>Archivar causas finalizadas y mantener tu sistema organizado</li>
@@ -151,6 +153,69 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 					<Typography paragraph>
 						Al crear una nueva causa, asegúrate de incluir toda la información relevante como jurisdicción, materia, parte representada y
 						fechas importantes para facilitar su seguimiento posterior.
+					</Typography>
+				</>
+			),
+		},
+		{
+			title: "Importación Automática de Causas",
+			content: (
+				<>
+					<Typography paragraph>
+						Ahora puedes importar causas directamente desde el Poder Judicial de la Nación de forma automática:
+					</Typography>
+					<Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.info.lighter, 0.2) }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Proceso de Importación:
+						</Typography>
+						<Stack spacing={2}>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Haz clic en el botón "Agregar Causa" en la parte superior derecha de la tabla</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>En el formulario, selecciona la pestaña "Importar Automáticamente"</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Selecciona la jurisdicción del Poder Judicial (ej. Civil, Laboral, Seguridad Social)</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Ingresa el número de expediente y el año</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Haz clic en "Siguiente" y luego "Guardar" para importar la causa</Typography>
+							</Box>
+						</Stack>
+					</Paper>
+
+					<Alert severity="warning" sx={{ mb: 2 }}>
+						<AlertTitle>Causas Pendientes de Verificación</AlertTitle>
+						<Typography paragraph>
+							Las causas importadas automáticamente aparecerán con estado <strong>"Pendiente de verificación"</strong> hasta que la
+							información sea validada por el sistema. Esto se indica visualmente en la tabla de causas.
+						</Typography>
+						<Typography>
+							Una vez que los datos hayan sido verificados y procesados, se actualizarán automáticamente con la información completa del
+							expediente.
+						</Typography>
+					</Alert>
+
+					<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ mt: 3 }}>
+						Jurisdicciones disponibles para importación automática:
+					</Typography>
+					<Stack spacing={1} sx={{ mb: 2 }}>
+						<Typography>• Cámara Nacional de Apelaciones en lo Civil</Typography>
+						<Typography>• Cámara Federal de la Seguridad Social</Typography>
+						<Typography>• Cámara Nacional de Apelaciones del Trabajo</Typography>
+					</Stack>
+
+					<Typography paragraph>
+						La importación automática te permite ahorrar tiempo en la carga de datos y reducir errores de transcripción, facilitando la
+						gestión de múltiples expedientes.
 					</Typography>
 				</>
 			),
@@ -570,6 +635,10 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 							<Box display="flex" alignItems="center">
 								<DocumentText size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
 								<Typography>Exporta regularmente tus causas a CSV como respaldo adicional o para compartir con colaboradores</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<DocumentUpload size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
+								<Typography>Utiliza la importación automática para ahorrar tiempo en la carga de expedientes del Poder Judicial</Typography>
 							</Box>
 						</Stack>
 					</Box>

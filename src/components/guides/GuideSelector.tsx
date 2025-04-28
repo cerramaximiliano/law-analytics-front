@@ -1,14 +1,14 @@
 import { useState } from "react";
 
 // material-ui
-import { Typography, Box, Dialog, DialogTitle, DialogContent, IconButton, Grid, Card, CardContent } from "@mui/material";
+import { Typography, Box, Dialog, DialogTitle, DialogContent, Grid, Card, CardContent } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 // project imports
 import { PopupTransition } from "components/@extended/Transitions";
 import GuideLaboral from "./GuideLaboral";
 import GuideIntereses from "./GuideIntereses";
-import { Calculator, Coin, CloseCircle, Warning2 } from "iconsax-react";
+import { Calculator, Coin, Warning2 } from "iconsax-react";
 
 // ==============================|| COMPONENTE SELECTOR DE GUÍAS ||============================== //
 
@@ -55,9 +55,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 						<Warning2 variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.primary.main }} />
 						<Typography variant="h3">Selecciona una Guía</Typography>
 					</Box>
-					<IconButton edge="end" onClick={onClose} aria-label="close">
-						<CloseCircle size={24} />
-					</IconButton>
+
 				</DialogTitle>
 				<DialogContent sx={{ p: 3 }}>
 					<Grid container spacing={3} sx={{ mt: 1 }}>

@@ -41,13 +41,13 @@ import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
 import {
 	IndeterminateCheckbox,
-	CSVExport,
 	EmptyTable,
 	HeaderSort,
 	SortingSelect,
 	TablePagination,
 	TableRowSelection,
 } from "components/third-party/ReactTable";
+import { CSVLink } from "react-csv";
 
 import AddFolder from "sections/apps/folders/AddFolder";
 import FolderView from "sections/apps/folders/FolderView";
@@ -56,12 +56,13 @@ import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle } from "iconsax-react";
+import { Add, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle, DocumentDownload } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
 import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
+import moment from "moment";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
@@ -283,13 +284,36 @@ function ReactTable({
 								justifyContent: matchDownSM ? "flex-start" : "flex-end",
 							}}
 						>
-							{/* Exportación */}
-							<CSVExport data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data} filename={"causas.csv"} />
+							{/* Exportación CSV personalizada */}
+							<Tooltip title="Exportar a CSV">
+								<IconButton
+									color="primary"
+									size="medium"
+									sx={{
+										position: 'relative',
+									}}
+								>
+									<CSVLink
+										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data}
+										filename={"causas.csv"}
+										style={{
+											color: 'inherit',
+											display: 'flex',
+											alignItems: 'center',
+											textDecoration: 'none'
+										}}
+									>
+										<DocumentDownload variant="Bulk" size={22} />
+									</CSVLink>
+								</IconButton>
+							</Tooltip>
 
 							{/* Botón para ver la guía */}
-							<Button variant="text" color="primary" startIcon={<InfoCircle />} onClick={handleOpenGuide} size="small">
-								Ver Guía
-							</Button>
+							<Tooltip title="Ver Guía">
+								<IconButton color="success" onClick={handleOpenGuide}>
+									<InfoCircle variant="Bulk" />
+								</IconButton>
+							</Tooltip>
 						</Stack>
 					</Stack>
 				</Stack>
@@ -551,10 +575,48 @@ const FoldersLayout = () => {
 			{
 				Header: "Carátula",
 				accessor: "folderName",
+				Cell: ({ value }: { value: any }) => {
+					if (value === "Pendiente") {
+						return (
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+							</Stack>
+						);
+					}
+					return <span style={{ textTransform: "uppercase" }}>{value}</span>;
+				},
 			},
 			{
 				Header: "Materia",
 				accessor: "materia",
+				Cell: ({ value }: { value: any }) => {
+					if (!value) return null;
+
+					// Lista de palabras que no deben capitalizarse (excepto si son la primera palabra)
+					const lowerCaseWords = ["de", "y", "para", "inc.", "por", "el", "la", "los", "del", "por", "a", "las"];
+
+					// Convierte todo a minúsculas primero
+					const lowercaseValue = value.toLowerCase();
+
+					// Divide en palabras
+					const words = lowercaseValue.split(" ");
+
+					// Capitaliza cada palabra según las reglas
+					const formattedWords = words.map((word: string, index: number) => {
+						// Si es la primera palabra o no está en la lista de excepciones,
+						// capitaliza su primera letra
+						if (index === 0 || !lowerCaseWords.includes(word)) {
+							return word.charAt(0).toUpperCase() + word.slice(1);
+						}
+						// Si está en la lista de excepciones, la deja en minúsculas
+						return word;
+					});
+
+					// Une las palabras de nuevo
+					const formattedValue = formattedWords.join(" ");
+
+					return <span>{formattedValue}</span>;
+				},
 			},
 			{
 				Header: "Parte",
@@ -567,10 +629,60 @@ const FoldersLayout = () => {
 			{
 				Header: "Fecha de Inicio",
 				accessor: "initialDateFolder",
+				Cell: ({ value }: { value: any }) => {
+					if (!value) return null;
+
+					// Formatear a DD/MM/YYYY
+					let formattedDate;
+					try {
+						// Si ya es un string con formato DD/MM/YYYY, lo mantenemos
+						if (typeof value === "string" && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)) {
+							formattedDate = value;
+						}
+						// Cualquier otro formato de fecha incluyendo ISO "2022-08-31T00:00:00.000+00:00"
+						else {
+							const parsedDate = moment(value);
+							if (parsedDate.isValid()) {
+								formattedDate = parsedDate.format("DD/MM/YYYY");
+							} else {
+								formattedDate = "Fecha inválida";
+							}
+						}
+					} catch (error) {
+						formattedDate = "Fecha inválida";
+					}
+
+					return <span>{formattedDate}</span>;
+				},
 			},
 			{
 				Header: "Fecha Final",
 				accessor: "finalDateFolder",
+				Cell: ({ value }: { value: any }) => {
+					if (!value) return null;
+
+					// Formatear a DD/MM/YYYY
+					let formattedDate;
+					try {
+						// Si ya es un string con formato DD/MM/YYYY, lo mantenemos
+						if (typeof value === "string" && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)) {
+							formattedDate = value;
+						}
+						// Cualquier otro formato de fecha incluyendo ISO "2022-08-31T00:00:00.000+00:00"
+						else {
+							const parsedDate = moment(value);
+							if (parsedDate.isValid()) {
+								formattedDate = parsedDate.format("DD/MM/YYYY");
+							} else {
+								formattedDate = "Fecha inválida";
+							}
+						}
+					} catch (error) {
+						formattedDate = "Fecha inválida";
+					}
+
+					return <span>{formattedDate}</span>;
+				},
 			},
 			{
 				Header: "Jurisdicción",

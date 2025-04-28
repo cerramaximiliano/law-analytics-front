@@ -11,7 +11,7 @@ const EmptyResults = ({ message }: EmptyResultsProps) => {
 			<Box sx={{ p: 2, bgcolor: "primary.lighter", borderRadius: "50%" }}>
 				<Archive size={32} variant="Bulk" style={{ color: "var(--mui-palette-primary-main)" }} />
 			</Box>
-			<Typography variant="h6" color="textSecondary">
+			<Typography variant="h5" color="textSecondary">
 				{message}
 			</Typography>
 			<Typography variant="body2" color="textSecondary">
