@@ -6,7 +6,6 @@ import {
 	useMediaQuery, 
 	Box, 
 	Dialog, 
-	SpeedDial, 
 	Tooltip, 
 	Typography,
 	Button,
@@ -50,7 +49,7 @@ import {
 } from "store/reducers/calendar";
 
 // types
-import { Add, Calendar as CalendarIcon, Edit2, InfoCircle, Link1, Trash } from "iconsax-react";
+import { Add, Calendar as CalendarIcon, DocumentDownload, Edit2, InfoCircle, Link1, Trash } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { deleteEvent, getEventsByUserId, selectEvent, updateEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -641,6 +640,43 @@ const Calendar = () => {
 	return (
 		<Box sx={{ position: "relative" }}>
 			<CalendarStyled>
+				{/* Botones en la parte superior */}
+				<Stack 
+					direction="row" 
+					justifyContent="flex-end" 
+					spacing={2} 
+					sx={{ mb: 2 }}
+				>
+					<Tooltip title="Agregar Nuevo Evento">
+						<IconButton 
+							color="primary" 
+							onClick={handleAddEventClick}
+							size="medium"
+						>
+							<Add variant="Bulk" />
+						</IconButton>
+					</Tooltip>
+					
+					<Tooltip title="Exportar Eventos">
+						<IconButton 
+							color="secondary"
+							size="medium"
+						>
+							<DocumentDownload variant="Bulk" />
+						</IconButton>
+					</Tooltip>
+					
+					<Tooltip title="Ver Guía">
+						<IconButton 
+							color="success" 
+							onClick={() => setGuideOpen(true)}
+							size="medium"
+						>
+							<InfoCircle variant="Bulk" />
+						</IconButton>
+					</Tooltip>
+				</Stack>
+				
 				<Toolbar
 					date={date}
 					view={calendarView}
@@ -719,35 +755,6 @@ const Calendar = () => {
 					/>
 				)}
 			</Dialog>
-			<Tooltip title="Agregar Nuevo Evento">
-				<SpeedDial
-					ariaLabel="add-event-fab"
-					sx={{
-						display: "inline-flex",
-						position: "sticky",
-						bottom: 24,
-						left: "100%",
-						transform: "translate(-50%, -50% )",
-					}}
-					icon={<Add />}
-					onClick={handleAddEventClick}
-				/>
-			</Tooltip>
-			
-			<Tooltip title="Ver Guía">
-				<SpeedDial
-					ariaLabel="guide-fab"
-					sx={{
-						display: "inline-flex",
-						position: "fixed",
-						bottom: 24,
-						right: 24,
-						transform: "translate(0, 0)",
-					}}
-					icon={<InfoCircle variant="Bold" />}
-					onClick={() => setGuideOpen(true)}
-				/>
-			</Tooltip>
 
 			{/* Guía del Calendario */}
 			<GuideCalendar open={guideOpen} onClose={() => setGuideOpen(false)} />

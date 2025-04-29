@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 // material-ui
 import { Theme } from "@mui/material/styles";
-import { useMediaQuery, Button, ButtonGroup, Grid, Stack, Tooltip, Typography, GridProps } from "@mui/material";
+import { useMediaQuery,  Stack, Tooltip, Typography, GridProps } from "@mui/material";
 
 // third-party
 import { format } from "date-fns";
@@ -12,7 +12,7 @@ import { es } from "date-fns/locale";
 import IconButton from "components/@extended/IconButton";
 
 // assets
-import { ArrowLeft2, ArrowRight2, Calendar1, Category, Grid6, TableDocument } from "iconsax-react";
+import { ArrowLeft2, ArrowRight2, Calendar1, Category, Grid6 } from "iconsax-react";
 
 // constant
 const viewOptions = [
@@ -31,11 +31,7 @@ const viewOptions = [
 		value: "timeGridDay",
 		icon: Calendar1,
 	},
-	{
-		label: "Agenda",
-		value: "listWeek",
-		icon: TableDocument,
-	},
+
 ];
 
 // ==============================|| CALENDAR - TOOLBAR ||============================== //
@@ -69,45 +65,62 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 	};
 
 	return (
-		<Grid alignItems="center" container justifyContent="space-between" spacing={matchDownSM ? 1 : 3} {...others} sx={{ pb: 3 }}>
-			<Grid item>
-				<Button variant="outlined" onClick={onClickToday} size={matchDownSM ? "small" : "medium"}>
-					Hoy
-				</Button>
-			</Grid>
-			<Grid item>
-				<Stack direction="row" alignItems="center" spacing={matchDownSM ? 1 : 3}>
-					<IconButton onClick={onClickPrev} size={matchDownSM ? "small" : "large"}>
+		<Stack direction="column" spacing={3} {...others} sx={{ pb: 3 }}>
+			{/* Fila superior con botones de navegación y título del mes */}
+			<Stack 
+				direction="row" 
+				justifyContent="space-between" 
+				alignItems="center"
+				spacing={2}
+			>
+				<Tooltip title="Ir a hoy">
+					<IconButton 
+						color="primary" 
+						onClick={onClickToday} 
+						size={matchDownSM ? "medium" : "large"}
+					>
+						<Calendar1 variant="Bulk" />
+					</IconButton>
+				</Tooltip>
+				
+				<Stack direction="row" alignItems="center" spacing={matchDownSM ? 1 : 2}>
+					<IconButton 
+						onClick={onClickPrev} 
+						size={matchDownSM ? "medium" : "large"}
+					>
 						<ArrowLeft2 />
 					</IconButton>
-					<Typography variant={matchDownSM ? "h5" : "h3"} color="textPrimary">
+					<Typography variant={matchDownSM ? "h5" : "h4"} color="textPrimary" sx={{ fontWeight: 600 }}>
 						{capitalizeFirstLetter(format(date, "MMMM yyyy", { locale: es }))}
 					</Typography>
-					<IconButton onClick={onClickNext} size={matchDownSM ? "small" : "large"}>
+					<IconButton 
+						onClick={onClickNext} 
+						size={matchDownSM ? "medium" : "large"}
+					>
 						<ArrowRight2 />
 					</IconButton>
 				</Stack>
-			</Grid>
-			<Grid item>
-				<ButtonGroup variant="outlined" aria-label="outlined button group">
+
+				{/* Botones de vista */}
+				<Stack direction="row" spacing={1}>
 					{viewFilter.map((viewOption) => {
 						const Icon = viewOption.icon;
+						const isActive = viewOption.value === view;
 						return (
 							<Tooltip title={viewOption.label} key={viewOption.value}>
-								<Button
-									size={matchDownSM ? "small" : "large"}
-									disableElevation
-									variant={viewOption.value === view ? "contained" : "outlined"}
+								<IconButton
+									color={isActive ? "primary" : "default"}
+									size={matchDownSM ? "medium" : "large"}
 									onClick={() => onChangeView(viewOption.value)}
 								>
-									<Icon variant={viewOption.value === view ? "Bold" : "Linear"} />
-								</Button>
+									<Icon variant={isActive ? "Bulk" : "Linear"} />
+								</IconButton>
 							</Tooltip>
 						);
 					})}
-				</ButtonGroup>
-			</Grid>
-		</Grid>
+				</Stack>
+			</Stack>
+		</Stack>
 	);
 };
 
