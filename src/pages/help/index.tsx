@@ -9,7 +9,18 @@ import { LaboralContent, InteresesContent, FoldersContent, ContactsContent, Cale
 import { useTheme } from "@mui/material/styles";
 
 // Icons
-import { Book1, ArrowRight2, Folder, Calculator, Coin, DocumentText, InfoCircle, MessageQuestion, Profile2User, Calendar } from "iconsax-react";
+import {
+	Book1,
+	ArrowRight2,
+	Folder,
+	Calculator,
+	Coin,
+	DocumentText,
+	InfoCircle,
+	MessageQuestion,
+	Profile2User,
+	Calendar,
+} from "iconsax-react";
 
 // ==============================|| COMPONENTES DE AYUDA ||============================== //
 
@@ -177,42 +188,42 @@ const GuidesSection = () => {
 						</CardActionArea>
 					</Card>
 				</Grid>
-				
+
 				{/* Guía Calendario */}
 				<Grid item xs={12} md={4} lg={2.4}>
-						<Card
-							sx={{
-								height: "100%",
-								transition: "all 0.2s",
-								"&:hover": {
-									boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-								},
-							}}
-						>
-							<CardActionArea onClick={() => handleExpandGuide("calendario")}>
-								<CardContent sx={{ textAlign: "center", pb: 3 }}>
-									<Calendar
-										variant="Bulk"
-										size={48}
-										style={{
-											color: theme.palette.secondary.main,
-											marginBottom: 16,
-										}}
-									/>
-									<Typography variant="h4" gutterBottom>
-										Calendario
-									</Typography>
-									<Typography variant="body2" color="textSecondary">
-										Aprende a gestionar tu agenda, eventos judiciales y recibir recordatorios de fechas importantes.
-									</Typography>
-									<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
-										{expandedGuide === "calendario" ? "Cerrar guía" : "Ver guía"}
-									</Button>
-								</CardContent>
-							</CardActionArea>
-						</Card>
-					</Grid>
+					<Card
+						sx={{
+							height: "100%",
+							transition: "all 0.2s",
+							"&:hover": {
+								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+							},
+						}}
+					>
+						<CardActionArea onClick={() => handleExpandGuide("calendario")}>
+							<CardContent sx={{ textAlign: "center", pb: 3 }}>
+								<Calendar
+									variant="Bulk"
+									size={48}
+									style={{
+										color: theme.palette.secondary.main,
+										marginBottom: 16,
+									}}
+								/>
+								<Typography variant="h4" gutterBottom>
+									Calendario
+								</Typography>
+								<Typography variant="body2" color="textSecondary">
+									Aprende a gestionar tu agenda, eventos judiciales y recibir recordatorios de fechas importantes.
+								</Typography>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+									{expandedGuide === "calendario" ? "Cerrar guía" : "Ver guía"}
+								</Button>
+							</CardContent>
+						</CardActionArea>
+					</Card>
 				</Grid>
+			</Grid>
 
 			{/* Contenidos expandidos de las guías */}
 			<Collapse in={expandedGuide === "laboral"} timeout="auto" unmountOnExit>

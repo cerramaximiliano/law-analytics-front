@@ -334,12 +334,12 @@ const GuideContacts: React.FC<GuideContactsProps> = ({ open, onClose }) => {
 							Anterior
 						</Button>
 					</Box>
-					
+
 					<Box sx={{ display: "flex", gap: 2 }}>
 						<Button color="error" onClick={handleCloseWithReset}>
 							Cerrar
 						</Button>
-						
+
 						{activeStep === steps.length - 1 ? (
 							<Button variant="contained" color="primary" onClick={() => setActiveStep(0)} endIcon={<Next />}>
 								Volver al inicio

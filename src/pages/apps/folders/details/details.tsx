@@ -66,13 +66,13 @@ const Details = () => {
 
 	// Format folder name with first letter of each word capitalized
 	const formatFolderName = (name: string) => {
-		if (!name) return '';
+		if (!name) return "";
 		// Split by spaces, capitalize each word, then join back
 		return name
 			.toLowerCase()
-			.split(' ')
-			.map(word => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(' ');
+			.split(" ")
+			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(" ");
 	};
 
 	// Optimized selectors with specific state slices
@@ -116,14 +116,14 @@ const Details = () => {
 
 		return () => clearTimeout(timeoutId);
 	}, [id, contacts]);
-	
+
 	// Update breadcrumb with folder name
 	useEffect(() => {
 		if (folder?.folderName) {
 			// Use formatted folder name for the breadcrumb
 			setCustomLabel(`apps/folders/details/${id}`, formatFolderName(folder.folderName));
 		}
-		
+
 		return () => {
 			clearCustomLabel(`apps/folders/details/${id}`);
 		};
@@ -163,9 +163,10 @@ const Details = () => {
 	);
 
 	// Create a dynamic title that shows just the formatted folder name
-	const dynamicTitle = useMemo(() => 
-		folder?.folderName ? formatFolderName(folder.folderName) : "Detalles de la Causa", 
-	[folder, formatFolderName]);
+	const dynamicTitle = useMemo(
+		() => (folder?.folderName ? formatFolderName(folder.folderName) : "Detalles de la Causa"),
+		[folder, formatFolderName],
+	);
 
 	// Memoized components
 	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);

@@ -1,46 +1,42 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface BreadcrumbContextType {
-  customLabels: Record<string, string>;
-  setCustomLabel: (path: string, label: string) => void;
-  clearCustomLabel: (path: string) => void;
+	customLabels: Record<string, string>;
+	setCustomLabel: (path: string, label: string) => void;
+	clearCustomLabel: (path: string) => void;
 }
 
 const BreadcrumbContext = createContext<BreadcrumbContextType | undefined>(undefined);
 
 interface BreadcrumbProviderProps {
-  children: ReactNode;
+	children: ReactNode;
 }
 
 export const BreadcrumbProvider = ({ children }: BreadcrumbProviderProps) => {
-  const [customLabels, setCustomLabels] = useState<Record<string, string>>({});
+	const [customLabels, setCustomLabels] = useState<Record<string, string>>({});
 
-  const setCustomLabel = (path: string, label: string) => {
-    setCustomLabels((prev) => ({
-      ...prev,
-      [path]: label
-    }));
-  };
+	const setCustomLabel = (path: string, label: string) => {
+		setCustomLabels((prev) => ({
+			...prev,
+			[path]: label,
+		}));
+	};
 
-  const clearCustomLabel = (path: string) => {
-    setCustomLabels((prev) => {
-      const newLabels = { ...prev };
-      delete newLabels[path];
-      return newLabels;
-    });
-  };
+	const clearCustomLabel = (path: string) => {
+		setCustomLabels((prev) => {
+			const newLabels = { ...prev };
+			delete newLabels[path];
+			return newLabels;
+		});
+	};
 
-  return (
-    <BreadcrumbContext.Provider value={{ customLabels, setCustomLabel, clearCustomLabel }}>
-      {children}
-    </BreadcrumbContext.Provider>
-  );
+	return <BreadcrumbContext.Provider value={{ customLabels, setCustomLabel, clearCustomLabel }}>{children}</BreadcrumbContext.Provider>;
 };
 
 export const useBreadcrumb = () => {
-  const context = useContext(BreadcrumbContext);
-  if (context === undefined) {
-    throw new Error('useBreadcrumb must be used within a BreadcrumbProvider');
-  }
-  return context;
+	const context = useContext(BreadcrumbContext);
+	if (context === undefined) {
+		throw new Error("useBreadcrumb must be used within a BreadcrumbProvider");
+	}
+	return context;
 };

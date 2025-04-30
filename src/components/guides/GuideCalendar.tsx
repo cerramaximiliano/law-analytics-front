@@ -42,7 +42,14 @@ import {
 	TableDocument,
 	Link21,
 	Clock,
-	Timer1
+	Timer1,
+	People,
+	TickSquare,
+	ClipboardTick,
+	Diagram,
+	UserTick,
+	Setting2,
+	Save2,
 } from "iconsax-react";
 
 // ==============================|| GUÍA CALENDARIO - COMPONENTES INTERNOS ||============================== //
@@ -113,7 +120,7 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 			content: (
 				<>
 					<Typography paragraph>
-						Esta guía te mostrará cómo utilizar el calendario para organizar tus eventos legales, gestionar recordatorios y vincular 
+						Esta guía te mostrará cómo utilizar el calendario para organizar tus eventos legales, gestionar recordatorios y vincular
 						actividades a tus causas.
 					</Typography>
 					<Alert severity="info" sx={{ mt: 2 }}>
@@ -125,6 +132,8 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 								<li>Vincular eventos a causas específicas para un mejor seguimiento</li>
 								<li>Visualizar tu agenda en diferentes formatos (mes, semana, día, lista)</li>
 								<li>Filtrar eventos por tipo y causa relacionada</li>
+								<li>Configurar tu disponibilidad para permitir a tus clientes programar citas</li>
+								<li>Gestionar de forma profesional tus citas y consultas con clientes</li>
 							</ul>
 						</Typography>
 					</Alert>
@@ -165,8 +174,8 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 						</Stack>
 					</Paper>
 					<Typography paragraph>
-						Para navegar entre fechas, utiliza las flechas de navegación o haz clic en el botón "Hoy" para volver rápidamente a la 
-						fecha actual.
+						Para navegar entre fechas, utiliza las flechas de navegación o haz clic en el botón "Hoy" para volver rápidamente a la fecha
+						actual.
 					</Typography>
 				</>
 			),
@@ -212,17 +221,25 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 						<AlertTitle>Tipos de eventos disponibles</AlertTitle>
 						<Typography component="div">
 							<ul>
-								<li><strong>Audiencia:</strong> Para eventos judiciales (color azul)</li>
-								<li><strong>Vencimiento:</strong> Para plazos procesales y fechas límite (color rojo)</li>
-								<li><strong>Reunión:</strong> Para encuentros con clientes o colegas (color verde)</li>
-								<li><strong>Otro:</strong> Para cualquier otro tipo de evento (color amarillo)</li>
+								<li>
+									<strong>Audiencia:</strong> Para eventos judiciales (color azul)
+								</li>
+								<li>
+									<strong>Vencimiento:</strong> Para plazos procesales y fechas límite (color rojo)
+								</li>
+								<li>
+									<strong>Reunión:</strong> Para encuentros con clientes o colegas (color verde)
+								</li>
+								<li>
+									<strong>Otro:</strong> Para cualquier otro tipo de evento (color amarillo)
+								</li>
 							</ul>
 						</Typography>
 					</Alert>
 
 					<Typography paragraph>
-						Al crear un evento, es posible vincularlo a una causa específica, lo que te permitirá mantener un seguimiento organizado
-						de todas las actividades relacionadas con cada expediente.
+						Al crear un evento, es posible vincularlo a una causa específica, lo que te permitirá mantener un seguimiento organizado de
+						todas las actividades relacionadas con cada expediente.
 					</Typography>
 				</>
 			),
@@ -316,9 +333,7 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 			title: "Gestión de Eventos",
 			content: (
 				<>
-					<Typography paragraph>
-						Una vez creados los eventos, puedes gestionarlos de diversas formas:
-					</Typography>
+					<Typography paragraph>Una vez creados los eventos, puedes gestionarlos de diversas formas:</Typography>
 
 					<Grid container spacing={2}>
 						<Grid item xs={12} md={6}>
@@ -384,7 +399,8 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 							<Box display="flex" alignItems="center">
 								<Category size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
 								<Typography>
-									<strong>Cambiar Vistas:</strong> Utiliza los botones de la barra superior para alternar entre vistas (Mes, Semana, Día, Agenda)
+									<strong>Cambiar Vistas:</strong> Utiliza los botones de la barra superior para alternar entre vistas (Mes, Semana, Día,
+									Agenda)
 								</Typography>
 							</Box>
 							<Box display="flex" alignItems="center">
@@ -425,8 +441,8 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 									<Box>
 										<Typography fontWeight="bold">Notificaciones por Correo Electrónico</Typography>
 										<Typography variant="body2">
-											Recibirás un correo electrónico con recordatorio de tus eventos programados, configurable para ser enviado con diferentes 
-											anticipaciones (1 día, 3 días o 1 semana antes).
+											Recibirás un correo electrónico con recordatorio de tus eventos programados, configurable para ser enviado con
+											diferentes anticipaciones (1 día, 3 días o 1 semana antes).
 										</Typography>
 									</Box>
 								</Box>
@@ -532,12 +548,168 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 			),
 		},
 		{
-			title: "Consejos Prácticos",
+			title: "Configuración de Citas",
 			content: (
 				<>
 					<Typography paragraph>
-						Para aprovechar al máximo el calendario, te recomendamos seguir estas mejores prácticas:
+						El sistema de calendario te permite configurar tu disponibilidad para que los clientes puedan programar citas directamente:
 					</Typography>
+
+					<StyledPaper>
+						<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+							<Typography variant="subtitle1" fontWeight="bold">
+								Acceso a la Sección de Disponibilidad
+							</Typography>
+						</Box>
+						<Box sx={{ p: 2 }}>
+							<Stack spacing={2}>
+								<Box display="flex" alignItems="flex-start">
+									<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Desde el Calendario Principal</Typography>
+										<Typography variant="body2">
+											Accede al calendario y haz clic en el botón "Citas" ubicado en el menú de la izquierda bajo Calendario.
+										</Typography>
+									</Box>
+								</Box>
+								<Box display="flex" alignItems="flex-start">
+									<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Desde tu Perfil de Usuario</Typography>
+										<Typography variant="body2">
+											También puedes acceder desde tu perfil, en la sección "Configuración" {"->"} "Calendario y Citas" {"->"} "Citas".
+										</Typography>
+									</Box>
+								</Box>
+							</Stack>
+						</Box>
+					</StyledPaper>
+
+					<StyledPaper sx={{ mt: 3 }}>
+						<Box sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+							<Typography variant="subtitle1" fontWeight="bold">
+								Configuración de Horarios Disponibles
+							</Typography>
+						</Box>
+						<Box sx={{ p: 2 }}>
+							<Stack spacing={2}>
+								<Box display="flex" alignItems="flex-start">
+									<Setting2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Selección de Días</Typography>
+										<Typography variant="body2">
+											Selecciona los días de la semana en los que estás disponible para atender citas. Puedes configurar disponibilidades
+											diferentes para cada día.
+										</Typography>
+									</Box>
+								</Box>
+								<Box display="flex" alignItems="flex-start">
+									<Clock size={18} style={{ minWidth: "24px", color: theme.palette.warning.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Horarios Disponibles</Typography>
+										<Typography variant="body2">
+											Para cada día seleccionado, configura las franjas horarias en las que deseas recibir citas, por ejemplo, de 9:00 a
+											12:00 y de 15:00 a 18:00.
+										</Typography>
+									</Box>
+								</Box>
+								<Box display="flex" alignItems="flex-start">
+									<Calendar1 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Fechas Específicas No Disponibles</Typography>
+										<Typography variant="body2">
+											Bloquea fechas específicas en las que no estarás disponible (vacaciones, feriados, etc.) para evitar que se programen
+											citas en esos días.
+										</Typography>
+									</Box>
+								</Box>
+							</Stack>
+						</Box>
+					</StyledPaper>
+
+					<StyledPaper sx={{ mt: 3 }}>
+						<Box sx={{ p: 2, bgcolor: alpha(theme.palette.success.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+							<Typography variant="subtitle1" fontWeight="bold">
+								Configuración de Citas
+							</Typography>
+						</Box>
+						<Box sx={{ p: 2 }}>
+							<Stack spacing={2}>
+								<Box display="flex" alignItems="flex-start">
+									<Timer1 size={18} style={{ minWidth: "24px", color: theme.palette.success.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Duración de las Citas</Typography>
+										<Typography variant="body2">
+											Define la duración estándar de tus citas (30 minutos, 1 hora, etc.). También puedes crear diferentes tipos de citas
+											con duraciones específicas.
+										</Typography>
+									</Box>
+								</Box>
+								<Box display="flex" alignItems="flex-start">
+									<Diagram size={18} style={{ minWidth: "24px", color: theme.palette.success.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Tiempo entre Citas</Typography>
+										<Typography variant="body2">
+											Configura el tiempo de descanso entre citas consecutivas para prepararte entre una y otra (15 minutos recomendados).
+										</Typography>
+									</Box>
+								</Box>
+								<Box display="flex" alignItems="flex-start">
+									<ClipboardTick size={18} style={{ minWidth: "24px", color: theme.palette.success.main, marginTop: "3px" }} />
+									<Box>
+										<Typography fontWeight="bold">Tipos de Consulta</Typography>
+										<Typography variant="body2">
+											Crea diferentes tipos de consulta (inicial, seguimiento, asesoría específica) con duraciones y precios distintos.
+										</Typography>
+									</Box>
+								</Box>
+							</Stack>
+						</Box>
+					</StyledPaper>
+
+					<Box sx={{ mt: 3, p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.1), borderRadius: "8px" }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Beneficios de la Programación de Citas
+						</Typography>
+						<Stack spacing={1.5}>
+							<Box display="flex" alignItems="center">
+								<People size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Permite a tus clientes reservar citas en horarios que te convengan sin intercambios de mensajes</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<TickSquare size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Reduce las citas perdidas con recordatorios automáticos para ti y tus clientes</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<UserTick size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Proyecta una imagen profesional y organizada frente a tus clientes</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<Save2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Ahorra tiempo en la coordinación de reuniones y optimiza tu agenda</Typography>
+							</Box>
+						</Stack>
+					</Box>
+
+					<Alert severity="info" sx={{ mt: 3 }}>
+						<AlertTitle>Enlace para Clientes</AlertTitle>
+						<Typography paragraph>
+							Una vez configurada tu disponibilidad, el sistema genera un enlace único que puedes compartir con tus clientes para que
+							reserven citas directamente según tu disponibilidad configurada.
+						</Typography>
+						<Typography>
+							Puedes incluir este enlace en tu firma de correo electrónico, compartirlo en tu página web o enviarlo directamente a tus
+							clientes cuando necesiten programar una consulta.
+						</Typography>
+					</Alert>
+				</>
+			),
+		},
+		{
+			title: "Consejos Prácticos",
+			content: (
+				<>
+					<Typography paragraph>Para aprovechar al máximo el calendario, te recomendamos seguir estas mejores prácticas:</Typography>
 
 					<Grid container spacing={2}>
 						<Grid item xs={12} md={6}>
@@ -577,8 +749,8 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 									</Typography>
 								</Box>
 								<Typography variant="body2">
-									Incluye información completa en la descripción de los eventos, como número de sala para audiencias, documentos 
-									necesarios o contactos relevantes, para tener todo a mano cuando lo necesites.
+									Incluye información completa en la descripción de los eventos, como número de sala para audiencias, documentos necesarios
+									o contactos relevantes, para tener todo a mano cuando lo necesites.
 								</Typography>
 							</Paper>
 						</Grid>
@@ -619,7 +791,9 @@ const GuideCalendar: React.FC<GuideCalendarProps> = ({ open, onClose }) => {
 							</Box>
 							<Box display="flex" alignItems="center">
 								<Add size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
-								<Typography>Programa tiempo para preparación antes de eventos importantes como audiencias o reuniones con clientes</Typography>
+								<Typography>
+									Programa tiempo para preparación antes de eventos importantes como audiencias o reuniones con clientes
+								</Typography>
 							</Box>
 						</Stack>
 					</Box>

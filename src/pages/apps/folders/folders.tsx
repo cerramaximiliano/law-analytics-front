@@ -290,17 +290,17 @@ function ReactTable({
 									color="primary"
 									size="medium"
 									sx={{
-										position: 'relative',
+										position: "relative",
 									}}
 								>
 									<CSVLink
 										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data}
 										filename={"causas.csv"}
 										style={{
-											color: 'inherit',
-											display: 'flex',
-											alignItems: 'center',
-											textDecoration: 'none'
+											color: "inherit",
+											display: "flex",
+											alignItems: "center",
+											textDecoration: "none",
 										}}
 									>
 										<DocumentDownload variant="Bulk" size={22} />

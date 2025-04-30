@@ -397,11 +397,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 									<Button color="error" onClick={onCancel}>
 										Cancelar
 									</Button>
-									<Button
-										type="submit"
-										variant="contained"
-										disabled={isSubmitting}
-									>
+									<Button type="submit" variant="contained" disabled={isSubmitting}>
 										{event ? "Editar" : "Agregar"}
 									</Button>
 								</Stack>

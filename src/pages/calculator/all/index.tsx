@@ -334,18 +334,18 @@ const IndeterminateCheckbox = React.forwardRef<
 	);
 });
 
-function ReactTable({ 
-	columns, 
-	data, 
-	renderRowSubComponent, 
-	isLoading, 
-	handleSelectedRows, 
-	handleDeleteSelected, 
+function ReactTable({
+	columns,
+	data,
+	renderRowSubComponent,
+	isLoading,
+	handleSelectedRows,
+	handleDeleteSelected,
 	processingAction,
 	onOpenArchivedModal,
 	onArchiveCalculators,
 	selectedCalculatorIds,
-	scrollToCalculators
+	scrollToCalculators,
 }: ReactTableProps) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
@@ -499,27 +499,16 @@ function ReactTable({
 				>
 					{/* Buscador (izquierda) */}
 					<Box width={matchDownSM ? "100%" : "280px"}>
-						<CustomGlobalFilter 
-							preGlobalFilteredRows={preGlobalFilteredRows} 
-							globalFilter={globalFilter} 
-							setGlobalFilter={setGlobalFilter} 
+						<CustomGlobalFilter
+							preGlobalFilteredRows={preGlobalFilteredRows}
+							globalFilter={globalFilter}
+							setGlobalFilter={setGlobalFilter}
 						/>
 					</Box>
-					
+
 					{/* Botones de acción (derecha) */}
-					<Stack 
-						direction="row" 
-						spacing={1} 
-						flexWrap="wrap"
-						justifyContent="flex-end"
-					>
-						<Button
-							color="secondary"
-							size="small"
-							variant="outlined"
-							startIcon={<Archive />}
-							onClick={() => onOpenArchivedModal()}
-						>
+					<Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+						<Button color="secondary" size="small" variant="outlined" startIcon={<Archive />} onClick={() => onOpenArchivedModal()}>
 							Archivados
 						</Button>
 						<Tooltip title={selectedCalculatorIds.length === 0 ? "Seleccione elementos para archivar" : ""}>
@@ -536,18 +525,12 @@ function ReactTable({
 								</Button>
 							</span>
 						</Tooltip>
-						<Button 
-							color="primary" 
-							size="small" 
-							variant="contained" 
-							startIcon={<Add />} 
-							onClick={scrollToCalculators}
-						>
+						<Button color="primary" size="small" variant="contained" startIcon={<Add />} onClick={scrollToCalculators}>
 							Nuevo cálculo
 						</Button>
 					</Stack>
 				</Stack>
-				
+
 				{/* Segunda fila: selector de ordenamiento a la izquierda, botones de eliminar/exportar a la derecha */}
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
@@ -560,16 +543,17 @@ function ReactTable({
 					<Box width={matchDownSM ? "100%" : "280px"}>
 						<CustomSortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
 					</Box>
-					
+
 					{/* Botones de eliminar y exportar (derecha) */}
-					<Stack 
-						direction="row" 
-						spacing={1} 
-						alignItems="center"
-						justifyContent="flex-end"
-					>
+					<Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
 						{/* Botón de eliminar */}
-						<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Seleccione elementos para eliminar" : `Eliminar ${Object.keys(selectedRowIds).length} elementos`}>
+						<Tooltip
+							title={
+								Object.keys(selectedRowIds).length === 0
+									? "Seleccione elementos para eliminar"
+									: `Eliminar ${Object.keys(selectedRowIds).length} elementos`
+							}
+						>
 							<span>
 								<IconButton
 									color="error"
@@ -577,7 +561,7 @@ function ReactTable({
 									disabled={Object.keys(selectedRowIds).length === 0 || processingAction}
 									size="medium"
 									sx={{
-										position: 'relative',
+										position: "relative",
 										"&.Mui-disabled": {
 											color: "text.disabled",
 										},
@@ -587,19 +571,19 @@ function ReactTable({
 									{Object.keys(selectedRowIds).length > 0 && (
 										<Box
 											sx={{
-												position: 'absolute',
+												position: "absolute",
 												top: -8,
 												right: -8,
-												bgcolor: 'error.main',
-												color: 'white',
-												borderRadius: '50%',
-												fontSize: '0.75rem',
-												minWidth: '20px',
-												height: '20px',
-												display: 'flex',
-												alignItems: 'center',
-												justifyContent: 'center',
-												fontWeight: 'bold',
+												bgcolor: "error.main",
+												color: "white",
+												borderRadius: "50%",
+												fontSize: "0.75rem",
+												minWidth: "20px",
+												height: "20px",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												fontWeight: "bold",
 											}}
 										>
 											{Object.keys(selectedRowIds).length}
@@ -608,24 +592,24 @@ function ReactTable({
 								</IconButton>
 							</span>
 						</Tooltip>
-						
+
 						{/* Botón de exportar CSV personalizado */}
 						<Tooltip title="Exportar a CSV">
 							<IconButton
 								color="primary"
 								size="medium"
 								sx={{
-									position: 'relative',
+									position: "relative",
 								}}
 							>
-								<CSVLink 
-									data={data} 
+								<CSVLink
+									data={data}
 									filename={"calculos-guardados.csv"}
-									style={{ 
-										color: 'inherit', 
-										display: 'flex', 
-										alignItems: 'center',
-										textDecoration: 'none'
+									style={{
+										color: "inherit",
+										display: "flex",
+										alignItems: "center",
+										textDecoration: "none",
 									}}
 								>
 									<DocumentDownload variant="Bulk" size={22} />
@@ -655,24 +639,35 @@ function ReactTable({
 									<TableRow
 										{...row.getRowProps()}
 										onClick={() => {
-											if (!row.isSelected) { row.toggleRowExpanded(); }
+											if (!row.isSelected) {
+												row.toggleRowExpanded();
+											}
 										}}
 										sx={{
 											cursor: "pointer",
-											bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : row.isExpanded ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
+											bgcolor: row.isSelected
+												? alpha(theme.palette.primary.lighter, 0.35)
+												: row.isExpanded
+												? alpha(theme.palette.primary.lighter, 0.35)
+												: "inherit",
 											"&:hover": {
 												bgcolor: alpha(theme.palette.primary.lighter, 0.15),
 											},
 										}}
 									>
 										{row.cells.map((cell: Cell<CalculatorType>) => (
-											<TableCell {...cell.getCellProps([{ className: cell.column.className }])} onClick={(e) => {
-												// Si es la celda de selección (checkbox), no desplegar el contenido
-												if (cell.column.id === 'selection') {
-													e.stopPropagation();
-													row.toggleRowSelected();
-												}
-											}}>{cell.render("Cell")}</TableCell>
+											<TableCell
+												{...cell.getCellProps([{ className: cell.column.className }])}
+												onClick={(e) => {
+													// Si es la celda de selección (checkbox), no desplegar el contenido
+													if (cell.column.id === "selection") {
+														e.stopPropagation();
+														row.toggleRowSelected();
+													}
+												}}
+											>
+												{cell.render("Cell")}
+											</TableCell>
 										))}
 									</TableRow>
 									{row.isExpanded && renderRowSubComponent({ row })}
@@ -682,7 +677,6 @@ function ReactTable({
 						{page.length === 0 && (
 							<TableRow>
 								<TableCell colSpan={8} sx={{ textAlign: "center", py: 5 }}>
-
 									<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
 										<Typography variant="h5" color="textSecondary" gutterBottom>
 											No hay cálculos guardados
@@ -777,21 +771,23 @@ const AllCalculators = () => {
 
 		try {
 			// Procesamos cada ID en el array
-			const promises = selectedCalculatorIds.map(id => dispatch(deleteCalculator(id)));
+			const promises = selectedCalculatorIds.map((id) => dispatch(deleteCalculator(id)));
 			const results = await Promise.all(promises);
 
 			// Verificamos si todos se eliminaron correctamente
-			const allSuccess = results.every(result => result.success);
+			const allSuccess = results.every((result) => result.success);
 
 			if (allSuccess) {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: `${selectedCalculatorIds.length} ${selectedCalculatorIds.length === 1 ? 'cálculo eliminado' : 'cálculos eliminados'} correctamente`,
+						message: `${selectedCalculatorIds.length} ${
+							selectedCalculatorIds.length === 1 ? "cálculo eliminado" : "cálculos eliminados"
+						} correctamente`,
 						variant: "alert",
 						alert: { color: "success" },
 						close: true,
-					})
+					}),
 				);
 			} else {
 				dispatch(
@@ -801,7 +797,7 @@ const AllCalculators = () => {
 						variant: "alert",
 						alert: { color: "error" },
 						close: true,
-					})
+					}),
 				);
 			}
 		} catch (error) {
@@ -812,7 +808,7 @@ const AllCalculators = () => {
 					variant: "alert",
 					alert: { color: "error" },
 					close: true,
-				})
+				}),
 			);
 		} finally {
 			setProcessingArchiveAction(false);
@@ -853,7 +849,6 @@ const AllCalculators = () => {
 		setDeleteTitle(title || "este cálculo");
 		setOpenDeleteModal(true);
 	};
-
 
 	// Handle close delete modal
 	const handleCloseDeleteModal = (status: boolean) => {
@@ -1207,29 +1202,29 @@ const AllCalculators = () => {
 					<Grid container spacing={3}>
 						{loading
 							? // Plantillas de carga que mantienen el mismo tamaño que las tarjetas reales
-							[...Array(3)].map((_, index) => (
-								<Grid item xs={12} sm={6} md={4} key={index}>
-									<Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-										<CardContent sx={{ flexGrow: 1, p: 3 }}>
-											<Box mb={2} display="flex" justifyContent="center">
-												<Skeleton variant="circular" width={48} height={48} />
-											</Box>
-											<Skeleton variant="text" height={32} width="60%" sx={{ mx: "auto" }} />
-											<Skeleton variant="text" height={20} />
-											<Skeleton variant="text" height={20} />
-										</CardContent>
-										<CardActions sx={{ p: 3, pt: 1, justifyContent: "center" }}>
-											<Skeleton variant="rectangular" height={36} width="100%" />
-										</CardActions>
-									</Card>
-								</Grid>
-							))
+							  [...Array(3)].map((_, index) => (
+									<Grid item xs={12} sm={6} md={4} key={index}>
+										<Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+											<CardContent sx={{ flexGrow: 1, p: 3 }}>
+												<Box mb={2} display="flex" justifyContent="center">
+													<Skeleton variant="circular" width={48} height={48} />
+												</Box>
+												<Skeleton variant="text" height={32} width="60%" sx={{ mx: "auto" }} />
+												<Skeleton variant="text" height={20} />
+												<Skeleton variant="text" height={20} />
+											</CardContent>
+											<CardActions sx={{ p: 3, pt: 1, justifyContent: "center" }}>
+												<Skeleton variant="rectangular" height={36} width="100%" />
+											</CardActions>
+										</Card>
+									</Grid>
+							  ))
 							: // Tarjetas reales
-							calculatorCards.map((calc, index) => (
-								<Grid item xs={12} sm={6} md={4} key={index}>
-									<CalculatorCard {...calc} />
-								</Grid>
-							))}
+							  calculatorCards.map((calc, index) => (
+									<Grid item xs={12} sm={6} md={4} key={index}>
+										<CalculatorCard {...calc} />
+									</Grid>
+							  ))}
 					</Grid>
 				</MainCard>
 

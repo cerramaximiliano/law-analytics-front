@@ -186,7 +186,7 @@ const Breadcrumbs = ({
 	// items
 	if (item && item.type === "item") {
 		// Use custom label if available, otherwise use item title
-		const pathWithoutPrefix = location.pathname.startsWith('/') ? location.pathname.substring(1) : location.pathname;
+		const pathWithoutPrefix = location.pathname.startsWith("/") ? location.pathname.substring(1) : location.pathname;
 		itemTitle = customLabels[pathWithoutPrefix] || item.title;
 
 		ItemIcon = item.icon ? item.icon : Buildings2;
@@ -235,7 +235,7 @@ const Breadcrumbs = ({
 									{(!icon || icons) && "Home"}
 								</Typography>
 
-								{/* Custom breadcrumb path for folder details and calculator pages */}
+								{/* Custom breadcrumb path for folder details, calculator and calendar pages */}
 								{location.pathname.includes("/apps/folders/details/") ? (
 									<Typography
 										component={Link}
@@ -256,8 +256,20 @@ const Breadcrumbs = ({
 									>
 										Cálculos
 									</Typography>
-								) : mainContent}
-								
+								) : location.pathname.includes("/apps/calendar") ? (
+									<Typography
+										component={location.pathname === "/apps/calendar" ? "span" : Link}
+										to="/apps/calendar"
+										variant="h6"
+										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+										color="secondary"
+									>
+										Calendario
+									</Typography>
+								) : (
+									mainContent
+								)}
+
 								{/* Solo mostrar itemContent si no estamos en la raíz de calculadoras */}
 								{location.pathname === "/apps/calc" ? null : itemContent}
 							</MuiBreadcrumbs>

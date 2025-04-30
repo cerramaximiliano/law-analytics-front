@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 // material-ui
 import { Theme } from "@mui/material/styles";
-import { useMediaQuery,  Stack, Tooltip, Typography, GridProps } from "@mui/material";
+import { useMediaQuery, Stack, Tooltip, Typography, GridProps } from "@mui/material";
 
 // third-party
 import { format } from "date-fns";
@@ -31,7 +31,6 @@ const viewOptions = [
 		value: "timeGridDay",
 		icon: Calendar1,
 	},
-
 ];
 
 // ==============================|| CALENDAR - TOOLBAR ||============================== //
@@ -67,36 +66,21 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 	return (
 		<Stack direction="column" spacing={3} {...others} sx={{ pb: 3 }}>
 			{/* Fila superior con botones de navegación y título del mes */}
-			<Stack 
-				direction="row" 
-				justifyContent="space-between" 
-				alignItems="center"
-				spacing={2}
-			>
+			<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
 				<Tooltip title="Ir a hoy">
-					<IconButton 
-						color="primary" 
-						onClick={onClickToday} 
-						size={matchDownSM ? "medium" : "large"}
-					>
+					<IconButton color="primary" onClick={onClickToday} size={matchDownSM ? "medium" : "large"}>
 						<Calendar1 variant="Bulk" />
 					</IconButton>
 				</Tooltip>
-				
+
 				<Stack direction="row" alignItems="center" spacing={matchDownSM ? 1 : 2}>
-					<IconButton 
-						onClick={onClickPrev} 
-						size={matchDownSM ? "medium" : "large"}
-					>
+					<IconButton onClick={onClickPrev} size={matchDownSM ? "medium" : "large"}>
 						<ArrowLeft2 />
 					</IconButton>
 					<Typography variant={matchDownSM ? "h5" : "h4"} color="textPrimary" sx={{ fontWeight: 600 }}>
 						{capitalizeFirstLetter(format(date, "MMMM yyyy", { locale: es }))}
 					</Typography>
-					<IconButton 
-						onClick={onClickNext} 
-						size={matchDownSM ? "medium" : "large"}
-					>
+					<IconButton onClick={onClickNext} size={matchDownSM ? "medium" : "large"}>
 						<ArrowRight2 />
 					</IconButton>
 				</Stack>

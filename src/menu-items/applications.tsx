@@ -87,9 +87,22 @@ const applications: NavItemType = {
 		{
 			id: "calendar",
 			title: <FormattedMessage id="calendario" />,
-			type: "item",
-			url: "/apps/calendar",
+			type: "collapse",
 			icon: icons.calendar,
+			children: [
+				{
+					id: "calendar-agenda",
+					title: <FormattedMessage id="Agenda" />,
+					type: "item",
+					url: "/apps/calendar",
+				},
+				{
+					id: "calendar-availability",
+					title: <FormattedMessage id="Citas" />,
+					type: "item",
+					url: "/apps/calendar/reservations",
+				},
+			],
 		},
 		{
 			id: "customer",

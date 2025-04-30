@@ -17,7 +17,9 @@ const DashboardDefault = Loadable(lazy(() => import("pages/dashboard/default")))
 
 // render - applications
 const AppChat = Loadable(lazy(() => import("pages/apps/chat")));
-const AppCalendar = Loadable(lazy(() => import("pages/apps/calendar")));
+const AppCalendar = Loadable(lazy(() => import("pages/apps/calendar/calendar")));
+const AppAvailability = Loadable(lazy(() => import("pages/apps/calendar/availability")));
+const AppReservations = Loadable(lazy(() => import("pages/apps/calendar/reservations")));
 
 //const AppKanban = Loadable(lazy(() => import("pages/apps/kanban")));
 //const AppKanbanBacklogs = Loadable(lazy(() => import("sections/apps/kanban/Backlogs")));
@@ -133,6 +135,9 @@ const Details = Loadable(lazy(() => import("pages/apps/folders/details/details")
 //const Landing = Loadable(lazy(() => import("pages/landing")));
 //const ContactUS = Loadable(lazy(() => import("pages/contact-us")));
 const PricingPage = Loadable(lazy(() => import("pages/extra-pages/price/price1")));
+
+// render - booking page
+const BookingPage = Loadable(lazy(() => import("pages/booking")));
 //const PricingPage2 = Loadable(lazy(() => import("pages/extra-pages/price/price2")));
 
 // subscription pages
@@ -147,6 +152,10 @@ const HelpPage = Loadable(lazy(() => import("pages/help")));
 const MainRoutes = {
 	path: "/",
 	children: [
+		{
+			path: "booking/:slug",
+			element: <BookingPage />,
+		},
 		{
 			path: "/",
 			element: (
@@ -207,7 +216,28 @@ const MainRoutes = {
 						},
 						{
 							path: "calendar",
-							element: <AppCalendar />,
+							children: [
+								{
+									path: "",
+									element: <AppCalendar />,
+								},
+								{
+									path: "availability",
+									element: <AppReservations />,
+								},
+								{
+									path: "reservations",
+									element: <AppReservations />,
+								},
+								{
+									path: "reservations/:id",
+									element: <AppReservations />,
+								},
+								{
+									path: "booking-config",
+									element: <AppAvailability />,
+								},
+							],
 						},
 						{
 							path: "customer",

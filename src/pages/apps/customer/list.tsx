@@ -103,36 +103,36 @@ function ReactTable({
 		() =>
 			matchDownSM
 				? [
-					"email",
-					"lastName",
-					"_id",
-					"address",
-					"status",
-					"state",
-					"zipCode",
-					"nationality",
-					"document",
-					"cuit",
-					"activity",
-					"company",
-					"fiscal",
-					"folderIds",
-				]
+						"email",
+						"lastName",
+						"_id",
+						"address",
+						"status",
+						"state",
+						"zipCode",
+						"nationality",
+						"document",
+						"cuit",
+						"activity",
+						"company",
+						"fiscal",
+						"folderIds",
+				  ]
 				: [
-					"email",
-					"lastName",
-					"_id",
-					"address",
-					"state",
-					"zipCode",
-					"nationality",
-					"document",
-					"cuit",
-					"activity",
-					"company",
-					"fiscal",
-					"folderIds",
-				],
+						"email",
+						"lastName",
+						"_id",
+						"address",
+						"state",
+						"zipCode",
+						"nationality",
+						"document",
+						"cuit",
+						"activity",
+						"company",
+						"fiscal",
+						"folderIds",
+				  ],
 		[matchDownSM],
 	);
 
@@ -332,17 +332,17 @@ function ReactTable({
 									color="primary"
 									size="medium"
 									sx={{
-										position: 'relative',
+										position: "relative",
 									}}
 								>
 									<CSVLink
 										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
 										filename={"contactos.csv"}
 										style={{
-											color: 'inherit',
-											display: 'flex',
-											alignItems: 'center',
-											textDecoration: 'none'
+											color: "inherit",
+											display: "flex",
+											alignItems: "center",
+											textDecoration: "none",
 										}}
 									>
 										<DocumentDownload variant="Bulk" size={22} />

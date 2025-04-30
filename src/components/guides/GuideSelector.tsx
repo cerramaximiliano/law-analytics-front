@@ -55,7 +55,6 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 						<Warning2 variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.primary.main }} />
 						<Typography variant="h3">Selecciona una Guía</Typography>
 					</Box>
-
 				</DialogTitle>
 				<DialogContent sx={{ p: 3 }}>
 					<Grid container spacing={3} sx={{ mt: 1 }}>

@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react";
 
 // material-ui
 import { Theme, useTheme } from "@mui/material/styles";
-import { 
-	useMediaQuery, 
-	Box, 
-	Dialog, 
-	Tooltip, 
+import {
+	useMediaQuery,
+	Box,
+	Dialog,
+	Tooltip,
 	Typography,
 	Button,
 	Stack,
@@ -49,7 +49,7 @@ import {
 } from "store/reducers/calendar";
 
 // types
-import { Add, Calendar as CalendarIcon, DocumentDownload, Edit2, InfoCircle, Link1, Trash } from "iconsax-react";
+import { Add, Calendar as CalendarIcon, Edit2, InfoCircle, Link1, Trash } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { deleteEvent, getEventsByUserId, selectEvent, updateEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -73,7 +73,7 @@ interface LinkFoldersModalProps {
 const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, loadingFolders }: LinkFoldersModalProps) => {
 	const theme = useTheme();
 	const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
-	
+
 	// Si el evento ya está vinculado a una carpeta, pre-seleccionarla
 	useEffect(() => {
 		if (open && event?.folderId) {
@@ -82,17 +82,17 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 			setSelectedFolders([]);
 		}
 	}, [open, event]);
-	
+
 	const handleToggleFolder = (folderId: string) => {
 		// Solo permitimos una carpeta seleccionada a la vez
 		setSelectedFolders([folderId]);
 	};
-	
+
 	const handleLinkFolders = () => {
 		onLink(selectedFolders, availableFolders);
 		onClose();
 	};
-	
+
 	return (
 		<Dialog
 			open={open}
@@ -120,11 +120,11 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 			</DialogTitle>
 			<DialogContent sx={{ p: 3 }}>
 				{loadingFolders ? (
-					<Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+					<Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
 						<CircularProgress />
 					</Box>
 				) : availableFolders.length === 0 ? (
-					<Typography variant="body1" sx={{ textAlign: 'center', p: 3 }}>
+					<Typography variant="body1" sx={{ textAlign: "center", p: 3 }}>
 						No hay carpetas disponibles para vincular. Cree una carpeta primero.
 					</Typography>
 				) : (
@@ -135,22 +135,14 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 						<Typography variant="body2" color="error.main" gutterBottom>
 							Nota: Sólo se permite vincular un evento a una única carpeta.
 						</Typography>
-						<List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+						<List sx={{ width: "100%", bgcolor: "background.paper" }}>
 							{availableFolders.map((folder) => (
 								<ListItem key={folder._id} disablePadding>
 									<ListItemButton onClick={() => handleToggleFolder(folder._id)}>
 										<ListItemIcon>
-											<Checkbox
-												edge="start"
-												checked={selectedFolders.includes(folder._id)}
-												tabIndex={-1}
-												disableRipple
-											/>
+											<Checkbox edge="start" checked={selectedFolders.includes(folder._id)} tabIndex={-1} disableRipple />
 										</ListItemIcon>
-										<ListItemText 
-											primary={folder.folderName} 
-											secondary={folder.description || `Estado: ${folder.status}`} 
-										/>
+										<ListItemText primary={folder.folderName} secondary={folder.description || `Estado: ${folder.status}`} />
 									</ListItemButton>
 								</ListItem>
 							))}
@@ -168,11 +160,7 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 				<Button color="error" onClick={onClose}>
 					Cancelar
 				</Button>
-				<Button
-					variant="contained"
-					onClick={handleLinkFolders}
-					disabled={loadingFolders || selectedFolders.length === 0}
-				>
+				<Button variant="contained" onClick={handleLinkFolders} disabled={loadingFolders || selectedFolders.length === 0}>
 					Vincular
 				</Button>
 			</DialogActions>
@@ -181,7 +169,6 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 };
 
 // ==============================|| CALENDAR - MAIN ||============================== //
-
 
 // Tipos de props para EventDetailsView
 interface EventDetailsViewProps {
@@ -196,31 +183,31 @@ interface EventDetailsViewProps {
 const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete }: EventDetailsViewProps) => {
 	const theme = useTheme();
 	const eventType = event?.type || "";
-	
+
 	// Mapeo de tipos a etiquetas en español
 	const eventTypeLabels: Record<string, string> = {
 		audiencia: "Audiencia",
 		vencimiento: "Vencimiento",
 		reunion: "Reunión",
-		otro: "Otro"
+		otro: "Otro",
 	};
-	
+
 	// Obtener el tipo formateado en español
 	const formattedType = eventTypeLabels[eventType as keyof typeof eventTypeLabels] || eventType;
-	
+
 	// Formatear fechas para mostrar
 	const formatDate = (date: Date | string | undefined): string => {
 		if (!date) return "";
 		const d = new Date(date);
-		return d.toLocaleString('es-ES', { 
-			day: '2-digit', 
-			month: '2-digit', 
-			year: 'numeric', 
-			hour: '2-digit', 
-			minute: '2-digit'
+		return d.toLocaleString("es-ES", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
 		});
 	};
-	
+
 	return (
 		<>
 			<DialogTitle
@@ -249,53 +236,74 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete }: EventDet
 				}}
 			>
 				<Box sx={{ mb: 2 }}>
-					<Typography variant="h4" gutterBottom>{event?.title}</Typography>
-					
+					<Typography variant="h4" gutterBottom>
+						{event?.title}
+					</Typography>
+
 					<Grid container spacing={2} sx={{ mt: 2 }}>
 						<Grid item xs={12} md={6}>
-							<Typography variant="subtitle2" color="textSecondary">Tipo:</Typography>
+							<Typography variant="subtitle2" color="textSecondary">
+								Tipo:
+							</Typography>
 							<Typography variant="body1" sx={{ mb: 1 }}>
-								<Box component="span" sx={{ 
-									display: 'inline-block', 
-									width: 12, 
-									height: 12, 
-									borderRadius: '50%', 
-									backgroundColor: event?.color || '#1890ff',
-									mr: 1
-								}}/>
+								<Box
+									component="span"
+									sx={{
+										display: "inline-block",
+										width: 12,
+										height: 12,
+										borderRadius: "50%",
+										backgroundColor: event?.color || "#1890ff",
+										mr: 1,
+									}}
+								/>
 								{formattedType}
 							</Typography>
 						</Grid>
-						
+
 						<Grid item xs={12} md={6}>
-							<Typography variant="subtitle2" color="textSecondary">Duración:</Typography>
+							<Typography variant="subtitle2" color="textSecondary">
+								Duración:
+							</Typography>
 							<Typography variant="body1" sx={{ mb: 1 }}>
-								{event?.allDay ? 'Todo el día' : 'Hora específica'}
+								{event?.allDay ? "Todo el día" : "Hora específica"}
 							</Typography>
 						</Grid>
-						
+
 						<Grid item xs={12} md={6}>
-							<Typography variant="subtitle2" color="textSecondary">Fecha de inicio:</Typography>
-							<Typography variant="body1" sx={{ mb: 1 }}>{formatDate(event?.start)}</Typography>
+							<Typography variant="subtitle2" color="textSecondary">
+								Fecha de inicio:
+							</Typography>
+							<Typography variant="body1" sx={{ mb: 1 }}>
+								{formatDate(event?.start)}
+							</Typography>
 						</Grid>
-						
+
 						<Grid item xs={12} md={6}>
-							<Typography variant="subtitle2" color="textSecondary">Fecha de finalización:</Typography>
-							<Typography variant="body1" sx={{ mb: 1 }}>{formatDate(event?.end)}</Typography>
+							<Typography variant="subtitle2" color="textSecondary">
+								Fecha de finalización:
+							</Typography>
+							<Typography variant="body1" sx={{ mb: 1 }}>
+								{formatDate(event?.end)}
+							</Typography>
 						</Grid>
-						
+
 						{event?.description && (
 							<Grid item xs={12}>
-								<Typography variant="subtitle2" color="textSecondary">Descripción:</Typography>
-								<Typography variant="body1" sx={{ mb: 1, whiteSpace: 'pre-wrap' }}>
+								<Typography variant="subtitle2" color="textSecondary">
+									Descripción:
+								</Typography>
+								<Typography variant="body1" sx={{ mb: 1, whiteSpace: "pre-wrap" }}>
 									{event.description}
 								</Typography>
 							</Grid>
 						)}
-						
+
 						{event?.folderName && (
 							<Grid item xs={12}>
-								<Typography variant="subtitle2" color="textSecondary">Carpeta:</Typography>
+								<Typography variant="subtitle2" color="textSecondary">
+									Carpeta:
+								</Typography>
 								<Typography variant="body1" sx={{ mb: 1 }}>
 									{event.folderName}
 								</Typography>
@@ -330,11 +338,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete }: EventDet
 							<Button color="error" onClick={onClose}>
 								Cerrar
 							</Button>
-							<Button
-								variant="contained"
-								startIcon={<Edit2 />}
-								onClick={onEdit}
-							>
+							<Button variant="contained" startIcon={<Edit2 />} onClick={onEdit}>
 								Editar
 							</Button>
 						</Stack>
@@ -354,7 +358,7 @@ const Calendar = () => {
 	const [isEditingEvent, setIsEditingEvent] = useState(false);
 	const [isViewingEvent, setIsViewingEvent] = useState(false);
 	const [linkFoldersOpen, setLinkFoldersOpen] = useState(false);
-	
+
 	// Estado para las carpetas disponibles
 	const [availableFolders, setAvailableFolders] = useState<Folder[]>([]);
 	const [loadingFolders, setLoadingFolders] = useState<boolean>(false);
@@ -505,12 +509,12 @@ const Calendar = () => {
 		dispatch(selectEvent(null));
 		setLocalModalOpen(true);
 	};
-	
+
 	const handleSwitchToEditMode = () => {
 		setIsViewingEvent(false);
 		setIsEditingEvent(true);
 	};
-	
+
 	const handleDeleteEvent = () => {
 		if (selectedEvent?._id) {
 			dispatch(deleteEvent(selectedEvent._id));
@@ -528,7 +532,7 @@ const Calendar = () => {
 			handleModalClose();
 		}
 	};
-	
+
 	const handleLinkEvent = () => {
 		// Cargar las carpetas antes de abrir el modal
 		const loadFolders = async () => {
@@ -557,25 +561,25 @@ const Calendar = () => {
 				}
 			}
 		};
-		
+
 		loadFolders();
 		// Abre el modal de vinculación
 		setLinkFoldersOpen(true);
 	};
-	
+
 	const handleLinkFolders = async (folderIds: string[], folders: Folder[]) => {
 		if (selectedEvent?._id) {
 			try {
 				// Obtiene el ID de la carpeta seleccionada (solo una)
 				const folderId = folderIds.length > 0 ? folderIds[0] : null;
-				
+
 				// Obtiene el nombre de la carpeta de la lista de carpetas proporcionada
 				let folderName = "";
 				if (folderId) {
-					const folder = folders.find(f => f._id === folderId);
+					const folder = folders.find((f) => f._id === folderId);
 					folderName = folder?.folderName || "";
 				}
-				
+
 				// Actualiza el evento con la nueva vinculación
 				await dispatch(
 					updateEvent(selectedEvent._id, {
@@ -586,10 +590,10 @@ const Calendar = () => {
 						description: selectedEvent.description,
 						type: selectedEvent.type,
 						folderId: folderId || undefined,
-						folderName
-					})
+						folderName,
+					}),
 				);
-				
+
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -621,7 +625,7 @@ const Calendar = () => {
 	if (loading) return <Loader />;
 
 	// Preprocesar los eventos para asegurarnos de que tengan el formato correcto
-	const formattedEvents = events.map(event => ({
+	const formattedEvents = events.map((event) => ({
 		id: event._id,
 		title: event.title,
 		start: event.start,
@@ -633,50 +637,37 @@ const Calendar = () => {
 			_id: event._id,
 			type: event.type,
 			folderId: event.folderId,
-			folderName: event.folderName
-		}
+			folderName: event.folderName,
+		},
 	}));
 
 	return (
 		<Box sx={{ position: "relative" }}>
 			<CalendarStyled>
 				{/* Botones en la parte superior */}
-				<Stack 
-					direction="row" 
-					justifyContent="flex-end" 
-					spacing={2} 
-					sx={{ mb: 2 }}
-				>
+				<Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mb: 2 }}>
 					<Tooltip title="Agregar Nuevo Evento">
-						<IconButton 
-							color="primary" 
-							onClick={handleAddEventClick}
-							size="medium"
-						>
+						<IconButton color="primary" onClick={handleAddEventClick} size="medium">
 							<Add variant="Bulk" />
 						</IconButton>
 					</Tooltip>
-					
-					<Tooltip title="Exportar Eventos">
+
+					{/* 					<Tooltip title="Exportar Eventos">
 						<IconButton 
 							color="secondary"
 							size="medium"
 						>
 							<DocumentDownload variant="Bulk" />
 						</IconButton>
-					</Tooltip>
-					
+					</Tooltip> */}
+
 					<Tooltip title="Ver Guía">
-						<IconButton 
-							color="success" 
-							onClick={() => setGuideOpen(true)}
-							size="medium"
-						>
+						<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
 							<InfoCircle variant="Bulk" />
 						</IconButton>
 					</Tooltip>
 				</Stack>
-				
+
 				<Toolbar
 					date={date}
 					view={calendarView}
@@ -709,14 +700,14 @@ const Calendar = () => {
 					height={matchDownSM ? "auto" : 720}
 					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
 					noEventsContent={
-						<Box 
-							sx={{ 
-								display: 'flex', 
-								flexDirection: 'column', 
-								alignItems: 'center', 
-								justifyContent: 'center', 
-								height: '100%', 
-								p: 3 
+						<Box
+							sx={{
+								display: "flex",
+								flexDirection: "column",
+								alignItems: "center",
+								justifyContent: "center",
+								height: "100%",
+								p: 3,
 							}}
 						>
 							<Typography variant="h5" color="textSecondary" sx={{ mb: 1 }}>
@@ -740,27 +731,23 @@ const Calendar = () => {
 				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}
 			>
 				{isViewingEvent ? (
-					<EventDetailsView 
-						event={selectedEvent} 
-						onClose={handleModalClose} 
+					<EventDetailsView
+						event={selectedEvent}
+						onClose={handleModalClose}
 						onEdit={handleSwitchToEditMode}
 						onDelete={handleDeleteEvent}
 						onLink={handleLinkEvent}
 					/>
 				) : (
-					<AddEventForm 
-						event={isEditingEvent ? selectedEvent : null} 
-						range={selectedRange} 
-						onCancel={handleModalClose} 
-					/>
+					<AddEventForm event={isEditingEvent ? selectedEvent : null} range={selectedRange} onCancel={handleModalClose} />
 				)}
 			</Dialog>
 
 			{/* Guía del Calendario */}
 			<GuideCalendar open={guideOpen} onClose={() => setGuideOpen(false)} />
-			
+
 			{/* Modal para vincular evento a carpetas */}
-			<LinkFoldersModal 
+			<LinkFoldersModal
 				open={linkFoldersOpen}
 				onClose={() => setLinkFoldersOpen(false)}
 				event={selectedEvent || null}
