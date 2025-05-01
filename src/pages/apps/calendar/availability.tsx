@@ -46,17 +46,7 @@ import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // assets
-import { 
-	Calendar as CalendarIcon, 
-	Clock, 
-	InfoCircle, 
-	Save2, 
-	Link, 
-	ArrowRotateRight, 
-	Add,
-	CloseCircle,
-	Edit2
-} from "iconsax-react";
+import { Calendar as CalendarIcon, Clock, InfoCircle, Save2, Link, Add, CloseCircle, Edit2 } from "iconsax-react";
 
 // Tipos para la API de disponibilidad
 interface TimeSlot {
@@ -88,7 +78,7 @@ interface RequiredFields {
 interface CustomField {
 	name: string;
 	required: boolean;
-	type: 'text' | 'number' | 'select' | 'checkbox';
+	type: "text" | "number" | "select" | "checkbox";
 	options: string[]; // Para tipo 'select'
 }
 
@@ -130,10 +120,10 @@ const weekdays = [
 
 // Tipos de campos personalizados disponibles
 const fieldTypes = [
-	{ value: 'text', label: 'Texto' },
-	{ value: 'number', label: 'Número' },
-	{ value: 'select', label: 'Selección' },
-	{ value: 'checkbox', label: 'Casilla de verificación' }
+	{ value: "text", label: "Texto" },
+	{ value: "number", label: "Número" },
+	{ value: "select", label: "Selección" },
+	{ value: "checkbox", label: "Casilla de verificación" },
 ];
 
 // ==============================|| AVAILABILITY SETTINGS ||============================== //
@@ -166,7 +156,7 @@ const Availability = () => {
 	const [bufferTime, setBufferTime] = useState<number>(10); // Tiempo de descanso: 10 minutos
 	const [autoAccept, setAutoAccept] = useState<boolean>(false);
 	const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
-	
+
 	// Nuevos estados para configuraciones adicionales
 	const [maxDaysInAdvance, setMaxDaysInAdvance] = useState<number>(60);
 	const [minNoticeHours, setMinNoticeHours] = useState<number>(24);
@@ -174,7 +164,7 @@ const Availability = () => {
 	const [maxWeeklyBookings, setMaxWeeklyBookings] = useState<number | null>(null);
 	const [excludedDates, setExcludedDates] = useState<ExcludedDate[]>([]);
 	const [customFields, setCustomFields] = useState<CustomField[]>([]);
-	
+
 	// Estado para los campos requeridos
 	const [requiredFields, setRequiredFields] = useState<RequiredFields>({
 		name: true,
@@ -182,7 +172,7 @@ const Availability = () => {
 		phone: false,
 		notes: false,
 		company: false,
-		address: false
+		address: false,
 	});
 
 	// Estados para diálogos
@@ -193,8 +183,8 @@ const Availability = () => {
 	const [newCustomField, setNewCustomField] = useState<CustomField>({
 		name: "",
 		required: false,
-		type: 'text',
-		options: []
+		type: "text",
+		options: [],
 	});
 	const [newFieldOption, setNewFieldOption] = useState("");
 	const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
@@ -238,23 +228,23 @@ const Availability = () => {
 
 		// Configuración de notificaciones
 		setNotificationEnabled(config.hostNotifications?.email || config.hostNotifications?.browser);
-		
+
 		// Nuevas configuraciones adicionales
 		setMaxDaysInAdvance(config.maxDaysInAdvance || 60);
 		setMinNoticeHours(config.minNoticeHours || 24);
 		setMaxDailyBookings(config.maxDailyBookings);
 		setMaxWeeklyBookings(config.maxWeeklyBookings);
-		
+
 		// Fechas excluidas
 		if (config.excludedDates && config.excludedDates.length > 0) {
 			setExcludedDates(config.excludedDates);
 		}
-		
+
 		// Campos personalizados
 		if (config.customFields && config.customFields.length > 0) {
 			setCustomFields(config.customFields);
 		}
-		
+
 		// Campos requeridos
 		if (config.requiredFields) {
 			setRequiredFields(config.requiredFields);
@@ -375,8 +365,8 @@ const Availability = () => {
 			setNewCustomField({
 				name: "",
 				required: false,
-				type: 'text',
-				options: []
+				type: "text",
+				options: [],
 			});
 			setEditingFieldIndex(null);
 			setOpenCustomFieldDialog(false);
@@ -390,7 +380,7 @@ const Availability = () => {
 	};
 
 	const handleEditCustomField = (index: number) => {
-		setNewCustomField({...customFields[index]});
+		setNewCustomField({ ...customFields[index] });
 		setEditingFieldIndex(index);
 		setOpenCustomFieldDialog(true);
 	};
@@ -399,7 +389,7 @@ const Availability = () => {
 		if (newFieldOption && !newCustomField.options.includes(newFieldOption)) {
 			setNewCustomField({
 				...newCustomField,
-				options: [...newCustomField.options, newFieldOption]
+				options: [...newCustomField.options, newFieldOption],
 			});
 			setNewFieldOption("");
 		}
@@ -408,7 +398,7 @@ const Availability = () => {
 	const handleRemoveFieldOption = (option: string) => {
 		setNewCustomField({
 			...newCustomField,
-			options: newCustomField.options.filter(o => o !== option)
+			options: newCustomField.options.filter((o) => o !== option),
 		});
 	};
 
@@ -416,7 +406,7 @@ const Availability = () => {
 	const handleRequiredFieldChange = (field: keyof RequiredFields) => {
 		setRequiredFields({
 			...requiredFields,
-			[field]: !requiredFields[field]
+			[field]: !requiredFields[field],
 		});
 	};
 
@@ -468,7 +458,7 @@ const Availability = () => {
 			}));
 
 			// Obtener el nombre del usuario para incluirlo en el título o descripción
-			const userName = user?.name || user?.lastName || user?.email?.split('@')[0] || "Profesional";
+			const userName = user?.name || user?.lastName || user?.email?.split("@")[0] || "Profesional";
 
 			// Construir objeto de configuración
 			const availabilityData = {
@@ -683,21 +673,21 @@ const Availability = () => {
 											</Tooltip>
 										</Stack>
 
-										<Button 
-											variant="outlined" 
-											startIcon={<Add />} 
+										<Button
+											variant="outlined"
+											startIcon={<Add />}
 											onClick={() => setOpenExcludedDateDialog(true)}
-											sx={{ alignSelf: 'flex-start' }}
+											sx={{ alignSelf: "flex-start" }}
 										>
 											Agregar fecha bloqueada
 										</Button>
 
 										{excludedDates.length > 0 ? (
-											<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+											<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
 												{excludedDates.map((item, index) => (
 													<Chip
 														key={index}
-														label={`${new Date(item.date).toLocaleDateString()} ${item.reason ? `- ${item.reason}` : ''}`}
+														label={`${new Date(item.date).toLocaleDateString()} ${item.reason ? `- ${item.reason}` : ""}`}
 														onDelete={() => handleRemoveExcludedDate(index)}
 														color="error"
 														variant="outlined"
@@ -820,9 +810,9 @@ const Availability = () => {
 												type="number"
 												label="Máximo de citas por día"
 												InputProps={{ inputProps: { min: 0 } }}
-												value={maxDailyBookings !== null ? maxDailyBookings : ''}
+												value={maxDailyBookings !== null ? maxDailyBookings : ""}
 												onChange={(e) => {
-													const val = e.target.value !== '' ? parseInt(e.target.value) : null;
+													const val = e.target.value !== "" ? parseInt(e.target.value) : null;
 													setMaxDailyBookings(val);
 												}}
 												size="small"
@@ -836,9 +826,9 @@ const Availability = () => {
 												type="number"
 												label="Máximo de citas por semana"
 												InputProps={{ inputProps: { min: 0 } }}
-												value={maxWeeklyBookings !== null ? maxWeeklyBookings : ''}
+												value={maxWeeklyBookings !== null ? maxWeeklyBookings : ""}
 												onChange={(e) => {
-													const val = e.target.value !== '' ? parseInt(e.target.value) : null;
+													const val = e.target.value !== "" ? parseInt(e.target.value) : null;
 													setMaxWeeklyBookings(val);
 												}}
 												size="small"
@@ -892,27 +882,27 @@ const Availability = () => {
 												<Typography variant="subtitle2">Campos obligatorios</Typography>
 												<FormGroup>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.name} onChange={() => handleRequiredFieldChange('name')} />}
+														control={<Checkbox checked={requiredFields.name} onChange={() => handleRequiredFieldChange("name")} />}
 														label="Nombre"
 													/>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.email} onChange={() => handleRequiredFieldChange('email')} />}
+														control={<Checkbox checked={requiredFields.email} onChange={() => handleRequiredFieldChange("email")} />}
 														label="Correo electrónico"
 													/>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.phone} onChange={() => handleRequiredFieldChange('phone')} />}
+														control={<Checkbox checked={requiredFields.phone} onChange={() => handleRequiredFieldChange("phone")} />}
 														label="Teléfono"
 													/>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.notes} onChange={() => handleRequiredFieldChange('notes')} />}
+														control={<Checkbox checked={requiredFields.notes} onChange={() => handleRequiredFieldChange("notes")} />}
 														label="Notas"
 													/>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.company} onChange={() => handleRequiredFieldChange('company')} />}
+														control={<Checkbox checked={requiredFields.company} onChange={() => handleRequiredFieldChange("company")} />}
 														label="Empresa"
 													/>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.address} onChange={() => handleRequiredFieldChange('address')} />}
+														control={<Checkbox checked={requiredFields.address} onChange={() => handleRequiredFieldChange("address")} />}
 														label="Dirección"
 													/>
 												</FormGroup>
@@ -932,8 +922,8 @@ const Availability = () => {
 															setNewCustomField({
 																name: "",
 																required: false,
-																type: 'text',
-																options: []
+																type: "text",
+																options: [],
 															});
 															setEditingFieldIndex(null);
 															setOpenCustomFieldDialog(true);
@@ -946,15 +936,15 @@ const Availability = () => {
 												{customFields.length > 0 ? (
 													<Stack spacing={1}>
 														{customFields.map((field, index) => (
-															<Box key={index} sx={{ p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+															<Box key={index} sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
 																<Stack direction="row" justifyContent="space-between" alignItems="center">
 																	<Stack>
-																		<Typography variant="subtitle2">{field.name} {field.required && <sup>*</sup>}</Typography>
+																		<Typography variant="subtitle2">
+																			{field.name} {field.required && <sup>*</sup>}
+																		</Typography>
 																		<Typography variant="caption" color="textSecondary">
-																			Tipo: {fieldTypes.find(t => t.value === field.type)?.label}
-																			{field.type === 'select' && field.options.length > 0 && 
-																				` (Opciones: ${field.options.join(', ')})`
-																			}
+																			Tipo: {fieldTypes.find((t) => t.value === field.type)?.label}
+																			{field.type === "select" && field.options.length > 0 && ` (Opciones: ${field.options.join(", ")})`}
 																		</Typography>
 																	</Stack>
 																	<Stack direction="row" spacing={1}>
@@ -986,15 +976,6 @@ const Availability = () => {
 					<Grid item xs={12}>
 						<Box display="flex" justifyContent="flex-end" sx={{ mt: 2 }} gap={2}>
 							<Button
-								variant="outlined"
-								color="primary"
-								startIcon={<ArrowRotateRight />}
-								onClick={loadAvailabilitySettings}
-								disabled={loading || saving}
-							>
-								Recargar
-							</Button>
-							<Button
 								variant="contained"
 								color="primary"
 								startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <Save2 />}
@@ -1013,16 +994,16 @@ const Availability = () => {
 			<Dialog open={openExcludedDateDialog} onClose={() => setOpenExcludedDateDialog(false)}>
 				<DialogTitle>Agregar fecha bloqueada</DialogTitle>
 				<DialogContent>
-					<Stack spacing={3} sx={{ mt: 1, minWidth: '300px' }}>
+					<Stack spacing={3} sx={{ mt: 1, minWidth: "300px" }}>
 						<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
 							<DatePicker
 								label="Fecha a bloquear"
 								value={newExcludedDate}
 								onChange={(newValue) => setNewExcludedDate(newValue)}
-								slotProps={{ textField: { fullWidth: true, margin: 'normal' } }}
+								slotProps={{ textField: { fullWidth: true, margin: "normal" } }}
 							/>
 						</LocalizationProvider>
-						
+
 						<TextField
 							label="Motivo (opcional)"
 							fullWidth
@@ -1044,28 +1025,30 @@ const Availability = () => {
 
 			{/* Diálogo para agregar/editar campo personalizado */}
 			<Dialog open={openCustomFieldDialog} onClose={() => setOpenCustomFieldDialog(false)}>
-				<DialogTitle>{editingFieldIndex !== null ? 'Editar campo personalizado' : 'Agregar campo personalizado'}</DialogTitle>
+				<DialogTitle>{editingFieldIndex !== null ? "Editar campo personalizado" : "Agregar campo personalizado"}</DialogTitle>
 				<DialogContent>
-					<Stack spacing={3} sx={{ mt: 1, minWidth: '300px' }}>
+					<Stack spacing={3} sx={{ mt: 1, minWidth: "300px" }}>
 						<TextField
 							label="Nombre del campo"
 							fullWidth
 							value={newCustomField.name}
-							onChange={(e) => setNewCustomField({...newCustomField, name: e.target.value})}
+							onChange={(e) => setNewCustomField({ ...newCustomField, name: e.target.value })}
 							placeholder="Ej: Número de expediente, Asunto, etc."
 						/>
-						
+
 						<FormControl fullWidth>
 							<InputLabel>Tipo de campo</InputLabel>
 							<Select
 								value={newCustomField.type}
 								label="Tipo de campo"
-								onChange={(e) => setNewCustomField({
-									...newCustomField, 
-									type: e.target.value as 'text' | 'number' | 'select' | 'checkbox',
-									// Limpiar las opciones si cambia de tipo select a otro
-									options: e.target.value !== 'select' ? [] : newCustomField.options
-								})}
+								onChange={(e) =>
+									setNewCustomField({
+										...newCustomField,
+										type: e.target.value as "text" | "number" | "select" | "checkbox",
+										// Limpiar las opciones si cambia de tipo select a otro
+										options: e.target.value !== "select" ? [] : newCustomField.options,
+									})
+								}
 							>
 								{fieldTypes.map((type) => (
 									<MenuItem key={type.value} value={type.value}>
@@ -1074,18 +1057,18 @@ const Availability = () => {
 								))}
 							</Select>
 						</FormControl>
-						
+
 						<FormControlLabel
 							control={
-								<Checkbox 
-									checked={newCustomField.required} 
-									onChange={(e) => setNewCustomField({...newCustomField, required: e.target.checked})}
+								<Checkbox
+									checked={newCustomField.required}
+									onChange={(e) => setNewCustomField({ ...newCustomField, required: e.target.checked })}
 								/>
 							}
 							label="Campo obligatorio"
 						/>
-						
-						{newCustomField.type === 'select' && (
+
+						{newCustomField.type === "select" && (
 							<>
 								<Typography variant="subtitle2">Opciones de selección</Typography>
 								<Stack direction="row" spacing={1}>
@@ -1097,24 +1080,15 @@ const Availability = () => {
 										placeholder="Agrega una opción"
 										size="small"
 									/>
-									<Button 
-										variant="contained" 
-										onClick={handleAddFieldOption}
-										disabled={!newFieldOption}
-									>
+									<Button variant="contained" onClick={handleAddFieldOption} disabled={!newFieldOption}>
 										Agregar
 									</Button>
 								</Stack>
-								
+
 								{newCustomField.options.length > 0 ? (
-									<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+									<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
 										{newCustomField.options.map((option, idx) => (
-											<Chip
-												key={idx}
-												label={option}
-												onDelete={() => handleRemoveFieldOption(option)}
-												variant="outlined"
-											/>
+											<Chip key={idx} label={option} onDelete={() => handleRemoveFieldOption(option)} variant="outlined" />
 										))}
 									</Box>
 								) : (
@@ -1130,13 +1104,13 @@ const Availability = () => {
 					<Button onClick={() => setOpenCustomFieldDialog(false)} color="inherit">
 						Cancelar
 					</Button>
-					<Button 
-						onClick={handleAddCustomField} 
-						variant="contained" 
+					<Button
+						onClick={handleAddCustomField}
+						variant="contained"
 						color="primary"
-						disabled={!newCustomField.name || (newCustomField.type === 'select' && newCustomField.options.length === 0)}
+						disabled={!newCustomField.name || (newCustomField.type === "select" && newCustomField.options.length === 0)}
 					>
-						{editingFieldIndex !== null ? 'Actualizar' : 'Agregar'}
+						{editingFieldIndex !== null ? "Actualizar" : "Agregar"}
 					</Button>
 				</DialogActions>
 			</Dialog>

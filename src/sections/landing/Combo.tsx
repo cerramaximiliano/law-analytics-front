@@ -1,48 +1,78 @@
 // material-ui
-import { CardMedia, Container, Grid, Stack, Typography } from "@mui/material";
+import { Button, Box, CardMedia, Container, Grid, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 // third party
 import { motion } from "framer-motion";
+import { ArrowRight, Chart, Calendar, Book1, Calculator } from "iconsax-react";
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
 
 // assets
-//import { ExportSquare } from "iconsax-react";
-import featureFigma from "assets/images/landing/feature-figma.png";
-import featureComponents from "assets/images/landing/feature-components.png";
-import featureDocumentation from "assets/images/landing/feature-documentation.png";
+import dashboardImg from "assets/images/widget/dashborad-1.jpg";
+import calendarImg from "assets/images/widget/dashborad-2.jpg";
+import foldersImg from "assets/images/widget/dashborad-3.jpg";
+import welcomeBanner from "assets/images/analytics/welcome-banner.png";
 
-const Technologies = [
+interface SystemScreenItem {
+	image: string;
+	title: string;
+	description: string;
+	icon: React.ElementType;
+	color: "primary" | "info" | "warning" | "success";
+	link: string;
+}
+
+const SystemScreens: SystemScreenItem[] = [
 	{
-		icon: featureFigma,
-		title: "Dashboard de control",
-		description: "Maneja todas las variables de tu negocio desde un solo lugar. Ingresos, honorarios, tareas y más.",
-		preview: "https://www.figma.com/file/6XqmRhRmkr33w0EFD49acY/Able-Pro--v9.0-Figma-Preview?type=design&mode=design&t=4FS2Lw6WxsmJ3RLm-0",
+		image: dashboardImg,
+		title: "Dashboard Analítico",
+		description:
+			"Visualiza todos los datos de tu estudio jurídico en tiempo real con gráficos detallados y métricas clave para la toma de decisiones.",
+		icon: Chart,
+		color: "primary",
+		link: "/login",
 	},
 	{
-		icon: featureComponents,
-		title: "Agenda sincronizada",
-		description: "Sincroniza tu agenda con Google Clalendar para tener todos los recordatorios del proceso en un sólo lugar.",
-		preview: "/components-overview/buttons",
+		image: calendarImg,
+		title: "Calendario Integrado",
+		description:
+			"Gestiona vencimientos, audiencias y reuniones de forma eficiente. Sincronización con Google Calendar e integración con expedientes.",
+		icon: Calendar,
+		color: "info",
+		link: "/login",
 	},
 	{
-		icon: featureDocumentation,
-		title: "Base de clientes",
-		description: "Administra la base de datos de clientes de forma ordenada y notifica novedades procesales de forma inmediata.",
-		preview: "https://phoenixcoded.gitbook.io/able-pro/v/react/",
+		image: foldersImg,
+		title: "Gestión de Expedientes",
+		description:
+			"Centraliza toda la información de tus causas legales, movimientos y documentos en un sistema de gestión completo y eficiente.",
+		icon: Book1,
+		color: "warning",
+		link: "/login",
+	},
+	{
+		image: welcomeBanner,
+		title: "Herramientas Legales",
+		description: "Accede a calculadoras laborales, de intereses, y más herramientas especializadas para profesionales del derecho.",
+		icon: Calculator,
+		color: "success",
+		link: "/login",
 	},
 ];
 
 // ==============================|| LANDING - ComboPage ||============================== //
 
 const ComboPage = () => {
+	const theme = useTheme();
+
 	return (
 		<Container>
-			<Grid container spacing={3} alignItems="center" justifyContent="center" sx={{ mt: { md: 15, xs: 2.5 }, mb: { md: 10, xs: 2.5 } }}>
+			<Grid container spacing={5} alignItems="center" justifyContent="center" sx={{ mt: { md: 15, xs: 2.5 }, mb: { md: 15, xs: 2.5 } }}>
 				<Grid item xs={12}>
-					<Grid container spacing={2} justifyContent="center" sx={{ textAlign: "center", marginBottom: 3 }}>
+					<Grid container spacing={2} justifyContent="center" sx={{ textAlign: "center", marginBottom: 5 }}>
 						<Grid item xs={12}>
 							<motion.div
 								initial={{ opacity: 0, translateY: 550 }}
@@ -54,10 +84,10 @@ const ComboPage = () => {
 									delay: 0.2,
 								}}
 							>
-								<Typography variant="h2">Estudio Jurídico virtual</Typography>
+								<Typography variant="h2">Estudio Jurídico Virtual</Typography>
 							</motion.div>
 						</Grid>
-						<Grid item xs={12} md={7}>
+						<Grid item xs={12} md={8}>
 							<motion.div
 								initial={{ opacity: 0, translateY: 550 }}
 								animate={{ opacity: 1, translateY: 0 }}
@@ -68,7 +98,7 @@ const ComboPage = () => {
 									delay: 0.4,
 								}}
 							>
-								<Typography>
+								<Typography variant="h5" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
 									Con Law||Analytics puedes mantener tu estudio jurídico de forma 100% virtual y trabajar de forma remota y colaborativa
 									desde cualquier lugar 🌍
 								</Typography>
@@ -76,48 +106,135 @@ const ComboPage = () => {
 						</Grid>
 					</Grid>
 				</Grid>
-				<Grid item xs={12}>
-					<Grid container spacing={3} alignItems="center">
-						{Technologies.map((tech, index) => (
-							<Grid item xs={12} md={6} lg={4} key={index}>
-								<FadeInWhenVisible>
-									<MainCard>
-										<Grid container spacing={3.5}>
-											<Grid item xs={12}>
-												<Stack spacing={1}>
-													<Typography variant="h5">{tech.title}</Typography>
-													<Typography>{tech.description}</Typography>
-												</Stack>
-											</Grid>
-											<Grid item xs={12}>
-												<CardMedia component="img" image={tech.icon} sx={{ width: "100%" }} />
-											</Grid>
-											{/* 										<Grid item xs={12}>
-												<Button
-													variant="contained"
-													color="secondary"
-													size="large"
-													startIcon={<ExportSquare />}
-													component={Link}
-													href={tech.preview}
-													target="_blank"
-													sx={{
-														fontWeight: 500,
-														bgcolor: "secondary.light",
-														color: "secondary.darker",
-														"&:hover": { color: "secondary.lighter" },
+
+				{SystemScreens.map((screen, index) => (
+					<Grid item xs={12} key={index} sx={{ mb: 4 }}>
+						<FadeInWhenVisible>
+							<MainCard
+								sx={{
+									overflow: "hidden",
+									boxShadow: theme.shadows[4],
+									borderRadius: "16px",
+									transition: "all 0.3s ease",
+									"&:hover": {
+										boxShadow: theme.shadows[10],
+										transform: "translateY(-5px)",
+									},
+								}}
+							>
+								<Grid
+									container
+									spacing={3}
+									direction={index % 2 === 0 ? "row" : "row-reverse"}
+									sx={{ flexDirection: { xs: "column-reverse", md: index % 2 === 0 ? "row" : "row-reverse" } }}
+								>
+									{/* Contenido de texto */}
+									<Grid item xs={12} md={5} sx={{ display: "flex", alignItems: "center" }}>
+										<Box sx={{ p: { xs: 2, md: 4 } }}>
+											<Box
+												sx={{
+													display: "inline-flex",
+													p: 1.5,
+													borderRadius: "12px",
+													bgcolor:
+														screen.color === "primary"
+															? theme.palette.primary.lighter
+															: screen.color === "info"
+															? theme.palette.info.lighter
+															: screen.color === "warning"
+															? theme.palette.warning.lighter
+															: theme.palette.success.lighter,
+													mb: 2,
+												}}
+											>
+												<screen.icon
+													size={36}
+													variant="Bulk"
+													style={{
+														color:
+															screen.color === "primary"
+																? theme.palette.primary.main
+																: screen.color === "info"
+																? theme.palette.info.main
+																: screen.color === "warning"
+																? theme.palette.warning.main
+																: theme.palette.success.main,
 													}}
-												>
-													Reference
-												</Button>
-											</Grid> */}
-										</Grid>
-									</MainCard>
-								</FadeInWhenVisible>
-							</Grid>
-						))}
+												/>
+											</Box>
+
+											<Typography
+												variant="h3"
+												sx={{
+													mb: 2,
+													color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
+												}}
+											>
+												{screen.title}
+											</Typography>
+
+											<Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+												{screen.description}
+											</Typography>
+
+											<Button
+												variant="contained"
+												color={screen.color}
+												endIcon={<ArrowRight />}
+												href={screen.link}
+												sx={{
+													borderRadius: "8px",
+													textTransform: "none",
+													fontWeight: 600,
+													"&:hover": {
+														boxShadow:
+															screen.color === "primary"
+																? `0 6px 15px ${theme.palette.primary.lighter}`
+																: screen.color === "info"
+																? `0 6px 15px ${theme.palette.info.lighter}`
+																: screen.color === "warning"
+																? `0 6px 15px ${theme.palette.warning.lighter}`
+																: `0 6px 15px ${theme.palette.success.lighter}`,
+													},
+												}}
+											>
+												Explorar
+											</Button>
+										</Box>
+									</Grid>
+
+									{/* Imagen */}
+									<Grid item xs={12} md={7}>
+										<Box
+											sx={{
+												position: "relative",
+												height: { xs: "240px", sm: "340px", md: "400px" },
+												overflow: "hidden",
+												borderRadius: { xs: "12px", md: index % 2 === 0 ? "0 12px 12px 0" : "12px 0 0 12px" },
+											}}
+										>
+											<CardMedia
+												component="img"
+												image={screen.image}
+												alt={screen.title}
+												sx={{
+													width: "100%",
+													height: "100%",
+													objectFit: "cover",
+													objectPosition: "center",
+													transition: "transform 0.5s ease",
+													"&:hover": {
+														transform: "scale(1.05)",
+													},
+												}}
+											/>
+										</Box>
+									</Grid>
+								</Grid>
+							</MainCard>
+						</FadeInWhenVisible>
 					</Grid>
-				</Grid>
+				))}
 			</Grid>
 		</Container>
 	);

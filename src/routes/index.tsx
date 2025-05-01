@@ -8,8 +8,12 @@ import Loadable from "components/Loadable";
 import LoginRoutes from "./LoginRoutes";
 import MainRoutes from "./MainRoutes";
 const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404")));
-// render - landing page
+
+// render - landing and static pages
 const PagesLanding = Loadable(lazy(() => import("pages/landing")));
+const GuidesPage = Loadable(lazy(() => import("pages/guides")));
+const PrivacyPolicy = Loadable(lazy(() => import("pages/privacy-policy")));
+const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
 
 // ==============================|| ROUTES RENDER ||============================== //
 
@@ -22,6 +26,18 @@ export default function ThemeRoutes() {
 				{
 					path: "/",
 					element: <PagesLanding />,
+				},
+				{
+					path: "guides",
+					element: <GuidesPage />,
+				},
+				{
+					path: "privacy-policy",
+					element: <PrivacyPolicy />,
+				},
+				{
+					path: "cookies-policy",
+					element: <CookiesPolicy />,
 				},
 			],
 		},

@@ -7,6 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import MainCard from "components/MainCard";
 import { LaboralContent, InteresesContent, FoldersContent, ContactsContent, CalendarContent } from "components/guides/GuideContent";
 import { useTheme } from "@mui/material/styles";
+import { GuideBooking } from "components/guides";
 
 // Icons
 import {
@@ -20,6 +21,7 @@ import {
 	MessageQuestion,
 	Profile2User,
 	Calendar,
+	CalendarTick,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES DE AYUDA ||============================== //
@@ -28,8 +30,14 @@ import {
 const GuidesSection = () => {
 	const theme = useTheme();
 	const [expandedGuide, setExpandedGuide] = useState<string | null>(null);
+	const [guideBookingOpen, setGuideBookingOpen] = useState(false);
 
 	const handleExpandGuide = (guideName: string) => {
+		if (guideName === "citas") {
+			setGuideBookingOpen(true);
+			return;
+		}
+
 		if (expandedGuide === guideName) {
 			setExpandedGuide(null);
 		} else {
@@ -50,7 +58,7 @@ const GuidesSection = () => {
 
 			<Grid container spacing={3} sx={{ mt: 1 }}>
 				{/* Guía Laboral */}
-				<Grid item xs={12} md={4} lg={2.4}>
+				<Grid item xs={12} md={4} lg={2}>
 					<Card
 						sx={{
 							height: "100%",
@@ -85,7 +93,7 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Intereses */}
-				<Grid item xs={12} md={4} lg={2.4}>
+				<Grid item xs={12} md={4} lg={2}>
 					<Card
 						sx={{
 							height: "100%",
@@ -120,7 +128,7 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Carpetas */}
-				<Grid item xs={12} md={4} lg={2.4}>
+				<Grid item xs={12} md={4} lg={2}>
 					<Card
 						sx={{
 							height: "100%",
@@ -155,7 +163,7 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Contactos */}
-				<Grid item xs={12} md={4} lg={2.4}>
+				<Grid item xs={12} md={4} lg={2}>
 					<Card
 						sx={{
 							height: "100%",
@@ -190,7 +198,7 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Calendario */}
-				<Grid item xs={12} md={4} lg={2.4}>
+				<Grid item xs={12} md={4} lg={2}>
 					<Card
 						sx={{
 							height: "100%",
@@ -218,6 +226,41 @@ const GuidesSection = () => {
 								</Typography>
 								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
 									{expandedGuide === "calendario" ? "Cerrar guía" : "Ver guía"}
+								</Button>
+							</CardContent>
+						</CardActionArea>
+					</Card>
+				</Grid>
+
+				{/* Guía Sistema de Citas */}
+				<Grid item xs={12} md={4} lg={2}>
+					<Card
+						sx={{
+							height: "100%",
+							transition: "all 0.2s",
+							"&:hover": {
+								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+							},
+						}}
+					>
+						<CardActionArea onClick={() => handleExpandGuide("citas")}>
+							<CardContent sx={{ textAlign: "center", pb: 3 }}>
+								<CalendarTick
+									variant="Bulk"
+									size={48}
+									style={{
+										color: theme.palette.error.main,
+										marginBottom: 16,
+									}}
+								/>
+								<Typography variant="h4" gutterBottom>
+									Sistema de Citas
+								</Typography>
+								<Typography variant="body2" color="textSecondary">
+									Aprende a configurar y gestionar el sistema de citas online para tus clientes.
+								</Typography>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+									Ver guía
 								</Button>
 							</CardContent>
 						</CardActionArea>
@@ -295,6 +338,9 @@ const GuidesSection = () => {
 					<CalendarContent />
 				</Paper>
 			</Collapse>
+
+			{/* Modal de Guía de Citas */}
+			<GuideBooking open={guideBookingOpen} onClose={() => setGuideBookingOpen(false)} />
 		</Box>
 	);
 };

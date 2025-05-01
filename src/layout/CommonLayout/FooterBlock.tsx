@@ -1,21 +1,38 @@
 // material-ui
 import { styled, useTheme } from "@mui/material/styles";
-import { Box, Container, Grid, Link, Stack, Typography } from "@mui/material";
+import { Box, Container, Grid, Link, Stack, Typography, Button } from "@mui/material";
+import { useState } from "react";
 
 // third-party
 import { motion } from "framer-motion";
+import { Facebook, Instagram, MessageText1, DocumentText } from "iconsax-react";
 
 // project-imports
 import Logo from "components/logo";
-
-// assets
-import { Facebook, Instagram } from "iconsax-react";
+import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
+import { Link as RouterLink } from "react-router-dom";
 
 // link - custom style
 const FooterLink = styled(Link)(({ theme }) => ({
 	color: theme.palette.text.primary,
 	"&:hover, &:active": {
 		color: theme.palette.primary.main,
+	},
+}));
+
+// Custom button styled to look like a link
+const FooterButton = styled(Button)(({ theme }) => ({
+	color: theme.palette.text.primary,
+	padding: 0,
+	minWidth: 0,
+	backgroundColor: "transparent",
+	textTransform: "none",
+	fontWeight: "inherit",
+	fontSize: "inherit",
+	justifyContent: "flex-start",
+	"&:hover, &:active": {
+		color: theme.palette.primary.main,
+		backgroundColor: "transparent",
 	},
 }));
 
@@ -27,6 +44,7 @@ type showProps = {
 
 const FooterBlock = ({ isFull }: showProps) => {
 	const theme = useTheme();
+	const [supportOpen, setSupportOpen] = useState(false);
 
 	const linkSX = {
 		color: theme.palette.text.secondary,
@@ -36,6 +54,14 @@ const FooterBlock = ({ isFull }: showProps) => {
 		"&:hover": {
 			opacity: "1",
 		},
+	};
+
+	const handleOpenSupport = () => {
+		setSupportOpen(true);
+	};
+
+	const handleCloseSupport = () => {
+		setSupportOpen(false);
 	};
 
 	return (
@@ -92,9 +118,26 @@ const FooterBlock = ({ isFull }: showProps) => {
 									<Stack spacing={3}>
 										<Typography variant="h5">Ayuda & Soporte</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
-											<FooterLink href="https://phoenixcoded.authordesk.app/" target="_blank" underline="none">
-												Soporte
-											</FooterLink>
+											<FooterButton
+												onClick={handleOpenSupport}
+												sx={{
+													textAlign: "left",
+													display: "inline-flex",
+												}}
+											>
+												<Stack direction="row" alignItems="center" spacing={1}>
+													<MessageText1 size={16} />
+													<Typography component="span">Soporte</Typography>
+												</Stack>
+											</FooterButton>
+											<RouterLink to="/guides" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ textAlign: "left", display: "inline-flex" }}>
+													<Stack direction="row" alignItems="center" spacing={1}>
+														<DocumentText size={16} />
+														<Typography component="span">Guías de Uso</Typography>
+													</Stack>
+												</FooterButton>
+											</RouterLink>
 										</Stack>
 									</Stack>
 								</Grid>
@@ -102,12 +145,12 @@ const FooterBlock = ({ isFull }: showProps) => {
 									<Stack spacing={3}>
 										<Typography variant="h5">Recursos útiles</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
-											<FooterLink href="https://themeforest.net/page/item_support_policy" target="_blank" underline="none">
-												Política de privacidad
-											</FooterLink>
-											<FooterLink href="https://themeforest.net/licenses/standard" target="_blank" underline="none">
-												Política de cookies
-											</FooterLink>
+											<RouterLink to="/privacy-policy" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Política de privacidad</FooterButton>
+											</RouterLink>
+											<RouterLink to="/cookies-policy" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Política de cookies</FooterButton>
+											</RouterLink>
 										</Stack>
 									</Stack>
 								</Grid>
@@ -151,6 +194,9 @@ const FooterBlock = ({ isFull }: showProps) => {
 					</Grid>
 				</Container>
 			</Box>
+
+			{/* Modal de soporte */}
+			<SupportModal open={supportOpen} onClose={handleCloseSupport} />
 		</>
 	);
 };

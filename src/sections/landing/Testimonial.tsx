@@ -1,101 +1,178 @@
 // material-ui
-import { useTheme } from "@mui/material/styles";
-import { Box, Container, Grid, Stack, Typography } from "@mui/material";
+import { useTheme, alpha } from "@mui/material/styles";
+import { Avatar, Box, Container, Grid, Stack, Typography } from "@mui/material";
 
 // third party
 import { motion } from "framer-motion";
 import Marquee from "react-fast-marquee";
+import { QuoteUp } from "iconsax-react";
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
-// assets
-//import Avatar from "components/@extended/Avatar";
-import Avatar1 from "assets/images/users/avatar-6.png";
-import Avatar2 from "assets/images/users/avatar-1.png";
-import Avatar3 from "assets/images/users/avatar-2.png";
-import Avatar4 from "assets/images/users/avatar-3.png";
-import Avatar5 from "assets/images/users/avatar-4.png";
-import Avatar6 from "assets/images/users/avatar-5.png";
-import Avatar7 from "assets/images/users/avatar-7.png";
-import Avatar8 from "assets/images/users/avatar-8.png";
 
 // ================================|| SLIDER - ITEMS ||================================ //
 
-const Item = ({ item }: { item: { image: string; text: string; name: string; designation: string; highlight?: boolean } }) => (
-	<MainCard
-		sx={{
-			width: { xs: "300px", md: "420px" },
-			cursor: "pointer",
-			my: 0.2,
-			mx: 1.5,
-		}}
-	>
-		<Stack direction="row" alignItems="flex-start" spacing={2}>
-			<Stack>
-				<Typography>{item.text}</Typography>
-				<Typography>
-					<small>{item.name}</small> -{" "}
-					<Box component="span" color="textSecondary">
-						{item.designation}
-					</Box>
+interface TestimonialItem {
+	text: string;
+	name: string;
+	initials: string;
+	role: string;
+	company: string;
+	color: "primary" | "secondary" | "error" | "info" | "warning" | "success";
+	rating?: number;
+}
+
+const Item = ({ item }: { item: TestimonialItem }) => {
+	const theme = useTheme();
+
+	return (
+		<MainCard
+			sx={{
+				width: { xs: "300px", md: "400px" },
+				cursor: "pointer",
+				my: 1,
+				mx: 2,
+				p: 3,
+				borderRadius: "16px",
+				boxShadow: theme.shadows[3],
+				transition: "all 0.3s ease",
+				border: `1px solid ${alpha(theme.palette[item.color].main, 0.2)}`,
+				"&:hover": {
+					boxShadow: theme.shadows[8],
+					transform: "translateY(-5px)",
+					borderColor: alpha(theme.palette[item.color].main, 0.5),
+				},
+			}}
+		>
+			<Stack spacing={3}>
+				<Box
+					sx={{
+						color: theme.palette[item.color].main,
+						mb: -1,
+					}}
+				>
+					<QuoteUp variant="Bulk" size={32} />
+				</Box>
+				<Typography
+					variant="body1"
+					sx={{
+						fontStyle: "italic",
+						color: theme.palette.text.secondary,
+						lineHeight: 1.6,
+					}}
+				>
+					{item.text}
 				</Typography>
+				<Stack direction="row" alignItems="center" spacing={2} sx={{ pt: 1 }}>
+					<Avatar
+						sx={{
+							bgcolor: alpha(theme.palette[item.color].main, 0.2),
+							color: theme.palette[item.color].dark,
+							fontWeight: 700,
+						}}
+					>
+						{item.initials}
+					</Avatar>
+					<Stack>
+						<Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+							{item.name}
+						</Typography>
+						<Typography variant="caption" color="textSecondary">
+							{item.role}
+							{item.company ? `, ${item.company}` : ""}
+						</Typography>
+					</Stack>
+				</Stack>
 			</Stack>
-		</Stack>
-	</MainCard>
-);
+		</MainCard>
+	);
+};
 
 // ==============================|| LANDING - TestimonialPage ||============================== //
 const TestimonialPage = () => {
 	const theme = useTheme();
-	const items = [
+
+	const testimonials: TestimonialItem[] = [
 		{
-			image: Avatar1,
-			text: "“Muy útil para gestionar clientes y expedientes de manera eficiente.💼“",
-			name: "DV",
-			designation: "Personalización",
+			text: "Law||Analytics ha cambiado completamente la forma en que gestiono mis casos. La calculadora de intereses me ha ahorrado horas de trabajo y la precisión es impecable.",
+			name: "ML",
+			initials: "ML",
+			role: "Abogado Laboral",
+			company: "Estudio Leguizamón & Asociados",
+			color: "primary",
 		},
 		{
-			image: Avatar2,
-			text: "“Excelente calidad en el desarrollo, diseño profesional y fácil de usar.🎨“",
-			name: "SB",
-			designation: "Calidad del Código",
+			text: "Después de probar varias soluciones, puedo decir que esta plataforma es la más completa para estudios jurídicos. El sistema de carpetas y gestión de clientes es muy intuitivo.",
+			name: "CV",
+			initials: "CV",
+			role: "Socia Fundadora",
+			company: "Vásquez, Mendoza & Cía.",
+			color: "secondary",
 		},
 		{
-			image: Avatar3,
-			text: "“De las mejores plataformas para administrar un despacho jurídico.👏“",
-			name: "HM",
-			designation: "Calidad de Diseño",
+			text: "La calculadora laboral me permite realizar liquidaciones complejas en minutos. Es una herramienta indispensable para mi práctica diaria como abogado especializado en derecho laboral.",
+			name: "RA",
+			initials: "RA",
+			role: "Especialista en Derecho Laboral",
+			company: "",
+			color: "error",
 		},
 		{
-			image: Avatar4,
-			text: "“El soporte es excelente y siempre responden rápido a las necesidades.🙌“",
-			name: "HK",
-			designation: "Atención al Cliente",
+			text: "El sistema de calendario y recordatorios ha sido fundamental para no perder ningún vencimiento. Muy recomendable para equipos de trabajo que necesitan coordinación.",
+			name: "AM",
+			initials: "AM",
+			role: "Asistente Legal Senior",
+			company: "Bufete Legal Mendoza",
+			color: "info",
 		},
 		{
-			image: Avatar5,
-			text: "“Todo lo necesario para desarrolladores jurídicos, ¡una herramienta completa! 💻“",
-			name: "SA",
-			designation: "Disponibilidad de Funciones",
+			text: "La interfaz es moderna e intuitiva, y la capacidad de vincular eventos del calendario con expedientes específicos es una función que no he encontrado en ninguna otra plataforma legal.",
+			name: "FG",
+			initials: "FG",
+			role: "Abogado Civil",
+			company: "",
+			color: "warning",
 		},
 		{
-			image: Avatar6,
-			text: "“El diseño es impecable, con colores bien elegidos para la interfaz. 🎨“",
-			name: "RL",
-			designation: "Otros",
+			text: "El soporte técnico es excelente y siempre responden rápidamente a cualquier consulta. La plataforma se mantiene actualizada con nuevas funciones regularmente.",
+			name: "LS",
+			initials: "LS",
+			role: "Gerente de Operaciones",
+			company: "Estudio Jurídico Internacional",
+			color: "success",
 		},
 		{
-			image: Avatar7,
-			text: "“Atención al cliente excelente, me ayudaron con rapidez. 👍“",
-			name: "RT",
-			designation: "Atención al Cliente",
+			text: "Como responsable de un equipo de abogados, valoro enormemente la capacidad de asignar tareas y hacer seguimiento de los avances en cada caso. Ha mejorado nuestra eficiencia un 40%.",
+			name: "DT",
+			initials: "DT",
+			role: "Director Jurídico",
+			company: "Torres & Asociados",
+			color: "primary",
 		},
 		{
-			image: Avatar8,
-			text: "“Cumple perfectamente con mis necesidades, elegante y rápido. 💼“",
-			name: "GS",
-			designation: "Disponibilidad de Funciones",
+			text: "El sistema de citas online ha transformado la forma en que atendemos a nuestros clientes. Es un diferencial importante para nuestro estudio frente a la competencia.",
+			name: "PR",
+			initials: "PR",
+			role: "Abogada Familiar",
+			company: "",
+			color: "secondary",
+		},
+		{
+			text: "La calculadora de intereses es precisa y fácil de usar. Me ha ahorrado incontables horas de cálculos manuales y ha reducido los errores en nuestras presentaciones judiciales.",
+			name: "JM",
+			initials: "JM",
+			role: "Abogado Corporativo",
+			company: "Morales & Cía.",
+			color: "info",
+		},
+		{
+			text: "La integración entre el calendario y los expedientes es brillante. Puedo ver todos los vencimientos relacionados con un caso específico de forma inmediata.",
+			name: "GP",
+			initials: "GP",
+			role: "Procuradora",
+			company: "",
+			color: "warning",
 		},
 	];
 
@@ -116,16 +193,17 @@ const TestimonialPage = () => {
 								}}
 							>
 								<Typography variant="h2">
-									Ellos{" "}
+									Lo que dicen
 									<Box
 										component="span"
 										sx={{
 											color: theme.palette.primary.main,
+											mx: 1,
 										}}
 									>
-										eligen{" "}
-									</Box>{" "}
-									Law||Analytics, Ahora es tu turno 😍
+										nuestros usuarios
+									</Box>
+									sobre nosotros
 								</Typography>
 							</motion.div>
 						</Grid>
@@ -139,17 +217,21 @@ const TestimonialPage = () => {
 									damping: 30,
 									delay: 0.4,
 								}}
-							></motion.div>
+							>
+								<Typography variant="h5" color="text.secondary" sx={{ mt: 2 }}>
+									Testimonios de profesionales que utilizan Law||Analytics en su práctica diaria
+								</Typography>
+							</motion.div>
 						</Grid>
 					</Grid>
 				</Container>
 			</Box>
-			<Box sx={{ mb: { md: 10, xs: 2.5 } }}>
+			<Box sx={{ mb: { md: 15, xs: 2.5 } }}>
 				<Grid container spacing={4}>
 					<Grid item xs={12}>
 						<FadeInWhenVisible>
-							<Marquee pauseOnHover gradient={false}>
-								{items.map((item, index) => (
+							<Marquee pauseOnHover gradient={false} speed={30}>
+								{testimonials.slice(0, 5).map((item, index) => (
 									<Item key={index} item={item} />
 								))}
 							</Marquee>
@@ -157,8 +239,8 @@ const TestimonialPage = () => {
 					</Grid>
 					<Grid item xs={12}>
 						<FadeInWhenVisible>
-							<Marquee pauseOnHover direction="right" gradient={false}>
-								{items.map((item, index) => (
+							<Marquee pauseOnHover direction="right" gradient={false} speed={30}>
+								{testimonials.slice(5, 10).map((item, index) => (
 									<Item key={index} item={item} />
 								))}
 							</Marquee>

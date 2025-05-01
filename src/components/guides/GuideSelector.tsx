@@ -8,7 +8,11 @@ import { useTheme } from "@mui/material/styles";
 import { PopupTransition } from "components/@extended/Transitions";
 import GuideLaboral from "./GuideLaboral";
 import GuideIntereses from "./GuideIntereses";
-import { Calculator, Coin, Warning2 } from "iconsax-react";
+import GuideFolders from "./GuideFolders";
+import GuideContacts from "./GuideContacts";
+import GuideCalendar from "./GuideCalendar";
+import GuideBooking from "./GuideBooking";
+import { Calculator, Coin, Warning2, FolderOpen, ProfileCircle, Calendar, CalendarTick } from "iconsax-react";
 
 // ==============================|| COMPONENTE SELECTOR DE GUÍAS ||============================== //
 
@@ -21,6 +25,10 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 	const theme = useTheme();
 	const [guideLaboralOpen, setGuideLaboralOpen] = useState(false);
 	const [guideInteresesOpen, setGuideInteresesOpen] = useState(false);
+	const [guideFoldersOpen, setGuideFoldersOpen] = useState(false);
+	const [guideContactsOpen, setGuideContactsOpen] = useState(false);
+	const [guideCalendarOpen, setGuideCalendarOpen] = useState(false);
+	const [guideBookingOpen, setGuideBookingOpen] = useState(false);
 
 	const handleOpenGuideLaboral = () => {
 		onClose();
@@ -32,12 +40,32 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 		setGuideInteresesOpen(true);
 	};
 
+	const handleOpenGuideFolders = () => {
+		onClose();
+		setGuideFoldersOpen(true);
+	};
+
+	const handleOpenGuideContacts = () => {
+		onClose();
+		setGuideContactsOpen(true);
+	};
+
+	const handleOpenGuideCalendar = () => {
+		onClose();
+		setGuideCalendarOpen(true);
+	};
+
+	const handleOpenGuideBooking = () => {
+		onClose();
+		setGuideBookingOpen(true);
+	};
+
 	return (
 		<>
 			<Dialog
 				open={open}
 				onClose={onClose}
-				maxWidth="sm"
+				maxWidth="lg"
 				fullWidth
 				TransitionComponent={PopupTransition}
 				sx={{ "& .MuiDialog-paper": { borderRadius: "12px" } }}
@@ -58,7 +86,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 				</DialogTitle>
 				<DialogContent sx={{ p: 3 }}>
 					<Grid container spacing={3} sx={{ mt: 1 }}>
-						<Grid item xs={12} md={6}>
+						<Grid item xs={12} sm={6} md={4}>
 							<Card
 								sx={{
 									cursor: "pointer",
@@ -79,7 +107,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 								</CardContent>
 							</Card>
 						</Grid>
-						<Grid item xs={12} md={6}>
+						<Grid item xs={12} sm={6} md={4}>
 							<Card
 								sx={{
 									cursor: "pointer",
@@ -100,6 +128,90 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 								</CardContent>
 							</Card>
 						</Grid>
+						<Grid item xs={12} sm={6} md={4}>
+							<Card
+								sx={{
+									cursor: "pointer",
+									transition: "all 0.3s",
+									"&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
+									height: "100%",
+								}}
+								onClick={handleOpenGuideFolders}
+							>
+								<CardContent sx={{ p: 3, textAlign: "center" }}>
+									<FolderOpen size={64} variant="Bulk" style={{ color: theme.palette.warning.main, marginBottom: "16px" }} />
+									<Typography variant="h4" gutterBottom>
+										Guía Carpetas
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Aprende a organizar y gestionar carpetas para tus expedientes legales.
+									</Typography>
+								</CardContent>
+							</Card>
+						</Grid>
+						<Grid item xs={12} sm={6} md={4}>
+							<Card
+								sx={{
+									cursor: "pointer",
+									transition: "all 0.3s",
+									"&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
+									height: "100%",
+								}}
+								onClick={handleOpenGuideContacts}
+							>
+								<CardContent sx={{ p: 3, textAlign: "center" }}>
+									<ProfileCircle size={64} variant="Bulk" style={{ color: theme.palette.secondary.main, marginBottom: "16px" }} />
+									<Typography variant="h4" gutterBottom>
+										Guía Contactos
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Aprende a gestionar tus contactos y clientes en el sistema.
+									</Typography>
+								</CardContent>
+							</Card>
+						</Grid>
+						<Grid item xs={12} sm={6} md={4}>
+							<Card
+								sx={{
+									cursor: "pointer",
+									transition: "all 0.3s",
+									"&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
+									height: "100%",
+								}}
+								onClick={handleOpenGuideCalendar}
+							>
+								<CardContent sx={{ p: 3, textAlign: "center" }}>
+									<Calendar size={64} variant="Bulk" style={{ color: theme.palette.info.main, marginBottom: "16px" }} />
+									<Typography variant="h4" gutterBottom>
+										Guía Calendario
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Aprende a gestionar eventos y agenda en tu calendario legal.
+									</Typography>
+								</CardContent>
+							</Card>
+						</Grid>
+						<Grid item xs={12} sm={6} md={4}>
+							<Card
+								sx={{
+									cursor: "pointer",
+									transition: "all 0.3s",
+									"&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
+									height: "100%",
+								}}
+								onClick={handleOpenGuideBooking}
+							>
+								<CardContent sx={{ p: 3, textAlign: "center" }}>
+									<CalendarTick size={64} variant="Bulk" style={{ color: theme.palette.error.main, marginBottom: "16px" }} />
+									<Typography variant="h4" gutterBottom>
+										Guía de Citas
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Aprende a configurar y gestionar el sistema de citas online para tus clientes.
+									</Typography>
+								</CardContent>
+							</Card>
+						</Grid>
 					</Grid>
 				</DialogContent>
 			</Dialog>
@@ -107,6 +219,10 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 			{/* Importamos y renderizamos los componentes de guía */}
 			<GuideLaboral open={guideLaboralOpen} onClose={() => setGuideLaboralOpen(false)} />
 			<GuideIntereses open={guideInteresesOpen} onClose={() => setGuideInteresesOpen(false)} />
+			<GuideFolders open={guideFoldersOpen} onClose={() => setGuideFoldersOpen(false)} />
+			<GuideContacts open={guideContactsOpen} onClose={() => setGuideContactsOpen(false)} />
+			<GuideCalendar open={guideCalendarOpen} onClose={() => setGuideCalendarOpen(false)} />
+			<GuideBooking open={guideBookingOpen} onClose={() => setGuideBookingOpen(false)} />
 		</>
 	);
 };

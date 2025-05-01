@@ -3,7 +3,7 @@ import BasicWizard from "sections/forms/wizard/calc-laboral/despido";
 import LiquidacionWizard from "sections/forms/wizard/calc-laboral/liquidacion";
 
 // material-ui
-import { Box, Tab, Tabs, Typography, Button } from "@mui/material";
+import { Box, Tab, Tabs, Typography, Tooltip, IconButton } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -85,9 +85,11 @@ export default function LaborTabs() {
 						<Tab label="Liquidación" icon={<Calculator />} iconPosition="start" {...a11yProps(1)} />
 						<Tab label="Guardados" icon={<DocumentCloud />} iconPosition="start" {...a11yProps(2)} />
 					</Tabs>
-					<Button variant="text" color="primary" startIcon={<InfoCircle />} onClick={() => setGuideOpen(true)} sx={{ mr: 2 }}>
-						Ver Guía
-					</Button>
+					<Tooltip title="Ver Guía">
+						<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
+							<InfoCircle variant="Bulk" />
+						</IconButton>
+					</Tooltip>
 					{shouldShowFolderName && (
 						<Typography
 							variant="subtitle1"

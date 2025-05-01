@@ -14,6 +14,7 @@ import {
 	UserSquare,
 	ShoppingBag,
 	InfoCircle,
+	CalendarTick,
 } from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
@@ -32,6 +33,7 @@ const icons = {
 	ecommerce: ShoppingBag,
 	price: DollarSquare,
 	help: InfoCircle,
+	booking: CalendarTick,
 };
 
 // ==============================|| MENU ITEMS - APPLICATIONS ||============================== //
@@ -97,7 +99,7 @@ const applications: NavItemType = {
 					url: "/apps/calendar",
 				},
 				{
-					id: "calendar-availability",
+					id: "calendar-reservations",
 					title: <FormattedMessage id="Citas" />,
 					type: "item",
 					url: "/apps/calendar/reservations",

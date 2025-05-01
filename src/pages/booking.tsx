@@ -57,7 +57,7 @@ interface ExcludedDate {
 interface CustomField {
 	name: string;
 	required: boolean;
-	type: 'text' | 'number' | 'select' | 'checkbox';
+	type: "text" | "number" | "select" | "checkbox";
 	options: string[]; // Para tipo 'select'
 }
 
@@ -218,7 +218,7 @@ const BookingPage = () => {
 
 		// Verificar si la fecha está excluida
 		if (availabilitySettings?.excludedDates) {
-			const isExcluded = availabilitySettings.excludedDates.some(excludedDate => {
+			const isExcluded = availabilitySettings.excludedDates.some((excludedDate) => {
 				const excludedDateTime = new Date(excludedDate.date);
 				return excludedDateTime.toDateString() === date.toDateString();
 			});
@@ -256,20 +256,20 @@ const BookingPage = () => {
 		// Verificar tiempo mínimo de anticipación
 		const now = new Date();
 		const minNoticeMs = (availabilitySettings?.minNoticeHours || 0) * 60 * 60 * 1000;
-		
+
 		// Calcular slots disponibles
 		for (let time = startMinutes; time + duration <= endMinutes; time += totalDuration) {
 			const hour = Math.floor(time / 60);
 			const minute = time % 60;
 			const timeString = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-			
+
 			// Crear una fecha para este slot
 			const slotDate = new Date(date);
 			slotDate.setHours(hour, minute, 0, 0);
-			
+
 			// Verificar si el slot cumple con el tiempo mínimo de anticipación
-			const isAfterMinNotice = slotDate.getTime() >= (now.getTime() + minNoticeMs);
-			
+			const isAfterMinNotice = slotDate.getTime() >= now.getTime() + minNoticeMs;
+
 			// Verificar si el slot está disponible (aquí se podría consultar al backend para ver ocupación)
 			// Por ahora asumimos disponible si cumple con el tiempo mínimo de anticipación
 			const isAvailable = isAfterMinNotice;
@@ -318,75 +318,72 @@ const BookingPage = () => {
 				});
 			}
 		};
-		
+
 	// Manejador específico para campos de texto y número
-	const handleTextFieldChange = 
-		(fieldName: string) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-			const value = event.target.value;
-			
-			setFormData({
-				...formData,
-				customFields: {
-					...formData.customFields,
-					[fieldName]: value
-				}
+	const handleTextFieldChange = (fieldName: string) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+		const value = event.target.value;
+
+		setFormData({
+			...formData,
+			customFields: {
+				...formData.customFields,
+				[fieldName]: value,
+			},
+		});
+
+		// Limpiar error cuando el usuario cambia el valor
+		const errorKey = `custom_${fieldName}`;
+		if (formErrors[errorKey]) {
+			setFormErrors({
+				...formErrors,
+				[errorKey]: "",
 			});
-			
-			// Limpiar error cuando el usuario cambia el valor
-			const errorKey = `custom_${fieldName}`;
-			if (formErrors[errorKey]) {
-				setFormErrors({
-					...formErrors,
-					[errorKey]: "",
-				});
-			}
-		};
-		
+		}
+	};
+
 	// Manejador específico para campos select
-	const handleSelectFieldChange = 
-		(fieldName: string) => (event: SelectChangeEvent<string>) => {
-			const value = event.target.value;
-			
-			setFormData({
-				...formData,
-				customFields: {
-					...formData.customFields,
-					[fieldName]: value
-				}
+	const handleSelectFieldChange = (fieldName: string) => (event: SelectChangeEvent<string>) => {
+		const value = event.target.value;
+
+		setFormData({
+			...formData,
+			customFields: {
+				...formData.customFields,
+				[fieldName]: value,
+			},
+		});
+
+		// Limpiar error cuando el usuario cambia el valor
+		const errorKey = `custom_${fieldName}`;
+		if (formErrors[errorKey]) {
+			setFormErrors({
+				...formErrors,
+				[errorKey]: "",
 			});
-			
-			// Limpiar error cuando el usuario cambia el valor
-			const errorKey = `custom_${fieldName}`;
-			if (formErrors[errorKey]) {
-				setFormErrors({
-					...formErrors,
-					[errorKey]: "",
-				});
-			}
-		};
-		
+		}
+	};
+
 	// Manejador específico para campos checkbox
-	const handleCheckboxFieldChange = 
-		(fieldName: string) => (event: ChangeEvent<HTMLInputElement>) => {
-			const value = event.target.checked;
-			
-			setFormData({
-				...formData,
-				customFields: {
-					...formData.customFields,
-					[fieldName]: value
-				}
+	const handleCheckboxFieldChange = (fieldName: string) => (event: ChangeEvent<HTMLInputElement>) => {
+		const value = event.target.checked;
+
+		setFormData({
+			...formData,
+			customFields: {
+				...formData.customFields,
+				[fieldName]: value,
+			},
+		});
+
+		// Limpiar error cuando el usuario cambia el valor
+		const errorKey = `custom_${fieldName}`;
+		if (formErrors[errorKey]) {
+			setFormErrors({
+				...formErrors,
+				[errorKey]: "",
 			});
-			
-			// Limpiar error cuando el usuario cambia el valor
-			const errorKey = `custom_${fieldName}`;
-			if (formErrors[errorKey]) {
-				setFormErrors({
-					...formErrors,
-					[errorKey]: "",
-				});
-			}
-		};
+		}
+	};
 
 	const validateForm = () => {
 		const errors: Record<string, string> = {};
@@ -410,20 +407,20 @@ const BookingPage = () => {
 		if (availabilitySettings?.requiredFields.company && !formData.company.trim()) {
 			errors.company = "La empresa es obligatoria";
 		}
-		
+
 		if (availabilitySettings?.requiredFields.address && !formData.address.trim()) {
 			errors.address = "La dirección es obligatoria";
 		}
-		
+
 		// Validar campos personalizados
 		if (availabilitySettings?.customFields) {
-			availabilitySettings.customFields.forEach(field => {
+			availabilitySettings.customFields.forEach((field) => {
 				if (field.required) {
 					const fieldValue = formData.customFields[field.name];
-					
-					if (field.type === 'checkbox' && fieldValue !== true) {
+
+					if (field.type === "checkbox" && fieldValue !== true) {
 						errors[`custom_${field.name}`] = `${field.name} es obligatorio`;
-					} else if (['text', 'number', 'select'].includes(field.type) && (!fieldValue || fieldValue === '')) {
+					} else if (["text", "number", "select"].includes(field.type) && (!fieldValue || fieldValue === "")) {
 						errors[`custom_${field.name}`] = `${field.name} es obligatorio`;
 					}
 				}
@@ -493,7 +490,7 @@ const BookingPage = () => {
 				clientCompany: formData.company,
 				clientAddress: formData.address,
 				notes: formData.notes,
-				customFields: formData.customFields
+				customFields: formData.customFields,
 			};
 
 			// Enviar solicitud al backend
@@ -578,14 +575,16 @@ const BookingPage = () => {
 											// Deshabilitar fechas que no tienen disponibilidad o están excluidas
 											shouldDisableDate={(date) => {
 												if (!availabilitySettings?.timeSlots) return true;
-												
+
 												// Verificar si la fecha está en el arreglo de fechas excluidas
-												if (availabilitySettings.excludedDates?.some(excludedDate => 
-													new Date(excludedDate.date).toDateString() === date.toDateString()
-												)) {
+												if (
+													availabilitySettings.excludedDates?.some(
+														(excludedDate) => new Date(excludedDate.date).toDateString() === date.toDateString(),
+													)
+												) {
 													return true;
 												}
-												
+
 												// Verificar disponibilidad para el día de la semana
 												const dayOfWeek = date.getDay();
 												return !availabilitySettings.timeSlots.some((slot) => slot.day === dayOfWeek && slot.isActive);
@@ -703,7 +702,7 @@ const BookingPage = () => {
 												/>
 											</Grid>
 										)}
-										
+
 										{(availabilitySettings?.requiredFields.address || formData.address) && (
 											<Grid item xs={12}>
 												<TextField
@@ -717,7 +716,7 @@ const BookingPage = () => {
 												/>
 											</Grid>
 										)}
-										
+
 										{/* Campos personalizados */}
 										{availabilitySettings?.customFields && availabilitySettings.customFields.length > 0 && (
 											<>
@@ -727,17 +726,17 @@ const BookingPage = () => {
 														Información adicional
 													</Typography>
 												</Grid>
-												
+
 												{availabilitySettings.customFields.map((field, index) => {
 													const errorKey = `custom_${field.name}`;
-													
-													if (field.type === 'text') {
+
+													if (field.type === "text") {
 														return (
 															<Grid item xs={12} key={index}>
 																<TextField
 																	fullWidth
 																	label={field.name}
-																	value={formData.customFields[field.name] || ''}
+																	value={formData.customFields[field.name] || ""}
 																	onChange={handleTextFieldChange(field.name)}
 																	error={!!formErrors[errorKey]}
 																	helperText={formErrors[errorKey]}
@@ -745,14 +744,14 @@ const BookingPage = () => {
 																/>
 															</Grid>
 														);
-													} else if (field.type === 'number') {
+													} else if (field.type === "number") {
 														return (
 															<Grid item xs={12} sm={6} key={index}>
 																<TextField
 																	fullWidth
 																	label={field.name}
 																	type="number"
-																	value={formData.customFields[field.name] || ''}
+																	value={formData.customFields[field.name] || ""}
 																	onChange={handleTextFieldChange(field.name)}
 																	error={!!formErrors[errorKey]}
 																	helperText={formErrors[errorKey]}
@@ -760,13 +759,13 @@ const BookingPage = () => {
 																/>
 															</Grid>
 														);
-													} else if (field.type === 'select' && field.options.length > 0) {
+													} else if (field.type === "select" && field.options.length > 0) {
 														return (
 															<Grid item xs={12} sm={6} key={index}>
 																<FormControl fullWidth error={!!formErrors[errorKey]} required={field.required}>
 																	<InputLabel>{field.name}</InputLabel>
 																	<Select<string>
-																		value={(formData.customFields[field.name] as string) || ''}
+																		value={(formData.customFields[field.name] as string) || ""}
 																		label={field.name}
 																		onChange={handleSelectFieldChange(field.name)}
 																	>
@@ -776,13 +775,11 @@ const BookingPage = () => {
 																			</MenuItem>
 																		))}
 																	</Select>
-																	{!!formErrors[errorKey] && (
-																		<FormHelperText>{formErrors[errorKey]}</FormHelperText>
-																	)}
+																	{!!formErrors[errorKey] && <FormHelperText>{formErrors[errorKey]}</FormHelperText>}
 																</FormControl>
 															</Grid>
 														);
-													} else if (field.type === 'checkbox') {
+													} else if (field.type === "checkbox") {
 														return (
 															<Grid item xs={12} key={index}>
 																<FormControl error={!!formErrors[errorKey]} required={field.required}>
@@ -795,14 +792,12 @@ const BookingPage = () => {
 																		}
 																		label={field.name}
 																	/>
-																	{!!formErrors[errorKey] && (
-																		<FormHelperText>{formErrors[errorKey]}</FormHelperText>
-																	)}
+																	{!!formErrors[errorKey] && <FormHelperText>{formErrors[errorKey]}</FormHelperText>}
 																</FormControl>
 															</Grid>
 														);
 													}
-													
+
 													return null;
 												})}
 											</>
@@ -825,7 +820,7 @@ const BookingPage = () => {
 													sx={{ mb: 2 }}
 												/>
 											)}
-											
+
 											<FormControl error={!!formErrors.terms} sx={{ mt: 1 }}>
 												<FormControlLabel
 													control={<Checkbox checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />}

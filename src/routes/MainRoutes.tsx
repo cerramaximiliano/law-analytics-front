@@ -157,6 +157,10 @@ const MainRoutes = {
 			element: <BookingPage />,
 		},
 		{
+			path: "booking",
+			element: <BookingPage />,
+		},
+		{
 			path: "/",
 			element: (
 				<AuthGuard>

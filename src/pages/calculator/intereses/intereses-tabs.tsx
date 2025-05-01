@@ -1,6 +1,6 @@
 import { useState, ReactNode, SyntheticEvent } from "react";
 // material-ui
-import { Box, Tab, Tabs, Button } from "@mui/material";
+import { Box, Tab, Tabs, IconButton, Tooltip } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -69,9 +69,11 @@ export default function InteresesTabs() {
 						<Tab label="Cáculo Intereses" icon={<Calculator />} iconPosition="start" {...a11yProps(0)} />
 						<Tab label="Guardados" icon={<DocumentCloud />} iconPosition="start" {...a11yProps(1)} />
 					</Tabs>
-					<Button variant="text" color="primary" startIcon={<InfoCircle />} onClick={() => setGuideOpen(true)} sx={{ mr: 2 }}>
-						Ver Guía
-					</Button>
+					<Tooltip title="Ver Guía">
+						<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
+							<InfoCircle variant="Bulk" />
+						</IconButton>
+					</Tooltip>
 				</Box>
 				<TabPanel value={value} index={0}>
 					<InteresesWizard />
