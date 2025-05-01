@@ -9,6 +9,7 @@ import FadeInWhenVisible from "./Animation";
 import axios from "axios";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import PageBackground from "components/PageBackground";
 
 // ==============================|| NEWSLETTER SUBSCRIPTION SERVICE ||============================== //
 
@@ -128,15 +129,14 @@ const ContactUsPage = () => {
 	return (
 		<Box
 			sx={{
-				background: `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.12)} 0%, ${alpha(
-					theme.palette.primary.dark,
-					0.05,
-				)} 50%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+				position: "relative",
+				overflow: "hidden",
 				pb: { md: 12, xs: 8 },
 				pt: { md: 8, xs: 5 },
 				borderRadius: { md: "16px 16px 0 0" },
 			}}
 		>
+			<PageBackground variant="light" />
 			<Container>
 				<Grid container spacing={3} alignItems="center" justifyContent="center" sx={{ mt: { md: 5, xs: 2 } }}>
 					<Grid item xs={12} md={6}>

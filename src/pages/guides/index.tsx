@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import MainCard from "components/MainCard";
 import { GuideLaboral, GuideIntereses, GuideFolders, GuideContacts, GuideCalendar, GuideBooking } from "components/guides";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
+import PageBackground from "components/PageBackground";
 
 // icons
 import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick } from "iconsax-react";
@@ -88,7 +89,8 @@ const GuidesPage = () => {
 
 	return (
 		<>
-			<Box component="section" sx={{ pt: { xs: 10, md: 15 }, pb: { xs: 5, md: 10 } }}>
+			<Box component="section" sx={{ pt: { xs: 10, md: 15 }, pb: { xs: 5, md: 10 }, position: "relative", overflow: "hidden" }}>
+				<PageBackground variant="light" />
 				<Container>
 					<Grid container spacing={3}>
 						<Grid item xs={12}>

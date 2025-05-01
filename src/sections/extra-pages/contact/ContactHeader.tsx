@@ -1,8 +1,8 @@
 // material-ui
 import { Box, Container, Stack, Typography } from "@mui/material";
 
-// assets
-import AuthBackground from "assets/images/auth/AuthBackground";
+// project imports
+import PageBackground from "components/PageBackground";
 
 // ==============================|| CONTACT US - HEADER ||============================== //
 
@@ -16,7 +16,7 @@ function ContactHeader() {
 				pb: 2,
 			}}
 		>
-			<AuthBackground />
+			<PageBackground />
 			<Container maxWidth="lg" sx={{ px: { xs: 0, sm: 2 } }}>
 				<Box sx={{ width: { xs: "100%", sm: 252, md: 360, lg: 436 }, py: 6, mx: "auto" }}>
 					<Stack spacing={1}>

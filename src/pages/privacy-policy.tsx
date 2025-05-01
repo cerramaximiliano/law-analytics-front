@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 // project imports
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
+import PageBackground from "components/PageBackground";
 
 // ==============================|| PRIVACY POLICY PAGE ||============================== //
 
@@ -18,7 +19,8 @@ const PrivacyPolicy = () => {
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Política de Privacidad" }];
 
 	return (
-		<Box component="section" sx={{ pt: { xs: 10, md: 15 }, pb: { xs: 5, md: 10 } }}>
+		<Box component="section" sx={{ pt: { xs: 10, md: 15 }, pb: { xs: 5, md: 10 }, position: "relative", overflow: "hidden" }}>
+			<PageBackground variant="light" />
 			<Container>
 				<Grid container spacing={3}>
 					<Grid item xs={12}>
