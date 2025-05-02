@@ -5,7 +5,7 @@ import { useState } from "react";
 
 // third-party
 import { motion } from "framer-motion";
-import { Facebook, Instagram, MessageText1, DocumentText } from "iconsax-react";
+import { Facebook, Instagram, MessageText1, DocumentText, MessageQuestion } from "iconsax-react";
 
 // project-imports
 import Logo from "components/logo";
@@ -135,6 +135,14 @@ const FooterBlock = ({ isFull }: showProps) => {
 													<Stack direction="row" alignItems="center" spacing={1}>
 														<DocumentText size={16} />
 														<Typography component="span">Guías de Uso</Typography>
+													</Stack>
+												</FooterButton>
+											</RouterLink>
+											<RouterLink to="/faq" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ textAlign: "left", display: "inline-flex" }}>
+													<Stack direction="row" alignItems="center" spacing={1}>
+														<MessageQuestion size={16} />
+														<Typography component="span">Preguntas Frecuentes</Typography>
 													</Stack>
 												</FooterButton>
 											</RouterLink>

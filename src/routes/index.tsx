@@ -12,6 +12,7 @@ const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404
 // render - landing and static pages
 const PagesLanding = Loadable(lazy(() => import("pages/landing")));
 const GuidesPage = Loadable(lazy(() => import("pages/guides")));
+const FaqPage = Loadable(lazy(() => import("pages/faq")));
 const PrivacyPolicy = Loadable(lazy(() => import("pages/privacy-policy")));
 const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
 
@@ -30,6 +31,10 @@ export default function ThemeRoutes() {
 				{
 					path: "guides",
 					element: <GuidesPage />,
+				},
+				{
+					path: "faq",
+					element: <FaqPage />,
 				},
 				{
 					path: "privacy-policy",
