@@ -209,9 +209,9 @@ const HeaderPage = () => {
 						</Grid>
 					</Grid>
 				</Box>
-				
+
 				{/* Sección de iconos en la parte inferior, dentro del mismo container */}
-				<Box sx={{ mt: 'auto', mb: 0, py: 2 }}>
+				<Box sx={{ mt: "auto", mb: 0, py: 2 }}>
 					<Grid
 						container
 						spacing={2}
@@ -230,7 +230,7 @@ const HeaderPage = () => {
 										type: "spring",
 										stiffness: 150,
 										damping: 30,
-										delay: 0.6 + (index * 0.1), // Secuencia de aparición más pronunciada
+										delay: 0.6 + index * 0.1, // Secuencia de aparición más pronunciada
 									}}
 								>
 									<Box
