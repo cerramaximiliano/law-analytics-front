@@ -1,6 +1,7 @@
 // material-ui
 //import { useTheme } from "@mui/material/styles";
-import { Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
+import logoIcon from 'assets/images/logo.png';
 /**
  * if you want to use image instead of <svg> uncomment following.
  *
@@ -23,7 +24,7 @@ const LogoIcon = () => {
 		 */
 		<>
 			<Stack>
-				<Typography variant="h3">||</Typography>
+				<img src={logoIcon} width={45} alt="" />
 			</Stack>
 		</>
 	);

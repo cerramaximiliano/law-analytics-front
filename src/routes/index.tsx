@@ -15,6 +15,8 @@ const GuidesPage = Loadable(lazy(() => import("pages/guides")));
 const FaqPage = Loadable(lazy(() => import("pages/faq")));
 const PrivacyPolicy = Loadable(lazy(() => import("pages/privacy-policy")));
 const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
+const UnsubscribePage = Loadable(lazy(() => import("pages/unsubscribe")));
+const TermsPage = Loadable(lazy(() => import("pages/terms")));
 
 // ==============================|| ROUTES RENDER ||============================== //
 
@@ -43,6 +45,14 @@ export default function ThemeRoutes() {
 				{
 					path: "cookies-policy",
 					element: <CookiesPolicy />,
+				},
+				{
+					path: "unsubscribe",
+					element: <UnsubscribePage />,
+				},
+				{
+					path: "terms",
+					element: <TermsPage />,
 				},
 			],
 		},

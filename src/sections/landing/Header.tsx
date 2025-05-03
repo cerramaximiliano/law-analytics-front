@@ -118,7 +118,7 @@ const HeaderPage = () => {
 													lineHeight: { xs: 1.4, md: 1.4 },
 												}}
 											>
-												Law||Analytics es uno de las herramientas legales más potentes del mercado legal hoy disponible.
+												Law||Analytics es una de las herramientas legales más potentes del mercado legal hoy disponible.
 											</Typography>
 										</motion.div>
 									</Grid>

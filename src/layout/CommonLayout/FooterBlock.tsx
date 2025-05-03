@@ -159,6 +159,9 @@ const FooterBlock = ({ isFull }: showProps) => {
 											<RouterLink to="/cookies-policy" style={{ textDecoration: "none" }}>
 												<FooterButton sx={{ color: theme.palette.text.primary }}>Política de cookies</FooterButton>
 											</RouterLink>
+											<RouterLink to="/terms" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Términos y condiciones</FooterButton>
+											</RouterLink>
 										</Stack>
 									</Stack>
 								</Grid>

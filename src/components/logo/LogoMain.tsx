@@ -1,7 +1,9 @@
 // material-ui
 //import { useTheme } from "@mui/material/styles";
 
-import { Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
+import logo from 'assets/images/large_logo_transparent.png';
+
 
 //import { fontFamily } from "@mui/system";
 /**
@@ -25,7 +27,9 @@ const LogoMain = ({ reverse, ...others }: { reverse?: boolean }) => {
 		 */
 		<>
 			<Stack>
-				<Typography
+
+				<img src={logo} height="50" alt="" />
+{/* 				<Typography
 					variant="h3"
 					sx={{
 						fontFamily: "'Cinzel', serif", // Aquí aplicas la fuente Cinzel
@@ -33,7 +37,8 @@ const LogoMain = ({ reverse, ...others }: { reverse?: boolean }) => {
 					}}
 				>
 					Law||Analytics
-				</Typography>
+				</Typography> */}
+				
 			</Stack>
 		</>
 	);
