@@ -4,7 +4,7 @@ import axios, { AxiosError } from "axios";
 import { googleLogout } from "@react-oauth/google";
 import { CredentialResponse } from "@react-oauth/google";
 import { dispatch as reduxDispatch } from "store";
-import { LOGIN, LOGOUT, REGISTER } from "store/reducers/actions";
+import { LOGIN, LOGOUT, REGISTER, SET_NEEDS_VERIFICATION } from "store/reducers/actions";
 import { openSnackbar } from "store/reducers/snackbar";
 import authReducer from "store/reducers/auth";
 import Loader from "components/Loader";
@@ -172,7 +172,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				reduxDispatch(fetchUserStats());
 			} catch (error) {
 				// No redirigir al login, solo inicializar el estado como logged out
-				console.log("Error en la inicialización:", error);
+				// Solo mostrar errores que no sean 401 para evitar ruido en los logs durante el registro
+				if (axios.isAxiosError(error) && error.response?.status !== 401) {
+					console.log("Error en la inicialización:", error);
+				}
 
 				localDispatch({
 					type: LOGOUT,
@@ -243,11 +246,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					!url.includes("/api/auth/login") &&
 					!url.includes("/api/auth/google") &&
 					!url.includes("/api/auth/refresh-token") &&
-					!url.includes("/api/auth/logout")
-					//&&
-					//!url.includes("/api/stats/")
-					//&&
-					//!url.includes("/api/auth/me")
+					!url.includes("/api/auth/logout") &&
+					!url.includes("/api/auth/me") // Excluir /api/auth/me para evitar problemas en registro
 				) {
 					console.log("[Interceptor] Detectado error 401 en:", url, error.response?.data);
 
@@ -343,6 +343,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		lastName: string,
 	): Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }> => {
 		try {
+			console.log("Iniciando registro para:", email);
 			const response = await axios.post<RegisterResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/register`, {
 				email,
 				password,
@@ -350,30 +351,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				lastName,
 			});
 
-			const { user, needsVerification } = response.data;
+			console.log("Respuesta registro:", response.data);
+			// Siempre necesitará verificación para nuevos registros
+			const { user } = response.data;
 
+			// Actualizar el estado local primero
 			localDispatch({
 				type: REGISTER,
 				payload: {
-					isLoggedIn: !needsVerification,
+					isLoggedIn: false, // Siempre false hasta que se verifique
 					user,
 					email,
-					needsVerification,
+					needsVerification: true,
 				},
 			});
 
+			// Luego actualizar el estado global de Redux
 			reduxDispatch({
 				type: REGISTER,
 				payload: {
-					isLoggedIn: !needsVerification,
+					isLoggedIn: false, // Siempre false hasta que se verifique
 					user,
 					email,
-					needsVerification,
+					needsVerification: true,
 				},
 			});
 
+			// Verificación adicional: usar la acción específica para asegurar que needsVerification sea true
+			reduxDispatch({
+				type: SET_NEEDS_VERIFICATION,
+				payload: { email }
+			});
+
 			showSnackbar("Registro exitoso", "success");
-			return { email, isLoggedIn: !needsVerification, needsVerification };
+			console.log("Registro completado, needsVerification:", true);
+			return { email, isLoggedIn: false, needsVerification: true };
 		} catch (error) {
 			showSnackbar("Error en el registro", "error");
 			throw error;

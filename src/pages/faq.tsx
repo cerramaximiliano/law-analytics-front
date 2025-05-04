@@ -7,16 +7,7 @@ import { useTheme, alpha } from "@mui/material/styles";
 import { motion } from "framer-motion";
 
 // Icons
-import {
-	ArrowRight2,
-	Calculator,
-	Calendar,
-	CalendarTick,
-	Folder,
-	InfoCircle,
-	MessageQuestion,
-	Profile2User,
-} from "iconsax-react";
+import { ArrowRight2, Calculator, Calendar, CalendarTick, Folder, InfoCircle, MessageQuestion, Profile2User } from "iconsax-react";
 
 // ==============================|| FAQ PAGE ||============================== //
 
@@ -235,7 +226,10 @@ const FaqPage = () => {
 	const filteredFaqs = activeCategory ? allFaqs.filter((faq) => faq.category === activeCategory) : allFaqs;
 
 	return (
-		<Box component="section" sx={{ pt: { xs: 10, md: 15 }, pb: { xs: 5, md: 10 }, position: "relative", overflow: "hidden", minHeight: "100vh" }}>
+		<Box
+			component="section"
+			sx={{ pt: { xs: 10, md: 15 }, pb: { xs: 5, md: 10 }, position: "relative", overflow: "hidden", minHeight: "100vh" }}
+		>
 			<PageBackground variant="light" />
 			<Container>
 				<Grid container spacing={3}>

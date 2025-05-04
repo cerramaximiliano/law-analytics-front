@@ -1,7 +1,7 @@
 // material-ui
 //import { useTheme } from "@mui/material/styles";
 import { Stack } from "@mui/material";
-import logoIcon from 'assets/images/logo.png';
+import logoIcon from "assets/images/logo.png";
 /**
  * if you want to use image instead of <svg> uncomment following.
  *

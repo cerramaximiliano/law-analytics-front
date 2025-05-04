@@ -1,5 +1,5 @@
 import { useEffect, useState, SyntheticEvent } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import {
@@ -28,6 +28,7 @@ import AnimateButton from "components/@extended/AnimateButton";
 
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import { setNeedsVerification } from "store/reducers/auth";
 import { strengthColor, strengthIndicator } from "utils/password-strength";
 
 // types
@@ -41,7 +42,9 @@ import { Eye, EyeSlash } from "iconsax-react";
 const AuthRegister = () => {
 	const { register } = useAuth();
 	const scriptedRef = useScriptRef();
-	const navigate = useNavigate();
+	// La navegación se hará con window.location.href
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	//const navigate = useNavigate();
 
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
@@ -81,7 +84,7 @@ const AuthRegister = () => {
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
-						const { needsVerification } = await register(values.email, values.password, values.firstname, values.lastname);
+						await register(values.email, values.password, values.firstname, values.lastname);
 						if (scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);
@@ -97,11 +100,18 @@ const AuthRegister = () => {
 								}),
 							);
 							// Redirigir a la ruta según `needsVerification`
-							if (needsVerification) {
-								navigate("/code-verification", { replace: true });
-							} else {
-								navigate("/dashboard", { replace: true });
-							}
+							// Redirigir a la ruta de verificación de código
+							console.log("Registro exitoso. Redirigiendo a verificación de código");
+							
+							// Forzamos la verificación y la redirección independientemente de lo que venga del backend
+							dispatch(setNeedsVerification(values.email));
+							
+							// Redirección directa - usar window.location para garantizar que el navegador haga una carga completa
+							console.log("Redirigiendo a /code-verification mediante window.location.href");
+							// Usar un timeout para asegurar que el estado se actualice antes de la redirección
+							setTimeout(() => {
+								window.location.href = "/code-verification?email=" + encodeURIComponent(values.email) + "&mode=register";
+							}, 500);
 						}
 					} catch (err: any) {
 						console.error("Error", err);

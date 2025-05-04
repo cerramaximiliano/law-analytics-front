@@ -22,18 +22,8 @@ function TabPanel(props: TabPanelProps) {
 	const { children, value, index, ...other } = props;
 
 	return (
-		<div
-			role="tabpanel"
-			hidden={value !== index}
-			id={`terms-tabpanel-${index}`}
-			aria-labelledby={`terms-tab-${index}`}
-			{...other}
-		>
-			{value === index && (
-				<Box sx={{ pt: 3 }}>
-					{children}
-				</Box>
-			)}
+		<div role="tabpanel" hidden={value !== index} id={`terms-tabpanel-${index}`} aria-labelledby={`terms-tab-${index}`} {...other}>
+			{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -106,8 +96,8 @@ const TermsPage = () => {
 							<Divider sx={{ my: 4 }} />
 
 							<Typography variant="body1" paragraph>
-								Si tiene alguna pregunta sobre estos Términos y Condiciones, puede contactarnos a través de nuestro formulario de contacto 
-								o por correo electrónico a terms@lawanalytics.app.
+								Si tiene alguna pregunta sobre estos Términos y Condiciones, puede contactarnos a través de nuestro formulario de contacto o
+								por correo electrónico a terms@lawanalytics.app.
 							</Typography>
 						</MainCard>
 					</Grid>

@@ -1,5 +1,5 @@
 // action - state management
-import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE, UPDATE_USER, CHANGE_PASSWORD_SUCCESS } from "./actions";
+import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE, UPDATE_USER, CHANGE_PASSWORD_SUCCESS, SET_NEEDS_VERIFICATION } from "./actions";
 import axios from "axios";
 
 // types
@@ -72,6 +72,13 @@ const auth = (state = initialState, action: AuthActionProps) => {
 			return {
 				...state,
 				// passwordChanged: true (opcional)
+			};
+		}
+		case SET_NEEDS_VERIFICATION: {
+			return {
+				...state,
+				email: action.payload?.email || state.email,
+				needsVerification: true,
 			};
 		}
 		case LOGOUT: {
@@ -287,4 +294,12 @@ export const changeUserPassword = (passwordData: PasswordChangeData) => async (d
 // Acción para cerrar sesión
 export const logoutUser = () => (dispatch: Dispatch) => {
 	dispatch({ type: LOGOUT });
+};
+
+// Acción para establecer que el usuario necesita verificación
+export const setNeedsVerification = (email: string) => (dispatch: Dispatch) => {
+	dispatch({
+		type: SET_NEEDS_VERIFICATION,
+		payload: { email },
+	});
 };

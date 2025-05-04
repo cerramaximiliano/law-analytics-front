@@ -1,1195 +1,1186 @@
 {
-  "guides": [
-    {
-      "id": "laboral",
-      "title": "Guía de Calculadora Laboral",
-      "icon": "Calculator",
-      "color": "primary",
-      "description": "Aprende a usar la calculadora para indemnizaciones laborales, despidos y liquidaciones.",
-      "steps": [
-        {
-          "title": "Bienvenido a la Calculadora Laboral",
-          "content": "Esta guía te mostrará cómo utilizar las calculadoras laborales para generar, guardar y gestionar diferentes tipos de cálculos legales.",
-          "bullets": [
-            "Acceder a las calculadoras laborales",
-            "Completar los formularios de cálculo paso a paso",
-            "Guardar y gestionar tus cálculos",
-            "Exportar e imprimir resultados"
-          ]
-        },
-        {
-          "title": "Acceso a la Calculadora Laboral",
-          "content": "Para acceder a la calculadora laboral, sigue estos pasos:",
-          "steps": [
-            "Haz clic en el botón \"Nuevo cálculo\" en la parte superior",
-            "O desplázate hacia abajo hasta la sección \"Cálculos disponibles\"",
-            "Selecciona la tarjeta \"Laboral\" y haz clic en \"Acceder\""
-          ],
-          "note": "Al acceder encontrarás diferentes tipos de cálculos laborales disponibles en pestañas como \"Despido\" y \"Liquidación\"."
-        },
-        {
-          "title": "Completando el Formulario de Despido",
-          "content": "El formulario de despido se completa en 3 pasos simples:",
-          "sections": [
-            {
-              "title": "Paso 1: Datos requeridos",
-              "items": [
-                "Información del reclamante y reclamado",
-                "Fecha de ingreso y egreso",
-                "Mejor remuneración mensual normal y habitual"
-              ]
-            },
-            {
-              "title": "Paso 2: Cálculos opcionales",
-              "items": [
-                "Selección de conceptos para la liquidación final",
-                "Inclusión de multas laborales",
-                "Aplicación de topes indemnizatorios"
-              ]
-            },
-            {
-              "title": "Paso 3: Resultados",
-              "items": [
-                "Visualización del desglose de la liquidación",
-                "Guardar, copiar, imprimir o enviar por email"
-              ]
-            }
-          ]
-        },
-        {
-          "title": "Fórmulas de Cálculo Aplicadas",
-          "content": "La calculadora laboral utiliza las siguientes fórmulas principales para los cálculos:",
-          "formulas": [
-            {
-              "title": "Indemnización por antigüedad (Art. 245 LCT)",
-              "formula": "Indemnización = Mejor remuneración mensual × Años de servicio",
-              "note": "Se considera 1 año completo cuando se superan los 3 meses del último año."
-            },
-            {
-              "title": "Preaviso (Art. 231/232 LCT)",
-              "formula": [
-                "Menos de 3 meses: 15 días de salario",
-                "De 3 meses a 5 años: 1 mes de salario",
-                "Más de 5 años: 2 meses de salario"
-              ]
-            },
-            {
-              "title": "Integración mes de despido (Art. 233 LCT)",
-              "formula": "Integración = (Salario diario) × (Días restantes del mes)"
-            },
-            {
-              "title": "Tope indemnizatorio (Fallo Vizzoti)",
-              "formula": [
-                "Tope = Mínimo entre:",
-                "67% de la mejor remuneración mensual",
-                "Tope legal vigente según convenio"
-              ]
-            }
-          ]
-        },
-        {
-          "title": "Gestión de Cálculos Guardados",
-          "content": "Una vez generados los cálculos, estos se guardarán automáticamente y podrás acceder a ellos en cualquier momento:",
-          "sections": [
-            {
-              "title": "Desde la pantalla principal:",
-              "items": [
-                "Encuentra todos tus cálculos en la tabla \"Mis cálculos guardados\"",
-                "Visualiza los detalles haciendo clic en cualquier fila",
-                "Elimina cálculos mediante el botón de papelera"
-              ]
-            },
-            {
-              "title": "Desde la calculadora laboral:",
-              "items": [
-                "Accede a la pestaña \"Guardados\" para ver los cálculos laborales",
-                "Exporta los resultados en distintos formatos",
-                "Vincula los cálculos a carpetas de casos específicos"
-              ]
-            }
-          ]
-        },
-        {
-          "title": "Consejos Prácticos",
-          "content": "Para sacar el máximo provecho de la calculadora laboral, ten en cuenta estos consejos:",
-          "tips": [
-            {
-              "title": "Vincular a carpetas",
-              "content": "Vincula tus cálculos a carpetas específicas para mantener organizados todos los documentos relacionados con un mismo caso legal."
-            },
-            {
-              "title": "Exportación",
-              "content": "Utiliza las opciones de exportación (email, impresión, copiar) para compartir fácilmente los resultados con clientes o colegas."
-            },
-            {
-              "title": "Multas",
-              "content": "No olvides revisar las opcionales de multas en el segundo paso para incluir conceptos adicionales que pueden ser relevantes para el caso."
-            },
-            {
-              "title": "Actualizaciones",
-              "content": "Puedes actualizar los cálculos con intereses mediante la opción específica disponible en la vista detallada de cada cálculo."
-            }
-          ],
-          "note": "Los cálculos se guardan automáticamente y están disponibles para su consulta en cualquier momento desde la sección \"Mis cálculos guardados\"."
-        }
-      ]
-    },
-    {
-      "id": "intereses",
-      "title": "Guía de Calculadora de Intereses",
-      "icon": "Coin",
-      "color": "success",
-      "description": "Aprende a calcular intereses con distintas tasas para tus procesos legales.",
-      "steps": [
-        {
-          "title": "Bienvenido a la Calculadora de Intereses",
-          "content": "Esta guía te mostrará cómo utilizar la calculadora de intereses para generar, guardar y gestionar distintos tipos de cálculos con diferentes tasas.",
-          "bullets": [
-            "Acceder y completar el formulario de cálculo de intereses",
-            "Seleccionar entre diferentes tipos de tasas disponibles",
-            "Interpretar los resultados y la metodología aplicada",
-            "Exportar, guardar y gestionar tus cálculos"
-          ]
-        },
-        {
-          "title": "Acceso y Formulario Básico",
-          "content": "Para comenzar con un cálculo de intereses, sigue estos pasos:",
-          "steps": [
-            "Accede a la calculadora seleccionando la tarjeta \"Intereses\" en la sección \"Cálculos disponibles\"",
-            "Se abrirá la pantalla de cálculo con un formulario de entrada",
-            "Completa los datos requeridos: reclamante, reclamado, fechas inicial y final, tipo de tasa y capital"
-          ],
-          "note": "Todos los campos marcados con asterisco (*) son obligatorios para poder realizar el cálculo."
-        },
-        {
-          "title": "Tipos de Tasas Disponibles",
-          "content": "La calculadora de intereses permite seleccionar entre diferentes tipos de tasas:",
-          "sections": [
-            {
-              "title": "Tasas más comunes",
-              "items": [
-                "Tasa Pasiva BCRA: Tasa pasiva publicada por el Banco Central de la República Argentina",
-                "Tasa Activa Banco Nación: Tasa activa para operaciones de descuento",
-                "CER (Coeficiente de Estabilización de Referencia): Refleja la variación del IPC"
-              ]
-            },
-            {
-              "title": "Tasas específicas del fuero laboral",
-              "items": [
-                "Tasa Activa CNAT Acta 2601: Tasa establecida por la Cámara Nacional de Apelaciones del Trabajo",
-                "Tasa Activa CNAT Acta 2658: Actualización posterior de la Cámara Laboral"
-              ]
-            }
-          ],
-          "note": "Al seleccionar una tasa, el sistema mostrará automáticamente el rango de fechas disponible para esa tasa específica."
-        },
-        {
-          "title": "Métodos de Cálculo Aplicados",
-          "content": "La calculadora de intereses utiliza dos métodos principales para calcular los intereses según el tipo de tasa seleccionada:",
-          "methods": [
-            {
-              "title": "Método de Indexación",
-              "applied_to": "CER, ICL y otros índices de ajuste",
-              "formula": "Capital × (Valor final / Valor inicial)",
-              "description": "Compara el valor del índice al inicio y al final del período, aplicando la variación proporcional al capital."
-            },
-            {
-              "title": "Método de Interés Diario",
-              "applied_to": "Tasas Pasivas y Activas (BCRA, BNA, CNAT)",
-              "formula": "Capital × (1 + Σ [Tasa diaria × días])",
-              "description": "Calcula los intereses acumulando la tasa diaria para cada período. La tasa diaria se obtiene dividiendo la tasa anual por 365."
-            }
-          ],
-          "note": "En ambos casos, el sistema obtiene los datos oficiales publicados por los organismos correspondientes para cada fecha del período seleccionado."
-        },
-        {
-          "title": "Interpretación de Resultados",
-          "content": "Después de realizar el cálculo, se mostrará una pantalla de resultados con la siguiente información:",
-          "sections": [
-            {
-              "title": "Detalles del Cálculo",
-              "content": "Muestra los datos ingresados como fechas, tipo de tasa seleccionada y capital base."
-            },
-            {
-              "title": "Metodología de Cálculo",
-              "content": "Muestra información sobre el método aplicado (indexación o interés diario), coeficiente calculado y otros parámetros técnicos."
-            },
-            {
-              "title": "Resultados",
-              "content": "Muestra el capital base, los intereses generados y el capital actualizado (suma de capital e intereses)."
-            },
-            {
-              "title": "Ver Tasas",
-              "content": "Botón que permite visualizar en detalle los valores de las tasas utilizadas en cada período del cálculo."
-            }
-          ]
-        },
-        {
-          "title": "Gestión y Exportación de Cálculos",
-          "content": "Una vez obtenidos los resultados, puedes realizar las siguientes acciones:",
-          "sections": [
-            {
-              "title": "Opciones de exportación:",
-              "items": [
-                "Copiar al portapapeles: Copia el resultado en formato texto para pegarlo donde necesites",
-                "Enviar por email: Envía los resultados por correo electrónico",
-                "Imprimir: Genera una versión imprimible del resultado"
-              ]
-            },
-            {
-              "title": "Gestión de cálculos:",
-              "items": [
-                "Guardar cálculo: Guarda el cálculo en tu cuenta para acceder posteriormente",
-                "Ver cálculos guardados: Accede a todos tus cálculos de intereses guardados desde la pestaña \"Guardados\"",
-                "Vincular a carpetas: Asocia el cálculo a un expediente o carpeta específica"
-              ]
-            }
-          ],
-          "note": "Para generar un nuevo cálculo, utiliza el botón \"Nueva Liquidación\" que aparece en la pantalla de resultados."
-        }
-      ]
-    },
-    {
-      "id": "folders",
-      "title": "Guía de Gestión de Causas",
-      "icon": "FolderOpen",
-      "color": "warning",
-      "description": "Aprende a organizar y gestionar carpetas para tus expedientes legales.",
-      "steps": [
-        {
-          "title": "Introducción a la Gestión de Causas",
-          "content": "Esta guía te mostrará cómo utilizar el sistema de gestión de causas para administrar eficientemente los expedientes legales, realizar seguimiento de casos y organizar toda la información relacionada con tus asuntos jurídicos.",
-          "bullets": [
-            "Crear y gestionar causas judiciales",
-            "Importar causas automáticamente desde el Poder Judicial",
-            "Organizar documentos y cálculos asociados a cada causa",
-            "Manejar el estado y seguimiento de tus expedientes",
-            "Archivar causas finalizadas y mantener tu sistema organizado"
-          ]
-        },
-        {
-          "title": "Creación de Nuevas Causas",
-          "content": "Para crear una nueva causa en el sistema, sigue estos pasos:",
-          "steps": [
-            "Haz clic en el botón \"Agregar Causa\" en la parte superior derecha de la tabla",
-            "Completa el formulario con los datos básicos de la causa",
-            "Haz clic en \"Guardar\" para crear la nueva causa en el sistema"
-          ],
-          "note": "Al crear una nueva causa, asegúrate de incluir toda la información relevante como jurisdicción, materia, parte representada y fechas importantes para facilitar su seguimiento posterior."
-        },
-        {
-          "title": "Importación Automática de Causas",
-          "content": "Ahora puedes importar causas directamente desde el Poder Judicial de la Nación de forma automática:",
-          "process": [
-            "Haz clic en el botón \"Agregar Causa\" en la parte superior derecha de la tabla",
-            "En el formulario, selecciona la pestaña \"Importar Automáticamente\"",
-            "Selecciona la jurisdicción del Poder Judicial (ej. Civil, Laboral, Seguridad Social)",
-            "Ingresa el número de expediente y el año",
-            "Haz clic en \"Siguiente\" y luego \"Guardar\" para importar la causa"
-          ],
-          "warning": "Las causas importadas automáticamente aparecerán con estado \"Pendiente de verificación\" hasta que la información sea validada por el sistema. Esto se indica visualmente en la tabla de causas.",
-          "note": "Una vez que los datos hayan sido verificados y procesados, se actualizarán automáticamente con la información completa del expediente.",
-          "jurisdictions": [
-            "Cámara Nacional de Apelaciones en lo Civil",
-            "Cámara Federal de la Seguridad Social",
-            "Cámara Nacional de Apelaciones del Trabajo"
-          ],
-          "additional_info": "La importación automática te permite ahorrar tiempo en la carga de datos y reducir errores de transcripción, facilitando la gestión de múltiples expedientes."
-        },
-        {
-          "title": "Campos del Formulario de Causa",
-          "content": "El formulario para crear o editar una causa contiene los siguientes campos:",
-          "sections": [
-            {
-              "title": "Datos Básicos",
-              "fields": [
-                "Carátula: Nombre identificativo del expediente (ej. \"Pérez c/ González s/ Daños\")",
-                "Parte: Rol que representa (Actora, Demandada, Tercero, etc.)",
-                "Descripción: Resumen o notas sobre la causa"
-              ]
-            },
-            {
-              "title": "Información Jurisdiccional",
-              "fields": [
-                "Jurisdicción: Ámbito territorial (ej. CABA, Provincia de Buenos Aires)",
-                "Fuero: Especialidad del tribunal (Civil, Laboral, Comercial, etc.)",
-                "Materia: Tipo de proceso (Daños y Perjuicios, Despido, etc.)"
-              ]
-            },
-            {
-              "title": "Estado y Fechas",
-              "fields": [
-                "Fecha de Inicio: Cuándo comenzó la causa",
-                "Fecha Final: Estimación de finalización o fecha de cierre",
-                "Estado: Situación actual (Nueva, En proceso, Finalizada)"
-              ]
-            }
-          ]
-        },
-        {
-          "title": "Gestión de Causas",
-          "content": "Una vez creadas las causas, puedes gestionar tus expedientes de manera eficiente utilizando las siguientes funciones:",
-          "functions": [
-            {
-              "title": "Ver Causa",
-              "description": "Haz clic en el icono de ojo para desplegar una vista previa con toda la información detallada de la causa directamente en la tabla."
-            },
-            {
-              "title": "Editar Causa",
-              "description": "Utiliza el botón de edición para modificar cualquier dato de la causa, actualizar su estado o añadir nueva información."
-            },
-            {
-              "title": "Eliminar Causa",
-              "description": "Permite eliminar causas del sistema. Esta acción requiere confirmación y es irreversible, por lo que se recomienda archivar en lugar de eliminar."
-            },
-            {
-              "title": "Abrir Causa",
-              "description": "Abre la vista detallada de la causa donde podrás gestionar documentos, cálculos y toda la información relacionada con el expediente."
-            }
-          ],
-          "additional_actions": [
-            "Archivar Causas: Selecciona una o varias causas y haz clic en \"Archivar\" para moverlas al archivo",
-            "Ver Archivados: Accede a las causas archivadas y recupera aquellas que necesites",
-            "Exportar CSV: Exporta la lista de causas como archivo CSV para su uso en otras aplicaciones"
-          ]
-        },
-        {
-          "title": "Vista Detallada de Causa",
-          "content": "Al abrir una causa (haciendo clic en el icono de maximizar), accederás a la vista detallada que te permite gestionar todos los aspectos relacionados con el expediente:",
-          "sections": [
-            {
-              "title": "Información General",
-              "description": "Muestra todos los datos básicos de la causa con opción de edición rápida. Aquí puedes actualizar el estado, fechas y detalles generales."
-            },
-            {
-              "title": "Documentos Asociados",
-              "description": "Permite subir, visualizar y gestionar todos los documentos relacionados con la causa, manteniendo un expediente digital completo y organizado."
-            },
-            {
-              "title": "Cálculos Vinculados",
-              "description": "Muestra todos los cálculos (laborales, intereses, etc.) que has asociado a esta causa, permitiéndote acceder rápidamente a ellos."
-            },
-            {
-              "title": "Notas y Comentarios",
-              "description": "Espacio para añadir notas, recordatorios o comentarios relacionados con la causa, facilitando el seguimiento y la colaboración."
-            }
-          ],
-          "note": "Puedes vincular cualquier cálculo realizado en el sistema (laboral, intereses, etc.) a una causa específica para mantener toda la información relacionada organizada. Para vincular un cálculo, selecciona la opción \"Vincular a Causa\" al guardar el cálculo."
-        },
-        {
-          "title": "Archivado y Organización",
-          "content": "El sistema te permite archivar causas finalizadas o inactivas para mantener tu espacio de trabajo organizado:",
-          "processes": [
-            {
-              "title": "Proceso de Archivado:",
-              "steps": [
-                "Selecciona una o varias causas marcando las casillas de selección en la tabla",
-                "Haz clic en el botón \"Archivar\" en la barra de herramientas",
-                "Confirma la acción cuando se te solicite"
-              ]
-            },
-            {
-              "title": "Gestión de Archivados:",
-              "steps": [
-                "Accede a las causas archivadas mediante el botón \"Ver Archivados\"",
-                "Selecciona las causas que deseas recuperar en la lista de archivados",
-                "Haz clic en \"Desarchivar\" para restaurarlas a la lista principal"
-              ]
-            }
-          ],
-          "warning": "Las causas archivadas permanecen en el sistema y pueden ser recuperadas en cualquier momento. El archivado es diferente a la eliminación, que es permanente.",
-          "recommendation": "Recomendamos usar el archivado como estrategia regular para mantener tu lista de causas activas más manejable, mejorando la eficiencia al centrarte en los casos que requieren atención inmediata."
-        },
-        {
-          "title": "Consejos Prácticos",
-          "content": "Para sacar el máximo provecho del sistema de gestión de causas, te ofrecemos estos consejos prácticos:",
-          "tips": [
-            {
-              "title": "Organización Sistemática",
-              "description": "Utiliza un sistema coherente para nombrar las carátulas de tus causas, lo que facilitará su identificación y búsqueda posterior."
-            },
-            {
-              "title": "Actualización Regular",
-              "description": "Mantén actualizado el estado de tus causas y añade notas relevantes después de cada novedad o actuación procesal importante."
-            },
-            {
-              "title": "Vinculación de Contenidos",
-              "description": "Vincula todos los cálculos y documentos relacionados a la causa correspondiente para tener un expediente digital completo y centralizado."
-            },
-            {
-              "title": "Archivado Estratégico",
-              "description": "Archiva regularmente las causas finalizadas o inactivas para mantener tu lista principal enfocada en casos activos que requieren atención."
-            }
-          ],
-          "workflow_tips": [
-            "Utiliza la sección de notas para registrar recordatorios, plazos y observaciones importantes",
-            "Aprovecha la función de vincular cálculos para mantener toda la información financiera asociada a la causa",
-            "Exporta regularmente tus causas a CSV como respaldo adicional o para compartir con colaboradores",
-            "Utiliza la importación automática para ahorrar tiempo en la carga de expedientes del Poder Judicial"
-          ],
-          "note": "Estamos constantemente mejorando el sistema de gestión de causas. Si tienes sugerencias o detectas oportunidades de mejora, háznoslo saber para seguir perfeccionando la herramienta."
-        }
-      ]
-    },
-    {
-      "id": "contacts",
-      "title": "Guía de Contactos",
-      "icon": "ProfileCircle",
-      "color": "secondary",
-      "description": "Aprende a gestionar tus contactos y clientes en el sistema.",
-      "steps": [
-        {
-          "title": "Gestión de Contactos",
-          "content": "El módulo de Contactos te permite organizar y gestionar todas las personas y organizaciones relacionadas con tus casos legales.",
-          "bullets": [
-            "Crear perfiles detallados para clientes, oponentes, testigos y otros contactos",
-            "Categorizar contactos para facilitar su búsqueda y organización",
-            "Vincular contactos a carpetas específicas y casos"
-          ]
-        },
-        {
-          "title": "Creación y Edición de Contactos",
-          "content": "Para agregar un nuevo contacto a tu base de datos:",
-          "sections": [
-            {
-              "title": "Creación de contacto",
-              "steps": [
-                "Navega a la sección \"Contactos\" y haz clic en el botón \"Nuevo Contacto\"",
-                "Selecciona el tipo de contacto: Persona física o Persona jurídica/Organización",
-                "Completa los campos obligatorios: Nombre, tipo de relación, información de contacto básica"
-              ]
-            },
-            {
-              "title": "Edición de contactos",
-              "steps": [
-                "Localiza el contacto en la lista y haz clic en el ícono de edición",
-                "Modifica los campos necesarios en el formulario de edición"
-              ]
-            }
-          ]
-        },
-        {
-          "title": "Búsqueda y Organización",
-          "content": "El sistema de contactos ofrece potentes herramientas de búsqueda y organización:",
-          "sections": [
-            {
-              "title": "Búsqueda avanzada",
-              "features": [
-                "Utiliza la barra de búsqueda para encontrar contactos por nombre, email o teléfono",
-                "Filtra contactos por tipo, categoría, carpeta asociada o fecha de creación"
-              ]
-            },
-            {
-              "title": "Categorización",
-              "features": [
-                "Asigna etiquetas personalizadas a los contactos para organizarlos por área legal, estado, etc.",
-                "Crea grupos de contactos relacionados para casos o proyectos específicos"
-              ]
-            }
-          ]
-        },
-        {
-          "title": "Vinculación con Carpetas y Casos",
-          "content": "Para aprovechar al máximo el sistema, vincula tus contactos con las carpetas de casos correspondientes:",
-          "sections": [
-            {
-              "title": "Vinculación desde la vista de contacto",
-              "steps": [
-                "Abre el perfil del contacto que deseas vincular",
-                "Navega a la sección \"Carpetas asociadas\"",
-                "Haz clic en \"Vincular a carpeta\" y selecciona la carpeta deseada"
-              ]
-            },
-            {
-              "title": "Vinculación desde la vista de carpeta",
-              "steps": [
-                "Abre la carpeta a la que deseas agregar contactos",
-                "Navega a la pestaña \"Contactos\" dentro de la carpeta",
-                "Haz clic en \"Agregar contacto\" y selecciona de tu lista de contactos existentes"
-              ]
-            }
-          ]
-        },
-        {
-          "title": "Exportación e Importación",
-          "content": "El sistema permite importar y exportar contactos para facilitar la migración desde otros sistemas o compartir datos:",
-          "sections": [
-            {
-              "title": "Exportación de contactos",
-              "steps": [
-                "Desde la vista principal de contactos, selecciona los contactos a exportar",
-                "Haz clic en el botón \"Exportar\" en la barra de herramientas",
-                "Elige el formato deseado: CSV, Excel o vCard (para agendas)"
-              ]
-            },
-            {
-              "title": "Importación de contactos",
-              "steps": [
-                "Haz clic en \"Importar contactos\" en la barra de herramientas",
-                "Selecciona el archivo (CSV, Excel o vCard) con los datos a importar",
-                "Mapea los campos del archivo con los campos del sistema"
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "calendar",
-      "title": "Guía de Calendario",
-      "icon": "Calendar",
-      "color": "info",
-      "description": "Aprende a gestionar eventos y agenda en tu calendario legal.",
-      "steps": [
-        {
-          "title": "Introducción al Calendario",
-          "content": "Esta guía te mostrará cómo utilizar el calendario para organizar tus eventos legales, gestionar recordatorios y vincular actividades a tus causas.",
-          "features": [
-            "Crear y gestionar eventos como audiencias, vencimientos y reuniones",
-            "Recibir recordatorios automáticos por correo electrónico y notificaciones web",
-            "Vincular eventos a causas específicas para un mejor seguimiento",
-            "Visualizar tu agenda en diferentes formatos (mes, semana, día, lista)",
-            "Filtrar eventos por tipo y causa relacionada",
-            "Configurar tu disponibilidad para permitir a tus clientes programar citas",
-            "Gestionar de forma profesional tus citas y consultas con clientes"
-          ]
-        },
-        {
-          "title": "Navegación del Calendario",
-          "content": "El calendario ofrece múltiples vistas que puedes personalizar según tus necesidades:",
-          "views": [
-            {
-              "name": "Vista Mensual",
-              "description": "Muestra todos los eventos del mes, ideal para planificación a largo plazo"
-            },
-            {
-              "name": "Vista Semanal",
-              "description": "Muestra los eventos de la semana con detalle horario"
-            },
-            {
-              "name": "Vista Diaria",
-              "description": "Muestra todos los eventos del día seleccionado con máximo detalle"
-            },
-            {
-              "name": "Vista Agenda",
-              "description": "Muestra los eventos como una lista cronológica"
-            }
-          ],
-          "note": "Para navegar entre fechas, utiliza las flechas de navegación o haz clic en el botón \"Hoy\" para volver rápidamente a la fecha actual."
-        },
-        {
-          "title": "Creación de Eventos",
-          "content": "Para crear un nuevo evento en el calendario, puedes hacerlo de dos formas:",
-          "methods": [
-            {
-              "title": "Método 1: Botón de Agregar",
-              "steps": [
-                "Haz clic en el botón circular con el símbolo \"+\" ubicado en la esquina inferior derecha",
-                "Se abrirá el formulario de nuevo evento"
-              ]
-            },
-            {
-              "title": "Método 2: Selección de Fecha/Hora",
-              "steps": [
-                "Haz clic y arrastra sobre el calendario para seleccionar un rango de fecha/hora",
-                "El formulario se abrirá automáticamente con las fechas preseleccionadas"
-              ]
-            }
-          ],
-          "event_types": [
-            "Audiencia: Para eventos judiciales (color azul)",
-            "Vencimiento: Para plazos procesales y fechas límite (color rojo)",
-            "Reunión: Para encuentros con clientes o colegas (color verde)",
-            "Otro: Para cualquier otro tipo de evento (color amarillo)"
-          ],
-          "note": "Al crear un evento, es posible vincularlo a una causa específica, lo que te permitirá mantener un seguimiento organizado de todas las actividades relacionadas con cada expediente."
-        },
-        {
-          "title": "Formulario de Evento",
-          "content": "El formulario para crear o editar un evento contiene los siguientes campos:",
-          "sections": [
-            {
-              "title": "Datos Básicos",
-              "fields": [
-                "Título: Nombre descriptivo del evento",
-                "Descripción: Detalles adicionales sobre el evento",
-                "Tipo: Categoría del evento (Audiencia, Vencimiento, Reunión, Otro)"
-              ]
-            },
-            {
-              "title": "Fecha y Hora",
-              "fields": [
-                "Fecha Inicio: Cuándo comienza el evento",
-                "Fecha Fin: Cuándo termina el evento",
-                "Todo el día: Opción para eventos que duran todo el día"
-              ]
-            },
-            {
-              "title": "Vinculación",
-              "fields": [
-                "Causa vinculada: Expediente al que está asociado el evento"
-              ],
-              "note": "Esta sección es visible al editar desde una causa"
-            }
-          ]
-        },
-        {
-          "title": "Gestión de Eventos",
-          "content": "Una vez creados los eventos, puedes gestionarlos de diversas formas:",
-          "functions": [
-            {
-              "title": "Editar Evento",
-              "description": "Haz clic sobre un evento para abrir el formulario de edición donde podrás modificar todos sus datos."
-            },
-            {
-              "title": "Eliminar Evento",
-              "description": "Dentro del formulario de edición, encontrarás un botón de papelera para eliminar el evento seleccionado."
-            },
-            {
-              "title": "Mover Evento",
-              "description": "Arrastra y suelta un evento para cambiarlo a una nueva fecha u hora, manteniendo todas sus propiedades."
-            },
-            {
-              "title": "Modificar Duración",
-              "description": "En las vistas Día y Semana, puedes estirar el evento desde sus bordes para modificar su duración."
-            }
-          ],
-          "navigation_tips": [
-            "Cambiar Vistas: Utiliza los botones de la barra superior para alternar entre vistas (Mes, Semana, Día, Agenda)",
-            "Navegar entre fechas: Usa las flechas de navegación o el botón \"Hoy\" para moverte entre períodos",
-            "Eventos vinculados: Los eventos vinculados a causas incluyen un indicador con el nombre de la causa"
-          ]
-        },
-        {
-          "title": "Recordatorios y Notificaciones",
-          "content": "El sistema de calendario incluye un completo sistema de recordatorios para que nunca pierdas un evento importante:",
-          "notification_types": [
-            {
-              "title": "Notificaciones por Correo Electrónico",
-              "description": "Recibirás un correo electrónico con recordatorio de tus eventos programados, configurable para ser enviado con diferentes anticipaciones (1 día, 3 días o 1 semana antes)."
-            },
-            {
-              "title": "Notificaciones Web",
-              "description": "Cuando estés utilizando la plataforma, recibirás notificaciones dentro de la aplicación para eventos próximos, apareciendo en el ícono de notificaciones en la barra superior."
-            },
-            {
-              "title": "Notificaciones Push",
-              "description": "Si has permitido las notificaciones del navegador, recibirás alertas incluso cuando no tengas la aplicación abierta, manteniéndote informado de todos tus eventos importantes."
-            }
-          ],
-          "configuration": "Puedes personalizar tus preferencias de notificación en la sección \"Configuración\" de tu perfil, donde podrás elegir: 1) Qué tipos de eventos deseas recibir notificaciones, 2) Con cuánta anticipación quieres ser notificado, 3) Por qué medios prefieres recibir las notificaciones (correo, web, push)"
-        },
-        {
-          "title": "Vinculación con Causas",
-          "content": "Una de las características más útiles del calendario es su integración con el sistema de causas:",
-          "methods": [
-            {
-              "title": "Creación de Eventos desde Causas:",
-              "steps": [
-                "Accede a la vista detallada de la causa",
-                "Navega a la pestaña \"Calendario\" o \"Eventos\"",
-                "Haz clic en \"Agregar Evento\" para crear un evento ya vinculado a esa causa"
-              ]
-            },
-            {
-              "title": "Vinculación desde el Calendario:",
-              "steps": [
-                "Crea un nuevo evento o edita uno existente",
-                "En el formulario, busca el campo \"Vincular a causa\"",
-                "Selecciona la causa de la lista desplegable"
-              ]
-            }
-          ],
-          "note": "Los eventos vinculados a causas aparecerán tanto en el calendario general como en la vista específica de la causa, permitiéndote tener una visión completa de tu agenda y de los eventos relacionados con cada expediente."
-        },
-        {
-          "title": "Configuración de Citas",
-          "content": "El sistema de calendario te permite configurar tu disponibilidad para que los clientes puedan programar citas directamente:",
-          "sections": [
-            {
-              "title": "Acceso a la Sección de Disponibilidad",
-              "options": [
-                "Desde el Calendario Principal: Accede al calendario y haz clic en el botón \"Citas\" ubicado en el menú de la izquierda bajo Calendario.",
-                "Desde tu Perfil de Usuario: También puedes acceder desde tu perfil, en la sección \"Configuración\" -> \"Calendario y Citas\" -> \"Citas\"."
-              ]
-            },
-            {
-              "title": "Configuración de Horarios Disponibles",
-              "fields": [
-                "Selección de Días: Selecciona los días de la semana en los que estás disponible para atender citas. Puedes configurar disponibilidades diferentes para cada día.",
-                "Horarios Disponibles: Para cada día seleccionado, configura las franjas horarias en las que deseas recibir citas, por ejemplo, de 9:00 a 12:00 y de 15:00 a 18:00.",
-                "Fechas Específicas No Disponibles: Bloquea fechas específicas en las que no estarás disponible (vacaciones, feriados, etc.) para evitar que se programen citas en esos días."
-              ]
-            },
-            {
-              "title": "Configuración de Citas",
-              "fields": [
-                "Duración de las Citas: Define la duración estándar de tus citas (30 minutos, 1 hora, etc.). También puedes crear diferentes tipos de citas con duraciones específicas.",
-                "Tiempo entre Citas: Configura el tiempo de descanso entre citas consecutivas para prepararte entre una y otra (15 minutos recomendados).",
-                "Tipos de Consulta: Crea diferentes tipos de consulta (inicial, seguimiento, asesoría específica) con duraciones y precios distintos."
-              ]
-            }
-          ],
-          "benefits": [
-            "Permite a tus clientes reservar citas en horarios que te convengan sin intercambios de mensajes",
-            "Reduce las citas perdidas con recordatorios automáticos para ti y tus clientes",
-            "Proyecta una imagen profesional y organizada frente a tus clientes",
-            "Ahorra tiempo en la coordinación de reuniones y optimiza tu agenda"
-          ],
-          "note": "Una vez configurada tu disponibilidad, el sistema genera un enlace único que puedes compartir con tus clientes para que reserven citas directamente según tu disponibilidad configurada."
-        },
-        {
-          "title": "Consejos Prácticos",
-          "content": "Para aprovechar al máximo el calendario, te recomendamos seguir estas mejores prácticas:",
-          "tips": [
-            {
-              "title": "Codificación por Colores",
-              "description": "Aprovecha los distintos colores de eventos para identificar rápidamente el tipo de actividad. Los vencimientos en rojo son especialmente útiles para destacar plazos críticos."
-            },
-            {
-              "title": "Vista Semanal para Planificación",
-              "description": "Utiliza la vista semanal los lunes para planificar tu semana, identificar conflictos de horarios y organizar tus actividades de manera eficiente."
-            },
-            {
-              "title": "Descripciones Detalladas",
-              "description": "Incluye información completa en la descripción de los eventos, como número de sala para audiencias, documentos necesarios o contactos relevantes, para tener todo a mano cuando lo necesites."
-            },
-            {
-              "title": "Sincroniza con tu Dispositivo",
-              "description": "Mantén el calendario abierto en tu dispositivo móvil o configura la sincronización con tu aplicación de calendario preferida para tener acceso rápido a tu agenda en cualquier momento."
-            }
-          ],
-          "management_recommendations": [
-            "Configura múltiples recordatorios para eventos cruciales como audiencias o vencimientos procesales",
-            "Siempre vincula los eventos a sus causas correspondientes para mantener todo organizado por expediente",
-            "Usa la vista de agenda para una revisión rápida de tus próximos compromisos",
-            "Programa tiempo para preparación antes de eventos importantes como audiencias o reuniones con clientes"
-          ],
-          "note": "Recuerda que puedes acceder al calendario desde el menú principal o directamente desde la vista de cada causa para gestionar eventos específicos relacionados con ese expediente."
-        }
-      ]
-    },
-    {
-      "id": "booking",
-      "title": "Guía del Sistema de Citas",
-      "icon": "CalendarTick",
-      "color": "error",
-      "description": "Aprende a configurar y gestionar el sistema de citas online para tus clientes.",
-      "steps": [
-        {
-          "title": "Sistema de Citas Online",
-          "content": "Esta guía te mostrará cómo utilizar el sistema de citas para configurar tu disponibilidad y permitir a tus clientes programar consultas directamente.",
-          "features": [
-            "Configura horarios de disponibilidad para recibir citas",
-            "Comparte un enlace profesional para que tus clientes agenden consultas",
-            "Recibe notificaciones automáticas de nuevas citas",
-            "Aprueba, rechaza o reagenda citas con facilidad",
-            "Personaliza formularios para recopilar información relevante de tus clientes",
-            "Integración completa con tu calendario de eventos",
-            "Gestión profesional de tu agenda de consultas"
-          ]
-        },
-        {
-          "title": "Acceso y Configuración",
-          "content": "Para comenzar a configurar tu sistema de citas, accede a la sección correspondiente:",
-          "access_methods": [
-            "Desde la Navegación Principal: Accede a \"Aplicaciones\" → \"Calendario\" → \"Reservaciones\"",
-            "Desde el Calendario: En la vista del calendario, haz clic en \"Disponibilidad\" en el menú lateral"
-          ],
-          "setup_steps": [
-            {
-              "step": "1. Crea una nueva configuración",
-              "description": "Haz clic en \"Nueva Disponibilidad\" y comienza a configurar tus opciones personalizadas."
-            },
-            {
-              "step": "2. Selecciona los días disponibles",
-              "description": "Marca los días de la semana en que estarás disponible para recibir consultas."
-            },
-            {
-              "step": "3. Define horarios",
-              "description": "Establece la hora de inicio y finalización de tu jornada de atención para cada día seleccionado."
-            },
-            {
-              "step": "4. Ajusta duración y descanso",
-              "description": "Configura la duración de cada cita y el tiempo de descanso que necesitas entre ellas."
-            },
-            {
-              "step": "5. Guarda la configuración",
-              "description": "Al guardar, se generará un enlace único que podrás compartir con tus clientes."
-            }
-          ],
-          "note": "Una vez completada la configuración, el sistema estará listo para recibir reservas de citas según tus parámetros establecidos."
-        },
-        {
-          "title": "Configuración Detallada",
-          "content": "El sistema de citas ofrece opciones detalladas para personalizar completamente tu disponibilidad y preferencias:",
-          "options": [
-            {
-              "title": "Días Disponibles",
-              "description": "Selecciona cualquier combinación de días de la semana para tus citas. Puedes elegir solo días laborables, incluir fines de semana o incluso configurar disponibilidad para un solo día específico."
-            },
-            {
-              "title": "Horario de Atención",
-              "description": "Define las horas de inicio y fin de tu jornada de atención para cada día. Puedes establecer distintos horarios para diferentes días según tus necesidades."
-            },
-            {
-              "title": "Duración de Citas",
-              "description": "Establece la duración estándar de tus consultas (15, 30, 45, 60 minutos o personalizada). Esta duración determinará los bloques de tiempo disponibles en tu calendario."
-            },
-            {
-              "title": "Tiempo entre Citas",
-              "description": "Configura un margen de tiempo entre consultas consecutivas para prepararte, revisar notas o simplemente descansar brevemente entre atenciones."
-            }
-          ],
-          "advanced_settings": [
-            {
-              "title": "Fechas Excluidas",
-              "description": "Bloquea fechas específicas en las que no estarás disponible, como vacaciones, días festivos o compromisos previos. Puedes añadir un motivo opcional para tu referencia."
-            },
-            {
-              "title": "Tiempo Mínimo de Anticipación",
-              "description": "Define cuánto tiempo antes debe programarse una cita (ej: mínimo 24 horas antes), evitando reservas de última hora."
-            },
-            {
-              "title": "Tiempo Máximo de Anticipación",
-              "description": "Establece hasta cuántos días en el futuro pueden programarse citas (ej: máximo 60 días), facilitando una gestión más eficiente de tu agenda a largo plazo."
-            },
-            {
-              "title": "Límite de Reservas",
-              "description": "Configura límites diarios o semanales de citas para evitar sobrecarga en tu agenda y mantener un equilibrio saludable en tu trabajo."
-            }
-          ]
-        },
-        {
-          "title": "Personalización de Formularios",
-          "content": "El sistema te permite personalizar el formulario que tus clientes completarán al agendar una cita, recopilando exactamente la información que necesitas:",
-          "sections": [
-            {
-              "title": "Campos Básicos",
-              "fields": [
-                {
-                  "title": "Información de Contacto",
-                  "description": "Configura qué campos de contacto son obligatorios para tus clientes: nombre, correo electrónico, teléfono, empresa, dirección, etc."
-                },
-                {
-                  "title": "Motivo de la Consulta",
-                  "description": "Decide si deseas que los clientes proporcionen un motivo o descripción de la consulta al momento de agendar."
-                }
-              ]
-            },
-            {
-              "title": "Campos Personalizados",
-              "field_types": [
-                {
-                  "title": "Campo de Texto",
-                  "description": "Para información general como números de expediente, referencias, etc."
-                },
-                {
-                  "title": "Campo Numérico",
-                  "description": "Para valores numéricos como montos, plazos o cantidades."
-                },
-                {
-                  "title": "Lista de Opciones",
-                  "description": "Para selección de categorías predefinidas (tipo de consulta, jurisdicción, etc.)."
-                },
-                {
-                  "title": "Casilla de Verificación",
-                  "description": "Para confirmaciones o aceptaciones de términos específicos."
-                }
-              ],
-              "management": [
-                "Añade campos personalizados haciendo clic en \"Agregar campo\"",
-                "Edita campos existentes para modificar sus propiedades o añadir opciones",
-                "Elimina campos que ya no necesites o que no sean relevantes",
-                "Marca los campos como obligatorios u opcionales según tus necesidades"
-              ]
-            }
-          ],
-          "tip": "Solicita solo la información realmente necesaria para la consulta inicial. Un formulario demasiado extenso puede disuadir a potenciales clientes de completar el proceso de reserva. Puedes recopilar información más detallada durante la cita."
-        },
-        {
-          "title": "Gestión de Reservas",
-          "content": "Una vez configurado tu sistema, podrás gestionar fácilmente las reservas que realicen tus clientes:",
-          "reservation_center": {
-            "description": "Accede a la sección \"Reservaciones\" en el menú del calendario para ver todas tus citas programadas. Desde aquí podrás:",
-            "functions": [
-              {
-                "title": "Confirmar Citas",
-                "description": "Si has configurado aprobación manual, podrás revisar y confirmar las solicitudes entrantes. Las citas confirmadas se añadirán automáticamente a tu calendario."
-              },
-              {
-                "title": "Rechazar o Cancelar",
-                "description": "Puedes rechazar solicitudes que no puedas atender o cancelar citas ya confirmadas, añadiendo opcionalmente un motivo que se compartirá con el cliente."
-              },
-              {
-                "title": "Ver Información del Cliente",
-                "description": "Accede a toda la información proporcionada por el cliente al momento de la reserva, incluyendo los campos personalizados que hayas configurado."
-              },
-              {
-                "title": "Marcar como Completada",
-                "description": "Una vez realizada la consulta, puedes marcarla como completada para mantener un registro ordenado de tus atenciones pasadas y pendientes."
-              }
-            ]
-          },
-          "filters": [
-            {
-              "title": "Vista Temporal",
-              "description": "Filtra por citas próximas, pasadas o todas para gestionar mejor tu agenda."
-            },
-            {
-              "title": "Filtro por Estado",
-              "description": "Visualiza citas según su estado: pendientes, confirmadas, canceladas, rechazadas o completadas."
-            },
-            {
-              "title": "Búsqueda por Cliente",
-              "description": "Localiza rápidamente citas de un cliente específico por su nombre o correo electrónico."
-            }
-          ],
-          "integration": "Todas las citas confirmadas se integran automáticamente con tu calendario principal, evitando conflictos de horarios con otros eventos y permitiéndote tener una visión completa de tu agenda en un solo lugar."
-        },
-        {
-          "title": "Enlace para Clientes",
-          "content": "Una vez configurada tu disponibilidad, el sistema genera un enlace personalizado que puedes compartir con tus clientes para que programen citas:",
-          "url_info": [
-            {
-              "title": "Acceso al Enlace",
-              "description": "El enlace único para tus reservas se muestra en la sección \"Reservaciones\" y se genera automáticamente con tu nombre profesional."
-            },
-            {
-              "title": "Personalización",
-              "description": "El enlace incluye tu nombre profesional y se presenta con un formato amigable para proyectar una imagen profesional."
-            },
-            {
-              "title": "Cómo Compartirlo",
-              "description": "Utiliza el botón \"Copiar\" para obtener la URL completa que podrás compartir por cualquier medio."
-            }
-          ],
-          "sharing_places": [
-            {
-              "title": "Firma de Correo",
-              "description": "Añade el enlace a la firma de tu correo electrónico con un texto como \"Agenda una consulta conmigo\" para facilitar a tus contactos la programación de citas."
-            },
-            {
-              "title": "Redes Sociales",
-              "description": "Comparte el enlace en tus perfiles profesionales de redes sociales o como respuesta a consultas iniciales que recibas por estos canales."
-            },
-            {
-              "title": "Sitio Web",
-              "description": "Si tienes un sitio web profesional, incluye un botón destacado con el enlace para que los visitantes puedan programar citas directamente."
-            },
-            {
-              "title": "Comunicación Directa",
-              "description": "Envía el enlace directamente a clientes que necesiten programar una cita, ahorrando tiempo en intercambios de mensajes para coordinar horarios."
-            }
-          ],
-          "important": "El enlace refleja siempre tu configuración actual de disponibilidad. Si modificas tus horarios o parámetros, estos cambios se aplicarán automáticamente sin necesidad de actualizar o cambiar la URL compartida."
-        },
-        {
-          "title": "Experiencia del Cliente",
-          "content": "Para entender mejor el proceso, es útil conocer la experiencia que tendrán tus clientes al usar el sistema de citas:",
-          "client_process": [
-            {
-              "step": "Paso 1: Acceso al Portal de Citas",
-              "description": "El cliente hace clic en el enlace que has compartido y accede a una página profesional con tu nombre y la descripción de tu servicio de citas."
-            },
-            {
-              "step": "Paso 2: Selección de Fecha y Hora",
-              "description": "Se presenta un calendario intuitivo donde el cliente puede:",
-              "details": [
-                "Ver claramente los días disponibles (los no disponibles aparecen deshabilitados)",
-                "Seleccionar una fecha específica para ver los horarios disponibles en ese día",
-                "Elegir un horario entre las opciones disponibles, presentadas en bloques según la duración configurada"
-              ]
-            },
-            {
-              "step": "Paso 3: Formulario de Información",
-              "description": "Después de elegir fecha y hora, el cliente completa un formulario con:",
-              "details": [
-                "Campos básicos de contacto (según lo que hayas configurado como obligatorio)",
-                "Los campos personalizados que hayas definido para recopilar información adicional",
-                "Aceptación de términos y condiciones si los has establecido"
-              ]
-            },
-            {
-              "step": "Paso 4: Confirmación y Recordatorios",
-              "description": "Una vez completada la reserva, el cliente:",
-              "details": [
-                "Recibe una página de confirmación con el resumen de su cita y un código de confirmación",
-                "Se le envía un correo electrónico automático con los detalles de la cita",
-                "Si has configurado aprobación manual, se le informa que recibirá una confirmación una vez que apruebes la cita",
-                "Recibe recordatorios automáticos por correo electrónico antes de la fecha de la cita"
-              ]
-            }
-          ],
-          "client_benefits": [
-            "Flexibilidad para programar citas en el momento que les resulte conveniente",
-            "Visualización clara de tu disponibilidad sin necesidad de intercambios de mensajes",
-            "Confirmación inmediata y recordatorios automáticos para no olvidar la cita",
-            "Experiencia profesional que genera confianza desde el primer contacto"
-          ]
-        },
-        {
-          "title": "Notificaciones y Recordatorios",
-          "content": "El sistema de citas incluye un completo sistema de notificaciones y recordatorios para mantenerte informado y ayudarte a gestionar tu agenda de manera eficiente:",
-          "notification_types": {
-            "for_you": [
-              {
-                "title": "Nuevas Reservas",
-                "description": "Recibes notificaciones inmediatas cuando un cliente programa una nueva cita, permitiéndote revisar y confirmar rápidamente."
-              },
-              {
-                "title": "Recordatorios de Citas",
-                "description": "El sistema te envía recordatorios automáticos antes de tus citas programadas para ayudarte a prepararte adecuadamente."
-              },
-              {
-                "title": "Cancelaciones",
-                "description": "Si un cliente cancela su cita, recibirás una notificación inmediata para que puedas actualizar tu agenda."
-              }
-            ],
-            "for_clients": [
-              {
-                "title": "Confirmación de Reserva",
-                "description": "Los clientes reciben un correo electrónico inmediato confirmando que su solicitud ha sido recibida, con todos los detalles de la cita."
-              },
-              {
-                "title": "Aprobación de Cita",
-                "description": "Si tienes activada la aprobación manual, los clientes recibirán una notificación cuando confirmes su cita."
-              },
-              {
-                "title": "Recordatorios Previos",
-                "description": "Se envían recordatorios automáticos 24 horas antes de la cita para reducir las ausencias y mejorar la puntualidad."
-              }
-            ]
-          },
-          "channels": [
-            {
-              "title": "Correo Electrónico",
-              "description": "Todas las notificaciones se envían por correo electrónico con un formato profesional y claro, incluyendo todos los detalles relevantes."
-            },
-            {
-              "title": "Notificaciones en la Plataforma",
-              "description": "Cuando estás usando la plataforma, recibirás notificaciones en tiempo real en el ícono de notificaciones de la barra superior."
-            },
-            {
-              "title": "Notificaciones Push (Opcional)",
-              "description": "Si has habilitado las notificaciones del navegador, puedes recibir alertas incluso cuando no tengas la plataforma abierta."
-            }
-          ],
-          "configuration": "Puedes personalizar qué notificaciones deseas recibir y por qué canales desde la sección de configuración de tu perfil. Los recordatorios para clientes son siempre enviados para garantizar un servicio profesional."
-        },
-        {
-          "title": "Beneficios del Sistema",
-          "content": "Implementar el sistema de citas en tu práctica profesional ofrece numerosas ventajas tanto para ti como para tus clientes:",
-          "benefits": {
-            "for_you": [
-              {
-                "title": "Ahorro de Tiempo",
-                "description": "Elimina los intercambios de correos y mensajes para coordinar horarios, permitiéndote enfocarte en tu trabajo."
-              },
-              {
-                "title": "Optimización de Agenda",
-                "description": "Establece horarios específicos para consultas, evitando interrupciones en otras actividades profesionales."
-              },
-              {
-                "title": "Reducción de Ausencias",
-                "description": "Los recordatorios automáticos disminuyen significativamente las citas perdidas o los retrasos de los clientes."
-              },
-              {
-                "title": "Imagen Profesional",
-                "description": "Proyecta una imagen de organización y profesionalismo que impresiona positivamente a los clientes."
-              },
-              {
-                "title": "Análisis de Datos",
-                "description": "Obtén información valiosa sobre patrones de citas, horarios más solicitados y tasas de conversión."
-              },
-              {
-                "title": "Información Previa",
-                "description": "Recibe información relevante antes de la cita, permitiéndote prepararte adecuadamente para cada consulta."
-              }
-            ],
-            "for_clients": [
-              {
-                "title": "Comodidad 24/7",
-                "description": "Pueden programar citas en cualquier momento, incluso fuera del horario laboral, sin necesidad de llamadas telefónicas."
-              },
-              {
-                "title": "Visualización Clara",
-                "description": "Ven claramente tu disponibilidad real, evitando frustraciones por intentar agendar en horarios ya ocupados."
-              },
-              {
-                "title": "Recordatorios Automáticos",
-                "description": "Reciben recordatorios oportunos que les ayudan a no olvidar su cita y a llegar puntuales."
-              },
-              {
-                "title": "Confirmación Inmediata",
-                "description": "Obtienen una confirmación inmediata con todos los detalles de la cita para su tranquilidad."
-              }
-            ]
-          },
-          "workflow_optimization": {
-            "title": "Optimización del Flujo de Trabajo",
-            "features": [
-              "Vincular citas a expedientes - Conecta automáticamente cada consulta con su causa correspondiente",
-              "Centralizar información - Mantén todos los datos del cliente y su historial en un solo lugar",
-              "Automatizar seguimientos - Configura recordatorios para acciones posteriores a la consulta",
-              "Profesionalizar tu servicio - Ofrece una experiencia completa desde el primer contacto hasta el seguimiento"
-            ]
-          }
-        },
-        {
-          "title": "Mejores Prácticas",
-          "content": "Para aprovechar al máximo el sistema de citas, te recomendamos seguir estas mejores prácticas:",
-          "practices": {
-            "configuration": [
-              {
-                "title": "Duración Realista",
-                "description": "Configura la duración de las citas considerando no solo el tiempo de la consulta, sino también la preparación y documentación posterior."
-              },
-              {
-                "title": "Buffers Adecuados",
-                "description": "Incluye tiempo de descanso suficiente entre citas (15-30 minutos) para manejar consultas que se extiendan y para prepararte adecuadamente."
-              },
-              {
-                "title": "Bloques de Agenda",
-                "description": "Considera definir bloques específicos para citas (ej: mañanas de lunes a miércoles) manteniendo otros momentos libres para trabajo sin interrupciones."
-              }
-            ],
-            "client_management": [
-              {
-                "title": "Aprobación Manual",
-                "description": "Para clientes nuevos, considera activar la aprobación manual para valorar primero si la consulta corresponde a tu área de especialización."
-              },
-              {
-                "title": "Comunicación Previa",
-                "description": "Envía un mensaje personalizado de confirmación incluyendo cualquier información o documentación que el cliente deba preparar para la consulta."
-              },
-              {
-                "title": "Campos Personalizados Estratégicos",
-                "description": "Diseña campos personalizados que recopilen información crítica para preparar mejor la consulta sin sobrecargar el formulario."
-              }
-            ],
-            "promotion": [
-              {
-                "title": "Promoción Activa",
-                "description": "Menciona la posibilidad de agendar citas online en todas tus comunicaciones y destaca la conveniencia para el cliente."
-              },
-              {
-                "title": "Personalización del Enlace",
-                "description": "Asegúrate de que tu nombre profesional aparezca correctamente en el enlace y la página de reserva para fortalecer tu marca personal."
-              },
-              {
-                "title": "Análisis Regular",
-                "description": "Revisa periódicamente los patrones de reservas para identificar horarios de alta demanda y ajustar tu disponibilidad según sea necesario."
-              },
-              {
-                "title": "Mantenimiento Actualizado",
-                "description": "Actualiza regularmente tu disponibilidad para reflejar cambios en tu agenda, períodos de vacaciones o modificaciones en tu horario de trabajo."
-              }
-            ]
-          },
-          "ongoing_optimization": "El sistema de citas está diseñado para adaptarse a tus necesidades. A medida que lo utilices, identifica oportunidades de mejora en tu configuración e implementa ajustes para optimizar tanto tu experiencia como la de tus clientes."
-        }
-      ]
-    }
-  ]
+	"guides": [
+		{
+			"id": "laboral",
+			"title": "Guía de Calculadora Laboral",
+			"icon": "Calculator",
+			"color": "primary",
+			"description": "Aprende a usar la calculadora para indemnizaciones laborales, despidos y liquidaciones.",
+			"steps": [
+				{
+					"title": "Bienvenido a la Calculadora Laboral",
+					"content": "Esta guía te mostrará cómo utilizar las calculadoras laborales para generar, guardar y gestionar diferentes tipos de cálculos legales.",
+					"bullets": [
+						"Acceder a las calculadoras laborales",
+						"Completar los formularios de cálculo paso a paso",
+						"Guardar y gestionar tus cálculos",
+						"Exportar e imprimir resultados"
+					]
+				},
+				{
+					"title": "Acceso a la Calculadora Laboral",
+					"content": "Para acceder a la calculadora laboral, sigue estos pasos:",
+					"steps": [
+						"Haz clic en el botón \"Nuevo cálculo\" en la parte superior",
+						"O desplázate hacia abajo hasta la sección \"Cálculos disponibles\"",
+						"Selecciona la tarjeta \"Laboral\" y haz clic en \"Acceder\""
+					],
+					"note": "Al acceder encontrarás diferentes tipos de cálculos laborales disponibles en pestañas como \"Despido\" y \"Liquidación\"."
+				},
+				{
+					"title": "Completando el Formulario de Despido",
+					"content": "El formulario de despido se completa en 3 pasos simples:",
+					"sections": [
+						{
+							"title": "Paso 1: Datos requeridos",
+							"items": [
+								"Información del reclamante y reclamado",
+								"Fecha de ingreso y egreso",
+								"Mejor remuneración mensual normal y habitual"
+							]
+						},
+						{
+							"title": "Paso 2: Cálculos opcionales",
+							"items": [
+								"Selección de conceptos para la liquidación final",
+								"Inclusión de multas laborales",
+								"Aplicación de topes indemnizatorios"
+							]
+						},
+						{
+							"title": "Paso 3: Resultados",
+							"items": ["Visualización del desglose de la liquidación", "Guardar, copiar, imprimir o enviar por email"]
+						}
+					]
+				},
+				{
+					"title": "Fórmulas de Cálculo Aplicadas",
+					"content": "La calculadora laboral utiliza las siguientes fórmulas principales para los cálculos:",
+					"formulas": [
+						{
+							"title": "Indemnización por antigüedad (Art. 245 LCT)",
+							"formula": "Indemnización = Mejor remuneración mensual × Años de servicio",
+							"note": "Se considera 1 año completo cuando se superan los 3 meses del último año."
+						},
+						{
+							"title": "Preaviso (Art. 231/232 LCT)",
+							"formula": [
+								"Menos de 3 meses: 15 días de salario",
+								"De 3 meses a 5 años: 1 mes de salario",
+								"Más de 5 años: 2 meses de salario"
+							]
+						},
+						{
+							"title": "Integración mes de despido (Art. 233 LCT)",
+							"formula": "Integración = (Salario diario) × (Días restantes del mes)"
+						},
+						{
+							"title": "Tope indemnizatorio (Fallo Vizzoti)",
+							"formula": ["Tope = Mínimo entre:", "67% de la mejor remuneración mensual", "Tope legal vigente según convenio"]
+						}
+					]
+				},
+				{
+					"title": "Gestión de Cálculos Guardados",
+					"content": "Una vez generados los cálculos, estos se guardarán automáticamente y podrás acceder a ellos en cualquier momento:",
+					"sections": [
+						{
+							"title": "Desde la pantalla principal:",
+							"items": [
+								"Encuentra todos tus cálculos en la tabla \"Mis cálculos guardados\"",
+								"Visualiza los detalles haciendo clic en cualquier fila",
+								"Elimina cálculos mediante el botón de papelera"
+							]
+						},
+						{
+							"title": "Desde la calculadora laboral:",
+							"items": [
+								"Accede a la pestaña \"Guardados\" para ver los cálculos laborales",
+								"Exporta los resultados en distintos formatos",
+								"Vincula los cálculos a carpetas de casos específicos"
+							]
+						}
+					]
+				},
+				{
+					"title": "Consejos Prácticos",
+					"content": "Para sacar el máximo provecho de la calculadora laboral, ten en cuenta estos consejos:",
+					"tips": [
+						{
+							"title": "Vincular a carpetas",
+							"content": "Vincula tus cálculos a carpetas específicas para mantener organizados todos los documentos relacionados con un mismo caso legal."
+						},
+						{
+							"title": "Exportación",
+							"content": "Utiliza las opciones de exportación (email, impresión, copiar) para compartir fácilmente los resultados con clientes o colegas."
+						},
+						{
+							"title": "Multas",
+							"content": "No olvides revisar las opcionales de multas en el segundo paso para incluir conceptos adicionales que pueden ser relevantes para el caso."
+						},
+						{
+							"title": "Actualizaciones",
+							"content": "Puedes actualizar los cálculos con intereses mediante la opción específica disponible en la vista detallada de cada cálculo."
+						}
+					],
+					"note": "Los cálculos se guardan automáticamente y están disponibles para su consulta en cualquier momento desde la sección \"Mis cálculos guardados\"."
+				}
+			]
+		},
+		{
+			"id": "intereses",
+			"title": "Guía de Calculadora de Intereses",
+			"icon": "Coin",
+			"color": "success",
+			"description": "Aprende a calcular intereses con distintas tasas para tus procesos legales.",
+			"steps": [
+				{
+					"title": "Bienvenido a la Calculadora de Intereses",
+					"content": "Esta guía te mostrará cómo utilizar la calculadora de intereses para generar, guardar y gestionar distintos tipos de cálculos con diferentes tasas.",
+					"bullets": [
+						"Acceder y completar el formulario de cálculo de intereses",
+						"Seleccionar entre diferentes tipos de tasas disponibles",
+						"Interpretar los resultados y la metodología aplicada",
+						"Exportar, guardar y gestionar tus cálculos"
+					]
+				},
+				{
+					"title": "Acceso y Formulario Básico",
+					"content": "Para comenzar con un cálculo de intereses, sigue estos pasos:",
+					"steps": [
+						"Accede a la calculadora seleccionando la tarjeta \"Intereses\" en la sección \"Cálculos disponibles\"",
+						"Se abrirá la pantalla de cálculo con un formulario de entrada",
+						"Completa los datos requeridos: reclamante, reclamado, fechas inicial y final, tipo de tasa y capital"
+					],
+					"note": "Todos los campos marcados con asterisco (*) son obligatorios para poder realizar el cálculo."
+				},
+				{
+					"title": "Tipos de Tasas Disponibles",
+					"content": "La calculadora de intereses permite seleccionar entre diferentes tipos de tasas:",
+					"sections": [
+						{
+							"title": "Tasas más comunes",
+							"items": [
+								"Tasa Pasiva BCRA: Tasa pasiva publicada por el Banco Central de la República Argentina",
+								"Tasa Activa Banco Nación: Tasa activa para operaciones de descuento",
+								"CER (Coeficiente de Estabilización de Referencia): Refleja la variación del IPC"
+							]
+						},
+						{
+							"title": "Tasas específicas del fuero laboral",
+							"items": [
+								"Tasa Activa CNAT Acta 2601: Tasa establecida por la Cámara Nacional de Apelaciones del Trabajo",
+								"Tasa Activa CNAT Acta 2658: Actualización posterior de la Cámara Laboral"
+							]
+						}
+					],
+					"note": "Al seleccionar una tasa, el sistema mostrará automáticamente el rango de fechas disponible para esa tasa específica."
+				},
+				{
+					"title": "Métodos de Cálculo Aplicados",
+					"content": "La calculadora de intereses utiliza dos métodos principales para calcular los intereses según el tipo de tasa seleccionada:",
+					"methods": [
+						{
+							"title": "Método de Indexación",
+							"applied_to": "CER, ICL y otros índices de ajuste",
+							"formula": "Capital × (Valor final / Valor inicial)",
+							"description": "Compara el valor del índice al inicio y al final del período, aplicando la variación proporcional al capital."
+						},
+						{
+							"title": "Método de Interés Diario",
+							"applied_to": "Tasas Pasivas y Activas (BCRA, BNA, CNAT)",
+							"formula": "Capital × (1 + Σ [Tasa diaria × días])",
+							"description": "Calcula los intereses acumulando la tasa diaria para cada período. La tasa diaria se obtiene dividiendo la tasa anual por 365."
+						}
+					],
+					"note": "En ambos casos, el sistema obtiene los datos oficiales publicados por los organismos correspondientes para cada fecha del período seleccionado."
+				},
+				{
+					"title": "Interpretación de Resultados",
+					"content": "Después de realizar el cálculo, se mostrará una pantalla de resultados con la siguiente información:",
+					"sections": [
+						{
+							"title": "Detalles del Cálculo",
+							"content": "Muestra los datos ingresados como fechas, tipo de tasa seleccionada y capital base."
+						},
+						{
+							"title": "Metodología de Cálculo",
+							"content": "Muestra información sobre el método aplicado (indexación o interés diario), coeficiente calculado y otros parámetros técnicos."
+						},
+						{
+							"title": "Resultados",
+							"content": "Muestra el capital base, los intereses generados y el capital actualizado (suma de capital e intereses)."
+						},
+						{
+							"title": "Ver Tasas",
+							"content": "Botón que permite visualizar en detalle los valores de las tasas utilizadas en cada período del cálculo."
+						}
+					]
+				},
+				{
+					"title": "Gestión y Exportación de Cálculos",
+					"content": "Una vez obtenidos los resultados, puedes realizar las siguientes acciones:",
+					"sections": [
+						{
+							"title": "Opciones de exportación:",
+							"items": [
+								"Copiar al portapapeles: Copia el resultado en formato texto para pegarlo donde necesites",
+								"Enviar por email: Envía los resultados por correo electrónico",
+								"Imprimir: Genera una versión imprimible del resultado"
+							]
+						},
+						{
+							"title": "Gestión de cálculos:",
+							"items": [
+								"Guardar cálculo: Guarda el cálculo en tu cuenta para acceder posteriormente",
+								"Ver cálculos guardados: Accede a todos tus cálculos de intereses guardados desde la pestaña \"Guardados\"",
+								"Vincular a carpetas: Asocia el cálculo a un expediente o carpeta específica"
+							]
+						}
+					],
+					"note": "Para generar un nuevo cálculo, utiliza el botón \"Nueva Liquidación\" que aparece en la pantalla de resultados."
+				}
+			]
+		},
+		{
+			"id": "folders",
+			"title": "Guía de Gestión de Causas",
+			"icon": "FolderOpen",
+			"color": "warning",
+			"description": "Aprende a organizar y gestionar carpetas para tus expedientes legales.",
+			"steps": [
+				{
+					"title": "Introducción a la Gestión de Causas",
+					"content": "Esta guía te mostrará cómo utilizar el sistema de gestión de causas para administrar eficientemente los expedientes legales, realizar seguimiento de casos y organizar toda la información relacionada con tus asuntos jurídicos.",
+					"bullets": [
+						"Crear y gestionar causas judiciales",
+						"Importar causas automáticamente desde el Poder Judicial",
+						"Organizar documentos y cálculos asociados a cada causa",
+						"Manejar el estado y seguimiento de tus expedientes",
+						"Archivar causas finalizadas y mantener tu sistema organizado"
+					]
+				},
+				{
+					"title": "Creación de Nuevas Causas",
+					"content": "Para crear una nueva causa en el sistema, sigue estos pasos:",
+					"steps": [
+						"Haz clic en el botón \"Agregar Causa\" en la parte superior derecha de la tabla",
+						"Completa el formulario con los datos básicos de la causa",
+						"Haz clic en \"Guardar\" para crear la nueva causa en el sistema"
+					],
+					"note": "Al crear una nueva causa, asegúrate de incluir toda la información relevante como jurisdicción, materia, parte representada y fechas importantes para facilitar su seguimiento posterior."
+				},
+				{
+					"title": "Importación Automática de Causas",
+					"content": "Ahora puedes importar causas directamente desde el Poder Judicial de la Nación de forma automática:",
+					"process": [
+						"Haz clic en el botón \"Agregar Causa\" en la parte superior derecha de la tabla",
+						"En el formulario, selecciona la pestaña \"Importar Automáticamente\"",
+						"Selecciona la jurisdicción del Poder Judicial (ej. Civil, Laboral, Seguridad Social)",
+						"Ingresa el número de expediente y el año",
+						"Haz clic en \"Siguiente\" y luego \"Guardar\" para importar la causa"
+					],
+					"warning": "Las causas importadas automáticamente aparecerán con estado \"Pendiente de verificación\" hasta que la información sea validada por el sistema. Esto se indica visualmente en la tabla de causas.",
+					"note": "Una vez que los datos hayan sido verificados y procesados, se actualizarán automáticamente con la información completa del expediente.",
+					"jurisdictions": [
+						"Cámara Nacional de Apelaciones en lo Civil",
+						"Cámara Federal de la Seguridad Social",
+						"Cámara Nacional de Apelaciones del Trabajo"
+					],
+					"additional_info": "La importación automática te permite ahorrar tiempo en la carga de datos y reducir errores de transcripción, facilitando la gestión de múltiples expedientes."
+				},
+				{
+					"title": "Campos del Formulario de Causa",
+					"content": "El formulario para crear o editar una causa contiene los siguientes campos:",
+					"sections": [
+						{
+							"title": "Datos Básicos",
+							"fields": [
+								"Carátula: Nombre identificativo del expediente (ej. \"Pérez c/ González s/ Daños\")",
+								"Parte: Rol que representa (Actora, Demandada, Tercero, etc.)",
+								"Descripción: Resumen o notas sobre la causa"
+							]
+						},
+						{
+							"title": "Información Jurisdiccional",
+							"fields": [
+								"Jurisdicción: Ámbito territorial (ej. CABA, Provincia de Buenos Aires)",
+								"Fuero: Especialidad del tribunal (Civil, Laboral, Comercial, etc.)",
+								"Materia: Tipo de proceso (Daños y Perjuicios, Despido, etc.)"
+							]
+						},
+						{
+							"title": "Estado y Fechas",
+							"fields": [
+								"Fecha de Inicio: Cuándo comenzó la causa",
+								"Fecha Final: Estimación de finalización o fecha de cierre",
+								"Estado: Situación actual (Nueva, En proceso, Finalizada)"
+							]
+						}
+					]
+				},
+				{
+					"title": "Gestión de Causas",
+					"content": "Una vez creadas las causas, puedes gestionar tus expedientes de manera eficiente utilizando las siguientes funciones:",
+					"functions": [
+						{
+							"title": "Ver Causa",
+							"description": "Haz clic en el icono de ojo para desplegar una vista previa con toda la información detallada de la causa directamente en la tabla."
+						},
+						{
+							"title": "Editar Causa",
+							"description": "Utiliza el botón de edición para modificar cualquier dato de la causa, actualizar su estado o añadir nueva información."
+						},
+						{
+							"title": "Eliminar Causa",
+							"description": "Permite eliminar causas del sistema. Esta acción requiere confirmación y es irreversible, por lo que se recomienda archivar en lugar de eliminar."
+						},
+						{
+							"title": "Abrir Causa",
+							"description": "Abre la vista detallada de la causa donde podrás gestionar documentos, cálculos y toda la información relacionada con el expediente."
+						}
+					],
+					"additional_actions": [
+						"Archivar Causas: Selecciona una o varias causas y haz clic en \"Archivar\" para moverlas al archivo",
+						"Ver Archivados: Accede a las causas archivadas y recupera aquellas que necesites",
+						"Exportar CSV: Exporta la lista de causas como archivo CSV para su uso en otras aplicaciones"
+					]
+				},
+				{
+					"title": "Vista Detallada de Causa",
+					"content": "Al abrir una causa (haciendo clic en el icono de maximizar), accederás a la vista detallada que te permite gestionar todos los aspectos relacionados con el expediente:",
+					"sections": [
+						{
+							"title": "Información General",
+							"description": "Muestra todos los datos básicos de la causa con opción de edición rápida. Aquí puedes actualizar el estado, fechas y detalles generales."
+						},
+						{
+							"title": "Documentos Asociados",
+							"description": "Permite subir, visualizar y gestionar todos los documentos relacionados con la causa, manteniendo un expediente digital completo y organizado."
+						},
+						{
+							"title": "Cálculos Vinculados",
+							"description": "Muestra todos los cálculos (laborales, intereses, etc.) que has asociado a esta causa, permitiéndote acceder rápidamente a ellos."
+						},
+						{
+							"title": "Notas y Comentarios",
+							"description": "Espacio para añadir notas, recordatorios o comentarios relacionados con la causa, facilitando el seguimiento y la colaboración."
+						}
+					],
+					"note": "Puedes vincular cualquier cálculo realizado en el sistema (laboral, intereses, etc.) a una causa específica para mantener toda la información relacionada organizada. Para vincular un cálculo, selecciona la opción \"Vincular a Causa\" al guardar el cálculo."
+				},
+				{
+					"title": "Archivado y Organización",
+					"content": "El sistema te permite archivar causas finalizadas o inactivas para mantener tu espacio de trabajo organizado:",
+					"processes": [
+						{
+							"title": "Proceso de Archivado:",
+							"steps": [
+								"Selecciona una o varias causas marcando las casillas de selección en la tabla",
+								"Haz clic en el botón \"Archivar\" en la barra de herramientas",
+								"Confirma la acción cuando se te solicite"
+							]
+						},
+						{
+							"title": "Gestión de Archivados:",
+							"steps": [
+								"Accede a las causas archivadas mediante el botón \"Ver Archivados\"",
+								"Selecciona las causas que deseas recuperar en la lista de archivados",
+								"Haz clic en \"Desarchivar\" para restaurarlas a la lista principal"
+							]
+						}
+					],
+					"warning": "Las causas archivadas permanecen en el sistema y pueden ser recuperadas en cualquier momento. El archivado es diferente a la eliminación, que es permanente.",
+					"recommendation": "Recomendamos usar el archivado como estrategia regular para mantener tu lista de causas activas más manejable, mejorando la eficiencia al centrarte en los casos que requieren atención inmediata."
+				},
+				{
+					"title": "Consejos Prácticos",
+					"content": "Para sacar el máximo provecho del sistema de gestión de causas, te ofrecemos estos consejos prácticos:",
+					"tips": [
+						{
+							"title": "Organización Sistemática",
+							"description": "Utiliza un sistema coherente para nombrar las carátulas de tus causas, lo que facilitará su identificación y búsqueda posterior."
+						},
+						{
+							"title": "Actualización Regular",
+							"description": "Mantén actualizado el estado de tus causas y añade notas relevantes después de cada novedad o actuación procesal importante."
+						},
+						{
+							"title": "Vinculación de Contenidos",
+							"description": "Vincula todos los cálculos y documentos relacionados a la causa correspondiente para tener un expediente digital completo y centralizado."
+						},
+						{
+							"title": "Archivado Estratégico",
+							"description": "Archiva regularmente las causas finalizadas o inactivas para mantener tu lista principal enfocada en casos activos que requieren atención."
+						}
+					],
+					"workflow_tips": [
+						"Utiliza la sección de notas para registrar recordatorios, plazos y observaciones importantes",
+						"Aprovecha la función de vincular cálculos para mantener toda la información financiera asociada a la causa",
+						"Exporta regularmente tus causas a CSV como respaldo adicional o para compartir con colaboradores",
+						"Utiliza la importación automática para ahorrar tiempo en la carga de expedientes del Poder Judicial"
+					],
+					"note": "Estamos constantemente mejorando el sistema de gestión de causas. Si tienes sugerencias o detectas oportunidades de mejora, háznoslo saber para seguir perfeccionando la herramienta."
+				}
+			]
+		},
+		{
+			"id": "contacts",
+			"title": "Guía de Contactos",
+			"icon": "ProfileCircle",
+			"color": "secondary",
+			"description": "Aprende a gestionar tus contactos y clientes en el sistema.",
+			"steps": [
+				{
+					"title": "Gestión de Contactos",
+					"content": "El módulo de Contactos te permite organizar y gestionar todas las personas y organizaciones relacionadas con tus casos legales.",
+					"bullets": [
+						"Crear perfiles detallados para clientes, oponentes, testigos y otros contactos",
+						"Categorizar contactos para facilitar su búsqueda y organización",
+						"Vincular contactos a carpetas específicas y casos"
+					]
+				},
+				{
+					"title": "Creación y Edición de Contactos",
+					"content": "Para agregar un nuevo contacto a tu base de datos:",
+					"sections": [
+						{
+							"title": "Creación de contacto",
+							"steps": [
+								"Navega a la sección \"Contactos\" y haz clic en el botón \"Nuevo Contacto\"",
+								"Selecciona el tipo de contacto: Persona física o Persona jurídica/Organización",
+								"Completa los campos obligatorios: Nombre, tipo de relación, información de contacto básica"
+							]
+						},
+						{
+							"title": "Edición de contactos",
+							"steps": [
+								"Localiza el contacto en la lista y haz clic en el ícono de edición",
+								"Modifica los campos necesarios en el formulario de edición"
+							]
+						}
+					]
+				},
+				{
+					"title": "Búsqueda y Organización",
+					"content": "El sistema de contactos ofrece potentes herramientas de búsqueda y organización:",
+					"sections": [
+						{
+							"title": "Búsqueda avanzada",
+							"features": [
+								"Utiliza la barra de búsqueda para encontrar contactos por nombre, email o teléfono",
+								"Filtra contactos por tipo, categoría, carpeta asociada o fecha de creación"
+							]
+						},
+						{
+							"title": "Categorización",
+							"features": [
+								"Asigna etiquetas personalizadas a los contactos para organizarlos por área legal, estado, etc.",
+								"Crea grupos de contactos relacionados para casos o proyectos específicos"
+							]
+						}
+					]
+				},
+				{
+					"title": "Vinculación con Carpetas y Casos",
+					"content": "Para aprovechar al máximo el sistema, vincula tus contactos con las carpetas de casos correspondientes:",
+					"sections": [
+						{
+							"title": "Vinculación desde la vista de contacto",
+							"steps": [
+								"Abre el perfil del contacto que deseas vincular",
+								"Navega a la sección \"Carpetas asociadas\"",
+								"Haz clic en \"Vincular a carpeta\" y selecciona la carpeta deseada"
+							]
+						},
+						{
+							"title": "Vinculación desde la vista de carpeta",
+							"steps": [
+								"Abre la carpeta a la que deseas agregar contactos",
+								"Navega a la pestaña \"Contactos\" dentro de la carpeta",
+								"Haz clic en \"Agregar contacto\" y selecciona de tu lista de contactos existentes"
+							]
+						}
+					]
+				},
+				{
+					"title": "Exportación e Importación",
+					"content": "El sistema permite importar y exportar contactos para facilitar la migración desde otros sistemas o compartir datos:",
+					"sections": [
+						{
+							"title": "Exportación de contactos",
+							"steps": [
+								"Desde la vista principal de contactos, selecciona los contactos a exportar",
+								"Haz clic en el botón \"Exportar\" en la barra de herramientas",
+								"Elige el formato deseado: CSV, Excel o vCard (para agendas)"
+							]
+						},
+						{
+							"title": "Importación de contactos",
+							"steps": [
+								"Haz clic en \"Importar contactos\" en la barra de herramientas",
+								"Selecciona el archivo (CSV, Excel o vCard) con los datos a importar",
+								"Mapea los campos del archivo con los campos del sistema"
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "calendar",
+			"title": "Guía de Calendario",
+			"icon": "Calendar",
+			"color": "info",
+			"description": "Aprende a gestionar eventos y agenda en tu calendario legal.",
+			"steps": [
+				{
+					"title": "Introducción al Calendario",
+					"content": "Esta guía te mostrará cómo utilizar el calendario para organizar tus eventos legales, gestionar recordatorios y vincular actividades a tus causas.",
+					"features": [
+						"Crear y gestionar eventos como audiencias, vencimientos y reuniones",
+						"Recibir recordatorios automáticos por correo electrónico y notificaciones web",
+						"Vincular eventos a causas específicas para un mejor seguimiento",
+						"Visualizar tu agenda en diferentes formatos (mes, semana, día, lista)",
+						"Filtrar eventos por tipo y causa relacionada",
+						"Configurar tu disponibilidad para permitir a tus clientes programar citas",
+						"Gestionar de forma profesional tus citas y consultas con clientes"
+					]
+				},
+				{
+					"title": "Navegación del Calendario",
+					"content": "El calendario ofrece múltiples vistas que puedes personalizar según tus necesidades:",
+					"views": [
+						{
+							"name": "Vista Mensual",
+							"description": "Muestra todos los eventos del mes, ideal para planificación a largo plazo"
+						},
+						{
+							"name": "Vista Semanal",
+							"description": "Muestra los eventos de la semana con detalle horario"
+						},
+						{
+							"name": "Vista Diaria",
+							"description": "Muestra todos los eventos del día seleccionado con máximo detalle"
+						},
+						{
+							"name": "Vista Agenda",
+							"description": "Muestra los eventos como una lista cronológica"
+						}
+					],
+					"note": "Para navegar entre fechas, utiliza las flechas de navegación o haz clic en el botón \"Hoy\" para volver rápidamente a la fecha actual."
+				},
+				{
+					"title": "Creación de Eventos",
+					"content": "Para crear un nuevo evento en el calendario, puedes hacerlo de dos formas:",
+					"methods": [
+						{
+							"title": "Método 1: Botón de Agregar",
+							"steps": [
+								"Haz clic en el botón circular con el símbolo \"+\" ubicado en la esquina inferior derecha",
+								"Se abrirá el formulario de nuevo evento"
+							]
+						},
+						{
+							"title": "Método 2: Selección de Fecha/Hora",
+							"steps": [
+								"Haz clic y arrastra sobre el calendario para seleccionar un rango de fecha/hora",
+								"El formulario se abrirá automáticamente con las fechas preseleccionadas"
+							]
+						}
+					],
+					"event_types": [
+						"Audiencia: Para eventos judiciales (color azul)",
+						"Vencimiento: Para plazos procesales y fechas límite (color rojo)",
+						"Reunión: Para encuentros con clientes o colegas (color verde)",
+						"Otro: Para cualquier otro tipo de evento (color amarillo)"
+					],
+					"note": "Al crear un evento, es posible vincularlo a una causa específica, lo que te permitirá mantener un seguimiento organizado de todas las actividades relacionadas con cada expediente."
+				},
+				{
+					"title": "Formulario de Evento",
+					"content": "El formulario para crear o editar un evento contiene los siguientes campos:",
+					"sections": [
+						{
+							"title": "Datos Básicos",
+							"fields": [
+								"Título: Nombre descriptivo del evento",
+								"Descripción: Detalles adicionales sobre el evento",
+								"Tipo: Categoría del evento (Audiencia, Vencimiento, Reunión, Otro)"
+							]
+						},
+						{
+							"title": "Fecha y Hora",
+							"fields": [
+								"Fecha Inicio: Cuándo comienza el evento",
+								"Fecha Fin: Cuándo termina el evento",
+								"Todo el día: Opción para eventos que duran todo el día"
+							]
+						},
+						{
+							"title": "Vinculación",
+							"fields": ["Causa vinculada: Expediente al que está asociado el evento"],
+							"note": "Esta sección es visible al editar desde una causa"
+						}
+					]
+				},
+				{
+					"title": "Gestión de Eventos",
+					"content": "Una vez creados los eventos, puedes gestionarlos de diversas formas:",
+					"functions": [
+						{
+							"title": "Editar Evento",
+							"description": "Haz clic sobre un evento para abrir el formulario de edición donde podrás modificar todos sus datos."
+						},
+						{
+							"title": "Eliminar Evento",
+							"description": "Dentro del formulario de edición, encontrarás un botón de papelera para eliminar el evento seleccionado."
+						},
+						{
+							"title": "Mover Evento",
+							"description": "Arrastra y suelta un evento para cambiarlo a una nueva fecha u hora, manteniendo todas sus propiedades."
+						},
+						{
+							"title": "Modificar Duración",
+							"description": "En las vistas Día y Semana, puedes estirar el evento desde sus bordes para modificar su duración."
+						}
+					],
+					"navigation_tips": [
+						"Cambiar Vistas: Utiliza los botones de la barra superior para alternar entre vistas (Mes, Semana, Día, Agenda)",
+						"Navegar entre fechas: Usa las flechas de navegación o el botón \"Hoy\" para moverte entre períodos",
+						"Eventos vinculados: Los eventos vinculados a causas incluyen un indicador con el nombre de la causa"
+					]
+				},
+				{
+					"title": "Recordatorios y Notificaciones",
+					"content": "El sistema de calendario incluye un completo sistema de recordatorios para que nunca pierdas un evento importante:",
+					"notification_types": [
+						{
+							"title": "Notificaciones por Correo Electrónico",
+							"description": "Recibirás un correo electrónico con recordatorio de tus eventos programados, configurable para ser enviado con diferentes anticipaciones (1 día, 3 días o 1 semana antes)."
+						},
+						{
+							"title": "Notificaciones Web",
+							"description": "Cuando estés utilizando la plataforma, recibirás notificaciones dentro de la aplicación para eventos próximos, apareciendo en el ícono de notificaciones en la barra superior."
+						},
+						{
+							"title": "Notificaciones Push",
+							"description": "Si has permitido las notificaciones del navegador, recibirás alertas incluso cuando no tengas la aplicación abierta, manteniéndote informado de todos tus eventos importantes."
+						}
+					],
+					"configuration": "Puedes personalizar tus preferencias de notificación en la sección \"Configuración\" de tu perfil, donde podrás elegir: 1) Qué tipos de eventos deseas recibir notificaciones, 2) Con cuánta anticipación quieres ser notificado, 3) Por qué medios prefieres recibir las notificaciones (correo, web, push)"
+				},
+				{
+					"title": "Vinculación con Causas",
+					"content": "Una de las características más útiles del calendario es su integración con el sistema de causas:",
+					"methods": [
+						{
+							"title": "Creación de Eventos desde Causas:",
+							"steps": [
+								"Accede a la vista detallada de la causa",
+								"Navega a la pestaña \"Calendario\" o \"Eventos\"",
+								"Haz clic en \"Agregar Evento\" para crear un evento ya vinculado a esa causa"
+							]
+						},
+						{
+							"title": "Vinculación desde el Calendario:",
+							"steps": [
+								"Crea un nuevo evento o edita uno existente",
+								"En el formulario, busca el campo \"Vincular a causa\"",
+								"Selecciona la causa de la lista desplegable"
+							]
+						}
+					],
+					"note": "Los eventos vinculados a causas aparecerán tanto en el calendario general como en la vista específica de la causa, permitiéndote tener una visión completa de tu agenda y de los eventos relacionados con cada expediente."
+				},
+				{
+					"title": "Configuración de Citas",
+					"content": "El sistema de calendario te permite configurar tu disponibilidad para que los clientes puedan programar citas directamente:",
+					"sections": [
+						{
+							"title": "Acceso a la Sección de Disponibilidad",
+							"options": [
+								"Desde el Calendario Principal: Accede al calendario y haz clic en el botón \"Citas\" ubicado en el menú de la izquierda bajo Calendario.",
+								"Desde tu Perfil de Usuario: También puedes acceder desde tu perfil, en la sección \"Configuración\" -> \"Calendario y Citas\" -> \"Citas\"."
+							]
+						},
+						{
+							"title": "Configuración de Horarios Disponibles",
+							"fields": [
+								"Selección de Días: Selecciona los días de la semana en los que estás disponible para atender citas. Puedes configurar disponibilidades diferentes para cada día.",
+								"Horarios Disponibles: Para cada día seleccionado, configura las franjas horarias en las que deseas recibir citas, por ejemplo, de 9:00 a 12:00 y de 15:00 a 18:00.",
+								"Fechas Específicas No Disponibles: Bloquea fechas específicas en las que no estarás disponible (vacaciones, feriados, etc.) para evitar que se programen citas en esos días."
+							]
+						},
+						{
+							"title": "Configuración de Citas",
+							"fields": [
+								"Duración de las Citas: Define la duración estándar de tus citas (30 minutos, 1 hora, etc.). También puedes crear diferentes tipos de citas con duraciones específicas.",
+								"Tiempo entre Citas: Configura el tiempo de descanso entre citas consecutivas para prepararte entre una y otra (15 minutos recomendados).",
+								"Tipos de Consulta: Crea diferentes tipos de consulta (inicial, seguimiento, asesoría específica) con duraciones y precios distintos."
+							]
+						}
+					],
+					"benefits": [
+						"Permite a tus clientes reservar citas en horarios que te convengan sin intercambios de mensajes",
+						"Reduce las citas perdidas con recordatorios automáticos para ti y tus clientes",
+						"Proyecta una imagen profesional y organizada frente a tus clientes",
+						"Ahorra tiempo en la coordinación de reuniones y optimiza tu agenda"
+					],
+					"note": "Una vez configurada tu disponibilidad, el sistema genera un enlace único que puedes compartir con tus clientes para que reserven citas directamente según tu disponibilidad configurada."
+				},
+				{
+					"title": "Consejos Prácticos",
+					"content": "Para aprovechar al máximo el calendario, te recomendamos seguir estas mejores prácticas:",
+					"tips": [
+						{
+							"title": "Codificación por Colores",
+							"description": "Aprovecha los distintos colores de eventos para identificar rápidamente el tipo de actividad. Los vencimientos en rojo son especialmente útiles para destacar plazos críticos."
+						},
+						{
+							"title": "Vista Semanal para Planificación",
+							"description": "Utiliza la vista semanal los lunes para planificar tu semana, identificar conflictos de horarios y organizar tus actividades de manera eficiente."
+						},
+						{
+							"title": "Descripciones Detalladas",
+							"description": "Incluye información completa en la descripción de los eventos, como número de sala para audiencias, documentos necesarios o contactos relevantes, para tener todo a mano cuando lo necesites."
+						},
+						{
+							"title": "Sincroniza con tu Dispositivo",
+							"description": "Mantén el calendario abierto en tu dispositivo móvil o configura la sincronización con tu aplicación de calendario preferida para tener acceso rápido a tu agenda en cualquier momento."
+						}
+					],
+					"management_recommendations": [
+						"Configura múltiples recordatorios para eventos cruciales como audiencias o vencimientos procesales",
+						"Siempre vincula los eventos a sus causas correspondientes para mantener todo organizado por expediente",
+						"Usa la vista de agenda para una revisión rápida de tus próximos compromisos",
+						"Programa tiempo para preparación antes de eventos importantes como audiencias o reuniones con clientes"
+					],
+					"note": "Recuerda que puedes acceder al calendario desde el menú principal o directamente desde la vista de cada causa para gestionar eventos específicos relacionados con ese expediente."
+				}
+			]
+		},
+		{
+			"id": "booking",
+			"title": "Guía del Sistema de Citas",
+			"icon": "CalendarTick",
+			"color": "error",
+			"description": "Aprende a configurar y gestionar el sistema de citas online para tus clientes.",
+			"steps": [
+				{
+					"title": "Sistema de Citas Online",
+					"content": "Esta guía te mostrará cómo utilizar el sistema de citas para configurar tu disponibilidad y permitir a tus clientes programar consultas directamente.",
+					"features": [
+						"Configura horarios de disponibilidad para recibir citas",
+						"Comparte un enlace profesional para que tus clientes agenden consultas",
+						"Recibe notificaciones automáticas de nuevas citas",
+						"Aprueba, rechaza o reagenda citas con facilidad",
+						"Personaliza formularios para recopilar información relevante de tus clientes",
+						"Integración completa con tu calendario de eventos",
+						"Gestión profesional de tu agenda de consultas"
+					]
+				},
+				{
+					"title": "Acceso y Configuración",
+					"content": "Para comenzar a configurar tu sistema de citas, accede a la sección correspondiente:",
+					"access_methods": [
+						"Desde la Navegación Principal: Accede a \"Aplicaciones\" → \"Calendario\" → \"Reservaciones\"",
+						"Desde el Calendario: En la vista del calendario, haz clic en \"Disponibilidad\" en el menú lateral"
+					],
+					"setup_steps": [
+						{
+							"step": "1. Crea una nueva configuración",
+							"description": "Haz clic en \"Nueva Disponibilidad\" y comienza a configurar tus opciones personalizadas."
+						},
+						{
+							"step": "2. Selecciona los días disponibles",
+							"description": "Marca los días de la semana en que estarás disponible para recibir consultas."
+						},
+						{
+							"step": "3. Define horarios",
+							"description": "Establece la hora de inicio y finalización de tu jornada de atención para cada día seleccionado."
+						},
+						{
+							"step": "4. Ajusta duración y descanso",
+							"description": "Configura la duración de cada cita y el tiempo de descanso que necesitas entre ellas."
+						},
+						{
+							"step": "5. Guarda la configuración",
+							"description": "Al guardar, se generará un enlace único que podrás compartir con tus clientes."
+						}
+					],
+					"note": "Una vez completada la configuración, el sistema estará listo para recibir reservas de citas según tus parámetros establecidos."
+				},
+				{
+					"title": "Configuración Detallada",
+					"content": "El sistema de citas ofrece opciones detalladas para personalizar completamente tu disponibilidad y preferencias:",
+					"options": [
+						{
+							"title": "Días Disponibles",
+							"description": "Selecciona cualquier combinación de días de la semana para tus citas. Puedes elegir solo días laborables, incluir fines de semana o incluso configurar disponibilidad para un solo día específico."
+						},
+						{
+							"title": "Horario de Atención",
+							"description": "Define las horas de inicio y fin de tu jornada de atención para cada día. Puedes establecer distintos horarios para diferentes días según tus necesidades."
+						},
+						{
+							"title": "Duración de Citas",
+							"description": "Establece la duración estándar de tus consultas (15, 30, 45, 60 minutos o personalizada). Esta duración determinará los bloques de tiempo disponibles en tu calendario."
+						},
+						{
+							"title": "Tiempo entre Citas",
+							"description": "Configura un margen de tiempo entre consultas consecutivas para prepararte, revisar notas o simplemente descansar brevemente entre atenciones."
+						}
+					],
+					"advanced_settings": [
+						{
+							"title": "Fechas Excluidas",
+							"description": "Bloquea fechas específicas en las que no estarás disponible, como vacaciones, días festivos o compromisos previos. Puedes añadir un motivo opcional para tu referencia."
+						},
+						{
+							"title": "Tiempo Mínimo de Anticipación",
+							"description": "Define cuánto tiempo antes debe programarse una cita (ej: mínimo 24 horas antes), evitando reservas de última hora."
+						},
+						{
+							"title": "Tiempo Máximo de Anticipación",
+							"description": "Establece hasta cuántos días en el futuro pueden programarse citas (ej: máximo 60 días), facilitando una gestión más eficiente de tu agenda a largo plazo."
+						},
+						{
+							"title": "Límite de Reservas",
+							"description": "Configura límites diarios o semanales de citas para evitar sobrecarga en tu agenda y mantener un equilibrio saludable en tu trabajo."
+						}
+					]
+				},
+				{
+					"title": "Personalización de Formularios",
+					"content": "El sistema te permite personalizar el formulario que tus clientes completarán al agendar una cita, recopilando exactamente la información que necesitas:",
+					"sections": [
+						{
+							"title": "Campos Básicos",
+							"fields": [
+								{
+									"title": "Información de Contacto",
+									"description": "Configura qué campos de contacto son obligatorios para tus clientes: nombre, correo electrónico, teléfono, empresa, dirección, etc."
+								},
+								{
+									"title": "Motivo de la Consulta",
+									"description": "Decide si deseas que los clientes proporcionen un motivo o descripción de la consulta al momento de agendar."
+								}
+							]
+						},
+						{
+							"title": "Campos Personalizados",
+							"field_types": [
+								{
+									"title": "Campo de Texto",
+									"description": "Para información general como números de expediente, referencias, etc."
+								},
+								{
+									"title": "Campo Numérico",
+									"description": "Para valores numéricos como montos, plazos o cantidades."
+								},
+								{
+									"title": "Lista de Opciones",
+									"description": "Para selección de categorías predefinidas (tipo de consulta, jurisdicción, etc.)."
+								},
+								{
+									"title": "Casilla de Verificación",
+									"description": "Para confirmaciones o aceptaciones de términos específicos."
+								}
+							],
+							"management": [
+								"Añade campos personalizados haciendo clic en \"Agregar campo\"",
+								"Edita campos existentes para modificar sus propiedades o añadir opciones",
+								"Elimina campos que ya no necesites o que no sean relevantes",
+								"Marca los campos como obligatorios u opcionales según tus necesidades"
+							]
+						}
+					],
+					"tip": "Solicita solo la información realmente necesaria para la consulta inicial. Un formulario demasiado extenso puede disuadir a potenciales clientes de completar el proceso de reserva. Puedes recopilar información más detallada durante la cita."
+				},
+				{
+					"title": "Gestión de Reservas",
+					"content": "Una vez configurado tu sistema, podrás gestionar fácilmente las reservas que realicen tus clientes:",
+					"reservation_center": {
+						"description": "Accede a la sección \"Reservaciones\" en el menú del calendario para ver todas tus citas programadas. Desde aquí podrás:",
+						"functions": [
+							{
+								"title": "Confirmar Citas",
+								"description": "Si has configurado aprobación manual, podrás revisar y confirmar las solicitudes entrantes. Las citas confirmadas se añadirán automáticamente a tu calendario."
+							},
+							{
+								"title": "Rechazar o Cancelar",
+								"description": "Puedes rechazar solicitudes que no puedas atender o cancelar citas ya confirmadas, añadiendo opcionalmente un motivo que se compartirá con el cliente."
+							},
+							{
+								"title": "Ver Información del Cliente",
+								"description": "Accede a toda la información proporcionada por el cliente al momento de la reserva, incluyendo los campos personalizados que hayas configurado."
+							},
+							{
+								"title": "Marcar como Completada",
+								"description": "Una vez realizada la consulta, puedes marcarla como completada para mantener un registro ordenado de tus atenciones pasadas y pendientes."
+							}
+						]
+					},
+					"filters": [
+						{
+							"title": "Vista Temporal",
+							"description": "Filtra por citas próximas, pasadas o todas para gestionar mejor tu agenda."
+						},
+						{
+							"title": "Filtro por Estado",
+							"description": "Visualiza citas según su estado: pendientes, confirmadas, canceladas, rechazadas o completadas."
+						},
+						{
+							"title": "Búsqueda por Cliente",
+							"description": "Localiza rápidamente citas de un cliente específico por su nombre o correo electrónico."
+						}
+					],
+					"integration": "Todas las citas confirmadas se integran automáticamente con tu calendario principal, evitando conflictos de horarios con otros eventos y permitiéndote tener una visión completa de tu agenda en un solo lugar."
+				},
+				{
+					"title": "Enlace para Clientes",
+					"content": "Una vez configurada tu disponibilidad, el sistema genera un enlace personalizado que puedes compartir con tus clientes para que programen citas:",
+					"url_info": [
+						{
+							"title": "Acceso al Enlace",
+							"description": "El enlace único para tus reservas se muestra en la sección \"Reservaciones\" y se genera automáticamente con tu nombre profesional."
+						},
+						{
+							"title": "Personalización",
+							"description": "El enlace incluye tu nombre profesional y se presenta con un formato amigable para proyectar una imagen profesional."
+						},
+						{
+							"title": "Cómo Compartirlo",
+							"description": "Utiliza el botón \"Copiar\" para obtener la URL completa que podrás compartir por cualquier medio."
+						}
+					],
+					"sharing_places": [
+						{
+							"title": "Firma de Correo",
+							"description": "Añade el enlace a la firma de tu correo electrónico con un texto como \"Agenda una consulta conmigo\" para facilitar a tus contactos la programación de citas."
+						},
+						{
+							"title": "Redes Sociales",
+							"description": "Comparte el enlace en tus perfiles profesionales de redes sociales o como respuesta a consultas iniciales que recibas por estos canales."
+						},
+						{
+							"title": "Sitio Web",
+							"description": "Si tienes un sitio web profesional, incluye un botón destacado con el enlace para que los visitantes puedan programar citas directamente."
+						},
+						{
+							"title": "Comunicación Directa",
+							"description": "Envía el enlace directamente a clientes que necesiten programar una cita, ahorrando tiempo en intercambios de mensajes para coordinar horarios."
+						}
+					],
+					"important": "El enlace refleja siempre tu configuración actual de disponibilidad. Si modificas tus horarios o parámetros, estos cambios se aplicarán automáticamente sin necesidad de actualizar o cambiar la URL compartida."
+				},
+				{
+					"title": "Experiencia del Cliente",
+					"content": "Para entender mejor el proceso, es útil conocer la experiencia que tendrán tus clientes al usar el sistema de citas:",
+					"client_process": [
+						{
+							"step": "Paso 1: Acceso al Portal de Citas",
+							"description": "El cliente hace clic en el enlace que has compartido y accede a una página profesional con tu nombre y la descripción de tu servicio de citas."
+						},
+						{
+							"step": "Paso 2: Selección de Fecha y Hora",
+							"description": "Se presenta un calendario intuitivo donde el cliente puede:",
+							"details": [
+								"Ver claramente los días disponibles (los no disponibles aparecen deshabilitados)",
+								"Seleccionar una fecha específica para ver los horarios disponibles en ese día",
+								"Elegir un horario entre las opciones disponibles, presentadas en bloques según la duración configurada"
+							]
+						},
+						{
+							"step": "Paso 3: Formulario de Información",
+							"description": "Después de elegir fecha y hora, el cliente completa un formulario con:",
+							"details": [
+								"Campos básicos de contacto (según lo que hayas configurado como obligatorio)",
+								"Los campos personalizados que hayas definido para recopilar información adicional",
+								"Aceptación de términos y condiciones si los has establecido"
+							]
+						},
+						{
+							"step": "Paso 4: Confirmación y Recordatorios",
+							"description": "Una vez completada la reserva, el cliente:",
+							"details": [
+								"Recibe una página de confirmación con el resumen de su cita y un código de confirmación",
+								"Se le envía un correo electrónico automático con los detalles de la cita",
+								"Si has configurado aprobación manual, se le informa que recibirá una confirmación una vez que apruebes la cita",
+								"Recibe recordatorios automáticos por correo electrónico antes de la fecha de la cita"
+							]
+						}
+					],
+					"client_benefits": [
+						"Flexibilidad para programar citas en el momento que les resulte conveniente",
+						"Visualización clara de tu disponibilidad sin necesidad de intercambios de mensajes",
+						"Confirmación inmediata y recordatorios automáticos para no olvidar la cita",
+						"Experiencia profesional que genera confianza desde el primer contacto"
+					]
+				},
+				{
+					"title": "Notificaciones y Recordatorios",
+					"content": "El sistema de citas incluye un completo sistema de notificaciones y recordatorios para mantenerte informado y ayudarte a gestionar tu agenda de manera eficiente:",
+					"notification_types": {
+						"for_you": [
+							{
+								"title": "Nuevas Reservas",
+								"description": "Recibes notificaciones inmediatas cuando un cliente programa una nueva cita, permitiéndote revisar y confirmar rápidamente."
+							},
+							{
+								"title": "Recordatorios de Citas",
+								"description": "El sistema te envía recordatorios automáticos antes de tus citas programadas para ayudarte a prepararte adecuadamente."
+							},
+							{
+								"title": "Cancelaciones",
+								"description": "Si un cliente cancela su cita, recibirás una notificación inmediata para que puedas actualizar tu agenda."
+							}
+						],
+						"for_clients": [
+							{
+								"title": "Confirmación de Reserva",
+								"description": "Los clientes reciben un correo electrónico inmediato confirmando que su solicitud ha sido recibida, con todos los detalles de la cita."
+							},
+							{
+								"title": "Aprobación de Cita",
+								"description": "Si tienes activada la aprobación manual, los clientes recibirán una notificación cuando confirmes su cita."
+							},
+							{
+								"title": "Recordatorios Previos",
+								"description": "Se envían recordatorios automáticos 24 horas antes de la cita para reducir las ausencias y mejorar la puntualidad."
+							}
+						]
+					},
+					"channels": [
+						{
+							"title": "Correo Electrónico",
+							"description": "Todas las notificaciones se envían por correo electrónico con un formato profesional y claro, incluyendo todos los detalles relevantes."
+						},
+						{
+							"title": "Notificaciones en la Plataforma",
+							"description": "Cuando estás usando la plataforma, recibirás notificaciones en tiempo real en el ícono de notificaciones de la barra superior."
+						},
+						{
+							"title": "Notificaciones Push (Opcional)",
+							"description": "Si has habilitado las notificaciones del navegador, puedes recibir alertas incluso cuando no tengas la plataforma abierta."
+						}
+					],
+					"configuration": "Puedes personalizar qué notificaciones deseas recibir y por qué canales desde la sección de configuración de tu perfil. Los recordatorios para clientes son siempre enviados para garantizar un servicio profesional."
+				},
+				{
+					"title": "Beneficios del Sistema",
+					"content": "Implementar el sistema de citas en tu práctica profesional ofrece numerosas ventajas tanto para ti como para tus clientes:",
+					"benefits": {
+						"for_you": [
+							{
+								"title": "Ahorro de Tiempo",
+								"description": "Elimina los intercambios de correos y mensajes para coordinar horarios, permitiéndote enfocarte en tu trabajo."
+							},
+							{
+								"title": "Optimización de Agenda",
+								"description": "Establece horarios específicos para consultas, evitando interrupciones en otras actividades profesionales."
+							},
+							{
+								"title": "Reducción de Ausencias",
+								"description": "Los recordatorios automáticos disminuyen significativamente las citas perdidas o los retrasos de los clientes."
+							},
+							{
+								"title": "Imagen Profesional",
+								"description": "Proyecta una imagen de organización y profesionalismo que impresiona positivamente a los clientes."
+							},
+							{
+								"title": "Análisis de Datos",
+								"description": "Obtén información valiosa sobre patrones de citas, horarios más solicitados y tasas de conversión."
+							},
+							{
+								"title": "Información Previa",
+								"description": "Recibe información relevante antes de la cita, permitiéndote prepararte adecuadamente para cada consulta."
+							}
+						],
+						"for_clients": [
+							{
+								"title": "Comodidad 24/7",
+								"description": "Pueden programar citas en cualquier momento, incluso fuera del horario laboral, sin necesidad de llamadas telefónicas."
+							},
+							{
+								"title": "Visualización Clara",
+								"description": "Ven claramente tu disponibilidad real, evitando frustraciones por intentar agendar en horarios ya ocupados."
+							},
+							{
+								"title": "Recordatorios Automáticos",
+								"description": "Reciben recordatorios oportunos que les ayudan a no olvidar su cita y a llegar puntuales."
+							},
+							{
+								"title": "Confirmación Inmediata",
+								"description": "Obtienen una confirmación inmediata con todos los detalles de la cita para su tranquilidad."
+							}
+						]
+					},
+					"workflow_optimization": {
+						"title": "Optimización del Flujo de Trabajo",
+						"features": [
+							"Vincular citas a expedientes - Conecta automáticamente cada consulta con su causa correspondiente",
+							"Centralizar información - Mantén todos los datos del cliente y su historial en un solo lugar",
+							"Automatizar seguimientos - Configura recordatorios para acciones posteriores a la consulta",
+							"Profesionalizar tu servicio - Ofrece una experiencia completa desde el primer contacto hasta el seguimiento"
+						]
+					}
+				},
+				{
+					"title": "Mejores Prácticas",
+					"content": "Para aprovechar al máximo el sistema de citas, te recomendamos seguir estas mejores prácticas:",
+					"practices": {
+						"configuration": [
+							{
+								"title": "Duración Realista",
+								"description": "Configura la duración de las citas considerando no solo el tiempo de la consulta, sino también la preparación y documentación posterior."
+							},
+							{
+								"title": "Buffers Adecuados",
+								"description": "Incluye tiempo de descanso suficiente entre citas (15-30 minutos) para manejar consultas que se extiendan y para prepararte adecuadamente."
+							},
+							{
+								"title": "Bloques de Agenda",
+								"description": "Considera definir bloques específicos para citas (ej: mañanas de lunes a miércoles) manteniendo otros momentos libres para trabajo sin interrupciones."
+							}
+						],
+						"client_management": [
+							{
+								"title": "Aprobación Manual",
+								"description": "Para clientes nuevos, considera activar la aprobación manual para valorar primero si la consulta corresponde a tu área de especialización."
+							},
+							{
+								"title": "Comunicación Previa",
+								"description": "Envía un mensaje personalizado de confirmación incluyendo cualquier información o documentación que el cliente deba preparar para la consulta."
+							},
+							{
+								"title": "Campos Personalizados Estratégicos",
+								"description": "Diseña campos personalizados que recopilen información crítica para preparar mejor la consulta sin sobrecargar el formulario."
+							}
+						],
+						"promotion": [
+							{
+								"title": "Promoción Activa",
+								"description": "Menciona la posibilidad de agendar citas online en todas tus comunicaciones y destaca la conveniencia para el cliente."
+							},
+							{
+								"title": "Personalización del Enlace",
+								"description": "Asegúrate de que tu nombre profesional aparezca correctamente en el enlace y la página de reserva para fortalecer tu marca personal."
+							},
+							{
+								"title": "Análisis Regular",
+								"description": "Revisa periódicamente los patrones de reservas para identificar horarios de alta demanda y ajustar tu disponibilidad según sea necesario."
+							},
+							{
+								"title": "Mantenimiento Actualizado",
+								"description": "Actualiza regularmente tu disponibilidad para reflejar cambios en tu agenda, períodos de vacaciones o modificaciones en tu horario de trabajo."
+							}
+						]
+					},
+					"ongoing_optimization": "El sistema de citas está diseñado para adaptarse a tus necesidades. A medida que lo utilices, identifica oportunidades de mejora en tu configuración e implementa ajustes para optimizar tanto tu experiencia como la de tus clientes."
+				}
+			]
+		}
+	]
 }
