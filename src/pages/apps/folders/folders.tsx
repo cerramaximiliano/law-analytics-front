@@ -18,6 +18,7 @@ import {
 	Snackbar,
 	Alert,
 	Box,
+	Typography,
 } from "@mui/material";
 
 import {
@@ -41,7 +42,6 @@ import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
 import {
 	IndeterminateCheckbox,
-	EmptyTable,
 	HeaderSort,
 	SortingSelect,
 	TablePagination,
@@ -56,7 +56,7 @@ import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle, DocumentDownload } from "iconsax-react";
+import { Add, FolderOpen, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle, DocumentDownload } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
@@ -362,7 +362,36 @@ function ReactTable({
 						</TableCell>
 					</TableRow>
 				)}
-				{page.length === 0 && <EmptyTable msg="No hay causas creadas. Puedes crear una usando el botón 'Agregar Causa'." colSpan={9} />}
+
+				{page.length === 0 && (
+					<Box
+						sx={{
+							width: "100%",
+							py: 6,
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							justifyContent: "center"
+						}}
+					>
+						{/* Ícono de Iconsax */}
+						<FolderOpen
+							variant="Bulk"
+							size={64}
+							style={{
+								marginBottom: '16px',
+								color: theme.palette.primary.main,
+								opacity: 0.7
+							}}
+						/>
+						<Typography variant="h5" gutterBottom align="center">
+							No hay causas creadas. Puedes crear una usando el botón 'Agregar Causa'.
+						</Typography>
+						<Typography variant="body2" color="textSecondary" align="center">
+							Las causas que guardes aparecerán aquí
+						</Typography>
+					</Box>
+				)}
 			</Stack>
 		</>
 	);
@@ -397,8 +426,6 @@ const FoldersLayout = () => {
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
 	const { folders, archivedFolders, isLoader } = useSelector((state) => state.folder);
-
-	console.log(true);
 
 	// Efecto para la carga inicial
 	useEffect(() => {

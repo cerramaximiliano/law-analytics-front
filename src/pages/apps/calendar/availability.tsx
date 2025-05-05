@@ -245,9 +245,13 @@ const Availability = () => {
 			setCustomFields(config.customFields);
 		}
 
-		// Campos requeridos
+		// Campos requeridos - asegurando que name y email siempre sean true
 		if (config.requiredFields) {
-			setRequiredFields(config.requiredFields);
+			setRequiredFields({
+				...config.requiredFields,
+				name: true,
+				email: true
+			});
 		}
 	};
 
@@ -404,9 +408,10 @@ const Availability = () => {
 
 	// Manejador para campos requeridos
 	const handleRequiredFieldChange = (field: keyof RequiredFields) => {
+		// Asegurar que name y email siempre sean true
 		setRequiredFields({
 			...requiredFields,
-			[field]: !requiredFields[field],
+			[field]: field === "name" || field === "email" ? true : !requiredFields[field],
 		});
 	};
 
@@ -482,7 +487,11 @@ const Availability = () => {
 				timezone: "America/Mexico_City",
 				isActive: true,
 				publicUrl: urlToUse,
-				requiredFields: requiredFields,
+				requiredFields: {
+					...requiredFields,
+					name: true,
+					email: true
+				},
 			};
 
 			// Determinar si es una actualización o una creación
@@ -882,12 +891,12 @@ const Availability = () => {
 												<Typography variant="subtitle2">Campos obligatorios</Typography>
 												<FormGroup>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.name} onChange={() => handleRequiredFieldChange("name")} />}
-														label="Nombre"
+														control={<Checkbox checked={true} disabled />}
+														label="Nombre (obligatorio)"
 													/>
 													<FormControlLabel
-														control={<Checkbox checked={requiredFields.email} onChange={() => handleRequiredFieldChange("email")} />}
-														label="Correo electrónico"
+														control={<Checkbox checked={true} disabled />}
+														label="Correo electrónico (obligatorio)"
 													/>
 													<FormControlLabel
 														control={<Checkbox checked={requiredFields.phone} onChange={() => handleRequiredFieldChange("phone")} />}

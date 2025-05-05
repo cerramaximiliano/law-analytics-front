@@ -162,14 +162,6 @@ const MainRoutes = {
 			element: <BookingPage />,
 		},
 		{
-			path: "manage-booking",
-			element: <ManageBookingPage />,
-		},
-		{
-			path: "manage-booking/:token",
-			element: <ManageBookingPage />,
-		},
-		{
 			path: "/",
 			element: (
 				<AuthGuard>

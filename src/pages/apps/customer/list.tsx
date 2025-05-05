@@ -48,7 +48,6 @@ import {
 	SortingSelect,
 	TablePagination,
 	TableRowSelection,
-	EmptyTable,
 } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 
@@ -61,7 +60,7 @@ import LinkToCause from "sections/apps/customer/LinkToCause";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1, InfoCircle, DocumentDownload } from "iconsax-react";
+import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1, InfoCircle, DocumentDownload, Profile2User } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
@@ -405,7 +404,33 @@ function ReactTable({
 					</TableRow>
 				)}
 				{page.length === 0 && (
-					<EmptyTable msg="No hay contactos creados. Puedes crear uno usando el botón 'Agregar Contacto'." colSpan={9} />
+					<Box
+						sx={{
+							width: "100%",
+							py: 6,
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							justifyContent: "center"
+						}}
+					>
+						{/* Ícono de Iconsax */}
+						<Profile2User
+							variant="Bulk"
+							size={64}
+							style={{
+								marginBottom: '16px',
+								color: theme.palette.primary.main,
+								opacity: 0.7
+							}}
+						/>
+						<Typography variant="h5" gutterBottom align="center">
+							No hay contactos creados. Puedes crear uno usando el botón 'Agregar Contacto'.
+						</Typography>
+						<Typography variant="body2" color="textSecondary" align="center">
+							Los contactos que guardes aparecerán aquí
+						</Typography>
+					</Box>
 				)}
 			</Stack>
 		</>

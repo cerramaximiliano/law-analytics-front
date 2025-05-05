@@ -648,8 +648,8 @@ function ReactTable({
 											bgcolor: row.isSelected
 												? alpha(theme.palette.primary.lighter, 0.35)
 												: row.isExpanded
-												? alpha(theme.palette.primary.lighter, 0.35)
-												: "inherit",
+													? alpha(theme.palette.primary.lighter, 0.35)
+													: "inherit",
 											"&:hover": {
 												bgcolor: alpha(theme.palette.primary.lighter, 0.15),
 											},
@@ -678,8 +678,17 @@ function ReactTable({
 							<TableRow>
 								<TableCell colSpan={8} sx={{ textAlign: "center", py: 5 }}>
 									<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-										<Typography variant="h5" color="textSecondary" gutterBottom>
-											No hay cálculos guardados
+										<Calculator
+											variant="Bulk"
+											size={64}
+											style={{
+												marginBottom: '16px',
+												color: theme.palette.primary.main,
+												opacity: 0.7
+											}}
+										/>
+										<Typography variant="h5" gutterBottom>
+											No hay cálculos guardados. Puedes crear una usando el botón 'Nuevo Cálculo'.
 										</Typography>
 										<Typography variant="body2" color="textSecondary">
 											Los cálculos que guardes aparecerán aquí
@@ -781,9 +790,8 @@ const AllCalculators = () => {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: `${selectedCalculatorIds.length} ${
-							selectedCalculatorIds.length === 1 ? "cálculo eliminado" : "cálculos eliminados"
-						} correctamente`,
+						message: `${selectedCalculatorIds.length} ${selectedCalculatorIds.length === 1 ? "cálculo eliminado" : "cálculos eliminados"
+							} correctamente`,
 						variant: "alert",
 						alert: { color: "success" },
 						close: true,
@@ -1202,29 +1210,29 @@ const AllCalculators = () => {
 					<Grid container spacing={3}>
 						{loading
 							? // Plantillas de carga que mantienen el mismo tamaño que las tarjetas reales
-							  [...Array(3)].map((_, index) => (
-									<Grid item xs={12} sm={6} md={4} key={index}>
-										<Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-											<CardContent sx={{ flexGrow: 1, p: 3 }}>
-												<Box mb={2} display="flex" justifyContent="center">
-													<Skeleton variant="circular" width={48} height={48} />
-												</Box>
-												<Skeleton variant="text" height={32} width="60%" sx={{ mx: "auto" }} />
-												<Skeleton variant="text" height={20} />
-												<Skeleton variant="text" height={20} />
-											</CardContent>
-											<CardActions sx={{ p: 3, pt: 1, justifyContent: "center" }}>
-												<Skeleton variant="rectangular" height={36} width="100%" />
-											</CardActions>
-										</Card>
-									</Grid>
-							  ))
+							[...Array(3)].map((_, index) => (
+								<Grid item xs={12} sm={6} md={4} key={index}>
+									<Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+										<CardContent sx={{ flexGrow: 1, p: 3 }}>
+											<Box mb={2} display="flex" justifyContent="center">
+												<Skeleton variant="circular" width={48} height={48} />
+											</Box>
+											<Skeleton variant="text" height={32} width="60%" sx={{ mx: "auto" }} />
+											<Skeleton variant="text" height={20} />
+											<Skeleton variant="text" height={20} />
+										</CardContent>
+										<CardActions sx={{ p: 3, pt: 1, justifyContent: "center" }}>
+											<Skeleton variant="rectangular" height={36} width="100%" />
+										</CardActions>
+									</Card>
+								</Grid>
+							))
 							: // Tarjetas reales
-							  calculatorCards.map((calc, index) => (
-									<Grid item xs={12} sm={6} md={4} key={index}>
-										<CalculatorCard {...calc} />
-									</Grid>
-							  ))}
+							calculatorCards.map((calc, index) => (
+								<Grid item xs={12} sm={6} md={4} key={index}>
+									<CalculatorCard {...calc} />
+								</Grid>
+							))}
 					</Grid>
 				</MainCard>
 

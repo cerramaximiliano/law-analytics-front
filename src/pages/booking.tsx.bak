@@ -1284,11 +1284,8 @@ const BookingPage = () => {
 									variant="contained"
 									color="primary"
 									onClick={() => {
-										if (slug) {
-											navigate(`/booking/${slug}`);
-										} else {
-											navigate('/');
-										}
+										setActiveStep(0);
+										formStartRef.current?.scrollIntoView({ behavior: 'smooth' });
 									}}
 									sx={{ mt: 2 }}
 								>
@@ -1330,30 +1327,17 @@ const BookingPage = () => {
 						<Typography variant="body1" paragraph color="textSecondary">
 							{error}
 						</Typography>
-						<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-							<Button
-								variant="contained"
-								color="primary"
-								onClick={() => {
-									if (slug) {
-										navigate(`/booking/${slug}`);
-									} else {
-										navigate('/');
-									}
-								}}
-								sx={{ mt: 2 }}
-							>
-								Volver al inicio
-							</Button>
-							<Button
-								variant="outlined"
-								color="primary"
-								onClick={() => navigate('/manage-booking')}
-								sx={{ mt: 2 }}
-							>
-								Gestionar reservas
-							</Button>
-						</Stack>
+						<Button
+							variant="contained"
+							color="primary"
+							onClick={() => {
+								setActiveStep(0);
+								formStartRef.current?.scrollIntoView({ behavior: 'smooth' });
+							}}
+							sx={{ mt: 2 }}
+						>
+							Volver al inicio
+						</Button>
 					</CardContent>
 				</Card>
 			</Container>
