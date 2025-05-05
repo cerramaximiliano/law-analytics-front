@@ -39,20 +39,17 @@ interface ContactViewProps {
 	data: Contact;
 }
 
+const EmptyFoldersMessage = ({ theme }: { theme: any }) => (
+	<Stack direction="column" spacing={1.5} alignItems="center" justifyContent="center" sx={{ py: 3 }}>
+		<Link1 size={32} variant="Bulk" color={theme.palette.text.secondary} opacity={0.4} />
+		<Typography color="textSecondary" variant="body2" sx={{ fontStyle: "italic", textAlign: "center" }}>
+			No hay causas vinculadas
+		</Typography>
+	</Stack>
+);
+
 // ==============================|| CUSTOMER - VIEW ||============================== //
 const CustomerView = ({ data }: ContactViewProps) => {
-	// Validación de prop data
-	if (!data) {
-		console.error("CustomerView recibió datos nulos o indefinidos");
-		return (
-			<TableRow>
-				<TableCell colSpan={8}>
-					<Typography color="error">Error: No se pudieron cargar los datos del contacto</Typography>
-				</TableCell>
-			</TableRow>
-		);
-	}
-
 	const theme = useTheme();
 	const matchDownMD = useMediaQuery(theme.breakpoints.down("md"));
 	const [linkedFolders, setLinkedFolders] = useState<Folder[]>([]);
@@ -60,18 +57,10 @@ const CustomerView = ({ data }: ContactViewProps) => {
 	const [error, setError] = useState<string | null>(null);
 	const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-	const EmptyFoldersMessage = () => (
-		<Stack direction="column" spacing={1.5} alignItems="center" justifyContent="center" sx={{ py: 3 }}>
-			<Link1 size={32} variant="Bulk" color={theme.palette.text.secondary} opacity={0.4} />
-			<Typography color="textSecondary" variant="body2" sx={{ fontStyle: "italic", textAlign: "center" }}>
-				No hay causas vinculadas
-			</Typography>
-		</Stack>
-	);
-
+	// Definir el callback para desvincular carpetas de contactos
 	const handleUnlink = useCallback(
 		async (folderId: string) => {
-			if (!data._id || !folderId) return;
+			if (!data?._id || !folderId) return;
 
 			try {
 				setIsProcessing(folderId);
@@ -127,9 +116,10 @@ const CustomerView = ({ data }: ContactViewProps) => {
 				setIsProcessing(null);
 			}
 		},
-		[data._id],
+		[data?._id],
 	);
 
+	// Componente para mostrar las carpetas vinculadas
 	const LinkedFoldersSection = useCallback(
 		() => (
 			<List sx={{ py: 0 }}>
@@ -184,18 +174,19 @@ const CustomerView = ({ data }: ContactViewProps) => {
 						</ListItem>
 					))
 				) : (
-					<EmptyFoldersMessage />
+					<EmptyFoldersMessage theme={theme} />
 				)}
 			</List>
 		),
 		[linkedFolders, isLoadingFolders, error, isProcessing, handleUnlink, theme.palette.mode],
 	);
 
+	// Cargar carpetas vinculadas cuando cambia el contacto
 	useEffect(() => {
-		const fetchLinkedFolders = async () => {
-			// No hacer nada si data es inválido
-			if (!data) return;
+		// Solo cargar datos si hay un contacto válido
+		if (!data) return;
 
+		const fetchLinkedFolders = async () => {
 			setIsLoadingFolders(true);
 			setError(null);
 
@@ -229,8 +220,17 @@ const CustomerView = ({ data }: ContactViewProps) => {
 		fetchLinkedFolders();
 	}, [data]);
 
-	// Si después de la validación inicial data es inválido, no mostrar nada
-	if (!data) return null;
+	// Validación de prop data para UI
+	if (!data) {
+		console.error("CustomerView recibió datos nulos o indefinidos");
+		return (
+			<TableRow>
+				<TableCell colSpan={8}>
+					<Typography color="error">Error: No se pudieron cargar los datos del contacto</Typography>
+				</TableCell>
+			</TableRow>
+		);
+	}
 
 	return (
 		<TableRow sx={{ "&:hover": { bgcolor: `transparent !important` }, overflow: "hidden" }}>

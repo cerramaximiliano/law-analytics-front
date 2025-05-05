@@ -404,7 +404,9 @@ function ReactTable({
 						</TableCell>
 					</TableRow>
 				)}
-				{page.length === 0 && <EmptyTable msg="No Hay Datos" colSpan={7} />}
+				{page.length === 0 && (
+					<EmptyTable msg="No hay contactos creados. Puedes crear uno usando el botón 'Agregar Contacto'." colSpan={9} />
+				)}
 			</Stack>
 		</>
 	);
@@ -448,20 +450,61 @@ const CustomerListPage = () => {
 			mountedRef.current = true;
 
 			const initialLoad = async () => {
-				if (!user?._id || loadingRef.current) return;
+				// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
+				if (!user?._id) {
+					console.log("No hay usuario disponible, mostrando UI vacía");
+					setIsInitialLoad(false);
+					return;
+				}
+
+				if (loadingRef.current) return;
 
 				try {
+					console.log("Cargando contactos para el usuario:", user._id);
+					// Garantizar que user._id es un string
+					const userId = user._id;
+					if (!userId) {
+						console.error("User ID no disponible para cargar contactos");
+						return;
+					}
+
 					loadingRef.current = true;
-					await dispatch(getContactsByUserId(user._id));
+					await dispatch(getContactsByUserId(userId));
 				} catch (error) {
 					console.error("Error loading contacts:", error);
+				} finally {
+					loadingRef.current = false;
+					setIsInitialLoad(false);
+					console.log("Carga inicial de contactos completada");
+				}
+			};
+
+			initialLoad();
+		}
+
+		// Este efecto también debe ejecutarse cuando cambia el usuario después del login
+		if (user?._id && !loadingRef.current && mountedRef.current) {
+			console.log("Usuario cambió después del montaje, recargando contactos");
+			const reloadContacts = async () => {
+				try {
+					// Garantizar que user._id es un string
+					const userId = user._id;
+					if (!userId) {
+						console.error("User ID no disponible para recargar contactos");
+						return;
+					}
+
+					loadingRef.current = true;
+					await dispatch(getContactsByUserId(userId));
+				} catch (error) {
+					console.error("Error reloading contacts after user change:", error);
 				} finally {
 					loadingRef.current = false;
 					setIsInitialLoad(false);
 				}
 			};
 
-			initialLoad();
+			reloadContacts();
 		}
 
 		return () => {
@@ -503,8 +546,15 @@ const CustomerListPage = () => {
 		if (!user?._id || loadingRef.current) return;
 
 		try {
+			// Garantizar que user._id es un string
+			const userId = user._id;
+			if (!userId) {
+				console.error("User ID no disponible para refrescar datos");
+				return;
+			}
+
 			loadingRef.current = true;
-			await dispatch(getContactsByUserId(user._id));
+			await dispatch(getContactsByUserId(userId));
 		} finally {
 			loadingRef.current = false;
 		}
@@ -523,11 +573,18 @@ const CustomerListPage = () => {
 		async (selectedRows: Row<Contact>[]) => {
 			if (!user?._id || selectedRows.length === 0 || loadingRef.current) return;
 
+			// Garantizar que user._id es un string
+			const userId = user._id;
+			if (!userId) {
+				console.error("User ID no disponible para archivar contactos");
+				return;
+			}
+
 			const contactIds = selectedRows.map((row) => row.original._id);
 
 			try {
 				loadingRef.current = true;
-				const result = await dispatch(archiveContacts(user._id, contactIds));
+				const result = await dispatch(archiveContacts(userId, contactIds));
 
 				if (result.success) {
 					setSnackbarMessage(
@@ -557,8 +614,15 @@ const CustomerListPage = () => {
 		if (!user?._id || loadingRef.current) return;
 
 		try {
+			// Garantizar que user._id es un string
+			const userId = user._id;
+			if (!userId) {
+				console.error("User ID no disponible para obtener contactos archivados");
+				return;
+			}
+
 			loadingRef.current = true;
-			await dispatch(getArchivedContactsByUserId(user._id));
+			await dispatch(getArchivedContactsByUserId(userId));
 			setArchivedModalOpen(true);
 		} catch (error) {
 			console.error("Error al obtener contactos archivados:", error);
@@ -582,9 +646,16 @@ const CustomerListPage = () => {
 		async (contactIds: string[]) => {
 			if (!user?._id || contactIds.length === 0 || loadingRef.current) return;
 
+			// Garantizar que user._id es un string
+			const userId = user._id;
+			if (!userId) {
+				console.error("User ID no disponible para desarchivar contactos");
+				return;
+			}
+
 			try {
 				setLoadingUnarchive(true);
-				const result = await dispatch(unarchiveContacts(user._id, contactIds));
+				const result = await dispatch(unarchiveContacts(userId, contactIds));
 
 				if (result.success) {
 					setSnackbarMessage(
@@ -787,8 +858,18 @@ const CustomerListPage = () => {
 		[contacts],
 	);
 
+	// Renderizar un loader o un componente vacío durante la carga inicial
 	if (isInitialLoad) {
-		return null; // O un componente de loading si prefieres
+		return (
+			<MainCard content={false}>
+				<ScrollX>
+					<Stack spacing={3} sx={{ p: 3 }}>
+						<Skeleton variant="rectangular" height={50} />
+						<Skeleton variant="rectangular" height={300} />
+					</Stack>
+				</ScrollX>
+			</MainCard>
+		);
 	}
 
 	return (

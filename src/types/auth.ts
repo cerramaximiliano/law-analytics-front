@@ -147,6 +147,7 @@ export interface RegisterResponse {
 export interface VerifyCodeResponse {
 	success: boolean;
 	message: string;
+	user?: UserProfile; // Información del usuario después de la verificación
 }
 
 // Interfaz actualizada para el contexto del servidor
@@ -160,7 +161,7 @@ export interface ServerContextType extends AuthProps {
 		firstName: string,
 		lastName: string,
 	) => Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }>;
-	verifyCode?: (email: string, code: string) => Promise<boolean>;
+	verifyCode?: (email: string, code: string) => Promise<VerifyCodeResponse>;
 	updateProfile: (userData: Partial<UserProfile>) => Promise<void>;
 	setIsLoggedIn: (value: boolean) => void;
 	setNeedsVerification: (value: boolean) => void;

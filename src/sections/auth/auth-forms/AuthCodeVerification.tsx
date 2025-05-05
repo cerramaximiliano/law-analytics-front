@@ -23,6 +23,8 @@ interface AuthCodeVerificationProps {
 
 const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificationSuccess }: AuthCodeVerificationProps) => {
 	// Obtener funciones y estado del contexto de autenticación
+	console.log("AuthCodeVerification inicializado con mode:", mode, "y email:", propEmail);
+
 	const auth = useAuth();
 
 	// Verificar que auth no sea null antes de desestructurarlo
@@ -35,6 +37,8 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 	// Obtener el email desde Redux si no viene como prop
 	const reduxEmail = useSelector((state: RootState) => state.auth.email);
 	const emailToUse = propEmail || reduxEmail || "";
+
+	console.log("AuthCodeVerification - Usando email:", emailToUse, "y mode:", mode);
 
 	const navigate = useNavigate();
 
@@ -90,7 +94,26 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 
 	// Manejador de verificación de código según el modo
 	const handleVerifyCode = async () => {
-		console.log(emailToUse);
+		// Determinar si estamos en un proceso de reseteo de contraseña
+		const isResetProcess = mode === "reset" || localStorage.getItem("reset_in_progress") === "true";
+		// Si estamos en proceso de reseteo, forzar modo "reset" independientemente del valor de prop
+		const effectiveMode = isResetProcess ? "reset" : mode;
+
+		console.log(
+			"handleVerifyCode - Email:",
+			emailToUse,
+			"Mode original:",
+			mode,
+			"Modo efectivo:",
+			effectiveMode,
+			"OTP:",
+			otp,
+			"¿Proceso de reseteo?:",
+			isResetProcess,
+			"¿reset_in_progress en localStorage?:",
+			localStorage.getItem("reset_in_progress"),
+		);
+
 		if (!otp || otp.length !== 6) {
 			setError("Por favor, ingresa el código completo de 6 dígitos.");
 			return;
@@ -102,24 +125,23 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 		}
 
 		try {
-			console.log(`Verificando código en modo: ${mode}`);
+			// IMPORTANTE: Verificar el modo y usar el endpoint correcto
+			console.log(
+				`Verificando código en modo efectivo: ${effectiveMode} - Se usará el endpoint: ${
+					effectiveMode === "reset" ? "/api/auth/verify-reset-code" : "/api/auth/verify-code"
+				}`,
+			);
 
-			if (mode === "register" && verifyCode) {
-				// Para registro, usa la función verifyCode del provider
-				const success = await verifyCode(emailToUse, otp);
-
-				if (success) {
-					setError(null);
-					setIsLoggedIn(true);
-					setNeedsVerification(false);
-					navigate("/dashboard/default");
-					if (onVerificationSuccess) onVerificationSuccess();
+			// Para reseteo de contraseña, SIEMPRE usamos el endpoint verify-reset-code
+			if (effectiveMode === "reset") {
+				if (!verifyResetCode) {
+					throw new Error("La función verifyResetCode no está disponible");
 				}
-			} else if (mode === "reset" && verifyResetCode) {
-				console.log("Verificando código para reseteo de contraseña", emailToUse);
 
-				// Para reseteo de contraseña, usa verifyResetCode
+				console.log("MODO RESET CONFIRMADO - Usando verifyResetCode que apunta a '/api/auth/verify-reset-code'");
 				const success = await verifyResetCode(emailToUse, otp);
+
+				console.log("Resultado de verificación con verifyResetCode:", success);
 
 				if (success) {
 					console.log("Código verificado exitosamente, redirigiendo a reset-password");
@@ -137,13 +159,76 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 				} else {
 					console.log("Error: El código no pudo ser verificado");
 				}
-			} else {
-				setError("Las funciones de verificación no están disponibles.");
-				console.error("Funciones de verificación no disponibles o modo incorrecto:", {
+			}
+			// Para registro normal, usamos el endpoint verify-code
+			else if (effectiveMode === "register" && verifyCode) {
+				console.log("MODO REGISTER - Usando verifyCode para registro normal");
+				const response = await verifyCode(emailToUse, otp);
+
+				if (response) {
+					console.log("Verificación exitosa:", response);
+
+					// Si el servidor devuelve el objeto usuario completo en la respuesta
+					if (response.user) {
+						// Actualizar estado global de auth con la data completa del usuario
+						dispatch({
+							type: "LOGIN",
+							payload: {
+								isLoggedIn: true,
+								user: response.user,
+								needsVerification: false,
+							},
+						});
+
+						// Actualizar también estado local de auth
+						setError(null);
+						setIsLoggedIn(true);
+						setNeedsVerification(false);
+
+						console.log("Estado de autenticación actualizado con datos del usuario:", response.user);
+					} else {
+						// Comportamiento anterior si no hay datos de usuario
+						setError(null);
+						setIsLoggedIn(true);
+						setNeedsVerification(false);
+					}
+
+					navigate("/dashboard/default");
+					if (onVerificationSuccess) onVerificationSuccess();
+				}
+			}
+			// Caso de emergencia - si el modo no está definido correctamente
+			else {
+				console.error("Modo no reconocido o funciones no disponibles:", {
 					mode,
-					verifyCode: !!verifyCode,
-					verifyResetCode: !!verifyResetCode,
+					hasVerifyCode: !!verifyCode,
+					hasVerifyResetCode: !!verifyResetCode,
 				});
+
+				// Si estamos en code-verification y no tenemos modo explícito, intentar con verifyResetCode
+				if (window.location.pathname.includes("code-verification") && verifyResetCode) {
+					console.log("MODO EMERGENCIA - Usando verifyResetCode por defecto");
+					const success = await verifyResetCode(emailToUse, otp);
+
+					if (success) {
+						console.log("Código verificado exitosamente, redirigiendo a reset-password");
+						setError(null);
+						localStorage.setItem("reset_email", emailToUse);
+						localStorage.setItem("reset_code", otp);
+						localStorage.setItem("reset_verified", "true");
+						navigate("/auth/reset-password", { replace: true });
+						if (onVerificationSuccess) onVerificationSuccess();
+					} else {
+						console.log("Error: El código no pudo ser verificado");
+					}
+				} else {
+					setError("Las funciones de verificación no están disponibles.");
+					console.error("Funciones de verificación no disponibles o modo incorrecto:", {
+						mode,
+						verifyCode: !!verifyCode,
+						verifyResetCode: !!verifyResetCode,
+					});
+				}
 			}
 		} catch (error) {
 			console.error("Error de verificación:", error);

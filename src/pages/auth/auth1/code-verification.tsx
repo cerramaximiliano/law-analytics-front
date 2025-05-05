@@ -15,17 +15,38 @@ const CodeVerification = () => {
 	const navigate = useNavigate();
 
 	// Obtener datos del estado de location, URL o Redux
-	const { email: locationEmail, mode: locationMode = "register" } = location.state || {};
+	const { email: locationEmail, mode: locationMode } = location.state || {};
+	console.log("CodeVerification - Estado de navegación recibido:", location.state);
+
+	// Verificar si venimos de una solicitud de reseteo de contraseña
+	// 1. Verificar por estado explícito en location.state
+	// 2. Verificar por documento referente (de dónde venimos)
+	// 3. Verificar si hay un email almacenado en localStorage para reseteo
+	const isResetPasswordContext =
+		(location.state && location.state.mode === "reset") ||
+		(document.referrer && document.referrer.includes("forgot-password")) ||
+		localStorage.getItem("reset_in_progress") === "true";
+
 	const searchParams = new URLSearchParams(location.search);
 	const urlEmail = searchParams.get("email");
-	const urlMode = searchParams.get("mode") || "register";
+	const urlMode = searchParams.get("mode");
+	console.log("CodeVerification - Parámetros URL:", { urlEmail, urlMode });
 
 	const reduxEmail = useSelector((state: RootState) => state.auth.email);
 	// Ya no necesitamos este valor ya que no lo estamos verificando
 	// const needsVerification = useSelector((state: RootState) => state.auth.needsVerification);
 
-	const email = urlEmail || locationEmail || reduxEmail || "";
-	const mode = urlMode || locationMode;
+	// Si detectamos que estamos en un contexto de reseteo de contraseña,
+	// usamos 'reset' como modo y también intentamos recuperar el email del localStorage
+	const storedResetEmail = localStorage.getItem("reset_email");
+
+	// Para el email, intentamos usar el de localStorage si estamos en contexto de reseteo
+	const email = urlEmail || locationEmail || (isResetPasswordContext ? storedResetEmail : "") || reduxEmail || "";
+
+	// Para el modo, forzamos 'reset' si detectamos contexto de reseteo
+	const mode = isResetPasswordContext ? "reset" : urlMode || locationMode || "register";
+
+	console.log("CodeVerification - Valores finales a pasar al componente:", { email, mode, locationMode, urlMode });
 
 	// Redireccionar si no hay email o no necesita verificación (en caso de registro)
 	useEffect(() => {

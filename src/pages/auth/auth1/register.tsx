@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import axios from "axios";
 
 // material-ui
 import { Grid, Stack, Alert, Typography } from "@mui/material";
@@ -21,19 +22,20 @@ const Register = () => {
 
 		try {
 			if (response && response.credential) {
-				// Utiliza access_token o id_token
-				const result = await fetch(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					credentials: "include",
-					body: JSON.stringify({
-						token: response.credential,
-					}),
-				});
+				// Utiliza axios en lugar de fetch
+				const result = await axios.post(
+					`${process.env.REACT_APP_BASE_URL}/api/auth/google`, 
+					{ token: response.credential },
+					{
+						withCredentials: true,
+						headers: {
+							"Content-Type": "application/json",
+						}
+					}
+				);
 
-				const data = await result.json();
+				// Axios ya parsea automaticamente la respuesta JSON
+				const data = result.data;
 
 				if (data.success) {
 					// Llama a la función de login para actualizar el estado de autenticación en el frontend

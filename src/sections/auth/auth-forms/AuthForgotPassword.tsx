@@ -52,6 +52,11 @@ const AuthForgotPassword = () => {
 
 								// Navegar a la página de verificación de código con el email
 								// Usar la ruta correcta: /auth/code-verification
+								// Almacenar en localStorage que estamos en proceso de reseteo
+								// Esto ayudará a mantener el contexto incluso si se recarga la página
+								localStorage.setItem("reset_in_progress", "true");
+								localStorage.setItem("reset_email", values.email);
+
 								setTimeout(() => {
 									navigate("/auth/code-verification", {
 										state: { email: values.email, mode: "reset" },
@@ -61,7 +66,7 @@ const AuthForgotPassword = () => {
 							},
 							(err: any) => {
 								setStatus({ success: false });
-								setErrors({ submit: err.message });
+								setErrors({ submit: err.response.data.message });
 								setSubmitting(false);
 							},
 						);
@@ -69,7 +74,7 @@ const AuthForgotPassword = () => {
 						console.error(err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
-							setErrors({ submit: err.message });
+							setErrors({ submit: err.response.data.message });
 							setSubmitting(false);
 						}
 					}

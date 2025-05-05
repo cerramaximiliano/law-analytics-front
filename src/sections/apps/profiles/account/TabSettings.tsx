@@ -62,7 +62,7 @@ const TabSubscription = () => {
 		try {
 			setLoading(true);
 			const response = await ApiService.getCurrentSubscription();
-
+			console.log(response)
 			// Hacer una aserción de tipo para la respuesta
 			const responseData = response as unknown as {
 				success: boolean;
@@ -313,7 +313,8 @@ const TabSubscription = () => {
 
 	// Función para obtener toda la información del período de gracia
 	const getGracePeriodInfo = () => {
-		if (!subscription.downgradeGracePeriod) return null;
+		// No mostrar información para plan gratuito sin plan previo
+		if (!subscription.downgradeGracePeriod || (subscription.plan === "free" && !subscription.downgradeGracePeriod.previousPlan)) return null;
 
 		const willDowngradeToFreePlan = subscription.cancelAtPeriodEnd && subscription.plan !== "free";
 		const previousPlanName = getPlanName(subscription.downgradeGracePeriod.previousPlan);
@@ -427,7 +428,7 @@ const TabSubscription = () => {
 											</Typography>
 										</Box>
 
-										{subscription.downgradeGracePeriod && (
+										{subscription.downgradeGracePeriod && (subscription.plan !== "free" || subscription.downgradeGracePeriod.previousPlan) && (
 											<Alert
 												severity="warning"
 												variant="outlined"
@@ -715,7 +716,7 @@ const TabSubscription = () => {
 			</Grid>
 
 			{/* Sección de Período de Gracia */}
-			{subscription.downgradeGracePeriod && (
+			{subscription.downgradeGracePeriod && (subscription.plan !== "free" || subscription.downgradeGracePeriod.previousPlan) && (
 				<Grid item xs={12}>
 					<MainCard
 						title={getGracePeriodInfo()?.title || "Período de Gracia"}
@@ -745,9 +746,8 @@ const TabSubscription = () => {
 										<Stack spacing={1}>
 											<Typography variant="subtitle1" fontWeight={600}>
 												{getGracePeriodInfo()?.willDowngradeToFreePlan
-													? `Tu plan ${getGracePeriodInfo()?.previousPlanName} será cambiado al Plan Gratuito el ${
-															getGracePeriodInfo()?.cancellationFormatted
-													  }`
+													? `Tu plan ${getGracePeriodInfo()?.previousPlanName} será cambiado al Plan Gratuito el ${getGracePeriodInfo()?.cancellationFormatted
+													}`
 													: `Tu plan ha cambiado de ${getGracePeriodInfo()?.previousPlanName} a ${getGracePeriodInfo()?.currentPlanName}`}
 											</Typography>
 											<Typography variant="body2">Tienes un período de gracia para ajustar tus datos a los nuevos límites.</Typography>
@@ -953,7 +953,7 @@ const TabSubscription = () => {
 			)}
 
 			{/* Comparación de límites cuando hay período de gracia */}
-			{subscription.downgradeGracePeriod && (
+			{subscription.downgradeGracePeriod && (subscription.plan !== "free" || subscription.downgradeGracePeriod.previousPlan) && (
 				<Grid item xs={12}>
 					<MainCard
 						title={
@@ -1071,8 +1071,8 @@ const TabSubscription = () => {
 												{subscription.downgradeGracePeriod.previousPlan === "premium"
 													? "Ilimitadas"
 													: subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "50"
-													: "5"}
+														? "50"
+														: "5"}
 											</TableCell>
 											<TableCell
 												align="center"
@@ -1111,8 +1111,8 @@ const TabSubscription = () => {
 												{subscription.downgradeGracePeriod.previousPlan === "premium"
 													? "Ilimitadas"
 													: subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "20"
-													: "3"}
+														? "20"
+														: "3"}
 											</TableCell>
 											<TableCell
 												align="center"
@@ -1151,8 +1151,8 @@ const TabSubscription = () => {
 												{subscription.downgradeGracePeriod.previousPlan === "premium"
 													? "Ilimitados"
 													: subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "100"
-													: "10"}
+														? "100"
+														: "10"}
 											</TableCell>
 											<TableCell
 												align="center"
@@ -1187,8 +1187,8 @@ const TabSubscription = () => {
 												{subscription.downgradeGracePeriod.previousPlan === "premium"
 													? "10 GB"
 													: subscription.downgradeGracePeriod.previousPlan === "standard"
-													? "1 GB"
-													: "50 MB"}
+														? "1 GB"
+														: "50 MB"}
 											</TableCell>
 											<TableCell
 												align="center"

@@ -12,13 +12,11 @@ import Avatar from "components/@extended/Avatar";
 import ProfileTab from "./ProfileTab";
 
 // assets
-import { Camera } from "iconsax-react";
+import { Camera, Profile } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
 import { updatePicture } from "store/reducers/auth";
-
-const avatarImage = require.context("assets/images/users", true);
 
 // ==============================|| USER PROFILE - TABS ||============================== //
 
@@ -31,7 +29,9 @@ const ProfileTabs = ({ focusInput }: Props) => {
 	const [selectedImage, setSelectedImage] = useState<File | undefined>(undefined);
 	const user = useSelector((state: RootState) => state.auth.user);
 	const picture = user?.picture;
-	const [avatar, setAvatar] = useState<string | undefined>(picture || avatarImage(`./default.png`));
+	
+	// Use the Profile component as default instead of the default.png image
+	const [avatar, setAvatar] = useState<string | undefined>(picture);
 
 	// Usar datos del usuario en lugar de hardcodearlos
 	const userName = user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
@@ -105,7 +105,16 @@ const ProfileTabs = ({ focusInput }: Props) => {
 								cursor: "pointer",
 							}}
 						>
-							<Avatar alt={userName} src={avatar} sx={{ width: 124, height: 124, border: "1px dashed" }} />
+							{avatar ? (
+								<Avatar alt={userName} src={avatar} sx={{ width: 124, height: 124, border: "1px dashed" }} />
+							) : (
+								<Avatar 
+									alt={userName} 
+									sx={{ width: 124, height: 124, border: "1px dashed" }}
+								>
+									<Profile size="64" color={theme.palette.primary.main} />
+								</Avatar>
+							)}
 							<Box
 								sx={{
 									position: "absolute",

@@ -380,7 +380,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			// Verificación adicional: usar la acción específica para asegurar que needsVerification sea true
 			reduxDispatch({
 				type: SET_NEEDS_VERIFICATION,
-				payload: { email }
+				payload: { email },
 			});
 
 			showSnackbar("Registro exitoso", "success");
@@ -393,7 +393,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	};
 
 	// Verificar código
-	const verifyCode = async (email: string, code: string): Promise<boolean> => {
+	const verifyCode = async (email: string, code: string): Promise<any> => {
 		try {
 			// Enviar email y code directamente al endpoint verify-code
 			const response = await axios.post<VerifyCodeResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/verify-code`, {
@@ -402,9 +402,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			});
 
 			if (response.data.success) {
+				// Extraer el objeto usuario si está disponible en la respuesta
+				const userData = response.data.user;
+
+				if (userData) {
+					console.log("Datos de usuario obtenidos después de la verificación:", userData);
+
+					// Actualizar el estado con los datos del usuario
+					localDispatch({
+						type: LOGIN,
+						payload: {
+							isLoggedIn: true,
+							user: userData,
+							needsVerification: false,
+						},
+					});
+
+					// También actualizar el estado global de Redux
+					reduxDispatch({
+						type: LOGIN,
+						payload: {
+							isLoggedIn: true,
+							user: userData,
+							needsVerification: false,
+						},
+					});
+
+					// Cargar estadísticas de usuario si es necesario
+					reduxDispatch(fetchUserStats());
+				}
+
 				setNeedsVerification(false);
 				showSnackbar("Cuenta verificada con éxito", "success");
-				return true;
+
+				// Devolver los datos completos de la respuesta para que el componente
+				// pueda acceder a los datos del usuario si es necesario
+				return response.data;
 			} else {
 				throw new Error(response.data.message || "Error de verificación");
 			}

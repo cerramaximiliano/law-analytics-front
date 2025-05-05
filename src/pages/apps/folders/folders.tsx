@@ -362,7 +362,7 @@ function ReactTable({
 						</TableCell>
 					</TableRow>
 				)}
-				{page.length === 0 && <EmptyTable msg="No Hay Datos" colSpan={7} />}
+				{page.length === 0 && <EmptyTable msg="No hay causas creadas. Puedes crear una usando el botón 'Agregar Causa'." colSpan={9} />}
 			</Stack>
 		</>
 	);
@@ -398,6 +398,8 @@ const FoldersLayout = () => {
 	const user = useSelector((state) => state.auth.user);
 	const { folders, archivedFolders, isLoader } = useSelector((state) => state.folder);
 
+	console.log(true);
+
 	// Efecto para la carga inicial
 	useEffect(() => {
 		// Solo ejecutar en el primer montaje
@@ -405,20 +407,58 @@ const FoldersLayout = () => {
 			mountedRef.current = true;
 
 			const initialLoad = async () => {
-				if (!user?._id || loadingRef.current) return;
+				// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
+				if (!user?._id) {
+					console.log("No hay usuario disponible, mostrando UI vacía");
+					setIsInitialLoad(false);
+					return;
+				}
+
+				if (loadingRef.current) return;
 
 				try {
+					console.log("Cargando carpetas para el usuario:", user._id);
+					// Garantizar que user._id es un string
+					const userId = user._id;
+					if (!userId) {
+						console.error("User ID no disponible para cargar carpetas");
+						return;
+					}
+
 					loadingRef.current = true;
-					await dispatch(getFoldersByUserId(user._id));
+					await dispatch(getFoldersByUserId(userId));
 				} catch (error) {
 					console.error("Error loading folders:", error);
+				} finally {
+					loadingRef.current = false;
+					setIsInitialLoad(false);
+					console.log("Carga inicial completada");
+				}
+			};
+
+			initialLoad();
+		}
+
+		// Este efecto también debe ejecutarse cuando cambia el usuario después del login
+		if (user?._id && !loadingRef.current && mountedRef.current) {
+			console.log("Usuario cambió después del montaje, recargando carpetas");
+			const reloadFolders = async () => {
+				try {
+					// Garantizar que user._id es un string antes de pasar a la función
+					const userId = user._id;
+					if (!userId) return; // Verificación adicional
+
+					loadingRef.current = true;
+					await dispatch(getFoldersByUserId(userId));
+				} catch (error) {
+					console.error("Error reloading folders after user change:", error);
 				} finally {
 					loadingRef.current = false;
 					setIsInitialLoad(false);
 				}
 			};
 
-			initialLoad();
+			reloadFolders();
 		}
 
 		return () => {
@@ -766,8 +806,18 @@ const FoldersLayout = () => {
 		[folders],
 	);
 
+	// Renderizar un loader o un componente vacío durante la carga inicial
 	if (isInitialLoad) {
-		return null; // O un componente de loading si prefieres
+		return (
+			<MainCard content={false}>
+				<ScrollX>
+					<Stack spacing={3} sx={{ p: 3 }}>
+						<Skeleton variant="rectangular" height={50} />
+						<Skeleton variant="rectangular" height={300} />
+					</Stack>
+				</ScrollX>
+			</MainCard>
+		);
 	}
 
 	return (

@@ -172,9 +172,11 @@ const AuthResetPassword = () => {
 							setSubmitting(false);
 
 							// Limpiar datos de localStorage
+							// Limpiar todos los datos del proceso de reseteo
 							localStorage.removeItem("reset_email");
 							localStorage.removeItem("reset_code");
 							localStorage.removeItem("reset_verified");
+							localStorage.removeItem("reset_in_progress");
 
 							// Mensaje de éxito
 							dispatch(
