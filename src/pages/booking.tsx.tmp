@@ -1,4 +1,0 @@
-								onClick={() => {
-									// Usar window.location en lugar de navigate para forzar una recarga completa
-									window.location.href = "/booking";
-								}}
