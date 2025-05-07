@@ -24,14 +24,14 @@ const Register = () => {
 			if (response && response.credential) {
 				// Utiliza axios en lugar de fetch
 				const result = await axios.post(
-					`${process.env.REACT_APP_BASE_URL}/api/auth/google`, 
+					`${process.env.REACT_APP_BASE_URL}/api/auth/google`,
 					{ token: response.credential },
 					{
 						withCredentials: true,
 						headers: {
 							"Content-Type": "application/json",
-						}
-					}
+						},
+					},
 				);
 
 				// Axios ya parsea automaticamente la respuesta JSON

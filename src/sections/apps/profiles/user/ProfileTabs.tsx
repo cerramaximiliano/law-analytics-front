@@ -29,7 +29,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 	const [selectedImage, setSelectedImage] = useState<File | undefined>(undefined);
 	const user = useSelector((state: RootState) => state.auth.user);
 	const picture = user?.picture;
-	
+
 	// Use the Profile component as default instead of the default.png image
 	const [avatar, setAvatar] = useState<string | undefined>(picture);
 
@@ -108,10 +108,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 							{avatar ? (
 								<Avatar alt={userName} src={avatar} sx={{ width: 124, height: 124, border: "1px dashed" }} />
 							) : (
-								<Avatar 
-									alt={userName} 
-									sx={{ width: 124, height: 124, border: "1px dashed" }}
-								>
+								<Avatar alt={userName} sx={{ width: 124, height: 124, border: "1px dashed" }}>
 									<Profile size="64" color={theme.palette.primary.main} />
 								</Avatar>
 							)}

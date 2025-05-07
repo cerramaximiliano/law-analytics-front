@@ -34,6 +34,8 @@ import {
 	Link,
 	Avatar,
 	Tooltip,
+	Pagination,
+	InputAdornment,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -44,7 +46,7 @@ import { format } from "date-fns";
 // project imports
 
 // assets
-import { Clock, TickCircle, InfoCircle, Calendar1, SecurityUser, Call, Sms } from "iconsax-react";
+import { Clock, TickCircle, InfoCircle, Calendar1, SecurityUser, Call, Sms, SearchNormal1, ArrowLeft } from "iconsax-react";
 import logo from "assets/images/large_logo_transparent.png";
 
 // types
@@ -103,9 +105,11 @@ interface AvailabilitySettings {
 	bufferAfter: number;
 	maxDaysInAdvance: number; // Máximo días hacia adelante para reservar
 	minNoticeHours: number; // Horas mínimas de anticipación
+	minCancellationHours: number; // Horas mínimas de antelación para cancelar
 	maxDailyBookings: number | null; // Máximo de reservas por día
 	maxWeeklyBookings: number | null; // Máximo de reservas por semana
 	isActive: boolean;
+	isPubliclyVisible: boolean; // Determina si la URL es visible en la plataforma
 	requireApproval: boolean;
 	publicUrl: string;
 	timeSlots: TimeSlot[];
@@ -114,6 +118,15 @@ interface AvailabilitySettings {
 	customFields: CustomField[];
 	host?: HostInfo;
 	bookings?: Booking[]; // Array de reservas existentes
+}
+
+interface PublicAvailability {
+	_id: string;
+	userId: string;
+	title: string;
+	description: string;
+	publicUrl: string;
+	host: HostInfo;
 }
 
 interface AvailableSlot {
@@ -149,6 +162,16 @@ const BookingPage = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [availabilitySettings, setAvailabilitySettings] = useState<AvailabilitySettings | null>(null);
+
+	// Estados para la lista de disponibilidades públicas
+	const [publicAvailabilities, setPublicAvailabilities] = useState<PublicAvailability[]>([]);
+	const [customUrlInput, setCustomUrlInput] = useState<string>("");
+	const [loadingPublicList, setLoadingPublicList] = useState(false);
+	
+	// Estados para búsqueda y paginación
+	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [currentPage, setCurrentPage] = useState<number>(1);
+	const itemsPerPage = 6; // 3 por fila, 2 filas
 
 	// Referencia para volver al inicio del formulario
 	const formStartRef = useRef<HTMLDivElement>(null);
@@ -215,11 +238,26 @@ const BookingPage = () => {
 			}
 		};
 
+		const fetchPublicAvailabilities = async () => {
+			setLoadingPublicList(true);
+			try {
+				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/public/availability/list`);
+				if (response.status === 200) {
+					setPublicAvailabilities(response.data);
+				}
+			} catch (err) {
+				console.error("Error al cargar lista de disponibilidades públicas:", err);
+			} finally {
+				setLoadingPublicList(false);
+				setLoading(false);
+			}
+		};
+
 		if (slug) {
 			fetchAvailabilitySettings();
 		} else {
-			setError("URL de reserva no válida");
-			setLoading(false);
+			// En lugar de mostrar error, cargar la lista de disponibilidades públicas
+			fetchPublicAvailabilities();
 		}
 	}, [slug]);
 
@@ -275,11 +313,11 @@ const BookingPage = () => {
 		const minNoticeMs = (availabilitySettings?.minNoticeHours || 0) * 60 * 60 * 1000;
 
 		// Crear un array de slots ocupados para la fecha seleccionada
-		const bookedSlots: { start: Date, end: Date }[] = [];
+		const bookedSlots: { start: Date; end: Date }[] = [];
 
 		// Si existen reservas, procesarlas para identificar slots ocupados
 		if (availabilitySettings?.bookings && availabilitySettings.bookings.length > 0) {
-			availabilitySettings.bookings.forEach(booking => {
+			availabilitySettings.bookings.forEach((booking) => {
 				const bookingStartTime = new Date(booking.startTime);
 				const bookingEndTime = new Date(booking.endTime);
 
@@ -287,7 +325,7 @@ const BookingPage = () => {
 				if (bookingStartTime.toDateString() === date.toDateString()) {
 					bookedSlots.push({
 						start: bookingStartTime,
-						end: bookingEndTime
+						end: bookingEndTime,
 					});
 				}
 			});
@@ -311,7 +349,7 @@ const BookingPage = () => {
 			const isAfterMinNotice = slotStartDate.getTime() >= now.getTime() + minNoticeMs;
 
 			// Verificar si el slot se solapa con alguna reserva existente
-			const isOverlapping = bookedSlots.some(bookedSlot => {
+			const isOverlapping = bookedSlots.some((bookedSlot) => {
 				// Comprobamos si hay solapamiento entre el slot actual y la reserva
 				// Un slot está disponible si termina antes o empieza después de la reserva
 				return !(slotEndDate <= bookedSlot.start || slotStartDate >= bookedSlot.end);
@@ -342,7 +380,7 @@ const BookingPage = () => {
 		const availableDaysMap = new Map<number, TimeSlot>();
 
 		// Crear un mapa de los días disponibles
-		settings.timeSlots.forEach(slot => {
+		settings.timeSlots.forEach((slot) => {
 			if (slot.isActive) {
 				availableDaysMap.set(slot.day, slot);
 			}
@@ -394,11 +432,11 @@ const BookingPage = () => {
 			const endMinutes = endHour * 60 + endMinute;
 
 			// Crear un array de slots ocupados para la fecha seleccionada
-			const bookedSlots: { start: Date, end: Date }[] = [];
+			const bookedSlots: { start: Date; end: Date }[] = [];
 
 			// Si existen reservas, procesarlas para identificar slots ocupados
 			if (settings.bookings && settings.bookings.length > 0) {
-				settings.bookings.forEach(booking => {
+				settings.bookings.forEach((booking) => {
 					const bookingStartTime = new Date(booking.startTime);
 					const bookingEndTime = new Date(booking.endTime);
 
@@ -406,7 +444,7 @@ const BookingPage = () => {
 					if (bookingStartTime.toDateString() === checkDate.toDateString()) {
 						bookedSlots.push({
 							start: bookingStartTime,
-							end: bookingEndTime
+							end: bookingEndTime,
 						});
 					}
 				});
@@ -433,7 +471,7 @@ const BookingPage = () => {
 				const isAfterMinNotice = slotStartDate.getTime() >= now.getTime() + minNoticeMs;
 
 				// Verificar si el slot se solapa con alguna reserva existente
-				const isOverlapping = bookedSlots.some(bookedSlot => {
+				const isOverlapping = bookedSlots.some((bookedSlot) => {
 					return !(slotEndDate <= bookedSlot.start || slotStartDate >= bookedSlot.end);
 				});
 
@@ -447,7 +485,7 @@ const BookingPage = () => {
 			}
 
 			// Verificar si hay al menos un slot disponible
-			const hasAvailableSlot = availableSlots.some(slot => slot.isAvailable);
+			const hasAvailableSlot = availableSlots.some((slot) => slot.isAvailable);
 
 			if (hasAvailableSlot) {
 				// Guardar esta fecha y sus slots disponibles
@@ -477,13 +515,7 @@ const BookingPage = () => {
 		setSelectedDate(tomorrow);
 
 		// En este caso, calculamos los slots disponibles
-		calculateAvailableTimesForDate(
-			tomorrow,
-			settings.timeSlots,
-			settings.duration,
-			settings.bufferBefore,
-			settings.bufferAfter,
-		);
+		calculateAvailableTimesForDate(tomorrow, settings.timeSlots, settings.duration, settings.bufferBefore, settings.bufferAfter);
 	};
 
 	const handleDateChange = (date: Date | null) => {
@@ -678,6 +710,60 @@ const BookingPage = () => {
 		setActiveStep((prevStep) => prevStep - 1);
 	};
 
+	// Función para navegar a una URL de disponibilidad personalizada
+	const handleCustomUrlSubmit = () => {
+		if (!customUrlInput.trim()) return;
+
+		let url = customUrlInput.trim();
+
+		// Si es una URL completa, extraer el slug
+		if (url.includes("/booking/")) {
+			const parts = url.split("/booking/");
+			url = parts[parts.length - 1];
+		}
+
+		// Limpiar cualquier parámetro de consulta o fragmento
+		if (url.includes("?")) {
+			url = url.split("?")[0];
+		}
+		if (url.includes("#")) {
+			url = url.split("#")[0];
+		}
+
+		// Navegar a la URL de disponibilidad
+		navigate(`/booking/${url}`);
+	};
+	
+	// Función para manejar la búsqueda
+	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setSearchQuery(event.target.value);
+		setCurrentPage(1); // Reset a la primera página cuando se realiza una búsqueda
+	};
+	
+	// Función para manejar cambio de página
+	const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+		setCurrentPage(value);
+		// Scroll hacia arriba para ver los resultados de la nueva página
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+	
+	// Filtrar los profesionales según la búsqueda
+	const filteredAvailabilities = publicAvailabilities.filter(availability => {
+		const hostName = availability.host?.name?.toLowerCase() || "";
+		const title = availability.title.toLowerCase();
+		const description = availability.description.toLowerCase();
+		const searchLower = searchQuery.toLowerCase();
+		
+		return hostName.includes(searchLower) || 
+			   title.includes(searchLower) || 
+			   description.includes(searchLower);
+	});
+	
+	// Calcular resultados para la página actual
+	const indexOfLastItem = currentPage * itemsPerPage;
+	const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+	const currentItems = filteredAvailabilities.slice(indexOfFirstItem, indexOfLastItem);
+
 	const submitAppointment = async () => {
 		setLoading(true);
 		try {
@@ -711,7 +797,7 @@ const BookingPage = () => {
 			if (response.status !== 201) {
 				throw new Error("Error al crear la cita");
 			}
-			console.log(response.data.clientToken)
+			console.log(response.data.clientToken);
 			// Mostrar confirmación con el token del cliente
 			setConfirmationCode(response.data.clientToken || "ABC123"); // Usar el clientToken de la respuesta
 			setAppointmentBooked(true);
@@ -731,7 +817,7 @@ const BookingPage = () => {
 						availabilitySettings.timeSlots,
 						availabilitySettings.duration,
 						availabilitySettings.bufferBefore,
-						availabilitySettings.bufferAfter
+						availabilitySettings.bufferAfter,
 					);
 				}
 
@@ -784,6 +870,31 @@ const BookingPage = () => {
 		}
 	};
 
+	// Componente de Footer reutilizable
+	const Footer = () => (
+		<Box
+			sx={{
+				mt: 4,
+				p: 3,
+				borderRadius: 2,
+				bgcolor: theme.palette.grey[100],
+				textAlign: "center",
+			}}
+		>
+			<Typography variant="body2" color="textSecondary" gutterBottom>
+				© {new Date().getFullYear()} Law Analytics - Todos los derechos reservados
+			</Typography>
+			<Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 1, flexWrap: "wrap" }}>
+				<Link href={`${process.env.REACT_APP_BASE_URL}/terms`} underline="hover" color="inherit">
+					Términos y condiciones
+				</Link>
+				<Link href={`${process.env.REACT_APP_BASE_URL}/privacy-policy`} underline="hover" color="inherit">
+					Política de privacidad
+				</Link>
+			</Box>
+		</Box>
+	);
+
 	// Renderizar el paso actual
 	const getStepContent = (step: number) => {
 		switch (step) {
@@ -823,7 +934,7 @@ const BookingPage = () => {
 
 												// Verificar disponibilidad para el día de la semana
 												const dayOfWeek = date.getDay();
-												const daySlot = availabilitySettings.timeSlots.find(slot => slot.day === dayOfWeek && slot.isActive);
+												const daySlot = availabilitySettings.timeSlots.find((slot) => slot.day === dayOfWeek && slot.isActive);
 
 												if (!daySlot) return true;
 
@@ -848,21 +959,22 @@ const BookingPage = () => {
 												// Verificar si hay citas que colisionarían en esta fecha y ocuparían todos los slots
 												if (availabilitySettings.bookings && availabilitySettings.bookings.length > 0) {
 													// Contar cuántas reservas hay para este día
-													const bookingsForThisDay = availabilitySettings.bookings.filter(booking => {
+													const bookingsForThisDay = availabilitySettings.bookings.filter((booking) => {
 														const bookingDate = new Date(booking.startTime);
 														return bookingDate.toDateString() === date.toDateString();
 													});
 
 													// Crear array de slots ocupados para esta fecha
-													const bookedSlots: { start: Date, end: Date }[] = bookingsForThisDay.map(booking => ({
+													const bookedSlots: { start: Date; end: Date }[] = bookingsForThisDay.map((booking) => ({
 														start: new Date(booking.startTime),
-														end: new Date(booking.endTime)
+														end: new Date(booking.endTime),
 													}));
 
 													// Calcular cuántos slots hay en total para este día
 													const startMinutes = startHour * 60 + startMinute;
 													const endMinutes = endHour * 60 + endMinute;
-													const totalDuration = availabilitySettings.duration + availabilitySettings.bufferBefore + availabilitySettings.bufferAfter;
+													const totalDuration =
+														availabilitySettings.duration + availabilitySettings.bufferBefore + availabilitySettings.bufferAfter;
 
 													// Verificar si al menos hay un slot disponible
 													let hasAvailableSlot = false;
@@ -883,7 +995,7 @@ const BookingPage = () => {
 														const isAfterMinNotice = slotStartDate.getTime() >= now.getTime() + minNoticeMs;
 
 														// Verificar si el slot se solapa con alguna reserva existente
-														const isOverlapping = bookedSlots.some(bookedSlot => {
+														const isOverlapping = bookedSlots.some((bookedSlot) => {
 															return !(slotEndDate <= bookedSlot.start || slotStartDate >= bookedSlot.end);
 														});
 
@@ -902,7 +1014,8 @@ const BookingPage = () => {
 													// Si no hay reservas, verificar si hay al menos un slot que cumpla con el tiempo mínimo
 													const startMinutes = startHour * 60 + startMinute;
 													const endMinutes = endHour * 60 + endMinute;
-													const totalDuration = availabilitySettings.duration + availabilitySettings.bufferBefore + availabilitySettings.bufferAfter;
+													const totalDuration =
+														availabilitySettings.duration + availabilitySettings.bufferBefore + availabilitySettings.bufferAfter;
 
 													// Verificar si al menos hay un slot disponible que cumpla con el tiempo mínimo
 													let hasAvailableSlot = false;
@@ -1284,15 +1397,36 @@ const BookingPage = () => {
 									variant="contained"
 									color="primary"
 									onClick={() => {
-										if (slug) {
-											navigate(`/booking/${slug}`);
-										} else {
-											navigate('/');
-										}
+										// Reset form data to initial state
+										setFormData({
+											name: "",
+											email: "",
+											phone: "",
+											company: "",
+											address: "",
+											notes: "",
+											date: null,
+											time: null,
+											customFields: {},
+										});
+										// Reset step to initial state
+										setActiveStep(0);
+										// Reset selection
+										setSelectedDate(null);
+										setSelectedTime(null);
+										// Reset errors
+										setFormErrors({});
+										setError(null);
+										setTermsAccepted(false);
+										// Scroll to top of form
+										formStartRef.current?.scrollIntoView({ behavior: "smooth" });
 									}}
-									sx={{ mt: 2 }}
+									sx={{ mt: 2, mr: 2 }}
 								>
 									Volver al inicio
+								</Button>
+								<Button variant="outlined" color="primary" onClick={() => navigate(`/manage-booking/${confirmationCode}`)} sx={{ mt: 2 }}>
+									Gestionar esta cita
 								</Button>
 							</>
 						) : (
@@ -1314,11 +1448,13 @@ const BookingPage = () => {
 				<Box display="flex" justifyContent="center" alignItems="center" sx={{ minHeight: "60vh" }}>
 					<CircularProgress />
 				</Box>
+				<Footer />
 			</Container>
 		);
 	}
 
-	if (error) {
+	// Si hay un error pero tenemos un slug, mostrar el mensaje de error
+	if (error && slug) {
 		return (
 			<Container maxWidth="md" sx={{ py: 8 }}>
 				<Card>
@@ -1330,32 +1466,230 @@ const BookingPage = () => {
 						<Typography variant="body1" paragraph color="textSecondary">
 							{error}
 						</Typography>
-						<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-							<Button
-								variant="contained"
-								color="primary"
-								onClick={() => {
-									if (slug) {
-										navigate(`/booking/${slug}`);
-									} else {
-										navigate('/');
-									}
-								}}
-								sx={{ mt: 2 }}
-							>
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
+							<Button variant="contained" color="primary" onClick={() => navigate("/booking")} sx={{ mt: 2 }}>
 								Volver al inicio
 							</Button>
-							<Button
-								variant="outlined"
-								color="primary"
-								onClick={() => navigate('/manage-booking')}
-								sx={{ mt: 2 }}
-							>
+							<Button variant="outlined" color="primary" onClick={() => navigate("/manage-booking")} sx={{ mt: 2 }}>
 								Gestionar reservas
 							</Button>
 						</Stack>
 					</CardContent>
 				</Card>
+				<Footer />
+			</Container>
+		);
+	}
+
+	// Si no hay slug, mostrar la página de búsqueda de disponibilidades
+	if (!slug && !availabilitySettings) {
+		return (
+			<Container maxWidth="md" sx={{ py: 8 }}>
+				{/* Header con el logo */}
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						mb: 4,
+						flexDirection: { xs: "column", sm: "row" },
+						gap: 2,
+					}}
+					ref={formStartRef}
+				>
+					<Box sx={{ display: "flex", alignItems: "center" }}>
+						<img src={logo} style={{ height: "60px", marginRight: "16px" }} alt="Law Analytics" />
+					</Box>
+					<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
+						<Tooltip title="Gestionar reserva">
+							<Button
+								size="small"
+								startIcon={<SecurityUser size={18} />}
+								variant="outlined"
+								color="primary"
+								sx={{ borderRadius: "20px" }}
+								onClick={() => navigate("/manage-booking")}
+							>
+								Gestionar reserva
+							</Button>
+						</Tooltip>
+						<Tooltip title="Soporte">
+							<Button
+								size="small"
+								startIcon={<Sms size={18} />}
+								variant="outlined"
+								color="primary"
+								sx={{ borderRadius: "20px" }}
+								onClick={() => setSupportModalOpen(true)}
+							>
+								Soporte
+							</Button>
+						</Tooltip>
+					</Box>
+				</Box>
+
+				<Card sx={{ mb: 4 }}>
+					<CardContent sx={{ p: 4 }}>
+						<Typography variant="h4" gutterBottom>
+							Reserva tu cita
+						</Typography>
+						<Typography variant="body1" paragraph>
+							Ingresa la URL de reserva que te compartió el profesional o selecciona uno de los profesionales disponibles.
+						</Typography>
+
+						<Box sx={{ mt: 3, mb: 4 }}>
+							<Typography variant="subtitle1" gutterBottom>
+								Ingresar URL de reserva
+							</Typography>
+							<Stack direction="row" spacing={2}>
+								<TextField
+									fullWidth
+									placeholder="Ingresa la URL o código de reserva (ej: citas-12345)"
+									value={customUrlInput}
+									onChange={(e) => setCustomUrlInput(e.target.value)}
+									sx={{ flexGrow: 1 }}
+								/>
+								<Button
+									variant="contained"
+									color="primary"
+									onClick={handleCustomUrlSubmit}
+									disabled={!customUrlInput.trim()}
+									sx={{ textTransform: 'none' }}
+								>
+									Ir a la agenda
+								</Button>
+							</Stack>
+							<FormHelperText>Puedes ingresar la URL completa o solo el código de la agenda</FormHelperText>
+						</Box>
+
+						<Divider sx={{ my: 4 }}>
+							<Typography variant="body2" color="textSecondary">
+								O selecciona un profesional
+							</Typography>
+						</Divider>
+						
+						{/* Barra de búsqueda */}
+						<Box sx={{ mb: 4 }}>
+							<TextField
+								fullWidth
+								placeholder="Buscar profesionales por nombre o especialidad..."
+								value={searchQuery}
+								onChange={handleSearchChange}
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<SearchNormal1 size={20} />
+										</InputAdornment>
+									),
+								}}
+								sx={{ mb: 2 }}
+							/>
+							{filteredAvailabilities.length > 0 && (
+								<Typography variant="body2" color="textSecondary">
+									{filteredAvailabilities.length === 1 
+										? "1 profesional encontrado" 
+										: `${filteredAvailabilities.length} profesionales encontrados`}
+									{searchQuery && ` para "${searchQuery}"`}
+								</Typography>
+							)}
+						</Box>
+
+						{loadingPublicList ? (
+							<Box display="flex" justifyContent="center" p={4}>
+								<CircularProgress />
+							</Box>
+						) : filteredAvailabilities.length > 0 ? (
+							<>
+								<Grid container spacing={3}>
+									{currentItems.map((availability) => (
+										<Grid item xs={12} sm={6} md={4} key={availability._id}>
+											<Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+												<CardContent sx={{ flexGrow: 1 }}>
+													<Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+														<Avatar sx={{ width: 48, height: 48, mr: 2, bgcolor: theme.palette.primary.main }}>
+															<SecurityUser size={24} />
+														</Avatar>
+														<Box>
+															<Typography variant="subtitle1">{availability.host?.name || "Profesional"}</Typography>
+															{availability.host?.title && (
+																<Typography variant="body2" color="textSecondary">
+																	{availability.host?.title}
+																</Typography>
+															)}
+														</Box>
+													</Box>
+													<Typography variant="h6" gutterBottom>
+														{availability.title}
+													</Typography>
+													<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+														{availability.description}
+													</Typography>
+												</CardContent>
+												<Box sx={{ p: 2, pt: 0 }}>
+													<Button
+														variant="contained"
+														color="primary"
+														fullWidth
+														onClick={() => navigate(`/booking/${availability.publicUrl}`)}
+													>
+														Reservar cita
+													</Button>
+												</Box>
+											</Card>
+										</Grid>
+									))}
+								</Grid>
+								
+								{/* Paginación */}
+								{filteredAvailabilities.length > itemsPerPage && (
+									<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+										<Pagination 
+											count={Math.ceil(filteredAvailabilities.length / itemsPerPage)}
+											page={currentPage}
+											onChange={handlePageChange}
+											color="primary"
+											showFirstButton 
+											showLastButton
+										/>
+									</Box>
+								)}
+							</>
+						) : (
+							<Alert severity="info" sx={{ mt: 2 }}>
+								{searchQuery 
+									? "No se encontraron profesionales que coincidan con la búsqueda."
+									: "No hay profesionales con agendas públicas disponibles en este momento."}
+							</Alert>
+						)}
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardContent sx={{ p: 4, textAlign: 'center' }}>
+						<Typography variant="h5" gutterBottom align="center">
+							¿Sos abogado?
+						</Typography>
+						<Typography variant="body1" paragraph align="center">
+							Si sos abogado o profesional jurídico, puedes crear tu agenda de citas para que tus clientes reserven fácilmente.
+						</Typography>
+						<Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+							<Button
+								variant="contained"
+								color="primary"
+								onClick={() => navigate("/apps/calendar/availability")}
+								sx={{ textTransform: 'none' }}
+							>
+								Crear mi Agenda
+							</Button>
+						</Box>
+					</CardContent>
+				</Card>
+
+				{/* Footer */}
+				<Footer />
+
+				{/* Modal de soporte */}
+				<SupportModal open={supportModalOpen} onClose={() => setSupportModalOpen(false)} />
 			</Container>
 		);
 	}
@@ -1365,39 +1699,45 @@ const BookingPage = () => {
 			{/* Header con el logo */}
 			<Box
 				sx={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
 					mb: 4,
-					flexDirection: { xs: 'column', sm: 'row' },
-					gap: 2
+					flexDirection: { xs: "column", sm: "row" },
+					gap: 2,
 				}}
 				ref={formStartRef}
 			>
-				<Box sx={{ display: 'flex', alignItems: 'center' }}>
-					<img src={logo} style={{ height: '60px', marginRight: '16px' }} alt="Law Analytics" />
+				<Box sx={{ display: "flex", alignItems: "center" }}>
+					<img src={logo} style={{ height: "60px", marginRight: "16px" }} alt="Law Analytics" />
 				</Box>
-				<Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+				<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
+					<Tooltip title="Volver">
+						<Button
+							size="small"
+							startIcon={<ArrowLeft size={18} />}
+							variant="contained"
+							color="primary"
+							sx={{ borderRadius: "20px" }}
+							onClick={() => { window.location.href = "/booking"; }}
+						>
+							Volver atrás
+						</Button>
+					</Tooltip>
 					<Tooltip title="Gestionar reserva">
 						<Button
 							size="small"
 							startIcon={<SecurityUser size={18} />}
 							variant="outlined"
 							color="primary"
-							sx={{ borderRadius: '20px' }}
-							onClick={() => navigate('/manage-booking')}
+							sx={{ borderRadius: "20px" }}
+							onClick={() => navigate("/manage-booking")}
 						>
 							Gestionar reserva
 						</Button>
 					</Tooltip>
 					<Tooltip title="Contacto">
-						<Button
-							size="small"
-							startIcon={<Call size={18} />}
-							variant="outlined"
-							color="primary"
-							sx={{ borderRadius: '20px' }}
-						>
+						<Button size="small" startIcon={<Call size={18} />} variant="outlined" color="primary" sx={{ borderRadius: "20px" }}>
 							Contacto
 						</Button>
 					</Tooltip>
@@ -1407,7 +1747,7 @@ const BookingPage = () => {
 							startIcon={<Sms size={18} />}
 							variant="outlined"
 							color="primary"
-							sx={{ borderRadius: '20px' }}
+							sx={{ borderRadius: "20px" }}
 							onClick={() => setSupportModalOpen(true)}
 						>
 							Soporte
@@ -1416,7 +1756,7 @@ const BookingPage = () => {
 				</Box>
 			</Box>
 
-			<Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 2, bgcolor: 'background.paper' }}>
+			<Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 2, bgcolor: "background.paper" }}>
 				<Box sx={{ mb: 4 }}>
 					<Typography variant="h3" gutterBottom>
 						{availabilitySettings?.title || "Reserva tu cita"}
@@ -1428,10 +1768,8 @@ const BookingPage = () => {
 					)}
 
 					{availabilitySettings?.host && (
-						<Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-							<Avatar
-								sx={{ width: 48, height: 48, mr: 2, bgcolor: theme.palette.primary.main }}
-							>
+						<Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
+							<Avatar sx={{ width: 48, height: 48, mr: 2, bgcolor: theme.palette.primary.main }}>
 								<SecurityUser size={24} />
 							</Avatar>
 							<Box>
@@ -1452,7 +1790,7 @@ const BookingPage = () => {
 						mb: 4,
 						p: 2,
 						bgcolor: theme.palette.grey[100],
-						borderRadius: 2
+						borderRadius: 2,
 					}}
 					alternativeLabel
 				>
@@ -1484,36 +1822,10 @@ const BookingPage = () => {
 			</Paper>
 
 			{/* Footer */}
-			<Box
-				sx={{
-					mt: 4,
-					p: 3,
-					borderRadius: 2,
-					bgcolor: theme.palette.grey[100],
-					textAlign: 'center'
-				}}
-			>
-				<Typography variant="body2" color="textSecondary" gutterBottom>
-					© {new Date().getFullYear()} Law Analytics - Todos los derechos reservados
-				</Typography>
-				<Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 1, flexWrap: 'wrap' }}>
-					<Link href="#" underline="hover" color="inherit">
-						Términos y condiciones
-					</Link>
-					<Link href="#" underline="hover" color="inherit">
-						Política de privacidad
-					</Link>
-					<Link href="#" underline="hover" color="inherit">
-						Contacto
-					</Link>
-				</Box>
-			</Box>
+			<Footer />
 
 			{/* Modal de soporte */}
-			<SupportModal
-				open={supportModalOpen}
-				onClose={() => setSupportModalOpen(false)}
-			/>
+			<SupportModal open={supportModalOpen} onClose={() => setSupportModalOpen(false)} />
 		</Container>
 	);
 };

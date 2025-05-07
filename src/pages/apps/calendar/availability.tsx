@@ -95,9 +95,11 @@ type AvailabilityConfig = {
 	bufferAfter: number;
 	maxDaysInAdvance: number; // Máximo días hacia adelante para reservar
 	minNoticeHours: number; // Horas mínimas de anticipación
+	minCancellationHours: number; // Horas mínimas de antelación para cancelar
 	maxDailyBookings: number | null; // Máximo de reservas por día
 	maxWeeklyBookings: number | null; // Máximo de reservas por semana
 	isActive: boolean;
+	isPubliclyVisible: boolean; // Determina si la URL es visible en la plataforma
 	requireApproval: boolean;
 	publicUrl: string;
 	timeSlots: TimeSlot[];
@@ -156,10 +158,12 @@ const Availability = () => {
 	const [bufferTime, setBufferTime] = useState<number>(10); // Tiempo de descanso: 10 minutos
 	const [autoAccept, setAutoAccept] = useState<boolean>(false);
 	const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
+	const [isPubliclyVisible, setIsPubliclyVisible] = useState<boolean>(true);
 
 	// Nuevos estados para configuraciones adicionales
 	const [maxDaysInAdvance, setMaxDaysInAdvance] = useState<number>(60);
 	const [minNoticeHours, setMinNoticeHours] = useState<number>(24);
+	const [minCancellationHours, setMinCancellationHours] = useState<number>(12); // Default: 12 horas
 	const [maxDailyBookings, setMaxDailyBookings] = useState<number | null>(null);
 	const [maxWeeklyBookings, setMaxWeeklyBookings] = useState<number | null>(null);
 	const [excludedDates, setExcludedDates] = useState<ExcludedDate[]>([]);
@@ -229,9 +233,13 @@ const Availability = () => {
 		// Configuración de notificaciones
 		setNotificationEnabled(config.hostNotifications?.email || config.hostNotifications?.browser);
 
+		// Configuración de visibilidad pública
+		setIsPubliclyVisible(config.isPubliclyVisible !== undefined ? config.isPubliclyVisible : true);
+
 		// Nuevas configuraciones adicionales
 		setMaxDaysInAdvance(config.maxDaysInAdvance || 60);
 		setMinNoticeHours(config.minNoticeHours || 24);
+		setMinCancellationHours(config.minCancellationHours || 12);
 		setMaxDailyBookings(config.maxDailyBookings);
 		setMaxWeeklyBookings(config.maxWeeklyBookings);
 
@@ -250,7 +258,7 @@ const Availability = () => {
 			setRequiredFields({
 				...config.requiredFields,
 				name: true,
-				email: true
+				email: true,
 			});
 		}
 	};
@@ -475,6 +483,7 @@ const Availability = () => {
 				requireApproval: !autoAccept,
 				maxDaysInAdvance: maxDaysInAdvance,
 				minNoticeHours: minNoticeHours,
+				minCancellationHours: minCancellationHours,
 				maxDailyBookings: maxDailyBookings,
 				maxWeeklyBookings: maxWeeklyBookings,
 				hostNotifications: {
@@ -486,11 +495,12 @@ const Availability = () => {
 				customFields: customFields,
 				timezone: "America/Mexico_City",
 				isActive: true,
+				isPubliclyVisible: isPubliclyVisible,
 				publicUrl: urlToUse,
 				requiredFields: {
 					...requiredFields,
 					name: true,
-					email: true
+					email: true,
 				},
 			};
 
@@ -812,6 +822,28 @@ const Availability = () => {
 										</Typography>
 									</Stack>
 
+									<Stack spacing={2}>
+										<Typography variant="subtitle2">Tiempo mínimo para cancelar</Typography>
+										<Stack direction="row" spacing={2} alignItems="center">
+											<Typography variant="body2" sx={{ minWidth: "30px" }}>
+												{minCancellationHours} hrs
+											</Typography>
+											<Slider
+												value={minCancellationHours}
+												onChange={(_event, newValue) => setMinCancellationHours(newValue as number)}
+												step={1}
+												marks
+												min={0}
+												max={48}
+												valueLabelDisplay="auto"
+												aria-labelledby="min-cancellation-hours-slider"
+											/>
+										</Stack>
+										<Typography variant="caption" color="textSecondary">
+											Tiempo mínimo de antelación para cancelar una cita ya programada.
+										</Typography>
+									</Stack>
+
 									<Grid container spacing={2}>
 										<Grid item xs={6}>
 											<TextField
@@ -861,6 +893,13 @@ const Availability = () => {
 										label="Recibir notificaciones de citas"
 									/>
 
+									<FormControlLabel
+										control={
+											<Switch checked={isPubliclyVisible} onChange={(e) => setIsPubliclyVisible(e.target.checked)} color="primary" />
+										}
+										label="Mostrar URL de citas en la plataforma"
+									/>
+
 									<Alert severity="info" sx={{ mt: 2 }}>
 										Las citas se crearán con un margen de {bufferTime} minutos entre ellas y tendrán una duración de {slotDuration} minutos.
 										{!autoAccept && " Las citas requerirán tu aprobación manual."}
@@ -890,14 +929,8 @@ const Availability = () => {
 											<Stack spacing={2}>
 												<Typography variant="subtitle2">Campos obligatorios</Typography>
 												<FormGroup>
-													<FormControlLabel
-														control={<Checkbox checked={true} disabled />}
-														label="Nombre (obligatorio)"
-													/>
-													<FormControlLabel
-														control={<Checkbox checked={true} disabled />}
-														label="Correo electrónico (obligatorio)"
-													/>
+													<FormControlLabel control={<Checkbox checked={true} disabled />} label="Nombre (obligatorio)" />
+													<FormControlLabel control={<Checkbox checked={true} disabled />} label="Correo electrónico (obligatorio)" />
 													<FormControlLabel
 														control={<Checkbox checked={requiredFields.phone} onChange={() => handleRequiredFieldChange("phone")} />}
 														label="Teléfono"

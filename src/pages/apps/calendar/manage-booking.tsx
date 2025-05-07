@@ -52,7 +52,7 @@ const ManageBookingPage = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
 	const { token } = useParams<{ token: string }>();
-	
+
 	const [bookingToken, setBookingToken] = useState(token || "");
 	const [loading, setLoading] = useState(false);
 	const [loadingCancel, setLoadingCancel] = useState(false);
@@ -61,28 +61,28 @@ const ManageBookingPage = () => {
 	const [booking, setBooking] = useState<Booking | null>(null);
 	const [openCancelDialog, setOpenCancelDialog] = useState(false);
 	const [cancelSuccess, setCancelSuccess] = useState(false);
-	
+
 	// Si hay un token en la URL, buscar la reserva automáticamente
 	useEffect(() => {
 		if (token) {
 			fetchBooking(token);
 		}
 	}, [token]);
-	
+
 	const fetchBooking = async (tokenToFetch: string) => {
 		if (!tokenToFetch.trim()) {
 			setError("Por favor, ingresa un token válido");
 			return;
 		}
-		
+
 		setLoading(true);
 		setError(null);
 		setSuccess(null);
 		setBooking(null);
-		
+
 		try {
 			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/public/bookings/${tokenToFetch}`);
-			
+
 			if (response.status === 200) {
 				// Guardar todos los datos de la reserva, incluyendo publicUrl si existe
 				setBooking(response.data);
@@ -93,7 +93,7 @@ const ManageBookingPage = () => {
 			}
 		} catch (err: any) {
 			console.error("Error al buscar la cita:", err);
-			
+
 			if (err.response && err.response.status === 404) {
 				setError("No se encontró ninguna reserva con ese token. Por favor, verifica e intenta de nuevo.");
 			} else if (err.response && err.response.data && err.response.data.error) {
@@ -105,26 +105,26 @@ const ManageBookingPage = () => {
 			setLoading(false);
 		}
 	};
-	
+
 	const handleSearch = () => {
 		fetchBooking(bookingToken);
 	};
-	
+
 	const handleCancelBooking = async () => {
 		if (!booking || !bookingToken) return;
-		
+
 		setLoadingCancel(true);
-		
+
 		try {
 			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/booking/public/bookings/${bookingToken}/cancel`);
-			
+
 			if (response.status === 200) {
 				setCancelSuccess(true);
 				setOpenCancelDialog(false);
 				// Actualizar el estado de la reserva
 				setBooking({
 					...booking,
-					status: "cancelled"
+					status: "cancelled",
 				});
 			} else {
 				throw new Error("No se pudo cancelar la reserva");
@@ -137,14 +137,14 @@ const ManageBookingPage = () => {
 			setLoadingCancel(false);
 		}
 	};
-	
+
 	const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setBookingToken(e.target.value);
 		// Limpiar mensajes cuando el usuario empieza a escribir
 		if (error) setError(null);
 		if (success) setSuccess(null);
 	};
-	
+
 	const getStatusLabel = (status: string) => {
 		switch (status) {
 			case "confirmed":
@@ -159,7 +159,7 @@ const ManageBookingPage = () => {
 				return status;
 		}
 	};
-	
+
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "confirmed":
@@ -180,27 +180,32 @@ const ManageBookingPage = () => {
 			{/* Header con el logo */}
 			<Box
 				sx={{
-					display: 'flex',
-					justifyContent: 'space-between',
-					alignItems: 'center',
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
 					mb: 4,
-					flexDirection: { xs: 'column', sm: 'row' },
-					gap: 2
+					flexDirection: { xs: "column", sm: "row" },
+					gap: 2,
 				}}
 			>
-				<Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
-					<img src={logo} style={{ height: '60px', marginRight: '16px' }} alt="Law Analytics" />
+				<Box sx={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={() => navigate("/")}>
+					<img src={logo} style={{ height: "60px", marginRight: "16px" }} alt="Law Analytics" />
 				</Box>
+				{!token && (
+					<Button variant="outlined" color="primary" onClick={() => navigate("/booking")}>
+						Volver a reservas
+					</Button>
+				)}
 			</Box>
-			
-			<Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 2, bgcolor: 'background.paper' }}>
+
+			<Paper elevation={3} sx={{ p: { xs: 3, sm: 5 }, borderRadius: 2, bgcolor: "background.paper" }}>
 				<Typography variant="h3" gutterBottom>
 					Gestión de reservas
 				</Typography>
 				<Typography variant="body1" color="textSecondary" paragraph>
 					Ingresa el token de tu reserva para ver los detalles o cancelarla.
 				</Typography>
-				
+
 				<Box sx={{ mt: 3, mb: 4 }}>
 					<Grid container spacing={2}>
 						<Grid item xs={12} sm={8}>
@@ -214,24 +219,24 @@ const ManageBookingPage = () => {
 							/>
 						</Grid>
 						<Grid item xs={12} sm={4}>
-							<Button 
-								fullWidth 
-								variant="contained" 
+							<Button
+								fullWidth
+								variant="contained"
 								onClick={handleSearch}
 								disabled={loading || !bookingToken.trim()}
-								sx={{ height: '100%' }}
+								sx={{ height: "100%" }}
 							>
 								{loading ? <CircularProgress size={24} color="inherit" /> : "Buscar"}
 							</Button>
 						</Grid>
 					</Grid>
-					
+
 					{error && (
 						<Alert severity="error" sx={{ mt: 2 }}>
 							{error}
 						</Alert>
 					)}
-					
+
 					{success && !error && (
 						<Alert severity="success" sx={{ mt: 2 }}>
 							{success}
@@ -239,40 +244,35 @@ const ManageBookingPage = () => {
 					)}
 
 					{error && (
-						<Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', width: '100%' }}>
-							<Button
-								variant="outlined"
-								color="primary"
-								startIcon={<CalendarAdd />}
-								onClick={() => navigate('/booking')}
-							>
+						<Box sx={{ mt: 3, display: "flex", justifyContent: "center", width: "100%" }}>
+							<Button variant="outlined" color="primary" startIcon={<CalendarAdd />} onClick={() => navigate("/booking")}>
 								¿No tienes una cita? Agenda una nueva
 							</Button>
 						</Box>
 					)}
 				</Box>
-				
+
 				{booking && (
 					<Card sx={{ mt: 4 }}>
 						<CardContent>
 							<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
 								<Typography variant="h4">Detalles de la reserva</Typography>
-								<Box 
-									sx={{ 
-										px: 2, 
-										py: 1, 
-										bgcolor: `${getStatusColor(booking.status)}20`, 
-										borderRadius: 2, 
+								<Box
+									sx={{
+										px: 2,
+										py: 1,
+										bgcolor: `${getStatusColor(booking.status)}20`,
+										borderRadius: 2,
 										color: getStatusColor(booking.status),
-										fontWeight: 'medium'
+										fontWeight: "medium",
 									}}
 								>
 									{getStatusLabel(booking.status)}
 								</Box>
 							</Box>
-							
+
 							<Divider sx={{ mb: 3 }} />
-							
+
 							<Grid container spacing={3}>
 								<Grid item xs={12} md={6}>
 									<Stack spacing={3}>
@@ -282,8 +282,8 @@ const ManageBookingPage = () => {
 											</Typography>
 											<Typography variant="body1">{booking.title}</Typography>
 										</Box>
-										
-										<Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+
+										<Box sx={{ display: "flex", alignItems: "flex-start" }}>
 											<Calendar1 size={20} style={{ marginRight: 8, marginTop: 4, color: theme.palette.primary.main }} />
 											<Box>
 												<Typography variant="subtitle2" color="textSecondary">
@@ -294,8 +294,8 @@ const ManageBookingPage = () => {
 												</Typography>
 											</Box>
 										</Box>
-										
-										<Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+
+										<Box sx={{ display: "flex", alignItems: "flex-start" }}>
 											<Clock size={20} style={{ marginRight: 8, marginTop: 4, color: theme.palette.primary.main }} />
 											<Box>
 												<Typography variant="subtitle2" color="textSecondary">
@@ -306,7 +306,7 @@ const ManageBookingPage = () => {
 												</Typography>
 											</Box>
 										</Box>
-										
+
 										<Box>
 											<Typography variant="subtitle2" color="textSecondary">
 												Duración
@@ -315,7 +315,7 @@ const ManageBookingPage = () => {
 										</Box>
 									</Stack>
 								</Grid>
-								
+
 								<Grid item xs={12} md={6}>
 									<Stack spacing={3}>
 										<Box>
@@ -324,7 +324,7 @@ const ManageBookingPage = () => {
 											</Typography>
 											<Typography variant="body1">{booking.hostName}</Typography>
 										</Box>
-										
+
 										{booking.location && (
 											<Box>
 												<Typography variant="subtitle2" color="textSecondary">
@@ -333,14 +333,14 @@ const ManageBookingPage = () => {
 												<Typography variant="body1">{booking.location}</Typography>
 											</Box>
 										)}
-										
+
 										<Box>
 											<Typography variant="subtitle2" color="textSecondary">
 												Cliente
 											</Typography>
 											<Typography variant="body1">{booking.clientName}</Typography>
 										</Box>
-										
+
 										<Box>
 											<Typography variant="subtitle2" color="textSecondary">
 												Contacto
@@ -350,7 +350,7 @@ const ManageBookingPage = () => {
 										</Box>
 									</Stack>
 								</Grid>
-								
+
 								{booking.notes && (
 									<Grid item xs={12}>
 										<Box sx={{ mt: 2 }}>
@@ -362,17 +362,12 @@ const ManageBookingPage = () => {
 									</Grid>
 								)}
 							</Grid>
-							
+
 							<Box sx={{ mt: 4 }}>
 								<Divider sx={{ mb: 3 }} />
-								<Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'center' }}>
+								<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "center" }}>
 									{booking.status !== "cancelled" && booking.status !== "completed" && (
-										<Button
-											variant="outlined"
-											color="error"
-											startIcon={<CloseCircle />}
-											onClick={() => setOpenCancelDialog(true)}
-										>
+										<Button variant="outlined" color="error" startIcon={<CloseCircle />} onClick={() => setOpenCancelDialog(true)}>
 											Cancelar reserva
 										</Button>
 									)}
@@ -385,7 +380,7 @@ const ManageBookingPage = () => {
 											if (booking.publicUrl) {
 												navigate(`/booking/${booking.publicUrl}`);
 											} else {
-												navigate('/manage-booking');
+												navigate("/manage-booking");
 											}
 										}}
 									>
@@ -393,7 +388,7 @@ const ManageBookingPage = () => {
 									</Button>
 								</Stack>
 							</Box>
-							
+
 							{cancelSuccess && (
 								<Alert severity="success" sx={{ mt: 3 }}>
 									La reserva ha sido cancelada exitosamente.
@@ -403,7 +398,7 @@ const ManageBookingPage = () => {
 					</Card>
 				)}
 			</Paper>
-			
+
 			{/* Footer */}
 			<Box
 				sx={{
@@ -411,19 +406,16 @@ const ManageBookingPage = () => {
 					p: 3,
 					borderRadius: 2,
 					bgcolor: theme.palette.grey[100],
-					textAlign: 'center'
+					textAlign: "center",
 				}}
 			>
 				<Typography variant="body2" color="textSecondary">
 					© {new Date().getFullYear()} Law Analytics - Todos los derechos reservados
 				</Typography>
 			</Box>
-			
+
 			{/* Diálogo de confirmación de cancelación */}
-			<Dialog
-				open={openCancelDialog}
-				onClose={() => setOpenCancelDialog(false)}
-			>
+			<Dialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)}>
 				<DialogTitle>¿Estás seguro que deseas cancelar esta reserva?</DialogTitle>
 				<DialogContent>
 					<DialogContentText>
@@ -432,9 +424,9 @@ const ManageBookingPage = () => {
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={() => setOpenCancelDialog(false)}>Volver</Button>
-					<Button 
-						onClick={handleCancelBooking} 
-						color="error" 
+					<Button
+						onClick={handleCancelBooking}
+						color="error"
 						variant="contained"
 						disabled={loadingCancel}
 						startIcon={loadingCancel ? <CircularProgress size={16} /> : <CloseCircle size={16} />}

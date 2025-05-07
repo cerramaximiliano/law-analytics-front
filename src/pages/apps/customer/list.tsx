@@ -42,13 +42,7 @@ import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
-import {
-	HeaderSort,
-	IndeterminateCheckbox,
-	SortingSelect,
-	TablePagination,
-	TableRowSelection,
-} from "components/third-party/ReactTable";
+import { HeaderSort, IndeterminateCheckbox, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 
 import AddCustomer from "sections/apps/customer/AddCustomer";
@@ -411,7 +405,7 @@ function ReactTable({
 							display: "flex",
 							flexDirection: "column",
 							alignItems: "center",
-							justifyContent: "center"
+							justifyContent: "center",
 						}}
 					>
 						{/* Ícono de Iconsax */}
@@ -419,9 +413,9 @@ function ReactTable({
 							variant="Bulk"
 							size={64}
 							style={{
-								marginBottom: '16px',
+								marginBottom: "16px",
 								color: theme.palette.primary.main,
-								opacity: 0.7
+								opacity: 0.7,
 							}}
 						/>
 						<Typography variant="h5" gutterBottom align="center">
