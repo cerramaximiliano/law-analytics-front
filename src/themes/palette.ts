@@ -22,6 +22,11 @@ const Palette = (mode: ThemeMode, presetColor: PresetColor, themeContrast: boole
 				white: "#fff",
 			},
 			...paletteColor,
+			dark: {
+				main: mode === ThemeMode.DARK ? paletteColor.secondary[200] || "#000" : paletteColor.secondary[900] || "#111",
+				light: mode === ThemeMode.DARK ? paletteColor.secondary[100] || "#333" : paletteColor.secondary[800] || "#222",
+				dark: mode === ThemeMode.DARK ? paletteColor.secondary[300] || "#111" : paletteColor.secondary[900] || "#000",
+			},
 			text: {
 				primary: mode === ThemeMode.DARK ? alpha(paletteColor.secondary.darker!, 0.87) : paletteColor.secondary[800],
 				secondary: mode === ThemeMode.DARK ? alpha(paletteColor.secondary.darker!, 0.45) : paletteColor.secondary.main,

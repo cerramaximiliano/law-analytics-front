@@ -1,13 +1,16 @@
 // project-imports
 import applications from "./applications";
+import admin from "./admin";
 
 // types
 import { NavItemType } from "types/menu";
 
 // ==============================|| MENU ITEMS ||============================== //
 
+// Create a menu items structure with ALL items
+// Role-based filtering will be done at the component level that consumes this
 const menuItems: { items: NavItemType[] } = {
-	items: [applications],
+	items: [applications, admin],
 };
 
 export default menuItems;

@@ -5,6 +5,7 @@ import MainLayout from "layout/MainLayout";
 import CommonLayout from "layout/CommonLayout";
 import Loadable from "components/Loadable";
 import AuthGuard from "utils/route-guard/AuthGuard";
+import AdminRoleGuard from "utils/route-guard/AdminRoleGuard";
 
 // render - dashboard
 const DashboardDefault = Loadable(lazy(() => import("pages/dashboard/default")));
@@ -147,6 +148,10 @@ const SubscriptionError = Loadable(lazy(() => import("pages/apps/subscription/er
 
 // help page
 const HelpPage = Loadable(lazy(() => import("pages/help")));
+
+// admin pages
+const AdminMailingPage = Loadable(lazy(() => import("pages/admin/marketing/mailing")));
+const AdminTemplatesPage = Loadable(lazy(() => import("pages/admin/marketing/templates")));
 
 // ==============================|| MAIN ROUTES ||============================== //
 
@@ -367,6 +372,25 @@ const MainRoutes = {
 				{
 					path: "ayuda",
 					element: <HelpPage />,
+				},
+				{
+					path: "admin",
+					element: <AdminRoleGuard />,
+					children: [
+						{
+							path: "marketing",
+							children: [
+								{
+									path: "mailing",
+									element: <AdminMailingPage />,
+								},
+								{
+									path: "templates",
+									element: <AdminTemplatesPage />,
+								},
+							],
+						},
+					],
 				},
 			],
 		},

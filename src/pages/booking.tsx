@@ -167,7 +167,7 @@ const BookingPage = () => {
 	const [publicAvailabilities, setPublicAvailabilities] = useState<PublicAvailability[]>([]);
 	const [customUrlInput, setCustomUrlInput] = useState<string>("");
 	const [loadingPublicList, setLoadingPublicList] = useState(false);
-	
+
 	// Estados para búsqueda y paginación
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [currentPage, setCurrentPage] = useState<number>(1);
@@ -733,32 +733,33 @@ const BookingPage = () => {
 		// Navegar a la URL de disponibilidad
 		navigate(`/booking/${url}`);
 	};
-	
+
 	// Función para manejar la búsqueda
 	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setSearchQuery(event.target.value);
 		setCurrentPage(1); // Reset a la primera página cuando se realiza una búsqueda
 	};
-	
+
 	// Función para manejar cambio de página
 	const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
 		setCurrentPage(value);
-		// Scroll hacia arriba para ver los resultados de la nueva página
-		window.scrollTo({ top: 0, behavior: "smooth" });
+		// Scroll hasta la barra de búsqueda para ver los resultados de la nueva página
+		const searchElement = document.querySelector('input[placeholder*="Buscar profesionales"]');
+		if (searchElement) {
+			searchElement.scrollIntoView({ behavior: "smooth", block: "start" });
+		}
 	};
-	
+
 	// Filtrar los profesionales según la búsqueda
-	const filteredAvailabilities = publicAvailabilities.filter(availability => {
+	const filteredAvailabilities = publicAvailabilities.filter((availability) => {
 		const hostName = availability.host?.name?.toLowerCase() || "";
 		const title = availability.title.toLowerCase();
 		const description = availability.description.toLowerCase();
 		const searchLower = searchQuery.toLowerCase();
-		
-		return hostName.includes(searchLower) || 
-			   title.includes(searchLower) || 
-			   description.includes(searchLower);
+
+		return hostName.includes(searchLower) || title.includes(searchLower) || description.includes(searchLower);
 	});
-	
+
 	// Calcular resultados para la página actual
 	const indexOfLastItem = currentPage * itemsPerPage;
 	const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -885,10 +886,10 @@ const BookingPage = () => {
 				© {new Date().getFullYear()} Law Analytics - Todos los derechos reservados
 			</Typography>
 			<Box sx={{ display: "flex", justifyContent: "center", gap: 3, mt: 1, flexWrap: "wrap" }}>
-				<Link href={`${process.env.REACT_APP_BASE_URL}/terms`} underline="hover" color="inherit">
+				<Link href={`/terms`} underline="hover" color="inherit">
 					Términos y condiciones
 				</Link>
-				<Link href={`${process.env.REACT_APP_BASE_URL}/privacy-policy`} underline="hover" color="inherit">
+				<Link href={`/privacy-policy`} underline="hover" color="inherit">
 					Política de privacidad
 				</Link>
 			</Box>
@@ -1554,7 +1555,7 @@ const BookingPage = () => {
 									color="primary"
 									onClick={handleCustomUrlSubmit}
 									disabled={!customUrlInput.trim()}
-									sx={{ textTransform: 'none' }}
+									sx={{ textTransform: "none" }}
 								>
 									Ir a la agenda
 								</Button>
@@ -1567,7 +1568,7 @@ const BookingPage = () => {
 								O selecciona un profesional
 							</Typography>
 						</Divider>
-						
+
 						{/* Barra de búsqueda */}
 						<Box sx={{ mb: 4 }}>
 							<TextField
@@ -1586,8 +1587,8 @@ const BookingPage = () => {
 							/>
 							{filteredAvailabilities.length > 0 && (
 								<Typography variant="body2" color="textSecondary">
-									{filteredAvailabilities.length === 1 
-										? "1 profesional encontrado" 
+									{filteredAvailabilities.length === 1
+										? "1 profesional encontrado"
 										: `${filteredAvailabilities.length} profesionales encontrados`}
 									{searchQuery && ` para "${searchQuery}"`}
 								</Typography>
@@ -1639,16 +1640,16 @@ const BookingPage = () => {
 										</Grid>
 									))}
 								</Grid>
-								
+
 								{/* Paginación */}
 								{filteredAvailabilities.length > itemsPerPage && (
-									<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-										<Pagination 
+									<Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+										<Pagination
 											count={Math.ceil(filteredAvailabilities.length / itemsPerPage)}
 											page={currentPage}
 											onChange={handlePageChange}
 											color="primary"
-											showFirstButton 
+											showFirstButton
 											showLastButton
 										/>
 									</Box>
@@ -1656,7 +1657,7 @@ const BookingPage = () => {
 							</>
 						) : (
 							<Alert severity="info" sx={{ mt: 2 }}>
-								{searchQuery 
+								{searchQuery
 									? "No se encontraron profesionales que coincidan con la búsqueda."
 									: "No hay profesionales con agendas públicas disponibles en este momento."}
 							</Alert>
@@ -1665,19 +1666,19 @@ const BookingPage = () => {
 				</Card>
 
 				<Card>
-					<CardContent sx={{ p: 4, textAlign: 'center' }}>
+					<CardContent sx={{ p: 4, textAlign: "center" }}>
 						<Typography variant="h5" gutterBottom align="center">
 							¿Sos abogado?
 						</Typography>
 						<Typography variant="body1" paragraph align="center">
 							Si sos abogado o profesional jurídico, puedes crear tu agenda de citas para que tus clientes reserven fácilmente.
 						</Typography>
-						<Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+						<Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
 							<Button
 								variant="contained"
 								color="primary"
 								onClick={() => navigate("/apps/calendar/availability")}
-								sx={{ textTransform: 'none' }}
+								sx={{ textTransform: "none" }}
 							>
 								Crear mi Agenda
 							</Button>
@@ -1719,7 +1720,9 @@ const BookingPage = () => {
 							variant="contained"
 							color="primary"
 							sx={{ borderRadius: "20px" }}
-							onClick={() => { window.location.href = "/booking"; }}
+							onClick={() => {
+								window.location.href = "/booking";
+							}}
 						>
 							Volver atrás
 						</Button>

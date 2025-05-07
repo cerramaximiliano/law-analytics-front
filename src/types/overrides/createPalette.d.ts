@@ -2,8 +2,16 @@
 import * as createPalette from "@mui/material/styles";
 
 declare module "@mui/material/styles" {
+	interface PaletteOptions {
+		dark?: {
+			main: string;
+			light?: string;
+			dark?: string;
+		};
+	}
 	interface SimplePaletteColorOptions {
 		lighter?: string;
+		dark?: string;
 		darker?: string;
 		0?: string;
 		50?: string;
@@ -20,6 +28,7 @@ declare module "@mui/material/styles" {
 
 	interface PaletteColor {
 		lighter: string;
+		dark?: string;
 		darker: string;
 		0?: string;
 		50?: string;
@@ -32,5 +41,13 @@ declare module "@mui/material/styles" {
 		700?: string;
 		800?: string;
 		900?: string;
+	}
+
+	interface Palette {
+		dark: {
+			main: string;
+			light: string;
+			dark: string;
+		};
 	}
 }

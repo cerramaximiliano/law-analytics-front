@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -6,8 +6,9 @@ import { Box, Typography, useMediaQuery } from "@mui/material";
 
 // project-imports
 import NavGroup from "./NavGroup";
-import menuItem from "menu-items";
+import menuItems from "menu-items";
 import { Menu } from "menu-items/dashboard";
+import useAuth from "hooks/useAuth";
 
 import { useSelector } from "store";
 import useConfig from "hooks/useConfig";
@@ -29,51 +30,51 @@ const Navigation = () => {
 
 	const [selectedItems, setSelectedItems] = useState<string | undefined>("");
 	const [selectedLevel, setSelectedLevel] = useState<number>(0);
-	const [menuItems, setMenuItems] = useState<{ items: NavItemType[] }>({ items: [] });
+	const [filteredMenuItems, setFilteredMenuItems] = useState<{ items: NavItemType[] }>({ items: [] });
+	const { user } = useAuth();
+	const isAdmin = user?.role === "ADMIN_ROLE";
 
 	useEffect(() => {
 		handlerMenuItem();
 		// eslint-disable-next-line
-	}, []);
-
-	useLayoutEffect(() => {
-		setMenuItems(menuItem);
-		// eslint-disable-next-line
-	}, [menuItem]);
+	}, [user]);
 
 	let getMenu = Menu();
 	const handlerMenuItem = () => {
-		const isFound = menuItem.items.some((element) => {
-			if (element.id === "group-dashboard") {
-				return true;
-			}
-			return false;
-		});
+		// Clone the original menu items to avoid mutating the imported object
+		const menuItemsClone = {
+			items: isAdmin
+				? [...menuItems.items] // Include all menu items for admin users
+				: menuItems.items.filter((item) => item.id !== "group-admin"), // Filter out admin items for non-admin users
+		};
+
+		const isFound = menuItemsClone.items.some((element) => element.id === "group-dashboard");
 
 		if (getMenu?.id !== undefined && !isFound) {
-			menuItem.items.splice(0, 0, getMenu);
-			setMenuItems(menuItem);
+			menuItemsClone.items.splice(0, 0, getMenu);
 		}
+
+		setFilteredMenuItems(menuItemsClone);
 	};
 
 	const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 
 	const lastItem = isHorizontal ? HORIZONTAL_MAX_ITEM : null;
-	let lastItemIndex = menuItems.items.length - 1;
+	let lastItemIndex = filteredMenuItems.items.length - 1;
 	let remItems: NavItemType[] = [];
 	let lastItemId: string;
 
-	if (lastItem && lastItem < menuItems.items.length) {
-		lastItemId = menuItems.items[lastItem - 1].id!;
+	if (lastItem && lastItem < filteredMenuItems.items.length) {
+		lastItemId = filteredMenuItems.items[lastItem - 1].id!;
 		lastItemIndex = lastItem - 1;
-		remItems = menuItems.items.slice(lastItem - 1, menuItems.items.length).map((item) => ({
+		remItems = filteredMenuItems.items.slice(lastItem - 1, filteredMenuItems.items.length).map((item) => ({
 			title: item.title,
 			elements: item.children,
 			icon: item.icon,
 		}));
 	}
 
-	const navGroups = menuItems.items.slice(0, lastItemIndex + 1).map((item) => {
+	const navGroups = filteredMenuItems.items.slice(0, lastItemIndex + 1).map((item) => {
 		switch (item.type) {
 			case "group":
 				return (
