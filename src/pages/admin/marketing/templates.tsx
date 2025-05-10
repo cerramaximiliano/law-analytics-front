@@ -606,6 +606,10 @@ const EmailTemplates = () => {
 
 		if (!editTemplate) return false;
 
+		if (!editTemplate.name.trim()) {
+			newErrors.name = "El nombre es obligatorio";
+		}
+
 		if (!editTemplate.subject.trim()) {
 			newErrors.subject = "El asunto es obligatorio";
 		}
@@ -629,6 +633,7 @@ const EmailTemplates = () => {
 		try {
 			// Prepare data to send (only the fields that can be updated)
 			const updateData = {
+				name: editTemplate.name,
 				subject: editTemplate.subject,
 				htmlBody: editTemplate.htmlBody,
 				description: editTemplate.description,
@@ -1101,6 +1106,17 @@ const EmailTemplates = () => {
 							<Grid container spacing={3}>
 								{/* Basic information */}
 								<Grid item xs={12} md={6}>
+									<TextField
+										label="Nombre de la plantilla"
+										fullWidth
+										value={editTemplate.name}
+										onChange={(e) => handleEditTemplateChange("name", e.target.value)}
+										error={!!errors.name}
+										helperText={errors.name}
+										required
+										sx={{ mb: 2 }}
+									/>
+
 									<TextField
 										label="Asunto"
 										fullWidth
