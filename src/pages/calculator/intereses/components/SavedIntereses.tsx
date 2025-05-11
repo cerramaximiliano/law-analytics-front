@@ -20,6 +20,11 @@ import {
 	DialogContent,
 	DialogActions,
 	TextField,
+	Chip,
+	Checkbox,
+	Autocomplete,
+	InputAdornment,
+	Divider,
 } from "@mui/material";
 import { dispatch, useSelector } from "store";
 import moment from "moment";
@@ -42,17 +47,19 @@ import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
-import { CSVExport, EmptyTable, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
+import { EmptyTable, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
+import { CSVLink } from "react-csv";
 import AlertCalculatorDelete from "./AlertCalculatorDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, Eye, Trash, Copy, Sms, Printer, Link21, Calculator } from "iconsax-react";
+import { Add, Eye, Trash, Copy, Sms, Printer, Link21, SearchNormal1, UserAdd, DocumentDownload } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
 import { getCalculatorsByFilter } from "store/reducers/calculator";
 import { openSnackbar } from "store/reducers/snackbar";
+import { getContactsByUserId } from "store/reducers/contacts";
 import axios from "axios";
 import { useReactToPrint } from "react-to-print";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
@@ -113,9 +120,13 @@ const CustomSortingSelect = SortingSelect as any;
 const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
 	const [email, setEmail] = useState("");
+	const [emailList, setEmailList] = useState<string[]>([]);
+	const [copyToMe, setCopyToMe] = useState(false);
+	const [customMessage, setCustomMessage] = useState("");
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
-	const [updateModalOpen, setUpdateModalOpen] = useState(false);
-	const [interestRate, setInterestRate] = useState("");
+	const [contactsLoaded, setContactsLoaded] = useState(false);
+	const { contacts, isLoader: contactsLoading } = useSelector((state: any) => state.contacts);
+	const { user } = useSelector((state: any) => state.auth);
 	const printRef = useRef<HTMLDivElement>(null);
 
 	// Función para obtener etiquetas personalizadas o claves directamente
@@ -173,7 +184,11 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 
 	// Función para generar texto plano
 	const generatePlainText = () => {
-		let text = "LIQUIDACIÓN DE INTERESES\n\n";
+		let text = "Liquidación de Intereses\n\n";
+
+		if (customMessage) {
+			text += `${customMessage}\n\n`;
+		}
 		const groupedData = data?.variables?.calculationResult || groupResults(data?.variables);
 
 		// Usar una aserción de tipo para ayudar a TypeScript a entender la estructura
@@ -195,45 +210,254 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 		return text;
 	};
 
+	const generateHtmlContent = () => {
+		let html = `
+		  <!DOCTYPE html>
+		  <html lang="es">
+		  <head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>Liquidación de Intereses</title>
+			<style>
+			  body {
+				font-family: Arial, sans-serif;
+				line-height: 1.6;
+				color: #333;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+			  }
+			  .container {
+				font-family: Arial, sans-serif;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+			  }
+			  .header {
+				text-align: center;
+				margin-bottom: 24px;
+			  }
+			  .header h1, .header h2 {
+				color: #333;
+				margin: 0;
+			  }
+			  .card {
+				border: 1px solid #ddd;
+				border-radius: 8px;
+				margin-bottom: 16px;
+				box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+				overflow: hidden;
+				break-inside: avoid;
+				page-break-inside: avoid;
+			  }
+			  .card-header {
+				background-color: #f5f5f5;
+				padding: 12px 16px;
+				font-weight: bold;
+				border-bottom: 1px solid #ddd;
+				border-radius: 8px 8px 0 0;
+				color: #333;
+			  }
+			  .card-content {
+				padding: 16px;
+			  }
+			  .item-row, .row {
+				display: flex;
+				justify-content: space-between;
+				padding: 8px 0;
+				border-bottom: 1px solid #eee;
+			  }
+			  .item-row:last-child, .row:last-child {
+				border-bottom: none;
+			  }
+			  .label {
+				color: #666;
+			  }
+			  .value {
+				font-weight: 500;
+				color: #333;
+			  }
+			  .total-card {
+				background-color: #1976d2;
+				color: white;
+				padding: 16px;
+				border-radius: 8px;
+				margin-top: 16px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			  }
+			  .total-content {
+				display: flex;
+				justify-content: space-between;
+				padding: 16px;
+				font-size: 1.2em;
+				font-weight: bold;
+			  }
+			  .total-label {
+				font-size: 18px;
+				font-weight: bold;
+			  }
+			  .total-value {
+				font-size: 18px;
+				font-weight: bold;
+			  }
+			  .footer {
+				margin-top: 24px;
+				text-align: center;
+				font-size: 12px;
+				color: #666;
+			  }
+			  .message-card {
+				border: 1px solid #ddd;
+				border-radius: 8px;
+				margin-bottom: 16px;
+				padding: 16px;
+				background-color: #f9f9f9;
+				line-height: 1.5;
+			  }
+			</style>
+		  </head>
+		  <body>
+			<div class="container">
+				<div class="header">
+					<h1>Liquidación de Intereses</h1>
+				</div>
+				${customMessage ? `<div class="message-card">
+					<p>${customMessage.replace(/\n/g, '<br>')}</p>
+				</div>` : ''}
+		`;
+
+		const groupedData = data?.variables?.calculationResult || groupResults(data?.variables);
+
+		// Generar secciones de tarjetas para cada grupo
+		Object.entries(groupedData as Record<string, ResultItem[]>).forEach(([group, items]) => {
+			if (items && items.length) {
+				const title = getGroupTitle(group);
+				html += `
+			  <div class="card">
+				<div class="card-header">${title.toUpperCase()}</div>
+				<div class="card-content">
+			`;
+
+				items.forEach((item: ResultItem) => {
+					const label = getLabelForKey(item.key, item.customLabel);
+					const value = formatValue(item.key, item.value, item.formatType);
+					html += `
+				<div class="item-row">
+				  <span class="label">${label}:</span>
+				  <span class="value">${value}</span>
+				</div>
+			  `;
+				});
+
+				html += `
+				</div>
+			  </div>
+			`;
+			}
+		});
+
+		// Agregar la tarjeta de total
+		const totalFormatted = new Intl.NumberFormat("es-AR", {
+			style: "currency",
+			currency: "ARS",
+		}).format(data.amount);
+
+		html += `
+			<div class="total-card">
+			  <span class="total-label">CAPITAL ACTUALIZADO</span>
+			  <span class="total-value">${totalFormatted}</span>
+			</div>
+	  
+			<div class="footer">
+			  <p>Este documento fue generado automáticamente por Law||Analytics.</p>
+			</div>
+			</div>
+		  </body>
+		  </html>
+		`;
+
+		return html;
+	};
+
 	// Manejadores de eventos
-	const handleUpdateWithInterest = async () => {
-		try {
-			console.log("Actualizando con tasa:", interestRate);
-			// Aquí iría la lógica para actualizar con intereses
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Intereses actualizados correctamente",
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-			setUpdateModalOpen(false);
-			setInterestRate("");
-		} catch (error) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Error al actualizar los intereses",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
+
+	// Cargar contactos cuando se abre el modal de email
+	useEffect(() => {
+		if (emailModalOpen && !contactsLoaded && user?._id) {
+			dispatch(getContactsByUserId(user._id));
+			setContactsLoaded(true);
 		}
+	}, [emailModalOpen, contactsLoaded, user?._id]);
+
+	const handleAddEmail = () => {
+		// Validar formato de email
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+		if (email && emailRegex.test(email) && !emailList.includes(email)) {
+			setEmailList([...emailList, email]);
+			setEmail("");
+		} else if (email && !emailRegex.test(email)) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Por favor ingrese un email válido",
+					variant: "alert",
+					alert: { color: "warning" },
+					close: true,
+				}),
+			);
+		} else if (email && emailList.includes(email)) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Este email ya fue agregado a la lista",
+					variant: "alert",
+					alert: { color: "info" },
+					close: true,
+				}),
+			);
+			setEmail("");
+		}
+	};
+
+	const handleRemoveEmail = (emailToRemove: string) => {
+		setEmailList(emailList.filter(e => e !== emailToRemove));
 	};
 
 	const handleEmailSend = async () => {
 		try {
 			const textBody = generatePlainText();
+			const htmlBody = generateHtmlContent();
 			const subject = "Liquidación de Intereses - Law||Analytics";
 
+			// Solo usar la lista de emails explícitamente agregados
+			const allEmails = [...emailList];
+
+			// Si no hay emails en la lista, mostrar error
+			if (allEmails.length === 0) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Debe agregar al menos un email a la lista de destinatarios",
+						variant: "alert",
+						alert: { color: "warning" },
+						close: true,
+					}),
+				);
+				return;
+			}
+
+			// Enviar email a todos los destinatarios como array
 			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/send-email`, {
-				to: email,
+				to: allEmails, // Enviar como array en lugar de string separado por comas
 				subject,
 				textBody,
+				htmlBody,
+				copyToMe: copyToMe
 			});
+
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -245,6 +469,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			);
 			setEmailModalOpen(false);
 			setEmail("");
+			setEmailList([]);
+			setCopyToMe(false);
+			setCustomMessage("");
 		} catch (error) {
 			dispatch(
 				openSnackbar({
@@ -307,11 +534,6 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			<Tooltip title="Vincular a causa">
 				<IconButton onClick={() => setLinkModalOpen(true)} color="primary">
 					<Link21 size={20} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Actualizar con intereses">
-				<IconButton onClick={() => setUpdateModalOpen(true)} color="primary">
-					<Calculator size={20} />
 				</IconButton>
 			</Tooltip>
 		</Stack>
@@ -469,21 +691,161 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			</Stack>
 			<div className="no-print">
 				{/* Email Modal */}
-				<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)}>
+				<Dialog
+					open={emailModalOpen}
+					onClose={() => setEmailModalOpen(false)}
+					maxWidth="md"
+					fullWidth
+				>
 					<DialogTitle>Enviar por Email</DialogTitle>
 					<DialogContent>
-						<TextField
-							autoFocus
-							margin="dense"
-							label="Dirección de Email"
-							type="email"
-							fullWidth
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-						/>
+						<Stack spacing={2} sx={{ mt: 1 }}>
+							<Stack direction="row" spacing={1}>
+								<TextField
+									autoFocus
+									margin="dense"
+									label="Dirección de Email"
+									type="email"
+									fullWidth
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === 'Enter') {
+											e.preventDefault();
+											handleAddEmail();
+										}
+									}}
+									placeholder="Escribe un email y haz clic en Agregar"
+								/>
+								<Button
+									variant="contained"
+									onClick={handleAddEmail}
+									sx={{ mt: 1 }}
+									color="primary"
+									disabled={!email.trim()}
+								>
+									Agregar
+								</Button>
+							</Stack>
+							<Typography variant="caption" color="textSecondary">
+								* Debes agregar cada email a la lista de destinatarios antes de enviar.
+							</Typography>
+
+							{emailList.length > 0 && (
+								<Box sx={{ mt: 2 }}>
+									<Typography variant="subtitle2" gutterBottom>
+										Destinatarios:
+									</Typography>
+									<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+										{emailList.map((emailItem) => (
+											<Chip
+												key={emailItem}
+												label={emailItem}
+												onDelete={() => handleRemoveEmail(emailItem)}
+												sx={{ m: 0.5 }}
+											/>
+										))}
+									</Box>
+								</Box>
+							)}
+
+							<Divider sx={{ my: 2 }}>
+								<Typography variant="caption" color="textSecondary">
+									o seleccionar de mis contactos
+								</Typography>
+							</Divider>
+
+							{contactsLoading ? (
+								<Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+									<Typography>Cargando contactos...</Typography>
+								</Box>
+							) : contacts && contacts.length > 0 ? (
+								<Autocomplete
+									options={contacts.filter((contact: any) => contact.email)}
+									getOptionLabel={(option: any) => `${option.name} ${option.lastName} (${option.email})`}
+									renderInput={(params) => (
+										<TextField
+											{...params}
+											label="Buscar contacto"
+											variant="outlined"
+											InputProps={{
+												...params.InputProps,
+												startAdornment: (
+													<InputAdornment position="start">
+														<SearchNormal1 size={18} />
+													</InputAdornment>
+												)
+											}}
+										/>
+									)}
+									renderOption={(props, option: any) => (
+										<li {...props}>
+											<Stack direction="row" spacing={1} alignItems="center" width="100%">
+												<UserAdd size={18} />
+												<Stack direction="column" sx={{ overflow: 'hidden' }}>
+													<Typography variant="body2" noWrap>
+														{option.name} {option.lastName}
+													</Typography>
+													<Typography variant="caption" color="textSecondary" noWrap>
+														{option.email}
+													</Typography>
+												</Stack>
+											</Stack>
+										</li>
+									)}
+									onChange={(_, newValue) => {
+										if (newValue && newValue.email && !emailList.includes(newValue.email)) {
+											setEmailList([...emailList, newValue.email]);
+										}
+									}}
+									sx={{ mt: 1 }}
+								/>
+							) : null}
+
+							<Box sx={{ mt: 2 }}>
+								<Typography variant="subtitle2" gutterBottom>
+									Mensaje (opcional):
+								</Typography>
+								<TextField
+									multiline
+									fullWidth
+									rows={4}
+									placeholder="Escriba un mensaje personalizado que se incluirá en el correo (opcional)"
+									value={customMessage}
+									onChange={(e) => setCustomMessage(e.target.value)}
+									variant="outlined"
+								/>
+							</Box>
+
+							<Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+								<Checkbox
+									checked={copyToMe}
+									onChange={(e) => setCopyToMe(e.target.checked)}
+									id="copy-to-me"
+								/>
+								<Typography
+									component="label"
+									htmlFor="copy-to-me"
+									variant="body2"
+									sx={{ cursor: 'pointer' }}
+								>
+									Enviarme una copia
+								</Typography>
+							</Box>
+						</Stack>
 					</DialogContent>
 					<DialogActions>
-						<Button onClick={() => setEmailModalOpen(false)}>Cancelar</Button>
+						<Button
+							color="error"
+							onClick={() => {
+								setEmailModalOpen(false);
+								setEmail("");
+								setEmailList([]);
+								setCopyToMe(false);
+								setCustomMessage("");
+							}}>
+							Cancelar
+						</Button>
 						<Button onClick={handleEmailSend} variant="contained">
 							Enviar
 						</Button>
@@ -492,28 +854,6 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 
 				{/* Link Modal */}
 				<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={data._id} folderId={data.folderId} />
-
-				{/* Interest Modal */}
-				<Dialog open={updateModalOpen} onClose={() => setUpdateModalOpen(false)}>
-					<DialogTitle>Actualizar con Intereses</DialogTitle>
-					<DialogContent>
-						<TextField
-							autoFocus
-							margin="dense"
-							label="Tasa de Interés (%)"
-							type="number"
-							fullWidth
-							value={interestRate}
-							onChange={(e) => setInterestRate(e.target.value)}
-						/>
-					</DialogContent>
-					<DialogActions>
-						<Button onClick={() => setUpdateModalOpen(false)}>Cancelar</Button>
-						<Button onClick={handleUpdateWithInterest} variant="contained">
-							Actualizar
-						</Button>
-					</DialogActions>
-				</Dialog>
 			</div>
 		</>
 	);
@@ -587,10 +927,28 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 
 					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
 						<CustomSortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<CSVExport
-							data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<CalculatorData>) => d.original) : data}
-							filename={"calculos-intereses.csv"}
-						/>
+						<Tooltip title="Exportar CSV">
+							<IconButton
+								color="secondary"
+								size="medium"
+								sx={{
+									position: "relative",
+								}}
+							>
+								<CSVLink
+									data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<CalculatorData>) => d.original) : data}
+									filename={"calculos-intereses.csv"}
+									style={{
+										color: "inherit",
+										display: "flex",
+										alignItems: "center",
+										textDecoration: "none",
+									}}
+								>
+									<DocumentDownload variant="Bulk" size={22} />
+								</CSVLink>
+							</IconButton>
+						</Tooltip>
 					</Stack>
 				</Stack>
 				<Table {...getTableProps()}>
