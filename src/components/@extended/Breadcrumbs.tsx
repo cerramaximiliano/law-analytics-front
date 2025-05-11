@@ -67,13 +67,17 @@ const Breadcrumbs = ({
 	};
 
 	useEffect(() => {
+		// Reiniciar estados al cambiar de ruta
+		setMain(undefined);
+		setItem(undefined);
+		
 		navigation?.items?.map((menu: NavItemType, index: number) => {
 			if (menu.type && menu.type === "group") {
 				getCollapse(menu as { children: NavItemType[]; type?: string });
 			}
 			return false;
 		});
-	});
+	}, [location.pathname, navigation]);
 
 	let customLocation = location.pathname;
 
@@ -87,10 +91,30 @@ const Breadcrumbs = ({
 	}
 
 	useEffect(() => {
+		// Casos especiales donde necesitamos ajustar manualmente el estado
 		if (customLocation.includes("/apps/profiles/user/payment")) {
 			setItem(undefined);
 		}
-	}, [item, customLocation]);
+		
+		// Para la página principal del dashboard, asegurarnos de mostrar correctamente el breadcrumb
+		if (customLocation === "/dashboard/default") {
+			// Buscar el ítem correspondiente a dashboard/default
+			navigation?.items?.forEach((menu: NavItemType) => {
+				if (menu.type === "group" && menu.id === "group-dashboard") {
+					menu.children?.forEach((submenu: NavItemType) => {
+						if (submenu.id === "dashboard" && submenu.children) {
+							submenu.children.forEach((childItem: NavItemType) => {
+								if (childItem.url === "/dashboard/default") {
+									setMain(submenu);
+									setItem(childItem);
+								}
+							});
+						}
+					});
+				}
+			});
+		}
+	}, [item, customLocation, navigation]);
 
 	// set active item state
 	const getCollapse = (menu: NavItemType) => {
@@ -235,7 +259,7 @@ const Breadcrumbs = ({
 									{(!icon || icons) && "Home"}
 								</Typography>
 
-								{/* Custom breadcrumb path for folder details, calculator and calendar pages */}
+								{/* Custom breadcrumb paths */}
 								{location.pathname.includes("/apps/folders/details/") ? (
 									<Typography
 										component={Link}
@@ -266,12 +290,21 @@ const Breadcrumbs = ({
 									>
 										Calendario
 									</Typography>
+								) : location.pathname === "/dashboard/default" ? (
+									<Typography
+										component="span"
+										variant="h6"
+										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+										color="secondary"
+									>
+										Inicio
+									</Typography>
 								) : (
 									mainContent
 								)}
 
-								{/* Solo mostrar itemContent si no estamos en la raíz de calculadoras */}
-								{location.pathname === "/apps/calc" ? null : itemContent}
+								{/* Solo mostrar itemContent si no estamos en la raíz de calculadoras o en la página principal */}
+								{location.pathname === "/apps/calc" || location.pathname === "/dashboard/default" ? null : itemContent}
 							</MuiBreadcrumbs>
 						</Grid>
 						{title && titleBottom && (

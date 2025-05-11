@@ -27,7 +27,7 @@ export const Menu = () => {
 		children: [
 			{
 				id: "dashboard",
-				title: "dashboard",
+				title: "Home",
 				type: "collapse",
 				icon: "dashboard",
 				children: [
@@ -36,7 +36,7 @@ export const Menu = () => {
 						title: "Inicio",
 						type: "item",
 						url: "/dashboard/default",
-						breadcrumbs: false,
+						breadcrumbs: true,
 					},
 					/* 					{
 						id: "informes",
