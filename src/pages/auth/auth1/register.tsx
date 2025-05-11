@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
+import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 
 // material-ui
 import { Grid, Stack, Alert, Typography } from "@mui/material";
@@ -10,89 +10,49 @@ import Logo from "components/logo";
 import useAuth from "hooks/useAuth";
 import AuthDivider from "sections/auth/AuthDivider";
 import AuthWrapper from "sections/auth/AuthWrapper";
-import FirebaseRegister from "sections/auth/auth-forms/AuthRegister";
-import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import AuthRegister from "sections/auth/auth-forms/AuthRegister";
+import CustomGoogleButton from "components/auth/CustomGoogleButton";
 
 const Register = () => {
-	const { setIsLoggedIn } = useAuth();
+	const { loginWithGoogle } = useAuth();
 	const [error, setError] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
-	const responseMessage = async (response: CredentialResponse) => {
-		setError(null);
-
+	const handleGoogleSuccess = async (tokenResponse: any) => {
+		setIsLoading(true);
 		try {
-			if (response && response.credential) {
-				// Utiliza axios en lugar de fetch
-				const result = await axios.post(
-					`${process.env.REACT_APP_BASE_URL}/api/auth/google`,
-					{ token: response.credential },
-					{
-						withCredentials: true,
-						headers: {
-							"Content-Type": "application/json",
-						},
-					},
-				);
-
-				// Axios ya parsea automaticamente la respuesta JSON
-				const data = result.data;
-
-				if (data.success) {
-					// Llama a la función de login para actualizar el estado de autenticación en el frontend
-					setIsLoggedIn(true);
-				} else {
-					setError("No se pudo autenticar. Intenta nuevamente.");
-				}
-			}
+			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
+			const credentialResponse: CredentialResponse = {
+				clientId: tokenResponse.clientId || "",
+				credential: tokenResponse.access_token,
+				select_by: "user"
+			};
+			
+			// Llamar a la función de login existente
+			await loginWithGoogle(credentialResponse);
 		} catch (error) {
 			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
 			console.error("Error:", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
-	const errorMessage = (error?: any) => {
-		setError("Error al iniciar sesión con Google. Intenta nuevamente.");
-	};
+	// Hook para iniciar sesión con Google
+	const googleLogin = useGoogleLogin({
+		onSuccess: handleGoogleSuccess,
+		onError: () => {
+			setError("Error al iniciar sesión con Google. Intenta nuevamente.");
+			setIsLoading(false);
+		},
+		flow: 'implicit'
+	});
 
 	return (
 		<AuthWrapper>
 			<Grid container spacing={3}>
 				<Grid item xs={12} sx={{ textAlign: "center" }}>
 					<Logo />
-				</Grid>
-				<Grid justifyContent={"center"} item xs={12}>
-					<Grid container spacing={1}>
-						{error && (
-							<Alert severity="error" sx={{ mb: 2 }}>
-								{error}
-							</Alert>
-						)}
-						<Grid
-							sx={{
-								display: "flex",
-								justifyContent: "center",
-							}}
-							item
-							xs={12}
-						>
-							<GoogleLogin
-								onSuccess={responseMessage}
-								onError={errorMessage}
-								useOneTap={false}
-								theme="filled_blue"
-								text="signup_with"
-								shape="rectangular"
-								logo_alignment="center"
-								context="signup"
-								width={"300"}
-							/>
-						</Grid>
-					</Grid>
-				</Grid>
-				<Grid item xs={12}>
-					<AuthDivider>
-						<Typography variant="body1">O</Typography>
-					</AuthDivider>
 				</Grid>
 				<Grid item xs={12}>
 					<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
@@ -103,7 +63,26 @@ const Register = () => {
 					</Stack>
 				</Grid>
 				<Grid item xs={12}>
-					<FirebaseRegister />
+					{error && (
+						<Alert severity="error" sx={{ mb: 2 }}>
+							{error}
+						</Alert>
+					)}
+					<AuthRegister />
+				</Grid>
+				<Grid item xs={12}>
+					<AuthDivider>
+						<Typography variant="body1">O</Typography>
+					</AuthDivider>
+				</Grid>
+				<Grid item xs={12}>
+					{/* Botón personalizado que llama a googleLogin.login() */}
+					<CustomGoogleButton 
+						onClick={() => googleLogin()} 
+						disabled={isLoading}
+						text="Registrarse con Google"
+						fullWidth
+					/>
 				</Grid>
 			</Grid>
 		</AuthWrapper>
