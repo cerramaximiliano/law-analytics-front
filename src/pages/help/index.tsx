@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Grid, Box, Typography, Card, CardContent, CardActionArea, Button, Collapse, Divider, Paper, Chip } from "@mui/material";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -31,11 +31,66 @@ const GuidesSection = () => {
 	const theme = useTheme();
 	const [expandedGuide, setExpandedGuide] = useState<string | null>(null);
 
+	// Create refs for guide cards
+	const laboralCardRef = useRef<HTMLDivElement>(null);
+	const interesesCardRef = useRef<HTMLDivElement>(null);
+	const carpetasCardRef = useRef<HTMLDivElement>(null);
+	const contactosCardRef = useRef<HTMLDivElement>(null);
+	const calendarioCardRef = useRef<HTMLDivElement>(null);
+	const citasCardRef = useRef<HTMLDivElement>(null);
+
+	// Create refs for expanded content
+	const laboralContentRef = useRef<HTMLDivElement>(null);
+	const interesesContentRef = useRef<HTMLDivElement>(null);
+	const carpetasContentRef = useRef<HTMLDivElement>(null);
+	const contactosContentRef = useRef<HTMLDivElement>(null);
+	const calendarioContentRef = useRef<HTMLDivElement>(null);
+	const citasContentRef = useRef<HTMLDivElement>(null);
+
 	const handleExpandGuide = (guideName: string) => {
 		if (expandedGuide === guideName) {
 			setExpandedGuide(null);
 		} else {
 			setExpandedGuide(guideName);
+
+			// Wait for the collapse animation to start before scrolling
+			setTimeout(() => {
+				// Get the appropriate content ref based on the guide name
+				let contentRef = null;
+				switch (guideName) {
+					case "laboral":
+						contentRef = laboralContentRef;
+						break;
+					case "intereses":
+						contentRef = interesesContentRef;
+						break;
+					case "carpetas":
+						contentRef = carpetasContentRef;
+						break;
+					case "contactos":
+						contentRef = contactosContentRef;
+						break;
+					case "calendario":
+						contentRef = calendarioContentRef;
+						break;
+					case "citas":
+						contentRef = citasContentRef;
+						break;
+					default:
+						break;
+				}
+
+				// Scroll to the expanded content with offset to keep title visible
+				if (contentRef && contentRef.current) {
+					const elementRect = contentRef.current.getBoundingClientRect();
+					const absoluteElementTop = elementRect.top + window.pageYOffset;
+					const offset = 150; // 150px offset to make title visible
+					window.scrollTo({
+						top: absoluteElementTop - offset,
+						behavior: "smooth"
+					});
+				}
+			}, 300); // Small delay to allow the collapse animation to expand
 		}
 	};
 
@@ -50,35 +105,45 @@ const GuidesSection = () => {
 				Estas guías te ayudarán a entender cómo utilizar las principales funciones de la aplicación.
 			</Typography>
 
-			<Grid container spacing={3} sx={{ mt: 1 }}>
+			<Grid container spacing={4} sx={{ mt: 1 }}>
 				{/* Guía Laboral */}
-				<Grid item xs={12} md={4} lg={2}>
+				<Grid item xs={12} sm={6} md={4} lg={4}>
 					<Card
+						ref={laboralCardRef}
 						sx={{
 							height: "100%",
+							display: "flex",
+							flexDirection: "column",
 							transition: "all 0.2s",
+							borderRadius: 2,
 							"&:hover": {
-								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)"
 							},
 						}}
 					>
-						<CardActionArea onClick={() => handleExpandGuide("laboral")}>
-							<CardContent sx={{ textAlign: "center", pb: 3 }}>
-								<Calculator
-									variant="Bulk"
-									size={48}
-									style={{
-										color: theme.palette.primary.main,
-										marginBottom: 16,
-									}}
-								/>
+						<CardActionArea
+							onClick={() => handleExpandGuide("laboral")}
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+									<Calculator
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.primary.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
 								<Typography variant="h4" gutterBottom>
 									Calculadora Laboral
 								</Typography>
-								<Typography variant="body2" color="textSecondary">
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
 									Aprende a utilizar todas las funciones de la calculadora laboral para indemnizaciones y liquidaciones.
 								</Typography>
-								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
 									{expandedGuide === "laboral" ? "Cerrar guía" : "Ver guía"}
 								</Button>
 							</CardContent>
@@ -87,33 +152,43 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Intereses */}
-				<Grid item xs={12} md={4} lg={2}>
+				<Grid item xs={12} sm={6} md={4} lg={4}>
 					<Card
+						ref={interesesCardRef}
 						sx={{
 							height: "100%",
+							display: "flex",
+							flexDirection: "column",
 							transition: "all 0.2s",
+							borderRadius: 2,
 							"&:hover": {
-								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)"
 							},
 						}}
 					>
-						<CardActionArea onClick={() => handleExpandGuide("intereses")}>
-							<CardContent sx={{ textAlign: "center", pb: 3 }}>
-								<Coin
-									variant="Bulk"
-									size={48}
-									style={{
-										color: theme.palette.success.main,
-										marginBottom: 16,
-									}}
-								/>
+						<CardActionArea
+							onClick={() => handleExpandGuide("intereses")}
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+									<Coin
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.success.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
 								<Typography variant="h4" gutterBottom>
 									Calculadora de Intereses
 								</Typography>
-								<Typography variant="body2" color="textSecondary">
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
 									Aprende a calcular intereses con diferentes tasas y a actualizar montos históricos.
 								</Typography>
-								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
 									{expandedGuide === "intereses" ? "Cerrar guía" : "Ver guía"}
 								</Button>
 							</CardContent>
@@ -122,33 +197,41 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Carpetas */}
-				<Grid item xs={12} md={4} lg={2}>
+				<Grid item xs={12} sm={6} md={4} lg={4}>
 					<Card
+						ref={carpetasCardRef}
 						sx={{
 							height: "100%",
+							display: "flex",
+							flexDirection: "column",
 							transition: "all 0.2s",
+							borderRadius: 2,
 							"&:hover": {
-								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)"
 							},
 						}}
 					>
-						<CardActionArea onClick={() => handleExpandGuide("carpetas")}>
-							<CardContent sx={{ textAlign: "center", pb: 3 }}>
+						<CardActionArea
+							onClick={() => handleExpandGuide("carpetas")}
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
 								<Folder
 									variant="Bulk"
-									size={48}
+									size={62}
 									style={{
 										color: theme.palette.warning.main,
-										marginBottom: 16,
+										marginBottom: 28,
+										marginTop: 12,
 									}}
 								/>
 								<Typography variant="h4" gutterBottom>
-									Sistema de Carpetas
+									Sistema de Causas
 								</Typography>
-								<Typography variant="body2" color="textSecondary">
-									Aprende a organizar tus casos y a vincular información relevante en el sistema de carpetas.
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
+									Aprende a organizar tus casos y a vincular información relevante en el sistema de causas.
 								</Typography>
-								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
 									{expandedGuide === "carpetas" ? "Cerrar guía" : "Ver guía"}
 								</Button>
 							</CardContent>
@@ -157,33 +240,43 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Contactos */}
-				<Grid item xs={12} md={4} lg={2}>
+				<Grid item xs={12} sm={6} md={4} lg={4}>
 					<Card
+						ref={contactosCardRef}
 						sx={{
 							height: "100%",
+							display: "flex",
+							flexDirection: "column",
 							transition: "all 0.2s",
+							borderRadius: 2,
 							"&:hover": {
-								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)"
 							},
 						}}
 					>
-						<CardActionArea onClick={() => handleExpandGuide("contactos")}>
-							<CardContent sx={{ textAlign: "center", pb: 3 }}>
-								<Profile2User
-									variant="Bulk"
-									size={48}
-									style={{
-										color: theme.palette.info.main,
-										marginBottom: 16,
-									}}
-								/>
+						<CardActionArea
+							onClick={() => handleExpandGuide("contactos")}
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+									<Profile2User
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.info.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
 								<Typography variant="h4" gutterBottom>
 									Sistema de Contactos
 								</Typography>
-								<Typography variant="body2" color="textSecondary">
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
 									Aprende a gestionar contactos, categorizarlos y vincularlos a carpetas de casos legales.
 								</Typography>
-								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
 									{expandedGuide === "contactos" ? "Cerrar guía" : "Ver guía"}
 								</Button>
 							</CardContent>
@@ -192,33 +285,43 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Calendario */}
-				<Grid item xs={12} md={4} lg={2}>
+				<Grid item xs={12} sm={6} md={4} lg={4}>
 					<Card
+						ref={calendarioCardRef}
 						sx={{
 							height: "100%",
+							display: "flex",
+							flexDirection: "column",
 							transition: "all 0.2s",
+							borderRadius: 2,
 							"&:hover": {
-								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)"
 							},
 						}}
 					>
-						<CardActionArea onClick={() => handleExpandGuide("calendario")}>
-							<CardContent sx={{ textAlign: "center", pb: 3 }}>
-								<Calendar
-									variant="Bulk"
-									size={48}
-									style={{
-										color: theme.palette.secondary.main,
-										marginBottom: 16,
-									}}
-								/>
+						<CardActionArea
+							onClick={() => handleExpandGuide("calendario")}
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+									<Calendar
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.secondary.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
 								<Typography variant="h4" gutterBottom>
 									Calendario
 								</Typography>
-								<Typography variant="body2" color="textSecondary">
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
 									Aprende a gestionar tu agenda, eventos judiciales y recibir recordatorios de fechas importantes.
 								</Typography>
-								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
 									{expandedGuide === "calendario" ? "Cerrar guía" : "Ver guía"}
 								</Button>
 							</CardContent>
@@ -227,33 +330,43 @@ const GuidesSection = () => {
 				</Grid>
 
 				{/* Guía Sistema de Citas */}
-				<Grid item xs={12} md={4} lg={2}>
+				<Grid item xs={12} sm={6} md={4} lg={4}>
 					<Card
+						ref={citasCardRef}
 						sx={{
 							height: "100%",
+							display: "flex",
+							flexDirection: "column",
 							transition: "all 0.2s",
+							borderRadius: 2,
 							"&:hover": {
-								boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)"
 							},
 						}}
 					>
-						<CardActionArea onClick={() => handleExpandGuide("citas")}>
-							<CardContent sx={{ textAlign: "center", pb: 3 }}>
-								<CalendarTick
-									variant="Bulk"
-									size={48}
-									style={{
-										color: theme.palette.error.main,
-										marginBottom: 16,
-									}}
-								/>
+						<CardActionArea
+							onClick={() => handleExpandGuide("citas")}
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
+							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+									<CalendarTick
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.error.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
 								<Typography variant="h4" gutterBottom>
 									Sistema de Citas
 								</Typography>
-								<Typography variant="body2" color="textSecondary">
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
 									Aprende a configurar y gestionar el sistema de citas online para tus clientes.
 								</Typography>
-								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 2 }}>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
 									{expandedGuide === "citas" ? "Cerrar guía" : "Ver guía"}
 								</Button>
 							</CardContent>
@@ -263,7 +376,7 @@ const GuidesSection = () => {
 			</Grid>
 
 			{/* Contenidos expandidos de las guías */}
-			<Collapse in={expandedGuide === "laboral"} timeout="auto" unmountOnExit>
+			<Collapse in={expandedGuide === "laboral"} timeout="auto" unmountOnExit ref={laboralContentRef}>
 				<Paper
 					elevation={3}
 					sx={{
@@ -277,7 +390,7 @@ const GuidesSection = () => {
 				</Paper>
 			</Collapse>
 
-			<Collapse in={expandedGuide === "intereses"} timeout="auto" unmountOnExit>
+			<Collapse in={expandedGuide === "intereses"} timeout="auto" unmountOnExit ref={interesesContentRef}>
 				<Paper
 					elevation={3}
 					sx={{
@@ -291,7 +404,7 @@ const GuidesSection = () => {
 				</Paper>
 			</Collapse>
 
-			<Collapse in={expandedGuide === "carpetas"} timeout="auto" unmountOnExit>
+			<Collapse in={expandedGuide === "carpetas"} timeout="auto" unmountOnExit ref={carpetasContentRef}>
 				<Paper
 					elevation={3}
 					sx={{
@@ -305,7 +418,7 @@ const GuidesSection = () => {
 				</Paper>
 			</Collapse>
 
-			<Collapse in={expandedGuide === "contactos"} timeout="auto" unmountOnExit>
+			<Collapse in={expandedGuide === "contactos"} timeout="auto" unmountOnExit ref={contactosContentRef}>
 				<Paper
 					elevation={3}
 					sx={{
@@ -319,7 +432,7 @@ const GuidesSection = () => {
 				</Paper>
 			</Collapse>
 
-			<Collapse in={expandedGuide === "calendario"} timeout="auto" unmountOnExit>
+			<Collapse in={expandedGuide === "calendario"} timeout="auto" unmountOnExit ref={calendarioContentRef}>
 				<Paper
 					elevation={3}
 					sx={{
@@ -334,7 +447,7 @@ const GuidesSection = () => {
 			</Collapse>
 
 			{/* Contenido de Guía de Citas */}
-			<Collapse in={expandedGuide === "citas"} timeout="auto" unmountOnExit>
+			<Collapse in={expandedGuide === "citas"} timeout="auto" unmountOnExit ref={citasContentRef}>
 				<Paper
 					elevation={3}
 					sx={{
@@ -724,7 +837,7 @@ const HelpPage = () => {
 
 	return (
 		<MainCard title="Centro de Ayuda">
-			<Grid container spacing={3}>
+			<Grid container spacing={4}>
 				{/* Menú lateral */}
 				<Grid item xs={12} md={3}>
 					<Paper sx={{ p: 2, mb: { xs: 3, md: 0 } }}>
