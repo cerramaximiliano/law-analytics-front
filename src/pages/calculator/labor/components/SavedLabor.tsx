@@ -312,16 +312,20 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
                     <div class="header">
                         <h1>Resultados de la Liquidación</h1>
                     </div>
-                    ${customMessage ? `<div class="message-card">
-                        <p>${customMessage.replace(/\n/g, '<br>')}</p>
-                    </div>` : ''}
+                    ${
+											customMessage
+												? `<div class="message-card">
+                        <p>${customMessage.replace(/\n/g, "<br>")}</p>
+                    </div>`
+												: ""
+										}
                     ${cardsHtml}
                     <div class="total-card">
                         <span class="total-label">TOTAL</span>
                         <span class="total-value">${new Intl.NumberFormat("es-AR", {
-															style: "currency",
-															currency: "ARS",
-														}).format(data.amount)}</span>
+													style: "currency",
+													currency: "ARS",
+												}).format(data.amount)}</span>
                     </div>
 
                     <div class="footer">
@@ -402,7 +406,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	};
 
 	const handleRemoveEmail = (emailToRemove: string) => {
-		setEmailList(emailList.filter(e => e !== emailToRemove));
+		setEmailList(emailList.filter((e) => e !== emailToRemove));
 	};
 
 	const handleEmailSend = async () => {
@@ -434,7 +438,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 				subject,
 				htmlBody,
 				textBody,
-				copyToMe: copyToMe
+				copyToMe: copyToMe,
 			});
 
 			dispatch(
@@ -628,12 +632,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			</Stack>{" "}
 			<div className="no-print">
 				{/* Email Modal */}
-				<Dialog
-					open={emailModalOpen}
-					onClose={() => setEmailModalOpen(false)}
-					maxWidth="md"
-					fullWidth
-				>
+				<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)} maxWidth="md" fullWidth>
 					<DialogTitle>Enviar por Email</DialogTitle>
 					<DialogContent>
 						<Stack spacing={2} sx={{ mt: 1 }}>
@@ -647,20 +646,14 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}
 									onKeyDown={(e) => {
-										if (e.key === 'Enter') {
+										if (e.key === "Enter") {
 											e.preventDefault();
 											handleAddEmail();
 										}
 									}}
 									placeholder="Escribe un email y haz clic en Agregar"
 								/>
-								<Button
-									variant="contained"
-									onClick={handleAddEmail}
-									sx={{ mt: 1 }}
-									color="primary"
-									disabled={!email.trim()}
-								>
+								<Button variant="contained" onClick={handleAddEmail} sx={{ mt: 1 }} color="primary" disabled={!email.trim()}>
 									Agregar
 								</Button>
 							</Stack>
@@ -673,14 +666,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 									<Typography variant="subtitle2" gutterBottom>
 										Destinatarios:
 									</Typography>
-									<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+									<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
 										{emailList.map((emailItem) => (
-											<Chip
-												key={emailItem}
-												label={emailItem}
-												onDelete={() => handleRemoveEmail(emailItem)}
-												sx={{ m: 0.5 }}
-											/>
+											<Chip key={emailItem} label={emailItem} onDelete={() => handleRemoveEmail(emailItem)} sx={{ m: 0.5 }} />
 										))}
 									</Box>
 								</Box>
@@ -693,7 +681,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 							</Divider>
 
 							{contactsLoading ? (
-								<Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+								<Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
 									<Typography>Cargando contactos...</Typography>
 								</Box>
 							) : contacts && contacts.length > 0 ? (
@@ -711,7 +699,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 													<InputAdornment position="start">
 														<SearchNormal1 size={18} />
 													</InputAdornment>
-												)
+												),
 											}}
 										/>
 									)}
@@ -719,7 +707,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 										<li {...props}>
 											<Stack direction="row" spacing={1} alignItems="center" width="100%">
 												<UserAdd size={18} />
-												<Stack direction="column" sx={{ overflow: 'hidden' }}>
+												<Stack direction="column" sx={{ overflow: "hidden" }}>
 													<Typography variant="body2" noWrap>
 														{option.name} {option.lastName}
 													</Typography>
@@ -754,18 +742,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 								/>
 							</Box>
 
-							<Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
-								<Checkbox
-									checked={copyToMe}
-									onChange={(e) => setCopyToMe(e.target.checked)}
-									id="copy-to-me"
-								/>
-								<Typography
-									component="label"
-									htmlFor="copy-to-me"
-									variant="body2"
-									sx={{ cursor: 'pointer' }}
-								>
+							<Box sx={{ mt: 1, display: "flex", alignItems: "center" }}>
+								<Checkbox checked={copyToMe} onChange={(e) => setCopyToMe(e.target.checked)} id="copy-to-me" />
+								<Typography component="label" htmlFor="copy-to-me" variant="body2" sx={{ cursor: "pointer" }}>
 									Enviarme una copia
 								</Typography>
 							</Box>
@@ -775,12 +754,13 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 						<Button
 							color="error"
 							onClick={() => {
-							setEmailModalOpen(false);
-							setEmail("");
-							setEmailList([]);
-							setCopyToMe(false);
-							setCustomMessage("");
-						}}>
+								setEmailModalOpen(false);
+								setEmail("");
+								setEmailList([]);
+								setCopyToMe(false);
+								setCustomMessage("");
+							}}
+						>
 							Cancelar
 						</Button>
 						<Button onClick={handleEmailSend} variant="contained">

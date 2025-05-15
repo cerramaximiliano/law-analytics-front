@@ -38,7 +38,6 @@ import {
 	Tooltip,
 	Typography,
 	useTheme,
-
 } from "@mui/material";
 
 // project imports
@@ -1013,7 +1012,6 @@ const EmailTemplates = () => {
 							<TabPanel value={viewTab} index={1}>
 								<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2, mr: 2, mt: 2 }}>
 									<IconButton
-
 										onClick={() => {
 											navigator.clipboard.writeText(selectedTemplate.htmlBody);
 											enqueueSnackbar("Código HTML copiado al portapapeles", { variant: "success" });
@@ -1301,8 +1299,8 @@ const EmailTemplates = () => {
 											? "Desactivando..."
 											: "Activando..."
 										: templateToToggle.isActive
-											? "Desactivar"
-											: "Activar"}
+										? "Desactivar"
+										: "Activar"}
 								</Button>
 							</AnimateButton>
 						</DialogActions>
@@ -1625,7 +1623,7 @@ const EmailTemplates = () => {
 					</AnimateButton>
 				</DialogActions>
 			</Dialog>
-		</MainCard >
+		</MainCard>
 	);
 };
 

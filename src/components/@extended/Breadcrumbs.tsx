@@ -70,7 +70,7 @@ const Breadcrumbs = ({
 		// Reiniciar estados al cambiar de ruta
 		setMain(undefined);
 		setItem(undefined);
-		
+
 		navigation?.items?.map((menu: NavItemType, index: number) => {
 			if (menu.type && menu.type === "group") {
 				getCollapse(menu as { children: NavItemType[]; type?: string });
@@ -95,7 +95,7 @@ const Breadcrumbs = ({
 		if (customLocation.includes("/apps/profiles/user/payment")) {
 			setItem(undefined);
 		}
-		
+
 		// Para la página principal del dashboard, asegurarnos de mostrar correctamente el breadcrumb
 		if (customLocation === "/dashboard/default") {
 			// Buscar el ítem correspondiente a dashboard/default

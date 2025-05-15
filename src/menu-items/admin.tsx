@@ -35,6 +35,13 @@ const admin: NavItemType = {
 					url: "/admin/marketing/templates",
 					breadcrumbs: true,
 				},
+				{
+					id: "contacts",
+					title: <FormattedMessage id="contacts" defaultMessage="Contactos" />,
+					type: "item",
+					url: "/admin/marketing/contacts",
+					breadcrumbs: true,
+				},
 			],
 		},
 		{

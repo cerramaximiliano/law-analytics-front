@@ -105,10 +105,10 @@
 		"yup": "^1.2.0"
 	},
 	"scripts": {
-		"start": "BROWSER=none react-scripts start",
-		"build-stage": "env-cmd -f .env.qa react-scripts build",
-		"build": "react-scripts build",
-		"test": "react-scripts test",
+		"start": "BROWSER=none craco start",
+		"build-stage": "env-cmd -f .env.qa craco build",
+		"build": "craco build",
+		"test": "craco test",
 		"eject": "react-scripts eject",
 		"format": "prettier --write .",
 		"lint": "eslint --fix . --ext .js,.jsx,.tx,.tsx"
@@ -139,6 +139,7 @@
 	"devDependencies": {
 		"@babel/core": "^7.22.1",
 		"@babel/eslint-parser": "^7.21.8",
+		"@craco/craco": "^7.1.0",
 		"@testing-library/jest-dom": "^5.16.5",
 		"@types/autosuggest-highlight": "^3.2.0",
 		"@types/chance": "^1.1.3",

@@ -87,7 +87,7 @@ const GuidesSection = () => {
 					const offset = 150; // 150px offset to make title visible
 					window.scrollTo({
 						top: absoluteElementTop - offset,
-						behavior: "smooth"
+						behavior: "smooth",
 					});
 				}
 			}, 300); // Small delay to allow the collapse animation to expand
@@ -118,15 +118,27 @@ const GuidesSection = () => {
 							borderRadius: 2,
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-								transform: "translateY(-4px)"
+								transform: "translateY(-4px)",
 							},
 						}}
 					>
 						<CardActionArea
 							onClick={() => handleExpandGuide("laboral")}
-							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
-							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}
+						>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
 									<Calculator
 										variant="Bulk"
 										size={62}
@@ -163,15 +175,27 @@ const GuidesSection = () => {
 							borderRadius: 2,
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-								transform: "translateY(-4px)"
+								transform: "translateY(-4px)",
 							},
 						}}
 					>
 						<CardActionArea
 							onClick={() => handleExpandGuide("intereses")}
-							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
-							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}
+						>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
 									<Coin
 										variant="Bulk"
 										size={62}
@@ -208,14 +232,26 @@ const GuidesSection = () => {
 							borderRadius: 2,
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-								transform: "translateY(-4px)"
+								transform: "translateY(-4px)",
 							},
 						}}
 					>
 						<CardActionArea
 							onClick={() => handleExpandGuide("carpetas")}
-							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
-							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}
+						>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
 								<Folder
 									variant="Bulk"
 									size={62}
@@ -251,15 +287,27 @@ const GuidesSection = () => {
 							borderRadius: 2,
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-								transform: "translateY(-4px)"
+								transform: "translateY(-4px)",
 							},
 						}}
 					>
 						<CardActionArea
 							onClick={() => handleExpandGuide("contactos")}
-							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
-							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}
+						>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
 									<Profile2User
 										variant="Bulk"
 										size={62}
@@ -296,15 +344,27 @@ const GuidesSection = () => {
 							borderRadius: 2,
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-								transform: "translateY(-4px)"
+								transform: "translateY(-4px)",
 							},
 						}}
 					>
 						<CardActionArea
 							onClick={() => handleExpandGuide("calendario")}
-							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
-							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}
+						>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
 									<Calendar
 										variant="Bulk"
 										size={62}
@@ -341,15 +401,27 @@ const GuidesSection = () => {
 							borderRadius: 2,
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-								transform: "translateY(-4px)"
+								transform: "translateY(-4px)",
 							},
 						}}
 					>
 						<CardActionArea
 							onClick={() => handleExpandGuide("citas")}
-							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
-							<CardContent sx={{ textAlign: "center", pb: 3, px: 4, height: "100%", minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-								<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+							sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}
+						>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
 									<CalendarTick
 										variant="Bulk"
 										size={62}

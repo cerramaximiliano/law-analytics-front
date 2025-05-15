@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // material-ui
 import {
@@ -8,9 +8,12 @@ import {
 	CardContent,
 	CardHeader,
 	Chip,
+	CircularProgress,
 	Divider,
 	Grid,
 	IconButton,
+	InputAdornment,
+	MenuItem,
 	Paper,
 	Stack,
 	Table,
@@ -21,55 +24,24 @@ import {
 	TablePagination,
 	TableRow,
 	TextField,
+	Tooltip,
 	Typography,
 	useTheme,
+	Alert,
 } from "@mui/material";
 
 // project imports
 import MainCard from "components/MainCard";
-import { Add, Edit2, Trash } from "iconsax-react";
+import { Add, Edit2, SearchNormal1, Trash, MessageText1, People } from "iconsax-react";
+import CampaignFormModal from "sections/admin/marketing/CampaignFormModal";
+import DeleteCampaignDialog from "sections/admin/marketing/DeleteCampaignDialog";
+import CampaignEmailList from "sections/admin/marketing/CampaignEmailList";
+import CampaignContactsList from "sections/admin/marketing/CampaignContactsList";
+import CampaignDetailModal from "sections/admin/marketing/CampaignDetailModal";
 
 // types
-interface Campaign {
-	id: string;
-	name: string;
-	subject: string;
-	status: "draft" | "scheduled" | "sent" | "error";
-	recipients: number;
-	openRate: number;
-	sentDate: string;
-}
-
-// mock data
-const mockCampaigns: Campaign[] = [
-	{
-		id: "1",
-		name: "Boletín mensual - Mayo 2025",
-		subject: "Novedades jurídicas del mes",
-		status: "sent",
-		recipients: 453,
-		openRate: 32.4,
-		sentDate: "2025-05-01",
-	},
-	{
-		id: "2",
-		name: "Webinar Derecho Laboral",
-		subject: "Invitación: Nuevo webinar sobre reformas laborales",
-		status: "scheduled",
-		recipients: 287,
-		openRate: 0,
-		sentDate: "2025-06-15",
-	},
-	{
-		id: "3",
-		name: "Ofertas especiales - Junio",
-		subject: "Ofertas especiales en nuestros servicios legales",
-		status: "draft",
-		recipients: 0,
-		openRate: 0,
-		sentDate: "",
-	},
-];
+import { Campaign, CampaignStatus, CampaignType } from "types/campaign";
+import { CampaignService } from "store/reducers/campaign";
 
 // ==============================|| ADMIN - MAILING CAMPAIGNS ||============================== //
 
@@ -77,11 +49,93 @@ const MailingCampaigns = () => {
 	const theme = useTheme();
 
 	// State for campaigns data
-	const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
+	const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+	const [loading, setLoading] = useState<boolean>(true);
+	const [error, setError] = useState<string | null>(null);
+	const [searchTerm, setSearchTerm] = useState<string>("");
+	const [filterType, setFilterType] = useState<string>("");
+	const [filterStatus, setFilterStatus] = useState<string>("");
+	const [sortBy, setSortBy] = useState<string>("createdAt");
+	const [sortDir, setSortDir] = useState<string>("desc");
+
+	// State for modals
+	const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+	const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
+	const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+	const [emailListOpen, setEmailListOpen] = useState<boolean>(false);
+	const [contactsListOpen, setContactsListOpen] = useState<boolean>(false);
+	const [campaignDetailOpen, setCampaignDetailOpen] = useState<boolean>(false);
+	const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
 
 	// State for pagination
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
+	const [totalCount, setTotalCount] = useState(0);
+
+	// Campaign statistics
+	const [stats, setStats] = useState({
+		totalCampaigns: 0,
+		averageOpenRate: 0,
+		totalContacts: 0,
+		statusCounts: {
+			draft: 0,
+			active: 0,
+			paused: 0,
+			completed: 0,
+			archived: 0,
+		},
+	});
+
+	// Load campaigns on component mount and when dependencies change
+	useEffect(() => {
+		fetchCampaigns();
+		fetchStats();
+	}, [page, rowsPerPage, filterType, filterStatus, sortBy, sortDir]);
+
+	// Function to fetch campaigns from API
+	const fetchCampaigns = async () => {
+		try {
+			setLoading(true);
+			setError(null);
+
+			// Build filter object
+			const filters: Record<string, any> = {};
+			if (searchTerm) filters.search = searchTerm;
+			if (filterType) filters.type = filterType;
+			if (filterStatus) filters.status = filterStatus;
+
+			const response = await CampaignService.getCampaigns(page + 1, rowsPerPage, filters, sortBy, sortDir);
+			setCampaigns(response.data);
+			setTotalCount(response.total);
+		} catch (err) {
+			console.error("Error fetching campaigns:", err);
+			setError("Error al cargar las campañas. Por favor, intente de nuevo más tarde.");
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Fetch campaign statistics
+	const fetchStats = async () => {
+		try {
+			const response = await CampaignService.getCampaignStats();
+			setStats({
+				totalCampaigns: response.totalCampaigns || 0,
+				averageOpenRate: response.averageOpenRate || 0,
+				totalContacts: response.totalContacts || 0,
+				statusCounts: response.statusCounts || {
+					draft: 0,
+					active: 0,
+					paused: 0,
+					completed: 0,
+					archived: 0,
+				},
+			});
+		} catch (error) {
+			console.error("Error fetching campaign statistics:", error);
+		}
+	};
 
 	// Pagination handlers
 	const handleChangePage = (event: unknown, newPage: number) => {
@@ -93,24 +147,157 @@ const MailingCampaigns = () => {
 		setPage(0);
 	};
 
-	// Delete campaign handler
-	const handleDeleteCampaign = (id: string) => {
-		setCampaigns(campaigns.filter((campaign) => campaign.id !== id));
+	// Search handler
+	const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setSearchTerm(event.target.value);
+	};
+
+	// Apply search filter
+	const handleApplySearch = () => {
+		setPage(0);
+		fetchCampaigns();
+	};
+
+	// Filter handlers
+	const handleTypeFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setFilterType(event.target.value);
+		setPage(0);
+	};
+
+	const handleStatusFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setFilterStatus(event.target.value);
+		setPage(0);
+	};
+
+	// Sorting handlers
+	const handleSortChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setSortBy(event.target.value);
+	};
+
+	const handleSortDirChange = () => {
+		setSortDir(sortDir === "asc" ? "desc" : "asc");
+	};
+
+	// Modal handlers
+	const handleOpenCreateModal = () => {
+		setCreateModalOpen(true);
+	};
+
+	const handleCloseCreateModal = () => {
+		setCreateModalOpen(false);
+	};
+
+	const handleOpenEditModal = (campaign: Campaign) => {
+		setSelectedCampaign(campaign);
+		setEditModalOpen(true);
+	};
+
+	const handleCloseEditModal = () => {
+		setSelectedCampaign(null);
+		setEditModalOpen(false);
+	};
+
+	const handleOpenDeleteDialog = (campaign: Campaign) => {
+		setSelectedCampaign(campaign);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleCloseDeleteDialog = () => {
+		setSelectedCampaign(null);
+		setDeleteDialogOpen(false);
+	};
+
+	// Email list modal handlers
+	const handleOpenEmailList = (campaign: Campaign) => {
+		setSelectedCampaign(campaign);
+		setEmailListOpen(true);
+	};
+
+	const handleCloseEmailList = () => {
+		setEmailListOpen(false);
+	};
+
+	// Contacts list modal handlers
+	const handleOpenContactsList = (campaign: Campaign) => {
+		setSelectedCampaign(campaign);
+		setContactsListOpen(true);
+	};
+
+	const handleCloseContactsList = () => {
+		setContactsListOpen(false);
+	};
+
+	// Campaign detail modal handlers
+	const handleOpenCampaignDetail = (campaign: Campaign) => {
+		// Asegurarnos de que _id no sea undefined antes de asignarlo
+		if (campaign._id) {
+			setSelectedCampaignId(campaign._id);
+			setCampaignDetailOpen(true);
+		} else {
+			console.error("Error: La campaña no tiene un ID válido");
+		}
+	};
+
+	const handleCloseCampaignDetail = () => {
+		setSelectedCampaignId(null);
+		setCampaignDetailOpen(false);
+	};
+
+	// Success handlers
+	const handleCampaignCreated = () => {
+		setCreateModalOpen(false);
+		// Refresh campaigns and stats
+		fetchCampaigns();
+		fetchStats();
+	};
+
+	const handleCampaignUpdated = () => {
+		setEditModalOpen(false);
+		setSelectedCampaign(null);
+		// Refresh campaigns and stats
+		fetchCampaigns();
+		fetchStats();
+	};
+
+	const handleCampaignDeleted = () => {
+		setDeleteDialogOpen(false);
+		setSelectedCampaign(null);
+		// Refresh campaigns and stats
+		fetchCampaigns();
+		fetchStats();
 	};
 
 	// Status chip color mapping
-	const getStatusColor = (status: Campaign["status"]) => {
+	const getStatusColor = (status: CampaignStatus) => {
 		switch (status) {
 			case "draft":
 				return { color: "default", label: "Borrador" };
-			case "scheduled":
-				return { color: "info", label: "Programada" };
-			case "sent":
-				return { color: "success", label: "Enviada" };
-			case "error":
-				return { color: "error", label: "Error" };
+			case "active":
+				return { color: "success", label: "Activa" };
+			case "paused":
+				return { color: "warning", label: "Pausada" };
+			case "completed":
+				return { color: "info", label: "Completada" };
+			case "archived":
+				return { color: "secondary", label: "Archivada" };
 			default:
 				return { color: "default", label: status };
+		}
+	};
+
+	// Type label mapping
+	const getTypeLabel = (type: CampaignType) => {
+		switch (type) {
+			case "onetime":
+				return "Una vez";
+			case "automated":
+				return "Automatizada";
+			case "sequence":
+				return "Secuencia";
+			case "recurring":
+				return "Recurrente";
+			default:
+				return type;
 		}
 	};
 
@@ -122,21 +309,80 @@ const MailingCampaigns = () => {
 						<Typography variant="h3">Campañas de Email Marketing</Typography>
 					</Grid>
 					<Grid item>
-						<Button variant="contained" color="primary" startIcon={<Add />} sx={{ textTransform: "none" }}>
+						<Button variant="contained" color="primary" startIcon={<Add />} sx={{ textTransform: "none" }} onClick={handleOpenCreateModal}>
 							Nueva campaña
 						</Button>
 					</Grid>
 				</Grid>
 			</Box>
 
+			{error && (
+				<Alert severity="error" sx={{ mb: 2 }}>
+					{error}
+				</Alert>
+			)}
+
 			<MainCard content={false}>
 				<Box sx={{ p: 2 }}>
 					<Grid container spacing={2} alignItems="center">
-						<Grid item xs={12} sm={6}>
-							<TextField fullWidth label="Buscar campaña" placeholder="Buscar por nombre o asunto" size="small" />
+						<Grid item xs={12} sm={6} md={4}>
+							<TextField
+								fullWidth
+								label="Buscar campaña"
+								placeholder="Buscar por nombre"
+								size="small"
+								value={searchTerm}
+								onChange={handleSearch}
+								onKeyPress={(e) => {
+									if (e.key === "Enter") {
+										handleApplySearch();
+									}
+								}}
+								InputProps={{
+									endAdornment: (
+										<InputAdornment position="end">
+											<IconButton onClick={handleApplySearch} edge="end">
+												<SearchNormal1 size={18} />
+											</IconButton>
+										</InputAdornment>
+									),
+								}}
+							/>
 						</Grid>
-						<Grid item xs={12} sm={6} sx={{ textAlign: { sm: "right" } }}>
-							{/* Additional filters could go here */}
+						<Grid item xs={12} sm={6} md={8}>
+							<Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="flex-end">
+								<TextField select size="small" label="Ordenar por" value={sortBy} onChange={handleSortChange} sx={{ minWidth: 120 }}>
+									<MenuItem value="name">Nombre</MenuItem>
+									<MenuItem value="createdAt">Fecha de creación</MenuItem>
+									<MenuItem value="startDate">Fecha de inicio</MenuItem>
+									<MenuItem value="status">Estado</MenuItem>
+								</TextField>
+								<Button variant="outlined" size="small" onClick={handleSortDirChange} sx={{ minWidth: 100, height: 40 }}>
+									{sortDir === "asc" ? "Ascendente" : "Descendente"}
+								</Button>
+								<TextField select size="small" label="Tipo" value={filterType} onChange={handleTypeFilterChange} sx={{ minWidth: 120 }}>
+									<MenuItem value="">Todos</MenuItem>
+									<MenuItem value="onetime">Una vez</MenuItem>
+									<MenuItem value="automated">Automatizada</MenuItem>
+									<MenuItem value="sequence">Secuencia</MenuItem>
+									<MenuItem value="recurring">Recurrente</MenuItem>
+								</TextField>
+								<TextField
+									select
+									size="small"
+									label="Estado"
+									value={filterStatus}
+									onChange={handleStatusFilterChange}
+									sx={{ minWidth: 120 }}
+								>
+									<MenuItem value="">Todos</MenuItem>
+									<MenuItem value="draft">Borrador</MenuItem>
+									<MenuItem value="active">Activa</MenuItem>
+									<MenuItem value="paused">Pausada</MenuItem>
+									<MenuItem value="completed">Completada</MenuItem>
+									<MenuItem value="archived">Archivada</MenuItem>
+								</TextField>
+							</Stack>
 						</Grid>
 					</Grid>
 				</Box>
@@ -147,58 +393,140 @@ const MailingCampaigns = () => {
 						<TableHead>
 							<TableRow>
 								<TableCell>Nombre</TableCell>
-								<TableCell>Asunto</TableCell>
+								<TableCell>Tipo</TableCell>
 								<TableCell>Estado</TableCell>
-								<TableCell align="right">Destinatarios</TableCell>
-								<TableCell align="right">Tasa de apertura</TableCell>
-								<TableCell align="right">Fecha de envío</TableCell>
+								<TableCell>Categoría</TableCell>
+								<TableCell align="right">Contactos</TableCell>
+								<TableCell align="right">Emails</TableCell>
+								<TableCell align="right">Tasa apertura</TableCell>
+								<TableCell align="right">Fecha inicio</TableCell>
 								<TableCell align="center">Acciones</TableCell>
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{campaigns.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((campaign) => {
-								const statusInfo = getStatusColor(campaign.status);
-
-								return (
-									<TableRow hover key={campaign.id} tabIndex={-1}>
-										<TableCell>
-											<Typography variant="subtitle2">{campaign.name}</Typography>
-										</TableCell>
-										<TableCell>{campaign.subject}</TableCell>
-										<TableCell>
-											<Chip label={statusInfo.label} color={statusInfo.color as any} size="small" />
-										</TableCell>
-										<TableCell align="right">{campaign.recipients}</TableCell>
-										<TableCell align="right">{campaign.status === "sent" ? `${campaign.openRate}%` : "-"}</TableCell>
-										<TableCell align="right">{campaign.sentDate ? new Date(campaign.sentDate).toLocaleDateString() : "-"}</TableCell>
-										<TableCell align="center">
-											<Stack direction="row" spacing={1} justifyContent="center">
-												<IconButton aria-label="editar" size="small" color="primary" disabled={campaign.status === "sent"}>
-													<Edit2 size={18} />
-												</IconButton>
-												<IconButton aria-label="eliminar" size="small" color="error" onClick={() => handleDeleteCampaign(campaign.id)}>
-													<Trash size={18} />
-												</IconButton>
-											</Stack>
-										</TableCell>
-									</TableRow>
-								);
-							})}
-							{campaigns.length === 0 && (
+							{loading ? (
 								<TableRow>
-									<TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+									<TableCell colSpan={9} align="center" sx={{ py: 3 }}>
+										<CircularProgress size={30} />
+									</TableCell>
+								</TableRow>
+							) : campaigns.length === 0 ? (
+								<TableRow>
+									<TableCell colSpan={9} align="center" sx={{ py: 3 }}>
 										<Typography variant="subtitle1">No hay campañas disponibles</Typography>
 									</TableCell>
 								</TableRow>
+							) : (
+								campaigns.map((campaign) => {
+									const statusInfo = getStatusColor(campaign.status);
+									const typeLabel = getTypeLabel(campaign.type);
+									const openRate =
+										campaign.metrics?.opens > 0 && campaign.metrics?.totalEmailsSent > 0
+											? ((campaign.metrics.opens / campaign.metrics.totalEmailsSent) * 100).toFixed(1)
+											: "0";
+									const isEditable = campaign.status !== "completed" && campaign.status !== "archived";
+
+									return (
+										<TableRow hover key={campaign._id} tabIndex={-1}>
+											<TableCell>
+												<Typography variant="subtitle2">{campaign.name}</Typography>
+												{campaign.description && (
+													<Typography variant="caption" color="textSecondary">
+														{campaign.description.length > 50 ? `${campaign.description.substring(0, 50)}...` : campaign.description}
+													</Typography>
+												)}
+											</TableCell>
+											<TableCell>{typeLabel}</TableCell>
+											<TableCell>
+												<Chip label={statusInfo.label} color={statusInfo.color as any} size="small" />
+											</TableCell>
+											<TableCell>{campaign.category || "-"}</TableCell>
+											<TableCell align="right">{campaign.metrics?.totalContacts || 0}</TableCell>
+											<TableCell align="right">{campaign.metrics?.emailCount || 0}</TableCell>
+											<TableCell align="right">{`${openRate}%`}</TableCell>
+											<TableCell align="right">{campaign.startDate ? new Date(campaign.startDate).toLocaleDateString() : "-"}</TableCell>
+											<TableCell align="center">
+												<Stack direction="row" spacing={1} justifyContent="center">
+													<Tooltip title="Gestionar emails">
+														<IconButton
+															aria-label="emails"
+															size="small"
+															color="secondary"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleOpenEmailList(campaign);
+															}}
+														>
+															<MessageText1 size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Gestionar contactos">
+														<IconButton
+															aria-label="contacts"
+															size="small"
+															color="info"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleOpenContactsList(campaign);
+															}}
+														>
+															<People size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Ver detalles">
+														<IconButton
+															aria-label="detalles"
+															size="small"
+															color="primary"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleOpenCampaignDetail(campaign);
+															}}
+														>
+															<SearchNormal1 size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Editar campaña">
+														<IconButton
+															aria-label="editar"
+															size="small"
+															color="primary"
+															disabled={!isEditable}
+															onClick={(e) => {
+																e.stopPropagation();
+																handleOpenEditModal(campaign);
+															}}
+														>
+															<Edit2 size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Eliminar campaña">
+														<IconButton
+															aria-label="eliminar"
+															size="small"
+															color="error"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleOpenDeleteDialog(campaign);
+															}}
+														>
+															<Trash size={18} />
+														</IconButton>
+													</Tooltip>
+												</Stack>
+											</TableCell>
+										</TableRow>
+									);
+								})
 							)}
 						</TableBody>
 					</Table>
 				</TableContainer>
 
 				<TablePagination
-					rowsPerPageOptions={[5, 10, 25]}
+					rowsPerPageOptions={[5, 10, 25, 50, 100]}
 					component="div"
-					count={campaigns.length}
+					count={totalCount}
 					rowsPerPage={rowsPerPage}
 					page={page}
 					onPageChange={handleChangePage}
@@ -218,26 +546,19 @@ const MailingCampaigns = () => {
 									<Typography variant="subtitle2" color="textSecondary">
 										Total de campañas
 									</Typography>
-									<Typography variant="h4">{campaigns.length}</Typography>
+									<Typography variant="h4">{stats.totalCampaigns}</Typography>
 								</Box>
 								<Box>
 									<Typography variant="subtitle2" color="textSecondary">
 										Tasa de apertura promedio
 									</Typography>
-									<Typography variant="h4">
-										{campaigns.filter((c) => c.status === "sent").length
-											? (
-													campaigns.filter((c) => c.status === "sent").reduce((acc, curr) => acc + curr.openRate, 0) /
-													campaigns.filter((c) => c.status === "sent").length
-											  ).toFixed(1) + "%"
-											: "0%"}
-									</Typography>
+									<Typography variant="h4">{`${stats.averageOpenRate.toFixed(1)}%`}</Typography>
 								</Box>
 								<Box>
 									<Typography variant="subtitle2" color="textSecondary">
-										Destinatarios totales
+										Contactos totales
 									</Typography>
-									<Typography variant="h4">{campaigns.reduce((acc, curr) => acc + curr.recipients, 0)}</Typography>
+									<Typography variant="h4">{stats.totalContacts}</Typography>
 								</Box>
 							</Stack>
 						</CardContent>
@@ -249,12 +570,12 @@ const MailingCampaigns = () => {
 						<CardHeader title="Estado de campañas" />
 						<CardContent>
 							<Grid container spacing={2}>
-								{["draft", "scheduled", "sent", "error"].map((status) => {
-									const count = campaigns.filter((c) => c.status === status).length;
-									const statusInfo = getStatusColor(status as Campaign["status"]);
+								{(["draft", "active", "paused", "completed", "archived"] as CampaignStatus[]).map((status) => {
+									const count = stats.statusCounts[status] || 0;
+									const statusInfo = getStatusColor(status);
 
 									return (
-										<Grid item xs={6} sm={3} key={status}>
+										<Grid item xs={6} sm={2.4} key={status}>
 											<Box
 												sx={{
 													p: 2.5,
@@ -274,6 +595,44 @@ const MailingCampaigns = () => {
 					</Card>
 				</Grid>
 			</Grid>
+
+			{/* Campaign Form Modals */}
+			<CampaignFormModal open={createModalOpen} onClose={handleCloseCreateModal} onSuccess={handleCampaignCreated} mode="create" />
+
+			<CampaignFormModal
+				open={editModalOpen}
+				onClose={handleCloseEditModal}
+				onSuccess={handleCampaignUpdated}
+				campaign={selectedCampaign}
+				mode="edit"
+			/>
+
+			{/* Delete Confirmation Dialog */}
+			<DeleteCampaignDialog
+				open={deleteDialogOpen}
+				onClose={handleCloseDeleteDialog}
+				onSuccess={handleCampaignDeleted}
+				campaign={selectedCampaign}
+			/>
+
+			{/* Campaign Email List Modal */}
+			{selectedCampaign && <CampaignEmailList open={emailListOpen} onClose={handleCloseEmailList} campaign={selectedCampaign} />}
+
+			{/* Campaign Contacts List Modal */}
+			{selectedCampaign && (
+				<CampaignContactsList
+					open={contactsListOpen}
+					onClose={handleCloseContactsList}
+					campaign={selectedCampaign}
+					onContactsChange={() => {
+						fetchCampaigns(); // Actualizar la tabla de campañas
+						fetchStats(); // Actualizar las estadísticas
+					}}
+				/>
+			)}
+
+			{/* Campaign Detail Modal */}
+			<CampaignDetailModal open={campaignDetailOpen} onClose={handleCloseCampaignDetail} campaignId={selectedCampaignId} />
 		</MainCard>
 	);
 };

@@ -26,9 +26,9 @@ const Login = () => {
 			const credentialResponse: CredentialResponse = {
 				clientId: tokenResponse.clientId || "",
 				credential: tokenResponse.access_token,
-				select_by: "user"
+				select_by: "user",
 			};
-			
+
 			// Llamar a la función de login existente
 			await loginWithGoogle(credentialResponse);
 		} catch (error) {
@@ -46,7 +46,7 @@ const Login = () => {
 			setError("Error al iniciar sesión con Google. Intenta nuevamente.");
 			setIsLoading(false);
 		},
-		flow: 'implicit'
+		flow: "implicit",
 	});
 
 	return (
@@ -78,12 +78,7 @@ const Login = () => {
 				</Grid>
 				<Grid item xs={12}>
 					{/* Botón personalizado que llama a googleLogin.login() */}
-					<CustomGoogleButton 
-						onClick={() => googleLogin()} 
-						disabled={isLoading}
-						text="Iniciar sesión con Google"
-						fullWidth
-					/>
+					<CustomGoogleButton onClick={() => googleLogin()} disabled={isLoading} text="Iniciar sesión con Google" fullWidth />
 				</Grid>
 			</Grid>
 		</AuthWrapper>
