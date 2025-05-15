@@ -26,8 +26,8 @@ import IconButton from "components/@extended/IconButton";
 import useAuth from "hooks/useAuth";
 import { dispatch as reduxDispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
-import { GoogleLogin } from "@react-oauth/google";
-import { CredentialResponse } from "@react-oauth/google";
+import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
+import CustomGoogleButton from "components/auth/CustomGoogleButton";
 
 // Types
 interface UnauthorizedContextType {
@@ -152,9 +152,23 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 		}
 	};
 
-	const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+	// Método de inicio de sesión con Google - EXACTAMENTE el mismo que en /pages/auth/auth1/login.tsx
+	const handleGoogleSuccess = async (tokenResponse: any) => {
 		try {
 			setIsSubmitting(true);
+			console.log("Token response from Google Modal:", tokenResponse);
+			console.log("Access token Modal:", tokenResponse.access_token);
+			console.log("Token type:", typeof tokenResponse.access_token);
+			console.log("Token length:", tokenResponse.access_token?.length || 0);
+			
+			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
+			const credentialResponse: CredentialResponse = {
+				clientId: tokenResponse.clientId || "",
+				credential: tokenResponse.access_token,
+				select_by: "user",
+			};
+			
+			// Llamar a la función de login existente
 			await loginWithGoogle(credentialResponse);
 			setShowUnauthorizedModal(false);
 			showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
@@ -165,6 +179,17 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 			setIsSubmitting(false);
 		}
 	};
+	
+	// Hook para iniciar sesión con Google - EXACTAMENTE el mismo que en /pages/auth/auth1/login.tsx
+	const googleLogin = useGoogleLogin({
+		onSuccess: handleGoogleSuccess,
+		onError: () => {
+			showSnackbar("Error al iniciar sesión con Google", "error");
+			setIsSubmitting(false);
+		},
+		flow: "implicit",
+		scope: "email profile",
+	});
 
 	return (
 		<UnauthorizedContext.Provider
@@ -255,16 +280,11 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 											</Divider>
 
 											<Box sx={{ width: "100%" }}>
-												<GoogleLogin
-													onSuccess={handleGoogleSuccess}
-													onError={() => showSnackbar("Error al iniciar sesión con Google", "error")}
-													theme="filled_blue"
-													size="large"
-													shape="rectangular"
-													useOneTap={false}
-													text="continue_with"
-													type="standard"
-													width={400}
+												<CustomGoogleButton 
+													onClick={() => googleLogin()} 
+													disabled={isSubmitting} 
+													text="Iniciar sesión con Google" 
+													fullWidth 
 												/>
 											</Box>
 

@@ -103,6 +103,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		try {
 			const credential = tokenResponse.credential;
 			if (credential) {
+				console.log("Enviando token a la API:", credential);
 				const result = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, { token: credential });
 
 				const { user, success } = result.data;

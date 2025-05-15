@@ -48,6 +48,7 @@ const FIELD_OPTIONS = [
 	{ value: "position", label: "Cargo" },
 	{ value: "status", label: "Estado" },
 	{ value: "tags", label: "Etiquetas" },
+	{ value: "subscriptionType", label: "Suscripción" },
 	{ value: "isAppUser", label: "Usuario" },
 	{ value: "isVerified", label: "Verificado" },
 	{ value: "totalCampaigns", label: "Número de campañas" },
@@ -110,6 +111,7 @@ const DEFAULT_OPERATOR_BY_FIELD: { [key: string]: string } = {
 	position: "contains",
 	status: "equals",
 	tags: "contains",
+	subscriptionType: "equals",
 	isAppUser: "equals",
 	isVerified: "equals",
 	totalCampaigns: "greater_than",
@@ -130,6 +132,13 @@ const STATUS_OPTIONS = [
 	{ value: "unsubscribed", label: "Cancelado" },
 	{ value: "bounced", label: "Rebotado" },
 	{ value: "complained", label: "Reclamado" },
+];
+
+// Valores para el campo subscription
+const SUBSCRIPTION_OPTIONS = [
+	{ value: "free", label: "Free" },
+	{ value: "standard", label: "Standard" },
+	{ value: "premium", label: "Premium" },
 ];
 
 // Valores para campos booleanos
@@ -438,6 +447,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Obtener operadores disponibles para un campo
 	const getOperatorsForField = (fieldName: string): { value: FilterOperator; label: string }[] => {
 		if (fieldName === "status") return OPERATOR_OPTIONS.status;
+		if (fieldName === "subscriptionType") return OPERATOR_OPTIONS.status; // Usar los mismos operadores que status
 		if (fieldName === "tags") return OPERATOR_OPTIONS.tags;
 		if (["isAppUser", "isVerified"].includes(fieldName)) return OPERATOR_OPTIONS.boolean;
 		if (["totalCampaigns", "openRate", "clickRate"].includes(fieldName)) return OPERATOR_OPTIONS.number;
@@ -500,6 +510,27 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 						disabled={saving}
 					>
 						{STATUS_OPTIONS.map((option) => (
+							<MenuItem key={option.value} value={option.value}>
+								{option.label}
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
+			);
+		}
+		
+		// Para el campo de suscripción
+		if (filter.field === "subscriptionType") {
+			return (
+				<FormControl fullWidth size="small">
+					<InputLabel>Suscripción</InputLabel>
+					<Select
+						value={filter.value || ""}
+						label="Suscripción"
+						onChange={(e) => handleFilterChange(index, "value", e.target.value)}
+						disabled={saving}
+					>
+						{SUBSCRIPTION_OPTIONS.map((option) => (
 							<MenuItem key={option.value} value={option.value}>
 								{option.label}
 							</MenuItem>

@@ -31,6 +31,7 @@ import {
 // project imports
 import TableSkeleton from "components/UI/TableSkeleton";
 import SegmentFormModal from "./SegmentFormModal";
+import DeleteSegmentDialog from "./DeleteSegmentDialog";
 
 // project imports
 import { Add, Edit2, SearchNormal1, Trash, People } from "iconsax-react";
@@ -51,6 +52,11 @@ const SegmentsPanel = () => {
 	const [sortBy, setSortBy] = useState<string>("createdAt");
 	const [sortDir, setSortDir] = useState<string>("desc");
 	const [openSegmentModal, setOpenSegmentModal] = useState<boolean>(false);
+	
+	// State for delete dialog
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+	const [deletingSegment, setDeletingSegment] = useState<Segment | null>(null);
+	const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
 	// State for pagination
 	const [page, setPage] = useState(0);
@@ -189,11 +195,57 @@ const SegmentsPanel = () => {
 		fetchSegments();
 		fetchStats();
 	};
+	
+	// Handlers for segment deletion
+	const handleOpenDeleteDialog = (segment: Segment) => {
+		setDeletingSegment(segment);
+		setDeleteDialogOpen(true);
+	};
+	
+	const handleCloseDeleteDialog = () => {
+		setDeleteDialogOpen(false);
+		setDeletingSegment(null);
+	};
+	
+	const handleConfirmDelete = async () => {
+		if (!deletingSegment) return;
+		
+		try {
+			setDeleteLoading(true);
+			setError(null);
+			
+			await SegmentService.deleteSegment(deletingSegment._id || "");
+			
+			// Success - refresh data
+			fetchSegments();
+			fetchStats();
+			
+			// Close dialog
+			setDeleteDialogOpen(false);
+			setDeletingSegment(null);
+		} catch (err: any) {
+			console.error("Error deleting segment:", err);
+			setError(err?.message || "Error al eliminar el segmento. Por favor, intente de nuevo más tarde.");
+		} finally {
+			setDeleteLoading(false);
+		}
+	};
 
 	return (
 		<>
 			{/* Segment Creation Modal */}
 			<SegmentFormModal open={openSegmentModal} onClose={handleCloseSegmentModal} onSave={handleSegmentCreated} />
+			
+			{/* Segment Deletion Modal */}
+			{deletingSegment && (
+				<DeleteSegmentDialog
+					open={deleteDialogOpen}
+					segmentName={deletingSegment.name}
+					onClose={handleCloseDeleteDialog}
+					onConfirm={handleConfirmDelete}
+					loading={deleteLoading}
+				/>
+			)}
 
 			{error && (
 				<Alert severity="error" sx={{ mb: 2 }}>
@@ -337,7 +389,12 @@ const SegmentsPanel = () => {
 													</IconButton>
 												</Tooltip>
 												<Tooltip title="Eliminar segmento">
-													<IconButton aria-label="eliminar" size="small" color="error">
+													<IconButton 
+														aria-label="eliminar" 
+														size="small" 
+														color="error"
+														onClick={() => handleOpenDeleteDialog(segment)}
+													>
 														<Trash size={18} />
 													</IconButton>
 												</Tooltip>

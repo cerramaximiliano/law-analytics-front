@@ -21,7 +21,8 @@ import { Eye, EyeSlash } from "iconsax-react";
 import * as Yup from "yup";
 import { Formik, FormikHelpers } from "formik";
 import IconButton from "components/@extended/IconButton";
-import { GoogleLogin } from "@react-oauth/google";
+import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
+import CustomGoogleButton from "components/auth/CustomGoogleButton";
 import { UnauthorizedModalProps, FormValues } from "types/auth";
 
 const validationSchema = Yup.object().shape({
@@ -82,9 +83,23 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 		}
 	};
 
-	const handleGoogleSuccess = async (credentialResponse: any) => {
+	// Método de inicio de sesión con Google - EXACTAMENTE igual al de login.tsx
+	const handleGoogleSuccess = async (tokenResponse: any) => {
 		try {
 			setIsSubmitting(true);
+			console.log("Token response from Modal:", tokenResponse);
+			console.log("Access token Modal:", tokenResponse.access_token);
+			console.log("Token type Modal:", typeof tokenResponse.access_token);
+			console.log("Token length Modal:", tokenResponse.access_token?.length || 0);
+			
+			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
+			const credentialResponse: CredentialResponse = {
+				clientId: tokenResponse.clientId || "",
+				credential: tokenResponse.access_token,
+				select_by: "user",
+			};
+			
+			// Llamar a la función de login existente
 			await onGoogleLogin(credentialResponse);
 			onClose();
 		} catch (error) {
@@ -93,6 +108,17 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			setIsSubmitting(false);
 		}
 	};
+	
+	// Hook para iniciar sesión con Google - EXACTAMENTE igual al de login.tsx
+	const googleLogin = useGoogleLogin({
+		onSuccess: handleGoogleSuccess,
+		onError: () => {
+			console.error("Error al iniciar sesión con Google. Intenta nuevamente.");
+			setIsSubmitting(false);
+		},
+		flow: "implicit",
+		scope: "email profile",
+	});
 
 	return (
 		<Dialog open={open} maxWidth="xs" fullWidth disableEscapeKeyDown={isSubmitting}>
@@ -175,16 +201,11 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 										</Divider>
 
 										<Box sx={{ width: "100%" }}>
-											<GoogleLogin
-												onSuccess={handleGoogleSuccess}
-												onError={() => console.error("Error al iniciar sesión con Google")}
-												theme="filled_blue"
-												size="large"
-												shape="rectangular"
-												useOneTap={false}
-												text="continue_with"
-												type="standard"
-												width={400}
+											<CustomGoogleButton 
+												onClick={() => googleLogin()} 
+												disabled={isSubmitting} 
+												text="Iniciar sesión con Google" 
+												fullWidth 
 											/>
 										</Box>
 
