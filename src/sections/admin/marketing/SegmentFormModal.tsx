@@ -28,7 +28,7 @@ import {
 	Autocomplete,
 } from "@mui/material";
 import { AddCircle, CloseCircle, Information, Trash } from "iconsax-react";
-import { SegmentInput, FilterOperator, SegmentFilter, ConditionOperator, SegmentType } from "types/segment";
+import { SegmentInput, FilterOperator, SegmentFilter, ConditionOperator, SegmentType, Segment } from "types/segment";
 import { SegmentService } from "store/reducers/segments";
 import { MarketingContactService } from "store/reducers/marketing-contacts";
 import { MarketingContact } from "types/marketing-contact";
@@ -37,6 +37,7 @@ interface SegmentFormModalProps {
 	open: boolean;
 	onClose: () => void;
 	onSave: () => void; // Callback para actualizar la lista después de guardar
+	segment?: Segment | null; // Segmento a editar, null para crear uno nuevo
 }
 
 // Opciones de campos para condiciones
@@ -147,7 +148,7 @@ const BOOLEAN_OPTIONS = [
 	{ value: "false", label: "No" },
 ];
 
-const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSave }) => {
+const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSave, segment }) => {
 	// Estado para carga y errores
 	const [loading, setLoading] = useState<boolean>(false);
 	const [saving, setSaving] = useState<boolean>(false);
@@ -157,6 +158,9 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	const [isCalculating, setIsCalculating] = useState<boolean>(false);
 	const [availableTags, setAvailableTags] = useState<string[]>([]);
 	const [loadingTags, setLoadingTags] = useState<boolean>(false);
+	
+	// Determinar si estamos en modo edición
+	const isEditMode = !!segment;
 	
 	// Consola de depuración (eliminar en producción)
 	useEffect(() => {
@@ -186,14 +190,33 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
 	const [contactSearchTerm, setContactSearchTerm] = useState<string>("");
 
-	// Reinicar formulario
+	// Reinicar formulario y cargar datos si es modo edición
 	useEffect(() => {
 		if (open) {
 			resetForm();
 			fetchAvailableContacts();
 			fetchAvailableTags();
+			
+			// Si es modo edición, cargar los datos del segmento
+			if (isEditMode && segment) {
+				setName(segment.name);
+				setDescription(segment.description || "");
+				setType(segment.type);
+				
+				if (segment.type === "dynamic" && segment.conditions) {
+					setConditionOperator(segment.conditions.operator);
+					setFilters(segment.conditions.filters || []);
+				} else if (segment.type === "static" && segment.contacts) {
+					setSelectedContactIds(segment.contacts);
+				}
+				
+				// Establecer conteo estimado para segmentos dinámicos
+				if (segment.estimatedCount !== undefined) {
+					setEstimatedCount(segment.estimatedCount);
+				}
+			}
 		}
-	}, [open]);
+	}, [open, isEditMode, segment]);
 
 	// Calcular conteo estimado cuando cambien las condiciones
 	useEffect(() => {
@@ -398,7 +421,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		}
 	};
 
-	// Guardar segmento
+	// Guardar segmento (crear o actualizar)
 	const handleSave = async () => {
 		if (!validateForm()) return;
 
@@ -409,9 +432,13 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			let segmentData: SegmentInput = {
 				name,
 				description: description.trim() || undefined,
-				type,
 				isActive: true,
 			};
+
+			// Solo enviar el tipo en modo creación, no se puede cambiar en edición
+			if (!isEditMode) {
+				segmentData.type = type;
+			}
 
 			if (type === "dynamic") {
 				segmentData.conditions = {
@@ -431,14 +458,20 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				segmentData.contacts = selectedContactIds;
 			}
 
-			await SegmentService.createSegment(segmentData);
+			if (isEditMode && segment?._id) {
+				// Modo edición - actualizar segmento existente
+				await SegmentService.updateSegment(segment._id, segmentData);
+			} else {
+				// Modo creación - crear nuevo segmento
+				await SegmentService.createSegment(segmentData);
+			}
 
 			// Éxito - cerrar modal y actualizar lista
 			onSave();
 			onClose();
 		} catch (err: any) {
-			console.error("Error creating segment:", err);
-			setError(err?.message || "No se pudo crear el segmento");
+			console.error(isEditMode ? "Error updating segment:" : "Error creating segment:", err);
+			setError(err?.message || (isEditMode ? "No se pudo actualizar el segmento" : "No se pudo crear el segmento"));
 		} finally {
 			setSaving(false);
 		}
@@ -652,7 +685,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			<DialogTitle>
 				<Grid container alignItems="center" justifyContent="space-between">
 					<Grid item>
-						<Typography variant="h5">Crear Nuevo Segmento</Typography>
+						<Typography variant="h5">{isEditMode ? "Editar Segmento" : "Crear Nuevo Segmento"}</Typography>
 					</Grid>
 					<Grid item>
 						<IconButton onClick={onClose} size="small">
@@ -732,7 +765,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 												</Tooltip>
 											</Box>
 										}
-										disabled={saving}
+										disabled={saving || isEditMode}
 									/>
 									<FormControlLabel
 										value="static"
@@ -749,9 +782,14 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 												</Tooltip>
 											</Box>
 										}
-										disabled={saving}
+										disabled={saving || isEditMode}
 									/>
 								</RadioGroup>
+								{isEditMode && (
+									<FormHelperText>
+										No es posible cambiar el tipo de segmento una vez creado.
+									</FormHelperText>
+								)}
 							</FormControl>
 						</Grid>
 
@@ -986,7 +1024,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 					disabled={loading || saving || !name}
 					startIcon={saving && <CircularProgress size={20} color="inherit" />}
 				>
-					{saving ? "Guardando..." : "Crear Segmento"}
+					{saving ? "Guardando..." : (isEditMode ? "Actualizar Segmento" : "Crear Segmento")}
 				</Button>
 			</DialogActions>
 		</Dialog>

@@ -32,6 +32,7 @@ import {
 import TableSkeleton from "components/UI/TableSkeleton";
 import SegmentFormModal from "./SegmentFormModal";
 import DeleteSegmentDialog from "./DeleteSegmentDialog";
+import SegmentContactsModal from "./SegmentContactsModal";
 
 // project imports
 import { Add, Edit2, SearchNormal1, Trash, People } from "iconsax-react";
@@ -52,6 +53,13 @@ const SegmentsPanel = () => {
 	const [sortBy, setSortBy] = useState<string>("createdAt");
 	const [sortDir, setSortDir] = useState<string>("desc");
 	const [openSegmentModal, setOpenSegmentModal] = useState<boolean>(false);
+	
+	// State for edit mode
+	const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
+	
+	// State for viewing contacts
+	const [viewingContactsSegment, setViewingContactsSegment] = useState<Segment | null>(null);
+	const [contactsModalOpen, setContactsModalOpen] = useState<boolean>(false);
 	
 	// State for delete dialog
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
@@ -188,12 +196,31 @@ const SegmentsPanel = () => {
 	// Handler for segment modal
 	const handleCloseSegmentModal = () => {
 		setOpenSegmentModal(false);
+		setEditingSegment(null); // Reset editing segment when closing modal
 	};
 
-	// Handler for segment creation success
-	const handleSegmentCreated = () => {
+	// Handler for segment creation/update success
+	const handleSegmentSaved = () => {
 		fetchSegments();
 		fetchStats();
+	};
+	
+	// Handler for edit segment
+	const handleEditSegment = (segment: Segment) => {
+		setEditingSegment(segment);
+		setOpenSegmentModal(true);
+	};
+	
+	// Handler for viewing segment contacts
+	const handleViewContacts = (segment: Segment) => {
+		setViewingContactsSegment(segment);
+		setContactsModalOpen(true);
+	};
+	
+	// Handler for closing contacts modal
+	const handleCloseContactsModal = () => {
+		setContactsModalOpen(false);
+		setViewingContactsSegment(null);
 	};
 	
 	// Handlers for segment deletion
@@ -233,8 +260,20 @@ const SegmentsPanel = () => {
 
 	return (
 		<>
-			{/* Segment Creation Modal */}
-			<SegmentFormModal open={openSegmentModal} onClose={handleCloseSegmentModal} onSave={handleSegmentCreated} />
+			{/* Segment Creation/Edit Modal */}
+			<SegmentFormModal 
+				open={openSegmentModal} 
+				onClose={handleCloseSegmentModal} 
+				onSave={handleSegmentSaved} 
+				segment={editingSegment} 
+			/>
+			
+			{/* Segment Contacts Modal */}
+			<SegmentContactsModal
+				open={contactsModalOpen}
+				onClose={handleCloseContactsModal}
+				segment={viewingContactsSegment}
+			/>
 			
 			{/* Segment Deletion Modal */}
 			{deletingSegment && (
@@ -379,12 +418,22 @@ const SegmentsPanel = () => {
 										<TableCell align="center">
 											<Stack direction="row" spacing={1} justifyContent="center">
 												<Tooltip title="Ver contactos">
-													<IconButton aria-label="contacts" size="small" color="primary">
+													<IconButton 
+													aria-label="contacts" 
+													size="small" 
+													color="primary"
+													onClick={() => handleViewContacts(segment)}
+												>
 														<People size={18} />
 													</IconButton>
 												</Tooltip>
 												<Tooltip title="Editar segmento">
-													<IconButton aria-label="editar" size="small" color="secondary">
+													<IconButton 
+													aria-label="editar" 
+													size="small" 
+													color="secondary"
+													onClick={() => handleEditSegment(segment)}
+												>
 														<Edit2 size={18} />
 													</IconButton>
 												</Tooltip>
