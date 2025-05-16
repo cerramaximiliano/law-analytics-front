@@ -11,12 +11,12 @@ import {
 	Box,
 	Chip,
 	IconButton,
+	CircularProgress,
 	Alert,
 	Table,
 	TableBody,
 	TableCell,
 	TableRow,
-	Skeleton,
 } from "@mui/material";
 import { CloseCircle } from "iconsax-react";
 import { CampaignService } from "store/reducers/campaign";
@@ -151,93 +151,12 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({ open, onClose
 
 			<DialogContent dividers>
 				{loading ? (
-					<Grid container spacing={3}>
-						{/* Información básica skeleton */}
-						<Grid item xs={12}>
-							<Skeleton variant="text" width={200} height={40} />
-							<Divider sx={{ mb: 2, mt: 1 }} />
-							<Grid container spacing={2}>
-								{[1, 2, 3, 4, 5, 6].map((item) => (
-									<Grid item xs={12} sm={6} key={item}>
-										<Skeleton variant="text" width={100} height={24} />
-										<Skeleton variant="text" width={150} height={32} />
-									</Grid>
-								))}
-							</Grid>
-						</Grid>
-
-						{/* Descripción skeleton */}
-						<Grid item xs={12}>
-							<Skeleton variant="text" width={200} height={40} />
-							<Divider sx={{ mb: 2, mt: 1 }} />
-							<Skeleton variant="text" width="100%" height={60} />
-						</Grid>
-
-						{/* Audiencia skeleton */}
-						<Grid item xs={12}>
-							<Skeleton variant="text" width={200} height={40} />
-							<Divider sx={{ mb: 2, mt: 1 }} />
-							<Grid container spacing={2}>
-								{[1, 2, 3].map((item) => (
-									<Grid item xs={12} sm={6} key={item}>
-										<Skeleton variant="text" width={100} height={24} />
-										<Skeleton variant="text" width={150} height={32} />
-									</Grid>
-								))}
-							</Grid>
-						</Grid>
-
-						{/* Métricas skeleton */}
-						<Grid item xs={12}>
-							<Skeleton variant="text" width={200} height={40} />
-							<Divider sx={{ mb: 2, mt: 1 }} />
-							<Grid container spacing={2}>
-								{[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-									<Grid item xs={6} sm={3} key={item}>
-										<Skeleton variant="text" width={100} height={24} />
-										<Skeleton variant="text" width={80} height={32} />
-									</Grid>
-								))}
-							</Grid>
-						</Grid>
-
-						{/* Configuración skeleton */}
-						<Grid item xs={12}>
-							<Skeleton variant="text" width={200} height={40} />
-							<Divider sx={{ mb: 2, mt: 1 }} />
-							<Table size="small">
-								<TableBody>
-									{[1, 2, 3, 4, 5, 6, 7].map((item) => (
-										<TableRow key={item}>
-											<TableCell width="30%">
-												<Skeleton variant="text" width={140} height={24} />
-											</TableCell>
-											<TableCell>
-												<Skeleton variant="text" width={160} height={24} />
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</Grid>
-
-						{/* Fechas skeleton */}
-						<Grid item xs={12}>
-							<Skeleton variant="text" width={200} height={40} />
-							<Divider sx={{ mb: 2, mt: 1 }} />
-							<Grid container spacing={2}>
-								{[1, 2].map((item) => (
-									<Grid item xs={12} sm={6} key={item}>
-										<Skeleton variant="text" width={100} height={24} />
-										<Skeleton variant="text" width={150} height={32} />
-									</Grid>
-								))}
-							</Grid>
-						</Grid>
-					</Grid>
+					<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 3 }}>
+						<CircularProgress />
+					</Box>
 				) : error ? (
 					<Alert severity="error" sx={{ my: 2 }}>
-						{"Error al cargar la campaña. Intente nuevamente más tarde.	"}
+						{error}
 					</Alert>
 				) : campaign ? (
 					<Grid container spacing={3}>

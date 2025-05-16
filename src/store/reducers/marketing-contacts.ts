@@ -175,7 +175,7 @@ export const MarketingContactService = {
 			throw error;
 		}
 	},
-	
+
 	// Get all tags for contacts
 	getTags: async (): Promise<string[]> => {
 		try {

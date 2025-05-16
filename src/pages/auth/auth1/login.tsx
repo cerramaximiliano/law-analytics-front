@@ -26,7 +26,7 @@ const Login = () => {
 			console.log("Access token Login:", tokenResponse.access_token);
 			console.log("Token type Login:", typeof tokenResponse.access_token);
 			console.log("Token length Login:", tokenResponse.access_token?.length || 0);
-			
+
 			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
 			const credentialResponse: CredentialResponse = {
 				clientId: tokenResponse.clientId || "",

@@ -158,10 +158,10 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	const [isCalculating, setIsCalculating] = useState<boolean>(false);
 	const [availableTags, setAvailableTags] = useState<string[]>([]);
 	const [loadingTags, setLoadingTags] = useState<boolean>(false);
-	
+
 	// Determinar si estamos en modo edición
 	const isEditMode = !!segment;
-	
+
 	// Consola de depuración (eliminar en producción)
 	useEffect(() => {
 		if (availableTags.length > 0) {
@@ -196,20 +196,20 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			resetForm();
 			fetchAvailableContacts();
 			fetchAvailableTags();
-			
+
 			// Si es modo edición, cargar los datos del segmento
 			if (isEditMode && segment) {
 				setName(segment.name);
 				setDescription(segment.description || "");
 				setType(segment.type);
-				
+
 				if (segment.type === "dynamic" && segment.conditions) {
 					setConditionOperator(segment.conditions.operator);
 					setFilters(segment.conditions.filters || []);
 				} else if (segment.type === "static" && segment.contacts) {
 					setSelectedContactIds(segment.contacts);
 				}
-				
+
 				// Establecer conteo estimado para segmentos dinámicos
 				if (segment.estimatedCount !== undefined) {
 					setEstimatedCount(segment.estimatedCount);
@@ -238,7 +238,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			setLoading(false);
 		}
 	};
-	
+
 	// Obtener etiquetas disponibles para el campo de etiquetas
 	const fetchAvailableTags = async () => {
 		try {
@@ -551,7 +551,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				</FormControl>
 			);
 		}
-		
+
 		// Para el campo de suscripción
 		if (filter.field === "subscriptionType") {
 			return (
@@ -572,7 +572,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				</FormControl>
 			);
 		}
-		
+
 		// Para campos booleanos (Usuario, Verificado)
 		if (filter.field === "isAppUser" || filter.field === "isVerified") {
 			const fieldLabel = filter.field === "isAppUser" ? "Usuario" : "Verificado";
@@ -594,7 +594,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				</FormControl>
 			);
 		}
-		
+
 		// Para el campo de etiquetas
 		if (filter.field === "tags") {
 			return (
@@ -785,11 +785,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 										disabled={saving || isEditMode}
 									/>
 								</RadioGroup>
-								{isEditMode && (
-									<FormHelperText>
-										No es posible cambiar el tipo de segmento una vez creado.
-									</FormHelperText>
-								)}
+								{isEditMode && <FormHelperText>No es posible cambiar el tipo de segmento una vez creado.</FormHelperText>}
 							</FormControl>
 						</Grid>
 
@@ -1024,7 +1020,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 					disabled={loading || saving || !name}
 					startIcon={saving && <CircularProgress size={20} color="inherit" />}
 				>
-					{saving ? "Guardando..." : (isEditMode ? "Actualizar Segmento" : "Crear Segmento")}
+					{saving ? "Guardando..." : isEditMode ? "Actualizar Segmento" : "Crear Segmento"}
 				</Button>
 			</DialogActions>
 		</Dialog>

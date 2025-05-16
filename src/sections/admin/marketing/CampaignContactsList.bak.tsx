@@ -21,7 +21,6 @@ import {
 	Typography,
 	Grid,
 	TextField,
-	Skeleton,
 } from "@mui/material";
 
 // project imports
@@ -544,49 +543,9 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 					<Divider sx={{ mb: 2 }} />
 
 					{loading ? (
-						<ScrollX>
-							<MainCard content={false} sx={{ border: 1, borderColor: "divider" }}>
-								<TableContainer>
-									<Table sx={{ minWidth: 850 }} aria-label="contacts table">
-										<TableHead>
-											<TableRow>
-												<TableCell>Contacto</TableCell>
-												<TableCell>Email</TableCell>
-												<TableCell>Segmentos</TableCell>
-												<TableCell>Tasa de apertura</TableCell>
-												<TableCell>Tasa de clics</TableCell>
-												<TableCell align="center">Acciones</TableCell>
-											</TableRow>
-										</TableHead>
-										<TableBody>
-											{[...Array(5)].map((_, index) => (
-												<TableRow key={index}>
-													<TableCell>
-														<Skeleton variant="text" width={120} height={24} />
-														<Skeleton variant="text" width={80} height={20} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="text" width={180} height={24} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="rectangular" width={100} height={32} sx={{ borderRadius: 2 }} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="text" width={50} height={24} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="text" width={50} height={24} />
-													</TableCell>
-													<TableCell align="center">
-														<Skeleton variant="circular" width={30} height={30} />
-													</TableCell>
-												</TableRow>
-											))}
-										</TableBody>
-									</Table>
-								</TableContainer>
-							</MainCard>
-						</ScrollX>
+						<Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+							<CircularProgress />
+						</Box>
 					) : error ? (
 						<Typography color="error" sx={{ p: 2 }}>
 							{error}

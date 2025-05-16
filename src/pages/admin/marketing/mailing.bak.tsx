@@ -229,13 +229,10 @@ const MailingCampaigns = () => {
 
 	// Campaign detail modal handlers
 	const handleOpenCampaignDetail = (campaign: Campaign) => {
-		console.log("handleOpenCampaignDetail called with campaign:", campaign);
 		// Asegurarnos de que _id no sea undefined antes de asignarlo
 		if (campaign._id) {
-			console.log("Setting campaignId:", campaign._id);
 			setSelectedCampaignId(campaign._id);
 			setCampaignDetailOpen(true);
-			console.log("Campaign detail modal should open with ID:", campaign._id);
 		} else {
 			console.error("Error: La campaña no tiene un ID válido");
 		}
@@ -408,7 +405,11 @@ const MailingCampaigns = () => {
 						</TableHead>
 						<TableBody>
 							{loading ? (
-								<TableSkeleton columns={9} rows={10} />
+								<TableRow>
+									<TableCell colSpan={9} align="center" sx={{ py: 3 }}>
+										<TableSkeleton columns={9} rows={10} />
+									</TableCell>
+								</TableRow>
 							) : campaigns.length === 0 ? (
 								<TableRow>
 									<TableCell colSpan={9} align="center" sx={{ py: 3 }}>

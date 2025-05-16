@@ -91,14 +91,14 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			console.log("Access token Modal:", tokenResponse.access_token);
 			console.log("Token type Modal:", typeof tokenResponse.access_token);
 			console.log("Token length Modal:", tokenResponse.access_token?.length || 0);
-			
+
 			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
 			const credentialResponse: CredentialResponse = {
 				clientId: tokenResponse.clientId || "",
 				credential: tokenResponse.access_token,
 				select_by: "user",
 			};
-			
+
 			// Llamar a la función de login existente
 			await onGoogleLogin(credentialResponse);
 			onClose();
@@ -108,7 +108,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			setIsSubmitting(false);
 		}
 	};
-	
+
 	// Hook para iniciar sesión con Google - EXACTAMENTE igual al de login.tsx
 	const googleLogin = useGoogleLogin({
 		onSuccess: handleGoogleSuccess,
@@ -201,11 +201,11 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 										</Divider>
 
 										<Box sx={{ width: "100%" }}>
-											<CustomGoogleButton 
-												onClick={() => googleLogin()} 
-												disabled={isSubmitting} 
-												text="Iniciar sesión con Google" 
-												fullWidth 
+											<CustomGoogleButton
+												onClick={() => googleLogin()}
+												disabled={isSubmitting}
+												text="Iniciar sesión con Google"
+												fullWidth
 											/>
 										</Box>
 

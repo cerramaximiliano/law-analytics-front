@@ -58,7 +58,7 @@ const SegmentContactsModal: React.FC<SegmentContactsModalProps> = ({ open, onClo
 			const response = await SegmentService.getSegmentContacts(
 				segment._id,
 				page + 1, // API espera página 1-indexed
-				rowsPerPage
+				rowsPerPage,
 			);
 
 			setContacts(response.data);
@@ -98,12 +98,13 @@ const SegmentContactsModal: React.FC<SegmentContactsModalProps> = ({ open, onClo
 				break;
 		}
 
-		const label = {
-			active: "Activo",
-			unsubscribed: "Cancelado",
-			bounced: "Rebotado",
-			complained: "Reclamado",
-		}[status] || status;
+		const label =
+			{
+				active: "Activo",
+				unsubscribed: "Cancelado",
+				bounced: "Rebotado",
+				complained: "Reclamado",
+			}[status] || status;
 
 		return <Chip label={label} color={color} size="small" />;
 	};

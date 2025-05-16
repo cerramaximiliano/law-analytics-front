@@ -9,7 +9,10 @@ const axiosServices = axios.create({
 axiosServices.interceptors.response.use(
 	(response) => response,
 	(error) => {
-		if (error.response.status === 401 && !window.location.href.includes("/login")) {
+		// Don't redirect for marketing API calls
+		const isMktAPI = error.config?.baseURL?.includes("mkt.lawanalytics.app") || error.config?.url?.includes("mkt.lawanalytics.app");
+
+		if (error.response?.status === 401 && !window.location.href.includes("/login") && !isMktAPI) {
 			window.location.pathname = "/login";
 		}
 		return Promise.reject((error.response && error.response.data) || "Wrong Services");

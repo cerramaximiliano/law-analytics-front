@@ -5,6 +5,7 @@ import {
 	Box,
 	Button,
 	Chip,
+	CircularProgress,
 	Divider,
 	IconButton,
 	Modal,
@@ -25,7 +26,6 @@ import {
 // project imports
 import { Add, Edit2, Eye, Trash } from "iconsax-react";
 import { useSnackbar } from "notistack";
-import TableSkeleton from "components/UI/TableSkeleton";
 
 // types
 import { Campaign } from "types/campaign";
@@ -216,7 +216,11 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 
 				<Divider sx={{ mb: 2 }} />
 
-				{error ? (
+				{loading ? (
+					<Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+						<CircularProgress />
+					</Box>
+				) : error ? (
 					<Typography color="error" sx={{ p: 2 }}>
 						{error}
 					</Typography>
@@ -236,9 +240,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 									</TableRow>
 								</TableHead>
 								<TableBody>
-									{loading ? (
-										<TableSkeleton columns={7} rows={5} />
-									) : emails.length === 0 ? (
+									{emails.length === 0 ? (
 										<TableRow>
 											<TableCell colSpan={7} align="center" sx={{ py: 3 }}>
 												<Typography variant="subtitle1">No hay emails en esta campaña</Typography>

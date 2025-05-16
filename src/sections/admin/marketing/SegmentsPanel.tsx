@@ -53,14 +53,14 @@ const SegmentsPanel = () => {
 	const [sortBy, setSortBy] = useState<string>("createdAt");
 	const [sortDir, setSortDir] = useState<string>("desc");
 	const [openSegmentModal, setOpenSegmentModal] = useState<boolean>(false);
-	
+
 	// State for edit mode
 	const [editingSegment, setEditingSegment] = useState<Segment | null>(null);
-	
+
 	// State for viewing contacts
 	const [viewingContactsSegment, setViewingContactsSegment] = useState<Segment | null>(null);
 	const [contactsModalOpen, setContactsModalOpen] = useState<boolean>(false);
-	
+
 	// State for delete dialog
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
 	const [deletingSegment, setDeletingSegment] = useState<Segment | null>(null);
@@ -204,49 +204,49 @@ const SegmentsPanel = () => {
 		fetchSegments();
 		fetchStats();
 	};
-	
+
 	// Handler for edit segment
 	const handleEditSegment = (segment: Segment) => {
 		setEditingSegment(segment);
 		setOpenSegmentModal(true);
 	};
-	
+
 	// Handler for viewing segment contacts
 	const handleViewContacts = (segment: Segment) => {
 		setViewingContactsSegment(segment);
 		setContactsModalOpen(true);
 	};
-	
+
 	// Handler for closing contacts modal
 	const handleCloseContactsModal = () => {
 		setContactsModalOpen(false);
 		setViewingContactsSegment(null);
 	};
-	
+
 	// Handlers for segment deletion
 	const handleOpenDeleteDialog = (segment: Segment) => {
 		setDeletingSegment(segment);
 		setDeleteDialogOpen(true);
 	};
-	
+
 	const handleCloseDeleteDialog = () => {
 		setDeleteDialogOpen(false);
 		setDeletingSegment(null);
 	};
-	
+
 	const handleConfirmDelete = async () => {
 		if (!deletingSegment) return;
-		
+
 		try {
 			setDeleteLoading(true);
 			setError(null);
-			
+
 			await SegmentService.deleteSegment(deletingSegment._id || "");
-			
+
 			// Success - refresh data
 			fetchSegments();
 			fetchStats();
-			
+
 			// Close dialog
 			setDeleteDialogOpen(false);
 			setDeletingSegment(null);
@@ -261,20 +261,11 @@ const SegmentsPanel = () => {
 	return (
 		<>
 			{/* Segment Creation/Edit Modal */}
-			<SegmentFormModal 
-				open={openSegmentModal} 
-				onClose={handleCloseSegmentModal} 
-				onSave={handleSegmentSaved} 
-				segment={editingSegment} 
-			/>
-			
+			<SegmentFormModal open={openSegmentModal} onClose={handleCloseSegmentModal} onSave={handleSegmentSaved} segment={editingSegment} />
+
 			{/* Segment Contacts Modal */}
-			<SegmentContactsModal
-				open={contactsModalOpen}
-				onClose={handleCloseContactsModal}
-				segment={viewingContactsSegment}
-			/>
-			
+			<SegmentContactsModal open={contactsModalOpen} onClose={handleCloseContactsModal} segment={viewingContactsSegment} />
+
 			{/* Segment Deletion Modal */}
 			{deletingSegment && (
 				<DeleteSegmentDialog
@@ -418,32 +409,17 @@ const SegmentsPanel = () => {
 										<TableCell align="center">
 											<Stack direction="row" spacing={1} justifyContent="center">
 												<Tooltip title="Ver contactos">
-													<IconButton 
-													aria-label="contacts" 
-													size="small" 
-													color="primary"
-													onClick={() => handleViewContacts(segment)}
-												>
+													<IconButton aria-label="contacts" size="small" color="primary" onClick={() => handleViewContacts(segment)}>
 														<People size={18} />
 													</IconButton>
 												</Tooltip>
 												<Tooltip title="Editar segmento">
-													<IconButton 
-													aria-label="editar" 
-													size="small" 
-													color="secondary"
-													onClick={() => handleEditSegment(segment)}
-												>
+													<IconButton aria-label="editar" size="small" color="secondary" onClick={() => handleEditSegment(segment)}>
 														<Edit2 size={18} />
 													</IconButton>
 												</Tooltip>
 												<Tooltip title="Eliminar segmento">
-													<IconButton 
-														aria-label="eliminar" 
-														size="small" 
-														color="error"
-														onClick={() => handleOpenDeleteDialog(segment)}
-													>
+													<IconButton aria-label="eliminar" size="small" color="error" onClick={() => handleOpenDeleteDialog(segment)}>
 														<Trash size={18} />
 													</IconButton>
 												</Tooltip>

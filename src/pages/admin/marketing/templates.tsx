@@ -45,6 +45,7 @@ import MainCard from "components/MainCard";
 import { Add, Edit2, Eye, Trash, AddCircle, Send, Mobile, Monitor, MouseSquare, Copy } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import AnimateButton from "components/@extended/AnimateButton";
+import TableSkeleton from "components/UI/TableSkeleton";
 
 // types
 interface EmailTemplate {
@@ -734,11 +735,7 @@ const EmailTemplates = () => {
 				</Box>
 				<Divider />
 
-				{loading ? (
-					<Box sx={{ p: 3, textAlign: "center" }}>
-						<Typography>Cargando plantillas...</Typography>
-					</Box>
-				) : error ? (
+				{error ? (
 					<Box sx={{ p: 3, textAlign: "center" }}>
 						<Typography color="error">{error}</Typography>
 					</Box>
@@ -758,59 +755,62 @@ const EmailTemplates = () => {
 									</TableRow>
 								</TableHead>
 								<TableBody>
-									{filteredTemplates.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((template) => (
-										<TableRow hover key={template._id} tabIndex={-1}>
-											<TableCell>
-												<Typography variant="subtitle2">{template.name}</Typography>
-											</TableCell>
-											<TableCell>{categoryDisplay[template.category] || template.category}</TableCell>
-											<TableCell>{template.subject}</TableCell>
-											<TableCell>{template.description}</TableCell>
-											<TableCell>
-												<Chip
-													label={template.isActive ? "Activa" : "Inactiva"}
-													color={template.isActive ? "success" : "default"}
-													size="small"
-												/>
-											</TableCell>
-											<TableCell>{new Date(template.updatedAt).toLocaleDateString()}</TableCell>
-											<TableCell align="center">
-												<Stack direction="row" spacing={1} justifyContent="center">
-													<IconButton aria-label="ver" size="small" color="info" onClick={() => handleOpenDetail(template)}>
-														<Eye size={18} />
-													</IconButton>
-													<IconButton aria-label="editar" size="small" color="primary" onClick={() => handleOpenEdit(template)}>
-														<Edit2 size={18} />
-													</IconButton>
-													<IconButton
-														aria-label="enviar email"
-														size="small"
-														color="secondary"
-														onClick={() => handleOpenSendEmail(template)}
-														title="Enviar email con esta plantilla"
-														disabled={!template.isActive}
-													>
-														<Send size={18} />
-													</IconButton>
-													<IconButton
-														aria-label={template.isActive ? "desactivar" : "activar"}
-														size="small"
-														color={template.isActive ? "error" : "success"}
-														onClick={() => handleOpenActivationDialog(template)}
-														title={template.isActive ? "Desactivar plantilla" : "Activar plantilla"}
-													>
-														<Trash size={18} />
-													</IconButton>
-												</Stack>
-											</TableCell>
-										</TableRow>
-									))}
-									{filteredTemplates.length === 0 && (
+									{loading ? (
+										<TableSkeleton columns={7} rows={10} />
+									) : filteredTemplates.length === 0 ? (
 										<TableRow>
 											<TableCell colSpan={7} align="center" sx={{ py: 3 }}>
 												<Typography variant="subtitle1">No hay plantillas disponibles</Typography>
 											</TableCell>
 										</TableRow>
+									) : (
+										filteredTemplates.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((template) => (
+											<TableRow hover key={template._id} tabIndex={-1}>
+												<TableCell>
+													<Typography variant="subtitle2">{template.name}</Typography>
+												</TableCell>
+												<TableCell>{categoryDisplay[template.category] || template.category}</TableCell>
+												<TableCell>{template.subject}</TableCell>
+												<TableCell>{template.description}</TableCell>
+												<TableCell>
+													<Chip
+														label={template.isActive ? "Activa" : "Inactiva"}
+														color={template.isActive ? "success" : "default"}
+														size="small"
+													/>
+												</TableCell>
+												<TableCell>{new Date(template.updatedAt).toLocaleDateString()}</TableCell>
+												<TableCell align="center">
+													<Stack direction="row" spacing={1} justifyContent="center">
+														<IconButton aria-label="ver" size="small" color="info" onClick={() => handleOpenDetail(template)}>
+															<Eye size={18} />
+														</IconButton>
+														<IconButton aria-label="editar" size="small" color="primary" onClick={() => handleOpenEdit(template)}>
+															<Edit2 size={18} />
+														</IconButton>
+														<IconButton
+															aria-label="enviar email"
+															size="small"
+															color="secondary"
+															onClick={() => handleOpenSendEmail(template)}
+															title="Enviar email con esta plantilla"
+															disabled={!template.isActive}
+														>
+															<Send size={18} />
+														</IconButton>
+														<IconButton
+															aria-label={template.isActive ? "desactivar" : "activar"}
+															size="small"
+															color={template.isActive ? "error" : "success"}
+															onClick={() => handleOpenActivationDialog(template)}
+															title={template.isActive ? "Desactivar plantilla" : "Activar plantilla"}
+														>
+															<Trash size={18} />
+														</IconButton>
+													</Stack>
+												</TableCell>
+											</TableRow>
+										))
 									)}
 								</TableBody>
 							</Table>
