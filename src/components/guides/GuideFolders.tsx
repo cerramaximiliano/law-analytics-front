@@ -99,8 +99,8 @@ const CreationContent = () => {
 				</Stack>
 			</Paper>
 			<Typography paragraph>
-				Al crear una nueva causa, asegúrate de incluir toda la información relevante como jurisdicción, materia, parte representada y
-				fechas importantes para facilitar su seguimiento posterior.
+				Al crear una nueva causa, asegúrate de incluir toda la información relevante como jurisdicción, materia, parte representada y fechas
+				importantes para facilitar su seguimiento posterior.
 			</Typography>
 		</Stack>
 	);
@@ -110,9 +110,7 @@ const ImportContent = () => {
 	const theme = useTheme();
 	return (
 		<Stack spacing={3}>
-			<Typography paragraph>
-				Ahora puedes importar causas directamente desde el Poder Judicial de la Nación de forma automática:
-			</Typography>
+			<Typography paragraph>Ahora puedes importar causas directamente desde el Poder Judicial de la Nación de forma automática:</Typography>
 			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.2) }}>
 				<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
 					Proceso de Importación:
@@ -144,8 +142,8 @@ const ImportContent = () => {
 			<Alert severity="warning" sx={{ mt: 2 }}>
 				<AlertTitle>Causas Pendientes de Verificación</AlertTitle>
 				<Typography paragraph>
-					Las causas importadas automáticamente aparecerán con estado <strong>"Pendiente de verificación"</strong> hasta que la
-					información sea validada por el sistema. Esto se indica visualmente en la tabla de causas.
+					Las causas importadas automáticamente aparecerán con estado <strong>"Pendiente de verificación"</strong> hasta que la información
+					sea validada por el sistema. Esto se indica visualmente en la tabla de causas.
 				</Typography>
 				<Typography>
 					Una vez que los datos hayan sido verificados y procesados, se actualizarán automáticamente con la información completa del
@@ -163,8 +161,8 @@ const ImportContent = () => {
 			</Stack>
 
 			<Typography paragraph>
-				La importación automática te permite ahorrar tiempo en la carga de datos y reducir errores de transcripción, facilitando la
-				gestión de múltiples expedientes.
+				La importación automática te permite ahorrar tiempo en la carga de datos y reducir errores de transcripción, facilitando la gestión
+				de múltiples expedientes.
 			</Typography>
 		</Stack>
 	);
@@ -286,8 +284,8 @@ const ManagementContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Haz clic en el icono de ojo para desplegar una vista previa con toda la información detallada de la causa directamente en
-							la tabla.
+							Haz clic en el icono de ojo para desplegar una vista previa con toda la información detallada de la causa directamente en la
+							tabla.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -313,8 +311,8 @@ const ManagementContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Permite eliminar causas del sistema. Esta acción requiere confirmación y es irreversible, por lo que se recomienda
-							archivar en lugar de eliminar.
+							Permite eliminar causas del sistema. Esta acción requiere confirmación y es irreversible, por lo que se recomienda archivar en
+							lugar de eliminar.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -396,8 +394,8 @@ const DetailedViewContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Documentos Asociados</Typography>
 								<Typography variant="body2">
-									Permite subir, visualizar y gestionar todos los documentos relacionados con la causa, manteniendo un expediente
-									digital completo y organizado.
+									Permite subir, visualizar y gestionar todos los documentos relacionados con la causa, manteniendo un expediente digital
+									completo y organizado.
 								</Typography>
 							</Box>
 						</Box>
@@ -406,8 +404,8 @@ const DetailedViewContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Cálculos Vinculados</Typography>
 								<Typography variant="body2">
-									Muestra todos los cálculos (laborales, intereses, etc.) que has asociado a esta causa, permitiéndote acceder
-									rápidamente a ellos.
+									Muestra todos los cálculos (laborales, intereses, etc.) que has asociado a esta causa, permitiéndote acceder rápidamente a
+									ellos.
 								</Typography>
 							</Box>
 						</Box>
@@ -428,8 +426,8 @@ const DetailedViewContent = () => {
 			<Alert severity="info" sx={{ mt: 3 }}>
 				<AlertTitle>Vinculación de Cálculos</AlertTitle>
 				<Typography paragraph>
-					Puedes vincular cualquier cálculo realizado en el sistema (laboral, intereses, etc.) a una causa específica para mantener toda
-					la información relacionada organizada.
+					Puedes vincular cualquier cálculo realizado en el sistema (laboral, intereses, etc.) a una causa específica para mantener toda la
+					información relacionada organizada.
 				</Typography>
 				<Stack direction="row" spacing={1} alignItems="center">
 					<Calculator size={20} />
@@ -536,8 +534,7 @@ const PracticalTipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Mantén actualizado el estado de tus causas y añade notas relevantes después de cada novedad o actuación procesal
-							importante.
+							Mantén actualizado el estado de tus causas y añade notas relevantes después de cada novedad o actuación procesal importante.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -550,8 +547,8 @@ const PracticalTipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Vincula todos los cálculos y documentos relacionados a la causa correspondiente para tener un expediente digital completo
-							y centralizado.
+							Vincula todos los cálculos y documentos relacionados a la causa correspondiente para tener un expediente digital completo y
+							centralizado.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -599,8 +596,8 @@ const PracticalTipsContent = () => {
 
 			<Alert severity="info" sx={{ mt: 3 }}>
 				<AlertTitle>Mejora Continua</AlertTitle>
-				Estamos constantemente mejorando el sistema de gestión de causas. Si tienes sugerencias o detectas oportunidades de mejora,
-				háznoslo saber para seguir perfeccionando la herramienta.
+				Estamos constantemente mejorando el sistema de gestión de causas. Si tienes sugerencias o detectas oportunidades de mejora, háznoslo
+				saber para seguir perfeccionando la herramienta.
 			</Alert>
 		</Stack>
 	);

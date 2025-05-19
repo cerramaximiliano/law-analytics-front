@@ -1,0 +1,217 @@
+[
+	{
+		"_id": {
+			"$oid": "67f67023e59836572d4275e4"
+		},
+		"planId": "free",
+		"__v": 0,
+		"createdAt": {
+			"$date": "2025-04-09T13:03:31.505Z"
+		},
+		"description": "Plan básico con funcionalidades limitadas",
+		"displayName": "Plan Gratuito",
+		"features": [
+			{
+				"name": "advancedAnalytics",
+				"enabled": false,
+				"description": "Análisis avanzados"
+			},
+			{
+				"name": "exportReports",
+				"enabled": false,
+				"description": "Exportación de reportes"
+			},
+			{
+				"name": "taskAutomation",
+				"enabled": false,
+				"description": "Automatización de tareas"
+			},
+			{
+				"name": "bulkOperations",
+				"enabled": false,
+				"description": "Operaciones masivas"
+			},
+			{
+				"name": "prioritySupport",
+				"enabled": false,
+				"description": "Soporte prioritario"
+			}
+		],
+		"isActive": true,
+		"isDefault": true,
+		"pricingInfo": {
+			"basePrice": 0,
+			"currency": "USD",
+			"billingPeriod": "monthly"
+		},
+		"resourceLimits": [
+			{
+				"name": "folders",
+				"limit": 5,
+				"description": "Número máximo de carpetas"
+			},
+			{
+				"name": "calculators",
+				"limit": 3,
+				"description": "Número máximo de calculadoras"
+			},
+			{
+				"name": "contacts",
+				"limit": 10,
+				"description": "Número máximo de contactos"
+			},
+			{
+				"name": "storage",
+				"limit": 50,
+				"description": "Almacenamiento máximo en MB"
+			}
+		],
+		"updatedAt": {
+			"$date": "2025-04-09T13:03:31.505Z"
+		}
+	},
+	{
+		"_id": {
+			"$oid": "67f67023e59836572d4275e5"
+		},
+		"planId": "standard",
+		"__v": 0,
+		"createdAt": {
+			"$date": "2025-04-09T13:03:31.672Z"
+		},
+		"description": "Plan con funcionalidades adicionales para profesionales",
+		"displayName": "Plan Estándar",
+		"features": [
+			{
+				"name": "advancedAnalytics",
+				"enabled": false,
+				"description": "Análisis avanzados"
+			},
+			{
+				"name": "exportReports",
+				"enabled": true,
+				"description": "Exportación de reportes"
+			},
+			{
+				"name": "taskAutomation",
+				"enabled": false,
+				"description": "Automatización de tareas"
+			},
+			{
+				"name": "bulkOperations",
+				"enabled": true,
+				"description": "Operaciones masivas"
+			},
+			{
+				"name": "prioritySupport",
+				"enabled": false,
+				"description": "Soporte prioritario"
+			}
+		],
+		"isActive": true,
+		"isDefault": false,
+		"pricingInfo": {
+			"basePrice": 9.99,
+			"currency": "USD",
+			"billingPeriod": "monthly",
+			"stripePriceId": "price_1RC96RJdr4OZ264aKCFlWorm"
+		},
+		"resourceLimits": [
+			{
+				"name": "folders",
+				"limit": 50,
+				"description": "Número máximo de carpetas"
+			},
+			{
+				"name": "calculators",
+				"limit": 20,
+				"description": "Número máximo de calculadoras"
+			},
+			{
+				"name": "contacts",
+				"limit": 100,
+				"description": "Número máximo de contactos"
+			},
+			{
+				"name": "storage",
+				"limit": 1024,
+				"description": "Almacenamiento máximo en MB"
+			}
+		],
+		"updatedAt": {
+			"$date": "2025-04-10T00:36:23.967Z"
+		}
+	},
+	{
+		"_id": {
+			"$oid": "67f67023e59836572d4275e6"
+		},
+		"planId": "premium",
+		"__v": 0,
+		"createdAt": {
+			"$date": "2025-04-09T13:03:31.833Z"
+		},
+		"description": "Plan completo con todas las funcionalidades",
+		"displayName": "Plan Premium",
+		"features": [
+			{
+				"name": "advancedAnalytics",
+				"enabled": true,
+				"description": "Análisis avanzados"
+			},
+			{
+				"name": "exportReports",
+				"enabled": true,
+				"description": "Exportación de reportes"
+			},
+			{
+				"name": "taskAutomation",
+				"enabled": true,
+				"description": "Automatización de tareas"
+			},
+			{
+				"name": "bulkOperations",
+				"enabled": true,
+				"description": "Operaciones masivas"
+			},
+			{
+				"name": "prioritySupport",
+				"enabled": true,
+				"description": "Soporte prioritario"
+			}
+		],
+		"isActive": true,
+		"isDefault": false,
+		"pricingInfo": {
+			"basePrice": 49.99,
+			"currency": "USD",
+			"billingPeriod": "monthly",
+			"stripePriceId": "price_1RC8aeJdr4OZ264alH0G2c14"
+		},
+		"resourceLimits": [
+			{
+				"name": "folders",
+				"limit": 999999,
+				"description": "Número máximo de carpetas"
+			},
+			{
+				"name": "calculators",
+				"limit": 999999,
+				"description": "Número máximo de calculadoras"
+			},
+			{
+				"name": "contacts",
+				"limit": 999999,
+				"description": "Número máximo de contactos"
+			},
+			{
+				"name": "storage",
+				"limit": 10240,
+				"description": "Almacenamiento máximo en MB"
+			}
+		],
+		"updatedAt": {
+			"$date": "2025-04-10T00:33:07.177Z"
+		}
+	}
+]

@@ -9,6 +9,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import authReducer from "store/reducers/auth";
 import Loader from "components/Loader";
 import { UnauthorizedModal } from "../sections/auth/UnauthorizedModal";
+import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
 import { fetchUserStats } from "store/reducers/userStats";
 
@@ -31,6 +32,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const [state, localDispatch] = useReducer(authReducer, initialState);
 	const [isGoogleLoggedIn, setIsGoogleLoggedIn] = useState<boolean>(false);
 	const [showUnauthorizedModal, setShowUnauthorizedModal] = useState<boolean>(false);
+	const [showLimitErrorModal, setShowLimitErrorModal] = useState<boolean>(false);
+	const [limitErrorData, setLimitErrorData] = useState<any>({});
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [isLogoutProcess, setIsLogoutProcess] = useState(false);
@@ -279,6 +282,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						// Si no necesita refresh, solo mostrar el modal
 						console.log("[Interceptor] Mostrando modal sin intentar refresh");
 						setShowUnauthorizedModal(true);
+					}
+				}
+
+				// Manejar errores 403 (límites de plan)
+				if (error.response?.status === 403) {
+					console.log("[Interceptor] Detectado error 403 en:", url, error.response?.data);
+
+					const responseData = error.response.data as any;
+
+					// Verificar si es un error de límite o de característica
+					if (responseData.limitInfo || responseData.featureInfo || responseData.upgradeRequired) {
+						setLimitErrorData({
+							message: responseData.message,
+							limitInfo: responseData.limitInfo,
+							featureInfo: responseData.featureInfo,
+							upgradeRequired: responseData.upgradeRequired,
+						});
+						setShowLimitErrorModal(true);
 					}
 				}
 
@@ -582,6 +603,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				onLogin={login}
 				onGoogleLogin={loginWithGoogle}
 				onLogout={handleLogoutAndRedirect}
+			/>
+			<LimitErrorModal
+				open={showLimitErrorModal}
+				onClose={() => setShowLimitErrorModal(false)}
+				message={limitErrorData.message}
+				limitInfo={limitErrorData.limitInfo}
+				featureInfo={limitErrorData.featureInfo}
+				upgradeRequired={limitErrorData.upgradeRequired}
 			/>
 		</AuthContext.Provider>
 	);

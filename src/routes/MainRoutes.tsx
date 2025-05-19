@@ -153,6 +153,7 @@ const HelpPage = Loadable(lazy(() => import("pages/help")));
 const AdminMailingPage = Loadable(lazy(() => import("pages/admin/marketing/mailing")));
 const AdminTemplatesPage = Loadable(lazy(() => import("pages/admin/marketing/templates")));
 const AdminContactsPage = Loadable(lazy(() => import("pages/admin/marketing/contacts")));
+const AdminPlansPage = Loadable(lazy(() => import("pages/admin/plans")));
 
 // render - tasks
 const TasksPage = Loadable(lazy(() => import("pages/tasks")));
@@ -401,6 +402,10 @@ const MainRoutes = {
 									element: <AdminContactsPage />,
 								},
 							],
+						},
+						{
+							path: "plans",
+							element: <AdminPlansPage />,
 						},
 					],
 				},

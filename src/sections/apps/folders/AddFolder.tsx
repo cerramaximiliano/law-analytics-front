@@ -23,6 +23,7 @@ import InitialStep from "./step-components/initialStep";
 import AutomaticStep from "./step-components/automaticStep";
 import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
+import JudicialPowerSelection from "./step-components/judicialPowerSelection";
 import { useSelector, dispatch } from "store";
 import { addFolder, updateFolder } from "store/reducers/folders";
 import { enqueueSnackbar } from "notistack";
@@ -42,6 +43,7 @@ const getInitialValues = (folder: FormikValues | null) => {
 		folderJurisLabel: "",
 		folderFuero: null,
 		entryMethod: "manual", // Nuevo campo para seleccionar el método de ingreso
+		judicialPower: "", // Poder judicial seleccionado (nacional o buenosaires)
 		expedientNumber: "", // Para ingreso automático
 		expedientYear: "", // Para ingreso automático
 		pjn: false, // Para indicar si los datos provienen del Poder Judicial de la Nación
@@ -76,11 +78,15 @@ function getStepContent(step: number, values: any) {
 		case 0:
 			return <InitialStep />;
 		case 1:
-			// Para ingreso automático, mostramos el paso automático
-			// Para ingreso manual, mostramos el paso manual
-			return values.entryMethod === "automatic" ? <AutomaticStep /> : <FirstStep />;
+			// Si es ingreso automático, mostramos selección de poder judicial
+			// Si es ingreso manual, mostramos el primer paso manual
+			return values.entryMethod === "automatic" ? <JudicialPowerSelection /> : <FirstStep />;
 		case 2:
-			// El paso 2 solo se muestra para ingreso manual
+			// Para ingreso automático, mostramos el formulario de ingreso automático
+			// Para ingreso manual, mostramos el segundo paso
+			return values.entryMethod === "automatic" ? <AutomaticStep /> : <SecondStep values={values} />;
+		case 3:
+			// Solo para ingreso manual, el paso 3 es los datos opcionales
 			return <SecondStep values={values} />;
 		default:
 			throw new Error("Unknown step");
@@ -96,6 +102,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	// Definición de esquemas de validación para diferentes pasos
 	const initialMethodSchema = Yup.object().shape({
 		entryMethod: Yup.string().oneOf(["manual", "automatic"], "Seleccione un método de ingreso").required("Seleccione un método de ingreso"),
+	});
+
+	const judicialPowerSchema = Yup.object().shape({
+		judicialPower: Yup.string().oneOf(["nacional", "buenosaires"], "Seleccione un poder judicial").required("Seleccione un poder judicial"),
 	});
 
 	const automaticEntrySchema = Yup.object().shape({
@@ -132,13 +142,16 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	// Esquemas para los pasos dependiendo de si estamos editando o creando
 
 	const [initialValues, setInitialValues] = useState(getInitialValues(folder));
+	const [values, setValues] = useState<any>(initialValues);
 	const stepsEditing = ["Datos requeridos", "Datos opcionales"];
-	const stepsCreating = ["Método de ingreso", "Datos requeridos", "Datos opcionales"];
-	const steps = isCreating ? stepsCreating : stepsEditing;
+	const stepsCreatingManual = ["Método de ingreso", "Datos requeridos", "Datos opcionales"];
+	const stepsCreatingAutomatic = ["Método de ingreso", "Selección poder judicial", "Importar datos", "Completar datos"];
+
+	// Determinamos los pasos según el modo y el método de entrada
+	const steps = !isCreating ? stepsEditing : values.entryMethod === "automatic" ? stepsCreatingAutomatic : stepsCreatingManual;
 	const [openAlert, setOpenAlert] = useState(false);
 	const [activeStep, setActiveStep] = useState(0);
 	const isLastStep = activeStep === steps.length - 1;
-	const [values, setValues] = useState<any>(initialValues);
 
 	// Para solucionar el problema de la referencia circular en la definición de FolderSchema
 	const getValidationSchema = (step: number) => {
@@ -147,15 +160,32 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			return step === 0 ? manualStepOneSchema : finalStepSchema;
 		} else {
 			// Si estamos creando
-			switch (step) {
-				case 0:
-					return initialMethodSchema;
-				case 1:
-					return values.entryMethod === "automatic" ? automaticEntrySchema : manualStepOneSchema;
-				case 2:
-					return finalStepSchema;
-				default:
-					return Yup.object();
+			if (values.entryMethod === "automatic") {
+				// Flujo de ingreso automático
+				switch (step) {
+					case 0:
+						return initialMethodSchema;
+					case 1:
+						return judicialPowerSchema;
+					case 2:
+						return automaticEntrySchema;
+					case 3:
+						return finalStepSchema;
+					default:
+						return Yup.object();
+				}
+			} else {
+				// Flujo de ingreso manual
+				switch (step) {
+					case 0:
+						return initialMethodSchema;
+					case 1:
+						return manualStepOneSchema;
+					case 2:
+						return finalStepSchema;
+					default:
+						return Yup.object();
+				}
 			}
 		}
 	};
@@ -227,16 +257,26 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	function _handleSubmit(formValues: any, actions: any) {
 		// Actualizamos el estado de los valores para las validaciones condicionales
 		setValues(formValues);
-		// Si estamos en el último paso, o si estamos en el paso de ingreso automático
-		const isAutomaticEntryStep = activeStep === 1 && formValues.entryMethod === "automatic";
 
-		if (isLastStep || isAutomaticEntryStep) {
+		// Si estamos en el último paso, enviamos el formulario
+		if (isLastStep) {
 			_submitForm(formValues, actions, mode);
 			onCancel();
 		} else {
-			setActiveStep(activeStep + 1);
-			actions.setTouched({});
-			actions.setSubmitting(false);
+			// Si es ingreso automático y acabamos de completar el formulario de importación (paso 2)
+			// podemos saltar el paso de "Completar datos" si todos los datos requeridos están completos
+			const isAutomaticImportStep = activeStep === 2 && formValues.entryMethod === "automatic";
+
+			if (isAutomaticImportStep && formValues.folderName && formValues.materia && formValues.orderStatus && formValues.status) {
+				// Si todos los datos requeridos están completos, enviamos directo
+				_submitForm(formValues, actions, mode);
+				onCancel();
+			} else {
+				// Continuamos al siguiente paso
+				setActiveStep(activeStep + 1);
+				actions.setTouched({});
+				actions.setSubmitting(false);
+			}
 		}
 	}
 

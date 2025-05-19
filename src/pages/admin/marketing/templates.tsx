@@ -112,7 +112,7 @@ const categoryDisplay: Record<string, string> = {
 	gestionCalendario: "Gestión de Calendario",
 	secuenciaOnboarding: "Onboarding",
 	promotional: "Promocional",
-	gestionTareas: "Gestión de Tareas"
+	gestionTareas: "Gestión de Tareas",
 };
 
 // Default blank template HTML

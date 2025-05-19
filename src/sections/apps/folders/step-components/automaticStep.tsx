@@ -153,6 +153,7 @@ interface FormValues {
 	source?: string;
 	pjn?: boolean;
 	initialDateFolder?: string;
+	judicialPower?: string;
 }
 
 const AutomaticStep = () => {
@@ -426,7 +427,9 @@ const AutomaticStep = () => {
 					<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
 						<DocumentUpload size={24} color={theme.palette.primary.main} />
 						<Typography variant="h6" color="textPrimary">
-							Importar causa desde Poder Judicial de la Nación
+							{values.judicialPower === "nacional"
+								? "Importar causa desde Poder Judicial de la Nación"
+								: "Importar causa desde Poder Judicial"}
 						</Typography>
 					</Stack>
 				</Grid>

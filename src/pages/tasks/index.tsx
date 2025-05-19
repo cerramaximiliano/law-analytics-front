@@ -76,7 +76,18 @@ interface Props {
 	taskDetailsLoading: { [key: string]: boolean };
 }
 
-function ReactTable({ columns, data, handleAdd, handleOpenGuide, isLoading, expandedTaskId, folders, onViewTask, taskDetails, taskDetailsLoading }: Props) {
+function ReactTable({
+	columns,
+	data,
+	handleAdd,
+	handleOpenGuide,
+	isLoading,
+	expandedTaskId,
+	folders,
+	onViewTask,
+	taskDetails,
+	taskDetailsLoading,
+}: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);

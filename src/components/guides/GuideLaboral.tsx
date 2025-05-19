@@ -24,19 +24,7 @@ import { useTheme } from "@mui/material/styles";
 
 // project imports
 import { PopupTransition } from "components/@extended/Transitions";
-import {
-	Calculator,
-	ArrowRight2,
-	Next,
-	Keyboard,
-	ArrowLeft,
-	ArrowRight,
-	Eye,
-	Trash,
-	DocumentText,
-	SmsStar,
-	Link21,
-} from "iconsax-react";
+import { Calculator, ArrowRight2, Next, Keyboard, ArrowLeft, ArrowRight, Eye, Trash, DocumentText, SmsStar, Link21 } from "iconsax-react";
 
 // ==============================|| GUÍA LABORAL - COMPONENTES INTERNOS ||============================== //
 
@@ -70,8 +58,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 const IntroductionContent = () => (
 	<Stack spacing={3}>
 		<Typography variant="body1">
-			Esta guía te mostrará cómo utilizar las calculadoras laborales para generar, guardar y gestionar diferentes tipos de cálculos
-			legales.
+			Esta guía te mostrará cómo utilizar las calculadoras laborales para generar, guardar y gestionar diferentes tipos de cálculos legales.
 		</Typography>
 		<Alert severity="info" sx={{ mt: 2 }}>
 			<AlertTitle>Aprenderás a:</AlertTitle>
@@ -345,8 +332,8 @@ const TipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							No olvides revisar las opcionales de multas en el segundo paso para incluir conceptos adicionales que pueden ser
-							relevantes para el caso.
+							No olvides revisar las opcionales de multas en el segundo paso para incluir conceptos adicionales que pueden ser relevantes
+							para el caso.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -359,8 +346,7 @@ const TipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Puedes actualizar los cálculos con intereses mediante la opción específica disponible en la vista detallada de cada
-							cálculo.
+							Puedes actualizar los cálculos con intereses mediante la opción específica disponible en la vista detallada de cada cálculo.
 						</Typography>
 					</Paper>
 				</Grid>

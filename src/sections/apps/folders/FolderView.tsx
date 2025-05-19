@@ -1,18 +1,20 @@
 // material-ui
-import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper } from "@mui/material";
+import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper, Button } from "@mui/material";
 
 // project-imports
 import Transitions from "components/@extended/Transitions";
+import LinkToJudicialPower from "./LinkToJudicialPower";
 
 // assets
-import { Calendar, FolderOpen, Profile, Clock, NoteText } from "iconsax-react";
-import { memo } from "react";
+import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare } from "iconsax-react";
+import { memo, useState } from "react";
 import moment from "moment";
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
 const FolderView = memo(({ data }: any) => {
 	const notAvailableMsg = "No disponible";
+	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 
 	// Función para obtener el color del estado
 	const getStatusColor = (status: string) => {
@@ -45,15 +47,38 @@ const FolderView = memo(({ data }: any) => {
 		</Box>
 	);
 
+	const handleOpenLinkJudicial = () => {
+		setOpenLinkJudicial(true);
+	};
+
+	const handleCancelLinkJudicial = () => {
+		setOpenLinkJudicial(false);
+	};
+
 	return (
 		<TableRow sx={{ "&:hover": { bgcolor: `transparent !important` } }}>
 			<TableCell colSpan={8} sx={{ p: 2.5 }}>
 				<Transitions type="slide" direction="down" in={true}>
 					<Box>
 						{/* Header with title and status */}
-						<Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-							<Typography variant="h5">{data.folderName || notAvailableMsg}</Typography>
-							<Chip size="small" label={data.status || "Sin estado"} color={getStatusColor(data.status)} />
+						<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+							<Stack direction="row" spacing={2} alignItems="center">
+								<Typography variant="h5">{data.folderName || notAvailableMsg}</Typography>
+								<Chip size="small" label={data.status || "Sin estado"} color={getStatusColor(data.status)} />
+							</Stack>
+							<Button
+								variant="outlined"
+								color="primary"
+								startIcon={<ExportSquare size="20" />}
+								onClick={handleOpenLinkJudicial}
+								sx={{
+									borderRadius: 1,
+									textTransform: "none",
+									fontWeight: 500,
+								}}
+							>
+								Vincular con Poder Judicial
+							</Button>
 						</Stack>
 
 						{/* Info cards - Horizontal layout */}
@@ -136,6 +161,14 @@ const FolderView = memo(({ data }: any) => {
 						</Grid>
 					</Box>
 				</Transitions>
+
+				{/* Modal para vincular con Poder Judicial */}
+				<LinkToJudicialPower
+					openLink={openLinkJudicial}
+					onCancelLink={handleCancelLinkJudicial}
+					folderId={data._id}
+					folderName={data.folderName}
+				/>
 			</TableCell>
 		</TableRow>
 	);

@@ -212,8 +212,8 @@ const DetailedConfigurationContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Define las horas de inicio y fin de tu jornada de atención para cada día. Puedes establecer distintos horarios para
-							diferentes días según tus necesidades.
+							Define las horas de inicio y fin de tu jornada de atención para cada día. Puedes establecer distintos horarios para diferentes
+							días según tus necesidades.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -240,8 +240,8 @@ const DetailedConfigurationContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Configura un margen de tiempo entre consultas consecutivas para prepararte, revisar notas o simplemente descansar
-							brevemente entre atenciones.
+							Configura un margen de tiempo entre consultas consecutivas para prepararte, revisar notas o simplemente descansar brevemente
+							entre atenciones.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -260,8 +260,8 @@ const DetailedConfigurationContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Fechas Excluidas</Typography>
 								<Typography variant="body2">
-									Bloquea fechas específicas en las que no estarás disponible, como vacaciones, días festivos o compromisos previos.
-									Puedes añadir un motivo opcional para tu referencia.
+									Bloquea fechas específicas en las que no estarás disponible, como vacaciones, días festivos o compromisos previos. Puedes
+									añadir un motivo opcional para tu referencia.
 								</Typography>
 							</Box>
 						</Box>
@@ -289,8 +289,8 @@ const DetailedConfigurationContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Límite de Reservas</Typography>
 								<Typography variant="body2">
-									Configura límites diarios o semanales de citas para evitar sobrecarga en tu agenda y mantener un equilibrio saludable
-									en tu trabajo.
+									Configura límites diarios o semanales de citas para evitar sobrecarga en tu agenda y mantener un equilibrio saludable en
+									tu trabajo.
 								</Typography>
 							</Box>
 						</Box>
@@ -382,9 +382,7 @@ const FormCustomizationContent = () => {
 										<strong>Lista de Opciones</strong>
 									</Typography>
 								</Box>
-								<Typography variant="caption">
-									Para selección de categorías predefinidas (tipo de consulta, jurisdicción, etc.).
-								</Typography>
+								<Typography variant="caption">Para selección de categorías predefinidas (tipo de consulta, jurisdicción, etc.).</Typography>
 							</Paper>
 						</Grid>
 						<Grid item xs={12} sm={6}>
@@ -441,9 +439,7 @@ const ReservationManagementContent = () => {
 	const theme = useTheme();
 	return (
 		<>
-			<Typography paragraph>
-				Una vez configurado tu sistema, podrás gestionar fácilmente las reservas que realicen tus clientes:
-			</Typography>
+			<Typography paragraph>Una vez configurado tu sistema, podrás gestionar fácilmente las reservas que realicen tus clientes:</Typography>
 
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -480,8 +476,8 @@ const ReservationManagementContent = () => {
 									</Typography>
 								</Box>
 								<Typography variant="body2">
-									Puedes rechazar solicitudes que no puedas atender o cancelar citas ya confirmadas, añadiendo opcionalmente un motivo
-									que se compartirá con el cliente.
+									Puedes rechazar solicitudes que no puedas atender o cancelar citas ya confirmadas, añadiendo opcionalmente un motivo que
+									se compartirá con el cliente.
 								</Typography>
 							</Paper>
 						</Grid>
@@ -494,8 +490,8 @@ const ReservationManagementContent = () => {
 									</Typography>
 								</Box>
 								<Typography variant="body2">
-									Accede a toda la información proporcionada por el cliente al momento de la reserva, incluyendo los campos
-									personalizados que hayas configurado.
+									Accede a toda la información proporcionada por el cliente al momento de la reserva, incluyendo los campos personalizados
+									que hayas configurado.
 								</Typography>
 							</Paper>
 						</Grid>
@@ -657,8 +653,8 @@ const ClientLinkContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Si tienes un sitio web profesional, incluye un botón destacado con el enlace para que los visitantes puedan programar
-							citas directamente.
+							Si tienes un sitio web profesional, incluye un botón destacado con el enlace para que los visitantes puedan programar citas
+							directamente.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -671,8 +667,8 @@ const ClientLinkContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Envía el enlace directamente a clientes que necesiten programar una cita, ahorrando tiempo en intercambios de mensajes
-							para coordinar horarios.
+							Envía el enlace directamente a clientes que necesiten programar una cita, ahorrando tiempo en intercambios de mensajes para
+							coordinar horarios.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -709,8 +705,8 @@ const ClientExperienceContent = () => {
 							Paso 1: Acceso al Portal de Citas
 						</Typography>
 						<Typography paragraph>
-							El cliente hace clic en el enlace que has compartido y accede a una página profesional con tu nombre y la descripción de
-							tu servicio de citas.
+							El cliente hace clic en el enlace que has compartido y accede a una página profesional con tu nombre y la descripción de tu
+							servicio de citas.
 						</Typography>
 					</Box>
 
@@ -755,9 +751,7 @@ const ClientExperienceContent = () => {
 
 			<Alert severity="success" sx={{ mt: 3 }}>
 				<AlertTitle>Beneficios para el Cliente</AlertTitle>
-				<Typography paragraph>
-					Este sistema ofrece una experiencia profesional que beneficia a tus clientes de múltiples formas:
-				</Typography>
+				<Typography paragraph>Este sistema ofrece una experiencia profesional que beneficia a tus clientes de múltiples formas:</Typography>
 				<Stack spacing={1}>
 					<Box display="flex" alignItems="center">
 						<TickSquare size={18} style={{ marginRight: "8px", color: theme.palette.success.main }} />
@@ -786,8 +780,8 @@ const NotificationsRemindersContent = () => {
 	return (
 		<>
 			<Typography paragraph>
-				El sistema de citas incluye un completo sistema de notificaciones y recordatorios para mantenerte informado y ayudarte a
-				gestionar tu agenda de manera eficiente:
+				El sistema de citas incluye un completo sistema de notificaciones y recordatorios para mantenerte informado y ayudarte a gestionar
+				tu agenda de manera eficiente:
 			</Typography>
 
 			<Grid container spacing={3}>
@@ -815,8 +809,7 @@ const NotificationsRemindersContent = () => {
 									<Box>
 										<Typography fontWeight="bold">Recordatorios de Citas</Typography>
 										<Typography variant="body2">
-											El sistema te envía recordatorios automáticos antes de tus citas programadas para ayudarte a prepararte
-											adecuadamente.
+											El sistema te envía recordatorios automáticos antes de tus citas programadas para ayudarte a prepararte adecuadamente.
 										</Typography>
 									</Box>
 								</Box>
@@ -910,8 +903,7 @@ const NotificationsRemindersContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Notificaciones Push (Opcional)</Typography>
 								<Typography variant="body2">
-									Si has habilitado las notificaciones del navegador, puedes recibir alertas incluso cuando no tengas la plataforma
-									abierta.
+									Si has habilitado las notificaciones del navegador, puedes recibir alertas incluso cuando no tengas la plataforma abierta.
 								</Typography>
 							</Box>
 						</Box>
@@ -1030,8 +1022,7 @@ const SystemBenefitsContent = () => {
 								<Box>
 									<Typography fontWeight="bold">Comodidad 24/7</Typography>
 									<Typography variant="body2">
-										Pueden programar citas en cualquier momento, incluso fuera del horario laboral, sin necesidad de llamadas
-										telefónicas.
+										Pueden programar citas en cualquier momento, incluso fuera del horario laboral, sin necesidad de llamadas telefónicas.
 									</Typography>
 								</Box>
 							</Box>
@@ -1138,8 +1129,8 @@ const BestPracticesContent = () => {
 									<Box>
 										<Typography fontWeight="bold">Bloques de Agenda</Typography>
 										<Typography variant="body2">
-											Considera definir bloques específicos para citas (ej: mañanas de lunes a miércoles) manteniendo otros momentos
-											libres para trabajo sin interrupciones.
+											Considera definir bloques específicos para citas (ej: mañanas de lunes a miércoles) manteniendo otros momentos libres
+											para trabajo sin interrupciones.
 										</Typography>
 									</Box>
 								</Box>
@@ -1162,8 +1153,8 @@ const BestPracticesContent = () => {
 									<Box>
 										<Typography fontWeight="bold">Aprobación Manual</Typography>
 										<Typography variant="body2">
-											Para clientes nuevos, considera activar la aprobación manual para valorar primero si la consulta corresponde a tu
-											área de especialización.
+											Para clientes nuevos, considera activar la aprobación manual para valorar primero si la consulta corresponde a tu área
+											de especialización.
 										</Typography>
 									</Box>
 								</Box>
@@ -1172,8 +1163,8 @@ const BestPracticesContent = () => {
 									<Box>
 										<Typography fontWeight="bold">Comunicación Previa</Typography>
 										<Typography variant="body2">
-											Envía un mensaje personalizado de confirmación incluyendo cualquier información o documentación que el cliente
-											deba preparar para la consulta.
+											Envía un mensaje personalizado de confirmación incluyendo cualquier información o documentación que el cliente deba
+											preparar para la consulta.
 										</Typography>
 									</Box>
 								</Box>
@@ -1225,8 +1216,8 @@ const BestPracticesContent = () => {
 									</Typography>
 								</Box>
 								<Typography variant="body2">
-									Asegúrate de que tu nombre profesional aparezca correctamente en el enlace y la página de reserva para fortalecer tu
-									marca personal.
+									Asegúrate de que tu nombre profesional aparezca correctamente en el enlace y la página de reserva para fortalecer tu marca
+									personal.
 								</Typography>
 							</Paper>
 						</Grid>
@@ -1239,8 +1230,8 @@ const BestPracticesContent = () => {
 									</Typography>
 								</Box>
 								<Typography variant="body2">
-									Revisa periódicamente los patrones de reservas para identificar horarios de alta demanda y ajustar tu disponibilidad
-									según sea necesario.
+									Revisa periódicamente los patrones de reservas para identificar horarios de alta demanda y ajustar tu disponibilidad según
+									sea necesario.
 								</Typography>
 							</Paper>
 						</Grid>
@@ -1253,8 +1244,8 @@ const BestPracticesContent = () => {
 									</Typography>
 								</Box>
 								<Typography variant="body2">
-									Actualiza regularmente tu disponibilidad para reflejar cambios en tu agenda, períodos de vacaciones o modificaciones
-									en tu horario de trabajo.
+									Actualiza regularmente tu disponibilidad para reflejar cambios en tu agenda, períodos de vacaciones o modificaciones en tu
+									horario de trabajo.
 								</Typography>
 							</Paper>
 						</Grid>
@@ -1265,8 +1256,8 @@ const BestPracticesContent = () => {
 			<Alert severity="info" sx={{ mt: 3 }}>
 				<AlertTitle>Evolución Continua</AlertTitle>
 				<Typography>
-					El sistema de citas está diseñado para adaptarse a tus necesidades. A medida que lo utilices, identifica oportunidades de
-					mejora en tu configuración e implementa ajustes para optimizar tanto tu experiencia como la de tus clientes.
+					El sistema de citas está diseñado para adaptarse a tus necesidades. A medida que lo utilices, identifica oportunidades de mejora
+					en tu configuración e implementa ajustes para optimizar tanto tu experiencia como la de tus clientes.
 				</Typography>
 			</Alert>
 		</>

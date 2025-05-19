@@ -67,7 +67,8 @@ const TechnologiesList: TechnologyItem[] = [
 		trending: true,
 		iconComponent: Task,
 		title: "Tareas",
-		description: "Gestión integral de tareas y actividades con seguimiento, priorización, plazos y asignación para mantener tu práctica legal organizada.",
+		description:
+			"Gestión integral de tareas y actividades con seguimiento, priorización, plazos y asignación para mantener tu práctica legal organizada.",
 		colorKey: "secondary",
 	},
 ];

@@ -67,8 +67,8 @@ const IntroductionContent = () => {
 	return (
 		<Stack spacing={3}>
 			<Typography paragraph>
-				Esta guía te mostrará cómo utilizar el calendario para organizar tus eventos legales, gestionar recordatorios y vincular
-				actividades a tus causas.
+				Esta guía te mostrará cómo utilizar el calendario para organizar tus eventos legales, gestionar recordatorios y vincular actividades
+				a tus causas.
 			</Typography>
 			<Alert severity="info">
 				<AlertTitle>Funcionalidades principales:</AlertTitle>
@@ -122,8 +122,7 @@ const NavigationContent = () => {
 				</Stack>
 			</Paper>
 			<Typography paragraph>
-				Para navegar entre fechas, utiliza las flechas de navegación o haz clic en el botón "Hoy" para volver rápidamente a la fecha
-				actual.
+				Para navegar entre fechas, utiliza las flechas de navegación o haz clic en el botón "Hoy" para volver rápidamente a la fecha actual.
 			</Typography>
 		</Stack>
 	);
@@ -187,8 +186,8 @@ const EventCreationContent = () => {
 			</Alert>
 
 			<Typography paragraph>
-				Al crear un evento, es posible vincularlo a una causa específica, lo que te permitirá mantener un seguimiento organizado de
-				todas las actividades relacionadas con cada expediente.
+				Al crear un evento, es posible vincularlo a una causa específica, lo que te permitirá mantener un seguimiento organizado de todas
+				las actividades relacionadas con cada expediente.
 			</Typography>
 		</Stack>
 	);
@@ -393,8 +392,8 @@ const RemindersContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Notificaciones por Correo Electrónico</Typography>
 								<Typography variant="body2">
-									Recibirás un correo electrónico con recordatorio de tus eventos programados, configurable para ser enviado con
-									diferentes anticipaciones (1 día, 3 días o 1 semana antes).
+									Recibirás un correo electrónico con recordatorio de tus eventos programados, configurable para ser enviado con diferentes
+									anticipaciones (1 día, 3 días o 1 semana antes).
 								</Typography>
 							</Box>
 						</Box>
@@ -403,8 +402,8 @@ const RemindersContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Notificaciones Web</Typography>
 								<Typography variant="body2">
-									Cuando estés utilizando la plataforma, recibirás notificaciones dentro de la aplicación para eventos próximos,
-									apareciendo en el ícono de notificaciones en la barra superior.
+									Cuando estés utilizando la plataforma, recibirás notificaciones dentro de la aplicación para eventos próximos, apareciendo
+									en el ícono de notificaciones en la barra superior.
 								</Typography>
 							</Box>
 						</Box>
@@ -441,9 +440,7 @@ const CauseLinkingContent = () => {
 	const theme = useTheme();
 	return (
 		<Stack spacing={3}>
-			<Typography paragraph>
-				Una de las características más útiles del calendario es su integración con el sistema de causas:
-			</Typography>
+			<Typography paragraph>Una de las características más útiles del calendario es su integración con el sistema de causas:</Typography>
 
 			<Box sx={{ bgcolor: alpha(theme.palette.primary.lighter, 0.1), p: 2, borderRadius: "8px", mb: 3 }}>
 				<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -488,14 +485,14 @@ const CauseLinkingContent = () => {
 			<Alert severity="warning" sx={{ mb: 2 }}>
 				<AlertTitle>Importante</AlertTitle>
 				<Typography>
-					Los eventos vinculados a causas aparecerán tanto en el calendario general como en la vista específica de la causa,
-					permitiéndote tener una visión completa de tu agenda y de los eventos relacionados con cada expediente.
+					Los eventos vinculados a causas aparecerán tanto en el calendario general como en la vista específica de la causa, permitiéndote
+					tener una visión completa de tu agenda y de los eventos relacionados con cada expediente.
 				</Typography>
 			</Alert>
 
 			<Typography paragraph>
-				La vinculación de eventos a causas te permite organizar mejor tu trabajo, priorizar tareas según los casos más urgentes y
-				mantener un registro detallado de todas las actividades relacionadas con cada expediente.
+				La vinculación de eventos a causas te permite organizar mejor tu trabajo, priorizar tareas según los casos más urgentes y mantener
+				un registro detallado de todas las actividades relacionadas con cada expediente.
 			</Typography>
 		</Stack>
 	);
@@ -562,8 +559,8 @@ const AppointmentConfigContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Horarios Disponibles</Typography>
 								<Typography variant="body2">
-									Para cada día seleccionado, configura las franjas horarias en las que deseas recibir citas, por ejemplo, de 9:00 a
-									12:00 y de 15:00 a 18:00.
+									Para cada día seleccionado, configura las franjas horarias en las que deseas recibir citas, por ejemplo, de 9:00 a 12:00 y
+									de 15:00 a 18:00.
 								</Typography>
 							</Box>
 						</Box>
@@ -594,8 +591,8 @@ const AppointmentConfigContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Duración de las Citas</Typography>
 								<Typography variant="body2">
-									Define la duración estándar de tus citas (30 minutos, 1 hora, etc.). También puedes crear diferentes tipos de citas
-									con duraciones específicas.
+									Define la duración estándar de tus citas (30 minutos, 1 hora, etc.). También puedes crear diferentes tipos de citas con
+									duraciones específicas.
 								</Typography>
 							</Box>
 						</Box>
@@ -648,12 +645,12 @@ const AppointmentConfigContent = () => {
 			<Alert severity="info" sx={{ mt: 3 }}>
 				<AlertTitle>Enlace para Clientes</AlertTitle>
 				<Typography paragraph>
-					Una vez configurada tu disponibilidad, el sistema genera un enlace único que puedes compartir con tus clientes para que
-					reserven citas directamente según tu disponibilidad configurada.
+					Una vez configurada tu disponibilidad, el sistema genera un enlace único que puedes compartir con tus clientes para que reserven
+					citas directamente según tu disponibilidad configurada.
 				</Typography>
 				<Typography>
-					Puedes incluir este enlace en tu firma de correo electrónico, compartirlo en tu página web o enviarlo directamente a tus
-					clientes cuando necesiten programar una consulta.
+					Puedes incluir este enlace en tu firma de correo electrónico, compartirlo en tu página web o enviarlo directamente a tus clientes
+					cuando necesiten programar una consulta.
 				</Typography>
 			</Alert>
 		</Stack>
@@ -690,8 +687,8 @@ const PracticalTipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Utiliza la vista semanal los lunes para planificar tu semana, identificar conflictos de horarios y organizar tus
-							actividades de manera eficiente.
+							Utiliza la vista semanal los lunes para planificar tu semana, identificar conflictos de horarios y organizar tus actividades
+							de manera eficiente.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -704,8 +701,8 @@ const PracticalTipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Incluye información completa en la descripción de los eventos, como número de sala para audiencias, documentos necesarios
-							o contactos relevantes, para tener todo a mano cuando lo necesites.
+							Incluye información completa en la descripción de los eventos, como número de sala para audiencias, documentos necesarios o
+							contactos relevantes, para tener todo a mano cuando lo necesites.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -718,8 +715,8 @@ const PracticalTipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Mantén el calendario abierto en tu dispositivo móvil o configura la sincronización con tu aplicación de calendario
-							preferida para tener acceso rápido a tu agenda en cualquier momento.
+							Mantén el calendario abierto en tu dispositivo móvil o configura la sincronización con tu aplicación de calendario preferida
+							para tener acceso rápido a tu agenda en cualquier momento.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -736,9 +733,7 @@ const PracticalTipsContent = () => {
 					</Box>
 					<Box display="flex" alignItems="center">
 						<FolderAdd size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
-						<Typography>
-							Siempre vincula los eventos a sus causas correspondientes para mantener todo organizado por expediente
-						</Typography>
+						<Typography>Siempre vincula los eventos a sus causas correspondientes para mantener todo organizado por expediente</Typography>
 					</Box>
 					<Box display="flex" alignItems="center">
 						<Sms size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
@@ -746,17 +741,15 @@ const PracticalTipsContent = () => {
 					</Box>
 					<Box display="flex" alignItems="center">
 						<Add size={20} style={{ marginRight: "8px", color: theme.palette.success.main }} />
-						<Typography>
-							Programa tiempo para preparación antes de eventos importantes como audiencias o reuniones con clientes
-						</Typography>
+						<Typography>Programa tiempo para preparación antes de eventos importantes como audiencias o reuniones con clientes</Typography>
 					</Box>
 				</Stack>
 			</Box>
 
 			<Alert severity="info" sx={{ mt: 3 }}>
 				<AlertTitle>Acceso Rápido</AlertTitle>
-				Recuerda que puedes acceder al calendario desde el menú principal o directamente desde la vista de cada causa para gestionar
-				eventos específicos relacionados con ese expediente.
+				Recuerda que puedes acceder al calendario desde el menú principal o directamente desde la vista de cada causa para gestionar eventos
+				específicos relacionados con ese expediente.
 			</Alert>
 		</Stack>
 	);

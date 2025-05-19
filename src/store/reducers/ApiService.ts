@@ -634,6 +634,69 @@ class ApiService {
 	}
 
 	/**
+	 * Obtiene todos los planes disponibles (admin)
+	 */
+	static async getAllPlans(): Promise<ApiResponse<Plan[]>> {
+		try {
+			const response = await axios.get(`${API_BASE_URL}/api/plan-configs`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			console.error("Error fetching all plans:", error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Obtiene un plan específico por ID
+	 * @param planId - ID del plan
+	 */
+	static async getPlanById(planId: string): Promise<ApiResponse<Plan>> {
+		try {
+			const response = await axios.get(`${API_BASE_URL}/api/plan-configs/${planId}`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			console.error(`Error fetching plan ${planId}:`, error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Crea o actualiza un plan
+	 * @param planData - Datos del plan
+	 */
+	static async createOrUpdatePlan(planData: Partial<Plan>): Promise<ApiResponse<Plan>> {
+		try {
+			const response = await axios.post(`${API_BASE_URL}/api/plan-config`, planData, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			console.error("Error creating/updating plan:", error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Elimina un plan
+	 * @param planId - ID del plan
+	 */
+	static async deletePlan(planId: string): Promise<ApiResponse> {
+		try {
+			const response = await axios.delete(`${API_BASE_URL}/api/plan-config/${planId}`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			console.error(`Error deleting plan ${planId}:`, error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
 	 * Obtiene el plan actual del usuario
 	 */
 	static async getCurrentSubscription(): Promise<ApiResponse> {

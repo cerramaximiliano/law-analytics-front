@@ -43,7 +43,6 @@ import {
 
 // ==============================|| CONTENIDOS DE LA GUÍA DE TAREAS ||============================== //
 
-
 const CreateTaskContent = () => (
 	<Stack spacing={3}>
 		<Stack spacing={2}>

@@ -41,8 +41,8 @@ const IntroductionContent = () => {
 	return (
 		<Stack spacing={3}>
 			<Typography paragraph>
-				Esta guía te mostrará cómo utilizar la calculadora de intereses para generar, guardar y gestionar distintos tipos de cálculos
-				con diferentes tasas.
+				Esta guía te mostrará cómo utilizar la calculadora de intereses para generar, guardar y gestionar distintos tipos de cálculos con
+				diferentes tasas.
 			</Typography>
 			<Alert severity="info">
 				<AlertTitle>Aprenderás a:</AlertTitle>
@@ -76,9 +76,7 @@ const FormContent = () => {
 					</Box>
 					<Box display="flex" alignItems="center">
 						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
-						<Typography>
-							Completa los datos requeridos: reclamante, reclamado, fechas inicial y final, tipo de tasa y capital
-						</Typography>
+						<Typography>Completa los datos requeridos: reclamante, reclamado, fechas inicial y final, tipo de tasa y capital</Typography>
 					</Box>
 				</Stack>
 			</Paper>
@@ -191,15 +189,14 @@ const MethodsContent = () => {
 						<strong>Fórmula:</strong> Capital × (1 + Σ [Tasa diaria × días])
 					</Typography>
 					<Typography variant="body2" mt={1}>
-						Calcula los intereses acumulando la tasa diaria para cada período. La tasa diaria se obtiene dividiendo la tasa anual por
-						365.
+						Calcula los intereses acumulando la tasa diaria para cada período. La tasa diaria se obtiene dividiendo la tasa anual por 365.
 					</Typography>
 				</Box>
 			</Paper>
 
 			<Typography paragraph>
-				En ambos casos, el sistema obtiene los datos oficiales publicados por los organismos correspondientes para cada fecha del
-				período seleccionado.
+				En ambos casos, el sistema obtiene los datos oficiales publicados por los organismos correspondientes para cada fecha del período
+				seleccionado.
 			</Typography>
 		</Stack>
 	);
@@ -234,8 +231,7 @@ const ResultsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Muestra información sobre el método aplicado (indexación o interés diario), coeficiente calculado y otros parámetros
-							técnicos.
+							Muestra información sobre el método aplicado (indexación o interés diario), coeficiente calculado y otros parámetros técnicos.
 						</Typography>
 					</Paper>
 				</Grid>
