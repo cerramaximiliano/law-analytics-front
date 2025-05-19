@@ -35,18 +35,6 @@ import TabLegalDocuments from "./TabPanel";
 
 // ==============================|| PRICING ||============================== //
 
-const featureOrder = [
-	"folders", // Causas
-	"calculators", // Cálculos
-	"contacts", // Contactos
-	"storage", // Almacenamiento
-	"exportReports", // Exportación de reportes
-	"bulkOperations", // Operaciones masivas
-	"advancedAnalytics", // Análisis avanzados
-	"taskAutomation", // Automatización de tareas
-	"prioritySupport", // Soporte prioritario
-];
-
 // Interfaz para las opciones de downgrade
 interface DowngradeOption {
 	type: string;
@@ -356,53 +344,26 @@ const Pricing = () => {
 		setLegalDocsDialogOpen(false);
 	};
 
-	// Obtener un orden global para todas las características
-	// Primero las habilitadas en cualquier plan, luego las no habilitadas
-	const getGlobalFeatureOrder = () => {
-		if (!plans.length) return [];
-
-		// Recopilar todos los tipos de características
-		const allFeatureTypes = featureOrder.filter((type) => {
-			return plans.some((plan) => {
-				// Verificar límites de recursos
-				if (["folders", "calculators", "contacts", "storage"].includes(type)) {
-					const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === type);
-					return resource && resource.limit > 0;
-				}
-				// Verificar características
-				const feature = plan.features.find((f: PlanFeature) => f.name === type);
-				return feature && feature.enabled;
-			});
-		});
-
-		// Recopilar los tipos que no están habilitados en ningún plan
-		const disabledTypes = featureOrder.filter((type) => !allFeatureTypes.includes(type));
-
-		// Combinar ambas listas
-		return [...allFeatureTypes, ...disabledTypes];
-	};
 
 	// Verificar si un plan tiene una característica específica y obtener su valor
 	const planFeatureValue = (plan: Plan, featureType: string) => {
 		// Para límites de recursos
-		if (featureType === "folders") {
-			const folders = plan.resourceLimits.find((r: ResourceLimit) => r.name === "folders");
-			return folders ? `+${folders.limit} Causas` : null;
-		}
-
-		if (featureType === "calculators") {
-			const calculators = plan.resourceLimits.find((r: ResourceLimit) => r.name === "calculators");
-			return calculators ? `+${calculators.limit} Cálculos` : null;
-		}
-
-		if (featureType === "contacts") {
-			const contacts = plan.resourceLimits.find((r: ResourceLimit) => r.name === "contacts");
-			return contacts ? `+${contacts.limit} Contactos` : null;
-		}
-
-		if (featureType === "storage") {
-			const storage = plan.resourceLimits.find((r: ResourceLimit) => r.name === "storage");
-			return storage ? `${storage.limit} MB de Almacenamiento` : null;
+		const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === featureType);
+		if (resource) {
+			switch (featureType) {
+				case "folders":
+					return `+${resource.limit} Causas`;
+				case "calculators":
+					return `+${resource.limit} Cálculos`;
+				case "contacts":
+					return `+${resource.limit} Contactos`;
+				case "storage":
+					return `${resource.limit} MB de Almacenamiento`;
+				default:
+					// Capitalizar el nombre del recurso
+					const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
+					return `${resource.limit} ${displayName}`;
+			}
 		}
 
 		// Para características booleanas
@@ -412,6 +373,46 @@ const Pricing = () => {
 		}
 
 		return null;
+	};
+
+	// Función para obtener el texto predeterminado para características deshabilitadas
+	const getDefaultFeatureText = (featureType: string): string => {
+		// Primero buscar si es un recurso en algún plan para obtener su descripción
+		for (const plan of plans) {
+			const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === featureType);
+			if (resource) {
+				switch (featureType) {
+					case "folders":
+						return "+0 Causas";
+					case "calculators":
+						return "+0 Cálculos";
+					case "contacts":
+						return "+0 Contactos";
+					case "storage":
+						return "0 MB de Almacenamiento";
+					default:
+						const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
+						return `0 ${displayName}`;
+				}
+			}
+		}
+
+		// Buscar si es una característica en algún plan para obtener su descripción
+		for (const plan of plans) {
+			const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
+			if (feature) {
+				return feature.description;
+			}
+		}
+
+		// Si no se encuentra, capitalizar el tipo de característica
+		return (
+			featureType.charAt(0).toUpperCase() +
+			featureType
+				.slice(1)
+				.replace(/([A-Z])/g, " $1")
+				.trim()
+		);
 	};
 
 	// Función para obtener el color y el estilo según el tipo de plan
@@ -520,29 +521,6 @@ const Pricing = () => {
 		);
 	}
 
-	// Obtener texto predeterminado para un tipo de característica
-	const getDefaultFeatureText = (featureType: string): string => {
-		switch (featureType) {
-			case "folders":
-				return "+0 Causas";
-			case "calculators":
-				return "+0 Cálculos";
-			case "contacts":
-				return "+0 Contactos";
-			case "storage":
-				return "0 MB de Almacenamiento";
-			default:
-				// Buscar la descripción en cualquier plan
-				for (const plan of plans) {
-					const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
-					if (feature) {
-						return feature.description;
-					}
-				}
-				return featureType; // Si no se encuentra una descripción, usar el nombre del tipo
-		}
-	};
-
 	return (
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
@@ -626,22 +604,35 @@ const Pricing = () => {
 											}}
 											component="ul"
 										>
-											{/* Mostrar todas las características en el mismo orden para todos los planes */}
-											{getGlobalFeatureOrder().map((featureType, i) => {
-												const featureValue = planFeatureValue(plan, featureType);
-												const hasFeature = !!featureValue;
+											{/* Primero mostrar los recursos del plan actual */}
+											{plan.resourceLimits.map((resource, i) => (
+												<Fragment key={`resource-${i}`}>
+													<ListItem>
+														<ListItemText
+															primary={planFeatureValue(plan, resource.name)}
+															sx={{ textAlign: "center", fontWeight: "medium" }}
+														/>
+													</ListItem>
+												</Fragment>
+											))}
 
-												return (
-													<Fragment key={i}>
-														<ListItem sx={!hasFeature ? priceListDisable : {}}>
+											{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
+											{[...plan.features]
+												.sort((a, b) => {
+													// Ordenar: enabled (true) primero, luego disabled (false)
+													if (a.enabled === b.enabled) return 0;
+													return a.enabled ? -1 : 1;
+												})
+												.map((feature, i) => (
+													<Fragment key={`feature-${i}`}>
+														<ListItem sx={!feature.enabled ? priceListDisable : {}}>
 															<ListItemText
-																primary={hasFeature ? featureValue : getDefaultFeatureText(featureType)}
-																sx={{ textAlign: "center", fontWeight: hasFeature ? "medium" : "normal" }}
+																primary={feature.enabled ? feature.description : getDefaultFeatureText(feature.name)}
+																sx={{ textAlign: "center", fontWeight: feature.enabled ? "medium" : "normal" }}
 															/>
 														</ListItem>
 													</Fragment>
-												);
-											})}
+												))}
 										</List>
 									</Grid>
 								</Grid>

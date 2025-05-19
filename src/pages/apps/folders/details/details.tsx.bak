@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams } from "react-router";
 import { useSelector } from "react-redux";
-import { ToggleButtonGroup, ToggleButton, Tooltip, Grid, Button, Chip, Stack, Skeleton } from "@mui/material";
+import { ToggleButtonGroup, ToggleButton, Tooltip, Grid, Button, Chip, Stack } from "@mui/material";
 import { Category, TableDocument, ExportSquare } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -167,70 +167,57 @@ const Details = () => {
 	// Memoized view options renderer
 	const renderViewOptions = useMemo(
 		() => (
-			<Stack spacing={1} alignItems="flex-end">
-				{/* First line: View toggle buttons */}
-				{isLoader ? (
-					<Skeleton variant="rectangular" width={100} height={36} sx={{ borderRadius: 1 }} />
+			<Stack direction="row" spacing={2} alignItems="center">
+				{/* Vincular con Poder Judicial button/chip */}
+				{folder?.pjn ? (
+					<Chip
+						label="Vinculado con Poder Judicial de la Nación"
+						color="success"
+						variant="filled"
+						icon={<ExportSquare size="16" />}
+						sx={{
+							fontWeight: 600,
+							fontSize: '0.875rem',
+							px: 2,
+							py: 0.5,
+						}}
+					/>
 				) : (
-					<ToggleButtonGroup value={alignment} exclusive onChange={handleAlignment} size="small" aria-label="view layout">
-						{VIEW_OPTIONS.map(({ value, label, icon: Icon }) => (
-							<ToggleButton value={value} key={value} aria-label={label}>
-								<Tooltip title={label}>
-									<Icon variant="Bold" />
-								</Tooltip>
-							</ToggleButton>
-						))}
-					</ToggleButtonGroup>
+					<Button
+						variant="outlined"
+						color="primary"
+						startIcon={<ExportSquare size="20" />}
+						onClick={handleOpenLinkJudicial}
+						sx={{
+							borderRadius: 1,
+							textTransform: "none",
+							fontWeight: 600,
+						}}
+					>
+						Vincular con Poder Judicial
+					</Button>
 				)}
 
-				{/* Second line: Vincular con Poder Judicial button/chip */}
-				{isLoader ? (
-					<Skeleton variant="rectangular" width={200} height={36} sx={{ borderRadius: 1 }} />
-				) : (
-					<>
-						{folder?.pjn ? (
-							<Chip
-								label="Vinculado con PJN"
-								size="small"
-								color="success"
-								variant="filled"
-								icon={<ExportSquare size="16" />}
-								sx={{
-									fontWeight: 500,
-									fontSize: "0.875rem",
-									px: 2,
-									py: 0.5,
-								}}
-							/>
-						) : (
-							<Button
-								variant="outlined"
-								color="primary"
-								startIcon={<ExportSquare size="20" />}
-								onClick={handleOpenLinkJudicial}
-								sx={{
-									borderRadius: 1,
-									textTransform: "none",
-									fontWeight: 500,
-								}}
-							>
-								Vincular con Poder Judicial
-							</Button>
-						)}
-					</>
-				)}
+				{/* View toggle buttons */}
+				<ToggleButtonGroup value={alignment} exclusive onChange={handleAlignment} size="small" aria-label="view layout">
+					{VIEW_OPTIONS.map(({ value, label, icon: Icon }) => (
+						<ToggleButton value={value} key={value} aria-label={label}>
+							<Tooltip title={label}>
+								<Icon variant="Bold" />
+							</Tooltip>
+						</ToggleButton>
+					))}
+				</ToggleButtonGroup>
 			</Stack>
 		),
-		[alignment, handleAlignment, folder?.pjn, handleOpenLinkJudicial, isLoader],
+		[alignment, handleAlignment, folder?.pjn, handleOpenLinkJudicial],
 	);
 
 	// Create a dynamic title that shows just the formatted folder name
-	const dynamicTitle = useMemo(() => {
-		if (isLoader) {
-			return <Skeleton variant="text" width={250} height={28} />;
-		}
-		return folder?.folderName ? formatFolderName(folder.folderName) : "Detalles de la Causa";
-	}, [folder, formatFolderName, isLoader]);
+	const dynamicTitle = useMemo(
+		() => (folder?.folderName ? formatFolderName(folder.folderName) : "Detalles de la Causa"),
+		[folder, formatFolderName],
+	);
 
 	// Memoized components
 	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);

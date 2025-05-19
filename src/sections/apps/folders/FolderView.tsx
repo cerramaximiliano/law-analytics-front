@@ -66,19 +66,34 @@ const FolderView = memo(({ data }: any) => {
 								<Typography variant="h5">{data.folderName || notAvailableMsg}</Typography>
 								<Chip size="small" label={data.status || "Sin estado"} color={getStatusColor(data.status)} />
 							</Stack>
-							<Button
-								variant="outlined"
-								color="primary"
-								startIcon={<ExportSquare size="20" />}
-								onClick={handleOpenLinkJudicial}
-								sx={{
-									borderRadius: 1,
-									textTransform: "none",
-									fontWeight: 500,
-								}}
-							>
-								Vincular con Poder Judicial
-							</Button>
+							{data.pjn ? (
+								<Chip
+									label="Vinculado con Poder Judicial de la Nación"
+									color="success"
+									variant="filled"
+									icon={<ExportSquare size="16" />}
+									sx={{
+										fontWeight: 600,
+										fontSize: "0.875rem",
+										px: 2,
+										py: 0.5,
+									}}
+								/>
+							) : (
+								<Button
+									variant="outlined"
+									color="primary"
+									startIcon={<ExportSquare size="20" />}
+									onClick={handleOpenLinkJudicial}
+									sx={{
+										borderRadius: 1,
+										textTransform: "none",
+										fontWeight: 500,
+									}}
+								>
+									Vincular con Poder Judicial
+								</Button>
+							)}
 						</Stack>
 
 						{/* Info cards - Horizontal layout */}
