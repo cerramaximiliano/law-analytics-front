@@ -15,6 +15,7 @@ import {
 	ShoppingBag,
 	InfoCircle,
 	CalendarTick,
+	Task,
 } from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
@@ -32,6 +33,7 @@ const icons = {
 	profile: UserSquare,
 	ecommerce: ShoppingBag,
 	price: DollarSquare,
+	tasks: Task,
 	help: InfoCircle,
 	booking: CalendarTick,
 };
@@ -119,6 +121,13 @@ const applications: NavItemType = {
 					url: "/apps/customer/customer-list",
 				},
 			],
+		},
+		{
+			id: "tasks",
+			title: <FormattedMessage id="Tareas" />,
+			icon: icons.tasks,
+			type: "item",
+			url: "/tareas",
 		},
 		/* 
 		{

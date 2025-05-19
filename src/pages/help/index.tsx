@@ -5,7 +5,14 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MainCard from "components/MainCard";
-import { LaboralContent, InteresesContent, FoldersContent, ContactsContent, CalendarContent } from "components/guides/GuideContent";
+import {
+	LaboralContent,
+	InteresesContent,
+	FoldersContent,
+	ContactsContent,
+	CalendarContent,
+	TasksContent,
+} from "components/guides/GuideContent";
 import { BookingContent } from "components/guides";
 import { useTheme } from "@mui/material/styles";
 
@@ -22,6 +29,7 @@ import {
 	Profile2User,
 	Calendar,
 	CalendarTick,
+	Task,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES DE AYUDA ||============================== //
@@ -38,6 +46,7 @@ const GuidesSection = () => {
 	const contactosCardRef = useRef<HTMLDivElement>(null);
 	const calendarioCardRef = useRef<HTMLDivElement>(null);
 	const citasCardRef = useRef<HTMLDivElement>(null);
+	const tareasCardRef = useRef<HTMLDivElement>(null);
 
 	// Create refs for expanded content
 	const laboralContentRef = useRef<HTMLDivElement>(null);
@@ -46,6 +55,7 @@ const GuidesSection = () => {
 	const contactosContentRef = useRef<HTMLDivElement>(null);
 	const calendarioContentRef = useRef<HTMLDivElement>(null);
 	const citasContentRef = useRef<HTMLDivElement>(null);
+	const tareasContentRef = useRef<HTMLDivElement>(null);
 
 	const handleExpandGuide = (guideName: string) => {
 		if (expandedGuide === guideName) {
@@ -75,6 +85,9 @@ const GuidesSection = () => {
 						break;
 					case "citas":
 						contentRef = citasContentRef;
+						break;
+					case "tareas":
+						contentRef = tareasContentRef;
 						break;
 					default:
 						break;
@@ -445,6 +458,60 @@ const GuidesSection = () => {
 						</CardActionArea>
 					</Card>
 				</Grid>
+
+				{/* Guía Tareas */}
+				<Grid item xs={12} sm={6} md={4} lg={4}>
+					<Card
+						ref={tareasCardRef}
+						sx={{
+							height: "100%",
+							display: "flex",
+							flexDirection: "column",
+							transition: "all 0.2s",
+							borderRadius: 2,
+							"&:hover": {
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)",
+							},
+						}}
+					>
+						<CardActionArea sx={{ height: "100%" }} onClick={() => handleExpandGuide("tareas")}>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
+									<Task
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.primary.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
+								<Typography variant="h4" gutterBottom>
+									Gestión de Tareas
+								</Typography>
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
+									Aprende a crear, organizar y gestionar tus tareas de manera eficiente.
+								</Typography>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
+									{expandedGuide === "tareas" ? "Cerrar guía" : "Ver guía"}
+								</Button>
+							</CardContent>
+						</CardActionArea>
+					</Card>
+				</Grid>
 			</Grid>
 
 			{/* Contenidos expandidos de las guías */}
@@ -530,6 +597,20 @@ const GuidesSection = () => {
 					}}
 				>
 					<BookingContent />
+				</Paper>
+			</Collapse>
+
+			<Collapse in={expandedGuide === "tareas"} timeout="auto" unmountOnExit ref={tareasContentRef}>
+				<Paper
+					elevation={3}
+					sx={{
+						mt: 3,
+						mb: 2,
+						p: 2,
+						borderTop: `3px solid ${theme.palette.primary.main}`,
+					}}
+				>
+					<TasksContent />
 				</Paper>
 			</Collapse>
 		</Box>

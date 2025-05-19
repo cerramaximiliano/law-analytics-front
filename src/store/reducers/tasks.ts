@@ -13,10 +13,15 @@ const ADD_COMMENT = "tasks/ADD_COMMENT";
 const UPDATE_SUBTASK = "tasks/UPDATE_SUBTASK";
 const SET_UPCOMING_TASKS = "tasks/SET_UPCOMING_TASKS";
 const UPDATE_TASK_ASSIGNMENTS = "tasks/UPDATE_TASK_ASSIGNMENTS";
+const SET_TASK_DETAIL = "tasks/SET_TASK_DETAIL";
+const SET_TASK_DETAIL_LOADING = "tasks/SET_TASK_DETAIL_LOADING";
 
 const initialState: TaskState = {
 	tasks: [],
 	upcomingTasks: [], // Nueva propiedad para tareas próximas
+	task: null, // Single task for detail view
+	taskDetails: {}, // Task details by ID
+	taskDetailsLoading: {}, // Loading state for each task detail
 	isLoader: false,
 	error: null,
 };
@@ -74,6 +79,22 @@ const tasksReducer = (state = initialState, action: any) => {
 				...state,
 				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
 				isLoader: false,
+			};
+		case SET_TASK_DETAIL:
+			return {
+				...state,
+				taskDetails: {
+					...state.taskDetails,
+					[action.payload.id]: action.payload.data,
+				},
+			};
+		case SET_TASK_DETAIL_LOADING:
+			return {
+				...state,
+				taskDetailsLoading: {
+					...state.taskDetailsLoading,
+					[action.payload.id]: action.payload.loading,
+				},
 			};
 		default:
 			return state;
@@ -164,6 +185,40 @@ export const updateTask = (id: string, data: Partial<TaskType>) => async (dispat
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al actualizar la tarea" : "Error al actualizar la tarea";
 		dispatch({ type: SET_ERROR, payload: errorMessage });
+		return { success: false, error: errorMessage };
+	}
+};
+
+export const getTaskDetail = (id: string) => async (dispatch: Dispatch) => {
+	try {
+		// Set loading state for this specific task
+		dispatch({
+			type: SET_TASK_DETAIL_LOADING,
+			payload: { id, loading: true },
+		});
+
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}`);
+
+		dispatch({
+			type: SET_TASK_DETAIL,
+			payload: { id, data: response.data },
+		});
+
+		dispatch({
+			type: SET_TASK_DETAIL_LOADING,
+			payload: { id, loading: false },
+		});
+
+		return { success: true, data: response.data };
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener la tarea" : "Error al obtener la tarea";
+
+		dispatch({
+			type: SET_TASK_DETAIL_LOADING,
+			payload: { id, loading: false },
+		});
+
 		return { success: false, error: errorMessage };
 	}
 };

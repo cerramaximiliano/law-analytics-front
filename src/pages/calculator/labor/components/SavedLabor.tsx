@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -13,18 +13,9 @@ import {
 	Typography,
 	Tooltip,
 	useMediaQuery,
-	CardContent,
 	Button,
 	Box,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	TextField,
-	Chip,
-	Checkbox,
-	Autocomplete,
-	InputAdornment,
-	Divider,
+	Collapse,
 } from "@mui/material";
 import { dispatch, useSelector } from "store";
 import moment from "moment";
@@ -51,17 +42,14 @@ import { EmptyTable, HeaderSort, SortingSelect, TablePagination, TableRowSelecti
 import { CSVLink } from "react-csv";
 import AlertCalculatorDelete from "./AlertCalculatorDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
+import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
 
 // assets
-import { Add, Eye, Trash, Copy, Sms, Printer, Link21, Calculator, SearchNormal1, UserAdd, DocumentDownload } from "iconsax-react";
+import { Add, Eye, Trash, DocumentDownload } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
 import { getCalculatorsByFilter } from "store/reducers/calculator";
-import { openSnackbar } from "store/reducers/snackbar";
-import { getContactsByUserId } from "store/reducers/contacts";
-import axios from "axios";
-import { useReactToPrint } from "react-to-print";
 import despidoFormModel from "sections/forms/wizard/calc-laboral/despido/formModel/despidoFormModel";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
 
@@ -86,6 +74,8 @@ interface Props {
 	handleAdd: () => void;
 	renderRowSubComponent: FC<{ row: Row<CalculatorData> }>;
 	isLoading: boolean;
+	expandedRowId?: string | null;
+	onToggleExpanded?: (rowId: string) => void;
 }
 
 interface ResultItem {
@@ -99,6 +89,7 @@ interface GroupedResults {
 	liquidacion: ResultItem[];
 	multas: ResultItem[];
 	otros: ResultItem[];
+	[key: string]: ResultItem[];
 }
 
 interface CalculationDetailsProps {
@@ -107,6 +98,8 @@ interface CalculationDetailsProps {
 		folderId?: string;
 		amount: number;
 		variables?: Record<string, any>;
+		subClassType?: string;
+		type?: string;
 	};
 }
 
@@ -119,19 +112,6 @@ const CustomHeaderSort = HeaderSort as any;
 const CustomSortingSelect = SortingSelect as any;
 
 const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
-	const [emailModalOpen, setEmailModalOpen] = useState(false);
-	const [email, setEmail] = useState("");
-	const [emailList, setEmailList] = useState<string[]>([]);
-	const [copyToMe, setCopyToMe] = useState(false);
-	const [customMessage, setCustomMessage] = useState("");
-	const [linkModalOpen, setLinkModalOpen] = useState(false);
-	const [updateModalOpen, setUpdateModalOpen] = useState(false);
-	const [interestRate, setInterestRate] = useState("");
-	const [contactsLoaded, setContactsLoaded] = useState(false);
-	const { contacts, isLoader: contactsLoading } = useSelector((state: any) => state.contacts);
-	const { user } = useSelector((state: any) => state.auth);
-	const printRef = useRef<HTMLDivElement>(null);
-
 	const { formField } = despidoFormModel;
 
 	const getLabelForKey = (key: string): string => {
@@ -143,9 +123,6 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	const generatePlainText = () => {
 		let text = "RESULTADOS DE LA LIQUIDACIÓN\n\n";
 
-		if (customMessage) {
-			text += `${customMessage}\n\n`;
-		}
 		const groupedData = groupResults(data?.variables);
 
 		Object.entries(groupedData).forEach(([group, items]: [string, ResultItem[]]) => {
@@ -176,86 +153,86 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	// Función para generar contenido HTML
 	const generateHtmlContent = () => {
 		const styles = `
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-        .container { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; margin-bottom: 24px; }
-        .header h1, .header h2 { color: #333; margin: 0; }
-        .card {
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          break-inside: avoid;
-          page-break-inside: avoid;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-          overflow: hidden;
-        }
-        .card-header {
-          background-color: #f5f5f5;
-          padding: 12px 16px;
-          border-bottom: 1px solid #ddd;
-          border-radius: 8px 8px 0 0;
-          font-weight: bold;
-          color: #333;
-        }
-        .card-content { padding: 16px; }
-        .row, .item-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 8px 0;
-          border-bottom: 1px solid #eee;
-        }
-        .row:last-child, .item-row:last-child { border-bottom: none; }
-        .label { color: #666; }
-        .value { font-weight: 500; color: #333; }
-        .total-card {
-          background-color: #1976d2;
-          color: white;
-          padding: 16px;
-          border-radius: 8px;
-          margin-top: 16px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .total-content {
-          display: flex;
-          justify-content: space-between;
-          padding: 16px;
-          font-size: 1.2em;
-          font-weight: bold;
-        }
-        .total-label {
-          font-size: 18px;
-          font-weight: bold;
-        }
-        .total-value {
-          font-size: 18px;
-          font-weight: bold;
-        }
-        .footer {
-          margin-top: 24px;
-          text-align: center;
-          font-size: 12px;
-          color: #666;
-        }
-        .message-card {
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          padding: 16px;
-          background-color: #f9f9f9;
-          line-height: 1.5;
-        }
-      </style>
-    `;
+	      <style>
+	        body {
+	          font-family: Arial, sans-serif;
+	          line-height: 1.6;
+	          color: #333;
+	          max-width: 800px;
+	          margin: 0 auto;
+	          padding: 20px;
+	        }
+	        .container { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+	        .header { text-align: center; margin-bottom: 24px; }
+	        .header h1, .header h2 { color: #333; margin: 0; }
+	        .card {
+	          border: 1px solid #ddd;
+	          border-radius: 8px;
+	          margin-bottom: 16px;
+	          break-inside: avoid;
+	          page-break-inside: avoid;
+	          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+	          overflow: hidden;
+	        }
+	        .card-header {
+	          background-color: #f5f5f5;
+	          padding: 12px 16px;
+	          border-bottom: 1px solid #ddd;
+	          border-radius: 8px 8px 0 0;
+	          font-weight: bold;
+	          color: #333;
+	        }
+	        .card-content { padding: 16px; }
+	        .row, .item-row {
+	          display: flex;
+	          justify-content: space-between;
+	          padding: 8px 0;
+	          border-bottom: 1px solid #eee;
+	        }
+	        .row:last-child, .item-row:last-child { border-bottom: none; }
+	        .label { color: #666; }
+	        .value { font-weight: 500; color: #333; }
+	        .total-card {
+	          background-color: #1976d2;
+	          color: white;
+	          padding: 16px;
+	          border-radius: 8px;
+	          margin-top: 16px;
+	          display: flex;
+	          justify-content: space-between;
+	          align-items: center;
+	        }
+	        .total-content {
+	          display: flex;
+	          justify-content: space-between;
+	          padding: 16px;
+	          font-size: 1.2em;
+	          font-weight: bold;
+	        }
+	        .total-label {
+	          font-size: 18px;
+	          font-weight: bold;
+	        }
+	        .total-value {
+	          font-size: 18px;
+	          font-weight: bold;
+	        }
+	        .footer {
+	          margin-top: 24px;
+	          text-align: center;
+	          font-size: 12px;
+	          color: #666;
+	        }
+	        .message-card {
+	          border: 1px solid #ddd;
+	          border-radius: 8px;
+	          margin-bottom: 16px;
+	          padding: 16px;
+	          background-color: #f9f9f9;
+	          line-height: 1.5;
+	        }
+	      </style>
+	    `;
 
 		const renderCard = (title: string, items: ResultItem[]) => {
 			if (!items.length) return "";
@@ -263,27 +240,27 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			const rows = items
 				.map(
 					({ key, value }) => `
-            <div class="row">
-                <span class="label">${getLabelForKey(key) || key}:</span>
-                <span class="value">${
-									typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
-										? new Intl.NumberFormat("es-AR", {
-												style: "currency",
-												currency: "ARS",
-										  }).format(value)
-										: value
-								}</span>
-            </div>
-        `,
+	            <div class="row">
+	                <span class="label">${getLabelForKey(key) || key}:</span>
+	                <span class="value">${
+										typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
+											? new Intl.NumberFormat("es-AR", {
+													style: "currency",
+													currency: "ARS",
+											  }).format(value)
+											: value
+									}</span>
+	            </div>
+	        `,
 				)
 				.join("");
 
 			return `
-            <div class="card">
-                <div class="card-header">${title}</div>
-                <div class="card-content">${rows}</div>
-            </div>
-        `;
+	            <div class="card">
+	                <div class="card-header">${title}</div>
+	                <div class="card-content">${rows}</div>
+	            </div>
+	        `;
 		};
 
 		const groupedData = groupResults(data?.variables);
@@ -300,232 +277,35 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			.join("");
 
 		return `
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                ${styles}
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>Resultados de la Liquidación</h1>
-                    </div>
-                    ${
-											customMessage
-												? `<div class="message-card">
-                        <p>${customMessage.replace(/\n/g, "<br>")}</p>
-                    </div>`
-												: ""
-										}
-                    ${cardsHtml}
-                    <div class="total-card">
-                        <span class="total-label">TOTAL</span>
-                        <span class="total-value">${new Intl.NumberFormat("es-AR", {
-													style: "currency",
-													currency: "ARS",
-												}).format(data.amount)}</span>
-                    </div>
+	        <!DOCTYPE html>
+	        <html>
+	            <head>
+	                <meta charset="utf-8">
+	                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	                ${styles}
+	            </head>
+	            <body>
+	                <div class="container">
+	                    <div class="header">
+	                        <h1>Resultados de la Liquidación</h1>
+	                    </div>
+	                    ${cardsHtml}
+	                    <div class="total-card">
+	                        <span class="total-label">TOTAL</span>
+	                        <span class="total-value">${new Intl.NumberFormat("es-AR", {
+														style: "currency",
+														currency: "ARS",
+													}).format(data.amount)}</span>
+	                    </div>
 
-                    <div class="footer">
-                      <p>Este documento fue generado automáticamente por Law||Analytics.</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-    `;
+	                    <div class="footer">
+	                      <p>Este documento fue generado automáticamente por Law||Analytics.</p>
+	                    </div>
+	                </div>
+	            </body>
+	        </html>
+	    `;
 	};
-
-	// Manejadores de eventos
-	const handleUpdateWithInterest = async () => {
-		try {
-			console.log("Actualizando con tasa:", interestRate);
-			// Aquí iría la lógica para actualizar con intereses
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Intereses actualizados correctamente",
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-			setUpdateModalOpen(false);
-			setInterestRate("");
-		} catch (error) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Error al actualizar los intereses",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
-
-	// Cargar contactos cuando se abre el modal de email
-	useEffect(() => {
-		if (emailModalOpen && !contactsLoaded && user?._id) {
-			dispatch(getContactsByUserId(user._id));
-			setContactsLoaded(true);
-		}
-	}, [emailModalOpen, contactsLoaded, user?._id]);
-
-	const handleAddEmail = () => {
-		// Validar formato de email
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-		if (email && emailRegex.test(email) && !emailList.includes(email)) {
-			setEmailList([...emailList, email]);
-			setEmail("");
-		} else if (email && !emailRegex.test(email)) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Por favor ingrese un email válido",
-					variant: "alert",
-					alert: { color: "warning" },
-					close: true,
-				}),
-			);
-		} else if (email && emailList.includes(email)) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Este email ya fue agregado a la lista",
-					variant: "alert",
-					alert: { color: "info" },
-					close: true,
-				}),
-			);
-			setEmail("");
-		}
-	};
-
-	const handleRemoveEmail = (emailToRemove: string) => {
-		setEmailList(emailList.filter((e) => e !== emailToRemove));
-	};
-
-	const handleEmailSend = async () => {
-		try {
-			const htmlBody = generateHtmlContent();
-			const textBody = generatePlainText();
-			const subject = "Liquidación por Despido - Law||Analytics";
-
-			// Solo usar la lista de emails explícitamente agregados
-			const allEmails = [...emailList];
-
-			// Si no hay emails en la lista, mostrar error
-			if (allEmails.length === 0) {
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: "Debe agregar al menos un email a la lista de destinatarios",
-						variant: "alert",
-						alert: { color: "warning" },
-						close: true,
-					}),
-				);
-				return;
-			}
-
-			// Enviar email a todos los destinatarios como array
-			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/send-email`, {
-				to: allEmails, // Enviar como array en lugar de string separado por comas
-				subject,
-				htmlBody,
-				textBody,
-				copyToMe: copyToMe,
-			});
-
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: `Liquidación enviada correctamente.`,
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-			setEmailModalOpen(false);
-			setEmail("");
-			setEmailList([]);
-			setCopyToMe(false);
-			setCustomMessage("");
-		} catch (error) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Ha ocurrido un error. Intente más tarde.",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
-
-	const handleCopyToClipboard = async () => {
-		try {
-			await navigator.clipboard.writeText(generatePlainText());
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: `Liquidación copiada correctamente.`,
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-		} catch (err) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Ha ocurrido un error al copiar. Intente más tarde.",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
-
-	const handlePrint = useReactToPrint({
-		content: () => printRef.current,
-	});
-
-	const renderActionButtons = () => (
-		<Stack direction="row" spacing={1} sx={{ mb: 2 }} justifyContent="center" className="no-print">
-			<Tooltip title="Copiar al portapapeles">
-				<IconButton onClick={handleCopyToClipboard} color="primary">
-					<Copy size={20} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Enviar por email">
-				<IconButton onClick={() => setEmailModalOpen(true)} color="primary">
-					<Sms size={20} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Imprimir">
-				<IconButton onClick={handlePrint} color="primary">
-					<Printer size={20} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Vincular a causa">
-				<IconButton onClick={() => setLinkModalOpen(true)} color="primary">
-					<Link21 size={20} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Actualizar con intereses">
-				<IconButton onClick={() => setUpdateModalOpen(true)} color="primary">
-					<Calculator size={20} />
-				</IconButton>
-			</Tooltip>
-		</Stack>
-	);
 
 	const groupResults = (variables: Record<string, any> | undefined): GroupedResults => {
 		const groups: GroupedResults = {
@@ -565,240 +345,31 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 		return groups;
 	};
 
-	const renderGroup = (title: string, items: ResultItem[]) => {
-		if (!items.length) return null;
-
-		return (
-			<MainCard shadow={3} title={title} sx={{ mb: 1 }}>
-				<CardContent sx={{ py: 1 }}>
-					{items.map(({ key, value }) => (
-						<Stack key={key} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 0.5 }}>
-							<Typography variant="body2" color="text.secondary">
-								{getLabelForKey(key) || key}:
-							</Typography>
-							<Typography variant="body2">
-								{typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
-									? new Intl.NumberFormat("es-AR", {
-											style: "currency",
-											currency: "ARS",
-									  }).format(value)
-									: value}
-							</Typography>
-						</Stack>
-					))}
-				</CardContent>
-			</MainCard>
-		);
+	const formatValue = (key: string, value: number | string): string => {
+		if (typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones") {
+			return new Intl.NumberFormat("es-AR", {
+				style: "currency",
+				currency: "ARS",
+			}).format(value);
+		}
+		return String(value);
 	};
-	const groupedData = groupResults(data?.variables);
 
 	return (
-		<>
-			<Stack sx={{ p: 2 }} spacing={1}>
-				{/* Botones de acción al inicio */}
-				{renderActionButtons()}
-
-				<div ref={printRef}>
-					{/* Contenido principal */}
-					<Stack spacing={1}>
-						{renderGroup("Datos del Reclamo", groupedData.reclamo)}
-						{renderGroup("Indemnización", groupedData.indemnizacion)}
-						{renderGroup("Liquidación Final", groupedData.liquidacion)}
-						{renderGroup("Multas", groupedData.multas)}
-
-						<MainCard
-							shadow={3}
-							sx={{
-								mt: 1,
-								bgcolor: "primary.main",
-								color: "primary.contrastText",
-							}}
-							content={false}
-						>
-							<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 1.5 }}>
-								<Typography variant="h6" color="inherit">
-									TOTAL
-								</Typography>
-								<Typography variant="h6" color="inherit">
-									{new Intl.NumberFormat("es-AR", {
-										style: "currency",
-										currency: "ARS",
-									}).format(data.amount)}
-								</Typography>
-							</Stack>
-						</MainCard>
-					</Stack>
-				</div>
-			</Stack>{" "}
-			<div className="no-print">
-				{/* Email Modal */}
-				<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)} maxWidth="md" fullWidth>
-					<DialogTitle>Enviar por Email</DialogTitle>
-					<DialogContent>
-						<Stack spacing={2} sx={{ mt: 1 }}>
-							<Stack direction="row" spacing={1}>
-								<TextField
-									autoFocus
-									margin="dense"
-									label="Dirección de Email"
-									type="email"
-									fullWidth
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") {
-											e.preventDefault();
-											handleAddEmail();
-										}
-									}}
-									placeholder="Escribe un email y haz clic en Agregar"
-								/>
-								<Button variant="contained" onClick={handleAddEmail} sx={{ mt: 1 }} color="primary" disabled={!email.trim()}>
-									Agregar
-								</Button>
-							</Stack>
-							<Typography variant="caption" color="textSecondary">
-								* Debes agregar cada email a la lista de destinatarios antes de enviar.
-							</Typography>
-
-							{emailList.length > 0 && (
-								<Box sx={{ mt: 2 }}>
-									<Typography variant="subtitle2" gutterBottom>
-										Destinatarios:
-									</Typography>
-									<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-										{emailList.map((emailItem) => (
-											<Chip key={emailItem} label={emailItem} onDelete={() => handleRemoveEmail(emailItem)} sx={{ m: 0.5 }} />
-										))}
-									</Box>
-								</Box>
-							)}
-
-							<Divider sx={{ my: 2 }}>
-								<Typography variant="caption" color="textSecondary">
-									o seleccionar de mis contactos
-								</Typography>
-							</Divider>
-
-							{contactsLoading ? (
-								<Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
-									<Typography>Cargando contactos...</Typography>
-								</Box>
-							) : contacts && contacts.length > 0 ? (
-								<Autocomplete
-									options={contacts.filter((contact: any) => contact.email)}
-									getOptionLabel={(option: any) => `${option.name} ${option.lastName} (${option.email})`}
-									renderInput={(params) => (
-										<TextField
-											{...params}
-											label="Buscar contacto"
-											variant="outlined"
-											InputProps={{
-												...params.InputProps,
-												startAdornment: (
-													<InputAdornment position="start">
-														<SearchNormal1 size={18} />
-													</InputAdornment>
-												),
-											}}
-										/>
-									)}
-									renderOption={(props, option: any) => (
-										<li {...props}>
-											<Stack direction="row" spacing={1} alignItems="center" width="100%">
-												<UserAdd size={18} />
-												<Stack direction="column" sx={{ overflow: "hidden" }}>
-													<Typography variant="body2" noWrap>
-														{option.name} {option.lastName}
-													</Typography>
-													<Typography variant="caption" color="textSecondary" noWrap>
-														{option.email}
-													</Typography>
-												</Stack>
-											</Stack>
-										</li>
-									)}
-									onChange={(_, newValue) => {
-										if (newValue && newValue.email && !emailList.includes(newValue.email)) {
-											setEmailList([...emailList, newValue.email]);
-										}
-									}}
-									sx={{ mt: 1 }}
-								/>
-							) : null}
-
-							<Box sx={{ mt: 2 }}>
-								<Typography variant="subtitle2" gutterBottom>
-									Mensaje (opcional):
-								</Typography>
-								<TextField
-									multiline
-									fullWidth
-									rows={4}
-									placeholder="Escriba un mensaje personalizado que se incluirá en el correo (opcional)"
-									value={customMessage}
-									onChange={(e) => setCustomMessage(e.target.value)}
-									variant="outlined"
-								/>
-							</Box>
-
-							<Box sx={{ mt: 1, display: "flex", alignItems: "center" }}>
-								<Checkbox checked={copyToMe} onChange={(e) => setCopyToMe(e.target.checked)} id="copy-to-me" />
-								<Typography component="label" htmlFor="copy-to-me" variant="body2" sx={{ cursor: "pointer" }}>
-									Enviarme una copia
-								</Typography>
-							</Box>
-						</Stack>
-					</DialogContent>
-					<DialogActions>
-						<Button
-							color="error"
-							onClick={() => {
-								setEmailModalOpen(false);
-								setEmail("");
-								setEmailList([]);
-								setCopyToMe(false);
-								setCustomMessage("");
-							}}
-						>
-							Cancelar
-						</Button>
-						<Button onClick={handleEmailSend} variant="contained">
-							Enviar
-						</Button>
-					</DialogActions>
-				</Dialog>
-
-				{/* Link Modal */}
-				<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={data._id} folderId={data.folderId} />
-
-				{/* Interest Modal */}
-				<Dialog open={updateModalOpen} onClose={() => setUpdateModalOpen(false)}>
-					<DialogTitle>Actualizar con Intereses</DialogTitle>
-					<DialogContent>
-						<TextField
-							autoFocus
-							margin="dense"
-							label="Tasa de Interés (%)"
-							type="number"
-							fullWidth
-							value={interestRate}
-							onChange={(e) => setInterestRate(e.target.value)}
-						/>
-					</DialogContent>
-					<DialogActions>
-						<Button onClick={() => setUpdateModalOpen(false)}>Cancelar</Button>
-						<Button onClick={handleUpdateWithInterest} variant="contained">
-							Actualizar
-						</Button>
-					</DialogActions>
-				</Dialog>
-			</div>
-		</>
+		<CalculationDetailsView
+			data={data}
+			getLabelForKey={getLabelForKey}
+			formatValue={formatValue}
+			groupResults={groupResults}
+			generateHtmlContent={generateHtmlContent}
+			generatePlainText={generatePlainText}
+			customTitle="Liquidación por Despido - Law||Analytics"
+			hideInterestButton={false}
+		/>
 	);
 };
 
-function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading }: Props) {
+function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading, expandedRowId, onToggleExpanded }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -857,18 +428,29 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 			<Stack spacing={3}>
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
-					spacing={1}
+					spacing={2}
 					justifyContent="space-between"
-					alignItems="center"
+					alignItems={matchDownSM ? "flex-start" : "flex-start"}
 					sx={{ p: 3, pb: 0 }}
 				>
-					<CustomGlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+					{/* Lado izquierdo - Filtro y ordenamiento */}
+					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "300px" }}>
+						{/* Primera línea: Barra de búsqueda */}
+						<CustomGlobalFilter
+							preGlobalFilteredRows={preGlobalFilteredRows}
+							globalFilter={globalFilter}
+							setGlobalFilter={setGlobalFilter}
+						/>
 
-					<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
+						{/* Segunda línea: Selector de ordenamiento */}
 						<CustomSortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-						<Tooltip title="Exportar CSV">
+					</Stack>
+
+					{/* Lado derecho - Botón de exportación */}
+					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+						<Tooltip title="Exportar a CSV">
 							<IconButton
-								color="secondary"
+								color="primary"
 								size="medium"
 								sx={{
 									position: "relative",
@@ -921,6 +503,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 									<>
 										{page.map((row: Row<CalculatorData>, i: number) => {
 											prepareRow(row);
+											const isRowExpanded = expandedRowId === row.original._id;
 
 											return (
 												<Fragment key={i}>
@@ -938,7 +521,27 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 															<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
 														))}
 													</TableRow>
-													{row.isExpanded && renderRowSubComponent({ row })}
+													<TableRow sx={{ "&:hover": { bgcolor: "inherit !important" } }}>
+														<TableCell colSpan={columns.length + 1} sx={{ p: 0 }}>
+															<Collapse in={isRowExpanded} timeout="auto" unmountOnExit>
+																<Box
+																	sx={{
+																		margin: 2,
+																		bgcolor: theme.palette.mode === "dark" ? "grey.800" : "#f5f5f5",
+																		borderRadius: 2,
+																		p: 0,
+																		border: `1px solid ${theme.palette.divider}`,
+																		boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+																		"&:hover": {
+																			bgcolor: theme.palette.mode === "dark" ? "grey.800" : "#f5f5f5",
+																		},
+																	}}
+																>
+																	{renderRowSubComponent({ row })}
+																</Box>
+															</Collapse>
+														</TableCell>
+													</TableRow>
 												</Fragment>
 											);
 										})}
@@ -979,6 +582,7 @@ const SavedLabor = () => {
 	const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 	const [calculatorIdToDelete, setCalculatorIdToDelete] = useState<string>("");
 	const [add, setAdd] = useState<boolean>(false);
+	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -1006,6 +610,10 @@ const SavedLabor = () => {
 		setDeleteModalOpen(false);
 		setCalculatorIdToDelete("");
 	};
+
+	const handleToggleExpanded = useCallback((rowId: string) => {
+		setExpandedRowId((prev) => (prev === rowId ? null : rowId));
+	}, []);
 
 	const columns = useMemo(
 		() => [
@@ -1127,7 +735,8 @@ const SavedLabor = () => {
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
-					const collapseIcon = row.isExpanded ? (
+					const isExpanded = expandedRowId === row.original._id;
+					const collapseIcon = isExpanded ? (
 						<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
 					) : (
 						<Eye variant="Bulk" />
@@ -1149,7 +758,9 @@ const SavedLabor = () => {
 									color="secondary"
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
-										row.toggleRowExpanded();
+										if (handleToggleExpanded) {
+											handleToggleExpanded(row.original._id);
+										}
 									}}
 								>
 									{collapseIcon}
@@ -1181,27 +792,22 @@ const SavedLabor = () => {
 				},
 			},
 		],
-		[theme],
+		[theme, expandedRowId, handleToggleExpanded],
 	) as Column<CalculatorData>[];
 
 	const renderRowSubComponent = useCallback(
 		({ row }: { row: Row<CalculatorData> }) => (
-			<TableRow>
-				<TableCell colSpan={3} />
-				<TableCell colSpan={6}>
-					<Stack direction="row" justifyContent="flex-end" sx={{ width: "100%" }}>
-						<Box sx={{ width: "100%" }}>
-							<CalculationDetails data={row.original} />
-						</Box>
-					</Stack>
-				</TableCell>
-			</TableRow>
+			<Stack direction="row" justifyContent="flex-end" sx={{ width: "100%" }}>
+				<Box sx={{ width: "100%" }}>
+					<CalculationDetails data={row.original} />
+				</Box>
+			</Stack>
 		),
 		[],
 	);
 
 	return (
-		<MainCard content={false} title={"Cáculos Guardados"}>
+		<MainCard content={false} title={"Cáculos Laborales Guardados"}>
 			<ScrollX>
 				<ReactTable
 					columns={columns}
@@ -1209,6 +815,8 @@ const SavedLabor = () => {
 					handleAdd={handleAdd}
 					renderRowSubComponent={renderRowSubComponent}
 					isLoading={isLoader}
+					expandedRowId={expandedRowId}
+					onToggleExpanded={handleToggleExpanded}
 				/>
 			</ScrollX>
 			<AlertCalculatorDelete id={calculatorIdToDelete} open={deleteModalOpen} handleClose={handleCloseDeleteModal} />

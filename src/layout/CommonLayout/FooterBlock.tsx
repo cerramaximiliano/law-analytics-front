@@ -153,6 +153,9 @@ const FooterBlock = ({ isFull }: showProps) => {
 									<Stack spacing={3}>
 										<Typography variant="h5">Recursos útiles</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
+											<RouterLink to="/plans" style={{ textDecoration: "none" }}>
+												<FooterButton sx={{ color: theme.palette.text.primary }}>Planes y Precios</FooterButton>
+											</RouterLink>
 											<RouterLink to="/privacy-policy" style={{ textDecoration: "none" }}>
 												<FooterButton sx={{ color: theme.palette.text.primary }}>Política de privacidad</FooterButton>
 											</RouterLink>

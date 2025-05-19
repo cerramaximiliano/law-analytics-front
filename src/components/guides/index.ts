@@ -6,3 +6,4 @@ export { default as GuideContacts } from "./GuideContacts";
 export { default as GuideCalendar } from "./GuideCalendar";
 export { default as GuideBooking } from "./GuideBooking";
 export { default as BookingContent } from "./BookingContent";
+export { default as GuideTasks } from "./GuideTasks";

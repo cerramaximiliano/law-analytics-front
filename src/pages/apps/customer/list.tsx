@@ -18,6 +18,7 @@ import {
 	Snackbar,
 	Alert,
 	Box,
+	Collapse,
 } from "@mui/material";
 
 // third-party
@@ -73,6 +74,7 @@ interface Props {
 	isLoading?: boolean;
 	handleOpenArchivedModal: () => void;
 	handleOpenGuide: () => void;
+	expandedRowId?: string | null;
 }
 
 function ReactTable({
@@ -84,10 +86,14 @@ function ReactTable({
 	isLoading,
 	handleOpenArchivedModal,
 	handleOpenGuide,
+	expandedRowId: parentExpandedRowId,
 }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
+
+	// Use parent expanded row ID
+	const expandedRowId = parentExpandedRowId ?? null;
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "name", desc: false };
@@ -384,7 +390,13 @@ function ReactTable({
 											<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
 										))}
 									</TableRow>
-									{row.isExpanded && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
+									<TableRow>
+										<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={visibleColumns.length}>
+											<Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
+												<Box sx={{ margin: 1 }}>{renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}</Box>
+											</Collapse>
+										</TableCell>
+									</TableRow>
 								</Fragment>
 							);
 						})}
@@ -453,6 +465,7 @@ const CustomerListPage = () => {
 	const [archivedModalOpen, setArchivedModalOpen] = useState(false);
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 	const [guideOpen, setGuideOpen] = useState(false);
+	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -700,6 +713,11 @@ const CustomerListPage = () => {
 		[user?._id],
 	);
 
+	// Create a callback to toggle expansion
+	const handleToggleExpanded = useCallback((rowId: string) => {
+		setExpandedRowId((prev) => (prev === rowId ? null : rowId));
+	}, []);
+
 	// Columnas memoizadas
 	const columns = useMemo<Column<Contact>[]>(
 		() => [
@@ -809,11 +827,12 @@ const CustomerListPage = () => {
 				Header: "Acciones",
 				id: "actions",
 				Cell: ({ row }: any) => {
-					const collapseIcon = row.isExpanded ? (
-						<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
-					) : (
-						<Eye variant="Bulk" />
-					);
+					const collapseIcon =
+						expandedRowId === row.id ? (
+							<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
+						) : (
+							<Eye variant="Bulk" />
+						);
 
 					// Usar original que contiene los datos completos sin ambigüedades
 					const { original } = row;
@@ -821,7 +840,15 @@ const CustomerListPage = () => {
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
 							<Tooltip title="Ver">
-								<IconButton color="secondary" onClick={(e) => handleRowAction(e, () => row.toggleRowExpanded())}>
+								<IconButton
+									color="secondary"
+									onClick={(e) =>
+										handleRowAction(e, () => {
+											handleToggleExpanded(row.id);
+											row.toggleRowExpanded();
+										})
+									}
+								>
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
@@ -865,7 +892,7 @@ const CustomerListPage = () => {
 				disableSortBy: true,
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, handleOpenLink, handleRowAction],
+		[theme, mode, handleEditContact, handleClose, handleOpenLink, handleRowAction, expandedRowId, handleToggleExpanded],
 	);
 
 	// Row sub component memoizado
@@ -903,6 +930,7 @@ const CustomerListPage = () => {
 					handleOpenGuide={handleOpenGuide}
 					renderRowSubComponent={renderRowSubComponent}
 					isLoading={isLoader}
+					expandedRowId={expandedRowId}
 				/>
 			</ScrollX>
 			<AlertCustomerDelete title={customerDeleteId} open={open} handleClose={handleClose} id={customerId} onDelete={handleRefreshData} />

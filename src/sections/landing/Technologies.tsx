@@ -4,7 +4,7 @@ import { useTheme } from "@mui/material/styles";
 
 // third party
 import { motion } from "framer-motion";
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick } from "iconsax-react";
+import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task } from "iconsax-react";
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
@@ -62,6 +62,13 @@ const TechnologiesList: TechnologyItem[] = [
 		title: "Intereses y Actualización",
 		description: "Cálculo de intereses con distintas tasas para actualización de montos en procesos judiciales.",
 		colorKey: "success",
+	},
+	{
+		trending: true,
+		iconComponent: Task,
+		title: "Tareas",
+		description: "Gestión integral de tareas y actividades con seguimiento, priorización, plazos y asignación para mantener tu práctica legal organizada.",
+		colorKey: "secondary",
 	},
 ];
 

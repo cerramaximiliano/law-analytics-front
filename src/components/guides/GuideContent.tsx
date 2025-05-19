@@ -21,6 +21,7 @@ import {
 	Folder,
 	Profile2User,
 	Calendar,
+	TaskSquare,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES PARA CONTENIDOS DE GUÍAS ||============================== //
@@ -1097,6 +1098,268 @@ export const CalendarContent = () => {
 			<Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
 				<Calendar variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.info.main }} />
 				<Typography variant="h3">Guía del Calendario</Typography>
+			</Box>
+
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+				{steps.map((step, index) => (
+					<Step key={index}>
+						<StepLabel>{step.title}</StepLabel>
+					</Step>
+				))}
+			</Stepper>
+
+			<Box sx={{ bgcolor: "background.paper", borderRadius: 2, mb: 3, boxShadow: theme.shadows[4] }}>
+				{steps[activeStep] && <GuideStep title={steps[activeStep].title} content={steps[activeStep].content} />}
+			</Box>
+
+			<Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+				<Button variant="outlined" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
+					Anterior
+				</Button>
+				{activeStep === steps.length - 1 ? (
+					<Button variant="contained" color="primary" onClick={() => setActiveStep(0)} endIcon={<Next />}>
+						Volver al inicio
+					</Button>
+				) : (
+					<Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
+						Siguiente
+					</Button>
+				)}
+			</Box>
+		</Box>
+	);
+};
+
+// ==============================|| CONTENIDO PARA LA GUÍA DE TAREAS ||============================== //
+
+// ==============================|| CONTENIDO PARA LA GUÍA DE TAREAS ||============================== //
+
+export const TasksContent = () => {
+	const [activeStep, setActiveStep] = useState(0);
+	const theme = useTheme();
+
+	const handleNext = () => {
+		setActiveStep((prevStep) => prevStep + 1);
+	};
+
+	const handleBack = () => {
+		setActiveStep((prevStep) => prevStep - 1);
+	};
+
+	const steps = [
+		{
+			title: "Introducción a Tareas",
+			content: (
+				<>
+					<Typography paragraph>
+						Las tareas te permiten organizar tu trabajo y actividades de manera eficiente. Con esta herramienta puedes gestionar todo tipo
+						de actividades, desde tareas simples hasta proyectos complejos.
+					</Typography>
+					<Alert severity="info" sx={{ mt: 2 }}>
+						<AlertTitle>Características principales:</AlertTitle>
+						<Typography component="div">
+							<ul>
+								<li>Crear tareas con prioridades y fechas de vencimiento</li>
+								<li>Organizar tareas por carpetas</li>
+								<li>Filtrar y buscar tareas específicas</li>
+								<li>Exportar lista de tareas en CSV</li>
+								<li>Seguimiento del estado de cada tarea</li>
+							</ul>
+						</Typography>
+					</Alert>
+				</>
+			),
+		},
+		{
+			title: "Crear y Editar Tareas",
+			content: (
+				<>
+					<Typography paragraph>Para crear una nueva tarea, sigue estos pasos:</Typography>
+					<Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
+						<Stack spacing={2}>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+								<Typography>Haz clic en el botón "Nueva Tarea"</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+								<Typography>Completa el formulario con los detalles de la tarea</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+								<Typography>Asigna prioridad y fecha de vencimiento</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+								<Typography>Selecciona una carpeta para organizar</Typography>
+							</Box>
+						</Stack>
+					</Paper>
+					<Alert severity="success" sx={{ mt: 2 }}>
+						<AlertTitle>Consejo</AlertTitle>
+						<Typography>
+							Usa descripciones detalladas en tus tareas para tener claridad sobre lo que necesitas hacer cuando las revises más adelante.
+						</Typography>
+					</Alert>
+				</>
+			),
+		},
+		{
+			title: "Gestión y Organización",
+			content: (
+				<>
+					<Typography paragraph>
+						La gestión eficiente de tareas es clave para la productividad. Aquí te mostramos cómo organizar tu trabajo:
+					</Typography>
+
+					<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Funciones de organización
+						</Typography>
+						<Stack spacing={1.5}>
+							<Box display="flex" alignItems="center">
+								<Eye size={18} style={{ minWidth: "24px", color: theme.palette.primary.main }} />
+								<Typography>
+									<strong>Ver detalles:</strong> Haz clic en el ícono de ver para expandir los detalles completos
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<Folder size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
+								<Typography>
+									<strong>Carpetas:</strong> Organiza tareas por proyecto, cliente o categoría
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.info.main }} />
+								<Typography>
+									<strong>Filtros:</strong> Usa la búsqueda y los filtros para encontrar tareas específicas
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<DocumentText size={18} style={{ minWidth: "24px", color: theme.palette.success.main }} />
+								<Typography>
+									<strong>Exportar:</strong> Descarga tu lista de tareas en formato CSV
+								</Typography>
+							</Box>
+						</Stack>
+					</Box>
+
+					<Alert severity="warning" sx={{ mt: 2 }}>
+						<Typography>Las tareas vencidas se muestran en rojo. Revísalas regularmente para mantener tu lista actualizada.</Typography>
+					</Alert>
+				</>
+			),
+		},
+		{
+			title: "Estados y Prioridades",
+			content: (
+				<>
+					<Typography paragraph>Comprende cómo funcionan los estados y prioridades para maximizar tu eficiencia:</Typography>
+
+					<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Estados de tarea
+						</Typography>
+						<Stack spacing={1}>
+							<Typography>
+								• <strong>Pendiente:</strong> Tarea aún no iniciada
+							</Typography>
+							<Typography>
+								• <strong>En Progreso:</strong> Tarea actualmente en desarrollo
+							</Typography>
+							<Typography>
+								• <strong>Revisión:</strong> Esperando aprobación o validación
+							</Typography>
+							<Typography>
+								• <strong>Completada:</strong> Tarea finalizada exitosamente
+							</Typography>
+							<Typography>
+								• <strong>Cancelada:</strong> Tarea descartada o cancelada
+							</Typography>
+						</Stack>
+					</Box>
+
+					<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Niveles de prioridad
+						</Typography>
+						<Stack spacing={1}>
+							<Typography>
+								• <strong>Alta (Rojo):</strong> Tareas críticas que requieren atención inmediata
+							</Typography>
+							<Typography>
+								• <strong>Media (Amarillo):</strong> Tareas importantes pero no urgentes
+							</Typography>
+							<Typography>
+								• <strong>Baja (Verde):</strong> Tareas que pueden esperar
+							</Typography>
+						</Stack>
+					</Box>
+
+					<Alert severity="info" sx={{ mt: 2 }}>
+						<Typography>Las tareas con vencimiento próximo (3 días o menos) se resaltarán automáticamente para alertarte.</Typography>
+					</Alert>
+				</>
+			),
+		},
+		{
+			title: "Consejos y Mejores Prácticas",
+			content: (
+				<>
+					<Typography paragraph>Sigue estos consejos para aprovechar al máximo la gestión de tareas:</Typography>
+
+					<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+							Mejores prácticas
+						</Typography>
+						<Stack spacing={1.5}>
+							<Box display="flex" alignItems="flex-start">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main, marginTop: "2px" }} />
+								<Typography>
+									<strong>Revisa diariamente:</strong> Dedica unos minutos cada día para revisar tus tareas pendientes
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="flex-start">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main, marginTop: "2px" }} />
+								<Typography>
+									<strong>Actualiza estados:</strong> Mantén los estados actualizados para reflejar el progreso real
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="flex-start">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main, marginTop: "2px" }} />
+								<Typography>
+									<strong>Usa carpetas temáticas:</strong> Organiza por proyecto, cliente o tipo de trabajo
+								</Typography>
+							</Box>
+							<Box display="flex" alignItems="flex-start">
+								<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.primary.main, marginTop: "2px" }} />
+								<Typography>
+									<strong>Archiva completadas:</strong> Mantén tu lista limpia archivando tareas finalizadas
+								</Typography>
+							</Box>
+						</Stack>
+					</Box>
+
+					<Alert severity="success" sx={{ mt: 3 }}>
+						<Typography paragraph>
+							<strong>Consejo Pro:</strong> Usa atajos de teclado para navegar más rápido:
+						</Typography>
+						<ul>
+							<li>Ctrl+F para buscar tareas</li>
+							<li>Flechas arriba/abajo para navegar</li>
+							<li>Enter para ver detalles</li>
+						</ul>
+					</Alert>
+				</>
+			),
+		},
+	];
+
+	return (
+		<Box>
+			<Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+				<TaskSquare variant="Bulk" size={28} style={{ marginRight: "12px", color: theme.palette.primary.main }} />
+				<Typography variant="h3">Guía de Tareas</Typography>
 			</Box>
 
 			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>

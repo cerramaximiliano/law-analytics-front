@@ -36,12 +36,16 @@ export interface TaskType {
 		completed: boolean;
 		_id?: string;
 	}>;
+	archived?: boolean; // Campo para tareas archivadas
 	createdAt?: Date | string; // De timestamps
 	updatedAt?: Date | string; // De timestamps
 }
 
 export interface TaskState {
 	tasks: TaskType[];
+	task: TaskType | null; // Single task for detail view
+	taskDetails: { [key: string]: TaskType }; // Task details by ID
+	taskDetailsLoading: { [key: string]: boolean }; // Loading state for each task detail
 	isLoader: boolean;
 	error: string | null;
 	upcomingTasks: TaskType[];

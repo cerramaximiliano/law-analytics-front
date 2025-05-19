@@ -9,12 +9,12 @@ import { motion } from "framer-motion";
 
 // project-imports
 import MainCard from "components/MainCard";
-import { GuideLaboral, GuideIntereses, GuideFolders, GuideContacts, GuideCalendar, GuideBooking } from "components/guides";
+import { GuideLaboral, GuideIntereses, GuideFolders, GuideContacts, GuideCalendar, GuideBooking, GuideTasks } from "components/guides";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 
 // icons
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick } from "iconsax-react";
+import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task } from "iconsax-react";
 
 // ==============================|| GUIDES PAGE - HEADER ||============================== //
 
@@ -38,6 +38,7 @@ const GuidesPage = () => {
 	const [contacts, setContacts] = useState(false);
 	const [calendar, setCalendar] = useState(false);
 	const [booking, setBooking] = useState(false);
+	const [tasks, setTasks] = useState(false);
 
 	const guideData = [
 		{
@@ -81,6 +82,13 @@ const GuidesPage = () => {
 			icon: CalendarTick,
 			color: "error",
 			openModal: () => setBooking(true),
+		},
+		{
+			title: "Gestión de Tareas",
+			description: "Aprende a crear, organizar y dar seguimiento a tus tareas y actividades legales.",
+			icon: Task,
+			color: "primary",
+			openModal: () => setTasks(true),
 		},
 	];
 
@@ -129,13 +137,14 @@ const GuidesPage = () => {
 													{ icon: Calculator, color: "primary.main", delay: 0.1, size: 60, offset: 20 },
 													{ icon: Calendar, color: "info.main", delay: 0.2, size: 72, offset: 0 },
 													{ icon: FolderOpen, color: "warning.main", delay: 0.3, size: 70, offset: 30 },
+													{ icon: Task, color: "secondary.main", delay: 0.4, size: 65, offset: 15 },
 												].map((item, index) => (
 													<motion.div
 														key={index}
 														initial={{ opacity: 0, translateY: 20 }}
 														animate={{ opacity: 1, translateY: 0 }}
 														transition={{ duration: 0.5, delay: item.delay }}
-														style={{ marginLeft: -item.offset, marginRight: index === 2 ? 0 : -item.offset }}
+														style={{ marginLeft: -item.offset, marginRight: index === 3 ? 0 : -item.offset }}
 													>
 														<Box
 															sx={{
@@ -160,6 +169,8 @@ const GuidesPage = () => {
 																			? theme.palette.primary.main
 																			: item.color === "info.main"
 																			? theme.palette.info.main
+																			: item.color === "secondary.main"
+																			? theme.palette.secondary.main
 																			: theme.palette.warning.main,
 																}}
 															/>
@@ -315,6 +326,7 @@ const GuidesPage = () => {
 			<GuideContacts open={contacts} onClose={() => setContacts(false)} />
 			<GuideCalendar open={calendar} onClose={() => setCalendar(false)} />
 			<GuideBooking open={booking} onClose={() => setBooking(false)} />
+			<GuideTasks open={tasks} onClose={() => setTasks(false)} />
 		</>
 	);
 };

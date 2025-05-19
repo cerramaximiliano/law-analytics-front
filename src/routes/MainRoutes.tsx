@@ -154,6 +154,9 @@ const AdminMailingPage = Loadable(lazy(() => import("pages/admin/marketing/maili
 const AdminTemplatesPage = Loadable(lazy(() => import("pages/admin/marketing/templates")));
 const AdminContactsPage = Loadable(lazy(() => import("pages/admin/marketing/contacts")));
 
+// render - tasks
+const TasksPage = Loadable(lazy(() => import("pages/tasks")));
+
 // ==============================|| MAIN ROUTES ||============================== //
 
 const MainRoutes = {
@@ -369,6 +372,10 @@ const MainRoutes = {
 							element: <PricingPage />,
 						},
 					],
+				},
+				{
+					path: "tareas",
+					element: <TasksPage />,
 				},
 				{
 					path: "ayuda",

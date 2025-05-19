@@ -25,6 +25,7 @@ import {
 	Chip,
 	Divider,
 	IconButton,
+	Collapse,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
@@ -347,6 +348,7 @@ function ReactTable({
 	selectedCalculatorIds,
 	scrollToCalculators,
 }: ReactTableProps) {
+	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
@@ -640,6 +642,11 @@ function ReactTable({
 										{...row.getRowProps()}
 										onClick={() => {
 											if (!row.isSelected) {
+												if (expandedRowId === row.id) {
+													setExpandedRowId(null);
+												} else {
+													setExpandedRowId(row.id);
+												}
 												row.toggleRowExpanded();
 											}
 										}}
@@ -647,7 +654,7 @@ function ReactTable({
 											cursor: "pointer",
 											bgcolor: row.isSelected
 												? alpha(theme.palette.primary.lighter, 0.35)
-												: row.isExpanded
+												: expandedRowId === row.id
 												? alpha(theme.palette.primary.lighter, 0.35)
 												: "inherit",
 											"&:hover": {
@@ -670,7 +677,13 @@ function ReactTable({
 											</TableCell>
 										))}
 									</TableRow>
-									{row.isExpanded && renderRowSubComponent({ row })}
+									<TableRow>
+										<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+											<Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
+												<Box sx={{ margin: 1 }}>{renderRowSubComponent({ row })}</Box>
+											</Collapse>
+										</TableCell>
+									</TableRow>
 								</Fragment>
 							);
 						})}
@@ -1139,16 +1152,7 @@ const AllCalculators = () => {
 	}, []);
 
 	// Table row sub-component with details
-	const renderRowSubComponent = useCallback(
-		({ row }: { row: Row<CalculatorType> }) => (
-			<TableRow>
-				<TableCell colSpan={8}>
-					<CalculationDetails data={row.original} />
-				</TableCell>
-			</TableRow>
-		),
-		[],
-	);
+	const renderRowSubComponent = useCallback(({ row }: { row: Row<CalculatorType> }) => <CalculationDetails data={row.original} />, []);
 
 	return (
 		<MainCard title="Cálculos Legales">

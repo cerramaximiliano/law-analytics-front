@@ -1,200 +1,140 @@
 // material-ui
-import { useTheme } from "@mui/material/styles";
-import {
-	useMediaQuery,
-	Grid,
-	Chip,
-	Divider,
-	List,
-	ListItem,
-	ListItemIcon,
-	ListItemSecondaryAction,
-	Stack,
-	TableCell,
-	TableRow,
-	Typography,
-} from "@mui/material";
+import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper } from "@mui/material";
 
 // project-imports
-import MainCard from "components/MainCard";
 import Transitions from "components/@extended/Transitions";
 
 // assets
-import { Chart, DollarSquare, TaskSquare, SmsNotification, FolderCross } from "iconsax-react";
+import { Calendar, FolderOpen, Profile, Clock, NoteText } from "iconsax-react";
 import { memo } from "react";
+import moment from "moment";
 
-// ==============================|| CUSTOMER - VIEW ||============================== //
+// ==============================|| FOLDER - VIEW ||============================== //
 
 const FolderView = memo(({ data }: any) => {
-	const theme = useTheme();
-	const matchDownMD = useMediaQuery(theme.breakpoints.down("md"));
 	const notAvailableMsg = "No disponible";
 
+	// Función para obtener el color del estado
+	const getStatusColor = (status: string) => {
+		switch (status) {
+			case "Finalizado":
+				return "success";
+			case "Activo":
+				return "primary";
+			case "En trámite":
+				return "warning";
+			case "Archivado":
+				return "default";
+			default:
+				return "default";
+		}
+	};
+
+	// Info cards - Horizontal layout similar to TaskView
+	const InfoCard = ({ icon, label, value, color = "textSecondary" }: any) => (
+		<Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+			<Box sx={{ color: "primary.main" }}>{icon}</Box>
+			<Box>
+				<Typography variant="caption" color="textSecondary" sx={{ display: "block" }}>
+					{label}
+				</Typography>
+				<Typography variant="body2" color={color} sx={{ fontWeight: 500 }}>
+					{value || notAvailableMsg}
+				</Typography>
+			</Box>
+		</Box>
+	);
+
 	return (
-		<TableRow sx={{ "&:hover": { bgcolor: `transparent !important` }, overflow: "hidden" }}>
-			<TableCell colSpan={8} sx={{ p: 2.5, overflow: "hidden" }}>
+		<TableRow sx={{ "&:hover": { bgcolor: `transparent !important` } }}>
+			<TableCell colSpan={8} sx={{ p: 2.5 }}>
 				<Transitions type="slide" direction="down" in={true}>
-					<Grid container spacing={2.5} sx={{ pl: { xs: 0, sm: 5, md: 6, lg: 10, xl: 12 } }}>
-						<Grid item xs={12} sm={5} md={4} lg={4} xl={3}>
-							<MainCard shadow={3}>
-								{data.status === "Finalizado" && (
-									<Chip
-										color="error"
-										label="Finalizada"
-										size="small"
-										variant="light"
-										sx={{
-											position: "absolute",
-											right: 10,
-											top: 10,
-											fontSize: "0.675rem",
-										}}
-									/>
-								)}
+					<Box>
+						{/* Header with title and status */}
+						<Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+							<Typography variant="h5">{data.folderName || notAvailableMsg}</Typography>
+							<Chip size="small" label={data.status || "Sin estado"} color={getStatusColor(data.status)} />
+						</Stack>
 
-								{data.status === "Nueva" && (
-									<Chip
-										color="success"
-										label="Nueva"
-										size="small"
-										variant="light"
-										sx={{
-											position: "absolute",
-											right: 10,
-											top: 10,
-											fontSize: "0.675rem",
-										}}
-									/>
-								)}
-								{data.status === "En proceso" && (
-									<Chip
-										color="info"
-										label="En proceso"
-										size="small"
-										variant="light"
-										sx={{
-											position: "absolute",
-											right: 10,
-											top: 10,
-											fontSize: "0.675rem",
-										}}
-									/>
-								)}
+						{/* Info cards - Horizontal layout */}
+						<Grid container spacing={3} sx={{ mb: 3 }}>
+							<Grid item xs={12} sm={6} md={3}>
+								<InfoCard
+									icon={<Calendar size="20" />}
+									label="Fecha de Inicio"
+									value={data.initialDateFolder ? moment(data.initialDateFolder).format("DD/MM/YYYY") : null}
+								/>
+							</Grid>
+							<Grid item xs={12} sm={6} md={3}>
+								<InfoCard
+									icon={<Clock size="20" />}
+									label="Fecha Final"
+									value={data.finalDateFolder ? moment(data.finalDateFolder).format("DD/MM/YYYY") : null}
+								/>
+							</Grid>
+							<Grid item xs={12} sm={6} md={3}>
+								<InfoCard icon={<Profile size="20" />} label="Cliente" value={data.customerName} />
+							</Grid>
+							<Grid item xs={12} sm={6} md={3}>
+								<InfoCard icon={<FolderOpen size="20" />} label="Fuero" value={data.folderFuero} />
+							</Grid>
+						</Grid>
 
-								<Grid container spacing={3}>
-									<Grid item xs={12}></Grid>
-									<Grid item xs={12}>
-										<Stack direction="row" justifyContent="space-around" alignItems="center">
-											<Stack spacing={0.5} alignItems="center">
-												<Typography variant="h5">{data.folderData || "-"}</Typography>
-												<Typography color="secondary">Duración</Typography>
+						<Divider sx={{ my: 2 }} />
+
+						{/* Main content - 2 columns */}
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={6}>
+								<Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
+									<Stack spacing={2}>
+										<Typography variant="subtitle1" color="primary" fontWeight={600}>
+											Información de la Causa
+										</Typography>
+
+										<Stack spacing={1.5}>
+											<Stack direction="row" spacing={1}>
+												<Typography variant="body2" color="textSecondary" sx={{ minWidth: 120 }}>
+													Jurisdicción:
+												</Typography>
+												<Typography variant="body2">{data.folderJuris?.label || notAvailableMsg}</Typography>
 											</Stack>
-											<Divider orientation="vertical" flexItem />
-											<Stack spacing={0.5} alignItems="center">
-												<Typography variant="h5">{data.movements || 0}</Typography>
-												<Typography color="secondary">Movimientos</Typography>
+
+											<Stack direction="row" spacing={1}>
+												<Typography variant="body2" color="textSecondary" sx={{ minWidth: 120 }}>
+													Materia:
+												</Typography>
+												<Typography variant="body2">{data.folderFuero || notAvailableMsg}</Typography>
+											</Stack>
+
+											<Stack direction="row" spacing={1}>
+												<Typography variant="body2" color="textSecondary" sx={{ minWidth: 120 }}>
+													Carátula:
+												</Typography>
+												<Typography variant="body2">{data.folderName || notAvailableMsg}</Typography>
 											</Stack>
 										</Stack>
-									</Grid>
-									<Grid item xs={12}>
-										<Divider />
-									</Grid>
-									<Grid item xs={12}>
-										<List aria-label="main mailbox folders" sx={{ py: 0, "& .MuiListItemIcon-root": { minWidth: 32 } }}>
-											<ListItem>
-												<ListItemIcon>
-													<Chart size={18} />
-												</ListItemIcon>
-												<ListItemSecondaryAction>
-													<Typography align="right">Cálculos: {data.email || 0}</Typography>
-												</ListItemSecondaryAction>
-											</ListItem>
-											<ListItem>
-												<ListItemIcon>
-													<DollarSquare size={18} />
-												</ListItemIcon>
-												<ListItemSecondaryAction>
-													<Typography align="right">Facturación: {`$ ${data.earnings || 0} `}</Typography>
-												</ListItemSecondaryAction>
-											</ListItem>
-											<ListItem>
-												<ListItemIcon>
-													<SmsNotification size={18} />
-												</ListItemIcon>
-												<ListItemSecondaryAction>
-													<Typography align="right">Notificaciones: {data.notifications || 0}</Typography>
-												</ListItemSecondaryAction>
-											</ListItem>
-											<ListItem>
-												<ListItemIcon>
-													<TaskSquare size={18} />
-												</ListItemIcon>
-												<ListItemSecondaryAction>
-													<Typography align="right">Tareas: {data.tasks || 0}</Typography>
-												</ListItemSecondaryAction>
-											</ListItem>
-										</List>
-									</Grid>
-								</Grid>
-							</MainCard>
+									</Stack>
+								</Paper>
+							</Grid>
+
+							<Grid item xs={12} md={6}>
+								<Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
+									<Stack spacing={2}>
+										<Typography variant="subtitle1" color="primary" fontWeight={600}>
+											Observaciones
+										</Typography>
+
+										<Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+											<NoteText size="18" style={{ marginTop: 3, flexShrink: 0 }} />
+											<Typography variant="body2" color="textSecondary">
+												{data.description || "Sin observaciones"}
+											</Typography>
+										</Box>
+									</Stack>
+								</Paper>
+							</Grid>
 						</Grid>
-						<Grid item xs={12} sm={7} md={8} lg={8} xl={9}>
-							<Stack spacing={2.5}>
-								<MainCard title="Detalles de la Causa" shadow={3}>
-									<List sx={{ py: 0 }}>
-										<ListItem divider={!matchDownMD}>
-											<Grid container spacing={3}>
-												<Grid item xs={12} md={6}>
-													<Stack spacing={0.5}>
-														<Typography color="secondary">Carátula</Typography>
-														<Typography>{data.folderName || notAvailableMsg}</Typography>
-													</Stack>
-												</Grid>
-												<Grid item xs={12} md={6}>
-													<Stack spacing={0.5}>
-														<Typography color="secondary">Materia</Typography>
-														<Typography>{data.materia || notAvailableMsg}</Typography>
-													</Stack>
-												</Grid>
-											</Grid>
-										</ListItem>
-										<ListItem divider={!matchDownMD}>
-											<Grid container spacing={3}>
-												<Grid item xs={12} md={6}>
-													<Stack spacing={0.5}>
-														<Typography color="secondary">Fuero</Typography>
-														<Typography>{data.folderFuero || notAvailableMsg}</Typography>
-													</Stack>
-												</Grid>
-												<Grid item xs={12} md={6}>
-													<Stack spacing={0.5}>
-														<Typography color="secondary">Jurisdicción</Typography>
-														<Typography>{data.folderJuris.item || notAvailableMsg}</Typography>
-													</Stack>
-												</Grid>
-											</Grid>
-										</ListItem>
-										<ListItem>
-											<Stack spacing={0.5}>
-												<Typography color="secondary">Descripción</Typography>
-												<Typography>{data.description || notAvailableMsg}</Typography>
-											</Stack>
-										</ListItem>
-									</List>
-								</MainCard>
-								<MainCard title="Últimos Movimientos" shadow={3}>
-									{data.lastMovement ? (
-										<Typography color="secondary">{data.lastMovement}</Typography>
-									) : (
-										<Grid container direction="column" alignItems="center" justifyContent="center" color="secondary">
-											<FolderCross color="#5B6B79" />
-											<Typography color="secondary">No hay movimientos</Typography>
-										</Grid>
-									)}
-								</MainCard>
-							</Stack>
-						</Grid>
-					</Grid>
+					</Box>
 				</Transitions>
 			</TableCell>
 		</TableRow>

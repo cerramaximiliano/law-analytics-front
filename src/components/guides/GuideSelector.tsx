@@ -12,7 +12,8 @@ import GuideFolders from "./GuideFolders";
 import GuideContacts from "./GuideContacts";
 import GuideCalendar from "./GuideCalendar";
 import GuideBooking from "./GuideBooking";
-import { Calculator, Coin, Warning2, FolderOpen, ProfileCircle, Calendar, CalendarTick } from "iconsax-react";
+import GuideTasks from "./GuideTasks";
+import { Calculator, Coin, Warning2, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task } from "iconsax-react";
 
 // ==============================|| COMPONENTE SELECTOR DE GUÍAS ||============================== //
 
@@ -29,6 +30,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 	const [guideContactsOpen, setGuideContactsOpen] = useState(false);
 	const [guideCalendarOpen, setGuideCalendarOpen] = useState(false);
 	const [guideBookingOpen, setGuideBookingOpen] = useState(false);
+	const [guideTasksOpen, setGuideTasksOpen] = useState(false);
 
 	const handleOpenGuideLaboral = () => {
 		onClose();
@@ -58,6 +60,11 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 	const handleOpenGuideBooking = () => {
 		onClose();
 		setGuideBookingOpen(true);
+	};
+
+	const handleOpenGuideTasks = () => {
+		onClose();
+		setGuideTasksOpen(true);
 	};
 
 	return (
@@ -212,6 +219,27 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 								</CardContent>
 							</Card>
 						</Grid>
+						<Grid item xs={12} sm={6} md={4}>
+							<Card
+								sx={{
+									cursor: "pointer",
+									transition: "all 0.3s",
+									"&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
+									height: "100%",
+								}}
+								onClick={handleOpenGuideTasks}
+							>
+								<CardContent sx={{ p: 3, textAlign: "center" }}>
+									<Task size={64} variant="Bulk" style={{ color: theme.palette.primary.main, marginBottom: "16px" }} />
+									<Typography variant="h4" gutterBottom>
+										Guía de Tareas
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Aprende a crear, organizar y gestionar tus tareas de manera eficiente.
+									</Typography>
+								</CardContent>
+							</Card>
+						</Grid>
 					</Grid>
 				</DialogContent>
 			</Dialog>
@@ -223,6 +251,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 			<GuideContacts open={guideContactsOpen} onClose={() => setGuideContactsOpen(false)} />
 			<GuideCalendar open={guideCalendarOpen} onClose={() => setGuideCalendarOpen(false)} />
 			<GuideBooking open={guideBookingOpen} onClose={() => setGuideBookingOpen(false)} />
+			<GuideTasks open={guideTasksOpen} onClose={() => setGuideTasksOpen(false)} />
 		</>
 	);
 };
