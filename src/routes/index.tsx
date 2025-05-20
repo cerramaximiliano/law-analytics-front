@@ -4,7 +4,6 @@ import { useRoutes } from "react-router-dom";
 // project-imports
 import CommonLayout from "layout/CommonLayout";
 import Loadable from "components/Loadable";
-//import ComponentsRoutes from "./ComponentsRoutes";
 import LoginRoutes from "./LoginRoutes";
 import MainRoutes from "./MainRoutes";
 const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404")));
@@ -62,7 +61,6 @@ export default function ThemeRoutes() {
 			],
 		},
 		LoginRoutes,
-		//ComponentsRoutes,
 		MainRoutes,
 		{
 			path: "*",

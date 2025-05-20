@@ -256,12 +256,6 @@ const MegaMenuSection = () => {
 																</ListItemIcon>
 																<ListItemText primary="About us" />
 															</ListItemButton>
-															<ListItemButton disableRipple component={Link} to="/contact-us" target="_blank">
-																<ListItemIcon>
-																	<Dot size={6} color="secondary" variant="outlined" />
-																</ListItemIcon>
-																<ListItemText primary="Contact us" />
-															</ListItemButton>
 															<ListItemButton disableRipple component={Link} to="/price/price1">
 																<ListItemIcon>
 																	<Dot size={6} color="secondary" variant="outlined" />
@@ -274,28 +268,15 @@ const MegaMenuSection = () => {
 																</ListItemIcon>
 																<ListItemText primary="Payment" />
 															</ListItemButton>
-															<ListItemButton disableRipple component={Link} target="_blank" to="/maintenance/under-construction">
-																<ListItemIcon>
-																	<Dot size={6} color="secondary" variant="outlined" />
-																</ListItemIcon>
-																<ListItemText primary="Construction" />
-															</ListItemButton>
-															<ListItemButton disableRipple component={Link} target="_blank" to="/maintenance/coming-soon">
-																<ListItemIcon>
-																	<Dot size={6} color="secondary" variant="outlined" />
-																</ListItemIcon>
-																<ListItemText primary="Coming Soon" />
-															</ListItemButton>
 														</List>
 													</Grid>
-													<Grid item xs={4}>
-														<List
+																											<List
 															component="nav"
 															aria-labelledby="nested-list-user"
 															subheader={
 																<ListSubheader id="nested-list-user">
 																	<Typography variant="subtitle1" color="textPrimary">
-																		SAAS Pages
+																		Error Pages
 																	</Typography>
 																</ListSubheader>
 															}
@@ -306,14 +287,7 @@ const MegaMenuSection = () => {
 																</ListItemIcon>
 																<ListItemText primary="404 Error" />
 															</ListItemButton>
-															<ListItemButton disableRipple component={Link} target="_blank" to="">
-																<ListItemIcon>
-																	<Dot size={6} color="secondary" variant="outlined" />
-																</ListItemIcon>
-																<ListItemText primary="Landing" />
-															</ListItemButton>
 														</List>
-													</Grid>
 												</Grid>
 											</Box>
 										</Grid>

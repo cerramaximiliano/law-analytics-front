@@ -54,6 +54,9 @@ const AuthResetPassword = Loadable(lazy(() => import("pages/auth/auth1/reset-pas
 const AuthCheckMail = Loadable(lazy(() => import("pages/auth/auth1/check-mail")));
 const AuthCodeVerification = Loadable(lazy(() => import("pages/auth/auth1/code-verification")));
 
+// pages routing - error
+const MaintenanceError = Loadable(lazy(() => import("pages/maintenance/error/404")));
+
 // render - sample page
 const Details = Loadable(lazy(() => import("pages/apps/folders/details/details")));
 const PricingPage = Loadable(lazy(() => import("pages/extra-pages/price/price1")));
@@ -336,56 +339,6 @@ const MainRoutes = {
 				},
 			],
 		},
-		/* 		{
-			path: "/",
-			element: <CommonLayout layout="landing" />,
-			children: [
-				{
-					path: "landing",
-					element: <Landing />,
-				},
-			],
-		}, */
-		/* 		{
-			path: "/",
-			element: <CommonLayout layout="simple" />,
-			children: [
-				{
-					path: "contact-us",
-					element: <ContactUS />,
-				},
-			],
-		}, */
-		/* 		{
-			path: "/maintenance",
-			element: <CommonLayout />,
-			children: [
-				{
-					path: "404",
-					element: <MaintenanceError />,
-				},
-				{
-					path: "500",
-					element: <MaintenanceError500 />,
-				},
-				{
-					path: "under-construction",
-					element: <MaintenanceUnderConstruction />,
-				},
-				{
-					path: "under-construction2",
-					element: <MaintenanceUnderConstruction2 />,
-				},
-				{
-					path: "coming-soon",
-					element: <MaintenanceComingSoon />,
-				},
-				{
-					path: "coming-soon2",
-					element: <MaintenanceComingSoon2 />,
-				},
-			],
-		}, */
 		{
 			path: "/auth",
 			element: <CommonLayout />,
@@ -414,7 +367,17 @@ const MainRoutes = {
 					path: "code-verification",
 					element: <AuthCodeVerification />,
 				},
-							],
+			],
+		},
+		{
+			path: "/maintenance",
+			element: <CommonLayout />,
+			children: [
+				{
+					path: "404",
+					element: <MaintenanceError />,
+				},
+			],
 		},
 	],
 };
