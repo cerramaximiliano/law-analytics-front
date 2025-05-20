@@ -34,9 +34,10 @@ import TableSkeleton from "components/UI/TableSkeleton";
 import AddUserModal from "./AddUserModal";
 import EditUserModal from "./EditUserModal";
 import DeleteUserDialog from "./DeleteUserDialog";
+import GenerateDataModal from "./GenerateDataModal";
 
 // assets
-import { Eye, Trash, Edit, Add } from "iconsax-react";
+import { Eye, Trash, Edit, Add, Chart } from "iconsax-react";
 
 // table sort
 function descendingComparator(a: any, b: any, orderBy: string) {
@@ -130,6 +131,7 @@ const UsersList = () => {
 	const [addModalOpen, setAddModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [generateDataModalOpen, setGenerateDataModalOpen] = useState(false);
 
 	const handleRequestSort = (property: string) => {
 		const isAsc = orderBy === property && order === "asc";
@@ -161,6 +163,11 @@ const UsersList = () => {
 		setDeleteDialogOpen(true);
 	};
 
+	const handleGenerateData = (user: User) => {
+		setSelectedUser(user);
+		setGenerateDataModalOpen(true);
+	};
+
 	const handleAddUser = () => {
 		setAddModalOpen(true);
 	};
@@ -181,6 +188,11 @@ const UsersList = () => {
 
 	const handleCloseDeleteDialog = () => {
 		setDeleteDialogOpen(false);
+		setSelectedUser(null);
+	};
+
+	const handleCloseGenerateDataModal = () => {
+		setGenerateDataModalOpen(false);
 		setSelectedUser(null);
 	};
 
@@ -277,7 +289,7 @@ const UsersList = () => {
 				<TableContainer>
 					<Table>
 						<TableHead>
-							<TableRow>
+							<TableRow key="header-row">
 								{headCells.map((headCell) => (
 									<TableCell
 										key={headCell.id}
@@ -303,7 +315,7 @@ const UsersList = () => {
 
 							{/* Mensaje de error */}
 							{!loading && error && (
-								<TableRow>
+								<TableRow key="error-row">
 									<TableCell colSpan={headCells.length} align="center" sx={{ py: 3 }}>
 										<Typography variant="h6" color="error" gutterBottom>
 											Error al cargar usuarios
@@ -317,7 +329,7 @@ const UsersList = () => {
 
 							{/* No hay resultados */}
 							{!loading && !error && (!users || users.length === 0) && (
-								<TableRow>
+								<TableRow key="empty-row">
 									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5 }}>
 										<Typography variant="h6" gutterBottom>
 											No hay usuarios disponibles
@@ -378,6 +390,11 @@ const UsersList = () => {
 															<Edit size={18} />
 														</IconButton>
 													</Tooltip>
+													<Tooltip title="Generar datos">
+														<IconButton color="success" onClick={() => handleGenerateData(user)}>
+															<Chart size={18} />
+														</IconButton>
+													</Tooltip>
 													<Tooltip title="Eliminar">
 														<IconButton color="error" onClick={() => handleUserDelete(user)}>
 															<Trash size={18} />
@@ -423,6 +440,9 @@ const UsersList = () => {
 
 			{/* Diálogo para confirmar eliminación */}
 			{selectedUser && <DeleteUserDialog user={selectedUser} open={deleteDialogOpen} onClose={handleCloseDeleteDialog} />}
+
+			{/* Modal para generar datos de usuario */}
+			{selectedUser && <GenerateDataModal user={selectedUser} open={generateDataModalOpen} onClose={handleCloseGenerateDataModal} />}
 		</MainCard>
 	);
 };

@@ -9,19 +9,15 @@ interface TableSkeletonProps {
 const TableSkeleton = ({ rows = 15, columns }: TableSkeletonProps) => {
 	return (
 		<>
-			{Array(rows)
-				.fill(0)
-				.map((_, rowIndex) => (
-					<TableRow key={rowIndex}>
-						{Array(columns)
-							.fill(0)
-							.map((_, cellIndex) => (
-								<TableCell key={cellIndex}>
-									<Skeleton width="100%" height={24} />
-								</TableCell>
-							))}
-					</TableRow>
-				))}
+			{Array.from({ length: rows }, (_, rowIndex) => (
+				<TableRow key={`skeleton-row-${rowIndex}`}>
+					{Array.from({ length: columns }, (_, cellIndex) => (
+						<TableCell key={`skeleton-cell-${rowIndex}-${cellIndex}`}>
+							<Skeleton width="100%" height={24} />
+						</TableCell>
+					))}
+				</TableRow>
+			))}
 		</>
 	);
 };
