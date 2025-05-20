@@ -1,9 +1,6 @@
 import { ReactElement } from "react";
 import { CredentialResponse } from "@react-oauth/google";
 
-// third-party
-import firebase from "firebase/compat/app";
-
 // ==============================|| TYPES - AUTH  ||============================== //
 
 export type GuardProps = {
@@ -80,32 +77,6 @@ export interface AuthActionProps {
 	};
 }
 
-export type FirebaseContextType = {
-	isLoggedIn: boolean;
-	isInitialized?: boolean;
-	user?: UserProfile | null | undefined;
-	logout: () => Promise<void>;
-	login: () => void;
-	firebaseRegister: (email: string, password: string) => Promise<firebase.auth.UserCredential>;
-	firebaseEmailPasswordSignIn: (email: string, password: string) => Promise<firebase.auth.UserCredential>;
-	firebaseGoogleSignIn: () => Promise<firebase.auth.UserCredential>;
-	firebaseTwitterSignIn: () => Promise<firebase.auth.UserCredential>;
-	firebaseFacebookSignIn: () => Promise<firebase.auth.UserCredential>;
-	resetPassword: (email: string) => Promise<void>;
-	updateProfile: VoidFunction;
-};
-
-export type AWSCognitoContextType = {
-	isLoggedIn: boolean;
-	isInitialized?: boolean;
-	user?: UserProfile | null | undefined;
-	logout: () => void;
-	login: (email: string, password: string) => Promise<void>;
-	register: (email: string, password: string, firstName: string, lastName: string) => Promise<unknown>;
-	resetPassword: (verificationCode: string, newPassword: string) => Promise<any>;
-	forgotPassword: (email: string) => Promise<void>;
-	updateProfile: VoidFunction;
-};
 
 export interface InitialLoginContextProps {
 	isLoggedIn: boolean;
@@ -117,16 +88,6 @@ export interface JWTDataProps {
 	userId: string;
 }
 
-export type JWTContextType = {
-	isLoggedIn: boolean;
-	isInitialized?: boolean;
-	user?: UserProfile | null | undefined;
-	logout: () => void;
-	login: (email: string, password: string) => Promise<void>;
-	register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
-	resetPassword: (email: string) => Promise<void>;
-	updateProfile: VoidFunction;
-};
 
 // Interfaces para respuestas de la API
 export interface LoginResponse {
@@ -188,12 +149,3 @@ export interface FormValues {
 	submit: string | null;
 }
 
-export type Auth0ContextType = {
-	isLoggedIn: boolean;
-	isInitialized?: boolean;
-	user?: UserProfile | null | undefined;
-	logout: () => void;
-	login: () => void;
-	resetPassword: (email: string) => Promise<void>;
-	updateProfile: VoidFunction;
-};
