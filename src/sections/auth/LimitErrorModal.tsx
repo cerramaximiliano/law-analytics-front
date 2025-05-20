@@ -5,6 +5,7 @@ import {
 	Dialog,
 	DialogActions,
 	DialogContent,
+	DialogTitle,
 	Box,
 	Typography,
 	Stack,
@@ -14,17 +15,14 @@ import {
 	useTheme,
 	Grid,
 	Chip,
-	Switch,
 	List,
 	ListItem,
 	ListItemText,
 	CircularProgress,
 	Alert,
-	alpha,
-	Avatar,
-	Tooltip,
+	alpha
 } from "@mui/material";
-import { Warning2, Lock, ArrowRight, CheckCircle, CloseCircle, Crown } from "iconsax-react";
+import { Lock, ArrowRight, TickCircle, CloseCircle, Crown } from "iconsax-react";
 // Importar MainCard desde el componente personalizado
 import MainCard from "components/MainCard";
 // Importar el servicio API para obtener planes dinámicamente
@@ -62,7 +60,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 }) => {
 	const navigate = useNavigate();
 	const theme = useTheme();
-	const [timePeriod, setTimePeriod] = useState(true); // true = mensual, false = anual
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -95,9 +92,9 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	const handleUpgrade = (planId?: string) => {
 		onClose();
 		if (planId) {
-			navigate(`/plans?plan=${planId}`);
+			navigate(`/suscripciones/tables?plan=${planId}`);
 		} else {
-			navigate("/plans");
+			navigate("/suscripciones/tables");
 		}
 	};
 
@@ -120,13 +117,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 	const isLimitError = !!limitInfo;
 	const isFeatureError = !!featureInfo;
-
-	const getIcon = () => {
-		if (upgradeRequired || isFeatureError) {
-			return <Crown variant="Bulk" size={48} color={theme.palette.primary.main} />;
-		}
-		return <Warning2 variant="Bulk" size={48} color={theme.palette.primary.main} />;
-	};
 
 	const getTitle = () => {
 		if (isFeatureError) {
@@ -262,9 +252,11 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				<Paper
 					elevation={0}
 					sx={{
-						mb: 4,
+						mb: 2,
 						p: 3,
 						borderRadius: 2,
+						maxWidth: "540px",
+						mx: "auto",
 						bgcolor: theme.palette.mode === "dark" ? "background.paper" : "grey.50",
 						border: `1px solid ${theme.palette.divider}`,
 					}}
@@ -340,9 +332,11 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				<Paper
 					elevation={0}
 					sx={{
-						mb: 4,
+						mb: 2,
 						p: 3,
 						borderRadius: 2,
+						maxWidth: "540px",
+						mx: "auto",
 						bgcolor: theme.palette.mode === "dark" ? "background.paper" : "grey.50",
 						border: `1px solid ${theme.palette.divider}`,
 					}}
@@ -409,37 +403,18 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		}
 
 		return (
-			<Paper
-				elevation={0}
+			<Alert
+				severity="warning"
+				icon={<Lock variant="Bulk" size={24} color={theme.palette.warning.main} />}
 				sx={{
-					mb: 3,
-					p: 2.5,
-					borderRadius: 2,
-					display: "flex",
-					alignItems: "center",
-					gap: 2,
-					background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.08)} 0%, ${alpha(
-						theme.palette.primary.main,
-						0.12,
-					)} 100%)`,
-					border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-					backdropFilter: "blur(4px)",
+					mb: 2,
+					width: "100%",
+					maxWidth: "700px",
+					mx: "auto",
 				}}
 			>
-				<Avatar
-					sx={{
-						bgcolor: alpha(theme.palette.primary.main, 0.15),
-						width: 40,
-						height: 40,
-						boxShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.25)}`,
-					}}
-				>
-					<Lock variant="Bulk" size={20} color={theme.palette.primary.main} />
-				</Avatar>
-				<Typography variant="body1" color="text.primary" sx={{ flex: 1 }}>
-					{message || "Acceso denegado: Esta característica no está disponible en tu plan actual."}
-				</Typography>
-			</Paper>
+				{message || "Acceso denegado: Esta característica no está disponible en tu plan actual."}
+			</Alert>
 		);
 	};
 
@@ -464,47 +439,11 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		const recommendedPlans = getRecommendedPlans();
 
 		return (
-			<Grid container spacing={3}>
-				<Grid item xs={12}>
-					<Stack spacing={1.5} direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems="center">
-						<Stack spacing={0}>
-							<Typography variant="subtitle1" fontWeight={600} color="text.primary">
-								Opciones de facturación
-							</Typography>
-						</Stack>
-						<Stack direction="row" spacing={1.5} alignItems="center">
-							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-								Cobro Anual
-							</Typography>
-							<Paper
-								elevation={0}
-								sx={{
-									py: 0.25,
-									px: 1.5,
-									bgcolor:
-										theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.6) : alpha(theme.palette.primary.lighter, 0.6),
-									borderRadius: 2,
-									border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
-								}}
-							>
-								<Switch
-									checked={timePeriod}
-									onChange={() => setTimePeriod(!timePeriod)}
-									inputProps={{ "aria-label": "container" }}
-									size="small"
-								/>
-							</Paper>
-							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-								Cobro Mensual
-							</Typography>
-						</Stack>
-					</Stack>
-				</Grid>
-
-				<Box sx={{ width: "100%", display: "flex", justifyContent: "center" }}>
+			<Grid container spacing={2}>
+				<Box sx={{ width: "100%", display: "flex", justifyContent: "center", mt: 0 }}>
 					<Grid
 						container
-						spacing={3}
+						spacing={2}
 						justifyContent="center"
 						sx={{
 							maxWidth: "100%",
@@ -512,11 +451,8 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 						}}
 					>
 						{recommendedPlans.map((plan) => {
-							// Calcular el precio según el periodo seleccionado
-							const displayPrice =
-								!timePeriod && plan.pricingInfo.billingPeriod === "monthly"
-									? Math.round(plan.pricingInfo.basePrice * 12 * 0.75) // Descuento anual del 25%
-									: plan.pricingInfo.basePrice;
+							// Usar siempre el precio mensual
+							const displayPrice = plan.pricingInfo.basePrice;
 
 							return (
 								<Grid item xs={12} sm={6} md={recommendedPlans.length <= 2 ? 5 : 4} key={plan.planId}>
@@ -524,7 +460,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 										elevation={2}
 										sx={{
 											height: "100%",
-											minHeight: "420px",
+											minHeight: "380px",
 											overflow: "visible",
 											transition: "all 0.3s ease-in-out",
 											"&:hover": {
@@ -550,18 +486,17 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 														<Grid item xs={12}>
 															<Stack spacing={0} textAlign="center">
 																<Typography variant="h4">{plan.displayName}</Typography>
-																<Typography>{plan.description}</Typography>
 															</Stack>
 														</Grid>
 														<Grid item xs={12}>
-															<Stack spacing={0} alignItems="center">
+															<Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
 																<Typography variant="h2" sx={price}>
 																	${displayPrice}
 																</Typography>
-																<Typography variant="h6" color="textSecondary">
-																	{timePeriod ? "/mes" : "/año"}
+																<Typography variant="h6" color="textSecondary" sx={{ ml: 1 }}>
+																	/mes
 																</Typography>
-															</Stack>
+															</Box>
 														</Grid>
 														<Grid item xs={12}>
 															<Button
@@ -599,7 +534,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 															px: 0,
 															py: 0.4,
 														},
-														maxHeight: "200px",
+														maxHeight: "180px",
 														overflowY: "auto",
 														"&::-webkit-scrollbar": {
 															width: "6px",
@@ -658,7 +593,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 																<ListItem sx={!feature.enabled ? priceListDisable : {}}>
 																	<Box sx={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center", gap: 1 }}>
 																		{feature.enabled ? (
-																			<CheckCircle size={16} variant="Bold" color={theme.palette.success.main} />
+																			<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
 																		) : (
 																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
 																		)}
@@ -703,52 +638,26 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				},
 			}}
 		>
-			<Box
+			<DialogTitle
 				sx={{
-					padding: "16px 24px",
-					bgcolor: alpha(theme.palette.primary.main, 0.08),
-					display: "flex",
-					alignItems: "center",
-					gap: 2.5,
-					borderBottom: `1px solid ${theme.palette.primary.light}`,
-					backdropFilter: "blur(8px)",
-					backgroundImage: `linear-gradient(to right, ${alpha(theme.palette.primary.light, 0.12)}, ${alpha(
-						theme.palette.primary.main,
-						0.08,
-					)})`,
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
 				}}
 			>
-				<Avatar
-					sx={{
-						bgcolor: alpha(theme.palette.primary.main, 0.16),
-						width: 48,
-						height: 48,
-						boxShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.3)}`,
-					}}
-				>
-					{getIcon()}
-				</Avatar>
-				<Box>
-					<Typography
-						variant="h5"
-						sx={{
-							color: theme.palette.primary.dark,
-							fontWeight: 600,
-						}}
-					>
-						{getTitle()}
-					</Typography>
-					<Typography
-						variant="body2"
-						sx={{
-							mt: 0.5,
-							color: theme.palette.text.secondary,
-						}}
-					>
+				<Stack spacing={1}>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<Crown size={24} variant="Bulk" color={theme.palette.primary.main} />
+						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+							{getTitle()}
+						</Typography>
+					</Stack>
+					<Typography variant="body2" color="textSecondary">
 						Se requiere actualizar tu plan para continuar
 					</Typography>
-				</Box>
-			</Box>
+				</Stack>
+			</DialogTitle>
+			<Divider />
 
 			<DialogContent
 				sx={{
@@ -757,26 +666,36 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.default, 0.8) : alpha(theme.palette.grey[50], 0.8),
 				}}
 			>
-				<Box sx={{ maxWidth: "95%", mx: "auto" }}>
-					{getContentMessage()}
+				<Box sx={{ mx: "auto" }}>
+					<Box sx={{ maxWidth: "600px", mx: "auto", mb: 2 }}>
+						{getContentMessage()}
+					</Box>
 					{renderPlansList()}
 				</Box>
 			</DialogContent>
 
-			<DialogActions sx={{ p: 2.5, pt: 1, gap: 1, justifyContent: "center" }}>
-				<Button
-					onClick={onClose}
-					variant="outlined"
-					color="primary"
-					sx={{
-						borderRadius: 2,
-						minWidth: 120,
-						py: 0.75,
-						fontWeight: 500,
-					}}
-				>
-					Cerrar
-				</Button>
+			<Divider />
+
+			<DialogActions
+				sx={{
+					p: 2.5,
+					bgcolor: theme.palette.background.default,
+					borderTop: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Grid container justifyContent="flex-end" alignItems="center">
+					<Grid item>
+						<Button
+							onClick={onClose}
+							color="error"
+							sx={{
+								minWidth: 100,
+							}}
+						>
+							Cerrar
+						</Button>
+					</Grid>
+				</Grid>
 			</DialogActions>
 		</Dialog>
 	);
