@@ -20,9 +20,11 @@ import {
 	ListItemText,
 	CircularProgress,
 	Alert,
-	alpha
+	alpha,
+	Avatar,
+	Tooltip,
 } from "@mui/material";
-import { Warning2, Lock, Star1, TrendUp } from "iconsax-react";
+import { Warning2, Lock, ArrowRight, CheckCircle, CloseCircle, Crown } from "iconsax-react";
 // Importar MainCard desde el componente personalizado
 import MainCard from "components/MainCard";
 // Importar el servicio API para obtener planes dinámicamente
@@ -121,9 +123,9 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 	const getIcon = () => {
 		if (upgradeRequired || isFeatureError) {
-			return <Lock variant="Bulk" size={64} color={theme.palette.warning.main} />;
+			return <Crown variant="Bulk" size={48} color={theme.palette.primary.main} />;
 		}
-		return <Warning2 variant="Bulk" size={64} color={theme.palette.error.main} />;
+		return <Warning2 variant="Bulk" size={48} color={theme.palette.primary.main} />;
 	};
 
 	const getTitle = () => {
@@ -162,7 +164,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		// Filtrar planes según el plan actual del usuario
 		return plans.filter((plan) => plan.planId.toLowerCase() !== currentUserPlan);
 	};
-
 
 	// Función para obtener el color y el estilo según el tipo de plan
 	const getPlanStyle = (planId: string, isCurrentPlan: boolean) => {
@@ -288,7 +289,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 									<strong>Plan actual:</strong>
 								</Typography>
 								<Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-									<Star1 size={16} variant="Bulk" color={theme.palette.primary.main} />
+									<Crown size={16} variant="Bulk" color={theme.palette.primary.main} />
 									{limitInfo.plan}
 								</Typography>
 							</Box>
@@ -308,11 +309,23 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 								variant="determinate"
 								value={usagePercentage}
 								sx={{
-									height: 8,
-									borderRadius: 1,
+									height: 10,
+									borderRadius: 1.5,
 									bgcolor: theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
 									"& .MuiLinearProgress-bar": {
 										backgroundColor: usageColor,
+										transition: "transform 1s ease-in-out",
+										backgroundImage: `linear-gradient(
+											45deg,
+											rgba(255, 255, 255, 0.15) 25%,
+											transparent 25%,
+											transparent 50%,
+											rgba(255, 255, 255, 0.15) 50%,
+											rgba(255, 255, 255, 0.15) 75%,
+											transparent 75%,
+											transparent
+										)`,
+										backgroundSize: "20px 20px",
 									},
 								}}
 							/>
@@ -354,7 +367,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 									<strong>Tu plan:</strong>
 								</Typography>
 								<Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-									<Star1 size={16} variant="Bulk" color={theme.palette.primary.main} />
+									<Crown size={16} variant="Bulk" color={theme.palette.primary.main} />
 									{featureInfo.plan}
 								</Typography>
 							</Box>
@@ -383,7 +396,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 												gap: 0.5,
 											}}
 										>
-											<Star1 size={14} variant="Bulk" />
+											<Crown size={14} variant="Bulk" />
 											{plan}
 										</Box>
 									))}
@@ -396,19 +409,37 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		}
 
 		return (
-			<Alert 
-				severity="warning" 
-				variant="outlined"
+			<Paper
+				elevation={0}
 				sx={{
-					mb: 4,
+					mb: 3,
+					p: 2.5,
 					borderRadius: 2,
-					"& .MuiAlert-message": {
-						width: "100%"
-					}
+					display: "flex",
+					alignItems: "center",
+					gap: 2,
+					background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.08)} 0%, ${alpha(
+						theme.palette.primary.main,
+						0.12,
+					)} 100%)`,
+					border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+					backdropFilter: "blur(4px)",
 				}}
 			>
-				{message || "Acceso denegado: Esta característica no está disponible en tu plan actual."}
-			</Alert>
+				<Avatar
+					sx={{
+						bgcolor: alpha(theme.palette.primary.main, 0.15),
+						width: 40,
+						height: 40,
+						boxShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.25)}`,
+					}}
+				>
+					<Lock variant="Bulk" size={20} color={theme.palette.primary.main} />
+				</Avatar>
+				<Typography variant="body1" color="text.primary" sx={{ flex: 1 }}>
+					{message || "Acceso denegado: Esta característica no está disponible en tu plan actual."}
+				</Typography>
+			</Paper>
 		);
 	};
 
@@ -435,13 +466,34 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		return (
 			<Grid container spacing={3}>
 				<Grid item xs={12}>
-					<Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
-						<Stack spacing={0}></Stack>
+					<Stack spacing={1.5} direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems="center">
+						<Stack spacing={0}>
+							<Typography variant="subtitle1" fontWeight={600} color="text.primary">
+								Opciones de facturación
+							</Typography>
+						</Stack>
 						<Stack direction="row" spacing={1.5} alignItems="center">
 							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
 								Cobro Anual
 							</Typography>
-							<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
+							<Paper
+								elevation={0}
+								sx={{
+									py: 0.25,
+									px: 1.5,
+									bgcolor:
+										theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.6) : alpha(theme.palette.primary.lighter, 0.6),
+									borderRadius: 2,
+									border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+								}}
+							>
+								<Switch
+									checked={timePeriod}
+									onChange={() => setTimePeriod(!timePeriod)}
+									inputProps={{ "aria-label": "container" }}
+									size="small"
+								/>
+							</Paper>
 							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
 								Cobro Mensual
 							</Typography>
@@ -449,124 +501,184 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					</Stack>
 				</Grid>
 
-				<Grid item container spacing={3} xs={12} alignItems="center" justifyContent="center">
-					{recommendedPlans.map((plan) => {
-						// Calcular el precio según el periodo seleccionado
-						const displayPrice =
-							!timePeriod && plan.pricingInfo.billingPeriod === "monthly"
-								? Math.round(plan.pricingInfo.basePrice * 12 * 0.75) // Descuento anual del 25%
-								: plan.pricingInfo.basePrice;
+				<Box sx={{ width: "100%", display: "flex", justifyContent: "center" }}>
+					<Grid
+						container
+						spacing={3}
+						justifyContent="center"
+						sx={{
+							maxWidth: "100%",
+							margin: "auto",
+						}}
+					>
+						{recommendedPlans.map((plan) => {
+							// Calcular el precio según el periodo seleccionado
+							const displayPrice =
+								!timePeriod && plan.pricingInfo.billingPeriod === "monthly"
+									? Math.round(plan.pricingInfo.basePrice * 12 * 0.75) // Descuento anual del 25%
+									: plan.pricingInfo.basePrice;
 
-						return (
-							<Grid item xs={12} sm={5} md={4} lg={3} key={plan.planId} sx={{ maxWidth: 320 }}>
-								<MainCard>
-									<Grid container spacing={2}>
-										<Grid item xs={12}>
-											<Box sx={getPlanStyle(plan.planId, false)}>
-												<Grid container spacing={2}>
-													{/* Mostramos el chip correspondiente */}
-													<Grid item xs={12} sx={{ textAlign: "center" }}>
-														{getPlanChip(plan.planId, false, plan.isDefault)}
+							return (
+								<Grid item xs={12} sm={6} md={recommendedPlans.length <= 2 ? 5 : 4} key={plan.planId}>
+									<MainCard
+										elevation={2}
+										sx={{
+											height: "100%",
+											minHeight: "420px",
+											overflow: "visible",
+											transition: "all 0.3s ease-in-out",
+											"&:hover": {
+												transform: "translateY(-5px)",
+												boxShadow: theme.shadows[10],
+											},
+										}}
+									>
+										<Grid container spacing={1}>
+											<Grid item xs={12}>
+												<Box
+													sx={{
+														...getPlanStyle(plan.planId, false),
+														pt: 2,
+														pb: 2,
+													}}
+												>
+													<Grid container spacing={1}>
+														{/* Mostramos el chip correspondiente */}
+														<Grid item xs={12} sx={{ textAlign: "center" }}>
+															{getPlanChip(plan.planId, false, plan.isDefault)}
+														</Grid>
+														<Grid item xs={12}>
+															<Stack spacing={0} textAlign="center">
+																<Typography variant="h4">{plan.displayName}</Typography>
+																<Typography>{plan.description}</Typography>
+															</Stack>
+														</Grid>
+														<Grid item xs={12}>
+															<Stack spacing={0} alignItems="center">
+																<Typography variant="h2" sx={price}>
+																	${displayPrice}
+																</Typography>
+																<Typography variant="h6" color="textSecondary">
+																	{timePeriod ? "/mes" : "/año"}
+																</Typography>
+															</Stack>
+														</Grid>
+														<Grid item xs={12}>
+															<Button
+																color={getButtonColor(plan.planId, false)}
+																variant={
+																	plan.planId.toLowerCase() === "standard" || plan.planId.toLowerCase() === "premium"
+																		? "contained"
+																		: "outlined"
+																}
+																fullWidth
+																onClick={() => handleUpgrade(plan.planId)}
+																endIcon={<ArrowRight size={16} />}
+																size="medium"
+																sx={{
+																	py: 1,
+																	fontWeight: 600,
+																	transition: "all 0.3s ease-in-out",
+																	"&:hover": {
+																		transform: "scale(1.02)",
+																	},
+																}}
+															>
+																Suscribirme Ahora
+															</Button>
+														</Grid>
 													</Grid>
-													<Grid item xs={12}>
-														<Stack spacing={0} textAlign="center">
-															<Typography variant="h4">{plan.displayName}</Typography>
-															<Typography>{plan.description}</Typography>
-														</Stack>
-													</Grid>
-													<Grid item xs={12}>
-														<Stack spacing={0} alignItems="center">
-															<Typography variant="h2" sx={price}>
-																${displayPrice}
-															</Typography>
-															<Typography variant="h6" color="textSecondary">
-																{timePeriod ? "/mes" : "/año"}
-															</Typography>
-														</Stack>
-													</Grid>
-													<Grid item xs={12}>
-														<Button
-															color={getButtonColor(plan.planId, false)}
-															variant={plan.planId.toLowerCase() === "standard" || plan.planId.toLowerCase() === "premium" ? "contained" : "outlined"}
-															fullWidth
-															onClick={() => handleUpgrade(plan.planId)}
-															startIcon={<TrendUp size={18} />}
-														>
-															Suscribirme
-														</Button>
-													</Grid>
-												</Grid>
-											</Box>
-										</Grid>
-										<Grid item xs={12}>
-											<List
-												sx={{
-													m: 0,
-													p: 0,
-													"&> li": {
-														px: 0,
-														py: 0.625,
-													},
-												}}
-												component="ul"
-											>
-												{/* Primero mostrar los recursos del plan */}
-												{plan.resourceLimits.map((resource, i) => {
-													// Formatear la descripción del recurso de forma legible
-													let formattedDescription;
-													switch (resource.name) {
-														case "folders":
-															formattedDescription = `+${resource.limit} Causas`;
-															break;
-														case "calculators":
-															formattedDescription = `+${resource.limit} Cálculos`;
-															break;
-														case "contacts":
-															formattedDescription = `+${resource.limit} Contactos`;
-															break;
-														case "storage":
-															formattedDescription = `${resource.limit} MB de Almacenamiento`;
-															break;
-														default:
-															// Capitalizar el nombre del recurso
-															const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
-															formattedDescription = `${resource.limit} ${displayName}`;
-													}
-													
-													return (
-														<React.Fragment key={`resource-${i}`}>
-															<ListItem>
-																<ListItemText primary={formattedDescription} sx={{ textAlign: "center", fontWeight: "medium" }} />
-															</ListItem>
-														</React.Fragment>
-													);
-												})}
+												</Box>
+											</Grid>
+											<Grid item xs={12}>
+												<List
+													sx={{
+														m: 0,
+														p: 0,
+														"&> li": {
+															px: 0,
+															py: 0.4,
+														},
+														maxHeight: "200px",
+														overflowY: "auto",
+														"&::-webkit-scrollbar": {
+															width: "6px",
+														},
+														"&::-webkit-scrollbar-track": {
+															backgroundColor: alpha(theme.palette.background.paper, 0.1),
+														},
+														"&::-webkit-scrollbar-thumb": {
+															backgroundColor: alpha(theme.palette.primary.main, 0.2),
+															borderRadius: "6px",
+														},
+													}}
+													component="ul"
+												>
+													{/* Primero mostrar los recursos del plan */}
+													{plan.resourceLimits.map((resource, i) => {
+														// Formatear la descripción del recurso de forma legible
+														let formattedDescription;
+														switch (resource.name) {
+															case "folders":
+																formattedDescription = `+${resource.limit} Causas`;
+																break;
+															case "calculators":
+																formattedDescription = `+${resource.limit} Cálculos`;
+																break;
+															case "contacts":
+																formattedDescription = `+${resource.limit} Contactos`;
+																break;
+															case "storage":
+																formattedDescription = `${resource.limit} MB de Almacenamiento`;
+																break;
+															default:
+																// Capitalizar el nombre del recurso
+																const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
+																formattedDescription = `${resource.limit} ${displayName}`;
+														}
 
-												{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
-												{[...plan.features]
-													.sort((a, b) => {
-														// Ordenar: enabled (true) primero, luego disabled (false)
-														if (a.enabled === b.enabled) return 0;
-														return a.enabled ? -1 : 1;
-													})
-													.map((feature, i) => (
-														<React.Fragment key={`feature-${i}`}>
-															<ListItem sx={!feature.enabled ? priceListDisable : {}}>
-																<ListItemText
-																	primary={feature.description}
-																	sx={{ textAlign: "center", fontWeight: feature.enabled ? "medium" : "normal" }}
-																/>
-															</ListItem>
-														</React.Fragment>
-													))}
-											</List>
+														return (
+															<React.Fragment key={`resource-${i}`}>
+																<ListItem>
+																	<ListItemText primary={formattedDescription} sx={{ textAlign: "center", fontWeight: "medium" }} />
+																</ListItem>
+															</React.Fragment>
+														);
+													})}
+
+													{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
+													{[...plan.features]
+														.sort((a, b) => {
+															// Ordenar: enabled (true) primero, luego disabled (false)
+															if (a.enabled === b.enabled) return 0;
+															return a.enabled ? -1 : 1;
+														})
+														.map((feature, i) => (
+															<React.Fragment key={`feature-${i}`}>
+																<ListItem sx={!feature.enabled ? priceListDisable : {}}>
+																	<Box sx={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center", gap: 1 }}>
+																		{feature.enabled ? (
+																			<CheckCircle size={16} variant="Bold" color={theme.palette.success.main} />
+																		) : (
+																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
+																		)}
+																		<ListItemText
+																			primary={feature.description}
+																			sx={{ textAlign: "center", fontWeight: feature.enabled ? "medium" : "normal" }}
+																		/>
+																	</Box>
+																</ListItem>
+															</React.Fragment>
+														))}
+												</List>
+											</Grid>
 										</Grid>
-									</Grid>
-								</MainCard>
-							</Grid>
-						);
-					})}
-				</Grid>
+									</MainCard>
+								</Grid>
+							);
+						})}
+					</Grid>
+				</Box>
 			</Grid>
 		);
 	};
@@ -575,41 +687,62 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		<Dialog
 			open={open}
 			onClose={onClose}
-			maxWidth="lg"
+			maxWidth="md"
 			fullWidth
+			TransitionProps={{
+				timeout: 400,
+			}}
 			PaperProps={{
 				sx: {
-					borderRadius: 2,
+					borderRadius: 3,
 					overflow: "hidden",
+					maxWidth: { xs: "95%", sm: "85%", md: "800px" },
+					maxHeight: "90vh",
+					margin: "auto",
+					boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
 				},
 			}}
 		>
 			<Box
 				sx={{
-					p: 3,
-					bgcolor: upgradeRequired || isFeatureError ? alpha(theme.palette.warning.main, 0.12) : alpha(theme.palette.error.main, 0.12),
+					padding: "16px 24px",
+					bgcolor: alpha(theme.palette.primary.main, 0.08),
 					display: "flex",
 					alignItems: "center",
 					gap: 2.5,
-					borderBottom: `1px solid ${upgradeRequired || isFeatureError ? theme.palette.warning.light : theme.palette.error.light}`,
+					borderBottom: `1px solid ${theme.palette.primary.light}`,
+					backdropFilter: "blur(8px)",
+					backgroundImage: `linear-gradient(to right, ${alpha(theme.palette.primary.light, 0.12)}, ${alpha(
+						theme.palette.primary.main,
+						0.08,
+					)})`,
 				}}
 			>
-				{getIcon()}
+				<Avatar
+					sx={{
+						bgcolor: alpha(theme.palette.primary.main, 0.16),
+						width: 48,
+						height: 48,
+						boxShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+					}}
+				>
+					{getIcon()}
+				</Avatar>
 				<Box>
-					<Typography 
-						variant="h5" 
-						sx={{ 
-							color: upgradeRequired || isFeatureError ? theme.palette.warning.dark : theme.palette.error.dark,
-							fontWeight: 500
+					<Typography
+						variant="h5"
+						sx={{
+							color: theme.palette.primary.dark,
+							fontWeight: 600,
 						}}
 					>
 						{getTitle()}
 					</Typography>
-					<Typography 
-						variant="body2" 
-						sx={{ 
-							mt: 0.5, 
-							color: upgradeRequired || isFeatureError ? theme.palette.warning.main : theme.palette.error.main
+					<Typography
+						variant="body2"
+						sx={{
+							mt: 0.5,
+							color: theme.palette.text.secondary,
 						}}
 					>
 						Se requiere actualizar tu plan para continuar
@@ -617,13 +750,31 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				</Box>
 			</Box>
 
-			<DialogContent sx={{ p: 3 }}>
-				{getContentMessage()}
-				{renderPlansList()}
+			<DialogContent
+				sx={{
+					p: 2.5,
+					pb: 3,
+					bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.default, 0.8) : alpha(theme.palette.grey[50], 0.8),
+				}}
+			>
+				<Box sx={{ maxWidth: "95%", mx: "auto" }}>
+					{getContentMessage()}
+					{renderPlansList()}
+				</Box>
 			</DialogContent>
 
-			<DialogActions sx={{ p: 3, pt: 1, gap: 1 }}>
-				<Button onClick={onClose} variant="outlined" color="error" sx={{ borderRadius: 1.5 }}>
+			<DialogActions sx={{ p: 2.5, pt: 1, gap: 1, justifyContent: "center" }}>
+				<Button
+					onClick={onClose}
+					variant="outlined"
+					color="primary"
+					sx={{
+						borderRadius: 2,
+						minWidth: 120,
+						py: 0.75,
+						fontWeight: 500,
+					}}
+				>
 					Cerrar
 				</Button>
 			</DialogActions>
