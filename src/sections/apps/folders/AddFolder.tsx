@@ -211,7 +211,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			const customEvent = event as CustomEvent;
 			console.log(
 				"Restricción de plan detectada, cerrando modal de nueva causa",
-				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : ""
+				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
 			);
 
 			// Cerrar el modal inmediatamente
@@ -254,21 +254,23 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 									limit: response.data.limit,
 								});
 								setLimitErrorMessage("Has alcanzado el límite de causas disponibles en tu plan actual.");
-								
+
 								// Cerrar el modal actual y mostrar el LimitErrorModal
 								onCancel();
-								
+
 								// Lanzar un pequeño delay para evitar problemas de renderizado
 								setTimeout(() => {
 									setLimitErrorOpen(true);
-									
+
 									// Disparar evento para coordinación con otros componentes
-									window.dispatchEvent(new CustomEvent("planRestrictionError", {
-										detail: { 
-											resourceType: "folders",
-											openDialogsCount: 1 
-										}
-									}));
+									window.dispatchEvent(
+										new CustomEvent("planRestrictionError", {
+											detail: {
+												resourceType: "folders",
+												openDialogsCount: 1,
+											},
+										}),
+									);
 								}, 100);
 							} else {
 								// Si no ha alcanzado el límite, mostrar el modal de nueva causa

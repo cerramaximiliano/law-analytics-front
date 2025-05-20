@@ -19,6 +19,8 @@ import * as Yup from "yup";
 import { Formik, Form, FormikValues, FormikProps } from "formik";
 import AlertCustomerDelete from "./AlertCustomerDelete";
 import { Trash, ArrowRight2, ArrowLeft2, Profile2User } from "iconsax-react";
+import ApiService from "store/reducers/ApiService";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import SecondStep from "./step-components/secondStep";
 import FirstStep from "./step-components/firstStep";
 import ThirdStep from "./step-components/thirdStep";
@@ -98,6 +100,12 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	const isCreating = mode === "add";
 	const [initialValues, setInitialValues] = useState(getInitialValues(customer));
 	const formikRef = React.useRef<FormikProps<CustomerFormValues>>(null);
+
+	// Estado para el modal de límite de recursos
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+	const [limitErrorMessage, setLimitErrorMessage] = useState("");
+	const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
 
 	const handleCancel = () => {
 		// Resetea el formulario a los valores iniciales correspondientes a un nuevo contacto
@@ -181,23 +189,114 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	}, [customer]);
 
 	// Resetea los pasos cuando se abre el formulario
+	// Escuchar evento de restricción del plan
+	useEffect(() => {
+		const handlePlanRestriction = (event: Event) => {
+			const customEvent = event as CustomEvent;
+			console.log(
+				"Restricción de plan detectada, cerrando modal de nuevo contacto",
+				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
+			);
+
+			// Cerrar el modal inmediatamente
+			onCancel();
+		};
+
+		// Agregar listener para el evento personalizado
+		window.addEventListener("planRestrictionError", handlePlanRestriction);
+
+		// Limpieza al desmontar
+		return () => {
+			window.removeEventListener("planRestrictionError", handlePlanRestriction);
+		};
+	}, [onCancel]);
+
+	// Resetea los pasos cuando se abre el formulario y verifica límites
 	useEffect(() => {
 		if (open) {
 			setActiveStep(0);
 
-			// Configura los valores iniciales según el modo
-			if (mode === "add") {
-				// Si es modo agregar, siempre resetea a valores vacíos
-				const emptyValues = getInitialValues(null);
-				setInitialValues(emptyValues);
+			// Si estamos creando, verificar límites
+			if (isCreating) {
+				// Resetear el estado modal
+				setShowAddCustomerModal(false);
 
-				// Si la referencia a Formik ya existe, resetea también los valores del formulario
-				if (formikRef.current) {
-					formikRef.current.resetForm();
-					formikRef.current.setValues(emptyValues);
-				}
+				// Verificar el límite de recursos para contactos
+				const checkLimit = async () => {
+					try {
+						const response = await ApiService.checkResourceLimit("contacts");
+						if (response.success && response.data) {
+							if (response.data.hasReachedLimit) {
+								// Si ha alcanzado el límite, mostrar el modal de error y cerrar este modal
+								setLimitErrorInfo({
+									resourceType: "Contactos",
+									plan: response.data.currentPlan || "free",
+									currentCount: `${response.data.currentCount}`,
+									limit: response.data.limit,
+								});
+								setLimitErrorMessage("Has alcanzado el límite de contactos disponibles en tu plan actual.");
+
+								// Cerrar el modal actual y mostrar el LimitErrorModal
+								onCancel();
+
+								// Lanzar un pequeño delay para evitar problemas de renderizado
+								setTimeout(() => {
+									setLimitErrorOpen(true);
+
+									// Disparar evento para coordinación con otros componentes
+									window.dispatchEvent(
+										new CustomEvent("planRestrictionError", {
+											detail: {
+												resourceType: "contacts",
+												openDialogsCount: 1,
+											},
+										}),
+									);
+								}, 100);
+							} else {
+								// Si no ha alcanzado el límite, mostrar el modal de nuevo contacto
+								setShowAddCustomerModal(true);
+								// Configura los valores iniciales para el modo agregar
+								const emptyValues = getInitialValues(null);
+								setInitialValues(emptyValues);
+
+								// Si la referencia a Formik ya existe, resetea también los valores del formulario
+								if (formikRef.current) {
+									formikRef.current.resetForm();
+									formikRef.current.setValues(emptyValues);
+								}
+							}
+						} else {
+							// Si hay un error en la respuesta, mostrar el modal por defecto
+							console.error("Error al verificar el límite de recursos:", response.message);
+							setShowAddCustomerModal(true);
+							// Configurar valores iniciales
+							const emptyValues = getInitialValues(null);
+							setInitialValues(emptyValues);
+							if (formikRef.current) {
+								formikRef.current.resetForm();
+								formikRef.current.setValues(emptyValues);
+							}
+						}
+					} catch (error) {
+						console.error("Error al verificar el límite de recursos:", error);
+						// En caso de error, permitir crear el contacto de todos modos
+						setShowAddCustomerModal(true);
+						// Configurar valores iniciales
+						const emptyValues = getInitialValues(null);
+						setInitialValues(emptyValues);
+						if (formikRef.current) {
+							formikRef.current.resetForm();
+							formikRef.current.setValues(emptyValues);
+						}
+					}
+				};
+				checkLimit();
 			} else if (mode === "edit" && customer) {
-				// Si es modo editar, usa los valores del cliente proporcionado
+				// Si es modo editar, no verificar límites
+				setShowAddCustomerModal(true);
+
+				// Configurar valores iniciales para edición
 				const customerValues = getInitialValues(customer);
 				setInitialValues(customerValues);
 
@@ -208,12 +307,15 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 				}
 			}
 		} else {
-			// Cuando se cierra el modal, podríamos opcionalmente limpiar el formulario
+			// Cuando se cierra el modal, limpiar el estado
+			setShowAddCustomerModal(false);
+
+			// Opcionalmente limpiar el formulario
 			if (formikRef.current) {
 				formikRef.current.resetForm();
 			}
 		}
-	}, [open, mode, customer]);
+	}, [open, mode, customer, isCreating, onCancel]);
 
 	const handleAlertClose = () => {
 		setOpenAlert(!openAlert);
@@ -303,136 +405,158 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 		setActiveStep((prevStep) => prevStep - 1);
 	};
 
+	// Manejador para cerrar el modal de límite de error
+	const handleCloseLimitErrorModal = () => {
+		setLimitErrorOpen(false);
+	};
+
+	// Este componente tiene dos comportamientos:
+	// 1. Cuando se alcanza el límite: Solo muestra el modal LimitErrorModal (independiente)
+	// 2. Cuando no se alcanza el límite: Muestra el formulario normal
 	return (
 		<>
-			<DialogTitle
-				sx={{
-					bgcolor: theme.palette.primary.lighter,
-					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
-				}}
-			>
-				<Stack spacing={1}>
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<Profile2User size={24} color={theme.palette.primary.main} />
-						<Typography
-							variant="h5"
-							color="primary"
-							sx={{
-								color: theme.palette.primary.main,
-								fontWeight: 600,
-							}}
-						>
-							{isCreating ? "Agregar Nuevo Contacto" : "Editar Contacto"}
-						</Typography>
-					</Stack>
-					<Typography variant="body2" color="textSecondary">
-						{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
-					</Typography>
-				</Stack>
-			</DialogTitle>
-			<Divider />
+			{/* Modal de límite de recursos - Se muestra de forma independiente */}
+			<LimitErrorModal
+				open={limitErrorOpen}
+				onClose={handleCloseLimitErrorModal}
+				message={limitErrorMessage}
+				limitInfo={limitErrorInfo}
+				upgradeRequired={true}
+			/>
 
-			<Formik
-				initialValues={initialValues}
-				enableReinitialize
-				validationSchema={currentValidationSchema}
-				onSubmit={_handleSubmit}
-				innerRef={formikRef}
-			>
-				{({ isSubmitting, values }) => (
-					<Form autoComplete="off" noValidate>
-						<DialogContent sx={{ p: 2.5 }}>
-							<Box sx={{ minHeight: 400 }}>
-								{/* Progress Steps */}
-								<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-									{steps.map((label, index) => (
-										<Box key={label} sx={{ position: "relative", width: "100%" }}>
-											<Box
-												sx={{
-													height: 4,
-													bgcolor: index <= activeStep ? "primary.main" : "divider",
-													borderRadius: 1,
-													transition: "all 0.3s ease",
-												}}
-											/>
-											<Typography
-												variant="caption"
-												sx={{
-													position: "absolute",
-													top: 8,
-													color: index <= activeStep ? "primary.main" : "text.secondary",
-												}}
-											>
-												{label}
-											</Typography>
-										</Box>
-									))}
-								</Stack>
+			{/* El contenido del modal de AddCustomer solo se muestra cuando corresponde */}
+			{showAddCustomerModal && (
+				<>
+					<DialogTitle
+						sx={{
+							bgcolor: theme.palette.primary.lighter,
+							p: 3,
+							borderBottom: `1px solid ${theme.palette.divider}`,
+						}}
+					>
+						<Stack spacing={1}>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Profile2User size={24} color={theme.palette.primary.main} />
+								<Typography
+									variant="h5"
+									color="primary"
+									sx={{
+										color: theme.palette.primary.main,
+										fontWeight: 600,
+									}}
+								>
+									{isCreating ? "Agregar Nuevo Contacto" : "Editar Contacto"}
+								</Typography>
+							</Stack>
+							<Typography variant="body2" color="textSecondary">
+								{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
+							</Typography>
+						</Stack>
+					</DialogTitle>
+					<Divider />
 
-								{/* Form Content */}
-								<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
-							</Box>
-						</DialogContent>
+					<Formik
+						initialValues={initialValues}
+						enableReinitialize
+						validationSchema={currentValidationSchema}
+						onSubmit={_handleSubmit}
+						innerRef={formikRef}
+					>
+						{({ isSubmitting, values }) => (
+							<Form autoComplete="off" noValidate>
+								<DialogContent sx={{ p: 2.5 }}>
+									<Box sx={{ minHeight: 400 }}>
+										{/* Progress Steps */}
+										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+											{steps.map((label, index) => (
+												<Box key={label} sx={{ position: "relative", width: "100%" }}>
+													<Box
+														sx={{
+															height: 4,
+															bgcolor: index <= activeStep ? "primary.main" : "divider",
+															borderRadius: 1,
+															transition: "all 0.3s ease",
+														}}
+													/>
+													<Typography
+														variant="caption"
+														sx={{
+															position: "absolute",
+															top: 8,
+															color: index <= activeStep ? "primary.main" : "text.secondary",
+														}}
+													>
+														{label}
+													</Typography>
+												</Box>
+											))}
+										</Stack>
 
-						<Divider />
+										{/* Form Content */}
+										<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+									</Box>
+								</DialogContent>
 
-						<DialogActions sx={{ p: 2.5 }}>
-							<Grid container justifyContent="space-between" alignItems="center">
-								<Grid item>
-									{!isCreating && (
-										<Tooltip title="Eliminar Contacto" placement="top">
-											<IconButton
-												onClick={() => setOpenAlert(true)}
-												size="large"
-												sx={{
-													color: "error.main",
-													"&:hover": {
-														bgcolor: "error.lighter",
-													},
-												}}
-											>
-												<Trash variant="Bold" />
-											</IconButton>
-										</Tooltip>
-									)}
-								</Grid>
-								<Grid item>
-									<Stack direction="row" spacing={2} alignItems="center">
-										{activeStep > 0 && (
-											<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
-												Atrás
-											</Button>
-										)}
-										<Button color="error" onClick={handleCancel} sx={{ minWidth: 100 }}>
-											Cancelar
-										</Button>
-										<Button
-											type="submit"
-											variant="contained"
-											disabled={isSubmitting}
-											endIcon={!isLastStep && <ArrowRight2 size={18} />}
-											sx={{ minWidth: 100 }}
-										>
-											{customer && isLastStep && "Guardar"}
-											{!customer && isLastStep && "Crear"}
-											{!isLastStep && "Siguiente"}
-										</Button>
-									</Stack>
-								</Grid>
-							</Grid>
-						</DialogActions>
-					</Form>
-				)}
-			</Formik>
+								<Divider />
 
-			{!isCreating && (
-				<AlertCustomerDelete
-					title={`${customer.name} ${customer.lastName}`}
-					open={openAlert}
-					handleClose={handleAlertClose}
-					id={customer._id}
-				/>
+								<DialogActions sx={{ p: 2.5 }}>
+									<Grid container justifyContent="space-between" alignItems="center">
+										<Grid item>
+											{!isCreating && (
+												<Tooltip title="Eliminar Contacto" placement="top">
+													<IconButton
+														onClick={() => setOpenAlert(true)}
+														size="large"
+														sx={{
+															color: "error.main",
+															"&:hover": {
+																bgcolor: "error.lighter",
+															},
+														}}
+													>
+														<Trash variant="Bold" />
+													</IconButton>
+												</Tooltip>
+											)}
+										</Grid>
+										<Grid item>
+											<Stack direction="row" spacing={2} alignItems="center">
+												{activeStep > 0 && (
+													<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
+														Atrás
+													</Button>
+												)}
+												<Button color="error" onClick={handleCancel} sx={{ minWidth: 100 }}>
+													Cancelar
+												</Button>
+												<Button
+													type="submit"
+													variant="contained"
+													disabled={isSubmitting}
+													endIcon={!isLastStep && <ArrowRight2 size={18} />}
+													sx={{ minWidth: 100 }}
+												>
+													{customer && isLastStep && "Guardar"}
+													{!customer && isLastStep && "Crear"}
+													{!isLastStep && "Siguiente"}
+												</Button>
+											</Stack>
+										</Grid>
+									</Grid>
+								</DialogActions>
+							</Form>
+						)}
+					</Formik>
+
+					{!isCreating && (
+						<AlertCustomerDelete
+							title={`${customer.name} ${customer.lastName}`}
+							open={openAlert}
+							handleClose={handleAlertClose}
+							id={customer._id}
+						/>
+					)}
+				</>
 			)}
 		</>
 	);

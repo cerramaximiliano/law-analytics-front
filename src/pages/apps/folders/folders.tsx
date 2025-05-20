@@ -897,7 +897,7 @@ const FoldersLayout = () => {
 					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleRefreshData} />
 				</Dialog>
 			)}
-			
+
 			{/* El componente AddFolder manejará el LimitErrorModal independientemente */}
 
 			{/* Modal para elementos archivados */}
