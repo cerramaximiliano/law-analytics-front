@@ -25,15 +25,18 @@ const GoogleButton = styled(Button)<ButtonProps>(({ theme }) => ({
 	"& .MuiButton-startIcon": {
 		marginRight: "16px",
 		marginLeft: "-4px",
+		display: "flex",
+		alignItems: "center",
 	},
 
 	// Otras propiedades para igualar el botón de Login
 	textTransform: "none",
-	fontSize: "1rem",
-	padding: "8px 22px",
+	fontSize: "0.9375rem",
+	padding: "6px 16px",
 	borderRadius: "8px",
 	transition: "all 0.25s ease-in-out",
-	minHeight: "42px", // Altura exacta del botón MUI de tamaño grande
+	height: "42.24px", // Altura exacta del botón Login
+		boxSizing: "border-box",
 	lineHeight: "1.75",
 }));
 
@@ -55,7 +58,7 @@ const CustomGoogleButton = ({
 			<GoogleButton
 				variant="contained"
 				color="primary"
-				startIcon={<img src={GoogleIcon} alt="Google" style={{ width: 20, height: 20 }} />}
+				startIcon={<img src={GoogleIcon} alt="Google" style={{ width: 16, height: 16 }} />}
 				onClick={onClick}
 				disabled={disabled}
 				fullWidth={fullWidth}
