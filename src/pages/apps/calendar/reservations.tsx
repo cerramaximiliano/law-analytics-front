@@ -30,7 +30,7 @@ import {
 	Alert,
 	Tooltip,
 } from "@mui/material";
-import { Calendar, ClipboardTick, MoreSquare, Trash, User, Edit2, Link21, Clock, InfoCircle } from "iconsax-react";
+import { Calendar, ClipboardTick, MoreSquare, Trash, User, Edit2, Link21, Clock, InfoCircle, Lock } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { LoadingButton } from "@mui/lab";
 import { format, isAfter, isToday } from "date-fns";
@@ -39,6 +39,8 @@ import Loader from "components/Loader";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { GuideBooking } from "components/guides";
+import ApiService from "store/reducers/ApiService";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 // Definición de interfaces para tipar adecuadamente los objetos
 interface CustomField {
@@ -574,7 +576,7 @@ const BookingCard: React.FC<{
 // Componente para gestionar las reservas de una disponibilidad específica
 const BookingsManagement = () => {
 	const navigate = useNavigate();
-	//const theme = useTheme();
+	const theme = useTheme();
 	const [loading, setLoading] = useState(true);
 	const [bookings, setBookings] = useState<BookingType[]>([]);
 	const [availability, setAvailability] = useState<AvailabilityType | null>(null);
@@ -591,11 +593,39 @@ const BookingsManagement = () => {
 	const [deleteAvailabilityDialog, setDeleteAvailabilityDialog] = useState(false);
 	const [selectedAvailabilityId, setSelectedAvailabilityId] = useState<string | null>(null);
 	const [guideOpen, setGuideOpen] = useState(false);
+	const [hasBookingFeature, setHasBookingFeature] = useState(false);
+	const [featureInfo, setFeatureInfo] = useState<any>(null);
+	const [limitModalOpen, setLimitModalOpen] = useState(false);
 
 	// Determinar si estamos viendo una disponibilidad específica o todas las reservas
 	const urlParts = window.location.pathname.split("/");
 	const availabilityId = urlParts[urlParts.length - 1];
 	const isSpecificAvailability = availabilityId && availabilityId !== "reservations";
+
+	// Verificar si el usuario tiene acceso a la característica de reservas
+	useEffect(() => {
+		const checkBookingFeature = async () => {
+			try {
+				const response = await ApiService.checkUserFeature("booking");
+				const isEnabled = response.data?.isEnabled || false;
+				setHasBookingFeature(isEnabled);
+				
+				// Si la característica no está habilitada, guardar la información para el modal
+				if (!isEnabled) {
+					setFeatureInfo({
+						feature: "Gestión de Reservas",
+						plan: response.data?.currentPlan || "Free",
+						availableIn: response.data?.requiredPlan ? [response.data.requiredPlan] : ["Standard", "Premium"]
+					});
+				}
+			} catch (error) {
+				console.error("Error verificando característica de reservas:", error);
+				setHasBookingFeature(false);
+			}
+		};
+
+		checkBookingFeature();
+	}, []);
 
 	// Cargar disponibilidad y reservas
 	useEffect(() => {
@@ -1029,12 +1059,43 @@ const BookingsManagement = () => {
 								Ver todas las reservas
 							</Button>
 						)}
-						<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
-							Nueva Disponibilidad
-						</Button>
+						{hasBookingFeature ? (
+							<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
+								Nueva Disponibilidad
+							</Button>
+						) : (
+							<Button 
+								variant="contained" 
+								color="primary" 
+								startIcon={<Lock size={16} />}
+								onClick={() => navigate("/suscripciones/tables")}
+							>
+								Nueva Disponibilidad
+							</Button>
+						)}
 					</Stack>
 				}
 			>
+				{!hasBookingFeature && (
+					<Alert 
+						severity="warning" 
+						icon={<Lock variant="Bulk" size={24} color={theme.palette.warning.main} />}
+						sx={{ mb: 3, mt: 1 }}
+						action={
+							<Button 
+								color="warning" 
+								size="small" 
+								onClick={() => navigate("/suscripciones/tables")}
+							>
+								Actualizar Plan
+							</Button>
+						}
+					>
+						La gestión de reservas y creación de disponibilidades está limitada a planes superiores. 
+						Actualiza tu plan para acceder a esta funcionalidad.
+					</Alert>
+				)}
+				
 				<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
 					<Tooltip title="Ver Guía">
 						<IconButton
@@ -1118,9 +1179,20 @@ const BookingsManagement = () => {
 											Configura tu disponibilidad para que otros puedan agendar citas contigo. Una vez configurada, podrás compartir un
 											enlace para recibir reservas.
 										</Typography>
-										<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
-											Crear Nueva Disponibilidad
-										</Button>
+										{hasBookingFeature ? (
+											<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
+												Crear Nueva Disponibilidad
+											</Button>
+										) : (
+											<Button 
+												variant="contained" 
+												color="primary" 
+												startIcon={<Lock size={16} />}
+												onClick={() => navigate("/suscripciones/tables")}
+											>
+												Crear Nueva Disponibilidad
+											</Button>
+										)}
 									</Box>
 								</CardContent>
 							</Card>
@@ -1172,9 +1244,21 @@ const BookingsManagement = () => {
 							}
 						/>
 						{!isSpecificAvailability && (
-							<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")} sx={{ mt: 3 }}>
-								Crear Nueva Disponibilidad
-							</Button>
+							hasBookingFeature ? (
+								<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")} sx={{ mt: 3 }}>
+									Crear Nueva Disponibilidad
+								</Button>
+							) : (
+								<Button 
+									variant="contained" 
+									color="primary" 
+									startIcon={<Lock size={16} />}
+									onClick={() => navigate("/suscripciones/tables")}
+									sx={{ mt: 3 }}
+								>
+									Crear Nueva Disponibilidad
+								</Button>
+							)
 						)}
 					</Box>
 				) : (
@@ -1449,6 +1533,17 @@ const BookingsManagement = () => {
 
 			{/* Guía para reservas */}
 			<GuideBooking open={guideOpen} onClose={() => setGuideOpen(false)} />
+			
+			{/* Modal de error de límite del plan */}
+			{featureInfo && (
+				<LimitErrorModal
+					open={limitModalOpen}
+					onClose={() => setLimitModalOpen(false)}
+					message="Para gestionar reservas y crear disponibilidades, necesitas actualizar tu plan."
+					featureInfo={featureInfo}
+					upgradeRequired={true}
+				/>
+			)}
 		</Box>
 	);
 };

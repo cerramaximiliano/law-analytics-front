@@ -11,7 +11,6 @@ import {
 	Stack,
 	Divider,
 	Paper,
-	LinearProgress,
 	useTheme,
 	Grid,
 	Chip,
@@ -31,8 +30,8 @@ import ApiService, { Plan } from "store/reducers/ApiService";
 interface LimitInfo {
 	resourceType: string;
 	plan: string;
+	currentCount: string;
 	limit: number;
-	used: number;
 }
 
 interface FeatureInfo {
@@ -126,17 +125,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			return "Límite alcanzado";
 		}
 		return "Restricción del plan";
-	};
-
-	const calculatePercentage = (used: number, limit: number) => {
-		return Math.min((used / limit) * 100, 100);
-	};
-
-	const getUsageColor = (used: number, limit: number) => {
-		const percentage = calculatePercentage(used, limit);
-		if (percentage >= 90) return theme.palette.error.main;
-		if (percentage >= 70) return theme.palette.warning.main;
-		return theme.palette.success.main;
 	};
 
 	// Determinar planes recomendados según el error
@@ -245,8 +233,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 	const getContentMessage = () => {
 		if (isLimitError && limitInfo) {
-			const usagePercentage = calculatePercentage(limitInfo.used, limitInfo.limit);
-			const usageColor = getUsageColor(limitInfo.used, limitInfo.limit);
 
 			return (
 				<Paper
@@ -267,23 +253,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					<Stack spacing={2.5}>
 						<Box>
 							<Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-								<Typography variant="body2" color="text.secondary">
-									<strong>Recurso:</strong>
-								</Typography>
 								<Typography variant="body2">{limitInfo.resourceType}</Typography>
-							</Box>
-							<Divider />
-						</Box>
-
-						<Box>
-							<Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-								<Typography variant="body2" color="text.secondary">
-									<strong>Plan actual:</strong>
-								</Typography>
-								<Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-									<Crown size={16} variant="Bulk" color={theme.palette.primary.main} />
-									{limitInfo.plan}
-								</Typography>
 							</Box>
 							<Divider />
 						</Box>
@@ -293,34 +263,10 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 								<Typography variant="body2" color="text.secondary">
 									<strong>Uso actual:</strong>
 								</Typography>
-								<Typography variant="body2" fontWeight="medium" color={usageColor}>
-									{limitInfo.used} / {limitInfo.limit} ({Math.round(usagePercentage)}%)
+								<Typography variant="body2" fontWeight="medium" >
+									{limitInfo.currentCount} / {limitInfo.limit}
 								</Typography>
 							</Box>
-							<LinearProgress
-								variant="determinate"
-								value={usagePercentage}
-								sx={{
-									height: 10,
-									borderRadius: 1.5,
-									bgcolor: theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-									"& .MuiLinearProgress-bar": {
-										backgroundColor: usageColor,
-										transition: "transform 1s ease-in-out",
-										backgroundImage: `linear-gradient(
-											45deg,
-											rgba(255, 255, 255, 0.15) 25%,
-											transparent 25%,
-											transparent 50%,
-											rgba(255, 255, 255, 0.15) 50%,
-											rgba(255, 255, 255, 0.15) 75%,
-											transparent 75%,
-											transparent
-										)`,
-										backgroundSize: "20px 20px",
-									},
-								}}
-							/>
 						</Box>
 					</Stack>
 				</Paper>
