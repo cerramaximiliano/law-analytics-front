@@ -8,7 +8,7 @@ import AnimateButton from "components/@extended/AnimateButton";
 import GoogleIcon from "assets/images/icons/google.svg";
 
 // Styled Button - exactamente como el botón de Login
-const GoogleButton = styled(Button)<ButtonProps>(({ theme }) => ({
+const GoogleButton = styled(Button)<ButtonProps & { customheight?: string }>(({ theme, customheight }) => ({
 	// Usar el color primario del tema
 	backgroundColor: theme.palette.primary.main,
 	color: theme.palette.primary.contrastText,
@@ -35,8 +35,8 @@ const GoogleButton = styled(Button)<ButtonProps>(({ theme }) => ({
 	padding: "6px 16px",
 	borderRadius: "8px",
 	transition: "all 0.25s ease-in-out",
-	height: "42.24px", // Altura exacta del botón Login
-		boxSizing: "border-box",
+	height: customheight || "42.24px", // Altura por defecto para el botón de login
+	boxSizing: "border-box",
 	lineHeight: "1.75",
 }));
 
@@ -45,6 +45,7 @@ interface CustomGoogleButtonProps {
 	text?: string;
 	disabled?: boolean;
 	fullWidth?: boolean;
+	customHeight?: string;
 }
 
 const CustomGoogleButton = ({
@@ -52,6 +53,7 @@ const CustomGoogleButton = ({
 	text = "Iniciar sesión con Google",
 	disabled = false,
 	fullWidth = true,
+	customHeight,
 }: CustomGoogleButtonProps) => {
 	return (
 		<AnimateButton type="scale">
@@ -64,6 +66,7 @@ const CustomGoogleButton = ({
 				fullWidth={fullWidth}
 				size="large"
 				disableElevation // Importante: asegura que no haya sombra
+				customheight={customHeight}
 			>
 				{text}
 			</GoogleButton>

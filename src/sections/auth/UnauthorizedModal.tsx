@@ -263,6 +263,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 												disabled={isSubmitting}
 												text="Iniciar sesión con Google"
 												fullWidth
+												customHeight="36.49px"
 											/>
 										</Box>
 
