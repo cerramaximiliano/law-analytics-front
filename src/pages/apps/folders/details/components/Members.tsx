@@ -17,7 +17,7 @@ import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import { Add, UserSquare, Trash, Link1 } from "iconsax-react";
 import { PopupTransition } from "components/@extended/Transitions";
-import { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import ModalMembers from "../modals/ModalMembers";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
@@ -59,10 +59,48 @@ const getColorByRole = (role: string) => {
 
 const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId }) => {
 	const [members, setMembers] = useState<Contact[]>(membersData);
-	console.log(membersData);
 	const [add, setAdd] = useState<boolean>(false);
 	const [openModal, setOpenModal] = useState<boolean>(false);
 	const [parent] = useAutoAnimate({ duration: 200 });
+
+	// Efecto para manejar cierre de modales cuando hay errores 403
+	useEffect(() => {
+		// Manejador para eventos de restricción de plan
+		const handlePlanRestriction = () => {
+			console.log("Members: Restricción de plan detectada, cerrando modales");
+			if (add) {
+				setAdd(false);
+			}
+			if (openModal) {
+				setOpenModal(false);
+			}
+		};
+
+		// Verificar periódicamente si hay una flag global para cerrar modales
+		const checkGlobalFlag = () => {
+			if ((window as any).FORCE_CLOSE_ALL_MODALS) {
+				console.log("Members: Flag global detectada, cerrando modales");
+				if (add) {
+					setAdd(false);
+				}
+				if (openModal) {
+					setOpenModal(false);
+				}
+			}
+		};
+
+		// Agregar listener para el evento
+		window.addEventListener("planRestrictionError", handlePlanRestriction);
+
+		// Configurar intervalo para verificar la flag global
+		const intervalId = setInterval(checkGlobalFlag, 200);
+
+		// Limpieza
+		return () => {
+			window.removeEventListener("planRestrictionError", handlePlanRestriction);
+			clearInterval(intervalId);
+		};
+	}, [add, openModal]);
 
 	const handleAdd = useCallback(() => {
 		if (!isLoader) {

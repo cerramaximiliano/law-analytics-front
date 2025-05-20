@@ -42,7 +42,18 @@ const Locales = ({ children }: Props) => {
 	return (
 		<>
 			{messages && (
-				<IntlProvider locale={i18n} defaultLocale="en" messages={messages}>
+				<IntlProvider
+					locale={i18n}
+					defaultLocale="en"
+					messages={messages}
+					onError={(err) => {
+						// Ignore missing translation errors
+						if (err.code === "MISSING_TRANSLATION") {
+							return;
+						}
+						console.error(err);
+					}}
+				>
 					{children}
 				</IntlProvider>
 			)}

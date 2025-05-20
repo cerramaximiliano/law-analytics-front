@@ -6,17 +6,71 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { Trash } from "iconsax-react";
 import { dispatch } from "store";
 import { deleteFolder } from "store/reducers/folders";
+import { useContext, useEffect } from "react";
+import AuthContext from "contexts/ServerContext";
 
 // types
 import { PropsAlert } from "types/folders";
 // ==============================|| FOLDER - DELETE ||============================== //
-export default function AlertFolderDelete({ title, open, handleClose, id }: PropsAlert) {
+export default function AlertFolderDelete({ title, open, handleClose, id, onDelete }: PropsAlert) {
+	// Obtener el contexto para verificar errores de restricción
+	const authContext = useContext(AuthContext);
+	// Verificar si hay un error de restricción del plan para evitar proceder
 	const handleClick = () => {
+		// Prevenir la eliminación si hay un error reciente de restricción del plan
+		if (authContext && authContext.hasPlanRestrictionError) {
+			console.log("Eliminación cancelada debido a un error reciente de restricción del plan");
+			handleClose(false); // Cerrar sin eliminar
+			return;
+		}
+
+		// Continuar normalmente si no hay restricciones
 		handleClose(true);
 		if (id) {
 			dispatch(deleteFolder(id));
+			// Llamar al callback de eliminación si existe
+			if (onDelete) {
+				onDelete();
+			}
 		}
 	};
+
+	// Efecto para cerrar automáticamente este modal cuando hay un error de restricción
+	useEffect(() => {
+		// Cerrar por estado de restricción del plan
+		if (open && authContext && authContext.hasPlanRestrictionError) {
+			console.log("AlertFolderDelete: Cerrando modal de eliminación debido a un error de restricción del plan");
+			handleClose(false);
+		}
+
+		// Manejador para eventos de restricción de plan
+		const handlePlanRestriction = () => {
+			console.log("AlertFolderDelete: Evento de restricción del plan recibido, cerrando modal");
+			if (open) {
+				handleClose(false);
+			}
+		};
+
+		// Verificar periódicamente si hay una flag global para cerrar modales
+		const checkGlobalFlag = () => {
+			if ((window as any).FORCE_CLOSE_ALL_MODALS && open) {
+				console.log("AlertFolderDelete: Flag global detectada, cerrando modal");
+				handleClose(false);
+			}
+		};
+
+		// Agregar listener para el evento
+		window.addEventListener("planRestrictionError", handlePlanRestriction);
+
+		// Configurar intervalo para verificar la flag global
+		const intervalId = setInterval(checkGlobalFlag, 200);
+
+		// Limpieza
+		return () => {
+			window.removeEventListener("planRestrictionError", handlePlanRestriction);
+			clearInterval(intervalId);
+		};
+	}, [open, authContext, handleClose]);
 	return (
 		<Dialog
 			open={open}

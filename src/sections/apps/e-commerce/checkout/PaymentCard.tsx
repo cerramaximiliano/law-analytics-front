@@ -1,6 +1,9 @@
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography, Alert } from "@mui/material";
+
+// hooks
+import useBankingDisplay from "hooks/useBankingDisplay";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -21,6 +24,26 @@ interface PaymentCardProps {
 const PaymentCard = ({ type, paymentType, cards, cardHandler }: PaymentCardProps) => {
 	const theme = useTheme();
 	const card = type === "visa" ? visa : mastercard;
+	// Check if banking data should be displayed
+	const showBankingData = useBankingDisplay();
+
+	// If banking data should be hidden, show a notification
+	if (!showBankingData) {
+		return (
+			<MainCard
+				content={false}
+				sx={{
+					overflow: "hidden",
+					bgcolor: theme.palette.secondary.lighter,
+					maxWidth: 380,
+				}}
+			>
+				<Alert severity="info" sx={{ m: 2 }}>
+					International banking data is not available in your region.
+				</Alert>
+			</MainCard>
+		);
+	}
 
 	return (
 		<MainCard

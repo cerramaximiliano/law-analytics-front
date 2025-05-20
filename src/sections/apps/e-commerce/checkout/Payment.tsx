@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import useBankingDisplay from "hooks/useBankingDisplay";
 
 // material-ui
 import {
@@ -63,8 +64,11 @@ interface PaymentProps {
 }
 
 const Payment = ({ checkout, onBack, onNext, handleShippingCharge, removeProduct, editAddress }: PaymentProps) => {
+	// Check if banking data should be displayed
+	const showBankingData = useBankingDisplay();
+
 	const [type, setType] = useState("visa");
-	const [payment, setPayment] = useState(checkout.payment.method);
+	const [payment, setPayment] = useState(showBankingData ? checkout.payment.method : "cod");
 	const [rows, setRows] = useState(checkout.products);
 	const [cards, setCards] = useState(checkout.payment.card);
 	const [select, setSelect] = useState<Address | null>(null);
@@ -169,7 +173,7 @@ const Payment = ({ checkout, onBack, onNext, handleShippingCharge, removeProduct
 									</RadioGroup>
 								</FormControl>
 							</Grid>
-							{type !== "cod" && (
+							{type !== "cod" && showBankingData && (
 								<Grid item xs={12}>
 									<Grid container rowSpacing={2}>
 										<Grid item xs={12}>
@@ -187,7 +191,10 @@ const Payment = ({ checkout, onBack, onNext, handleShippingCharge, removeProduct
 														fullWidth
 														type="password"
 														InputProps={{
-															startAdornment: type !== "cod" ? <InputAdornment position="start">{getImage(type)}</InputAdornment> : null,
+															startAdornment:
+																type !== "cod" && showBankingData ? (
+																	<InputAdornment position="start">{getImage(type)}</InputAdornment>
+																) : null,
 															endAdornment: (
 																<InputAdornment position="end">
 																	<TickCircle />
@@ -274,7 +281,7 @@ const Payment = ({ checkout, onBack, onNext, handleShippingCharge, removeProduct
 									</Grid>
 								</Grid>
 							)}
-							{type !== "cod" && (
+							{type !== "cod" && showBankingData && (
 								<Grid item xs={12}>
 									<Stack direction="row" spacing={1} justifyContent="flex-end">
 										<Button variant="outlined" color="secondary">

@@ -236,6 +236,39 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 		}
 	}, [id, dispatch]);
 
+	// Escuchar eventos globales para restricciones de plan y cierre forzado de modales
+	useEffect(() => {
+		// Manejador para eventos de restricción de plan
+		const handlePlanRestriction = () => {
+			console.log("Calendar: Restricción de plan detectada, cerrando modal Agregar Evento");
+			if (isModalOpen) {
+				dispatch(toggleModal()); // Cerrar el modal
+				dispatch(selectEvent(null)); // Limpiar evento seleccionado
+			}
+		};
+
+		// Revisar periódicamente si hay una flag global para cerrar modales
+		const checkGlobalFlag = () => {
+			if ((window as any).FORCE_CLOSE_ALL_MODALS && isModalOpen) {
+				console.log("Calendar: Flag global detectada, cerrando modal Agregar Evento");
+				dispatch(toggleModal()); // Cerrar el modal
+				dispatch(selectEvent(null)); // Limpiar evento seleccionado
+			}
+		};
+
+		// Agregar listener para el evento
+		window.addEventListener("planRestrictionError", handlePlanRestriction);
+
+		// Configurar intervalo para verificar la flag global
+		const intervalId = setInterval(checkGlobalFlag, 200);
+
+		// Limpieza
+		return () => {
+			window.removeEventListener("planRestrictionError", handlePlanRestriction);
+			clearInterval(intervalId);
+		};
+	}, [isModalOpen]);
+
 	return (
 		<MainCard
 			shadow={3}

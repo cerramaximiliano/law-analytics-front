@@ -40,6 +40,23 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		navigate("/plans");
 	};
 
+	// Gestor de estado simplificado del modal
+	// No intentamos cerrar otros modales desde aquí - eso lo maneja ServerContext
+	const modalOpenedRef = React.useRef(false);
+
+	// Registrar la apertura y cierre del modal
+	React.useEffect(() => {
+		if (open && !modalOpenedRef.current) {
+			console.log("LimitErrorModal: Modal de restricción de plan abierto");
+			modalOpenedRef.current = true;
+		}
+
+		// Limpiar referencia al cerrar
+		if (!open) {
+			modalOpenedRef.current = false;
+		}
+	}, [open]);
+
 	const isLimitError = !!limitInfo;
 	const isFeatureError = !!featureInfo;
 
@@ -118,7 +135,16 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			);
 		}
 
-		return <Typography variant="body1">{message}</Typography>;
+		return (
+			<>
+				<Typography variant="body1" gutterBottom>
+					{message || "Esta característica requiere un plan superior."}
+				</Typography>
+				<Alert severity="info" sx={{ mt: 3 }} icon={<TrendUp />}>
+					Para acceder a esta funcionalidad necesitas actualizar tu plan.
+				</Alert>
+			</>
+		);
 	};
 
 	return (

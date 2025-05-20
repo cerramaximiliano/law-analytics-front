@@ -1,4 +1,5 @@
 import { useState, ChangeEvent, SyntheticEvent } from "react";
+import useBankingDisplay from "hooks/useBankingDisplay";
 
 // material-ui
 import {
@@ -121,7 +122,10 @@ const PaymentCard = ({ card }: CardProps) => {
 // ==============================|| USER PROFILE - PAYMENT ||============================== //
 
 const TabPayment = () => {
-	const [cards] = useState(paymentCards);
+	// Check if banking data should be displayed
+	const showBankingData = useBankingDisplay();
+
+	const [cards] = useState(showBankingData ? paymentCards : []);
 	const [method, setMethod] = useState("card");
 	const [value, setValue] = useState<string | null>("2");
 	const [expiry, setExpiry] = useState<Date | null>(new Date());

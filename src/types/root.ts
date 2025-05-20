@@ -32,3 +32,26 @@ export interface GenericCardProps {
 	color?: string;
 	size?: string;
 }
+
+export interface DefaultRootStateProps {
+	chat: any;
+	calendar: any;
+	menu: any;
+	snackbar: any;
+	cart: any;
+	product: any;
+	kanban: any;
+	invoice: any;
+	folder: any;
+	notifications: any;
+	calculator: any;
+	movements: any;
+	auth: any;
+	alerts: any;
+	contacts: any;
+	folders: any;
+	events: any;
+	tasksReducer: any;
+	userStats: any;
+	users: any;
+}

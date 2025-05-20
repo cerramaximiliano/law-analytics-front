@@ -670,7 +670,7 @@ class ApiService {
 	 */
 	static async createOrUpdatePlan(planData: Partial<Plan>): Promise<ApiResponse<Plan>> {
 		try {
-			const response = await axios.post(`${API_BASE_URL}/api/plan-config`, planData, {
+			const response = await axios.post(`${API_BASE_URL}/api/plan-configs`, planData, {
 				withCredentials: true,
 			});
 			return response.data;
@@ -686,7 +686,7 @@ class ApiService {
 	 */
 	static async deletePlan(planId: string): Promise<ApiResponse> {
 		try {
-			const response = await axios.delete(`${API_BASE_URL}/api/plan-config/${planId}`, {
+			const response = await axios.delete(`${API_BASE_URL}/api/plan-configs/${planId}`, {
 				withCredentials: true,
 			});
 			return response.data;
@@ -864,6 +864,31 @@ class ApiService {
 	 */
 	static async getBillingTerms(planId?: string): Promise<ApiResponse<LegalDocument>> {
 		return this.getLegalDocument("billing", planId);
+	}
+
+	/**
+	 * Verifica si una característica específica está disponible para el usuario actual
+	 * @param featureName - Nombre de la característica a verificar
+	 */
+	static async checkUserFeature(featureName: string): Promise<
+		ApiResponse<{
+			isEnabled: boolean;
+			planId: string;
+			featureName: string;
+			featureDescription?: string;
+			currentPlan?: string;
+			requiredPlan?: string;
+		}>
+	> {
+		try {
+			const response = await axios.get<ApiResponse>(`${API_BASE_URL}/api/plan-configs/check-feature/${featureName}`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			console.error(`Error checking feature availability (${featureName}):`, error);
+			throw this.handleAxiosError(error);
+		}
 	}
 }
 

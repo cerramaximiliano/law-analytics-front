@@ -29,6 +29,7 @@ import { Add, DocumentUpload, ArrowRight, Lock } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+import ApiService from "store/reducers/ApiService";
 
 interface LinkToJudicialPowerProps {
 	openLink: boolean;
@@ -253,6 +254,74 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 			validateYear(expedientYear);
 		}
 	}, [jurisdiction, expedientNumber, expedientYear]);
+
+	// Escuchar evento de restricción del plan
+	useEffect(() => {
+		const handlePlanRestriction = (event: Event) => {
+			const customEvent = event as CustomEvent;
+			console.log(
+				"Restricción de plan detectada, cerrando modal de vinculación",
+				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
+			);
+
+			// Cerrar el modal inmediatamente
+			onCancelLink();
+
+			// Importante: Detener cualquier solicitud pendiente o efecto secundario
+			setLoading(false);
+		};
+
+		// Agregar listener para el evento personalizado
+		window.addEventListener("planRestrictionError", handlePlanRestriction);
+
+		// Limpieza al desmontar
+		return () => {
+			window.removeEventListener("planRestrictionError", handlePlanRestriction);
+		};
+	}, [onCancelLink]);
+
+	// Verificar disponibilidad de la característica antes de abrir el modal
+	useEffect(() => {
+		let isMounted = true;
+
+		const checkFeature = async () => {
+			if (openLink) {
+				try {
+					setLoading(true);
+					const response = await ApiService.checkUserFeature("vinculateFolders");
+
+					// Solo continuar si el componente sigue montado
+					if (!isMounted) return;
+
+					// Si la característica no está habilitada, cerrar este modal
+					if (!response.data?.isEnabled) {
+						console.log("Característica no habilitada en el plan actual");
+						onCancelLink();
+					}
+
+					// La característica está habilitada, no hacer nada
+				} catch (error) {
+					// Solo continuar si el componente sigue montado
+					if (!isMounted) return;
+
+					// Cerrar el modal original cuando ocurre un error
+					console.error("Error checking feature:", error);
+					onCancelLink(); // Cerrar este modal independientemente del error
+				} finally {
+					if (isMounted) {
+						setLoading(false);
+					}
+				}
+			}
+		};
+
+		checkFeature();
+
+		// Limpieza al desmontar
+		return () => {
+			isMounted = false;
+		};
+	}, [openLink, onCancelLink]);
 
 	return (
 		<Dialog

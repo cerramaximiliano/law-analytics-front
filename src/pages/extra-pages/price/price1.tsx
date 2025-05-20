@@ -344,7 +344,6 @@ const Pricing = () => {
 		setLegalDocsDialogOpen(false);
 	};
 
-
 	// Verificar si un plan tiene una característica específica y obtener su valor
 	const planFeatureValue = (plan: Plan, featureType: string) => {
 		// Para límites de recursos

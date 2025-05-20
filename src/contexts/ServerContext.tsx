@@ -13,6 +13,9 @@ import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
 import { fetchUserStats } from "store/reducers/userStats";
 
+// Global setting for hiding international banking data
+export const HIDE_INTERNATIONAL_BANKING_DATA = process.env.REACT_APP_HIDE_BANKING_DATA === "true";
+
 const initialState: AuthProps = {
 	isLoggedIn: false,
 	isInitialized: false,
@@ -34,6 +37,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const [showUnauthorizedModal, setShowUnauthorizedModal] = useState<boolean>(false);
 	const [showLimitErrorModal, setShowLimitErrorModal] = useState<boolean>(false);
 	const [limitErrorData, setLimitErrorData] = useState<any>({});
+	const [hasPlanRestrictionError, setHasPlanRestrictionError] = useState<boolean>(false);
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [isLogoutProcess, setIsLogoutProcess] = useState(false);
@@ -292,14 +296,80 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					const responseData = error.response.data as any;
 
 					// Verificar si es un error de límite o de característica
-					if (responseData.limitInfo || responseData.featureInfo || responseData.upgradeRequired) {
+					// Condición más amplia para capturar diferentes formatos de respuesta
+					if (
+						responseData.limitInfo ||
+						responseData.featureInfo ||
+						responseData.upgradeRequired ||
+						responseData.message?.includes("característica") ||
+						responseData.message?.includes("plan") ||
+						(responseData.success === false && responseData.data && responseData.data.feature)
+					) {
+						// Analizar si la respuesta tiene estructura específica de feature
+						let featureInfo = responseData.featureInfo;
+						if (responseData.data && responseData.data.feature) {
+							featureInfo = {
+								feature: responseData.data.feature || "Característica premium",
+								plan: responseData.data.currentPlan || "Tu plan actual",
+								availableIn: responseData.data.requiredPlan ? [responseData.data.requiredPlan] : ["Plan premium"],
+							};
+						}
+
 						setLimitErrorData({
-							message: responseData.message,
+							message: responseData.message || "Esta característica no está disponible en tu plan actual",
 							limitInfo: responseData.limitInfo,
-							featureInfo: responseData.featureInfo,
-							upgradeRequired: responseData.upgradeRequired,
+							featureInfo: featureInfo,
+							upgradeRequired: responseData.upgradeRequired || true,
 						});
-						setShowLimitErrorModal(true);
+
+						// 1. Primero capturamos todos los diálogos abiertos en este momento
+						// para cerrarlos específicamente y no afectar a otros componentes
+						const openDialogsBeforeError = Array.from(document.querySelectorAll(".MuiDialog-root"));
+						console.log(`[Interceptor] Capturando ${openDialogsBeforeError.length} diálogos abiertos antes de mostrar error de plan`);
+
+						// 2. Marcar que estamos en medio de un error de restricción del plan ANTES de cualquier otra acción
+						// Esto es importante para que otros componentes lo detecten y actúen en consecuencia
+						setHasPlanRestrictionError(true);
+
+						// 3. Emitir evento personalizado para componentes que tengan manejadores específicos
+						// Esto permite a los componentes como LinkToJudicialPower cancelar sus operaciones
+						const planRestrictionEvent = new CustomEvent("planRestrictionError", {
+							detail: {
+								message: responseData.message,
+								feature: responseData.data?.feature || null,
+								timestamp: Date.now(),
+								// Añadir información sobre los diálogos que se encontraban abiertos
+								openDialogsCount: openDialogsBeforeError.length,
+							},
+						});
+						console.log("[Interceptor] Emitiendo evento planRestrictionError");
+						window.dispatchEvent(planRestrictionEvent);
+
+						// 4. CAMBIO DE ENFOQUE: NO cerrar modales directamente para evitar efectos secundarios
+						// Este método anterior está provocando problemas al hacer clic en botones
+						console.log(`[Interceptor] NO se cerrarán modales directamente para evitar efectos secundarios`);
+
+						// Crear propiedad global para forzar cierre de modales
+						// Los componentes individuales deberán observar esta propiedad y cerrar sus propios modales
+						window.FORCE_CLOSE_ALL_MODALS = true;
+
+						// Programar la limpieza del estado global después de un tiempo suficiente
+						setTimeout(() => {
+							console.log("[Interceptor] Limpiando flag global FORCE_CLOSE_ALL_MODALS");
+							window.FORCE_CLOSE_ALL_MODALS = false;
+						}, 2000);
+
+						// 5. Esperar un poco antes de mostrar el modal de restricción del plan
+						// para permitir que todos los diálogos se cierren correctamente
+						setTimeout(() => {
+							console.log("[Interceptor] Mostrando modal de restricción del plan");
+							setShowLimitErrorModal(true);
+
+							// 6. Programar reinicio del estado después de que se maneje todo
+							setTimeout(() => {
+								setHasPlanRestrictionError(false);
+							}, 3000);
+						}, 300);
 					}
 				}
 
@@ -594,6 +664,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				handleLogoutAndRedirect,
 				verifyResetCode,
 				setNewPassword,
+				hasPlanRestrictionError,
+				hideInternationalBankingData: HIDE_INTERNATIONAL_BANKING_DATA,
 			}}
 		>
 			{children}

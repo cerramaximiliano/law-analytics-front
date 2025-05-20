@@ -170,6 +170,8 @@ export interface ServerContextType extends AuthProps {
 	resetPassword: (email: string) => Promise<void>;
 	verifyResetCode: (email: string, code: string) => Promise<boolean>;
 	setNewPassword: (email: string, code: string, newPassword: string) => Promise<boolean>;
+	hasPlanRestrictionError: boolean;
+	hideInternationalBankingData: boolean;
 }
 
 export interface UnauthorizedModalProps {

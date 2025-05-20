@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSelector } from "store";
 import { formatDistance } from "date-fns";
 import { es } from "date-fns/locale";
+import useBankingDisplay from "hooks/useBankingDisplay";
 
 // material-ui
 import {
@@ -92,6 +93,8 @@ const deactivationReasons = [
 ];
 
 const TabAccount = () => {
+	// Check if international banking data should be displayed
+	const showBankingData = useBankingDisplay();
 	const [checked, setChecked] = useState(["sb", "ln", "la"]);
 	const auth = useSelector((state) => state.auth);
 	const [email, setEmail] = useState(auth.user?.email || "");
@@ -903,10 +906,19 @@ const TabAccount = () => {
 														{session.os} • {session.browser}
 													</Typography>
 													<Typography variant="caption" color="secondary">
-														IP: {session.ip || "Desconocida"} •{" "}
-														{session.isCurrentSession ? "Sesión actual" : `Última actividad: ${formatLastActivity(session.lastActivity)}`}
+														{showBankingData
+															? `IP: ${session.ip || "Desconocida"} • ${
+																	session.isCurrentSession
+																		? "Sesión actual"
+																		: `Última actividad: ${formatLastActivity(session.lastActivity)}`
+															  }`
+															: `${
+																	session.isCurrentSession
+																		? "Sesión actual"
+																		: `Última actividad: ${formatLastActivity(session.lastActivity)}`
+															  }`}
 													</Typography>
-													{session.location && (
+													{showBankingData && session.location && (
 														<Typography variant="caption" color="textSecondary">
 															Ubicación: {session.location}
 														</Typography>

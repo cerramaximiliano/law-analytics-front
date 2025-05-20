@@ -45,7 +45,7 @@ const Navigation = () => {
 		const menuItemsClone = {
 			items: isAdmin
 				? [...menuItems.items] // Include all menu items for admin users
-				: menuItems.items.filter((item) => item.id !== "group-admin"), // Filter out admin items for non-admin users
+				: menuItems.items.filter((item) => item.id !== "admin"), // Filter out admin items for non-admin users
 		};
 
 		const isFound = menuItemsClone.items.some((element) => element.id === "group-dashboard");
