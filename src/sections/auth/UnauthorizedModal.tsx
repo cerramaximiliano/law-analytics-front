@@ -1,4 +1,4 @@
-import { useState, useRef, FC } from "react";
+import { useState, useRef, FC, useEffect } from "react";
 import {
 	Dialog,
 	DialogTitle,
@@ -39,8 +39,35 @@ const initialValues: FormValues = {
 export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, onLogin, onGoogleLogin, onLogout }) => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
 	const submitAttempts = useRef(0);
 	const maxRetries = 3;
+	
+	// Controlar cuando se muestra el modal para prevenir interacciones no deseadas
+	useEffect(() => {
+		// Usamos un pequeño retraso para evitar conflictos con otros modales
+		const timer = setTimeout(() => {
+			setInternalOpen(open);
+		}, 100);
+		
+		return () => clearTimeout(timer);
+	}, [open]);
+	
+	// Escuchar eventos de plan restriction para coordinar con otros modales
+	useEffect(() => {
+		const handlePlanRestrictionError = () => {
+			// Si hay un error de restricción de plan, cerrar temporalmente este modal
+			if (internalOpen) {
+				setInternalOpen(false);
+			}
+		};
+		
+		window.addEventListener("planRestrictionError", handlePlanRestrictionError);
+		
+		return () => {
+			window.removeEventListener("planRestrictionError", handlePlanRestrictionError);
+		};
+	}, [internalOpen]);
 
 	const handleFormSubmit = async (values: FormValues, { setErrors, setStatus }: FormikHelpers<FormValues>) => {
 		if (isSubmitting) return;
@@ -49,11 +76,21 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			setIsSubmitting(true);
 			submitAttempts.current += 1;
 
+			// Validar el formulario
 			await validationSchema.validate(values, { abortEarly: false });
-			await onLogin(values.email.trim(), values.password);
-
-			setStatus({ success: true });
-			onClose();
+			
+			// Manejo defensivo para evitar errores de eventos perdidos
+			try {
+				await onLogin(values.email.trim(), values.password);
+				
+				setStatus({ success: true });
+				// Primero cerramos nuestro estado interno
+				setInternalOpen(false);
+				// Luego informamos al padre
+				setTimeout(() => onClose(), 50);
+			} catch (loginErr) {
+				throw loginErr;
+			}
 		} catch (err: unknown) {
 			console.error("Login error:", err);
 
@@ -76,14 +113,16 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			});
 
 			if (submitAttempts.current >= maxRetries) {
-				setTimeout(onLogout, 2000);
+				// Usar el mismo patrón de cierre seguro
+				setInternalOpen(false);
+				setTimeout(onLogout, 500);
 			}
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
-	// Método de inicio de sesión con Google - EXACTAMENTE igual al de login.tsx
+	// Método de inicio de sesión con Google - mejorado para evitar errores de eventos
 	const handleGoogleSuccess = async (tokenResponse: any) => {
 		try {
 			setIsSubmitting(true);
@@ -99,9 +138,17 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 				select_by: "user",
 			};
 
-			// Llamar a la función de login existente
-			await onGoogleLogin(credentialResponse);
-			onClose();
+			// Manejo defensivo del login para evitar errores de eventos
+			try {
+				await onGoogleLogin(credentialResponse);
+				
+				// Primero cerramos nuestro estado interno
+				setInternalOpen(false);
+				// Luego informamos al padre con un pequeño retraso para evitar conflictos
+				setTimeout(() => onClose(), 50);
+			} catch (loginError) {
+				console.error("Error during Google login callback:", loginError);
+			}
 		} catch (error) {
 			console.error("Google login error:", error);
 		} finally {
@@ -121,7 +168,17 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 	});
 
 	return (
-		<Dialog open={open} maxWidth="xs" fullWidth disableEscapeKeyDown={isSubmitting}>
+		<Dialog 
+			open={internalOpen} 
+			maxWidth="xs" 
+			fullWidth 
+			disableEscapeKeyDown={isSubmitting}
+			onClose={() => {
+				// Manejo seguro al cerrar el modal
+				setInternalOpen(false);
+				setTimeout(() => onClose(), 50);
+			}}
+		>
 			<DialogTitle>
 				<Box display="flex" alignItems="center">
 					<Typography variant="h5">Sesión Expirada</Typography>
@@ -209,7 +266,17 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 											/>
 										</Box>
 
-										<Button variant="outlined" color="secondary" onClick={onLogout} fullWidth disabled={isSubmitting}>
+										<Button 
+											variant="outlined" 
+											color="secondary" 
+											onClick={() => {
+												// Manejo seguro para el botón de cancelar
+												setInternalOpen(false);
+												setTimeout(() => onLogout(), 50);
+											}} 
+											fullWidth 
+											disabled={isSubmitting}
+										>
 											Cancelar
 										</Button>
 									</Stack>

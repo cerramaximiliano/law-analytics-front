@@ -2,7 +2,7 @@
 import { FormattedMessage } from "react-intl";
 
 // assets
-import { MessageSquare, User, Graph, DocumentText } from "iconsax-react";
+import { MessageSquare, User, DocumentText } from "iconsax-react";
 
 // type
 import { NavItemType } from "types/menu";
@@ -50,14 +50,6 @@ const admin: NavItemType = {
 			type: "item",
 			url: "/admin/users",
 			icon: User,
-			breadcrumbs: false,
-		},
-		{
-			id: "stats",
-			title: <FormattedMessage id="stats" defaultMessage="Estadísticas" />,
-			type: "item",
-			url: "/admin/stats",
-			icon: Graph,
 			breadcrumbs: false,
 		},
 		{

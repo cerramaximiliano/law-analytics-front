@@ -26,6 +26,7 @@ import MainCard from "components/MainCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import useBankingDisplay from "hooks/useBankingDisplay";
 
 // ==============================|| PLANES PÚBLICOS ||============================== //
 
@@ -47,6 +48,8 @@ const Plans = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
+	// Determinar si se debe mostrar información bancaria internacional
+	const showBankingData = useBankingDisplay();
 
 	// breadcrumb items
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Planes y Precios" }];
@@ -274,6 +277,17 @@ const Plans = () => {
 						<Grid item xs={12}>
 							<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "300px" }}>
 								<Alert severity="error">{error}</Alert>
+							</Box>
+						</Grid>
+					)}
+
+					{/* Información bancaria internacional si corresponde */}
+					{!loading && !error && showBankingData && (
+						<Grid item xs={12}>
+							<Box sx={{ textAlign: "center", mb: 3 }}>
+								<Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+									También aceptamos pagos bancarios internacionales a: Banco XYZ, Cuenta: 123-456-789, SWIFT: ABCDEFGH.
+								</Typography>
 							</Box>
 						</Grid>
 					)}

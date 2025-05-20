@@ -28,6 +28,7 @@ import { formatCurrency } from "utils/formatCurrency";
 import ApiService, { Plan } from "store/reducers/ApiService";
 import PlanFormModal from "./PlanFormModal";
 import DeletePlanDialog from "./DeletePlanDialog";
+import useBankingDisplay from "hooks/useBankingDisplay";
 
 const PlansManagement = () => {
 	const [plans, setPlans] = useState<Plan[]>([]);
@@ -36,6 +37,8 @@ const PlansManagement = () => {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
+	// Determinar si se debe mostrar información bancaria internacional
+	const showBankingData = useBankingDisplay();
 
 	const fetchPlans = async () => {
 		try {
@@ -294,6 +297,23 @@ const PlansManagement = () => {
 							</Table>
 						</TableContainer>
 					</Grid>
+
+					{/* Información bancaria internacional */}
+					{showBankingData && (
+						<Grid item xs={12}>
+							<Paper sx={{ p: 2, mb: 3, borderLeft: '4px solid', borderColor: 'info.main' }}>
+								<Typography variant="subtitle1" color="info.main" gutterBottom>
+									Información de Pagos Bancarios Internacionales
+								</Typography>
+								<Typography variant="body2">
+									Banco: XYZ Bank | Cuenta: 123-456-789 | SWIFT: ABCDEFGH
+								</Typography>
+								<Typography variant="caption" color="textSecondary">
+									Esta información se muestra a los usuarios cuando se suscriben a un plan.
+								</Typography>
+							</Paper>
+						</Grid>
+					)}
 
 					{/* Plan Details Cards */}
 					<Grid item xs={12}>

@@ -25,4 +25,10 @@
 - **Styling**: Use MUI theming system and styled components
 - **Icons**: Use iconsax
 
+## Consejos para el proyecto
+
+1. Sigue las convenciones de TypeScript para nombramiento y estructura
+2. Usa variables prefijadas con `_` cuando tengas variables obligatorias que no se usan
+3. Al trabajar con componentes React, asegúrate de utilizar todos los props o desestructurarlos con `...rest`
+
 Use VS Code with auto-formatting on save for consistent code style.

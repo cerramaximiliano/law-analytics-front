@@ -22,16 +22,39 @@ const capitalizeFirstLetter = (str: string): string => {
 // Este componente proporciona un IntlProvider simplificado que usa los mismos IDs como mensajes
 // eliminando completamente la necesidad de archivos de traducción
 const Locales = ({ children }: Props) => {
-	// Creamos un proxy que devuelve el mismo ID cuando se solicita una traducción,
-	// pero con la primera letra capitalizada
+	// Definimos un objeto base con traducciones explícitas para los elementos del menú
+	// que necesitan aparecer capitalizados
+	const baseMessages = {
+		// Elementos del menú principal que deben estar capitalizados
+		'aplicaciones': 'Aplicaciones',
+		'causas': 'Causas',
+		'cálculos': 'Cálculos',
+		'calendario': 'Calendario',
+		'contactos': 'Contactos',
+		'intereses': 'Intereses',
+		'laboral': 'Laboral',
+		'civil': 'Civil',
+		'perfil': 'Perfil',
+		'usuario': 'Usuario',
+		'cuenta': 'Cuenta',
+	};
+
+	// Creamos un proxy que primero busca en el objeto baseMessages,
+	// y si no lo encuentra, devuelve el ID capitalizado
 	const messagesProxy = new Proxy(
-		{},
+		baseMessages,
 		{
-			get: (_target, prop) => {
-				// Devuelve el mismo ID como valor de traducción pero con la primera letra en mayúscula
+			get: (target, prop) => {
+				// Primero verificamos si existe una traducción explícita
+				if (typeof prop === 'string' && prop in target) {
+					return target[prop as keyof typeof target];
+				}
+				
+				// Si no existe, capitalizamos el ID
 				if (typeof prop === "string") {
 					return capitalizeFirstLetter(prop);
 				}
+				
 				return String(prop);
 			},
 		},

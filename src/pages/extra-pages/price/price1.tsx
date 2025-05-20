@@ -32,6 +32,7 @@ import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/Api
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import TabLegalDocuments from "./TabPanel";
+import useBankingDisplay from "hooks/useBankingDisplay";
 
 // ==============================|| PRICING ||============================== //
 
@@ -55,6 +56,8 @@ const Pricing = () => {
 	const [downgradeOptions, setDowngradeOptions] = useState<DowngradeOption[]>([]);
 	const [selectedOption, setSelectedOption] = useState<string>("");
 	const [targetPlanId, setTargetPlanId] = useState<string>("");
+	// Determinar si se debe mostrar información bancaria internacional
+	const showBankingData = useBankingDisplay();
 
 	// Obtener los planes al cargar el componente
 	useEffect(() => {
@@ -659,6 +662,11 @@ const Pricing = () => {
 						</Link>
 						.
 					</Typography>
+					{showBankingData && (
+						<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+							Puedes realizar pagos bancarios internacionales a: Banco XYZ, Cuenta: 123-456-789, SWIFT: ABCDEFGH.
+						</Typography>
+					)}
 				</Box>
 			</Grid>
 

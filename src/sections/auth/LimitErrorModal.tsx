@@ -19,7 +19,8 @@ import {
 	ListItem,
 	ListItemText,
 	CircularProgress,
-	Alert
+	Alert,
+	alpha
 } from "@mui/material";
 import { Warning2, Lock, Star1, TrendUp } from "iconsax-react";
 // Importar MainCard desde el componente personalizado
@@ -162,9 +163,18 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		return plans.filter((plan) => plan.planId.toLowerCase() !== currentUserPlan);
 	};
 
+
 	// Función para obtener el color y el estilo según el tipo de plan
-	const getPlanStyle = (planId: string) => {
-		switch (planId.toLowerCase()) {
+	const getPlanStyle = (planId: string, isCurrentPlan: boolean) => {
+		if (isCurrentPlan) {
+			return {
+				padding: 3,
+				borderRadius: 1,
+				bgcolor: theme.palette.primary.lighter,
+			};
+		}
+
+		switch (planId) {
 			case "free":
 				return {
 					padding: 3,
@@ -189,8 +199,12 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	};
 
 	// Función para obtener el color del botón según el tipo de plan
-	const getButtonColor = (planId: string) => {
-		switch (planId.toLowerCase()) {
+	const getButtonColor = (planId: string, isCurrentPlan: boolean) => {
+		if (isCurrentPlan) {
+			return "primary";
+		}
+
+		switch (planId) {
 			case "free":
 				return "info";
 			case "standard":
@@ -203,8 +217,12 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	};
 
 	// Función para obtener el chip distintivo según el plan
-	const getPlanChip = (planId: string, isDefault: boolean) => {
-		switch (planId.toLowerCase()) {
+	const getPlanChip = (planId: string, isCurrentPlan: boolean, isDefault: boolean) => {
+		if (isCurrentPlan) {
+			return <Chip label="Plan Actual" color="primary" />;
+		}
+
+		switch (planId) {
 			case "standard":
 				return <Chip label="Popular" color="success" />;
 			case "premium":
@@ -378,20 +396,19 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		}
 
 		return (
-			<Paper
-				elevation={0}
+			<Alert 
+				severity="warning" 
+				variant="outlined"
 				sx={{
 					mb: 4,
-					p: 3,
 					borderRadius: 2,
-					bgcolor: theme.palette.mode === "dark" ? "background.paper" : "grey.50",
-					border: `1px solid ${theme.palette.divider}`,
+					"& .MuiAlert-message": {
+						width: "100%"
+					}
 				}}
 			>
-				<Typography variant="h6" color="text.primary">
-					{message || "Esta característica requiere un plan superior."}
-				</Typography>
-			</Paper>
+				{message || "Acceso denegado: Esta característica no está disponible en tu plan actual."}
+			</Alert>
 		);
 	};
 
@@ -432,7 +449,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					</Stack>
 				</Grid>
 
-				<Grid item container spacing={3} xs={12} alignItems="center">
+				<Grid item container spacing={3} xs={12} alignItems="center" justifyContent="center">
 					{recommendedPlans.map((plan) => {
 						// Calcular el precio según el periodo seleccionado
 						const displayPrice =
@@ -441,15 +458,15 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 								: plan.pricingInfo.basePrice;
 
 						return (
-							<Grid item xs={12} sm={6} md={4} key={plan.planId}>
+							<Grid item xs={12} sm={5} md={4} lg={3} key={plan.planId} sx={{ maxWidth: 320 }}>
 								<MainCard>
-									<Grid container spacing={3}>
+									<Grid container spacing={2}>
 										<Grid item xs={12}>
-											<Box sx={getPlanStyle(plan.planId)}>
-												<Grid container spacing={3}>
+											<Box sx={getPlanStyle(plan.planId, false)}>
+												<Grid container spacing={2}>
 													{/* Mostramos el chip correspondiente */}
 													<Grid item xs={12} sx={{ textAlign: "center" }}>
-														{getPlanChip(plan.planId, plan.isDefault)}
+														{getPlanChip(plan.planId, false, plan.isDefault)}
 													</Grid>
 													<Grid item xs={12}>
 														<Stack spacing={0} textAlign="center">
@@ -469,7 +486,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 													</Grid>
 													<Grid item xs={12}>
 														<Button
-															color={getButtonColor(plan.planId)}
+															color={getButtonColor(plan.planId, false)}
 															variant={plan.planId.toLowerCase() === "standard" || plan.planId.toLowerCase() === "premium" ? "contained" : "outlined"}
 															fullWidth
 															onClick={() => handleUpgrade(plan.planId)}
@@ -494,13 +511,36 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 												component="ul"
 											>
 												{/* Primero mostrar los recursos del plan */}
-												{plan.resourceLimits.map((resource, i) => (
-													<React.Fragment key={`resource-${i}`}>
-														<ListItem>
-															<ListItemText primary={resource.description} sx={{ textAlign: "center", fontWeight: "medium" }} />
-														</ListItem>
-													</React.Fragment>
-												))}
+												{plan.resourceLimits.map((resource, i) => {
+													// Formatear la descripción del recurso de forma legible
+													let formattedDescription;
+													switch (resource.name) {
+														case "folders":
+															formattedDescription = `+${resource.limit} Causas`;
+															break;
+														case "calculators":
+															formattedDescription = `+${resource.limit} Cálculos`;
+															break;
+														case "contacts":
+															formattedDescription = `+${resource.limit} Contactos`;
+															break;
+														case "storage":
+															formattedDescription = `${resource.limit} MB de Almacenamiento`;
+															break;
+														default:
+															// Capitalizar el nombre del recurso
+															const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
+															formattedDescription = `${resource.limit} ${displayName}`;
+													}
+													
+													return (
+														<React.Fragment key={`resource-${i}`}>
+															<ListItem>
+																<ListItemText primary={formattedDescription} sx={{ textAlign: "center", fontWeight: "medium" }} />
+															</ListItem>
+														</React.Fragment>
+													);
+												})}
 
 												{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
 												{[...plan.features]
@@ -547,18 +587,31 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			<Box
 				sx={{
 					p: 3,
-					bgcolor: upgradeRequired || isFeatureError ? "warning.lighter" : "error.lighter",
+					bgcolor: upgradeRequired || isFeatureError ? alpha(theme.palette.warning.main, 0.12) : alpha(theme.palette.error.main, 0.12),
 					display: "flex",
 					alignItems: "center",
 					gap: 2.5,
+					borderBottom: `1px solid ${upgradeRequired || isFeatureError ? theme.palette.warning.light : theme.palette.error.light}`,
 				}}
 			>
 				{getIcon()}
 				<Box>
-					<Typography variant="h5" sx={{ color: upgradeRequired || isFeatureError ? "warning.darker" : "error.darker" }}>
+					<Typography 
+						variant="h5" 
+						sx={{ 
+							color: upgradeRequired || isFeatureError ? theme.palette.warning.dark : theme.palette.error.dark,
+							fontWeight: 500
+						}}
+					>
 						{getTitle()}
 					</Typography>
-					<Typography variant="body2" sx={{ mt: 0.5, color: upgradeRequired || isFeatureError ? "warning.dark" : "error.dark" }}>
+					<Typography 
+						variant="body2" 
+						sx={{ 
+							mt: 0.5, 
+							color: upgradeRequired || isFeatureError ? theme.palette.warning.main : theme.palette.error.main
+						}}
+					>
 						Se requiere actualizar tu plan para continuar
 					</Typography>
 				</Box>
@@ -570,7 +623,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			</DialogContent>
 
 			<DialogActions sx={{ p: 3, pt: 1, gap: 1 }}>
-				<Button onClick={onClose} variant="outlined" color="inherit" sx={{ borderRadius: 1.5 }}>
+				<Button onClick={onClose} variant="outlined" color="error" sx={{ borderRadius: 1.5 }}>
 					Cerrar
 				</Button>
 			</DialogActions>
