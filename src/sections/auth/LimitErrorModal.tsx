@@ -19,7 +19,7 @@ import {
 	ListItemText,
 	CircularProgress,
 	Alert,
-	alpha
+	alpha,
 } from "@mui/material";
 import { Lock, ArrowRight, TickCircle, CloseCircle, Crown } from "iconsax-react";
 // Importar MainCard desde el componente personalizado
@@ -233,7 +233,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 	const getContentMessage = () => {
 		if (isLimitError && limitInfo) {
-
 			return (
 				<Paper
 					elevation={0}
@@ -263,7 +262,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 								<Typography variant="body2" color="text.secondary">
 									<strong>Uso actual:</strong>
 								</Typography>
-								<Typography variant="body2" fontWeight="medium" >
+								<Typography variant="body2" fontWeight="medium">
 									{limitInfo.currentCount} / {limitInfo.limit}
 								</Typography>
 							</Box>
@@ -435,7 +434,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 															</Stack>
 														</Grid>
 														<Grid item xs={12}>
-															<Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center' }}>
+															<Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
 																<Typography variant="h2" sx={price}>
 																	${displayPrice}
 																</Typography>
@@ -613,9 +612,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				}}
 			>
 				<Box sx={{ mx: "auto" }}>
-					<Box sx={{ maxWidth: "600px", mx: "auto", mb: 2 }}>
-						{getContentMessage()}
-					</Box>
+					<Box sx={{ maxWidth: "600px", mx: "auto", mb: 2 }}>{getContentMessage()}</Box>
 					{renderPlansList()}
 				</Box>
 			</DialogContent>

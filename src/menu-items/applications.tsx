@@ -16,6 +16,7 @@ import {
 	InfoCircle,
 	CalendarTick,
 	Task,
+	DocumentText,
 } from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
@@ -36,6 +37,7 @@ const icons = {
 	tasks: Task,
 	help: InfoCircle,
 	booking: CalendarTick,
+	documents: DocumentText,
 };
 
 // ==============================|| MENU ITEMS - APPLICATIONS ||============================== //
@@ -128,6 +130,15 @@ const applications: NavItemType = {
 			icon: icons.tasks,
 			type: "item",
 			url: "/tareas",
+		},
+		{
+			id: "documents",
+			title: <FormattedMessage id="Documentos" />,
+			icon: icons.documents,
+			type: "item",
+			url: "/apps/documents",
+			disabled: true,
+			chip: { label: "Próximamente", color: "secondary", size: "small", variant: "outlined" },
 		},
 		/* 
 		{

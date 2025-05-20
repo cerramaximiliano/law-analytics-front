@@ -29,6 +29,8 @@ import { addFolder, updateFolder } from "store/reducers/folders";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
 import { PropsAddFolder } from "types/folders";
+import ApiService from "store/reducers/ApiService";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 const getInitialValues = (folder: FormikValues | null) => {
 	const newFolder = {
@@ -96,6 +98,12 @@ function getStepContent(step: number, values: any) {
 const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder) => {
 	const auth = useSelector((state) => state.auth);
 	const isCreating = mode === "add";
+
+	// Estado para el modal de límite de recursos
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+	const [limitErrorMessage, setLimitErrorMessage] = useState("");
+	const [showAddFolderModal, setShowAddFolderModal] = useState(false);
 
 	const theme = useTheme();
 
@@ -197,14 +205,98 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		onCancel();
 	};
 
+	// Escuchar evento de restricción del plan (similar a LinkToJudicialPower)
 	useEffect(() => {
+		const handlePlanRestriction = (event: Event) => {
+			const customEvent = event as CustomEvent;
+			console.log(
+				"Restricción de plan detectada, cerrando modal de nueva causa",
+				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : ""
+			);
+
+			// Cerrar el modal inmediatamente
+			onCancel();
+		};
+
+		// Agregar listener para el evento personalizado
+		window.addEventListener("planRestrictionError", handlePlanRestriction);
+
+		// Limpieza al desmontar
+		return () => {
+			window.removeEventListener("planRestrictionError", handlePlanRestriction);
+		};
+	}, [onCancel]);
+
+	useEffect(() => {
+		// Cuando el modal se abre, resetear los estados relacionados con la verificación
 		if (open) {
+			// Resetear el paso activo
 			const timer = setTimeout(() => {
 				setActiveStep(0);
 			}, 0);
+
+			// Si estamos creando, verificar límites
+			if (isCreating) {
+				// Resetear el estado del modal
+				setShowAddFolderModal(false);
+
+				// Verificar el límite de recursos para carpetas (folders)
+				const checkLimit = async () => {
+					try {
+						const response = await ApiService.checkResourceLimit("folders");
+						if (response.success && response.data) {
+							if (response.data.hasReachedLimit) {
+								// Si ha alcanzado el límite, mostrar el modal de error y cerrar este modal
+								setLimitErrorInfo({
+									resourceType: "Carpetas/Causas",
+									plan: response.data.currentPlan || "free",
+									currentCount: `${response.data.currentCount}`,
+									limit: response.data.limit,
+								});
+								setLimitErrorMessage("Has alcanzado el límite de causas disponibles en tu plan actual.");
+								
+								// Cerrar el modal actual y mostrar el LimitErrorModal
+								onCancel();
+								
+								// Lanzar un pequeño delay para evitar problemas de renderizado
+								setTimeout(() => {
+									setLimitErrorOpen(true);
+									
+									// Disparar evento para coordinación con otros componentes
+									window.dispatchEvent(new CustomEvent("planRestrictionError", {
+										detail: { 
+											resourceType: "folders",
+											openDialogsCount: 1 
+										}
+									}));
+								}, 100);
+							} else {
+								// Si no ha alcanzado el límite, mostrar el modal de nueva causa
+								setShowAddFolderModal(true);
+							}
+						} else {
+							// Si hay un error en la respuesta, mostrar el modal de nueva causa por defecto
+							console.error("Error al verificar el límite de recursos:", response.message);
+							setShowAddFolderModal(true);
+						}
+					} catch (error) {
+						console.error("Error al verificar el límite de recursos:", error);
+						// En caso de error, permitir crear la causa de todos modos
+						setShowAddFolderModal(true);
+					}
+				};
+				checkLimit();
+			} else {
+				// Si estamos editando, mostrar directamente el modal sin verificar límites
+				setShowAddFolderModal(true);
+			}
+
 			return () => clearTimeout(timer);
+		} else {
+			// Cuando el modal se cierra, limpiar los estados
+			setShowAddFolderModal(false);
 		}
-	}, [open]);
+	}, [open, isCreating, onCancel]);
 
 	useEffect(() => {
 		if (folder) {
@@ -280,123 +372,145 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		}
 	}
 
+	// Manejador para cerrar el modal de límite de error
+	const handleCloseLimitErrorModal = () => {
+		setLimitErrorOpen(false);
+	};
+
+	// Este componente tiene dos comportamientos:
+	// 1. Cuando se alcanza el límite: Solo muestra el modal LimitErrorModal (independiente)
+	// 2. Cuando no se alcanza el límite: Muestra el formulario normal
 	return (
 		<>
-			<DialogTitle
-				sx={{
-					bgcolor: theme.palette.primary.lighter,
-					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
-				}}
-			>
-				<Stack spacing={1}>
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<FolderAdd size={24} color={theme.palette.primary.main} />
-						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-							{isCreating ? "Nueva Causa" : "Editar Causa"}
-						</Typography>
-					</Stack>
-					<Typography variant="body2" color="textSecondary">
-						{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
-					</Typography>
-				</Stack>
-			</DialogTitle>
-			<Divider />
+			{/* Modal de límite de recursos - Se muestra de forma independiente */}
+			<LimitErrorModal
+				open={limitErrorOpen}
+				onClose={handleCloseLimitErrorModal}
+				message={limitErrorMessage}
+				limitInfo={limitErrorInfo}
+				upgradeRequired={true}
+			/>
 
-			<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
-				{({ isSubmitting, values }) => (
-					<Form autoComplete="off" noValidate>
-						<DialogContent sx={{ p: 2.5 }}>
-							<Box sx={{ minHeight: 400 }}>
-								{/* Steps Progress */}
-								<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-									{steps.map((label, index) => (
-										<Box key={label} sx={{ position: "relative", width: "100%" }}>
-											<Box
-												sx={{
-													height: 4,
-													bgcolor: index <= activeStep ? "primary.main" : "divider",
-													borderRadius: 1,
-													transition: "all 0.3s ease",
-												}}
-											/>
-											<Typography
-												variant="caption"
-												sx={{
-													position: "absolute",
-													top: 8,
-													color: index <= activeStep ? "primary.main" : "text.secondary",
-												}}
-											>
-												{label}
-											</Typography>
-										</Box>
-									))}
-								</Stack>
+			{/* El contenido del modal de AddFolder solo se muestra cuando corresponde */}
+			{showAddFolderModal && (
+				<>
+					<DialogTitle
+						sx={{
+							bgcolor: theme.palette.primary.lighter,
+							p: 3,
+							borderBottom: `1px solid ${theme.palette.divider}`,
+						}}
+					>
+						<Stack spacing={1}>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<FolderAdd size={24} color={theme.palette.primary.main} />
+								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+									{isCreating ? "Nueva Causa" : "Editar Causa"}
+								</Typography>
+							</Stack>
+							<Typography variant="body2" color="textSecondary">
+								{`Paso ${activeStep + 1} de ${steps.length}: ${steps[activeStep]}`}
+							</Typography>
+						</Stack>
+					</DialogTitle>
+					<Divider />
 
-								{/* Form Content */}
-								<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
-							</Box>
-						</DialogContent>
+					<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
+						{({ isSubmitting, values }) => (
+							<Form autoComplete="off" noValidate>
+								<DialogContent sx={{ p: 2.5 }}>
+									<Box sx={{ minHeight: 400 }}>
+										{/* Steps Progress */}
+										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+											{steps.map((label, index) => (
+												<Box key={label} sx={{ position: "relative", width: "100%" }}>
+													<Box
+														sx={{
+															height: 4,
+															bgcolor: index <= activeStep ? "primary.main" : "divider",
+															borderRadius: 1,
+															transition: "all 0.3s ease",
+														}}
+													/>
+													<Typography
+														variant="caption"
+														sx={{
+															position: "absolute",
+															top: 8,
+															color: index <= activeStep ? "primary.main" : "text.secondary",
+														}}
+													>
+														{label}
+													</Typography>
+												</Box>
+											))}
+										</Stack>
 
-						<Divider />
+										{/* Form Content */}
+										<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+									</Box>
+								</DialogContent>
 
-						<DialogActions
-							sx={{
-								p: 2.5,
-								bgcolor: theme.palette.background.default,
-								borderTop: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							<Grid container justifyContent="space-between" alignItems="center">
-								<Grid item>
-									{!isCreating && (
-										<Tooltip title="Eliminar Causa" placement="top">
-											<IconButton
-												onClick={() => setOpenAlert(true)}
-												size="large"
-												sx={{
-													color: "error.main",
-													"&:hover": {
-														bgcolor: "error.lighter",
-													},
-												}}
-											>
-												<Trash variant="Bold" />
-											</IconButton>
-										</Tooltip>
-									)}
-								</Grid>
-								<Grid item>
-									<Stack direction="row" spacing={2} alignItems="center">
-										{activeStep > 0 && (
-											<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
-												Atrás
-											</Button>
-										)}
-										<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
-											Cancelar
-										</Button>
-										<Button
-											type="submit"
-											variant="contained"
-											disabled={isSubmitting}
-											endIcon={!isLastStep && <ArrowRight2 size={18} />}
-											sx={{ minWidth: 100 }}
-										>
-											{folder && isLastStep && "Editar"}
-											{!folder && isLastStep && "Crear"}
-											{!isLastStep && "Siguiente"}
-										</Button>
-									</Stack>
-								</Grid>
-							</Grid>
-						</DialogActions>
-					</Form>
-				)}
-			</Formik>
+								<Divider />
 
-			{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
+								<DialogActions
+									sx={{
+										p: 2.5,
+										bgcolor: theme.palette.background.default,
+										borderTop: `1px solid ${theme.palette.divider}`,
+									}}
+								>
+									<Grid container justifyContent="space-between" alignItems="center">
+										<Grid item>
+											{!isCreating && (
+												<Tooltip title="Eliminar Causa" placement="top">
+													<IconButton
+														onClick={() => setOpenAlert(true)}
+														size="large"
+														sx={{
+															color: "error.main",
+															"&:hover": {
+																bgcolor: "error.lighter",
+															},
+														}}
+													>
+														<Trash variant="Bold" />
+													</IconButton>
+												</Tooltip>
+											)}
+										</Grid>
+										<Grid item>
+											<Stack direction="row" spacing={2} alignItems="center">
+												{activeStep > 0 && (
+													<Button onClick={handleBack} startIcon={<ArrowLeft2 size={18} />}>
+														Atrás
+													</Button>
+												)}
+												<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
+													Cancelar
+												</Button>
+												<Button
+													type="submit"
+													variant="contained"
+													disabled={isSubmitting}
+													endIcon={!isLastStep && <ArrowRight2 size={18} />}
+													sx={{ minWidth: 100 }}
+												>
+													{folder && isLastStep && "Editar"}
+													{!folder && isLastStep && "Crear"}
+													{!isLastStep && "Siguiente"}
+												</Button>
+											</Stack>
+										</Grid>
+									</Grid>
+								</DialogActions>
+							</Form>
+						)}
+					</Formik>
+
+					{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
+				</>
+			)}
 		</>
 	);
 };

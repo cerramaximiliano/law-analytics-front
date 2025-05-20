@@ -42,17 +42,17 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 	const [internalOpen, setInternalOpen] = useState(false);
 	const submitAttempts = useRef(0);
 	const maxRetries = 3;
-	
+
 	// Controlar cuando se muestra el modal para prevenir interacciones no deseadas
 	useEffect(() => {
 		// Usamos un pequeño retraso para evitar conflictos con otros modales
 		const timer = setTimeout(() => {
 			setInternalOpen(open);
 		}, 100);
-		
+
 		return () => clearTimeout(timer);
 	}, [open]);
-	
+
 	// Escuchar eventos de plan restriction para coordinar con otros modales
 	useEffect(() => {
 		const handlePlanRestrictionError = () => {
@@ -61,9 +61,9 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 				setInternalOpen(false);
 			}
 		};
-		
+
 		window.addEventListener("planRestrictionError", handlePlanRestrictionError);
-		
+
 		return () => {
 			window.removeEventListener("planRestrictionError", handlePlanRestrictionError);
 		};
@@ -78,11 +78,11 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 
 			// Validar el formulario
 			await validationSchema.validate(values, { abortEarly: false });
-			
+
 			// Manejo defensivo para evitar errores de eventos perdidos
 			try {
 				await onLogin(values.email.trim(), values.password);
-				
+
 				setStatus({ success: true });
 				// Primero cerramos nuestro estado interno
 				setInternalOpen(false);
@@ -141,7 +141,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			// Manejo defensivo del login para evitar errores de eventos
 			try {
 				await onGoogleLogin(credentialResponse);
-				
+
 				// Primero cerramos nuestro estado interno
 				setInternalOpen(false);
 				// Luego informamos al padre con un pequeño retraso para evitar conflictos
@@ -168,10 +168,10 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 	});
 
 	return (
-		<Dialog 
-			open={internalOpen} 
-			maxWidth="xs" 
-			fullWidth 
+		<Dialog
+			open={internalOpen}
+			maxWidth="xs"
+			fullWidth
 			disableEscapeKeyDown={isSubmitting}
 			onClose={() => {
 				// Manejo seguro al cerrar el modal
@@ -267,15 +267,15 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 											/>
 										</Box>
 
-										<Button 
-											variant="outlined" 
-											color="secondary" 
+										<Button
+											variant="outlined"
+											color="secondary"
 											onClick={() => {
 												// Manejo seguro para el botón de cancelar
 												setInternalOpen(false);
 												setTimeout(() => onLogout(), 50);
-											}} 
-											fullWidth 
+											}}
+											fullWidth
 											disabled={isSubmitting}
 										>
 											Cancelar

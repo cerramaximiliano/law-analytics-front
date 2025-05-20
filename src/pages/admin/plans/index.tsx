@@ -301,13 +301,11 @@ const PlansManagement = () => {
 					{/* Información bancaria internacional */}
 					{showBankingData && (
 						<Grid item xs={12}>
-							<Paper sx={{ p: 2, mb: 3, borderLeft: '4px solid', borderColor: 'info.main' }}>
+							<Paper sx={{ p: 2, mb: 3, borderLeft: "4px solid", borderColor: "info.main" }}>
 								<Typography variant="subtitle1" color="info.main" gutterBottom>
 									Información de Pagos Bancarios Internacionales
 								</Typography>
-								<Typography variant="body2">
-									Banco: XYZ Bank | Cuenta: 123-456-789 | SWIFT: ABCDEFGH
-								</Typography>
+								<Typography variant="body2">Banco: XYZ Bank | Cuenta: 123-456-789 | SWIFT: ABCDEFGH</Typography>
 								<Typography variant="caption" color="textSecondary">
 									Esta información se muestra a los usuarios cuando se suscriben a un plan.
 								</Typography>

@@ -77,7 +77,6 @@ export interface AuthActionProps {
 	};
 }
 
-
 export interface InitialLoginContextProps {
 	isLoggedIn: boolean;
 	isInitialized?: boolean;
@@ -87,7 +86,6 @@ export interface InitialLoginContextProps {
 export interface JWTDataProps {
 	userId: string;
 }
-
 
 // Interfaces para respuestas de la API
 export interface LoginResponse {
@@ -148,4 +146,3 @@ export interface FormValues {
 	password: string;
 	submit: string | null;
 }
-

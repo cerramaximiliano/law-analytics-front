@@ -510,6 +510,7 @@ const FoldersLayout = () => {
 		setAdd(true);
 		setAddFolderMode("add");
 		setFolder(null);
+		// Al iniciar el proceso, resetear cualquier verificación previa
 	}, []);
 
 	const handleEditContact = useCallback((folderData: any) => {
@@ -896,6 +897,8 @@ const FoldersLayout = () => {
 					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleRefreshData} />
 				</Dialog>
 			)}
+			
+			{/* El componente AddFolder manejará el LimitErrorModal independientemente */}
 
 			{/* Modal para elementos archivados */}
 			<ArchivedItemsModal

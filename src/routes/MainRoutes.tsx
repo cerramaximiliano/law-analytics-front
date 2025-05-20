@@ -46,6 +46,9 @@ const CivilLayouts = Loadable(lazy(() => import("pages/calculator/civil/index"))
 const InteresesLayouts = Loadable(lazy(() => import("pages/calculator/intereses/index")));
 const AllCalculatorsLayout = Loadable(lazy(() => import("pages/calculator/all/index")));
 
+// render - documents
+const DocumentsLayout = Loadable(lazy(() => import("pages/documents/index")));
+
 // pages routing - auth
 const AuthLogin = Loadable(lazy(() => import("pages/auth/auth1/login")));
 const AuthRegister = Loadable(lazy(() => import("pages/auth/auth1/register")));
@@ -160,6 +163,10 @@ const MainRoutes = {
 									element: <InteresesLayouts />,
 								},
 							],
+						},
+						{
+							path: "documents",
+							element: <DocumentsLayout />,
 						},
 						{
 							path: "calendar",

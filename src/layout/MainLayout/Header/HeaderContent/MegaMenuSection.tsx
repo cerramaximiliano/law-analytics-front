@@ -270,24 +270,24 @@ const MegaMenuSection = () => {
 															</ListItemButton>
 														</List>
 													</Grid>
-																											<List
-															component="nav"
-															aria-labelledby="nested-list-user"
-															subheader={
-																<ListSubheader id="nested-list-user">
-																	<Typography variant="subtitle1" color="textPrimary">
-																		Error Pages
-																	</Typography>
-																</ListSubheader>
-															}
-														>
-															<ListItemButton disableRipple component={Link} target="_blank" to="/maintenance/404">
-																<ListItemIcon>
-																	<Dot size={6} color="secondary" variant="outlined" />
-																</ListItemIcon>
-																<ListItemText primary="404 Error" />
-															</ListItemButton>
-														</List>
+													<List
+														component="nav"
+														aria-labelledby="nested-list-user"
+														subheader={
+															<ListSubheader id="nested-list-user">
+																<Typography variant="subtitle1" color="textPrimary">
+																	Error Pages
+																</Typography>
+															</ListSubheader>
+														}
+													>
+														<ListItemButton disableRipple component={Link} target="_blank" to="/maintenance/404">
+															<ListItemIcon>
+																<Dot size={6} color="secondary" variant="outlined" />
+															</ListItemIcon>
+															<ListItemText primary="404 Error" />
+														</ListItemButton>
+													</List>
 												</Grid>
 											</Box>
 										</Grid>

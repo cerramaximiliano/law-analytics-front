@@ -26,39 +26,36 @@ const Locales = ({ children }: Props) => {
 	// que necesitan aparecer capitalizados
 	const baseMessages = {
 		// Elementos del menú principal que deben estar capitalizados
-		'aplicaciones': 'Aplicaciones',
-		'causas': 'Causas',
-		'cálculos': 'Cálculos',
-		'calendario': 'Calendario',
-		'contactos': 'Contactos',
-		'intereses': 'Intereses',
-		'laboral': 'Laboral',
-		'civil': 'Civil',
-		'perfil': 'Perfil',
-		'usuario': 'Usuario',
-		'cuenta': 'Cuenta',
+		aplicaciones: "Aplicaciones",
+		causas: "Causas",
+		cálculos: "Cálculos",
+		calendario: "Calendario",
+		contactos: "Contactos",
+		intereses: "Intereses",
+		laboral: "Laboral",
+		civil: "Civil",
+		perfil: "Perfil",
+		usuario: "Usuario",
+		cuenta: "Cuenta",
 	};
 
 	// Creamos un proxy que primero busca en el objeto baseMessages,
 	// y si no lo encuentra, devuelve el ID capitalizado
-	const messagesProxy = new Proxy(
-		baseMessages,
-		{
-			get: (target, prop) => {
-				// Primero verificamos si existe una traducción explícita
-				if (typeof prop === 'string' && prop in target) {
-					return target[prop as keyof typeof target];
-				}
-				
-				// Si no existe, capitalizamos el ID
-				if (typeof prop === "string") {
-					return capitalizeFirstLetter(prop);
-				}
-				
-				return String(prop);
-			},
+	const messagesProxy = new Proxy(baseMessages, {
+		get: (target, prop) => {
+			// Primero verificamos si existe una traducción explícita
+			if (typeof prop === "string" && prop in target) {
+				return target[prop as keyof typeof target];
+			}
+
+			// Si no existe, capitalizamos el ID
+			if (typeof prop === "string") {
+				return capitalizeFirstLetter(prop);
+			}
+
+			return String(prop);
 		},
-	);
+	});
 
 	return (
 		<IntlProvider
