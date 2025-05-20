@@ -13,11 +13,9 @@ import {
 	FormControl,
 	FormHelperText,
 	Grid,
-	IconButton,
 	InputLabel,
 	MenuItem,
 	Select,
-	Stack,
 	TextField,
 } from "@mui/material";
 
@@ -26,9 +24,6 @@ import { User } from "types/user";
 import { DefaultRootStateProps } from "types/root";
 import userApi from "utils/userApi";
 import { SET_ERROR, UPDATE_USER } from "store/reducers/users";
-
-// assets
-import { CloseCircle } from "iconsax-react";
 
 // third party
 import * as Yup from "yup";
@@ -111,14 +106,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, open, onClose }) =>
 
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-			<DialogTitle>
-				<Stack direction="row" alignItems="center" justifyContent="space-between">
-					Editar Usuario
-					<IconButton onClick={onClose} size="small">
-						<CloseCircle size={20} />
-					</IconButton>
-				</Stack>
-			</DialogTitle>
+			<DialogTitle>Editar Usuario</DialogTitle>
 			<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
 					<form noValidate onSubmit={handleSubmit}>

@@ -22,7 +22,7 @@ const Localization = () => {
 	const theme = useTheme();
 	const matchesXs = useMediaQuery(theme.breakpoints.down("md"));
 
-	const { i18n, onChangeLocalization } = useConfig();
+	const { i18n } = useConfig();
 
 	const anchorRef = useRef<any>(null);
 	const [open, setOpen] = useState(false);
@@ -38,7 +38,8 @@ const Localization = () => {
 	};
 
 	const handleListItemClick = (lang: I18n) => {
-		onChangeLocalization(lang);
+		// La función onChangeLocalization ha sido eliminada
+		console.log("Cambio de idioma desactivado:", lang);
 		setOpen(false);
 	};
 

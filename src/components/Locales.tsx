@@ -1,63 +1,57 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 
 // third-party
-import { IntlProvider, MessageFormatElement } from "react-intl";
+import { IntlProvider } from "react-intl";
 
-// project-imports
-import useConfig from "hooks/useConfig";
-import { I18n } from "types/config";
-
-// load locales files
-const loadLocaleData = (locale: I18n) => {
-	switch (locale) {
-		case "fr":
-			return import("utils/locales/fr.json");
-		case "ro":
-			return import("utils/locales/ro.json");
-		case "zh":
-			return import("utils/locales/zh.json");
-		case "en":
-		default:
-			return import("utils/locales/en.json");
-	}
-};
-
-// ==============================|| LOCALIZATION ||============================== //
+// ==============================|| LOCALIZATION SIMPLIFIED ||============================== //
 
 interface Props {
 	children: ReactNode;
 }
 
+/**
+ * Convierte la primera letra de un string a mayúscula
+ * @param str String a capitalizar
+ * @returns String con la primera letra en mayúscula
+ */
+const capitalizeFirstLetter = (str: string): string => {
+	if (!str) return str;
+	return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+// Este componente proporciona un IntlProvider simplificado que usa los mismos IDs como mensajes
+// eliminando completamente la necesidad de archivos de traducción
 const Locales = ({ children }: Props) => {
-	const { i18n } = useConfig();
-
-	const [messages, setMessages] = useState<Record<string, string> | Record<string, MessageFormatElement[]> | undefined>();
-
-	useEffect(() => {
-		loadLocaleData(i18n).then((d: { default: Record<string, string> | Record<string, MessageFormatElement[]> | undefined }) => {
-			setMessages(d.default);
-		});
-	}, [i18n]);
+	// Creamos un proxy que devuelve el mismo ID cuando se solicita una traducción,
+	// pero con la primera letra capitalizada
+	const messagesProxy = new Proxy(
+		{},
+		{
+			get: (_target, prop) => {
+				// Devuelve el mismo ID como valor de traducción pero con la primera letra en mayúscula
+				if (typeof prop === "string") {
+					return capitalizeFirstLetter(prop);
+				}
+				return String(prop);
+			},
+		},
+	);
 
 	return (
-		<>
-			{messages && (
-				<IntlProvider
-					locale={i18n}
-					defaultLocale="en"
-					messages={messages}
-					onError={(err) => {
-						// Ignore missing translation errors
-						if (err.code === "MISSING_TRANSLATION") {
-							return;
-						}
-						console.error(err);
-					}}
-				>
-					{children}
-				</IntlProvider>
-			)}
-		</>
+		<IntlProvider
+			locale="es"
+			defaultLocale="es"
+			messages={messagesProxy as Record<string, string>}
+			onError={(err) => {
+				// Ignorar errores de traducción faltante
+				if (err.code === "MISSING_TRANSLATION") {
+					return;
+				}
+				console.error(err);
+			}}
+		>
+			{children}
+		</IntlProvider>
 	);
 };
 

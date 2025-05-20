@@ -9,7 +9,6 @@ import {
 	Chip,
 	Divider,
 	Grid,
-	IconButton,
 	Paper,
 	Stack,
 	Tab,
@@ -31,7 +30,7 @@ import DeleteUserDialog from "./DeleteUserDialog";
 import EditUserModal from "./EditUserModal";
 
 // assets
-import { ArrowLeft, CloseCircle, User as UserIcon, Wallet, Lock, Calendar } from "iconsax-react";
+import { User as UserIcon, Wallet, Lock, Calendar } from "iconsax-react";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -290,21 +289,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 	return (
 		<>
-			<MainCard
-				title={
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<IconButton onClick={onClose} size="small">
-							<ArrowLeft size={16} />
-						</IconButton>
-						<Typography variant="h5">Detalles del Usuario</Typography>
-					</Stack>
-				}
-				secondary={
-					<IconButton onClick={onClose} size="small">
-						<CloseCircle size={16} />
-					</IconButton>
-				}
-			>
+			<MainCard title={<Typography variant="h5">Detalles del Usuario</Typography>}>
 				<Grid container spacing={3}>
 					<Grid item xs={12}>
 						<Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "center", sm: "flex-start" }} spacing={2.5}>

@@ -23,5 +23,6 @@
 - **Components**: Follow React functional component patterns with hooks
 - **State Management**: Use Redux for global state, React context for theme/auth
 - **Styling**: Use MUI theming system and styled components
+- **Icons**: Use iconsax
 
 Use VS Code with auto-formatting on save for consistent code style.

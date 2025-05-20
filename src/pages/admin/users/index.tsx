@@ -30,7 +30,6 @@ import { getUsers } from "store/reducers/users";
 import { DefaultRootStateProps } from "types/root";
 import { User } from "types/user";
 import UserView from "./UserView";
-import EmptyResults from "sections/apps/customer/EmptyResults";
 import TableSkeleton from "components/UI/TableSkeleton";
 import AddUserModal from "./AddUserModal";
 import EditUserModal from "./EditUserModal";
@@ -275,103 +274,137 @@ const UsersList = () => {
 				</Stack>
 				<Divider />
 
-				{loading && <TableSkeleton columns={6} />}
+				<TableContainer>
+					<Table>
+						<TableHead>
+							<TableRow>
+								{headCells.map((headCell) => (
+									<TableCell
+										key={headCell.id}
+										align={headCell.align as any}
+										sortDirection={orderBy === headCell.id ? order : false}
+										sx={{ py: 2 }}
+									>
+										{headCell.id === "actions" ? (
+											headCell.label
+										) : (
+											<Box component="span" onClick={() => handleRequestSort(headCell.id)} sx={{ cursor: "pointer" }}>
+												{headCell.label}
+												{orderBy === headCell.id ? <Box component="span">{order === "desc" ? " ▼" : " ▲"}</Box> : null}
+											</Box>
+										)}
+									</TableCell>
+								))}
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{/* Skeleton de carga */}
+							{loading && <TableSkeleton columns={headCells.length} rows={rowsPerPage} />}
 
-				{!loading && error && <EmptyResults message={`Error al cargar usuarios: ${error}`} />}
+							{/* Mensaje de error */}
+							{!loading && error && (
+								<TableRow>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 3 }}>
+										<Typography variant="h6" color="error" gutterBottom>
+											Error al cargar usuarios
+										</Typography>
+										<Typography variant="body2" color="textSecondary">
+											{error}
+										</Typography>
+									</TableCell>
+								</TableRow>
+							)}
 
-				{!loading && !error && (!users || users.length === 0) && <EmptyResults message="No hay usuarios disponibles" />}
+							{/* No hay resultados */}
+							{!loading && !error && (!users || users.length === 0) && (
+								<TableRow>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5 }}>
+										<Typography variant="h6" gutterBottom>
+											No hay usuarios disponibles
+										</Typography>
+										<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+											Para agregar un nuevo usuario, haz clic en el botón "Agregar Usuario"
+										</Typography>
+										<Button variant="outlined" color="primary" onClick={handleAddUser} startIcon={<Add />}>
+											Agregar Usuario
+										</Button>
+									</TableCell>
+								</TableRow>
+							)}
 
-				{!loading && !error && users && users.length > 0 && (
-					<>
-						<TableContainer>
-							<Table>
-								<TableHead>
-									<TableRow>
-										{headCells.map((headCell) => (
-											<TableCell
-												key={headCell.id}
-												align={headCell.align as any}
-												sortDirection={orderBy === headCell.id ? order : false}
-												sx={{ py: 2 }}
-											>
-												{headCell.id === "actions" ? (
-													headCell.label
-												) : (
-													<Box component="span" onClick={() => handleRequestSort(headCell.id)} sx={{ cursor: "pointer" }}>
-														{headCell.label}
-														{orderBy === headCell.id ? <Box component="span">{order === "desc" ? " ▼" : " ▲"}</Box> : null}
-													</Box>
-												)}
+							{/* Listado de usuarios */}
+							{!loading &&
+								!error &&
+								users &&
+								users.length > 0 &&
+								visibleRows.map((userItem) => {
+									const user = userItem as User;
+									return (
+										<TableRow hover role="checkbox" tabIndex={-1} key={user.id}>
+											<TableCell>
+												<Stack direction="row" alignItems="center" spacing={1.5}>
+													<Stack>
+														<Typography variant="subtitle1">{user.name || "Sin nombre"}</Typography>
+													</Stack>
+												</Stack>
 											</TableCell>
-										))}
-									</TableRow>
-								</TableHead>
-								<TableBody>
-									{visibleRows.map((userItem) => {
-										const user = userItem as User;
-										return (
-											<TableRow hover role="checkbox" tabIndex={-1} key={user.id}>
-												<TableCell>
-													<Stack direction="row" alignItems="center" spacing={1.5}>
-														<Stack>
-															<Typography variant="subtitle1">{user.name || "Sin nombre"}</Typography>
-														</Stack>
-													</Stack>
-												</TableCell>
-												<TableCell>{user.email || "No disponible"}</TableCell>
-												<TableCell>
-													<Chip
-														label={user.role || "Sin rol"}
-														size="small"
-														sx={{
-															borderRadius: "4px",
-															minWidth: 80,
-															background: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
-															color: theme.palette.primary.main,
-															"& .MuiChip-label": {
-																px: 1.5,
-															},
-														}}
-													/>
-												</TableCell>
-												<TableCell>{renderStatusChip(user.status)}</TableCell>
-												<TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Nunca"}</TableCell>
-												<TableCell align="center">
-													<Stack direction="row" justifyContent="center" alignItems="center">
-														<Tooltip title="Ver detalles">
-															<IconButton color="primary" onClick={() => handleUserView(user)}>
-																<Eye size={18} />
-															</IconButton>
-														</Tooltip>
-														<Tooltip title="Editar">
-															<IconButton color="primary" onClick={() => handleUserEdit(user)}>
-																<Edit size={18} />
-															</IconButton>
-														</Tooltip>
-														<Tooltip title="Eliminar">
-															<IconButton color="error" onClick={() => handleUserDelete(user)}>
-																<Trash size={18} />
-															</IconButton>
-														</Tooltip>
-													</Stack>
-												</TableCell>
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
-						</TableContainer>
+											<TableCell>{user.email || "No disponible"}</TableCell>
+											<TableCell>
+												<Chip
+													label={user.role || "Sin rol"}
+													size="small"
+													sx={{
+														borderRadius: "4px",
+														minWidth: 80,
+														background: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
+														color: theme.palette.primary.main,
+														"& .MuiChip-label": {
+															px: 1.5,
+														},
+													}}
+												/>
+											</TableCell>
+											<TableCell>{renderStatusChip(user.status)}</TableCell>
+											<TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Nunca"}</TableCell>
+											<TableCell align="center">
+												<Stack direction="row" justifyContent="center" alignItems="center">
+													<Tooltip title="Ver detalles">
+														<IconButton color="primary" onClick={() => handleUserView(user)}>
+															<Eye size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Editar">
+														<IconButton color="primary" onClick={() => handleUserEdit(user)}>
+															<Edit size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Eliminar">
+														<IconButton color="error" onClick={() => handleUserDelete(user)}>
+															<Trash size={18} />
+														</IconButton>
+													</Tooltip>
+												</Stack>
+											</TableCell>
+										</TableRow>
+									);
+								})}
+						</TableBody>
+					</Table>
+				</TableContainer>
 
-						<TablePagination
-							rowsPerPageOptions={[5, 10, 25]}
-							component="div"
-							count={users.length}
-							rowsPerPage={rowsPerPage}
-							page={page}
-							onPageChange={handleChangePage}
-							onRowsPerPageChange={handleChangeRowsPerPage}
-						/>
-					</>
+				{/* Paginación (solo se muestra cuando hay usuarios) */}
+				{!loading && !error && users && users.length > 0 && (
+					<TablePagination
+						rowsPerPageOptions={[5, 10, 25]}
+						component="div"
+						count={users.length}
+						rowsPerPage={rowsPerPage}
+						page={page}
+						onPageChange={handleChangePage}
+						onRowsPerPageChange={handleChangeRowsPerPage}
+						labelRowsPerPage="Filas por página:"
+						labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+					/>
 				)}
 			</ScrollX>
 

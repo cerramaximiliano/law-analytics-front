@@ -5,13 +5,12 @@ import config from "config";
 import useLocalStorage from "hooks/useLocalStorage";
 
 // types
-import { CustomizationProps, FontFamily, I18n, MenuOrientation, PresetColor, ThemeDirection, ThemeMode } from "types/config";
+import { CustomizationProps, FontFamily, MenuOrientation, PresetColor, ThemeDirection, ThemeMode } from "types/config";
 
 // initial state
 const initialState: CustomizationProps = {
 	...config,
 	onChangeContainer: () => {},
-	onChangeLocalization: (lang: I18n) => {},
 	onChangeMode: (mode: ThemeMode) => {},
 	onChangePresetColor: (theme: PresetColor) => {},
 	onChangeDirection: (direction: ThemeDirection) => {},
@@ -40,12 +39,7 @@ function ConfigProvider({ children }: ConfigProviderProps) {
 		});
 	};
 
-	const onChangeLocalization = (lang: I18n) => {
-		setConfig({
-			...config,
-			i18n: lang,
-		});
-	};
+	// La función onChangeLocalization se ha eliminado ya que no usamos el sistema de traducción
 
 	const onChangeMode = (mode: ThemeMode) => {
 		setConfig({
@@ -108,7 +102,6 @@ function ConfigProvider({ children }: ConfigProviderProps) {
 			value={{
 				...config,
 				onChangeContainer,
-				onChangeLocalization,
 				onChangeMode,
 				onChangePresetColor,
 				onChangeDirection,

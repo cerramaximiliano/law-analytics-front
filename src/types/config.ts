@@ -125,7 +125,7 @@ export type DefaultConfigProps = {
 
 export type CustomizationProps = {
 	fontFamily: FontFamily;
-	i18n: I18n;
+	i18n: I18n; // Mantenemos la propiedad por compatibilidad, pero no se utiliza
 	miniDrawer: boolean;
 	container: boolean;
 	menuOrientation: MenuOrientation;
@@ -135,7 +135,6 @@ export type CustomizationProps = {
 	themeDirection: ThemeDirection;
 	themeContrast: boolean;
 	onChangeContainer: VoidFunction;
-	onChangeLocalization: (lang: I18n) => void;
 	onChangeMode: (mode: ThemeMode) => void;
 	onChangePresetColor: (theme: PresetColor) => void;
 	onChangeDirection: (direction: ThemeDirection) => void;
