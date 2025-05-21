@@ -1,4 +1,4 @@
-import { Grid, InputLabel, Typography, Box } from "@mui/material";
+import { Grid, InputLabel, Typography } from "@mui/material";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import SelectField from "components/UI/SelectField";
@@ -136,9 +136,9 @@ export default function FirstForm(props: FirstFormProps) {
 					Datos requeridos
 				</Typography>
 				<Grid item xs={12}>
-					<Grid container spacing={1}>
-						<Grid item xs={12} lg={6} sx={{ mt: { lg: -1 } }}>
-							<Grid container spacing={1} alignItems="flex-start">
+					<Grid container spacing={2} alignItems="center">
+						<Grid item xs={12} lg={6}>
+							<Grid container spacing={2} alignItems="center">
 								<Grid item xs={12} lg={3}>
 									<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamante*:</InputLabel>
 								</Grid>
@@ -149,12 +149,11 @@ export default function FirstForm(props: FirstFormProps) {
 										placeholder="Ingrese un nombre"
 										name={reclamante.name}
 									/>
-									<Box sx={{ minHeight: "32px" }}></Box>
 								</Grid>
 							</Grid>
 						</Grid>
-						<Grid item xs={12} lg={6} sx={{ mt: { lg: -1 } }}>
-							<Grid container spacing={1} alignItems="flex-start">
+						<Grid item xs={12} lg={6}>
+							<Grid container spacing={2} alignItems="center">
 								<Grid item xs={12} lg={3}>
 									<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamado*:</InputLabel>
 								</Grid>
@@ -165,41 +164,38 @@ export default function FirstForm(props: FirstFormProps) {
 										placeholder="Ingrese un nombre"
 										name={reclamado.name}
 									/>
-									<Box sx={{ minHeight: "32px" }}></Box>
 								</Grid>
 							</Grid>
 						</Grid>
-						<Grid item xs={12} lg={6} sx={{ mt: { lg: -1 } }}>
-							<Grid container spacing={1} alignItems="flex-start">
+						<Grid item xs={12} lg={6}>
+							<Grid container spacing={2} alignItems="center">
 								<Grid item xs={12} lg={3}>
 									<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Fecha inicial*:</InputLabel>
 								</Grid>
 								<Grid item xs={12} lg={9}>
 									<DateInputField name={fechaInicial.name} />
-									<Box sx={{ minHeight: "32px" }}></Box>
 								</Grid>
 							</Grid>
 						</Grid>
-						<Grid item xs={12} lg={6} sx={{ mt: { lg: -1 } }}>
-							<Grid container spacing={1} alignItems="flex-start">
+						<Grid item xs={12} lg={6}>
+							<Grid container spacing={2} alignItems="center">
 								<Grid item xs={12} lg={3}>
 									<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Fecha final*:</InputLabel>
 								</Grid>
 								<Grid item xs={12} lg={9}>
 									<DateInputField name={fechaFinal.name} />
-									<Box sx={{ minHeight: "32px" }}></Box>
 								</Grid>
 							</Grid>
 						</Grid>
 
-						<Grid item xs={12} lg={6} sx={{ mt: { lg: -1 } }}>
-							<Grid container spacing={1} alignItems="flex-start">
+						<Grid item xs={12} lg={6}>
+							<Grid container spacing={2} alignItems="center">
 								<Grid item xs={12} lg={3}>
-									<InputLabel htmlFor="folder-status">Tasa de interés*:</InputLabel>
+									<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Tasa de interés*:</InputLabel>
 								</Grid>
 								<Grid item xs={12} lg={9}>
 									<SelectField label="Seleccione una tasa" data={tasasOpciones} name={tasa.name} disabled={cargandoTasas} />
-									<Box sx={{ minHeight: "32px" }}>
+									<div>
 										{errorTasas && (
 											<Typography variant="caption" color="error" sx={{ mt: 1, display: "block" }}>
 												{errorTasas}
@@ -217,12 +213,12 @@ export default function FirstForm(props: FirstFormProps) {
 												).toLocaleDateString()}
 											</Typography>
 										)}
-									</Box>
+									</div>
 								</Grid>
 							</Grid>
 						</Grid>
-						<Grid item xs={12} lg={6} sx={{ mt: { lg: -1 } }}>
-							<Grid container spacing={1} alignItems="flex-start">
+						<Grid item xs={12} lg={6}>
+							<Grid container spacing={2} alignItems="center">
 								<Grid item xs={12} lg={3}>
 									<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Capital*:</InputLabel>
 								</Grid>
@@ -237,7 +233,6 @@ export default function FirstForm(props: FirstFormProps) {
 										name={capital.name}
 										InputProps={{ startAdornment: "$" }}
 									/>
-									<Box sx={{ minHeight: "32px" }}></Box>
 								</Grid>
 							</Grid>
 						</Grid>
