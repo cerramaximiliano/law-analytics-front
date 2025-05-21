@@ -39,8 +39,8 @@ import Loader from "components/Loader";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { GuideBooking } from "components/guides";
-import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import useSubscription from "hooks/useSubscription";
 
 // Definición de interfaces para tipar adecuadamente los objetos
 interface CustomField {
@@ -269,6 +269,10 @@ const BookingCard: React.FC<{
 	const [expanded, setExpanded] = useState(false);
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 	const open = Boolean(anchorEl);
+	
+	// Obtener acceso a las características de suscripción utilizando el hook
+	const { hasFeatureLocal } = useSubscription();
+	const hasBookingFeature = hasFeatureLocal('booking');
 
 	// Determinar color según estado
 	const getStatusChip = (status: BookingType["status"]) => {
@@ -329,6 +333,7 @@ const BookingCard: React.FC<{
 						aria-controls={open ? "booking-menu" : undefined}
 						aria-haspopup="true"
 						aria-expanded={open ? "true" : undefined}
+						disabled={!hasBookingFeature}
 					>
 						<MoreSquare size={20} />
 					</IconButton>
@@ -347,6 +352,7 @@ const BookingCard: React.FC<{
 									handleClose();
 									onStatusChange(booking._id, "confirmed");
 								}}
+								disabled={!hasBookingFeature}
 							>
 								<ClipboardTick size={16} style={{ marginRight: 8, color: theme.palette.success.main }} />
 								Confirmar
@@ -360,6 +366,7 @@ const BookingCard: React.FC<{
 									onStatusChange(booking._id, "rejected");
 								}}
 								sx={{ color: "error.main" }}
+								disabled={!hasBookingFeature}
 							>
 								<Trash size={16} style={{ marginRight: 8 }} />
 								Rechazar
@@ -373,6 +380,7 @@ const BookingCard: React.FC<{
 									onStatusChange(booking._id, "cancelled");
 								}}
 								sx={{ color: "error.main" }}
+								disabled={!hasBookingFeature}
 							>
 								<Trash size={16} style={{ marginRight: 8 }} />
 								Cancelar
@@ -385,6 +393,7 @@ const BookingCard: React.FC<{
 									handleClose();
 									onStatusChange(booking._id, "completed");
 								}}
+								disabled={!hasBookingFeature}
 							>
 								<ClipboardTick size={16} style={{ marginRight: 8 }} />
 								Marcar como completada
@@ -397,6 +406,7 @@ const BookingCard: React.FC<{
 								onDelete(booking);
 							}}
 							sx={{ color: "error.main" }}
+							disabled={!hasBookingFeature}
 						>
 							<Trash size={16} style={{ marginRight: 8 }} />
 							Eliminar
@@ -519,6 +529,7 @@ const BookingCard: React.FC<{
 								startIcon={<ClipboardTick size={16} />}
 								onClick={() => onStatusChange(booking._id, "confirmed")}
 								sx={{ textTransform: "none" }}
+								disabled={!hasBookingFeature}
 							>
 								Confirmar
 							</Button>
@@ -529,6 +540,7 @@ const BookingCard: React.FC<{
 								startIcon={<Trash size={16} />}
 								onClick={() => onStatusChange(booking._id, "rejected")}
 								sx={{ textTransform: "none" }}
+								disabled={!hasBookingFeature}
 							>
 								Rechazar
 							</Button>
@@ -543,6 +555,7 @@ const BookingCard: React.FC<{
 							startIcon={<Trash size={16} />}
 							onClick={() => onStatusChange(booking._id, "cancelled")}
 							sx={{ textTransform: "none" }}
+							disabled={!hasBookingFeature}
 						>
 							Cancelar
 						</Button>
@@ -556,6 +569,7 @@ const BookingCard: React.FC<{
 							startIcon={<ClipboardTick size={16} />}
 							onClick={() => onStatusChange(booking._id, "completed")}
 							sx={{ textTransform: "none" }}
+							disabled={!hasBookingFeature}
 						>
 							Completada
 						</Button>
@@ -596,36 +610,65 @@ const BookingsManagement = () => {
 	const [hasBookingFeature, setHasBookingFeature] = useState(false);
 	const [featureInfo, setFeatureInfo] = useState<any>(null);
 	const [limitModalOpen, setLimitModalOpen] = useState(false);
+	// Estado para controlar si el modal ha sido cerrado una vez
+	const [hasModalBeenClosed, setHasModalBeenClosed] = useState(false);
 
 	// Determinar si estamos viendo una disponibilidad específica o todas las reservas
 	const urlParts = window.location.pathname.split("/");
 	const availabilityId = urlParts[urlParts.length - 1];
 	const isSpecificAvailability = availabilityId && availabilityId !== "reservations";
 
+	// Obtener acceso a las características de suscripción utilizando el hook
+	const { subscription, hasFeatureLocal } = useSubscription();
+	
+	// Función para crear el objeto featureInfo de forma estándar
+	const createFeatureInfo = () => ({
+		feature: "Gestión de Reservas",
+		plan: subscription?.plan || "free",
+		availableIn: ["standard", "premium"]
+	});
+	
+	// Se ejecuta solo al montar el componente
+	useEffect(() => {
+		// Limpiar el flag del sessionStorage al montar el componente
+		// Esto asegura que al navegar fuera y volver, el modal pueda mostrarse nuevamente
+		sessionStorage.removeItem("booking_modal_shown");
+		
+		// Efecto de limpieza: remover también cuando el componente se desmonte
+		return () => {
+			sessionStorage.removeItem("booking_modal_shown");
+		};
+	}, []);
+	
 	// Verificar si el usuario tiene acceso a la característica de reservas
 	useEffect(() => {
-		const checkBookingFeature = async () => {
-			try {
-				const response = await ApiService.checkUserFeature("booking");
-				const isEnabled = response.data?.isEnabled || false;
-				setHasBookingFeature(isEnabled);
-
-				// Si la característica no está habilitada, guardar la información para el modal
-				if (!isEnabled) {
-					setFeatureInfo({
-						feature: "Gestión de Reservas",
-						plan: response.data?.currentPlan || "Free",
-						availableIn: response.data?.requiredPlan ? [response.data.requiredPlan] : ["Standard", "Premium"],
-					});
-				}
-			} catch (error) {
-				console.error("Error verificando característica de reservas:", error);
-				setHasBookingFeature(false);
+		// Verificar si tiene la característica de booking usando el hook
+		const hasBookingAccess = hasFeatureLocal('booking');
+		
+		setHasBookingFeature(hasBookingAccess || false);
+		
+		// Si no tiene la característica habilitada y el modal no ha sido cerrado manualmente
+		if (!hasBookingAccess && !hasModalBeenClosed) {
+			setFeatureInfo(createFeatureInfo());
+			
+			// Comprobar si ya mostramos el modal en esta visita a la página
+			const modalShown = sessionStorage.getItem("booking_modal_shown");
+			
+			// Solo mostrar el modal si no se ha mostrado antes
+			if (!modalShown) {
+				setLimitModalOpen(true);
 			}
-		};
-
-		checkBookingFeature();
-	}, []);
+		}
+	}, [subscription, hasFeatureLocal, hasModalBeenClosed]);
+	
+	// Manejar cierre del modal
+	const handleCloseLimitModal = () => {
+		// Marcar que el modal fue cerrado explícitamente por el usuario
+		setHasModalBeenClosed(true);
+		// Marcar que ya se mostró, para evitar mostrarlo nuevamente en esta sesión
+		sessionStorage.setItem("booking_modal_shown", "true");
+		setLimitModalOpen(false);
+	};
 
 	// Cargar disponibilidad y reservas
 	useEffect(() => {
@@ -1525,15 +1568,13 @@ const BookingsManagement = () => {
 			<GuideBooking open={guideOpen} onClose={() => setGuideOpen(false)} />
 
 			{/* Modal de error de límite del plan */}
-			{featureInfo && (
-				<LimitErrorModal
-					open={limitModalOpen}
-					onClose={() => setLimitModalOpen(false)}
-					message="Para gestionar reservas y crear disponibilidades, necesitas actualizar tu plan."
-					featureInfo={featureInfo}
-					upgradeRequired={true}
-				/>
-			)}
+			<LimitErrorModal
+				open={limitModalOpen}
+				onClose={handleCloseLimitModal}
+				message="Para gestionar reservas y crear disponibilidades, necesitas actualizar tu plan."
+				featureInfo={featureInfo || createFeatureInfo()}
+				upgradeRequired={true}
+			/>
 		</Box>
 	);
 };
