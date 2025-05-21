@@ -1,0 +1,45 @@
+/* Custom styles */
+
+.truncate-chip {
+  max-width: 90px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  margin-left: auto !important; /* Empuja el chip hacia la derecha */
+}
+
+/* Estilo especial para el chip "Próximamente" */
+.coming-soon-chip {
+  opacity: 1 !important;
+  font-weight: 500 !important; /* Texto semi-bold */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Sombra sutil */
+}
+
+/* Ajustar el espaciado para el menú Documentos y otros con chip */
+.MuiListItemButton-root .MuiListItemText-root {
+  flex: 0 1 auto !important; /* Evita que el texto ocupe todo el espacio */
+  margin-right: 12px !important; /* Espacio entre el texto y el chip */
+}
+
+/* Asegurar que el chip se muestre correctamente alineado */
+.MuiListItemButton-root .MuiChip-root {
+  margin-left: auto !important; /* Empuja el chip hacia la derecha */
+  min-width: 90px !important; /* Ancho mínimo consistente */
+  justify-content: center !important; /* Centra el contenido del chip */
+}
+
+/* Hacer el texto del menú más visible incluso cuando está deshabilitado */
+.MuiListItemButton-root.Mui-disabled .MuiTypography-root {
+  opacity: 0.9 !important;
+  color: #555 !important;
+}
+
+/* Para modo oscuro */
+[data-mui-color-scheme="dark"] .MuiListItemButton-root.Mui-disabled .MuiTypography-root {
+  color: #ccc !important;
+}
+
+/* Mejorar visibilidad de íconos en elementos deshabilitados */
+.MuiListItemButton-root.Mui-disabled .MuiListItemIcon-root {
+  opacity: 0.85 !important;
+}

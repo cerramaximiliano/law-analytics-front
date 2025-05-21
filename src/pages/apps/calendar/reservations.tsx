@@ -269,10 +269,10 @@ const BookingCard: React.FC<{
 	const [expanded, setExpanded] = useState(false);
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 	const open = Boolean(anchorEl);
-	
+
 	// Obtener acceso a las características de suscripción utilizando el hook
 	const { hasFeatureLocal } = useSubscription();
-	const hasBookingFeature = hasFeatureLocal('booking');
+	const hasBookingFeature = hasFeatureLocal("booking");
 
 	// Determinar color según estado
 	const getStatusChip = (status: BookingType["status"]) => {
@@ -620,47 +620,47 @@ const BookingsManagement = () => {
 
 	// Obtener acceso a las características de suscripción utilizando el hook
 	const { subscription, hasFeatureLocal } = useSubscription();
-	
+
 	// Función para crear el objeto featureInfo de forma estándar
 	const createFeatureInfo = () => ({
 		feature: "Gestión de Reservas",
 		plan: subscription?.plan || "free",
-		availableIn: ["standard", "premium"]
+		availableIn: ["standard", "premium"],
 	});
-	
+
 	// Se ejecuta solo al montar el componente
 	useEffect(() => {
 		// Limpiar el flag del sessionStorage al montar el componente
 		// Esto asegura que al navegar fuera y volver, el modal pueda mostrarse nuevamente
 		sessionStorage.removeItem("booking_modal_shown");
-		
+
 		// Efecto de limpieza: remover también cuando el componente se desmonte
 		return () => {
 			sessionStorage.removeItem("booking_modal_shown");
 		};
 	}, []);
-	
+
 	// Verificar si el usuario tiene acceso a la característica de reservas
 	useEffect(() => {
 		// Verificar si tiene la característica de booking usando el hook
-		const hasBookingAccess = hasFeatureLocal('booking');
-		
+		const hasBookingAccess = hasFeatureLocal("booking");
+
 		setHasBookingFeature(hasBookingAccess || false);
-		
+
 		// Si no tiene la característica habilitada y el modal no ha sido cerrado manualmente
 		if (!hasBookingAccess && !hasModalBeenClosed) {
 			setFeatureInfo(createFeatureInfo());
-			
+
 			// Comprobar si ya mostramos el modal en esta visita a la página
 			const modalShown = sessionStorage.getItem("booking_modal_shown");
-			
+
 			// Solo mostrar el modal si no se ha mostrado antes
 			if (!modalShown) {
 				setLimitModalOpen(true);
 			}
 		}
 	}, [subscription, hasFeatureLocal, hasModalBeenClosed]);
-	
+
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {
 		// Marcar que el modal fue cerrado explícitamente por el usuario

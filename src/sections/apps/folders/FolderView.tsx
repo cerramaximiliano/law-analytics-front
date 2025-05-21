@@ -57,7 +57,7 @@ const FolderView = memo(({ data }: any) => {
 	const handleOpenLinkJudicial = () => {
 		// Verificar si el usuario tiene acceso a la característica de vincular carpetas
 		const { canAccess, featureInfo } = canVinculateFolders();
-		
+
 		if (canAccess) {
 			// Si tiene acceso, mostrar el modal de vinculación
 			setOpenLinkJudicial(true);
@@ -71,7 +71,7 @@ const FolderView = memo(({ data }: any) => {
 	const handleCancelLinkJudicial = () => {
 		setOpenLinkJudicial(false);
 	};
-	
+
 	const handleCloseLimitErrorModal = () => {
 		setLimitErrorOpen(false);
 	};
@@ -205,7 +205,7 @@ const FolderView = memo(({ data }: any) => {
 					folderId={data._id}
 					folderName={data.folderName}
 				/>
-				
+
 				{/* Modal de error cuando no se tiene acceso a la característica */}
 				<LimitErrorModal
 					open={limitErrorOpen}

@@ -14,6 +14,8 @@ interface FormModel {
 		capital: FormField;
 		fechaInicial: FormField;
 		fechaFinal: FormField;
+		folderId: FormField;
+		folderName: FormField;
 	};
 }
 
@@ -54,6 +56,16 @@ const compensacionFormModel: FormModel = {
 			name: "fechaFinal",
 			label: "Fecha final",
 			requiredErrorMsg: "Campo requerido",
+			type: "reclamo",
+		},
+		folderId: {
+			name: "folderId",
+			label: "Carpeta ID",
+			type: "reclamo",
+		},
+		folderName: {
+			name: "folderName",
+			label: "Nombre de carpeta",
 			type: "reclamo",
 		},
 	},

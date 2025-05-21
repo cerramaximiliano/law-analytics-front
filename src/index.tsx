@@ -17,6 +17,9 @@ import "slick-carousel/slick/slick-theme.css";
 import "assets/third-party/apex-chart.css";
 import "assets/third-party/react-table.css";
 
+// custom styles
+import "assets/css/custom.css";
+
 // project-imports
 import App from "./App";
 import { store, persister } from "store";

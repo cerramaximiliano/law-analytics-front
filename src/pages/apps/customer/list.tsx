@@ -468,7 +468,7 @@ const CustomerListPage = () => {
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 	const [guideOpen, setGuideOpen] = useState(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-	
+
 	// Estado para el modal de límite de recursos
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
@@ -572,7 +572,7 @@ const CustomerListPage = () => {
 		if (subscription && subscription.limits && contacts) {
 			const maxContacts = subscription.limits.maxContacts;
 			const currentContactCount = contacts.length;
-			
+
 			// Si el número de contactos es igual o superior al límite, mostrar modal de error
 			if (currentContactCount >= maxContacts) {
 				// Configuramos la información para el modal de error
@@ -587,7 +587,7 @@ const CustomerListPage = () => {
 				return;
 			}
 		}
-		
+
 		// Si no se ha alcanzado el límite, mostramos el modal normal
 		setAdd(true);
 		setAddCustomerMode("add");
@@ -703,7 +703,7 @@ const CustomerListPage = () => {
 	const handleOpenGuide = useCallback(() => {
 		setGuideOpen(true);
 	}, []);
-	
+
 	// Manejador para cerrar el modal de límite de error
 	const handleCloseLimitErrorModal = useCallback(() => {
 		setLimitErrorOpen(false);
@@ -1020,7 +1020,7 @@ const CustomerListPage = () => {
 					{snackbarMessage}
 				</Alert>
 			</Snackbar>
-			
+
 			{/* Modal de límite de recursos */}
 			<LimitErrorModal
 				open={limitErrorOpen}

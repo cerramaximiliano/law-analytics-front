@@ -81,7 +81,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 
 			// Mostrar mensaje de éxito
 			setSuccess("Datos generados exitosamente");
-			
+
 			// Cerrar el modal después de 2 segundos
 			setTimeout(() => {
 				onClose();

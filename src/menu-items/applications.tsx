@@ -86,7 +86,27 @@ const applications: NavItemType = {
 					type: "item",
 					url: "/apps/calc/civil",
 					disabled: true,
-					chip: { label: "Próximamente", color: "secondary", size: "small", variant: "outlined" },
+					chip: {
+						label: "Próximamente",
+						color: "primary",
+						size: "small",
+						variant: "filled",
+						className: "truncate-chip coming-soon-chip",
+					},
+				},
+				{
+					id: "previsional-calculator",
+					title: <FormattedMessage id="Previsional" />,
+					type: "item",
+					url: "/apps/calc/previsional",
+					disabled: true,
+					chip: {
+						label: "Próximamente",
+						color: "primary",
+						size: "small",
+						variant: "filled",
+						className: "truncate-chip coming-soon-chip",
+					},
 				},
 			],
 		},
@@ -138,7 +158,13 @@ const applications: NavItemType = {
 			type: "item",
 			url: "/apps/documents",
 			disabled: true,
-			chip: { label: "Próximamente", color: "secondary", size: "small", variant: "outlined" },
+			chip: {
+				label: "Próximamente",
+				color: "primary",
+				size: "small",
+				variant: "filled",
+				className: "truncate-chip coming-soon-chip",
+			},
 		},
 		/* 
 		{

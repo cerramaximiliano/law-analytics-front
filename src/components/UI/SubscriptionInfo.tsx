@@ -46,7 +46,7 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 				const maxFolders = getLimitLocal("maxFolders");
 				const maxCalcs = getLimitLocal("maxCalculators");
 				const maxContacts = getLimitLocal("maxContacts");
-				
+
 				setUsageStats({
 					folders: Math.floor(maxFolders * 0.3), // Example: using 30% of limit
 					calculators: Math.floor(maxCalcs * 0.2), // Example: using 20% of limit
@@ -101,18 +101,9 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 				subheader={`Plan: ${subscription.plan.toUpperCase()}`}
 				action={
 					<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-						<Chip
-							label={subscription.status}
-							color={getStatusColor(subscription.status) as any}
-							variant="filled"
-						/>
+						<Chip label={subscription.status} color={getStatusColor(subscription.status) as any} variant="filled" />
 						{showUpgradeButton && canUpgrade() && (
-							<Button
-								variant="contained"
-								color="primary"
-								size="small"
-								onClick={handleUpgrade}
-							>
+							<Button variant="contained" color="primary" size="small" onClick={handleUpgrade}>
 								Upgrade
 							</Button>
 						)}
@@ -164,7 +155,10 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 						</Typography>
 						<Typography variant="body2">
 							You are currently in a trial period. Your trial will end in{" "}
-							<strong>{daysLeftInTrial} {daysLeftInTrial === 1 ? "day" : "days"}</strong>.
+							<strong>
+								{daysLeftInTrial} {daysLeftInTrial === 1 ? "day" : "days"}
+							</strong>
+							.
 						</Typography>
 						{subscription.plan !== "premium" && (
 							<Button variant="contained" color="primary" size="small" sx={{ mt: 1 }} onClick={handleUpgrade}>
@@ -306,14 +300,15 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 				{subscription.cancelAtPeriodEnd && (
 					<Box mt={2} sx={{ bgcolor: "warning.light", p: 2, borderRadius: 1 }}>
 						<Typography variant="body2" color="warning.dark">
-							Your subscription will be canceled at the end of the current billing period on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}.
+							Your subscription will be canceled at the end of the current billing period on{" "}
+							{new Date(subscription.currentPeriodEnd).toLocaleDateString()}.
 						</Typography>
-						<Button 
-							variant="outlined" 
-							color="warning" 
-							size="small" 
+						<Button
+							variant="outlined"
+							color="warning"
+							size="small"
 							sx={{ mt: 1 }}
-							onClick={() => window.location.href = "/profile/billing"}
+							onClick={() => (window.location.href = "/profile/billing")}
 						>
 							Reactivate Subscription
 						</Button>
@@ -323,11 +318,7 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 				{/* Upgrade call to action - for free and standard plans */}
 				{(subscription.plan === "free" || subscription.plan === "standard") && !subscription.cancelAtPeriodEnd && (
 					<Box mt={3} textAlign="center">
-						<Button 
-							variant="contained" 
-							color="primary"
-							onClick={handleUpgrade}
-						>
+						<Button variant="contained" color="primary" onClick={handleUpgrade}>
 							{subscription.plan === "free" ? "Upgrade to Standard or Premium" : "Upgrade to Premium"}
 						</Button>
 					</Box>

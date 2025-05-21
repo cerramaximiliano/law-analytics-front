@@ -525,11 +525,11 @@ const FoldersLayout = () => {
 			setFolder(null);
 			return;
 		}
-		
+
 		// Obtener el límite de carpetas y verificar si se ha alcanzado
 		const maxFolders = subscription.limits.maxFolders;
 		const currentFolderCount = folders.length;
-		
+
 		// Verificar si se ha alcanzado el límite
 		if (currentFolderCount >= maxFolders) {
 			// Si se ha alcanzado el límite, mostrar el modal de error
@@ -537,7 +537,7 @@ const FoldersLayout = () => {
 				resourceType: "Carpetas/Causas",
 				plan: subscription.plan,
 				currentCount: `${currentFolderCount}`,
-				limit: maxFolders
+				limit: maxFolders,
 			});
 			setLimitErrorMessage("Has alcanzado el límite de causas disponibles en tu plan actual.");
 			setLimitErrorOpen(true);
