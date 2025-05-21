@@ -29,7 +29,6 @@ import { Add, DocumentUpload, ArrowRight, Lock } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
-import ApiService from "store/reducers/ApiService";
 
 interface LinkToJudicialPowerProps {
 	openLink: boolean;
@@ -280,48 +279,8 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 		};
 	}, [onCancelLink]);
 
-	// Verificar disponibilidad de la característica antes de abrir el modal
-	useEffect(() => {
-		let isMounted = true;
-
-		const checkFeature = async () => {
-			if (openLink) {
-				try {
-					setLoading(true);
-					const response = await ApiService.checkUserFeature("vinculateFolders");
-
-					// Solo continuar si el componente sigue montado
-					if (!isMounted) return;
-
-					// Si la característica no está habilitada, cerrar este modal
-					if (!response.data?.isEnabled) {
-						console.log("Característica no habilitada en el plan actual");
-						onCancelLink();
-					}
-
-					// La característica está habilitada, no hacer nada
-				} catch (error) {
-					// Solo continuar si el componente sigue montado
-					if (!isMounted) return;
-
-					// Cerrar el modal original cuando ocurre un error
-					console.error("Error checking feature:", error);
-					onCancelLink(); // Cerrar este modal independientemente del error
-				} finally {
-					if (isMounted) {
-						setLoading(false);
-					}
-				}
-			}
-		};
-
-		checkFeature();
-
-		// Limpieza al desmontar
-		return () => {
-			isMounted = false;
-		};
-	}, [openLink, onCancelLink]);
+	// Ya no es necesario verificar la característica aquí,
+	// ahora lo hacemos desde el componente padre mediante useSubscription
 
 	return (
 		<Dialog

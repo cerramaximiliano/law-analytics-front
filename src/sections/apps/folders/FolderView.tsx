@@ -4,6 +4,8 @@ import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper
 // project-imports
 import Transitions from "components/@extended/Transitions";
 import LinkToJudicialPower from "./LinkToJudicialPower";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import useSubscription from "hooks/useSubscription";
 
 // assets
 import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare } from "iconsax-react";
@@ -15,6 +17,11 @@ import moment from "moment";
 const FolderView = memo(({ data }: any) => {
 	const notAvailableMsg = "No disponible";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+
+	// Usar el hook de suscripción para verificar características
+	const { canVinculateFolders } = useSubscription();
 
 	// Función para obtener el color del estado
 	const getStatusColor = (status: string) => {
@@ -48,11 +55,25 @@ const FolderView = memo(({ data }: any) => {
 	);
 
 	const handleOpenLinkJudicial = () => {
-		setOpenLinkJudicial(true);
+		// Verificar si el usuario tiene acceso a la característica de vincular carpetas
+		const { canAccess, featureInfo } = canVinculateFolders();
+		
+		if (canAccess) {
+			// Si tiene acceso, mostrar el modal de vinculación
+			setOpenLinkJudicial(true);
+		} else {
+			// Si no tiene acceso, mostrar el modal de error de límite
+			setLimitErrorInfo(featureInfo);
+			setLimitErrorOpen(true);
+		}
 	};
 
 	const handleCancelLinkJudicial = () => {
 		setOpenLinkJudicial(false);
+	};
+	
+	const handleCloseLimitErrorModal = () => {
+		setLimitErrorOpen(false);
 	};
 
 	return (
@@ -183,6 +204,15 @@ const FolderView = memo(({ data }: any) => {
 					onCancelLink={handleCancelLinkJudicial}
 					folderId={data._id}
 					folderName={data.folderName}
+				/>
+				
+				{/* Modal de error cuando no se tiene acceso a la característica */}
+				<LimitErrorModal
+					open={limitErrorOpen}
+					onClose={handleCloseLimitErrorModal}
+					message="Esta característica no está disponible en tu plan actual."
+					featureInfo={limitErrorInfo}
+					upgradeRequired={true}
 				/>
 			</TableCell>
 		</TableRow>

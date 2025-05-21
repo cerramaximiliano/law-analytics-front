@@ -221,3 +221,50 @@ export const canCreateMoreFolders = (currentFolderCount: number): {
 		limitInfo: null 
 	};
 };
+
+/**
+ * Checks if the user has access to the vinculateFolders feature
+ * @returns Object with check result and feature info
+ */
+export const canVinculateFolders = (): {
+	canAccess: boolean;
+	featureInfo: {
+		feature: string;
+		plan: string;
+		availableIn: string[];
+	} | null;
+} => {
+	const subscription = getCurrentSubscription();
+	
+	// If no subscription, we assume they don't have access
+	if (!subscription) {
+		return { 
+			canAccess: false, 
+			featureInfo: {
+				feature: "Vincular con Poder Judicial",
+				plan: "free",
+				availableIn: ["standard", "premium"]
+			}
+		};
+	}
+	
+	// Check if the vinculateFolders feature is enabled
+	const hasAccess = subscription.features.vinculateFolders;
+	
+	if (!hasAccess) {
+		return {
+			canAccess: false,
+			featureInfo: {
+				feature: "Vincular con Poder Judicial",
+				plan: subscription.plan,
+				// This feature is available in standard and premium plans
+				availableIn: ["standard", "premium"]
+			}
+		};
+	}
+	
+	return { 
+		canAccess: true, 
+		featureInfo: null 
+	};
+};

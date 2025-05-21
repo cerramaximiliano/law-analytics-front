@@ -23,6 +23,7 @@ const useSubscription = () => {
 		getDaysLeftInPeriod: subscriptionUtils.getDaysLeftInPeriod,
 		getDaysLeftInTrial: subscriptionUtils.getDaysLeftInTrial,
 		canUpgrade: subscriptionUtils.canUpgrade,
+		canVinculateFolders: subscriptionUtils.canVinculateFolders,
 
 		/**
 		 * Checks if a feature is available in the user's current subscription
