@@ -11,6 +11,7 @@ import Loader from "components/Loader";
 import { UnauthorizedModal } from "../sections/auth/UnauthorizedModal";
 import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
+import { Subscription } from "../types/user";
 import { fetchUserStats } from "store/reducers/userStats";
 
 // Global setting for hiding international banking data
@@ -113,7 +114,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				console.log("Enviando token a la API:", credential);
 				const result = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, { token: credential });
 
-				const { user, success } = result.data;
+				const { user, success, subscription } = result.data;
 
 				if (success) {
 					setIsGoogleLoggedIn(true);
@@ -124,6 +125,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						payload: {
 							isLoggedIn: true,
 							user,
+							subscription,
 						},
 					});
 
@@ -132,6 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						payload: {
 							isLoggedIn: true,
 							user,
+							subscription,
 						},
 					});
 
@@ -156,8 +159,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		const init = async (): Promise<void> => {
 			try {
 				// Verificar la sesión actual con el token en cookies
-				const response = await axios.get<{ user: UserProfile }>(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
-				const { user } = response.data;
+				const response = await axios.get<{ user: UserProfile, subscription?: Subscription }>(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
+				const { user, subscription } = response.data;
 
 				localDispatch({
 					type: LOGIN,
@@ -165,6 +168,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						isLoggedIn: true,
 						user,
 						isInitialized: true,
+						subscription,
 					},
 				});
 
@@ -174,6 +178,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						isLoggedIn: true,
 						user,
 						isInitialized: true,
+						subscription,
 					},
 				});
 
@@ -393,13 +398,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		try {
 			const response = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
 
-			const { user } = response.data;
+			const { user, subscription } = response.data;
 
 			localDispatch({
 				type: LOGIN,
 				payload: {
 					isLoggedIn: true,
 					user,
+					subscription,
 				},
 			});
 
@@ -408,6 +414,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				payload: {
 					isLoggedIn: true,
 					user,
+					subscription,
 				},
 			});
 
@@ -496,9 +503,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			if (response.data.success) {
 				// Extraer el objeto usuario si está disponible en la respuesta
 				const userData = response.data.user;
+				const subscription = response.data.subscription;
 
 				if (userData) {
 					console.log("Datos de usuario obtenidos después de la verificación:", userData);
+					console.log("Datos de suscripción obtenidos después de la verificación:", subscription);
 
 					// Actualizar el estado con los datos del usuario
 					localDispatch({
@@ -507,6 +516,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 							isLoggedIn: true,
 							user: userData,
 							needsVerification: false,
+							subscription,
 						},
 					});
 
@@ -517,6 +527,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 							isLoggedIn: true,
 							user: userData,
 							needsVerification: false,
+							subscription,
 						},
 					});
 

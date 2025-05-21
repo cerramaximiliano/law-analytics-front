@@ -51,6 +51,7 @@ import CustomerView from "sections/apps/customer/CustomerView";
 import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
 import LinkToCause from "sections/apps/customer/LinkToCause";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
@@ -62,6 +63,7 @@ import { dispatch, useSelector } from "store";
 import { getContactsByUserId, archiveContacts, getArchivedContactsByUserId, unarchiveContacts } from "store/reducers/contacts";
 import { Contact } from "types/contact";
 import { GuideContacts } from "components/guides";
+// import useSubscription from "hooks/useSubscription";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -466,6 +468,11 @@ const CustomerListPage = () => {
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 	const [guideOpen, setGuideOpen] = useState(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	
+	// Estado para el modal de límite de recursos
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+	const [limitErrorMessage, setLimitErrorMessage] = useState("");
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -473,7 +480,9 @@ const CustomerListPage = () => {
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
+	const { subscription } = useSelector((state) => state.auth);
 	const { contacts, archivedContacts, isLoader } = useSelector((state) => state.contacts);
+	// const { getLimitLocal } = useSubscription();
 
 	// Efecto para la carga inicial
 	useEffect(() => {
@@ -559,10 +568,31 @@ const CustomerListPage = () => {
 	}, []);
 
 	const handleAddContact = useCallback(() => {
+		// Verificamos el límite de contactos usando los datos en el estado global de auth
+		if (subscription && subscription.limits && contacts) {
+			const maxContacts = subscription.limits.maxContacts;
+			const currentContactCount = contacts.length;
+			
+			// Si el número de contactos es igual o superior al límite, mostrar modal de error
+			if (currentContactCount >= maxContacts) {
+				// Configuramos la información para el modal de error
+				setLimitErrorInfo({
+					resourceType: "Contactos",
+					plan: subscription.plan,
+					currentCount: `${currentContactCount}`,
+					limit: maxContacts,
+				});
+				setLimitErrorMessage("Has alcanzado el límite de contactos disponibles en tu plan actual.");
+				setLimitErrorOpen(true);
+				return;
+			}
+		}
+		
+		// Si no se ha alcanzado el límite, mostramos el modal normal
 		setAdd(true);
 		setAddCustomerMode("add");
 		setCustomer(null);
-	}, []);
+	}, [subscription, contacts]);
 
 	const handleEditContact = useCallback((contactData: any) => {
 		setAdd(true);
@@ -672,6 +702,11 @@ const CustomerListPage = () => {
 
 	const handleOpenGuide = useCallback(() => {
 		setGuideOpen(true);
+	}, []);
+	
+	// Manejador para cerrar el modal de límite de error
+	const handleCloseLimitErrorModal = useCallback(() => {
+		setLimitErrorOpen(false);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -985,6 +1020,15 @@ const CustomerListPage = () => {
 					{snackbarMessage}
 				</Alert>
 			</Snackbar>
+			
+			{/* Modal de límite de recursos */}
+			<LimitErrorModal
+				open={limitErrorOpen}
+				onClose={handleCloseLimitErrorModal}
+				message={limitErrorMessage}
+				limitInfo={limitErrorInfo}
+				upgradeRequired={true}
+			/>
 		</MainCard>
 	);
 };

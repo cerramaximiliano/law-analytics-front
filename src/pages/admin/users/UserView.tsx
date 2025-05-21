@@ -215,16 +215,18 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 					</>
 				)}
 
-				{subscription.features && subscription.features.length > 0 && (
+				{subscription.features && Object.entries(subscription.features).filter(([_, value]) => value).length > 0 && (
 					<>
 						<Divider />
 						<Typography variant="subtitle1">Características incluidas</Typography>
 						<List dense disablePadding>
-							{subscription.features.map((feature, index) => (
-								<ListItem key={index} sx={{ py: 0.5 }}>
-									<ListItemText primary={feature} />
-								</ListItem>
-							))}
+							{Object.entries(subscription.features)
+								.filter(([_, enabled]) => enabled)
+								.map(([featureName, _], index) => (
+									<ListItem key={index} sx={{ py: 0.5 }}>
+										<ListItemText primary={featureName} />
+									</ListItem>
+								))}
 						</List>
 					</>
 				)}

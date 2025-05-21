@@ -8,6 +8,7 @@ import { RootState } from "store";
 import { Dispatch } from "redux";
 import { openSnackbar } from "store/reducers/snackbar";
 import { UserProfile } from "types/auth";
+import { Subscription } from "types/user";
 
 // initial state
 export const initialState: AuthProps = {
@@ -16,6 +17,7 @@ export const initialState: AuthProps = {
 	user: null, // Cambiar a null en lugar de objeto vacío
 	email: "",
 	needsVerification: false,
+	subscription: null,
 };
 
 // ==============================|| AUTH REDUCER ||============================== //
@@ -23,17 +25,18 @@ export const initialState: AuthProps = {
 const auth = (state = initialState, action: AuthActionProps) => {
 	switch (action.type) {
 		case REGISTER: {
-			const { user, email, needsVerification } = action.payload!;
+			const { user, email, needsVerification, subscription } = action.payload!;
 			return {
 				...state,
 				user,
 				isInitialized: true,
 				email,
 				needsVerification: needsVerification || false,
+				subscription: subscription || null,
 			};
 		}
 		case LOGIN: {
-			const { user, email, needsVerification } = action.payload!;
+			const { user, email, needsVerification, subscription } = action.payload!;
 			return {
 				...state,
 				isLoggedIn: true,
@@ -41,6 +44,7 @@ const auth = (state = initialState, action: AuthActionProps) => {
 				user,
 				email, // Guarda el correo en el estado
 				needsVerification: needsVerification || false,
+				subscription: subscription || null,
 			};
 		}
 		case UPDATE_PICTURE: {
@@ -100,6 +104,7 @@ interface LoginPayload {
 	user?: any;
 	email?: string;
 	needsVerification?: boolean;
+	subscription?: Subscription;
 }
 
 interface PasswordChangeData {

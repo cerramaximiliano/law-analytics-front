@@ -2,27 +2,48 @@
 
 // Interfaz para la suscripción del usuario
 export interface Subscription {
-	id: string;
-	name: string;
-	planId: string;
-	status: string;
-	startDate: string;
-	endDate?: string;
-	features?: string[];
-	limits?: {
-		[key: string]: number;
-	};
+	_id: string;
+	user: string;
+	name: string; // Plan name for display
+	stripeCustomerId: string;
+	stripeSubscriptionId?: string;
+	stripePriceId?: string;
+	plan: "free" | "standard" | "premium";
+	status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
+	currentPeriodStart: Date;
+	currentPeriodEnd: Date;
+	startDate: Date; // Start date
+	endDate?: Date; // End date
+	cancelAtPeriodEnd: boolean;
+	trialStart?: Date;
+	trialEnd?: Date;
+	canceledAt?: Date;
+	paymentMethod?: string;
 	paymentInfo?: {
 		method: string;
-		lastPayment?: string;
-		nextPayment?: string;
+		lastPayment?: Date;
+		nextPayment?: Date;
 	};
-	createdAt: string;
-	updatedAt: string;
+	limits: {
+		maxFolders: number;
+		maxCalculators: number;
+		maxContacts: number;
+		storageLimit: number;
+	};
+	features: {
+		advancedAnalytics: boolean;
+		exportReports: boolean;
+		taskAutomation: boolean;
+		bulkOperations: boolean;
+		prioritySupport: boolean;
+		vinculateFolders: boolean;
+		booking: boolean;
+	};
 }
 
 export interface User {
 	id: string;
+	_id: string; // Add _id property that matches id
 	email: string;
 	name: string;
 	role: string;

@@ -62,6 +62,7 @@ import moment from "moment";
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
 import { GuideFolders } from "components/guides";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 // ==============================|| REACT TABLE ||============================== //
 
 interface ReactTableProps extends Props {
@@ -433,6 +434,7 @@ const FoldersLayout = () => {
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
 	const { folders, archivedFolders, isLoader } = useSelector((state) => state.folder);
+	const subscription = useSelector((state) => state.auth.subscription);
 
 	// Efecto para la carga inicial
 	useEffect(() => {
@@ -501,17 +503,51 @@ const FoldersLayout = () => {
 		};
 	}, [user?._id]);
 
+	// Estados para el modal de límite de recursos
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+	const [limitErrorMessage, setLimitErrorMessage] = useState("");
+
 	// Handlers
 	const handleCloseDialog = useCallback(() => {
 		setAdd(false);
 	}, []);
 
-	const handleAddFolder = useCallback(() => {
-		setAdd(true);
-		setAddFolderMode("add");
-		setFolder(null);
-		// Al iniciar el proceso, resetear cualquier verificación previa
+	const handleCloseLimitErrorModal = useCallback(() => {
+		setLimitErrorOpen(false);
 	}, []);
+
+	const handleAddFolder = useCallback(() => {
+		// Si no hay suscripción, permitir crear la carpeta (esto no debería ocurrir normalmente)
+		if (!subscription) {
+			setAdd(true);
+			setAddFolderMode("add");
+			setFolder(null);
+			return;
+		}
+		
+		// Obtener el límite de carpetas y verificar si se ha alcanzado
+		const maxFolders = subscription.limits.maxFolders;
+		const currentFolderCount = folders.length;
+		
+		// Verificar si se ha alcanzado el límite
+		if (currentFolderCount >= maxFolders) {
+			// Si se ha alcanzado el límite, mostrar el modal de error
+			setLimitErrorInfo({
+				resourceType: "Carpetas/Causas",
+				plan: subscription.plan,
+				currentCount: `${currentFolderCount}`,
+				limit: maxFolders
+			});
+			setLimitErrorMessage("Has alcanzado el límite de causas disponibles en tu plan actual.");
+			setLimitErrorOpen(true);
+		} else {
+			// Si no se ha alcanzado el límite, mostrar el modal para agregar carpeta
+			setAdd(true);
+			setAddFolderMode("add");
+			setFolder(null);
+		}
+	}, [folders, subscription]);
 
 	const handleEditContact = useCallback((folderData: any) => {
 		setAdd(true);
@@ -913,6 +949,15 @@ const FoldersLayout = () => {
 
 			{/* Guía de causas */}
 			<GuideFolders open={guideOpen} onClose={() => setGuideOpen(false)} />
+
+			{/* Modal de límite de recursos */}
+			<LimitErrorModal
+				open={limitErrorOpen}
+				onClose={handleCloseLimitErrorModal}
+				message={limitErrorMessage}
+				limitInfo={limitErrorInfo}
+				upgradeRequired={true}
+			/>
 
 			<Snackbar
 				open={snackbarOpen}

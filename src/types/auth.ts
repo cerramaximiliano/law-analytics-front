@@ -1,5 +1,6 @@
 import { ReactElement } from "react";
 import { CredentialResponse } from "@react-oauth/google";
+import { Subscription } from "./user";
 
 // ==============================|| TYPES - AUTH  ||============================== //
 
@@ -63,6 +64,7 @@ export interface AuthProps {
 	token?: string | null;
 	needsVerification?: boolean;
 	plan?: string;
+	subscription?: Subscription | null;
 }
 
 export interface AuthActionProps {
@@ -74,6 +76,7 @@ export interface AuthActionProps {
 		isLoggedIn?: boolean;
 		isInitialized?: boolean;
 		picture?: string;
+		subscription?: Subscription;
 	};
 }
 
@@ -95,6 +98,7 @@ export interface LoginResponse {
 	accessToken?: string;
 	refreshToken?: string;
 	needsVerification?: boolean;
+	subscription?: Subscription;
 }
 
 export interface RegisterResponse {
@@ -107,6 +111,7 @@ export interface VerifyCodeResponse {
 	success: boolean;
 	message: string;
 	user?: UserProfile; // Información del usuario después de la verificación
+	subscription?: Subscription; // Información de la suscripción
 }
 
 // Interfaz actualizada para el contexto del servidor
