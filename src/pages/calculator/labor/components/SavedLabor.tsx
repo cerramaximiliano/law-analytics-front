@@ -115,6 +115,11 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	const { formField } = despidoFormModel;
 
 	const getLabelForKey = (key: string): string => {
+		// Manejo especial para carátula
+		if (key === "caratula") {
+			return "Carátula";
+		}
+
 		const field = formField[key as keyof typeof formField];
 		return field?.label || key;
 	};
@@ -318,12 +323,32 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 
 		if (!variables) return groups;
 
+		// Detectar si hay una carpeta vinculada
+		const isLinkedToFolder =
+			variables.reclamante && typeof variables.reclamante === "string" && variables.reclamante.startsWith("__CAUSA_VINCULADA__");
+
+		// Si hay carpeta vinculada, extraer el nombre de la carpeta
+		if (isLinkedToFolder) {
+			const folderName =
+				variables.folderName ||
+				(typeof variables.reclamante === "string" ? variables.reclamante.replace("__CAUSA_VINCULADA__", "").trim() : "");
+
+			if (folderName) {
+				groups.reclamo.push({ key: "caratula", value: folderName });
+			}
+		}
+
 		Object.entries(variables).forEach(([key, value]) => {
 			if (value == null || value === "" || value === false) return;
 			if (typeof value === "object" || typeof value === "boolean") return;
 			if (typeof value === "number" && value === 0) return;
 
 			const item: ResultItem = { key, value };
+
+			// Excluir reclamante y reclamado si hay carpeta vinculada
+			if (isLinkedToFolder && (key === "reclamante" || key === "reclamado")) {
+				return;
+			}
 
 			if (["reclamante", "reclamado", "fechaIngreso", "fechaEgreso", "remuneracion"].includes(key)) {
 				groups.reclamo.push(item);

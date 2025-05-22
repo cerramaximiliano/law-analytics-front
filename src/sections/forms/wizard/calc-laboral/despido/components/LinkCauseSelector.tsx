@@ -264,7 +264,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 								Ingreso manual de datos
 							</Typography>
 							<Typography variant="body2" color="textSecondary" align="center">
-								Los campos Requirente y Requerido deben completarse manualmente
+								Los campos Reclamante y Reclamado deben completarse manualmente
 							</Typography>
 						</Stack>
 					</Box>

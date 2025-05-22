@@ -33,13 +33,21 @@ const root = createRoot(container!);
 
 root.render(
 	<ReduxProvider store={store}>
-		<PersistGate loading={null} persistor={persister}>
+		{persister ? (
+			<PersistGate loading={null} persistor={persister}>
+				<ConfigProvider>
+					<BrowserRouter basename={process.env.REACT_APP_BASE_NAME}>
+						<App />
+					</BrowserRouter>
+				</ConfigProvider>
+			</PersistGate>
+		) : (
 			<ConfigProvider>
 				<BrowserRouter basename={process.env.REACT_APP_BASE_NAME}>
 					<App />
 				</BrowserRouter>
 			</ConfigProvider>
-		</PersistGate>
+		)}
 	</ReduxProvider>,
 );
 

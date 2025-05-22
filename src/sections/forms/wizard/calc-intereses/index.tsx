@@ -118,6 +118,8 @@ const CompensacionWizard = () => {
 				tasasResult,
 				interesTotal,
 				capitalActualizado: parseFloat(values.capital || 0) + interesTotal,
+				folderId: values.folderId,
+				folderName: values.folderName,
 			};
 
 			console.log(tasasData);
@@ -165,7 +167,13 @@ const CompensacionWizard = () => {
 			</Stepper>
 			<>
 				{activeStep === steps.length ? (
-					<ResultsView values={calculationResult} formField={formField} onReset={handleReset} />
+					<ResultsView
+						values={calculationResult}
+						formField={formField}
+						onReset={handleReset}
+						folderId={calculationResult?.folderId}
+						folderName={calculationResult?.folderName}
+					/>
 				) : (
 					<Formik
 						initialValues={initialValues}

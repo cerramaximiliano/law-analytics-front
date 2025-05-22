@@ -1,12 +1,7 @@
 // third-party
 import { FormattedMessage } from "react-intl";
 // assets
-import {
-	DollarSquare,
-	UserSquare,
-	InfoCircle,
-	BoxTick,
-} from "iconsax-react";
+import { DollarSquare, UserSquare, InfoCircle, BoxTick } from "iconsax-react";
 // type
 import { NavItemType } from "types/menu";
 

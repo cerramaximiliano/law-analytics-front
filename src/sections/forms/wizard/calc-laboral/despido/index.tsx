@@ -8,6 +8,7 @@ import MainCard from "components/MainCard";
 import AnimateButton from "components/@extended/AnimateButton";
 import FirstForm from "./first";
 import SecondForm from "./second";
+import ThirdForm from "./third";
 import Review from "./final";
 import despidoFormModel from "./formModel/despidoFormModel";
 import initialValues from "./formModel/formInitialValues";
@@ -21,7 +22,7 @@ import ResultsView from "./resultsView";
 import { WizardProps } from "types/wizards";
 
 // step options
-const steps = ["Datos requeridos", "Cálculos opcionales", "Resultados"];
+const steps = ["Datos requeridos", "Cálculos opcionales", "Intereses", "Resultados"];
 const { formId, formField } = despidoFormModel;
 
 function getStepContent(step: number, values: any) {
@@ -31,6 +32,8 @@ function getStepContent(step: number, values: any) {
 		case 1:
 			return <SecondForm formField={formField} />;
 		case 2:
+			return <ThirdForm formField={formField} />;
+		case 3:
 			return <Review formField={formField} values={values} />;
 		default:
 			throw new Error("Unknown step");
@@ -67,6 +70,34 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	function _sleep(ms: number) {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
+
+	// Función para calcular intereses
+	const calcularIntereses = (montoBase: number, fechaInicial: string, fechaFinal: string, tasaId: string): number => {
+		if (!montoBase || !fechaInicial || !fechaFinal || !tasaId) return 0;
+
+		const fechaInicialMoment = moment(fechaInicial, "DD/MM/YYYY");
+		const fechaFinalMoment = moment(fechaFinal, "DD/MM/YYYY");
+
+		// Calcular días entre fechas
+		const diasTotales = fechaFinalMoment.diff(fechaInicialMoment, "days");
+		if (diasTotales <= 0) return 0;
+
+		// Tasas mensuales aproximadas (en el backend se usará la real)
+		const tasas: { [key: string]: number } = {
+			tasaPasivaBCRA: 0.06 / 30, // ~6% mensual
+			acta2601: 0.08 / 30, // ~8% mensual
+			acta2630: 0.1 / 30, // ~10% mensual
+		};
+
+		// Tasa diaria (aproximada para preview)
+		const tasaDiaria = tasas[tasaId] || 0.06 / 30;
+
+		// Cálculo de interés simple
+		const interesTotal = montoBase * tasaDiaria * diasTotales;
+
+		return Math.round(interesTotal * 100) / 100;
+	};
+
 	const calcularPreaviso = (fechaIngreso: Date | null, fechaEgreso: Date | null, remuneracion: number) => {
 		if (!fechaIngreso || !fechaEgreso) return 0;
 
@@ -173,11 +204,15 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	}
 
 	function calcularTopeVizzoti(mejorRemuneracionBruta: number, topeLegalVigente: number): number {
-		// Calcular el tope Vizzoti (67% de la mejor remuneración bruta)
-		const topeVizzoti = mejorRemuneracionBruta * 0.67;
+		// Calcular el 67% de la remuneración (criterio Vizzoti)
+		const sesentiSietePorciento = mejorRemuneracionBruta * 0.67;
 
-		// Determinar el menor valor entre el tope legal vigente y el tope Vizzoti
-		return Math.min(topeVizzoti, topeLegalVigente);
+		// Criterio Vizzoti: tomar el mayor valor entre el 67% de la remuneración y el tope legal
+		// Pero nunca superar la remuneración original
+		const valorCalculado = Math.max(sesentiSietePorciento, topeLegalVigente);
+
+		// No puede superar la remuneración original
+		return Math.min(valorCalculado, mejorRemuneracionBruta);
 	}
 	function calcularMultaArt1Ley25323(indemnizacionTotal: number): number {
 		return indemnizacionTotal * 0.5;
@@ -274,33 +309,67 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	async function _submitForm(values: any, actions: any) {
 		console.log(values);
 		await _sleep(1000);
-		const calcularPeriodos = (fechaIngreso: Date | null, fechaEgreso: Date | null) => {
+		const calcularPeriodos = (fechaIngreso: Date | null, fechaEgreso: Date | null, aplicarLey27742: boolean = false) => {
 			if (!fechaIngreso || !fechaEgreso) return 0;
 
 			const inicio = moment(fechaIngreso);
 			const fin = moment(fechaEgreso);
 
+			// Calcular años y meses sin modificar los objetos originales
 			const años = fin.diff(inicio, "years");
-			const mesesRestantes = fin.subtract(años, "years").diff(inicio, "months");
+			const finCopia = fin.clone(); // Crear copia para evitar modificar el original
+			const mesesRestantes = finCopia.subtract(años, "years").diff(inicio, "months");
 
-			const añosFinales = mesesRestantes > 3 ? años + 1 : años;
-
-			return añosFinales;
+			if (aplicarLey27742) {
+				// Ley 27.742: Solo años completos (sin sumar fracción mayor a 3 meses)
+				// Requiere mínimo 6 meses de antigüedad (período de prueba)
+				const totalMeses = fin.diff(inicio, "months");
+				if (totalMeses < 6) {
+					return 0; // Menos de 6 meses = sin indemnización
+				}
+				return años >= 1 ? años : 1; // A partir de 6 meses ya cuenta como 1 año mínimo
+			} else {
+				// Criterio tradicional: fracción mayor a 3 meses cuenta como año adicional
+				return mesesRestantes > 3 ? años + 1 : años;
+			}
 		};
 
-		const periodos = calcularPeriodos(values.fechaIngreso, values.fechaEgreso);
+		const periodos = calcularPeriodos(values.fechaIngreso, values.fechaEgreso, values.aplicarLey27742);
+		if (isNaN(periodos) || periodos < 0) {
+			console.error("Períodos inválidos:", periodos);
+			actions.setSubmitting(false);
+			return;
+		}
+
+		// Con Ley 27.742, si hay 0 períodos es válido (menos de 6 meses de antigüedad)
 
 		const remuneracionBase = parseFloat(values.remuneracion);
+		if (isNaN(remuneracionBase) || remuneracionBase <= 0) {
+			console.error("Remuneración base inválida:", values.remuneracion);
+			actions.setSubmitting(false);
+			return;
+		}
 		let remuneracionCalculada;
 
-		if (values.isTopes) {
-			const remuneracionTope = calcularTopeVizzoti(remuneracionBase, values.topeLegalVigente);
-			remuneracionCalculada = values.incluirSAC ? remuneracionTope + remuneracionTope / 12 : remuneracionTope;
+		if (values.isTopes && values.remuneracionTopes) {
+			const topeLegalVigente = parseFloat(values.remuneracionTopes);
+			if (!isNaN(topeLegalVigente) && topeLegalVigente > 0) {
+				const remuneracionTope = calcularTopeVizzoti(remuneracionBase, topeLegalVigente);
+				remuneracionCalculada = values.incluirSAC ? remuneracionTope + remuneracionTope / 12 : remuneracionTope;
+			} else {
+				// Si el tope no es válido, usar la remuneración base
+				remuneracionCalculada = values.incluirSAC ? remuneracionBase + remuneracionBase / 12 : remuneracionBase;
+			}
 		} else {
 			remuneracionCalculada = values.incluirSAC ? remuneracionBase + remuneracionBase / 12 : remuneracionBase;
 		}
 
 		const indemnizacion = periodos * remuneracionCalculada;
+		if (isNaN(indemnizacion)) {
+			console.error("Indemnización inválida. Períodos:", periodos, "Remuneración calculada:", remuneracionCalculada);
+			actions.setSubmitting(false);
+			return;
+		}
 
 		const resultado = {
 			folderId: values.folderId,
@@ -308,6 +377,15 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 			Periodos: periodos,
 			Indemnizacion: indemnizacion,
 		};
+
+		// Si se aplicó tope, agregar la remuneración tope calculada
+		if (values.isTopes && values.remuneracionTopes) {
+			const topeLegalVigente = parseFloat(values.remuneracionTopes);
+			if (!isNaN(topeLegalVigente) && topeLegalVigente > 0) {
+				const remuneracionTope = calcularTopeVizzoti(remuneracionBase, topeLegalVigente);
+				resultado.remuneracionTope = remuneracionTope;
+			}
+		}
 		console.log("Resultado antes de cálculos adicionales:", resultado); // Debug intermedio
 
 		if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
@@ -331,7 +409,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 				resultado["Días Trabajados"] = diaDelMes * (remuneracionBase / diasEnMes);
 			}
 			if (values.liquidacion.includes("vacaciones")) {
-				const antiguedad = calcularPeriodos(values.fechaIngreso, values.fechaEgreso);
+				// Para vacaciones usamos siempre el cálculo tradicional de antigüedad (no afectado por Ley 27.742)
+				const antiguedad = calcularPeriodos(values.fechaIngreso, values.fechaEgreso, false);
 				const vacaciones = calcularVacacionesProporcionales(remuneracionBase, values.fechaIngreso, values.fechaEgreso, antiguedad);
 				resultado["Días Vacaciones"] = vacaciones.diasVacacionesProporcionales;
 				resultado["Monto Vacaciones"] = vacaciones.montoVacaciones;
@@ -364,6 +443,25 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 				remuneracionBase,
 				values.salarioFalso,
 			);
+		}
+
+		// Agregar cálculo de intereses si corresponde
+		if (values.aplicarIntereses && values.fechaInicialIntereses && values.fechaFinalIntereses && values.tasaIntereses) {
+			// Calcular intereses sobre el monto total
+			const montoIntereses = calcularIntereses(
+				indemnizacion,
+				values.fechaInicialIntereses,
+				values.fechaFinalIntereses,
+				values.tasaIntereses,
+			);
+
+			resultado.datosIntereses = {
+				fechaInicialIntereses: values.fechaInicialIntereses,
+				fechaFinalIntereses: values.fechaFinalIntereses,
+				tasaIntereses: values.tasaIntereses,
+				montoIntereses: montoIntereses,
+				montoTotalConIntereses: indemnizacion + montoIntereses,
+			};
 		}
 
 		//alert(JSON.stringify(resultado, null, 2));
@@ -399,6 +497,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 							setActiveStep(0);
 							setFormResults(null);
 						}}
+						folderId={formResults?.folderId}
+						folderName={formResults?.folderName}
 					/>
 				) : (
 					<Formik initialValues={formInitialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>

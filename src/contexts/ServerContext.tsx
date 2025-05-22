@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios, { AxiosError } from "axios";
 import { googleLogout } from "@react-oauth/google";
 import { CredentialResponse } from "@react-oauth/google";
-import { dispatch as reduxDispatch } from "store";
+import { useDispatch } from "react-redux";
 import { LOGIN, LOGOUT, REGISTER, SET_NEEDS_VERIFICATION } from "store/reducers/actions";
 import { openSnackbar } from "store/reducers/snackbar";
 import authReducer from "store/reducers/auth";
@@ -13,6 +13,7 @@ import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
 import { Subscription } from "../types/user";
 import { fetchUserStats } from "store/reducers/userStats";
+import { AppDispatch } from "store";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = process.env.REACT_APP_HIDE_BANKING_DATA === "true";
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [isLogoutProcess, setIsLogoutProcess] = useState(false);
+	const reduxDispatch = useDispatch<AppDispatch>();
 
 	// Configuración global de axios
 	useEffect(() => {

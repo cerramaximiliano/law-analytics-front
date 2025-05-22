@@ -22,7 +22,8 @@ export type RootState = ReturnType<typeof reducers>;
 
 export type AppDispatch = typeof store.dispatch;
 
-const persister = persistStore(store);
+// Add defensive check for persist store initialization
+const persister = store ? persistStore(store) : null;
 
 const { dispatch } = store;
 

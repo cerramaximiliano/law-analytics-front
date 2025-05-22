@@ -99,14 +99,14 @@ export const getSubscriptionPlan = (): string | null => {
  */
 export const isInTrialPeriod = (): boolean => {
 	const subscription = getCurrentSubscription();
-	
+
 	if (!subscription || !subscription.trialEnd) {
 		return false;
 	}
-	
+
 	const now = new Date();
 	const trialEnd = new Date(subscription.trialEnd);
-	
+
 	return now < trialEnd;
 };
 
@@ -116,16 +116,16 @@ export const isInTrialPeriod = (): boolean => {
  */
 export const getDaysLeftInPeriod = (): number | null => {
 	const subscription = getCurrentSubscription();
-	
+
 	if (!subscription || !subscription.currentPeriodEnd) {
 		return null;
 	}
-	
+
 	const now = new Date();
 	const endDate = new Date(subscription.currentPeriodEnd);
 	const diffTime = endDate.getTime() - now.getTime();
 	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-	
+
 	return Math.max(0, diffDays);
 };
 
@@ -135,21 +135,21 @@ export const getDaysLeftInPeriod = (): number | null => {
  */
 export const getDaysLeftInTrial = (): number | null => {
 	const subscription = getCurrentSubscription();
-	
+
 	if (!subscription || !subscription.trialEnd) {
 		return null;
 	}
-	
+
 	const now = new Date();
 	const trialEnd = new Date(subscription.trialEnd);
-	
+
 	if (now > trialEnd) {
 		return 0;
 	}
-	
+
 	const diffTime = trialEnd.getTime() - now.getTime();
 	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-	
+
 	return diffDays;
 };
 
@@ -159,17 +159,17 @@ export const getDaysLeftInTrial = (): number | null => {
  */
 export const canUpgrade = (): boolean => {
 	const subscription = getCurrentSubscription();
-	
+
 	// If no subscription, they can upgrade
 	if (!subscription) {
 		return true;
 	}
-	
+
 	// Can't upgrade if not active
 	if (subscription.status !== "active") {
 		return false;
 	}
-	
+
 	// Can't upgrade from premium
 	return subscription.plan !== "premium";
 };
@@ -179,7 +179,9 @@ export const canUpgrade = (): boolean => {
  * @param currentFolderCount Current number of folders the user has
  * @returns Object with check result and limit info
  */
-export const canCreateMoreFolders = (currentFolderCount: number): {
+export const canCreateMoreFolders = (
+	currentFolderCount: number,
+): {
 	canCreate: boolean;
 	limitInfo: {
 		resourceType: string;
@@ -189,21 +191,21 @@ export const canCreateMoreFolders = (currentFolderCount: number): {
 	} | null;
 } => {
 	const subscription = getCurrentSubscription();
-	
+
 	// If no subscription, we assume they can create folders (should not happen)
 	if (!subscription) {
-		return { 
-			canCreate: true, 
-			limitInfo: null 
+		return {
+			canCreate: true,
+			limitInfo: null,
 		};
 	}
-	
+
 	// Get the max folders limit
 	const maxFolders = subscription.limits.maxFolders;
-	
+
 	// Check if the user has reached the limit
-	const hasReached = hasReachedLimit('maxFolders', currentFolderCount);
-	
+	const hasReached = hasReachedLimit("maxFolders", currentFolderCount);
+
 	if (hasReached) {
 		return {
 			canCreate: false,
@@ -211,14 +213,14 @@ export const canCreateMoreFolders = (currentFolderCount: number): {
 				resourceType: "Carpetas/Causas",
 				plan: subscription.plan,
 				currentCount: `${currentFolderCount}`,
-				limit: maxFolders
-			}
+				limit: maxFolders,
+			},
 		};
 	}
-	
-	return { 
-		canCreate: true, 
-		limitInfo: null 
+
+	return {
+		canCreate: true,
+		limitInfo: null,
 	};
 };
 
@@ -235,22 +237,22 @@ export const canVinculateFolders = (): {
 	} | null;
 } => {
 	const subscription = getCurrentSubscription();
-	
+
 	// If no subscription, we assume they don't have access
 	if (!subscription) {
-		return { 
-			canAccess: false, 
+		return {
+			canAccess: false,
 			featureInfo: {
 				feature: "Vincular con Poder Judicial",
 				plan: "free",
-				availableIn: ["standard", "premium"]
-			}
+				availableIn: ["standard", "premium"],
+			},
 		};
 	}
-	
+
 	// Check if the vinculateFolders feature is enabled
 	const hasAccess = subscription.features.vinculateFolders;
-	
+
 	if (!hasAccess) {
 		return {
 			canAccess: false,
@@ -258,13 +260,13 @@ export const canVinculateFolders = (): {
 				feature: "Vincular con Poder Judicial",
 				plan: subscription.plan,
 				// This feature is available in standard and premium plans
-				availableIn: ["standard", "premium"]
-			}
+				availableIn: ["standard", "premium"],
+			},
 		};
 	}
-	
-	return { 
-		canAccess: true, 
-		featureInfo: null 
+
+	return {
+		canAccess: true,
+		featureInfo: null,
 	};
 };

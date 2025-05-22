@@ -1,61 +1,73 @@
 import { Checkbox, Grid, InputLabel, Typography } from "@mui/material";
-import LaborCheckbox from "../components/labor-chebox";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
+import LinkCauseSelector from "../components/LinkCauseSelector";
 import { UserSquare, Calendar2 } from "iconsax-react";
+import { useField } from "formik";
 
 export default function FirstForm(props: any) {
 	const {
-		formField: { reclamado, reclamante, remuneracion, otrasSumas, fechaIngreso, fechaEgreso, dias, liquidacion },
+		formField: { reclamado, reclamante, remuneracion, otrasSumas, fechaIngreso, fechaEgreso, dias, incluirSAC, folderId, folderName },
 	} = props;
 
-	const optionsLiquidacion = [
-		{ value: "preaviso", label: "Preaviso" },
-		{ value: "integracionMes", label: "Integración mes" },
-		{ value: "sacProp", label: "SAC proporcional" },
-		{ value: "sacPreaviso", label: "SAC s/ Preaviso" },
-		{ value: "diasTrabajados", label: "Días trabajados" },
-		{ value: "vacaciones", label: "Vacaciones" },
-	];
+	// Usar useField para acceder a los valores de Formik
+	const [reclamanteField] = useField(reclamante.name);
+	const [incluirSACField] = useField(incluirSAC.name);
 
 	return (
 		<>
 			<Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-				Seleccione Cálculos opcionales
+				Datos requeridos
 			</Typography>
+			
+			{/* Selector de vinculación de causa */}
+			<Grid item xs={12} sx={{ mb: 3 }}>
+				<LinkCauseSelector 
+					reclamanteField={reclamante}
+					reclamadoField={reclamado}
+					folderIdField={folderId}
+					folderNameField={folderName}
+				/>
+			</Grid>
+
 			<Grid item xs={12}>
 				<Grid container spacing={2} alignItems="center">
-					<Grid item xs={12} lg={6}>
-						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
-								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamante*:</InputLabel>
+					{/* Solo mostrar campos manuales si no hay carpeta vinculada */}
+					{(!reclamanteField.value || !reclamanteField.value.startsWith("__CAUSA_VINCULADA__")) && (
+						<>
+							<Grid item xs={12} lg={6}>
+								<Grid container spacing={2} alignItems="center">
+									<Grid item xs={12} lg={3}>
+										<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamante*:</InputLabel>
+									</Grid>
+									<Grid item xs={12} lg={9}>
+										<InputField
+											InputProps={{ startAdornment: <UserSquare /> }}
+											fullWidth
+											placeholder="Ingrese un nombre"
+											name={reclamante.name}
+										/>
+									</Grid>
+								</Grid>
 							</Grid>
-							<Grid item xs={12} lg={9}>
-								<InputField
-									InputProps={{ startAdornment: <UserSquare /> }}
-									fullWidth
-									placeholder="Ingrese un nombre"
-									name={reclamante.name}
-								/>
+							<Grid item xs={12} lg={6}>
+								<Grid container spacing={2} alignItems="center">
+									<Grid item xs={12} lg={3}>
+										<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamado*:</InputLabel>
+									</Grid>
+									<Grid item xs={12} lg={9}>
+										<InputField
+											InputProps={{ startAdornment: <UserSquare /> }}
+											fullWidth
+											placeholder="Ingrese un nombre"
+											name={reclamado.name}
+										/>
+									</Grid>
+								</Grid>
 							</Grid>
-						</Grid>
-					</Grid>
-					<Grid item xs={12} lg={6}>
-						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
-								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamado*:</InputLabel>
-							</Grid>
-							<Grid item xs={12} lg={9}>
-								<InputField
-									InputProps={{ startAdornment: <UserSquare /> }}
-									fullWidth
-									placeholder="Ingrese un nombre"
-									name={reclamado.name}
-								/>
-							</Grid>
-						</Grid>
-					</Grid>
+						</>
+					)}
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
 							<Grid item xs={12} lg={3}>
@@ -137,16 +149,14 @@ export default function FirstForm(props: any) {
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Incluir SAC:</InputLabel>
 							</Grid>
 							<Grid item xs={12} lg={9}>
-								<Checkbox name="incluirSAC" />
+								<Checkbox 
+									checked={incluirSACField.value || false}
+									onChange={incluirSACField.onChange}
+									name={incluirSACField.name}
+								/>
 							</Grid>
 						</Grid>
 					</Grid>
-				</Grid>
-			</Grid>
-
-			<Grid item xs={12} style={{ marginTop: "35px" }}>
-				<Grid>
-					<LaborCheckbox name={liquidacion.name} options={optionsLiquidacion} />
 				</Grid>
 			</Grid>
 		</>

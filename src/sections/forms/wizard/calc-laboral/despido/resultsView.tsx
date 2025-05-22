@@ -1,31 +1,14 @@
-import React, { useState, useMemo, useRef } from "react";
-import {
-	Button,
-	CardContent,
-	Typography,
-	Stack,
-	IconButton,
-	Tooltip,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	TextField,
-} from "@mui/material";
-import MainCard from "components/MainCard";
-import { Copy, Sms, Printer, Link21, Calculator, Save2 } from "iconsax-react";
-import despidoFormModel from "./formModel/despidoFormModel";
-import styled from "@emotion/styled";
-import { useReactToPrint } from "react-to-print";
-import { openSnackbar } from "store/reducers/snackbar";
-import { dispatch, useSelector } from "store";
-
-//third party
-import moment from "moment";
-import axios from "axios";
+import React, { useState, useMemo } from "react";
+import { Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Divider, Zoom } from "@mui/material";
+import { CalculationDetailsView } from "../../../../../components/calculator/CalculationDetailsView";
+import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";
+import { CalculatorType } from "types/calculator";
 import LinkCauseModal from "../components/linkCauseModal";
 import { useNavigate } from "react-router";
+import despidoFormModel from "./formModel/despidoFormModel";
+import moment from "moment";
+import { enqueueSnackbar } from "notistack";
 
 // Tipos
 interface ResultItem {
@@ -33,85 +16,79 @@ interface ResultItem {
 	value: number | string;
 }
 
-interface GroupedResults {
-	reclamo: ResultItem[];
-	indemnizacion: ResultItem[];
-	liquidacion: ResultItem[];
-	multas: ResultItem[];
-	otros: ResultItem[];
-}
+// Este tipo estaba causando el error, ya que no es compatible con Record<string, ResultItem[]>
+// interface GroupedResults {
+// 	reclamo: ResultItem[];
+// 	indemnizacion: ResultItem[];
+// 	liquidacion: ResultItem[];
+// 	multas: ResultItem[];
+// 	otros: ResultItem[];
+// }
+
+// En su lugar, usamos directamente el tipo que espera el componente CalculationDetailsView
+type GroupedResults = Record<string, ResultItem[]>;
 
 interface ResultsViewProps {
 	values: Record<string, any>;
 	onReset: () => void;
+	folderId?: string;
+	folderName?: string;
 }
 
-const PrintContainer = styled("div")`
-	@media print {
-		@page {
-			size: auto;
-			margin: 20mm;
-		}
-
-		& .no-print {
-			display: none !important;
-		}
-
-		& .MuiCard-root {
-			break-inside: avoid;
-			page-break-inside: avoid;
-			margin-bottom: 16px;
-			border: 1px solid #ddd;
-		}
-
-		& .total-card {
-			break-inside: avoid;
-			page-break-inside: avoid;
-			background-color: #f5f5f5 !important;
-			color: #000 !important;
-		}
-
-		& .MuiTypography-root {
-			color: #000 !important;
-		}
-	}
-`;
-
-const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
-	console.log(values);
-	const [emailModalOpen, setEmailModalOpen] = useState(false);
-	const [email, setEmail] = useState("");
+const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, folderName }) => {
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
-	const [causeNumber, setCauseNumber] = useState("");
-	const [updateModalOpen, setUpdateModalOpen] = useState(false);
-	const [interestRate, setInterestRate] = useState("");
-
-	const [savedCalculationId, setSavedCalculationId] = useState<string | null>(null);
-
+	const [infoModalOpen, setInfoModalOpen] = useState(false);
 	const [isSaved, setIsSaved] = useState(false);
+	// These state variables are used by CalculationDetailsView internally
+	const [savedCalculationId] = useState<string | null>(null);
 	const navigate = useNavigate();
-
-	const userId = useSelector((state) => state.auth.user?._id);
-
-	const printRef = useRef<HTMLDivElement>(null);
 	const { formField } = despidoFormModel;
 
-	const isLinkedToFolder = useMemo(() => {
-		return Boolean(values.folderId && values.folderName);
-	}, [values.folderId, values.folderName]);
+	const userFromRedux = useSelector((state: RootState) => state.auth.user);
+
+	// No longer used but keeping for potential future use
+	// const isLinkedToFolder = useMemo(() => {
+	// 	return Boolean((values.folderId || folderId) && (values.folderName || folderName));
+	// }, [values.folderId, values.folderName, folderId, folderName]);
 
 	const getLabelForKey = (key: string): string => {
+		// Manejo especial para carátula
+		if (key === "caratula") {
+			return "Carátula";
+		}
+
+		// Manejo especial para los campos de intereses
+		const interesesLabels: { [key: string]: string } = {
+			fechaInicialIntereses: "Fecha inicial de intereses",
+			fechaFinalIntereses: "Fecha final de intereses",
+			tasaIntereses: "Tasa de interés aplicada",
+			montoIntereses: "Monto de intereses",
+			montoTotalConIntereses: "Monto total con intereses",
+		};
+
+		if (interesesLabels[key]) {
+			return interesesLabels[key];
+		}
+
 		const field = formField[key as keyof typeof formField];
 		return field?.label || key;
 	};
 
 	const formatValue = (key: string, value: number | string): string => {
-		if (key === "fechaIngreso" || key === "fechaEgreso") {
-			const date = moment(value);
-			if (date.isValid()) {
-				return date.format("DD/MM/YYYY");
-			}
-			return String(value);
+		// Para campos de fechas (incluyendo los de intereses)
+		if (key === "fechaIngreso" || key === "fechaEgreso" || key === "fechaInicialIntereses" || key === "fechaFinalIntereses") {
+			const date = typeof value === "string" ? value : value.toString();
+			return date;
+		}
+
+		// Para la tasa de intereses (mostrar un nombre más amigable)
+		if (key === "tasaIntereses") {
+			const tasasLabels: { [key: string]: string } = {
+				tasaPasivaBCRA: "Tasa Pasiva BCRA",
+				acta2601: "Acta 2601",
+				acta2630: "Acta 2630",
+			};
+			return tasasLabels[String(value)] || String(value);
 		}
 
 		// Para Períodos y otros valores numéricos
@@ -120,8 +97,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			return !isNaN(numValue) ? numValue.toFixed(2) : "0.00";
 		}
 
-		// Para valores monetarios
-		if (typeof value === "number" || !isNaN(Number(value))) {
+		// Para valores monetarios (incluyendo los relacionados con intereses)
+		if (typeof value === "number" || !isNaN(Number(value)) || key === "montoIntereses" || key === "montoTotalConIntereses") {
 			const numValue = Number(value);
 			if (!isNaN(numValue)) {
 				return new Intl.NumberFormat("es-AR", {
@@ -141,24 +118,140 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 		return value !== "";
 	};
 
-	const groupResults = (inputValues: Record<string, any>): GroupedResults => {
+	// Función auxiliar para ordenar items según tipo
+	const sortItemsByType = (items: ResultItem[], type: string): ResultItem[] => {
+		if (type === "reclamo") {
+			// Definir el orden para la sección "reclamo"
+			const orderMap: Record<string, number> = {
+				folderId: 999, // No mostrar
+				folderName: 998, // No mostrar
+				caratula: 0,
+				reclamante: 1,
+				reclamado: 2,
+				fechaIngreso: 3,
+				fechaEgreso: 4,
+				remuneracion: 5,
+				remuneracionTope: 6,
+				// Otros campos con menor prioridad
+			};
+
+			return [...items].sort((a, b) => {
+				const orderA = orderMap[a.key] !== undefined ? orderMap[a.key] : 500;
+				const orderB = orderMap[b.key] !== undefined ? orderMap[b.key] : 500;
+				return orderA - orderB;
+			});
+		} else if (type === "indemnizacion") {
+			// Orden para la sección "indemnizacion"
+			const orderMap: Record<string, number> = {
+				Periodos: 0,
+				Indemnizacion: 1,
+			};
+
+			return [...items].sort((a, b) => {
+				const orderA = orderMap[a.key] !== undefined ? orderMap[a.key] : 999;
+				const orderB = orderMap[b.key] !== undefined ? orderMap[b.key] : 999;
+				return orderA - orderB;
+			});
+		} else if (type === "intereses") {
+			// Ordenar los items de intereses para la sección "intereses"
+			const orderMap: Record<string, number> = {
+				fechaInicialIntereses: 0,
+				fechaFinalIntereses: 1,
+				tasaIntereses: 2,
+				montoIntereses: 3,
+				montoTotalConIntereses: 4,
+			};
+
+			return [...items].sort((a, b) => {
+				const orderA = orderMap[a.key] !== undefined ? orderMap[a.key] : 999;
+				const orderB = orderMap[b.key] !== undefined ? orderMap[b.key] : 999;
+				return orderA - orderB;
+			});
+		}
+
+		return items;
+	};
+
+	const groupResults = (inputValues: Record<string, any> | undefined): GroupedResults => {
+		// Inicializamos con el mismo formato pero como Record<string, ResultItem[]>
 		const groups: GroupedResults = {
 			reclamo: [],
 			indemnizacion: [],
 			liquidacion: [],
 			multas: [],
-			otros: [],
+			intereses: [],
+			otrasSumas: [],
 		};
 
+		// Si no hay valores, retornar el objeto vacío
+		if (!inputValues) {
+			return groups;
+		}
+
+		// No mostrar estos campos en los resultados
+		const camposExcluidos = ["folderId", "reclamo"];
+
+		// Agregar datos de intereses si existen
+		if (inputValues.datosIntereses) {
+			const intereses = inputValues.datosIntereses;
+			// Agregar campos de intereses a la sección "intereses" (solo los datos solicitados)
+			groups.intereses.push({
+				key: "fechaInicialIntereses",
+				value: intereses.fechaInicialIntereses,
+			});
+			groups.intereses.push({
+				key: "fechaFinalIntereses",
+				value: intereses.fechaFinalIntereses,
+			});
+			groups.intereses.push({
+				key: "tasaIntereses",
+				value: intereses.tasaIntereses,
+			});
+			groups.intereses.push({
+				key: "montoIntereses",
+				value: intereses.montoIntereses,
+			});
+			// Agregar el montoTotalConIntereses como campo oculto para el cálculo del total
+			groups.intereses.push({
+				key: "montoTotalConIntereses",
+				value: intereses.montoTotalConIntereses,
+			});
+		}
+
+		// Detectar si hay una causa vinculada
+		const isCauseLinked =
+			inputValues.reclamante && typeof inputValues.reclamante === "string" && inputValues.reclamante.startsWith("__CAUSA_VINCULADA__");
+
+		// Agregar carátula si hay una causa vinculada
+		if (isCauseLinked && inputValues.folderName) {
+			groups.reclamo.push({
+				key: "caratula",
+				value: inputValues.folderName,
+			});
+		}
+
 		Object.entries(inputValues).forEach(([key, value]) => {
+			// Omitir el objeto datosIntereses ya que lo procesamos por separado
+			if (key === "datosIntereses") return;
 			if (value == null || value === "" || value === false) return;
 			if (typeof value === "object" || typeof value === "boolean") return;
 			if (!shouldShowValue(value)) return;
+			if (camposExcluidos.includes(key)) return;
 
 			const item: ResultItem = { key, value };
 
-			if (["reclamante", "reclamado", "fechaIngreso", "fechaEgreso", "remuneracion"].includes(key)) {
-				groups.reclamo.push(item);
+			if (["reclamante", "reclamado", "fechaIngreso", "fechaEgreso", "remuneracion", "remuneracionTope"].includes(key)) {
+				// Si hay causa vinculada, no agregar reclamante ni reclamado
+				if (key === "reclamante" || key === "reclamado") {
+					if (!isCauseLinked) {
+						groups.reclamo.push(item);
+					}
+				} else {
+					groups.reclamo.push(item);
+				}
+			} else if (key === "otrasSumas") {
+				// Otras Sumas Adeudadas va en su propia sección para ser incluida en el total
+				groups.otrasSumas.push(item);
 			} else if (key === "Indemnizacion" || key === "Periodos") {
 				groups.indemnizacion.push(item);
 			} else if (
@@ -171,9 +264,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 				groups.liquidacion.push(item);
 			} else if (key.includes("Multa")) {
 				groups.multas.push(item);
-			} else if (!["isLiquidacion", "isMultas", "isTopes"].includes(key)) {
-				groups.otros.push(item);
 			}
+			// Remover la sección "otros" que duplicaba el total
+		});
+
+		// Ordenar cada grupo según su tipo
+		Object.keys(groups).forEach((groupKey) => {
+			groups[groupKey] = sortItemsByType(groups[groupKey], groupKey);
 		});
 
 		return groups;
@@ -182,28 +279,161 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 	const groupedResults = useMemo(() => groupResults(values), [values]);
 
 	const total = useMemo(() => {
-		const sumableGroups = ["indemnizacion", "liquidacion", "multas", "otros"];
+		// Si hay intereses, calcular el total considerando el monto total con intereses + otras sumas
+		const interesTotal = groupedResults.intereses?.find((item) => item.key === "montoTotalConIntereses");
+		if (interesTotal && typeof interesTotal.value === "number") {
+			// Sumar solo las "otras sumas" al monto total con intereses
+			const otrasSumasTotal = Object.entries(groupedResults)
+				.filter(([group]) => group === "otrasSumas")
+				.flatMap(([_, items]) => items)
+				.reduce((sum, { value }) => {
+					return sum + (typeof value === "number" ? value : 0);
+				}, 0);
+
+			return interesTotal.value + otrasSumasTotal;
+		}
+
+		// De lo contrario, calcular el total como siempre (sin intereses)
+		const sumableGroups = ["indemnizacion", "liquidacion", "multas", "otrasSumas"];
 		return Object.entries(groupedResults)
 			.filter(([group]) => sumableGroups.includes(group))
 			.flatMap(([_, items]) => items)
 			.reduce((sum, { key, value }) => {
-				// No sumar si la key es Periodos o Días Vacaciones
+				// No sumar si la key es Periodos, Días Vacaciones
 				if (key === "Periodos" || key === "Días Vacaciones") {
 					return sum;
 				}
+
 				// Solo sumar si es un número
 				return sum + (typeof value === "number" ? value : 0);
 			}, 0);
 	}, [groupedResults]);
 
+	const handleSaveCalculation = async () => {
+		if (isSaved) return;
+
+		try {
+			// Verificar si tenemos userId
+			const userId = userFromRedux?._id;
+			const userName = userFromRedux?.name || userFromRedux?.email || "Usuario";
+
+			// Verificar si tenemos userId
+			if (!userId) {
+				enqueueSnackbar("Debe iniciar sesión para guardar el cálculo", {
+					variant: "error",
+					anchorOrigin: {
+						vertical: "bottom",
+						horizontal: "right",
+					},
+					TransitionComponent: Zoom,
+					autoHideDuration: 5000,
+				});
+				return;
+			}
+
+			// Crear el objeto para enviar al servidor según el modelo
+			const calculatorData: Omit<CalculatorType, "_id" | "isLoader" | "error"> = {
+				userId,
+				date: moment().format("YYYY-MM-DD"),
+				type: "Calculado" as const,
+				classType: "laboral" as const,
+				subClassType: "despido" as const,
+				amount: total,
+				interest: 0, // Los cálculos laborales no tienen interés por separado
+				user: userName,
+				// Añadir las propiedades opcionales
+				...(folderId ? { folderId } : {}),
+				...(folderName ? { folderName } : {}),
+				variables: {
+					// Guardamos todas las variables necesarias para recrear el cálculo
+					...values,
+					// Aseguramos que el resultado esté incluido para poder renderizarlo sin recalcular
+					calculationResult: groupedResults,
+				},
+			};
+
+			// Utilizar la acción asíncrona addCalculator
+			const result = await dispatch(addCalculator(calculatorData));
+
+			if (result.success) {
+				enqueueSnackbar("Cálculo guardado correctamente", {
+					variant: "success",
+					anchorOrigin: {
+						vertical: "bottom",
+						horizontal: "right",
+					},
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+				setIsSaved(true);
+			} else {
+				throw new Error(result.error || "Error al guardar el cálculo");
+			}
+		} catch (error) {
+			console.error("Error al guardar el cálculo:", error);
+			enqueueSnackbar(error instanceof Error ? error.message : "Error al guardar el cálculo", {
+				variant: "error",
+				anchorOrigin: {
+					vertical: "bottom",
+					horizontal: "right",
+				},
+				TransitionComponent: Zoom,
+				autoHideDuration: 5000,
+			});
+		}
+	};
+
 	const generatePlainText = () => {
 		let text = "RESULTADOS DE LA LIQUIDACIÓN\n\n";
+
+		// Mapeo de títulos para texto plano
+		const groupTitles: Record<string, string> = {
+			reclamo: "DATOS DEL RECLAMO",
+			indemnizacion: "INDEMNIZACIÓN",
+			liquidacion: "LIQUIDACIÓN FINAL",
+			otrasSumas: "OTROS RUBROS",
+			multas: "MULTAS",
+			intereses: "INTERESES",
+		};
+
 		Object.entries(groupedResults).forEach(([group, items]: [string, ResultItem[]]) => {
 			if (items.length) {
-				text += `${group.toUpperCase()}\n`;
+				const title = groupTitles[group] || group.toUpperCase();
+				text += `${title}\n`;
+
+				const filteredItems: ResultItem[] = [];
 				items.forEach((item: ResultItem) => {
+					// Ocultar montoTotalConIntereses en la sección de intereses
+					if (group === "intereses" && item.key === "montoTotalConIntereses") {
+						return;
+					}
 					text += `${getLabelForKey(item.key)}: ${formatValue(item.key, item.value)}\n`;
+					filteredItems.push(item);
 				});
+
+				// Calcular subtotal para secciones monetarias
+				const sectionsWithSubtotal = ["indemnizacion", "liquidacion", "multas", "intereses", "otrasSumas"];
+				if (sectionsWithSubtotal.includes(group)) {
+					const subtotal = filteredItems.reduce((sum, item) => {
+						// No sumar campos no monetarios
+						if (
+							item.key === "Periodos" ||
+							item.key === "Días Vacaciones" ||
+							item.key === "fechaInicialIntereses" ||
+							item.key === "fechaFinalIntereses" ||
+							item.key === "tasaIntereses"
+						) {
+							return sum;
+						}
+						const numValue = typeof item.value === "number" ? item.value : parseFloat(item.value);
+						return sum + (isNaN(numValue) ? 0 : numValue);
+					}, 0);
+
+					if (subtotal > 0) {
+						text += `Subtotal: ${formatValue("subtotal", subtotal)}\n`;
+					}
+				}
+
 				text += "\n";
 			}
 		});
@@ -262,6 +492,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			if (!items.length) return "";
 
 			const rows = items
+				.filter(({ key }) => {
+					// Ocultar montoTotalConIntereses en la sección de intereses
+					if (title === "Intereses" && key === "montoTotalConIntereses") {
+						return false;
+					}
+					return true;
+				})
 				.map(
 					({ key, value }) => `
 				<div class="row">
@@ -272,11 +509,49 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 				)
 				.join("");
 
+			// Calcular subtotal para secciones monetarias
+			let subtotalRow = "";
+			const sectionsWithSubtotal = ["Indemnización", "Liquidación Final", "Multas", "Intereses", "Otros Rubros"];
+			if (sectionsWithSubtotal.includes(title)) {
+				const filteredItems = items.filter(({ key }) => {
+					// Ocultar montoTotalConIntereses en la sección de intereses
+					if (title === "Intereses" && key === "montoTotalConIntereses") {
+						return false;
+					}
+					return true;
+				});
+
+				const subtotal = filteredItems.reduce((sum, item) => {
+					// No sumar campos no monetarios
+					if (
+						item.key === "Periodos" ||
+						item.key === "Días Vacaciones" ||
+						item.key === "fechaInicialIntereses" ||
+						item.key === "fechaFinalIntereses" ||
+						item.key === "tasaIntereses"
+					) {
+						return sum;
+					}
+					const numValue = typeof item.value === "number" ? item.value : parseFloat(item.value);
+					return sum + (isNaN(numValue) ? 0 : numValue);
+				}, 0);
+
+				if (subtotal > 0) {
+					subtotalRow = `
+					<div class="row" style="border-top: 2px solid #ddd; background-color: #f8f8f8; font-weight: bold;">
+					<span class="label">Subtotal:</span>
+					<span class="value">${formatValue("subtotal", subtotal)}</span>
+					</div>
+					`;
+				}
+			}
+
 			return `
 				<div class="card">
 				<div class="card-header">${title}</div>
 				<div class="card-content">
 					${rows}
+					${subtotalRow}
 				</div>
 				</div>
 			`;
@@ -286,8 +561,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			{ title: "Datos del Reclamo", data: groupedResults.reclamo },
 			{ title: "Indemnización", data: groupedResults.indemnizacion },
 			{ title: "Liquidación Final", data: groupedResults.liquidacion },
+			{ title: "Otros Rubros", data: groupedResults.otrasSumas },
 			{ title: "Multas", data: groupedResults.multas },
-			{ title: "Otros Conceptos", data: groupedResults.otros },
+			{ title: "Intereses", data: groupedResults.intereses },
 		];
 
 		const cardsHtml = groupSections
@@ -323,302 +599,194 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset }) => {
 			`;
 	};
 
-	const handleCopyToClipboard = async () => {
-		try {
-			await navigator.clipboard.writeText(generatePlainText());
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: `Liquidación copiada correctamente.`,
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-		} catch (err) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Ha ocurrido un error al copiar. Intente más tarde.",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
-
-	const handlePrint = useReactToPrint({
-		content: () => printRef.current,
-	});
-
-	const handleEmailSend = async () => {
-		try {
-			const htmlBody = generateHtmlContent();
-			const textBody = generatePlainText();
-			const subject = "Liquidación por Despido - Law||Analytics";
-
-			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/send-email`, {
-				to: email,
-				subject,
-				htmlBody,
-				textBody,
-			});
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: `Liquidación enviada correctamente.`,
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-			setEmailModalOpen(false);
-			setEmail("");
-		} catch (error: any) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Ha ocurrido un error. Intente más tarde.",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
-
-	const handleLinkToCause = () => {
-		console.log("Vinculando a causa:", causeNumber);
-		setLinkModalOpen(true);
-		setCauseNumber("");
-	};
-
-	const handleUpdateWithInterest = () => {
-		console.log("Actualizando con tasa:", interestRate);
-		setUpdateModalOpen(false);
-		setInterestRate("");
-	};
-
-	const handleSaveCalculation = async () => {
-		console.log("Guardando cálculo");
-		if (isSaved) return;
-
-		try {
-			const calculatorData = {
-				date: moment().format("YYYY-MM-DD"),
-				type: "Calculado" as const,
-				classType: "laboral" as const,
-				subClassType: "despido" as const,
-				amount: total,
-				userId: userId,
-				folderId: values.folderId,
-				folderName: values.folderName,
-				variables: {
-					...values,
-					groupedResults,
-					total,
-				},
-			};
-			const result = await dispatch(addCalculator(calculatorData));
-
-			if (result.success) {
-				setSavedCalculationId(result.calculator._id);
-				setIsSaved(true);
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: "Cálculo guardado correctamente",
-						variant: "alert",
-						alert: { color: "success" },
-						close: true,
-					}),
-				);
-			} else {
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: result.error || "Error al guardar el cálculo",
-						variant: "alert",
-						alert: { color: "error" },
-						close: true,
-					}),
-				);
-			}
-		} catch (error) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Error al guardar el cálculo",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
-
-	const renderActionButtons = () => (
-		<Stack direction="row" spacing={1} sx={{ mb: 2 }} justifyContent="center" className="no-print">
-			<Tooltip title="Copiar al portapapeles">
-				<IconButton onClick={handleCopyToClipboard} color="primary">
-					<Copy size={24} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Enviar por email">
-				<IconButton onClick={() => setEmailModalOpen(true)} color="primary">
-					<Sms size={24} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Imprimir">
-				<IconButton onClick={handlePrint} color="primary">
-					<Printer size={24} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip
-				title={
-					isLinkedToFolder ? "Ya está vinculado a una carpeta" : !savedCalculationId ? "Guarde el cálculo primero" : "Vincular a causa"
-				}
-			>
-				<span>
-					<IconButton onClick={handleLinkToCause} color="primary" disabled={!savedCalculationId || isLinkedToFolder}>
-						<Link21 size={24} />
-					</IconButton>
-				</span>
-			</Tooltip>
-			<Tooltip title="Actualizar con intereses">
-				<IconButton onClick={() => setUpdateModalOpen(true)} color="primary">
-					<Calculator size={24} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title={isSaved ? "El cálculo ya fue guardado" : "Guardar cálculo"}>
-				<span>
-					<IconButton onClick={handleSaveCalculation} color="primary" disabled={isSaved}>
-						<Save2 size={24} />
-					</IconButton>
-				</span>
-			</Tooltip>
-		</Stack>
-	);
-
-	const renderGroup = (title: string, items: ResultItem[]): React.ReactNode => {
-		if (!items.length) return null;
-
-		return (
-			<MainCard title={title} shadow={3} sx={{ mb: 2 }}>
-				<CardContent>
-					{items.map(({ key, value }) => (
-						<Stack key={key} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1 }}>
-							<Typography variant="body1" color="text.secondary">
-								{getLabelForKey(key)}:
-							</Typography>
-							<Typography variant="body1" fontWeight="medium">
-								{formatValue(key, value)}
-							</Typography>
-						</Stack>
-					))}
-				</CardContent>
-			</MainCard>
-		);
-	};
-
-	const PrintableContent = React.forwardRef<HTMLDivElement>((_, ref) => (
-		<div ref={ref}>
-			<Typography variant="h4" gutterBottom sx={{ mb: 3, textAlign: "center" }}>
-				Resultados de la Liquidación
-			</Typography>
-
-			{renderGroup("Datos del Reclamo", groupedResults.reclamo)}
-			{renderGroup("Indemnización", groupedResults.indemnizacion)}
-			{renderGroup("Liquidación Final", groupedResults.liquidacion)}
-			{renderGroup("Multas", groupedResults.multas)}
-			{renderGroup("Otros Conceptos", groupedResults.otros)}
-
-			<MainCard
-				shadow={3}
-				className="total-card"
-				sx={{
-					mt: 3,
-					bgcolor: "primary.main",
-					color: "primary.contrastText",
-				}}
-				content={false}
-			>
-				<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2 }}>
-					<Typography variant="h5" color="inherit">
-						TOTAL
-					</Typography>
-					<Typography variant="h5" color="inherit">
-						{formatValue("total", total)}
-					</Typography>
-				</Stack>
-			</MainCard>
-		</div>
-	));
-
 	const handleReset = () => {
 		navigate(".", { replace: true }); // This removes query parameters
 		onReset();
 	};
 
 	return (
-		<PrintContainer>
-			{renderActionButtons()}
+		<>
+			<CalculationDetailsView
+				data={{
+					_id: savedCalculationId || "temp_id",
+					folderId: values.folderId || folderId,
+					amount: total,
+					variables: {
+						...values,
+						groupedResults,
+						total,
+					},
+					subClassType: "laboral",
+				}}
+				getLabelForKey={getLabelForKey}
+				formatValue={formatValue}
+				groupResults={groupResults}
+				generatePlainText={generatePlainText}
+				generateHtmlContent={generateHtmlContent}
+				customTitle="Liquidación por Despido - Law||Analytics"
+				hideInterestButton={true}
+				showInfoButton={true}
+				onInfoClick={() => setInfoModalOpen(true)}
+				showSaveButton={true}
+				onSaveClick={handleSaveCalculation}
+				isSaved={isSaved}
+			/>
 
-			<PrintableContent ref={printRef} />
-
-			<Stack direction="row" justifyContent="flex-end" className="no-print">
-				<Button variant="contained" color="error" onClick={handleReset} sx={{ mt: 3 }}>
+			<Stack direction="row" justifyContent="flex-end" className="no-print" sx={{ mt: 2 }}>
+				<Button variant="contained" color="error" onClick={handleReset}>
 					Nueva Liquidación
 				</Button>
 			</Stack>
 
-			<div className="no-print">
-				<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)}>
-					<DialogTitle>Enviar por Email</DialogTitle>
-					<DialogContent>
-						<TextField
-							autoFocus
-							margin="dense"
-							label="Dirección de Email"
-							type="email"
-							fullWidth
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-						/>
-					</DialogContent>
-					<DialogActions>
-						<Button onClick={() => setEmailModalOpen(false)}>Cancelar</Button>
-						<Button onClick={handleEmailSend} variant="contained">
-							Enviar
-						</Button>
-					</DialogActions>
-				</Dialog>
+			<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={savedCalculationId || ""} />
 
-				<LinkCauseModal open={linkModalOpen} onClose={() => setLinkModalOpen(false)} calculationId={savedCalculationId || ""} />
+			{/* Modal de información sobre cálculos */}
+			<Dialog open={infoModalOpen} onClose={() => setInfoModalOpen(false)} maxWidth="md" fullWidth>
+				<DialogTitle>Información sobre los Cálculos</DialogTitle>
+				<DialogContent dividers>
+					<Stack spacing={3}>
+						{/* Sección Indemnización */}
+						<Box>
+							<Typography variant="h6" color="primary" gutterBottom>
+								Cálculo de Indemnización
+							</Typography>
+							<Typography variant="body2" paragraph>
+								<strong>Fórmula:</strong> Períodos × Remuneración mensual
+							</Typography>
+							{values.aplicarLey27742 ? (
+								<Box sx={{ p: 2, bgcolor: "warning.light", borderRadius: 1, mb: 2 }}>
+									<Typography variant="body2" fontWeight="bold" gutterBottom>
+										🗂️ Ley 27.742 aplicada
+									</Typography>
+									<Typography variant="body2" component="div">
+										• <strong>Solo años completos:</strong> No se suma fracción mayor a 3 meses
+										<br />• <strong>Período de prueba:</strong> Mínimo 6 meses de antigüedad
+										<br />• <strong>Criterio mínimo:</strong> 6+ meses = 1 año de indemnización
+										<br />• <strong>Años completos:</strong> Cada año completo = 1 mes de remuneración
+									</Typography>
+								</Box>
+							) : (
+								<Box sx={{ p: 2, bgcolor: "info.light", borderRadius: 1, mb: 2 }}>
+									<Typography variant="body2" fontWeight="bold" gutterBottom>
+										📜 Criterio tradicional aplicado
+									</Typography>
+									<Typography variant="body2" component="div">
+										• <strong>Fracción mayor a 3 meses:</strong> Se computa como año completo
+										<br />• <strong>Período de prueba:</strong> Desde 3+ meses ya genera indemnización
+										<br />• <strong>Criterio:</strong> Más flexible para el trabajador
+									</Typography>
+								</Box>
+							)}
+						</Box>
 
-				<Dialog open={updateModalOpen} onClose={() => setUpdateModalOpen(false)}>
-					<DialogTitle>Actualizar con Intereses</DialogTitle>
-					<DialogContent>
-						<TextField
-							autoFocus
-							margin="dense"
-							label="Tasa de Interés (%)"
-							type="number"
-							fullWidth
-							value={interestRate}
-							onChange={(e) => setInterestRate(e.target.value)}
-						/>
-					</DialogContent>
-					<DialogActions>
-						<Button onClick={() => setUpdateModalOpen(false)}>Cancelar</Button>
-						<Button onClick={handleUpdateWithInterest} variant="contained">
-							Actualizar
-						</Button>
-					</DialogActions>
-				</Dialog>
-			</div>
-		</PrintContainer>
+						<Divider />
+
+						{/* Sección Tope Vizzoti */}
+						{values.isTopes && (
+							<>
+								<Box>
+									<Typography variant="h6" color="primary" gutterBottom>
+										Criterio Vizzoti (Tope de Indemnización)
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Aplicación del Tope:</strong>
+									</Typography>
+									<Typography variant="body2" component="div" sx={{ ml: 2 }}>
+										• Se calcula el <strong>67% de la remuneración real</strong>
+										<br />• Se toma el <strong>mayor valor</strong> entre:
+										<br />
+										&nbsp;&nbsp;- El 67% de la remuneración
+										<br />
+										&nbsp;&nbsp;- El tope legal vigente
+										<br />• <strong>Nunca puede superar</strong> la remuneración original
+									</Typography>
+									<Box sx={{ mt: 2, p: 2, bgcolor: "grey.100", borderRadius: 1 }}>
+										<Typography variant="body2" fontWeight="bold" gutterBottom>
+											Ejemplo práctico:
+										</Typography>
+										<Typography variant="body2" component="div">
+											• Remuneración: $1.000.000
+											<br />
+											• Tope legal: $500.000
+											<br />
+											• 67% remuneración: $670.000
+											<br />• <strong>Resultado: $670.000</strong> (mayor entre $670.000 y $500.000)
+										</Typography>
+									</Box>
+								</Box>
+								<Divider />
+							</>
+						)}
+
+						{/* Sección Liquidación Final */}
+						{values.isLiquidacion && (
+							<>
+								<Box>
+									<Typography variant="h6" color="primary" gutterBottom>
+										Liquidación Final
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Preaviso:</strong> Según antigüedad (1 o 2 meses de remuneración)
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>SAC Proporcional:</strong> (Días trabajados en el semestre / 365) × (Remuneración / 12)
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Vacaciones:</strong> Según antigüedad (14, 21, 28 o 35 días) calculadas proporcionalmente
+									</Typography>
+								</Box>
+								<Divider />
+							</>
+						)}
+
+						{/* Sección Multas */}
+						{values.isMultas && (
+							<>
+								<Box>
+									<Typography variant="h6" color="primary" gutterBottom>
+										Multas Laborales
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Art. 1° Ley 25.323:</strong> 50% de la indemnización
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Art. 2° Ley 25.323:</strong> 100% de la indemnización
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Art. 80 LCT:</strong> 3 meses de remuneración
+									</Typography>
+									<Typography variant="body2" paragraph>
+										<strong>Arts. 8, 9, 10, 15 Ley 24.013:</strong> 25% del total de remuneraciones no registradas
+									</Typography>
+								</Box>
+								<Divider />
+							</>
+						)}
+
+						{/* Sección Intereses */}
+						{values.aplicarIntereses && (
+							<Box>
+								<Typography variant="h6" color="primary" gutterBottom>
+									Cálculo de Intereses
+								</Typography>
+								<Typography variant="body2" paragraph>
+									Los intereses se calculan sobre el monto total de la liquidación desde la fecha de inicio hasta la fecha final, aplicando
+									la tasa seleccionada de forma diaria.
+								</Typography>
+								<Typography variant="body2" paragraph>
+									<strong>Fórmula:</strong> Monto base × Tasa diaria × Días transcurridos
+								</Typography>
+							</Box>
+						)}
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setInfoModalOpen(false)} variant="contained">
+						Cerrar
+					</Button>
+				</DialogActions>
+			</Dialog>
+		</>
 	);
 };
 

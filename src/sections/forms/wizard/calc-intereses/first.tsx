@@ -66,7 +66,7 @@ export default function FirstForm(props: FirstFormProps) {
 	const { values, setFieldValue } = useFormikContext<any>();
 
 	// Manejador para el cambio de método de entrada
-	const handleMethodChange = (method: "manual" | "causa", folder: any, folderData?: {folderId: string, folderName: string}) => {
+	const handleMethodChange = (method: "manual" | "causa", folder: any, folderData?: { folderId: string; folderName: string }) => {
 		setInputMethod(method);
 		setSelectedFolder(folder);
 
@@ -75,7 +75,7 @@ export default function FirstForm(props: FirstFormProps) {
 			// campos especiales para indicar que se está utilizando una causa vinculada
 			setFieldValue(reclamante.name, `__CAUSA_VINCULADA__${folder._id}`);
 			setFieldValue(reclamado.name, `__CAUSA_VINCULADA__${folder._id}`);
-			
+
 			// Almacenar folderId y folderName para guardarlos en la base de datos
 			if (folderData) {
 				// Guardar estos valores en campos ocultos o estado del formulario
