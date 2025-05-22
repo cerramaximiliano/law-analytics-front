@@ -1,40 +1,125 @@
-import { Checkbox, Grid, InputLabel, Typography } from "@mui/material";
+import { useState } from "react";
+import { Box, Checkbox, Grid, InputLabel, Typography } from "@mui/material";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
-import LinkCauseSelector from "../components/LinkCauseSelector";
-import { UserSquare, Calendar2 } from "iconsax-react";
-import { useField } from "formik";
+import LinkCauseSelector from "./components/LinkCauseSelector";
+import { UserSquare, Calendar2, DocumentText } from "iconsax-react";
+import { useFormikContext, useField } from "formik";
+import { Folder } from "types/folders";
 
-export default function FirstForm(props: any) {
+interface FormField {
+	reclamante: {
+		name: string;
+	};
+	reclamado: {
+		name: string;
+	};
+	remuneracion: {
+		name: string;
+	};
+	otrasSumas: {
+		name: string;
+	};
+	fechaIngreso: {
+		name: string;
+	};
+	fechaEgreso: {
+		name: string;
+	};
+	dias: {
+		name: string;
+	};
+	incluirSAC: {
+		name: string;
+	};
+	folderId: {
+		name: string;
+	};
+	folderName: {
+		name: string;
+	};
+}
+
+interface FirstFormProps {
+	formField: FormField;
+}
+
+export default function FirstForm(props: FirstFormProps) {
 	const {
 		formField: { reclamado, reclamante, remuneracion, otrasSumas, fechaIngreso, fechaEgreso, dias, incluirSAC, folderId, folderName },
 	} = props;
 
-	// Usar useField para acceder a los valores de Formik
-	const [reclamanteField] = useField(reclamante.name);
+	const { setFieldValue } = useFormikContext();
+	const [inputMethod, setInputMethod] = useState<"manual" | "causa">("manual");
+	const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+
+	// Hooks para los checkboxes
 	const [incluirSACField] = useField(incluirSAC.name);
+
+	const handleMethodChange = (method: "manual" | "causa", folder: any, folderData?: { folderId: string; folderName: string }) => {
+		setInputMethod(method);
+		setSelectedFolder(folder);
+
+		if (method === "causa" && folder) {
+			// Si se ha seleccionado una causa, establecer los valores de reclamante/reclamado como
+			// campos especiales para indicar que se está utilizando una causa vinculada
+			setFieldValue(reclamante.name, `__CAUSA_VINCULADA__${folder._id}`);
+			setFieldValue(reclamado.name, `__CAUSA_VINCULADA__${folder._id}`);
+
+			// Almacenar folderId y folderName para guardarlos en la base de datos
+			if (folderData) {
+				setFieldValue(folderId.name, folderData.folderId);
+				setFieldValue(folderName.name, folderData.folderName);
+			}
+		} else if (method === "manual") {
+			// Si se cambia a modo manual, limpiar los campos
+			setFieldValue(reclamante.name, "");
+			setFieldValue(reclamado.name, "");
+			// Limpiar los campos de vinculación de carpeta
+			setFieldValue(folderId.name, "");
+			setFieldValue(folderName.name, "");
+		}
+	};
 
 	return (
 		<>
 			<Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
 				Datos requeridos
 			</Typography>
-			
-			{/* Selector de vinculación de causa */}
-			<Grid item xs={12} sx={{ mb: 3 }}>
-				<LinkCauseSelector 
-					reclamanteField={reclamante}
-					reclamadoField={reclamado}
-					folderIdField={folderId}
-					folderNameField={folderName}
-				/>
-			</Grid>
+
+			<LinkCauseSelector requiereField={reclamante.name} requeridoField={reclamado.name} onMethodChange={handleMethodChange} />
 
 			<Grid item xs={12}>
 				<Grid container spacing={2} alignItems="center">
-					{/* Solo mostrar campos manuales si no hay carpeta vinculada */}
-					{(!reclamanteField.value || !reclamanteField.value.startsWith("__CAUSA_VINCULADA__")) && (
+					{inputMethod === "causa" && selectedFolder ? (
+						<Grid item xs={12} sx={{ mb: 2 }}>
+							<Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+								Causa vinculada:
+							</Typography>
+							<Box
+								sx={{
+									p: 2,
+									borderRadius: 1,
+									bgcolor: (theme) => theme.palette.background.paper,
+									border: (theme) => `1px solid ${theme.palette.divider}`,
+									display: "flex",
+									alignItems: "center",
+									gap: 2,
+								}}
+							>
+								<DocumentText size={20} variant="Bold" />
+								<Typography variant="body1" fontWeight={500}>
+									{selectedFolder.folderName}
+								</Typography>
+								{selectedFolder.materia && (
+									<Typography variant="body2" sx={{ ml: 1, color: "text.secondary" }}>
+										({selectedFolder.materia})
+									</Typography>
+								)}
+							</Box>
+						</Grid>
+					) : (
 						<>
 							<Grid item xs={12} lg={6}>
 								<Grid container spacing={2} alignItems="center">
@@ -68,6 +153,7 @@ export default function FirstForm(props: any) {
 							</Grid>
 						</>
 					)}
+
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
 							<Grid item xs={12} lg={3}>
@@ -149,11 +235,7 @@ export default function FirstForm(props: any) {
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Incluir SAC:</InputLabel>
 							</Grid>
 							<Grid item xs={12} lg={9}>
-								<Checkbox 
-									checked={incluirSACField.value || false}
-									onChange={incluirSACField.onChange}
-									name={incluirSACField.name}
-								/>
+								<Checkbox checked={incluirSACField.value || false} onChange={incluirSACField.onChange} name={incluirSACField.name} />
 							</Grid>
 						</Grid>
 					</Grid>

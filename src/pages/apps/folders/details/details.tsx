@@ -5,6 +5,8 @@ import { ToggleButtonGroup, ToggleButton, Tooltip, Grid, Button, Chip, Stack, Sk
 import { Category, TableDocument, ExportSquare } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
+import useSubscription from "hooks/useSubscription";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 // Components
 import CalcTable from "./components/CalcTable";
@@ -64,7 +66,12 @@ const Details = () => {
 	const [isColumn, setIsColumn] = useState(false);
 	const [isInitialLoad, setIsInitialLoad] = useState(true);
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
+
+	// Usar el hook de suscripción para verificar características
+	const { canVinculateFolders } = useSubscription();
 
 	// Format folder name with first letter of each word capitalized
 	const formatFolderName = useCallback((name: string) => {
@@ -157,11 +164,25 @@ const Details = () => {
 	}, []);
 
 	const handleOpenLinkJudicial = useCallback(() => {
-		setOpenLinkJudicial(true);
-	}, []);
+		// Verificar si el usuario tiene acceso a la característica de vincular carpetas
+		const { canAccess, featureInfo } = canVinculateFolders();
+
+		if (canAccess) {
+			// Si tiene acceso, mostrar el modal de vinculación
+			setOpenLinkJudicial(true);
+		} else {
+			// Si no tiene acceso, mostrar el modal de error de límite
+			setLimitErrorInfo(featureInfo);
+			setLimitErrorOpen(true);
+		}
+	}, [canVinculateFolders]);
 
 	const handleCloseLinkJudicial = useCallback(() => {
 		setOpenLinkJudicial(false);
+	}, []);
+
+	const handleCloseLimitErrorModal = useCallback(() => {
+		setLimitErrorOpen(false);
 	}, []);
 
 	// Memoized view options renderer
@@ -300,6 +321,15 @@ const Details = () => {
 					folderName={folder.folderName}
 				/>
 			)}
+
+			{/* Modal de error cuando no se tiene acceso a la característica */}
+			<LimitErrorModal
+				open={limitErrorOpen}
+				onClose={handleCloseLimitErrorModal}
+				message="Esta característica no está disponible en tu plan actual."
+				featureInfo={limitErrorInfo}
+				upgradeRequired={true}
+			/>
 		</MainCard>
 	);
 };

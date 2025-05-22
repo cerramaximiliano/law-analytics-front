@@ -97,10 +97,7 @@ const TabAccount = () => {
 	const showBankingData = useBankingDisplay();
 	const [checked, setChecked] = useState(["sb", "ln", "la"]);
 	const auth = useSelector((state) => state.auth);
-	const [email, setEmail] = useState(auth.user?.email || "");
-	const [originalEmail, setOriginalEmail] = useState(auth.user?.email || "");
-	const [emailChanged, setEmailChanged] = useState(false);
-	const [emailError, setEmailError] = useState<string | null>(null);
+	const email = auth.user?.email || "";
 
 	// Estado para la zona horaria y formato de fecha
 	const [timeZone, setTimeZone] = useState("");
@@ -140,6 +137,12 @@ const TabAccount = () => {
 	const [showDeactivateConfirmDialog, setShowDeactivateConfirmDialog] = useState(false);
 
 	const [originalChecked, setOriginalChecked] = useState<string[]>([]);
+
+	// Estado para modales de confirmación de sesiones
+	const [sessionToClose, setSessionToClose] = useState<{ deviceId: string; isCurrentSession: boolean } | null>(null);
+	const [showCloseSessionDialog, setShowCloseSessionDialog] = useState(false);
+	const [showCloseAllSessionsDialog, setShowCloseAllSessionsDialog] = useState(false);
+	const [closingSession, setClosingSession] = useState(false);
 
 	const loadUserPreferences = async () => {
 		try {
@@ -281,21 +284,25 @@ const TabAccount = () => {
 		}
 	};
 
-	// Cerrar una sesión específica
-	const handleCloseSession = async (deviceId: string, isCurrentSession: boolean) => {
-		try {
-			if (isCurrentSession) {
-				const confirm = window.confirm(
-					"¿Estás seguro de que deseas cerrar tu sesión actual? Serás redirigido a la página de inicio de sesión.",
-				);
-				if (!confirm) return;
-			} else {
-				const confirm = window.confirm("¿Estás seguro de que deseas cerrar esta sesión?");
-				if (!confirm) return;
-			}
+	// Abrir modal de confirmación para cerrar sesión
+	const handleOpenCloseSessionDialog = (deviceId: string, isCurrentSession: boolean) => {
+		setSessionToClose({ deviceId, isCurrentSession });
+		setShowCloseSessionDialog(true);
+	};
 
-			setLoadingSessions(true);
-			const response = await sessionService.terminateSession(deviceId);
+	// Cerrar modal de confirmación de sesión
+	const handleCloseSessionDialog = () => {
+		setShowCloseSessionDialog(false);
+		setSessionToClose(null);
+	};
+
+	// Cerrar una sesión específica
+	const handleCloseSession = async () => {
+		if (!sessionToClose) return;
+
+		try {
+			setClosingSession(true);
+			const response = await sessionService.terminateSession(sessionToClose.deviceId);
 
 			if (response.success) {
 				dispatch(
@@ -309,6 +316,8 @@ const TabAccount = () => {
 						close: false,
 					}),
 				);
+				handleCloseSessionDialog(); // Cerrar el modal
+
 				if (response.requireLogin) {
 					// Redirigir al login si se cerró la sesión actual
 					window.location.href = "/login";
@@ -344,17 +353,25 @@ const TabAccount = () => {
 			);
 			console.error("Error al cerrar sesión:", error);
 		} finally {
-			setLoadingSessions(false);
+			setClosingSession(false);
+			handleCloseSessionDialog(); // Cerrar el modal en caso de error
 		}
+	};
+
+	// Abrir modal de confirmación para cerrar todas las sesiones
+	const handleOpenCloseAllSessionsDialog = () => {
+		setShowCloseAllSessionsDialog(true);
+	};
+
+	// Cerrar modal de confirmación de todas las sesiones
+	const handleCloseAllSessionsDialog = () => {
+		setShowCloseAllSessionsDialog(false);
 	};
 
 	// Cerrar todas las sesiones excepto la actual
 	const handleCloseAllSessions = async () => {
 		try {
-			const confirm = window.confirm("¿Estás seguro de que deseas cerrar todas las demás sesiones?");
-			if (!confirm) return;
-
-			setLoadingSessions(true);
+			setClosingSession(true);
 			const response = await sessionService.terminateAllOtherSessions();
 
 			if (response.success) {
@@ -370,6 +387,7 @@ const TabAccount = () => {
 					}),
 				);
 
+				handleCloseAllSessionsDialog(); // Cerrar el modal
 				loadSessions();
 			} else {
 				dispatch(
@@ -399,7 +417,8 @@ const TabAccount = () => {
 
 			console.error("Error al cerrar todas las sesiones:", error);
 		} finally {
-			setLoadingSessions(false);
+			setClosingSession(false);
+			handleCloseAllSessionsDialog(); // Cerrar el modal en caso de error
 		}
 	};
 
@@ -504,19 +523,6 @@ const TabAccount = () => {
 		}
 	};
 
-	// Maneja el cambio de email
-	const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const newEmail = e.target.value;
-		setEmail(newEmail);
-		setEmailChanged(newEmail !== originalEmail);
-
-		// Validar formato de email
-		if (newEmail && !/\S+@\S+\.\S+/.test(newEmail)) {
-			setEmailError("Por favor, introduce un correo electrónico válido");
-		} else {
-			setEmailError(null);
-		}
-	};
 
 	// Formatear el tiempo "desde" para la última actividad
 	const formatLastActivity = (dateString: string): string => {
@@ -604,11 +610,10 @@ const TabAccount = () => {
 			// Verificar cambios
 			const hasTimeZoneChanged = timeZone !== originalTimeZone;
 			const hasDateFormatChanged = dateFormat !== originalDateFormat;
-			const hasEmailChanged = email !== originalEmail;
 			const hasLoginNotificationChanged =
 				(checked.includes("ln") && !originalChecked.includes("ln")) || (!checked.includes("ln") && originalChecked.includes("ln"));
 
-			if (!hasTimeZoneChanged && !hasDateFormatChanged && !hasEmailChanged && !hasLoginNotificationChanged) {
+			if (!hasTimeZoneChanged && !hasDateFormatChanged && !hasLoginNotificationChanged) {
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -625,23 +630,6 @@ const TabAccount = () => {
 				return;
 			}
 
-			// Validar email
-			if (hasEmailChanged && emailError) {
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: "Por favor, corrige el formato del correo electrónico",
-						variant: "alert",
-						alert: {
-							color: "error",
-						},
-						close: false,
-					}),
-				);
-
-				setSavingPreferences(false);
-				return;
-			}
 
 			// Preparamos datos y hacemos un cast para evitar errores de tipo
 			// Este enfoque es seguro porque sabemos que la estructura que espera la API
@@ -661,10 +649,6 @@ const TabAccount = () => {
 				updatedPreferences.loginAlerts = checked.includes("ln");
 			}
 
-			if (hasEmailChanged) {
-				// Manejar email según API
-				updatedPreferences.email = email;
-			}
 
 			console.log("Enviando datos al servidor:", updatedPreferences);
 
@@ -718,17 +702,13 @@ const TabAccount = () => {
 				// Convertir a ExtendedUserPreferences
 				const extendedData: ExtendedUserPreferences = {
 					...updatedUserPrefs,
-					email: hasEmailChanged ? email : preferences.email,
+					email: preferences.email,
 				};
 
 				setPreferences(extendedData);
 				setOriginalTimeZone(timeZone);
 				setOriginalDateFormat(dateFormat);
 
-				if (hasEmailChanged) {
-					setOriginalEmail(email);
-					setEmailChanged(false);
-				}
 
 				// Actualizar estado switches
 				setOriginalChecked([...checked]);
@@ -814,18 +794,13 @@ const TabAccount = () => {
 								<TextField
 									fullWidth
 									value={email}
-									onChange={handleEmailChange}
 									id="my-account-email"
 									placeholder="Correo electrónico"
-									autoFocus
-									error={!!emailError}
-									helperText={emailError}
+									disabled
+									InputProps={{
+										readOnly: true,
+									}}
 								/>
-								{emailChanged && (
-									<Typography variant="caption" color="primary">
-										*Se han realizado cambios. No olvide guardar para aplicarlos.
-									</Typography>
-								)}
 							</Stack>
 						</Grid>
 					</Grid>
@@ -929,7 +904,7 @@ const TabAccount = () => {
 										{session.isCurrentSession ? (
 											<Button disabled>Sesión actual</Button>
 										) : (
-											<Button color="error" onClick={() => handleCloseSession(session.deviceId, session.isCurrentSession)}>
+											<Button color="error" onClick={() => handleOpenCloseSessionDialog(session.deviceId, session.isCurrentSession)}>
 												Cerrar sesión
 											</Button>
 										)}
@@ -938,7 +913,7 @@ const TabAccount = () => {
 							</List>
 							{sessions.length > 1 && (
 								<Box sx={{ p: 2, display: "flex", justifyContent: "center" }}>
-									<Button color="error" variant="contained" onClick={handleCloseAllSessions}>
+									<Button color="error" variant="contained" onClick={handleOpenCloseAllSessionsDialog}>
 										Cerrar todas las demás sesiones
 									</Button>
 								</Box>
@@ -1023,9 +998,6 @@ const TabAccount = () => {
 							// Revertir cambios
 							setTimeZone(originalTimeZone);
 							setDateFormat(originalDateFormat);
-							setEmail(originalEmail);
-							setEmailChanged(false);
-							setEmailError(null);
 							setEditingTimeZone(false);
 							setEditingDateFormat(false);
 						}}
@@ -1035,7 +1007,7 @@ const TabAccount = () => {
 					<Button
 						variant="contained"
 						onClick={saveChanges}
-						disabled={savingPreferences || (emailChanged && !!emailError)}
+						disabled={savingPreferences}
 						startIcon={savingPreferences ? <CircularProgress size={20} /> : null}
 					>
 						{savingPreferences ? "Guardando..." : "Guardar"}
@@ -1174,6 +1146,54 @@ const TabAccount = () => {
 						startIcon={deactivateLoading ? <CircularProgress size={20} /> : null}
 					>
 						{deactivateLoading ? "Procesando..." : "Sí, desactivar mi cuenta"}
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Diálogo de confirmación para cerrar sesión */}
+			<Dialog open={showCloseSessionDialog} onClose={handleCloseSessionDialog}>
+				<DialogTitle>Confirmar cierre de sesión</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						{sessionToClose?.isCurrentSession
+							? "¿Estás seguro de que deseas cerrar tu sesión actual? Serás redirigido a la página de inicio de sesión."
+							: "¿Estás seguro de que deseas cerrar esta sesión?"}
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCloseSessionDialog} disabled={closingSession}>
+						Cancelar
+					</Button>
+					<Button
+						onClick={handleCloseSession}
+						color="error"
+						disabled={closingSession}
+						startIcon={closingSession ? <CircularProgress size={20} /> : null}
+					>
+						{closingSession ? "Cerrando..." : "Cerrar sesión"}
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Diálogo de confirmación para cerrar todas las sesiones */}
+			<Dialog open={showCloseAllSessionsDialog} onClose={handleCloseAllSessionsDialog}>
+				<DialogTitle>Confirmar cierre de todas las sesiones</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						¿Estás seguro de que deseas cerrar todas las demás sesiones? Esta acción cerrará todas las sesiones activas excepto la actual.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleCloseAllSessionsDialog} disabled={closingSession}>
+						Cancelar
+					</Button>
+					<Button
+						onClick={handleCloseAllSessions}
+						color="error"
+						disabled={closingSession}
+						startIcon={closingSession ? <CircularProgress size={20} /> : null}
+					>
+						{closingSession ? "Cerrando sesiones..." : "Cerrar todas las sesiones"}
 					</Button>
 				</DialogActions>
 			</Dialog>

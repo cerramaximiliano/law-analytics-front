@@ -19,6 +19,11 @@ export const HEADER_HEIGHT = 74;
 export const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://api.example.com";
 export const WS_BASE_URL = process.env.REACT_APP_WS_URL || "wss://api.example.com/ws";
 
+// Development credentials for auto-fill in login forms
+export const DEV_EMAIL = process.env.REACT_APP_DEV_EMAIL || "";
+export const DEV_PASSWORD = process.env.REACT_APP_DEV_PASSWORD || "";
+export const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+
 // ==============================|| THEME CONFIG ||============================== //
 
 const config: DefaultConfigProps = {

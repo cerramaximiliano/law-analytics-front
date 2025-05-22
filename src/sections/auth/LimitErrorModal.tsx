@@ -315,31 +315,34 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 						{featureInfo.availableIn.length > 0 && (
 							<Box>
-								<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-									<strong>Planes que incluyen esta función:</strong>
-								</Typography>
-								<Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-									{featureInfo.availableIn.map((plan, index) => (
-										<Box
-											key={index}
-											sx={{
-												display: "inline-flex",
-												alignItems: "center",
-												px: 1.5,
-												py: 0.5,
-												border: `1px solid ${theme.palette.primary.light}`,
-												borderRadius: 1,
-												bgcolor: theme.palette.primary.lighter,
-												color: theme.palette.primary.dark,
-												fontSize: "0.75rem",
-												gap: 0.5,
-											}}
-										>
-											<Crown size={14} variant="Bulk" />
-											{plan}
-										</Box>
-									))}
-								</Stack>
+								<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+									<Typography variant="body2" color="text.secondary">
+										<strong>Planes que incluyen esta función:</strong>
+									</Typography>
+									<Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+										{featureInfo.availableIn.map((plan, index) => (
+											<Box
+												key={index}
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													px: 1.5,
+													py: 0.5,
+													border: `1px solid ${theme.palette.primary.light}`,
+													borderRadius: 1,
+													bgcolor: theme.palette.primary.lighter,
+													color: theme.palette.primary.dark,
+													fontSize: "0.75rem",
+													gap: 0.5,
+												}}
+											>
+												<Crown size={14} variant="Bulk" />
+												{plan}
+											</Box>
+										))}
+									</Stack>
+								</Box>
+								<Divider />
 							</Box>
 						)}
 					</Stack>

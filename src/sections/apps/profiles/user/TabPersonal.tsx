@@ -105,7 +105,6 @@ const TabPersonal = () => {
 				validationSchema={Yup.object().shape({
 					firstName: Yup.string().max(255).required("El nombre es requerido"),
 					lastName: Yup.string().max(255).required("El apellido es requerido."),
-					email: Yup.string().email("Correo electrónico inválido.").max(255).required("El correo electrónico es requerido."),
 					note: Yup.string().min(5, "La nota debe tener más de 5 caracteres."),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
@@ -116,7 +115,6 @@ const TabPersonal = () => {
 						const updateData = {
 							firstName: values.firstName,
 							lastName: values.lastName,
-							email: values.email,
 							dob: formattedDate,
 							contact: values.contact,
 							designation: values.designation,
@@ -197,17 +195,13 @@ const TabPersonal = () => {
 											fullWidth
 											value={values.email}
 											name="email"
-											onBlur={handleBlur}
-											onChange={handleChange}
 											id="personal-email"
 											placeholder="Correo Electrónico"
-											error={Boolean(touched.email && errors.email)}
+											disabled
+											InputProps={{
+												readOnly: true,
+											}}
 										/>
-										{touched.email && errors.email && (
-											<FormHelperText error id="personal-email-helper">
-												{errors.email}
-											</FormHelperText>
-										)}
 									</Stack>
 								</Grid>
 								<Grid item xs={12} sm={6}>

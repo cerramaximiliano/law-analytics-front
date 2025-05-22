@@ -57,6 +57,20 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			return "Carátula";
 		}
 
+		// Manejo especial para los campos de liquidación
+		const liquidacionLabels: { [key: string]: string } = {
+			preaviso: "Preaviso",
+			integracionMes: "Integración mes",
+			sacProp: "SAC proporcional",
+			sacPreaviso: "SAC s/ Preaviso",
+			diasTrabajados: "Días trabajados",
+			vacaciones: "Vacaciones",
+		};
+
+		if (liquidacionLabels[key]) {
+			return liquidacionLabels[key];
+		}
+
 		// Manejo especial para los campos de intereses
 		const interesesLabels: { [key: string]: string } = {
 			fechaInicialIntereses: "Fecha inicial de intereses",
@@ -278,22 +292,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 
 	const groupedResults = useMemo(() => groupResults(values), [values]);
 
-	const total = useMemo(() => {
-		// Si hay intereses, calcular el total considerando el monto total con intereses + otras sumas
-		const interesTotal = groupedResults.intereses?.find((item) => item.key === "montoTotalConIntereses");
-		if (interesTotal && typeof interesTotal.value === "number") {
-			// Sumar solo las "otras sumas" al monto total con intereses
-			const otrasSumasTotal = Object.entries(groupedResults)
-				.filter(([group]) => group === "otrasSumas")
-				.flatMap(([_, items]) => items)
-				.reduce((sum, { value }) => {
-					return sum + (typeof value === "number" ? value : 0);
-				}, 0);
-
-			return interesTotal.value + otrasSumasTotal;
-		}
-
-		// De lo contrario, calcular el total como siempre (sin intereses)
+	// Calcular capital base (sin intereses)
+	const capitalBase = useMemo(() => {
 		const sumableGroups = ["indemnizacion", "liquidacion", "multas", "otrasSumas"];
 		return Object.entries(groupedResults)
 			.filter(([group]) => sumableGroups.includes(group))
@@ -308,6 +308,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				return sum + (typeof value === "number" ? value : 0);
 			}, 0);
 	}, [groupedResults]);
+
+	// Calcular monto de intereses
+	const interesesMonto = useMemo(() => {
+		const interesesItem = groupedResults.intereses?.find((item) => item.key === "montoIntereses");
+		return interesesItem && typeof interesesItem.value === "number" ? interesesItem.value : 0;
+	}, [groupedResults]);
+
+	// Total con intereses
+	const total = useMemo(() => {
+		return capitalBase + interesesMonto;
+	}, [capitalBase, interesesMonto]);
 
 	const handleSaveCalculation = async () => {
 		if (isSaved) return;
@@ -338,8 +349,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				type: "Calculado" as const,
 				classType: "laboral" as const,
 				subClassType: "despido" as const,
-				amount: total,
-				interest: 0, // Los cálculos laborales no tienen interés por separado
+				amount: total, // Total con intereses
+				capital: capitalBase, // Capital sin intereses
+				interest: interesesMonto, // Monto de intereses
 				user: userName,
 				// Añadir las propiedades opcionales
 				...(folderId ? { folderId } : {}),

@@ -20,7 +20,7 @@ interface FormModel {
 
 		// Paso 2: Cálculos opcionales
 		liquidacion: FormField;
-		
+
 		// Paso 3: Actualización por intereses
 		aplicarIntereses: FormField;
 		fechaInicialIntereses: FormField;

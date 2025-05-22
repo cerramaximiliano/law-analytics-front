@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 // material-ui
-import { Button, Step, Stepper, StepLabel, Stack, Typography } from "@mui/material";
+import { Button, Step, Stepper, StepLabel, Stack } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -26,9 +26,9 @@ function getStepContent(step: number, values: any, handleReset: () => void, fold
 		case 0:
 			return <FirstForm formField={formField} />;
 		case 1:
-			return <SecondForm formField={formField} values={values} />;
+			return <SecondForm formField={formField} />;
 		case 2:
-			return <ThirdForm formField={formField} values={values} />;
+			return <ThirdForm formField={formField} />;
 		case 3:
 			return <ResultsView values={values} onReset={handleReset} folderId={folderId} folderName={folderName} />;
 		default:
@@ -43,13 +43,14 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
-	
+
 	const handleBack = () => {
 		setActiveStep(activeStep - 1);
 	};
 
-	const handleReset = () => {
+	const createHandleReset = (resetForm: () => void) => () => {
 		setActiveStep(0);
+		resetForm();
 	};
 
 	function _handleSubmit(values: any, actions: any) {
@@ -74,9 +75,9 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 				))}
 			</Stepper>
 			<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
-				{({ isSubmitting, values }) => (
+				{({ isSubmitting, values, resetForm }) => (
 					<Form id={formId}>
-						{getStepContent(activeStep, values, handleReset, folder?.folderId, folder?.folderName)}
+						{getStepContent(activeStep, values, createHandleReset(resetForm), folder?._id, folder?.folderName)}
 						{!isLastStep && (
 							<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
 								{activeStep !== 0 && (

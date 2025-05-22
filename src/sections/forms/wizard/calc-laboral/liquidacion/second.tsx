@@ -1,5 +1,5 @@
-import { Grid, InputLabel, Typography } from "@mui/material";
-import LaborCheckbox from "../components/labor-chebox";
+import { Box } from "@mui/material";
+import CalculationSelector from "./components/CalculationSelector";
 
 export default function SecondForm(props: any) {
 	const {
@@ -16,15 +16,8 @@ export default function SecondForm(props: any) {
 	];
 
 	return (
-		<>
-			<Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-				Seleccione Cálculos a incluir
-			</Typography>
-			<Grid item xs={12} style={{ marginTop: "35px" }}>
-				<Grid>
-					<LaborCheckbox name={liquidacion.name} options={optionsLiquidacion} />
-				</Grid>
-			</Grid>
-		</>
+		<Box sx={{ py: 2 }}>
+			<CalculationSelector name={liquidacion.name} options={optionsLiquidacion} />
+		</Box>
 	);
 }

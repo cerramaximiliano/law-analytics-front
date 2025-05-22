@@ -27,6 +27,7 @@ import {
 	useTheme,
 	GlobalStyles,
 } from "@mui/material";
+import logo from "assets/images/large_logo_transparent.png";
 import { Copy, Sms, Printer, Save2, SearchNormal1, UserAdd, Information, Calculator, StatusUp } from "iconsax-react";
 import styled from "@emotion/styled";
 import { useReactToPrint } from "react-to-print";
@@ -884,6 +885,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				}}
 			>
 				<Stack spacing={1}>
+					{/* Logo para impresión */}
+					<Box className="print-logo" sx={{ textAlign: "center", mb: 3 }}>
+						<img src={logo} alt="Law Analytics" style={{ maxWidth: "150px", height: "auto" }} />
+					</Box>
+					
 					{/* Título */}
 					<Typography variant="h4" gutterBottom sx={{ mb: 3, textAlign: "center" }}>
 						Liquidación de Intereses
@@ -1087,6 +1093,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 						"td, th": {
 							padding: "4px 8px !important",
 						},
+						".print-logo": {
+							display: "block !important",
+							width: "150px !important",
+							height: "auto !important",
+							marginBottom: "20px !important",
+						},
+					},
+					".print-logo": {
+						display: "none",
 					},
 				}}
 			/>

@@ -20,6 +20,7 @@ import {
 	Autocomplete,
 	GlobalStyles,
 } from "@mui/material";
+import logo from "assets/images/large_logo_transparent.png";
 import {
 	Copy,
 	Sms,
@@ -588,6 +589,15 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						"td, th": {
 							padding: "4px 8px !important",
 						},
+						".print-logo": {
+							display: "block !important",
+							width: "150px !important",
+							height: "auto !important",
+							marginBottom: "20px !important",
+						},
+					},
+					".print-logo": {
+						display: "none",
 					},
 				}}
 			/>
@@ -614,6 +624,11 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					}}
 				>
 					<div ref={printRef}>
+						{/* Logo para impresión */}
+						<Box className="print-logo" sx={{ textAlign: "center", mb: 3 }}>
+							<img src={logo} alt="Law Analytics" style={{ maxWidth: "150px", height: "auto" }} />
+						</Box>
+						
 						{/* Contenido principal */}
 						<Stack spacing={1}>
 							{/* Renderizar las secciones disponibles */}

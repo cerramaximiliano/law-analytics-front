@@ -28,6 +28,7 @@ import { dispatch as reduxDispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
+import { DEV_EMAIL, DEV_PASSWORD, IS_DEVELOPMENT } from "config";
 
 // Types
 interface UnauthorizedContextType {
@@ -51,8 +52,8 @@ const validationSchema = Yup.object().shape({
 });
 
 const initialValues: FormValues = {
-	email: "",
-	password: "",
+	email: IS_DEVELOPMENT && DEV_EMAIL ? DEV_EMAIL : "",
+	password: IS_DEVELOPMENT && DEV_PASSWORD ? DEV_PASSWORD : "",
 	submit: null,
 };
 

@@ -1,7 +1,7 @@
-import { Divider, Switch, FormControlLabel, Grid, Typography } from "@mui/material";
-import LaborCheckbox from "../components/labor-chebox";
+import { Divider, Switch, FormControlLabel, Grid, Typography, Box } from "@mui/material";
 import LaborTopes from "../components/labor-topes";
 import LaborMultas from "../components/labor-multas";
+import CalculationSelector from "./components/CalculationSelector";
 import { useField } from "formik";
 
 export default function SecondForm(props: any) {
@@ -56,7 +56,11 @@ export default function SecondForm(props: any) {
 						labelPlacement="end"
 					/>
 				</Grid>
-				{fieldIsLiquidacion.value && <LaborCheckbox name={liquidacion.name} options={optionsLiquidacion} />}
+				{fieldIsLiquidacion.value && (
+					<Box sx={{ mt: 3 }}>
+						<CalculationSelector name={liquidacion.name} options={optionsLiquidacion} />
+					</Box>
+				)}
 				<Divider />
 				<Grid>
 					<FormControlLabel

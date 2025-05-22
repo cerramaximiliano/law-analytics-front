@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -45,7 +46,7 @@ import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
 
 // assets
-import { Add, Eye, Trash, DocumentDownload } from "iconsax-react";
+import { Add, Eye, Trash, DocumentDownload, Coin } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
@@ -63,6 +64,7 @@ interface CalculatorData {
 	type: string;
 	subClassType: string;
 	amount: number;
+	capital?: number;
 	interest?: number;
 	variables?: Record<string, any>;
 }
@@ -89,6 +91,7 @@ interface GroupedResults {
 	liquidacion: ResultItem[];
 	multas: ResultItem[];
 	otros: ResultItem[];
+	intereses: ResultItem[];
 	[key: string]: ResultItem[];
 }
 
@@ -319,6 +322,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			liquidacion: [],
 			multas: [],
 			otros: [],
+			intereses: [],
 		};
 
 		if (!variables) return groups;
@@ -338,6 +342,55 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			}
 		}
 
+		// Procesar datos de calculationResult si existe
+		if (variables.calculationResult) {
+			const result = variables.calculationResult;
+
+			// Procesar cada sección del resultado
+			if (result.reclamo) {
+				result.reclamo.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.reclamo.push(item);
+					}
+				});
+			}
+
+			if (result.indemnizacion) {
+				result.indemnizacion.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.indemnizacion.push(item);
+					}
+				});
+			}
+
+			if (result.liquidacion) {
+				result.liquidacion.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.liquidacion.push(item);
+					}
+				});
+			}
+
+			if (result.multas) {
+				result.multas.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.multas.push(item);
+					}
+				});
+			}
+
+			if (result.intereses) {
+				result.intereses.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.intereses.push(item);
+					}
+				});
+			}
+
+			return groups;
+		}
+
+		// Fallback al procesamiento anterior si no hay calculationResult
 		Object.entries(variables).forEach(([key, value]) => {
 			if (value == null || value === "" || value === false) return;
 			if (typeof value === "object" || typeof value === "boolean") return;
@@ -389,7 +442,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			generateHtmlContent={generateHtmlContent}
 			generatePlainText={generatePlainText}
 			customTitle="Liquidación por Despido - Law||Analytics"
-			hideInterestButton={false}
+			hideInterestButton={true}
 		/>
 	);
 };
@@ -596,6 +649,7 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 
 const SavedLabor = () => {
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const mode = theme.palette.mode;
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state) => state.auth);
@@ -714,30 +768,53 @@ const SavedLabor = () => {
 			{
 				Header: "Capital",
 				accessor: "amount",
-				Cell: ({ row }: { row: Row<CalculatorData> }) => (
-					<Typography>
-						{row.original.amount
-							? new Intl.NumberFormat("es-AR", {
+				Cell: ({ row }: { row: Row<CalculatorData> }) => {
+					// Si existe la propiedad capital, usarla
+					if (row.original.capital !== undefined) {
+						return (
+							<Typography fontWeight="500">
+								{new Intl.NumberFormat("es-AR", {
 									style: "currency",
 									currency: "ARS",
-							  }).format(row.original.amount)
-							: "-"}
-					</Typography>
-				),
+								}).format(row.original.capital)}
+							</Typography>
+						);
+					}
+					
+					// Si no existe capital pero hay intereses, calcular capital = amount - interest
+					const interestAmount = row.original.variables?.datosIntereses?.montoIntereses || 0;
+					const capital = row.original.amount - interestAmount;
+					
+					return (
+						<Typography fontWeight="500">
+							{capital
+								? new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+								  }).format(capital)
+								: "-"}
+						</Typography>
+					);
+				},
 			},
 			{
 				Header: "Intereses",
 				accessor: "interest",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
-					if (!row.original.interest) {
+					const interestAmount = row.original.variables?.datosIntereses?.montoIntereses;
+
+					if (!interestAmount && interestAmount !== 0) {
 						return (
 							<Button
 								variant="contained"
 								size="small"
+								color="success"
 								onClick={(e) => {
 									e.stopPropagation();
-									console.log("Calcular intereses");
+									// Navegar a la sección de intereses
+									navigate("/apps/calc/intereses");
 								}}
+								startIcon={<Coin size={16} />}
 							>
 								Calcular
 							</Button>
@@ -745,11 +822,11 @@ const SavedLabor = () => {
 					}
 
 					return (
-						<Typography>
+						<Typography fontWeight="500" color="success.main">
 							{new Intl.NumberFormat("es-AR", {
 								style: "currency",
 								currency: "ARS",
-							}).format(row.original.interest)}
+							}).format(interestAmount)}
 						</Typography>
 					);
 				},

@@ -496,6 +496,11 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 						onReset={() => {
 							setActiveStep(0);
 							setFormResults(null);
+							setFormInitialValues({
+								...initialValues,
+								folderId: folder?._id || "",
+								folderName: folder?.folderName || "",
+							});
 						}}
 						folderId={formResults?.folderId}
 						folderName={formResults?.folderName}
