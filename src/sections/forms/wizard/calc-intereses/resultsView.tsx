@@ -889,7 +889,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					<Box className="print-logo" sx={{ textAlign: "center", mb: 3 }}>
 						<img src={logo} alt="Law Analytics" style={{ maxWidth: "150px", height: "auto" }} />
 					</Box>
-					
+
 					{/* Título */}
 					<Typography variant="h4" gutterBottom sx={{ mb: 3, textAlign: "center" }}>
 						Liquidación de Intereses

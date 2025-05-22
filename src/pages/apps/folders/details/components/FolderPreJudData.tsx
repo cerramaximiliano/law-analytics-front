@@ -122,7 +122,21 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 		console.log(values);
 		if (id) {
 			try {
-				const result = await dispatch(updateFolderById(id, values));
+				// Convertir fechas de DD/MM/YYYY a formato ISO (YYYY-MM-DD) antes de enviar al backend
+				const formattedValues = {
+					...values,
+					preFolder: {
+						...values.preFolder,
+						initialDatePreFolder: values.preFolder.initialDatePreFolder
+							? moment(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							: values.preFolder.initialDatePreFolder,
+						finalDatePreFolder: values.preFolder.finalDatePreFolder
+							? moment(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							: values.preFolder.finalDatePreFolder,
+					},
+				};
+
+				const result = await dispatch(updateFolderById(id, formattedValues));
 
 				if (result.success) {
 					enqueueSnackbar("Se actualizó correctamente", {

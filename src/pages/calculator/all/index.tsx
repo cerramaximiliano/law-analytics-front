@@ -1090,10 +1090,10 @@ const AllCalculators = () => {
 							</Typography>
 						);
 					}
-					
+
 					// Si no existe capital pero hay intereses, calcular capital = amount - interest
 					const capital = row.original.amount - (row.original.interest || 0);
-					
+
 					return (
 						<Typography fontWeight="500">
 							{new Intl.NumberFormat("es-AR", {
@@ -1109,7 +1109,7 @@ const AllCalculators = () => {
 				accessor: "interest",
 				Cell: ({ row }: { row: Row<CalculatorType> }) => {
 					const hasInterest = row.original.interest !== undefined && row.original.interest !== null && row.original.interest > 0;
-					
+
 					if (!hasInterest) {
 						return (
 							<Button
@@ -1127,7 +1127,7 @@ const AllCalculators = () => {
 							</Button>
 						);
 					}
-					
+
 					return (
 						<Typography fontWeight="500" color="success.main">
 							{new Intl.NumberFormat("es-AR", {

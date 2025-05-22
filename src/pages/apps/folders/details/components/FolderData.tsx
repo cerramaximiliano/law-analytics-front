@@ -95,7 +95,18 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 	const _submitForm = async (values: any, actions: any) => {
 		if (id) {
 			try {
-				const result = await dispatch(updateFolderById(id, values));
+				// Convertir fechas de DD/MM/YYYY a formato ISO (YYYY-MM-DD) antes de enviar al backend
+				const formattedValues = {
+					...values,
+					initialDateFolder: values.initialDateFolder
+						? moment(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						: values.initialDateFolder,
+					finalDateFolder: values.finalDateFolder
+						? moment(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						: values.finalDateFolder,
+				};
+
+				const result = await dispatch(updateFolderById(id, formattedValues));
 
 				if (result.success) {
 					enqueueSnackbar("Se actualizó correctamente", {

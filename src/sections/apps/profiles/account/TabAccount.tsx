@@ -523,7 +523,6 @@ const TabAccount = () => {
 		}
 	};
 
-
 	// Formatear el tiempo "desde" para la última actividad
 	const formatLastActivity = (dateString: string): string => {
 		try {
@@ -630,7 +629,6 @@ const TabAccount = () => {
 				return;
 			}
 
-
 			// Preparamos datos y hacemos un cast para evitar errores de tipo
 			// Este enfoque es seguro porque sabemos que la estructura que espera la API
 			// no coincide exactamente con UserPreferences
@@ -648,7 +646,6 @@ const TabAccount = () => {
 				// En base a los logs, parece que loginAlerts debe ir en el nivel superior
 				updatedPreferences.loginAlerts = checked.includes("ln");
 			}
-
 
 			console.log("Enviando datos al servidor:", updatedPreferences);
 
@@ -708,7 +705,6 @@ const TabAccount = () => {
 				setPreferences(extendedData);
 				setOriginalTimeZone(timeZone);
 				setOriginalDateFormat(dateFormat);
-
 
 				// Actualizar estado switches
 				setOriginalChecked([...checked]);

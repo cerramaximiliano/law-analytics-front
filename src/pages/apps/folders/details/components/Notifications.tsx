@@ -1,20 +1,8 @@
 // Notifications.tsx
 import React, { useEffect, useState } from "react";
-import {
-	Stack,
-	Skeleton,
-	Grid,
-	Button,
-	IconButton,
-	CardContent,
-	Tooltip,
-	Box,
-	Typography,
-	Paper,
-	Chip, // Agregar esta importación
-} from "@mui/material";
-import Avatar from "components/@extended/Avatar";
+import { Stack, Skeleton, Grid, Button, IconButton, CardContent, Tooltip, Typography, Paper, Chip } from "@mui/material";
 import MainCard from "components/MainCard";
+import Avatar from "components/@extended/Avatar";
 import { Add, Notification1, SmsNotification, NotificationStatus, Edit, Trash, ArrowUp, ArrowDown, Calendar } from "iconsax-react";
 import ModalNotifications from "../modals/ModalNotifications";
 import { useParams } from "react-router";
@@ -25,6 +13,7 @@ import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { NotificationType } from "types/notifications";
 import AlertNotificationDelete from "../modals/alertNotificationDelete";
 import { useTheme } from "@mui/material/styles";
+import EmptyStateCard from "components/EmptyStateCard";
 
 interface NotificationsProps {
 	title: string;
@@ -59,35 +48,6 @@ const getIconAndColor = (
 			};
 	}
 };
-const EmptyState = () => (
-	<Paper elevation={0} sx={{ p: 4, textAlign: "center", bgcolor: "transparent" }}>
-		<Stack spacing={3} alignItems="center">
-			<Avatar
-				color="error"
-				variant="rounded"
-				sx={{
-					width: 80,
-					height: 80,
-					bgcolor: "error.lighter",
-					transition: "transform 0.3s ease-in-out",
-					"&:hover": {
-						transform: "scale(1.1)",
-					},
-				}}
-			>
-				<Notification1 variant="Bulk" size={40} />
-			</Avatar>
-			<Box>
-				<Typography variant="h5" gutterBottom>
-					No hay notificaciones registradas
-				</Typography>
-				<Typography variant="body2" color="textSecondary">
-					Comienza agregando una nueva notificación usando el botón +
-				</Typography>
-			</Box>
-		</Stack>
-	</Paper>
-);
 
 const NotificationSkeleton = () => (
 	<Paper elevation={0} sx={{ p: 2, mb: 2 }}>
@@ -406,7 +366,11 @@ const Notifications: React.FC<NotificationsProps> = ({ title, folderName }) => {
 						<FooterActions />
 					</>
 				) : (
-					<EmptyState />
+					<EmptyStateCard
+						icon={<Notification1 variant="Bulk" />}
+						title="No hay notificaciones registradas"
+						subtitle="Comienza agregando una nueva notificación usando el botón +"
+					/>
 				)}
 			</CardContent>
 		</MainCard>

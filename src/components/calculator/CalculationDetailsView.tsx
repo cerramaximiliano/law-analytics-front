@@ -628,7 +628,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						<Box className="print-logo" sx={{ textAlign: "center", mb: 3 }}>
 							<img src={logo} alt="Law Analytics" style={{ maxWidth: "150px", height: "auto" }} />
 						</Box>
-						
+
 						{/* Contenido principal */}
 						<Stack spacing={1}>
 							{/* Renderizar las secciones disponibles */}

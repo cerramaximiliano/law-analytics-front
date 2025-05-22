@@ -19,6 +19,7 @@ import Members from "./components/Members";
 import TaskList from "./components/TaskList";
 import Calendar from "./components/Calendar";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
+import NavigationControls from "./components/NavigationControls";
 
 // Actions
 import { dispatch } from "store";
@@ -89,7 +90,6 @@ const Details = () => {
 	const { id } = useParams<{ id: string }>();
 	const [alignment, setAlignment] = useState<string>("two");
 	const [isColumn, setIsColumn] = useState(false);
-	const [isInitialLoad, setIsInitialLoad] = useState(true);
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
@@ -133,13 +133,12 @@ const Details = () => {
 		}
 	}, [id, userId]);
 
-	// Initial data fetch
+	// Data fetch when id changes
 	useEffect(() => {
-		if (isInitialLoad) {
-			fetchData();
-			setIsInitialLoad(false);
-		}
-	}, [fetchData, isInitialLoad]);
+		fetchData();
+		// Reset tab to first tab when changing folders
+		setTabValue(0);
+	}, [id, fetchData]);
 
 	// Contacts filtering with debounce
 	useEffect(() => {
@@ -155,9 +154,21 @@ const Details = () => {
 	// Track the previous folder name to avoid unnecessary updates
 	const prevFolderNameRef = useRef<string>();
 
-	// Update breadcrumb with folder name
+	// Set placeholder in breadcrumb when ID changes (loading state)
 	useEffect(() => {
-		if (!folder?.folderName || !id) return;
+		if (!id) return;
+
+		// Set a non-breaking space as placeholder to maintain height
+		setCustomLabel(`apps/folders/details/${id}`, "\u00A0");
+
+		return () => {
+			clearCustomLabel(`apps/folders/details/${id}`);
+		};
+	}, [id, setCustomLabel, clearCustomLabel]);
+
+	// Update breadcrumb with folder name when loaded
+	useEffect(() => {
+		if (!folder?.folderName || !id || isLoader) return;
 
 		// Only update if the folder name has actually changed
 		if (prevFolderNameRef.current === folder.folderName) return;
@@ -165,12 +176,8 @@ const Details = () => {
 		const formattedName = formatFolderName(folder.folderName);
 		setCustomLabel(`apps/folders/details/${id}`, formattedName);
 		prevFolderNameRef.current = folder.folderName;
-
-		return () => {
-			clearCustomLabel(`apps/folders/details/${id}`);
-		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [folder?.folderName, id]);
+	}, [folder?.folderName, id, isLoader]);
 
 	// Memoized handlers
 	const handleAlignment = useCallback((_: any, newAlignment: string | null) => {
@@ -265,14 +272,6 @@ const Details = () => {
 		[alignment, handleAlignment, folder?.pjn, handleOpenLinkJudicial, isLoader],
 	);
 
-	// Create a dynamic title that shows just the formatted folder name
-	const dynamicTitle = useMemo(() => {
-		if (isLoader) {
-			return <Skeleton variant="text" width={250} height={28} />;
-		}
-		return folder?.folderName ? formatFolderName(folder.folderName) : "Detalles de la Causa";
-	}, [folder, formatFolderName, isLoader]);
-
 	// Memoized components
 	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);
 
@@ -296,98 +295,150 @@ const Details = () => {
 	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" folderName={folder?.folderName} />, [folder]);
 
 	return (
-		<MainCard title={dynamicTitle} secondary={renderViewOptions}>
-			<Box sx={{ width: "100%" }}>
-				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-					<Tabs
-						value={tabValue}
-						onChange={handleTabChange}
-						aria-label="folder detail tabs"
-						variant="scrollable"
-						scrollButtons="auto"
-						sx={{
-							"& .MuiTab-root": {
-								minHeight: 48,
-								textTransform: "none",
-								fontSize: "0.875rem",
-								fontWeight: 500,
-							},
-							"& .MuiTab-iconWrapper": {
-								marginRight: 1,
-							},
-						}}
-					>
-						<Tab label="Información General" icon={<InfoCircle size="20" />} iconPosition="start" {...a11yProps(0)} />
-						<Tab label="Actividad" icon={<Activity size="20" />} iconPosition="start" {...a11yProps(1)} />
-						<Tab label="Gestión" icon={<Briefcase size="20" />} iconPosition="start" {...a11yProps(2)} />
-					</Tabs>
+		<Box
+			key={id}
+			sx={{
+				position: "relative",
+				"@keyframes fadeIn": {
+					from: { opacity: 0.7 },
+					to: { opacity: 1 },
+				},
+				animation: "fadeIn 0.3s ease-in-out",
+			}}
+		>
+			{/* Navigation controls positioned at breadcrumb level */}
+			{id && (
+				<Box
+					sx={{
+						position: "absolute",
+						top: { xs: -56, md: -60 }, // Moved up by 8px
+						right: 0,
+						zIndex: 1100, // Higher than breadcrumb
+						display: "flex",
+						alignItems: "center",
+						height: 36, // Match breadcrumb height
+					}}
+				>
+					<NavigationControls currentFolderId={id} inline />
 				</Box>
-
-				{/* Tab 1: Información General */}
-				<TabPanel value={tabValue} index={0}>
-					<Grid container spacing={3}>
-						<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
-							{MemoizedFolderData}
-						</Grid>
-						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
-							{MemoizedPreJudData}
-						</Grid>
-						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
-							{MemoizedJudData}
-						</Grid>
-					</Grid>
-				</TabPanel>
-
-				{/* Tab 2: Actividad */}
-				<TabPanel value={tabValue} index={1}>
-					<Grid container spacing={3}>
-						<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
-							{MemoizedMovements}
-						</Grid>
-						<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
-							{MemoizedNotifications}
-						</Grid>
-						<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
-							{MemoizedCalendar}
-						</Grid>
-					</Grid>
-				</TabPanel>
-
-				{/* Tab 3: Gestión */}
-				<TabPanel value={tabValue} index={2}>
-					<Grid container spacing={3}>
-						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
-							{MemoizedCalcTable}
-						</Grid>
-						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
-							{MemoizedMembers}
-						</Grid>
-						<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
-							{MemoizedTaskList}
-						</Grid>
-					</Grid>
-				</TabPanel>
-			</Box>
-
-			{/* LinkToJudicialPower Modal */}
-			{id && folder && (
-				<LinkToJudicialPower
-					openLink={openLinkJudicial}
-					onCancelLink={handleCloseLinkJudicial}
-					folderId={id}
-					folderName={folder.folderName}
-				/>
 			)}
 
-			{/* Modal de error cuando no se tiene acceso a la característica */}
-			<LimitErrorModal
-				open={limitErrorOpen}
-				onClose={handleCloseLimitErrorModal}
-				message="Esta característica no está disponible en tu plan actual."
-				featureInfo={limitErrorInfo}
-				upgradeRequired={true}
-			/>
-		</MainCard>
+			<MainCard
+				title={
+					isLoader || !folder?.folderName ? (
+						<Box sx={{ position: "relative", display: "inline-block", minHeight: "32px" }}>
+							<Box component="span" sx={{ visibility: "hidden" }}>
+								Nombre De Carpeta Ejemplo
+							</Box>
+							<Skeleton
+								variant="text"
+								width={200}
+								height={32}
+								sx={{
+									position: "absolute",
+									top: 0,
+									left: 0,
+								}}
+							/>
+						</Box>
+					) : (
+						<Box sx={{ minHeight: "32px", display: "flex", alignItems: "center" }}>{formatFolderName(folder.folderName)}</Box>
+					)
+				}
+				secondary={renderViewOptions}
+			>
+				<Box sx={{ width: "100%" }}>
+					<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+						<Tabs
+							value={tabValue}
+							onChange={handleTabChange}
+							aria-label="folder detail tabs"
+							variant="scrollable"
+							scrollButtons="auto"
+							sx={{
+								"& .MuiTab-root": {
+									minHeight: 48,
+									textTransform: "none",
+									fontSize: "0.875rem",
+									fontWeight: 500,
+								},
+								"& .MuiTab-iconWrapper": {
+									marginRight: 1,
+								},
+							}}
+						>
+							<Tab label="Información General" icon={<InfoCircle size="20" />} iconPosition="start" {...a11yProps(0)} />
+							<Tab label="Actividad" icon={<Activity size="20" />} iconPosition="start" {...a11yProps(1)} />
+							<Tab label="Gestión" icon={<Briefcase size="20" />} iconPosition="start" {...a11yProps(2)} />
+						</Tabs>
+					</Box>
+
+					{/* Tab 1: Información General */}
+					<TabPanel value={tabValue} index={0}>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
+								{MemoizedFolderData}
+							</Grid>
+							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+								{MemoizedPreJudData}
+							</Grid>
+							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+								{MemoizedJudData}
+							</Grid>
+						</Grid>
+					</TabPanel>
+
+					{/* Tab 2: Actividad */}
+					<TabPanel value={tabValue} index={1}>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+								{MemoizedMovements}
+							</Grid>
+							<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+								{MemoizedNotifications}
+							</Grid>
+							<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+								{MemoizedCalendar}
+							</Grid>
+						</Grid>
+					</TabPanel>
+
+					{/* Tab 3: Gestión */}
+					<TabPanel value={tabValue} index={2}>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+								{MemoizedCalcTable}
+							</Grid>
+							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+								{MemoizedMembers}
+							</Grid>
+							<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
+								{MemoizedTaskList}
+							</Grid>
+						</Grid>
+					</TabPanel>
+				</Box>
+
+				{/* LinkToJudicialPower Modal */}
+				{id && folder && (
+					<LinkToJudicialPower
+						openLink={openLinkJudicial}
+						onCancelLink={handleCloseLinkJudicial}
+						folderId={id}
+						folderName={folder.folderName}
+					/>
+				)}
+
+				{/* Modal de error cuando no se tiene acceso a la característica */}
+				<LimitErrorModal
+					open={limitErrorOpen}
+					onClose={handleCloseLimitErrorModal}
+					message="Esta característica no está disponible en tu plan actual."
+					featureInfo={limitErrorInfo}
+					upgradeRequired={true}
+				/>
+			</MainCard>
+		</Box>
 	);
 };
 

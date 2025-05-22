@@ -117,7 +117,21 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 		console.log(values);
 		if (id) {
 			try {
-				const result = await dispatch(updateFolderById(id, values));
+				// Convertir fechas de DD/MM/YYYY a formato ISO (YYYY-MM-DD) antes de enviar al backend
+				const formattedValues = {
+					...values,
+					judFolder: {
+						...values.judFolder,
+						initialDateJudFolder: values.judFolder.initialDateJudFolder
+							? moment(values.judFolder.initialDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							: values.judFolder.initialDateJudFolder,
+						finalDateJudFolder: values.judFolder.finalDateJudFolder
+							? moment(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							: values.judFolder.finalDateJudFolder,
+					},
+				};
+
+				const result = await dispatch(updateFolderById(id, formattedValues));
 
 				if (result.success) {
 					enqueueSnackbar("Se actualizó correctamente", {

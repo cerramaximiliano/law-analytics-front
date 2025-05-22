@@ -780,11 +780,11 @@ const SavedLabor = () => {
 							</Typography>
 						);
 					}
-					
+
 					// Si no existe capital pero hay intereses, calcular capital = amount - interest
 					const interestAmount = row.original.variables?.datosIntereses?.montoIntereses || 0;
 					const capital = row.original.amount - interestAmount;
-					
+
 					return (
 						<Typography fontWeight="500">
 							{capital
