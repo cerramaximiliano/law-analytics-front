@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef, ReactNode, SyntheticEvent } from "react";
 import { useParams } from "react-router";
 import { useSelector } from "react-redux";
-import { ToggleButtonGroup, ToggleButton, Tooltip, Grid, Button, Chip, Stack, Skeleton, Box, Tab, Tabs } from "@mui/material";
-import { Category, TableDocument, ExportSquare, InfoCircle, Activity, Briefcase } from "iconsax-react";
+import { Tooltip, Grid, Stack, Skeleton, Box, Tab, Tabs, Typography, useTheme, alpha } from "@mui/material";
+import { Category, TableDocument, ExportSquare, InfoCircle, Activity, Briefcase, Folder2, Judge, DocumentText } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
@@ -20,6 +20,7 @@ import TaskList from "./components/TaskList";
 import Calendar from "./components/Calendar";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import NavigationControls from "./components/NavigationControls";
+import CollapsibleSection from "./components/CollapsibleSection";
 
 // Actions
 import { dispatch } from "store";
@@ -46,14 +47,16 @@ interface StateType {
 // Constants - Moved outside component
 const VIEW_OPTIONS = [
 	{
-		label: "Expandir",
-		value: "one",
+		label: "Vista Detallada",
+		value: "detailed",
 		icon: Category,
+		description: "Muestra toda la información expandida",
 	},
 	{
-		label: "Colapsar",
-		value: "two",
+		label: "Vista Compacta",
+		value: "compact",
 		icon: TableDocument,
+		description: "Muestra la información condensada",
 	},
 ] as const;
 
@@ -88,8 +91,9 @@ function a11yProps(index: number) {
 
 const Details = () => {
 	const { id } = useParams<{ id: string }>();
-	const [alignment, setAlignment] = useState<string>("two");
-	const [isColumn, setIsColumn] = useState(false);
+	const theme = useTheme();
+	const [viewMode, setViewMode] = useState<string>("compact");
+	const [isDetailedView, setIsDetailedView] = useState(false);
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
@@ -180,10 +184,10 @@ const Details = () => {
 	}, [folder?.folderName, id, isLoader]);
 
 	// Memoized handlers
-	const handleAlignment = useCallback((_: any, newAlignment: string | null) => {
-		if (!newAlignment) return;
-		setAlignment(newAlignment);
-		setIsColumn(newAlignment === "one");
+	const handleViewModeChange = useCallback((_: any, newViewMode: string | null) => {
+		if (!newViewMode) return;
+		setViewMode(newViewMode);
+		setIsDetailedView(newViewMode === "detailed");
 	}, []);
 
 	const handleOpenLinkJudicial = useCallback(() => {
@@ -215,61 +219,127 @@ const Details = () => {
 	// Memoized view options renderer
 	const renderViewOptions = useMemo(
 		() => (
-			<Stack spacing={1} alignItems="flex-end">
-				{/* First line: View toggle buttons */}
+			<Stack spacing={1.5} alignItems="flex-end">
+				{/* View mode buttons - Formal style */}
 				{isLoader ? (
-					<Skeleton variant="rectangular" width={100} height={36} sx={{ borderRadius: 1 }} />
+					<Skeleton variant="rectangular" width={320} height={36} sx={{ borderRadius: 0.5 }} />
 				) : (
-					<ToggleButtonGroup value={alignment} exclusive onChange={handleAlignment} size="small" aria-label="view layout">
-						{VIEW_OPTIONS.map(({ value, label, icon: Icon }) => (
-							<ToggleButton value={value} key={value} aria-label={label}>
-								<Tooltip title={label}>
-									<Icon variant="Bold" />
-								</Tooltip>
-							</ToggleButton>
+					<Stack direction="row" spacing={0}>
+						{VIEW_OPTIONS.map(({ value, label, icon: Icon, description }, index) => (
+							<Tooltip key={value} title={description} placement="top">
+								<Box
+									onClick={() => handleViewModeChange(null, value)}
+									sx={{
+										px: 2.5,
+										py: 1,
+										height: 36,
+										display: "flex",
+										alignItems: "center",
+										gap: 1,
+										cursor: "pointer",
+										bgcolor: viewMode === value ? theme.palette.grey[100] : "transparent",
+										borderTop: `1px solid ${theme.palette.divider}`,
+										borderBottom: `1px solid ${theme.palette.divider}`,
+										borderLeft: index === 0 ? `1px solid ${theme.palette.divider}` : "none",
+										borderRight: `1px solid ${theme.palette.divider}`,
+										borderRadius: index === 0 ? "4px 0 0 4px" : index === VIEW_OPTIONS.length - 1 ? "0 4px 4px 0" : 0,
+										transition: "all 0.2s ease",
+										"&:hover": {
+											bgcolor: theme.palette.grey[50],
+										},
+									}}
+								>
+									<Icon
+										size={18}
+										variant={viewMode === value ? "Bold" : "Linear"}
+										color={viewMode === value ? theme.palette.primary.main : theme.palette.text.secondary}
+									/>
+									<Typography
+										variant="body2"
+										sx={{
+											fontWeight: viewMode === value ? 600 : 400,
+											color: viewMode === value ? theme.palette.text.primary : theme.palette.text.secondary,
+											fontSize: "0.8125rem",
+										}}
+									>
+										{label}
+									</Typography>
+								</Box>
+							</Tooltip>
 						))}
-					</ToggleButtonGroup>
+					</Stack>
 				)}
 
-				{/* Second line: Vincular con Poder Judicial button/chip */}
+				{/* Vincular con Poder Judicial - Formal button */}
 				{isLoader ? (
-					<Skeleton variant="rectangular" width={200} height={36} sx={{ borderRadius: 1 }} />
+					<Skeleton variant="rectangular" width={180} height={36} sx={{ borderRadius: 0.5 }} />
 				) : (
-					<>
+					<Box>
 						{folder?.pjn ? (
-							<Chip
-								label="Vinculado con PJN"
-								size="small"
-								color="success"
-								variant="filled"
-								icon={<ExportSquare size="16" />}
+							<Box
 								sx={{
-									fontWeight: 500,
-									fontSize: "0.875rem",
 									px: 2,
-									py: 0.5,
-								}}
-							/>
-						) : (
-							<Button
-								variant="outlined"
-								color="primary"
-								startIcon={<ExportSquare size="20" />}
-								onClick={handleOpenLinkJudicial}
-								sx={{
-									borderRadius: 1,
-									textTransform: "none",
-									fontWeight: 500,
+									py: 0.75,
+									height: 36,
+									display: "flex",
+									alignItems: "center",
+									gap: 0.75,
+									bgcolor: alpha(theme.palette.success.main, 0.1),
+									border: `1px solid ${theme.palette.success.main}`,
+									borderRadius: 0.5,
 								}}
 							>
-								Vincular con Poder Judicial
-							</Button>
+								<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+								<Typography
+									variant="body2"
+									sx={{
+										fontWeight: 500,
+										color: theme.palette.success.dark,
+										fontSize: "0.8125rem",
+									}}
+								>
+									Vinculado con PJN
+								</Typography>
+							</Box>
+						) : (
+							<Box
+								onClick={handleOpenLinkJudicial}
+								sx={{
+									px: 2,
+									py: 0.75,
+									height: 36,
+									display: "flex",
+									alignItems: "center",
+									gap: 0.75,
+									cursor: "pointer",
+									bgcolor: "transparent",
+									border: `1px solid ${theme.palette.divider}`,
+									borderRadius: 0.5,
+									transition: "all 0.2s ease",
+									"&:hover": {
+										borderColor: theme.palette.primary.main,
+										bgcolor: alpha(theme.palette.primary.main, 0.04),
+									},
+								}}
+							>
+								<ExportSquare size={16} variant="Linear" color={theme.palette.text.secondary} />
+								<Typography
+									variant="body2"
+									sx={{
+										fontWeight: 400,
+										color: theme.palette.text.secondary,
+										fontSize: "0.8125rem",
+									}}
+								>
+									Vincular con Poder Judicial
+								</Typography>
+							</Box>
 						)}
-					</>
+					</Box>
 				)}
 			</Stack>
 		),
-		[alignment, handleAlignment, folder?.pjn, handleOpenLinkJudicial, isLoader],
+		[viewMode, handleViewModeChange, folder?.pjn, handleOpenLinkJudicial, isLoader, theme, VIEW_OPTIONS],
 	);
 
 	// Memoized components
@@ -375,29 +445,46 @@ const Details = () => {
 
 					{/* Tab 1: Información General */}
 					<TabPanel value={tabValue} index={0}>
-						<Grid container spacing={3}>
-							<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
+						<Stack spacing={3}>
+							<CollapsibleSection
+								title="Datos Básicos"
+								icon={<Folder2 size={24} variant="Bold" />}
+								subtitle="Información principal de la carpeta"
+								defaultExpanded={true}
+							>
 								{MemoizedFolderData}
-							</Grid>
-							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							</CollapsibleSection>
+
+							<CollapsibleSection
+								title="Datos de Mediación"
+								icon={<DocumentText size={24} variant="Bold" />}
+								subtitle="Información del proceso de mediación"
+								defaultExpanded={false}
+							>
 								{MemoizedPreJudData}
-							</Grid>
-							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							</CollapsibleSection>
+
+							<CollapsibleSection
+								title="Datos Judiciales"
+								icon={<Judge size={24} variant="Bold" />}
+								subtitle="Información del proceso judicial"
+								defaultExpanded={false}
+							>
 								{MemoizedJudData}
-							</Grid>
-						</Grid>
+							</CollapsibleSection>
+						</Stack>
 					</TabPanel>
 
 					{/* Tab 2: Actividad */}
 					<TabPanel value={tabValue} index={1}>
 						<Grid container spacing={3}>
-							<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+							<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
 								{MemoizedMovements}
 							</Grid>
-							<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+							<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
 								{MemoizedNotifications}
 							</Grid>
-							<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+							<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
 								{MemoizedCalendar}
 							</Grid>
 						</Grid>
@@ -406,13 +493,13 @@ const Details = () => {
 					{/* Tab 3: Gestión */}
 					<TabPanel value={tabValue} index={2}>
 						<Grid container spacing={3}>
-							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							<Grid item xs={12} md={isDetailedView ? 12 : 6} sx={GRID_STYLES}>
 								{MemoizedCalcTable}
 							</Grid>
-							<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							<Grid item xs={12} md={isDetailedView ? 12 : 6} sx={GRID_STYLES}>
 								{MemoizedMembers}
 							</Grid>
-							<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
+							<Grid item xs={12} md={12} sx={GRID_STYLES}>
 								{MemoizedTaskList}
 							</Grid>
 						</Grid>
