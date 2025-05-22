@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, ReactNode, SyntheticEvent } from "react";
 import { useParams } from "react-router";
 import { useSelector } from "react-redux";
-import { ToggleButtonGroup, ToggleButton, Tooltip, Grid, Button, Chip, Stack, Skeleton } from "@mui/material";
-import { Category, TableDocument, ExportSquare } from "iconsax-react";
+import { ToggleButtonGroup, ToggleButton, Tooltip, Grid, Button, Chip, Stack, Skeleton, Box, Tab, Tabs } from "@mui/material";
+import { Category, TableDocument, ExportSquare, InfoCircle, Activity, Briefcase } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
@@ -60,6 +60,31 @@ const GRID_STYLES = {
 	transition: "all 0.5s ease-in-out",
 };
 
+// ==============================|| TAB PANEL ||============================== //
+
+interface TabPanelProps {
+	children?: ReactNode;
+	index: number;
+	value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+	const { children, value, index, ...other } = props;
+
+	return (
+		<div role="tabpanel" hidden={value !== index} id={`folder-tabpanel-${index}`} aria-labelledby={`folder-tab-${index}`} {...other}>
+			{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+		</div>
+	);
+}
+
+function a11yProps(index: number) {
+	return {
+		id: `folder-tab-${index}`,
+		"aria-controls": `folder-tabpanel-${index}`,
+	};
+}
+
 const Details = () => {
 	const { id } = useParams<{ id: string }>();
 	const [alignment, setAlignment] = useState<string>("two");
@@ -68,6 +93,7 @@ const Details = () => {
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+	const [tabValue, setTabValue] = useState(0);
 	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
 
 	// Usar el hook de suscripción para verificar características
@@ -146,16 +172,6 @@ const Details = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [folder?.folderName, id]);
 
-	// Memoized grid size calculation
-	const getGridSize = useMemo(
-		() => (size: number) => ({
-			xs: 12,
-			md: isColumn ? 12 : 6,
-			lg: isColumn ? 12 : size,
-		}),
-		[isColumn],
-	);
-
 	// Memoized handlers
 	const handleAlignment = useCallback((_: any, newAlignment: string | null) => {
 		if (!newAlignment) return;
@@ -183,6 +199,10 @@ const Details = () => {
 
 	const handleCloseLimitErrorModal = useCallback(() => {
 		setLimitErrorOpen(false);
+	}, []);
+
+	const handleTabChange = useCallback((event: SyntheticEvent, newValue: number) => {
+		setTabValue(newValue);
 	}, []);
 
 	// Memoized view options renderer
@@ -277,40 +297,77 @@ const Details = () => {
 
 	return (
 		<MainCard title={dynamicTitle} secondary={renderViewOptions}>
-			<Grid container spacing={3}>
-				{/* Row 1 */}
-				<Grid item {...getGridSize(6)} sx={GRID_STYLES}>
-					{MemoizedFolderData}
-				</Grid>
-				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedMovements}
-				</Grid>
-				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedNotifications}
-				</Grid>
+			<Box sx={{ width: "100%" }}>
+				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+					<Tabs
+						value={tabValue}
+						onChange={handleTabChange}
+						aria-label="folder detail tabs"
+						variant="scrollable"
+						scrollButtons="auto"
+						sx={{
+							"& .MuiTab-root": {
+								minHeight: 48,
+								textTransform: "none",
+								fontSize: "0.875rem",
+								fontWeight: 500,
+							},
+							"& .MuiTab-iconWrapper": {
+								marginRight: 1,
+							},
+						}}
+					>
+						<Tab label="Información General" icon={<InfoCircle size="20" />} iconPosition="start" {...a11yProps(0)} />
+						<Tab label="Actividad" icon={<Activity size="20" />} iconPosition="start" {...a11yProps(1)} />
+						<Tab label="Gestión" icon={<Briefcase size="20" />} iconPosition="start" {...a11yProps(2)} />
+					</Tabs>
+				</Box>
 
-				{/* Row 2 */}
-				<Grid item {...getGridSize(4)} sx={GRID_STYLES}>
-					{MemoizedPreJudData}
-				</Grid>
-				<Grid item {...getGridSize(4)} sx={GRID_STYLES}>
-					{MemoizedJudData}
-				</Grid>
-				<Grid item {...getGridSize(4)} sx={GRID_STYLES}>
-					{MemoizedCalcTable}
-				</Grid>
+				{/* Tab 1: Información General */}
+				<TabPanel value={tabValue} index={0}>
+					<Grid container spacing={3}>
+						<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
+							{MemoizedFolderData}
+						</Grid>
+						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							{MemoizedPreJudData}
+						</Grid>
+						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							{MemoizedJudData}
+						</Grid>
+					</Grid>
+				</TabPanel>
 
-				{/* Row 3 */}
-				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedMembers}
-				</Grid>
-				<Grid item {...getGridSize(3)} sx={GRID_STYLES}>
-					{MemoizedTaskList}
-				</Grid>
-				<Grid item {...getGridSize(6)} sx={GRID_STYLES}>
-					{MemoizedCalendar}
-				</Grid>
-			</Grid>
+				{/* Tab 2: Actividad */}
+				<TabPanel value={tabValue} index={1}>
+					<Grid container spacing={3}>
+						<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+							{MemoizedMovements}
+						</Grid>
+						<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+							{MemoizedNotifications}
+						</Grid>
+						<Grid item xs={12} md={isColumn ? 12 : 4} sx={GRID_STYLES}>
+							{MemoizedCalendar}
+						</Grid>
+					</Grid>
+				</TabPanel>
+
+				{/* Tab 3: Gestión */}
+				<TabPanel value={tabValue} index={2}>
+					<Grid container spacing={3}>
+						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							{MemoizedCalcTable}
+						</Grid>
+						<Grid item xs={12} md={isColumn ? 12 : 6} sx={GRID_STYLES}>
+							{MemoizedMembers}
+						</Grid>
+						<Grid item xs={12} md={isColumn ? 12 : 12} sx={GRID_STYLES}>
+							{MemoizedTaskList}
+						</Grid>
+					</Grid>
+				</TabPanel>
+			</Box>
 
 			{/* LinkToJudicialPower Modal */}
 			{id && folder && (
