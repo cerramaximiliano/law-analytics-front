@@ -10,10 +10,13 @@ export const SET_LOADING = "@users/SET_LOADING";
 export const SET_ERROR = "@users/SET_ERROR";
 export const UPDATE_USER = "@users/UPDATE_USER";
 export const DELETE_USER = "@users/DELETE_USER";
+export const SET_LIGHT_DATA = "@users/SET_LIGHT_DATA";
+export const CLEAR_USER_DATA = "@users/CLEAR_USER_DATA";
 
 export interface UsersStateProps {
 	users: any[];
 	user: any | null;
+	lightData: any | null;
 	loading: boolean;
 	error: object | string | null;
 }
@@ -21,6 +24,7 @@ export interface UsersStateProps {
 export const initialState: UsersStateProps = {
 	users: [],
 	user: null,
+	lightData: null,
 	loading: false,
 	error: null,
 };
@@ -87,6 +91,8 @@ const users = (state = initialState, action: any) => {
 				users: action.payload,
 			};
 		case SET_USER:
+			console.log("=== REDUX: SET_USER ACTION ===");
+			console.log("Payload:", action.payload);
 			return {
 				...state,
 				user: action.payload,
@@ -115,6 +121,19 @@ const users = (state = initialState, action: any) => {
 			return {
 				...state,
 				error: action.payload,
+			};
+		case SET_LIGHT_DATA:
+			console.log("=== REDUX: SET_LIGHT_DATA ACTION ===");
+			console.log("Payload:", action.payload);
+			return {
+				...state,
+				lightData: action.payload,
+			};
+		case CLEAR_USER_DATA:
+			return {
+				...state,
+				user: null,
+				lightData: null,
 			};
 		default:
 			return state;
@@ -258,6 +277,7 @@ export const deleteUser = (userId: string) => {
 
 export const getUserById = (userId: string) => {
 	return async (dispatch: any) => {
+		console.log("getUserById called with userId:", userId);
 		try {
 			dispatch({
 				type: SET_LOADING,
@@ -268,32 +288,44 @@ export const getUserById = (userId: string) => {
 				payload: null,
 			});
 
-			const response = await userApi.get(`/api/users/${userId}`);
+			console.log("Making API request to:", `/api/users/${userId}?includeLightData=true`);
+			const response = await userApi.get(`/api/users/${userId}?includeLightData=true`);
 			console.log("Respuesta de la API de usuario por ID:", response.data);
+			console.log("Response structure:", {
+				hasSuccess: response.data.hasOwnProperty('success'),
+				hasUser: response.data.hasOwnProperty('user'),
+				hasLightData: response.data.hasOwnProperty('lightData'),
+				hasSubscription: response.data.hasOwnProperty('subscription')
+			});
 
-			// Asegurarse de que estamos usando el formato correcto
-			// La nueva estructura devuelve user y subscription por separado
-			let userData;
-			if (response.data.user) {
-				// Si recibimos la nueva estructura con usuario + suscripción
-				userData = {
+			// La API devuelve success, user, subscription y lightData
+			if (response.data.success && response.data.user) {
+				// Combinar user con subscription en un solo objeto
+				const userData = {
 					...response.data.user,
 					subscription: response.data.subscription || undefined,
 				};
+
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
+
+				// Guardar lightData por separado
+				if (response.data.lightData) {
+					dispatch({
+						type: SET_LIGHT_DATA,
+						payload: response.data.lightData,
+					});
+				}
 			} else {
-				userData = response.data.data ? response.data.data : response.data;
+				// Fallback para estructura antigua
+				const userData = response.data.data ? response.data.data : response.data;
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
 			}
-
-			// Si no hay datos, usar datos de ejemplo
-			if (!userData || Object.keys(userData).length === 0) {
-				console.log("No se recibieron datos del usuario específico, buscando en datos de ejemplo");
-				userData = mockUsers.find((user) => user.id === userId) || null;
-			}
-
-			dispatch({
-				type: SET_USER,
-				payload: userData,
-			});
 		} catch (error) {
 			console.error("Error al obtener usuario por ID:", error);
 
@@ -389,32 +421,37 @@ export function getUserById_Static(userId: string) {
 				payload: null,
 			});
 
-			const response = await userApi.get(`/api/users/${userId}`);
+			const response = await userApi.get(`/api/users/${userId}?includeLightData=true`);
 			console.log("Respuesta de la API de usuario por ID (Static):", response.data);
 
-			// Asegurarse de que estamos usando el formato correcto
-			// La nueva estructura devuelve user y subscription por separado
-			let userData;
-			if (response.data.user) {
-				// Si recibimos la nueva estructura con usuario + suscripción
-				userData = {
+			// La API devuelve success, user, subscription y lightData
+			if (response.data.success && response.data.user) {
+				// Combinar user con subscription en un solo objeto
+				const userData = {
 					...response.data.user,
 					subscription: response.data.subscription || undefined,
 				};
+
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
+
+				// Guardar lightData por separado
+				if (response.data.lightData) {
+					dispatch({
+						type: SET_LIGHT_DATA,
+						payload: response.data.lightData,
+					});
+				}
 			} else {
-				userData = response.data.data ? response.data.data : response.data;
+				// Fallback para estructura antigua
+				const userData = response.data.data ? response.data.data : response.data;
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
 			}
-
-			// Si no hay datos, usar datos de ejemplo
-			if (!userData || Object.keys(userData).length === 0) {
-				console.log("No se recibieron datos del usuario específico (Static), buscando en datos de ejemplo");
-				userData = mockUsers.find((user) => user.id === userId) || null;
-			}
-
-			dispatch({
-				type: SET_USER,
-				payload: userData,
-			});
 		} catch (error) {
 			console.error("Error al obtener usuario por ID (Static):", error);
 
@@ -440,3 +477,11 @@ export function getUserById_Static(userId: string) {
 		}
 	};
 }
+
+export const clearUserData = () => {
+	return async () => {
+		dispatch({
+			type: CLEAR_USER_DATA,
+		});
+	};
+};

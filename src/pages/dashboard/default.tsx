@@ -1,11 +1,12 @@
 // material-ui
 import { useState, useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
-import { CircularProgress, Grid, Stack, Typography, Snackbar, Alert } from "@mui/material";
+import { Grid, Stack, Typography, Snackbar, Alert, Skeleton } from "@mui/material";
 
 // project-imports
 import EcommerceDataCard from "components/cards/statistics/WidgetDataCard";
 import BarsDataWidget from "sections/widget/chart/BarsDataWidget";
+import ErrorStateCard from "components/ErrorStateCard";
 
 import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
 
@@ -163,49 +164,51 @@ const DashboardDefault = () => {
 
 	//const movementsTrend = dashboardData ? calculateTrend("movements") : { direction: "up", percentage: 0 };
 
-	// Mostrar indicador de carga
-	if (loading) {
-		return (
-			<Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 400 }}>
-				<CircularProgress />
-			</Grid>
-		);
-	}
+	// Función para reintentar la carga
+	const handleRetry = () => {
+		setRetryCount(0);
+		setError(null);
+	};
 
-	// Mostrar mensaje de error
-	if (error) {
-		return (
-			<>
-				<Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 400 }}>
-					<Typography color="error" variant="h5">
-						{error}
-					</Typography>
+	// Renderizar skeleton loader para las tarjetas
+	const renderSkeletonCards = () => (
+		<>
+			{[1, 2, 3, 4].map((item) => (
+				<Grid item xs={12} sm={6} lg={3} key={item}>
+					<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1.5 }} />
 				</Grid>
-				<Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-					<Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: "100%" }}>
-						{snackbar.message}
-					</Alert>
-				</Snackbar>
-			</>
-		);
-	}
-
-	// Si no hay datos, mostrar mensaje
-	if (!dashboardData) {
-		return (
-			<Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 400 }}>
-				<Typography variant="h5">No hay datos disponibles</Typography>
+			))}
+			<Grid item xs={12} md={8} lg={9}>
+				<Stack spacing={3}>
+					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+				</Stack>
 			</Grid>
-		);
-	}
+			<Grid item xs={12} md={4} lg={3}>
+				<Stack spacing={3}>
+					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
+				</Stack>
+			</Grid>
+		</>
+	);
 
-	// Renderizar el dashboard con los datos
+	// Determinar tipo de error para el componente ErrorStateCard
+	const getErrorType = () => {
+		if (error?.includes("sesión") || error?.includes("autorizado")) return "permission";
+		if (error?.includes("conectar") || error?.includes("conexión")) return "connection";
+		if (error?.includes("404") || error?.includes("encontrado")) return "notFound";
+		return "general";
+	};
+
+	// Renderizar el dashboard - siempre mostrar el banner
 	return (
 		<>
 			<Grid container rowSpacing={4.5} columnSpacing={2.75}>
+				{/* Banner siempre visible */}
 				<Grid item xs={12}>
 					<WelcomeBanner />
-					{dashboardData.lastUpdated && (
+					{dashboardData?.lastUpdated && !loading && !error && (
 						<Typography
 							variant="caption"
 							sx={{
@@ -228,135 +231,165 @@ const DashboardDefault = () => {
 					)}
 				</Grid>
 
-				{/* row 1 - Mostrar estadísticas clave del dashboard */}
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Monto Activo"
-						count={new Intl.NumberFormat("es-AR", {
-							style: "currency",
-							currency: "ARS",
-							maximumFractionDigits: 0,
-						}).format(dashboardData.financialStats.totalActiveAmount)}
-						iconPrimary={<Wallet3 />}
-						percentage={
-							<Typography
-								color={foldersTrend.direction === "up" ? "primary" : "error.dark"}
-								sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-							>
-								{foldersTrend.direction === "up" ? (
-									<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
-								) : (
-									<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
-								)}
-								{foldersTrend.percentage}%
-							</Typography>
-						}
-					>
-						<BarsDataWidget color={theme.palette.primary.main} data={dashboardData.trends.financialAmounts?.map((item) => item.count)} />
-					</EcommerceDataCard>
-				</Grid>
+				{/* Contenido del dashboard */}
+				{loading && renderSkeletonCards()}
 
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Carpetas Activas"
-						count={dashboardData.folderStats.active.toString()}
-						color="warning"
-						iconPrimary={<Book color={theme.palette.warning.dark} />}
-						percentage={
-							<Typography
-								color={foldersTrend.direction === "up" ? "warning.dark" : "error.dark"}
-								sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-							>
-								{foldersTrend.direction === "up" ? (
-									<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
-								) : (
-									<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
-								)}
-								{foldersTrend.percentage}%
-							</Typography>
-						}
-					>
-						<BarsDataWidget
-							color={theme.palette.warning.dark}
-							height={50}
-							data={
-								dashboardData.folderStats.distribution
-									? [
-											dashboardData.folderStats.distribution.nueva,
-											dashboardData.folderStats.distribution.enProceso,
-											dashboardData.folderStats.distribution.pendiente,
-									  ]
+				{/* Mostrar error si existe */}
+				{error && !loading && (
+					<Grid item xs={12}>
+						<ErrorStateCard
+							type={getErrorType()}
+							onRetry={handleRetry}
+							title={
+								error.includes("sesión")
+									? "Sesión expirada"
+									: error.includes("permisos")
+									? "Acceso restringido"
+									: error.includes("conectar")
+									? "Sin conexión al servidor"
 									: undefined
 							}
-							labels={["Nueva", "En Proceso", "Pendiente"]}
-							noDataMessage="No hay carpetas disponibles"
 						/>
-					</EcommerceDataCard>
-				</Grid>
-
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Tareas Pendientes"
-						count={dashboardData.taskMetrics.pendingTasks.toString()}
-						color="success"
-						iconPrimary={<Calendar color={theme.palette.success.darker} />}
-						percentage={
-							<Typography color="success.darker" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-								<Typography variant="caption">{dashboardData.taskMetrics.completionRate}% completado</Typography>
-							</Typography>
-						}
-					>
-						<BarsDataWidget
-							color={theme.palette.success.darker}
-							data={dashboardData.trends.tasks?.map((item) => item.count) || undefined}
-						/>
-					</EcommerceDataCard>
-				</Grid>
-
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Vencimientos Próximos"
-						count={dashboardData.upcomingDeadlines.toString()}
-						color="error"
-						iconPrimary={<CloudChange color={theme.palette.error.dark} />}
-						percentage={
-							<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-								<Typography variant="caption">En los próximos 7 días</Typography>
-							</Typography>
-						}
-					>
-						<BarsDataWidget
-							color={theme.palette.error.dark}
-							data={dashboardData.trends.deadlines?.map((item) => item.count) || undefined}
-						/>
-					</EcommerceDataCard>
-				</Grid>
-
-				{/* row 2 */}
-				<Grid item xs={12} md={8} lg={9}>
-					<Grid container spacing={3}>
-						<Grid item xs={12}>
-							<RepeatCustomerRate />
-						</Grid>
-						<Grid item xs={12}>
-							<ProjectOverview />
-						</Grid>
 					</Grid>
-				</Grid>
-				<Grid item xs={12} md={4} lg={3}>
-					<Stack spacing={3}>
-						<ProjectRelease />
-						<AssignUsers />
-					</Stack>
-				</Grid>
+				)}
 
-				{/* row 3 */}
-				{/* 			<Grid item xs={12} md={6}>
-				<Transactions />
-			</Grid>
-			<Grid item xs={12} md={6}>
-				<TotalIncome />
-			</Grid> */}
+				{/* Mostrar datos si están disponibles */}
+				{!loading && !error && dashboardData && (
+					<>
+						{/* row 1 - Mostrar estadísticas clave del dashboard */}
+						<Grid item xs={12} sm={6} lg={3}>
+							<EcommerceDataCard
+								title="Monto Activo"
+								count={new Intl.NumberFormat("es-AR", {
+									style: "currency",
+									currency: "ARS",
+									maximumFractionDigits: 0,
+								}).format(dashboardData.financialStats.totalActiveAmount)}
+								iconPrimary={<Wallet3 />}
+								percentage={
+									<Typography
+										color={foldersTrend.direction === "up" ? "primary" : "error.dark"}
+										sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+									>
+										{foldersTrend.direction === "up" ? (
+											<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
+										) : (
+											<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
+										)}
+										{foldersTrend.percentage}%
+									</Typography>
+								}
+							>
+								<BarsDataWidget
+									color={theme.palette.primary.main}
+									data={dashboardData.trends.financialAmounts?.map((item) => item.count)}
+								/>
+							</EcommerceDataCard>
+						</Grid>
+
+						<Grid item xs={12} sm={6} lg={3}>
+							<EcommerceDataCard
+								title="Carpetas Activas"
+								count={dashboardData.folderStats.active.toString()}
+								color="warning"
+								iconPrimary={<Book color={theme.palette.warning.dark} />}
+								percentage={
+									<Typography
+										color={foldersTrend.direction === "up" ? "warning.dark" : "error.dark"}
+										sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+									>
+										{foldersTrend.direction === "up" ? (
+											<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
+										) : (
+											<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
+										)}
+										{foldersTrend.percentage}%
+									</Typography>
+								}
+							>
+								<BarsDataWidget
+									color={theme.palette.warning.dark}
+									height={50}
+									data={
+										dashboardData.folderStats.distribution
+											? [
+													dashboardData.folderStats.distribution.nueva,
+													dashboardData.folderStats.distribution.enProceso,
+													dashboardData.folderStats.distribution.pendiente,
+											  ]
+											: undefined
+									}
+									labels={["Nueva", "En Proceso", "Pendiente"]}
+									noDataMessage="No hay carpetas disponibles"
+								/>
+							</EcommerceDataCard>
+						</Grid>
+
+						<Grid item xs={12} sm={6} lg={3}>
+							<EcommerceDataCard
+								title="Tareas Pendientes"
+								count={dashboardData.taskMetrics.pendingTasks.toString()}
+								color="success"
+								iconPrimary={<Calendar color={theme.palette.success.darker} />}
+								percentage={
+									<Typography color="success.darker" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+										<Typography variant="caption">{dashboardData.taskMetrics.completionRate}% completado</Typography>
+									</Typography>
+								}
+							>
+								<BarsDataWidget
+									color={theme.palette.success.darker}
+									data={dashboardData.trends.tasks?.map((item) => item.count) || undefined}
+								/>
+							</EcommerceDataCard>
+						</Grid>
+
+						<Grid item xs={12} sm={6} lg={3}>
+							<EcommerceDataCard
+								title="Vencimientos Próximos"
+								count={dashboardData.upcomingDeadlines.toString()}
+								color="error"
+								iconPrimary={<CloudChange color={theme.palette.error.dark} />}
+								percentage={
+									<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+										<Typography variant="caption">En los próximos 7 días</Typography>
+									</Typography>
+								}
+							>
+								<BarsDataWidget
+									color={theme.palette.error.dark}
+									data={dashboardData.trends.deadlines?.map((item) => item.count) || undefined}
+								/>
+							</EcommerceDataCard>
+						</Grid>
+
+						{/* row 2 */}
+						<Grid item xs={12} md={8} lg={9}>
+							<Grid container spacing={3}>
+								<Grid item xs={12}>
+									<RepeatCustomerRate />
+								</Grid>
+								<Grid item xs={12}>
+									<ProjectOverview />
+								</Grid>
+							</Grid>
+						</Grid>
+						<Grid item xs={12} md={4} lg={3}>
+							<Stack spacing={3}>
+								<ProjectRelease />
+								<AssignUsers />
+							</Stack>
+						</Grid>
+
+						{/* row 3 */}
+						{/* 			<Grid item xs={12} md={6}>
+					<Transactions />
+				</Grid>
+				<Grid item xs={12} md={6}>
+					<TotalIncome />
+				</Grid> */}
+					</>
+				)}
 			</Grid>
 
 			{/* Agregar Snackbar para mostrar mensajes de error */}

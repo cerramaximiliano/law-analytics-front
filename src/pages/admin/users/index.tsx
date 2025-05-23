@@ -149,6 +149,8 @@ const UsersList = () => {
 	};
 
 	const handleUserView = (user: User) => {
+		console.log("handleUserView - user:", user);
+		console.log("User ID:", user.id, "User _id:", user._id);
 		setSelectedUser(user);
 		setViewDialogOpen(true);
 	};
@@ -316,13 +318,71 @@ const UsersList = () => {
 							{/* Mensaje de error */}
 							{!loading && error && (
 								<TableRow key="error-row">
-									<TableCell colSpan={headCells.length} align="center" sx={{ py: 3 }}>
-										<Typography variant="h6" color="error" gutterBottom>
-											Error al cargar usuarios
-										</Typography>
-										<Typography variant="body2" color="textSecondary">
-											{error}
-										</Typography>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 8 }}>
+										<Stack spacing={2} alignItems="center">
+											<Box
+												sx={{
+													width: 80,
+													height: 80,
+													borderRadius: "50%",
+													backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'error.dark' : 'error.lighter',
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													mb: 2
+												}}
+											>
+												<Typography variant="h2" color="error.main">
+													!
+												</Typography>
+											</Box>
+											<Typography variant="h5" color="text.primary" gutterBottom>
+												Ups, algo salió mal
+											</Typography>
+											<Typography variant="body1" color="text.secondary" align="center" sx={{ maxWidth: 400 }}>
+												{error?.toLowerCase().includes('network') || error?.toLowerCase().includes('conexión') 
+													? 'Parece que hay problemas de conexión. Verifica tu acceso a internet e intenta de nuevo.'
+													: error?.toLowerCase().includes('unauthorized') || error?.toLowerCase().includes('401')
+													? 'Tu sesión ha expirado. Por favor, vuelve a iniciar sesión.'
+													: error?.toLowerCase().includes('forbidden') || error?.toLowerCase().includes('403')
+													? 'No tienes permisos para ver esta información. Contacta al administrador.'
+													: error?.toLowerCase().includes('server') || error?.toLowerCase().includes('500')
+													? 'Nuestros servidores están experimentando problemas. Intenta más tarde.'
+													: 'No pudimos cargar la lista de usuarios. Por favor, intenta nuevamente.'}
+											</Typography>
+											{error && (
+												<Box 
+													sx={{ 
+														mt: 2, 
+														p: 1, 
+														borderRadius: 1, 
+														backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
+														maxWidth: 400,
+														width: '100%'
+													}}
+												>
+													<Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+														Error técnico: {error}
+													</Typography>
+												</Box>
+											)}
+											<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+												<Button 
+													variant="contained" 
+													color="primary" 
+													onClick={() => dispatch(getUsers())}
+												>
+													Reintentar
+												</Button>
+												<Button 
+													variant="outlined" 
+													color="primary" 
+													onClick={() => window.location.reload()}
+												>
+													Recargar página
+												</Button>
+											</Stack>
+										</Stack>
 									</TableCell>
 								</TableRow>
 							)}
@@ -330,16 +390,41 @@ const UsersList = () => {
 							{/* No hay resultados */}
 							{!loading && !error && (!users || users.length === 0) && (
 								<TableRow key="empty-row">
-									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5 }}>
-										<Typography variant="h6" gutterBottom>
-											No hay usuarios disponibles
-										</Typography>
-										<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-											Para agregar un nuevo usuario, haz clic en el botón "Agregar Usuario"
-										</Typography>
-										<Button variant="outlined" color="primary" onClick={handleAddUser} startIcon={<Add />}>
-											Agregar Usuario
-										</Button>
+									<TableCell colSpan={headCells.length} align="center" sx={{ py: 8 }}>
+										<Stack spacing={3} alignItems="center">
+											<Box
+												sx={{
+													width: 100,
+													height: 100,
+													borderRadius: "50%",
+													backgroundColor: theme.palette.mode === 'dark' ? 'background.paper' : 'grey.100',
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													mb: 2
+												}}
+											>
+												<Add size={48} color={theme.palette.text.secondary} />
+											</Box>
+											<Stack spacing={1} alignItems="center">
+												<Typography variant="h5" color="text.primary">
+													Comienza agregando usuarios
+												</Typography>
+												<Typography variant="body1" color="text.secondary" align="center" sx={{ maxWidth: 400 }}>
+													Aún no hay usuarios registrados en el sistema. Agrega el primer usuario para comenzar a gestionar tu equipo.
+												</Typography>
+											</Stack>
+											<Button 
+												variant="contained" 
+												color="primary" 
+												onClick={handleAddUser} 
+												startIcon={<Add />}
+												size="large"
+												sx={{ mt: 2 }}
+											>
+												Agregar Primer Usuario
+											</Button>
+										</Stack>
 									</TableCell>
 								</TableRow>
 							)}
@@ -427,7 +512,20 @@ const UsersList = () => {
 
 			{/* Diálogo para ver los detalles de un usuario */}
 			{selectedUser && (
-				<Dialog open={viewDialogOpen} onClose={handleCloseViewDialog} maxWidth="md" fullWidth>
+				<Dialog 
+					open={viewDialogOpen} 
+					onClose={handleCloseViewDialog} 
+					maxWidth="md" 
+					fullWidth
+					sx={{
+						"& .MuiDialog-paper": {
+							height: "90vh",
+							maxHeight: "900px",
+							display: "flex",
+							flexDirection: "column"
+						}
+					}}
+				>
 					<UserView user={selectedUser} onClose={handleCloseViewDialog} />
 				</Dialog>
 			)}

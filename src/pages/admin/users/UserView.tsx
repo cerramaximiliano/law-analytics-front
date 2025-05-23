@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { dispatch } from "store/index";
+import { useSelector, useDispatch } from "react-redux";
 
 // material-ui
 import {
@@ -23,14 +22,15 @@ import {
 
 // project imports
 import MainCard from "components/MainCard";
-import { getUserById } from "store/reducers/users";
+import { getUserById, clearUserData } from "store/reducers/users";
 import { DefaultRootStateProps } from "types/root";
-import { User, Subscription } from "types/user";
+import { User, Subscription, UserLightData } from "types/user";
 import DeleteUserDialog from "./DeleteUserDialog";
 import EditUserModal from "./EditUserModal";
+import { formatCurrency } from "utils/formatCurrency";
 
 // assets
-import { User as UserIcon, Wallet, Lock, Calendar } from "iconsax-react";
+import { User as UserIcon, Wallet, Lock, Calendar, Folder2, Calculator, Profile2User, CalendarAdd } from "iconsax-react";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -43,7 +43,31 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`user-tabpanel-${index}`} aria-labelledby={`user-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+			{value === index && (
+				<Box 
+					sx={{ 
+						p: 3,
+						height: "400px",
+						overflowY: "auto",
+						"&::-webkit-scrollbar": {
+							width: "8px"
+						},
+						"&::-webkit-scrollbar-track": {
+							background: "#f1f1f1",
+							borderRadius: "4px"
+						},
+						"&::-webkit-scrollbar-thumb": {
+							background: "#888",
+							borderRadius: "4px"
+						},
+						"&::-webkit-scrollbar-thumb:hover": {
+							background: "#555"
+						}
+					}}
+				>
+					{children}
+				</Box>
+			)}
 		</div>
 	);
 }
@@ -55,7 +79,10 @@ interface UserViewProps {
 
 const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const theme = useTheme();
-	const { user: userDetails } = useSelector((state: DefaultRootStateProps) => state.users);
+	const dispatch = useDispatch();
+	console.log("UserView component - dispatch:", typeof dispatch);
+	const { user: userDetails, lightData } = useSelector((state: DefaultRootStateProps) => state.users);
+	console.log("UserView component - initial state:", { userDetails, lightData });
 
 	// Estados para los modales
 	const [editModalOpen, setEditModalOpen] = useState(false);
@@ -63,10 +90,36 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const [tabValue, setTabValue] = useState(0);
 
 	useEffect(() => {
-		if (user?.id) {
-			dispatch(getUserById(user.id));
+		console.log("UserView useEffect - user:", user);
+		console.log("User properties:", {
+			hasId: user?.hasOwnProperty('id'),
+			has_id: user?.hasOwnProperty('_id'),
+			id: user?.id,
+			_id: user?._id
+		});
+		
+		const userId = user?.id || user?._id;
+		if (userId) {
+			console.log("UserView - Calling getUserById with ID:", userId);
+			dispatch(getUserById(userId) as any);
+		} else {
+			console.log("UserView - No user ID found, skipping API call");
 		}
-	}, [user]);
+
+		// Cleanup function para limpiar los datos cuando se desmonta el componente
+		return () => {
+			console.log("UserView - Cleanup, calling clearUserData");
+			dispatch(clearUserData() as any);
+		};
+	}, [user, dispatch]);
+
+	// Log para ver el estado de Redux
+	useEffect(() => {
+		console.log("=== REDUX STATE IN USERV VIEW ===");
+		console.log("userDetails from Redux:", userDetails);
+		console.log("lightData from Redux:", lightData);
+		console.log("=================================");
+	}, [userDetails, lightData]);
 
 	// Información combinada (datos de la fila + detalles completos de la API)
 	const userData = userDetails || user;
@@ -289,166 +342,401 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		);
 	};
 
-	return (
-		<>
-			<MainCard title={<Typography variant="h5">Detalles del Usuario</Typography>}>
-				<Grid container spacing={3}>
-					<Grid item xs={12}>
-						<Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "center", sm: "flex-start" }} spacing={2.5}>
-							<Avatar
-								alt={userData?.name}
-								src={userData?.avatar || "/assets/images/users/default.png"}
-								sx={{
-									width: { xs: 80, sm: 90 },
-									height: { xs: 80, sm: 90 },
-									boxShadow: theme.shadows[4],
-								}}
-							/>
-							<Stack spacing={1} sx={{ width: "100%", alignItems: { xs: "center", sm: "flex-start" } }}>
-								<Typography variant="h4">{userData?.name}</Typography>
-								<Typography variant="body1" color="textSecondary">
-									{userData?.email}
-								</Typography>
-								<Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-									{userData?.status && renderStatusChip(userData.status)}
-									<Chip
-										label={userData?.role}
-										size="small"
-										sx={{
-											borderRadius: "4px",
-											backgroundColor: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
-											color: theme.palette.primary.main,
-											fontSize: "0.875rem",
-										}}
-									/>
-								</Stack>
-							</Stack>
+	// Renderizar información resumida (lightData)
+	const renderLightData = (lightData?: UserLightData) => {
+		if (!lightData) {
+			return (
+				<Paper
+					elevation={0}
+					sx={{
+						p: 3,
+						backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+						borderRadius: 2,
+					}}
+				>
+					<Typography variant="body1" align="center">
+						No hay información resumida disponible.
+					</Typography>
+				</Paper>
+			);
+		}
+
+		return (
+			<Grid container spacing={3}>
+				{/* Carpetas */}
+				<Grid item xs={12} md={6}>
+					<Paper
+						elevation={0}
+						sx={{
+							p: 3,
+							backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+							borderRadius: 2,
+							height: "100%",
+						}}
+					>
+						<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+							<Folder2 size={20} />
+							<Typography variant="h6">Carpetas</Typography>
+							<Chip label={`${lightData.folders.totalCount} total`} size="small" sx={{ ml: "auto" }} />
 						</Stack>
-					</Grid>
+						{lightData.folders.items.length > 0 ? (
+							<Stack spacing={1.5}>
+								{lightData.folders.items.slice(0, 5).map((folder, index) => (
+									<Box key={folder._id}>
+										<Stack direction="row" justifyContent="space-between" alignItems="center">
+											<Box>
+												<Typography variant="subtitle2">{folder.folderName}</Typography>
+												<Typography variant="caption" color="textSecondary">
+													{folder.materia} • {folder.status}
+												</Typography>
+											</Box>
+											<Typography variant="body2" fontWeight="medium">
+												{folder.amount != null ? formatCurrency(folder.amount) : "-"}
+											</Typography>
+										</Stack>
+										{index < lightData.folders.items.length - 1 && <Divider sx={{ mt: 1.5 }} />}
+									</Box>
+								))}
+								{lightData.folders.totalCount > lightData.folders.count && (
+									<Typography variant="caption" color="textSecondary" align="center" sx={{ pt: 1 }}>
+										Mostrando {lightData.folders.count} de {lightData.folders.totalCount} carpetas
+									</Typography>
+								)}
+							</Stack>
+						) : (
+							<Typography variant="body2" color="textSecondary">
+								No hay carpetas registradas
+							</Typography>
+						)}
+					</Paper>
+				</Grid>
 
-					<Grid item xs={12}>
-						<Divider />
-					</Grid>
+				{/* Calculadoras */}
+				<Grid item xs={12} md={6}>
+					<Paper
+						elevation={0}
+						sx={{
+							p: 3,
+							backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+							borderRadius: 2,
+							height: "100%",
+						}}
+					>
+						<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+							<Calculator size={20} />
+							<Typography variant="h6">Cálculos</Typography>
+							<Chip label={`${lightData.calculators.totalCount} total`} size="small" sx={{ ml: "auto" }} />
+						</Stack>
+						{lightData.calculators.items.length > 0 ? (
+							<Stack spacing={1.5}>
+								{lightData.calculators.items.slice(0, 5).map((calc, index) => (
+									<Box key={calc._id}>
+										<Stack direction="row" justifyContent="space-between" alignItems="center">
+											<Box>
+												<Typography variant="subtitle2">{calc.type}</Typography>
+												<Typography variant="caption" color="textSecondary">
+													{calc.classType} • {new Date(calc.date).toLocaleDateString()}
+												</Typography>
+											</Box>
+											<Typography variant="body2" fontWeight="medium">
+												{calc.amount != null ? formatCurrency(calc.amount) : "-"}
+											</Typography>
+										</Stack>
+										{index < lightData.calculators.items.length - 1 && <Divider sx={{ mt: 1.5 }} />}
+									</Box>
+								))}
+								{lightData.calculators.totalCount > lightData.calculators.count && (
+									<Typography variant="caption" color="textSecondary" align="center" sx={{ pt: 1 }}>
+										Mostrando {lightData.calculators.count} de {lightData.calculators.totalCount} cálculos
+									</Typography>
+								)}
+							</Stack>
+						) : (
+							<Typography variant="body2" color="textSecondary">
+								No hay cálculos registrados
+							</Typography>
+						)}
+					</Paper>
+				</Grid>
 
-					<Grid item xs={12}>
-						<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-							<Tabs value={tabValue} onChange={handleTabChange} aria-label="user tabs" variant="scrollable" scrollButtons="auto">
-								<Tab
-									icon={<UserIcon size={18} />}
-									iconPosition="start"
-									label="Información General"
-									id="user-tab-0"
-									aria-controls="user-tabpanel-0"
-								/>
-								<Tab icon={<Wallet size={18} />} iconPosition="start" label="Suscripción" id="user-tab-1" aria-controls="user-tabpanel-1" />
-								<Tab icon={<Calendar size={18} />} iconPosition="start" label="Actividad" id="user-tab-2" aria-controls="user-tabpanel-2" />
-								<Tab icon={<Lock size={18} />} iconPosition="start" label="Preferencias" id="user-tab-3" aria-controls="user-tabpanel-3" />
-							</Tabs>
-						</Box>
-
-						<TabPanel value={tabValue} index={0}>
-							<Grid container spacing={3}>
-								<Grid item xs={12} md={6}>
-									<Stack spacing={3}>
-										<Typography variant="h6">Información Personal</Typography>
-										<Stack spacing={2}>
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="subtitle1">Nombre completo</Typography>
-												<Typography variant="body2">{userData?.name || "-"}</Typography>
-											</Stack>
-
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="subtitle1">Correo electrónico</Typography>
-												<Typography variant="body2">{userData?.email || "-"}</Typography>
-											</Stack>
-
-											{userData?.phone && (
-												<Stack direction="row" justifyContent="space-between" alignItems="center">
-													<Typography variant="subtitle1">Teléfono</Typography>
-													<Typography variant="body2">{userData.phone}</Typography>
-												</Stack>
+				{/* Contactos */}
+				<Grid item xs={12} md={6}>
+					<Paper
+						elevation={0}
+						sx={{
+							p: 3,
+							backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+							borderRadius: 2,
+							height: "100%",
+						}}
+					>
+						<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+							<Profile2User size={20} />
+							<Typography variant="h6">Contactos</Typography>
+							<Chip label={`${lightData.contacts.totalCount} total`} size="small" sx={{ ml: "auto" }} />
+						</Stack>
+						{lightData.contacts.items.length > 0 ? (
+							<Stack spacing={1.5}>
+								{lightData.contacts.items.slice(0, 5).map((contact, index) => (
+									<Box key={contact._id}>
+										<Stack direction="row" justifyContent="space-between" alignItems="center">
+											<Box>
+												<Typography variant="subtitle2">
+													{contact.name} {contact.lastName}
+												</Typography>
+												<Typography variant="caption" color="textSecondary">
+													{contact.role} • {contact.type}
+												</Typography>
+											</Box>
+											{contact.email && (
+												<Typography variant="caption" color="textSecondary">
+													{contact.email}
+												</Typography>
 											)}
 										</Stack>
+										{index < lightData.contacts.items.length - 1 && <Divider sx={{ mt: 1.5 }} />}
+									</Box>
+								))}
+								{lightData.contacts.totalCount > lightData.contacts.count && (
+									<Typography variant="caption" color="textSecondary" align="center" sx={{ pt: 1 }}>
+										Mostrando {lightData.contacts.count} de {lightData.contacts.totalCount} contactos
+									</Typography>
+								)}
+							</Stack>
+						) : (
+							<Typography variant="body2" color="textSecondary">
+								No hay contactos registrados
+							</Typography>
+						)}
+					</Paper>
+				</Grid>
+
+				{/* Eventos */}
+				<Grid item xs={12} md={6}>
+					<Paper
+						elevation={0}
+						sx={{
+							p: 3,
+							backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+							borderRadius: 2,
+							height: "100%",
+						}}
+					>
+						<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+							<CalendarAdd size={20} />
+							<Typography variant="h6">Eventos</Typography>
+							<Chip label={`${lightData.events.totalCount} total`} size="small" sx={{ ml: "auto" }} />
+						</Stack>
+						{lightData.events.items.length > 0 ? (
+							<Stack spacing={1.5}>
+								{lightData.events.items.slice(0, 5).map((event, index) => (
+									<Box key={event._id}>
+										<Stack direction="row" justifyContent="space-between" alignItems="center">
+											<Box sx={{ flex: 1 }}>
+												<Typography variant="subtitle2" noWrap>
+													{event.title}
+												</Typography>
+												<Typography variant="caption" color="textSecondary">
+													{new Date(event.start).toLocaleDateString()} • {event.type}
+												</Typography>
+											</Box>
+											{!event.allDay && (
+												<Typography variant="caption" color="textSecondary">
+													{new Date(event.start).toLocaleTimeString([], {
+														hour: "2-digit",
+														minute: "2-digit",
+													})}
+												</Typography>
+											)}
+										</Stack>
+										{index < lightData.events.items.length - 1 && <Divider sx={{ mt: 1.5 }} />}
+									</Box>
+								))}
+								{lightData.events.totalCount > lightData.events.count && (
+									<Typography variant="caption" color="textSecondary" align="center" sx={{ pt: 1 }}>
+										Mostrando {lightData.events.count} de {lightData.events.totalCount} eventos
+									</Typography>
+								)}
+							</Stack>
+						) : (
+							<Typography variant="body2" color="textSecondary">
+								No hay eventos programados
+							</Typography>
+						)}
+					</Paper>
+				</Grid>
+			</Grid>
+		);
+	};
+
+	return (
+		<>
+			<Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+				<MainCard 
+					title={<Typography variant="h5">Detalles del Usuario</Typography>}
+					sx={{ flex: 1, display: "flex", flexDirection: "column" }}
+				>
+					<Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+						{/* Header con info del usuario */}
+						<Box sx={{ pb: 2 }}>
+							<Stack direction={{ xs: "column", sm: "row" }} alignItems={{ xs: "center", sm: "flex-start" }} spacing={2.5}>
+								<Avatar
+									alt={userData?.name}
+									src={userData?.avatar || "/assets/images/users/default.png"}
+									sx={{
+										width: { xs: 80, sm: 90 },
+										height: { xs: 80, sm: 90 },
+										boxShadow: theme.shadows[4],
+									}}
+								/>
+								<Stack spacing={1} sx={{ width: "100%", alignItems: { xs: "center", sm: "flex-start" } }}>
+									<Typography variant="h4">{userData?.name}</Typography>
+									<Typography variant="body1" color="textSecondary">
+										{userData?.email}
+									</Typography>
+									<Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+										{userData?.status && renderStatusChip(userData.status)}
+										<Chip
+											label={userData?.role}
+											size="small"
+											sx={{
+												borderRadius: "4px",
+												backgroundColor: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
+												color: theme.palette.primary.main,
+												fontSize: "0.875rem",
+											}}
+										/>
 									</Stack>
-								</Grid>
-								<Grid item xs={12} md={6}>
-									<Stack spacing={3}>
-										<Typography variant="h6">Información de Cuenta</Typography>
-										<Stack spacing={2}>
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="subtitle1">ID</Typography>
-												<Typography
-													variant="body2"
-													sx={{
-														maxWidth: "180px",
-														overflow: "hidden",
-														textOverflow: "ellipsis",
-													}}
-												>
-													{userData?.id || "-"}
-												</Typography>
-											</Stack>
+								</Stack>
+							</Stack>
+						</Box>
 
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="subtitle1">Rol</Typography>
-												<Chip
-													label={userData?.role || "Sin rol"}
-													size="small"
-													sx={{
-														borderRadius: "4px",
-														backgroundColor: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
-														color: theme.palette.primary.main,
-														fontSize: "0.75rem",
-													}}
-												/>
-											</Stack>
+						<Divider />
 
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="subtitle1">Estado</Typography>
-												{userData?.status ? renderStatusChip(userData.status) : "-"}
-											</Stack>
+						{/* Contenido con tabs */}
+						<Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", mt: 2 }}>
+							<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+								<Tabs value={tabValue} onChange={handleTabChange} aria-label="user tabs" variant="scrollable" scrollButtons="auto">
+									<Tab
+										icon={<UserIcon size={18} />}
+										iconPosition="start"
+										label="Información General"
+										id="user-tab-0"
+										aria-controls="user-tabpanel-0"
+									/>
+									<Tab icon={<Wallet size={18} />} iconPosition="start" label="Suscripción" id="user-tab-1" aria-controls="user-tabpanel-1" />
+									<Tab icon={<Calendar size={18} />} iconPosition="start" label="Actividad" id="user-tab-2" aria-controls="user-tabpanel-2" />
+									<Tab icon={<Lock size={18} />} iconPosition="start" label="Preferencias" id="user-tab-3" aria-controls="user-tabpanel-3" />
+									<Tab icon={<Folder2 size={18} />} iconPosition="start" label="Resumen" id="user-tab-4" aria-controls="user-tabpanel-4" />
+								</Tabs>
+							</Box>
 
-											<Stack direction="row" justifyContent="space-between" alignItems="center">
-												<Typography variant="subtitle1">Fecha de registro</Typography>
-												<Typography variant="body2">
-													{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "-"}
-												</Typography>
+							<TabPanel value={tabValue} index={0}>
+								<Grid container spacing={3}>
+									<Grid item xs={12} md={6}>
+										<Stack spacing={3}>
+											<Typography variant="h6">Información Personal</Typography>
+											<Stack spacing={2}>
+												<Stack direction="row" justifyContent="space-between" alignItems="center">
+													<Typography variant="subtitle1">Nombre completo</Typography>
+													<Typography variant="body2">{userData?.name || "-"}</Typography>
+												</Stack>
+
+												<Stack direction="row" justifyContent="space-between" alignItems="center">
+													<Typography variant="subtitle1">Correo electrónico</Typography>
+													<Typography variant="body2">{userData?.email || "-"}</Typography>
+												</Stack>
+
+												{userData?.phone && (
+													<Stack direction="row" justifyContent="space-between" alignItems="center">
+														<Typography variant="subtitle1">Teléfono</Typography>
+														<Typography variant="body2">{userData.phone}</Typography>
+													</Stack>
+												)}
 											</Stack>
 										</Stack>
-									</Stack>
+									</Grid>
+									<Grid item xs={12} md={6}>
+										<Stack spacing={3}>
+											<Typography variant="h6">Información de Cuenta</Typography>
+											<Stack spacing={2}>
+												<Stack direction="row" justifyContent="space-between" alignItems="center">
+													<Typography variant="subtitle1">ID</Typography>
+													<Typography
+														variant="body2"
+														sx={{
+															maxWidth: "180px",
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+														}}
+													>
+														{userData?.id || "-"}
+													</Typography>
+												</Stack>
+
+												<Stack direction="row" justifyContent="space-between" alignItems="center">
+													<Typography variant="subtitle1">Rol</Typography>
+													<Chip
+														label={userData?.role || "Sin rol"}
+														size="small"
+														sx={{
+															borderRadius: "4px",
+															backgroundColor: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
+															color: theme.palette.primary.main,
+															fontSize: "0.75rem",
+														}}
+													/>
+												</Stack>
+
+												<Stack direction="row" justifyContent="space-between" alignItems="center">
+													<Typography variant="subtitle1">Estado</Typography>
+													{userData?.status ? renderStatusChip(userData.status) : "-"}
+												</Stack>
+
+												<Stack direction="row" justifyContent="space-between" alignItems="center">
+													<Typography variant="subtitle1">Fecha de registro</Typography>
+													<Typography variant="body2">
+														{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : "-"}
+													</Typography>
+												</Stack>
+											</Stack>
+										</Stack>
+									</Grid>
 								</Grid>
-							</Grid>
-						</TabPanel>
+							</TabPanel>
 
-						<TabPanel value={tabValue} index={1}>
-							{renderSubscriptionInfo(userData?.subscription)}
-						</TabPanel>
+							<TabPanel value={tabValue} index={1}>
+								{renderSubscriptionInfo(userData?.subscription)}
+							</TabPanel>
 
-						<TabPanel value={tabValue} index={2}>
-							{renderActivityInfo()}
-						</TabPanel>
+							<TabPanel value={tabValue} index={2}>
+								{renderActivityInfo()}
+							</TabPanel>
 
-						<TabPanel value={tabValue} index={3}>
-							{renderPreferences()}
-						</TabPanel>
-					</Grid>
+							<TabPanel value={tabValue} index={3}>
+								{renderPreferences()}
+							</TabPanel>
 
-					<Grid item xs={12}>
-						<Divider />
-					</Grid>
+							<TabPanel value={tabValue} index={4}>
+								{renderLightData(lightData)}
+							</TabPanel>
+						</Box>
 
-					<Grid item xs={12}>
-						<Stack direction="row" spacing={1} justifyContent="flex-end">
-							<Button variant="outlined" color="error" onClick={handleDeleteClick}>
-								Eliminar Usuario
-							</Button>
-							<Button variant="contained" onClick={handleEditClick}>
-								Editar Usuario
-							</Button>
-						</Stack>
-					</Grid>
-				</Grid>
-			</MainCard>
+						{/* Botones de acción - siempre visibles */}
+						<Box sx={{ pt: 2 }}>
+							<Divider sx={{ mb: 2 }} />
+							<Stack direction="row" spacing={1} justifyContent="flex-end">
+								<Button variant="outlined" color="error" onClick={handleDeleteClick}>
+									Eliminar Usuario
+								</Button>
+								<Button variant="contained" onClick={handleEditClick}>
+									Editar Usuario
+								</Button>
+							</Stack>
+						</Box>
+					</Box>
+				</MainCard>
+			</Box>
 
 			{/* Modal para editar usuario */}
 			{editModalOpen && userData && <EditUserModal user={userData} open={editModalOpen} onClose={handleEditModalClose} />}
