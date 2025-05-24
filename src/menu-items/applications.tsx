@@ -58,7 +58,7 @@ const applications: NavItemType = {
 			children: [
 				{
 					id: "all-calculators",
-					title: <FormattedMessage id="Todos los Cálculos" />,
+					title: <FormattedMessage id="Mis Cálculos" />,
 					type: "item",
 					url: "/apps/calc",
 				},
