@@ -83,7 +83,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 			console.log("GenerateDataModal - Loading folders for user:", userId);
 			console.log("User object:", user);
 			setLoadingFolders(true);
-			
+
 			// Primero intentar con el endpoint específico del usuario
 			userApi
 				.get(`/api/folders/user/${userId}`)
@@ -104,7 +104,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 				.catch((err) => {
 					console.error("Error al cargar causas (user endpoint):", err);
 					console.error("Error details:", err.response);
-					
+
 					// Si falla, intentar con el endpoint alternativo
 					return userApi.get(`/api/folders?userId=${userId}`);
 				})
@@ -211,25 +211,25 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 	};
 
 	return (
-		<Dialog 
-			open={open} 
-			onClose={onClose} 
-			maxWidth="md" 
+		<Dialog
+			open={open}
+			onClose={onClose}
+			maxWidth="md"
 			fullWidth
 			sx={{
 				"& .MuiDialog-paper": {
 					height: "80vh",
 					maxHeight: "700px",
 					display: "flex",
-					flexDirection: "column"
-				}
+					flexDirection: "column",
+				},
 			}}
 		>
 			<DialogTitle sx={{ flexShrink: 0 }}>Generar Datos para {user.name}</DialogTitle>
 			<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values, setFieldValue }) => (
-					<form noValidate onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-						<DialogContent sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+					<form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+						<DialogContent sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 							<Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3, flexShrink: 0 }}>
 								<Tabs value={tabValue} onChange={handleTabChange}>
 									<Tab label="Datos Generales" />
@@ -237,230 +237,224 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 								</Tabs>
 							</Box>
 
-							<Box 
-								sx={{ 
+							<Box
+								sx={{
 									flex: 1,
 									overflowY: "auto",
 									"&::-webkit-scrollbar": {
-										width: "8px"
+										width: "8px",
 									},
 									"&::-webkit-scrollbar-track": {
 										background: "#f1f1f1",
-										borderRadius: "4px"
+										borderRadius: "4px",
 									},
 									"&::-webkit-scrollbar-thumb": {
 										background: "#888",
-										borderRadius: "4px"
+										borderRadius: "4px",
 									},
 									"&::-webkit-scrollbar-thumb:hover": {
-										background: "#555"
-									}
+										background: "#555",
+									},
 								}}
 							>
 								{tabValue === 0 && (
-								<Grid container spacing={3}>
-									<Grid item xs={12}>
-										<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-											Especifica la cantidad de cada tipo de dato a generar para este usuario.
-										</Typography>
+									<Grid container spacing={3}>
+										<Grid item xs={12}>
+											<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+												Especifica la cantidad de cada tipo de dato a generar para este usuario.
+											</Typography>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="folders"
+												name="folders"
+												label="Carpetas"
+												type="number"
+												value={values.folders}
+												onChange={handleChange}
+												onBlur={handleBlur}
+												error={Boolean(touched.folders && errors.folders)}
+												helperText={touched.folders && errors.folders}
+												InputProps={{ inputProps: { min: 0 } }}
+											/>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="calculators"
+												name="calculators"
+												label="Calculadoras"
+												type="number"
+												value={values.calculators}
+												onChange={handleChange}
+												onBlur={handleBlur}
+												error={Boolean(touched.calculators && errors.calculators)}
+												helperText={touched.calculators && errors.calculators}
+												InputProps={{ inputProps: { min: 0 } }}
+											/>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="contacts"
+												name="contacts"
+												label="Contactos"
+												type="number"
+												value={values.contacts}
+												onChange={handleChange}
+												onBlur={handleBlur}
+												error={Boolean(touched.contacts && errors.contacts)}
+												helperText={touched.contacts && errors.contacts}
+												InputProps={{ inputProps: { min: 0 } }}
+											/>
+										</Grid>
+										<Grid item xs={12}>
+											<FormControlLabel
+												control={
+													<Switch
+														checked={values.ignoreLimits}
+														onChange={(e) => setFieldValue("ignoreLimits", e.target.checked)}
+														name="ignoreLimits"
+														color="primary"
+													/>
+												}
+												label="Forzar límites de suscripción"
+											/>
+											<Typography variant="caption" color="textSecondary" display="block">
+												Al activar esta opción, se ignorarán los límites de la suscripción del usuario.
+											</Typography>
+										</Grid>
 									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="folders"
-											name="folders"
-											label="Carpetas"
-											type="number"
-											value={values.folders}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.folders && errors.folders)}
-											helperText={touched.folders && errors.folders}
-											InputProps={{ inputProps: { min: 0 } }}
-										/>
-									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="calculators"
-											name="calculators"
-											label="Calculadoras"
-											type="number"
-											value={values.calculators}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.calculators && errors.calculators)}
-											helperText={touched.calculators && errors.calculators}
-											InputProps={{ inputProps: { min: 0 } }}
-										/>
-									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="contacts"
-											name="contacts"
-											label="Contactos"
-											type="number"
-											value={values.contacts}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.contacts && errors.contacts)}
-											helperText={touched.contacts && errors.contacts}
-											InputProps={{ inputProps: { min: 0 } }}
-										/>
-									</Grid>
-									<Grid item xs={12}>
-										<FormControlLabel
-											control={
-												<Switch
-													checked={values.ignoreLimits}
-													onChange={(e) => setFieldValue("ignoreLimits", e.target.checked)}
-													name="ignoreLimits"
-													color="primary"
-												/>
-											}
-											label="Forzar límites de suscripción"
-										/>
-										<Typography variant="caption" color="textSecondary" display="block">
-											Al activar esta opción, se ignorarán los límites de la suscripción del usuario.
-										</Typography>
-									</Grid>
-								</Grid>
 								)}
 
 								{tabValue === 1 && (
-								<Grid container spacing={3}>
-									<Grid item xs={12}>
-										<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-											Selecciona una causa y especifica la cantidad de datos a generar para esa causa específica.
-										</Typography>
-										{!loadingFolders && userFolders.length > 0 && (
-											<Typography variant="caption" color="textSecondary">
-												Se encontraron {userFolders.length} causas del usuario.
+									<Grid container spacing={3}>
+										<Grid item xs={12}>
+											<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+												Selecciona una causa y especifica la cantidad de datos a generar para esa causa específica.
 											</Typography>
-										)}
-									</Grid>
-									<Grid item xs={12}>
-										<FormControl fullWidth>
-											<InputLabel id="folder-select-label">
-												{loadingFolders ? "Cargando causas..." : "Seleccionar Causa"}
-											</InputLabel>
-											<Select
-												labelId="folder-select-label"
-												id="folderId"
-												name="folderId"
-												value={values.folderId}
-												label={loadingFolders ? "Cargando causas..." : "Seleccionar Causa"}
+											{!loadingFolders && userFolders.length > 0 && (
+												<Typography variant="caption" color="textSecondary">
+													Se encontraron {userFolders.length} causas del usuario.
+												</Typography>
+											)}
+										</Grid>
+										<Grid item xs={12}>
+											<FormControl fullWidth>
+												<InputLabel id="folder-select-label">{loadingFolders ? "Cargando causas..." : "Seleccionar Causa"}</InputLabel>
+												<Select
+													labelId="folder-select-label"
+													id="folderId"
+													name="folderId"
+													value={values.folderId}
+													label={loadingFolders ? "Cargando causas..." : "Seleccionar Causa"}
+													onChange={handleChange}
+													onBlur={handleBlur}
+													error={Boolean(touched.folderId && errors.folderId)}
+													disabled={loadingFolders}
+												>
+													<MenuItem value="">
+														<em>Ninguno</em>
+													</MenuItem>
+													{loadingFolders ? (
+														<MenuItem disabled>
+															<em>Cargando causas...</em>
+														</MenuItem>
+													) : userFolders.length === 0 ? (
+														<MenuItem disabled>
+															<em>No hay causas disponibles</em>
+														</MenuItem>
+													) : (
+														userFolders.map((folder) => (
+															<MenuItem key={folder._id || folder.id} value={folder._id || folder.id}>
+																{folder.folderName || folder.name} - {folder.materia || "Sin materia"}
+															</MenuItem>
+														))
+													)}
+												</Select>
+											</FormControl>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="movements"
+												name="movements"
+												label="Movimientos"
+												type="number"
+												value={values.movements}
 												onChange={handleChange}
 												onBlur={handleBlur}
-												error={Boolean(touched.folderId && errors.folderId)}
-												disabled={loadingFolders}
-											>
-												<MenuItem value="">
-													<em>Ninguno</em>
-												</MenuItem>
-												{loadingFolders ? (
-													<MenuItem disabled>
-														<em>Cargando causas...</em>
-													</MenuItem>
-												) : userFolders.length === 0 ? (
-													<MenuItem disabled>
-														<em>No hay causas disponibles</em>
-													</MenuItem>
-												) : (
-													userFolders.map((folder) => (
-														<MenuItem key={folder._id || folder.id} value={folder._id || folder.id}>
-															{folder.folderName || folder.name} - {folder.materia || "Sin materia"}
-														</MenuItem>
-													))
-												)}
-											</Select>
-										</FormControl>
+												error={Boolean(touched.movements && errors.movements)}
+												helperText={(touched.movements && errors.movements) || "Máx: 50"}
+												InputProps={{ inputProps: { min: 0, max: 50 } }}
+											/>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="tasks"
+												name="tasks"
+												label="Tareas"
+												type="number"
+												value={values.tasks}
+												onChange={handleChange}
+												onBlur={handleBlur}
+												error={Boolean(touched.tasks && errors.tasks)}
+												helperText={(touched.tasks && errors.tasks) || "Máx: 50"}
+												InputProps={{ inputProps: { min: 0, max: 50 } }}
+											/>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="folderCalculators"
+												name="folderCalculators"
+												label="Calculadoras"
+												type="number"
+												value={values.folderCalculators}
+												onChange={handleChange}
+												onBlur={handleBlur}
+												error={Boolean(touched.folderCalculators && errors.folderCalculators)}
+												helperText={(touched.folderCalculators && errors.folderCalculators) || "Máx: 50"}
+												InputProps={{ inputProps: { min: 0, max: 50 } }}
+											/>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="events"
+												name="events"
+												label="Eventos"
+												type="number"
+												value={values.events}
+												onChange={handleChange}
+												onBlur={handleBlur}
+												error={Boolean(touched.events && errors.events)}
+												helperText={(touched.events && errors.events) || "Máx: 50"}
+												InputProps={{ inputProps: { min: 0, max: 50 } }}
+											/>
+										</Grid>
+										<Grid item xs={12} md={4}>
+											<TextField
+												fullWidth
+												id="folderContacts"
+												name="folderContacts"
+												label="Contactos"
+												type="number"
+												value={values.folderContacts}
+												onChange={handleChange}
+												onBlur={handleBlur}
+												error={Boolean(touched.folderContacts && errors.folderContacts)}
+												helperText={(touched.folderContacts && errors.folderContacts) || "Máx: 50"}
+												InputProps={{ inputProps: { min: 0, max: 50 } }}
+											/>
+										</Grid>
 									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="movements"
-											name="movements"
-											label="Movimientos"
-											type="number"
-											value={values.movements}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.movements && errors.movements)}
-											helperText={touched.movements && errors.movements || "Máx: 50"}
-											InputProps={{ inputProps: { min: 0, max: 50 } }}
-										/>
-									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="tasks"
-											name="tasks"
-											label="Tareas"
-											type="number"
-											value={values.tasks}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.tasks && errors.tasks)}
-											helperText={touched.tasks && errors.tasks || "Máx: 50"}
-											InputProps={{ inputProps: { min: 0, max: 50 } }}
-										/>
-									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="folderCalculators"
-											name="folderCalculators"
-											label="Calculadoras"
-											type="number"
-											value={values.folderCalculators}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.folderCalculators && errors.folderCalculators)}
-											helperText={touched.folderCalculators && errors.folderCalculators || "Máx: 50"}
-											InputProps={{ inputProps: { min: 0, max: 50 } }}
-										/>
-									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="events"
-											name="events"
-											label="Eventos"
-											type="number"
-											value={values.events}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.events && errors.events)}
-											helperText={touched.events && errors.events || "Máx: 50"}
-											InputProps={{ inputProps: { min: 0, max: 50 } }}
-										/>
-									</Grid>
-									<Grid item xs={12} md={4}>
-										<TextField
-											fullWidth
-											id="folderContacts"
-											name="folderContacts"
-											label="Contactos"
-											type="number"
-											value={values.folderContacts}
-											onChange={handleChange}
-											onBlur={handleBlur}
-											error={Boolean(touched.folderContacts && errors.folderContacts)}
-											helperText={touched.folderContacts && errors.folderContacts || "Máx: 50"}
-											InputProps={{ inputProps: { min: 0, max: 50 } }}
-										/>
-									</Grid>
-								</Grid>
 								)}
 
-								{error && (
-									<Box sx={{ color: "error.main", mt: 2 }}>{error}</Box>
-								)}
-								{success && (
-									<Box sx={{ color: "success.main", mt: 2 }}>{success}</Box>
-								)}
+								{error && <Box sx={{ color: "error.main", mt: 2 }}>{error}</Box>}
+								{success && <Box sx={{ color: "success.main", mt: 2 }}>{success}</Box>}
 							</Box>
 						</DialogContent>
 						<DialogActions sx={{ flexShrink: 0, px: 3, py: 2 }}>

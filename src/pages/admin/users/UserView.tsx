@@ -44,25 +44,25 @@ function TabPanel(props: TabPanelProps) {
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`user-tabpanel-${index}`} aria-labelledby={`user-tab-${index}`} {...other}>
 			{value === index && (
-				<Box 
-					sx={{ 
+				<Box
+					sx={{
 						p: 3,
 						height: "400px",
 						overflowY: "auto",
 						"&::-webkit-scrollbar": {
-							width: "8px"
+							width: "8px",
 						},
 						"&::-webkit-scrollbar-track": {
 							background: "#f1f1f1",
-							borderRadius: "4px"
+							borderRadius: "4px",
 						},
 						"&::-webkit-scrollbar-thumb": {
 							background: "#888",
-							borderRadius: "4px"
+							borderRadius: "4px",
 						},
 						"&::-webkit-scrollbar-thumb:hover": {
-							background: "#555"
-						}
+							background: "#555",
+						},
 					}}
 				>
 					{children}
@@ -92,12 +92,12 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	useEffect(() => {
 		console.log("UserView useEffect - user:", user);
 		console.log("User properties:", {
-			hasId: user?.hasOwnProperty('id'),
-			has_id: user?.hasOwnProperty('_id'),
+			hasId: user?.hasOwnProperty("id"),
+			has_id: user?.hasOwnProperty("_id"),
 			id: user?.id,
-			_id: user?._id
+			_id: user?._id,
 		});
-		
+
 		const userId = user?.id || user?._id;
 		if (userId) {
 			console.log("UserView - Calling getUserById with ID:", userId);
@@ -572,7 +572,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	return (
 		<>
 			<Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-				<MainCard 
+				<MainCard
 					title={<Typography variant="h5">Detalles del Usuario</Typography>}
 					sx={{ flex: 1, display: "flex", flexDirection: "column" }}
 				>
@@ -624,9 +624,27 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 										id="user-tab-0"
 										aria-controls="user-tabpanel-0"
 									/>
-									<Tab icon={<Wallet size={18} />} iconPosition="start" label="Suscripción" id="user-tab-1" aria-controls="user-tabpanel-1" />
-									<Tab icon={<Calendar size={18} />} iconPosition="start" label="Actividad" id="user-tab-2" aria-controls="user-tabpanel-2" />
-									<Tab icon={<Lock size={18} />} iconPosition="start" label="Preferencias" id="user-tab-3" aria-controls="user-tabpanel-3" />
+									<Tab
+										icon={<Wallet size={18} />}
+										iconPosition="start"
+										label="Suscripción"
+										id="user-tab-1"
+										aria-controls="user-tabpanel-1"
+									/>
+									<Tab
+										icon={<Calendar size={18} />}
+										iconPosition="start"
+										label="Actividad"
+										id="user-tab-2"
+										aria-controls="user-tabpanel-2"
+									/>
+									<Tab
+										icon={<Lock size={18} />}
+										iconPosition="start"
+										label="Preferencias"
+										id="user-tab-3"
+										aria-controls="user-tabpanel-3"
+									/>
 									<Tab icon={<Folder2 size={18} />} iconPosition="start" label="Resumen" id="user-tab-4" aria-controls="user-tabpanel-4" />
 								</Tabs>
 							</Box>

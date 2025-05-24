@@ -325,11 +325,11 @@ const UsersList = () => {
 													width: 80,
 													height: 80,
 													borderRadius: "50%",
-													backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'error.dark' : 'error.lighter',
+													backgroundColor: (theme) => (theme.palette.mode === "dark" ? "error.dark" : "error.lighter"),
 													display: "flex",
 													alignItems: "center",
 													justifyContent: "center",
-													mb: 2
+													mb: 2,
 												}}
 											>
 												<Typography variant="h2" color="error.main">
@@ -340,45 +340,37 @@ const UsersList = () => {
 												Ups, algo salió mal
 											</Typography>
 											<Typography variant="body1" color="text.secondary" align="center" sx={{ maxWidth: 400 }}>
-												{error?.toLowerCase().includes('network') || error?.toLowerCase().includes('conexión') 
-													? 'Parece que hay problemas de conexión. Verifica tu acceso a internet e intenta de nuevo.'
-													: error?.toLowerCase().includes('unauthorized') || error?.toLowerCase().includes('401')
-													? 'Tu sesión ha expirado. Por favor, vuelve a iniciar sesión.'
-													: error?.toLowerCase().includes('forbidden') || error?.toLowerCase().includes('403')
-													? 'No tienes permisos para ver esta información. Contacta al administrador.'
-													: error?.toLowerCase().includes('server') || error?.toLowerCase().includes('500')
-													? 'Nuestros servidores están experimentando problemas. Intenta más tarde.'
-													: 'No pudimos cargar la lista de usuarios. Por favor, intenta nuevamente.'}
+												{error?.toLowerCase().includes("network") || error?.toLowerCase().includes("conexión")
+													? "Parece que hay problemas de conexión. Verifica tu acceso a internet e intenta de nuevo."
+													: error?.toLowerCase().includes("unauthorized") || error?.toLowerCase().includes("401")
+													? "Tu sesión ha expirado. Por favor, vuelve a iniciar sesión."
+													: error?.toLowerCase().includes("forbidden") || error?.toLowerCase().includes("403")
+													? "No tienes permisos para ver esta información. Contacta al administrador."
+													: error?.toLowerCase().includes("server") || error?.toLowerCase().includes("500")
+													? "Nuestros servidores están experimentando problemas. Intenta más tarde."
+													: "No pudimos cargar la lista de usuarios. Por favor, intenta nuevamente."}
 											</Typography>
 											{error && (
-												<Box 
-													sx={{ 
-														mt: 2, 
-														p: 1, 
-														borderRadius: 1, 
-														backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
+												<Box
+													sx={{
+														mt: 2,
+														p: 1,
+														borderRadius: 1,
+														backgroundColor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"),
 														maxWidth: 400,
-														width: '100%'
+														width: "100%",
 													}}
 												>
-													<Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+													<Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-word" }}>
 														Error técnico: {error}
 													</Typography>
 												</Box>
 											)}
 											<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-												<Button 
-													variant="contained" 
-													color="primary" 
-													onClick={() => dispatch(getUsers())}
-												>
+												<Button variant="contained" color="primary" onClick={() => dispatch(getUsers())}>
 													Reintentar
 												</Button>
-												<Button 
-													variant="outlined" 
-													color="primary" 
-													onClick={() => window.location.reload()}
-												>
+												<Button variant="outlined" color="primary" onClick={() => window.location.reload()}>
 													Recargar página
 												</Button>
 											</Stack>
@@ -397,11 +389,11 @@ const UsersList = () => {
 													width: 100,
 													height: 100,
 													borderRadius: "50%",
-													backgroundColor: theme.palette.mode === 'dark' ? 'background.paper' : 'grey.100',
+													backgroundColor: theme.palette.mode === "dark" ? "background.paper" : "grey.100",
 													display: "flex",
 													alignItems: "center",
 													justifyContent: "center",
-													mb: 2
+													mb: 2,
 												}}
 											>
 												<Add size={48} color={theme.palette.text.secondary} />
@@ -414,14 +406,7 @@ const UsersList = () => {
 													Aún no hay usuarios registrados en el sistema. Agrega el primer usuario para comenzar a gestionar tu equipo.
 												</Typography>
 											</Stack>
-											<Button 
-												variant="contained" 
-												color="primary" 
-												onClick={handleAddUser} 
-												startIcon={<Add />}
-												size="large"
-												sx={{ mt: 2 }}
-											>
+											<Button variant="contained" color="primary" onClick={handleAddUser} startIcon={<Add />} size="large" sx={{ mt: 2 }}>
 												Agregar Primer Usuario
 											</Button>
 										</Stack>
@@ -512,18 +497,18 @@ const UsersList = () => {
 
 			{/* Diálogo para ver los detalles de un usuario */}
 			{selectedUser && (
-				<Dialog 
-					open={viewDialogOpen} 
-					onClose={handleCloseViewDialog} 
-					maxWidth="md" 
+				<Dialog
+					open={viewDialogOpen}
+					onClose={handleCloseViewDialog}
+					maxWidth="md"
 					fullWidth
 					sx={{
 						"& .MuiDialog-paper": {
 							height: "90vh",
 							maxHeight: "900px",
 							display: "flex",
-							flexDirection: "column"
-						}
+							flexDirection: "column",
+						},
 					}}
 				>
 					<UserView user={selectedUser} onClose={handleCloseViewDialog} />

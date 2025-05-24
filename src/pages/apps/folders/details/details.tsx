@@ -18,6 +18,7 @@ import Notifications from "./components/Notifications";
 import Members from "./components/Members";
 import TaskList from "./components/TaskList";
 import Calendar from "./components/Calendar";
+import ActivityTables from "./components/ActivityTables";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import NavigationControls from "./components/NavigationControls";
 import CollapsibleSection from "./components/CollapsibleSection";
@@ -477,17 +478,21 @@ const Details = () => {
 
 					{/* Tab 2: Actividad */}
 					<TabPanel value={tabValue} index={1}>
-						<Grid container spacing={3}>
-							<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
-								{MemoizedMovements}
+						{viewMode === "detailed" ? (
+							<Grid container spacing={3}>
+								<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
+									{MemoizedMovements}
+								</Grid>
+								<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
+									{MemoizedNotifications}
+								</Grid>
+								<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
+									{MemoizedCalendar}
+								</Grid>
 							</Grid>
-							<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
-								{MemoizedNotifications}
-							</Grid>
-							<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
-								{MemoizedCalendar}
-							</Grid>
-						</Grid>
+						) : (
+							<ActivityTables folderName={folder?.folderName} />
+						)}
 					</TabPanel>
 
 					{/* Tab 3: Gestión */}

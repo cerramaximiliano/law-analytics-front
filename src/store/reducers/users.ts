@@ -292,10 +292,10 @@ export const getUserById = (userId: string) => {
 			const response = await userApi.get(`/api/users/${userId}?includeLightData=true`);
 			console.log("Respuesta de la API de usuario por ID:", response.data);
 			console.log("Response structure:", {
-				hasSuccess: response.data.hasOwnProperty('success'),
-				hasUser: response.data.hasOwnProperty('user'),
-				hasLightData: response.data.hasOwnProperty('lightData'),
-				hasSubscription: response.data.hasOwnProperty('subscription')
+				hasSuccess: response.data.hasOwnProperty("success"),
+				hasUser: response.data.hasOwnProperty("user"),
+				hasLightData: response.data.hasOwnProperty("lightData"),
+				hasSubscription: response.data.hasOwnProperty("subscription"),
 			});
 
 			// La API devuelve success, user, subscription y lightData
