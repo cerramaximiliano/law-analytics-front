@@ -43,7 +43,7 @@ import { NotificationType } from "types/notifications";
 export interface UnifiedActivity {
 	id: string;
 	title: string;
-	date: Date;
+	date: Date | null;
 	dateString: string;
 	description?: string;
 	type: "movement" | "notification" | "calendar";
@@ -177,7 +177,11 @@ const getTypeLabel = (type: string): string => {
 	}
 };
 
-const parseDate = (dateString: string): Date => {
+const parseDate = (dateString: string): Date | null => {
+	if (!dateString || dateString.trim() === "") {
+		return null;
+	}
+	
 	try {
 		// Try DD/MM/YYYY format first
 		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
@@ -187,9 +191,37 @@ const parseDate = (dateString: string): Date => {
 		const isoDate = parseISO(dateString);
 		if (isValid(isoDate)) return isoDate;
 
-		return new Date(0);
+		return null;
 	} catch {
-		return new Date(0);
+		return null;
+	}
+};
+
+const formatDate = (dateString: string) => {
+	if (!dateString || dateString.trim() === "") {
+		return "";
+	}
+	
+	try {
+		let parsedDate: Date;
+		
+		// Try to parse as ISO date first
+		if (dateString.includes('T') || dateString.includes('-')) {
+			parsedDate = parseISO(dateString);
+			if (isValid(parsedDate)) {
+				return format(parsedDate, "dd/MM/yyyy", { locale: es });
+			}
+		}
+		
+		// Try to parse as DD/MM/YYYY format
+		parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
+		if (isValid(parsedDate)) {
+			return format(parsedDate, "dd/MM/yyyy", { locale: es });
+		}
+		
+		return "";
+	} catch {
+		return "";
 	}
 };
 
@@ -218,11 +250,11 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 				id: movement._id || "",
 				title: movement.title || "",
 				date,
-				dateString: movement.time,
+				dateString: date ? format(date, "dd/MM/yyyy", { locale: es }) : "",
 				description: movement.description,
 				type: "movement",
 				subType: movement.movement || "",
-				expirationDate: movement.dateExpiration,
+				expirationDate: movement.dateExpiration ? formatDate(movement.dateExpiration) : undefined,
 				link: movement.link,
 				originalData: movement,
 			});
@@ -235,11 +267,11 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 				id: notification._id || "",
 				title: notification.title || "",
 				date,
-				dateString: notification.time || "",
+				dateString: date ? format(date, "dd/MM/yyyy", { locale: es }) : "",
 				description: notification.description,
 				type: "notification",
 				subType: notification.notification || "",
-				expirationDate: notification.dateExpiration,
+				expirationDate: notification.dateExpiration ? formatDate(notification.dateExpiration) : undefined,
 				user: notification.user,
 				originalData: notification,
 			});
@@ -252,7 +284,7 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 				id: event._id || "",
 				title: event.title || "",
 				date,
-				dateString: format(date, "dd/MM/yyyy", { locale: es }),
+				dateString: date && isValid(date) ? format(date, "dd/MM/yyyy", { locale: es }) : "",
 				description: event.description,
 				type: "calendar",
 				subType: event.type || "General",
@@ -327,6 +359,11 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 			if (orderBy === "date") {
 				aValue = a.date;
 				bValue = b.date;
+				
+				// Handle null dates - put them at the end
+				if (aValue === null && bValue === null) return 0;
+				if (aValue === null) return 1;
+				if (bValue === null) return -1;
 			}
 
 			if (order === "desc") {

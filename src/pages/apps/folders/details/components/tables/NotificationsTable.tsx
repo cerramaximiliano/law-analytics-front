@@ -16,9 +16,8 @@ import {
 	Box,
 	Checkbox,
 	Typography,
-	useTheme,
 } from "@mui/material";
-import { Edit, Trash, Eye, SmsNotification, Notification1, NotificationStatus, Calendar, Clock } from "iconsax-react";
+import { Edit, Trash, Eye, SmsNotification, Notification1, NotificationStatus, Clock } from "iconsax-react";
 import { NotificationType } from "types/notifications";
 import { visuallyHidden } from "@mui/utils";
 import { format, parse, parseISO, isValid } from "date-fns";
@@ -116,6 +115,10 @@ const parseDate = (dateString: string) => {
 };
 
 const formatDate = (dateString: string) => {
+	if (!dateString || dateString.trim() === "") {
+		return "";
+	}
+	
 	try {
 		let parsedDate: Date;
 		
@@ -133,14 +136,13 @@ const formatDate = (dateString: string) => {
 			return format(parsedDate, "dd/MM/yyyy", { locale: es });
 		}
 		
-		return dateString;
+		return "";
 	} catch {
-		return dateString;
+		return "";
 	}
 };
 
 const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, searchQuery, onEdit, onDelete, onView }) => {
-	const theme = useTheme();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof NotificationType>("time");
 	const [selected, setSelected] = useState<string[]>([]);

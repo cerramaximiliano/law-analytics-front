@@ -110,6 +110,10 @@ const parseDate = (dateString: string) => {
 };
 
 const formatDate = (dateString: string) => {
+	if (!dateString || dateString.trim() === "") {
+		return "";
+	}
+	
 	try {
 		let parsedDate: Date;
 		
@@ -127,9 +131,9 @@ const formatDate = (dateString: string) => {
 			return format(parsedDate, "dd/MM/yyyy", { locale: es });
 		}
 		
-		return dateString;
+		return "";
 	} catch {
-		return dateString;
+		return "";
 	}
 };
 
