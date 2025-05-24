@@ -181,7 +181,7 @@ const parseDate = (dateString: string): Date | null => {
 	if (!dateString || dateString.trim() === "") {
 		return null;
 	}
-	
+
 	try {
 		// Try DD/MM/YYYY format first
 		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
@@ -201,24 +201,24 @@ const formatDate = (dateString: string) => {
 	if (!dateString || dateString.trim() === "") {
 		return "";
 	}
-	
+
 	try {
 		let parsedDate: Date;
-		
+
 		// Try to parse as ISO date first
-		if (dateString.includes('T') || dateString.includes('-')) {
+		if (dateString.includes("T") || dateString.includes("-")) {
 			parsedDate = parseISO(dateString);
 			if (isValid(parsedDate)) {
 				return format(parsedDate, "dd/MM/yyyy", { locale: es });
 			}
 		}
-		
+
 		// Try to parse as DD/MM/YYYY format
 		parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
 		if (isValid(parsedDate)) {
 			return format(parsedDate, "dd/MM/yyyy", { locale: es });
 		}
-		
+
 		return "";
 	} catch {
 		return "";
@@ -359,7 +359,7 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 			if (orderBy === "date") {
 				aValue = a.date;
 				bValue = b.date;
-				
+
 				// Handle null dates - put them at the end
 				if (aValue === null && bValue === null) return 0;
 				if (aValue === null) return 1;

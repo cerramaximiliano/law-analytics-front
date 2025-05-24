@@ -95,19 +95,19 @@ const getUserChipColor = (user?: string): "success" | "error" | "default" => {
 const parseDate = (dateString: string) => {
 	try {
 		// Try to parse as ISO date first
-		if (dateString.includes('T') || dateString.includes('-')) {
+		if (dateString.includes("T") || dateString.includes("-")) {
 			const parsedDate = parseISO(dateString);
 			if (isValid(parsedDate)) {
 				return parsedDate;
 			}
 		}
-		
+
 		// Try to parse as DD/MM/YYYY format
 		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
 		if (isValid(parsedDate)) {
 			return parsedDate;
 		}
-		
+
 		return new Date(0);
 	} catch {
 		return new Date(0);
@@ -118,24 +118,24 @@ const formatDate = (dateString: string) => {
 	if (!dateString || dateString.trim() === "") {
 		return "";
 	}
-	
+
 	try {
 		let parsedDate: Date;
-		
+
 		// Try to parse as ISO date first
-		if (dateString.includes('T') || dateString.includes('-')) {
+		if (dateString.includes("T") || dateString.includes("-")) {
 			parsedDate = parseISO(dateString);
 			if (isValid(parsedDate)) {
 				return format(parsedDate, "dd/MM/yyyy", { locale: es });
 			}
 		}
-		
+
 		// Try to parse as DD/MM/YYYY format
 		parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
 		if (isValid(parsedDate)) {
 			return format(parsedDate, "dd/MM/yyyy", { locale: es });
 		}
-		
+
 		return "";
 	} catch {
 		return "";
@@ -317,51 +317,51 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 										</Typography>
 									</TableCell>
 									<TableCell>
-										{notification.dateExpiration ? (() => {
-											const expirationDate = parseDate(notification.dateExpiration);
-											const today = new Date();
-											today.setHours(0, 0, 0, 0);
-											const isExpired = expirationDate < today;
-											const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-											const isNearExpiration = daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
-											
-											return (
-												<Stack direction="row" spacing={0.5} alignItems="center">
-													<Chip 
-														label={formatDate(notification.dateExpiration)} 
-														color={isExpired ? "error" : isNearExpiration ? "warning" : "success"}
-														size="small" 
-														variant={isExpired ? "filled" : "outlined"}
-														icon={
-															isExpired ? 
-															<Clock size={14} style={{ color: 'inherit' }} /> : 
-															isNearExpiration ? 
-															<Clock size={14} style={{ color: 'inherit' }} /> : 
-															undefined
-														}
-														sx={{
-															fontWeight: isExpired ? 600 : 500,
-															'& .MuiChip-icon': {
-																marginLeft: '4px',
-																marginRight: '-2px'
-															}
-														}}
-													/>
-													{isExpired && (
-														<Typography variant="caption" color="error" fontWeight={600}>
-															Vencido
-														</Typography>
-													)}
-													{isNearExpiration && !isExpired && (
-														<Typography variant="caption" color="warning.main" fontWeight={500}>
-															{daysUntilExpiration === 0 ? 'Hoy' : `${daysUntilExpiration}d`}
-														</Typography>
-													)}
-												</Stack>
-											);
-										})() : (
-											"-"
-										)}
+										{notification.dateExpiration
+											? (() => {
+													const expirationDate = parseDate(notification.dateExpiration);
+													const today = new Date();
+													today.setHours(0, 0, 0, 0);
+													const isExpired = expirationDate < today;
+													const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+													const isNearExpiration = daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
+
+													return (
+														<Stack direction="row" spacing={0.5} alignItems="center">
+															<Chip
+																label={formatDate(notification.dateExpiration)}
+																color={isExpired ? "error" : isNearExpiration ? "warning" : "success"}
+																size="small"
+																variant={isExpired ? "filled" : "outlined"}
+																icon={
+																	isExpired ? (
+																		<Clock size={14} style={{ color: "inherit" }} />
+																	) : isNearExpiration ? (
+																		<Clock size={14} style={{ color: "inherit" }} />
+																	) : undefined
+																}
+																sx={{
+																	fontWeight: isExpired ? 600 : 500,
+																	"& .MuiChip-icon": {
+																		marginLeft: "4px",
+																		marginRight: "-2px",
+																	},
+																}}
+															/>
+															{isExpired && (
+																<Typography variant="caption" color="error" fontWeight={600}>
+																	Vencido
+																</Typography>
+															)}
+															{isNearExpiration && !isExpired && (
+																<Typography variant="caption" color="warning.main" fontWeight={500}>
+																	{daysUntilExpiration === 0 ? "Hoy" : `${daysUntilExpiration}d`}
+																</Typography>
+															)}
+														</Stack>
+													);
+											  })()
+											: "-"}
 									</TableCell>
 									<TableCell>
 										<Stack direction="row" spacing={0.5}>

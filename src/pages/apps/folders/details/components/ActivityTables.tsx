@@ -113,7 +113,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		}
 	}, [id]);
 
-
 	// Tab configuration
 	const tabs: TabConfig[] = [
 		{
@@ -531,9 +530,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 							{/* Action Buttons */}
 							<Stack direction="row" spacing={1}>
 								<Tooltip title="Filtros">
-									<IconButton 
-										size="small" 
-										onClick={() => setShowFilters(!showFilters)} 
+									<IconButton
+										size="small"
+										onClick={() => setShowFilters(!showFilters)}
 										color={showFilters ? "primary" : "default"}
 										sx={{
 											transition: "all 0.3s ease",
