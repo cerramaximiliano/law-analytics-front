@@ -14,7 +14,6 @@ import {
 	Tooltip,
 	Avatar,
 	Box,
-	Checkbox,
 	Typography,
 	useTheme,
 } from "@mui/material";
@@ -126,7 +125,6 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 	const theme = useTheme();
 	const [order, setOrder] = useState<Order>("asc");
 	const [orderBy, setOrderBy] = useState<string>("start");
-	const [selected, setSelected] = useState<string[]>([]);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -134,32 +132,6 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 		const isAsc = orderBy === property && order === "asc";
 		setOrder(isAsc ? "desc" : "asc");
 		setOrderBy(property);
-	};
-
-	const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.checked) {
-			const newSelected = filteredEvents.map((n) => n._id);
-			setSelected(newSelected);
-			return;
-		}
-		setSelected([]);
-	};
-
-	const handleClick = (id: string) => {
-		const selectedIndex = selected.indexOf(id);
-		let newSelected: string[] = [];
-
-		if (selectedIndex === -1) {
-			newSelected = newSelected.concat(selected, id);
-		} else if (selectedIndex === 0) {
-			newSelected = newSelected.concat(selected.slice(1));
-		} else if (selectedIndex === selected.length - 1) {
-			newSelected = newSelected.concat(selected.slice(0, -1));
-		} else if (selectedIndex > 0) {
-			newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-		}
-
-		setSelected(newSelected);
 	};
 
 	const handleChangePage = (_event: unknown, newPage: number) => {
@@ -170,8 +142,6 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 		setRowsPerPage(parseInt(event.target.value, 10));
 		setPage(0);
 	};
-
-	const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
 	// Filter events based on search query
 	const filteredEvents = useMemo(() => {
@@ -225,14 +195,6 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
 						<TableRow>
-							<TableCell padding="checkbox">
-								<Checkbox
-									color="primary"
-									indeterminate={selected.length > 0 && selected.length < filteredEvents.length}
-									checked={filteredEvents.length > 0 && selected.length === filteredEvents.length}
-									onChange={handleSelectAllClick}
-								/>
-							</TableCell>
 							{headCells.map((headCell) => (
 								<TableCell
 									key={headCell.id}
@@ -261,24 +223,9 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{paginatedEvents.map((event, index) => {
-							const isItemSelected = isSelected(event._id);
-							const labelId = `calendar-table-checkbox-${index}`;
-
+						{paginatedEvents.map((event) => {
 							return (
-								<TableRow
-									hover
-									onClick={() => handleClick(event._id)}
-									role="checkbox"
-									aria-checked={isItemSelected}
-									tabIndex={-1}
-									key={event._id}
-									selected={isItemSelected}
-									sx={{ cursor: "pointer" }}
-								>
-									<TableCell padding="checkbox">
-										<Checkbox color="primary" checked={isItemSelected} inputProps={{ "aria-labelledby": labelId }} />
-									</TableCell>
+								<TableRow hover tabIndex={-1} key={event._id} sx={{ cursor: "pointer" }}>
 									<TableCell>
 										<Stack direction="row" spacing={1} alignItems="center">
 											<Avatar
@@ -376,7 +323,7 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 						})}
 						{paginatedEvents.length === 0 && (
 							<TableRow>
-								<TableCell colSpan={headCells.length + 1} align="center">
+								<TableCell colSpan={headCells.length} align="center">
 									<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
 										No se encontraron eventos
 									</Typography>

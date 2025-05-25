@@ -14,7 +14,6 @@ import {
 	Tooltip,
 	Link,
 	Box,
-	Checkbox,
 	Typography,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
@@ -140,7 +139,6 @@ const formatDate = (dateString: string) => {
 const MovementsTable: React.FC<MovementsTableProps> = ({ movements, searchQuery, onEdit, onDelete, onView, filters = {} }) => {
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof Movement>("time");
-	const [selected, setSelected] = useState<string[]>([]);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -148,32 +146,6 @@ const MovementsTable: React.FC<MovementsTableProps> = ({ movements, searchQuery,
 		const isAsc = orderBy === property && order === "asc";
 		setOrder(isAsc ? "desc" : "asc");
 		setOrderBy(property);
-	};
-
-	const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.checked) {
-			const newSelected = filteredMovements.map((n) => n._id!);
-			setSelected(newSelected);
-			return;
-		}
-		setSelected([]);
-	};
-
-	const handleClick = (id: string) => {
-		const selectedIndex = selected.indexOf(id);
-		let newSelected: string[] = [];
-
-		if (selectedIndex === -1) {
-			newSelected = newSelected.concat(selected, id);
-		} else if (selectedIndex === 0) {
-			newSelected = newSelected.concat(selected.slice(1));
-		} else if (selectedIndex === selected.length - 1) {
-			newSelected = newSelected.concat(selected.slice(0, -1));
-		} else if (selectedIndex > 0) {
-			newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-		}
-
-		setSelected(newSelected);
 	};
 
 	const handleChangePage = (_event: unknown, newPage: number) => {
@@ -184,8 +156,6 @@ const MovementsTable: React.FC<MovementsTableProps> = ({ movements, searchQuery,
 		setRowsPerPage(parseInt(event.target.value, 10));
 		setPage(0);
 	};
-
-	const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
 	// Filter movements based on search query and filters
 	const filteredMovements = useMemo(() => {
@@ -259,14 +229,6 @@ const MovementsTable: React.FC<MovementsTableProps> = ({ movements, searchQuery,
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
 						<TableRow>
-							<TableCell padding="checkbox">
-								<Checkbox
-									color="primary"
-									indeterminate={selected.length > 0 && selected.length < filteredMovements.length}
-									checked={filteredMovements.length > 0 && selected.length === filteredMovements.length}
-									onChange={handleSelectAllClick}
-								/>
-							</TableCell>
 							{headCells.map((headCell) => (
 								<TableCell
 									key={headCell.id}
@@ -295,24 +257,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({ movements, searchQuery,
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{paginatedMovements.map((movement, index) => {
-							const isItemSelected = isSelected(movement._id!);
-							const labelId = `movement-table-checkbox-${index}`;
-
+						{paginatedMovements.map((movement) => {
 							return (
-								<TableRow
-									hover
-									onClick={() => handleClick(movement._id!)}
-									role="checkbox"
-									aria-checked={isItemSelected}
-									tabIndex={-1}
-									key={movement._id}
-									selected={isItemSelected}
-									sx={{ cursor: "pointer" }}
-								>
-									<TableCell padding="checkbox">
-										<Checkbox color="primary" checked={isItemSelected} inputProps={{ "aria-labelledby": labelId }} />
-									</TableCell>
+								<TableRow hover tabIndex={-1} key={movement._id} sx={{ cursor: "pointer" }}>
 									<TableCell>{formatDate(movement.time)}</TableCell>
 									<TableCell>
 										<Typography variant="subtitle2" noWrap>
@@ -435,7 +382,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({ movements, searchQuery,
 						})}
 						{paginatedMovements.length === 0 && (
 							<TableRow>
-								<TableCell colSpan={headCells.length + 1} align="center">
+								<TableCell colSpan={headCells.length} align="center">
 									<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
 										No se encontraron movimientos
 									</Typography>

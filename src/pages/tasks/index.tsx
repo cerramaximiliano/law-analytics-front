@@ -74,6 +74,10 @@ interface Props {
 	onViewTask: (taskId: string) => void;
 	taskDetails: { [key: string]: TaskType };
 	taskDetailsLoading: { [key: string]: boolean };
+	pageIndex: number;
+	pageSize: number;
+	onPageChange: (pageIndex: number) => void;
+	onPageSizeChange: (pageSize: number) => void;
 }
 
 function ReactTable({
@@ -87,6 +91,10 @@ function ReactTable({
 	onViewTask,
 	taskDetails,
 	taskDetailsLoading,
+	pageIndex: controlledPageIndex,
+	pageSize: controlledPageSize,
+	onPageChange,
+	onPageSizeChange,
 }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
@@ -122,11 +130,13 @@ function ReactTable({
 			data,
 			filterTypes,
 			initialState: {
-				pageIndex: 0,
-				pageSize: 10,
+				pageIndex: controlledPageIndex,
+				pageSize: controlledPageSize,
 				sortBy: sortBy,
 				hiddenColumns: defaultHiddenColumns,
 			},
+			pageCount: Math.ceil(data.length / controlledPageSize),
+			manualPagination: false,
 		},
 		useGlobalFilter,
 		useFilters,
@@ -163,6 +173,29 @@ function ReactTable({
 	useEffect(() => {
 		setSortBy(sortBy);
 	}, [setSortBy, sortBy]);
+
+	// Sincronizar el estado de paginación con el controlador externo
+	useEffect(() => {
+		if (pageIndex !== controlledPageIndex) {
+			gotoPage(controlledPageIndex);
+		}
+	}, [controlledPageIndex, gotoPage, pageIndex]);
+
+	useEffect(() => {
+		if (pageSize !== controlledPageSize) {
+			setPageSize(controlledPageSize);
+		}
+	}, [controlledPageSize, setPageSize, pageSize]);
+
+	// Wrapper functions para manejar cambios de paginación
+	const handleGotoPage = (newPageIndex: number) => {
+		onPageChange(newPageIndex);
+	};
+
+	const handleSetPageSize = (newPageSize: number) => {
+		onPageSizeChange(newPageSize);
+		onPageChange(0); // Reset to first page when changing page size
+	};
 
 	const csvHeaders = columns
 		.filter((column: any) => column.accessor && typeof column.accessor === "string")
@@ -323,7 +356,7 @@ function ReactTable({
 						)}
 					</TableBody>
 				</Table>
-				<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageIndex={pageIndex} pageSize={pageSize} />
+				<TablePagination gotoPage={handleGotoPage} rows={rows} setPageSize={handleSetPageSize} pageIndex={pageIndex} pageSize={pageSize} />
 			</Stack>
 		</>
 	);
@@ -355,6 +388,9 @@ const Tasks = () => {
 	});
 	const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 	const [openGuide, setOpenGuide] = useState(false);
+	// Agregar estado para controlar la paginación
+	const [pageIndex, setPageIndex] = useState(0);
+	const [pageSize, setPageSize] = useState(10);
 
 	useEffect(() => {
 		if (userId) {
@@ -618,6 +654,10 @@ const Tasks = () => {
 					onViewTask={handleViewTask}
 					taskDetails={taskDetails}
 					taskDetailsLoading={taskDetailsLoading}
+					pageIndex={pageIndex}
+					pageSize={pageSize}
+					onPageChange={setPageIndex}
+					onPageSizeChange={setPageSize}
 				/>
 			</MainCard>
 

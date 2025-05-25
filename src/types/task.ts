@@ -75,6 +75,9 @@ export type TaskModalType = {
 	handlerAddress?: (task: any) => void;
 	folderId: string;
 	folderName: string;
+	editMode?: boolean;
+	taskToEdit?: TaskType | null;
+	onClose?: () => void;
 };
 
 export type TaskFormValues = {

@@ -928,7 +928,16 @@ const FoldersLayout = () => {
 					keepMounted
 					fullWidth
 					open={add}
-					sx={{ "& .MuiDialog-paper": { p: 0 } }}
+					sx={{
+						"& .MuiDialog-paper": {
+							p: 0,
+							height: "80vh",
+							maxHeight: "80vh",
+							display: "flex",
+							flexDirection: "column",
+							overflow: "hidden",
+						},
+					}}
 				>
 					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleRefreshData} />
 				</Dialog>

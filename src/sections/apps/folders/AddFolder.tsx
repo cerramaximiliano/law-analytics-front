@@ -5,7 +5,6 @@ import {
 	DialogActions,
 	DialogTitle,
 	DialogContent,
-	Divider,
 	Grid,
 	Stack,
 	Tooltip,
@@ -395,12 +394,13 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 			{/* El contenido del modal de AddFolder solo se muestra cuando corresponde */}
 			{showAddFolderModal && (
-				<>
+				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
 					<DialogTitle
 						sx={{
 							bgcolor: theme.palette.primary.lighter,
 							p: 3,
 							borderBottom: `1px solid ${theme.palette.divider}`,
+							flexShrink: 0,
 						}}
 					>
 						<Stack spacing={1}>
@@ -415,12 +415,11 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 							</Typography>
 						</Stack>
 					</DialogTitle>
-					<Divider />
 
 					<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
 						{({ isSubmitting, values }) => (
-							<Form autoComplete="off" noValidate>
-								<DialogContent sx={{ p: 2.5 }}>
+							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+								<DialogContent sx={{ p: 2.5, overflow: "auto", flex: 1 }}>
 									<Box sx={{ minHeight: 400 }}>
 										{/* Steps Progress */}
 										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
@@ -453,13 +452,12 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 									</Box>
 								</DialogContent>
 
-								<Divider />
-
 								<DialogActions
 									sx={{
 										p: 2.5,
 										bgcolor: theme.palette.background.default,
 										borderTop: `1px solid ${theme.palette.divider}`,
+										flexShrink: 0,
 									}}
 								>
 									<Grid container justifyContent="space-between" alignItems="center">
@@ -511,7 +509,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					</Formik>
 
 					{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
-				</>
+				</Box>
 			)}
 		</>
 	);

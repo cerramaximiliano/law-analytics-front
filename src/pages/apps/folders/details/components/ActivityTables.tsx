@@ -18,10 +18,12 @@ import {
 	Dialog,
 	Collapse,
 	Fade,
+	useMediaQuery,
+	Drawer,
 } from "@mui/material";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, parse, isValid } from "date-fns";
 import { es } from "date-fns/locale";
-import { TableDocument, NotificationStatus, Calendar, Link21, SearchNormal1, ExportSquare, Filter, Add } from "iconsax-react";
+import { TableDocument, NotificationStatus, Calendar, Link21, SearchNormal1, ExportSquare, Filter, Add, Menu } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useParams } from "react-router";
 import { useSelector, dispatch } from "store";
@@ -62,10 +64,12 @@ interface TabConfig {
 
 const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { id } = useParams<{ id: string }>();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [showFilters, setShowFilters] = useState(false);
+	const [mobileOpen, setMobileOpen] = useState(false);
 	const [filters, setFilters] = useState<any>({
 		startDate: null,
 		endDate: null,
@@ -82,19 +86,21 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const [openDeleteModal, setOpenDeleteModal] = useState(false);
 	const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
 	const [movementToDelete, setMovementToDelete] = useState<string | null>(null);
-	const [viewMovementDetails, setViewMovementDetails] = useState<Movement | null>(null);
 
 	// Modals states - Notifications
 	const [openNotificationModal, setOpenNotificationModal] = useState(false);
 	const [openNotificationDeleteModal, setOpenNotificationDeleteModal] = useState(false);
 	const [selectedNotification, setSelectedNotification] = useState<NotificationType | null>(null);
 	const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
-	const [viewNotificationDetails, setViewNotificationDetails] = useState<NotificationType | null>(null);
 
 	// Modals states - Calendar
 	const [eventToDelete, setEventToDelete] = useState<string | null>(null);
-	const [viewEventDetails, setViewEventDetails] = useState<any>(null);
 	const [deleteEventDialog, setDeleteEventDialog] = useState(false);
+
+	// View details states
+	const [viewMovementDetails, setViewMovementDetails] = useState<Movement | null>(null);
+	const [viewNotificationDetails, setViewNotificationDetails] = useState<NotificationType | null>(null);
+	const [viewEventDetails, setViewEventDetails] = useState<any | null>(null);
 
 	// Selectors
 	const movementsData = useSelector((state: any) => state.movements);
@@ -160,6 +166,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			allDay: "",
 			source: "",
 		});
+		if (isMobile) {
+			setMobileOpen(false);
+		}
 	};
 
 	const handleExport = () => {
@@ -227,6 +236,35 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		exportActivityData(activeTab, dataToExport, folderName);
 	};
 
+	// Date formatting utility
+	const formatDate = (dateString: string) => {
+		if (!dateString || dateString.trim() === "") {
+			return "";
+		}
+
+		try {
+			let parsedDate: Date;
+
+			// Try to parse as ISO date first
+			if (dateString.includes("T") || dateString.includes("-")) {
+				parsedDate = parseISO(dateString);
+				if (isValid(parsedDate)) {
+					return format(parsedDate, "dd/MM/yyyy", { locale: es });
+				}
+			}
+
+			// Try to parse as DD/MM/YYYY format
+			parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
+			if (isValid(parsedDate)) {
+				return format(parsedDate, "dd/MM/yyyy", { locale: es });
+			}
+
+			return "";
+		} catch {
+			return "";
+		}
+	};
+
 	// Movement handlers
 	const handleAddMovement = () => {
 		setSelectedMovement(null);
@@ -245,7 +283,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	const handleViewMovement = (movement: Movement) => {
 		setViewMovementDetails(movement);
-		// TODO: Implementar vista de detalles
 	};
 
 	const handleCloseMovementModal = () => {
@@ -302,16 +339,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		setDeleteEventDialog(true);
 	};
 
+	const handleViewEvent = (event: any) => {
+		setViewEventDetails(event);
+	};
+
 	const handleConfirmDeleteEvent = async () => {
 		if (eventToDelete) {
 			await dispatch(deleteEvent(eventToDelete));
 			setDeleteEventDialog(false);
 			setEventToDelete(null);
 		}
-	};
-
-	const handleViewEvent = (event: any) => {
-		setViewEventDetails(event);
 	};
 
 	const handleCloseEventModal = () => {
@@ -368,6 +405,101 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		(activeTab === "calendar" && eventsData.isLoader) ||
 		(activeTab === "combined" && (movementsData.isLoader || notificationsData.isLoader || eventsData.isLoader));
 
+	// Sidebar content
+	const sidebarContent = (
+		<Box
+			sx={{
+				width: isMobile ? 280 : 240,
+				display: "flex",
+				flexDirection: "column",
+				height: "100%",
+				bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
+			}}
+		>
+			<Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+				<Typography variant="h5" gutterBottom>
+					Actividad
+				</Typography>
+				<Typography variant="caption" color="textSecondary">
+					{folderName || "Carpeta"}
+				</Typography>
+			</Box>
+
+			<Tabs
+				orientation="vertical"
+				variant="scrollable"
+				value={activeTab}
+				onChange={handleTabChange}
+				sx={{
+					flex: 1,
+					"& .MuiTabs-indicator": {
+						left: 0,
+						width: 4,
+					},
+					"& .MuiTab-root": {
+						minHeight: 72,
+						justifyContent: "flex-start",
+						textAlign: "left",
+						alignItems: "flex-start",
+						px: 2,
+						py: 1.5,
+						borderRadius: 0,
+						textTransform: "none",
+						"&.Mui-selected": {
+							bgcolor: alpha(theme.palette.primary.main, 0.08),
+							color: theme.palette.primary.main,
+						},
+						"&:hover": {
+							bgcolor: alpha(theme.palette.primary.main, 0.04),
+						},
+					},
+				}}
+			>
+				{tabs.map((tab) => (
+					<Tab
+						key={tab.value}
+						value={tab.value}
+						label={
+							<Stack spacing={0.5} alignItems="flex-start" width="100%">
+								<Stack direction="row" spacing={1} alignItems="center">
+									<Box sx={{ color: tab.color }}>{tab.icon}</Box>
+									<Typography variant="subtitle1" fontWeight={500}>
+										{tab.label}
+									</Typography>
+								</Stack>
+								<Typography variant="caption" color="textSecondary" sx={{ lineHeight: 1.2 }}>
+									{tab.description}
+								</Typography>
+							</Stack>
+						}
+					/>
+				))}
+			</Tabs>
+
+			{/* Stats or Quick Info */}
+			<Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+				<Typography variant="caption" color="textSecondary">
+					Total de registros
+				</Typography>
+				<Stack spacing={0.5} mt={1}>
+					<Chip
+						size="small"
+						label={`${movementsData.movements?.length || 0} movimientos`}
+						variant="outlined"
+						sx={{ justifyContent: "flex-start" }}
+					/>
+					<Chip
+						size="small"
+						label={`${notificationsData.notifications?.length || 0} notificaciones`}
+						variant="outlined"
+						sx={{ justifyContent: "flex-start" }}
+					/>
+					<Chip size="small" label={`${eventsData.events?.length || 0} eventos`} variant="outlined" sx={{ justifyContent: "flex-start" }} />
+				</Stack>
+			</Box>
+		</Box>
+	);
+
 	return (
 		<MainCard
 			shadow={3}
@@ -380,262 +512,351 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			}}
 		>
 			<Box sx={{ display: "flex", height: "100%", minHeight: 600 }}>
-				{/* Vertical Tabs Section */}
-				<Paper
-					elevation={0}
-					sx={{
-						width: 240,
-						borderRight: `1px solid ${theme.palette.divider}`,
-						bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
-						display: "flex",
-						flexDirection: "column",
-					}}
-				>
-					<Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-						<Typography variant="h5" gutterBottom>
-							Actividad
-						</Typography>
-						<Typography variant="caption" color="textSecondary">
-							{folderName || "Carpeta"}
-						</Typography>
-					</Box>
+				{isMobile ? (
+					<>
+						{/* Mobile Layout */}
+						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+							{/* Header Toolbar with Menu Button */}
+							<Box
+								sx={{
+									p: 2,
+									borderBottom: `1px solid ${theme.palette.divider}`,
+									bgcolor: theme.palette.background.paper,
+								}}
+							>
+								<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+									<Stack direction="row" spacing={2} alignItems="center" flex={1}>
+										{/* Menu Button */}
+										<IconButton onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}>
+											<Menu />
+										</IconButton>
 
-					<Tabs
-						orientation="vertical"
-						variant="scrollable"
-						value={activeTab}
-						onChange={handleTabChange}
-						sx={{
-							flex: 1,
-							"& .MuiTabs-indicator": {
-								left: 0,
-								width: 4,
-							},
-							"& .MuiTab-root": {
-								minHeight: 72,
-								justifyContent: "flex-start",
-								textAlign: "left",
-								alignItems: "flex-start",
-								px: 2,
-								py: 1.5,
-								borderRadius: 0,
-								textTransform: "none",
-								"&.Mui-selected": {
-									bgcolor: alpha(theme.palette.primary.main, 0.08),
-									color: theme.palette.primary.main,
-								},
-								"&:hover": {
-									bgcolor: alpha(theme.palette.primary.main, 0.04),
-								},
-							},
-						}}
-					>
-						{tabs.map((tab) => (
-							<Tab
-								key={tab.value}
-								value={tab.value}
-								label={
-									<Stack spacing={0.5} alignItems="flex-start" width="100%">
-										<Stack direction="row" spacing={1} alignItems="center">
-											<Box sx={{ color: tab.color }}>{tab.icon}</Box>
-											<Typography variant="subtitle1" fontWeight={500}>
-												{tab.label}
-											</Typography>
-										</Stack>
-										<Typography variant="caption" color="textSecondary" sx={{ lineHeight: 1.2 }}>
-											{tab.description}
-										</Typography>
-									</Stack>
-								}
-							/>
-						))}
-					</Tabs>
-
-					{/* Stats or Quick Info */}
-					<Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-						<Typography variant="caption" color="textSecondary">
-							Total de registros
-						</Typography>
-						<Stack spacing={0.5} mt={1}>
-							<Chip
-								size="small"
-								label={`${movementsData.movements?.length || 0} movimientos`}
-								variant="outlined"
-								sx={{ justifyContent: "flex-start" }}
-							/>
-							<Chip
-								size="small"
-								label={`${notificationsData.notifications?.length || 0} notificaciones`}
-								variant="outlined"
-								sx={{ justifyContent: "flex-start" }}
-							/>
-							<Chip
-								size="small"
-								label={`${eventsData.events?.length || 0} eventos`}
-								variant="outlined"
-								sx={{ justifyContent: "flex-start" }}
-							/>
-						</Stack>
-					</Box>
-				</Paper>
-
-				{/* Main Content Area */}
-				<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-					{/* Header Toolbar */}
-					<Box
-						sx={{
-							p: 2,
-							borderBottom: `1px solid ${theme.palette.divider}`,
-							bgcolor: theme.palette.background.paper,
-						}}
-					>
-						<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-							<Stack direction="row" spacing={2} alignItems="center" flex={1}>
-								{/* Current Tab Indicator */}
-								<Box
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-										px: 2,
-										py: 1,
-										borderRadius: 1,
-										bgcolor: alpha(currentTab?.color || theme.palette.primary.main, 0.1),
-										color: currentTab?.color,
-									}}
-								>
-									{currentTab?.icon}
-									<Typography variant="subtitle2" fontWeight={600}>
-										{currentTab?.label}
-									</Typography>
-								</Box>
-
-								{/* Search Bar */}
-								<TextField
-									size="small"
-									placeholder={`Buscar en ${currentTab?.label.toLowerCase()}...`}
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									sx={{ minWidth: 300 }}
-									InputProps={{
-										startAdornment: (
-											<InputAdornment position="start">
-												<SearchNormal1 size={18} />
-											</InputAdornment>
-										),
-									}}
-								/>
-							</Stack>
-
-							{/* Action Buttons */}
-							<Stack direction="row" spacing={1}>
-								<Tooltip title="Filtros">
-									<IconButton
-										size="small"
-										onClick={() => setShowFilters(!showFilters)}
-										color={showFilters ? "primary" : "default"}
-										sx={{
-											transition: "all 0.3s ease",
-											transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
-										}}
-									>
-										<Filter />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Exportar">
-									<IconButton size="small" onClick={handleExport}>
-										<ExportSquare />
-									</IconButton>
-								</Tooltip>
-								{activeTab !== "combined" && (
-									<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
-										<IconButton
-											size="small"
-											color="primary"
-											onClick={() => {
-												if (activeTab === "movements") handleAddMovement();
-												else if (activeTab === "notifications") handleAddNotification();
-												else if (activeTab === "calendar") handleAddEvent();
+										{/* Current Tab Indicator */}
+										<Box
+											sx={{
+												display: "flex",
+												alignItems: "center",
+												gap: 1,
+												px: 2,
+												py: 1,
+												borderRadius: 1,
+												bgcolor: alpha(currentTab?.color || theme.palette.primary.main, 0.1),
+												color: currentTab?.color,
 											}}
 										>
-											<Add />
-										</IconButton>
-									</Tooltip>
-								)}
-							</Stack>
-						</Stack>
+											{currentTab?.icon}
+											<Typography variant="subtitle2" fontWeight={600}>
+												{currentTab?.label}
+											</Typography>
+										</Box>
+									</Stack>
 
-						{/* Filters Section (Collapsible) */}
-						<Collapse in={showFilters} timeout="auto" unmountOnExit>
-							<Fade in={showFilters} timeout={350}>
-								<Box
-									sx={{
-										mt: 2,
-										p: 2,
-										bgcolor: theme.palette.grey[50],
-										borderRadius: 1,
-										border: `1px solid ${theme.palette.divider}`,
-										transition: "all 0.3s ease-in-out",
-									}}
-								>
-									<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+									{/* Action Buttons */}
+									<Stack direction="row" spacing={1}>
+										<Tooltip title="Filtros">
+											<IconButton
+												size="small"
+												onClick={() => setShowFilters(!showFilters)}
+												color={showFilters ? "primary" : "default"}
+												sx={{
+													transition: "all 0.3s ease",
+													transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+												}}
+											>
+												<Filter />
+											</IconButton>
+										</Tooltip>
+										{activeTab !== "combined" && (
+											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
+												<IconButton
+													size="small"
+													color="primary"
+													onClick={() => {
+														if (activeTab === "movements") handleAddMovement();
+														else if (activeTab === "notifications") handleAddNotification();
+														else if (activeTab === "calendar") handleAddEvent();
+													}}
+												>
+													<Add />
+												</IconButton>
+											</Tooltip>
+										)}
+									</Stack>
+								</Stack>
+
+								{/* Search Bar - Full width on mobile */}
+								<Box sx={{ mt: 2 }}>
+									<TextField
+										size="small"
+										fullWidth
+										placeholder={`Buscar en ${currentTab?.label.toLowerCase()}...`}
+										value={searchQuery}
+										onChange={(e) => setSearchQuery(e.target.value)}
+										InputProps={{
+											startAdornment: (
+												<InputAdornment position="start">
+													<SearchNormal1 size={18} />
+												</InputAdornment>
+											),
+										}}
+									/>
 								</Box>
-							</Fade>
-						</Collapse>
-					</Box>
 
-					{/* Table Content Area */}
-					<Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
-						{isLoading ? (
-							<Stack spacing={2}>
-								<Skeleton variant="rectangular" height={60} />
-								<Skeleton variant="rectangular" height={400} />
-							</Stack>
-						) : (
-							<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
-								{activeTab === "movements" && (
-									<MovementsTable
-										movements={movementsData.movements}
-										searchQuery={searchQuery}
-										onEdit={handleEditMovement}
-										onDelete={handleDeleteMovement}
-										onView={handleViewMovement}
-										filters={filters}
-									/>
+								{/* Filters Section (Collapsible) */}
+								<Collapse in={showFilters} timeout="auto" unmountOnExit>
+									<Fade in={showFilters} timeout={350}>
+										<Box
+											sx={{
+												mt: 2,
+												p: 2,
+												bgcolor: theme.palette.grey[50],
+												borderRadius: 1,
+												border: `1px solid ${theme.palette.divider}`,
+												transition: "all 0.3s ease-in-out",
+											}}
+										>
+											<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+										</Box>
+									</Fade>
+								</Collapse>
+							</Box>
+
+							{/* Table Content Area */}
+							<Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
+								{isLoading ? (
+									<Stack spacing={2}>
+										<Skeleton variant="rectangular" height={60} />
+										<Skeleton variant="rectangular" height={400} />
+									</Stack>
+								) : (
+									<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
+										{activeTab === "movements" && (
+											<MovementsTable
+												movements={movementsData.movements}
+												searchQuery={searchQuery}
+												onEdit={handleEditMovement}
+												onDelete={handleDeleteMovement}
+												onView={handleViewMovement}
+												filters={filters}
+											/>
+										)}
+										{activeTab === "notifications" && (
+											<NotificationsTable
+												notifications={notificationsData.notifications}
+												searchQuery={searchQuery}
+												onEdit={handleEditNotification}
+												onDelete={handleDeleteNotification}
+												onView={handleViewNotification}
+											/>
+										)}
+										{activeTab === "calendar" && (
+											<CalendarTable
+												events={eventsData.events}
+												searchQuery={searchQuery}
+												onEdit={handleEditEvent}
+												onDelete={handleDeleteEvent}
+												onView={handleViewEvent}
+											/>
+										)}
+										{activeTab === "combined" && (
+											<CombinedTable
+												movements={movementsData.movements}
+												notifications={notificationsData.notifications}
+												events={eventsData.events}
+												searchQuery={searchQuery}
+												onEdit={handleCombinedEdit}
+												onDelete={handleCombinedDelete}
+												onView={handleCombinedView}
+											/>
+										)}
+									</Paper>
 								)}
-								{activeTab === "notifications" && (
-									<NotificationsTable
-										notifications={notificationsData.notifications}
-										searchQuery={searchQuery}
-										onEdit={handleEditNotification}
-										onDelete={handleDeleteNotification}
-										onView={handleViewNotification}
-									/>
+							</Box>
+						</Box>
+
+						{/* Mobile Drawer */}
+						<Drawer
+							anchor="left"
+							open={mobileOpen}
+							onClose={() => setMobileOpen(false)}
+							ModalProps={{
+								keepMounted: true,
+							}}
+						>
+							{sidebarContent}
+						</Drawer>
+					</>
+				) : (
+					<>
+						{/* Desktop Layout */}
+						<Paper
+							elevation={0}
+							sx={{
+								borderRight: `1px solid ${theme.palette.divider}`,
+							}}
+						>
+							{sidebarContent}
+						</Paper>
+
+						{/* Main Content Area */}
+						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+							{/* Header Toolbar */}
+							<Box
+								sx={{
+									p: 2,
+									borderBottom: `1px solid ${theme.palette.divider}`,
+									bgcolor: theme.palette.background.paper,
+								}}
+							>
+								<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+									<Stack direction="row" spacing={2} alignItems="center" flex={1}>
+										{/* Current Tab Indicator */}
+										<Box
+											sx={{
+												display: "flex",
+												alignItems: "center",
+												gap: 1,
+												px: 2,
+												py: 1,
+												borderRadius: 1,
+												bgcolor: alpha(currentTab?.color || theme.palette.primary.main, 0.1),
+												color: currentTab?.color,
+											}}
+										>
+											{currentTab?.icon}
+											<Typography variant="subtitle2" fontWeight={600}>
+												{currentTab?.label}
+											</Typography>
+										</Box>
+
+										{/* Search Bar */}
+										<TextField
+											size="small"
+											placeholder={`Buscar en ${currentTab?.label.toLowerCase()}...`}
+											value={searchQuery}
+											onChange={(e) => setSearchQuery(e.target.value)}
+											sx={{ minWidth: 300 }}
+											InputProps={{
+												startAdornment: (
+													<InputAdornment position="start">
+														<SearchNormal1 size={18} />
+													</InputAdornment>
+												),
+											}}
+										/>
+									</Stack>
+
+									{/* Action Buttons */}
+									<Stack direction="row" spacing={1}>
+										<Tooltip title="Filtros">
+											<IconButton
+												size="small"
+												onClick={() => setShowFilters(!showFilters)}
+												color={showFilters ? "primary" : "default"}
+												sx={{
+													transition: "all 0.3s ease",
+													transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+												}}
+											>
+												<Filter />
+											</IconButton>
+										</Tooltip>
+										<Tooltip title="Exportar">
+											<IconButton size="small" onClick={handleExport}>
+												<ExportSquare />
+											</IconButton>
+										</Tooltip>
+										{activeTab !== "combined" && (
+											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
+												<IconButton
+													size="small"
+													color="primary"
+													onClick={() => {
+														if (activeTab === "movements") handleAddMovement();
+														else if (activeTab === "notifications") handleAddNotification();
+														else if (activeTab === "calendar") handleAddEvent();
+													}}
+												>
+													<Add />
+												</IconButton>
+											</Tooltip>
+										)}
+									</Stack>
+								</Stack>
+
+								{/* Filters Section (Collapsible) */}
+								<Collapse in={showFilters} timeout="auto" unmountOnExit>
+									<Fade in={showFilters} timeout={350}>
+										<Box
+											sx={{
+												mt: 2,
+												p: 2,
+												bgcolor: theme.palette.grey[50],
+												borderRadius: 1,
+												border: `1px solid ${theme.palette.divider}`,
+												transition: "all 0.3s ease-in-out",
+											}}
+										>
+											<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+										</Box>
+									</Fade>
+								</Collapse>
+							</Box>
+
+							{/* Table Content Area */}
+							<Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
+								{isLoading ? (
+									<Stack spacing={2}>
+										<Skeleton variant="rectangular" height={60} />
+										<Skeleton variant="rectangular" height={400} />
+									</Stack>
+								) : (
+									<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
+										{activeTab === "movements" && (
+											<MovementsTable
+												movements={movementsData.movements}
+												searchQuery={searchQuery}
+												onEdit={handleEditMovement}
+												onDelete={handleDeleteMovement}
+												onView={handleViewMovement}
+												filters={filters}
+											/>
+										)}
+										{activeTab === "notifications" && (
+											<NotificationsTable
+												notifications={notificationsData.notifications}
+												searchQuery={searchQuery}
+												onEdit={handleEditNotification}
+												onDelete={handleDeleteNotification}
+												onView={handleViewNotification}
+											/>
+										)}
+										{activeTab === "calendar" && (
+											<CalendarTable
+												events={eventsData.events}
+												searchQuery={searchQuery}
+												onEdit={handleEditEvent}
+												onDelete={handleDeleteEvent}
+												onView={handleViewEvent}
+											/>
+										)}
+										{activeTab === "combined" && (
+											<CombinedTable
+												movements={movementsData.movements}
+												notifications={notificationsData.notifications}
+												events={eventsData.events}
+												searchQuery={searchQuery}
+												onEdit={handleCombinedEdit}
+												onDelete={handleCombinedDelete}
+												onView={handleCombinedView}
+											/>
+										)}
+									</Paper>
 								)}
-								{activeTab === "calendar" && (
-									<CalendarTable
-										events={eventsData.events}
-										searchQuery={searchQuery}
-										onEdit={handleEditEvent}
-										onDelete={handleDeleteEvent}
-										onView={handleViewEvent}
-									/>
-								)}
-								{activeTab === "combined" && (
-									<CombinedTable
-										movements={movementsData.movements}
-										notifications={notificationsData.notifications}
-										events={eventsData.events}
-										searchQuery={searchQuery}
-										onEdit={handleCombinedEdit}
-										onDelete={handleCombinedDelete}
-										onView={handleCombinedView}
-									/>
-								)}
-							</Paper>
-						)}
-					</Box>
-				</Box>
+							</Box>
+						</Box>
+					</>
+				)}
 			</Box>
 
 			{/* Modals */}
@@ -697,7 +918,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								<Typography variant="subtitle2" color="textSecondary">
 									Fecha
 								</Typography>
-								<Typography variant="body1">{viewMovementDetails.time}</Typography>
+								<Typography variant="body1">{formatDate(viewMovementDetails.time)}</Typography>
 							</Box>
 							{viewMovementDetails.description && (
 								<Box>
@@ -712,7 +933,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									<Typography variant="subtitle2" color="textSecondary">
 										Fecha de Vencimiento
 									</Typography>
-									<Typography variant="body1">{viewMovementDetails.dateExpiration}</Typography>
+									<Typography variant="body1">{formatDate(viewMovementDetails.dateExpiration)}</Typography>
 								</Box>
 							)}
 						</Stack>

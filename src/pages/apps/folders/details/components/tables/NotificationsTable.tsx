@@ -14,7 +14,6 @@ import {
 	Tooltip,
 	Avatar,
 	Box,
-	Checkbox,
 	Typography,
 } from "@mui/material";
 import { Edit, Trash, Eye, SmsNotification, Notification1, NotificationStatus, Clock } from "iconsax-react";
@@ -145,7 +144,6 @@ const formatDate = (dateString: string) => {
 const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, searchQuery, onEdit, onDelete, onView }) => {
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof NotificationType>("time");
-	const [selected, setSelected] = useState<string[]>([]);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -153,32 +151,6 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 		const isAsc = orderBy === property && order === "asc";
 		setOrder(isAsc ? "desc" : "asc");
 		setOrderBy(property);
-	};
-
-	const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.checked) {
-			const newSelected = filteredNotifications.map((n) => n._id!);
-			setSelected(newSelected);
-			return;
-		}
-		setSelected([]);
-	};
-
-	const handleClick = (id: string) => {
-		const selectedIndex = selected.indexOf(id);
-		let newSelected: string[] = [];
-
-		if (selectedIndex === -1) {
-			newSelected = newSelected.concat(selected, id);
-		} else if (selectedIndex === 0) {
-			newSelected = newSelected.concat(selected.slice(1));
-		} else if (selectedIndex === selected.length - 1) {
-			newSelected = newSelected.concat(selected.slice(0, -1));
-		} else if (selectedIndex > 0) {
-			newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-		}
-
-		setSelected(newSelected);
 	};
 
 	const handleChangePage = (_event: unknown, newPage: number) => {
@@ -189,8 +161,6 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 		setRowsPerPage(parseInt(event.target.value, 10));
 		setPage(0);
 	};
-
-	const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
 	// Filter notifications based on search query
 	const filteredNotifications = useMemo(() => {
@@ -231,14 +201,6 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
 						<TableRow>
-							<TableCell padding="checkbox">
-								<Checkbox
-									color="primary"
-									indeterminate={selected.length > 0 && selected.length < filteredNotifications.length}
-									checked={filteredNotifications.length > 0 && selected.length === filteredNotifications.length}
-									onChange={handleSelectAllClick}
-								/>
-							</TableCell>
 							{headCells.map((headCell) => (
 								<TableCell
 									key={headCell.id}
@@ -267,24 +229,9 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{paginatedNotifications.map((notification, index) => {
-							const isItemSelected = isSelected(notification._id!);
-							const labelId = `notification-table-checkbox-${index}`;
-
+						{paginatedNotifications.map((notification) => {
 							return (
-								<TableRow
-									hover
-									onClick={() => handleClick(notification._id!)}
-									role="checkbox"
-									aria-checked={isItemSelected}
-									tabIndex={-1}
-									key={notification._id}
-									selected={isItemSelected}
-									sx={{ cursor: "pointer" }}
-								>
-									<TableCell padding="checkbox">
-										<Checkbox color="primary" checked={isItemSelected} inputProps={{ "aria-labelledby": labelId }} />
-									</TableCell>
+								<TableRow hover tabIndex={-1} key={notification._id} sx={{ cursor: "pointer" }}>
 									<TableCell>{formatDate(notification.time || "")}</TableCell>
 									<TableCell>
 										<Typography variant="subtitle2" noWrap>
@@ -407,7 +354,7 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 						})}
 						{paginatedNotifications.length === 0 && (
 							<TableRow>
-								<TableCell colSpan={headCells.length + 1} align="center">
+								<TableCell colSpan={headCells.length} align="center">
 									<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
 										No se encontraron notificaciones
 									</Typography>

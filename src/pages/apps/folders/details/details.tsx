@@ -1,32 +1,48 @@
-import { useState, useEffect, useMemo, useCallback, useRef, ReactNode, SyntheticEvent } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, ReactNode, SyntheticEvent } from "react";
 import { useParams } from "react-router";
 import { useSelector } from "react-redux";
-import { Tooltip, Grid, Stack, Skeleton, Box, Tab, Tabs, Typography, useTheme, alpha } from "@mui/material";
-import { Category, TableDocument, ExportSquare, InfoCircle, Activity, Briefcase, Folder2, Judge, DocumentText } from "iconsax-react";
+import {
+	Skeleton,
+	Box,
+	Tab,
+	Tabs,
+	Typography,
+	useTheme,
+	alpha,
+	ToggleButton,
+	ToggleButtonGroup,
+	Tooltip,
+	useMediaQuery,
+	Drawer,
+	IconButton,
+	List,
+	ListItemIcon,
+	ListItemText,
+	ListItemButton,
+} from "@mui/material";
+import { ExportSquare, InfoCircle, Activity, Briefcase, Category, TableDocument, HambergerMenu } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 // Components
-import CalcTable from "./components/CalcTable";
-import Movements from "./components/Movements";
-import FolderData from "./components/FolderData";
-import FolderPreJudData from "./components/FolderPreJudData";
-import FolderJudData from "./components/FolderJudData";
-import Notifications from "./components/Notifications";
-import Members from "./components/Members";
-import TaskList from "./components/TaskList";
-import Calendar from "./components/Calendar";
+import FolderDataCompact from "./components/FolderDataCompact";
+import FolderPreJudDataCompact from "./components/FolderPreJudDataCompact";
+import FolderJudDataCompact from "./components/FolderJudDataCompact";
+import FolderDataImproved from "./components/FolderDataImproved";
+import FolderPreJudDataImproved from "./components/FolderPreJudDataImproved";
+import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import NavigationControls from "./components/NavigationControls";
-import CollapsibleSection from "./components/CollapsibleSection";
+import InfoTabsVertical from "./components/InfoTabsVertical";
 
 // Actions
 import { dispatch } from "store";
 import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
+import GestionTabImproved from "./alternatives/GestionTabImproved";
 
 interface StateType {
 	folder: {
@@ -45,26 +61,6 @@ interface StateType {
 	};
 }
 
-// Constants - Moved outside component
-const VIEW_OPTIONS = [
-	{
-		label: "Vista Detallada",
-		value: "detailed",
-		icon: Category,
-		description: "Muestra toda la información expandida",
-	},
-	{
-		label: "Vista Compacta",
-		value: "compact",
-		icon: TableDocument,
-		description: "Muestra la información condensada",
-	},
-] as const;
-
-const GRID_STYLES = {
-	transition: "all 0.5s ease-in-out",
-};
-
 // ==============================|| TAB PANEL ||============================== //
 
 interface TabPanelProps {
@@ -78,7 +74,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`folder-tabpanel-${index}`} aria-labelledby={`folder-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+			{value === index && <Box sx={{ pt: 2, px: 2 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -93,13 +89,18 @@ function a11yProps(index: number) {
 const Details = () => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
-	const [viewMode, setViewMode] = useState<string>("compact");
-	const [isDetailedView, setIsDetailedView] = useState(false);
+	const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
+	const isDetailedView = viewMode === "detailed";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
+	const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
+
+	// Media queries for responsive design
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
@@ -118,8 +119,6 @@ const Details = () => {
 	// Optimized selectors with specific state slices
 	const folder = useSelector((state: StateType) => state.folder.folder);
 	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
-	const selectedContacts = useSelector((state: StateType) => state.contacts.selectedContacts);
-	const contactsLoading = useSelector((state: StateType) => state.contacts.isLoader);
 	const contacts = useSelector((state: StateType) => state.contacts.contacts);
 	const userId = useSelector((state: StateType) => state.auth.user?._id);
 
@@ -184,13 +183,6 @@ const Details = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [folder?.folderName, id, isLoader]);
 
-	// Memoized handlers
-	const handleViewModeChange = useCallback((_: any, newViewMode: string | null) => {
-		if (!newViewMode) return;
-		setViewMode(newViewMode);
-		setIsDetailedView(newViewMode === "detailed");
-	}, []);
-
 	const handleOpenLinkJudicial = useCallback(() => {
 		// Verificar si el usuario tiene acceso a la característica de vincular carpetas
 		const { canAccess, featureInfo } = canVinculateFolders();
@@ -213,157 +205,137 @@ const Details = () => {
 		setLimitErrorOpen(false);
 	}, []);
 
-	const handleTabChange = useCallback((event: SyntheticEvent, newValue: number) => {
-		setTabValue(newValue);
+	const handleTabChange = useCallback(
+		(event: SyntheticEvent, newValue: number) => {
+			setTabValue(newValue);
+			// Close mobile drawer when selecting a tab
+			if (isMobile) {
+				setMobileDrawerOpen(false);
+			}
+		},
+		[isMobile],
+	);
+
+	const handleDrawerToggle = useCallback(() => {
+		setMobileDrawerOpen(!mobileDrawerOpen);
+	}, [mobileDrawerOpen]);
+
+	const handleDrawerClose = useCallback(() => {
+		setMobileDrawerOpen(false);
 	}, []);
 
-	// Memoized view options renderer
-	const renderViewOptions = useMemo(
-		() => (
-			<Stack spacing={1.5} alignItems="flex-end">
-				{/* View mode buttons - Formal style */}
-				{isLoader ? (
-					<Skeleton variant="rectangular" width={320} height={36} sx={{ borderRadius: 0.5 }} />
-				) : (
-					<Stack direction="row" spacing={0}>
-						{VIEW_OPTIONS.map(({ value, label, icon: Icon, description }, index) => (
-							<Tooltip key={value} title={description} placement="top">
-								<Box
-									onClick={() => handleViewModeChange(null, value)}
-									sx={{
-										px: 2.5,
-										py: 1,
-										height: 36,
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-										cursor: "pointer",
-										bgcolor: viewMode === value ? theme.palette.grey[100] : "transparent",
-										borderTop: `1px solid ${theme.palette.divider}`,
-										borderBottom: `1px solid ${theme.palette.divider}`,
-										borderLeft: index === 0 ? `1px solid ${theme.palette.divider}` : "none",
-										borderRight: `1px solid ${theme.palette.divider}`,
-										borderRadius: index === 0 ? "4px 0 0 4px" : index === VIEW_OPTIONS.length - 1 ? "0 4px 4px 0" : 0,
-										transition: "all 0.2s ease",
-										"&:hover": {
-											bgcolor: theme.palette.grey[50],
-										},
-									}}
-								>
-									<Icon
-										size={18}
-										variant={viewMode === value ? "Bold" : "Linear"}
-										color={viewMode === value ? theme.palette.primary.main : theme.palette.text.secondary}
-									/>
-									<Typography
-										variant="body2"
-										sx={{
-											fontWeight: viewMode === value ? 600 : 400,
-											color: viewMode === value ? theme.palette.text.primary : theme.palette.text.secondary,
-											fontSize: "0.8125rem",
-										}}
-									>
-										{label}
-									</Typography>
-								</Box>
-							</Tooltip>
-						))}
-					</Stack>
-				)}
-
-				{/* Vincular con Poder Judicial - Formal button */}
-				{isLoader ? (
-					<Skeleton variant="rectangular" width={180} height={36} sx={{ borderRadius: 0.5 }} />
-				) : (
-					<Box>
-						{folder?.pjn ? (
-							<Box
-								sx={{
-									px: 2,
-									py: 0.75,
-									height: 36,
-									display: "flex",
-									alignItems: "center",
-									gap: 0.75,
-									bgcolor: alpha(theme.palette.success.main, 0.1),
-									border: `1px solid ${theme.palette.success.main}`,
-									borderRadius: 0.5,
-								}}
-							>
-								<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
-								<Typography
-									variant="body2"
-									sx={{
-										fontWeight: 500,
-										color: theme.palette.success.dark,
-										fontSize: "0.8125rem",
-									}}
-								>
-									Vinculado con PJN
-								</Typography>
-							</Box>
-						) : (
-							<Box
-								onClick={handleOpenLinkJudicial}
-								sx={{
-									px: 2,
-									py: 0.75,
-									height: 36,
-									display: "flex",
-									alignItems: "center",
-									gap: 0.75,
-									cursor: "pointer",
-									bgcolor: "transparent",
-									border: `1px solid ${theme.palette.divider}`,
-									borderRadius: 0.5,
-									transition: "all 0.2s ease",
-									"&:hover": {
-										borderColor: theme.palette.primary.main,
-										bgcolor: alpha(theme.palette.primary.main, 0.04),
-									},
-								}}
-							>
-								<ExportSquare size={16} variant="Linear" color={theme.palette.text.secondary} />
-								<Typography
-									variant="body2"
-									sx={{
-										fontWeight: 400,
-										color: theme.palette.text.secondary,
-										fontSize: "0.8125rem",
-									}}
-								>
-									Vincular con Poder Judicial
-								</Typography>
-							</Box>
-						)}
-					</Box>
-				)}
-			</Stack>
-		),
-		[viewMode, handleViewModeChange, folder?.pjn, handleOpenLinkJudicial, isLoader, theme, VIEW_OPTIONS],
+	// Tab items configuration
+	const tabItems = useMemo(
+		() => [
+			{ value: 0, label: "Información General", icon: <InfoCircle size="20" />, shortLabel: "Info" },
+			{ value: 1, label: "Actividad", icon: <Activity size="20" />, shortLabel: "Actividad" },
+			{ value: 2, label: "Gestión", icon: <Briefcase size="20" />, shortLabel: "Gestión" },
+		],
+		[],
 	);
 
-	// Memoized components
-	const MemoizedFolderData = useMemo(() => <FolderData isLoader={isLoader} folder={folder} type="general" />, [isLoader, folder]);
-
-	const MemoizedMovements = useMemo(() => <Movements title="Movimientos" folderName={folder?.folderName} />, [folder]);
-
-	const MemoizedNotifications = useMemo(() => <Notifications title="Notificaciones" folderName={folder?.folderName} />, [folder]);
-
-	const MemoizedPreJudData = useMemo(() => <FolderPreJudData isLoader={isLoader} folder={folder} type="mediacion" />, [isLoader, folder]);
-
-	const MemoizedJudData = useMemo(() => <FolderJudData isLoader={isLoader} folder={folder} type="judicial" />, [isLoader, folder]);
-
-	const MemoizedCalcTable = useMemo(() => <CalcTable title="Montos, Cálculos y Ofrecimientos" folderData={folder} />, [folder]);
-
-	const MemoizedMembers = useMemo(
-		() => (id ? <Members title="Intervinientes" membersData={selectedContacts} isLoader={contactsLoading} folderId={id} /> : null),
-		[id, selectedContacts, contactsLoading],
+	// Memoized judicial link button
+	const renderJudicialLink = useMemo(
+		() =>
+			isLoader ? (
+				<Skeleton variant="rectangular" width={180} height={36} sx={{ borderRadius: 0.5 }} />
+			) : (
+				<Box>
+					{folder?.pjn ? (
+						<Box
+							sx={{
+								px: 2,
+								py: 0.75,
+								height: 36,
+								display: "flex",
+								alignItems: "center",
+								gap: 0.75,
+								bgcolor: alpha(theme.palette.success.main, 0.1),
+								border: `1px solid ${theme.palette.success.main}`,
+								borderRadius: 0.5,
+							}}
+						>
+							<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+							<Typography
+								variant="body2"
+								sx={{
+									fontWeight: 500,
+									color: theme.palette.success.dark,
+									fontSize: "0.8125rem",
+								}}
+							>
+								Vinculado con PJN
+							</Typography>
+						</Box>
+					) : (
+						<Box
+							onClick={handleOpenLinkJudicial}
+							sx={{
+								px: 2,
+								py: 0.75,
+								height: 36,
+								display: "flex",
+								alignItems: "center",
+								gap: 0.75,
+								cursor: "pointer",
+								bgcolor: "transparent",
+								border: `1px solid ${theme.palette.divider}`,
+								borderRadius: 0.5,
+								transition: "all 0.2s ease",
+								"&:hover": {
+									borderColor: theme.palette.primary.main,
+									bgcolor: alpha(theme.palette.primary.main, 0.04),
+								},
+							}}
+						>
+							<ExportSquare size={16} variant="Linear" color={theme.palette.text.secondary} />
+							<Typography
+								variant="body2"
+								sx={{
+									fontWeight: 400,
+									color: theme.palette.text.secondary,
+									fontSize: "0.8125rem",
+								}}
+							>
+								Vincular con Poder Judicial
+							</Typography>
+						</Box>
+					)}
+				</Box>
+			),
+		[folder?.pjn, handleOpenLinkJudicial, isLoader, theme],
 	);
 
-	const MemoizedTaskList = useMemo(() => <TaskList title="Tareas" folderName={folder?.folderName} />, [folder]);
+	// Memoized components - switch between compact and improved based on isDetailedView
+	const MemoizedFolderData = useMemo(
+		() =>
+			isDetailedView ? (
+				<FolderDataImproved isLoader={isLoader} folder={folder} />
+			) : (
+				<FolderDataCompact isLoader={isLoader} folder={folder} type="general" />
+			),
+		[isLoader, folder, isDetailedView],
+	);
 
-	const MemoizedCalendar = useMemo(() => <Calendar title="Calendario" folderName={folder?.folderName} />, [folder]);
+	const MemoizedPreJudData = useMemo(
+		() =>
+			isDetailedView ? (
+				<FolderPreJudDataImproved isLoader={isLoader} folder={folder} />
+			) : (
+				<FolderPreJudDataCompact isLoader={isLoader} folder={folder} type="mediacion" />
+			),
+		[isLoader, folder, isDetailedView],
+	);
+
+	const MemoizedJudData = useMemo(
+		() =>
+			isDetailedView ? (
+				<FolderJudDataImproved isLoader={isLoader} folder={folder} />
+			) : (
+				<FolderJudDataCompact isLoader={isLoader} folder={folder} type="judicial" />
+			),
+		[isLoader, folder, isDetailedView],
+	);
 
 	return (
 		<Box
@@ -394,120 +366,194 @@ const Details = () => {
 				</Box>
 			)}
 
-			<MainCard
-				title={
-					isLoader || !folder?.folderName ? (
-						<Box sx={{ position: "relative", display: "inline-block", minHeight: "32px" }}>
-							<Box component="span" sx={{ visibility: "hidden" }}>
-								Nombre De Carpeta Ejemplo
-							</Box>
-							<Skeleton
-								variant="text"
-								width={200}
-								height={32}
-								sx={{
-									position: "absolute",
-									top: 0,
-									left: 0,
-								}}
-							/>
-						</Box>
-					) : (
-						<Box sx={{ minHeight: "32px", display: "flex", alignItems: "center" }}>{formatFolderName(folder.folderName)}</Box>
-					)
-				}
-				secondary={renderViewOptions}
+			{/* Mobile Drawer for Navigation */}
+			<Drawer
+				anchor="left"
+				open={mobileDrawerOpen}
+				onClose={handleDrawerClose}
+				slotProps={{
+					backdrop: {
+						onClick: handleDrawerClose,
+					},
+				}}
+				sx={{
+					"& .MuiDrawer-paper": {
+						width: 280,
+						boxSizing: "border-box",
+					},
+				}}
 			>
-				<Box sx={{ width: "100%" }}>
-					<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-						<Tabs
-							value={tabValue}
-							onChange={handleTabChange}
-							aria-label="folder detail tabs"
-							variant="scrollable"
-							scrollButtons="auto"
+				<Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+					<Typography variant="h6" sx={{ fontWeight: 600 }}>
+						Navegación
+					</Typography>
+				</Box>
+				<List>
+					{tabItems.map((tab) => (
+						<ListItemButton
+							key={tab.value}
+							selected={tabValue === tab.value}
+							onClick={() => {
+								setTabValue(tab.value);
+								handleDrawerClose();
+							}}
 							sx={{
-								"& .MuiTab-root": {
-									minHeight: 48,
-									textTransform: "none",
-									fontSize: "0.875rem",
-									fontWeight: 500,
-								},
-								"& .MuiTab-iconWrapper": {
-									marginRight: 1,
+								"&.Mui-selected": {
+									bgcolor: alpha(theme.palette.primary.main, 0.08),
+									"&:hover": {
+										bgcolor: alpha(theme.palette.primary.main, 0.12),
+									},
 								},
 							}}
 						>
-							<Tab label="Información General" icon={<InfoCircle size="20" />} iconPosition="start" {...a11yProps(0)} />
-							<Tab label="Actividad" icon={<Activity size="20" />} iconPosition="start" {...a11yProps(1)} />
-							<Tab label="Gestión" icon={<Briefcase size="20" />} iconPosition="start" {...a11yProps(2)} />
-						</Tabs>
+							<ListItemIcon>
+								{React.cloneElement(tab.icon, {
+									variant: tabValue === tab.value ? "Bold" : "Linear",
+									color: tabValue === tab.value ? theme.palette.primary.main : theme.palette.text.secondary,
+								})}
+							</ListItemIcon>
+							<ListItemText primary={tab.label} />
+						</ListItemButton>
+					))}
+				</List>
+			</Drawer>
+
+			<MainCard content={false} sx={{ "& .MuiCardContent-root": { p: 0 } }}>
+				<Box sx={{ width: "100%", position: "relative" }}>
+					{/* Tab Header with buttons - responsive layout */}
+					<Box sx={{ borderBottom: 1, borderColor: "divider", px: 2, pt: 2 }}>
+						{/* On mobile, stack vertically */}
+						<Box
+							sx={{
+								display: "flex",
+								flexDirection: { xs: "column", sm: "column", md: "row" },
+								justifyContent: { md: "space-between" },
+								alignItems: { xs: "stretch", md: "center" },
+								gap: { xs: 2, md: 0 },
+								mb: { xs: 2, md: 0 },
+							}}
+						>
+							{/* Mobile Menu Button and Current Tab Display */}
+							{isMobile ? (
+								<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+									<IconButton onClick={handleDrawerToggle} sx={{ p: 1 }}>
+										<HambergerMenu />
+									</IconButton>
+									<Typography variant="h6" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
+										{React.cloneElement(tabItems[tabValue].icon, { variant: "Bold" })}
+										{tabItems[tabValue].shortLabel}
+									</Typography>
+								</Box>
+							) : (
+								/* Desktop/Tablet Tabs */
+								<Tabs
+									value={tabValue}
+									onChange={handleTabChange}
+									aria-label="folder detail tabs"
+									variant="scrollable"
+									scrollButtons="auto"
+									sx={{
+										"& .MuiTab-root": {
+											minHeight: 48,
+											textTransform: "none",
+											fontSize: { xs: "0.75rem", sm: "0.875rem" },
+											fontWeight: 500,
+											px: { xs: 1.5, sm: 2 },
+											minWidth: { xs: "auto", sm: 120 },
+										},
+										"& .MuiTab-iconWrapper": {
+											marginRight: { xs: 0.5, sm: 1 },
+										},
+									}}
+								>
+									{tabItems.map((tab) => (
+										<Tab
+											key={tab.value}
+											label={isTablet ? tab.shortLabel : tab.label}
+											icon={React.cloneElement(tab.icon, { size: isTablet ? 18 : 20 })}
+											iconPosition="start"
+											{...a11yProps(tab.value)}
+										/>
+									))}
+								</Tabs>
+							)}
+
+							{/* View Mode Selector and Judicial Link Button */}
+							<Box
+								sx={{
+									display: "flex",
+									gap: 2,
+									alignItems: "center",
+									justifyContent: { xs: "center", sm: "flex-start", md: "flex-end" },
+									flexWrap: { xs: "wrap", sm: "nowrap" },
+								}}
+							>
+								{/* View Mode Toggle - Only show on Info tab */}
+								{tabValue === 0 && (
+									<ToggleButtonGroup
+										value={viewMode}
+										exclusive
+										onChange={(_, newViewMode) => newViewMode && setViewMode(newViewMode)}
+										size="small"
+										sx={{
+											"& .MuiToggleButton-root": {
+												px: 2,
+												py: 0.75,
+												height: 36,
+												borderRadius: 0.5,
+												"&.Mui-selected": {
+													bgcolor: alpha(theme.palette.primary.main, 0.08),
+													borderColor: theme.palette.primary.main,
+												},
+											},
+										}}
+									>
+										<ToggleButton value="compact">
+											<Tooltip title="Vista compacta">
+												<Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+													<TableDocument size={16} />
+													<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
+														Compacta
+													</Typography>
+												</Box>
+											</Tooltip>
+										</ToggleButton>
+										<ToggleButton value="detailed">
+											<Tooltip title="Vista detallada con mejor aprovechamiento del espacio">
+												<Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+													<Category size={16} />
+													<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
+														Detallada
+													</Typography>
+												</Box>
+											</Tooltip>
+										</ToggleButton>
+									</ToggleButtonGroup>
+								)}
+								{renderJudicialLink}
+							</Box>
+						</Box>
 					</Box>
 
 					{/* Tab 1: Información General */}
 					<TabPanel value={tabValue} index={0}>
-						<Stack spacing={3}>
-							<CollapsibleSection
-								title="Datos Básicos"
-								icon={<Folder2 size={24} variant="Bold" />}
-								subtitle="Información principal de la carpeta"
-								defaultExpanded={true}
-							>
-								{MemoizedFolderData}
-							</CollapsibleSection>
-
-							<CollapsibleSection
-								title="Datos de Mediación"
-								icon={<DocumentText size={24} variant="Bold" />}
-								subtitle="Información del proceso de mediación"
-								defaultExpanded={false}
-							>
-								{MemoizedPreJudData}
-							</CollapsibleSection>
-
-							<CollapsibleSection
-								title="Datos Judiciales"
-								icon={<Judge size={24} variant="Bold" />}
-								subtitle="Información del proceso judicial"
-								defaultExpanded={false}
-							>
-								{MemoizedJudData}
-							</CollapsibleSection>
-						</Stack>
+						<InfoTabsVertical
+							folderData={folder}
+							basicDataComponent={MemoizedFolderData}
+							mediationDataComponent={MemoizedPreJudData}
+							judicialDataComponent={MemoizedJudData}
+							isLoader={isLoader}
+						/>
 					</TabPanel>
 
 					{/* Tab 2: Actividad */}
 					<TabPanel value={tabValue} index={1}>
-						{viewMode === "detailed" ? (
-							<Grid container spacing={3}>
-								<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
-									{MemoizedMovements}
-								</Grid>
-								<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
-									{MemoizedNotifications}
-								</Grid>
-								<Grid item xs={12} md={isDetailedView ? 12 : 4} sx={GRID_STYLES}>
-									{MemoizedCalendar}
-								</Grid>
-							</Grid>
-						) : (
-							<ActivityTables folderName={folder?.folderName} />
-						)}
+						<ActivityTables folderName={folder?.folderName} />
 					</TabPanel>
 
 					{/* Tab 3: Gestión */}
 					<TabPanel value={tabValue} index={2}>
-						<Grid container spacing={3}>
-							<Grid item xs={12} md={isDetailedView ? 12 : 6} sx={GRID_STYLES}>
-								{MemoizedCalcTable}
-							</Grid>
-							<Grid item xs={12} md={isDetailedView ? 12 : 6} sx={GRID_STYLES}>
-								{MemoizedMembers}
-							</Grid>
-							<Grid item xs={12} md={12} sx={GRID_STYLES}>
-								{MemoizedTaskList}
-							</Grid>
-						</Grid>
+						{folder && <GestionTabImproved folder={folder} isDetailedView={isDetailedView} />}
 					</TabPanel>
 				</Box>
 

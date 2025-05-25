@@ -1366,5 +1366,7 @@
 		{ "label": "Correo Argentino", "item": "EU" },
 		{ "label": "Correo Argentino", "item": "PU" },
 		{ "label": "Correo Argentino", "item": "XU" }
-	]
+	],
+	"statusJudicial": ["Nueva", "En Proceso", "Sentencia", "Apelación", "Finalizada"],
+	"statusMediacion": ["Nueva", "En Proceso", "Finalizada"]
 }

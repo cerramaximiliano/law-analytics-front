@@ -14,7 +14,6 @@ import {
 	Tooltip,
 	Avatar,
 	Box,
-	Checkbox,
 	Typography,
 	ToggleButton,
 	ToggleButtonGroup,
@@ -228,7 +227,6 @@ const formatDate = (dateString: string) => {
 const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications, events, searchQuery, onEdit, onDelete, onView }) => {
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof UnifiedActivity>("date");
-	const [selected, setSelected] = useState<string[]>([]);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 	const [filterType, setFilterType] = useState<string[]>(["movement", "notification", "calendar"]);
@@ -301,32 +299,6 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 		setOrderBy(property);
 	};
 
-	const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-		if (event.target.checked) {
-			const newSelected = filteredAndSortedData.map((n) => n.id);
-			setSelected(newSelected);
-			return;
-		}
-		setSelected([]);
-	};
-
-	const handleClick = (id: string) => {
-		const selectedIndex = selected.indexOf(id);
-		let newSelected: string[] = [];
-
-		if (selectedIndex === -1) {
-			newSelected = newSelected.concat(selected, id);
-		} else if (selectedIndex === 0) {
-			newSelected = newSelected.concat(selected.slice(1));
-		} else if (selectedIndex === selected.length - 1) {
-			newSelected = newSelected.concat(selected.slice(0, -1));
-		} else if (selectedIndex > 0) {
-			newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1));
-		}
-
-		setSelected(newSelected);
-	};
-
 	const handleChangePage = (_event: unknown, newPage: number) => {
 		setPage(newPage);
 	};
@@ -335,8 +307,6 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 		setRowsPerPage(parseInt(event.target.value, 10));
 		setPage(0);
 	};
-
-	const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
 	// Filter and sort data
 	const filteredAndSortedData = useMemo(() => {
@@ -409,14 +379,6 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
 						<TableRow>
-							<TableCell padding="checkbox">
-								<Checkbox
-									color="primary"
-									indeterminate={selected.length > 0 && selected.length < filteredAndSortedData.length}
-									checked={filteredAndSortedData.length > 0 && selected.length === filteredAndSortedData.length}
-									onChange={handleSelectAllClick}
-								/>
-							</TableCell>
 							{headCells.map((headCell) => (
 								<TableCell
 									key={headCell.id}
@@ -445,24 +407,9 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{paginatedData.map((activity, index) => {
-							const isItemSelected = isSelected(activity.id);
-							const labelId = `combined-table-checkbox-${index}`;
-
+						{paginatedData.map((activity) => {
 							return (
-								<TableRow
-									hover
-									onClick={() => handleClick(activity.id)}
-									role="checkbox"
-									aria-checked={isItemSelected}
-									tabIndex={-1}
-									key={activity.id}
-									selected={isItemSelected}
-									sx={{ cursor: "pointer" }}
-								>
-									<TableCell padding="checkbox">
-										<Checkbox color="primary" checked={isItemSelected} inputProps={{ "aria-labelledby": labelId }} />
-									</TableCell>
+								<TableRow hover tabIndex={-1} key={activity.id} sx={{ cursor: "pointer" }}>
 									<TableCell>{activity.dateString}</TableCell>
 									<TableCell>
 										<Typography variant="subtitle2" noWrap>
@@ -549,7 +496,7 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 						})}
 						{paginatedData.length === 0 && (
 							<TableRow>
-								<TableCell colSpan={headCells.length + 1} align="center">
+								<TableCell colSpan={headCells.length} align="center">
 									<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
 										No se encontraron actividades
 									</Typography>

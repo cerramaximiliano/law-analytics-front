@@ -311,7 +311,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 										</>
 									) : (
 										<>
-											<Typography variant="subtitle1">Monto</Typography>
+											<Typography variant="subtitle1">Monto de Reclamo</Typography>
 											{isEditing ? (
 												<NumberField
 													thousandSeparator={","}
