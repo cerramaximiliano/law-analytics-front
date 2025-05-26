@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
 	Box,
 	Tabs,
@@ -20,16 +20,11 @@ import CalcTableCompact from "../components/CalcTableCompact";
 import MembersImproved from "../components/MembersImproved";
 import TaskListImproved from "../components/TaskListImproved";
 import { FolderData } from "types/folder";
-import { Contact } from "types/contact";
-
-// Extended type for alternative components
-interface ExtendedFolderData extends FolderData {
-	calculations?: any[];
-	members?: Contact[];
-	tasks?: any[];
-	claimAmount?: number;
-	monto?: number;
-}
+import { useSelector, dispatch } from "store";
+import { getCalculatorsByFolderId } from "store/reducers/calculator";
+import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
+import { getTasksByFolderId } from "store/reducers/tasks";
+import type { RootState } from "store";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -48,7 +43,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 interface GestionTabImprovedProps {
-	folder: ExtendedFolderData;
+	folder: FolderData;
 	isDetailedView: boolean;
 }
 
@@ -58,8 +53,32 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	const [value, setValue] = useState(0);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
-	const pendingTasks = folder.tasks?.filter((t: any) => !t.completed).length || 0;
-	const totalTasks = folder.tasks?.length || 0;
+	// Get data from Redux store
+	const { selectedCalculators } = useSelector((state: RootState) => state.calculator);
+	const { selectedContacts, contacts } = useSelector((state: RootState) => state.contacts);
+	const { tasks } = useSelector((state: RootState) => state.tasksReducer);
+	const userId = useSelector((state: RootState) => state.auth.user?._id);
+
+	// Fetch data when component mounts
+	useEffect(() => {
+		if (folder._id) {
+			const fetchData = async () => {
+				// Fetch calculations and tasks
+				dispatch(getCalculatorsByFolderId(folder._id));
+				dispatch(getTasksByFolderId(folder._id));
+
+				// Fetch contacts if needed, then filter by folder
+				if (userId && (!contacts || contacts.length === 0)) {
+					await dispatch(getContactsByUserId(userId));
+				}
+				dispatch(filterContactsByFolder(folder._id));
+			};
+			fetchData();
+		}
+	}, [folder._id, userId]);
+
+	const pendingTasks = tasks?.filter((t: any) => !t.checked).length || 0;
+	const totalTasks = tasks?.length || 0;
 	const completedTasks = totalTasks - pendingTasks;
 
 	const handleChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -74,14 +93,14 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 			icon: <Calculator size={20} />,
 			label: "Cálculos, Montos y Ofrecimientos",
 			shortLabel: "Cálculos",
-			description: `${folder.calculations?.length || 0} registros`,
+			description: `${selectedCalculators?.length || 0} registros`,
 			color: theme.palette.primary.main,
 		},
 		{
 			icon: <People size={20} />,
 			label: "Intervinientes",
 			shortLabel: "Intervinientes",
-			description: `${folder.members?.length || 0} personas`,
+			description: `${selectedContacts?.length || 0} contactos`,
 			color: theme.palette.success.main,
 		},
 		{
@@ -222,10 +241,10 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							</Typography>
 						</Box>
 						<TabPanel value={value} index={0}>
-							<CalcTableCompact title="" folderData={{ folderName: folder.folderName, monto: folder.monto || folder.amount || 0 }} />
+							<CalcTableCompact title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
 						</TabPanel>
 						<TabPanel value={value} index={1}>
-							<MembersImproved title="" membersData={folder.members || []} isLoader={false} folderId={folder._id} />
+							<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
 						</TabPanel>
 						<TabPanel value={value} index={2}>
 							<TaskListImproved title="" folderName={folder.folderName} />
@@ -256,10 +275,10 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 					<Box sx={{ flexGrow: 1, overflow: "auto" }}>
 						<Box sx={{ p: 3 }}>
 							<TabPanel value={value} index={0}>
-								<CalcTableCompact title="" folderData={{ folderName: folder.folderName, monto: folder.monto || folder.amount || 0 }} />
+								<CalcTableCompact title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
 							</TabPanel>
 							<TabPanel value={value} index={1}>
-								<MembersImproved title="" membersData={folder.members || []} isLoader={false} folderId={folder._id} />
+								<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />

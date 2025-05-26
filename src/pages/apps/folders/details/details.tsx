@@ -13,14 +13,8 @@ import {
 	ToggleButtonGroup,
 	Tooltip,
 	useMediaQuery,
-	Drawer,
-	IconButton,
-	List,
-	ListItemIcon,
-	ListItemText,
-	ListItemButton,
 } from "@mui/material";
-import { ExportSquare, InfoCircle, Activity, Briefcase, Category, TableDocument, HambergerMenu } from "iconsax-react";
+import { ExportSquare, InfoCircle, Activity, Briefcase, Category, TableDocument } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
@@ -95,7 +89,7 @@ const Details = () => {
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
-	const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+	// const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false); // Removed: Using icon tabs instead
 	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
 
 	// Media queries for responsive design
@@ -205,31 +199,46 @@ const Details = () => {
 		setLimitErrorOpen(false);
 	}, []);
 
-	const handleTabChange = useCallback(
-		(event: SyntheticEvent, newValue: number) => {
-			setTabValue(newValue);
-			// Close mobile drawer when selecting a tab
-			if (isMobile) {
-				setMobileDrawerOpen(false);
-			}
-		},
-		[isMobile],
-	);
-
-	const handleDrawerToggle = useCallback(() => {
-		setMobileDrawerOpen(!mobileDrawerOpen);
-	}, [mobileDrawerOpen]);
-
-	const handleDrawerClose = useCallback(() => {
-		setMobileDrawerOpen(false);
+	const handleTabChange = useCallback((event: SyntheticEvent, newValue: number) => {
+		setTabValue(newValue);
+		// Mobile drawer removed - no longer needed with icon tabs
 	}, []);
 
+	// Drawer functions removed: Using icon tabs instead
+
 	// Tab items configuration
-	const tabItems = useMemo(
+	// Tab configuration with icons and labels
+	interface TabItem {
+		value: number;
+		label: string;
+		icon: React.ReactElement;
+		shortLabel: string;
+		ariaLabel: string;
+	}
+
+	const tabItems = useMemo<TabItem[]>(
 		() => [
-			{ value: 0, label: "Información General", icon: <InfoCircle size="20" />, shortLabel: "Info" },
-			{ value: 1, label: "Actividad", icon: <Activity size="20" />, shortLabel: "Actividad" },
-			{ value: 2, label: "Gestión", icon: <Briefcase size="20" />, shortLabel: "Gestión" },
+			{
+				value: 0,
+				label: "Información General",
+				icon: <InfoCircle size="20" />,
+				shortLabel: "Info",
+				ariaLabel: "Información General",
+			},
+			{
+				value: 1,
+				label: "Actividad",
+				icon: <Activity size="20" />,
+				shortLabel: "Actividad",
+				ariaLabel: "Actividad",
+			},
+			{
+				value: 2,
+				label: "Gestión",
+				icon: <Briefcase size="20" />,
+				shortLabel: "Gestión",
+				ariaLabel: "Gestión",
+			},
 		],
 		[],
 	);
@@ -366,57 +375,7 @@ const Details = () => {
 				</Box>
 			)}
 
-			{/* Mobile Drawer for Navigation */}
-			<Drawer
-				anchor="left"
-				open={mobileDrawerOpen}
-				onClose={handleDrawerClose}
-				slotProps={{
-					backdrop: {
-						onClick: handleDrawerClose,
-					},
-				}}
-				sx={{
-					"& .MuiDrawer-paper": {
-						width: 280,
-						boxSizing: "border-box",
-					},
-				}}
-			>
-				<Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-					<Typography variant="h6" sx={{ fontWeight: 600 }}>
-						Navegación
-					</Typography>
-				</Box>
-				<List>
-					{tabItems.map((tab) => (
-						<ListItemButton
-							key={tab.value}
-							selected={tabValue === tab.value}
-							onClick={() => {
-								setTabValue(tab.value);
-								handleDrawerClose();
-							}}
-							sx={{
-								"&.Mui-selected": {
-									bgcolor: alpha(theme.palette.primary.main, 0.08),
-									"&:hover": {
-										bgcolor: alpha(theme.palette.primary.main, 0.12),
-									},
-								},
-							}}
-						>
-							<ListItemIcon>
-								{React.cloneElement(tab.icon, {
-									variant: tabValue === tab.value ? "Bold" : "Linear",
-									color: tabValue === tab.value ? theme.palette.primary.main : theme.palette.text.secondary,
-								})}
-							</ListItemIcon>
-							<ListItemText primary={tab.label} />
-						</ListItemButton>
-					))}
-				</List>
-			</Drawer>
+			{/* Mobile Drawer for Navigation - Removed: Now using icon tabs */}
 
 			<MainCard content={false} sx={{ "& .MuiCardContent-root": { p: 0 } }}>
 				<Box sx={{ width: "100%", position: "relative" }}>
@@ -433,16 +392,66 @@ const Details = () => {
 								mb: { xs: 2, md: 0 },
 							}}
 						>
-							{/* Mobile Menu Button and Current Tab Display */}
+							{/* Mobile Icon Tabs */}
 							{isMobile ? (
-								<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-									<IconButton onClick={handleDrawerToggle} sx={{ p: 1 }}>
-										<HambergerMenu />
-									</IconButton>
-									<Typography variant="h6" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
-										{React.cloneElement(tabItems[tabValue].icon, { variant: "Bold" })}
-										{tabItems[tabValue].shortLabel}
-									</Typography>
+								<Box sx={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center" }}>
+									<Box
+										sx={{
+											display: "flex",
+											gap: 0,
+											"& > *:not(:last-child)": {
+												borderRight: `1px solid ${theme.palette.divider}`,
+											},
+										}}
+									>
+										{tabItems.map((tab) => (
+											<Tooltip key={tab.value} title={tab.label} arrow>
+												<Box
+													onClick={() => setTabValue(tab.value)}
+													sx={{
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														px: 3,
+														py: 1.5,
+														cursor: "pointer",
+														color: tabValue === tab.value ? theme.palette.primary.main : theme.palette.text.secondary,
+														transition: "all 0.2s ease",
+														position: "relative",
+														"&:hover": {
+															color: theme.palette.primary.main,
+														},
+														"&::after": {
+															content: '""',
+															position: "absolute",
+															bottom: 0,
+															left: "50%",
+															transform: "translateX(-50%)",
+															width: tabValue === tab.value ? "60%" : "0%",
+															height: 2,
+															backgroundColor: theme.palette.primary.main,
+															transition: "width 0.3s ease",
+														},
+													}}
+													aria-label={tab.ariaLabel}
+													role="tab"
+													aria-selected={tabValue === tab.value}
+													tabIndex={0}
+													onKeyDown={(e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															setTabValue(tab.value);
+														}
+													}}
+												>
+													{React.cloneElement(tab.icon, {
+														size: 28,
+														variant: tabValue === tab.value ? "Bold" : "Linear",
+													})}
+												</Box>
+											</Tooltip>
+										))}
+									</Box>
 								</Box>
 							) : (
 								/* Desktop/Tablet Tabs */
