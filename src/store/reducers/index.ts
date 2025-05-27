@@ -19,11 +19,11 @@ import movements from "./movements";
 import auth from "./auth";
 import alerts from "./alerts";
 import contacts from "./contacts";
-import folders from "./folders";
 import events from "./events";
 import tasksReducer from "./tasks";
 import userStats from "./userStats";
 import users from "./users";
+import search from "./search";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -50,11 +50,11 @@ const reducers = combineReducers({
 	auth,
 	alerts,
 	contacts,
-	folders,
 	events,
 	tasksReducer,
 	userStats,
 	users,
+	search,
 });
 
 export default reducers;

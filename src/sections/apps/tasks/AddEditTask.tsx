@@ -38,7 +38,7 @@ const TaskSchema = Yup.object().shape({
 // ==============================|| ADD / EDIT TASK ||============================== //
 
 const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
-	const { folders } = useSelector((state) => state.folders);
+	const { folders } = useSelector((state) => state.folder);
 	const { user } = useSelector((state) => state.auth);
 
 	const isCreating = !task;
@@ -76,7 +76,6 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 					showSnackbar(result.error || "Error al procesar la tarea", "error");
 				}
 			} catch (error: any) {
-				console.error(error);
 				showSnackbar("Error al procesar la tarea", "error");
 			} finally {
 				setSubmitting(false);

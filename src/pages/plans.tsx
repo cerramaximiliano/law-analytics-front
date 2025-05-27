@@ -67,7 +67,6 @@ const Plans = () => {
 				}
 			} catch (err) {
 				setError("Error al cargar los planes. Por favor, intenta más tarde.");
-				console.error(err);
 			} finally {
 				setLoading(false);
 			}

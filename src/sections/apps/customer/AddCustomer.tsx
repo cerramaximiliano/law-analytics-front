@@ -192,12 +192,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	// Escuchar evento de restricción del plan
 	useEffect(() => {
 		const handlePlanRestriction = (event: Event) => {
-			const customEvent = event as CustomEvent;
-			console.log(
-				"Restricción de plan detectada, cerrando modal de nuevo contacto",
-				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
-			);
-
+			//const customEvent = event as CustomEvent;
 			// Cerrar el modal inmediatamente
 			onCancel();
 		};
@@ -268,7 +263,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 							}
 						} else {
 							// Si hay un error en la respuesta, mostrar el modal por defecto
-							console.error("Error al verificar el límite de recursos:", response.message);
+
 							setShowAddCustomerModal(true);
 							// Configurar valores iniciales
 							const emptyValues = getInitialValues(null);
@@ -279,7 +274,6 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 							}
 						}
 					} catch (error) {
-						console.error("Error al verificar el límite de recursos:", error);
 						// En caso de error, permitir crear el contacto de todos modos
 						setShowAddCustomerModal(true);
 						// Configurar valores iniciales
@@ -375,7 +369,6 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 				throw new Error(`Error en la respuesta al ${message} el contacto`);
 			}
 		} catch (error) {
-			console.error("Error en el proceso de envío:", error);
 			enqueueSnackbar(`Error al procesar el contacto. Intente nuevamente más tarde.`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },

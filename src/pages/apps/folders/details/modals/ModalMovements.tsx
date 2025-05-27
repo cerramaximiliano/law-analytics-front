@@ -91,7 +91,7 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 			}
 		} catch (error) {
 			// Manejo de errores inesperados
-			console.error("Error en _submitForm:", error);
+
 			enqueueSnackbar(`Error inesperado al ${editMode ? "actualizar" : "crear"} el movimiento`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -105,7 +105,6 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		_submitForm(values, actions);
 		closeTaskModal();
 		actions.resetForm();

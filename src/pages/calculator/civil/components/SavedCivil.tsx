@@ -299,7 +299,7 @@ const SavedCivil = () => {
 									color="success"
 									onClick={(e: MouseEvent) => {
 										e.stopPropagation();
-										console.log(row.values.id);
+
 										navigate(`../details/${row.values.id}`);
 									}}
 								>

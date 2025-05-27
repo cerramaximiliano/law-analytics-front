@@ -108,12 +108,7 @@ const headCells = [
 const UsersList = () => {
 	const theme = useTheme();
 
-	// Añadir console.log para ver el estado completo
-	const storeState = useSelector((state: DefaultRootStateProps) => state);
-	console.log("Estado completo del store:", storeState);
-
 	const { users, loading, error } = useSelector((state: DefaultRootStateProps) => state.users);
-	console.log("Estado específico de usuarios:", { users, loading, error });
 
 	// Estado para la paginación
 	const [page, setPage] = useState(0);
@@ -149,8 +144,6 @@ const UsersList = () => {
 	};
 
 	const handleUserView = (user: User) => {
-		console.log("handleUserView - user:", user);
-		console.log("User ID:", user.id, "User _id:", user._id);
 		setSelectedUser(user);
 		setViewDialogOpen(true);
 	};
@@ -204,10 +197,7 @@ const UsersList = () => {
 
 	// Aplicamos paginación y ordenamiento
 	const visibleRows = useMemo(() => {
-		console.log("Estado de usuarios:", users);
-
 		if (!users || !Array.isArray(users) || users.length === 0) {
-			console.log("No hay usuarios para mostrar o formato incorrecto:", users);
 			return [];
 		}
 

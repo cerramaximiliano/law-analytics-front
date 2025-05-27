@@ -39,7 +39,6 @@ export const MarketingContactService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching contacts:", error);
 			throw error;
 		}
 	},
@@ -50,7 +49,6 @@ export const MarketingContactService = {
 			const response = await axios.get(`${baseURL}/api/contacts/${id}`);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error fetching contact ${id}:`, error);
 			throw error;
 		}
 	},
@@ -61,7 +59,6 @@ export const MarketingContactService = {
 			const response = await axios.post(`${baseURL}/api/contacts`, contactData);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error creating contact:", error);
 			throw error;
 		}
 	},
@@ -72,7 +69,6 @@ export const MarketingContactService = {
 			const response = await axios.put(`${baseURL}/api/contacts/${id}`, contactData);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error updating contact ${id}:`, error);
 			throw error;
 		}
 	},
@@ -83,7 +79,6 @@ export const MarketingContactService = {
 			const response = await axios.delete(`${baseURL}/api/contacts/${id}`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error deleting contact ${id}:`, error);
 			throw error;
 		}
 	},
@@ -112,7 +107,6 @@ export const MarketingContactService = {
 
 			return response.data;
 		} catch (error) {
-			console.error("Error importing contacts:", error);
 			throw error;
 		}
 	},
@@ -126,7 +120,6 @@ export const MarketingContactService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error bulk updating contacts:", error);
 			throw error;
 		}
 	},
@@ -138,7 +131,6 @@ export const MarketingContactService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error bulk deleting contacts:", error);
 			throw error;
 		}
 	},
@@ -149,7 +141,6 @@ export const MarketingContactService = {
 			const response = await axios.get(`${baseURL}/api/contacts/stats`);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error fetching contact statistics:", error);
 			throw error;
 		}
 	},
@@ -160,7 +151,6 @@ export const MarketingContactService = {
 			const response = await axios.patch(`${baseURL}/api/contacts/${id}/status`, { status });
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error updating status for contact ${id}:`, error);
 			throw error;
 		}
 	},
@@ -171,7 +161,6 @@ export const MarketingContactService = {
 			const response = await axios.get(`${baseURL}/api/campaigns/${id}`);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error fetching campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -182,7 +171,6 @@ export const MarketingContactService = {
 			const response = await axios.get<TagsResponse>(`${baseURL}/api/tags/simple`);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error fetching tags:", error);
 			throw error;
 		}
 	},

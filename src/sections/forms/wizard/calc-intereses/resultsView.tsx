@@ -121,7 +121,6 @@ const SectionIcons: Record<string, React.ElementType> = {
 };
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, onSave, currentUser, folderId, folderName, groupId }) => {
-	console.log(values);
 	const theme = useTheme();
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
 	const [email, setEmail] = useState("");
@@ -695,7 +694,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				throw new Error(result.error || "Error al guardar el cálculo");
 			}
 		} catch (error) {
-			console.error("Error al guardar el cálculo:", error);
 			enqueueSnackbar(error instanceof Error ? error.message : "Error al guardar el cálculo", {
 				variant: "error",
 				anchorOrigin: {

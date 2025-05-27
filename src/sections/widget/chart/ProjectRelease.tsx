@@ -22,7 +22,6 @@ const ProjectRelease = () => {
 				const folderData = await ApiService.getCategoryAnalysis<{ deadlines: UpcomingDeadlines }>("folders", userId);
 				setDeadlinesData(folderData.deadlines);
 			} catch (error) {
-				console.error("Error fetching deadlines data:", error);
 			} finally {
 				setLoading(false);
 			}

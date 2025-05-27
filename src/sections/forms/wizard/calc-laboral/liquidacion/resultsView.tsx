@@ -330,7 +330,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				throw new Error(result.error || "Error al guardar el cálculo");
 			}
 		} catch (error) {
-			console.error("Error al guardar el cálculo:", error);
 			enqueueSnackbar(error instanceof Error ? error.message : "Error al guardar el cálculo", {
 				variant: "error",
 				anchorOrigin: {

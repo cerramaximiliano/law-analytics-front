@@ -41,9 +41,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 
 	async function _submitForm(values: TaskFormValues, actions: any) {
 		try {
-			console.log("Enviando formulario con valores:", values);
 			const result = await dispatch(addTask(values));
-			console.log("Resultado de addTask:", result);
 
 			if (result.success) {
 				dispatch(
@@ -81,7 +79,6 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 				return false;
 			}
 		} catch (error) {
-			console.log("Error en _submitForm:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -102,7 +99,6 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 	}
 
 	async function _handleSubmit(values: TaskFormValues, actions: any) {
-		console.log("_handleSubmit llamado con valores:", values);
 		await _submitForm(values, actions);
 	}
 

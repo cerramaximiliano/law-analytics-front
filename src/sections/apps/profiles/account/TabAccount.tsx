@@ -149,8 +149,6 @@ const TabAccount = () => {
 			const response = await ApiService.getUserPreferences();
 
 			if (response.success && response.data) {
-				console.log("Datos recibidos del servidor:", response.data);
-
 				// Casting seguro a 'any' solo para acceso a propiedades
 				const responseData = response.data as any;
 
@@ -230,17 +228,11 @@ const TabAccount = () => {
 				}
 
 				// Logs para depuración
-				console.log("¿loginAlerts es true?", loginAlertsValue === true);
-				console.log("¿loginAlerts existe directo?", "loginAlerts" in responseData);
-				console.log("¿loginAlerts existe en notifications?", responseData.notifications && "loginAlerts" in responseData.notifications);
-				console.log("Valor de loginAlerts:", loginAlertsValue);
 
 				setOriginalChecked([...newChecked]);
 				setChecked(newChecked);
-				console.log("Estado de switches actualizado:", newChecked);
 			}
 		} catch (error) {
-			console.error("Error al cargar preferencias de usuario:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -278,7 +270,6 @@ const TabAccount = () => {
 			}
 		} catch (error) {
 			setSessionError(typeof error === "string" ? error : "Error al cargar las sesiones activas");
-			console.error("Error al cargar sesiones:", error);
 		} finally {
 			setLoadingSessions(false);
 		}
@@ -351,7 +342,6 @@ const TabAccount = () => {
 					close: false,
 				}),
 			);
-			console.error("Error al cerrar sesión:", error);
 		} finally {
 			setClosingSession(false);
 			handleCloseSessionDialog(); // Cerrar el modal en caso de error
@@ -414,8 +404,6 @@ const TabAccount = () => {
 					close: false,
 				}),
 			);
-
-			console.error("Error al cerrar todas las sesiones:", error);
 		} finally {
 			setClosingSession(false);
 			handleCloseAllSessionsDialog(); // Cerrar el modal en caso de error
@@ -583,11 +571,6 @@ const TabAccount = () => {
 		}
 
 		setChecked(newChecked);
-
-		// Log para depuración
-		if (value === "ln") {
-			console.log("Switch loginAlerts cambiado a:", newChecked.includes("ln"));
-		}
 	};
 
 	// Funciones para controlar los estados de edición
@@ -646,8 +629,6 @@ const TabAccount = () => {
 				// En base a los logs, parece que loginAlerts debe ir en el nivel superior
 				updatedPreferences.loginAlerts = checked.includes("ln");
 			}
-
-			console.log("Enviando datos al servidor:", updatedPreferences);
 
 			// Casting seguro para la llamada API
 			const response = await ApiService.updateUserPreferences(updatedPreferences as Partial<UserPreferences>);
@@ -728,7 +709,6 @@ const TabAccount = () => {
 				throw new Error(response.message || "Error al guardar cambios");
 			}
 		} catch (error) {
-			console.error("Error al guardar cambios:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -763,8 +743,6 @@ const TabAccount = () => {
 
 	useEffect(() => {
 		// Este efecto solo es para depuración
-		console.log("Estado actual de switches:", checked);
-		console.log("¿loginAlerts activado?:", checked.includes("ln"));
 	}, [checked]);
 
 	return (

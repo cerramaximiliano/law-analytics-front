@@ -71,7 +71,6 @@ const AuthForgotPassword = () => {
 							},
 						);
 					} catch (err: any) {
-						console.error(err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setErrors({ submit: err.response.data.message });

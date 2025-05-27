@@ -69,7 +69,11 @@ export const getMovementsByUserId = (userId: string) => async (dispatch: Dispatc
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/movements/user/${userId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/movements/user/${userId}`, {
+			params: { fields },
+		});
 
 		if (Array.isArray(response.data)) {
 			dispatch({
@@ -218,7 +222,11 @@ export const getMovementsByFolderId = (folderId: string) => async (dispatch: Dis
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.get<MovementsResponse>(`${process.env.REACT_APP_BASE_URL}/api/movements/folder/${folderId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId";
+		const response = await axios.get<MovementsResponse>(`${process.env.REACT_APP_BASE_URL}/api/movements/folder/${folderId}`, {
+			params: { fields },
+		});
 
 		if (response.data.success) {
 			dispatch({

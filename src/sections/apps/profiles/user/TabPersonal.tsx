@@ -129,8 +129,6 @@ const TabPersonal = () => {
 						await dispatch(updateUserProfile(updateData));
 						setStatus({ success: true });
 					} catch (err: any) {
-						console.error("Error al actualizar el perfil:", err);
-
 						setStatus({ success: false });
 						setErrors({
 							submit: err.response?.data?.message || err.message || "Error al actualizar el perfil",

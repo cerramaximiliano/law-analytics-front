@@ -255,7 +255,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 									{new Intl.NumberFormat("es-AR", {
 										style: "currency",
 										currency: "ARS",
-									}).format(data.amount)}
+									}).format(data.capital !== undefined ? data.capital : data.amount - (data.interest || 0))}
 								</Typography>
 							</Stack>
 							{data.interest !== undefined && (
@@ -280,7 +280,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 											{new Intl.NumberFormat("es-AR", {
 												style: "currency",
 												currency: "ARS",
-											}).format(data.amount + (data.interest || 0))}
+											}).format(data.amount)}
 										</Typography>
 									</Stack>
 								</>

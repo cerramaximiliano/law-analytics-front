@@ -116,8 +116,6 @@ const NotificationPage = () => {
 				return newIds;
 			});
 		} catch (error) {
-			console.error("Error eliminando alerta:", error);
-
 			// Quitar del conjunto de IDs en procesamiento en caso de error
 			setProcessingIds((prev) => {
 				const newIds = new Set(prev);
@@ -142,8 +140,6 @@ const NotificationPage = () => {
 			newProcessingIds.delete(alertId);
 			setProcessingIds(newProcessingIds);
 		} catch (error) {
-			console.error("Error marcando alerta como leída:", error);
-
 			// Quitar del conjunto de IDs en procesamiento en caso de error
 			const newProcessingIds = new Set(processingIds);
 			newProcessingIds.delete(alertId);
@@ -166,9 +162,7 @@ const NotificationPage = () => {
 			if (!userId) return;
 			try {
 				dispatch(fetchUserAlerts(userId));
-			} catch (error) {
-				console.error("Error recibiendo alerts", error);
-			}
+			} catch (error) {}
 		};
 
 		fetchAlerts(userId);
@@ -246,7 +240,6 @@ const NotificationPage = () => {
 
 			return { primaryText, primaryVariant, typographyColor, avatarColor };
 		} catch (error) {
-			console.error("Error al procesar la fecha de la notificación:", error);
 			// Devolver valores predeterminados si hay algún error
 			return {
 				primaryText: notification.secondaryText || "Notificación",

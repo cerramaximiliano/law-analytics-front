@@ -28,7 +28,6 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 
 			// Realizar la petición a la API
 			await userApi.delete(`/api/users/${user.id}`);
-			console.log("Usuario eliminado:", user.id);
 
 			// Actualizar el estado global
 			dispatch({
@@ -39,7 +38,6 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 			// Cerrar el diálogo
 			onClose();
 		} catch (err: any) {
-			console.error("Error al eliminar usuario:", err);
 			setError(err.message || "Error al eliminar el usuario");
 			dispatch({
 				type: SET_ERROR,

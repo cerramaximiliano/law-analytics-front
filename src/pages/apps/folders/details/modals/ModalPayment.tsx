@@ -79,7 +79,6 @@ const ModalPayment = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		_submitForm(values, actions);
 	}
 

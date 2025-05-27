@@ -85,12 +85,10 @@ const Pricing = () => {
 						setCurrentPlanId(responseData.subscription.plan);
 					}
 				} catch (err) {
-					console.error("Error al obtener suscripción actual:", err);
 					// No mostramos error si falla esto, solo para el listado de planes
 				}
 			} catch (err) {
 				setError("Error al cargar los planes. Por favor, intenta más tarde.");
-				console.error(err);
 			} finally {
 				setLoading(false);
 			}
@@ -176,16 +174,15 @@ const Pricing = () => {
 			// Manejo de planes pagos o respuestas normales
 			if (response.success && response.url) {
 				// Redirigir al usuario a la URL de checkout proporcionada por Stripe
-				console.log("Redirigiendo a URL de Stripe:", response.url);
+
 				window.location.href = response.url;
 			} else if (response.success && response.sessionId) {
 				// En caso de que solo devuelva el sessionId sin URL
-				console.log("Obtenido sessionId de Stripe:", response.sessionId);
+
 				alert("Proceso de suscripción iniciado. Serás redirigido a la página de pago.");
 			}
 			// Caso para suscripción pendiente de cancelación (no relacionado con plan gratuito)
 			else if (response.success && response.pendingCancellation) {
-				console.log("Suscripción pendiente de cancelación detectada");
 				// Mostrar mensaje informativo
 				dispatch(
 					openSnackbar({
@@ -207,7 +204,7 @@ const Pricing = () => {
 				}
 			} else if (response.success) {
 				// Respuesta exitosa pero sin URL ni sessionId
-				console.log("Respuesta exitosa sin URL ni sessionId");
+
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -221,7 +218,7 @@ const Pricing = () => {
 				);
 			} else {
 				// Respuesta no exitosa
-				console.error("Error en la respuesta:", response);
+
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -237,7 +234,6 @@ const Pricing = () => {
 				window.location.href = errorUrl;
 			}
 		} catch (error) {
-			console.error("Error al suscribirse:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -320,7 +316,6 @@ const Pricing = () => {
 				throw new Error(response.message || "Error al procesar la solicitud");
 			}
 		} catch (error) {
-			console.error("Error al procesar la opción:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

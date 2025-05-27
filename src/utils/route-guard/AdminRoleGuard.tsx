@@ -15,16 +15,13 @@ const AdminRoleGuard = () => {
 
 	useEffect(() => {
 		// Log verificación de permisos
-		console.log("AdminRoleGuard - Verificando permisos:", { isLoggedIn, userRole: user?.role });
 
 		// Si el usuario está logueado pero no es admin, redirigir al dashboard
 		if (isLoggedIn && user?.role !== "ADMIN_ROLE") {
-			console.log("AdminRoleGuard - Redirigiendo a dashboard: No es admin");
 			navigate("/dashboard/default", { replace: true });
 		}
 		// Si no está logueado, redirigir al login
 		else if (!isLoggedIn) {
-			console.log("AdminRoleGuard - Redirigiendo a login: No está autenticado");
 			navigate("/login", { replace: true });
 		}
 

@@ -154,7 +154,6 @@ const AvailabilityCard: React.FC<{
 					.join("; ") + additionalSlots
 			);
 		} catch (error) {
-			console.error("Error formatting time slots:", error);
 			return "Formato de horario no válido";
 		}
 	};
@@ -697,8 +696,6 @@ const BookingsManagement = () => {
 					setAvailabilities(availabilitiesResponse.data);
 				}
 			} catch (error) {
-				console.error(error);
-
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -811,8 +808,6 @@ const BookingsManagement = () => {
 				}),
 			);
 		} catch (error) {
-			console.error(error);
-
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -862,8 +857,6 @@ const BookingsManagement = () => {
 					}),
 				);
 			} catch (error) {
-				console.error(error);
-
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -914,8 +907,6 @@ const BookingsManagement = () => {
 					}),
 				);
 			} catch (error) {
-				console.error(error);
-
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -963,8 +954,6 @@ const BookingsManagement = () => {
 				}),
 			);
 		} catch (error) {
-			console.error(error);
-
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -1011,8 +1000,6 @@ const BookingsManagement = () => {
 				}),
 			);
 		} catch (error) {
-			console.error(error);
-
 			if (axios.isAxiosError(error)) {
 				// Intentamos obtener el mensaje de error del servidor, si existe
 				const serverErrorMsg = error.response?.data?.error || error.response?.data?.message;

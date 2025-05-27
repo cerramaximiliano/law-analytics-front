@@ -980,7 +980,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								<Typography variant="subtitle2" color="textSecondary">
 									Fecha
 								</Typography>
-								<Typography variant="body1">{viewNotificationDetails.time}</Typography>
+								<Typography variant="body1">{formatDate(viewNotificationDetails.time)}</Typography>
 							</Box>
 							{viewNotificationDetails.description && (
 								<Box>
@@ -995,7 +995,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									<Typography variant="subtitle2" color="textSecondary">
 										Fecha de Vencimiento
 									</Typography>
-									<Typography variant="body1">{viewNotificationDetails.dateExpiration}</Typography>
+									<Typography variant="body1">{formatDate(viewNotificationDetails.dateExpiration)}</Typography>
 								</Box>
 							)}
 						</Stack>

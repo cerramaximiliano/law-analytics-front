@@ -126,9 +126,7 @@ const Details = () => {
 				promises.push(dispatch(getContactsByUserId(userId)));
 			}
 			await Promise.all(promises);
-		} catch (error) {
-			console.error("Error fetching data:", error);
-		}
+		} catch (error) {}
 	}, [id, userId]);
 
 	// Data fetch when id changes

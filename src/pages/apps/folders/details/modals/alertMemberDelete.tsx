@@ -38,7 +38,7 @@ export default function AlertMemberDelete({ title, open, handleClose, id }: Prop
 				});
 			} else {
 				// Optionally handle error case, e.g. show error message
-				console.error(result.error);
+
 				enqueueSnackbar("Ha ocurrido un error eliminado el movimiento.", {
 					variant: "error",
 					anchorOrigin: {

@@ -32,7 +32,6 @@ export const SegmentService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching segments:", error);
 			throw error;
 		}
 	},
@@ -43,7 +42,6 @@ export const SegmentService = {
 			const response = await axios.get(`${baseURL}/api/segments/${id}`);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error fetching segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -54,7 +52,6 @@ export const SegmentService = {
 			const response = await axios.post(`${baseURL}/api/segments`, segmentData);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error creating segment:", error);
 			throw error;
 		}
 	},
@@ -65,7 +62,6 @@ export const SegmentService = {
 			const response = await axios.put(`${baseURL}/api/segments/${id}`, segmentData);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error updating segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -76,7 +72,6 @@ export const SegmentService = {
 			const response = await axios.delete(`${baseURL}/api/segments/${id}`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error deleting segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -94,7 +89,6 @@ export const SegmentService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching contacts for segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -105,7 +99,6 @@ export const SegmentService = {
 			const response = await axios.post(`${baseURL}/api/segments/${id}/contacts`, { contactIds });
 			return response.data;
 		} catch (error) {
-			console.error(`Error adding contacts to segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -118,7 +111,6 @@ export const SegmentService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error removing contacts from segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -129,7 +121,6 @@ export const SegmentService = {
 			const response = await axios.post(`${baseURL}/api/segments/calculate`, { conditions });
 			return response.data;
 		} catch (error) {
-			console.error("Error calculating segment count:", error);
 			throw error;
 		}
 	},
@@ -140,7 +131,6 @@ export const SegmentService = {
 			const response = await axios.get(`${baseURL}/api/segments/stats`);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error fetching segment statistics:", error);
 			throw error;
 		}
 	},

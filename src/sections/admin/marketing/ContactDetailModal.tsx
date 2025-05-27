@@ -50,7 +50,6 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 			const contactData = await MarketingContactService.getContactById(id);
 			setContact(contactData);
 		} catch (err: any) {
-			console.error("Error al obtener detalles del contacto:", err);
 			setError(err?.message || "No se pudo cargar la información del contacto");
 		} finally {
 			setLoading(false);

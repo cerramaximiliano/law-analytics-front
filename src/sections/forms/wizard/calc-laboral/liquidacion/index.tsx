@@ -39,7 +39,6 @@ function getStepContent(step: number, values: any, handleReset: () => void, fold
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 
 const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
-	console.log(folder);
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
@@ -54,7 +53,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	};
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		if (isLastStep) {
 			// En el último paso, simplemente renderizamos los resultados
 			actions.setSubmitting(false);

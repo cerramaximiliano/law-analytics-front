@@ -71,7 +71,6 @@ const DashboardDefault = () => {
 		const fetchDashboardData = async () => {
 			// Esperar a que el usuario esté cargado
 			if (!user) {
-				console.log("Usuario no disponible, esperando...");
 				return;
 			}
 
@@ -79,12 +78,8 @@ const DashboardDefault = () => {
 				setLoading(true);
 				setError(null);
 
-				console.log("Cargando dashboard para usuario:", userId);
-				console.log("User object:", user);
-
 				// Usar directamente ApiService en lugar de hacer una llamada fetch adicional
 				const summaryData = await ApiService.getDashboardSummary(userId);
-				console.log("SUMMARY", summaryData);
 
 				// Verificar que se obtuvieron datos
 				if (!summaryData) {
@@ -94,7 +89,6 @@ const DashboardDefault = () => {
 				// Asignar datos directamente
 				setDashboardData(summaryData);
 			} catch (err) {
-				console.error("Error loading dashboard data:", err);
 				let errorMessage = "No se pudieron cargar los datos del dashboard";
 
 				// Manejar diferentes tipos de errores
@@ -107,7 +101,6 @@ const DashboardDefault = () => {
 					} else if (err.message.includes("404") || err.message.includes("no fue encontrado")) {
 						// Posible error de endpoint - reintentar después de 1 segundo
 						if (retryCount < 3) {
-							console.log(`Reintentando conexión (intento ${retryCount + 1}/3)...`);
 							setTimeout(() => {
 								setRetryCount(retryCount + 1);
 							}, 1000);

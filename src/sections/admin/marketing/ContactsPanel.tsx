@@ -100,7 +100,6 @@ const ContactsPanel = () => {
 			setContacts(response.data);
 			setTotalCount(response.pagination.total);
 		} catch (err) {
-			console.error("Error fetching contacts:", err);
 			setError("Error al cargar los contactos. Por favor, intente de nuevo más tarde.");
 		} finally {
 			setLoading(false);
@@ -123,9 +122,7 @@ const ContactsPanel = () => {
 					inactive: 0,
 				},
 			});
-		} catch (error) {
-			console.error("Error fetching contact statistics:", error);
-		}
+		} catch (error) {}
 	};
 
 	// Pagination handlers

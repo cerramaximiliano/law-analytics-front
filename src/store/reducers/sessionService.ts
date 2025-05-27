@@ -163,9 +163,7 @@ class SessionService {
 					location: `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`,
 				});
 			});
-		} catch (error) {
-			console.warn("No se pudo obtener la ubicación del usuario", error);
-		}
+		} catch (error) {}
 	}
 
 	/**
@@ -195,4 +193,5 @@ class SessionService {
 	}
 }
 
-export default new SessionService();
+const sessionService = new SessionService();
+export default sessionService;

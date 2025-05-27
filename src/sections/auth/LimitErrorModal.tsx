@@ -78,7 +78,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					setError("No se pudieron cargar los planes");
 				}
 			} catch (err) {
-				console.error("Error al cargar los planes:", err);
 				setError("Error al cargar los planes. Por favor, intenta más tarde.");
 			} finally {
 				setLoading(false);
@@ -104,7 +103,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	// Registrar la apertura y cierre del modal
 	React.useEffect(() => {
 		if (open && !modalOpenedRef.current) {
-			console.log("LimitErrorModal: Modal de restricción de plan abierto");
 			modalOpenedRef.current = true;
 		}
 

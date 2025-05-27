@@ -106,14 +106,13 @@ export const addTask = (data: Omit<TaskType, "_id">) => async (dispatch: Dispatc
 	try {
 		dispatch({ type: SET_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks`, data);
-		console.log(response);
+
 		dispatch({
 			type: ADD_TASK,
 			payload: response.data,
 		});
 		return { success: true, task: response.data };
 	} catch (error: unknown) {
-		console.log(error);
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al crear la tarea" : "Error al crear la tarea";
 		dispatch({ type: SET_ERROR, payload: errorMessage });
@@ -124,7 +123,11 @@ export const addTask = (data: Omit<TaskType, "_id">) => async (dispatch: Dispatc
 export const getTasksByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/user/${userId}`);
+		// Campos optimizados para listas
+		const fields = "_id,name,description,status,priority,dueDate,folderId,folderName,tags,attachments,createdAt,updatedAt,completedAt";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/user/${userId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_TASKS,
 			payload: response.data,
@@ -158,7 +161,11 @@ export const getTasksByGroupId = (groupId: string) => async (dispatch: Dispatch)
 export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/folder/${folderId}`);
+		// Campos optimizados para listas
+		const fields = "_id,name,description,status,priority,dueDate,folderId,folderName,tags,attachments,createdAt,updatedAt,completedAt";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/folder/${folderId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_TASKS,
 			payload: response.data,

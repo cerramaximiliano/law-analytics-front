@@ -32,7 +32,6 @@ const Register = () => {
 			await loginWithGoogle(credentialResponse);
 		} catch (error) {
 			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
-			console.error("Error:", error);
 		} finally {
 			setIsLoading(false);
 		}

@@ -97,7 +97,6 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 	// Efecto para manejar cierre de modales cuando hay errores 403
 	useEffect(() => {
 		const handlePlanRestriction = () => {
-			console.log("Members: Restricción de plan detectada, cerrando modales");
 			if (add) {
 				setAdd(false);
 			}
@@ -108,7 +107,6 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 
 		const checkGlobalFlag = () => {
 			if ((window as any).FORCE_CLOSE_ALL_MODALS) {
-				console.log("Members: Flag global detectada, cerrando modales");
 				if (add) {
 					setAdd(false);
 				}
@@ -241,7 +239,6 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				);
 			}
 		} catch (error) {
-			console.error("Error en handleUnlink:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

@@ -164,13 +164,6 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 
 		try {
 			// TODO: Implementar llamada al servicio externo del Poder Judicial
-			console.log("Vinculando causa:", {
-				folderId,
-				folderName,
-				expedientNumber,
-				expedientYear,
-				jurisdiction,
-			});
 
 			// Simulación de llamada exitosa
 			setTimeout(() => {
@@ -257,12 +250,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 	// Escuchar evento de restricción del plan
 	useEffect(() => {
 		const handlePlanRestriction = (event: Event) => {
-			const customEvent = event as CustomEvent;
-			console.log(
-				"Restricción de plan detectada, cerrando modal de vinculación",
-				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
-			);
-
+			//const customEvent = event as CustomEvent;
 			// Cerrar el modal inmediatamente
 			onCancelLink();
 

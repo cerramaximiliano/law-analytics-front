@@ -92,7 +92,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 
 	const [isEditing, setIsEditing] = useState(false);
 
-	//console.log(folder.preFolder);
+	//
 
 	const status = ["Nueva", "En Proceso", "Finalizada"];
 	const [statusFolder, setStatusFolder] = useState(folder?.status || "Nueva");
@@ -119,7 +119,6 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 	};
 
 	const _submitForm = async (values: any, actions: any) => {
-		console.log(values);
 		if (id) {
 			try {
 				// Convertir fechas de DD/MM/YYYY a formato ISO (YYYY-MM-DD) antes de enviar al backend
@@ -145,7 +144,6 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 						TransitionComponent: Zoom,
 						autoHideDuration: 3000,
 					});
-					console.log("Folder actualizado con éxito:", result.folder);
 				} else {
 					enqueueSnackbar(result.message || "Error al actualizar el folder", {
 						variant: "error",
@@ -153,7 +151,6 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 						TransitionComponent: Zoom,
 						autoHideDuration: 3000,
 					});
-					console.error("Error al actualizar folder:", result.message);
 				}
 			} catch (error) {
 				enqueueSnackbar("Ocurrió un error inesperado. Por favor, intente nuevamente más tarde.", {
@@ -162,10 +159,8 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
-				console.error("Error inesperado:", error);
 			}
 		} else {
-			console.error("ID is undefined, unable to update folder");
 			enqueueSnackbar("No se puede actualizar. Intente nuevamente más tarde.", {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -177,7 +172,6 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 	};
 
 	const _handleSubmit = (values: any, actions: any) => {
-		console.log(values);
 		if (isEditing) {
 			setIsEditing(false);
 			_submitForm(values, actions);

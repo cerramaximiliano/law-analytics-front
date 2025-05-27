@@ -77,7 +77,11 @@ export const addNotification = (data: Omit<NotificationType, "_id">) => async (d
 export const getNotificationsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/user/${userId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,dateExpiration,notification,user,description,folderId";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/user/${userId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_NOTIFICATIONS,
 			payload: response.data.notifications,
@@ -93,7 +97,11 @@ export const getNotificationsByUserId = (userId: string) => async (dispatch: Dis
 export const getNotificationsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/group/${groupId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,dateExpiration,notification,user,description,folderId";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/group/${groupId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_NOTIFICATIONS,
 			payload: response.data.notifications,
@@ -109,7 +117,11 @@ export const getNotificationsByGroupId = (groupId: string) => async (dispatch: D
 export const getNotificationsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/folder/${folderId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,dateExpiration,notification,user,description,folderId";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/folder/${folderId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_NOTIFICATIONS,
 			payload: response.data.notifications,

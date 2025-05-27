@@ -56,7 +56,6 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			// Reiniciar el contador de intentos cuando se abre el modal
 			if (open) {
 				submitAttempts.current = 0;
-				console.log("Modal abierto - contador de intentos reiniciado:", submitAttempts.current);
 			}
 		}, 100);
 
@@ -97,7 +96,6 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 
 		try {
 			setIsSubmitting(true);
-			console.log("Intentos de login (formulario):", submitAttempts.current, "de", maxRetries);
 
 			// Validar el formulario
 			await validationSchema.validate(values, { abortEarly: false });
@@ -115,11 +113,8 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 				throw loginErr;
 			}
 		} catch (err: unknown) {
-			console.error("Login error:", err);
-
 			// Incrementar contador de intentos solo cuando hay un error de login
 			submitAttempts.current += 1;
-			console.log("Form submit - attempts counter:", submitAttempts.current);
 
 			setStatus({ success: false });
 
@@ -161,8 +156,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			}
 
 			// Calcular intentos restantes después de incrementar
-			const remainingAttempts = maxRetries - submitAttempts.current;
-			console.log("Login error - intentos actuales:", submitAttempts.current, "restantes:", remainingAttempts);
+			//const remainingAttempts = maxRetries - submitAttempts.current;
 
 			// Mostrar error mediante snackbar en lugar de dentro del modal
 			showSnackbar(`${errorMessage}. Intento ${submitAttempts.current} de ${maxRetries}.`, "error");
@@ -182,10 +176,6 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 	const handleGoogleSuccess = async (tokenResponse: any) => {
 		try {
 			setIsSubmitting(true);
-			console.log("Token response from Modal:", tokenResponse);
-			console.log("Access token Modal:", tokenResponse.access_token);
-			console.log("Token type Modal:", typeof tokenResponse.access_token);
-			console.log("Token length Modal:", tokenResponse.access_token?.length || 0);
 
 			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
 			const credentialResponse: CredentialResponse = {
@@ -207,11 +197,8 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 				throw loginError;
 			}
 		} catch (error) {
-			console.error("Google login error:", error);
-
 			// Incrementar contador de intentos solo cuando hay un error de login
 			submitAttempts.current += 1;
-			console.log("Google login error - attempts counter:", submitAttempts.current);
 
 			// Formatear el mensaje de error
 			let errorMessage = "Error al iniciar sesión con Google";
@@ -251,8 +238,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			}
 
 			// Calcular intentos restantes
-			const remainingAttempts = maxRetries - submitAttempts.current;
-			console.log("Google login error - intentos actuales:", submitAttempts.current, "restantes:", remainingAttempts);
+			//const remainingAttempts = maxRetries - submitAttempts.current;
 
 			showSnackbar(`${errorMessage}. Intento ${submitAttempts.current} de ${maxRetries}.`, "error");
 
@@ -271,15 +257,10 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 	const googleLogin = useGoogleLogin({
 		onSuccess: handleGoogleSuccess,
 		onError: () => {
-			console.error("Error al iniciar sesión con Google. Intenta nuevamente.");
-			console.log("Google onError triggered - isSubmitting:", isSubmitting);
-			console.log("Google onError - current submitAttempts:", submitAttempts.current);
-
 			// Incrementar contador de intentos solo si no está en proceso de envío
 			// Esto evita duplicados con handleGoogleSuccess
 			if (!isSubmitting) {
 				submitAttempts.current += 1;
-				console.log("Google onError - updated attempts counter:", submitAttempts.current);
 
 				// Ya no necesitamos calcular los intentos restantes porque mostramos "Intento X de Y"
 

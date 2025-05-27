@@ -5,7 +5,7 @@ import { Dispatch } from "redux";
 import { FolderData, FolderState } from "types/folder";
 
 // Action types
-const SET_LOADING = "SET_LOADING";
+const SET_FOLDER_LOADING = "SET_FOLDER_LOADING";
 const ADD_FOLDER = "ADD_FOLDER";
 const GET_FOLDERS_BY_USER = "GET_FOLDERS_BY_USER";
 const GET_FOLDERS_BY_GROUP = "GET_FOLDERS_BY_GROUP";
@@ -16,11 +16,13 @@ const SET_FOLDER_ERROR = "SET_FOLDER_ERROR";
 const ARCHIVE_FOLDERS = "ARCHIVE_FOLDERS";
 const UNARCHIVE_FOLDERS = "UNARCHIVE_FOLDERS";
 const GET_ARCHIVED_FOLDERS = "GET_ARCHIVED_FOLDERS";
+const GET_FOLDERS_BY_IDS = "GET_FOLDERS_BY_IDS";
 
 // Initial state
 const initialFolderState: FolderState = {
 	folders: [],
 	archivedFolders: [],
+	selectedFolders: [],
 	folder: null,
 	isLoader: false,
 	error: undefined,
@@ -30,7 +32,7 @@ const initialFolderState: FolderState = {
 // Reducer
 const folder = (state = initialFolderState, action: any) => {
 	switch (action.type) {
-		case SET_LOADING:
+		case SET_FOLDER_LOADING:
 			return { ...state, isLoader: true, error: null };
 		case ADD_FOLDER:
 			return {
@@ -107,6 +109,19 @@ const folder = (state = initialFolderState, action: any) => {
 				error: action.payload,
 				isLoader: false,
 			};
+		case GET_FOLDERS_BY_IDS:
+			return {
+				...state,
+				selectedFolders: action.payload,
+				isLoader: false,
+			};
+		case "folders/SET_FOLDER_ERROR":
+			// Handle namespaced action for manual reset
+			return {
+				...state,
+				error: action.payload,
+				isLoader: false,
+			};
 		default:
 			return state;
 	}
@@ -116,7 +131,7 @@ const folder = (state = initialFolderState, action: any) => {
 
 export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/folders`, folderData);
 		if (response.data.success) {
 			dispatch({
@@ -134,26 +149,39 @@ export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) 
 
 export const getFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`);
+		dispatch({ type: SET_FOLDER_LOADING });
+		// Campos optimizados para listas y vistas resumidas
+		const fields =
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
+			params: { fields },
+		});
 		if (response.data.success) {
 			dispatch({
 				type: GET_FOLDERS_BY_USER,
 				payload: response.data.folders,
 			});
+			return { success: true, folders: response.data.folders };
 		}
+		return { success: false, folders: [] };
 	} catch (error) {
 		dispatch({
 			type: SET_FOLDER_ERROR,
 			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders por usuario" : "Error desconocido",
 		});
+		return { success: false, folders: [] };
 	}
 };
 
 export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/group/${groupId}`);
+		dispatch({ type: SET_FOLDER_LOADING });
+		// Campos optimizados para listas y vistas resumidas
+		const fields =
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/group/${groupId}`, {
+			params: { fields },
+		});
 		if (response.data.success) {
 			dispatch({
 				type: GET_FOLDERS_BY_GROUP,
@@ -170,7 +198,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 
 export const getFolderById = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
 		if (response.data.success) {
 			dispatch({
@@ -188,7 +216,7 @@ export const getFolderById = (folderId: string) => async (dispatch: Dispatch) =>
 
 export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
 		if (response.data.success) {
 			dispatch({
@@ -206,7 +234,7 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 
 export const updateFolderById = (folderId: string, updatedData: Partial<FolderData>) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`, updatedData);
 		if (response.data.success) {
 			dispatch({
@@ -229,7 +257,7 @@ export const updateFolderById = (folderId: string, updatedData: Partial<FolderDa
 
 export const archiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
 			resourceType: "folders",
 			itemIds: folderIds,
@@ -259,8 +287,16 @@ export const archiveFolders = (userId: string, folderIds: string[]) => async (di
 
 export const getArchivedFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}?archived=true`);
+		dispatch({ type: SET_FOLDER_LOADING });
+		// Campos optimizados para listas y vistas resumidas
+		const fields =
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
+			params: {
+				archived: true,
+				fields,
+			},
+		});
 		if (response.data.success) {
 			dispatch({
 				type: GET_ARCHIVED_FOLDERS,
@@ -277,7 +313,7 @@ export const getArchivedFoldersByUserId = (userId: string) => async (dispatch: D
 
 export const unarchiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
 			resourceType: "folders",
 			itemIds: folderIds,
@@ -323,5 +359,88 @@ export const unarchiveFolders = (userId: string, folderIds: string[]) => async (
 		return { success: false, message: errorMessage };
 	}
 };
+
+export interface GetFoldersByIdsResponse {
+	success: boolean;
+	folders: FolderData[];
+	error?: string;
+}
+
+export const getFoldersByIds =
+	(folderIds: string[]) =>
+	async (dispatch: Dispatch): Promise<GetFoldersByIdsResponse> => {
+		dispatch({ type: SET_FOLDER_LOADING });
+		try {
+			if (!folderIds || folderIds.length === 0) {
+				dispatch({
+					type: GET_FOLDERS_BY_IDS,
+					payload: [],
+				});
+				return {
+					success: true,
+					folders: [],
+				};
+			}
+
+			// Campos optimizados para vistas resumidas (usado en CustomerView)
+			const fields = "_id,folderName,status";
+
+			// Add timeout to the axios request
+			const response = await axios.post(
+				`${process.env.REACT_APP_BASE_URL}/api/folders/batch`,
+				{
+					folderIds,
+					fields,
+				},
+				{
+					timeout: 30000, // 30 seconds timeout
+					withCredentials: true,
+				},
+			);
+
+			if (Array.isArray(response.data.folders)) {
+				dispatch({
+					type: GET_FOLDERS_BY_IDS,
+					payload: response.data.folders,
+				});
+				return { success: true, folders: response.data.folders };
+			}
+
+			// Invalid response format
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: "Formato de respuesta inválido",
+			});
+			return {
+				success: false,
+				folders: [],
+				error: "Formato de respuesta inválido",
+			};
+		} catch (error) {
+			let errorMessage = "Error al obtener los folders";
+
+			if (axios.isAxiosError(error)) {
+				if (error.code === "ECONNABORTED") {
+					errorMessage = "Tiempo de espera agotado al obtener las carpetas";
+				} else if (error.response) {
+					errorMessage = error.response.data?.message || errorMessage;
+				}
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+
+			// Always dispatch error to ensure isLoader is set to false
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+
+			return {
+				success: false,
+				folders: [],
+				error: errorMessage,
+			};
+		}
+	};
 
 export default folder;

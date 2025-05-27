@@ -43,7 +43,7 @@ const avatarImage = require.context("assets/images/users", true);
 const TabPersonal = () => {
 	const theme = useTheme();
 	const user = useSelector((state) => state.auth.user);
-	console.log(user);
+
 	const picture = user?.picture;
 	const [selectedImage, setSelectedImage] = useState<File | undefined>(undefined);
 	const [avatar, setAvatar] = useState<string | undefined>(picture || avatarImage(`./default.png`));
@@ -59,9 +59,6 @@ const TabPersonal = () => {
 			formData.append("image", file);
 			formData.append("userId", userId); // Añade el userId al FormData
 
-			// Verificar que el FormData tiene el userId
-			console.log("FormData entries:", Array.from(formData.entries()));
-
 			try {
 				// Enviar la imagen al backend
 				const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/cloudinary/upload-avatar`, formData, {
@@ -76,11 +73,8 @@ const TabPersonal = () => {
 					setAvatar(newPictureUrl); // Actualiza la vista previa del avatar
 					dispatch(updatePicture(newPictureUrl));
 				}
-			} catch (error) {
-				console.error("Error al subir la imagen:", error);
-			}
+			} catch (error) {}
 		} else {
-			console.warn("No se encontró un userId o archivo para enviar");
 		}
 	};
 

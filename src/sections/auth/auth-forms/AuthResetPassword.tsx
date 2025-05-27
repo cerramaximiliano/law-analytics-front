@@ -68,15 +68,6 @@ const AuthResetPassword = () => {
 	const verified = locationState?.verified || storedVerified;
 
 	// Log para depuración
-	console.log("AuthResetPassword - Datos:", {
-		locationState,
-		storedEmail,
-		storedCode,
-		storedVerified,
-		email,
-		code,
-		verified,
-	});
 
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
@@ -100,7 +91,6 @@ const AuthResetPassword = () => {
 
 		// IMPORTANTE: Solo redireccionar una vez para evitar ciclos infinitos
 		if (!redirected && !verified && !storedVerified) {
-			console.log("No hay verificación previa, redirigiendo a forgot-password");
 			setRedirected(true);
 			// Intentar determinar la ruta correcta
 			const forgotPasswordPath = "/forgot-password";
@@ -158,8 +148,6 @@ const AuthResetPassword = () => {
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
-						console.log("Enviando solicitud de restablecimiento de contraseña");
-
 						if (!email || !code) {
 							throw new Error("Información de verificación incompleta");
 						}
@@ -193,12 +181,10 @@ const AuthResetPassword = () => {
 
 							// Redirigir al login después de restablecer la contraseña
 							setTimeout(() => {
-								console.log("Redirigiendo al login");
 								navigate("/login", { replace: true });
 							}, 1500);
 						}
 					} catch (err: any) {
-						console.error("Error al restablecer contraseña:", err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setErrors({ submit: err.message });

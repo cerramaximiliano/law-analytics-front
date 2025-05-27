@@ -43,7 +43,7 @@ function getStepContent(step: number, values: any) {
 const CompensacionWizard = () => {
 	const [activeStep, setActiveStep] = useState(0);
 	const isLastStep = activeStep === steps.length - 1;
-	const [tasasData, setTasasData] = useState(null);
+	//const [tasasData, setTasasData] = useState(null);
 	const [validationSchema, setValidationSchema] = useState(esquemaInicial);
 	const currentValidationSchema = validationSchema[activeStep];
 	const [hayRangos, setHayRangos] = useState(false);
@@ -77,7 +77,6 @@ const CompensacionWizard = () => {
 
 	useEffect(() => {
 		if (hayRangos) {
-			console.log("Actualizando esquema de validación con rangos de fechas");
 			setValidationSchema(crearEsquemaValidacion());
 		}
 	}, [hayRangos]);
@@ -100,8 +99,8 @@ const CompensacionWizard = () => {
 			});
 
 			const tasasResult = response.data;
-			console.log("Resultados de tasas:", tasasResult);
-			setTasasData(tasasResult);
+
+			//setTasasData(tasasResult);
 
 			let interesTotal = 0;
 			if (Array.isArray(tasasResult)) {
@@ -111,7 +110,6 @@ const CompensacionWizard = () => {
 			}
 
 			await _sleep(1000);
-			//console.log(values);
 
 			const finalResult = {
 				...values,
@@ -122,15 +120,12 @@ const CompensacionWizard = () => {
 				folderName: values.folderName,
 			};
 
-			console.log(tasasData);
-
 			setCalculationResult(finalResult);
 			actions.setSubmitting(false);
 
 			actions.setSubmitting(false);
 			setActiveStep(activeStep + 1);
 		} catch (error) {
-			console.error("Error al consultar tasas:", error);
 			enqueueSnackbar("Error al consultar tasas. Por favor intente nuevamente.", {
 				variant: "error",
 				anchorOrigin: {
@@ -146,7 +141,6 @@ const CompensacionWizard = () => {
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		if (isLastStep) {
 			_submitForm(values, actions);
 		} else {

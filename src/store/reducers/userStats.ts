@@ -122,7 +122,7 @@ export const fetchUserStats = () => async (dispatch: Dispatch) => {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/user-stats/user`, {
 			withCredentials: true,
 		});
-		console.log("RESPONSE USER STATS", response);
+
 		if (response.data && response.data.success) {
 			dispatch({
 				type: FETCH_USER_STATS_SUCCESS,
@@ -132,8 +132,6 @@ export const fetchUserStats = () => async (dispatch: Dispatch) => {
 			throw new Error(response.data.message || "Error al obtener estadísticas");
 		}
 	} catch (error: any) {
-		console.error("Error al obtener estadísticas de usuario:", error);
-
 		dispatch({
 			type: FETCH_USER_STATS_FAILURE,
 			payload: error.response?.data?.message || error.message || "Error al obtener estadísticas",

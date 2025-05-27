@@ -223,8 +223,6 @@ export const updateUserProfile = (profileData: any) => async (dispatch: Dispatch
 			throw new Error(response.data.message || "Error al actualizar el perfil");
 		}
 	} catch (error: any) {
-		console.error("Error al actualizar el perfil:", error);
-
 		// Mostrar mensaje de error
 		dispatch(
 			openSnackbar({
@@ -277,8 +275,6 @@ export const changeUserPassword = (passwordData: PasswordChangeData) => async (d
 			throw new Error(response.data.message || "Error al cambiar la contraseña");
 		}
 	} catch (error: any) {
-		console.error("Error al cambiar la contraseña:", error);
-
 		// Mostrar mensaje de error
 		dispatch(
 			openSnackbar({

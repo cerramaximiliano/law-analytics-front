@@ -109,7 +109,6 @@ const MailingCampaigns = () => {
 			setCampaigns(response.data);
 			setTotalCount(response.total);
 		} catch (err) {
-			console.error("Error fetching campaigns:", err);
 			setError("Error al cargar las campañas. Por favor, intente de nuevo más tarde.");
 		} finally {
 			setLoading(false);
@@ -132,9 +131,7 @@ const MailingCampaigns = () => {
 					archived: 0,
 				},
 			});
-		} catch (error) {
-			console.error("Error fetching campaign statistics:", error);
-		}
+		} catch (error) {}
 	};
 
 	// Pagination handlers
@@ -229,15 +226,11 @@ const MailingCampaigns = () => {
 
 	// Campaign detail modal handlers
 	const handleOpenCampaignDetail = (campaign: Campaign) => {
-		console.log("handleOpenCampaignDetail called with campaign:", campaign);
 		// Asegurarnos de que _id no sea undefined antes de asignarlo
 		if (campaign._id) {
-			console.log("Setting campaignId:", campaign._id);
 			setSelectedCampaignId(campaign._id);
 			setCampaignDetailOpen(true);
-			console.log("Campaign detail modal should open with ID:", campaign._id);
 		} else {
-			console.error("Error: La campaña no tiene un ID válido");
 		}
 	};
 

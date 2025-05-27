@@ -78,7 +78,6 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 			setEmails(response.data || []);
 			setTotalCount(response.total || response.data.length || 0);
 		} catch (err: any) {
-			console.error("Error fetching campaign emails:", err);
 			setError(err.message || "Error al cargar los emails de la campaña");
 		} finally {
 			setLoading(false);
@@ -148,7 +147,6 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 			fetchCampaignEmails();
 			enqueueSnackbar("Email eliminado con éxito", { variant: "success" });
 		} catch (err: any) {
-			console.error(`Error deleting email ${selectedEmail._id}:`, err);
 			enqueueSnackbar(err.message || "Error al eliminar el email", { variant: "error" });
 		}
 	};

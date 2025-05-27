@@ -90,7 +90,6 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, onClose }) => {
 
 			// Realizar la petición a la API
 			const response = await userApi.post("/api/users", payload);
-			console.log("Usuario creado:", response.data);
 
 			// Actualizar el estado global con el nuevo usuario
 			const newUser = response.data.user || response.data;
@@ -102,7 +101,6 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, onClose }) => {
 			// Cerrar el modal
 			onClose();
 		} catch (err: any) {
-			console.error("Error al crear usuario:", err);
 			setError(err.message || "Error al crear el usuario");
 			dispatch({
 				type: SET_ERROR,

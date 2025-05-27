@@ -316,7 +316,6 @@ const Availability = () => {
 				}
 			}
 		} catch (error) {
-			console.error("Error al cargar configuración:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -544,7 +543,6 @@ const Availability = () => {
 			// Después de guardar, redirigir a la página de reservas
 			navigate("/apps/calendar/reservations");
 		} catch (error) {
-			console.error("Error al guardar configuración:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

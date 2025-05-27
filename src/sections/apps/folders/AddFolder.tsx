@@ -24,7 +24,7 @@ import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
 import JudicialPowerSelection from "./step-components/judicialPowerSelection";
 import { useSelector, dispatch } from "store";
-import { addFolder, updateFolder } from "store/reducers/folders";
+import { addFolder, updateFolderById } from "store/reducers/folder";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
 import { PropsAddFolder } from "types/folders";
@@ -322,7 +322,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			message = "agregar";
 		}
 		if (mode === "edit") {
-			results = await dispatch(updateFolder(id, values));
+			results = await dispatch(updateFolderById(id, values));
 			message = "editar";
 		}
 

@@ -345,7 +345,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			  <span class="total-label">CAPITAL ACTUALIZADO</span>
 			  <span class="total-value">${totalFormatted}</span>
 			</div>
-	  
+
 			<div class="footer">
 			  <p>Este documento fue generado automáticamente por Law||Analytics.</p>
 			</div>
@@ -842,7 +842,6 @@ const SavedIntereses = () => {
 								size="small"
 								onClick={(e) => {
 									e.stopPropagation();
-									console.log("Calcular intereses");
 								}}
 							>
 								Calcular

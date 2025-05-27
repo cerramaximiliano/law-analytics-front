@@ -69,11 +69,8 @@ const ProfileTabs = ({ focusInput }: Props) => {
 					setAvatar(newPictureUrl); // Actualiza la vista previa del avatar
 					dispatch(updatePicture(newPictureUrl));
 				}
-			} catch (error) {
-				console.error("Error al subir la imagen:", error);
-			}
+			} catch (error) {}
 		} else {
-			console.warn("No se encontró un userId o archivo para enviar");
 		}
 	};
 

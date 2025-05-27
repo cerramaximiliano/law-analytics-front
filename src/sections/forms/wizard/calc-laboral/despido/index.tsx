@@ -57,7 +57,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	}));
 
 	useEffect(() => {
-		console.log("Folder cambiado:", folder);
 		setFormInitialValues((currentValues) => ({
 			...currentValues,
 			folderId: folder?._id || "",
@@ -307,7 +306,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 		return parseFloat(multa.toFixed(2));
 	}
 	async function _submitForm(values: any, actions: any) {
-		console.log(values);
 		await _sleep(1000);
 		const calcularPeriodos = (fechaIngreso: Date | null, fechaEgreso: Date | null, aplicarLey27742: boolean = false) => {
 			if (!fechaIngreso || !fechaEgreso) return 0;
@@ -336,7 +334,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 
 		const periodos = calcularPeriodos(values.fechaIngreso, values.fechaEgreso, values.aplicarLey27742);
 		if (isNaN(periodos) || periodos < 0) {
-			console.error("Períodos inválidos:", periodos);
 			actions.setSubmitting(false);
 			return;
 		}
@@ -345,7 +342,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 
 		const remuneracionBase = parseFloat(values.remuneracion);
 		if (isNaN(remuneracionBase) || remuneracionBase <= 0) {
-			console.error("Remuneración base inválida:", values.remuneracion);
 			actions.setSubmitting(false);
 			return;
 		}
@@ -366,7 +362,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 
 		const indemnizacion = periodos * remuneracionCalculada;
 		if (isNaN(indemnizacion)) {
-			console.error("Indemnización inválida. Períodos:", periodos, "Remuneración calculada:", remuneracionCalculada);
 			actions.setSubmitting(false);
 			return;
 		}
@@ -386,7 +381,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 				resultado.remuneracionTope = remuneracionTope;
 			}
 		}
-		console.log("Resultado antes de cálculos adicionales:", resultado); // Debug intermedio
+		// Debug intermedio
 
 		if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
 			if (values.liquidacion.includes("preaviso")) {

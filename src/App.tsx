@@ -10,6 +10,7 @@ import RTLLayout from "components/RTLLayout";
 import ScrollTop from "components/ScrollTop";
 import Snackbar from "components/@extended/Snackbar";
 import Notistack from "components/third-party/Notistack";
+import SearchModal from "components/search/SearchModal";
 
 import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
@@ -48,6 +49,7 @@ const App = () => {
 									<Notistack>
 										<Routes />
 										<Snackbar />
+										<SearchModal />
 									</Notistack>
 								</WebSocketProvider>
 							</AuthProvider>

@@ -228,9 +228,7 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 				try {
 					await dispatch(getEventsById(id));
 					setIsLoading(false);
-				} catch (error) {
-					console.error(error);
-				}
+				} catch (error) {}
 			};
 			fetchData();
 		}
@@ -240,7 +238,6 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 	useEffect(() => {
 		// Manejador para eventos de restricción de plan
 		const handlePlanRestriction = () => {
-			console.log("Calendar: Restricción de plan detectada, cerrando modal Agregar Evento");
 			if (isModalOpen) {
 				dispatch(toggleModal()); // Cerrar el modal
 				dispatch(selectEvent(null)); // Limpiar evento seleccionado
@@ -250,7 +247,6 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 		// Revisar periódicamente si hay una flag global para cerrar modales
 		const checkGlobalFlag = () => {
 			if ((window as any).FORCE_CLOSE_ALL_MODALS && isModalOpen) {
-				console.log("Calendar: Flag global detectada, cerrando modal Agregar Evento");
 				dispatch(toggleModal()); // Cerrar el modal
 				dispatch(selectEvent(null)); // Limpiar evento seleccionado
 			}

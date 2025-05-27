@@ -25,7 +25,6 @@ export const CampaignService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching campaigns:", error);
 			throw error;
 		}
 	},
@@ -36,7 +35,6 @@ export const CampaignService = {
 			const response = await axios.get(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}`);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error fetching campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -47,7 +45,6 @@ export const CampaignService = {
 			const response = await axios.post(`${process.env.REACT_APP_MKT_URL}/api/campaigns`, campaignData);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error creating campaign:", error);
 			throw error;
 		}
 	},
@@ -58,7 +55,6 @@ export const CampaignService = {
 			const response = await axios.put(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}`, campaignData);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error updating campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -69,7 +65,6 @@ export const CampaignService = {
 			const response = await axios.delete(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error deleting campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -80,7 +75,6 @@ export const CampaignService = {
 			const response = await axios.get(`${process.env.REACT_APP_MKT_URL}/api/campaigns/stats`);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error fetching campaign statistics:", error);
 			throw error;
 		}
 	},
@@ -106,7 +100,6 @@ export const CampaignService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching contacts in campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -136,7 +129,6 @@ export const CampaignService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching contacts not in campaign ${campaignId}:`, error);
 			throw error;
 		}
 	},
@@ -158,7 +150,6 @@ export const CampaignService = {
 			const response = await axios.post(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}/contacts`, data);
 			return response.data;
 		} catch (error) {
-			console.error(`Error adding contacts to campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -171,7 +162,6 @@ export const CampaignService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error removing contacts from campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -182,7 +172,6 @@ export const CampaignService = {
 			const response = await axios.delete(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}/contacts/all`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error removing all contacts from campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -193,7 +182,6 @@ export const CampaignService = {
 			const response = await axios.get(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}/contacts/all/status`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error checking remove all contacts status for campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -204,7 +192,6 @@ export const CampaignService = {
 			const response = await axios.post(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}/contacts/active/all`, {});
 			return response.data;
 		} catch (error) {
-			console.error(`Error adding all active contacts to campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -215,7 +202,6 @@ export const CampaignService = {
 			const response = await axios.get(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${id}/contacts/active/all/status`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error checking add all active contacts status for campaign ${id}:`, error);
 			throw error;
 		}
 	},
@@ -229,7 +215,6 @@ export const CampaignEmailService = {
 			const response = await axios.get(`${process.env.REACT_APP_MKT_URL}/api/campaigns/${campaignId}/emails`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching emails for campaign ${campaignId}:`, error);
 			throw error;
 		}
 	},
@@ -240,7 +225,6 @@ export const CampaignEmailService = {
 			const response = await axios.get(`${process.env.REACT_APP_MKT_URL}/api/campaign-emails/${emailId}`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching email ${emailId}:`, error);
 			throw error;
 		}
 	},
@@ -251,7 +235,6 @@ export const CampaignEmailService = {
 			const response = await axios.post(`${process.env.REACT_APP_MKT_URL}/api/campaign-emails`, emailData);
 			return response.data;
 		} catch (error) {
-			console.error("Error creating campaign email:", error);
 			throw error;
 		}
 	},
@@ -265,7 +248,6 @@ export const CampaignEmailService = {
 			const response = await axios.put(`${process.env.REACT_APP_MKT_URL}/api/campaign-emails/${emailId}`, updateData);
 			return response.data;
 		} catch (error) {
-			console.error(`Error updating campaign email ${emailId}:`, error);
 			throw error;
 		}
 	},
@@ -276,7 +258,6 @@ export const CampaignEmailService = {
 			const response = await axios.delete(`${process.env.REACT_APP_MKT_URL}/api/campaign-emails/${emailId}`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error deleting campaign email ${emailId}:`, error);
 			throw error;
 		}
 	},

@@ -16,16 +16,6 @@ interface ResultItem {
 	value: number | string;
 }
 
-// Este tipo estaba causando el error, ya que no es compatible con Record<string, ResultItem[]>
-// interface GroupedResults {
-// 	reclamo: ResultItem[];
-// 	indemnizacion: ResultItem[];
-// 	liquidacion: ResultItem[];
-// 	multas: ResultItem[];
-// 	otros: ResultItem[];
-// }
-
-// En su lugar, usamos directamente el tipo que espera el componente CalculationDetailsView
 type GroupedResults = Record<string, ResultItem[]>;
 
 interface ResultsViewProps {
@@ -382,7 +372,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				throw new Error(result.error || "Error al guardar el cálculo");
 			}
 		} catch (error) {
-			console.error("Error al guardar el cálculo:", error);
 			enqueueSnackbar(error instanceof Error ? error.message : "Error al guardar el cálculo", {
 				variant: "error",
 				anchorOrigin: {
@@ -596,9 +585,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 					<div class="header">
 					<h2>Resultados de la Liquidación</h2>
 					</div>
-					
+
 					${cardsHtml}
-					
+
 					<div class="card total-card">
 					<div class="total-content">
 						<span>TOTAL</span>

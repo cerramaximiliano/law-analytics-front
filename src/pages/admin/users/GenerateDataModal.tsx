@@ -80,15 +80,13 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 	useEffect(() => {
 		if (open && user) {
 			const userId = user._id || user.id;
-			console.log("GenerateDataModal - Loading folders for user:", userId);
-			console.log("User object:", user);
+
 			setLoadingFolders(true);
 
 			// Primero intentar con el endpoint específico del usuario
 			userApi
 				.get(`/api/folders/user/${userId}`)
 				.then((response) => {
-					console.log("Folders API response (user endpoint):", response.data);
 					// La respuesta puede venir en diferentes formatos
 					let folders = [];
 					if (Array.isArray(response.data)) {
@@ -98,19 +96,15 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 					} else if (response.data.data && Array.isArray(response.data.data)) {
 						folders = response.data.data;
 					}
-					console.log("Parsed folders:", folders);
+
 					setUserFolders(folders);
 				})
-				.catch((err) => {
-					console.error("Error al cargar causas (user endpoint):", err);
-					console.error("Error details:", err.response);
-
+				.catch(() => {
 					// Si falla, intentar con el endpoint alternativo
 					return userApi.get(`/api/folders?userId=${userId}`);
 				})
 				.then((response) => {
 					if (response) {
-						console.log("Folders API response (query param):", response.data);
 						let folders = [];
 						if (Array.isArray(response.data)) {
 							folders = response.data;
@@ -119,12 +113,11 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 						} else if (response.data.data && Array.isArray(response.data.data)) {
 							folders = response.data.data;
 						}
-						console.log("Parsed folders from alternative:", folders);
+
 						setUserFolders(folders);
 					}
 				})
 				.catch((err) => {
-					console.error("Error al cargar causas (ambos endpoints):", err);
 					setUserFolders([]);
 				})
 				.finally(() => {
@@ -163,10 +156,9 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 
 				// Realizar la petición a la API
 				const response = await userApi.post(`/api/users/${user._id || user.id}/generate-data`, payload);
-				console.log("Datos generados:", response.data);
 
 				// Mostrar mensaje de éxito
-				setSuccess("Datos generados exitosamente");
+				setSuccess(response.data.message || "Datos generados exitosamente");
 			} else {
 				// Tab Causa - Generar datos para una causa específica
 				if (!values.folderId) {
@@ -187,7 +179,6 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 
 				// Realizar la petición a la API
 				const response = await userApi.post(`/api/users/${user._id || user.id}/generate-folder-data`, payload);
-				console.log("Datos de causa generados:", response.data);
 
 				// Mostrar mensaje de éxito
 				setSuccess(response.data.message || "Datos de la causa generados exitosamente");
@@ -198,7 +189,6 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 				onClose();
 			}, 2000);
 		} catch (err: any) {
-			console.error("Error al generar datos:", err);
 			setError(err.response?.data?.message || err.message || "Error al generar datos");
 			dispatch({
 				type: SET_ERROR,

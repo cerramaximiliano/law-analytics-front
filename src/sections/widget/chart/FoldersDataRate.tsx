@@ -31,10 +31,9 @@ const FoldersDataRate = () => {
 			try {
 				setLoading(true);
 				const categoryData = await ApiService.getCategoryAnalysis<FolderAnalytics>("folders", userId);
-				console.log(categoryData);
+
 				setFolderData(categoryData);
 			} catch (error) {
-				console.error("Error fetching folder data:", error);
 			} finally {
 				setLoading(false);
 			}

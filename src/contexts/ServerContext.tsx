@@ -92,7 +92,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				setIsLogoutProcess(false);
 			}, 1000);
 		} catch (error) {
-			console.error("Logout error:", error);
 			setTimeout(() => {
 				setIsLogoutProcess(false);
 			}, 1000);
@@ -113,7 +112,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		try {
 			const credential = tokenResponse.credential;
 			if (credential) {
-				console.log("Enviando token a la API:", credential);
 				const result = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, { token: credential });
 
 				const { user, success, subscription } = result.data;
@@ -150,7 +148,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			}
 			throw new Error("No se recibió credencial de Google");
 		} catch (error) {
-			console.error("Error:", error);
 			showSnackbar("Error al iniciar sesión con Google", "error");
 			throw error;
 		}
@@ -191,7 +188,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				// No redirigir al login, solo inicializar el estado como logged out
 				// Solo mostrar errores que no sean 401 para evitar ruido en los logs durante el registro
 				if (axios.isAxiosError(error) && error.response?.status !== 401) {
-					console.log("Error en la inicialización:", error);
 				}
 
 				localDispatch({
@@ -218,11 +214,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		// Interceptor de solicitud para ver qué peticiones se están haciendo
 		const requestInterceptor = axios.interceptors.request.use(
 			(config) => {
-				console.log(`[Petición] ${config.method?.toUpperCase()} ${config.url}`, config);
 				return config;
 			},
 			(error) => {
-				console.error("[Error de petición]", error);
 				return Promise.reject(error);
 			},
 		);
@@ -232,12 +226,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		// Crear un nuevo interceptor de respuesta para ver errores
 		const responseInterceptor = axios.interceptors.response.use(
 			(response) => {
-				console.log(`[Respuesta] ${response.config.method?.toUpperCase()} ${response.config.url}`, response);
 				return response;
 			},
 			async (error: AxiosError) => {
-				console.log(`[Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: ${error.response?.status}`, error);
-
 				if (!error.config) {
 					return Promise.reject(error);
 				}
@@ -247,7 +238,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 				// Para evitar bucles infinitos
 				if (originalRequest._hasBeenHandled) {
-					console.log(`[Interceptor] Petición ya fue manejada: ${url}`);
 					return Promise.reject(error);
 				}
 
@@ -266,16 +256,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					!url.includes("/api/auth/logout") &&
 					!url.includes("/api/auth/me") // Excluir /api/auth/me para evitar problemas en registro
 				) {
-					console.log("[Interceptor] Detectado error 401 en:", url, error.response?.data);
-
 					// Si el backend indica que necesita refresh
 					if (error.response?.data && (error.response.data as any).needRefresh === true) {
 						try {
-							console.log("[Interceptor] Intentando refresh token");
 							// Intentar refrescar el token automáticamente
 							const refreshResponse = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/refresh-token`);
-
-							console.log("[Interceptor] Refresh exitoso", refreshResponse);
 
 							// Si el refresh es exitoso, reintentar la petición original
 							if (refreshResponse.status === 200) {
@@ -285,23 +270,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 								});
 							}
 						} catch (refreshError) {
-							console.error("[Interceptor] Error al refrescar token:", refreshError);
-
 							setShowUnauthorizedModal(true);
 
 							return Promise.reject(refreshError);
 						}
 					} else {
 						// Si no necesita refresh, solo mostrar el modal
-						console.log("[Interceptor] Mostrando modal sin intentar refresh");
+
 						setShowUnauthorizedModal(true);
 					}
 				}
 
 				// Manejar errores 403 (límites de plan)
 				if (error.response?.status === 403) {
-					console.log("[Interceptor] Detectado error 403 en:", url, error.response?.data);
-
 					const responseData = error.response.data as any;
 
 					// Verificar si es un error de límite o de característica
@@ -334,7 +315,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						// 1. Primero capturamos todos los diálogos abiertos en este momento
 						// para cerrarlos específicamente y no afectar a otros componentes
 						const openDialogsBeforeError = Array.from(document.querySelectorAll(".MuiDialog-root"));
-						console.log(`[Interceptor] Capturando ${openDialogsBeforeError.length} diálogos abiertos antes de mostrar error de plan`);
 
 						// 2. Marcar que estamos en medio de un error de restricción del plan ANTES de cualquier otra acción
 						// Esto es importante para que otros componentes lo detecten y actúen en consecuencia
@@ -351,12 +331,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 								openDialogsCount: openDialogsBeforeError.length,
 							},
 						});
-						console.log("[Interceptor] Emitiendo evento planRestrictionError");
+
 						window.dispatchEvent(planRestrictionEvent);
 
 						// 4. CAMBIO DE ENFOQUE: NO cerrar modales directamente para evitar efectos secundarios
 						// Este método anterior está provocando problemas al hacer clic en botones
-						console.log(`[Interceptor] NO se cerrarán modales directamente para evitar efectos secundarios`);
 
 						// Crear propiedad global para forzar cierre de modales
 						// Los componentes individuales deberán observar esta propiedad y cerrar sus propios modales
@@ -364,14 +343,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 						// Programar la limpieza del estado global después de un tiempo suficiente
 						setTimeout(() => {
-							console.log("[Interceptor] Limpiando flag global FORCE_CLOSE_ALL_MODALS");
 							window.FORCE_CLOSE_ALL_MODALS = false;
 						}, 2000);
 
 						// 5. Esperar un poco antes de mostrar el modal de restricción del plan
 						// para permitir que todos los diálogos se cierren correctamente
 						setTimeout(() => {
-							console.log("[Interceptor] Mostrando modal de restricción del plan");
 							setShowLimitErrorModal(true);
 
 							// 6. Programar reinicio del estado después de que se maneje todo
@@ -426,8 +403,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			showSnackbar("¡Inicio de sesión exitoso!", "success");
 			return true;
 		} catch (error) {
-			console.error("Login error:", error);
-
 			if (axios.isAxiosError(error) && error.response) {
 				if ((error.response.data as any).loginFailed) {
 					throw new Error("Credenciales inválidas");
@@ -446,7 +421,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		lastName: string,
 	): Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }> => {
 		try {
-			console.log("Iniciando registro para:", email);
 			const response = await axios.post<RegisterResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/register`, {
 				email,
 				password,
@@ -454,7 +428,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				lastName,
 			});
 
-			console.log("Respuesta registro:", response.data);
 			// Siempre necesitará verificación para nuevos registros
 			const { user } = response.data;
 
@@ -487,7 +460,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			});
 
 			showSnackbar("Registro exitoso", "success");
-			console.log("Registro completado, needsVerification:", true);
+
 			return { email, isLoggedIn: false, needsVerification: true };
 		} catch (error) {
 			showSnackbar("Error en el registro", "error");
@@ -510,9 +483,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				const subscription = response.data.subscription;
 
 				if (userData) {
-					console.log("Datos de usuario obtenidos después de la verificación:", userData);
-					console.log("Datos de suscripción obtenidos después de la verificación:", subscription);
-
 					// Actualizar el estado con los datos del usuario
 					localDispatch({
 						type: LOGIN,
@@ -630,8 +600,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 	const verifyResetCode = async (email: string, code: string): Promise<boolean> => {
 		try {
-			console.log("Verificando código de reseteo para:", email);
-
 			const response = await axios.post<{ success: boolean; message: string }>(
 				`${process.env.REACT_APP_BASE_URL}/api/auth/verify-reset-code`,
 				{
@@ -647,8 +615,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				throw new Error(response.data.message || "Error al verificar el código");
 			}
 		} catch (error) {
-			console.error("Error al verificar código de reseteo:", error);
-
 			const errorMessage = axios.isAxiosError(error)
 				? (error.response?.data as any)?.message || "Error al verificar el código"
 				: "Error al verificar el código";

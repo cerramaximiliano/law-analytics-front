@@ -64,7 +64,6 @@ const SegmentContactsModal: React.FC<SegmentContactsModalProps> = ({ open, onClo
 			setContacts(response.data);
 			setTotalContacts(response.pagination.total);
 		} catch (err: any) {
-			console.error("Error fetching segment contacts:", err);
 			setError(err?.message || "Error al cargar los contactos del segmento");
 		} finally {
 			setLoading(false);

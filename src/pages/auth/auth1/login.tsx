@@ -22,11 +22,6 @@ const Login = () => {
 	const handleGoogleSuccess = async (tokenResponse: any) => {
 		setIsLoading(true);
 		try {
-			console.log("Token response from Google Login:", tokenResponse);
-			console.log("Access token Login:", tokenResponse.access_token);
-			console.log("Token type Login:", typeof tokenResponse.access_token);
-			console.log("Token length Login:", tokenResponse.access_token?.length || 0);
-
 			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
 			const credentialResponse: CredentialResponse = {
 				clientId: tokenResponse.clientId || "",
@@ -38,7 +33,6 @@ const Login = () => {
 			await loginWithGoogle(credentialResponse);
 		} catch (error) {
 			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
-			console.error("Error:", error);
 		} finally {
 			setIsLoading(false);
 		}

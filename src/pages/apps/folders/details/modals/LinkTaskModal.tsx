@@ -92,7 +92,6 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 				);
 			}
 		} catch (error) {
-			console.error("Error fetching tasks:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

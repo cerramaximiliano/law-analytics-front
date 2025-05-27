@@ -47,7 +47,6 @@ const DeleteContactDialog: React.FC<DeleteContactDialogProps> = ({ open, onClose
 			onDelete(); // Notificar éxito para actualizar la lista
 			onClose(); // Cerrar diálogo
 		} catch (err: any) {
-			console.error("Error al cancelar contacto:", err);
 			setError(err?.message || "Ha ocurrido un error al cancelar el contacto");
 		} finally {
 			setLoading(false);

@@ -62,13 +62,12 @@ const TabSubscription = () => {
 		try {
 			setLoading(true);
 			const response = await ApiService.getCurrentSubscription();
-			console.log(response);
+
 			// Hacer una aserción de tipo para la respuesta
 			const responseData = response as unknown as {
 				success: boolean;
 				subscription?: any;
 			};
-			console.log("Datos de suscripción:", responseData);
 
 			if (responseData.success && responseData.subscription) {
 				setSubscription(responseData.subscription);
@@ -81,7 +80,6 @@ const TabSubscription = () => {
 				setError("No se pudo obtener la información de suscripción");
 			}
 		} catch (err) {
-			console.error("Error al obtener datos de suscripción:", err);
 			setError("Error al cargar los datos de suscripción");
 		} finally {
 			setLoading(false);
@@ -112,15 +110,12 @@ const TabSubscription = () => {
 				if (responseData.paymentHistory && Array.isArray(responseData.paymentHistory)) {
 					setPayments(responseData.paymentHistory);
 				} else {
-					console.error("Formato de respuesta inesperado:", response);
 					setPaymentsError("No se pudo obtener el historial de pagos");
 				}
 			} else {
-				console.error("Formato de respuesta inesperado:", response);
 				setPaymentsError("No se pudo obtener el historial de pagos");
 			}
 		} catch (err: any) {
-			console.error("Error al obtener historial de pagos:", err);
 			setPaymentsError(err.message || "Error al cargar el historial de pagos");
 		} finally {
 			setPaymentsLoading(false);
@@ -256,7 +251,6 @@ const TabSubscription = () => {
 				setTimeout(() => setError(null), 5000);
 			}
 		} catch (err: any) {
-			console.error("Error al cancelar la suscripción:", err);
 			setError(err.message || "Error al cancelar la suscripción");
 			setTimeout(() => setError(null), 5000);
 		} finally {
@@ -285,7 +279,6 @@ const TabSubscription = () => {
 				setTimeout(() => setError(null), 5000);
 			}
 		} catch (err: any) {
-			console.error("Error al reactivar la suscripción:", err);
 			setError(err.message || "Error al reactivar la suscripción");
 			setTimeout(() => setError(null), 5000);
 		} finally {

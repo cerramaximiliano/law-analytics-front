@@ -174,7 +174,6 @@ const TabSettings = () => {
 					setChecked(newChecked);
 				}
 			} catch (error) {
-				console.error("Error al cargar preferencias:", error);
 				setError("No se pudieron cargar las preferencias de notificaciones");
 			} finally {
 				setLoading(false);
@@ -214,7 +213,7 @@ const TabSettings = () => {
 			};
 
 			const response = await ApiService.updateNotificationPreferences(updatedPreferences);
-			console.log(response);
+
 			if (response.success && response.data) {
 				setPreferences(response.data);
 				dispatch(
@@ -230,7 +229,6 @@ const TabSettings = () => {
 				);
 			}
 		} catch (error) {
-			console.error("Error al guardar preferencias:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

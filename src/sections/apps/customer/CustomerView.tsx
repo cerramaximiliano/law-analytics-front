@@ -11,9 +11,9 @@ import Transitions from "components/@extended/Transitions";
 import { Call, Location, Buildings2, Calendar } from "iconsax-react";
 import { dispatch } from "store";
 import React, { useEffect, useState } from "react";
-import { getFoldersByIds } from "store/reducers/folders";
+import { getFoldersByIds } from "store/reducers/folder";
 
-import { Folder } from "types/folders";
+import { FolderData } from "types/folder";
 import { Contact } from "types/contact";
 import moment from "moment";
 
@@ -22,32 +22,101 @@ interface ContactViewProps {
 }
 
 const CustomerView: React.FC<ContactViewProps> = ({ data }) => {
-	const [folders, setFolders] = useState<Folder[]>([]);
+	const [folders, setFolders] = useState<FolderData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const isArchived = data.status === "archived";
 	const notAvailableMsg = "No disponible";
+	const isMountedRef = React.useRef(true);
+	const loadingRef = React.useRef(true);
 
 	useEffect(() => {
-		if (data.folderIds && data.folderIds.length > 0) {
-			loadFolders();
+		isMountedRef.current = true;
+
+		// Reset states when component mounts or data changes
+		setLoading(true);
+		loadingRef.current = true;
+		setError(null);
+		setFolders([]);
+
+		// Check if folderIds exists and is a valid array with items
+		if (data.folderIds && Array.isArray(data.folderIds) && data.folderIds.length > 0) {
+			// Create a timeout to ensure we eventually stop loading
+			const timeoutId = setTimeout(() => {
+				if (isMountedRef.current && loadingRef.current) {
+					setError("Tiempo de espera agotado al cargar las causas");
+					setLoading(false);
+					loadingRef.current = false;
+				}
+			}, 10000); // 10 second timeout
+
+			// Load folders asynchronously
+			loadFolders().finally(() => {
+				clearTimeout(timeoutId);
+			});
 		} else {
+			// No folders to load, set loading to false immediately
+
 			setLoading(false);
+			loadingRef.current = false;
 		}
-	}, [data.folderIds]);
+
+		// Cleanup function to prevent state updates on unmounted component
+		return () => {
+			isMountedRef.current = false;
+		};
+	}, [data._id]); // Changed dependency to data._id to avoid issues with array references
 
 	const loadFolders = async () => {
 		try {
-			setLoading(true);
-			const response = await dispatch(getFoldersByIds(data.folderIds || []));
-			if (response && response.folders) {
-				setFolders(response.folders);
+			// Don't set loading again as it's already set in useEffect
+			if (!isMountedRef.current) {
+				return;
+			}
+
+			// Extra validation before calling API
+			if (!data.folderIds || !Array.isArray(data.folderIds) || data.folderIds.length === 0) {
+				if (isMountedRef.current) {
+					setFolders([]);
+					setLoading(false);
+				}
+				return;
+			}
+
+			const response = await dispatch(getFoldersByIds(data.folderIds));
+
+			// Only update state if component is still mounted
+			if (isMountedRef.current) {
+				if (response && response.success && response.folders) {
+					setFolders(response.folders);
+					setError(null);
+				} else if (response && !response.success) {
+					// Handle API error response
+
+					setFolders([]);
+					setError(response.error || "No se pudieron cargar las causas");
+				} else {
+					// Handle unexpected response format
+
+					setFolders([]);
+					setError("Respuesta inesperada del servidor");
+				}
+			} else {
 			}
 		} catch (err) {
-			console.error("Error al cargar causas:", err);
-			setError("Error al cargar causas");
+			// Only update state if component is still mounted
+			if (isMountedRef.current) {
+				const errorMessage = err instanceof Error ? err.message : "Error al cargar causas";
+				setError(errorMessage);
+				setFolders([]);
+			}
 		} finally {
-			setLoading(false);
+			// Always clear loading state if component is still mounted
+
+			if (isMountedRef.current) {
+				setLoading(false);
+				loadingRef.current = false;
+			}
 		}
 	};
 
@@ -83,7 +152,22 @@ const CustomerView: React.FC<ContactViewProps> = ({ data }) => {
 		<TableRow sx={{ "&:hover": { bgcolor: `transparent !important` } }}>
 			<TableCell colSpan={8} sx={{ p: 2.5 }}>
 				<Transitions type="slide" direction="down" in={true}>
-					<Box>
+					<Box
+						sx={{
+							opacity: 1,
+							animation: "fadeIn 0.4s ease-in-out",
+							"@keyframes fadeIn": {
+								from: {
+									opacity: 0,
+									transform: "translateY(-10px)",
+								},
+								to: {
+									opacity: 1,
+									transform: "translateY(0)",
+								},
+							},
+						}}
+					>
 						{/* Header with title and status */}
 						<Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
 							<Typography variant="h5">{data.name || notAvailableMsg}</Typography>

@@ -77,7 +77,6 @@ const TabProfessional = () => {
 					setCollegesList(names);
 				}
 			} catch (error) {
-				console.error("Error al cargar colegios de abogados:", error);
 			} finally {
 				setCollegesLoading(false);
 			}
@@ -137,8 +136,6 @@ const TabProfessional = () => {
 						await dispatch(updateUserProfile(updateData));
 						setStatus({ success: true });
 					} catch (err: any) {
-						console.error("Error al actualizar información profesional:", err);
-
 						setStatus({ success: false });
 						setErrors({
 							submit: err.response?.data?.message || err.message || "Error al actualizar información profesional",

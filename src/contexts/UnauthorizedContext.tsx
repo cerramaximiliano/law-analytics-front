@@ -88,7 +88,6 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 	}, [showUnauthorizedModal]);
 
 	useEffect(() => {
-		console.log("interceptor unauth context");
 		const interceptor = axios.interceptors.response.use(
 			(response) => response,
 			(error) => {
@@ -117,8 +116,6 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 			setShowUnauthorizedModal(false);
 			showSnackbar("¡Inicio de sesión exitoso!", "success");
 		} catch (err: any) {
-			console.error("Login error:", err);
-
 			setStatus({ success: false });
 
 			const errorMessage = err?.response?.data?.message || err.message || "Error al iniciar sesión";
@@ -143,7 +140,6 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 			await logout();
 			showSnackbar("Por favor, inicie sesión nuevamente", "info");
 		} catch (error) {
-			console.error("Logout error:", error);
 			showSnackbar("Error al cerrar sesión", "error");
 		} finally {
 			navigate("/login", {
@@ -157,10 +153,6 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 	const handleGoogleSuccess = async (tokenResponse: any) => {
 		try {
 			setIsSubmitting(true);
-			console.log("Token response from Google Modal:", tokenResponse);
-			console.log("Access token Modal:", tokenResponse.access_token);
-			console.log("Token type:", typeof tokenResponse.access_token);
-			console.log("Token length:", tokenResponse.access_token?.length || 0);
 
 			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
 			const credentialResponse: CredentialResponse = {
@@ -174,7 +166,6 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 			setShowUnauthorizedModal(false);
 			showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
 		} catch (error) {
-			console.error("Google login error:", error);
 			showSnackbar("Error al iniciar sesión con Google", "error");
 		} finally {
 			setIsSubmitting(false);

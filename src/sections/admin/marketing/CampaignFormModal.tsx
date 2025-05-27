@@ -160,7 +160,6 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 				onSuccess();
 			} catch (err: any) {
 				setError(err.message || `Error al ${isEditMode ? "actualizar" : "crear"} la campaña`);
-				console.error(`Error ${isEditMode ? "updating" : "creating"} campaign:`, err);
 			} finally {
 				setLoading(false);
 			}

@@ -241,7 +241,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	const handleUpdateWithInterest = async () => {
 		try {
 			// Aquí iría la lógica para actualizar con intereses
-			console.log("Actualizando con tasa:", interestRate);
+
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -632,7 +632,9 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						{/* Contenido principal */}
 						<Stack spacing={1}>
 							{/* Renderizar las secciones disponibles */}
-							{Object.entries(groupedData).map(([key, items], index) => renderSection(key, items as ResultItem[], key, index))}
+							{Object.entries(groupedData).map(([key, items], index) => (
+								<React.Fragment key={`section-${key}-${index}`}>{renderSection(key, items as ResultItem[], key, index)}</React.Fragment>
+							))}
 
 							{/* Card del total con diseño minimalista */}
 							<Paper
@@ -723,8 +725,14 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 									Destinatarios:
 								</Typography>
 								<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-									{emailList.map((emailItem) => (
-										<Chip key={emailItem} label={emailItem} onDelete={() => handleRemoveEmail(emailItem)} size="small" sx={{ m: 0.5 }} />
+									{emailList.map((emailItem, index) => (
+										<Chip
+											key={`email-chip-${index}`}
+											label={emailItem}
+											onDelete={() => handleRemoveEmail(emailItem)}
+											size="small"
+											sx={{ m: 0.5 }}
+										/>
 									))}
 								</Box>
 							</Box>

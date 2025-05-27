@@ -31,11 +31,8 @@ const ProfileCard = ({ focusInput }: Props) => {
 
 	const calculateProfileCompletion = () => {
 		if (!user) {
-			console.log("No hay usuario disponible");
 			return 0;
 		}
-
-		console.log("Datos del usuario para verificación:", JSON.stringify(user, null, 2));
 
 		// Array de campos requeridos para un perfil completo
 		const requiredFields = ["firstName", "lastName", "email", "dob", "contact", "designation", "address", "country", "state"] as const;
@@ -58,12 +55,8 @@ const ProfileCard = ({ focusInput }: Props) => {
 			}
 		}
 
-		console.log("Estado de completitud de campos:", fieldStatus);
-		console.log(`Campos completados: ${completedFields}/${requiredFields.length}`);
-
 		// Calcular porcentaje de completitud (asegurar que sea al menos 1 si hay algún campo)
 		const percentage = Math.round((completedFields / requiredFields.length) * 100);
-		console.log("Porcentaje calculado:", percentage);
 
 		return percentage > 0 ? percentage : user.firstName ? 10 : 0; // Dar al menos 10% si tiene nombre
 	};

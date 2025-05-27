@@ -215,7 +215,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 			setContacts(response.data);
 			setTotalCount(response.pagination.total);
 		} catch (err: any) {
-			console.error("Error fetching campaign contacts:", err);
 			setError(err.message || "Error al cargar los contactos de la campaña");
 		} finally {
 			setLoading(false);
@@ -265,7 +264,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 				onContactsChange(); // Notificar al componente padre sobre el cambio
 			}
 		} catch (error: any) {
-			console.error("Error removing contacts from campaign:", error);
 			enqueueSnackbar(error.message || "Error al eliminar contactos de la campaña", { variant: "error" });
 		}
 	};
@@ -325,7 +323,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 				throw new Error(result.message || "Error al verificar estado del proceso");
 			}
 		} catch (error: any) {
-			console.error("Error checking deletion process status:", error);
 			const errorMessage = error.response?.data?.message || error.message || "Error al verificar estado del proceso";
 			enqueueSnackbar(errorMessage, { variant: "error" });
 
@@ -378,7 +375,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 				throw new Error(result.message || "Error desconocido");
 			}
 		} catch (error: any) {
-			console.error("Error removing all contacts from campaign:", error);
 			enqueueSnackbar(error.message || "Error al eliminar todos los contactos de la campaña", { variant: "error" });
 			setAsyncDeletionProcessing(false);
 		}

@@ -231,7 +231,6 @@ const BookingPage = () => {
 				// Encontrar la primera fecha disponible
 				findFirstAvailableDate(data);
 			} catch (err) {
-				console.error("Error al cargar configuración:", err);
 				setError("No se pudo cargar la información de disponibilidad. Por favor, verifica la URL e intenta de nuevo.");
 			} finally {
 				setLoading(false);
@@ -246,7 +245,6 @@ const BookingPage = () => {
 					setPublicAvailabilities(response.data);
 				}
 			} catch (err) {
-				console.error("Error al cargar lista de disponibilidades públicas:", err);
 			} finally {
 				setLoadingPublicList(false);
 				setLoading(false);
@@ -798,14 +796,12 @@ const BookingPage = () => {
 			if (response.status !== 201) {
 				throw new Error("Error al crear la cita");
 			}
-			console.log(response.data.clientToken);
+
 			// Mostrar confirmación con el token del cliente
 			setConfirmationCode(response.data.clientToken || "ABC123"); // Usar el clientToken de la respuesta
 			setAppointmentBooked(true);
 			setActiveStep(2); // Ir al paso de confirmación
 		} catch (err: any) {
-			console.error("Error al reservar cita:", err);
-
 			// Verificar si es el error específico de horario ya reservado
 			if (err.response && err.response.data && err.response.data.error === "Este horario ya ha sido reservado") {
 				setError("Este horario ya ha sido reservado. Por favor, selecciona otro horario.");

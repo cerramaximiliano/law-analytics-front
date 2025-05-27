@@ -165,7 +165,6 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Consola de depuración (eliminar en producción)
 	useEffect(() => {
 		if (availableTags.length > 0) {
-			console.log("Tags loaded:", availableTags);
 		}
 	}, [availableTags]);
 
@@ -232,7 +231,6 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			const response = await MarketingContactService.getContacts(1, 100);
 			setAvailableContacts(response.data);
 		} catch (err: any) {
-			console.error("Error fetching contacts:", err);
 			setError(err?.message || "No se pudieron cargar los contactos");
 		} finally {
 			setLoading(false);
@@ -246,7 +244,6 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			const tags = await MarketingContactService.getTags();
 			setAvailableTags(tags);
 		} catch (err: any) {
-			console.error("Error fetching tags:", err);
 			// No mostrar error al usuario para no interrumpir el flujo principal
 		} finally {
 			setLoadingTags(false);
@@ -319,7 +316,6 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			const response = await SegmentService.calculateSegmentCount(conditions);
 			setEstimatedCount(response.count);
 		} catch (err) {
-			console.error("Error calculating count:", err);
 			setEstimatedCount(0);
 		} finally {
 			setIsCalculating(false);
@@ -470,7 +466,6 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			onSave();
 			onClose();
 		} catch (err: any) {
-			console.error(isEditMode ? "Error updating segment:" : "Error creating segment:", err);
 			setError(err?.message || (isEditMode ? "No se pudo actualizar el segmento" : "No se pudo crear el segmento"));
 		} finally {
 			setSaving(false);

@@ -91,6 +91,3 @@ templates.push(newTemplate);
 
 // Write back to file
 fs.writeFileSync(templatesPath, JSON.stringify(templates, null, 2), "utf8");
-
-console.log("New judicial standard subscription template created successfully!");
-console.log("Template name: promo_12_judicial_standard_subscription");

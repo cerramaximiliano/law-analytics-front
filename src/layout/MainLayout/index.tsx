@@ -18,6 +18,7 @@ import navigation from "menu-items";
 import useConfig from "hooks/useConfig";
 import { dispatch } from "store";
 import { openDrawer } from "store/reducers/menu";
+import { useSearchEntityLoader } from "hooks/useSearchEntityLoader";
 
 // types
 import { MenuOrientation } from "types/config";
@@ -32,6 +33,9 @@ const MainLayout = () => {
 	const { container, miniDrawer, menuOrientation } = useConfig();
 
 	const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
+
+	// Initialize search entity loader
+	useSearchEntityLoader();
 
 	// set media wise responsive drawer
 	useEffect(() => {

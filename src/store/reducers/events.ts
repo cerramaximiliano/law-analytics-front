@@ -13,6 +13,7 @@ const UPDATE_EVENT = "UPDATE_EVENT";
 const SET_EVENT_ERROR = "SET_EVENT_ERROR";
 const GET_EVENTS_BY_ID = "GET_EVENTS_BY_ID";
 const SELECT_EVENT = "SELECT_EVENT";
+const SET_LOADING = "SET_LOADING";
 
 // initial state
 const initialEventState: EventState = {
@@ -27,10 +28,17 @@ const initialEventState: EventState = {
 // Reducer para manejar el estado de los eventos
 const eventReducer = (state = initialEventState, action: Action): EventState => {
 	switch (action.type) {
+		case SET_LOADING:
+			return {
+				...state,
+				isLoader: true,
+				error: undefined,
+			};
 		case ADD_EVENT:
 			return {
 				...state,
 				events: [...state.events, action.payload],
+				isLoader: false,
 			};
 		case GET_EVENTS_BY_ID:
 		case GET_EVENTS_BY_USER:
@@ -38,21 +46,25 @@ const eventReducer = (state = initialEventState, action: Action): EventState => 
 			return {
 				...state,
 				events: action.payload,
+				isLoader: false,
 			};
 		case DELETE_EVENT:
 			return {
 				...state,
 				events: state.events.filter((event) => event._id !== action.payload),
+				isLoader: false,
 			};
 		case UPDATE_EVENT:
 			return {
 				...state,
 				events: state.events.map((event) => (event._id === action.payload._id ? action.payload : event)),
+				isLoader: false,
 			};
 		case SET_EVENT_ERROR:
 			return {
 				...state,
 				error: action.payload,
+				isLoader: false,
 			};
 		case SELECT_EVENT: // Nuevo caso para seleccionar un evento
 			return {
@@ -68,6 +80,7 @@ const eventReducer = (state = initialEventState, action: Action): EventState => 
 
 // Agregar un nuevo evento
 export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
+	dispatch({ type: SET_LOADING });
 	try {
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/events`, eventData);
 
@@ -98,9 +111,10 @@ export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
 
 // Actualizar un evento existente
 export const updateEvent = (eventId: string, updateData: Partial<Event>) => async (dispatch: Dispatch) => {
+	dispatch({ type: SET_LOADING });
 	try {
 		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/events/${eventId}`, updateData);
-		console.log(response);
+
 		if (response.data && response.data.event) {
 			dispatch({
 				type: UPDATE_EVENT,
@@ -111,7 +125,6 @@ export const updateEvent = (eventId: string, updateData: Partial<Event>) => asyn
 			return { success: false };
 		}
 	} catch (error) {
-		console.log(error);
 		let errorMessage = "Error al actualizar evento";
 		if (axios.isAxiosError(error) && error.response) {
 			errorMessage = error.response.data?.message || errorMessage;
@@ -129,8 +142,13 @@ export const updateEvent = (eventId: string, updateData: Partial<Event>) => asyn
 
 // Obtener eventos por userId
 export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) => {
+	dispatch({ type: SET_LOADING });
 	try {
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/user/${userId}`);
+		// Campos optimizados para listas
+		const fields = "_id,title,description,type,color,allDay,start,end,folderId,folderName";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/user/${userId}`, {
+			params: { fields },
+		});
 
 		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
@@ -153,6 +171,7 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 
 // Obtener eventos por userId
 export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
+	dispatch({ type: SET_LOADING });
 	try {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/id/${_id}`);
 		if (response.data.success && Array.isArray(response.data.events)) {
@@ -176,6 +195,7 @@ export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 
 // Obtener eventos por groupId
 export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
+	dispatch({ type: SET_LOADING });
 	try {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/group/${groupId}`);
 		dispatch({
@@ -192,6 +212,7 @@ export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch
 
 // Eliminar evento por _id
 export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
+	dispatch({ type: SET_LOADING });
 	try {
 		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/events/${eventId}`);
 		dispatch({

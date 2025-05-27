@@ -46,7 +46,6 @@ const PlansManagement = () => {
 			const response = await ApiService.getAllPlans();
 			setPlans(response.data || []);
 		} catch (error) {
-			console.error("Error fetching plans:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -77,7 +76,6 @@ const PlansManagement = () => {
 
 	const handleView = (planId: string) => {
 		// TODO: Implement view details functionality
-		console.log("View plan:", planId);
 	};
 
 	const handleAddNew = () => {
@@ -111,7 +109,6 @@ const PlansManagement = () => {
 				fetchPlans();
 			}
 		} catch (error) {
-			console.error("Error saving plan:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -145,7 +142,6 @@ const PlansManagement = () => {
 				handleDeleteClose();
 			}
 		} catch (error) {
-			console.error("Error deleting plan:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

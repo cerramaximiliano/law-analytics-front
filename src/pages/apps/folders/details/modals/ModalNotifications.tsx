@@ -37,8 +37,6 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id || "";
 
-	console.log(editMode);
-
 	function closeModal() {
 		setOpen(false);
 	}
@@ -123,7 +121,6 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 				});
 			}
 		} catch (error) {
-			console.error("Error en _submitForm:", error);
 			enqueueSnackbar(`Error inesperado al ${editMode ? "actualizar" : "crear"} la notificación`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },

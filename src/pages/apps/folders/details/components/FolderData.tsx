@@ -115,7 +115,6 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 						TransitionComponent: Zoom,
 						autoHideDuration: 3000,
 					});
-					console.log("Folder actualizado con éxito:", result.folder);
 				} else {
 					enqueueSnackbar(result.message || "Error al actualizar el folder", {
 						variant: "error",
@@ -123,7 +122,6 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 						TransitionComponent: Zoom,
 						autoHideDuration: 3000,
 					});
-					console.error("Error al actualizar folder:", result.message);
 				}
 			} catch (error) {
 				enqueueSnackbar("Ocurrió un error inesperado. Por favor, intente nuevamente más tarde.", {
@@ -132,10 +130,8 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
-				console.error("Error inesperado:", error);
 			}
 		} else {
-			console.error("ID is undefined, unable to update folder");
 			enqueueSnackbar("No se puede actualizar. Intente nuevamente más tarde.", {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },

@@ -91,8 +91,6 @@ const users = (state = initialState, action: any) => {
 				users: action.payload,
 			};
 		case SET_USER:
-			console.log("=== REDUX: SET_USER ACTION ===");
-			console.log("Payload:", action.payload);
 			return {
 				...state,
 				user: action.payload,
@@ -123,8 +121,6 @@ const users = (state = initialState, action: any) => {
 				error: action.payload,
 			};
 		case SET_LIGHT_DATA:
-			console.log("=== REDUX: SET_LIGHT_DATA ACTION ===");
-			console.log("Payload:", action.payload);
 			return {
 				...state,
 				lightData: action.payload,
@@ -156,7 +152,6 @@ export const getUsers = () => {
 			});
 
 			const response = await userApi.get("/api/users");
-			console.log("Respuesta de la API de usuarios:", response.data);
 
 			// Asegurarse de que estamos usando el formato correcto
 			let userData = Array.isArray(response.data)
@@ -169,7 +164,6 @@ export const getUsers = () => {
 
 			// Si no hay datos, usar datos de ejemplo
 			if (!userData || userData.length === 0) {
-				console.log("No se recibieron datos de la API, usando datos de ejemplo");
 				userData = mockUsers;
 			}
 
@@ -178,10 +172,8 @@ export const getUsers = () => {
 				payload: userData,
 			});
 		} catch (error) {
-			console.error("Error al obtener usuarios:", error);
-
 			// En caso de error, usar datos de ejemplo
-			console.log("Error en la API, usando datos de ejemplo");
+
 			dispatch({
 				type: SET_USERS,
 				payload: mockUsers,
@@ -213,7 +205,6 @@ export const updateUser = (userId: string, userData: any) => {
 			});
 
 			const response = await userApi.put(`/api/users/${userId}`, userData);
-			console.log("Respuesta de actualización de usuario:", response.data);
 
 			// Extraer el usuario actualizado dependiendo de la estructura de la respuesta
 			const updatedUser = response.data.user || response.data;
@@ -225,7 +216,6 @@ export const updateUser = (userId: string, userData: any) => {
 
 			return updatedUser;
 		} catch (error) {
-			console.error("Error al actualizar usuario:", error);
 			dispatch({
 				type: SET_ERROR,
 				payload: error,
@@ -253,14 +243,12 @@ export const deleteUser = (userId: string) => {
 			});
 
 			await userApi.delete(`/api/users/${userId}`);
-			console.log("Usuario eliminado:", userId);
 
 			dispatch({
 				type: DELETE_USER,
 				payload: userId,
 			});
 		} catch (error) {
-			console.error("Error al eliminar usuario:", error);
 			dispatch({
 				type: SET_ERROR,
 				payload: error,
@@ -277,7 +265,6 @@ export const deleteUser = (userId: string) => {
 
 export const getUserById = (userId: string) => {
 	return async (dispatch: any) => {
-		console.log("getUserById called with userId:", userId);
 		try {
 			dispatch({
 				type: SET_LOADING,
@@ -288,15 +275,7 @@ export const getUserById = (userId: string) => {
 				payload: null,
 			});
 
-			console.log("Making API request to:", `/api/users/${userId}?includeLightData=true`);
 			const response = await userApi.get(`/api/users/${userId}?includeLightData=true`);
-			console.log("Respuesta de la API de usuario por ID:", response.data);
-			console.log("Response structure:", {
-				hasSuccess: response.data.hasOwnProperty("success"),
-				hasUser: response.data.hasOwnProperty("user"),
-				hasLightData: response.data.hasOwnProperty("lightData"),
-				hasSubscription: response.data.hasOwnProperty("subscription"),
-			});
 
 			// La API devuelve success, user, subscription y lightData
 			if (response.data.success && response.data.user) {
@@ -327,12 +306,9 @@ export const getUserById = (userId: string) => {
 				});
 			}
 		} catch (error) {
-			console.error("Error al obtener usuario por ID:", error);
-
 			// En caso de error, buscar en datos de ejemplo
 			const mockUser = mockUsers.find((user) => user.id === userId) || null;
 			if (mockUser) {
-				console.log("Error en la API, usando datos de ejemplo para el usuario:", userId);
 				dispatch({
 					type: SET_USER,
 					payload: mockUser,
@@ -365,8 +341,6 @@ export function getUsers_Static() {
 			});
 
 			const response = await userApi.get("/api/users");
-			console.log("Respuesta de la API de usuarios (Static):", response.data);
-
 			// Asegurarse de que estamos usando el formato correcto
 			let userData = Array.isArray(response.data)
 				? response.data
@@ -378,7 +352,6 @@ export function getUsers_Static() {
 
 			// Si no hay datos, usar datos de ejemplo
 			if (!userData || userData.length === 0) {
-				console.log("No se recibieron datos de la API (Static), usando datos de ejemplo");
 				userData = mockUsers;
 			}
 
@@ -387,10 +360,6 @@ export function getUsers_Static() {
 				payload: userData,
 			});
 		} catch (error) {
-			console.error("Error al obtener usuarios (Static):", error);
-
-			// En caso de error, usar datos de ejemplo
-			console.log("Error en la API (Static), usando datos de ejemplo");
 			dispatch({
 				type: SET_USERS,
 				payload: mockUsers,
@@ -422,7 +391,6 @@ export function getUserById_Static(userId: string) {
 			});
 
 			const response = await userApi.get(`/api/users/${userId}?includeLightData=true`);
-			console.log("Respuesta de la API de usuario por ID (Static):", response.data);
 
 			// La API devuelve success, user, subscription y lightData
 			if (response.data.success && response.data.user) {
@@ -453,12 +421,9 @@ export function getUserById_Static(userId: string) {
 				});
 			}
 		} catch (error) {
-			console.error("Error al obtener usuario por ID (Static):", error);
-
 			// En caso de error, buscar en datos de ejemplo
 			const mockUser = mockUsers.find((user) => user.id === userId) || null;
 			if (mockUser) {
-				console.log("Error en la API (Static), usando datos de ejemplo para el usuario:", userId);
 				dispatch({
 					type: SET_USER,
 					payload: mockUser,

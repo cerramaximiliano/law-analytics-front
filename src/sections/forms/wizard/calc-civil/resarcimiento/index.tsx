@@ -50,7 +50,6 @@ const ResarcimientoWizard = () => {
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		if (isLastStep) {
 			_submitForm(values, actions);
 		} else {

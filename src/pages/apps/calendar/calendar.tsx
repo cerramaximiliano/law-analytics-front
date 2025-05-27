@@ -57,7 +57,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 // Importación de eventos y carpetas types
 import { Event } from "types/events";
 import { Folder } from "types/folders";
-import { getFoldersByUserId } from "store/reducers/folders";
+import { getFoldersByUserId } from "store/reducers/folder";
 
 // ==============================|| LINK FOLDERS MODAL ||============================== //
 
@@ -387,9 +387,7 @@ const Calendar = () => {
 				try {
 					await dispatch(getEventsByUserId(id));
 					setLoading(false);
-				} catch (error) {
-					console.error(error);
-				}
+				} catch (error) {}
 			};
 			fetchData();
 		}
@@ -474,7 +472,7 @@ const Calendar = () => {
 	const handleEventSelect = (arg: EventClickArg) => {
 		// Cuando se selecciona un evento existente, ahora lo mostramos en vista de detalles
 		const eventId = arg.event.extendedProps?._id || arg.event.id;
-		console.log("Event selected for viewing:", eventId, arg.event);
+
 		setIsEditingEvent(false);
 		setIsViewingEvent(true);
 		dispatch(selectEvent(eventId));
@@ -491,9 +489,7 @@ const Calendar = () => {
 					end: event.end ? new Date(event.end) : undefined,
 				}),
 			);
-		} catch (error) {
-			console.error(error);
-		}
+		} catch (error) {}
 	};
 
 	const handleModalClose = () => {
@@ -544,7 +540,6 @@ const Calendar = () => {
 						setAvailableFolders(result.folders);
 					}
 				} catch (error) {
-					console.error("Error al cargar carpetas:", error);
 					dispatch(
 						openSnackbar({
 							open: true,
@@ -606,7 +601,6 @@ const Calendar = () => {
 					}),
 				);
 			} catch (error) {
-				console.error("Error al vincular evento:", error);
 				dispatch(
 					openSnackbar({
 						open: true,

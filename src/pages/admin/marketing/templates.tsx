@@ -398,7 +398,6 @@ const EmailTemplates = () => {
 				enqueueSnackbar(response.data.message || `Error al cambiar estado de la plantilla`, { variant: "error" });
 			}
 		} catch (err: any) {
-			console.error("Error toggling template status:", err);
 			enqueueSnackbar(err.message || `Error al cambiar estado de la plantilla`, { variant: "error" });
 		} finally {
 			setToggling(false);
@@ -475,7 +474,6 @@ const EmailTemplates = () => {
 				enqueueSnackbar(response.data.message || "Error al enviar el email", { variant: "error" });
 			}
 		} catch (err: any) {
-			console.error("Error sending email:", err);
 			enqueueSnackbar(err.message || "Error al enviar el email", { variant: "error" });
 		} finally {
 			setSending(false);
@@ -594,7 +592,6 @@ const EmailTemplates = () => {
 				enqueueSnackbar(response.data.message || "Error al crear la plantilla", { variant: "error" });
 			}
 		} catch (err: any) {
-			console.error("Error creating template:", err);
 			enqueueSnackbar(err.message || "Error al crear la plantilla", { variant: "error" });
 		} finally {
 			setCreating(false);
@@ -660,7 +657,6 @@ const EmailTemplates = () => {
 				enqueueSnackbar(response.data.message || "Error al actualizar la plantilla", { variant: "error" });
 			}
 		} catch (err: any) {
-			console.error("Error updating template:", err);
 			enqueueSnackbar(err.message || "Error al actualizar la plantilla", { variant: "error" });
 		} finally {
 			setUpdating(false);

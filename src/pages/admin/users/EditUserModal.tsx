@@ -81,7 +81,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, open, onClose }) =>
 
 			// Realizar la petición a la API
 			const response = await userApi.put(`/api/users/${user.id}`, payload);
-			console.log("Usuario actualizado:", response.data);
 
 			// Actualizar el estado global
 			const updatedUser = response.data.user || response.data;
@@ -93,7 +92,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, open, onClose }) =>
 			// Cerrar el modal
 			onClose();
 		} catch (err: any) {
-			console.error("Error al actualizar usuario:", err);
 			setError(err.message || "Error al actualizar el usuario");
 			dispatch({
 				type: SET_ERROR,

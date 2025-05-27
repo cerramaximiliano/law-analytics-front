@@ -21,7 +21,7 @@ import {
 import { DocumentCloud, SearchNormal1, People, Edit2 } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useSelector, dispatch } from "store";
-import { getFoldersByUserId } from "store/reducers/folders";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { Folder } from "types/folders";
 

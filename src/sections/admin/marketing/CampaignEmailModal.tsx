@@ -146,7 +146,6 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 				enqueueSnackbar("Error al cargar las plantillas de email", { variant: "error" });
 			}
 		} catch (err: any) {
-			console.error("Error fetching templates:", err);
 			enqueueSnackbar(err.message || "Error al cargar las plantillas de email", { variant: "error" });
 		} finally {
 			setTemplatesLoading(false);
@@ -299,7 +298,6 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 				throw new Error("Error en la respuesta del servidor");
 			}
 		} catch (err: any) {
-			console.error(`Error ${mode === "create" ? "creating" : "updating"} campaign email:`, err);
 			enqueueSnackbar(err.message || `Error al ${mode === "create" ? "crear" : "actualizar"} el email de la campaña`, { variant: "error" });
 		} finally {
 			setSubmitting(false);

@@ -102,7 +102,6 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				);
 
 				if (result.errors) {
-					console.error("Errores específicos:", result.errors);
 				}
 
 				dispatch(filterContactsByFolder(folderId));
@@ -126,8 +125,6 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				);
 			}
 		} catch (error) {
-			console.error("Error inesperado al vincular contactos:", error);
-
 			let errorMessage = "Error inesperado al vincular los contactos";
 			if (error instanceof Error) {
 				errorMessage = error.message;

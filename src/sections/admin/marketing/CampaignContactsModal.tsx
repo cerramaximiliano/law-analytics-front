@@ -118,7 +118,6 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			setContacts(response.data);
 			setTotalContacts(response.pagination.total);
 		} catch (error) {
-			console.error("Error al cargar contactos:", error);
 			enqueueSnackbar("Error al cargar la lista de contactos", { variant: "error" });
 		} finally {
 			setLoadingContacts(false);
@@ -133,7 +132,6 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			setSegments(response.data);
 			setTotalSegments(response.pagination.total);
 		} catch (error) {
-			console.error("Error al cargar segmentos:", error);
 			enqueueSnackbar("Error al cargar la lista de segmentos", { variant: "error" });
 		} finally {
 			setLoadingSegments(false);
@@ -205,7 +203,6 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 				throw new Error(result.message || "Error desconocido");
 			}
 		} catch (error: any) {
-			console.error("Error adding to campaign:", error);
 			// Mostrar el mensaje de error del servidor si está disponible
 			const errorMessage = error.response?.data?.message || error.message || "Error al añadir a la campaña";
 			enqueueSnackbar(errorMessage, { variant: "error" });
@@ -266,7 +263,6 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 				throw new Error(result.message || "Error al verificar estado del proceso");
 			}
 		} catch (error: any) {
-			console.error("Error checking process status:", error);
 			const errorMessage = error.response?.data?.message || error.message || "Error al verificar estado del proceso";
 			enqueueSnackbar(errorMessage, { variant: "error" });
 
@@ -335,7 +331,6 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 				throw new Error(result.message || "Error desconocido");
 			}
 		} catch (error: any) {
-			console.error("Error adding all active contacts to campaign:", error);
 			const errorMessage = error.response?.data?.message || error.message || "Error al añadir todos los contactos activos";
 			enqueueSnackbar(errorMessage, { variant: "error" });
 			setAddingAllContacts(false);

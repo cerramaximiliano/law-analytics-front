@@ -68,7 +68,6 @@ const TaskWidget = () => {
 					try {
 						taskMetricsData = await ApiService.getCategoryAnalysis<TaskMetrics>("tasks", userId);
 					} catch (error) {
-						console.warn("No se pudieron obtener métricas detalladas de tareas:", error);
 						// Continuamos con las métricas del dashboard summary
 					}
 
@@ -82,7 +81,6 @@ const TaskWidget = () => {
 					// Cargar tareas próximas a vencer
 					dispatch(getUpcomingTasks(userId, DAYS_TO_SHOW));
 				} catch (error) {
-					console.error("Error al cargar datos de tareas:", error);
 				} finally {
 					setLoading(false);
 				}

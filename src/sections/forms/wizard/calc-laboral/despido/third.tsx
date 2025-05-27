@@ -132,7 +132,6 @@ export default function ThirdForm(props: ThirdFormProps) {
 					}
 				}
 			} catch (error) {
-				console.error("Error al cargar las tasas:", error);
 				setErrorTasas("No se pudieron cargar las tasas. Por favor, intenta de nuevo más tarde.");
 				// Opciones de fallback
 				setTasasOpciones([

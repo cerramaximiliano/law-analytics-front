@@ -41,7 +41,6 @@ const ProjectOverview = () => {
 				const dashboardData = await StatsService.getDashboardSummary(userId);
 				setTrendsData(dashboardData.trends);
 			} catch (error) {
-				console.error("Error fetching trends data:", error);
 			} finally {
 				setLoading(false);
 			}

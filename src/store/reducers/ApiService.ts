@@ -325,7 +325,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching active sessions:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -341,7 +340,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error terminating session:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -356,7 +354,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error terminating all other sessions:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -372,7 +369,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error updating current session:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -391,7 +387,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching notification preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -407,7 +402,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error updating notification preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -422,7 +416,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching user preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -438,7 +431,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error updating user preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -458,7 +450,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error deactivating account:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -472,7 +463,6 @@ class ApiService {
 			const response = await axios.post<ApiResponse>(`${API_BASE_URL}/api/reactivate-account`, data);
 			return response.data;
 		} catch (error) {
-			console.error("Error reactivating account:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -495,7 +485,6 @@ class ApiService {
 
 			return response.data.summary;
 		} catch (error) {
-			console.error("Error fetching dashboard summary:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -514,7 +503,6 @@ class ApiService {
 
 			return response.data.analytics;
 		} catch (error) {
-			console.error("Error fetching full analytics:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -538,7 +526,6 @@ class ApiService {
 
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error fetching ${category} analysis:`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -628,7 +615,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching public plans:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -643,7 +629,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching all plans:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -659,7 +644,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching plan ${planId}:`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -675,7 +659,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error creating/updating plan:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -691,7 +674,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error deleting plan ${planId}:`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -706,7 +688,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching current subscription:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -724,7 +705,6 @@ class ApiService {
 			);
 			return response.data;
 		} catch (error) {
-			console.error("Error al cancelar suscripción:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -750,7 +730,6 @@ class ApiService {
 			);
 			return response.data;
 		} catch (error) {
-			console.error("Error subscribing to plan:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -762,7 +741,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error obteniendo historial de pagos:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -778,7 +756,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error: any) {
-			console.error("Error al cancelar downgrade programado:", error);
 			return {
 				success: false,
 				message: error.response?.data?.message || "Error al cancelar el downgrade programado",
@@ -802,7 +779,6 @@ class ApiService {
 			);
 			return response.data;
 		} catch (error: any) {
-			console.error("Error al cambiar plan inmediatamente:", error);
 			return {
 				success: false,
 				message: error.response?.data?.message || "Error al cambiar el plan",
@@ -820,7 +796,6 @@ class ApiService {
 			const response = await axios.post("/api/subscriptions/schedule-change", { planId }, { withCredentials: true });
 			return response.data;
 		} catch (error: any) {
-			console.error("Error al programar cambio de plan:", error);
 			return {
 				success: false,
 				message: error.response?.data?.message || "Error al programar el cambio de plan",
@@ -837,7 +812,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error obteniendo documento legal (${documentType}):`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -886,7 +860,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error checking feature availability (${featureName}):`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -912,7 +885,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error checking resource limit (${resourceType}):`, error);
 			throw this.handleAxiosError(error);
 		}
 	}

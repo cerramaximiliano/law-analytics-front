@@ -5,7 +5,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 // assets
 import { Trash } from "iconsax-react";
 import { dispatch } from "store";
-import { deleteFolder } from "store/reducers/folders";
+import { deleteFolderById } from "store/reducers/folder";
 import { useContext, useEffect } from "react";
 import AuthContext from "contexts/ServerContext";
 
@@ -19,7 +19,6 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 	const handleClick = () => {
 		// Prevenir la eliminación si hay un error reciente de restricción del plan
 		if (authContext && authContext.hasPlanRestrictionError) {
-			console.log("Eliminación cancelada debido a un error reciente de restricción del plan");
 			handleClose(false); // Cerrar sin eliminar
 			return;
 		}
@@ -27,7 +26,7 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 		// Continuar normalmente si no hay restricciones
 		handleClose(true);
 		if (id) {
-			dispatch(deleteFolder(id));
+			dispatch(deleteFolderById(id));
 			// Llamar al callback de eliminación si existe
 			if (onDelete) {
 				onDelete();
@@ -39,13 +38,11 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 	useEffect(() => {
 		// Cerrar por estado de restricción del plan
 		if (open && authContext && authContext.hasPlanRestrictionError) {
-			console.log("AlertFolderDelete: Cerrando modal de eliminación debido a un error de restricción del plan");
 			handleClose(false);
 		}
 
 		// Manejador para eventos de restricción de plan
 		const handlePlanRestriction = () => {
-			console.log("AlertFolderDelete: Evento de restricción del plan recibido, cerrando modal");
 			if (open) {
 				handleClose(false);
 			}
@@ -54,7 +51,6 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 		// Verificar periódicamente si hay una flag global para cerrar modales
 		const checkGlobalFlag = () => {
 			if ((window as any).FORCE_CLOSE_ALL_MODALS && open) {
-				console.log("AlertFolderDelete: Flag global detectada, cerrando modal");
 				handleClose(false);
 			}
 		};

@@ -91,7 +91,6 @@ const TabPassword = () => {
 						resetForm();
 						setStatus({ success: true });
 					} catch (err: any) {
-						console.error("Error al cambiar la contraseña:", err);
 						setStatus({ success: false });
 
 						// Si el error tiene un mensaje de respuesta del servidor, mostrar ese

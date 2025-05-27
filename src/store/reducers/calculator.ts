@@ -122,7 +122,11 @@ export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "e
 export const getCalculatorsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`);
+		// Campos optimizados para listas
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_CALCULATORS,
 			payload: response.data.calculators,
@@ -139,7 +143,11 @@ export const getCalculatorsByUserId = (userId: string) => async (dispatch: Dispa
 export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/group/${groupId}`);
+		// Campos optimizados para listas
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/group/${groupId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_CALCULATORS,
 			payload: response.data.calculators,
@@ -156,7 +164,11 @@ export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dis
 export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/folder/${folderId}`);
+		// Campos optimizados para listas
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/folder/${folderId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_SELECTED_CALCULATORS,
 			payload: response.data.calculators,
@@ -181,12 +193,16 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 
 		dispatch({ type: SET_LOADING });
 
+		// Campos optimizados para listas
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+
 		const queryParams = new URLSearchParams({
 			...(folderId && { folderId }),
 			...(type && { type }),
 			...(classType && { classType }),
 			...(groupId && { groupId }),
 			...(userId && { userId }),
+			fields,
 		}).toString();
 
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/filter?${queryParams}`);
@@ -328,7 +344,14 @@ export const unarchiveCalculators = (userId: string, calculatorIds: string[]) =>
 export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}?archived=true`);
+		// Campos optimizados para listas
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+			params: {
+				archived: true,
+				fields,
+			},
+		});
 
 		dispatch({
 			type: SET_ARCHIVED_CALCULATORS,

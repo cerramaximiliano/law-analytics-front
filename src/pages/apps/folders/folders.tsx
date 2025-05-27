@@ -445,7 +445,6 @@ const FoldersLayout = () => {
 			const initialLoad = async () => {
 				// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
 				if (!user?._id) {
-					console.log("No hay usuario disponible, mostrando UI vacía");
 					setIsInitialLoad(false);
 					return;
 				}
@@ -453,22 +452,18 @@ const FoldersLayout = () => {
 				if (loadingRef.current) return;
 
 				try {
-					console.log("Cargando carpetas para el usuario:", user._id);
 					// Garantizar que user._id es un string
 					const userId = user._id;
 					if (!userId) {
-						console.error("User ID no disponible para cargar carpetas");
 						return;
 					}
 
 					loadingRef.current = true;
 					await dispatch(getFoldersByUserId(userId));
 				} catch (error) {
-					console.error("Error loading folders:", error);
 				} finally {
 					loadingRef.current = false;
 					setIsInitialLoad(false);
-					console.log("Carga inicial completada");
 				}
 			};
 
@@ -477,7 +472,6 @@ const FoldersLayout = () => {
 
 		// Este efecto también debe ejecutarse cuando cambia el usuario después del login
 		if (user?._id && !loadingRef.current && mountedRef.current) {
-			console.log("Usuario cambió después del montaje, recargando carpetas");
 			const reloadFolders = async () => {
 				try {
 					// Garantizar que user._id es un string antes de pasar a la función
@@ -487,7 +481,6 @@ const FoldersLayout = () => {
 					loadingRef.current = true;
 					await dispatch(getFoldersByUserId(userId));
 				} catch (error) {
-					console.error("Error reloading folders after user change:", error);
 				} finally {
 					loadingRef.current = false;
 					setIsInitialLoad(false);
@@ -599,7 +592,6 @@ const FoldersLayout = () => {
 
 				setSnackbarOpen(true);
 			} catch (error) {
-				console.error("Error al archivar causas:", error);
 				setSnackbarMessage("Error al archivar causas");
 				setSnackbarSeverity("error");
 				setSnackbarOpen(true);
@@ -619,7 +611,6 @@ const FoldersLayout = () => {
 			await dispatch(getArchivedFoldersByUserId(user._id));
 			setArchivedModalOpen(true);
 		} catch (error) {
-			console.error("Error al obtener causas archivadas:", error);
 			setSnackbarMessage("Error al obtener causas archivadas");
 			setSnackbarSeverity("error");
 			setSnackbarOpen(true);
@@ -655,7 +646,6 @@ const FoldersLayout = () => {
 
 				setSnackbarOpen(true);
 			} catch (error) {
-				console.error("Error al desarchivar causas:", error);
 				setSnackbarMessage("Error al desarchivar causas");
 				setSnackbarSeverity("error");
 				setSnackbarOpen(true);

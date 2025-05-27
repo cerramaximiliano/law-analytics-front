@@ -77,7 +77,6 @@ const EditContactModal: React.FC<EditContactModalProps> = ({ open, onClose, cont
 			const contactTags = data.tags || [];
 			setTags(contactTags.map((tag: any) => (typeof tag === "string" ? tag : tag.name)));
 		} catch (err: any) {
-			console.error("Error al obtener detalles del contacto:", err);
 			setError(err?.message || "No se pudo cargar la información del contacto");
 		} finally {
 			setLoading(false);
@@ -142,7 +141,6 @@ const EditContactModal: React.FC<EditContactModalProps> = ({ open, onClose, cont
 			onSave();
 			onClose();
 		} catch (err: any) {
-			console.error("Error al guardar contacto:", err);
 			setError(err?.message || "No se pudo guardar la información del contacto");
 		} finally {
 			setSaving(false);
