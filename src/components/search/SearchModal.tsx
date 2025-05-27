@@ -266,9 +266,9 @@ const SearchModal = () => {
 							variant="contained"
 							onClick={handleSearch}
 							disabled={!localQuery.trim() || isSearching || isSearchingServer}
-							sx={{ 
+							sx={{
 								minWidth: "100px",
-								height: "56px" // Same height as MUI TextField with normal density
+								height: "56px", // Same height as MUI TextField with normal density
 							}}
 						>
 							Buscar

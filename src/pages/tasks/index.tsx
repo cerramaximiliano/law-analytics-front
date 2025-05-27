@@ -220,13 +220,13 @@ function ReactTable({
 						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 
 						{/* Segunda línea: Selector de ordenamiento */}
-						<SortingSelect 
-							sortBy={sortBy[0]?.id || "name"} 
+						<SortingSelect
+							sortBy={sortBy[0]?.id || "name"}
 							setSortBy={(newSortBy: any) => {
 								setSortByState(newSortBy);
 								setSortBy(newSortBy);
-							}} 
-							allColumns={allColumns} 
+							}}
+							allColumns={allColumns}
 						/>
 					</Stack>
 

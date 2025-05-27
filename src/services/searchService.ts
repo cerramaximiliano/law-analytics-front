@@ -31,7 +31,7 @@ export const searchService = {
 
 			const response = await axios.get<ServerSearchResponse>(`${process.env.REACT_APP_BASE_URL}/api/search`, { params });
 			const results: SearchResult[] = [];
-			
+
 			// Handle response structure - the API may return data wrapped or unwrapped
 			const responseData = response.data.data || response.data;
 
