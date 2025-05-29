@@ -674,7 +674,7 @@ const SavedLabor = () => {
 			);
 		};
 		fetchData();
-	}, [dispatch]);
+	}, [dispatch, userId]);
 
 	const handleAdd = () => {
 		setAdd(!add);

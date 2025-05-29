@@ -27,7 +27,6 @@ import { UnauthorizedModalProps, FormValues } from "types/auth";
 import { useDispatch } from "react-redux";
 import { openSnackbar } from "store/reducers/snackbar";
 import { AppDispatch } from "store";
-import { DEV_EMAIL, DEV_PASSWORD, IS_DEVELOPMENT } from "config";
 
 const validationSchema = Yup.object().shape({
 	email: Yup.string().email("Debe ser un e-mail válido").required("El e-mail es requerido").trim(),
@@ -35,8 +34,8 @@ const validationSchema = Yup.object().shape({
 });
 
 const initialValues: FormValues = {
-	email: IS_DEVELOPMENT && DEV_EMAIL ? DEV_EMAIL : "",
-	password: IS_DEVELOPMENT && DEV_PASSWORD ? DEV_PASSWORD : "",
+	email: "",
+	password: "",
 	submit: null,
 };
 

@@ -24,6 +24,7 @@ import tasksReducer from "./tasks";
 import userStats from "./userStats";
 import users from "./users";
 import search from "./search";
+import unifiedStats from "./unifiedStats";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -55,6 +56,7 @@ const reducers = combineReducers({
 	userStats,
 	users,
 	search,
+	unifiedStats,
 });
 
 export default reducers;

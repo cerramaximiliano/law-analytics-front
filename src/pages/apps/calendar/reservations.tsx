@@ -658,7 +658,7 @@ const BookingsManagement = () => {
 				setLimitModalOpen(true);
 			}
 		}
-	}, [subscription, hasFeatureLocal, hasModalBeenClosed]);
+	}, [subscription, hasModalBeenClosed]);
 
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {

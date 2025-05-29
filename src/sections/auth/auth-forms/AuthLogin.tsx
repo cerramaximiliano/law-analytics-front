@@ -25,7 +25,6 @@ import useAuth from "hooks/useAuth";
 import useScriptRef from "hooks/useScriptRef";
 import IconButton from "components/@extended/IconButton";
 import AnimateButton from "components/@extended/AnimateButton";
-import { DEV_EMAIL, DEV_PASSWORD, IS_DEVELOPMENT } from "config";
 
 // assets
 import { Eye, EyeSlash } from "iconsax-react";
@@ -53,8 +52,8 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 		<>
 			<Formik
 				initialValues={{
-					email: IS_DEVELOPMENT && DEV_EMAIL ? DEV_EMAIL : "",
-					password: IS_DEVELOPMENT && DEV_PASSWORD ? DEV_PASSWORD : "",
+					email: "",
+					password: "",
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({

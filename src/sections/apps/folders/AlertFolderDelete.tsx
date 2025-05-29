@@ -1,5 +1,5 @@
 //AlertFolderDelete.tsx
-import { Button, Dialog, DialogContent, Stack, Typography } from "@mui/material";
+import { Button, Dialog, DialogContent, Stack, Typography, Zoom } from "@mui/material";
 import Avatar from "components/@extended/Avatar";
 import { PopupTransition } from "components/@extended/Transitions";
 // assets
@@ -8,6 +8,7 @@ import { dispatch } from "store";
 import { deleteFolderById } from "store/reducers/folder";
 import { useContext, useEffect } from "react";
 import AuthContext from "contexts/ServerContext";
+import { enqueueSnackbar } from "notistack";
 
 // types
 import { PropsAlert } from "types/folders";
@@ -16,7 +17,7 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 	// Obtener el contexto para verificar errores de restricción
 	const authContext = useContext(AuthContext);
 	// Verificar si hay un error de restricción del plan para evitar proceder
-	const handleClick = () => {
+	const handleClick = async () => {
 		// Prevenir la eliminación si hay un error reciente de restricción del plan
 		if (authContext && authContext.hasPlanRestrictionError) {
 			handleClose(false); // Cerrar sin eliminar
@@ -26,7 +27,24 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 		// Continuar normalmente si no hay restricciones
 		handleClose(true);
 		if (id) {
-			dispatch(deleteFolderById(id));
+			const result = await dispatch(deleteFolderById(id));
+
+			if (result.success) {
+				enqueueSnackbar("Causa eliminada correctamente", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			} else {
+				enqueueSnackbar(result.message || "Error al eliminar la causa", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+
 			// Llamar al callback de eliminación si existe
 			if (onDelete) {
 				onDelete();

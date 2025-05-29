@@ -409,10 +409,10 @@ const UsersList = () => {
 								!error &&
 								users &&
 								users.length > 0 &&
-								visibleRows.map((userItem) => {
+								visibleRows.map((userItem, index) => {
 									const user = userItem as User;
 									return (
-										<TableRow hover role="checkbox" tabIndex={-1} key={user.id}>
+										<TableRow hover role="checkbox" tabIndex={-1} key={user._id || user.id || `user-row-${index}`}>
 											<TableCell>
 												<Stack direction="row" alignItems="center" spacing={1.5}>
 													<Stack>

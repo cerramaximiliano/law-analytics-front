@@ -427,11 +427,9 @@ function ReactTable({
 					</TableBody>
 				</Table>
 				{page.length > 0 && (
-					<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-						<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-							<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
-						</TableCell>
-					</TableRow>
+					<Box sx={{ p: 2, py: 3 }}>
+						<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
+					</Box>
 				)}
 				{page.length === 0 && (
 					<Box
@@ -629,7 +627,7 @@ const CustomerListPage = () => {
 			}
 
 			loadingRef.current = true;
-			await dispatch(getContactsByUserId(userId));
+			await dispatch(getContactsByUserId(userId, true)); // forceRefresh=true para recargar después de cambios
 		} finally {
 			loadingRef.current = false;
 		}

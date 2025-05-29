@@ -735,7 +735,7 @@ function ReactTable({
 const AllCalculators = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
-	const { calculators, archivedCalculators, isLoader } = useSelector((state: any) => state.calculator);
+	const { calculators, archivedCalculators, isLoader, isInitialized, lastFetchedUserId } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 	const [loading, setLoading] = useState(true);
@@ -772,8 +772,13 @@ const AllCalculators = () => {
 			setLoading(true);
 
 			if (userId) {
-				await dispatch(getCalculatorsByUserId(userId));
-				await dispatch(getArchivedCalculatorsByUserId(userId));
+				// Solo hacer fetch si no está inicializado o si el usuario cambió
+				const shouldFetch = !isInitialized || lastFetchedUserId !== userId;
+
+				if (shouldFetch) {
+					await dispatch(getCalculatorsByUserId(userId));
+					await dispatch(getArchivedCalculatorsByUserId(userId));
+				}
 			}
 
 			const timer = setTimeout(() => {
@@ -784,7 +789,7 @@ const AllCalculators = () => {
 		};
 
 		fetchData();
-	}, [userId]);
+	}, [userId, isInitialized, lastFetchedUserId]);
 
 	// Handle delete multiple calculators
 	const handleDeleteSelectedCalculators = async () => {

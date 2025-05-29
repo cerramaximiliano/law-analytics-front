@@ -5,6 +5,7 @@ import OtpInput from "react18-input-otp";
 import AnimateButton from "components/@extended/AnimateButton";
 import axios from "axios";
 import { ThemeMode } from "types/config";
+import secureStorage from "services/secureStorage";
 import { useSelector } from "react-redux";
 import { dispatch, RootState } from "store";
 import { useNavigate } from "react-router-dom";
@@ -85,7 +86,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 	// Manejador de verificación de código según el modo
 	const handleVerifyCode = async () => {
 		// Determinar si estamos en un proceso de reseteo de contraseña
-		const isResetProcess = mode === "reset" || localStorage.getItem("reset_in_progress") === "true";
+		const isResetProcess = mode === "reset" || secureStorage.getSessionData("reset_in_progress") === true;
 		// Si estamos en proceso de reseteo, forzar modo "reset" independientemente del valor de prop
 		const effectiveMode = isResetProcess ? "reset" : mode;
 
@@ -113,10 +114,10 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 				if (success) {
 					setError(null);
 
-					// Almacenar información en localStorage para evitar pérdida durante navegación
-					localStorage.setItem("reset_email", emailToUse);
-					localStorage.setItem("reset_code", otp);
-					localStorage.setItem("reset_verified", "true");
+					// Almacenar información temporal en sessionStorage (no sensible)
+					secureStorage.setSessionData("reset_email", emailToUse);
+					// NUNCA almacenar el código OTP - debe validarse directamente con el backend
+					secureStorage.setSessionData("reset_verified", true);
 
 					// Navegar a la página de reseteo de contraseña
 					navigate("/auth/reset-password", { replace: true });

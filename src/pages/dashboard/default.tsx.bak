@@ -9,15 +9,13 @@ import BarsDataWidget from "sections/widget/chart/BarsDataWidget";
 import ErrorStateCard from "components/ErrorStateCard";
 
 import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
-import FinancialWidget from "sections/widget/chart/FinancialWidget";
-import ActiveFoldersWidget from "sections/widget/chart/ActiveFoldersWidget";
 
 import ProjectOverview from "sections/widget/chart/ProjectOverview";
 import ProjectRelease from "sections/widget/chart/ProjectRelease";
 import AssignUsers from "sections/widget/chart/TaskWidget";
 
 // assets
-import { Calendar, CloudChange } from "iconsax-react";
+import { ArrowDown, ArrowUp, Book, Calendar, CloudChange, Wallet3 } from "iconsax-react";
 import WelcomeBanner from "sections/dashboard/default/WelcomeBanner";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
@@ -37,13 +35,13 @@ const DashboardDefault = () => {
 	const userId = user?._id;
 
 	// Obtener datos del store unificado
-	const { data: unifiedData, isLoading, error, lastUpdated } = useSelector((state) => state.unifiedStats);
+	const { data: unifiedData, isLoading, error } = useSelector((state) => state.unifiedStats);
 	const dashboardData = unifiedData?.dashboard || null;
 
 	// Cargar datos del dashboard usando el store unificado
 	useEffect(() => {
 		if (userId) {
-			dispatch(getUnifiedStats(userId, "dashboard,folders"));
+			dispatch(getUnifiedStats(userId, "dashboard"));
 		}
 	}, [userId]);
 
@@ -135,7 +133,7 @@ const DashboardDefault = () => {
 				{/* Banner siempre visible */}
 				<Grid item xs={12}>
 					<WelcomeBanner />
-					{lastUpdated && !isLoading && !error && (
+					{dashboardData?.lastUpdated && !isLoading && !error && (
 						<Typography
 							variant="caption"
 							sx={{
@@ -147,7 +145,7 @@ const DashboardDefault = () => {
 							}}
 						>
 							Última actualización:{" "}
-							{new Date(lastUpdated).toLocaleString("es-AR", {
+							{new Date(dashboardData.lastUpdated).toLocaleString("es-AR", {
 								day: "2-digit",
 								month: "2-digit",
 								year: "numeric",
@@ -185,11 +183,63 @@ const DashboardDefault = () => {
 					<>
 						{/* row 1 - Mostrar estadísticas clave del dashboard */}
 						<Grid item xs={12} sm={6} lg={3}>
-							<FinancialWidget foldersTrend={foldersTrend} />
+							<EcommerceDataCard
+								title="Monto Activo"
+								count={new Intl.NumberFormat("es-AR", {
+									style: "currency",
+									currency: "ARS",
+									maximumFractionDigits: 0,
+								}).format(dashboardData?.financial?.activeAmount || 0)}
+								iconPrimary={<Wallet3 />}
+								percentage={
+									<Typography
+										color={foldersTrend.direction === "up" ? "primary" : "error.dark"}
+										sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+									>
+										{foldersTrend.direction === "up" ? (
+											<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
+										) : (
+											<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
+										)}
+										{foldersTrend.percentage}%
+									</Typography>
+								}
+							>
+								<BarsDataWidget color={theme.palette.primary.main} data={dashboardData?.trends?.calculators?.map((item) => item.count)} />
+							</EcommerceDataCard>
 						</Grid>
 
 						<Grid item xs={12} sm={6} lg={3}>
-							<ActiveFoldersWidget />
+							<EcommerceDataCard
+								title="Carpetas Activas"
+								count={(dashboardData?.folders?.active || 0).toString()}
+								color="warning"
+								iconPrimary={<Book color={theme.palette.warning.dark} />}
+								percentage={
+									<Typography
+										color={foldersTrend.direction === "up" ? "warning.dark" : "error.dark"}
+										sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+									>
+										{foldersTrend.direction === "up" ? (
+											<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
+										) : (
+											<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
+										)}
+										{foldersTrend.percentage}%
+									</Typography>
+								}
+							>
+								<BarsDataWidget
+									color={theme.palette.warning.dark}
+									height={50}
+									data={
+										// Por ahora no tenemos distribución en la nueva estructura
+										undefined
+									}
+									labels={["Nueva", "En Proceso", "Pendiente"]}
+									noDataMessage="No hay carpetas disponibles"
+								/>
+							</EcommerceDataCard>
 						</Grid>
 
 						<Grid item xs={12} sm={6} lg={3}>

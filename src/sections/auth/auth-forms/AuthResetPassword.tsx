@@ -24,6 +24,7 @@ import useAuth from "hooks/useAuth";
 import useScriptRef from "hooks/useScriptRef";
 import IconButton from "components/@extended/IconButton";
 import AnimateButton from "components/@extended/AnimateButton";
+import secureStorage from "services/secureStorage";
 
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -57,10 +58,10 @@ const AuthResetPassword = () => {
 		from?: string;
 	} | null;
 
-	// Obtener datos de localStorage
-	const storedEmail = localStorage.getItem("reset_email");
-	const storedCode = localStorage.getItem("reset_code");
-	const storedVerified = localStorage.getItem("reset_verified") === "true";
+	// Obtener datos de sessionStorage
+	const storedEmail = secureStorage.getSessionData<string>("reset_email");
+	const storedCode = null; // NO almacenamos el código por seguridad
+	const storedVerified = secureStorage.getSessionData<boolean>("reset_verified") === true;
 
 	// Usar datos de location.state o localStorage
 	const email = locationState?.email || storedEmail;
@@ -161,10 +162,10 @@ const AuthResetPassword = () => {
 
 							// Limpiar datos de localStorage
 							// Limpiar todos los datos del proceso de reseteo
-							localStorage.removeItem("reset_email");
-							localStorage.removeItem("reset_code");
-							localStorage.removeItem("reset_verified");
-							localStorage.removeItem("reset_in_progress");
+							secureStorage.removeSessionData("reset_email");
+							secureStorage.removeSessionData("reset_code");
+							secureStorage.removeSessionData("reset_verified");
+							secureStorage.removeSessionData("reset_in_progress");
 
 							// Mensaje de éxito
 							dispatch(

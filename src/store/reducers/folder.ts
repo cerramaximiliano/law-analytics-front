@@ -17,6 +17,8 @@ const ARCHIVE_FOLDERS = "ARCHIVE_FOLDERS";
 const UNARCHIVE_FOLDERS = "UNARCHIVE_FOLDERS";
 const GET_ARCHIVED_FOLDERS = "GET_ARCHIVED_FOLDERS";
 const GET_FOLDERS_BY_IDS = "GET_FOLDERS_BY_IDS";
+const RESET_FOLDERS_STATE = "RESET_FOLDERS_STATE";
+const SET_SELECTED_FOLDERS = "SET_SELECTED_FOLDERS";
 
 // Initial state
 const initialFolderState: FolderState = {
@@ -26,6 +28,8 @@ const initialFolderState: FolderState = {
 	folder: null,
 	isLoader: false,
 	error: undefined,
+	isInitialized: false,
+	lastFetchedUserId: undefined,
 };
 
 // Reducer
@@ -41,6 +45,13 @@ const folder = (state = initialFolderState, action: any) => {
 				isLoader: false,
 			};
 		case GET_FOLDERS_BY_USER:
+			return {
+				...state,
+				folders: action.payload,
+				isLoader: false,
+				isInitialized: true,
+				lastFetchedUserId: action.userId,
+			};
 		case GET_FOLDERS_BY_GROUP:
 			return {
 				...state,
@@ -115,6 +126,12 @@ const folder = (state = initialFolderState, action: any) => {
 				selectedFolders: action.payload,
 				isLoader: false,
 			};
+		case SET_SELECTED_FOLDERS:
+			return {
+				...state,
+				selectedFolders: action.payload,
+				isLoader: false,
+			};
 		case "folders/SET_FOLDER_ERROR":
 			// Handle namespaced action for manual reset
 			return {
@@ -122,6 +139,8 @@ const folder = (state = initialFolderState, action: any) => {
 				error: action.payload,
 				isLoader: false,
 			};
+		case RESET_FOLDERS_STATE:
+			return initialFolderState;
 		default:
 			return state;
 	}
@@ -138,40 +157,55 @@ export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) 
 				type: ADD_FOLDER,
 				payload: response.data.folder,
 			});
+			return { success: true, folder: response.data.folder };
 		}
+		return { success: false, message: response.data.message || "Error al crear folder" };
 	} catch (error) {
+		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al crear folder" : "Error desconocido";
 		dispatch({
 			type: SET_FOLDER_ERROR,
-			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al crear folder" : "Error desconocido",
+			payload: errorMessage,
 		});
+		return { success: false, message: errorMessage };
 	}
 };
 
-export const getFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_FOLDER_LOADING });
-		// Campos optimizados para listas y vistas resumidas
-		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
-			params: { fields },
-		});
-		if (response.data.success) {
-			dispatch({
-				type: GET_FOLDERS_BY_USER,
-				payload: response.data.folders,
+export const getFoldersByUserId =
+	(userId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			const state = getState();
+			const { isInitialized, lastFetchedUserId } = state.folder;
+
+			// Si ya está inicializado para este usuario y no se está forzando la recarga, retornar los datos actuales
+			if (isInitialized && lastFetchedUserId === userId && !forceRefresh) {
+				return { success: true, folders: state.folder.folders };
+			}
+
+			dispatch({ type: SET_FOLDER_LOADING });
+			// Campos optimizados para listas y vistas resumidas
+			const fields =
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
+			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
+				params: { fields },
 			});
-			return { success: true, folders: response.data.folders };
+			if (response.data.success) {
+				dispatch({
+					type: GET_FOLDERS_BY_USER,
+					payload: response.data.folders,
+					userId: userId,
+				});
+				return { success: true, folders: response.data.folders };
+			}
+			return { success: false, folders: [] };
+		} catch (error) {
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders por usuario" : "Error desconocido",
+			});
+			return { success: false, folders: [] };
 		}
-		return { success: false, folders: [] };
-	} catch (error) {
-		dispatch({
-			type: SET_FOLDER_ERROR,
-			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders por usuario" : "Error desconocido",
-		});
-		return { success: false, folders: [] };
-	}
-};
+	};
 
 export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
@@ -196,8 +230,18 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 	}
 };
 
-export const getFolderById = (folderId: string) => async (dispatch: Dispatch) => {
+export const getFolderById = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
 	try {
+		// Obtener el estado actual del store
+		const state = getState();
+		const currentFolder = state.folder.folder;
+
+		// Si el folder actual tiene el mismo ID, no hacer la petición
+		if (currentFolder && currentFolder._id === folderId) {
+			return { success: true, folder: currentFolder };
+		}
+
+		// Si es diferente o no hay folder, hacer la petición
 		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
 		if (response.data.success) {
@@ -205,12 +249,16 @@ export const getFolderById = (folderId: string) => async (dispatch: Dispatch) =>
 				type: GET_FOLDER_BY_ID,
 				payload: response.data.folder,
 			});
+			return { success: true, folder: response.data.folder };
 		}
+		return { success: false, message: "No se pudo obtener el folder" };
 	} catch (error) {
+		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folder" : "Error desconocido";
 		dispatch({
 			type: SET_FOLDER_ERROR,
-			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folder" : "Error desconocido",
+			payload: errorMessage,
 		});
+		return { success: false, message: errorMessage };
 	}
 };
 
@@ -223,12 +271,16 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 				type: DELETE_FOLDER,
 				payload: folderId,
 			});
+			return { success: true };
 		}
+		return { success: false, message: response.data.message || "Error al eliminar carpeta" };
 	} catch (error) {
+		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al eliminar carpeta" : "Error desconocido";
 		dispatch({
 			type: SET_FOLDER_ERROR,
-			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al eliminar folder" : "Error desconocido",
+			payload: errorMessage,
 		});
+		return { success: false, message: errorMessage };
 	}
 };
 
@@ -442,5 +494,79 @@ export const getFoldersByIds =
 			};
 		}
 	};
+
+// Filtrar folders por criterios
+interface FilterFoldersParams {
+	status?: string;
+	materia?: string;
+	folderJuris?: string;
+	folderFuero?: string;
+	orderStatus?: string;
+}
+
+export const filterFolders = (filters: FilterFoldersParams) => async (dispatch: Dispatch, getState: any) => {
+	try {
+		const state = getState();
+		const { folders, isInitialized } = state.folder;
+		const auth = state.auth;
+		const userId = auth.user?._id;
+
+		// Si tenemos userId y no hay datos en cache, descargar todos primero
+		if (userId && !isInitialized) {
+			// Descargar todos los folders del usuario
+			const result = await dispatch(getFoldersByUserId(userId) as any);
+			if (!result.success) {
+				return result;
+			}
+		}
+
+		// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
+		const currentFolders = isInitialized ? folders : getState().folder.folders;
+
+		// Verifica que currentFolders existe y es un array
+		if (!Array.isArray(currentFolders)) {
+			return { success: false, error: "No hay carpetas disponibles" };
+		}
+
+		// Filtrar folders según los criterios proporcionados
+		let filteredFolders = currentFolders;
+
+		if (filters.status) {
+			filteredFolders = filteredFolders.filter((folder) => folder.status === filters.status);
+		}
+		if (filters.materia) {
+			filteredFolders = filteredFolders.filter((folder) => folder.materia === filters.materia);
+		}
+		if (filters.folderJuris) {
+			filteredFolders = filteredFolders.filter((folder) => folder.folderJuris === filters.folderJuris);
+		}
+		if (filters.folderFuero) {
+			filteredFolders = filteredFolders.filter((folder) => folder.folderFuero === filters.folderFuero);
+		}
+		if (filters.orderStatus) {
+			filteredFolders = filteredFolders.filter((folder) => folder.orderStatus === filters.orderStatus);
+		}
+
+		// Despachar la acción con los folders filtrados
+		dispatch({
+			type: SET_SELECTED_FOLDERS,
+			payload: filteredFolders,
+		});
+
+		return { success: true, folders: filteredFolders };
+	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : "Error al filtrar carpetas";
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: errorMessage,
+		});
+		return { success: false, error: errorMessage };
+	}
+};
+
+// Action para resetear el estado (útil para logout)
+export const resetFoldersState = () => ({
+	type: RESET_FOLDERS_STATE,
+});
 
 export default folder;

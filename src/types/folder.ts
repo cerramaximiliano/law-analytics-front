@@ -77,4 +77,6 @@ export type FolderState = {
 	folder: FolderData | null;
 	isLoader: boolean;
 	error?: string;
+	isInitialized: boolean;
+	lastFetchedUserId?: string;
 };

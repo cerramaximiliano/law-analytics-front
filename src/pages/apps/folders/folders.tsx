@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
+	Box,
 	Button,
 	Chip,
 	Dialog,
@@ -17,24 +18,11 @@ import {
 	Skeleton,
 	Snackbar,
 	Alert,
-	Box,
 	Typography,
 	Collapse,
 } from "@mui/material";
 
-import {
-	useFilters,
-	useExpanded,
-	useGlobalFilter,
-	useRowSelect,
-	useSortBy,
-	useTable,
-	usePagination,
-	HeaderGroup,
-	Row,
-	Cell,
-	HeaderProps,
-} from "react-table";
+import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -43,6 +31,7 @@ import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
+import { formatFolderName } from "utils/formatFolderName";
 
 import AddFolder from "sections/apps/folders/AddFolder";
 import FolderView from "sections/apps/folders/FolderView";
@@ -67,6 +56,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 interface ReactTableProps extends Props {
 	expandedRowId?: string | null;
+	navigate: ReturnType<typeof useNavigate>;
 }
 
 function ReactTable({
@@ -79,6 +69,7 @@ function ReactTable({
 	handleOpenArchivedModal,
 	handleOpenGuide,
 	expandedRowId,
+	navigate,
 }: ReactTableProps) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
@@ -112,9 +103,9 @@ function ReactTable({
 		setGlobalFilter,
 		setSortBy,
 		selectedFlatRows,
-	} = useTable(
+	} = useTable<Folder>(
 		{
-			columns,
+			columns: columns as any,
 			data,
 			filterTypes,
 			initialState: {
@@ -209,10 +200,14 @@ function ReactTable({
 					{/* Lado izquierdo - Filtro y ordenamiento */}
 					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "300px" }}>
 						{/* Primera línea: Barra de búsqueda */}
-						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+						<GlobalFilter
+							preGlobalFilteredRows={preGlobalFilteredRows as any}
+							globalFilter={globalFilter}
+							setGlobalFilter={setGlobalFilter}
+						/>
 
 						{/* Segunda línea: Selector de ordenamiento */}
-						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
+						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
 					</Stack>
 
 					{/* Lado derecho - Botones de acción */}
@@ -295,7 +290,7 @@ function ReactTable({
 									}}
 								>
 									<CSVLink
-										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row) => d.original) : data}
+										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data}
 										filename={"causas.csv"}
 										style={{
 											color: "inherit",
@@ -320,9 +315,9 @@ function ReactTable({
 				</Stack>
 				<Table {...getTableProps()}>
 					<TableHead>
-						{headerGroups.map((headerGroup: HeaderGroup<{}>) => (
+						{headerGroups.map((headerGroup) => (
 							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
-								{headerGroup.headers.map((column: HeaderGroup) => (
+								{headerGroup.headers.map((column: any) => (
 									<TableCell {...column.getHeaderProps([{ className: column.className }])}>
 										<HeaderSort column={column} sort />
 									</TableCell>
@@ -331,7 +326,7 @@ function ReactTable({
 						))}
 					</TableHead>
 					<TableBody {...getTableBodyProps()}>
-						{page.map((row: Row, i: number) => {
+						{page.map((row, i) => {
 							prepareRow(row);
 							const rowProps = row.getRowProps();
 							return (
@@ -341,12 +336,15 @@ function ReactTable({
 										onClick={() => {
 											row.toggleRowSelected();
 										}}
+										onDoubleClick={() => {
+											navigate(`../details/${row.original._id}`);
+										}}
 										sx={{
 											cursor: "pointer",
 											bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
 										}}
 									>
-										{row.cells.map((cell: Cell) => (
+										{row.cells.map((cell) => (
 											<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
 										))}
 									</TableRow>
@@ -363,11 +361,9 @@ function ReactTable({
 					</TableBody>
 				</Table>
 				{page.length > 0 && (
-					<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-						<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-							<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
-						</TableCell>
-					</TableRow>
+					<Box sx={{ p: 2, py: 3 }}>
+						<TablePagination gotoPage={gotoPage} rows={rows as any} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
+					</Box>
 				)}
 
 				{page.length === 0 && (
@@ -459,7 +455,7 @@ const FoldersLayout = () => {
 					}
 
 					loadingRef.current = true;
-					await dispatch(getFoldersByUserId(userId));
+					await dispatch(getFoldersByUserId(userId)); // No forzar recarga en la carga inicial
 				} catch (error) {
 				} finally {
 					loadingRef.current = false;
@@ -479,7 +475,7 @@ const FoldersLayout = () => {
 					if (!userId) return; // Verificación adicional
 
 					loadingRef.current = true;
-					await dispatch(getFoldersByUserId(userId));
+					await dispatch(getFoldersByUserId(userId)); // No forzar recarga, usar cache si está disponible
 				} catch (error) {
 				} finally {
 					loadingRef.current = false;
@@ -551,17 +547,6 @@ const FoldersLayout = () => {
 	const handleClose = useCallback(() => {
 		setOpen((prev) => !prev);
 	}, []);
-
-	const handleRefreshData = useCallback(async () => {
-		if (!user?._id || loadingRef.current) return;
-
-		try {
-			loadingRef.current = true;
-			await dispatch(getFoldersByUserId(user._id));
-		} finally {
-			loadingRef.current = false;
-		}
-	}, [user?._id]);
 
 	const handleRowAction = useCallback((e: MouseEvent<HTMLButtonElement>, action: () => void) => {
 		e.stopPropagation();
@@ -639,6 +624,8 @@ const FoldersLayout = () => {
 					setSnackbarMessage(`${folderIds.length} ${folderIds.length === 1 ? "causa desarchivada" : "causas desarchivadas"} correctamente`);
 					setSnackbarSeverity("success");
 					setArchivedModalOpen(false);
+					// En este caso SÍ necesitamos forzar recarga porque unarchiveFolders podría no tener todos los datos
+					await dispatch(getFoldersByUserId(user._id, true));
 				} else {
 					setSnackbarMessage(result.message || "Error al desarchivar causas");
 					setSnackbarSeverity("error");
@@ -666,17 +653,17 @@ const FoldersLayout = () => {
 		() => [
 			{
 				title: "Row Selection",
-				Header: ({ getToggleAllPageRowsSelectedProps }: HeaderProps<{}>) => (
+				Header: ({ getToggleAllPageRowsSelectedProps }: HeaderProps<Folder>) => (
 					<IndeterminateCheckbox indeterminate {...getToggleAllPageRowsSelectedProps()} />
 				),
-				accessor: "selection",
+				accessor: "selection" as any,
 				Cell: ({ row }: any) => <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />,
 				disableSortBy: true,
 			},
 			{
 				Header: "Id",
 				accessor: "_id",
-				className: "cell-center",
+				className: "cell-center" as any,
 			},
 			{
 				Header: "Carátula",
@@ -689,7 +676,7 @@ const FoldersLayout = () => {
 							</Stack>
 						);
 					}
-					return <span style={{ textTransform: "uppercase" }}>{value}</span>;
+					return <span>{formatFolderName(value, 50)}</span>;
 				},
 			},
 			{
@@ -698,30 +685,7 @@ const FoldersLayout = () => {
 				Cell: ({ value }: { value: any }) => {
 					if (!value) return null;
 
-					// Lista de palabras que no deben capitalizarse (excepto si son la primera palabra)
-					const lowerCaseWords = ["de", "y", "para", "inc.", "por", "el", "la", "los", "del", "por", "a", "las"];
-
-					// Convierte todo a minúsculas primero
-					const lowercaseValue = value.toLowerCase();
-
-					// Divide en palabras
-					const words = lowercaseValue.split(" ");
-
-					// Capitaliza cada palabra según las reglas
-					const formattedWords = words.map((word: string, index: number) => {
-						// Si es la primera palabra o no está en la lista de excepciones,
-						// capitaliza su primera letra
-						if (index === 0 || !lowerCaseWords.includes(word)) {
-							return word.charAt(0).toUpperCase() + word.slice(1);
-						}
-						// Si está en la lista de excepciones, la deja en minúsculas
-						return word;
-					});
-
-					// Une las palabras de nuevo
-					const formattedValue = formattedWords.join(" ");
-
-					return <span>{formattedValue}</span>;
+					return <span>{formatFolderName(value)}</span>;
 				},
 			},
 			{
@@ -792,7 +756,7 @@ const FoldersLayout = () => {
 			},
 			{
 				Header: "Jurisdicción",
-				accessor: "folderJuris.label",
+				accessor: "folderJuris.label" as any,
 			},
 			{
 				Header: "Fuero",
@@ -817,7 +781,7 @@ const FoldersLayout = () => {
 				Header: "Acciones",
 				className: "cell-center",
 				disableSortBy: true,
-				Cell: ({ row }: { row: Row<{}> }) => {
+				Cell: ({ row }: any) => {
 					const collapseIcon =
 						expandedRowId === row.id ? (
 							<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
@@ -899,7 +863,7 @@ const FoldersLayout = () => {
 		<MainCard content={false}>
 			<ScrollX>
 				<ReactTable
-					columns={columns}
+					columns={columns as any}
 					data={folders}
 					handleAdd={handleAddFolder}
 					handleArchiveSelected={handleArchiveSelected}
@@ -908,9 +872,10 @@ const FoldersLayout = () => {
 					renderRowSubComponent={renderRowSubComponent}
 					isLoading={isLoader}
 					expandedRowId={expandedRowId}
+					navigate={navigate}
 				/>
 			</ScrollX>
-			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={handleRefreshData} />
+			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
 			{add && (
 				<Dialog
 					maxWidth="sm"
@@ -929,7 +894,7 @@ const FoldersLayout = () => {
 						},
 					}}
 				>
-					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleRefreshData} />
+					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleCloseDialog} />
 				</Dialog>
 			)}
 

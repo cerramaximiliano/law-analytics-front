@@ -40,6 +40,8 @@ export interface CalculatorState {
 	archivedCalculators: CalculatorType[];
 	isLoader: boolean;
 	error: string | null;
+	isInitialized: boolean;
+	lastFetchedUserId?: string;
 }
 
 export interface FilterParams {

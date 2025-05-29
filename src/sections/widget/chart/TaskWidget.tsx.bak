@@ -44,15 +44,13 @@ const TaskWidget = () => {
 
 	// Obtener datos del store unificado
 	const { data: unifiedData, isLoading: isStatsLoading } = useSelector((state: RootState) => state.unifiedStats);
-
-	// Crear un objeto normalizado para las métricas de tareas
-	const dashboardTasks = unifiedData?.dashboard?.tasks;
-	const taskStats = unifiedData?.tasks;
-
-	const taskMetrics = {
-		pending: dashboardTasks?.pending || taskStats?.metrics?.pendingTasks || 0,
-		completed: dashboardTasks?.completed || taskStats?.metrics?.completedTasks || 0,
-		overdue: dashboardTasks?.overdue || taskStats?.metrics?.overdueTasks || 0,
+	const taskMetrics = unifiedData?.dashboard?.tasks || unifiedData?.tasks || {
+		pending: 0,
+		completed: 0,
+		overdue: 0,
+		pendingTasks: 0,
+		completedTasks: 0,
+		overdueTasks: 0,
 	};
 
 	// Cargar datos de tareas y métricas
@@ -156,8 +154,8 @@ const TaskWidget = () => {
 								</Tooltip>
 							</Stack>
 							<Typography variant="caption" color="secondary">
-								Próximos {DAYS_TO_SHOW} días • {taskMetrics.pending} pendientes
-								{taskMetrics.overdue > 0 ? ` • ${taskMetrics.overdue} vencidas` : ""}
+								Próximos {DAYS_TO_SHOW} días • {taskMetrics.pendingTasks} pendientes
+								{"overdueTasks" in taskMetrics && taskMetrics.overdueTasks > 0 ? ` • ${taskMetrics.overdueTasks} vencidas` : ""}
 							</Typography>
 						</Stack>
 

@@ -29,6 +29,8 @@ export type ContactState = {
 	selectedContacts: Contact[];
 	isLoader: boolean;
 	error: string | null;
+	isInitialized: boolean;
+	lastFetchedUserId?: string;
 };
 
 export type Action = {

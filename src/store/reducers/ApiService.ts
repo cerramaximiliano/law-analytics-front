@@ -73,80 +73,8 @@ export interface SessionData {
 }
 
 // ===============================
-// Interfaces de estadísticas
+// Interfaces para los planes
 // ===============================
-
-export interface TrendItem {
-	month: string;
-	count: number;
-}
-
-export interface FolderDistribution {
-	nueva: number;
-	enProceso: number;
-	cerrada: number;
-	pendiente: number;
-}
-
-export interface ResolutionTimes {
-	overall: number;
-	byStatus: {
-		nueva: number;
-		enProceso: number;
-		pendiente: number;
-	};
-}
-
-export interface UpcomingDeadlines {
-	next7Days: number;
-	next15Days: number;
-	next30Days: number;
-}
-
-export interface TaskMetrics {
-	completionRate: number;
-	pendingTasks: number;
-	completedTasks: number;
-	overdueTasks: number;
-}
-
-export interface DashboardSummary {
-	folderStats: {
-		active: number;
-		closed: number;
-		distribution: FolderDistribution;
-	};
-	financialStats: {
-		totalActiveAmount: number;
-		calculatorsAmount: number;
-	};
-	upcomingDeadlines: number;
-	taskMetrics: {
-		pendingTasks: number;
-		completionRate: number;
-	};
-	notificationMetrics: {
-		unreadCount: number;
-	};
-	trends: {
-		newFolders: TrendItem[];
-		movements: TrendItem[];
-	};
-	lastUpdated: string;
-}
-
-export interface FolderAnalytics {
-	distribution: FolderDistribution;
-	resolutionTimes: ResolutionTimes;
-	deadlines: UpcomingDeadlines;
-}
-
-export interface UserAnalytics {
-	folderStatusDistribution: FolderDistribution;
-	// ...otros campos
-}
-
-// Añadir nuevas interfaces para los planes
 
 export interface ResourceLimit {
 	name: string;
@@ -468,82 +396,29 @@ class ApiService {
 	}
 
 	// ================================
-	// Estadísticas y análisis
+	// Estadísticas y análisis - API Unificada
 	// ================================
 
 	/**
-	 * Obtiene el resumen del dashboard
-	 * @param userId - ID de usuario opcional para administradores
+	 * Obtiene estadísticas unificadas del usuario
+	 * @param userId - ID del usuario
+	 * @param sections - Secciones específicas a obtener (por defecto: 'all')
 	 */
-	static async getDashboardSummary(userId?: string | null): Promise<DashboardSummary> {
+	static async getUnifiedStats(userId: string, sections: string = "all"): Promise<any> {
 		try {
-			const response = await axios.get(`${API_BASE_URL}/api/stats/dashboard${userId ? `/${userId}` : ""}`, { withCredentials: true });
-
-			if (!response.data || !response.data.summary) {
-				throw new Error("Formato de respuesta inválido");
-			}
-
-			return response.data.summary;
-		} catch (error) {
-			throw this.handleAxiosError(error);
-		}
-	}
-
-	/**
-	 * Obtiene análisis completos del usuario
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getFullAnalytics(userId?: string | null): Promise<UserAnalytics> {
-		try {
-			const response = await axios.get(`${API_BASE_URL}/api/stats/analytics${userId ? `/${userId}` : ""}`, { withCredentials: true });
-
-			if (!response.data || !response.data.analytics) {
-				throw new Error("Formato de respuesta inválido");
-			}
-
-			return response.data.analytics;
-		} catch (error) {
-			throw this.handleAxiosError(error);
-		}
-	}
-
-	/**
-	 * Obtiene análisis por categoría específica
-	 * @param category - La categoría de análisis a obtener
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getCategoryAnalysis<T>(category: string, userId?: string | null): Promise<T> {
-		try {
-			const path = userId ? `/api/stats/${userId}/category/${category}` : `/api/stats/category/${category}`;
-
-			const response = await axios.get(`${API_BASE_URL}${path}`, {
+			const response = await axios.get(`${API_BASE_URL}/api/stats/unified/${userId}`, {
+				params: { sections },
 				withCredentials: true,
 			});
 
-			if (!response.data || !response.data.data) {
+			if (!response.data || !response.data.success) {
 				throw new Error("Formato de respuesta inválido");
 			}
 
-			return response.data.data;
+			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
 		}
-	}
-
-	/**
-	 * Obtiene análisis de carpetas
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getFolderAnalytics(userId?: string | null): Promise<FolderAnalytics> {
-		return this.getCategoryAnalysis<FolderAnalytics>("folders", userId);
-	}
-
-	/**
-	 * Obtiene métricas de tareas
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getTaskMetrics(userId?: string | null): Promise<TaskMetrics> {
-		return this.getCategoryAnalysis<TaskMetrics>("tasks", userId);
 	}
 
 	// ================================

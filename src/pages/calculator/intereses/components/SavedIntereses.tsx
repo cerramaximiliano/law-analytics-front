@@ -689,7 +689,7 @@ const SavedIntereses = () => {
 			);
 		};
 		fetchData();
-	}, [userId]);
+	}, [dispatch, userId]);
 
 	const handleDeleteDialogClose = () => {
 		setOpen(false);

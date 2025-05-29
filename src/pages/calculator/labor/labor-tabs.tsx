@@ -54,7 +54,7 @@ export default function LaborTabs() {
 		if (id && folderParam) {
 			dispatch(getFoldersByUserId(id));
 		}
-	}, [id, folderParam]);
+	}, [dispatch, id, folderParam]);
 
 	const handleChange = (event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);

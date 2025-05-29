@@ -19,6 +19,7 @@ import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import { formatFolderName } from "utils/formatFolderName";
 
 // Components
 import FolderDataCompact from "./components/FolderDataCompact";
@@ -99,17 +100,6 @@ const Details = () => {
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
 
-	// Format folder name with first letter of each word capitalized
-	const formatFolderName = useCallback((name: string) => {
-		if (!name) return "";
-		// Split by spaces, capitalize each word, then join back
-		return name
-			.toLowerCase()
-			.split(" ")
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(" ");
-	}, []);
-
 	// Optimized selectors with specific state slices
 	const folder = useSelector((state: StateType) => state.folder.folder);
 	const isLoader = useSelector((state: StateType) => state.folder.isLoader);
@@ -121,11 +111,11 @@ const Details = () => {
 		if (!id || id === "undefined") return;
 
 		try {
-			const promises = [dispatch(getFolderById(id))];
-			if (userId) {
-				promises.push(dispatch(getContactsByUserId(userId)));
-			}
-			await Promise.all(promises);
+			// Ejecutar las promesas en paralelo pero sin mezclar tipos
+			const folderPromise = dispatch(getFolderById(id));
+			const contactsPromise = userId ? dispatch(getContactsByUserId(userId)) : Promise.resolve();
+
+			await Promise.all([folderPromise, contactsPromise]);
 		} catch (error) {}
 	}, [id, userId]);
 

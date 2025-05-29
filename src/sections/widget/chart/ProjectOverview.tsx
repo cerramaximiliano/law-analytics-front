@@ -1,66 +1,35 @@
 // MUESTRA DATOS DE TENDENCIA MOVIMIENTOS Y CARPETAS
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
-import { Box, CircularProgress, ListItemButton, Menu, Stack, Typography, Chip } from "@mui/material";
+import { Box, CircularProgress, Stack, Typography, Chip } from "@mui/material";
 import ReactApexChart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
 import MainCard from "components/MainCard";
-import IconButton from "components/@extended/IconButton";
-import { More } from "iconsax-react";
-import StatsService from "store/reducers/ApiService";
-import { useSelector } from "store";
-
-interface TrendEntry {
-	month: string;
-	count: number;
-}
-
-interface TrendsData {
-	newFolders: TrendEntry[];
-	movements: TrendEntry[];
-}
+import { useSelector, dispatch } from "store";
+import { getUnifiedStats } from "store/reducers/unifiedStats";
 
 const ProjectOverview = () => {
 	const theme = useTheme();
-	const [loading, setLoading] = useState(true);
-	const [trendsData, setTrendsData] = useState<TrendsData | null>(null);
-
-	const [anchorEl, setAnchorEl] = useState(null);
-
-	const open = Boolean(anchorEl);
 
 	// Obtener userId del usuario actualmente autenticado
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
 
+	// Obtener datos del store unificado
+	const { data: unifiedData, isLoading } = useSelector((state) => state.unifiedStats);
+	const trendsData = unifiedData?.dashboard?.trends || null;
+
 	useEffect(() => {
-		const fetchTrendsData = async () => {
-			try {
-				setLoading(true);
-				const dashboardData = await StatsService.getDashboardSummary(userId);
-				setTrendsData(dashboardData.trends);
-			} catch (error) {
-			} finally {
-				setLoading(false);
-			}
-		};
+		if (userId && !unifiedData?.dashboard) {
+			dispatch(getUnifiedStats(userId, "dashboard"));
+		}
+	}, [userId, unifiedData]);
 
-		fetchTrendsData();
-	}, [userId]);
-
-	const handleClick = (event: any) => {
-		setAnchorEl(event.currentTarget);
-	};
-
-	const handleClose = () => {
-		setAnchorEl(null);
-	};
-
-	if (loading) {
+	if (isLoading && !trendsData) {
 		return (
 			<MainCard>
-				<Stack alignItems="center" justifyContent="center" spacing={1} sx={{ minHeight: 300 }}>
+				<Stack alignItems="center" justifyContent="center" spacing={1} sx={{ minHeight: 380 }}>
 					<CircularProgress />
 				</Stack>
 			</MainCard>
@@ -70,25 +39,32 @@ const ProjectOverview = () => {
 	if (!trendsData || !trendsData.newFolders || !trendsData.movements) {
 		return (
 			<MainCard>
-				<Stack alignItems="center" justifyContent="center" spacing={1} sx={{ minHeight: 300 }}>
+				<Stack alignItems="center" justifyContent="center" spacing={1} sx={{ minHeight: 380 }}>
 					<Typography variant="h6">No hay datos de tendencias disponibles</Typography>
 				</Stack>
 			</MainCard>
 		);
 	}
 
-	// Opciones para el gráfico de área
-	const areaChartOptions: ApexOptions = {
+	// Procesar las fechas para las categorías del eje X
+	const categories = trendsData.newFolders.map((item) => {
+		const date = new Date(item.month);
+		return date.toLocaleDateString("es-AR", { month: "short", year: "2-digit" });
+	});
+
+	// Configuración del gráfico
+	const chartOptions: ApexOptions = {
 		chart: {
-			id: "trends-chart",
+			height: 310,
 			type: "area",
-			height: 315, // Reducido para dar más espacio a las leyendas
 			toolbar: {
 				show: false,
 			},
-			parentHeightOffset: 0, // Aumentar el padding superior del gráfico
+			zoom: {
+				enabled: false,
+			},
 		},
-		colors: [theme.palette.primary.main, theme.palette.success.main],
+		colors: [theme.palette.primary.main, theme.palette.warning.main],
 		dataLabels: {
 			enabled: false,
 		},
@@ -97,11 +73,11 @@ const ProjectOverview = () => {
 			width: 2,
 		},
 		grid: {
-			strokeDashArray: 3,
+			strokeDashArray: 0,
 			borderColor: theme.palette.divider,
 		},
 		xaxis: {
-			categories: trendsData.newFolders.map((item) => item.month),
+			categories: categories,
 			axisBorder: {
 				show: false,
 			},
@@ -111,23 +87,26 @@ const ProjectOverview = () => {
 		},
 		yaxis: {
 			labels: {
-				formatter: (value: number) => Math.round(value).toString(),
+				formatter: (value) => Math.round(value).toString(),
 			},
-		},
-		// Desactivar las leyendas integradas de ApexCharts
-		legend: {
-			show: false,
+			min: 0,
 		},
 		tooltip: {
 			theme: theme.palette.mode,
-			shared: true,
+			x: {
+				show: true,
+			},
+		},
+		legend: {
+			position: "top",
+			horizontalAlign: "left",
+			offsetY: -20,
 		},
 		fill: {
 			type: "gradient",
 			gradient: {
 				shadeIntensity: 1,
 				type: "vertical",
-				inverseColors: false,
 				opacityFrom: 0.5,
 				opacityTo: 0,
 			},
@@ -148,69 +127,17 @@ const ProjectOverview = () => {
 
 	return (
 		<MainCard>
-			<Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-				<Typography variant="h5">Tendencias Mensuales</Typography>
-				<IconButton
-					color="secondary"
-					id="trends-button"
-					aria-controls={open ? "trends-menu" : undefined}
-					aria-haspopup="true"
-					aria-expanded={open ? "true" : undefined}
-					onClick={handleClick}
-				>
-					<More />
-				</IconButton>
-				<Menu
-					id="trends-menu"
-					anchorEl={anchorEl}
-					open={open}
-					onClose={handleClose}
-					MenuListProps={{
-						"aria-labelledby": "trends-button",
-						sx: { p: 1.25, minWidth: 150 },
-					}}
-					anchorOrigin={{
-						vertical: "bottom",
-						horizontal: "right",
-					}}
-					transformOrigin={{
-						vertical: "top",
-						horizontal: "right",
-					}}
-				>
-					<ListItemButton onClick={handleClose}>Actualizar</ListItemButton>
-				</Menu>
-			</Stack>
+			<Typography variant="h5">Tendencias Mensuales</Typography>
 
-			{/* Leyendas personalizadas fuera del gráfico */}
-			{/* Leyendas personalizadas con mejor contraste */}
-			<Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 1, mb: 1 }}>
-				<Chip
-					label="Nuevas Carpetas"
-					size="small"
-					sx={{
-						bgcolor: "transparent", // Fondo transparente
-						color: theme.palette.primary.main, // Color de texto = color de la línea
-						border: `1px solid ${theme.palette.primary.main}`,
-						fontWeight: "medium",
-						"& .MuiChip-label": { px: 1.5 },
-					}}
-				/>
-				<Chip
-					label="Movimientos"
-					size="small"
-					sx={{
-						bgcolor: "transparent", // Fondo transparente
-						color: theme.palette.success.main, // Color de texto = color de la línea
-						border: `1px solid ${theme.palette.success.main}`,
-						fontWeight: "medium",
-						"& .MuiChip-label": { px: 1.5 },
-					}}
-				/>
+			<Stack spacing={2} sx={{ mt: 2 }}>
+				<Stack direction="row" spacing={1}>
+					<Chip color="primary" variant="light" size="small" label="Nuevas Carpetas" />
+					<Chip color="warning" variant="light" size="small" label="Movimientos" />
+				</Stack>
+				<Box sx={{ pt: 1 }}>
+					<ReactApexChart options={chartOptions} series={chartData} type="area" height={310} />
+				</Box>
 			</Stack>
-			<Box sx={{ mt: 1 }}>
-				<ReactApexChart options={areaChartOptions} series={chartData} type="area" height={315} />
-			</Box>
 		</MainCard>
 	);
 };

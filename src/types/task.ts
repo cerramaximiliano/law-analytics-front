@@ -43,12 +43,15 @@ export interface TaskType {
 
 export interface TaskState {
 	tasks: TaskType[];
+	selectedTasks: TaskType[]; // Tareas filtradas
 	task: TaskType | null; // Single task for detail view
 	taskDetails: { [key: string]: TaskType }; // Task details by ID
 	taskDetailsLoading: { [key: string]: boolean }; // Loading state for each task detail
 	isLoader: boolean;
 	error: string | null;
 	upcomingTasks: TaskType[];
+	isInitialized: boolean;
+	lastFetchedUserId?: string;
 }
 
 export type TaskDataType = {

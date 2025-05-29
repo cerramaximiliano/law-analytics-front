@@ -100,15 +100,22 @@ const users = (state = initialState, action: any) => {
 			return {
 				...state,
 				user: action.payload,
-				users: state.users.map((user: any) => (user.id === action.payload.id ? action.payload : user)),
+				users: state.users.map((user: any) => {
+					const userId = user._id || user.id;
+					const payloadId = action.payload._id || action.payload.id;
+					return userId === payloadId ? action.payload : user;
+				}),
 			};
 		case DELETE_USER:
 			// Eliminar el usuario de la lista
 			return {
 				...state,
-				users: state.users.filter((user: any) => user.id !== action.payload),
+				users: state.users.filter((user: any) => {
+					const userId = user._id || user.id;
+					return userId !== action.payload;
+				}),
 				// Si el usuario activo es el eliminado, limpiarlo
-				user: state.user && state.user.id === action.payload ? null : state.user,
+				user: state.user && (state.user._id || state.user.id) === action.payload ? null : state.user,
 			};
 		case SET_LOADING:
 			return {
@@ -165,6 +172,12 @@ export const getUsers = () => {
 			// Si no hay datos, usar datos de ejemplo
 			if (!userData || userData.length === 0) {
 				userData = mockUsers;
+			} else {
+				// Asegurar que cada usuario tenga un id además de _id
+				userData = userData.map((user: any) => ({
+					...user,
+					id: user.id || user._id,
+				}));
 			}
 
 			dispatch({
@@ -353,6 +366,12 @@ export function getUsers_Static() {
 			// Si no hay datos, usar datos de ejemplo
 			if (!userData || userData.length === 0) {
 				userData = mockUsers;
+			} else {
+				// Asegurar que cada usuario tenga un id además de _id
+				userData = userData.map((user: any) => ({
+					...user,
+					id: user.id || user._id,
+				}));
 			}
 
 			dispatch({

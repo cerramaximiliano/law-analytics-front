@@ -420,9 +420,9 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	const renderSection = (title: string, items: ResultItem[], sectionKey: string, index: number) => {
 		if (!items || !items.length) return null;
 
-		// Filtrar items para ocultar montoTotalConIntereses en la sección de intereses
+		// Filtrar items para ocultar montoTotalConIntereses y capitalActualizado en la sección de intereses
 		const visibleItems = items.filter((item) => {
-			if (sectionKey === "intereses" && item.key === "montoTotalConIntereses") {
+			if (sectionKey === "intereses" && (item.key === "montoTotalConIntereses" || item.key === "capitalActualizado")) {
 				return false;
 			}
 			return true;

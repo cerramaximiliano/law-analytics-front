@@ -17,10 +17,16 @@ const ProjectRelease = () => {
 
 	useEffect(() => {
 		const fetchDeadlinesData = async () => {
+			if (!userId) return;
+
 			try {
 				setLoading(true);
-				const folderData = await ApiService.getCategoryAnalysis<{ deadlines: UpcomingDeadlines }>("folders", userId);
-				setDeadlinesData(folderData.deadlines);
+				const response = await ApiService.getUnifiedStats(userId, "folders");
+
+				// Extraer los datos de deadlines del response
+				if (response.data?.folders?.deadlines) {
+					setDeadlinesData(response.data.folders.deadlines);
+				}
 			} catch (error) {
 			} finally {
 				setLoading(false);

@@ -9,6 +9,9 @@ import { Dispatch } from "redux";
 import { openSnackbar } from "store/reducers/snackbar";
 import { UserProfile } from "types/auth";
 import { Subscription } from "types/user";
+import { resetFoldersState } from "./folder";
+import { resetContactsState } from "./contacts";
+import { resetCalculatorsState } from "./calculator";
 
 // initial state
 export const initialState: AuthProps = {
@@ -295,6 +298,17 @@ export const changeUserPassword = (passwordData: PasswordChangeData) => async (d
 // Acción para cerrar sesión
 export const logoutUser = () => (dispatch: Dispatch) => {
 	dispatch({ type: LOGOUT });
+	// Resetear el estado de folders al hacer logout
+	dispatch(resetFoldersState());
+	// Resetear el estado de contacts al hacer logout
+	dispatch(resetContactsState());
+	// Resetear el estado de calculators al hacer logout
+	dispatch(resetCalculatorsState());
+	// Resetear otros estados relacionados con el usuario
+	dispatch({ type: "RESET_EVENTS_STATE" });
+	dispatch({ type: "RESET_TASKS_STATE" });
+	dispatch({ type: "RESET_MOVEMENTS_STATE" });
+	dispatch({ type: "RESET_NOTIFICATIONS_STATE" });
 };
 
 // Acción para establecer que el usuario necesita verificación

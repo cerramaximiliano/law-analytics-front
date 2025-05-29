@@ -154,9 +154,9 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			type: Yup.string().required("El tipo es requerido"),
 		}),
 		Yup.object().shape({
-			state: Yup.string().required("La provincia es requerida"),
-			city: Yup.string().required("La localidad es requerida"),
-			zipCode: Yup.string().required("El código postal es requerido"),
+			state: Yup.string(), // No requerido
+			city: Yup.string(), // No requerido
+			zipCode: Yup.string(), // No requerido
 			email: Yup.string().email("Correo electrónico inválido").required("El correo electrónico es requerido"),
 			phone: Yup.string()
 				.required("El teléfono es requerido")
@@ -213,10 +213,18 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 			// Si estamos creando, verificar límites
 			if (isCreating) {
-				// Resetear el estado modal
-				setShowAddCustomerModal(false);
+				// Mostrar el modal inmediatamente para mejorar la experiencia del usuario
+				setShowAddCustomerModal(true);
 
-				// Verificar el límite de recursos para contactos
+				// Configurar valores iniciales para crear
+				const emptyValues = getInitialValues(null);
+				setInitialValues(emptyValues);
+				if (formikRef.current) {
+					formikRef.current.resetForm();
+					formikRef.current.setValues(emptyValues);
+				}
+
+				// Verificar el límite de recursos para contactos en paralelo
 				const checkLimit = async () => {
 					try {
 						const response = await ApiService.checkResourceLimit("contacts");
@@ -248,41 +256,12 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 										}),
 									);
 								}, 100);
-							} else {
-								// Si no ha alcanzado el límite, mostrar el modal de nuevo contacto
-								setShowAddCustomerModal(true);
-								// Configura los valores iniciales para el modo agregar
-								const emptyValues = getInitialValues(null);
-								setInitialValues(emptyValues);
-
-								// Si la referencia a Formik ya existe, resetea también los valores del formulario
-								if (formikRef.current) {
-									formikRef.current.resetForm();
-									formikRef.current.setValues(emptyValues);
-								}
 							}
-						} else {
-							// Si hay un error en la respuesta, mostrar el modal por defecto
-
-							setShowAddCustomerModal(true);
-							// Configurar valores iniciales
-							const emptyValues = getInitialValues(null);
-							setInitialValues(emptyValues);
-							if (formikRef.current) {
-								formikRef.current.resetForm();
-								formikRef.current.setValues(emptyValues);
-							}
+							// Si no ha alcanzado el límite, ya se mostró el modal anteriormente
 						}
+						// Si hay un error en la respuesta, permitir crear (ya se mostró el modal)
 					} catch (error) {
-						// En caso de error, permitir crear el contacto de todos modos
-						setShowAddCustomerModal(true);
-						// Configurar valores iniciales
-						const emptyValues = getInitialValues(null);
-						setInitialValues(emptyValues);
-						if (formikRef.current) {
-							formikRef.current.resetForm();
-							formikRef.current.setValues(emptyValues);
-						}
+						// En caso de error, permitir crear el contacto (ya se mostró el modal)
 					}
 				};
 				checkLimit();
@@ -319,7 +298,6 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	async function _submitForm(values: any, actions: any, mode: string | undefined) {
 		try {
 			const userId = auth.user?._id;
-			setActiveStep(0);
 
 			const cleanedValues = {
 				...values,
@@ -353,9 +331,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 					autoHideDuration: 3000,
 				});
 
-				// Ahora notificamos al componente padre y reiniciamos el paso
+				// Ahora notificamos al componente padre
 				onAddMember(cleanedValues);
-				setActiveStep(0);
 
 				// Opcional: forzar un reseteo adicional con setTimeout
 				setTimeout(() => {

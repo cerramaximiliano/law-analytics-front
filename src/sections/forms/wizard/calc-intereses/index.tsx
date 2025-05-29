@@ -61,9 +61,12 @@ const CompensacionWizard = () => {
 	useEffect(() => {
 		const checkRangos = () => {
 			const tieneRangos = hayRangosFechas();
-			if (tieneRangos !== hayRangos) {
-				setHayRangos(tieneRangos);
-			}
+			setHayRangos((prevHayRangos) => {
+				if (tieneRangos !== prevHayRangos) {
+					return tieneRangos;
+				}
+				return prevHayRangos;
+			});
 		};
 
 		// Verificar inmediatamente
@@ -73,7 +76,7 @@ const CompensacionWizard = () => {
 		const interval = setInterval(checkRangos, 1000);
 
 		return () => clearInterval(interval);
-	}, [hayRangos]);
+	}, []);
 
 	useEffect(() => {
 		if (hayRangos) {
