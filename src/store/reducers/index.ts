@@ -25,6 +25,7 @@ import userStats from "./userStats";
 import users from "./users";
 import search from "./search";
 import unifiedStats from "./unifiedStats";
+import interestRates from "./interestRates";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -57,6 +58,7 @@ const reducers = combineReducers({
 	users,
 	search,
 	unifiedStats,
+	interestRates,
 });
 
 export default reducers;

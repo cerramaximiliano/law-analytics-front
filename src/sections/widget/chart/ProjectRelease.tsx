@@ -1,43 +1,40 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
 import { Box, CardContent, CircularProgress, Grid, LinearProgress, Stack, Typography, Alert } from "@mui/material";
 import MainCard from "components/MainCard";
-import { UpcomingDeadlines } from "types/stats";
-import ApiService from "store/reducers/ApiService";
-import { useSelector } from "store";
+import { useSelector, dispatch } from "store";
+import { getUnifiedStats } from "store/reducers/unifiedStats";
 import { Calendar, Timer1 } from "iconsax-react";
 
 const ProjectRelease = () => {
 	const theme = useTheme();
-	const [loading, setLoading] = useState<boolean>(true);
-	const [deadlinesData, setDeadlinesData] = useState<UpcomingDeadlines | null>(null);
 
+	// Obtener userId del usuario actual
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
 
+	// Obtener datos del store unificado
+	const { data: unifiedData, isLoading, isInitialized } = useSelector((state) => state.unifiedStats);
+	const upcomingDeadlines = unifiedData?.folders?.upcomingDeadlines;
+
+	// Mapear los datos al formato esperado
+	const deadlinesData = upcomingDeadlines
+		? {
+				next7Days: upcomingDeadlines["7_days"] || 0,
+				next15Days: upcomingDeadlines["15_days"] || 0,
+				next30Days: upcomingDeadlines["30_days"] || 0,
+		  }
+		: null;
+
+	// Cargar datos si no existen
 	useEffect(() => {
-		const fetchDeadlinesData = async () => {
-			if (!userId) return;
-
-			try {
-				setLoading(true);
-				const response = await ApiService.getUnifiedStats(userId, "folders");
-
-				// Extraer los datos de deadlines del response
-				if (response.data?.folders?.deadlines) {
-					setDeadlinesData(response.data.folders.deadlines);
-				}
-			} catch (error) {
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchDeadlinesData();
-	}, [userId]);
+		if (userId && !isInitialized && !unifiedData?.folders) {
+			dispatch(getUnifiedStats(userId, "folders"));
+		}
+	}, [userId, isInitialized, unifiedData]);
 
 	// Estado de carga
-	if (loading) {
+	if (isLoading && !deadlinesData) {
 		return (
 			<MainCard>
 				<CardContent>

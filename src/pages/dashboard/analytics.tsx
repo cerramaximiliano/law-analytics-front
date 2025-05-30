@@ -1,85 +1,85 @@
-// material-ui
-import { useTheme } from "@mui/material/styles";
-import { Grid, Stack } from "@mui/material";
+import { Grid } from "@mui/material";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
 
-// project-imports
+// project imports
+import { AppDispatch } from "store";
+import { getUnifiedStats } from "store/reducers/unifiedStats";
+import useAuth from "hooks/useAuth";
 
-import NewOrders from "sections/widget/chart/NewOrders";
-import NewUsers from "sections/widget/chart/NewUsers";
-import Visitors from "sections/widget/chart/Visitors";
-
-import DropboxStorage from "sections/widget/statistics/DropboxStorage";
-import SwitchBalanace from "sections/widget/statistics/SwitchBalanace";
-
-import ProjectAnalytics from "sections/widget/chart/ProjectAnalytics";
-
-import EcommerceIncome from "sections/widget/chart/EcommerceIncome";
-import LanguagesSupport from "sections/widget/chart/LanguagesSupport";
-
-import ProductOverview from "sections/widget/chart/ProductOverview";
-
-import PaymentHistory from "sections/widget/data/PaymentHistory";
-import EcommerceRadial from "sections/widget/chart/EcommerceRadial";
+// widgets
+import AverageResolutionTime from "sections/widget/analytics/AverageResolutionTime";
+import TaskCompletionRate from "sections/widget/analytics/TaskCompletionRate";
+import TaskDistributionByPriority from "sections/widget/analytics/TaskDistributionByPriority";
+import CalculatorTypeBreakdown from "sections/widget/analytics/CalculatorTypeBreakdown";
+import AmountsByFolderStatus from "sections/widget/analytics/AmountsByFolderStatus";
+import DailyWeeklyActivity from "sections/widget/analytics/DailyWeeklyActivity";
+import RecentActivityFeed from "sections/widget/analytics/RecentActivityFeed";
+import TopMatters from "sections/widget/analytics/TopMatters";
+import FoldersByMatter from "sections/widget/analytics/FoldersByMatter";
+import NotificationStatus from "sections/widget/analytics/NotificationStatus";
+import DeadlineProjections from "sections/widget/analytics/DeadlineProjections";
+import FolderClosingTrends from "sections/widget/analytics/FolderClosingTrends";
 
 // ==============================|| DASHBOARD - ANALYTICS ||============================== //
 
 const DashboardAnalytics = () => {
-	const theme = useTheme();
+	const dispatch = useDispatch<AppDispatch>();
+	const { user } = useAuth();
+
+	useEffect(() => {
+		if (user?.id) {
+			// Fetch all sections for analytics
+			dispatch(getUnifiedStats(user.id, "all", false));
+		}
+	}, [dispatch, user?.id]);
 
 	return (
-		<Grid container rowSpacing={4.5} columnSpacing={3}>
-			{/* row 1 */}
-			<Grid item xs={12} md={4} lg={3}>
-				<NewOrders />
+		<Grid container spacing={3}>
+			{/* Row 1 - Key Metrics */}
+			<Grid item xs={12} md={6} lg={3}>
+				<AverageResolutionTime />
 			</Grid>
-			<Grid item xs={12} md={4} lg={3}>
-				<NewUsers />
+			<Grid item xs={12} md={6} lg={3}>
+				<TaskCompletionRate />
 			</Grid>
-			<Grid item xs={12} md={4} lg={3}>
-				<Visitors />
+			<Grid item xs={12} md={6} lg={3}>
+				<TaskDistributionByPriority />
 			</Grid>
-			<Grid item xs={12} md={4} lg={3}>
-				<Grid container spacing={2}>
-					<Grid item xs={12}>
-						<DropboxStorage />
-					</Grid>
-					<Grid item xs={12}>
-						<SwitchBalanace />
-					</Grid>
-				</Grid>
+			<Grid item xs={12} md={6} lg={3}>
+				<CalculatorTypeBreakdown />
 			</Grid>
 
-			{/* row 2 */}
-			<Grid item xs={12}>
-				<ProjectAnalytics />
+			{/* Row 2 - Financial and Activity */}
+			<Grid item xs={12} lg={8}>
+				<AmountsByFolderStatus />
+			</Grid>
+			<Grid item xs={12} lg={4}>
+				<NotificationStatus />
 			</Grid>
 
-			{/* row 3 */}
-			<Grid item xs={12} lg={3}>
-				<Grid container spacing={3}>
-					<Grid item xs={12} md={6} lg={12}>
-						<EcommerceIncome />
-					</Grid>
-					<Grid item xs={12} md={6} lg={12}>
-						<LanguagesSupport />
-					</Grid>
-				</Grid>
+			{/* Row 3 - Trends and Activity */}
+			<Grid item xs={12} lg={8}>
+				<DailyWeeklyActivity />
 			</Grid>
-			<Grid item xs={12} md={6}>
-				<ProductOverview />
+			<Grid item xs={12} lg={4}>
+				<RecentActivityFeed />
 			</Grid>
-			<Grid item xs={12} lg={3}>
-				<Grid container spacing={3}>
-					<Grid item xs={12} md={6} lg={12}>
-						<PaymentHistory />
-					</Grid>
-					<Grid item xs={12} md={6} lg={12}>
-						<Stack spacing={3}>
-							<EcommerceRadial color={theme.palette.primary.main} />
-							<EcommerceRadial color={theme.palette.error.dark} />
-						</Stack>
-					</Grid>
-				</Grid>
+
+			{/* Row 4 - Matters and Folders */}
+			<Grid item xs={12} lg={6}>
+				<TopMatters />
+			</Grid>
+			<Grid item xs={12} lg={6}>
+				<FoldersByMatter />
+			</Grid>
+
+			{/* Row 5 - Projections and Trends */}
+			<Grid item xs={12} lg={6}>
+				<DeadlineProjections />
+			</Grid>
+			<Grid item xs={12} lg={6}>
+				<FolderClosingTrends />
 			</Grid>
 		</Grid>
 	);

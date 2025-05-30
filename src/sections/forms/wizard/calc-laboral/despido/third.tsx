@@ -3,8 +3,9 @@ import { Grid, InputLabel, Typography, Box, Switch, FormControlLabel, Paper, use
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import { useFormikContext } from "formik";
-import axios from "axios";
 import moment from "moment";
+import { useSelector, dispatch } from "store";
+import { getInterestRates } from "store/reducers/interestRates";
 
 // Almacenamiento de rangos de fechas para las tasas
 interface RangoFechas {
@@ -55,10 +56,12 @@ export default function ThirdForm(props: ThirdFormProps) {
 	} = props;
 
 	const theme = useTheme();
-	const [tasasOpciones, setTasasOpciones] = useState<TasaOpcion[]>([]);
-	const [cargandoTasas, setCargandoTasas] = useState<boolean>(true);
-	const [errorTasas, setErrorTasas] = useState<string | null>(null);
 	const [tasaSeleccionada, setTasaSeleccionada] = useState<TasaOpcion | null>(null);
+
+	// Obtener datos del store
+	const user = useSelector((state) => state.auth.user);
+	const userId = user?._id;
+	const { rates: tasasOpciones, isLoading: cargandoTasas, error: errorTasas, isInitialized } = useSelector((state) => state.interestRates);
 
 	const { values, setFieldValue, setFieldError, setFieldTouched, validateForm } = useFormikContext<any>();
 
@@ -95,72 +98,27 @@ export default function ThirdForm(props: ThirdFormProps) {
 		}, 0);
 	};
 
-	// Efecto para cargar las tasas al montar el componente
+	// Cargar tasas del store
 	useEffect(() => {
-		const obtenerTasas = async () => {
-			try {
-				setCargandoTasas(true);
-				setErrorTasas(null);
+		if (userId && !isInitialized) {
+			dispatch(getInterestRates(userId));
+		}
+	}, [userId, isInitialized]);
 
-				const respuesta = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasas/listado`, {
-					withCredentials: true,
-				});
+	// Actualizar el mapa global de rangos de fechas cuando se cargan las tasas
+	useEffect(() => {
+		tasasOpciones.forEach((tasa) => {
+			actualizarRangoFechasTasa(tasa.value, tasa.fechaInicio, tasa.fechaUltima);
+		});
 
-				// Convertir fechas de string a objetos Date
-				const tasasConFechas = respuesta.data.map((tasa: any) => {
-					// Usar moment para manejar fechas correctamente
-					const fechaInicio = moment.utc(tasa.fechaInicio).startOf("day").toDate();
-					const fechaUltima = moment.utc(tasa.fechaUltima).startOf("day").toDate();
-
-					// Actualizar el mapa global de rangos de fechas
-					actualizarRangoFechasTasa(tasa.value, fechaInicio, fechaUltima);
-
-					return {
-						...tasa,
-						fechaInicio,
-						fechaUltima,
-					};
-				});
-
-				setTasasOpciones(tasasConFechas);
-
-				// Si ya hay una tasa seleccionada en el formulario, encontrarla y establecerla
-				if (values[tasaIntereses.name] && values[tasaIntereses.name] !== "") {
-					const tasaActual = tasasConFechas.find((t: TasaOpcion) => t.value === values[tasaIntereses.name]);
-					if (tasaActual) {
-						setTasaSeleccionada(tasaActual);
-					}
-				}
-			} catch (error) {
-				setErrorTasas("No se pudieron cargar las tasas. Por favor, intenta de nuevo más tarde.");
-				// Opciones de fallback
-				setTasasOpciones([
-					{
-						label: "Tasa Pasiva BCRA",
-						value: "tasaPasivaBCRA",
-						fechaInicio: new Date("2000-01-01"),
-						fechaUltima: new Date(),
-					},
-					{
-						label: "Acta 2601",
-						value: "acta2601",
-						fechaInicio: new Date("2000-01-01"),
-						fechaUltima: new Date(),
-					},
-					{
-						label: "Acta 2630",
-						value: "acta2630",
-						fechaInicio: new Date("2000-01-01"),
-						fechaUltima: new Date(),
-					},
-				]);
-			} finally {
-				setCargandoTasas(false);
+		// Si ya hay una tasa seleccionada en el formulario, encontrarla y establecerla
+		if (values[tasaIntereses.name] && values[tasaIntereses.name] !== "") {
+			const tasaActual = tasasOpciones.find((t: TasaOpcion) => t.value === values[tasaIntereses.name]);
+			if (tasaActual) {
+				setTasaSeleccionada(tasaActual);
 			}
-		};
-
-		obtenerTasas();
-	}, []);
+		}
+	}, [tasasOpciones, values, tasaIntereses.name]);
 
 	// Efecto para actualizar tasaSeleccionada cuando cambia la selección en el formulario
 	useEffect(() => {

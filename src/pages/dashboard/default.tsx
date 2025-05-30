@@ -37,15 +37,15 @@ const DashboardDefault = () => {
 	const userId = user?._id;
 
 	// Obtener datos del store unificado
-	const { data: unifiedData, isLoading, error, lastUpdated } = useSelector((state) => state.unifiedStats);
+	const { data: unifiedData, isLoading, error, lastUpdated, isInitialized } = useSelector((state) => state.unifiedStats);
 	const dashboardData = unifiedData?.dashboard || null;
 
 	// Cargar datos del dashboard usando el store unificado
 	useEffect(() => {
-		if (userId) {
+		if (userId && !isInitialized) {
 			dispatch(getUnifiedStats(userId, "dashboard,folders"));
 		}
-	}, [userId]);
+	}, [userId, isInitialized]);
 
 	// Manejar errores
 	useEffect(() => {
@@ -62,7 +62,9 @@ const DashboardDefault = () => {
 	const calculateTrend = (dataKey: keyof DashboardStats["trends"]) => {
 		// Verificar si dashboardData existe
 		const trendData = dashboardData?.trends?.[dataKey];
-		if (!dashboardData || !dashboardData.trends || !trendData || trendData.length < 2) {
+
+		// Check if trendData is an array with at least 2 items
+		if (!dashboardData || !dashboardData.trends || !trendData || !Array.isArray(trendData) || trendData.length < 2) {
 			return { direction: "up", percentage: 0 };
 		}
 

@@ -43,7 +43,7 @@ const TaskWidget = () => {
 	const isTasksLoading = useSelector((state: RootState) => state.tasksReducer.isLoader);
 
 	// Obtener datos del store unificado
-	const { data: unifiedData, isLoading: isStatsLoading } = useSelector((state: RootState) => state.unifiedStats);
+	const { data: unifiedData, isLoading: isStatsLoading, isInitialized } = useSelector((state: RootState) => state.unifiedStats);
 
 	// Crear un objeto normalizado para las métricas de tareas
 	const dashboardTasks = unifiedData?.dashboard?.tasks;
@@ -59,14 +59,14 @@ const TaskWidget = () => {
 	useEffect(() => {
 		if (userId) {
 			// Cargar estadísticas unificadas si no están disponibles
-			if (!unifiedData?.dashboard && !unifiedData?.tasks) {
+			if (!isInitialized && !unifiedData?.dashboard && !unifiedData?.tasks) {
 				dispatch(getUnifiedStats(userId, "dashboard,tasks"));
 			}
 
 			// Cargar tareas próximas a vencer
 			dispatch(getUpcomingTasks(userId, DAYS_TO_SHOW));
 		}
-	}, [userId, unifiedData]);
+	}, [userId, isInitialized, unifiedData]);
 
 	// Función para mostrar todas las tareas y navegar a la página
 	const handleViewAllTasks = () => {

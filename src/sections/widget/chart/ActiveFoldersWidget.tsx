@@ -17,15 +17,15 @@ const ActiveFoldersWidget = () => {
 	const userId = user?._id;
 
 	// Obtener datos del store unificado
-	const { data: unifiedData, isLoading } = useSelector((state) => state.unifiedStats);
+	const { data: unifiedData, isLoading, isInitialized } = useSelector((state) => state.unifiedStats);
 	const foldersData = unifiedData?.folders;
 
 	// Cargar datos si no existen
 	useEffect(() => {
-		if (userId && !unifiedData?.folders) {
+		if (userId && !isInitialized && !unifiedData?.folders) {
 			dispatch(getUnifiedStats(userId, "folders"));
 		}
-	}, [userId, unifiedData]);
+	}, [userId, isInitialized, unifiedData]);
 
 	// Si está cargando y no hay datos
 	if (isLoading && !foldersData) {

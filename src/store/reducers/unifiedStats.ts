@@ -14,8 +14,8 @@ const initialState: UnifiedStatsState = {
 	lastUpdated: null,
 };
 
-// Tiempo de caché en milisegundos (5 minutos)
-const CACHE_TIME = 5 * 60 * 1000;
+// Tiempo de caché en milisegundos (24 horas)
+const CACHE_TIME = 24 * 60 * 60 * 1000;
 
 const slice = createSlice({
 	name: "unifiedStats",

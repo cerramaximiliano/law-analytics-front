@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
@@ -38,7 +38,7 @@ import { Add, Eye, Trash, Maximize } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-import { getCalculatorsByFilter } from "store/reducers/calculator";
+import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -201,7 +201,7 @@ const SavedCivil = () => {
 	const mode = theme.palette.mode;
 
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
-	const auth = useSelector((state) => state.auth);
+	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 
 	const data = useMemo(() => makeData(20), []);
@@ -209,19 +209,39 @@ const SavedCivil = () => {
 	const [customer, setCustomer] = useState<any>(null);
 	const [customerDeleteId, setCustomerDeleteId] = useState<any>("");
 	const [add, setAdd] = useState<boolean>(false);
+	const isMountedRef = useRef(false);
+	const isFirstRenderRef = useRef(true);
 
 	useEffect(() => {
-		const fetchData = async () => {
-			await dispatch(
-				getCalculatorsByFilter({
-					userId,
-					type: "calculado",
-					classType: "civil",
-				}),
-			);
+		// Marcar como montado
+		isMountedRef.current = true;
+
+		// Usar setTimeout para retrasar la primera ejecución y evitar conflictos
+		const timeoutId = setTimeout(
+			() => {
+				if (userId && isMountedRef.current) {
+					// getCalculatorsByFilter ya maneja la lógica de cache internamente
+					dispatch(
+						getCalculatorsByFilter({
+							userId,
+							type: "calculado",
+							classType: "civil",
+						}),
+					);
+				}
+			},
+			isFirstRenderRef.current ? 100 : 0,
+		); // Retrasar la primera ejecución
+
+		isFirstRenderRef.current = false;
+
+		return () => {
+			clearTimeout(timeoutId);
+			isMountedRef.current = false;
+			// Limpiar selectedCalculators cuando el componente se desmonta
+			dispatch(clearSelectedCalculators());
 		};
-		fetchData();
-	}, [dispatch]);
+	}, [userId, dispatch]); // Incluir dispatch en las dependencias
 
 	const handleAdd = () => {
 		setAdd(!add);

@@ -17,14 +17,14 @@ const ProjectOverview = () => {
 	const userId = user?._id;
 
 	// Obtener datos del store unificado
-	const { data: unifiedData, isLoading } = useSelector((state) => state.unifiedStats);
+	const { data: unifiedData, isLoading, isInitialized } = useSelector((state) => state.unifiedStats);
 	const trendsData = unifiedData?.dashboard?.trends || null;
 
 	useEffect(() => {
-		if (userId && !unifiedData?.dashboard) {
+		if (userId && !isInitialized && !unifiedData?.dashboard) {
 			dispatch(getUnifiedStats(userId, "dashboard"));
 		}
-	}, [userId, unifiedData]);
+	}, [userId, isInitialized, unifiedData]);
 
 	if (isLoading && !trendsData) {
 		return (

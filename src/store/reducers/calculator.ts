@@ -14,6 +14,7 @@ const DELETE_CALCULATOR = "calculators/DELETE_CALCULATOR";
 const ARCHIVE_CALCULATORS = "calculators/ARCHIVE_CALCULATORS";
 const UNARCHIVE_CALCULATORS = "calculators/UNARCHIVE_CALCULATORS";
 const RESET_CALCULATORS_STATE = "calculators/RESET_CALCULATORS_STATE";
+const CLEAR_SELECTED_CALCULATORS = "calculators/CLEAR_SELECTED_CALCULATORS";
 
 const initialState: CalculatorState = {
 	calculators: [],
@@ -106,6 +107,11 @@ const calculatorsReducer = (state = initialState, action: any) => {
 			};
 		case RESET_CALCULATORS_STATE:
 			return initialState;
+		case CLEAR_SELECTED_CALCULATORS:
+			return {
+				...state,
+				selectedCalculators: [],
+			};
 		default:
 			return state;
 	}
@@ -463,6 +469,11 @@ export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatc
 // Action to reset calculators state
 export const resetCalculatorsState = () => ({
 	type: RESET_CALCULATORS_STATE,
+});
+
+// Action to clear selected calculators
+export const clearSelectedCalculators = () => ({
+	type: CLEAR_SELECTED_CALCULATORS,
 });
 
 export default calculatorsReducer;

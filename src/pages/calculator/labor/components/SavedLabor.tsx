@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
@@ -50,7 +50,7 @@ import { Add, Eye, Trash, DocumentDownload, Coin } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-import { getCalculatorsByFilter } from "store/reducers/calculator";
+import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
 import despidoFormModel from "sections/forms/wizard/calc-laboral/despido/formModel/despidoFormModel";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
 
@@ -652,7 +652,7 @@ const SavedLabor = () => {
 	const navigate = useNavigate();
 	const mode = theme.palette.mode;
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
-	const auth = useSelector((state) => state.auth);
+	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -662,19 +662,39 @@ const SavedLabor = () => {
 	const [calculatorIdToDelete, setCalculatorIdToDelete] = useState<string>("");
 	const [add, setAdd] = useState<boolean>(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	const isMountedRef = useRef(false);
+	const isFirstRenderRef = useRef(true);
 
 	useEffect(() => {
-		const fetchData = async () => {
-			await dispatch(
-				getCalculatorsByFilter({
-					userId,
-					type: "Calculado",
-					classType: "laboral",
-				}),
-			);
+		// Marcar como montado
+		isMountedRef.current = true;
+
+		// Usar setTimeout para retrasar la primera ejecución y evitar conflictos
+		const timeoutId = setTimeout(
+			() => {
+				if (userId && isMountedRef.current) {
+					// getCalculatorsByFilter ya maneja la lógica de cache internamente
+					dispatch(
+						getCalculatorsByFilter({
+							userId,
+							type: "Calculado",
+							classType: "laboral",
+						}),
+					);
+				}
+			},
+			isFirstRenderRef.current ? 100 : 0,
+		); // Retrasar la primera ejecución
+
+		isFirstRenderRef.current = false;
+
+		return () => {
+			clearTimeout(timeoutId);
+			isMountedRef.current = false;
+			// Limpiar selectedCalculators cuando el componente se desmonta
+			dispatch(clearSelectedCalculators());
 		};
-		fetchData();
-	}, [dispatch, userId]);
+	}, [userId, dispatch]); // Incluir dispatch en las dependencias
 
 	const handleAdd = () => {
 		setAdd(!add);

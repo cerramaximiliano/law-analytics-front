@@ -561,6 +561,7 @@ class ApiService {
 			const response = await axios.get(`${API_BASE_URL}/api/subscriptions/current`, {
 				withCredentials: true,
 			});
+			console.log("/api/subscriptions/current", response.data)
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -578,6 +579,7 @@ class ApiService {
 				{ atPeriodEnd },
 				{ withCredentials: true },
 			);
+			console.log("/api/subscriptions/cancel", response.data)
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -609,16 +611,8 @@ class ApiService {
 		}
 	}
 
-	static async getPaymentHistory(): Promise<ApiResponse<PaymentHistoryResponse>> {
-		try {
-			const response = await axios.get<ApiResponse<PaymentHistoryResponse>>(`${API_BASE_URL}/api/subscriptions/payments`, {
-				withCredentials: true,
-			});
-			return response.data;
-		} catch (error) {
-			throw this.handleAxiosError(error);
-		}
-	}
+	// getPaymentHistory method has been removed - payment history is now fetched during login 
+	// and stored in Redux auth state. Use the fetchPaymentHistory action from auth reducer instead.
 
 	/**
 	 * Cancela un downgrade programado
@@ -629,6 +623,7 @@ class ApiService {
 			const response = await axios.post("/api/subscriptions/cancel-downgrade", {
 				withCredentials: true,
 			});
+			console.log(response.data)
 			return response.data;
 		} catch (error: any) {
 			return {

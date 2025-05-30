@@ -85,6 +85,7 @@ const userStatsReducer = (state = initialState, action: UserStatsActionTypes): U
 				...state,
 				loading: false,
 				data: {
+					...state.data,
 					counts: action.payload.counts,
 					lastUpdated: action.payload.lastUpdated,
 				},

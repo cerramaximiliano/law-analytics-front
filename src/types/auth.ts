@@ -1,6 +1,7 @@
 import { ReactElement } from "react";
 import { CredentialResponse } from "@react-oauth/google";
 import { Subscription } from "./user";
+import { Payment } from "store/reducers/ApiService";
 
 // ==============================|| TYPES - AUTH  ||============================== //
 
@@ -65,6 +66,11 @@ export interface AuthProps {
 	needsVerification?: boolean;
 	plan?: string;
 	subscription?: Subscription | null;
+	paymentHistory?: Payment[] | null;
+	customer?: {
+		id: string;
+		email: string | null;
+	} | null;
 }
 
 export interface AuthActionProps {
@@ -77,6 +83,11 @@ export interface AuthActionProps {
 		isInitialized?: boolean;
 		picture?: string;
 		subscription?: Subscription;
+		paymentHistory?: Payment[];
+		customer?: {
+			id: string;
+			email: string | null;
+		};
 	};
 }
 
@@ -99,6 +110,11 @@ export interface LoginResponse {
 	refreshToken?: string;
 	needsVerification?: boolean;
 	subscription?: Subscription;
+	paymentHistory?: Payment[];
+	customer?: {
+		id: string;
+		email: string | null;
+	};
 }
 
 export interface RegisterResponse {

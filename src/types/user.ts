@@ -91,6 +91,14 @@ export interface Subscription {
 		vinculateFolders: boolean;
 		booking: boolean;
 	};
+	pendingPlanChange?: {
+		planId: string;
+		effectiveDate: Date;
+	};
+	downgradeGracePeriod?: {
+		previousPlan: string;
+		expiresAt: Date;
+	};
 }
 
 export interface User {

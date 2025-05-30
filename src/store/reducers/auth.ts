@@ -1,5 +1,5 @@
 // action - state management
-import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE, UPDATE_USER, CHANGE_PASSWORD_SUCCESS, SET_NEEDS_VERIFICATION } from "./actions";
+import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE, UPDATE_USER, CHANGE_PASSWORD_SUCCESS, SET_NEEDS_VERIFICATION, UPDATE_SUBSCRIPTION, UPDATE_PAYMENT_HISTORY } from "./actions";
 import axios from "axios";
 
 // types
@@ -9,6 +9,7 @@ import { Dispatch } from "redux";
 import { openSnackbar } from "store/reducers/snackbar";
 import { UserProfile } from "types/auth";
 import { Subscription } from "types/user";
+import { Payment } from "./ApiService";
 import { resetFoldersState } from "./folder";
 import { resetContactsState } from "./contacts";
 import { resetCalculatorsState } from "./calculator";
@@ -21,6 +22,8 @@ export const initialState: AuthProps = {
 	email: "",
 	needsVerification: false,
 	subscription: null,
+	paymentHistory: null,
+	customer: null,
 };
 
 // ==============================|| AUTH REDUCER ||============================== //
@@ -28,7 +31,7 @@ export const initialState: AuthProps = {
 const auth = (state = initialState, action: AuthActionProps) => {
 	switch (action.type) {
 		case REGISTER: {
-			const { user, email, needsVerification, subscription } = action.payload!;
+			const { user, email, needsVerification, subscription, paymentHistory, customer } = action.payload!;
 			return {
 				...state,
 				user,
@@ -36,10 +39,12 @@ const auth = (state = initialState, action: AuthActionProps) => {
 				email,
 				needsVerification: needsVerification || false,
 				subscription: subscription || null,
+				paymentHistory: paymentHistory || null,
+				customer: customer || null,
 			};
 		}
 		case LOGIN: {
-			const { user, email, needsVerification, subscription } = action.payload!;
+			const { user, email, needsVerification, subscription, paymentHistory, customer } = action.payload!;
 			return {
 				...state,
 				isLoggedIn: true,
@@ -48,6 +53,8 @@ const auth = (state = initialState, action: AuthActionProps) => {
 				email, // Guarda el correo en el estado
 				needsVerification: needsVerification || false,
 				subscription: subscription || null,
+				paymentHistory: paymentHistory || null,
+				customer: customer || null,
 			};
 		}
 		case UPDATE_PICTURE: {
@@ -86,6 +93,19 @@ const auth = (state = initialState, action: AuthActionProps) => {
 				...state,
 				email: action.payload?.email || state.email,
 				needsVerification: true,
+			};
+		}
+		case UPDATE_SUBSCRIPTION: {
+			return {
+				...state,
+				subscription: action.payload?.subscription || null,
+			};
+		}
+		case UPDATE_PAYMENT_HISTORY: {
+			return {
+				...state,
+				paymentHistory: action.payload?.paymentHistory || null,
+				customer: action.payload?.customer || null,
 			};
 		}
 		case LOGOUT: {
@@ -317,4 +337,120 @@ export const setNeedsVerification = (email: string) => (dispatch: Dispatch) => {
 		type: SET_NEEDS_VERIFICATION,
 		payload: { email },
 	});
+};
+
+// Acción para actualizar la suscripción en el estado
+export const updateSubscription = (subscription: Subscription | null) => (dispatch: Dispatch) => {
+	dispatch({
+		type: UPDATE_SUBSCRIPTION,
+		payload: { subscription },
+	});
+};
+
+// Acción para obtener la suscripción actual desde la API
+export const fetchCurrentSubscription = () => async (dispatch: any, getState: () => RootState) => {
+	try {
+		// Verificar si ya tenemos la suscripción en el estado
+		const { subscription } = getState().auth;
+		if (subscription) {
+			return subscription;
+		}
+
+		// Si no existe, hacer la llamada a la API
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/subscription/current`, {
+			withCredentials: true,
+		});
+
+		if (response.data && response.data.success && response.data.subscription) {
+			// Actualizar el estado con la suscripción
+			dispatch(updateSubscription(response.data.subscription));
+			return response.data.subscription;
+		} else {
+			throw new Error(response.data?.message || "Error al obtener la suscripción");
+		}
+	} catch (error: any) {
+		// Si hay error, actualizar con null
+		dispatch(updateSubscription(null));
+		
+		// No mostrar error si es 401 (usuario no autenticado)
+		if (error.response?.status !== 401) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: error.response?.data?.message || error.message || "Error al obtener la información de suscripción",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: false,
+				}),
+			);
+		}
+		
+		throw error;
+	}
+};
+
+// Selector para obtener la suscripción del estado
+export const selectSubscription = (state: RootState) => state.auth.subscription;
+
+// Selector para obtener el historial de pagos del estado
+export const selectPaymentHistory = (state: RootState) => state.auth.paymentHistory;
+
+// Selector para obtener el customer del estado
+export const selectCustomer = (state: RootState) => state.auth.customer;
+
+// Acción para actualizar el historial de pagos y customer en el estado
+export const updatePaymentHistory = (paymentHistory: Payment[] | null, customer?: { id: string; email: string | null } | null) => (dispatch: Dispatch) => {
+	dispatch({
+		type: UPDATE_PAYMENT_HISTORY,
+		payload: { paymentHistory, customer },
+	});
+};
+
+// Acción para obtener el historial de pagos desde la API
+export const fetchPaymentHistory = () => async (dispatch: any, getState: () => RootState) => {
+	try {
+		// Verificar si ya tenemos el historial de pagos en el estado
+		const { paymentHistory } = getState().auth;
+		if (paymentHistory && paymentHistory.length > 0) {
+			return { payments: paymentHistory, customer: getState().auth.customer };
+		}
+
+		// Si no existe, hacer la llamada a la API
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/payments`, {
+			withCredentials: true,
+		});
+
+		if (response.data && response.data.success) {
+			const payments = response.data.data?.payments || response.data.payments || [];
+			const customer = response.data.data?.customer || response.data.customer || null;
+			
+			// Actualizar el estado con el historial de pagos
+			dispatch(updatePaymentHistory(payments, customer));
+			return { payments, customer };
+		} else {
+			throw new Error(response.data?.message || "Error al obtener el historial de pagos");
+		}
+	} catch (error: any) {
+		// Si hay error, actualizar con null
+		dispatch(updatePaymentHistory(null, null));
+		
+		// No mostrar error si es 401 (usuario no autenticado)
+		if (error.response?.status !== 401) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: error.response?.data?.message || error.message || "Error al obtener el historial de pagos",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: false,
+				}),
+			);
+		}
+		
+		throw error;
+	}
 };

@@ -13,6 +13,7 @@ import { UnauthorizedModal } from "../sections/auth/UnauthorizedModal";
 import { LimitErrorModal } from "../sections/auth/LimitErrorModal";
 import { AuthProps, ServerContextType, UserProfile, LoginResponse, RegisterResponse, VerifyCodeResponse } from "../types/auth";
 import { Subscription } from "../types/user";
+import { Payment } from "store/reducers/ApiService";
 import { fetchUserStats } from "store/reducers/userStats";
 import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
@@ -119,7 +120,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			if (credential) {
 				const result = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, { token: credential });
 
-				const { user, success, subscription } = result.data;
+				const { user, success, subscription, paymentHistory, customer } = result.data;
 
 				if (success) {
 					setIsGoogleLoggedIn(true);
@@ -132,6 +133,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 							isLoggedIn: true,
 							user,
 							subscription,
+							paymentHistory,
+							customer,
 						},
 					});
 
@@ -141,6 +144,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 							isLoggedIn: true,
 							user,
 							subscription,
+							paymentHistory,
+							customer,
 						},
 					});
 
@@ -164,10 +169,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		const init = async (): Promise<void> => {
 			try {
 				// Verificar la sesión actual con el token en cookies
-				const response = await axios.get<{ user: UserProfile; subscription?: Subscription }>(
+				const response = await axios.get<{ user: UserProfile; subscription?: Subscription; paymentHistory?: Payment[]; customer?: { id: string; email: string | null } }>(
 					`${process.env.REACT_APP_BASE_URL}/api/auth/me`,
 				);
-				const { user, subscription } = response.data;
+				const { user, subscription, paymentHistory, customer } = response.data;
 
 				localDispatch({
 					type: LOGIN,
@@ -176,6 +181,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						user,
 						isInitialized: true,
 						subscription,
+						paymentHistory,
+						customer,
 					},
 				});
 
@@ -186,6 +193,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 						user,
 						isInitialized: true,
 						subscription,
+						paymentHistory,
+						customer,
 					},
 				});
 
@@ -385,7 +394,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		try {
 			const response = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
 
-			const { user, subscription } = response.data;
+			const { user, subscription, paymentHistory, customer } = response.data;
 
 			localDispatch({
 				type: LOGIN,
@@ -393,6 +402,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					isLoggedIn: true,
 					user,
 					subscription,
+					paymentHistory,
+					customer,
 				},
 			});
 
@@ -402,6 +413,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					isLoggedIn: true,
 					user,
 					subscription,
+					paymentHistory,
+					customer,
 				},
 			});
 

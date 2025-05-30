@@ -45,10 +45,13 @@ export interface DashboardStats {
 		total?: number;
 	};
 	trends: {
-		newFolders: TrendItem[];
-		closedFolders: TrendItem[];
-		movements: TrendItem[];
-		calculators: TrendItem[];
+		foldersLastMonth?: number;
+		tasksLastMonth?: number;
+		revenueLastMonth?: number;
+		newFolders?: TrendItem[];
+		closedFolders?: TrendItem[];
+		movements?: TrendItem[];
+		calculators?: TrendItem[];
 		tasks?: TrendItem[];
 		deadlines?: TrendItem[];
 	};
@@ -104,7 +107,10 @@ export interface TaskStats {
 
 export interface FinancialStats {
 	totalActiveAmount: number;
+	totalReceivedAmount?: number;
+	totalPendingAmount?: number;
 	averageAmountPerFolder?: number;
+	paymentRate?: number;
 	amountByStatus?: {
 		[key: string]: number;
 	};
@@ -118,13 +124,15 @@ export interface FinancialStats {
 
 export interface ActivityStats {
 	metrics?: {
-		dailyAverage: number;
-		weeklyAverage: number;
-		monthlyAverage: number;
-		mostActiveDay: string;
+		totalFolders: number;
+		totalTasks: number;
+		totalMovements: number;
+		lastActivityDate: string;
 	};
-	trends: {
-		[key: string]: TrendItem[];
+	trends?: {
+		foldersLastMonth?: number;
+		tasksLastMonth?: number;
+		revenueLastMonth?: number;
 	};
 	recentActivity?: ActivityItem[];
 }
