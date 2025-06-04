@@ -561,7 +561,7 @@ class ApiService {
 			const response = await axios.get(`${API_BASE_URL}/api/subscriptions/current`, {
 				withCredentials: true,
 			});
-			console.log("/api/subscriptions/current", response.data)
+			console.log("/api/subscriptions/current", response.data);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -579,7 +579,7 @@ class ApiService {
 				{ atPeriodEnd },
 				{ withCredentials: true },
 			);
-			console.log("/api/subscriptions/cancel", response.data)
+			console.log("/api/subscriptions/cancel", response.data);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -611,7 +611,7 @@ class ApiService {
 		}
 	}
 
-	// getPaymentHistory method has been removed - payment history is now fetched during login 
+	// getPaymentHistory method has been removed - payment history is now fetched during login
 	// and stored in Redux auth state. Use the fetchPaymentHistory action from auth reducer instead.
 
 	/**
@@ -623,7 +623,7 @@ class ApiService {
 			const response = await axios.post("/api/subscriptions/cancel-downgrade", {
 				withCredentials: true,
 			});
-			console.log(response.data)
+			console.log(response.data);
 			return response.data;
 		} catch (error: any) {
 			return {

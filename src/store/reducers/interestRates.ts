@@ -36,7 +36,7 @@ const getNextUpdateTime = (): number => {
 	const now = moment();
 	const argentinaOffset = -3 * 60; // -3 horas en minutos
 	const nowArgentina = now.clone().utcOffset(argentinaOffset);
-	
+
 	let nextUpdate = nowArgentina.clone().hour(9).minute(0).second(0).millisecond(0);
 
 	// Si ya pasaron las 9 AM de hoy, configurar para mañana
@@ -114,12 +114,7 @@ export function getInterestRates(userId: string, forceRefresh: boolean = false) 
 		const state = getState().interestRates;
 
 		// Verificar si necesitamos hacer la petición
-		if (
-			!forceRefresh &&
-			state.isInitialized &&
-			state.lastFetchedUserId === userId &&
-			!needsCacheUpdate(state.lastFetchTime)
-		) {
+		if (!forceRefresh && state.isInitialized && state.lastFetchedUserId === userId && !needsCacheUpdate(state.lastFetchTime)) {
 			// Los datos están en caché y son válidos
 			return;
 		}

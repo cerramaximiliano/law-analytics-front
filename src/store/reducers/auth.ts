@@ -1,5 +1,15 @@
 // action - state management
-import { REGISTER, LOGIN, LOGOUT, UPDATE_PICTURE, UPDATE_USER, CHANGE_PASSWORD_SUCCESS, SET_NEEDS_VERIFICATION, UPDATE_SUBSCRIPTION, UPDATE_PAYMENT_HISTORY } from "./actions";
+import {
+	REGISTER,
+	LOGIN,
+	LOGOUT,
+	UPDATE_PICTURE,
+	UPDATE_USER,
+	CHANGE_PASSWORD_SUCCESS,
+	SET_NEEDS_VERIFICATION,
+	UPDATE_SUBSCRIPTION,
+	UPDATE_PAYMENT_HISTORY,
+} from "./actions";
 import axios from "axios";
 
 // types
@@ -371,7 +381,7 @@ export const fetchCurrentSubscription = () => async (dispatch: any, getState: ()
 	} catch (error: any) {
 		// Si hay error, actualizar con null
 		dispatch(updateSubscription(null));
-		
+
 		// No mostrar error si es 401 (usuario no autenticado)
 		if (error.response?.status !== 401) {
 			dispatch(
@@ -386,7 +396,7 @@ export const fetchCurrentSubscription = () => async (dispatch: any, getState: ()
 				}),
 			);
 		}
-		
+
 		throw error;
 	}
 };
@@ -401,12 +411,13 @@ export const selectPaymentHistory = (state: RootState) => state.auth.paymentHist
 export const selectCustomer = (state: RootState) => state.auth.customer;
 
 // Acción para actualizar el historial de pagos y customer en el estado
-export const updatePaymentHistory = (paymentHistory: Payment[] | null, customer?: { id: string; email: string | null } | null) => (dispatch: Dispatch) => {
-	dispatch({
-		type: UPDATE_PAYMENT_HISTORY,
-		payload: { paymentHistory, customer },
-	});
-};
+export const updatePaymentHistory =
+	(paymentHistory: Payment[] | null, customer?: { id: string; email: string | null } | null) => (dispatch: Dispatch) => {
+		dispatch({
+			type: UPDATE_PAYMENT_HISTORY,
+			payload: { paymentHistory, customer },
+		});
+	};
 
 // Acción para obtener el historial de pagos desde la API
 export const fetchPaymentHistory = () => async (dispatch: any, getState: () => RootState) => {
@@ -425,7 +436,7 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 		if (response.data && response.data.success) {
 			const payments = response.data.data?.payments || response.data.payments || [];
 			const customer = response.data.data?.customer || response.data.customer || null;
-			
+
 			// Actualizar el estado con el historial de pagos
 			dispatch(updatePaymentHistory(payments, customer));
 			return { payments, customer };
@@ -435,7 +446,7 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 	} catch (error: any) {
 		// Si hay error, actualizar con null
 		dispatch(updatePaymentHistory(null, null));
-		
+
 		// No mostrar error si es 401 (usuario no autenticado)
 		if (error.response?.status !== 401) {
 			dispatch(
@@ -450,7 +461,7 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 				}),
 			);
 		}
-		
+
 		throw error;
 	}
 };

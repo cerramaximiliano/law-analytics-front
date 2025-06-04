@@ -169,9 +169,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		const init = async (): Promise<void> => {
 			try {
 				// Verificar la sesión actual con el token en cookies
-				const response = await axios.get<{ user: UserProfile; subscription?: Subscription; paymentHistory?: Payment[]; customer?: { id: string; email: string | null } }>(
-					`${process.env.REACT_APP_BASE_URL}/api/auth/me`,
-				);
+				const response = await axios.get<{
+					user: UserProfile;
+					subscription?: Subscription;
+					paymentHistory?: Payment[];
+					customer?: { id: string; email: string | null };
+				}>(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
 				const { user, subscription, paymentHistory, customer } = response.data;
 
 				localDispatch({
