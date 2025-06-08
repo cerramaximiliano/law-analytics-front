@@ -1,14 +1,15 @@
-import React from "react";
-import { Alert, AlertTitle, Button, Box, Typography } from "@mui/material";
+import React, { useState } from "react";
+import { Alert, Button, Box, Typography, IconButton, Collapse } from "@mui/material";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Warning2 } from "iconsax-react";
+import { Warning2, Add } from "iconsax-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { RootState } from "store";
 
 const DowngradeGracePeriodAlert: React.FC = () => {
 	const navigate = useNavigate();
+	const [isVisible, setIsVisible] = useState(true);
 	const subscription = useSelector((state: RootState) => state.auth.subscription);
 	const downgradeGracePeriod = subscription?.downgradeGracePeriod;
 
@@ -48,39 +49,73 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 	};
 
 	return (
-		<Alert
-			severity="warning"
-			icon={<Warning2 size={24} />}
-			sx={{
-				mb: 3,
-				"& .MuiAlert-icon": {
-					fontSize: "1.5rem",
-				},
-			}}
-		>
-			<AlertTitle sx={{ fontWeight: 600, mb: 1 }}>Período de gracia por cambio de plan</AlertTitle>
-			<Box>
-				<Typography variant="body2" sx={{ mb: 1 }}>
-					Estás en un período de gracia debido al cambio del plan <strong>{getPlanName(previousPlan)}</strong> al plan{" "}
-					<strong>{getPlanName(targetPlan)}</strong>. Debes archivar los recursos que excedan los límites del nuevo plan.
-				</Typography>
-				<Typography variant="body2" sx={{ mb: 1 }}>
-					Este período de gracia expira el <strong>{formattedExpirationDate}</strong>.
-				</Typography>
-				{autoArchiveScheduled && (
-					<Typography variant="body2" sx={{ mb: 2, color: "warning.dark" }}>
-						<strong>Importante:</strong> Si no archivas los recursos excedentes antes de la fecha de expiración, se archivarán
-						automáticamente.
+		<Collapse in={isVisible} timeout={500}>
+			<Alert
+				severity="warning"
+				icon={<Warning2 size={20} />}
+				action={
+					<IconButton
+						aria-label="close"
+						size="small"
+						onClick={() => setIsVisible(false)}
+						sx={{
+							color: 'warning.dark',
+							'&:hover': {
+								backgroundColor: 'transparent',
+								color: 'warning.main',
+							},
+						}}
+					>
+						<Add size={20} style={{ transform: 'rotate(45deg)' }} />
+					</IconButton>
+				}
+				sx={{
+					mb: 2,
+					py: 1,
+					"& .MuiAlert-icon": {
+						fontSize: "1.25rem",
+						alignSelf: "center",
+					},
+					"& .MuiAlert-message": {
+						width: "100%",
+					},
+				}}
+			>
+				<Box>
+					<Typography variant="body2" component="span">
+						<strong>Período de gracia:</strong> Cambio del plan {getPlanName(previousPlan)} al plan {getPlanName(targetPlan)}.
+						Debes archivar los recursos que excedan los límites. Expira el <strong>{formattedExpirationDate}</strong>.
+						{autoArchiveScheduled && (
+							<>
+								{" "}
+								<strong style={{ color: "black" }}>
+									Importante: Si no archivas los recursos excedentes antes de la fecha de expiración, se archivarán automáticamente.
+								</strong>
+							</>
+						)}
+						{" "}
+						<Button 
+							size="small" 
+							variant="text" 
+							onClick={handleSettingsClick}
+							sx={{ 
+								ml: 1,
+								minWidth: "auto",
+								p: 0.5,
+								textTransform: "none",
+								color: "warning.dark",
+								"&:hover": {
+									backgroundColor: "warning.lighter",
+									color: "warning.darker",
+								}
+							}}
+						>
+							Más información
+						</Button>
 					</Typography>
-				)}
-				<Typography variant="body2" sx={{ mb: 2 }}>
-					Para más información sobre los límites del nuevo plan y cómo gestionar tus recursos, visita la configuración de tu cuenta.
-				</Typography>
-				<Button size="small" variant="outlined" onClick={handleSettingsClick}>
-					Ver configuración de cuenta
-				</Button>
-			</Box>
-		</Alert>
+				</Box>
+			</Alert>
+		</Collapse>
 	);
 };
 
