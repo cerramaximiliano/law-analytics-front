@@ -277,6 +277,90 @@ const UsersList = () => {
 		);
 	};
 
+	// Renderizado de chip de rol con colores específicos
+	const renderRoleChip = (role: string | undefined | null) => {
+		if (!role) {
+			return (
+				<Chip
+					label="Sin rol"
+					size="small"
+					sx={{
+						borderRadius: "4px",
+						minWidth: 80,
+						backgroundColor: theme.palette.grey[400],
+						color: theme.palette.grey[800],
+						"& .MuiChip-label": {
+							px: 1.5,
+						},
+					}}
+				/>
+			);
+		}
+
+		let backgroundColor;
+		let textColor;
+		let label = role;
+
+		// Asignar colores según el rol
+		switch (role.toLowerCase()) {
+			case "admin":
+			case "administrador":
+				backgroundColor = theme.palette.error.main;
+				textColor = theme.palette.error.contrastText;
+				label = "Admin";
+				break;
+			case "user":
+			case "usuario":
+				backgroundColor = theme.palette.primary.main;
+				textColor = theme.palette.primary.contrastText;
+				label = "Usuario";
+				break;
+			case "moderator":
+			case "moderador":
+				backgroundColor = theme.palette.warning.main;
+				textColor = theme.palette.warning.contrastText;
+				label = "Moderador";
+				break;
+			case "editor":
+				backgroundColor = theme.palette.info.main;
+				textColor = theme.palette.info.contrastText;
+				label = "Editor";
+				break;
+			case "viewer":
+			case "visor":
+				backgroundColor = theme.palette.success.light;
+				textColor = theme.palette.success.dark;
+				label = "Visor";
+				break;
+			case "guest":
+			case "invitado":
+				backgroundColor = theme.palette.grey[300];
+				textColor = theme.palette.grey[800];
+				label = "Invitado";
+				break;
+			default:
+				backgroundColor = theme.palette.mode === "dark" ? theme.palette.grey[700] : theme.palette.grey[300];
+				textColor = theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[800];
+		}
+
+		return (
+			<Chip
+				label={label}
+				size="small"
+				sx={{
+					borderRadius: "4px",
+					minWidth: 80,
+					backgroundColor,
+					color: textColor,
+					fontWeight: 500,
+					"& .MuiChip-label": {
+						px: 1.5,
+					},
+				}}
+			/>
+		);
+	};
+
 	return (
 		<MainCard title="Administración de Usuarios" content={false}>
 			<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -439,21 +523,7 @@ const UsersList = () => {
 													</Stack>
 												</TableCell>
 												<TableCell>{user.email || "No disponible"}</TableCell>
-												<TableCell>
-													<Chip
-														label={user.role || "Sin rol"}
-														size="small"
-														sx={{
-															borderRadius: "4px",
-															minWidth: 80,
-															background: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
-															color: theme.palette.primary.main,
-															"& .MuiChip-label": {
-																px: 1.5,
-															},
-														}}
-													/>
-												</TableCell>
+												<TableCell>{renderRoleChip(user.role)}</TableCell>
 												<TableCell>{renderStatusChip(user.status)}</TableCell>
 												<TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Nunca"}</TableCell>
 												<TableCell align="center">

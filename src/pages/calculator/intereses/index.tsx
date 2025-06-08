@@ -3,14 +3,18 @@ import { Grid } from "@mui/material";
 // project-imports
 
 import InteresesTabs from "./intereses-tabs";
+import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 
 function InteresesLayouts() {
 	return (
-		<Grid container spacing={3}>
-			<Grid item xs={12}>
-				<InteresesTabs />
+		<>
+			<DowngradeGracePeriodAlert />
+			<Grid container spacing={3}>
+				<Grid item xs={12}>
+					<InteresesTabs />
+				</Grid>
 			</Grid>
-		</Grid>
+		</>
 	);
 }
 export default InteresesLayouts;

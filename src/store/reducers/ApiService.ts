@@ -1,5 +1,7 @@
 import axios from "axios";
 import { StripeCustomersResponse } from "../../types/stripe-subscription";
+import { StripeCustomerHistory } from "../../types/stripe-history";
+import { Subscription as UserSubscription } from "../../types/user";
 
 const API_BASE_URL = process.env.REACT_APP_BASE_URL; // Ajusta esto según tu configuración
 
@@ -771,6 +773,44 @@ class ApiService {
 				params,
 				withCredentials: true,
 			});
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Obtiene el historial completo de Stripe para un usuario específico
+	 * @param userId - ID del usuario
+	 */
+	static async getStripeCustomerHistory(userId: string): Promise<ApiResponse<StripeCustomerHistory>> {
+		try {
+			const response = await axios.get<ApiResponse<StripeCustomerHistory>>(
+				`${API_BASE_URL}/api/subscriptions/user/${userId}/stripe-history`,
+				{
+					withCredentials: true,
+				},
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Actualiza la suscripción de un usuario específico
+	 * @param userId - ID del usuario
+	 * @param subscriptionData - Datos de suscripción a actualizar
+	 */
+	static async updateUserSubscription(userId: string, subscriptionData: Partial<UserSubscription>): Promise<ApiResponse<UserSubscription>> {
+		try {
+			const response = await axios.patch<ApiResponse<UserSubscription>>(
+				`${API_BASE_URL}/api/subscriptions/user/${userId}`,
+				subscriptionData,
+				{
+					withCredentials: true,
+				},
+			);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);

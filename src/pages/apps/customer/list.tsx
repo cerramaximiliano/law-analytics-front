@@ -67,6 +67,7 @@ import { dispatch, useSelector } from "store";
 import { getContactsByUserId, archiveContacts, getArchivedContactsByUserId, unarchiveContacts } from "store/reducers/contacts";
 import { Contact } from "types/contact";
 import { GuideContacts } from "components/guides";
+import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 // import useSubscription from "hooks/useSubscription";
 
 // ==============================|| REACT TABLE ||============================== //
@@ -978,6 +979,7 @@ const CustomerListPage = () => {
 
 	return (
 		<MainCard content={false}>
+			<DowngradeGracePeriodAlert />
 			<ScrollX>
 				<ReactTable
 					columns={columns}

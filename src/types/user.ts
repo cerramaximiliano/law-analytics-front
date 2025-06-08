@@ -61,7 +61,7 @@ export interface Subscription {
 	stripeSubscriptionId?: string;
 	stripePriceId?: string;
 	plan: "free" | "standard" | "premium";
-	status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
+	status: "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "unpaid" | "incomplete_expired";
 	currentPeriodStart: Date;
 	currentPeriodEnd: Date;
 	startDate: Date; // Start date
@@ -75,6 +75,10 @@ export interface Subscription {
 		method: string;
 		lastPayment?: Date;
 		nextPayment?: Date;
+		lastFourDigits?: string;
+		brand?: string;
+		expiryMonth?: number;
+		expiryYear?: number;
 	};
 	limits: {
 		maxFolders: number;
@@ -95,10 +99,110 @@ export interface Subscription {
 		planId: string;
 		effectiveDate: Date;
 	};
+	scheduledPlanChange?: {
+		targetPlan: string;
+		effectiveDate: Date;
+		notified: boolean;
+	};
 	downgradeGracePeriod?: {
 		previousPlan: string;
+		targetPlan: string;
 		expiresAt: Date;
+		originalLimits?: {
+			maxFolders: number;
+			maxCalculators: number;
+			maxContacts: number;
+			storageLimit: number;
+		};
+		originalFeatures?: {
+			advancedAnalytics: boolean;
+			exportReports: boolean;
+			taskAutomation: boolean;
+			bulkOperations: boolean;
+			prioritySupport: boolean;
+			vinculateFolders: boolean;
+			booking: boolean;
+		};
+		isActive?: boolean;
+		notificationsSent?: string[];
+		autoArchiveScheduled?: boolean;
+		reminderSent?: boolean;
+		reminder3DaysSent?: boolean;
+		reminder1DaySent?: boolean;
+		immediateCancel?: boolean;
 	};
+	paymentFailures?: {
+		count: number;
+		dates: Date[];
+		lastAttempt?: Date;
+		nextRetry?: Date;
+		notificationsSent?: {
+			firstFailure?: Date;
+			secondFailure?: Date;
+			finalWarning?: Date;
+		};
+	};
+	accountStatus?: {
+		isLocked: boolean;
+		lockedAt?: Date;
+		lockedReason?: string;
+		suspendedFeatures?: string[];
+		warnings?: {
+			type: string;
+			message: string;
+			sentAt: Date;
+		}[];
+	};
+	paymentRecovery?: {
+		isInRecovery: boolean;
+		recoveryStarted?: Date;
+		attemptCount: number;
+		lastRecoveryAttempt?: Date;
+		recoveryDeadline?: Date;
+		recoveryMethod?: string;
+	};
+	statusHistory?: {
+		status: string;
+		changedAt: Date;
+		reason?: string;
+		metadata?: Record<string, any>;
+	}[];
+	metadata?: {
+		source?: string;
+		referrer?: string;
+		campaignId?: string;
+		notes?: string;
+		customFields?: Record<string, any>;
+	};
+	usageTracking?: {
+		foldersCreated: number;
+		calculatorsCreated: number;
+		contactsCreated: number;
+		lastActivityDate?: Date;
+		storageUsed: number;
+	};
+	invoiceSettings?: {
+		customerId?: string;
+		billingEmail?: string;
+		taxId?: string;
+		billingAddress?: {
+			line1?: string;
+			line2?: string;
+			city?: string;
+			state?: string;
+			postalCode?: string;
+			country?: string;
+		};
+	};
+	notifications?: {
+		email: boolean;
+		sms: boolean;
+		inApp: boolean;
+		marketing: boolean;
+		billingAlerts: boolean;
+	};
+	createdAt?: Date;
+	updatedAt?: Date;
 }
 
 export interface User {

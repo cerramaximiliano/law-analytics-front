@@ -52,6 +52,7 @@ import moment from "moment";
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
 import { GuideFolders } from "components/guides";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 // ==============================|| REACT TABLE ||============================== //
 
 interface ReactTableProps extends Props {
@@ -861,6 +862,7 @@ const FoldersLayout = () => {
 
 	return (
 		<MainCard content={false}>
+			<DowngradeGracePeriodAlert />
 			<ScrollX>
 				<ReactTable
 					columns={columns as any}

@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 // material-ui
 import {
+	Alert,
 	Avatar,
 	Button,
 	Chip,
@@ -18,7 +19,15 @@ import {
 	List,
 	ListItem,
 	ListItemText,
+	IconButton,
+	FormControlLabel,
+	Checkbox,
+	CircularProgress,
 } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import esLocale from "date-fns/locale/es";
 
 // project imports
 import MainCard from "components/MainCard";
@@ -30,7 +39,25 @@ import EditUserModal from "./EditUserModal";
 import { formatCurrency } from "utils/formatCurrency";
 
 // assets
-import { User as UserIcon, Wallet, Lock, Calendar, Folder2, Calculator, Profile2User, CalendarAdd } from "iconsax-react";
+import {
+	User as UserIcon,
+	Wallet,
+	Lock,
+	Calendar,
+	Folder2,
+	Calculator,
+	Profile2User,
+	CalendarAdd,
+	CardPos,
+	Edit2,
+	Save2,
+	CloseCircle,
+} from "iconsax-react";
+
+// API and types
+import ApiService from "store/reducers/ApiService";
+import { StripeCustomerHistory } from "types/stripe-history";
+import { useSnackbar } from "notistack";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -88,6 +115,17 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [tabValue, setTabValue] = useState(0);
+	const [stripeHistory, setStripeHistory] = useState<StripeCustomerHistory | null>(null);
+	const [stripeHistoryLoading, setStripeHistoryLoading] = useState(false);
+	const [stripeHistoryError, setStripeHistoryError] = useState<string | null>(null);
+
+	// Estados para editar el downgrade grace period
+	const [isEditingGracePeriod, setIsEditingGracePeriod] = useState(false);
+	const [gracePeriodExpiresAt, setGracePeriodExpiresAt] = useState<Date | null>(null);
+	const [autoArchiveScheduled, setAutoArchiveScheduled] = useState(false);
+	const [savingGracePeriod, setSavingGracePeriod] = useState(false);
+
+	const { enqueueSnackbar } = useSnackbar();
 
 	useEffect(() => {
 		console.log("UserView useEffect - user:", user);
@@ -121,6 +159,15 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		console.log("=================================");
 	}, [userDetails, lightData]);
 
+	// Initialize grace period values when subscription data is available
+	useEffect(() => {
+		if (userDetails?.subscription?.downgradeGracePeriod) {
+			const gracePeriod = userDetails.subscription.downgradeGracePeriod;
+			setGracePeriodExpiresAt(gracePeriod.expiresAt ? new Date(gracePeriod.expiresAt) : null);
+			setAutoArchiveScheduled(gracePeriod.autoArchiveScheduled || false);
+		}
+	}, [userDetails?.subscription?.downgradeGracePeriod]);
+
 	// Información combinada (datos de la fila + detalles completos de la API)
 	const userData = userDetails || user;
 
@@ -148,6 +195,79 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 	const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
 		setTabValue(newValue);
+
+		// Cargar historial de Stripe cuando se selecciona esa pestaña
+		if (newValue === 5 && !stripeHistory && !stripeHistoryLoading) {
+			const userId = userData?.id || userData?._id;
+			if (userId) {
+				loadStripeHistory(userId);
+			}
+		}
+	};
+
+	// Función para cargar el historial de Stripe
+	const loadStripeHistory = async (userId: string) => {
+		setStripeHistoryLoading(true);
+		setStripeHistoryError(null);
+		try {
+			const response = await ApiService.getStripeCustomerHistory(userId);
+			if (response.success && response.data) {
+				setStripeHistory(response.data);
+			} else {
+				setStripeHistoryError(response.message || "No se pudo cargar el historial de Stripe");
+			}
+		} catch (error) {
+			console.error("Error loading Stripe history:", error);
+			const errorMessage = error instanceof Error ? error.message : "Error desconocido al cargar el historial de Stripe";
+			setStripeHistoryError(errorMessage);
+		} finally {
+			setStripeHistoryLoading(false);
+		}
+	};
+
+	// Función para guardar cambios en el grace period
+	const handleSaveGracePeriod = async () => {
+		const userId = userData?.id || userData?._id;
+		if (!userId) {
+			enqueueSnackbar("No se pudo identificar el usuario", { variant: "error" });
+			return;
+		}
+
+		setSavingGracePeriod(true);
+		try {
+			const response = await ApiService.updateUserSubscription(userId, {
+				downgradeGracePeriod: {
+					...userData?.subscription?.downgradeGracePeriod,
+					expiresAt: gracePeriodExpiresAt,
+					autoArchiveScheduled: autoArchiveScheduled,
+				} as any,
+			});
+
+			if (response.success) {
+				enqueueSnackbar("Período de gracia actualizado correctamente", { variant: "success" });
+				setIsEditingGracePeriod(false);
+				// Recargar los datos del usuario para reflejar los cambios
+				dispatch(getUserById(userId) as any);
+			} else {
+				enqueueSnackbar(response.message || "Error al actualizar el período de gracia", { variant: "error" });
+			}
+		} catch (error) {
+			console.error("Error updating grace period:", error);
+			enqueueSnackbar("Error al actualizar el período de gracia", { variant: "error" });
+		} finally {
+			setSavingGracePeriod(false);
+		}
+	};
+
+	// Función para cancelar la edición
+	const handleCancelEditGracePeriod = () => {
+		setIsEditingGracePeriod(false);
+		// Reset values to original
+		if (userDetails?.subscription?.downgradeGracePeriod) {
+			const gracePeriod = userDetails.subscription.downgradeGracePeriod;
+			setGracePeriodExpiresAt(gracePeriod.expiresAt ? new Date(gracePeriod.expiresAt) : null);
+			setAutoArchiveScheduled(gracePeriod.autoArchiveScheduled || false);
+		}
 	};
 
 	// Renderizado de chip de estado
@@ -189,117 +309,831 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		);
 	};
 
+	// Renderizar chip de estado de suscripción más detallado
+	const renderSubscriptionStatusChip = (status: string) => {
+		let color;
+		let label;
+
+		switch (status.toLowerCase()) {
+			case "active":
+				color = "success";
+				label = "Activa";
+				break;
+			case "canceled":
+				color = "error";
+				label = "Cancelada";
+				break;
+			case "past_due":
+				color = "warning";
+				label = "Pago vencido";
+				break;
+			case "trialing":
+				color = "info";
+				label = "Período de prueba";
+				break;
+			case "incomplete":
+				color = "warning";
+				label = "Incompleta";
+				break;
+			case "unpaid":
+				color = "error";
+				label = "Impaga";
+				break;
+			case "incomplete_expired":
+				color = "error";
+				label = "Incompleta expirada";
+				break;
+			default:
+				color = "default";
+				label = status;
+		}
+
+		return (
+			<Chip
+				label={label}
+				size="small"
+				color={color as any}
+				sx={{
+					borderRadius: "4px",
+					fontSize: "0.875rem",
+				}}
+			/>
+		);
+	};
+
 	// Renderizar información de la suscripción
 	const renderSubscriptionInfo = (subscription?: Subscription) => {
 		if (!subscription) {
 			return (
-				<Paper
-					elevation={0}
-					sx={{
-						p: 3,
-						backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
-						borderRadius: 2,
-					}}
-				>
-					<Typography variant="body1" align="center">
-						El usuario no tiene una suscripción activa.
-					</Typography>
-				</Paper>
+				<Stack spacing={3}>
+					<Alert severity="info" sx={{ mb: 2 }}>
+						<Typography variant="body2">
+							<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
+						</Typography>
+					</Alert>
+					<Paper
+						elevation={0}
+						sx={{
+							p: 3,
+							backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+							borderRadius: 2,
+						}}
+					>
+						<Typography variant="body1" align="center">
+							El usuario no posee información sobre suscripción dentro de la colección de suscripciones.
+						</Typography>
+					</Paper>
+				</Stack>
 			);
 		}
 
 		return (
 			<Stack spacing={3}>
+				<Alert severity="info" sx={{ mb: 2 }}>
+					<Typography variant="body2">
+						<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
+					</Typography>
+				</Alert>
+
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="subtitle1">Plan</Typography>
 					<Chip
-						label={subscription.name}
+						label={subscription.plan || subscription.name || "Sin información"}
 						size="small"
 						color="primary"
 						sx={{
 							borderRadius: "4px",
 							fontSize: "0.875rem",
+							textTransform: "capitalize",
 						}}
 					/>
 				</Stack>
 
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="subtitle1">Estado</Typography>
-					{renderStatusChip(subscription.status)}
+					{renderSubscriptionStatusChip(subscription.status)}
 				</Stack>
 
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Typography variant="subtitle1">Fecha de inicio</Typography>
-					<Typography variant="body2">{subscription.startDate ? new Date(subscription.startDate).toLocaleDateString() : "-"}</Typography>
+					<Typography variant="subtitle1">ID de Cliente Stripe</Typography>
+					<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
+						{subscription.stripeCustomerId || "Información no disponible"}
+					</Typography>
 				</Stack>
 
-				{subscription.endDate && (
+				{subscription.stripeSubscriptionId && (
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
-						<Typography variant="subtitle1">Fecha de finalización</Typography>
-						<Typography variant="body2">{new Date(subscription.endDate).toLocaleDateString()}</Typography>
+						<Typography variant="subtitle1">ID de Suscripción Stripe</Typography>
+						<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
+							{subscription.stripeSubscriptionId}
+						</Typography>
+					</Stack>
+				)}
+
+				<Divider />
+				<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+					Período de Facturación
+				</Typography>
+
+				<Stack direction="row" justifyContent="space-between" alignItems="center">
+					<Typography variant="subtitle1">Inicio del período actual</Typography>
+					<Typography variant="body2">
+						{subscription.currentPeriodStart ? new Date(subscription.currentPeriodStart).toLocaleDateString() : "Información no disponible"}
+					</Typography>
+				</Stack>
+
+				<Stack direction="row" justifyContent="space-between" alignItems="center">
+					<Typography variant="subtitle1">Fin del período actual</Typography>
+					<Typography variant="body2">
+						{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "Información no disponible"}
+					</Typography>
+				</Stack>
+
+				<Stack direction="row" justifyContent="space-between" alignItems="center">
+					<Typography variant="subtitle1">Cancelar al final del período</Typography>
+					<Typography variant="body2">{subscription.cancelAtPeriodEnd ? "Sí" : "No"}</Typography>
+				</Stack>
+
+				{subscription.canceledAt && (
+					<Stack direction="row" justifyContent="space-between" alignItems="center">
+						<Typography variant="subtitle1">Fecha de cancelación</Typography>
+						<Typography variant="body2">{new Date(subscription.canceledAt).toLocaleDateString()}</Typography>
+					</Stack>
+				)}
+
+				{subscription.trialStart && (
+					<Stack direction="row" justifyContent="space-between" alignItems="center">
+						<Typography variant="subtitle1">Inicio de prueba</Typography>
+						<Typography variant="body2">{new Date(subscription.trialStart).toLocaleDateString()}</Typography>
+					</Stack>
+				)}
+
+				{subscription.trialEnd && (
+					<Stack direction="row" justifyContent="space-between" alignItems="center">
+						<Typography variant="subtitle1">Fin de prueba</Typography>
+						<Typography variant="body2">{new Date(subscription.trialEnd).toLocaleDateString()}</Typography>
 					</Stack>
 				)}
 
 				{subscription.paymentInfo && (
 					<>
 						<Divider />
-						<Typography variant="subtitle1">Información de pago</Typography>
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Información de Pago
+						</Typography>
 
-						<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pl: 2 }}>
-							<Typography variant="body2">Método</Typography>
+						<Stack direction="row" justifyContent="space-between" alignItems="center">
+							<Typography variant="subtitle1">Método</Typography>
 							<Typography variant="body2" fontWeight="medium">
 								{subscription.paymentInfo.method}
 							</Typography>
 						</Stack>
 
 						{subscription.paymentInfo.lastPayment && (
-							<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pl: 2 }}>
-								<Typography variant="body2">Último pago</Typography>
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Último pago</Typography>
 								<Typography variant="body2">{new Date(subscription.paymentInfo.lastPayment).toLocaleDateString()}</Typography>
 							</Stack>
 						)}
 
 						{subscription.paymentInfo.nextPayment && (
-							<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pl: 2 }}>
-								<Typography variant="body2">Próximo pago</Typography>
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Próximo pago</Typography>
 								<Typography variant="body2">{new Date(subscription.paymentInfo.nextPayment).toLocaleDateString()}</Typography>
 							</Stack>
 						)}
-					</>
-				)}
 
-				{subscription.features && Object.entries(subscription.features).filter(([_, value]) => value).length > 0 && (
-					<>
-						<Divider />
-						<Typography variant="subtitle1">Características incluidas</Typography>
-						<List dense disablePadding>
-							{Object.entries(subscription.features)
-								.filter(([_, enabled]) => enabled)
-								.map(([featureName, _], index) => (
-									<ListItem key={index} sx={{ py: 0.5 }}>
-										<ListItemText primary={featureName} />
-									</ListItem>
-								))}
-						</List>
+						{subscription.paymentInfo.lastFourDigits && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Últimos 4 dígitos</Typography>
+								<Typography variant="body2" fontWeight="medium">
+									**** {subscription.paymentInfo.lastFourDigits}
+								</Typography>
+							</Stack>
+						)}
+
+						{subscription.paymentInfo.brand && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Marca de tarjeta</Typography>
+								<Typography variant="body2" fontWeight="medium">
+									{subscription.paymentInfo.brand}
+								</Typography>
+							</Stack>
+						)}
+
+						{subscription.paymentInfo.expiryMonth && subscription.paymentInfo.expiryYear && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Vencimiento</Typography>
+								<Typography variant="body2" fontWeight="medium">
+									{String(subscription.paymentInfo.expiryMonth).padStart(2, "0")}/{subscription.paymentInfo.expiryYear}
+								</Typography>
+							</Stack>
+						)}
 					</>
 				)}
 
 				{subscription.limits && Object.keys(subscription.limits).length > 0 && (
 					<>
 						<Divider />
-						<Typography variant="subtitle1">Límites</Typography>
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Límites de Recursos
+						</Typography>
 						{Object.entries(subscription.limits).map(([key, value], index) => (
-							<Stack key={index} direction="row" justifyContent="space-between" alignItems="center" sx={{ pl: 2 }}>
-								<Typography variant="body2" sx={{ textTransform: "capitalize" }}>
-									{key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+							<Stack key={index} direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">
+									{key === "maxFolders"
+										? "Carpetas máximas"
+										: key === "maxCalculators"
+										? "Calculadoras máximas"
+										: key === "maxContacts"
+										? "Contactos máximos"
+										: key === "storageLimit"
+										? "Límite de almacenamiento (MB)"
+										: key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
 								</Typography>
 								<Typography variant="body2" fontWeight="medium">
-									{value}
+									{value || "Información no disponible"}
 								</Typography>
 							</Stack>
 						))}
 					</>
 				)}
+
+				{subscription.features && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Características del Plan
+						</Typography>
+						<Grid container spacing={2}>
+							{Object.entries(subscription.features).map(([featureName, enabled], index) => (
+								<Grid item xs={12} sm={6} key={index}>
+									<Stack direction="row" alignItems="center" spacing={1}>
+										<Chip
+											label={enabled ? "Activo" : "Inactivo"}
+											size="small"
+											color={enabled ? "success" : "default"}
+											sx={{ minWidth: 70 }}
+										/>
+										<Typography variant="body2">
+											{featureName === "advancedAnalytics"
+												? "Analíticas avanzadas"
+												: featureName === "exportReports"
+												? "Exportar reportes"
+												: featureName === "taskAutomation"
+												? "Automatización de tareas"
+												: featureName === "bulkOperations"
+												? "Operaciones masivas"
+												: featureName === "prioritySupport"
+												? "Soporte prioritario"
+												: featureName === "vinculateFolders"
+												? "Vincular carpetas"
+												: featureName === "booking"
+												? "Sistema de reservas"
+												: featureName.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+										</Typography>
+									</Stack>
+								</Grid>
+							))}
+						</Grid>
+					</>
+				)}
+
+				{(subscription.pendingPlanChange || subscription.scheduledPlanChange || subscription.downgradeGracePeriod) && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold", fontSize: "0.9rem" }}>
+							Cambios Programados
+						</Typography>
+
+						<Grid container spacing={1}>
+							{subscription.pendingPlanChange && (
+								<Grid item xs={12} md={6}>
+									<Paper elevation={0} sx={{ p: 1.5, backgroundColor: "warning.light", height: "100%" }}>
+										<Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+											Cambio pendiente: {subscription.pendingPlanChange.planId}
+										</Typography>
+										<Typography variant="caption">
+											Efectivo:{" "}
+											{subscription.pendingPlanChange.effectiveDate
+												? new Date(subscription.pendingPlanChange.effectiveDate).toLocaleDateString()
+												: "No especificada"}
+										</Typography>
+									</Paper>
+								</Grid>
+							)}
+
+							{subscription.scheduledPlanChange && (
+								<Grid item xs={12} md={6}>
+									<Paper elevation={0} sx={{ p: 1.5, backgroundColor: "warning.light", height: "100%" }}>
+										<Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+											Cambio programado: {subscription.scheduledPlanChange.targetPlan}
+										</Typography>
+										<Typography variant="caption">
+											Efectivo:{" "}
+											{subscription.scheduledPlanChange.effectiveDate
+												? new Date(subscription.scheduledPlanChange.effectiveDate).toLocaleDateString()
+												: "No especificada"}
+										</Typography>
+										<Typography variant="caption" display="block">
+											Notificado: {subscription.scheduledPlanChange.notified ? "Sí" : "No"}
+										</Typography>
+									</Paper>
+								</Grid>
+							)}
+
+							{subscription.downgradeGracePeriod && (
+								<Grid item xs={12} md={6}>
+									<Paper elevation={0} sx={{ p: 1.5, backgroundColor: "info.light", height: "100%" }}>
+										<Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+											<Box sx={{ flex: 1 }}>
+												<Typography variant="body2">
+													Período de gracia {subscription.downgradeGracePeriod.isActive ? "activo" : "inactivo"}
+													{subscription.downgradeGracePeriod.previousPlan &&
+														` (plan anterior: ${subscription.downgradeGracePeriod.previousPlan})`}
+												</Typography>
+
+												{isEditingGracePeriod ? (
+													<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={esLocale}>
+														<Stack spacing={2} sx={{ mt: 2 }}>
+															<DatePicker
+																label="Fecha de expiración"
+																value={gracePeriodExpiresAt}
+																onChange={(newValue) => setGracePeriodExpiresAt(newValue)}
+																slotProps={{
+																	textField: {
+																		size: "small",
+																		fullWidth: true,
+																	},
+																}}
+															/>
+															<FormControlLabel
+																control={
+																	<Checkbox
+																		checked={autoArchiveScheduled}
+																		onChange={(e) => setAutoArchiveScheduled(e.target.checked)}
+																		size="small"
+																	/>
+																}
+																label="Auto-archivar programado"
+															/>
+															<Stack direction="row" spacing={1}>
+																<Button
+																	size="small"
+																	variant="contained"
+																	startIcon={<Save2 size={16} />}
+																	onClick={handleSaveGracePeriod}
+																	disabled={savingGracePeriod}
+																>
+																	{savingGracePeriod ? "Guardando..." : "Guardar"}
+																</Button>
+																<Button
+																	size="small"
+																	variant="outlined"
+																	startIcon={<CloseCircle size={16} />}
+																	onClick={handleCancelEditGracePeriod}
+																	disabled={savingGracePeriod}
+																>
+																	Cancelar
+																</Button>
+															</Stack>
+														</Stack>
+													</LocalizationProvider>
+												) : (
+													<>
+														<Typography variant="caption">
+															Expira:{" "}
+															{subscription.downgradeGracePeriod.expiresAt
+																? new Date(subscription.downgradeGracePeriod.expiresAt).toLocaleDateString()
+																: "No especificada"}
+														</Typography>
+														{subscription.downgradeGracePeriod.autoArchiveScheduled !== undefined && (
+															<Typography variant="caption" display="block">
+																Auto-archivar: {subscription.downgradeGracePeriod.autoArchiveScheduled ? "Sí" : "No"}
+															</Typography>
+														)}
+														{subscription.downgradeGracePeriod.notificationsSent &&
+															subscription.downgradeGracePeriod.notificationsSent.length > 0 && (
+																<Typography variant="caption" display="block" sx={{ mt: 1 }}>
+																	Notificaciones enviadas: {subscription.downgradeGracePeriod.notificationsSent.join(", ")}
+																</Typography>
+															)}
+													</>
+												)}
+											</Box>
+											{!isEditingGracePeriod && (
+												<IconButton size="small" onClick={() => setIsEditingGracePeriod(true)} sx={{ ml: 1 }}>
+													<Edit2 size={16} />
+												</IconButton>
+											)}
+										</Stack>
+									</Paper>
+								</Grid>
+							)}
+						</Grid>
+					</>
+				)}
+
+				{subscription.paymentFailures && subscription.paymentFailures.count > 0 && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Fallos de Pago
+						</Typography>
+
+						<Paper elevation={0} sx={{ p: 2, backgroundColor: "error.light", mb: 1 }}>
+							<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+								<Typography variant="subtitle2">Cantidad de fallos</Typography>
+								<Chip label={subscription.paymentFailures.count} size="small" color="error" />
+							</Stack>
+
+							{subscription.paymentFailures.lastAttempt && (
+								<Typography variant="body2">
+									Último intento:{" "}
+									{subscription.paymentFailures.lastAttempt
+										? new Date(subscription.paymentFailures.lastAttempt).toLocaleString()
+										: "No disponible"}
+								</Typography>
+							)}
+
+							{subscription.paymentFailures.nextRetry && (
+								<Typography variant="body2">
+									Próximo reintento:{" "}
+									{subscription.paymentFailures.nextRetry
+										? new Date(subscription.paymentFailures.nextRetry).toLocaleString()
+										: "No disponible"}
+								</Typography>
+							)}
+
+							{subscription.paymentFailures.notificationsSent && (
+								<Box sx={{ mt: 1 }}>
+									<Typography variant="caption" display="block">
+										Notificaciones enviadas:
+									</Typography>
+									{subscription.paymentFailures.notificationsSent.firstFailure && (
+										<Typography variant="caption" display="block">
+											• Primer fallo:{" "}
+											{subscription.paymentFailures.notificationsSent.firstFailure
+												? new Date(subscription.paymentFailures.notificationsSent.firstFailure).toLocaleDateString()
+												: "No disponible"}
+										</Typography>
+									)}
+									{subscription.paymentFailures.notificationsSent.secondFailure && (
+										<Typography variant="caption" display="block">
+											• Segundo fallo:{" "}
+											{subscription.paymentFailures.notificationsSent.secondFailure
+												? new Date(subscription.paymentFailures.notificationsSent.secondFailure).toLocaleDateString()
+												: "No disponible"}
+										</Typography>
+									)}
+									{subscription.paymentFailures.notificationsSent.finalWarning && (
+										<Typography variant="caption" display="block">
+											• Advertencia final:{" "}
+											{subscription.paymentFailures.notificationsSent.finalWarning
+												? new Date(subscription.paymentFailures.notificationsSent.finalWarning).toLocaleDateString()
+												: "No disponible"}
+										</Typography>
+									)}
+								</Box>
+							)}
+						</Paper>
+					</>
+				)}
+
+				{subscription.accountStatus && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Estado de la Cuenta
+						</Typography>
+
+						<Stack direction="row" justifyContent="space-between" alignItems="center">
+							<Typography variant="subtitle1">Cuenta bloqueada</Typography>
+							<Chip
+								label={subscription.accountStatus.isLocked ? "Sí" : "No"}
+								size="small"
+								color={subscription.accountStatus.isLocked ? "error" : "success"}
+							/>
+						</Stack>
+
+						{subscription.accountStatus.lockedAt && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Fecha de bloqueo</Typography>
+								<Typography variant="body2">{new Date(subscription.accountStatus.lockedAt).toLocaleString()}</Typography>
+							</Stack>
+						)}
+
+						{subscription.accountStatus.lockedReason && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Razón del bloqueo</Typography>
+								<Typography variant="body2">{subscription.accountStatus.lockedReason}</Typography>
+							</Stack>
+						)}
+
+						{subscription.accountStatus.suspendedFeatures && subscription.accountStatus.suspendedFeatures.length > 0 && (
+							<Box sx={{ mt: 1 }}>
+								<Typography variant="subtitle1">Características suspendidas:</Typography>
+								{subscription.accountStatus.suspendedFeatures.map((feature, index) => (
+									<Chip key={index} label={feature} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+								))}
+							</Box>
+						)}
+
+						{subscription.accountStatus.warnings && subscription.accountStatus.warnings.length > 0 && (
+							<Box sx={{ mt: 2 }}>
+								<Typography variant="subtitle1">Advertencias:</Typography>
+								{subscription.accountStatus.warnings.map((warning, index) => (
+									<Paper key={index} elevation={0} sx={{ p: 1.5, backgroundColor: "warning.light", mb: 1 }}>
+										<Typography variant="body2" fontWeight="medium">
+											{warning.type}
+										</Typography>
+										<Typography variant="body2">{warning.message}</Typography>
+										<Typography variant="caption">Enviado: {new Date(warning.sentAt).toLocaleString()}</Typography>
+									</Paper>
+								))}
+							</Box>
+						)}
+					</>
+				)}
+
+				{subscription.paymentRecovery && subscription.paymentRecovery.isInRecovery && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Recuperación de Pago
+						</Typography>
+
+						<Paper elevation={0} sx={{ p: 2, backgroundColor: "warning.light" }}>
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle2">En recuperación</Typography>
+								<Chip label="Sí" size="small" color="warning" />
+							</Stack>
+
+							{subscription.paymentRecovery.recoveryStarted && (
+								<Typography variant="body2" sx={{ mt: 1 }}>
+									Inicio: {new Date(subscription.paymentRecovery.recoveryStarted).toLocaleString()}
+								</Typography>
+							)}
+
+							<Typography variant="body2">Intentos: {subscription.paymentRecovery.attemptCount}</Typography>
+
+							{subscription.paymentRecovery.lastRecoveryAttempt && (
+								<Typography variant="body2">
+									Último intento: {new Date(subscription.paymentRecovery.lastRecoveryAttempt).toLocaleString()}
+								</Typography>
+							)}
+
+							{subscription.paymentRecovery.recoveryDeadline && (
+								<Typography variant="body2" color="error">
+									Fecha límite: {new Date(subscription.paymentRecovery.recoveryDeadline).toLocaleString()}
+								</Typography>
+							)}
+
+							{subscription.paymentRecovery.recoveryMethod && (
+								<Typography variant="body2">Método: {subscription.paymentRecovery.recoveryMethod}</Typography>
+							)}
+						</Paper>
+					</>
+				)}
+
+				{subscription.usageTracking && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Seguimiento de Uso
+						</Typography>
+
+						<Grid container spacing={2}>
+							<Grid item xs={6}>
+								<Stack direction="row" justifyContent="space-between" alignItems="center">
+									<Typography variant="subtitle2">Carpetas creadas</Typography>
+									<Typography variant="body2" fontWeight="medium">
+										{subscription.usageTracking.foldersCreated || 0}
+									</Typography>
+								</Stack>
+							</Grid>
+							<Grid item xs={6}>
+								<Stack direction="row" justifyContent="space-between" alignItems="center">
+									<Typography variant="subtitle2">Cálculos creados</Typography>
+									<Typography variant="body2" fontWeight="medium">
+										{subscription.usageTracking.calculatorsCreated || 0}
+									</Typography>
+								</Stack>
+							</Grid>
+							<Grid item xs={6}>
+								<Stack direction="row" justifyContent="space-between" alignItems="center">
+									<Typography variant="subtitle2">Contactos creados</Typography>
+									<Typography variant="body2" fontWeight="medium">
+										{subscription.usageTracking.contactsCreated || 0}
+									</Typography>
+								</Stack>
+							</Grid>
+							<Grid item xs={6}>
+								<Stack direction="row" justifyContent="space-between" alignItems="center">
+									<Typography variant="subtitle2">Almacenamiento (MB)</Typography>
+									<Typography variant="body2" fontWeight="medium">
+										{subscription.usageTracking.storageUsed || 0}
+									</Typography>
+								</Stack>
+							</Grid>
+						</Grid>
+
+						{subscription.usageTracking.lastActivityDate && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
+								<Typography variant="subtitle1">Última actividad</Typography>
+								<Typography variant="body2">{new Date(subscription.usageTracking.lastActivityDate).toLocaleString()}</Typography>
+							</Stack>
+						)}
+					</>
+				)}
+
+				{subscription.invoiceSettings && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Configuración de Facturación
+						</Typography>
+
+						{subscription.invoiceSettings.customerId && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">ID de cliente</Typography>
+								<Typography variant="body2">{subscription.invoiceSettings.customerId}</Typography>
+							</Stack>
+						)}
+
+						{subscription.invoiceSettings.billingEmail && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Email de facturación</Typography>
+								<Typography variant="body2">{subscription.invoiceSettings.billingEmail}</Typography>
+							</Stack>
+						)}
+
+						{subscription.invoiceSettings.taxId && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">ID fiscal</Typography>
+								<Typography variant="body2">{subscription.invoiceSettings.taxId}</Typography>
+							</Stack>
+						)}
+
+						{subscription.invoiceSettings.billingAddress && (
+							<Box sx={{ mt: 1 }}>
+								<Typography variant="subtitle1">Dirección de facturación:</Typography>
+								<Typography variant="body2">
+									{subscription.invoiceSettings.billingAddress.line1 || ""}
+									{subscription.invoiceSettings.billingAddress.line2 && <>, {subscription.invoiceSettings.billingAddress.line2}</>}
+								</Typography>
+								<Typography variant="body2">
+									{subscription.invoiceSettings.billingAddress.city || ""}
+									{subscription.invoiceSettings.billingAddress.state && <>, {subscription.invoiceSettings.billingAddress.state}</>}
+									{subscription.invoiceSettings.billingAddress.postalCode && <> {subscription.invoiceSettings.billingAddress.postalCode}</>}
+								</Typography>
+								{subscription.invoiceSettings.billingAddress.country && (
+									<Typography variant="body2">{subscription.invoiceSettings.billingAddress.country}</Typography>
+								)}
+							</Box>
+						)}
+					</>
+				)}
+
+				{subscription.notifications && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Preferencias de Notificación
+						</Typography>
+
+						<Grid container spacing={2}>
+							{Object.entries(subscription.notifications).map(([key, value], index) => (
+								<Grid item xs={6} key={index}>
+									<Stack direction="row" alignItems="center" spacing={1}>
+										<Chip label={value ? "Activo" : "Inactivo"} size="small" color={value ? "success" : "default"} sx={{ minWidth: 70 }} />
+										<Typography variant="body2">
+											{key === "email"
+												? "Email"
+												: key === "sms"
+												? "SMS"
+												: key === "inApp"
+												? "En aplicación"
+												: key === "marketing"
+												? "Marketing"
+												: key === "billingAlerts"
+												? "Alertas de facturación"
+												: key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+										</Typography>
+									</Stack>
+								</Grid>
+							))}
+						</Grid>
+					</>
+				)}
+
+				{subscription.metadata && Object.keys(subscription.metadata).length > 0 && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Metadatos
+						</Typography>
+
+						{subscription.metadata.source && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Fuente</Typography>
+								<Typography variant="body2">{subscription.metadata.source}</Typography>
+							</Stack>
+						)}
+
+						{subscription.metadata.referrer && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">Referente</Typography>
+								<Typography variant="body2">{subscription.metadata.referrer}</Typography>
+							</Stack>
+						)}
+
+						{subscription.metadata.campaignId && (
+							<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Typography variant="subtitle1">ID de campaña</Typography>
+								<Typography variant="body2">{subscription.metadata.campaignId}</Typography>
+							</Stack>
+						)}
+
+						{subscription.metadata.notes && (
+							<Box sx={{ mt: 1 }}>
+								<Typography variant="subtitle1">Notas:</Typography>
+								<Paper elevation={0} sx={{ p: 1.5, backgroundColor: "grey.100" }}>
+									<Typography variant="body2">{subscription.metadata.notes}</Typography>
+								</Paper>
+							</Box>
+						)}
+
+						{subscription.metadata.customFields && Object.keys(subscription.metadata.customFields).length > 0 && (
+							<Box sx={{ mt: 1 }}>
+								<Typography variant="subtitle1">Campos personalizados:</Typography>
+								{Object.entries(subscription.metadata.customFields).map(([key, value], index) => (
+									<Stack key={index} direction="row" justifyContent="space-between" alignItems="center">
+										<Typography variant="body2">{key}</Typography>
+										<Typography variant="body2" fontWeight="medium">
+											{String(value)}
+										</Typography>
+									</Stack>
+								))}
+							</Box>
+						)}
+					</>
+				)}
+
+				{subscription.statusHistory && subscription.statusHistory.length > 0 && (
+					<>
+						<Divider />
+						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+							Historial de Estados
+						</Typography>
+
+						<List dense>
+							{subscription.statusHistory.slice(0, 5).map((history, index) => (
+								<ListItem key={index} sx={{ px: 0 }}>
+									<ListItemText
+										primary={
+											<Stack direction="row" alignItems="center" spacing={1}>
+												<Typography variant="body2" fontWeight="medium">
+													{history.status}
+												</Typography>
+												{history.reason && (
+													<Typography variant="caption" color="textSecondary">
+														- {history.reason}
+													</Typography>
+												)}
+											</Stack>
+										}
+										secondary={new Date(history.changedAt).toLocaleString()}
+									/>
+								</ListItem>
+							))}
+						</List>
+						{subscription.statusHistory.length > 5 && (
+							<Typography variant="caption" color="textSecondary" align="center" display="block">
+								Mostrando 5 de {subscription.statusHistory.length} cambios de estado
+							</Typography>
+						)}
+					</>
+				)}
+
+				<Divider />
+				<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+					Información de Auditoría
+				</Typography>
+
+				<Stack direction="row" justifyContent="space-between" alignItems="center">
+					<Typography variant="subtitle1">Creado</Typography>
+					<Typography variant="body2">
+						{subscription.createdAt ? new Date(subscription.createdAt).toLocaleString() : "Información no disponible"}
+					</Typography>
+				</Stack>
+
+				<Stack direction="row" justifyContent="space-between" alignItems="center">
+					<Typography variant="subtitle1">Última actualización</Typography>
+					<Typography variant="body2">
+						{subscription.updatedAt ? new Date(subscription.updatedAt).toLocaleString() : "Información no disponible"}
+					</Typography>
+				</Stack>
 			</Stack>
 		);
 	};
@@ -333,11 +1167,9 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const renderPreferences = () => {
 		return (
 			<Stack spacing={2}>
-				{/* Aquí pueden agregarse preferencias del usuario cuando estén disponibles */}
-				{/* Como preferencias de notificaciones, idioma, etc. */}
-				<Typography variant="body1" color="textSecondary" sx={{ mt: 2 }}>
-					La información de preferencias no está disponible actualmente.
-				</Typography>
+				<Alert severity="info">
+					<Typography variant="body2">La información de preferencias no está disponible actualmente.</Typography>
+				</Alert>
 			</Stack>
 		);
 	};
@@ -346,18 +1178,9 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const renderLightData = (lightData?: UserLightData) => {
 		if (!lightData) {
 			return (
-				<Paper
-					elevation={0}
-					sx={{
-						p: 3,
-						backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
-						borderRadius: 2,
-					}}
-				>
-					<Typography variant="body1" align="center">
-						No hay información resumida disponible.
-					</Typography>
-				</Paper>
+				<Alert severity="info">
+					<Typography variant="body2">No hay información resumida disponible.</Typography>
+				</Alert>
 			);
 		}
 
@@ -569,6 +1392,328 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		);
 	};
 
+	// Renderizar historial de Stripe
+	const renderStripeHistory = () => {
+		// Helper function to format interval
+		const formatInterval = (interval: string) => {
+			switch (interval) {
+				case "month":
+					return "Mensual";
+				case "year":
+					return "Anual";
+				case "week":
+					return "Semanal";
+				case "day":
+					return "Diario";
+				default:
+					return interval;
+			}
+		};
+
+		if (stripeHistoryLoading) {
+			return (
+				<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "300px" }}>
+					<CircularProgress />
+				</Box>
+			);
+		}
+
+		if (stripeHistoryError) {
+			return (
+				<Alert severity="error" sx={{ mb: 2 }}>
+					{stripeHistoryError}
+				</Alert>
+			);
+		}
+
+		if (!stripeHistory) {
+			return (
+				<Alert severity="info" sx={{ mb: 2 }}>
+					No se ha cargado el historial de Stripe. Intenta refrescar la página.
+				</Alert>
+			);
+		}
+
+		return (
+			<Stack spacing={3}>
+				{/* Información del Cliente */}
+				<Paper elevation={0} sx={{ p: 3, backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100" }}>
+					<Typography variant="h6" sx={{ mb: 2 }}>
+						Información del Cliente
+					</Typography>
+					<Grid container spacing={2}>
+						<Grid item xs={12} md={6}>
+							<Stack spacing={1}>
+								<Typography variant="subtitle2" color="text.secondary">
+									ID de Cliente
+								</Typography>
+								<Typography variant="body2" sx={{ fontFamily: "monospace" }}>
+									{stripeHistory.customer.id}
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={12} md={6}>
+							<Stack spacing={1}>
+								<Typography variant="subtitle2" color="text.secondary">
+									Email
+								</Typography>
+								<Typography variant="body2">{stripeHistory.customer.email}</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={12} md={6}>
+							<Stack spacing={1}>
+								<Typography variant="subtitle2" color="text.secondary">
+									Creado
+								</Typography>
+								<Typography variant="body2">{new Date(stripeHistory.customer.created).toLocaleString()}</Typography>
+							</Stack>
+						</Grid>
+						{stripeHistory.customer.metadata && Object.keys(stripeHistory.customer.metadata).length > 0 && (
+							<Grid item xs={12}>
+								<Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+									Metadata
+								</Typography>
+								{Object.entries(stripeHistory.customer.metadata).map(([key, value]) => (
+									<Stack key={key} direction="row" spacing={1}>
+										<Typography variant="caption" fontWeight="medium">
+											{key}:
+										</Typography>
+										<Typography variant="caption">{value}</Typography>
+									</Stack>
+								))}
+							</Grid>
+						)}
+					</Grid>
+				</Paper>
+
+				{/* Estadísticas */}
+				<Paper elevation={0} sx={{ p: 3, backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100" }}>
+					<Typography variant="h6" sx={{ mb: 2 }}>
+						Estadísticas
+					</Typography>
+					<Grid container spacing={3}>
+						<Grid item xs={6} md={3}>
+							<Stack spacing={1}>
+								<Typography variant="subtitle2" color="text.secondary">
+									Total Gastado
+								</Typography>
+								<Typography variant="h5">{formatCurrency(stripeHistory.stats?.lifetimeValue || 0)}</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} md={3}>
+							<Stack spacing={1}>
+								<Typography variant="subtitle2" color="text.secondary">
+									Suscripciones Activas
+								</Typography>
+								<Typography variant="h5">{stripeHistory.stats?.activeSubscriptions || 0}</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} md={3}>
+							<Stack spacing={1}>
+								<Typography variant="subtitle2" color="text.secondary">
+									Total Facturas
+								</Typography>
+								<Typography variant="h5">{stripeHistory.stats?.totalInvoices || 0}</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} md={3}>
+							<Stack spacing={1}>
+								<Typography variant="subtitle2" color="text.secondary">
+									Facturas Pagadas
+								</Typography>
+								<Typography variant="h5">{stripeHistory.stats?.paidInvoices || 0}</Typography>
+							</Stack>
+						</Grid>
+						{stripeHistory.stats?.totalPaymentMethods && (
+							<Grid item xs={12}>
+								<Typography variant="subtitle2" color="text.secondary">
+									Métodos de Pago
+								</Typography>
+								<Typography variant="body2">{stripeHistory.stats.totalPaymentMethods} registrado(s)</Typography>
+							</Grid>
+						)}
+					</Grid>
+				</Paper>
+
+				{/* Suscripciones */}
+				{stripeHistory.subscriptions.length > 0 && (
+					<Paper elevation={0} sx={{ p: 3, backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100" }}>
+						<Typography variant="h6" sx={{ mb: 2 }}>
+							Historial de Suscripciones
+						</Typography>
+						<Stack spacing={2}>
+							{stripeHistory.subscriptions.map((sub) => (
+								<Paper key={sub.id} variant="outlined" sx={{ p: 2 }}>
+									<Grid container spacing={2}>
+										<Grid item xs={12}>
+											<Stack direction="row" justifyContent="space-between" alignItems="center">
+												<Typography variant="subtitle1">ID: {sub.id}</Typography>
+												{renderSubscriptionStatusChip(sub.status)}
+											</Stack>
+										</Grid>
+										<Grid item xs={12} md={6}>
+											<Typography variant="caption" color="text.secondary">
+												Período Actual
+											</Typography>
+											<Typography variant="body2">
+												{new Date(sub.current_period_start).toLocaleDateString()} - {new Date(sub.current_period_end).toLocaleDateString()}
+											</Typography>
+										</Grid>
+										<Grid item xs={12} md={6}>
+											<Typography variant="caption" color="text.secondary">
+												Creada
+											</Typography>
+											<Typography variant="body2">{new Date(sub.created).toLocaleString()}</Typography>
+										</Grid>
+										{sub.plan && (
+											<Grid item xs={12}>
+												<Stack direction="row" justifyContent="space-between" alignItems="center">
+													<Typography variant="body2">
+														Plan: {sub.plan.product || sub.plan.id}
+														{sub.plan.interval && ` (${formatInterval(sub.plan.interval)})`}
+													</Typography>
+													<Typography variant="body2" fontWeight="medium">
+														{formatCurrency(sub.plan.amount || 0)} {(sub.plan.currency || "usd").toUpperCase()}
+													</Typography>
+												</Stack>
+											</Grid>
+										)}
+										{sub.canceled_at && (
+											<Grid item xs={12}>
+												<Typography variant="caption" color="error">
+													Cancelada el: {new Date(sub.canceled_at).toLocaleString()}
+												</Typography>
+											</Grid>
+										)}
+									</Grid>
+								</Paper>
+							))}
+						</Stack>
+					</Paper>
+				)}
+
+				{/* Facturas */}
+				{stripeHistory.invoices.length > 0 && (
+					<Paper elevation={0} sx={{ p: 3, backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100" }}>
+						<Typography variant="h6" sx={{ mb: 2 }}>
+							Facturas
+						</Typography>
+						<Stack spacing={2}>
+							{stripeHistory.invoices.slice(0, 10).map((invoice) => (
+								<Paper key={invoice.id} variant="outlined" sx={{ p: 2 }}>
+									<Grid container spacing={2} alignItems="center">
+										<Grid item xs={12} md={3}>
+											<Typography variant="subtitle2">{invoice.number || invoice.id}</Typography>
+											<Typography variant="caption" color="text.secondary">
+												{new Date(invoice.created).toLocaleDateString()}
+											</Typography>
+										</Grid>
+										<Grid item xs={12} md={3}>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Chip label={invoice.paid ? "Pagada" : "Pendiente"} size="small" color={invoice.paid ? "success" : "warning"} />
+												<Typography variant="caption" color="text.secondary">
+													{invoice.status}
+												</Typography>
+											</Stack>
+										</Grid>
+										<Grid item xs={12} md={3}>
+											<Typography variant="body2" fontWeight="medium">
+												{formatCurrency((invoice.amount_paid || 0) / 100)} {(invoice.currency || "usd").toUpperCase()}
+											</Typography>
+										</Grid>
+										<Grid item xs={12} md={3}>
+											<Stack direction="row" spacing={1}>
+												{invoice.pdf_url && (
+													<Button size="small" variant="outlined" href={invoice.pdf_url} target="_blank" rel="noopener noreferrer">
+														PDF
+													</Button>
+												)}
+												{invoice.hosted_invoice_url && (
+													<Button
+														size="small"
+														variant="outlined"
+														href={invoice.hosted_invoice_url}
+														target="_blank"
+														rel="noopener noreferrer"
+													>
+														Ver
+													</Button>
+												)}
+											</Stack>
+										</Grid>
+									</Grid>
+								</Paper>
+							))}
+							{stripeHistory.invoices.length > 10 && (
+								<Typography variant="caption" color="text.secondary" align="center">
+									Mostrando 10 de {stripeHistory.invoices.length} facturas
+								</Typography>
+							)}
+						</Stack>
+					</Paper>
+				)}
+
+				{/* Métodos de Pago */}
+				{stripeHistory.paymentMethods.length > 0 && (
+					<Paper elevation={0} sx={{ p: 3, backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100" }}>
+						<Typography variant="h6" sx={{ mb: 2 }}>
+							Métodos de Pago
+						</Typography>
+						<Stack spacing={2}>
+							{stripeHistory.paymentMethods.map((method) => (
+								<Paper key={method.id} variant="outlined" sx={{ p: 2 }}>
+									<Stack direction="row" justifyContent="space-between" alignItems="center">
+										<Box>
+											<Typography variant="subtitle2">
+												{method.type === "card" && method.card
+													? `${method.card.brand.toUpperCase()} •••• ${method.card.last4}`
+													: method.type.toUpperCase()}
+											</Typography>
+											{method.card && (
+												<Typography variant="caption" color="text.secondary">
+													Expira: {method.card.exp_month}/{method.card.exp_year}
+												</Typography>
+											)}
+										</Box>
+										<Typography variant="caption" color="text.secondary">
+											Agregada: {new Date(method.created).toLocaleDateString()}
+										</Typography>
+									</Stack>
+								</Paper>
+							))}
+						</Stack>
+					</Paper>
+				)}
+
+				{/* Eventos Recientes */}
+				{stripeHistory.recentEvents.length > 0 && (
+					<Paper elevation={0} sx={{ p: 3, backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100" }}>
+						<Typography variant="h6" sx={{ mb: 2 }}>
+							Eventos Recientes
+						</Typography>
+						<Stack spacing={1}>
+							{stripeHistory.recentEvents.slice(0, 20).map((event) => (
+								<Stack key={event.id} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1 }}>
+									<Box>
+										<Typography variant="body2">{event.type.replace(/\./g, " ").replace(/_/g, " ")}</Typography>
+										<Typography variant="caption" color="text.secondary">
+											{new Date(event.created).toLocaleString()}
+										</Typography>
+									</Box>
+								</Stack>
+							))}
+							{stripeHistory.recentEvents.length > 20 && (
+								<Typography variant="caption" color="text.secondary" align="center">
+									Mostrando 20 de {stripeHistory.recentEvents.length} eventos
+								</Typography>
+							)}
+						</Stack>
+					</Paper>
+				)}
+			</Stack>
+		);
+	};
+
 	return (
 		<>
 			<Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -646,6 +1791,13 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 										aria-controls="user-tabpanel-3"
 									/>
 									<Tab icon={<Folder2 size={18} />} iconPosition="start" label="Resumen" id="user-tab-4" aria-controls="user-tabpanel-4" />
+									<Tab
+										icon={<CardPos size={18} />}
+										iconPosition="start"
+										label="Historial de Stripe"
+										id="user-tab-5"
+										aria-controls="user-tabpanel-5"
+									/>
 								</Tabs>
 							</Box>
 
@@ -738,18 +1890,27 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 							<TabPanel value={tabValue} index={4}>
 								{renderLightData(lightData)}
 							</TabPanel>
+
+							<TabPanel value={tabValue} index={5}>
+								{renderStripeHistory()}
+							</TabPanel>
 						</Box>
 
 						{/* Botones de acción - siempre visibles */}
 						<Box sx={{ pt: 2 }}>
 							<Divider sx={{ mb: 2 }} />
-							<Stack direction="row" spacing={1} justifyContent="flex-end">
+							<Stack direction="row" spacing={1} justifyContent="space-between">
 								<Button variant="outlined" color="error" onClick={handleDeleteClick}>
 									Eliminar Usuario
 								</Button>
-								<Button variant="contained" onClick={handleEditClick}>
-									Editar Usuario
-								</Button>
+								<Stack direction="row" spacing={1}>
+									<Button variant="outlined" onClick={onClose}>
+										Cerrar
+									</Button>
+									<Button variant="contained" onClick={handleEditClick}>
+										Editar Usuario
+									</Button>
+								</Stack>
 							</Stack>
 						</Box>
 					</Box>

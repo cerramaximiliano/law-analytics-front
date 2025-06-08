@@ -72,6 +72,7 @@ import { GuideSelector } from "components/guides";
 // Importamos componentes para gestión de archivado
 import ArchivedCalculatorsModal from "sections/apps/calculator/ArchivedCalculatorsModal";
 import AlertCalculatorDelete from "sections/apps/calculator/AlertCalculatorDelete";
+import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 
 // ==============================|| CALCULATOR CARD COMPONENT ||============================== //
 
@@ -1212,6 +1213,7 @@ const AllCalculators = () => {
 	return (
 		<MainCard title="Cálculos Legales">
 			<Container maxWidth="lg">
+				<DowngradeGracePeriodAlert />
 				{/* PRIMERO: Tabla de cálculos guardados */}
 				<MainCard
 					title={
