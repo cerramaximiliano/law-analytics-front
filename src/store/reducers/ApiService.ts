@@ -1,4 +1,5 @@
 import axios from "axios";
+import { StripeCustomersResponse } from "../../types/stripe-subscription";
 
 const API_BASE_URL = process.env.REACT_APP_BASE_URL; // Ajusta esto según tu configuración
 
@@ -751,6 +752,23 @@ class ApiService {
 	> {
 		try {
 			const response = await axios.get<ApiResponse>(`${API_BASE_URL}/api/plan-configs/check-resource/${resourceType}`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Obtiene todos los clientes de Stripe (solo administradores)
+	 * @param cursor - Cursor para paginación (opcional)
+	 */
+	static async getStripeCustomers(cursor?: string): Promise<StripeCustomersResponse> {
+		try {
+			const params = cursor ? { cursor } : {};
+			const response = await axios.get<StripeCustomersResponse>(`${API_BASE_URL}/api/subscriptions/stripe-subscriptions`, {
+				params,
 				withCredentials: true,
 			});
 			return response.data;
