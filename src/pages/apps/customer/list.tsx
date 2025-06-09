@@ -1009,7 +1009,7 @@ const CustomerListPage = () => {
 
 			{/* El componente AddCustomer manejará el LimitErrorModal independientemente */}
 
-			<Dialog maxWidth="sm" TransitionComponent={PopupTransition} keepMounted fullWidth open={link} sx={{ "& .MuiDialog-paper": { p: 0 } }}>
+			<Dialog maxWidth="md" TransitionComponent={PopupTransition} keepMounted fullWidth open={link} sx={{ "& .MuiDialog-paper": { p: 0 } }}>
 				<LinkToCause openLink={link} onCancelLink={handleCloseLink} contactId={customerId} folderIds={folderIds} />
 			</Dialog>
 

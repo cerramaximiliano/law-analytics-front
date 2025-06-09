@@ -135,7 +135,8 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 
 	return (
 		<Dialog
-			maxWidth="sm"
+			maxWidth="md"
+			fullWidth
 			open={openLink}
 			onClose={onCancelLink}
 			sx={{

@@ -1794,7 +1794,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 									<Tab
 										icon={<CardPos size={18} />}
 										iconPosition="start"
-										label="Historial de Stripe"
+										label="Clientes de Stripe"
 										id="user-tab-5"
 										aria-controls="user-tabpanel-5"
 									/>

@@ -624,12 +624,22 @@ export const unarchiveContacts = (userId: string, contactIds: string[]) => async
 				};
 			} else {
 				// Ningún contacto fue desarchivado (posiblemente por límites)
+				// Importante: Despachar SET_CONTACT_ERROR para resetear isLoader
+				dispatch({
+					type: SET_CONTACT_ERROR,
+					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
+				});
 				return {
 					success: false,
 					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
 				};
 			}
 		} else {
+			// Importante: Despachar SET_CONTACT_ERROR para resetear isLoader
+			dispatch({
+				type: SET_CONTACT_ERROR,
+				payload: response.data.message || "No se pudieron desarchivar los contactos.",
+			});
 			return {
 				success: false,
 				message: response.data.message || "No se pudieron desarchivar los contactos.",

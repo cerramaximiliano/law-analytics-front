@@ -388,12 +388,22 @@ export const unarchiveFolders = (userId: string, folderIds: string[]) => async (
 				};
 			} else {
 				// Ninguna carpeta fue desarchivada (posiblemente por límites)
+				// Importante: Despachar SET_FOLDER_ERROR para resetear isLoader
+				dispatch({
+					type: SET_FOLDER_ERROR,
+					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
+				});
 				return {
 					success: false,
 					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
 				};
 			}
 		} else {
+			// Importante: Despachar SET_FOLDER_ERROR para resetear isLoader
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: response.data.message || "No se pudieron desarchivar las causas.",
+			});
 			return {
 				success: false,
 				message: response.data.message || "No se pudieron desarchivar las causas.",

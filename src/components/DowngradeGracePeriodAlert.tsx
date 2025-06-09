@@ -59,14 +59,14 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 						size="small"
 						onClick={() => setIsVisible(false)}
 						sx={{
-							color: 'warning.dark',
-							'&:hover': {
-								backgroundColor: 'transparent',
-								color: 'warning.main',
+							color: "warning.dark",
+							"&:hover": {
+								backgroundColor: "transparent",
+								color: "warning.main",
 							},
 						}}
 					>
-						<Add size={20} style={{ transform: 'rotate(45deg)' }} />
+						<Add size={20} style={{ transform: "rotate(45deg)" }} />
 					</IconButton>
 				}
 				sx={{
@@ -83,8 +83,8 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 			>
 				<Box>
 					<Typography variant="body2" component="span">
-						<strong>Período de gracia:</strong> Cambio del plan {getPlanName(previousPlan)} al plan {getPlanName(targetPlan)}.
-						Debes archivar los recursos que excedan los límites. Expira el <strong>{formattedExpirationDate}</strong>.
+						<strong>Período de gracia:</strong> Cambio del plan {getPlanName(previousPlan)} al plan {getPlanName(targetPlan)}. Debes
+						archivar los recursos que excedan los límites. Expira el <strong>{formattedExpirationDate}</strong>.
 						{autoArchiveScheduled && (
 							<>
 								{" "}
@@ -92,13 +92,12 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 									Importante: Si no archivas los recursos excedentes antes de la fecha de expiración, se archivarán automáticamente.
 								</strong>
 							</>
-						)}
-						{" "}
-						<Button 
-							size="small" 
-							variant="text" 
+						)}{" "}
+						<Button
+							size="small"
+							variant="text"
 							onClick={handleSettingsClick}
-							sx={{ 
+							sx={{
 								ml: 1,
 								minWidth: "auto",
 								p: 0.5,
@@ -107,7 +106,7 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 								"&:hover": {
 									backgroundColor: "warning.lighter",
 									color: "warning.darker",
-								}
+								},
 							}}
 						>
 							Más información

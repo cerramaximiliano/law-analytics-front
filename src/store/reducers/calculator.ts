@@ -414,12 +414,22 @@ export const unarchiveCalculators = (userId: string, calculatorIds: string[]) =>
 				};
 			} else {
 				// Ningún cálculo fue desarchivado (posiblemente por límites)
+				// Importante: Despachar SET_ERROR para resetear isLoader
+				dispatch({
+					type: SET_ERROR,
+					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
+				});
 				return {
 					success: false,
 					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
 				};
 			}
 		} else {
+			// Importante: Despachar SET_ERROR para resetear isLoader
+			dispatch({
+				type: SET_ERROR,
+				payload: response.data.message || "No se pudieron desarchivar los cálculos.",
+			});
 			return {
 				success: false,
 				message: response.data.message || "No se pudieron desarchivar los cálculos.",
