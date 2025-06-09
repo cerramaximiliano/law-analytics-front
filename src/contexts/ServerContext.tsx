@@ -17,6 +17,7 @@ import { Payment } from "store/reducers/ApiService";
 import { fetchUserStats } from "store/reducers/userStats";
 import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
+import { requestQueueService } from "services/requestQueueService";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = process.env.REACT_APP_HIDE_BANKING_DATA === "true";
@@ -53,6 +54,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		axios.defaults.withCredentials = true;
 	}, []);
 
+	// Procesar la cola de peticiones pendientes
+	const processRequestQueue = useCallback(async () => {
+		if (requestQueueService.hasQueuedRequests()) {
+			await requestQueueService.processQueue(axios);
+			// Emitir un evento para que los componentes se actualicen
+			window.dispatchEvent(new CustomEvent("requestQueueProcessed"));
+		}
+	}, []);
+
 	// Mostrar notificaciones
 	const showSnackbar = useCallback((message: string, color: "success" | "error" | "info" = "success") => {
 		reduxDispatch(
@@ -83,6 +93,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 			// Limpiar toda la sesión de forma segura
 			secureStorage.clearSession();
+
+			// Limpiar la cola de peticiones pendientes
+			requestQueueService.clearQueue();
 
 			// Actualizar states
 			localDispatch({ type: LOGOUT });
@@ -152,6 +165,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					reduxDispatch(fetchUserStats());
 
 					showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
+
+					// Procesar la cola de peticiones pendientes después de login exitoso
+					await processRequestQueue();
+
 					return true;
 				} else {
 					throw new Error("No se pudo autenticar. Intenta nuevamente.");
@@ -288,14 +305,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 								});
 							}
 						} catch (refreshError) {
-							setShowUnauthorizedModal(true);
+							// Si no es una petición ya encolada y no es una petición de retry
+							if (!originalRequest._queued && !originalRequest._retry) {
+								// Encolar la petición para reintentar después de la autenticación
+								const queuedPromise = requestQueueService.enqueue(originalRequest);
+								setShowUnauthorizedModal(true);
+								return queuedPromise;
+							}
 
 							return Promise.reject(refreshError);
 						}
 					} else {
-						// Si no necesita refresh, solo mostrar el modal
-
-						setShowUnauthorizedModal(true);
+						// Si no necesita refresh, encolar la petición si no ha sido encolada
+						if (!originalRequest._queued && !originalRequest._retry) {
+							const queuedPromise = requestQueueService.enqueue(originalRequest);
+							setShowUnauthorizedModal(true);
+							return queuedPromise;
+						}
 					}
 				}
 
@@ -423,6 +449,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 			reduxDispatch(fetchUserStats());
 			showSnackbar("¡Inicio de sesión exitoso!", "success");
+
+			// Procesar la cola de peticiones pendientes después de login exitoso
+			await processRequestQueue();
+
 			return true;
 		} catch (error) {
 			if (axios.isAxiosError(error) && error.response) {

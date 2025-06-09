@@ -27,6 +27,7 @@ import { UnauthorizedModalProps, FormValues } from "types/auth";
 import { useDispatch } from "react-redux";
 import { openSnackbar } from "store/reducers/snackbar";
 import { AppDispatch } from "store";
+import { requestQueueService } from "services/requestQueueService";
 
 const validationSchema = Yup.object().shape({
 	email: Yup.string().email("Debe ser un e-mail válido").required("El e-mail es requerido").trim(),
@@ -43,6 +44,7 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 	const [showPassword, setShowPassword] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [internalOpen, setInternalOpen] = useState(false);
+	const [queuedRequests, setQueuedRequests] = useState(0);
 	const submitAttempts = useRef(0);
 	const maxRetries = 3;
 	const reduxDispatch = useDispatch<AppDispatch>();
@@ -55,11 +57,22 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 			// Reiniciar el contador de intentos cuando se abre el modal
 			if (open) {
 				submitAttempts.current = 0;
+				// Actualizar el número de peticiones en cola
+				setQueuedRequests(requestQueueService.getQueueLength());
 			}
 		}, 100);
 
 		return () => clearTimeout(timer);
 	}, [open]);
+
+	// Monitorear cambios en la cola de peticiones
+	useEffect(() => {
+		const unsubscribe = requestQueueService.subscribe(() => {
+			setQueuedRequests(requestQueueService.getQueueLength());
+		});
+
+		return unsubscribe;
+	}, []);
 
 	// Escuchar eventos de plan restriction para coordinar con otros modales
 	useEffect(() => {
@@ -300,6 +313,12 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 				<Alert severity="error" sx={{ mb: 2 }}>
 					<AlertTitle>No Autorizado</AlertTitle>
 					Tu sesión ha expirado o no tienes autorización para acceder a este recurso. Por favor, inicia sesión nuevamente.
+					{queuedRequests > 0 && (
+						<Typography variant="body2" sx={{ mt: 1 }}>
+							<strong>Nota:</strong> Tienes {queuedRequests} {queuedRequests === 1 ? "petición pendiente" : "peticiones pendientes"} que se
+							procesarán automáticamente después de iniciar sesión.
+						</Typography>
+					)}
 				</Alert>
 
 				<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleFormSubmit}>
