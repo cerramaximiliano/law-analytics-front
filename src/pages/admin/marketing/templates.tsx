@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 
 // material-ui
 import {
@@ -262,25 +263,33 @@ const EmailTemplates = () => {
 	const [filter, setFilter] = useState<string>("");
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-	// Fetch email templates
-	useEffect(() => {
-		const fetchTemplates = async () => {
-			try {
-				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/email/templates`);
-				if (response.data.success) {
-					setTemplates(response.data.data);
-				} else {
-					setError("Error fetching templates");
-				}
-			} catch (err: any) {
-				setError(err.message || "Error fetching templates");
-			} finally {
-				setLoading(false);
+	// Fetch email templates - convertido a callback para reutilizar
+	const fetchTemplates = useCallback(async () => {
+		try {
+			setLoading(true);
+			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/email/templates`);
+			if (response.data.success) {
+				setTemplates(response.data.data);
+				setError(null);
+			} else {
+				setError("Error fetching templates");
 			}
-		};
-
-		fetchTemplates();
+		} catch (err: any) {
+			setError(err.message || "Error fetching templates");
+		} finally {
+			setLoading(false);
+		}
 	}, []);
+
+	// Cargar templates al montar el componente
+	useEffect(() => {
+		fetchTemplates();
+	}, [fetchTemplates]);
+
+	// Refrescar templates cuando se procesen las peticiones encoladas
+	useRequestQueueRefresh(() => {
+		fetchTemplates();
+	}, [fetchTemplates]);
 
 	// Pagination handlers
 	const handleChangePage = (event: unknown, newPage: number) => {

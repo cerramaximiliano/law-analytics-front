@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 // material-ui
@@ -194,7 +195,7 @@ const Availability = () => {
 	const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
 
 	// Función para aplicar la configuración a los estados
-	const applyConfigData = (config: AvailabilityConfig) => {
+	const applyConfigData = useCallback((config: AvailabilityConfig) => {
 		// Guardar la URL pública
 		setPublicUrl(config.publicUrl);
 
@@ -261,17 +262,10 @@ const Availability = () => {
 				email: true,
 			});
 		}
-	};
+	}, []);
 
-	// Cargar configuración al iniciar
-	useEffect(() => {
-		if (user && user._id) {
-			loadAvailabilitySettings();
-		}
-	}, [user]);
-
-	// Función para cargar la configuración existente
-	const loadAvailabilitySettings = async () => {
+	// Función para cargar la configuración existente - convertida a callback
+	const loadAvailabilitySettings = useCallback(async () => {
 		setLoading(true);
 		try {
 			let response;
@@ -330,7 +324,21 @@ const Availability = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [availabilityId, applyConfigData]);
+
+	// Cargar configuración al iniciar
+	useEffect(() => {
+		if (user && user._id) {
+			loadAvailabilitySettings();
+		}
+	}, [user, loadAvailabilitySettings]);
+
+	// Refrescar configuración cuando se procesen las peticiones encoladas
+	useRequestQueueRefresh(() => {
+		if (user && user._id) {
+			loadAvailabilitySettings();
+		}
+	}, [user, loadAvailabilitySettings]);
 
 	// Manejadores
 	const handleDayToggle = (dayId: number) => {

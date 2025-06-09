@@ -25,7 +25,7 @@ import {
 
 // project imports
 import { User } from "types/user";
-import userApi from "utils/userApi";
+import axios from "axios";
 import { SET_ERROR } from "store/reducers/users";
 
 // third party
@@ -84,7 +84,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 			setLoadingFolders(true);
 
 			// Primero intentar con el endpoint específico del usuario
-			userApi
+			axios
 				.get(`/api/folders/user/${userId}`)
 				.then((response) => {
 					// La respuesta puede venir en diferentes formatos
@@ -101,7 +101,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 				})
 				.catch(() => {
 					// Si falla, intentar con el endpoint alternativo
-					return userApi.get(`/api/folders?userId=${userId}`);
+					return axios.get(`/api/folders?userId=${userId}`);
 				})
 				.then((response) => {
 					if (response) {
@@ -155,7 +155,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 				};
 
 				// Realizar la petición a la API
-				const response = await userApi.post(`/api/users/${user._id || user.id}/generate-data`, payload);
+				const response = await axios.post(`/api/users/${user._id || user.id}/generate-data`, payload);
 
 				// Mostrar mensaje de éxito
 				setSuccess(response.data.message || "Datos generados exitosamente");
@@ -178,7 +178,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 				};
 
 				// Realizar la petición a la API
-				const response = await userApi.post(`/api/users/${user._id || user.id}/generate-folder-data`, payload);
+				const response = await axios.post(`/api/users/${user._id || user.id}/generate-folder-data`, payload);
 
 				// Mostrar mensaje de éxito
 				setSuccess(response.data.message || "Datos de la causa generados exitosamente");

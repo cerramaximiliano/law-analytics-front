@@ -22,7 +22,7 @@ import {
 // project imports
 import { User } from "types/user";
 import { DefaultRootStateProps } from "types/root";
-import userApi from "utils/userApi";
+import axios from "axios";
 import { SET_ERROR, UPDATE_USER } from "store/reducers/users";
 import { openSnackbar } from "store/reducers/snackbar";
 
@@ -89,7 +89,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, open, onClose }) =>
 			};
 
 			// Realizar la petición a la API
-			const response = await userApi.put(`/api/users/${userId}`, payload);
+			const response = await axios.put(`/api/users/${userId}`, payload);
 
 			// Verificar la respuesta del servidor
 			if (response.data.success) {

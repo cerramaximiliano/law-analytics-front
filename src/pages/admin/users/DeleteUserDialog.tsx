@@ -8,7 +8,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 // project imports
 import { User } from "types/user";
 import { DefaultRootStateProps } from "types/root";
-import userApi from "utils/userApi";
+import axios from "axios";
 import { DELETE_USER, SET_ERROR } from "store/reducers/users";
 import { openSnackbar } from "store/reducers/snackbar";
 
@@ -35,7 +35,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 			}
 
 			// Realizar la petición a la API
-			const response = await userApi.delete(`/api/users/${userId}`);
+			const response = await axios.delete(`/api/users/${userId}`);
 
 			// Verificar la respuesta del servidor
 			if (response.data.success) {

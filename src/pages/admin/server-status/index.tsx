@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Grid, Typography, Box, Chip, Stack, IconButton, Tooltip } from "@mui/material";
 import { Refresh } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { styled } from "@mui/material/styles";
+import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 
 // Types
 interface ServiceStatus {
@@ -77,7 +78,7 @@ const ServerStatus = () => {
 		},
 	]);
 
-	const checkServices = async () => {
+	const checkServices = useCallback(async () => {
 		setLoading(true);
 
 		// Primero, actualizar todos los servicios a estado "checking"
@@ -201,7 +202,7 @@ const ServerStatus = () => {
 
 		setServices(updatedServices);
 		setLoading(false);
-	};
+	}, [services]);
 
 	useEffect(() => {
 		// Check immediately
@@ -211,8 +212,12 @@ const ServerStatus = () => {
 		const interval = setInterval(checkServices, 30000);
 
 		return () => clearInterval(interval);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [checkServices]);
+
+	// Refrescar el estado de los servicios cuando se procesen las peticiones encoladas
+	useRequestQueueRefresh(() => {
+		checkServices();
+	}, [checkServices]);
 
 	const formatTimestamp = (timestamp?: string) => {
 		if (!timestamp) return "";
