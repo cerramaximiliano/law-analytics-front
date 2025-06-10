@@ -1,11 +1,20 @@
-import { Grid } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+
+// mui
+import { Grid, Box, Alert, Button, useTheme, Tooltip, Paper, Stack, Typography } from "@mui/material";
+
+// icons
+import { Lock, Export, Crown } from "iconsax-react";
 
 // project imports
+import MainCard from "components/MainCard";
 import { AppDispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import useAuth from "hooks/useAuth";
+import useSubscription from "hooks/useSubscription";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 // widgets
 import AverageResolutionTime from "sections/widget/analytics/AverageResolutionTime";
@@ -25,7 +34,69 @@ import FolderClosingTrends from "sections/widget/analytics/FolderClosingTrends";
 
 const DashboardAnalytics = () => {
 	const dispatch = useDispatch<AppDispatch>();
+	const navigate = useNavigate();
+	const theme = useTheme();
 	const { user } = useAuth();
+	const subscriptionData = useSubscription();
+	const subscription = subscriptionData?.subscription;
+	const hasFeatureLocal = subscriptionData?.hasFeatureLocal || (() => false);
+	
+	// Estados para el control del modal
+	const [hasAdvancedAnalytics, setHasAdvancedAnalytics] = useState(false);
+	const [hasExportReports, setHasExportReports] = useState(false);
+	const [featureInfo, setFeatureInfo] = useState<any>(null);
+	const [limitModalOpen, setLimitModalOpen] = useState(false);
+	const [hasModalBeenClosed, setHasModalBeenClosed] = useState(false);
+
+	// Función para crear el objeto featureInfo
+	const createFeatureInfo = () => ({
+		feature: "Analíticas Avanzadas y Exportación de Reportes",
+		plan: subscription?.plan || "free",
+		availableIn: ["standard", "premium"],
+	});
+
+	// Se ejecuta solo al montar el componente
+	useEffect(() => {
+		// Limpiar el flag del sessionStorage al montar el componente
+		sessionStorage.removeItem("analytics_modal_shown");
+
+		// Efecto de limpieza: remover también cuando el componente se desmonte
+		return () => {
+			sessionStorage.removeItem("analytics_modal_shown");
+		};
+	}, []);
+
+	// Verificar si el usuario tiene acceso a las características
+	useEffect(() => {
+		// Verificar si tiene las características usando el hook
+		const hasAdvanced = hasFeatureLocal("advancedAnalytics");
+		const hasExport = hasFeatureLocal("exportReports");
+
+		setHasAdvancedAnalytics(hasAdvanced || false);
+		setHasExportReports(hasExport || false);
+
+		// Si no tiene ninguna de las características habilitadas y el modal no ha sido cerrado manualmente
+		if (!hasAdvanced && !hasExport && !hasModalBeenClosed) {
+			setFeatureInfo(createFeatureInfo());
+
+			// Comprobar si ya mostramos el modal en esta visita a la página
+			const modalShown = sessionStorage.getItem("analytics_modal_shown");
+
+			// Solo mostrar el modal si no se ha mostrado antes
+			if (!modalShown) {
+				setLimitModalOpen(true);
+			}
+		}
+	}, [subscription, hasModalBeenClosed]);
+
+	// Manejar cierre del modal
+	const handleCloseLimitModal = () => {
+		// Marcar que el modal fue cerrado explícitamente por el usuario
+		setHasModalBeenClosed(true);
+		// Marcar que ya se mostró, para evitar mostrarlo nuevamente en esta sesión
+		sessionStorage.setItem("analytics_modal_shown", "true");
+		setLimitModalOpen(false);
+	};
 
 	useEffect(() => {
 		if (user?.id) {
@@ -35,11 +106,51 @@ const DashboardAnalytics = () => {
 	}, [dispatch, user?.id]);
 
 	return (
-		<Grid container spacing={3}>
-			{/* Row 1 - Key Metrics */}
-			<Grid item xs={12} md={6} lg={3}>
-				<AverageResolutionTime />
-			</Grid>
+		<Box>
+			<MainCard
+				title="Panel de Analíticas"
+				secondary={
+					<Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+						{hasExportReports ? (
+							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => console.log("Export functionality")}>
+								Exportar Reporte
+							</Button>
+						) : (
+							<Tooltip title="Función disponible en planes superiores">
+								<Button variant="outlined" startIcon={<Lock size={16} />} onClick={() => navigate("/suscripciones/tables")} disabled>
+									Exportar Reporte
+								</Button>
+							</Tooltip>
+						)}
+					</Box>
+				}
+			>
+				{(!hasAdvancedAnalytics || !hasExportReports) && (
+					<Alert
+						severity="warning"
+						icon={<Lock variant="Bulk" size={24} color={theme.palette.warning.main} />}
+						sx={{ mb: 3 }}
+						action={
+							<Button color="warning" size="small" onClick={() => navigate("/suscripciones/tables")}>
+								Actualizar Plan
+							</Button>
+						}
+					>
+						{!hasAdvancedAnalytics && !hasExportReports
+							? "Las analíticas avanzadas y la exportación de reportes están limitadas a planes superiores."
+							: !hasAdvancedAnalytics
+							? "Las analíticas avanzadas están limitadas a planes superiores."
+							: "La exportación de reportes está limitada a planes superiores."}
+					</Alert>
+				)}
+
+				{/* Contenedor con overlay cuando no tiene permisos */}
+				<Box sx={{ position: "relative" }}>
+					<Grid container spacing={3}>
+						{/* Row 1 - Key Metrics */}
+						<Grid item xs={12} md={6} lg={3}>
+							<AverageResolutionTime />
+						</Grid>
 			<Grid item xs={12} md={6} lg={3}>
 				<TaskCompletionRate />
 			</Grid>
@@ -82,6 +193,96 @@ const DashboardAnalytics = () => {
 				<FolderClosingTrends />
 			</Grid>
 		</Grid>
+
+		{/* Overlay de bloqueo cuando no tiene permisos */}
+		{!hasAdvancedAnalytics && (
+			<Box
+				sx={{
+					position: "absolute",
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
+					backgroundColor: theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)",
+					backdropFilter: "blur(3px)",
+					zIndex: 1,
+					display: "flex",
+					alignItems: "flex-start",
+					justifyContent: "center",
+					borderRadius: 1,
+					pt: 8,
+				}}
+			>
+				<Paper
+					elevation={3}
+					sx={{
+						p: 3,
+						textAlign: "center",
+						maxWidth: 450,
+						backgroundColor: "background.paper",
+					}}
+				>
+					<Stack direction="row" alignItems="center" justifyContent="center" spacing={2} sx={{ mb: 2 }}>
+						<Lock variant="Bulk" size={48} color={theme.palette.primary.main} />
+						<Typography variant="h5">
+							Contenido Bloqueado
+						</Typography>
+					</Stack>
+					<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+						Las analíticas avanzadas están disponibles en planes Standard y Premium.
+					</Typography>
+					<Grid container spacing={1} sx={{ mb: 2, textAlign: "left" }}>
+						<Grid item xs={6}>
+							<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+								<Crown size={14} color={theme.palette.primary.main} />
+								<Typography variant="caption">Métricas detalladas</Typography>
+							</Box>
+						</Grid>
+						<Grid item xs={6}>
+							<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+								<Crown size={14} color={theme.palette.primary.main} />
+								<Typography variant="caption">Análisis de tendencias</Typography>
+							</Box>
+						</Grid>
+						<Grid item xs={6}>
+							<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+								<Crown size={14} color={theme.palette.primary.main} />
+								<Typography variant="caption">Exportar reportes</Typography>
+							</Box>
+						</Grid>
+						<Grid item xs={6}>
+							<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+								<Crown size={14} color={theme.palette.primary.main} />
+								<Typography variant="caption">Dashboards personalizados</Typography>
+							</Box>
+						</Grid>
+					</Grid>
+					<Button
+						variant="contained"
+						color="primary"
+						size="medium"
+						startIcon={<Crown size={18} />}
+						onClick={() => navigate("/suscripciones/tables")}
+						fullWidth
+					>
+						Actualizar Plan
+					</Button>
+				</Paper>
+			</Box>
+		)}
+		</Box>
+		</MainCard>
+
+		{/* Modal de error de límite del plan */}
+		<LimitErrorModal
+			open={limitModalOpen}
+			onClose={handleCloseLimitModal}
+			message="Para acceder a las analíticas avanzadas y exportación de reportes, necesitas actualizar tu plan."
+			featureInfo={featureInfo || createFeatureInfo()}
+			upgradeRequired={true}
+		/>
+
+	</Box>
 	);
 };
 
