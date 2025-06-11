@@ -48,7 +48,7 @@ class RequestQueueService {
 
 	// Limpiar la cola sin procesar
 	public clearQueue(): void {
-		const error = new Error("Request queue cleared due to authentication failure");
+		const error = new Error("Por favor, vuelva a iniciar sesión para continuar");
 		this.queue.forEach((request) => {
 			request.reject(error);
 		});
