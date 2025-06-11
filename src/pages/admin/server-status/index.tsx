@@ -93,8 +93,15 @@ const ServerStatus = () => {
 		await new Promise((resolve) => setTimeout(resolve, 300));
 
 		// Luego, verificar cada servicio
+		const currentServices = await new Promise<ServiceStatus[]>((resolve) => {
+			setServices((prevServices) => {
+				resolve(prevServices);
+				return prevServices;
+			});
+		});
+		
 		const updatedServices = await Promise.all(
-			services.map(async (service) => {
+			currentServices.map(async (service) => {
 				try {
 					// Para todos los servicios, intentar sin credenciales primero para evitar CORS
 					const response = await fetch(service.url, {
@@ -202,14 +209,14 @@ const ServerStatus = () => {
 
 		setServices(updatedServices);
 		setLoading(false);
-	}, [services]);
+	}, []);
 
 	useEffect(() => {
 		// Check immediately
 		checkServices();
 
-		// Set up interval to check every 30 seconds
-		const interval = setInterval(checkServices, 30000);
+		// Set up interval to check every 60 seconds (1 minute)
+		const interval = setInterval(checkServices, 60000);
 
 		return () => clearInterval(interval);
 	}, [checkServices]);

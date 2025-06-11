@@ -383,6 +383,14 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		}
 
 		const recommendedPlans = getRecommendedPlans();
+		
+		// Filtrar solo planes activos
+		const activePlans = recommendedPlans.filter(plan => plan.isActive);
+		
+		// Si no hay planes activos disponibles
+		if (activePlans.length === 0) {
+			return <Alert severity="info">No hay planes disponibles para actualizar en este momento.</Alert>;
+		}
 
 		return (
 			<Grid container spacing={2}>
@@ -396,12 +404,12 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 							margin: "auto",
 						}}
 					>
-						{recommendedPlans.map((plan) => {
+						{activePlans.map((plan) => {
 							// Usar siempre el precio mensual
 							const displayPrice = plan.pricingInfo.basePrice;
 
 							return (
-								<Grid item xs={12} sm={6} md={recommendedPlans.length <= 2 ? 5 : 4} key={plan.planId}>
+								<Grid item xs={12} sm={6} md={activePlans.length <= 2 ? 5 : 4} key={plan.planId}>
 									<MainCard
 										elevation={2}
 										sx={{
