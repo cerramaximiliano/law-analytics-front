@@ -418,7 +418,7 @@ const Pricing = () => {
 			padding: 3,
 			borderRadius: 1,
 		};
-		
+
 		// Si no está activo, usar un estilo gris
 		if (!isActive) {
 			return {
@@ -427,7 +427,7 @@ const Pricing = () => {
 				opacity: 0.8,
 			};
 		}
-		
+
 		if (isCurrentPlan) {
 			return {
 				...baseStyle,
@@ -481,7 +481,7 @@ const Pricing = () => {
 		if (!isActive) {
 			return <Chip label="Próximamente" color="warning" variant="filled" />;
 		}
-		
+
 		if (isCurrentPlan) {
 			return <Chip label="Plan Actual" color="primary" />;
 		}
@@ -600,7 +600,13 @@ const Pricing = () => {
 														onClick={() => plan.isActive && handleSubscribe(plan.planId)}
 														startIcon={!plan.isActive ? <Lock size={16} /> : undefined}
 													>
-														{!plan.isActive ? "No disponible" : isCurrentPlan ? "Plan Actual" : isDowngradeToFree ? "Bajar a Free" : "Suscribirme"}
+														{!plan.isActive
+															? "No disponible"
+															: isCurrentPlan
+															? "Plan Actual"
+															: isDowngradeToFree
+															? "Bajar a Free"
+															: "Suscribirme"}
 													</Button>
 												</Grid>
 											</Grid>
@@ -650,7 +656,7 @@ const Pricing = () => {
 										</List>
 									</Grid>
 								</Grid>
-								
+
 								{/* Overlay para planes no activos */}
 								{!plan.isActive && (
 									<Box

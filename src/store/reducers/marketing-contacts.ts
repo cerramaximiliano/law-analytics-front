@@ -1,9 +1,6 @@
-import axios from "axios";
+import mktAxios from "utils/mktAxios";
 import { MarketingContact, ContactResponse, ContactInput } from "types/marketing-contact";
 // import { SingleContactResponse } from "types/marketing-contact";
-
-// Constants
-const baseURL = process.env.REACT_APP_MKT_URL || "https://mkt.lawanalytics.app";
 
 interface TagsResponse {
 	success: boolean;
@@ -28,7 +25,7 @@ export const MarketingContactService = {
 		} = {},
 	): Promise<ContactResponse> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/contacts`, {
+			const response = await mktAxios.get("/api/contacts", {
 				params: {
 					page,
 					limit,
@@ -46,7 +43,7 @@ export const MarketingContactService = {
 	// Get a single contact by ID
 	getContactById: async (id: string): Promise<MarketingContact> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/contacts/${id}`);
+			const response = await mktAxios.get(`/api/contacts/${id}`);
 			return response.data.data;
 		} catch (error) {
 			throw error;
@@ -56,7 +53,7 @@ export const MarketingContactService = {
 	// Create a new contact
 	createContact: async (contactData: ContactInput): Promise<MarketingContact> => {
 		try {
-			const response = await axios.post(`${baseURL}/api/contacts`, contactData);
+			const response = await mktAxios.post("/api/contacts", contactData);
 			return response.data.data;
 		} catch (error) {
 			throw error;
@@ -66,7 +63,7 @@ export const MarketingContactService = {
 	// Update an existing contact
 	updateContact: async (id: string, contactData: Partial<ContactInput>): Promise<MarketingContact> => {
 		try {
-			const response = await axios.put(`${baseURL}/api/contacts/${id}`, contactData);
+			const response = await mktAxios.put(`/api/contacts/${id}`, contactData);
 			return response.data.data;
 		} catch (error) {
 			throw error;
@@ -76,7 +73,7 @@ export const MarketingContactService = {
 	// Delete a contact
 	deleteContact: async (id: string): Promise<{ success: boolean; message: string }> => {
 		try {
-			const response = await axios.delete(`${baseURL}/api/contacts/${id}`);
+			const response = await mktAxios.delete(`/api/contacts/${id}`);
 			return response.data;
 		} catch (error) {
 			throw error;
@@ -99,7 +96,7 @@ export const MarketingContactService = {
 				formData.append("options", JSON.stringify(options));
 			}
 
-			const response = await axios.post(`${baseURL}/api/contacts/import`, formData, {
+			const response = await mktAxios.post("/api/contacts/import", formData, {
 				headers: {
 					"Content-Type": "multipart/form-data",
 				},
@@ -114,7 +111,7 @@ export const MarketingContactService = {
 	// Bulk operations
 	bulkUpdate: async (ids: string[], updateData: Partial<ContactInput>): Promise<{ success: boolean; updated: number; message: string }> => {
 		try {
-			const response = await axios.put(`${baseURL}/api/contacts/bulk`, {
+			const response = await mktAxios.put("/api/contacts/bulk", {
 				ids,
 				updateData,
 			});
@@ -126,7 +123,7 @@ export const MarketingContactService = {
 
 	bulkDelete: async (ids: string[]): Promise<{ success: boolean; deleted: number; message: string }> => {
 		try {
-			const response = await axios.delete(`${baseURL}/api/contacts/bulk`, {
+			const response = await mktAxios.delete("/api/contacts/bulk", {
 				data: { ids },
 			});
 			return response.data;
@@ -138,7 +135,7 @@ export const MarketingContactService = {
 	// Get contact statistics
 	getContactStats: async (): Promise<any> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/contacts/stats`);
+			const response = await mktAxios.get("/api/contacts/stats");
 			return response.data.data;
 		} catch (error) {
 			throw error;
@@ -148,7 +145,7 @@ export const MarketingContactService = {
 	// Update only the status of a contact
 	updateContactStatus: async (id: string, status: string): Promise<MarketingContact> => {
 		try {
-			const response = await axios.patch(`${baseURL}/api/contacts/${id}/status`, { status });
+			const response = await mktAxios.patch(`/api/contacts/${id}/status`, { status });
 			return response.data.data;
 		} catch (error) {
 			throw error;
@@ -158,7 +155,7 @@ export const MarketingContactService = {
 	// Get campaign details by ID
 	getCampaignById: async (id: string): Promise<any> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/campaigns/${id}`);
+			const response = await mktAxios.get(`/api/campaigns/${id}`);
 			return response.data.data;
 		} catch (error) {
 			throw error;
@@ -168,7 +165,7 @@ export const MarketingContactService = {
 	// Get all tags for contacts
 	getTags: async (): Promise<string[]> => {
 		try {
-			const response = await axios.get<TagsResponse>(`${baseURL}/api/tags/simple`);
+			const response = await mktAxios.get<TagsResponse>("/api/tags/simple");
 			return response.data.data;
 		} catch (error) {
 			throw error;

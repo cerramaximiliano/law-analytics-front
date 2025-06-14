@@ -292,7 +292,6 @@ const PlansManagement = () => {
 						</TableContainer>
 					</Grid>
 
-
 					{/* Plan Details Cards */}
 					<Grid item xs={12}>
 						<Typography variant="h5" sx={{ mb: 2 }}>

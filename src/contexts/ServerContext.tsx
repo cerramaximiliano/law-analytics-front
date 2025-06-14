@@ -18,6 +18,7 @@ import { fetchUserStats } from "store/reducers/userStats";
 import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
 import { requestQueueService } from "services/requestQueueService";
+import authTokenService from "services/authTokenService";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = process.env.REACT_APP_HIDE_BANKING_DATA === "true";
@@ -96,6 +97,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 			// Limpiar la cola de peticiones pendientes
 			requestQueueService.clearQueue();
+
+			// Limpiar el token del servicio
+			authTokenService.clearToken();
 
 			// Actualizar states
 			localDispatch({ type: LOGOUT });
@@ -261,6 +265,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		// Crear un nuevo interceptor de respuesta para ver errores
 		const responseInterceptor = axios.interceptors.response.use(
 			(response) => {
+				// Check if response contains auth token in headers or data
+				const authHeader = response.headers["authorization"] || response.headers["x-auth-token"];
+				const tokenFromData = response.data?.token || response.data?.accessToken || response.data?.authToken;
+
+				if (authHeader) {
+					const token = authHeader.replace("Bearer ", "");
+					authTokenService.setToken(token);
+				} else if (tokenFromData) {
+					authTokenService.setToken(tokenFromData);
+				}
+
 				return response;
 			},
 			async (error: AxiosError) => {
@@ -448,6 +463,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			});
 
 			reduxDispatch(fetchUserStats());
+
 			showSnackbar("¡Inicio de sesión exitoso!", "success");
 
 			// Procesar la cola de peticiones pendientes después de login exitoso

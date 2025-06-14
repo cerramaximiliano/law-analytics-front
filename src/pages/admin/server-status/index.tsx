@@ -99,7 +99,7 @@ const ServerStatus = () => {
 				return prevServices;
 			});
 		});
-		
+
 		const updatedServices = await Promise.all(
 			currentServices.map(async (service) => {
 				try {

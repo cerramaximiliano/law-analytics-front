@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTheme } from "@mui/material/styles";
-import { Button, Grid, Stack, Typography } from "@mui/material";
+import { Button, CircularProgress, Grid, Stack, Typography } from "@mui/material";
 import OtpInput from "react18-input-otp";
 import AnimateButton from "components/@extended/AnimateButton";
 import axios from "axios";
@@ -45,6 +45,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 	const [otp, setOtp] = useState<string>("");
 	const [error, setError] = useState<string | null>(null);
 	const [isResending, setIsResending] = useState<boolean>(false);
+	const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
 	const borderColor = theme.palette.mode === ThemeMode.DARK ? theme.palette.secondary[200] : theme.palette.secondary.light;
 
@@ -85,6 +86,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 
 	// Manejador de verificación de código según el modo
 	const handleVerifyCode = async () => {
+		if (isVerifying) return;
 		// Determinar si estamos en un proceso de reseteo de contraseña
 		const isResetProcess = mode === "reset" || secureStorage.getSessionData("reset_in_progress") === true;
 		// Si estamos en proceso de reseteo, forzar modo "reset" independientemente del valor de prop
@@ -100,6 +102,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 			return;
 		}
 
+		setIsVerifying(true);
 		try {
 			// IMPORTANTE: Verificar el modo y usar el endpoint correcto
 
@@ -183,6 +186,8 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 			} else {
 				setError("Hubo un problema al verificar el código. Inténtalo de nuevo más tarde.");
 			}
+		} finally {
+			setIsVerifying(false);
 		}
 	};
 
@@ -202,6 +207,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 					value={otp}
 					onChange={(otp: string) => setOtp(otp)}
 					numInputs={6}
+					isDisabled={isVerifying}
 					containerStyle={{ justifyContent: "space-between" }}
 					inputStyle={{
 						width: "100%",
@@ -209,14 +215,16 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 						padding: "10px",
 						border: `1px solid ${borderColor}`,
 						borderRadius: 4,
+						opacity: isVerifying ? 0.6 : 1,
+						cursor: isVerifying ? "not-allowed" : "text",
 						":hover": {
-							borderColor: theme.palette.primary.main,
+							borderColor: isVerifying ? borderColor : theme.palette.primary.main,
 						},
 					}}
 					focusStyle={{
 						outline: "none",
-						boxShadow: theme.customShadows.primary,
-						border: `1px solid ${theme.palette.primary.main}`,
+						boxShadow: isVerifying ? "none" : theme.customShadows.primary,
+						border: `1px solid ${isVerifying ? borderColor : theme.palette.primary.main}`,
 					}}
 				/>
 			</Grid>
@@ -229,8 +237,17 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 
 			<Grid item xs={12}>
 				<AnimateButton>
-					<Button disableElevation fullWidth size="large" type="submit" variant="contained" onClick={handleVerifyCode}>
-						{mode === "register" ? "Verificar y continuar" : "Verificar código"}
+					<Button
+						disableElevation
+						fullWidth
+						size="large"
+						type="submit"
+						variant="contained"
+						onClick={handleVerifyCode}
+						disabled={isVerifying}
+						startIcon={isVerifying ? <CircularProgress size={20} color="inherit" /> : null}
+					>
+						{isVerifying ? "Verificando..." : mode === "register" ? "Verificar y continuar" : "Verificar código"}
 					</Button>
 				</AnimateButton>
 			</Grid>

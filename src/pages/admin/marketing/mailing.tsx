@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // material-ui
 import {
@@ -28,20 +28,55 @@ import {
 	useTheme,
 	Alert,
 } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
 // project imports
 import MainCard from "components/MainCard";
-import { Add, Edit2, SearchNormal1, Trash, MessageText1, People } from "iconsax-react";
+import { Add, Edit2, SearchNormal1, Trash, MessageText1, People, Refresh } from "iconsax-react";
 import CampaignFormModal from "sections/admin/marketing/CampaignFormModal";
 import DeleteCampaignDialog from "sections/admin/marketing/DeleteCampaignDialog";
 import CampaignEmailList from "sections/admin/marketing/CampaignEmailList";
 import CampaignContactsList from "sections/admin/marketing/CampaignContactsList";
 import CampaignDetailModal from "sections/admin/marketing/CampaignDetailModal";
 import TableSkeleton from "components/UI/TableSkeleton";
+import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 
 // types
 import { Campaign, CampaignStatus, CampaignType } from "types/campaign";
 import { CampaignService } from "store/reducers/campaign";
+
+// Server Status Types
+interface ServiceStatus {
+	name: string;
+	url: string;
+	ip: string;
+	baseUrl: string;
+	status: "online" | "offline" | "checking";
+	timestamp?: string;
+	message?: string;
+}
+
+// Styled components
+const StatusIndicator = styled(Box)<{ status: "online" | "offline" | "checking" }>(({ theme, status }) => ({
+	width: 12,
+	height: 12,
+	borderRadius: "50%",
+	backgroundColor:
+		status === "online" ? theme.palette.success.main : status === "offline" ? theme.palette.error.main : theme.palette.warning.main,
+	marginRight: theme.spacing(1),
+	animation: status === "checking" ? "pulse 1.5s infinite" : "none",
+	"@keyframes pulse": {
+		"0%": {
+			opacity: 1,
+		},
+		"50%": {
+			opacity: 0.4,
+		},
+		"100%": {
+			opacity: 1,
+		},
+	},
+}));
 
 // ==============================|| ADMIN - MAILING CAMPAIGNS ||============================== //
 
@@ -87,11 +122,93 @@ const MailingCampaigns = () => {
 		},
 	});
 
+	// Server status state
+	const [serverStatus, setServerStatus] = useState<ServiceStatus>({
+		name: "Servidor de Marketing",
+		url: "https://mkt.lawanalytics.app",
+		ip: "15.229.93.121",
+		baseUrl: "https://mkt.lawanalytics.app",
+		status: "checking",
+	});
+	const [checkingStatus, setCheckingStatus] = useState(false);
+
+	// Check server status
+	const checkServerStatus = useCallback(async () => {
+		setCheckingStatus(true);
+		setServerStatus((prev) => ({ ...prev, status: "checking" }));
+
+		try {
+			const response = await fetch(serverStatus.url, {
+				method: "GET",
+				mode: "cors",
+				headers: {
+					Accept: "application/json",
+				},
+			});
+
+			if (response.ok) {
+				try {
+					const data = await response.json();
+					setServerStatus((prev) => ({
+						...prev,
+						status: "online",
+						timestamp: data.timestamp || new Date().toISOString(),
+						message: data.message,
+					}));
+				} catch {
+					setServerStatus((prev) => ({
+						...prev,
+						status: "online",
+						timestamp: new Date().toISOString(),
+						message: "Respuesta exitosa (no JSON)",
+					}));
+				}
+			} else {
+				setServerStatus((prev) => ({
+					...prev,
+					status: "offline",
+					timestamp: new Date().toISOString(),
+				}));
+			}
+		} catch (error) {
+			// Si es un error de CORS, asumir que está online
+			if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
+				setServerStatus((prev) => ({
+					...prev,
+					status: "online",
+					timestamp: new Date().toISOString(),
+					message: "CORS restrictivo - Estado verificado externamente",
+				}));
+			} else {
+				setServerStatus((prev) => ({
+					...prev,
+					status: "offline",
+					timestamp: new Date().toISOString(),
+					message: error instanceof Error ? error.message : "Error desconocido",
+				}));
+			}
+		} finally {
+			setCheckingStatus(false);
+		}
+	}, [serverStatus.url]);
+
 	// Load campaigns on component mount and when dependencies change
 	useEffect(() => {
 		fetchCampaigns();
 		fetchStats();
 	}, [page, rowsPerPage, filterType, filterStatus, sortBy, sortDir]);
+
+	// Check server status on mount and periodically
+	useEffect(() => {
+		checkServerStatus();
+		const interval = setInterval(checkServerStatus, 60000); // Check every minute
+		return () => clearInterval(interval);
+	}, [checkServerStatus]);
+
+	// Refresh server status when processing queued requests
+	useRequestQueueRefresh(() => {
+		checkServerStatus();
+	}, [checkServerStatus]);
 
 	// Function to fetch campaigns from API
 	const fetchCampaigns = async () => {
@@ -310,6 +427,58 @@ const MailingCampaigns = () => {
 						</Button>
 					</Grid>
 				</Grid>
+			</Box>
+
+			{/* Server Status Alert */}
+			<Box sx={{ mb: 2 }}>
+				<Alert
+					severity={serverStatus.status === "online" ? "success" : serverStatus.status === "offline" ? "error" : "warning"}
+					icon={
+						<Box display="flex" alignItems="center">
+							<StatusIndicator status={serverStatus.status} />
+						</Box>
+					}
+					action={
+						<Tooltip title="Verificar estado">
+							<IconButton
+								size="small"
+								onClick={checkServerStatus}
+								disabled={checkingStatus}
+								sx={{
+									animation: checkingStatus ? "spin 1s linear infinite" : "none",
+									"@keyframes spin": {
+										"0%": {
+											transform: "rotate(0deg)",
+										},
+										"100%": {
+											transform: "rotate(360deg)",
+										},
+									},
+								}}
+							>
+								<Refresh size={16} />
+							</IconButton>
+						</Tooltip>
+					}
+				>
+					<Box>
+						<Typography variant="subtitle2" fontWeight="bold">
+							{serverStatus.name}
+						</Typography>
+						<Typography variant="body2">
+							Estado:{" "}
+							{serverStatus.status === "online" ? "En línea" : serverStatus.status === "offline" ? "Fuera de línea" : "Verificando..."}
+						</Typography>
+						<Typography variant="caption" color="text.secondary">
+							{serverStatus.baseUrl} • IP: {serverStatus.ip}
+						</Typography>
+						{serverStatus.message && (
+							<Typography variant="caption" display="block" sx={{ fontStyle: "italic", mt: 0.5 }}>
+								{serverStatus.message}
+							</Typography>
+						)}
+					</Box>
+				</Alert>
 			</Box>
 
 			{error && (

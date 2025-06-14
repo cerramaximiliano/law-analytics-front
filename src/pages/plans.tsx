@@ -139,7 +139,7 @@ const Plans = () => {
 			padding: 3,
 			borderRadius: 1,
 		};
-		
+
 		// Si no está activo, usar un estilo gris
 		if (!isActive) {
 			return {
@@ -148,7 +148,7 @@ const Plans = () => {
 				opacity: 0.8,
 			};
 		}
-		
+
 		switch (planId) {
 			case "free":
 				return {
@@ -190,7 +190,7 @@ const Plans = () => {
 		if (!isActive) {
 			return <Chip label="Próximamente" color="warning" variant="filled" />;
 		}
-		
+
 		switch (planId) {
 			case "standard":
 				return <Chip label="Popular" color="success" />;
@@ -297,7 +297,6 @@ const Plans = () => {
 						</Grid>
 					)}
 
-
 					{/* Planes */}
 					{!loading && !error && (
 						<Grid item container spacing={3} xs={12} alignItems="center">
@@ -381,7 +380,7 @@ const Plans = () => {
 													</List>
 												</Grid>
 											</Grid>
-											
+
 											{/* Overlay para planes no activos */}
 											{!plan.isActive && (
 												<Box

@@ -383,10 +383,10 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		}
 
 		const recommendedPlans = getRecommendedPlans();
-		
+
 		// Filtrar solo planes activos
-		const activePlans = recommendedPlans.filter(plan => plan.isActive);
-		
+		const activePlans = recommendedPlans.filter((plan) => plan.isActive);
+
 		// Si no hay planes activos disponibles
 		if (activePlans.length === 0) {
 			return <Alert severity="info">No hay planes disponibles para actualizar en este momento.</Alert>;

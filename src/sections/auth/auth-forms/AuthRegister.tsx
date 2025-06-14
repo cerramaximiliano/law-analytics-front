@@ -264,12 +264,12 @@ const AuthRegister = () => {
 							</Grid>
 							<Grid item xs={12}>
 								<Typography variant="body2">
-									Registránse, está de acuerdo con &nbsp;
-									<Link variant="subtitle2" component={RouterLink} to="#">
+									Registrándose, está de acuerdo con &nbsp;
+									<Link variant="subtitle2" component={RouterLink} to="/terms" target="_blank" rel="noopener noreferrer">
 										Términos del Servicio
 									</Link>
-									&nbsp; and &nbsp;
-									<Link variant="subtitle2" component={RouterLink} to="#">
+									&nbsp; y &nbsp;
+									<Link variant="subtitle2" component={RouterLink} to="/privacy-policy" target="_blank" rel="noopener noreferrer">
 										Política de Privacidad
 									</Link>
 								</Typography>

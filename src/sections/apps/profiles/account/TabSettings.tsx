@@ -311,6 +311,43 @@ const TabSubscription = () => {
 		return Math.max(0, diffDays); // Garantizar que no sea negativo
 	};
 
+	// Función para determinar el estado del período de gracia
+	const getGracePeriodStatus = (expiryDate: string | Date): "future" | "today" | "past" => {
+		if (!expiryDate) return "past";
+
+		const expiry = new Date(expiryDate);
+		const today = new Date();
+
+		// Normalizar las fechas para comparar solo día/mes/año
+		expiry.setHours(0, 0, 0, 0);
+		today.setHours(0, 0, 0, 0);
+
+		if (expiry.getTime() > today.getTime()) {
+			return "future";
+		} else if (expiry.getTime() === today.getTime()) {
+			return "today";
+		} else {
+			return "past";
+		}
+	};
+
+	// Función para obtener el mensaje del período de gracia según el estado
+	const getGracePeriodMessage = (expiryDate: string | Date): string => {
+		const status = getGracePeriodStatus(expiryDate);
+		const formattedDate = formatDate(expiryDate);
+
+		switch (status) {
+			case "future":
+				return `Después de la cancelación, tendrás hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+			case "today":
+				return `Hoy es el último día para archivar el contenido que exceda los límites del plan gratuito. El sistema archivará automáticamente el contenido excedente al finalizar el día.`;
+			case "past":
+				return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito ha sido archivado automáticamente.`;
+			default:
+				return `Después de la cancelación, tendrás hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+		}
+	};
+
 	// Función para obtener toda la información del período de gracia
 	const getGracePeriodInfo = () => {
 		// Verificar que subscription existe
@@ -453,10 +490,7 @@ const TabSubscription = () => {
 														"& .MuiAlert-icon": { color: "warning.dark" },
 													}}
 												>
-													<Typography variant="body2">
-														Después de la cancelación, tendrás hasta el {formatDate(subscription.downgradeGracePeriod.expiresAt)} para
-														archivar el contenido que exceda los límites del plan gratuito.
-													</Typography>
+													<Typography variant="body2">{getGracePeriodMessage(subscription.downgradeGracePeriod.expiresAt)}</Typography>
 												</Alert>
 											)}
 									</>
@@ -763,25 +797,49 @@ const TabSubscription = () => {
 							>
 								<Grid container spacing={3}>
 									<Grid item xs={12}>
-										<Alert
-											severity="warning"
-											variant="outlined"
-											sx={{
-												mb: 3,
-												borderRadius: 2,
-											}}
-										>
-											<Stack spacing={1}>
-												<Typography variant="subtitle1" fontWeight={600}>
-													{getGracePeriodInfo()?.willDowngradeToFreePlan
-														? `Tu plan ${getGracePeriodInfo()?.previousPlanName} será cambiado al Plan Gratuito el ${
-																getGracePeriodInfo()?.cancellationFormatted
-														  }`
-														: `Tu plan ha cambiado de ${getGracePeriodInfo()?.previousPlanName} a ${getGracePeriodInfo()?.currentPlanName}`}
-												</Typography>
-												<Typography variant="body2">Tienes un período de gracia para ajustar tus datos a los nuevos límites.</Typography>
-											</Stack>
-										</Alert>
+										{getGracePeriodStatus(subscription.downgradeGracePeriod.expiresAt) === "past" ? (
+											<Alert
+												severity="info"
+												variant="outlined"
+												sx={{
+													mb: 3,
+													borderRadius: 2,
+												}}
+											>
+												<Stack spacing={1}>
+													<Typography variant="subtitle1" fontWeight={600}>
+														Período de gracia finalizado
+													</Typography>
+													<Typography variant="body2">
+														El período de gracia finalizó el {formatDate(subscription.downgradeGracePeriod.expiresAt)}. El contenido que
+														excedía los límites de tu {getGracePeriodInfo()?.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha
+														sido archivado automáticamente.
+													</Typography>
+												</Stack>
+											</Alert>
+										) : (
+											<Alert
+												severity="warning"
+												variant="outlined"
+												sx={{
+													mb: 3,
+													borderRadius: 2,
+												}}
+											>
+												<Stack spacing={1}>
+													<Typography variant="subtitle1" fontWeight={600}>
+														{getGracePeriodInfo()?.willDowngradeToFreePlan
+															? `Tu plan ${getGracePeriodInfo()?.previousPlanName} será cambiado al Plan Gratuito el ${
+																	getGracePeriodInfo()?.cancellationFormatted
+															  }`
+															: `Tu plan ha cambiado de ${getGracePeriodInfo()?.previousPlanName} a ${
+																	getGracePeriodInfo()?.currentPlanName
+															  }`}
+													</Typography>
+													<Typography variant="body2">Tienes un período de gracia para ajustar tus datos a los nuevos límites.</Typography>
+												</Stack>
+											</Alert>
+										)}
 									</Grid>
 
 									<Grid item xs={12}>
@@ -914,9 +972,15 @@ const TabSubscription = () => {
 												mt: 1,
 											}}
 										>
-											<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
-												¿Qué ocurre después de esta fecha?
-											</Typography>
+											{getGracePeriodStatus(subscription.downgradeGracePeriod.expiresAt) === "past" ? (
+												<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
+													Archivado automático completado
+												</Typography>
+											) : (
+												<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
+													¿Qué ocurre después de esta fecha?
+												</Typography>
+											)}
 
 											<Typography variant="body1" paragraph sx={{ fontWeight: 500 }}>
 												El sistema archivará automáticamente los elementos que excedan los límites de tu{" "}

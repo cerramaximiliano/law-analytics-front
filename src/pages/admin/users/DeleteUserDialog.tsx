@@ -3,7 +3,17 @@ import { useSelector } from "react-redux";
 import { dispatch } from "store/index";
 
 // material-ui
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography, Box } from "@mui/material";
+import {
+	Button,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
+	Typography,
+	Box,
+	CircularProgress,
+} from "@mui/material";
 
 // project imports
 import { User } from "types/user";
@@ -21,11 +31,13 @@ interface DeleteUserDialogProps {
 const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose }) => {
 	const { loading } = useSelector((state: DefaultRootStateProps) => state.users);
 	const [error, setError] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	// Función para eliminar el usuario
 	const handleDelete = async () => {
 		try {
 			setError(null);
+			setIsDeleting(true);
 
 			// Usar _id o id según lo que esté disponible
 			const userId = user._id || user.id;
@@ -96,11 +108,13 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 					close: true,
 				}),
 			);
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+		<Dialog open={open} onClose={isDeleting ? undefined : onClose} maxWidth="sm" fullWidth disableEscapeKeyDown={isDeleting}>
 			<DialogTitle>Eliminar Usuario</DialogTitle>
 			<DialogContent>
 				<DialogContentText>
@@ -122,11 +136,17 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 				{error && <Box sx={{ color: "error.main", mt: 2 }}>{error}</Box>}
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={onClose} color="primary">
+				<Button onClick={onClose} color="primary" disabled={isDeleting}>
 					Cancelar
 				</Button>
-				<Button onClick={handleDelete} color="error" variant="contained" disabled={loading}>
-					Eliminar
+				<Button
+					onClick={handleDelete}
+					color="error"
+					variant="contained"
+					disabled={loading || isDeleting}
+					startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : null}
+				>
+					{isDeleting ? "Eliminando..." : "Eliminar"}
 				</Button>
 			</DialogActions>
 		</Dialog>
