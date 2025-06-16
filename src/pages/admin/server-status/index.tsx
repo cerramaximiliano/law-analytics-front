@@ -51,7 +51,7 @@ const ServerStatus = () => {
 		{
 			name: "API de Causas",
 			url: "https://api.lawanalytics.app/api",
-			ip: "98.85.31.199",
+			ip: "15.229.93.121",
 			baseUrl: "https://api.lawanalytics.app",
 			status: "checking",
 		},
