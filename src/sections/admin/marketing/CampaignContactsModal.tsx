@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 // material-ui
 import {
+	Alert,
 	Box,
 	Button,
 	Chip,
@@ -35,7 +36,6 @@ import { ContactsProcessStatus } from "types/campaign-contacts-status";
 import { CampaignService } from "store/reducers/campaign";
 // import { MarketingContactService } from "store/reducers/marketing-contacts";
 import { SegmentService } from "store/reducers/segments";
-import ScrollX from "components/ScrollX";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -48,7 +48,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`contacts-tabpanel-${index}`} aria-labelledby={`contacts-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+			{value === index && <Box>{children}</Box>}
 		</div>
 	);
 }
@@ -72,6 +72,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 	const [loadingSegments, setLoadingSegments] = useState<boolean>(false);
 	const [submitting, setSubmitting] = useState<boolean>(false);
 	const [addingAllContacts, setAddingAllContacts] = useState<boolean>(false);
+
+	// Verificar si la campaña está activa
+	const isCampaignActive = campaign.status === "active";
+	const canAddContacts = isCampaignActive;
 
 	// Data states
 	const [contacts, setContacts] = useState<MarketingContact[]>([]);
@@ -171,10 +175,11 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 	};
 
 	const handleAddToCampaign = async () => {
+		let requestData: { contacts?: string[]; segmentId?: string } = {};
+
 		try {
 			setSubmitting(true);
 
-			let requestData: { contacts?: string[]; segmentId?: string } = {};
 			let successMessage = "";
 
 			if (tabValue === 0 && selectedContacts.length > 0) {
@@ -203,8 +208,36 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 				throw new Error(result.message || "Error desconocido");
 			}
 		} catch (error: any) {
-			// Mostrar el mensaje de error del servidor si está disponible
-			const errorMessage = error.response?.data?.message || error.message || "Error al añadir a la campaña";
+			// Log detallado del error para depuración
+			console.error("Error al añadir contactos/segmentos a la campaña:", {
+				error,
+				response: error.response,
+				data: error.response?.data,
+				status: error.response?.status,
+				requestData,
+			});
+
+			// Obtener mensaje de error más específico
+			let errorMessage = "Error al añadir a la campaña";
+
+			if (error.response?.status === 400) {
+				// Error de validación del servidor
+				if (error.response.data?.errors) {
+					// Si hay errores específicos de validación
+					const validationErrors = Object.values(error.response.data.errors).flat().join(", ");
+					errorMessage = `Error de validación: ${validationErrors}`;
+				} else if (error.response.data?.message) {
+					errorMessage = error.response.data.message;
+				} else {
+					errorMessage = "Solicitud inválida. Por favor, verifica los datos enviados.";
+				}
+			} else if (error.response?.data?.message) {
+				errorMessage = error.response.data.message;
+			} else if (error.message) {
+				errorMessage = error.message;
+			}
+
+			// Mostrar mensaje de error mejorado
 			enqueueSnackbar(errorMessage, { variant: "error" });
 		} finally {
 			setSubmitting(false);
@@ -444,21 +477,32 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 					sx={{
 						width: "90%",
 						maxWidth: 900,
-						maxHeight: "90vh",
-						overflow: "auto",
-						p: 3,
+						height: "90vh",
+						display: "flex",
+						flexDirection: "column",
 						borderRadius: 2,
+						overflow: "hidden",
 					}}
 				>
-					<Typography variant="h4" id="campaign-contacts-modal-title" gutterBottom>
-						Añadir a la Campaña: {campaign.name}
-					</Typography>
-					<Typography variant="body2" color="textSecondary" gutterBottom>
-						Seleccione contactos o un segmento para añadir a esta campaña
-					</Typography>
+					{/* Header fijo */}
+					<Box sx={{ p: 3, pb: 2 }}>
+						<Typography variant="h4" id="campaign-contacts-modal-title" gutterBottom>
+							Añadir a la Campaña: {campaign.name}
+						</Typography>
+						<Typography variant="body2" color="textSecondary" gutterBottom>
+							Seleccione contactos o un segmento para añadir a esta campaña
+						</Typography>
 
-					<Divider sx={{ my: 2 }} />
+						{!canAddContacts && (
+							<Alert severity="warning" sx={{ mt: 2 }}>
+								Solo se pueden agregar contactos a campañas activas. Esta campaña se encuentra en estado "{campaign.status}".
+							</Alert>
+						)}
+					</Box>
 
+					<Divider />
+
+					{/* Tabs fijos */}
 					<Tabs
 						value={tabValue}
 						onChange={handleTabChange}
@@ -466,85 +510,88 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 						textColor="primary"
 						variant="fullWidth"
 						aria-label="campaign contacts tabs"
+						sx={{ px: 3, pt: 2 }}
 					>
 						<Tab label="Contactos Individuales" />
 						<Tab label="Segmentos" />
 					</Tabs>
 
-					<TabPanel value={tabValue} index={0}>
-						<Box mb={2}>
-							<Grid container spacing={2} alignItems="center">
-								<Grid item xs>
-									<TextField
-										fullWidth
-										variant="outlined"
-										size="small"
-										placeholder="Buscar contactos por nombre, email..."
-										value={contactSearch}
-										onChange={(e) => setContactSearch(e.target.value)}
-										onKeyPress={(e) => e.key === "Enter" && handleContactSearch()}
-										InputProps={{
-											endAdornment: (
-												<IconButton onClick={handleContactSearch} edge="end" size="small">
-													<SearchNormal1 size={18} />
-												</IconButton>
-											),
-										}}
-									/>
-								</Grid>
-								<Grid item>
-									<Box sx={{ display: "flex", alignItems: "center" }}>
-										<Chip
-											label={`${selectedContacts.length} seleccionados`}
-											color={selectedContacts.length > 0 ? "primary" : "default"}
-											sx={{ mr: 1 }}
+					{/* Contenido con scroll */}
+					<Box sx={{ flexGrow: 1, overflow: "auto", px: 3 }}>
+						<TabPanel value={tabValue} index={0}>
+							<Box mt={3} mb={2}>
+								<Grid container spacing={2} alignItems="center">
+									<Grid item xs>
+										<TextField
+											fullWidth
+											variant="outlined"
+											size="small"
+											placeholder="Buscar contactos por nombre, email..."
+											value={contactSearch}
+											onChange={(e) => setContactSearch(e.target.value)}
+											onKeyPress={(e) => e.key === "Enter" && handleContactSearch()}
+											InputProps={{
+												endAdornment: (
+													<IconButton onClick={handleContactSearch} edge="end" size="small">
+														<SearchNormal1 size={18} />
+													</IconButton>
+												),
+											}}
 										/>
-										{contacts.length > 0 && (
-											<Button
-												size="small"
-												variant="outlined"
-												color="secondary"
-												onClick={() => {
-													// Solo trabajar con los contactos de la página actual
-													const currentPageContactIds = contacts.filter((contact) => contact._id).map((contact) => contact._id as string);
+									</Grid>
+									<Grid item>
+										<Box sx={{ display: "flex", alignItems: "center" }}>
+											<Chip
+												label={`${selectedContacts.length} seleccionados`}
+												color={selectedContacts.length > 0 ? "primary" : "default"}
+												sx={{ mr: 1 }}
+											/>
+											{contacts.length > 0 && (
+												<Button
+													size="small"
+													variant="outlined"
+													color="secondary"
+													disabled={!canAddContacts}
+													onClick={() => {
+														// Solo trabajar con los contactos de la página actual
+														const currentPageContactIds = contacts.filter((contact) => contact._id).map((contact) => contact._id as string);
 
-													// Verificar si todos los contactos de la página actual están seleccionados
-													const allCurrentSelected = currentPageContactIds.every((id) => selectedContacts.includes(id));
+														// Verificar si todos los contactos de la página actual están seleccionados
+														const allCurrentSelected = currentPageContactIds.every((id) => selectedContacts.includes(id));
 
-													if (allCurrentSelected) {
-														// Deseleccionar solo los contactos de la página actual
-														const newSelection = selectedContacts.filter((id) => !currentPageContactIds.includes(id));
-														setSelectedContacts(newSelection);
-													} else {
-														// Mantener las selecciones anteriores y agregar las nuevas
-														const newSelection = [...selectedContacts];
-														currentPageContactIds.forEach((id) => {
-															if (!newSelection.includes(id)) {
-																newSelection.push(id);
-															}
-														});
-														setSelectedContacts(newSelection);
-													}
-												}}
-											>
-												{contacts.filter((contact) => contact._id).every((contact) => selectedContacts.includes(contact._id as string))
-													? "Deseleccionar página"
-													: "Seleccionar página"}
-											</Button>
-										)}
-									</Box>
+														if (allCurrentSelected) {
+															// Deseleccionar solo los contactos de la página actual
+															const newSelection = selectedContacts.filter((id) => !currentPageContactIds.includes(id));
+															setSelectedContacts(newSelection);
+														} else {
+															// Mantener las selecciones anteriores y agregar las nuevas
+															const newSelection = [...selectedContacts];
+															currentPageContactIds.forEach((id) => {
+																if (!newSelection.includes(id)) {
+																	newSelection.push(id);
+																}
+															});
+															setSelectedContacts(newSelection);
+														}
+													}}
+												>
+													{contacts.filter((contact) => contact._id).every((contact) => selectedContacts.includes(contact._id as string))
+														? "Deseleccionar página"
+														: "Seleccionar página"}
+												</Button>
+											)}
+										</Box>
+									</Grid>
 								</Grid>
-							</Grid>
-						</Box>
+							</Box>
 
-						<Box sx={{ display: "flex", flexDirection: "column", height: 400 }}>
-							<Box sx={{ flexGrow: 1, overflow: "hidden" }}>
-								<ScrollX>
+							<Box sx={{ display: "flex", flexDirection: "column" }}>
+								<Box>
 									<MainCard
 										content={false}
 										sx={{
-											height: 330, // Altura fija para la lista
-											overflow: "auto",
+											border: "none",
+											boxShadow: "none",
 										}}
 									>
 										{loadingContacts ? (
@@ -575,16 +622,17 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 													<Box
 														key={contact._id}
 														p={2}
-														onClick={() => contact._id && toggleContactSelection(contact._id)}
+														onClick={() => canAddContacts && contact._id && toggleContactSelection(contact._id)}
 														sx={{
-															cursor: "pointer",
+															cursor: canAddContacts ? "pointer" : "not-allowed",
+															opacity: canAddContacts ? 1 : 0.6,
 															display: "flex",
 															alignItems: "center",
 															justifyContent: "space-between",
 															borderBottom: `1px solid ${theme.palette.divider}`,
 															bgcolor: contact._id && selectedContacts.includes(contact._id) ? theme.palette.primary.light : "transparent",
 															"&:hover": {
-																bgcolor: theme.palette.grey[100],
+																bgcolor: canAddContacts ? theme.palette.grey[100] : "transparent",
 															},
 														}}
 													>
@@ -609,166 +657,174 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 											</>
 										)}
 									</MainCard>
-								</ScrollX>
-							</Box>
-							<Box sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}`, pt: 1 }}>
-								<TablePagination
-									component="div"
-									count={totalContacts}
-									page={contactPage - 1} // La API usa paginación basada en 1, pero MUI usa 0
-									onPageChange={handleContactPageChange}
-									rowsPerPage={10}
-									rowsPerPageOptions={[10]}
-									labelRowsPerPage="Por página:"
-									labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => {
-										const validFrom = isNaN(from) ? 0 : from;
-										const validTo = isNaN(to) ? 0 : to;
-										const validCount = isNaN(count) || count === undefined ? 0 : count;
-										return `${validFrom}-${validTo} de ${validCount}`;
-									}}
-								/>
-							</Box>
-						</Box>
-					</TabPanel>
-
-					<TabPanel value={tabValue} index={1}>
-						<Box mb={2}>
-							<Grid container spacing={2} alignItems="center">
-								<Grid item xs>
-									<TextField
-										fullWidth
-										variant="outlined"
-										size="small"
-										placeholder="Buscar segmentos por nombre..."
-										value={segmentSearch}
-										onChange={(e) => setSegmentSearch(e.target.value)}
-										onKeyPress={(e) => e.key === "Enter" && handleSegmentSearch()}
-										InputProps={{
-											endAdornment: (
-												<IconButton onClick={handleSegmentSearch} edge="end" size="small">
-													<SearchNormal1 size={18} />
-												</IconButton>
-											),
+								</Box>
+								<Box sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}`, pt: 1 }}>
+									<TablePagination
+										component="div"
+										count={totalContacts}
+										page={contactPage - 1} // La API usa paginación basada en 1, pero MUI usa 0
+										onPageChange={handleContactPageChange}
+										rowsPerPage={10}
+										rowsPerPageOptions={[10]}
+										labelRowsPerPage="Por página:"
+										labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => {
+											const validFrom = isNaN(from) ? 0 : from;
+											const validTo = isNaN(to) ? 0 : to;
+											const validCount = isNaN(count) || count === undefined ? 0 : count;
+											return `${validFrom}-${validTo} de ${validCount}`;
 										}}
 									/>
+								</Box>
+							</Box>
+						</TabPanel>
+
+						<TabPanel value={tabValue} index={1}>
+							<Box mt={3} mb={2}>
+								<Grid container spacing={2} alignItems="center">
+									<Grid item xs>
+										<TextField
+											fullWidth
+											variant="outlined"
+											size="small"
+											placeholder="Buscar segmentos por nombre..."
+											value={segmentSearch}
+											onChange={(e) => setSegmentSearch(e.target.value)}
+											onKeyPress={(e) => e.key === "Enter" && handleSegmentSearch()}
+											InputProps={{
+												endAdornment: (
+													<IconButton onClick={handleSegmentSearch} edge="end" size="small">
+														<SearchNormal1 size={18} />
+													</IconButton>
+												),
+											}}
+										/>
+									</Grid>
 								</Grid>
-							</Grid>
-						</Box>
+							</Box>
 
-						<Box sx={{ display: "flex", flexDirection: "column", height: 400 }}>
-							<RadioGroup
-								aria-label="segments"
-								name="segments"
-								value={selectedSegment}
-								onChange={(e) => handleSegmentSelection(e.target.value)}
-								sx={{ height: "100%" }}
-							>
-								{loadingSegments ? (
-									<Box display="flex" justifyContent="center" alignItems="center" py={4}>
-										<CircularProgress />
-									</Box>
-								) : segments.length === 0 ? (
-									<Box textAlign="center" p={3}>
-										<Typography variant="body1">No se encontraron segmentos</Typography>
-										{segmentSearch && (
-											<Button
-												variant="text"
-												color="primary"
-												onClick={() => {
-													setSegmentSearch("");
-													setSegmentPage(1);
-													// No es necesario llamar a fetchSegments aquí, el efecto lo hará
-												}}
-												sx={{ mt: 1 }}
-											>
-												Limpiar búsqueda
-											</Button>
-										)}
-									</Box>
-								) : (
-									<Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-										<Box sx={{ flexGrow: 1, overflow: "hidden" }}>
-											<MainCard content={false} sx={{ height: 330, overflow: "auto" }}>
-												{segments.map((segment) => (
-													<Box
-														key={segment._id}
-														p={2}
-														sx={{
-															cursor: "pointer",
-															borderBottom: `1px solid ${theme.palette.divider}`,
-															bgcolor: segment._id === selectedSegment ? theme.palette.primary.light : "transparent",
-															"&:hover": {
-																bgcolor: theme.palette.grey[100],
-															},
-														}}
-													>
-														<FormControlLabel
-															value={segment._id}
-															control={<Radio />}
-															label={
-																<Box>
-																	<Typography variant="subtitle1">{segment.name}</Typography>
-																	<Box display="flex" alignItems="center" mt={0.5}>
-																		<Typography variant="body2" color="textSecondary">
-																			{segment.description || "Sin descripción"}
-																		</Typography>
-																		<Chip
-																			size="small"
-																			label={`${segment.estimatedCount || 0} contactos`}
-																			sx={{ ml: 1, fontSize: "0.75rem" }}
-																			variant="outlined"
-																		/>
-																		<Chip
-																			size="small"
-																			label={segment.type}
-																			color="secondary"
-																			sx={{ ml: 1, fontSize: "0.75rem" }}
-																			variant="outlined"
-																		/>
-																	</Box>
-																</Box>
-															}
-															sx={{ width: "100%", m: 0 }}
-														/>
-													</Box>
-												))}
-											</MainCard>
-										</Box>
-										<Box sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}`, pt: 1 }}>
-											<TablePagination
-												component="div"
-												count={totalSegments}
-												page={segmentPage - 1} // La API usa paginación basada en 1, pero MUI usa 0
-												onPageChange={handleSegmentPageChange}
-												rowsPerPage={10}
-												rowsPerPageOptions={[10]}
-												labelRowsPerPage="Por página:"
-												labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => {
-													const validFrom = isNaN(from) ? 0 : from;
-													const validTo = isNaN(to) ? 0 : to;
-													const validCount = isNaN(count) || count === undefined ? 0 : count;
-													return `${validFrom}-${validTo} de ${validCount}`;
-												}}
-											/>
-										</Box>
-									</Box>
-								)}
-							</RadioGroup>
-						</Box>
-					</TabPanel>
-
-					<Box mt={3} display="flex" justifyContent="space-between">
-						<Box>
-							<Tooltip title="Añadir todos los contactos activos a la campaña">
-								<Button
-									onClick={handleAddAllActiveContacts}
-									variant="outlined"
-									color="secondary"
-									disabled={addingAllContacts}
-									startIcon={addingAllContacts ? <CircularProgress size={20} color="inherit" /> : <UserAdd />}
+							<Box sx={{ display: "flex", flexDirection: "column" }}>
+								<RadioGroup
+									aria-label="segments"
+									name="segments"
+									value={selectedSegment}
+									onChange={(e) => handleSegmentSelection(e.target.value)}
 								>
-									{addingAllContacts ? "Añadiendo todos..." : "Añadir todos los activos"}
-								</Button>
+									{loadingSegments ? (
+										<Box display="flex" justifyContent="center" alignItems="center" py={4}>
+											<CircularProgress />
+										</Box>
+									) : segments.length === 0 ? (
+										<Box textAlign="center" p={3}>
+											<Typography variant="body1">No se encontraron segmentos</Typography>
+											{segmentSearch && (
+												<Button
+													variant="text"
+													color="primary"
+													onClick={() => {
+														setSegmentSearch("");
+														setSegmentPage(1);
+														// No es necesario llamar a fetchSegments aquí, el efecto lo hará
+													}}
+													sx={{ mt: 1 }}
+												>
+													Limpiar búsqueda
+												</Button>
+											)}
+										</Box>
+									) : (
+										<Box sx={{ display: "flex", flexDirection: "column" }}>
+											<Box>
+												<MainCard content={false} sx={{ border: "none", boxShadow: "none" }}>
+													{segments.map((segment) => (
+														<Box
+															key={segment._id}
+															p={2}
+															sx={{
+																cursor: canAddContacts ? "pointer" : "not-allowed",
+																opacity: canAddContacts ? 1 : 0.6,
+																borderBottom: `1px solid ${theme.palette.divider}`,
+																bgcolor: segment._id === selectedSegment ? theme.palette.primary.light : "transparent",
+																"&:hover": {
+																	bgcolor: canAddContacts ? theme.palette.grey[100] : "transparent",
+																},
+															}}
+														>
+															<FormControlLabel
+																value={segment._id}
+																control={<Radio disabled={!canAddContacts} />}
+																label={
+																	<Box>
+																		<Typography variant="subtitle1">{segment.name}</Typography>
+																		<Box display="flex" alignItems="center" mt={0.5}>
+																			<Typography variant="body2" color="textSecondary">
+																				{segment.description || "Sin descripción"}
+																			</Typography>
+																			<Chip
+																				size="small"
+																				label={`${segment.estimatedCount || 0} contactos`}
+																				sx={{ ml: 1, fontSize: "0.75rem" }}
+																				variant="outlined"
+																			/>
+																			<Chip
+																				size="small"
+																				label={segment.type}
+																				color="secondary"
+																				sx={{ ml: 1, fontSize: "0.75rem" }}
+																				variant="outlined"
+																			/>
+																		</Box>
+																	</Box>
+																}
+																sx={{ width: "100%", m: 0 }}
+															/>
+														</Box>
+													))}
+												</MainCard>
+											</Box>
+											<Box sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}`, pt: 1 }}>
+												<TablePagination
+													component="div"
+													count={totalSegments}
+													page={segmentPage - 1} // La API usa paginación basada en 1, pero MUI usa 0
+													onPageChange={handleSegmentPageChange}
+													rowsPerPage={10}
+													rowsPerPageOptions={[10]}
+													labelRowsPerPage="Por página:"
+													labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => {
+														const validFrom = isNaN(from) ? 0 : from;
+														const validTo = isNaN(to) ? 0 : to;
+														const validCount = isNaN(count) || count === undefined ? 0 : count;
+														return `${validFrom}-${validTo} de ${validCount}`;
+													}}
+												/>
+											</Box>
+										</Box>
+									)}
+								</RadioGroup>
+							</Box>
+						</TabPanel>
+					</Box>
+
+					{/* Footer fijo */}
+					<Divider />
+					<Box sx={{ p: 3, display: "flex", justifyContent: "space-between" }}>
+						<Box>
+							<Tooltip
+								title={
+									canAddContacts ? "Añadir todos los contactos activos a la campaña" : "Solo se pueden agregar contactos a campañas activas"
+								}
+							>
+								<span>
+									<Button
+										onClick={handleAddAllActiveContacts}
+										variant="outlined"
+										color="secondary"
+										disabled={addingAllContacts || !canAddContacts}
+										startIcon={addingAllContacts ? <CircularProgress size={20} color="inherit" /> : <UserAdd />}
+									>
+										{addingAllContacts ? "Añadiendo todos..." : "Añadir todos los activos"}
+									</Button>
+								</span>
 							</Tooltip>
 						</Box>
 						<Box>
@@ -779,7 +835,9 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 								onClick={handleAddToCampaign}
 								variant="contained"
 								color="primary"
-								disabled={submitting || (tabValue === 0 && selectedContacts.length === 0) || (tabValue === 1 && !selectedSegment)}
+								disabled={
+									submitting || !canAddContacts || (tabValue === 0 && selectedContacts.length === 0) || (tabValue === 1 && !selectedSegment)
+								}
 								startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Add />}
 							>
 								{submitting ? "Añadiendo..." : "Añadir a la Campaña"}

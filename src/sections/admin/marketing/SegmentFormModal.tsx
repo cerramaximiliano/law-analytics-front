@@ -26,6 +26,7 @@ import {
 	Radio,
 	Tooltip,
 	Autocomplete,
+	Switch,
 } from "@mui/material";
 import { AddCircle, CloseCircle, Information, Trash } from "iconsax-react";
 import { SegmentInput, FilterOperator, SegmentFilter, ConditionOperator, SegmentType, Segment } from "types/segment";
@@ -56,6 +57,7 @@ const FIELD_OPTIONS = [
 	{ value: "openRate", label: "Tasa de apertura" },
 	{ value: "clickRate", label: "Tasa de clics" },
 	{ value: "lastActivity", label: "Última actividad" },
+	{ value: "createdAt", label: "Creado (fecha)" },
 ];
 
 // Opciones de operadores para condiciones
@@ -119,6 +121,7 @@ const DEFAULT_OPERATOR_BY_FIELD: { [key: string]: string } = {
 	openRate: "greater_than",
 	clickRate: "greater_than",
 	lastActivity: "greater_than",
+	createdAt: "greater_than",
 };
 
 // Operadores que no necesitan valor
@@ -174,6 +177,11 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	const [type, setType] = useState<SegmentType>("dynamic");
 	const [conditionOperator, setConditionOperator] = useState<ConditionOperator>("and");
 
+	// Estado para autoUpdate
+	const [autoUpdateEnabled, setAutoUpdateEnabled] = useState<boolean>(true);
+	const [autoUpdateFrequencyValue, setAutoUpdateFrequencyValue] = useState<number>(1);
+	const [autoUpdateFrequencyUnit, setAutoUpdateFrequencyUnit] = useState<"hours" | "days">("days");
+
 	// Para segmentos dinámicos
 	const [filters, setFilters] = useState<SegmentFilter[]>([
 		{
@@ -201,6 +209,15 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				setName(segment.name);
 				setDescription(segment.description || "");
 				setType(segment.type);
+
+				// Cargar configuración de autoUpdate si existe
+				if (segment.autoUpdate) {
+					setAutoUpdateEnabled(segment.autoUpdate.enabled);
+					if (segment.autoUpdate.frequency) {
+						setAutoUpdateFrequencyValue(segment.autoUpdate.frequency.value);
+						setAutoUpdateFrequencyUnit(segment.autoUpdate.frequency.unit);
+					}
+				}
 
 				if (segment.type === "dynamic" && segment.conditions) {
 					setConditionOperator(segment.conditions.operator);
@@ -256,6 +273,9 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		setDescription("");
 		setType("dynamic");
 		setConditionOperator("and");
+		setAutoUpdateEnabled(true);
+		setAutoUpdateFrequencyValue(1);
+		setAutoUpdateFrequencyUnit("days");
 		setFilters([{ field: "email", operator: "contains", value: "" }]);
 		setContacts([]);
 		setSelectedContactIds([]);
@@ -479,7 +499,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		if (fieldName === "tags") return OPERATOR_OPTIONS.tags;
 		if (["isAppUser", "isVerified"].includes(fieldName)) return OPERATOR_OPTIONS.boolean;
 		if (["totalCampaigns", "openRate", "clickRate"].includes(fieldName)) return OPERATOR_OPTIONS.number;
-		if (fieldName === "lastActivity") return OPERATOR_OPTIONS.date;
+		if (["lastActivity", "createdAt"].includes(fieldName)) return OPERATOR_OPTIONS.date;
 		return OPERATOR_OPTIONS.default;
 	};
 
@@ -637,7 +657,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		}
 
 		// Para fechas
-		if (filter.field === "lastActivity") {
+		if (["lastActivity", "createdAt"].includes(filter.field)) {
 			return (
 				<TextField
 					fullWidth
@@ -800,6 +820,15 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 										</Tooltip>
 									</Box>
 									<Divider sx={{ mb: 2 }} />
+
+									{/* Nota informativa sobre segmentos dinámicos */}
+									<Alert severity="info" sx={{ mb: 2 }}>
+										<Typography variant="body2">
+											<strong>Nota sobre segmentos dinámicos:</strong> Los segmentos se actualizan automáticamente al ser utilizados (ej. al
+											enviar campañas), pero el conteo estimado que se muestra aquí solo se actualiza al crear o modificar el segmento. El
+											número real de contactos puede variar.
+										</Typography>
+									</Alert>
 
 									<Box sx={{ mb: 2 }}>
 										<FormControl component="fieldset">
@@ -1000,6 +1029,64 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 								</Grid>
 							</>
 						)}
+
+						{/* Configuración de Actualización Automática */}
+						<Grid item xs={12}>
+							<Box sx={{ display: "flex", alignItems: "center", mb: 2, mt: 3 }}>
+								<Typography variant="subtitle1" fontWeight="bold">
+									Configuración de Actualización Automática
+								</Typography>
+								<Tooltip title="Configure cómo y cuándo se actualiza automáticamente este segmento">
+									<IconButton size="small">
+										<Information variant="Bold" size={16} />
+									</IconButton>
+								</Tooltip>
+							</Box>
+							<Divider sx={{ mb: 2 }} />
+
+							<Grid container spacing={2}>
+								<Grid item xs={12}>
+									<FormControlLabel
+										control={
+											<Switch checked={autoUpdateEnabled} onChange={(e) => setAutoUpdateEnabled(e.target.checked)} color="primary" />
+										}
+										label="Actualización automática habilitada"
+										disabled={saving}
+									/>
+								</Grid>
+
+								{autoUpdateEnabled && (
+									<>
+										<Grid item xs={12} sm={6}>
+											<TextField
+												fullWidth
+												type="number"
+												label="Frecuencia"
+												value={autoUpdateFrequencyValue}
+												onChange={(e) => setAutoUpdateFrequencyValue(Number(e.target.value))}
+												inputProps={{ min: 1 }}
+												disabled={saving}
+												helperText="Cada cuánto se actualiza"
+											/>
+										</Grid>
+										<Grid item xs={12} sm={6}>
+											<FormControl fullWidth>
+												<InputLabel>Unidad</InputLabel>
+												<Select
+													value={autoUpdateFrequencyUnit}
+													label="Unidad"
+													onChange={(e) => setAutoUpdateFrequencyUnit(e.target.value as "hours" | "days")}
+													disabled={saving}
+												>
+													<MenuItem value="hours">Horas</MenuItem>
+													<MenuItem value="days">Días</MenuItem>
+												</Select>
+											</FormControl>
+										</Grid>
+									</>
+								)}
+							</Grid>
+						</Grid>
 					</Grid>
 				)}
 			</DialogContent>

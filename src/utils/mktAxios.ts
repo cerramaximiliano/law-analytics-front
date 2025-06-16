@@ -15,27 +15,28 @@ const getAuthToken = () => {
 	if (serviceToken) {
 		return serviceToken;
 	}
-	
+
 	// Then try to get token from different possible cookie names
-	const token = Cookies.get("authToken") || 
-				 Cookies.get("auth_token") || 
-				 Cookies.get("auth_token_temp") ||
-				 Cookies.get("token") ||
-				 Cookies.get("access_token") ||
-				 Cookies.get("jwt") ||
-				 Cookies.get("session");
-				 
+	const token =
+		Cookies.get("authToken") ||
+		Cookies.get("auth_token") ||
+		Cookies.get("auth_token_temp") ||
+		Cookies.get("token") ||
+		Cookies.get("access_token") ||
+		Cookies.get("jwt") ||
+		Cookies.get("session");
+
 	// If no token in cookies, check if we can get it from document.cookie directly
 	if (!token) {
-		const cookies = document.cookie.split(';');
+		const cookies = document.cookie.split(";");
 		for (const cookie of cookies) {
-			const [name, value] = cookie.trim().split('=');
-			if (['authToken', 'auth_token', 'token', 'jwt', 'session'].includes(name)) {
+			const [name, value] = cookie.trim().split("=");
+			if (["authToken", "auth_token", "token", "jwt", "session"].includes(name)) {
 				return decodeURIComponent(value);
 			}
 		}
 	}
-	
+
 	return token;
 };
 
@@ -44,22 +45,22 @@ mktAxios.interceptors.request.use(
 	(config) => {
 		// Ensure credentials are included in all requests
 		config.withCredentials = true;
-		
+
 		// Debug: Log available cookies (remove in production)
-		if (process.env.NODE_ENV === 'development') {
-			console.log('Available cookies:', document.cookie);
-			console.log('All cookie names:', Object.keys(Cookies.get()));
+		if (process.env.NODE_ENV === "development") {
+			console.log("Available cookies:", document.cookie);
+			console.log("All cookie names:", Object.keys(Cookies.get()));
 		}
-		
+
 		// Add Authorization header if token exists
 		const token = getAuthToken();
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
-			console.log('Token found and added to MKT API request');
+			console.log("Token found and added to MKT API request");
 		} else {
-			console.warn('No auth token found for MKT API request');
+			console.warn("No auth token found for MKT API request");
 		}
-		
+
 		return config;
 	},
 	(error) => {
@@ -86,7 +87,7 @@ mktAxios.interceptors.response.use(
 				if (newToken) {
 					originalRequest.headers.Authorization = `Bearer ${newToken}`;
 				}
-				
+
 				// Retry the original request with updated headers
 				return mktAxios(originalRequest);
 			} catch (refreshError) {

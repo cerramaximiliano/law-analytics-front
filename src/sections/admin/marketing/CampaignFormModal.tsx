@@ -4,6 +4,7 @@ import * as Yup from "yup";
 
 // material-ui
 import {
+	Alert,
 	Box,
 	Button,
 	Dialog,
@@ -15,12 +16,14 @@ import {
 	FormControlLabel,
 	FormHelperText,
 	Grid,
+	IconButton,
 	InputLabel,
 	MenuItem,
 	Select,
 	Stack,
 	Switch,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import { LoadingButton } from "@mui/lab";
@@ -28,6 +31,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { es } from "date-fns/locale";
+import { InfoCircle } from "iconsax-react";
 
 // project imports
 import { Campaign, CampaignInput, CampaignType } from "types/campaign";
@@ -95,6 +99,7 @@ const campaignStatuses = [
 const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: CampaignFormModalProps) => {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [showTypeHelp, setShowTypeHelp] = useState(false);
 	const isEditMode = mode === "edit";
 
 	// Default initial values
@@ -211,23 +216,27 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 		<Dialog
 			open={open}
 			onClose={handleClose}
-			maxWidth="md"
+			maxWidth="sm"
 			fullWidth
 			sx={{
 				"& .MuiDialog-paper": {
 					borderRadius: 2,
+					height: "90vh",
+					display: "flex",
+					flexDirection: "column",
+					overflow: "hidden",
 				},
 			}}
 		>
-			<form onSubmit={formik.handleSubmit}>
-				<DialogTitle>
+			<form onSubmit={formik.handleSubmit} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+				<DialogTitle sx={{ flexShrink: 0 }}>
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
 						<Typography variant="h4">{isEditMode ? "Editar Campaña" : "Nueva Campaña de Email"}</Typography>
 					</Stack>
 				</DialogTitle>
 				<Divider />
 
-				<DialogContent sx={{ pt: 3 }}>
+				<DialogContent sx={{ pt: 3, pb: 3, overflowY: "auto", overflowX: "hidden" }}>
 					{error && (
 						<Box mb={3}>
 							<Typography color="error">{error}</Typography>
@@ -243,7 +252,7 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 						</Grid>
 
 						{/* Campaign name */}
-						<Grid item xs={12} md={6}>
+						<Grid item xs={12} sm={12} md={6}>
 							<FormControl fullWidth error={formik.touched.name && Boolean(formik.errors.name)}>
 								<TextField
 									id="name"
@@ -260,29 +269,74 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 						</Grid>
 
 						{/* Campaign type - disabled in edit mode */}
-						<Grid item xs={12} md={6}>
-							<FormControl fullWidth error={formik.touched.type && Boolean(formik.errors.type)}>
-								<InputLabel id="type-label">Tipo de campaña *</InputLabel>
-								<Select
-									labelId="type-label"
-									id="type"
-									name="type"
-									value={formik.values.type}
-									onChange={formik.handleChange}
-									onBlur={formik.handleBlur}
-									label="Tipo de campaña *"
-									disabled={isEditMode} // Can't change type in edit mode
-								>
-									{campaignTypes.map((type) => (
-										<MenuItem key={type.value} value={type.value}>
-											{type.label}
-										</MenuItem>
-									))}
-								</Select>
-								{formik.touched.type && formik.errors.type && <FormHelperText>{formik.errors.type}</FormHelperText>}
-								{isEditMode && <FormHelperText>El tipo de campaña no puede modificarse</FormHelperText>}
-							</FormControl>
+						<Grid item xs={12} sm={12} md={6}>
+							<Stack direction="row" spacing={1} alignItems="flex-start">
+								<FormControl fullWidth error={formik.touched.type && Boolean(formik.errors.type)}>
+									<InputLabel id="type-label">Tipo de campaña *</InputLabel>
+									<Select
+										labelId="type-label"
+										id="type"
+										name="type"
+										value={formik.values.type}
+										onChange={formik.handleChange}
+										onBlur={formik.handleBlur}
+										label="Tipo de campaña *"
+										disabled={isEditMode} // Can't change type in edit mode
+									>
+										{campaignTypes.map((type) => (
+											<MenuItem key={type.value} value={type.value}>
+												{type.label}
+											</MenuItem>
+										))}
+									</Select>
+									{formik.touched.type && formik.errors.type && <FormHelperText>{formik.errors.type}</FormHelperText>}
+									{isEditMode && <FormHelperText>El tipo de campaña no puede modificarse</FormHelperText>}
+								</FormControl>
+								<Tooltip title="Ver información sobre tipos de campaña">
+									<IconButton size="small" onClick={() => setShowTypeHelp(!showTypeHelp)} sx={{ mt: 1.5 }}>
+										<InfoCircle size={18} />
+									</IconButton>
+								</Tooltip>
+							</Stack>
 						</Grid>
+
+						{/* Campaign Type Help Information */}
+						{showTypeHelp && (
+							<Grid item xs={12}>
+								<Alert severity="info" onClose={() => setShowTypeHelp(false)}>
+									<Typography variant="subtitle2" gutterBottom sx={{ fontWeight: "bold" }}>
+										Tipos de Campaña:
+									</Typography>
+									<Box sx={{ mt: 1 }}>
+										<Typography variant="body2" paragraph>
+											<strong>1. Una sola vez (Onetime)</strong>
+											<br />• Envía un único email a todos los contactos
+											<br />• Se ejecuta una sola vez en la fecha programada
+											<br />• Ideal para: anuncios, promociones puntuales
+										</Typography>
+										<Typography variant="body2" paragraph>
+											<strong>2. Secuencia (Sequence)</strong>
+											<br />• Serie de emails con delays entre ellos
+											<br />• Cada contacto avanza paso a paso
+											<br />• Ideal para: cursos por email, educación progresiva
+										</Typography>
+										<Typography variant="body2" paragraph>
+											<strong>3. Automatizada (Automated)</strong>
+											<br />• Se activa por eventos (ej: registro de usuario)
+											<br />• Responde automáticamente a acciones
+											<br />• Perfecta para: onboarding, carritos abandonados
+											<br />• Funciona con "Campaña permanente" activado
+										</Typography>
+										<Typography variant="body2">
+											<strong>4. Recurrente (Recurring)</strong>
+											<br />• Se repite periódicamente (semanal, mensual)
+											<br />• Los contactos pueden recibir la campaña múltiples veces
+											<br />• Ideal para: newsletters, resúmenes periódicos
+										</Typography>
+									</Box>
+								</Alert>
+							</Grid>
+						)}
 
 						{/* Campaign description */}
 						<Grid item xs={12}>
@@ -437,7 +491,8 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 					</Grid>
 				</DialogContent>
 
-				<DialogActions sx={{ px: 3, py: 2 }}>
+				<Divider />
+				<DialogActions sx={{ px: 3, py: 2, flexShrink: 0 }}>
 					<Button onClick={handleClose} color="inherit">
 						Cancelar
 					</Button>
