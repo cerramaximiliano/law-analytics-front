@@ -40,7 +40,7 @@ import { Add, Trash } from "iconsax-react";
 
 // types
 import { Campaign } from "types/campaign";
-import { CampaignEmail, CampaignEmailInput, SendingRestrictions, EmailTracking } from "types/campaign-email";
+import { CampaignEmail, CampaignEmailInput, EmailTracking } from "types/campaign-email";
 import { CampaignEmailService } from "store/reducers/campaign";
 
 // Interface for email template
@@ -146,7 +146,26 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 				enqueueSnackbar("Error al cargar las plantillas de email", { variant: "error" });
 			}
 		} catch (err: any) {
-			enqueueSnackbar(err.message || "Error al cargar las plantillas de email", { variant: "error" });
+			// Mejorar el manejo de errores para proporcionar mensajes más amigables
+			let errorMessage = "Error al cargar las plantillas de email";
+
+			if (err.code === "ERR_NETWORK") {
+				errorMessage = "Error de conexión. Por favor verifica tu conexión a internet y vuelve a intentarlo.";
+			} else if (err.response?.data?.error) {
+				errorMessage = err.response.data.error;
+			} else if (err.response?.data?.message) {
+				errorMessage = err.response.data.message;
+			} else if (err.response?.status === 404) {
+				errorMessage = "No se encontraron plantillas de email.";
+			} else if (err.response?.status === 403) {
+				errorMessage = "No tienes permisos para ver las plantillas.";
+			} else if (err.response?.status === 500) {
+				errorMessage = "Error en el servidor. Por favor intenta nuevamente más tarde.";
+			} else if (err.message && err.message !== "Network Error") {
+				errorMessage = err.message;
+			}
+
+			enqueueSnackbar(errorMessage, { variant: "error" });
 		} finally {
 			setTemplatesLoading(false);
 		}
@@ -218,13 +237,48 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 			  }),
 	});
 
-	// Initial sending restrictions
-	const initialSendingRestrictions: SendingRestrictions = {
-		daysOfWeek: email?.sendingRestrictions?.daysOfWeek || [0, 1, 2, 3, 4, 5, 6],
-		timeStart: email?.sendingRestrictions?.timeStart || "08:00",
-		timeEnd: email?.sendingRestrictions?.timeEnd || "20:00",
-		timezone: email?.sendingRestrictions?.timezone || "America/Santiago",
+	// Initial sending restrictions - solo usar datos existentes
+	const initialSendingRestrictions = email?.sendingRestrictions || undefined;
+
+	// Estado para controlar si las restricciones están habilitadas
+	// Solo considerar habilitadas si hay datos reales configurados
+	const hasRestrictionsData = (): boolean => {
+		if (!email?.sendingRestrictions) return false;
+
+		// Verificar si es un objeto vacío
+		if (Object.keys(email.sendingRestrictions).length === 0) return false;
+
+		// Verificar si tiene los valores por defecto del modelo (todos los días y horario 08:00-20:00)
+		const defaultDays = [0, 1, 2, 3, 4, 5, 6];
+		const allowedDays = email.sendingRestrictions.allowedDays;
+		const hasDefaultDays =
+			allowedDays &&
+			allowedDays.length === 7 &&
+			defaultDays.every((day) => allowedDays.includes(day));
+
+		const timeWindow = email.sendingRestrictions.timeWindow;
+		const hasDefaultTimeWindow =
+			timeWindow &&
+			timeWindow.start === "08:00" &&
+			timeWindow.end === "20:00";
+
+		// Si tiene los valores por defecto, considerar como no configurado
+		if (hasDefaultDays && hasDefaultTimeWindow) {
+			return false;
+		}
+
+		// Verificar si tiene configuración personalizada
+		const hasCustomDays = allowedDays && allowedDays.length > 0 && !hasDefaultDays;
+
+		const hasCustomTimeWindow =
+			timeWindow &&
+			(timeWindow.start || timeWindow.end) &&
+			!hasDefaultTimeWindow;
+
+		return Boolean(hasCustomDays || hasCustomTimeWindow);
 	};
+
+	const [restrictionsEnabled, setRestrictionsEnabled] = useState<boolean>(hasRestrictionsData());
 
 	// Initial tracking settings
 	const initialTracking: EmailTracking = {
@@ -234,7 +288,7 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 	};
 
 	// Initial values
-	const initialValues: CampaignEmailInput & { conditions: any } = {
+	const initialValues: CampaignEmailInput = {
 		campaignId: campaign._id || "",
 		name: email?.name || "",
 		subject: email?.subject || "",
@@ -246,16 +300,16 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 		sender: email?.sender || { name: "", email: "" },
 		replyTo: email?.replyTo || "",
 		conditions: email?.conditions || {
-			type: "time",
+			type: "time" as const,
 			timeDelay: {
 				value: 1,
-				unit: "days",
+				unit: "days" as const,
 			},
 			eventTrigger: {
 				eventName: "",
 				maxWaitTime: {
 					value: 1,
-					unit: "days",
+					unit: "days" as const,
 				},
 			},
 			customCondition: {},
@@ -292,13 +346,27 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 			}
 
 			if (response && response.success) {
-				enqueueSnackbar(mode === "create" ? "Email creado con éxito" : "Email actualizado con éxito", { variant: "success" });
+				// No mostrar snackbar aquí, se maneja en el componente padre (CampaignEmailList)
 				onSuccess();
 			} else {
 				throw new Error("Error en la respuesta del servidor");
 			}
 		} catch (err: any) {
-			enqueueSnackbar(err.message || `Error al ${mode === "create" ? "crear" : "actualizar"} el email de la campaña`, { variant: "error" });
+			// Extraer el mensaje de error del backend
+			let errorMessage = `Error al ${mode === "create" ? "crear" : "actualizar"} el email de la campaña`;
+
+			if (err.response?.data?.error) {
+				// Si el backend devuelve un mensaje de error específico
+				errorMessage = err.response.data.error;
+			} else if (err.response?.data?.message) {
+				// Algunos endpoints pueden usar 'message' en lugar de 'error'
+				errorMessage = err.response.data.message;
+			} else if (err.message && !err.message.includes("Request failed")) {
+				// Si hay un mensaje de error personalizado que no sea el genérico de axios
+				errorMessage = err.message;
+			}
+
+			enqueueSnackbar(errorMessage, { variant: "error" });
 		} finally {
 			setSubmitting(false);
 		}
@@ -325,10 +393,47 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 	];
 
 	const handleDayToggle = (day: number) => {
-		const currentDays = formik.values.sendingRestrictions?.daysOfWeek || [];
-		const updatedDays = currentDays.includes(day) ? currentDays.filter((d) => d !== day) : [...currentDays, day];
+		// Solo permitir toggle si las restricciones están habilitadas
+		if (!restrictionsEnabled) return;
 
-		formik.setFieldValue("sendingRestrictions.daysOfWeek", updatedDays);
+		// Si no hay sendingRestrictions, inicializar con estructura vacía
+		if (!formik.values.sendingRestrictions) {
+			formik.setFieldValue("sendingRestrictions", {
+				allowedDays: [day],
+				timeWindow: {
+					start: "08:00",
+					end: "20:00",
+				},
+			});
+		} else {
+			const currentDays = formik.values.sendingRestrictions.allowedDays || [];
+			const updatedDays = currentDays.includes(day) ? currentDays.filter((d) => d !== day) : [...currentDays, day];
+			formik.setFieldValue("sendingRestrictions.allowedDays", updatedDays);
+		}
+	};
+
+	const handleToggleRestrictions = () => {
+		if (restrictionsEnabled) {
+			// Deshabilitar restricciones - establecer valores por defecto del modelo
+			setRestrictionsEnabled(false);
+			formik.setFieldValue("sendingRestrictions", {
+				allowedDays: [0, 1, 2, 3, 4, 5, 6], // Todos los días (valores por defecto)
+				timeWindow: {
+					start: "08:00",
+					end: "20:00",
+				},
+			});
+		} else {
+			// Habilitar restricciones con valores personalizados
+			setRestrictionsEnabled(true);
+			formik.setFieldValue("sendingRestrictions", {
+				allowedDays: [1, 2, 3, 4, 5], // Lunes a Viernes (configuración personalizada)
+				timeWindow: {
+					start: "09:00",
+					end: "18:00",
+				},
+			});
+		}
 	};
 
 	return (
@@ -497,6 +602,78 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 									}
 									label="Es el email final de la secuencia"
 								/>
+
+								<Divider sx={{ my: 2 }} />
+
+								<Typography variant="subtitle2" gutterBottom>
+									Configuración de tiempo de envío
+								</Typography>
+
+								<Card variant="outlined" sx={{ mb: 2, p: 2, backgroundColor: "action.hover" }}>
+									<Typography variant="body2" color="text.secondary" paragraph>
+										<strong>¿Cómo funcionan los retrasos de emails?</strong>
+									</Typography>
+									<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+										• <strong>Primer email:</strong> Se envía X tiempo después de que el contacto se une a la campaña
+									</Typography>
+									<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+										• <strong>Emails siguientes:</strong> Cada retraso se calcula desde cuando se envió el email anterior, no desde el
+										inicio
+									</Typography>
+									<Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+										Ejemplo: Si el Email 1 tiene retraso de 1 día y el Email 2 tiene retraso de 3 días, el Email 2 se enviará 3 días después
+										del Email 1 (4 días después de unirse a la campaña)
+									</Typography>
+									{campaign.startDate && (
+										<Typography variant="caption" color="warning.main" display="block" sx={{ mt: 1 }}>
+											<strong>Nota:</strong> Esta campaña tiene fecha de inicio. Los emails no se procesarán hasta después de esa fecha.
+										</Typography>
+									)}
+								</Card>
+
+								<Grid container spacing={2}>
+									<Grid item xs={6}>
+										<TextField
+											fullWidth
+											id="conditions.timeDelay.value"
+											name="conditions.timeDelay.value"
+											label="Retraso"
+											type="number"
+											InputProps={{ inputProps: { min: 0 } }}
+											value={formik.values.conditions?.timeDelay?.value || 1}
+											onChange={formik.handleChange}
+											error={Boolean(
+												formik.touched.conditions &&
+													(formik.touched.conditions as any).timeDelay?.value &&
+													formik.errors.conditions &&
+													(formik.errors.conditions as any).timeDelay?.value,
+											)}
+											helperText={
+												formik.values.sequenceIndex === 0
+													? "Tiempo de espera después de unirse a la campaña"
+													: "Tiempo de espera después del email anterior"
+											}
+										/>
+									</Grid>
+									<Grid item xs={6}>
+										<FormControl fullWidth>
+											<InputLabel id="time-unit-label">Unidad</InputLabel>
+											<Select
+												labelId="time-unit-label"
+												id="conditions.timeDelay.unit"
+												name="conditions.timeDelay.unit"
+												value={formik.values.conditions?.timeDelay?.unit || "days"}
+												label="Unidad"
+												onChange={formik.handleChange}
+											>
+												<MenuItem value="minutes">Minutos</MenuItem>
+												<MenuItem value="hours">Horas</MenuItem>
+												<MenuItem value="days">Días</MenuItem>
+												<MenuItem value="weeks">Semanas</MenuItem>
+											</Select>
+										</FormControl>
+									</Grid>
+								</Grid>
 							</Grid>
 
 							<Grid item xs={12} md={6}>
@@ -539,23 +716,55 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 					{/* Configuración Avanzada */}
 					<TabPanel value={tabValue} index={1}>
 						<Grid container spacing={3}>
+							{/* Título general de restricciones */}
+							<Grid item xs={12}>
+								<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+									<Typography variant="h6">Restricciones de envío</Typography>
+									<FormControlLabel
+										control={
+											<Switch
+												checked={restrictionsEnabled}
+												onChange={handleToggleRestrictions}
+												name="restrictionsEnabled"
+												color="primary"
+											/>
+										}
+										label={restrictionsEnabled ? "Habilitado" : "Deshabilitado"}
+									/>
+								</Box>
+							</Grid>
+
 							<Grid item xs={12} md={6}>
 								<Typography variant="subtitle2" gutterBottom>
 									Días permitidos para envío
 								</Typography>
 								<Box sx={{ mb: 3 }}>
-									<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-										{daysOfWeek.map((day) => (
-											<Chip
-												key={day.value}
-												label={day.label}
-												variant={formik.values.sendingRestrictions?.daysOfWeek?.includes(day.value) ? "filled" : "outlined"}
-												color={formik.values.sendingRestrictions?.daysOfWeek?.includes(day.value) ? "primary" : "default"}
-												onClick={() => handleDayToggle(day.value)}
-												sx={{ my: 0.5 }}
-											/>
-										))}
-									</Stack>
+									{!restrictionsEnabled ? (
+										<Typography variant="body2" color="text.secondary" sx={{ p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+											Sin restricciones de días configuradas. Los emails se enviarán cualquier día de la semana.
+										</Typography>
+									) : (
+										<>
+											<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+												{daysOfWeek.map((day) => (
+													<Chip
+														key={day.value}
+														label={day.label}
+														variant={formik.values.sendingRestrictions?.allowedDays?.includes(day.value) ? "filled" : "outlined"}
+														color={formik.values.sendingRestrictions?.allowedDays?.includes(day.value) ? "primary" : "default"}
+														onClick={() => handleDayToggle(day.value)}
+														disabled={!restrictionsEnabled}
+														sx={{ my: 0.5, cursor: restrictionsEnabled ? "pointer" : "not-allowed" }}
+													/>
+												))}
+											</Stack>
+											{restrictionsEnabled && formik.values.sendingRestrictions?.allowedDays?.length === 0 && (
+												<Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+													Ningún día seleccionado. Seleccione al menos un día.
+												</Typography>
+											)}
+										</>
+									)}
 								</Box>
 							</Grid>
 
@@ -563,46 +772,47 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 								<Typography variant="subtitle2" gutterBottom>
 									Ventana de tiempo para envío
 								</Typography>
-								<Grid container spacing={2}>
-									<Grid item xs={6}>
-										<TextField
-											fullWidth
-											id="sendingRestrictions.timeStart"
-											name="sendingRestrictions.timeStart"
-											label="Hora inicio"
-											type="time"
-											value={formik.values.sendingRestrictions?.timeStart || "08:00"}
-											onChange={formik.handleChange}
-											InputLabelProps={{ shrink: true }}
-											inputProps={{ step: 300 }}
-											sx={{ mb: 2 }}
-										/>
-									</Grid>
-									<Grid item xs={6}>
-										<TextField
-											fullWidth
-											id="sendingRestrictions.timeEnd"
-											name="sendingRestrictions.timeEnd"
-											label="Hora fin"
-											type="time"
-											value={formik.values.sendingRestrictions?.timeEnd || "20:00"}
-											onChange={formik.handleChange}
-											InputLabelProps={{ shrink: true }}
-											inputProps={{ step: 300 }}
-											sx={{ mb: 2 }}
-										/>
-									</Grid>
-								</Grid>
-								<TextField
-									fullWidth
-									id="sendingRestrictions.timezone"
-									name="sendingRestrictions.timezone"
-									label="Zona horaria"
-									value={formik.values.sendingRestrictions?.timezone || "America/Santiago"}
-									onChange={formik.handleChange}
-									sx={{ mb: 2 }}
-									placeholder="America/Santiago"
-								/>
+								{!restrictionsEnabled ? (
+									<Typography variant="body2" color="text.secondary" sx={{ p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+										Sin restricciones de horario configuradas. Los emails se enviarán a cualquier hora del día.
+									</Typography>
+								) : (
+									<>
+										<Grid container spacing={2}>
+											<Grid item xs={6}>
+												<TextField
+													fullWidth
+													id="sendingRestrictions.timeWindow.start"
+													name="sendingRestrictions.timeWindow.start"
+													label="Hora inicio"
+													type="time"
+													value={formik.values.sendingRestrictions?.timeWindow?.start || ""}
+													onChange={formik.handleChange}
+													InputLabelProps={{ shrink: true }}
+													inputProps={{ step: 300 }}
+													disabled={!restrictionsEnabled}
+												/>
+											</Grid>
+											<Grid item xs={6}>
+												<TextField
+													fullWidth
+													id="sendingRestrictions.timeWindow.end"
+													name="sendingRestrictions.timeWindow.end"
+													label="Hora fin"
+													type="time"
+													value={formik.values.sendingRestrictions?.timeWindow?.end || ""}
+													onChange={formik.handleChange}
+													InputLabelProps={{ shrink: true }}
+													inputProps={{ step: 300 }}
+													disabled={!restrictionsEnabled}
+												/>
+											</Grid>
+										</Grid>
+										<Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+											La zona horaria se configura a nivel de campaña
+										</Typography>
+									</>
+								)}
 							</Grid>
 
 							{/* Sección A/B Testing dentro de Configuración Avanzada */}

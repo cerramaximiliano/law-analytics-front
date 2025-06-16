@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // material-ui
 import {
@@ -93,6 +93,9 @@ const MailingCampaigns = () => {
 	const [sortBy, setSortBy] = useState<string>("createdAt");
 	const [sortDir, setSortDir] = useState<string>("desc");
 
+	// Use ref to track if initial load has been done
+	const hasInitialLoad = useRef(false);
+
 	// State for modals
 	const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 	const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
@@ -137,8 +140,10 @@ const MailingCampaigns = () => {
 		setCheckingStatus(true);
 		setServerStatus((prev) => ({ ...prev, status: "checking" }));
 
+		const serverUrl = "https://mkt.lawanalytics.app";
+
 		try {
-			const response = await fetch(serverStatus.url, {
+			const response = await fetch(serverUrl, {
 				method: "GET",
 				mode: "cors",
 				headers: {
@@ -190,20 +195,30 @@ const MailingCampaigns = () => {
 		} finally {
 			setCheckingStatus(false);
 		}
-	}, [serverStatus.url]);
+	}, []);
 
-	// Load campaigns on component mount and when dependencies change
+	// Initial mount effect
 	useEffect(() => {
 		fetchCampaigns();
 		fetchStats();
-	}, [page, rowsPerPage, filterType, filterStatus, sortBy, sortDir]);
-
-	// Check server status on mount and periodically
-	useEffect(() => {
 		checkServerStatus();
+
+		// Set up periodic server status check
 		const interval = setInterval(checkServerStatus, 60000); // Check every minute
-		return () => clearInterval(interval);
-	}, [checkServerStatus]);
+		return () => {
+			clearInterval(interval);
+		};
+	}, []); // Only on mount
+
+	// Filter/pagination change effect
+	useEffect(() => {
+		if (hasInitialLoad.current) {
+			fetchCampaigns();
+			fetchStats();
+		} else {
+			hasInitialLoad.current = true;
+		}
+	}, [page, rowsPerPage, filterType, filterStatus, sortBy, sortDir]);
 
 	// Refresh server status when processing queued requests
 	useRequestQueueRefresh(() => {
@@ -223,8 +238,10 @@ const MailingCampaigns = () => {
 			if (filterStatus) filters.status = filterStatus;
 
 			const response = await CampaignService.getCampaigns(page + 1, rowsPerPage, filters, sortBy, sortDir);
-			setCampaigns(response.data);
-			setTotalCount(response.total);
+			setCampaigns(response.data || []);
+			// Use pagination.total if available, otherwise fallback to legacy total
+			const totalRecords = response.pagination?.total ?? response.total ?? 0;
+			setTotalCount(totalRecords);
 		} catch (err) {
 			setError("Error al cargar las campañas. Por favor, intente de nuevo más tarde.");
 		} finally {
@@ -693,7 +710,11 @@ const MailingCampaigns = () => {
 					onPageChange={handleChangePage}
 					onRowsPerPageChange={handleChangeRowsPerPage}
 					labelRowsPerPage="Filas por página:"
-					labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+					labelDisplayedRows={({ from, to, count, page }) => {
+						const totalPages = Math.ceil(count / rowsPerPage);
+						const currentPage = page + 1;
+						return `Página ${currentPage} de ${totalPages} (${from}-${to} de ${count})`;
+					}}
 				/>
 			</MainCard>
 

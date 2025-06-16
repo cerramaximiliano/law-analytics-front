@@ -36,6 +36,7 @@ import { InfoCircle } from "iconsax-react";
 // project imports
 import { Campaign, CampaignInput, CampaignType } from "types/campaign";
 import { CampaignService } from "store/reducers/campaign";
+import { useSnackbar } from "notistack";
 
 // types
 interface CampaignFormModalProps {
@@ -101,6 +102,7 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 	const [error, setError] = useState<string | null>(null);
 	const [showTypeHelp, setShowTypeHelp] = useState(false);
 	const isEditMode = mode === "edit";
+	const { enqueueSnackbar } = useSnackbar();
 
 	// Default initial values
 	const defaultInitialValues: FormValues = {
@@ -164,7 +166,36 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 				formik.resetForm();
 				onSuccess();
 			} catch (err: any) {
-				setError(err.message || `Error al ${isEditMode ? "actualizar" : "crear"} la campaña`);
+				// Log del error completo para debugging
+				console.error(`Error al ${isEditMode ? "actualizar" : "crear"} campaña:`, {
+					error: err,
+					response: err.response,
+					data: err.response?.data,
+					status: err.response?.status,
+					values: values,
+				});
+
+				// Obtener mensaje de error más específico
+				let errorMessage = `Error al ${isEditMode ? "actualizar" : "crear"} la campaña`;
+
+				if (err.response?.data?.message) {
+					errorMessage = err.response.data.message;
+				} else if (err.response?.data?.error) {
+					errorMessage = err.response.data.error;
+				} else if (err.response?.data?.errors) {
+					// Si hay múltiples errores de validación
+					const errors = err.response.data.errors;
+					const errorMessages = Object.entries(errors)
+						.map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+						.join("; ");
+					errorMessage = `Errores de validación: ${errorMessages}`;
+				} else if (err.message) {
+					errorMessage = err.message;
+				}
+
+				setError(errorMessage);
+				// También mostrar el error en un snackbar para mayor visibilidad
+				enqueueSnackbar(errorMessage, { variant: "error", persist: false });
 			} finally {
 				setLoading(false);
 			}
@@ -209,6 +240,7 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 	const handleClose = () => {
 		formik.resetForm();
 		setError(null);
+		setShowTypeHelp(false);
 		onClose();
 	};
 
@@ -238,9 +270,12 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 
 				<DialogContent sx={{ pt: 3, pb: 3, overflowY: "auto", overflowX: "hidden" }}>
 					{error && (
-						<Box mb={3}>
-							<Typography color="error">{error}</Typography>
-						</Box>
+						<Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+							<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+								{isEditMode ? "Error al actualizar la campaña" : "Error al crear la campaña"}
+							</Typography>
+							<Typography variant="body2">{error}</Typography>
+						</Alert>
 					)}
 
 					<Grid container spacing={3}>

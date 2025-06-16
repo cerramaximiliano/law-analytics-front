@@ -73,9 +73,8 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 	const [submitting, setSubmitting] = useState<boolean>(false);
 	const [addingAllContacts, setAddingAllContacts] = useState<boolean>(false);
 
-	// Verificar si la campaña está activa
-	const isCampaignActive = campaign.status === "active";
-	const canAddContacts = isCampaignActive;
+	// Verificar si se pueden agregar contactos según el estado de la campaña
+	const canAddContacts = campaign.status === "draft" || campaign.status === "active" || campaign.status === "paused";
 
 	// Data states
 	const [contacts, setContacts] = useState<MarketingContact[]>([]);
@@ -486,16 +485,52 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 				>
 					{/* Header fijo */}
 					<Box sx={{ p: 3, pb: 2 }}>
-						<Typography variant="h4" id="campaign-contacts-modal-title" gutterBottom>
-							Añadir a la Campaña: {campaign.name}
-						</Typography>
+						<Box display="flex" alignItems="center" gap={2} mb={1}>
+							<Typography variant="h4" id="campaign-contacts-modal-title">
+								Añadir a la Campaña: {campaign.name}
+							</Typography>
+							<Chip
+								label={
+									campaign.status === "draft"
+										? "Borrador"
+										: campaign.status === "active"
+										? "Activa"
+										: campaign.status === "paused"
+										? "Pausada"
+										: campaign.status === "completed"
+										? "Completada"
+										: "Archivada"
+								}
+								color={
+									campaign.status === "draft"
+										? "default"
+										: campaign.status === "active"
+										? "success"
+										: campaign.status === "paused"
+										? "warning"
+										: campaign.status === "completed"
+										? "info"
+										: "secondary"
+								}
+								size="small"
+							/>
+						</Box>
 						<Typography variant="body2" color="textSecondary" gutterBottom>
 							Seleccione contactos o un segmento para añadir a esta campaña
 						</Typography>
 
 						{!canAddContacts && (
 							<Alert severity="warning" sx={{ mt: 2 }}>
-								Solo se pueden agregar contactos a campañas activas. Esta campaña se encuentra en estado "{campaign.status}".
+								<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+									No se pueden agregar contactos a esta campaña
+								</Typography>
+								<Typography variant="body2">
+									Las campañas en estado "{campaign.status === "completed" ? "completada" : "archivada"}" no permiten agregar nuevos
+									contactos.
+								</Typography>
+								<Typography variant="caption" display="block" sx={{ mt: 1 }}>
+									Los contactos solo pueden agregarse a campañas en estado: borrador, activa o pausada.
+								</Typography>
 							</Alert>
 						)}
 					</Box>
@@ -585,8 +620,8 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 								</Grid>
 							</Box>
 
-							<Box sx={{ display: "flex", flexDirection: "column" }}>
-								<Box>
+							<Box sx={{ display: "flex", flexDirection: "column", height: 400 }}>
+								<Box sx={{ flexGrow: 1, overflow: "auto" }}>
 									<MainCard
 										content={false}
 										sx={{
@@ -702,12 +737,13 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 								</Grid>
 							</Box>
 
-							<Box sx={{ display: "flex", flexDirection: "column" }}>
+							<Box sx={{ display: "flex", flexDirection: "column", height: 400 }}>
 								<RadioGroup
 									aria-label="segments"
 									name="segments"
 									value={selectedSegment}
 									onChange={(e) => handleSegmentSelection(e.target.value)}
+									sx={{ flexGrow: 1, overflow: "auto" }}
 								>
 									{loadingSegments ? (
 										<Box display="flex" justifyContent="center" alignItems="center" py={4}>
@@ -732,75 +768,71 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 											)}
 										</Box>
 									) : (
-										<Box sx={{ display: "flex", flexDirection: "column" }}>
-											<Box>
-												<MainCard content={false} sx={{ border: "none", boxShadow: "none" }}>
-													{segments.map((segment) => (
-														<Box
-															key={segment._id}
-															p={2}
-															sx={{
-																cursor: canAddContacts ? "pointer" : "not-allowed",
-																opacity: canAddContacts ? 1 : 0.6,
-																borderBottom: `1px solid ${theme.palette.divider}`,
-																bgcolor: segment._id === selectedSegment ? theme.palette.primary.light : "transparent",
-																"&:hover": {
-																	bgcolor: canAddContacts ? theme.palette.grey[100] : "transparent",
-																},
-															}}
-														>
-															<FormControlLabel
-																value={segment._id}
-																control={<Radio disabled={!canAddContacts} />}
-																label={
-																	<Box>
-																		<Typography variant="subtitle1">{segment.name}</Typography>
-																		<Box display="flex" alignItems="center" mt={0.5}>
-																			<Typography variant="body2" color="textSecondary">
-																				{segment.description || "Sin descripción"}
-																			</Typography>
-																			<Chip
-																				size="small"
-																				label={`${segment.estimatedCount || 0} contactos`}
-																				sx={{ ml: 1, fontSize: "0.75rem" }}
-																				variant="outlined"
-																			/>
-																			<Chip
-																				size="small"
-																				label={segment.type}
-																				color="secondary"
-																				sx={{ ml: 1, fontSize: "0.75rem" }}
-																				variant="outlined"
-																			/>
-																		</Box>
-																	</Box>
-																}
-																sx={{ width: "100%", m: 0 }}
-															/>
-														</Box>
-													))}
-												</MainCard>
-											</Box>
-											<Box sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}`, pt: 1 }}>
-												<TablePagination
-													component="div"
-													count={totalSegments}
-													page={segmentPage - 1} // La API usa paginación basada en 1, pero MUI usa 0
-													onPageChange={handleSegmentPageChange}
-													rowsPerPage={10}
-													rowsPerPageOptions={[10]}
-													labelRowsPerPage="Por página:"
-													labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => {
-														const validFrom = isNaN(from) ? 0 : from;
-														const validTo = isNaN(to) ? 0 : to;
-														const validCount = isNaN(count) || count === undefined ? 0 : count;
-														return `${validFrom}-${validTo} de ${validCount}`;
+										<MainCard content={false} sx={{ border: "none", boxShadow: "none" }}>
+											{segments.map((segment) => (
+												<Box
+													key={segment._id}
+													p={2}
+													sx={{
+														cursor: canAddContacts ? "pointer" : "not-allowed",
+														opacity: canAddContacts ? 1 : 0.6,
+														borderBottom: `1px solid ${theme.palette.divider}`,
+														bgcolor: segment._id === selectedSegment ? theme.palette.primary.light : "transparent",
+														"&:hover": {
+															bgcolor: canAddContacts ? theme.palette.grey[100] : "transparent",
+														},
 													}}
-												/>
-											</Box>
-										</Box>
+												>
+													<FormControlLabel
+														value={segment._id}
+														control={<Radio disabled={!canAddContacts} />}
+														label={
+															<Box>
+																<Typography variant="subtitle1">{segment.name}</Typography>
+																<Box display="flex" alignItems="center" mt={0.5}>
+																	<Typography variant="body2" color="textSecondary">
+																		{segment.description || "Sin descripción"}
+																	</Typography>
+																	<Chip
+																		size="small"
+																		label={`${segment.estimatedCount || 0} contactos`}
+																		sx={{ ml: 1, fontSize: "0.75rem" }}
+																		variant="outlined"
+																	/>
+																	<Chip
+																		size="small"
+																		label={segment.type}
+																		color="secondary"
+																		sx={{ ml: 1, fontSize: "0.75rem" }}
+																		variant="outlined"
+																	/>
+																</Box>
+															</Box>
+														}
+														sx={{ width: "100%", m: 0 }}
+													/>
+												</Box>
+											))}
+										</MainCard>
 									)}
 								</RadioGroup>
+								<Box sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}`, pt: 1 }}>
+									<TablePagination
+										component="div"
+										count={totalSegments}
+										page={segmentPage - 1} // La API usa paginación basada en 1, pero MUI usa 0
+										onPageChange={handleSegmentPageChange}
+										rowsPerPage={10}
+										rowsPerPageOptions={[10]}
+										labelRowsPerPage="Por página:"
+										labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => {
+											const validFrom = isNaN(from) ? 0 : from;
+											const validTo = isNaN(to) ? 0 : to;
+											const validCount = isNaN(count) || count === undefined ? 0 : count;
+											return `${validFrom}-${validTo} de ${validCount}`;
+										}}
+									/>
+								</Box>
 							</Box>
 						</TabPanel>
 					</Box>
@@ -811,7 +843,9 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 						<Box>
 							<Tooltip
 								title={
-									canAddContacts ? "Añadir todos los contactos activos a la campaña" : "Solo se pueden agregar contactos a campañas activas"
+									canAddContacts
+										? "Añadir todos los contactos activos a la campaña"
+										: "No se pueden agregar contactos a campañas completadas o archivadas"
 								}
 							>
 								<span>

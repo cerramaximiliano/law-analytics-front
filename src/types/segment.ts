@@ -33,7 +33,7 @@ export interface AutoUpdate {
 	enabled: boolean;
 	frequency: {
 		value: number;
-		unit: "hours" | "days";
+		unit: "minutes" | "hours" | "days";
 	};
 }
 
@@ -93,7 +93,7 @@ export interface SegmentInput {
 		enabled?: boolean;
 		frequency?: {
 			value?: number;
-			unit?: "hours" | "days";
+			unit?: "minutes" | "hours" | "days";
 		};
 	};
 }

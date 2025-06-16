@@ -33,6 +33,7 @@ import { SegmentInput, FilterOperator, SegmentFilter, ConditionOperator, Segment
 import { SegmentService } from "store/reducers/segments";
 import { MarketingContactService } from "store/reducers/marketing-contacts";
 import { MarketingContact } from "types/marketing-contact";
+import { useSnackbar } from "notistack";
 
 interface SegmentFormModalProps {
 	open: boolean;
@@ -152,6 +153,8 @@ const BOOLEAN_OPTIONS = [
 ];
 
 const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSave, segment }) => {
+	const { enqueueSnackbar } = useSnackbar();
+
 	// Estado para carga y errores
 	const [loading, setLoading] = useState<boolean>(false);
 	const [saving, setSaving] = useState<boolean>(false);
@@ -180,7 +183,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Estado para autoUpdate
 	const [autoUpdateEnabled, setAutoUpdateEnabled] = useState<boolean>(true);
 	const [autoUpdateFrequencyValue, setAutoUpdateFrequencyValue] = useState<number>(1);
-	const [autoUpdateFrequencyUnit, setAutoUpdateFrequencyUnit] = useState<"hours" | "days">("days");
+	const [autoUpdateFrequencyUnit, setAutoUpdateFrequencyUnit] = useState<"minutes" | "hours" | "days">("days");
 
 	// Para segmentos dinámicos
 	const [filters, setFilters] = useState<SegmentFilter[]>([
@@ -215,7 +218,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 					setAutoUpdateEnabled(segment.autoUpdate.enabled);
 					if (segment.autoUpdate.frequency) {
 						setAutoUpdateFrequencyValue(segment.autoUpdate.frequency.value);
-						setAutoUpdateFrequencyUnit(segment.autoUpdate.frequency.unit);
+						setAutoUpdateFrequencyUnit(segment.autoUpdate.frequency.unit as "minutes" | "hours" | "days");
 					}
 				}
 
@@ -274,8 +277,8 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		setType("dynamic");
 		setConditionOperator("and");
 		setAutoUpdateEnabled(true);
-		setAutoUpdateFrequencyValue(1);
-		setAutoUpdateFrequencyUnit("days");
+		setAutoUpdateFrequencyValue(30);
+		setAutoUpdateFrequencyUnit("minutes");
 		setFilters([{ field: "email", operator: "contains", value: "" }]);
 		setContacts([]);
 		setSelectedContactIds([]);
@@ -451,6 +454,15 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				isActive: true,
 			};
 
+			// Agregar configuración de autoUpdate
+			segmentData.autoUpdate = {
+				enabled: autoUpdateEnabled,
+				frequency: {
+					value: autoUpdateFrequencyValue,
+					unit: autoUpdateFrequencyUnit,
+				},
+			};
+
 			// Solo enviar el tipo en modo creación, no se puede cambiar en edición
 			if (!isEditMode) {
 				segmentData.type = type;
@@ -474,19 +486,47 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				segmentData.contacts = selectedContactIds;
 			}
 
+			// Log para depuración
+			console.log(`[SegmentFormModal] ${isEditMode ? "Actualizando" : "Creando"} segmento:`, {
+				segmentId: segment?._id,
+				segmentData,
+			});
+
 			if (isEditMode && segment?._id) {
 				// Modo edición - actualizar segmento existente
 				await SegmentService.updateSegment(segment._id, segmentData);
+				enqueueSnackbar("Segmento actualizado exitosamente", { variant: "success" });
 			} else {
 				// Modo creación - crear nuevo segmento
 				await SegmentService.createSegment(segmentData);
+				enqueueSnackbar("Segmento creado exitosamente", { variant: "success" });
 			}
 
 			// Éxito - cerrar modal y actualizar lista
 			onSave();
 			onClose();
 		} catch (err: any) {
-			setError(err?.message || (isEditMode ? "No se pudo actualizar el segmento" : "No se pudo crear el segmento"));
+			// Log detallado del error
+			console.error(`[SegmentFormModal] Error al ${isEditMode ? "actualizar" : "crear"} segmento:`, {
+				error: err,
+				response: err.response,
+				data: err.response?.data,
+				status: err.response?.status,
+			});
+
+			// Obtener mensaje de error más específico
+			let errorMessage = isEditMode ? "No se pudo actualizar el segmento" : "No se pudo crear el segmento";
+
+			if (err.response?.data?.error) {
+				errorMessage = err.response.data.error;
+			} else if (err.response?.data?.message) {
+				errorMessage = err.response.data.message;
+			} else if (err.message) {
+				errorMessage = err.message;
+			}
+
+			setError(errorMessage);
+			enqueueSnackbar(errorMessage, { variant: "error" });
 		} finally {
 			setSaving(false);
 		}
@@ -1058,30 +1098,57 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 								{autoUpdateEnabled && (
 									<>
 										<Grid item xs={12} sm={6}>
-											<TextField
-												fullWidth
-												type="number"
-												label="Frecuencia"
-												value={autoUpdateFrequencyValue}
-												onChange={(e) => setAutoUpdateFrequencyValue(Number(e.target.value))}
-												inputProps={{ min: 1 }}
-												disabled={saving}
-												helperText="Cada cuánto se actualiza"
-											/>
-										</Grid>
-										<Grid item xs={12} sm={6}>
 											<FormControl fullWidth>
 												<InputLabel>Unidad</InputLabel>
 												<Select
 													value={autoUpdateFrequencyUnit}
 													label="Unidad"
-													onChange={(e) => setAutoUpdateFrequencyUnit(e.target.value as "hours" | "days")}
+													onChange={(e) => {
+														const newUnit = e.target.value as "minutes" | "hours" | "days";
+														setAutoUpdateFrequencyUnit(newUnit);
+
+														// Ajustar el valor según la unidad seleccionada
+														if (newUnit === "minutes") {
+															setAutoUpdateFrequencyValue(30); // Por defecto 30 minutos
+														} else {
+															setAutoUpdateFrequencyValue(1); // Por defecto 1 hora o 1 día
+														}
+													}}
 													disabled={saving}
 												>
+													<MenuItem value="minutes">Minutos</MenuItem>
 													<MenuItem value="hours">Horas</MenuItem>
 													<MenuItem value="days">Días</MenuItem>
 												</Select>
 											</FormControl>
+										</Grid>
+										<Grid item xs={12} sm={6}>
+											{autoUpdateFrequencyUnit === "minutes" ? (
+												<FormControl fullWidth>
+													<InputLabel>Frecuencia</InputLabel>
+													<Select
+														value={autoUpdateFrequencyValue}
+														label="Frecuencia"
+														onChange={(e) => setAutoUpdateFrequencyValue(Number(e.target.value))}
+														disabled={saving}
+													>
+														<MenuItem value={15}>Cada 15 minutos</MenuItem>
+														<MenuItem value={30}>Cada 30 minutos</MenuItem>
+														<MenuItem value={45}>Cada 45 minutos</MenuItem>
+													</Select>
+												</FormControl>
+											) : (
+												<TextField
+													fullWidth
+													type="number"
+													label="Frecuencia"
+													value={autoUpdateFrequencyValue}
+													onChange={(e) => setAutoUpdateFrequencyValue(Number(e.target.value))}
+													inputProps={{ min: 1 }}
+													disabled={saving}
+													helperText={`Cada ${autoUpdateFrequencyValue} ${autoUpdateFrequencyUnit === "hours" ? "hora(s)" : "día(s)"}`}
+												/>
+											)}
 										</Grid>
 									</>
 								)}
