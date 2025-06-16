@@ -58,6 +58,7 @@ interface FormValues {
 	isPermanent: boolean;
 	category: string;
 	tags: string;
+	timezone: string;
 }
 
 // validation schema
@@ -78,6 +79,7 @@ const validationSchema = Yup.object({
 	isPermanent: Yup.boolean(),
 	category: Yup.string(),
 	tags: Yup.string(),
+	timezone: Yup.string().required("La zona horaria es requerida"),
 });
 
 // Campaign types with labels
@@ -95,6 +97,40 @@ const campaignStatuses = [
 	{ value: "paused", label: "Pausada" },
 	{ value: "completed", label: "Completada" },
 	{ value: "archived", label: "Archivada" },
+];
+
+// Timezone options compatible with node-cron
+const timezoneOptions = [
+	{ value: "America/New_York", label: "Nueva York (EST/EDT)" },
+	{ value: "America/Chicago", label: "Chicago (CST/CDT)" },
+	{ value: "America/Denver", label: "Denver (MST/MDT)" },
+	{ value: "America/Los_Angeles", label: "Los Ángeles (PST/PDT)" },
+	{ value: "America/Toronto", label: "Toronto (EST/EDT)" },
+	{ value: "America/Vancouver", label: "Vancouver (PST/PDT)" },
+	{ value: "America/Mexico_City", label: "Ciudad de México (CST)" },
+	{ value: "America/Argentina/Buenos_Aires", label: "Buenos Aires (ART)" },
+	{ value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+	{ value: "America/Bogota", label: "Bogotá (COT)" },
+	{ value: "America/Lima", label: "Lima (PET)" },
+	{ value: "America/Santiago", label: "Santiago (CLT/CLST)" },
+	{ value: "America/Caracas", label: "Caracas (VET)" },
+	{ value: "Europe/London", label: "Londres (GMT/BST)" },
+	{ value: "Europe/Paris", label: "París (CET/CEST)" },
+	{ value: "Europe/Madrid", label: "Madrid (CET/CEST)" },
+	{ value: "Europe/Berlin", label: "Berlín (CET/CEST)" },
+	{ value: "Europe/Rome", label: "Roma (CET/CEST)" },
+	{ value: "Europe/Moscow", label: "Moscú (MSK)" },
+	{ value: "Asia/Dubai", label: "Dubai (GST)" },
+	{ value: "Asia/Shanghai", label: "Shanghai (CST)" },
+	{ value: "Asia/Hong_Kong", label: "Hong Kong (HKT)" },
+	{ value: "Asia/Tokyo", label: "Tokio (JST)" },
+	{ value: "Asia/Seoul", label: "Seúl (KST)" },
+	{ value: "Asia/Singapore", label: "Singapur (SGT)" },
+	{ value: "Asia/Kolkata", label: "Calcuta (IST)" },
+	{ value: "Australia/Sydney", label: "Sídney (AEDT/AEST)" },
+	{ value: "Australia/Melbourne", label: "Melbourne (AEDT/AEST)" },
+	{ value: "Pacific/Auckland", label: "Auckland (NZDT/NZST)" },
+	{ value: "UTC", label: "UTC (Tiempo Universal Coordinado)" },
 ];
 
 const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: CampaignFormModalProps) => {
@@ -115,6 +151,7 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 		isPermanent: false,
 		category: "",
 		tags: "",
+		timezone: "America/Argentina/Buenos_Aires", // Default timezone
 	};
 
 	// Formik setup
@@ -140,6 +177,10 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 						isPermanent: values.isPermanent,
 						category: values.category || undefined,
 						tags: tagsArray.length > 0 ? tagsArray : undefined,
+						settings: {
+							...campaign.settings,
+							timezone: values.timezone,
+						},
 					};
 
 					// Update campaign
@@ -156,6 +197,9 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 						isPermanent: values.isPermanent,
 						category: values.category || undefined,
 						tags: tagsArray.length > 0 ? tagsArray : undefined,
+						settings: {
+							timezone: values.timezone,
+						},
 					};
 
 					// Create campaign
@@ -218,6 +262,7 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 				isPermanent: campaign.isPermanent || false,
 				category: campaign.category || "",
 				tags: tagsString,
+				timezone: campaign.settings?.timezone || "America/Argentina/Buenos_Aires",
 			});
 		} else {
 			// Reset to defaults for create mode
@@ -442,6 +487,29 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 									onBlur={formik.handleBlur}
 									placeholder="Ej: Noticias, Eventos, Promociones"
 								/>
+							</FormControl>
+						</Grid>
+
+						{/* Timezone */}
+						<Grid item xs={12} md={6}>
+							<FormControl fullWidth error={formik.touched.timezone && Boolean(formik.errors.timezone)}>
+								<InputLabel id="timezone-label">Zona Horaria *</InputLabel>
+								<Select
+									labelId="timezone-label"
+									id="timezone"
+									name="timezone"
+									value={formik.values.timezone}
+									onChange={formik.handleChange}
+									onBlur={formik.handleBlur}
+									label="Zona Horaria *"
+								>
+									{timezoneOptions.map((tz) => (
+										<MenuItem key={tz.value} value={tz.value}>
+											{tz.label}
+										</MenuItem>
+									))}
+								</Select>
+								{formik.touched.timezone && formik.errors.timezone && <FormHelperText>{formik.errors.timezone}</FormHelperText>}
 							</FormControl>
 						</Grid>
 

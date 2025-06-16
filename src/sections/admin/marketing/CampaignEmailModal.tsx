@@ -251,16 +251,10 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 		// Verificar si tiene los valores por defecto del modelo (todos los días y horario 08:00-20:00)
 		const defaultDays = [0, 1, 2, 3, 4, 5, 6];
 		const allowedDays = email.sendingRestrictions.allowedDays;
-		const hasDefaultDays =
-			allowedDays &&
-			allowedDays.length === 7 &&
-			defaultDays.every((day) => allowedDays.includes(day));
+		const hasDefaultDays = allowedDays && allowedDays.length === 7 && defaultDays.every((day) => allowedDays.includes(day));
 
 		const timeWindow = email.sendingRestrictions.timeWindow;
-		const hasDefaultTimeWindow =
-			timeWindow &&
-			timeWindow.start === "08:00" &&
-			timeWindow.end === "20:00";
+		const hasDefaultTimeWindow = timeWindow && timeWindow.start === "08:00" && timeWindow.end === "20:00";
 
 		// Si tiene los valores por defecto, considerar como no configurado
 		if (hasDefaultDays && hasDefaultTimeWindow) {
@@ -270,10 +264,7 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 		// Verificar si tiene configuración personalizada
 		const hasCustomDays = allowedDays && allowedDays.length > 0 && !hasDefaultDays;
 
-		const hasCustomTimeWindow =
-			timeWindow &&
-			(timeWindow.start || timeWindow.end) &&
-			!hasDefaultTimeWindow;
+		const hasCustomTimeWindow = timeWindow && (timeWindow.start || timeWindow.end) && !hasDefaultTimeWindow;
 
 		return Boolean(hasCustomDays || hasCustomTimeWindow);
 	};
