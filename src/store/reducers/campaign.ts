@@ -205,6 +205,120 @@ export const CampaignService = {
 			throw error;
 		}
 	},
+
+	// Reset contact in campaign to initial step
+	resetContactCampaign: async (
+		campaignId: string,
+		contactId: string,
+		data?: { step?: number; reason?: string }
+	): Promise<{ success: boolean; message: string }> => {
+		try {
+			const response = await mktAxios.post(`/api/campaigns/${campaignId}/contacts/${contactId}/reset`, data || {});
+			return response.data;
+		} catch (error) {
+			throw error;
+		}
+	},
+
+	// Pause contact in campaign
+	pauseContactInCampaign: async (
+		campaignId: string,
+		contactId: string,
+		data: { reason: string; preventResync?: boolean }
+	): Promise<{ success: boolean; message: string }> => {
+		try {
+			const response = await mktAxios.post(`/api/campaigns/${campaignId}/contacts/${contactId}/pause`, {
+				...data,
+				preventResync: data.preventResync !== false // Default to true
+			});
+			return response.data;
+		} catch (error) {
+			throw error;
+		}
+	},
+
+	// Remove contact from campaign
+	removeContactFromCampaign: async (
+		campaignId: string,
+		contactId: string,
+		data: { reason: string; preventResync?: boolean }
+	): Promise<{ success: boolean; message: string }> => {
+		try {
+			const response = await mktAxios.delete(`/api/campaigns/${campaignId}/contacts/${contactId}`, {
+				data: {
+					...data,
+					preventResync: true // Always true to prevent sync
+				}
+			});
+			return response.data;
+		} catch (error) {
+			throw error;
+		}
+	},
+
+	// Resume contact in campaign
+	resumeContactInCampaign: async (
+		campaignId: string,
+		contactId: string,
+		data?: { reason?: string }
+	): Promise<{ success: boolean; message: string }> => {
+		try {
+			const response = await mktAxios.post(`/api/campaigns/${campaignId}/contacts/${contactId}/resume`, data || {});
+			return response.data;
+		} catch (error) {
+			throw error;
+		}
+	},
+
+	// Get contact progress in campaign
+	getContactCampaignProgress: async (campaignId: string, contactId: string): Promise<{
+		success: boolean;
+		data: {
+			contact: {
+				id: string;
+				email: string;
+				name: string;
+			};
+			campaign: {
+				id: string;
+				name: string;
+				totalEmails: number;
+				activeEmails: number;
+				type: string;
+				sequenceMap?: Array<{
+					sequenceIndex: number;
+					name: string;
+					status: string;
+					isActive: boolean;
+					willBlock: boolean;
+				}>;
+			};
+			progress: {
+				status: string;
+				currentStep: number;
+				joinedAt: string;
+				completedAt?: string;
+				lastStepTime?: string;
+				nextEmail?: {
+					sequenceIndex: number;
+					subject: string;
+					status?: string;
+					isBlocked?: boolean;
+					conditions?: any;
+					sendingRestrictions?: any;
+				};
+				nextSendTime?: string;
+				blockedAt?: number;
+			};
+		};
+	}> => {
+		try {
+			const response = await mktAxios.get(`/api/campaigns/${campaignId}/contacts/${contactId}/progress`);
+			return response.data;
+		} catch (error) {
+			throw error;
+		}
+	},
 };
 
 // Campaign Email API Service

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 // material-ui
 import {
@@ -6,6 +6,7 @@ import {
 	Box,
 	Button,
 	Card,
+	CardContent,
 	Chip,
 	Collapse,
 	Divider,
@@ -23,6 +24,9 @@ import {
 	Typography,
 	useTheme,
 	Grid,
+	List,
+	ListItem,
+	ListItemText,
 } from "@mui/material";
 
 // project imports
@@ -64,6 +68,9 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 
 	// State for help card collapse
 	const [helpExpanded, setHelpExpanded] = useState(false);
+	
+	// State for expanded email details
+	const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
 
 	// Fetch campaign emails
 	useEffect(() => {
@@ -411,59 +418,312 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 															: "0";
 
 													return (
-														<TableRow hover key={email._id} tabIndex={-1}>
-															<TableCell>
-																<Typography variant="subtitle2">{email.name}</Typography>
-																{email.templateId && (
-																	<Typography variant="caption" color="primary">
-																		Usa plantilla
-																	</Typography>
-																)}
-															</TableCell>
-															<TableCell>{email.subject}</TableCell>
-															<TableCell>{email.sequenceIndex}</TableCell>
-															<TableCell>
-																{email.conditions?.timeDelay
-																	? `${email.conditions.timeDelay.value} ${email.conditions.timeDelay.unit}`
-																	: "Inmediato"}
-															</TableCell>
-															<TableCell>
-																<Chip label={statusInfo.label} color={statusInfo.color as any} size="small" />
-																{email.isFinal && <Chip label="Final" color="secondary" size="small" sx={{ ml: 1 }} />}
-															</TableCell>
-															<TableCell>{`${openRate}%`}</TableCell>
-															<TableCell align="center">
-																<Stack direction="row" spacing={1} justifyContent="center">
-																	<IconButton
-																		aria-label="ver"
-																		size="small"
-																		color="info"
-																		onClick={() => handleOpenEditModal(email)}
-																		title="Ver detalles del email"
-																	>
-																		<Eye size={18} />
-																	</IconButton>
-																	<IconButton
-																		aria-label="editar"
-																		size="small"
-																		color="primary"
-																		onClick={() => handleOpenEditModal(email)}
-																		title="Editar email"
-																	>
-																		<Edit2 size={18} />
-																	</IconButton>
-																	<IconButton
-																		aria-label="eliminar"
-																		size="small"
-																		color="error"
-																		onClick={() => handleOpenDeleteDialog(email)}
-																		title="Eliminar email"
-																	>
-																		<Trash size={18} />
-																	</IconButton>
-																</Stack>
-															</TableCell>
-														</TableRow>
+														<>
+															<TableRow hover key={email._id} tabIndex={-1}>
+																<TableCell>
+																	<Typography variant="subtitle2">{email.name}</Typography>
+																	{email.templateId && (
+																		<Typography variant="caption" color="primary">
+																			Usa plantilla
+																		</Typography>
+																	)}
+																</TableCell>
+																<TableCell>{email.subject}</TableCell>
+																<TableCell>{email.sequenceIndex}</TableCell>
+																<TableCell>
+																	{email.conditions?.timeDelay
+																		? `${email.conditions.timeDelay.value} ${email.conditions.timeDelay.unit}`
+																		: "Inmediato"}
+																</TableCell>
+																<TableCell>
+																	<Chip label={statusInfo.label} color={statusInfo.color as any} size="small" />
+																	{email.isFinal && <Chip label="Final" color="secondary" size="small" sx={{ ml: 1 }} />}
+																</TableCell>
+																<TableCell>{`${openRate}%`}</TableCell>
+																<TableCell align="center">
+																	<Stack direction="row" spacing={1} justifyContent="center">
+																		<IconButton
+																			aria-label="ver"
+																			size="small"
+																			color="info"
+																			onClick={() => setExpandedEmailId(expandedEmailId === email._id ? null : email._id || null)}
+																			title={expandedEmailId === email._id ? "Ocultar detalles" : "Ver detalles del email"}
+																		>
+																			{expandedEmailId === email._id ? <ArrowUp2 size={18} /> : <Eye size={18} />}
+																		</IconButton>
+																		<IconButton
+																			aria-label="editar"
+																			size="small"
+																			color="primary"
+																			onClick={() => handleOpenEditModal(email)}
+																			title="Editar email"
+																		>
+																			<Edit2 size={18} />
+																		</IconButton>
+																		<IconButton
+																			aria-label="eliminar"
+																			size="small"
+																			color="error"
+																			onClick={() => handleOpenDeleteDialog(email)}
+																			title="Eliminar email"
+																		>
+																			<Trash size={18} />
+																		</IconButton>
+																	</Stack>
+																</TableCell>
+															</TableRow>
+															<TableRow>
+																<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+																	<Collapse in={expandedEmailId === email._id} timeout="auto" unmountOnExit>
+																		<Box sx={{ margin: 2 }}>
+																			<Card variant="outlined">
+																				<CardContent>
+																					<Grid container spacing={3}>
+																						{/* Header */}
+																						<Grid item xs={12}>
+																							<Typography variant="h6" gutterBottom>
+																								Detalles del Email
+																							</Typography>
+																							<Divider />
+																						</Grid>
+
+																						{/* Basic Info */}
+																						<Grid item xs={12} md={6}>
+																							<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+																								Información General
+																							</Typography>
+																							<List dense>
+																								<ListItem>
+																									<ListItemText
+																										primary="Nombre"
+																										secondary={email.name}
+																									/>
+																								</ListItem>
+																								<ListItem>
+																									<ListItemText
+																										primary="Asunto"
+																										secondary={email.subject}
+																									/>
+																								</ListItem>
+																								<ListItem>
+																									<ListItemText
+																										primary="Posición en secuencia"
+																										secondary={`Email #${email.sequenceIndex}${email.isFinal ? " (Final)" : ""}`}
+																									/>
+																								</ListItem>
+																								{email.templateId && (
+																									<ListItem>
+																										<ListItemText
+																											primary="ID de Plantilla"
+																											secondary={email.templateId}
+																										/>
+																									</ListItem>
+																								)}
+																							</List>
+																						</Grid>
+
+																						{/* Sending Configuration */}
+																						<Grid item xs={12} md={6}>
+																							<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+																								Configuración de Envío
+																							</Typography>
+																							<List dense>
+																								{email.sender && (
+																									<ListItem>
+																										<ListItemText
+																											primary="Remitente"
+																											secondary={`${email.sender.name} <${email.sender.email}>`}
+																										/>
+																									</ListItem>
+																								)}
+																								{email.replyTo && (
+																									<ListItem>
+																										<ListItemText
+																											primary="Responder a"
+																											secondary={email.replyTo}
+																										/>
+																									</ListItem>
+																								)}
+																								<ListItem>
+																									<ListItemText
+																										primary="Condición de activación"
+																										secondary={
+																											email.conditions?.type === "time" && email.conditions.timeDelay
+																												? `Tiempo: ${email.conditions.timeDelay.value} ${email.conditions.timeDelay.unit} después`
+																												: email.conditions?.type === "event"
+																												? `Evento: ${email.conditions.eventTrigger?.eventName || "No especificado"}`
+																												: "Inmediato"
+																										}
+																									/>
+																								</ListItem>
+																							</List>
+																						</Grid>
+
+																						{/* Sending Restrictions */}
+																						{email.sendingRestrictions && (
+																							<Grid item xs={12} md={6}>
+																								<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+																									Restricciones de Envío
+																								</Typography>
+																								<List dense>
+																									{email.sendingRestrictions.allowedDays && (
+																										<ListItem>
+																											<ListItemText
+																												primary="Días permitidos"
+																												secondary={email.sendingRestrictions.allowedDays.map(day => {
+																													const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+																													return days[day];
+																												}).join(", ")}
+																											/>
+																										</ListItem>
+																									)}
+																									{email.sendingRestrictions.timeWindow && (
+																										<ListItem>
+																											<ListItemText
+																												primary="Ventana horaria"
+																												secondary={`${email.sendingRestrictions.timeWindow.start} - ${email.sendingRestrictions.timeWindow.end}`}
+																											/>
+																										</ListItem>
+																									)}
+																								</List>
+																							</Grid>
+																						)}
+
+																						{/* Metrics */}
+																						{email.metrics && (
+																							<Grid item xs={12} md={6}>
+																								<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+																									Métricas
+																								</Typography>
+																								<List dense>
+																									<ListItem>
+																										<ListItemText
+																											primary="Enviados"
+																											secondary={email.metrics.sent || 0}
+																										/>
+																									</ListItem>
+																									<ListItem>
+																										<ListItemText
+																											primary="Aperturas"
+																											secondary={`${email.metrics.opens || 0} (${openRate}%)`}
+																										/>
+																									</ListItem>
+																									<ListItem>
+																										<ListItemText
+																											primary="Clics"
+																											secondary={email.metrics.clicks || 0}
+																										/>
+																									</ListItem>
+																									{(email.metrics.bounces || email.metrics.unsubscribes || email.metrics.complaints) && (
+																										<>
+																											<ListItem>
+																												<ListItemText
+																													primary="Rebotes"
+																													secondary={email.metrics.bounces || 0}
+																												/>
+																											</ListItem>
+																											<ListItem>
+																												<ListItemText
+																													primary="Desuscripciones"
+																													secondary={email.metrics.unsubscribes || 0}
+																												/>
+																											</ListItem>
+																											<ListItem>
+																												<ListItemText
+																													primary="Quejas"
+																													secondary={email.metrics.complaints || 0}
+																												/>
+																											</ListItem>
+																										</>
+																									)}
+																								</List>
+																							</Grid>
+																						)}
+
+																						{/* Tracking */}
+																						{email.tracking && (
+																							<Grid item xs={12} md={6}>
+																								<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+																									Configuración de Tracking
+																								</Typography>
+																								<List dense>
+																									<ListItem>
+																										<ListItemText
+																											primary="Tracking de aperturas"
+																											secondary={email.tracking.opens ? "Activado" : "Desactivado"}
+																										/>
+																									</ListItem>
+																									<ListItem>
+																										<ListItemText
+																											primary="Tracking de clics"
+																											secondary={email.tracking.clicks ? "Activado" : "Desactivado"}
+																										/>
+																									</ListItem>
+																								</List>
+																							</Grid>
+																						)}
+
+																						{/* A/B Testing */}
+																						{email.abTesting?.enabled && (
+																							<Grid item xs={12} md={6}>
+																								<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+																									A/B Testing
+																								</Typography>
+																								<List dense>
+																									<ListItem>
+																										<ListItemText
+																											primary="Estado"
+																											secondary="Activado"
+																										/>
+																									</ListItem>
+																									{email.abTesting.variants && (
+																										<ListItem>
+																											<ListItemText
+																												primary="Número de variantes"
+																												secondary={email.abTesting.variants.length}
+																											/>
+																										</ListItem>
+																									)}
+																									{email.abTesting.testDuration && (
+																										<ListItem>
+																											<ListItemText
+																												primary="Duración del test"
+																												secondary={`${email.abTesting.testDuration.value} ${email.abTesting.testDuration.unit}`}
+																											/>
+																										</ListItem>
+																									)}
+																									{email.abTesting.winnerCriteria && (
+																										<ListItem>
+																											<ListItemText
+																												primary="Criterio ganador"
+																												secondary={email.abTesting.winnerCriteria}
+																											/>
+																										</ListItem>
+																									)}
+																								</List>
+																							</Grid>
+																						)}
+
+																						{/* Timestamps */}
+																						<Grid item xs={12}>
+																							<Divider sx={{ my: 1 }} />
+																							<Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+																								<Typography variant="caption" color="textSecondary">
+																									Creado: {email.createdAt ? new Date(email.createdAt).toLocaleString("es-ES") : "N/A"}
+																								</Typography>
+																								<Typography variant="caption" color="textSecondary">
+																									Actualizado: {email.updatedAt ? new Date(email.updatedAt).toLocaleString("es-ES") : "N/A"}
+																								</Typography>
+																							</Box>
+																						</Grid>
+																					</Grid>
+																				</CardContent>
+																			</Card>
+																		</Box>
+																	</Collapse>
+																</TableCell>
+															</TableRow>
+														</>
 													);
 												})
 											)}
