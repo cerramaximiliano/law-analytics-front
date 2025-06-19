@@ -39,6 +39,7 @@ import CampaignEmailList from "sections/admin/marketing/CampaignEmailList";
 import CampaignContactsList from "sections/admin/marketing/CampaignContactsList";
 import CampaignDetailModal from "sections/admin/marketing/CampaignDetailModal";
 import TableSkeleton from "components/UI/TableSkeleton";
+import MarketingQuickNav from "components/admin/marketing/MarketingQuickNav";
 import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 
 // types
@@ -445,6 +446,9 @@ const MailingCampaigns = () => {
 					</Grid>
 				</Grid>
 			</Box>
+
+			{/* Marketing Quick Navigation */}
+			<MarketingQuickNav />
 
 			{/* Server Status Alert */}
 			<Box sx={{ mb: 2 }}>

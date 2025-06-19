@@ -68,7 +68,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 
 	// State for help card collapse
 	const [helpExpanded, setHelpExpanded] = useState(false);
-	
+
 	// State for expanded email details
 	const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
 
@@ -494,16 +494,10 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																							</Typography>
 																							<List dense>
 																								<ListItem>
-																									<ListItemText
-																										primary="Nombre"
-																										secondary={email.name}
-																									/>
+																									<ListItemText primary="Nombre" secondary={email.name} />
 																								</ListItem>
 																								<ListItem>
-																									<ListItemText
-																										primary="Asunto"
-																										secondary={email.subject}
-																									/>
+																									<ListItemText primary="Asunto" secondary={email.subject} />
 																								</ListItem>
 																								<ListItem>
 																									<ListItemText
@@ -513,10 +507,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																								</ListItem>
 																								{email.templateId && (
 																									<ListItem>
-																										<ListItemText
-																											primary="ID de Plantilla"
-																											secondary={email.templateId}
-																										/>
+																										<ListItemText primary="ID de Plantilla" secondary={email.templateId} />
 																									</ListItem>
 																								)}
 																							</List>
@@ -538,10 +529,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																								)}
 																								{email.replyTo && (
 																									<ListItem>
-																										<ListItemText
-																											primary="Responder a"
-																											secondary={email.replyTo}
-																										/>
+																										<ListItemText primary="Responder a" secondary={email.replyTo} />
 																									</ListItem>
 																								)}
 																								<ListItem>
@@ -570,10 +558,12 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																										<ListItem>
 																											<ListItemText
 																												primary="Días permitidos"
-																												secondary={email.sendingRestrictions.allowedDays.map(day => {
-																													const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-																													return days[day];
-																												}).join(", ")}
+																												secondary={email.sendingRestrictions.allowedDays
+																													.map((day) => {
+																														const days = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+																														return days[day];
+																													})
+																													.join(", ")}
 																											/>
 																										</ListItem>
 																									)}
@@ -597,10 +587,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																								</Typography>
 																								<List dense>
 																									<ListItem>
-																										<ListItemText
-																											primary="Enviados"
-																											secondary={email.metrics.sent || 0}
-																										/>
+																										<ListItemText primary="Enviados" secondary={email.metrics.sent || 0} />
 																									</ListItem>
 																									<ListItem>
 																										<ListItemText
@@ -609,18 +596,12 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																										/>
 																									</ListItem>
 																									<ListItem>
-																										<ListItemText
-																											primary="Clics"
-																											secondary={email.metrics.clicks || 0}
-																										/>
+																										<ListItemText primary="Clics" secondary={email.metrics.clicks || 0} />
 																									</ListItem>
 																									{(email.metrics.bounces || email.metrics.unsubscribes || email.metrics.complaints) && (
 																										<>
 																											<ListItem>
-																												<ListItemText
-																													primary="Rebotes"
-																													secondary={email.metrics.bounces || 0}
-																												/>
+																												<ListItemText primary="Rebotes" secondary={email.metrics.bounces || 0} />
 																											</ListItem>
 																											<ListItem>
 																												<ListItemText
@@ -629,10 +610,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																												/>
 																											</ListItem>
 																											<ListItem>
-																												<ListItemText
-																													primary="Quejas"
-																													secondary={email.metrics.complaints || 0}
-																												/>
+																												<ListItemText primary="Quejas" secondary={email.metrics.complaints || 0} />
 																											</ListItem>
 																										</>
 																									)}
@@ -671,10 +649,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																								</Typography>
 																								<List dense>
 																									<ListItem>
-																										<ListItemText
-																											primary="Estado"
-																											secondary="Activado"
-																										/>
+																										<ListItemText primary="Estado" secondary="Activado" />
 																									</ListItem>
 																									{email.abTesting.variants && (
 																										<ListItem>
@@ -694,10 +669,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 																									)}
 																									{email.abTesting.winnerCriteria && (
 																										<ListItem>
-																											<ListItemText
-																												primary="Criterio ganador"
-																												secondary={email.abTesting.winnerCriteria}
-																											/>
+																											<ListItemText primary="Criterio ganador" secondary={email.abTesting.winnerCriteria} />
 																										</ListItem>
 																									)}
 																								</List>

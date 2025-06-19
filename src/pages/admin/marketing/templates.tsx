@@ -47,6 +47,7 @@ import { Add, Edit2, Eye, Trash, AddCircle, Send, Mobile, Monitor, MouseSquare, 
 import { useSnackbar } from "notistack";
 import AnimateButton from "components/@extended/AnimateButton";
 import TableSkeleton from "components/UI/TableSkeleton";
+import MarketingQuickNav from "components/admin/marketing/MarketingQuickNav";
 
 // types
 interface EmailTemplate {
@@ -709,6 +710,9 @@ const EmailTemplates = () => {
 					</Grid>
 				</Grid>
 			</Box>
+
+			{/* Marketing Quick Navigation */}
+			<MarketingQuickNav />
 
 			<MainCard content={false}>
 				<Box sx={{ p: 2 }}>

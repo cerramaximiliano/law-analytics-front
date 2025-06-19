@@ -8,6 +8,7 @@ import { styled } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import ContactsPanel from "sections/admin/marketing/ContactsPanel";
 import SegmentsPanel from "sections/admin/marketing/SegmentsPanel";
+import MarketingQuickNav from "components/admin/marketing/MarketingQuickNav";
 import { Refresh } from "iconsax-react";
 import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 
@@ -162,6 +163,9 @@ const MarketingContacts = () => {
 					</Grid>
 				</Grid>
 			</Box>
+
+			{/* Marketing Quick Navigation */}
+			<MarketingQuickNav />
 
 			{/* Server Status Alert */}
 			<Box sx={{ mb: 2 }}>
