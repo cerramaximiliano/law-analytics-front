@@ -24,6 +24,7 @@ import {
 	LinearProgress,
 	Stack,
 	Tooltip,
+	Skeleton,
 } from "@mui/material";
 import { MarketingContact } from "types/marketing-contact";
 import { MarketingContactService } from "store/reducers/marketing-contacts";
@@ -77,6 +78,11 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 
 	useEffect(() => {
 		if (open && contactId) {
+			// Limpiar estados cuando cambia el contacto
+			setCampaignProgress({});
+			setExpandedRows(new Set());
+			setProgressLoading({});
+			setShowAllActivities(false);
 			fetchContactDetails(contactId);
 		}
 	}, [open, contactId]);
@@ -185,10 +191,13 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 
 		try {
 			setProgressLoading((prev) => ({ ...prev, [campaignId]: true }));
+			console.log(`Fetching campaign progress: /api/campaigns/${campaignId}/contacts/${contactId}/progress`);
 			const response = await CampaignService.getContactCampaignProgress(campaignId, contactId);
+			console.log("Campaign progress response:", response);
 
 			setCampaignProgress((prev) => ({ ...prev, [campaignId]: response.data }));
 		} catch (error: any) {
+			console.error(`Error fetching campaign progress for campaign ${campaignId} and contact ${contactId}:`, error);
 			// Error fetching campaign progress
 		} finally {
 			setProgressLoading((prev) => ({ ...prev, [campaignId]: false }));
@@ -295,9 +304,100 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 
 				<DialogContent dividers>
 					{loading ? (
-						<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 3 }}>
-							<CircularProgress />
-						</Box>
+						<Grid container spacing={3}>
+							{/* Skeleton para Información Básica */}
+							<Grid item xs={12}>
+								<Skeleton variant="text" width={150} height={24} sx={{ mb: 1 }} />
+								<Divider sx={{ mb: 2 }} />
+								<Grid container spacing={2}>
+									{[...Array(8)].map((_, index) => (
+										<Grid item xs={12} sm={6} key={index}>
+											<Skeleton variant="text" width={80} height={20} />
+											<Skeleton variant="text" width={120} height={24} />
+										</Grid>
+									))}
+								</Grid>
+							</Grid>
+
+							{/* Skeleton para Campañas */}
+							<Grid item xs={12}>
+								<Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+									<Skeleton variant="text" width={100} height={24} />
+									<Stack direction="row" spacing={1}>
+										<Skeleton variant="rectangular" width={120} height={32} sx={{ borderRadius: 1 }} />
+										<Skeleton variant="rectangular" width={140} height={32} sx={{ borderRadius: 1 }} />
+									</Stack>
+								</Box>
+								<Divider sx={{ mb: 2 }} />
+								<Box sx={{ mb: 3 }}>
+									<Table size="small">
+										<TableHead>
+											<TableRow>
+												<TableCell width={40} />
+												<TableCell>ID Campaña</TableCell>
+												<TableCell>Estado</TableCell>
+												<TableCell>Paso Actual</TableCell>
+												<TableCell>Fecha de Ingreso</TableCell>
+												<TableCell align="center">Acciones</TableCell>
+											</TableRow>
+										</TableHead>
+										<TableBody>
+											{[...Array(2)].map((_, index) => (
+												<TableRow key={index}>
+													<TableCell>
+														<Skeleton variant="circular" width={24} height={24} />
+													</TableCell>
+													<TableCell>
+														<Skeleton variant="text" width={100} />
+													</TableCell>
+													<TableCell>
+														<Skeleton variant="rectangular" width={60} height={22} sx={{ borderRadius: 10 }} />
+													</TableCell>
+													<TableCell>
+														<Skeleton variant="text" width={20} />
+													</TableCell>
+													<TableCell>
+														<Skeleton variant="text" width={120} />
+													</TableCell>
+													<TableCell align="center">
+														<Stack direction="row" spacing={0.5} justifyContent="center">
+															<Skeleton variant="circular" width={32} height={32} />
+															<Skeleton variant="circular" width={32} height={32} />
+															<Skeleton variant="circular" width={32} height={32} />
+														</Stack>
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</Box>
+							</Grid>
+
+							{/* Skeleton para Etiquetas */}
+							<Grid item xs={12}>
+								<Skeleton variant="text" width={100} height={24} sx={{ mb: 1 }} />
+								<Divider sx={{ mb: 2 }} />
+								<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+									{[...Array(3)].map((_, index) => (
+										<Skeleton key={index} variant="rectangular" width={80} height={24} sx={{ borderRadius: 10 }} />
+									))}
+								</Box>
+							</Grid>
+
+							{/* Skeleton para Fechas */}
+							<Grid item xs={12}>
+								<Skeleton variant="text" width={60} height={24} sx={{ mb: 1 }} />
+								<Divider sx={{ mb: 2 }} />
+								<Grid container spacing={2}>
+									{[...Array(2)].map((_, index) => (
+										<Grid item xs={12} sm={6} key={index}>
+											<Skeleton variant="text" width={80} height={20} />
+											<Skeleton variant="text" width={150} height={24} />
+										</Grid>
+									))}
+								</Grid>
+							</Grid>
+						</Grid>
 					) : error ? (
 						<Alert
 							severity="error"
@@ -1022,7 +1122,13 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 				<DialogActions sx={{ px: 3, py: 2 }}>
 					<Button
 						onClick={() => {
+							// Limpiar todos los estados al cerrar
 							setShowAllActivities(false);
+							setCampaignProgress({});
+							setExpandedRows(new Set());
+							setProgressLoading({});
+							setContact(null);
+							setError(null);
 							onClose();
 						}}
 						color="primary"

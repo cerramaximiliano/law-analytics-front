@@ -313,9 +313,13 @@ export const CampaignService = {
 		};
 	}> => {
 		try {
-			const response = await mktAxios.get(`/api/campaigns/${campaignId}/contacts/${contactId}/progress`);
+			const url = `/api/campaigns/${campaignId}/contacts/${contactId}/progress`;
+			console.log(`[CampaignService] GET ${url}`);
+			const response = await mktAxios.get(url);
+			console.log(`[CampaignService] Response:`, response.data);
 			return response.data;
 		} catch (error) {
+			console.error(`[CampaignService] Error fetching contact progress:`, error);
 			throw error;
 		}
 	},
