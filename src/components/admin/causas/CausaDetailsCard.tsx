@@ -1,21 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-	Box,
-	Card,
-	CardContent,
-	Typography,
-	CircularProgress,
-	Alert,
-	Chip,
-	Divider,
-	List,
-	ListItem,
-	Stack,
-	IconButton,
-	Collapse,
-	Pagination,
-} from "@mui/material";
-import { CloseCircle } from "iconsax-react";
+import { Box, Typography, CircularProgress, Alert, Chip, Divider, Collapse, Pagination, Grid } from "@mui/material";
+import { Calendar, DocumentText, Folder2, People } from "iconsax-react";
 import causasService from "services/causasService";
 import { VerifiedCausa, Movimiento, CausaDetails, PaginationInfo } from "types/causas";
 
@@ -25,7 +10,7 @@ interface CausaDetailsCardProps {
 	onClose: () => void;
 }
 
-const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open, onClose }) => {
+const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open }) => {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
@@ -80,151 +65,153 @@ const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open, onClos
 
 	return (
 		<Collapse in={open} timeout="auto" unmountOnExit>
-			<Card sx={{ mt: 2, boxShadow: 3 }}>
-				<CardContent>
-					<Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-						<Box>
-							<Typography variant="h5" component="h2" gutterBottom>
-								Detalles de la Causa
-							</Typography>
-							<Typography variant="subtitle1" color="text.secondary">
-								{causa.caratula}
-							</Typography>
-						</Box>
-						<IconButton onClick={onClose} size="small">
-							<CloseCircle />
-						</IconButton>
-					</Box>
-
-					<Divider sx={{ my: 2 }} />
-
-					{/* Información básica */}
-					<Box mb={3}>
-						<Typography variant="h6" gutterBottom>
-							Información General
-						</Typography>
-						<Stack spacing={1}>
-							<Box display="flex" gap={1}>
-								<Typography variant="body2" fontWeight="bold">
-									Número:
+			<Box sx={{ py: 2, px: 1 }}>
+				{/* Compact header with key information */}
+				<Grid container spacing={2} sx={{ mb: 2 }}>
+					<Grid item xs={12} md={3}>
+						<Box display="flex" alignItems="center" gap={1}>
+							<DocumentText size={16} />
+							<Box>
+								<Typography variant="caption" color="text.secondary">
+									Expediente
 								</Typography>
-								<Typography variant="body2">
+								<Typography variant="body2" fontWeight="medium">
 									{causa.number}/{causa.year}
 								</Typography>
 							</Box>
-							<Box display="flex" gap={1}>
-								<Typography variant="body2" fontWeight="bold">
-									Fuero:
-								</Typography>
-								<Chip
-									label={causa.fuero === "CNT" ? "Trabajo" : causa.fuero === "CSS" ? "Seguridad Social" : "Civil"}
-									size="small"
-									color={causa.fuero === "CNT" ? "primary" : causa.fuero === "CSS" ? "info" : "secondary"}
-								/>
-							</Box>
-							<Box display="flex" gap={1}>
-								<Typography variant="body2" fontWeight="bold">
-									Juzgado/Secretaría:
-								</Typography>
-								<Typography variant="body2">
-									Juzgado {causa.juzgado} - Secretaría {causa.secretaria}
-								</Typography>
-							</Box>
-							<Box display="flex" gap={1}>
-								<Typography variant="body2" fontWeight="bold">
-									Objeto:
-								</Typography>
-								<Typography variant="body2">{causa.objeto}</Typography>
-							</Box>
-							<Box display="flex" gap={1}>
-								<Typography variant="body2" fontWeight="bold">
-									Total de movimientos:
-								</Typography>
-								<Typography variant="body2">{causaDetails?.movimientosCount || causa.movimientosCount}</Typography>
-							</Box>
-						</Stack>
-					</Box>
-
-					<Divider sx={{ my: 2 }} />
-
-					{/* Movimientos */}
-					<Box>
-						<Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-							<Typography variant="h6">Movimientos</Typography>
-							{message && (
-								<Typography variant="body2" color="text.secondary">
-									{message}
-								</Typography>
-							)}
 						</Box>
-
-						{loading && (
-							<Box display="flex" justifyContent="center" py={3}>
-								<CircularProgress />
+					</Grid>
+					<Grid item xs={12} md={3}>
+						<Box display="flex" alignItems="center" gap={1}>
+							<Calendar size={16} />
+							<Box>
+								<Typography variant="caption" color="text.secondary">
+									Última actualización
+								</Typography>
+								<Typography variant="body2" fontWeight="medium">
+									{new Date(causa.lastUpdate).toLocaleDateString("es-AR")}
+								</Typography>
 							</Box>
-						)}
+						</Box>
+					</Grid>
+					{causaDetails && (
+						<>
+							<Grid item xs={12} md={3}>
+								<Box display="flex" alignItems="center" gap={1}>
+									<Folder2 size={16} />
+									<Box>
+										<Typography variant="caption" color="text.secondary">
+											Carpetas asociadas
+										</Typography>
+										<Typography variant="body2" fontWeight="medium">
+											{causaDetails.folderIds.length}
+										</Typography>
+									</Box>
+								</Box>
+							</Grid>
+							<Grid item xs={12} md={3}>
+								<Box display="flex" alignItems="center" gap={1}>
+									<People size={16} />
+									<Box>
+										<Typography variant="caption" color="text.secondary">
+											Usuarios vinculados
+										</Typography>
+										<Typography variant="body2" fontWeight="medium">
+											{causaDetails.userCausaIds.length}
+										</Typography>
+									</Box>
+								</Box>
+							</Grid>
+						</>
+					)}
+				</Grid>
 
-						{error && (
-							<Alert severity="error" sx={{ mb: 2 }}>
-								{error}
-							</Alert>
-						)}
+				<Divider sx={{ mb: 2 }} />
 
-						{!loading && !error && movimientos && movimientos.length === 0 && (
-							<Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-								No hay movimientos disponibles
+				{/* Movimientos section */}
+				<Box>
+					<Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+						<Typography variant="subtitle2" fontWeight="bold">
+							Movimientos
+						</Typography>
+						{message && (
+							<Typography variant="caption" color="text.secondary">
+								{message}
 							</Typography>
 						)}
+					</Box>
 
-						{!loading && !error && movimientos && movimientos.length > 0 && (
-							<List sx={{ maxHeight: 400, overflow: "auto" }}>
-								{movimientos.map((movimiento, index) => (
-									<ListItem
-										key={index}
-										sx={{
-											borderBottom: index < movimientos.length - 1 ? 1 : 0,
-											borderColor: "divider",
-											flexDirection: "column",
-											alignItems: "flex-start",
-										}}
-									>
-										<Box width="100%">
-											<Box display="flex" justifyContent="space-between" alignItems="center">
-												<Typography variant="subtitle2" fontWeight="bold">
-													{formatDate(movimiento.fecha)}
-												</Typography>
-												{movimiento.tipo && <Chip label={movimiento.tipo} size="small" variant="outlined" />}
+					{loading && (
+						<Box display="flex" justifyContent="center" py={2}>
+							<CircularProgress size={24} />
+						</Box>
+					)}
+
+					{error && (
+						<Alert severity="error" sx={{ mb: 1 }} variant="outlined">
+							{error}
+						</Alert>
+					)}
+
+					{!loading && !error && movimientos && movimientos.length === 0 && (
+						<Typography variant="caption" color="text.secondary" sx={{ py: 1, display: "block", textAlign: "center" }}>
+							No hay movimientos disponibles
+						</Typography>
+					)}
+
+					{!loading && !error && movimientos && movimientos.length > 0 && (
+						<Box sx={{ maxHeight: 300, overflow: "auto", pr: 1 }}>
+							{movimientos.map((movimiento, index) => (
+								<Box
+									key={index}
+									sx={{
+										py: 1.5,
+										px: 1.5,
+										borderBottom: index < movimientos.length - 1 ? 1 : 0,
+										borderColor: "divider",
+										"&:hover": {
+											bgcolor: "action.hover",
+											borderRadius: 1,
+										},
+									}}
+								>
+									<Box display="flex" alignItems="flex-start" gap={2}>
+										<Typography variant="caption" color="text.secondary" sx={{ minWidth: 70, pt: 0.3 }}>
+											{formatDate(movimiento.fecha)}
+										</Typography>
+										<Box flex={1}>
+											<Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+												<Typography variant="body2">{movimiento.descripcion}</Typography>
+												{movimiento.tipo && <Chip label={movimiento.tipo} size="small" sx={{ height: 20, fontSize: "0.7rem" }} />}
 											</Box>
-											<Typography variant="body2" sx={{ mt: 0.5 }}>
-												{movimiento.descripcion}
-											</Typography>
 											{movimiento.observacion && (
-												<Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-													Observación: {movimiento.observacion}
+												<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+													{movimiento.observacion}
 												</Typography>
 											)}
 										</Box>
-									</ListItem>
-								))}
-							</List>
-						)}
+									</Box>
+								</Box>
+							))}
+						</Box>
+					)}
 
-						{pagination && pagination.totalPages > 1 && (
-							<Box display="flex" justifyContent="center" mt={3}>
-								<Pagination
-									count={pagination.totalPages}
-									page={currentPage}
-									onChange={handlePageChange}
-									color="primary"
-									disabled={loading}
-									showFirstButton
-									showLastButton
-								/>
-							</Box>
-						)}
-					</Box>
-				</CardContent>
-			</Card>
+					{pagination && pagination.totalPages > 1 && (
+						<Box display="flex" justifyContent="center" mt={2}>
+							<Pagination
+								count={pagination.totalPages}
+								page={currentPage}
+								onChange={handlePageChange}
+								color="primary"
+								size="small"
+								disabled={loading}
+								showFirstButton
+								showLastButton
+							/>
+						</Box>
+					)}
+				</Box>
+			</Box>
 		</Collapse>
 	);
 };

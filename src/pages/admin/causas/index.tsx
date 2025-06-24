@@ -343,8 +343,15 @@ const CausasAdmin = () => {
 
 	// Handle view details
 	const handleViewDetails = (causa: VerifiedCausa) => {
-		setSelectedCausaForDetails(causa);
-		setDetailsOpen(true);
+		if (selectedCausaForDetails?._id === causa._id && detailsOpen) {
+			// If clicking on the same causa that's already open, close it
+			setDetailsOpen(false);
+			setSelectedCausaForDetails(null);
+		} else {
+			// Open the details for the clicked causa
+			setSelectedCausaForDetails(causa);
+			setDetailsOpen(true);
+		}
 	};
 
 	const handleCloseDetails = () => {

@@ -46,4 +46,3 @@ const DeleteCausaDialog: React.FC<DeleteCausaDialogProps> = ({ open, causa, onCl
 };
 
 export default DeleteCausaDialog;
-
