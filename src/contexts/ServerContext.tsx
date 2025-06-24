@@ -272,8 +272,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				if (authHeader) {
 					const token = authHeader.replace("Bearer ", "");
 					authTokenService.setToken(token);
+					// También guardar en secureStorage para persistencia
+					secureStorage.setAuthToken(token);
 				} else if (tokenFromData) {
 					authTokenService.setToken(tokenFromData);
+					// También guardar en secureStorage para persistencia
+					secureStorage.setAuthToken(tokenFromData);
 				}
 
 				return response;

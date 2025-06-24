@@ -2,7 +2,7 @@
 import { FormattedMessage } from "react-intl";
 
 // assets
-import { MessageSquare, User, DocumentText, Monitor } from "iconsax-react";
+import { MessageSquare, User, DocumentText, Monitor, Folder2 } from "iconsax-react";
 
 // type
 import { NavItemType } from "types/menu";
@@ -58,6 +58,14 @@ const admin: NavItemType = {
 			type: "item",
 			url: "/admin/plans",
 			icon: DocumentText,
+			breadcrumbs: true,
+		},
+		{
+			id: "causas",
+			title: <FormattedMessage id="causas" defaultMessage="Causas Verificadas" />,
+			type: "item",
+			url: "/admin/causas",
+			icon: Folder2,
 			breadcrumbs: true,
 		},
 		{

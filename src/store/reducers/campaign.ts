@@ -210,7 +210,7 @@ export const CampaignService = {
 	resetContactCampaign: async (
 		campaignId: string,
 		contactId: string,
-		data?: { step?: number; reason?: string }
+		data?: { step?: number; reason?: string },
 	): Promise<{ success: boolean; message: string }> => {
 		try {
 			const response = await mktAxios.post(`/api/campaigns/${campaignId}/contacts/${contactId}/reset`, data || {});
@@ -224,12 +224,12 @@ export const CampaignService = {
 	pauseContactInCampaign: async (
 		campaignId: string,
 		contactId: string,
-		data: { reason: string; preventResync?: boolean }
+		data: { reason: string; preventResync?: boolean },
 	): Promise<{ success: boolean; message: string }> => {
 		try {
 			const response = await mktAxios.post(`/api/campaigns/${campaignId}/contacts/${contactId}/pause`, {
 				...data,
-				preventResync: data.preventResync !== false // Default to true
+				preventResync: data.preventResync !== false, // Default to true
 			});
 			return response.data;
 		} catch (error) {
@@ -241,14 +241,14 @@ export const CampaignService = {
 	removeContactFromCampaign: async (
 		campaignId: string,
 		contactId: string,
-		data: { reason: string; preventResync?: boolean }
+		data: { reason: string; preventResync?: boolean },
 	): Promise<{ success: boolean; message: string }> => {
 		try {
 			const response = await mktAxios.delete(`/api/campaigns/${campaignId}/contacts/${contactId}`, {
 				data: {
 					...data,
-					preventResync: true // Always true to prevent sync
-				}
+					preventResync: true, // Always true to prevent sync
+				},
 			});
 			return response.data;
 		} catch (error) {
@@ -260,7 +260,7 @@ export const CampaignService = {
 	resumeContactInCampaign: async (
 		campaignId: string,
 		contactId: string,
-		data?: { reason?: string }
+		data?: { reason?: string },
 	): Promise<{ success: boolean; message: string }> => {
 		try {
 			const response = await mktAxios.post(`/api/campaigns/${campaignId}/contacts/${contactId}/resume`, data || {});
@@ -271,7 +271,10 @@ export const CampaignService = {
 	},
 
 	// Get contact progress in campaign
-	getContactCampaignProgress: async (campaignId: string, contactId: string): Promise<{
+	getContactCampaignProgress: async (
+		campaignId: string,
+		contactId: string,
+	): Promise<{
 		success: boolean;
 		data: {
 			contact: {

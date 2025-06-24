@@ -178,7 +178,7 @@ export const MarketingContactService = {
 		data: {
 			reason: string;
 			excludeCampaignIds?: string[];
-		}
+		},
 	): Promise<{ success: boolean; message: string; affectedCampaigns: number }> => {
 		try {
 			const response = await mktAxios.post(`/api/contacts/${contactId}/pause-all`, data);
@@ -195,12 +195,12 @@ export const MarketingContactService = {
 			reason: string;
 			excludeCampaignIds?: string[];
 			onlyGloballyPaused?: boolean;
-		}
+		},
 	): Promise<{ success: boolean; message: string; affectedCampaigns: number }> => {
 		try {
 			const response = await mktAxios.post(`/api/contacts/${contactId}/resume-all`, {
 				...data,
-				onlyGloballyPaused: data.onlyGloballyPaused !== false // Default to true
+				onlyGloballyPaused: data.onlyGloballyPaused !== false, // Default to true
 			});
 			return response.data;
 		} catch (error) {
