@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, CircularProgress, Alert, Chip, Divider, Collapse, Pagination, Grid } from "@mui/material";
-import { Calendar, DocumentText, Folder2, People } from "iconsax-react";
+import {
+	Box,
+	Typography,
+	CircularProgress,
+	Alert,
+	Chip,
+	Divider,
+	Collapse,
+	Pagination,
+	Grid,
+	Link,
+	IconButton,
+	Tooltip,
+} from "@mui/material";
+import { Calendar, DocumentText, Folder2, People, Eye } from "iconsax-react";
 import causasService from "services/causasService";
 import { VerifiedCausa, Movimiento, CausaDetails, PaginationInfo } from "types/causas";
+import PDFViewer from "components/shared/PDFViewer";
 
 interface CausaDetailsCardProps {
 	causa: VerifiedCausa;
@@ -18,6 +32,9 @@ const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open }) => {
 	const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [message, setMessage] = useState<string>("");
+	const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+	const [selectedPdfUrl, setSelectedPdfUrl] = useState<string>("");
+	const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>("");
 
 	useEffect(() => {
 		if (open && causa && causa._id) {
@@ -51,6 +68,18 @@ const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open }) => {
 
 	const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
 		fetchMovimientos(value);
+	};
+
+	const handleViewPdf = (url: string, title: string) => {
+		setSelectedPdfUrl(url);
+		setSelectedPdfTitle(title);
+		setPdfViewerOpen(true);
+	};
+
+	const handleClosePdfViewer = () => {
+		setPdfViewerOpen(false);
+		setSelectedPdfUrl("");
+		setSelectedPdfTitle("");
 	};
 
 	const formatDate = (dateString: string) => {
@@ -160,13 +189,13 @@ const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open }) => {
 					)}
 
 					{!loading && !error && movimientos && movimientos.length > 0 && (
-						<Box sx={{ maxHeight: 300, overflow: "auto", pr: 1 }}>
+						<Box sx={{ maxHeight: 400, overflow: "auto", pr: 1 }}>
 							{movimientos.map((movimiento, index) => (
 								<Box
 									key={index}
 									sx={{
-										py: 1.5,
-										px: 1.5,
+										py: 2,
+										px: 2,
 										borderBottom: index < movimientos.length - 1 ? 1 : 0,
 										borderColor: "divider",
 										"&:hover": {
@@ -175,22 +204,73 @@ const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open }) => {
 										},
 									}}
 								>
-									<Box display="flex" alignItems="flex-start" gap={2}>
-										<Typography variant="caption" color="text.secondary" sx={{ minWidth: 70, pt: 0.3 }}>
-											{formatDate(movimiento.fecha)}
-										</Typography>
-										<Box flex={1}>
-											<Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-												<Typography variant="body2">{movimiento.descripcion}</Typography>
-												{movimiento.tipo && <Chip label={movimiento.tipo} size="small" sx={{ height: 20, fontSize: "0.7rem" }} />}
+									<Grid container spacing={2}>
+										<Grid item xs={12} sm={2}>
+											<Typography variant="caption" color="text.secondary">
+												Fecha
+											</Typography>
+											<Typography variant="body2" fontWeight="medium">
+												{formatDate(movimiento.fecha)}
+											</Typography>
+										</Grid>
+										<Grid item xs={12} sm={2}>
+											<Typography variant="caption" color="text.secondary">
+												Tipo
+											</Typography>
+											<Box>
+												{movimiento.tipo ? (
+													<Chip label={movimiento.tipo} size="small" sx={{ height: 22, fontSize: "0.75rem" }} />
+												) : (
+													<Typography variant="body2">-</Typography>
+												)}
 											</Box>
+										</Grid>
+										<Grid item xs={12} sm={6}>
+											<Typography variant="caption" color="text.secondary">
+												Detalle
+											</Typography>
+											<Typography variant="body2">{movimiento.detalle || movimiento.descripcion || "-"}</Typography>
 											{movimiento.observacion && (
 												<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
 													{movimiento.observacion}
 												</Typography>
 											)}
-										</Box>
-									</Box>
+										</Grid>
+										<Grid item xs={12} sm={2}>
+											<Typography variant="caption" color="text.secondary">
+												Documento
+											</Typography>
+											<Box>
+												{movimiento.url ? (
+													<Box display="flex" alignItems="center" gap={1}>
+														<Link
+															href="#"
+															variant="body2"
+															underline="hover"
+															onClick={(e) => {
+																e.preventDefault();
+																handleViewPdf(movimiento.url!, `Movimiento - ${formatDate(movimiento.fecha)}`);
+															}}
+															sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+														>
+															Ver PDF
+														</Link>
+														<Tooltip title="Visualizar documento">
+															<IconButton
+																size="small"
+																color="primary"
+																onClick={() => handleViewPdf(movimiento.url!, `Movimiento - ${formatDate(movimiento.fecha)}`)}
+															>
+																<Eye size={16} />
+															</IconButton>
+														</Tooltip>
+													</Box>
+												) : (
+													<Typography variant="body2">-</Typography>
+												)}
+											</Box>
+										</Grid>
+									</Grid>
 								</Box>
 							))}
 						</Box>
@@ -211,6 +291,9 @@ const CausaDetailsCard: React.FC<CausaDetailsCardProps> = ({ causa, open }) => {
 						</Box>
 					)}
 				</Box>
+
+				{/* PDF Viewer Dialog */}
+				<PDFViewer open={pdfViewerOpen} onClose={handleClosePdfViewer} url={selectedPdfUrl} title={selectedPdfTitle} />
 			</Box>
 		</Collapse>
 	);

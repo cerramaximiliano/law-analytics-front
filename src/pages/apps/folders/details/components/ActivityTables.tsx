@@ -110,10 +110,17 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 
-	// Load data on mount
+	// Load data on mount - con paginación inicial
 	useEffect(() => {
 		if (id) {
-			dispatch(getMovementsByFolderId(id));
+			// Cargar movimientos con paginación inicial y ordenamiento por defecto
+			dispatch(
+				getMovementsByFolderId(id, {
+					page: 1,
+					limit: 10,
+					sort: "-time", // Ordenar por fecha descendente por defecto
+				}),
+			);
 			dispatch(getNotificationsByFolderId(id));
 			dispatch(getEventsById(id));
 		}
@@ -482,19 +489,56 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					Total de registros
 				</Typography>
 				<Stack spacing={0.5} mt={1}>
-					<Chip
-						size="small"
-						label={`${movementsData.movements?.length || 0} movimientos`}
-						variant="outlined"
-						sx={{ justifyContent: "flex-start" }}
-					/>
-					<Chip
-						size="small"
-						label={`${notificationsData.notifications?.length || 0} notificaciones`}
-						variant="outlined"
-						sx={{ justifyContent: "flex-start" }}
-					/>
-					<Chip size="small" label={`${eventsData.events?.length || 0} eventos`} variant="outlined" sx={{ justifyContent: "flex-start" }} />
+					{movementsData.isLoading || notificationsData.isLoading || eventsData.isLoading ? (
+						<>
+							<Skeleton variant="rectangular" height={24} />
+							<Skeleton variant="rectangular" height={24} />
+							<Skeleton variant="rectangular" height={24} />
+						</>
+					) : (
+						<>
+							<Tooltip
+								title={movementsData.pagination ? `Mostrando ${movementsData.movements?.length} de ${movementsData.pagination.total}` : ""}
+								arrow
+								placement="right"
+							>
+								<Chip
+									size="small"
+									label={`${movementsData.pagination?.total || movementsData.movements?.length || 0} movimientos`}
+									variant="outlined"
+									sx={{ justifyContent: "flex-start", width: "100%" }}
+								/>
+							</Tooltip>
+							<Tooltip
+								title={
+									notificationsData.pagination
+										? `Mostrando ${notificationsData.notifications?.length} de ${notificationsData.pagination.total}`
+										: ""
+								}
+								arrow
+								placement="right"
+							>
+								<Chip
+									size="small"
+									label={`${notificationsData.pagination?.total || notificationsData.notifications?.length || 0} notificaciones`}
+									variant="outlined"
+									sx={{ justifyContent: "flex-start", width: "100%" }}
+								/>
+							</Tooltip>
+							<Tooltip
+								title={eventsData.pagination ? `Mostrando ${eventsData.events?.length} de ${eventsData.pagination.total}` : ""}
+								arrow
+								placement="right"
+							>
+								<Chip
+									size="small"
+									label={`${eventsData.pagination?.total || eventsData.events?.length || 0} eventos`}
+									variant="outlined"
+									sx={{ justifyContent: "flex-start", width: "100%" }}
+								/>
+							</Tooltip>
+						</>
+					)}
 				</Stack>
 			</Box>
 		</Box>
@@ -638,6 +682,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												onDelete={handleDeleteMovement}
 												onView={handleViewMovement}
 												filters={filters}
+												pagination={movementsData.pagination}
+												isLoading={movementsData.isLoading}
+												totalWithLinks={movementsData.totalWithLinks}
+												documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+												documentsInThisPage={movementsData.documentsInThisPage}
 											/>
 										)}
 										{activeTab === "notifications" && (
@@ -820,6 +869,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												onDelete={handleDeleteMovement}
 												onView={handleViewMovement}
 												filters={filters}
+												pagination={movementsData.pagination}
+												isLoading={movementsData.isLoading}
+												totalWithLinks={movementsData.totalWithLinks}
+												documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+												documentsInThisPage={movementsData.documentsInThisPage}
 											/>
 										)}
 										{activeTab === "notifications" && (

@@ -11,10 +11,33 @@ export type Movement = {
 	title: string;
 	description?: string;
 	link?: string;
+	source?: "pjn"; // Campo para identificar movimientos de PJN
 };
+
+// Tipos para paginación
+export interface PaginationInfo {
+	total: number;
+	page: number;
+	limit: number;
+	pages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+export interface PaginatedMovementsResponse {
+	movements: Movement[];
+	pagination: PaginationInfo;
+	totalWithLinks?: number;
+	documentsBeforeThisPage?: number;
+	documentsInThisPage?: number;
+}
 
 export interface MovementState {
 	movements: Movement[];
+	pagination?: PaginationInfo; // Información de paginación
+	totalWithLinks?: number;
+	documentsBeforeThisPage?: number;
+	documentsInThisPage?: number;
 	isLoading: boolean;
 	error?: string;
 }

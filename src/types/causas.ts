@@ -58,6 +58,8 @@ export interface Movimiento {
 	descripcion: string;
 	observacion?: string;
 	tipo?: string;
+	detalle?: string;
+	url?: string;
 	[key: string]: any;
 }
 
