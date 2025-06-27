@@ -42,7 +42,7 @@ const PaginationWithJump: React.FC<PaginationWithJumpProps> = ({ page, totalPage
 					</Typography>
 					<TextField
 						size="small"
-						value={jumpValue}
+						value={jumpValue || ""}
 						onChange={handleJumpChange}
 						onKeyPress={handleJumpToPage}
 						placeholder="Página"

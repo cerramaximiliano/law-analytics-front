@@ -28,6 +28,7 @@ import unifiedStats from "./unifiedStats";
 import interestRates from "./interestRates";
 import stripeSubscriptions from "./stripe-subscriptions";
 import causas from "./causas";
+import activities from "./activities";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -63,6 +64,7 @@ const reducers = combineReducers({
 	interestRates,
 	stripeSubscriptions,
 	causas,
+	activities,
 });
 
 export default reducers;

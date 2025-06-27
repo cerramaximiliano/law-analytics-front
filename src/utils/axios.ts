@@ -12,7 +12,9 @@ axiosServices.interceptors.response.use(
 		if (error.response?.status === 401 && !window.location.href.includes("/login")) {
 			window.location.pathname = "/login";
 		}
-		return Promise.reject((error.response && error.response.data) || "Wrong Services");
+		
+		// Return the full error object to preserve status codes and allow specific handling
+		return Promise.reject(error);
 	},
 );
 

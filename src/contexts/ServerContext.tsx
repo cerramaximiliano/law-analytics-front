@@ -479,6 +479,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				if ((error.response.data as any).loginFailed) {
 					throw new Error("Credenciales inválidas");
 				}
+				// Handle specific HTTP status codes
+				if (error.response.status === 404) {
+					throw new Error("El servicio de autenticación no está disponible");
+				} else if (error.response.status === 500) {
+					throw new Error("Error del servidor. Por favor, intente más tarde");
+				} else if (error.response.status === 503) {
+					throw new Error("Servicio temporalmente no disponible");
+				}
+			} else if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
+				throw new Error("No se puede conectar con el servidor");
 			}
 
 			throw error;

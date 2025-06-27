@@ -75,10 +75,27 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 							// Safely extract error message with proper checks
 							let errorMessage = "Error al iniciar sesión";
 
-							if (err && err.response && err.response.data && err.response.data.message) {
-								errorMessage = err.response.data.message;
+							// Handle specific error cases
+							if (err && err.response) {
+								// Handle axios errors with response
+								if (err.response.status === 404) {
+									errorMessage = "El servicio de autenticación no está disponible. Por favor, intente más tarde.";
+								} else if (err.response.status === 500) {
+									errorMessage = "Error del servidor. Por favor, intente más tarde.";
+								} else if (err.response.status === 401) {
+									errorMessage = "Credenciales inválidas. Por favor, verifique su email y contraseña.";
+								} else if (err.response.data && err.response.data.message) {
+									errorMessage = err.response.data.message;
+								}
 							} else if (err && err.message) {
-								errorMessage = err.message;
+								// Handle errors with message property
+								if (err.message.includes("Network Error")) {
+									errorMessage = "Error de conexión. Por favor, verifique su conexión a internet.";
+								} else if (err.message.includes("timeout")) {
+									errorMessage = "La solicitud ha tardado demasiado. Por favor, intente nuevamente.";
+								} else {
+									errorMessage = err.message;
+								}
 							} else if (typeof err === "string") {
 								errorMessage = err;
 							}

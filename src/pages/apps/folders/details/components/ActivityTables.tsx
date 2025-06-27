@@ -30,10 +30,11 @@ import { useSelector, dispatch } from "store";
 import { getMovementsByFolderId } from "store/reducers/movements";
 import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { getEventsById } from "store/reducers/events";
+import { getCombinedActivities } from "store/reducers/activities";
 import MovementsTable from "./tables/MovementsTable";
 import NotificationsTable from "./tables/NotificationsTable";
 import CalendarTable from "./tables/CalendarTable";
-import CombinedTable, { UnifiedActivity } from "./tables/CombinedTable";
+import CombinedTablePaginated from "./tables/CombinedTablePaginated";
 import ModalMovements from "../modals/ModalMovements";
 import ModalNotifications from "../modals/ModalNotifications";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
@@ -41,6 +42,7 @@ import AlertMemberDelete from "../modals/alertMemberDelete";
 import AlertNotificationDelete from "../modals/alertNotificationDelete";
 import { Movement } from "types/movements";
 import { NotificationType } from "types/notifications";
+import { CombinedActivity } from "types/activities";
 import { PopupTransition } from "components/@extended/Transitions";
 import { toggleModal, selectEvent } from "store/reducers/calendar";
 import { deleteEvent } from "store/reducers/events";
@@ -106,6 +108,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const movementsData = useSelector((state: any) => state.movements);
 	const notificationsData = useSelector((state: any) => state.notifications);
 	const eventsData = useSelector((state: any) => state.events);
+	const activitiesData = useSelector((state: any) => state.activities);
 	const calendarState = useSelector((state: any) => state.calendar);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
@@ -173,6 +176,21 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			allDay: "",
 			source: "",
 		});
+		
+		// Cargar datos combinados cuando se selecciona esa pestaña
+		if (newValue === "combined" && id) {
+			dispatch(
+				getCombinedActivities(id, {
+					page: 1,
+					limit: 10,
+					sort: "-date",
+					filter: {
+						types: ["movement", "notification", "event"],
+					},
+				}),
+			);
+		}
+		
 		if (isMobile) {
 			setMobileOpen(false);
 		}
@@ -189,55 +207,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		} else if (activeTab === "calendar") {
 			dataToExport.events = eventsData.events;
 		} else if (activeTab === "combined") {
-			// For combined view, we need to get the unified data
-			const unified: UnifiedActivity[] = [];
-
-			// Convert movements
-			movementsData.movements.forEach((movement: Movement) => {
-				unified.push({
-					id: movement._id || "",
-					title: movement.title || "",
-					date: new Date(),
-					dateString: movement.time,
-					description: movement.description,
-					type: "movement",
-					subType: movement.movement || "",
-					expirationDate: movement.dateExpiration,
-					originalData: movement,
-				});
-			});
-
-			// Convert notifications
-			notificationsData.notifications.forEach((notification: NotificationType) => {
-				unified.push({
-					id: notification._id || "",
-					title: notification.title || "",
-					date: new Date(),
-					dateString: notification.time || "",
-					description: notification.description,
-					type: "notification",
-					subType: notification.notification || "",
-					expirationDate: notification.dateExpiration,
-					user: notification.user,
-					originalData: notification,
-				});
-			});
-
-			// Convert calendar events
-			eventsData.events.forEach((event: any) => {
-				unified.push({
-					id: event._id || "",
-					title: event.title || "",
-					date: new Date(),
-					dateString: format(parseISO(event.start), "dd/MM/yyyy", { locale: es }),
-					description: event.description,
-					type: "calendar",
-					subType: event.type || "General",
-					originalData: event,
-				});
-			});
-
-			dataToExport.combined = unified;
+			// For combined view, export from the paginated data
+			dataToExport.combined = activitiesData.activities;
 		}
 
 		exportActivityData(activeTab, dataToExport, folderName);
@@ -362,45 +333,121 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		dispatch(toggleModal());
 	};
 
-	// Combined view handlers
-	const handleCombinedEdit = (activity: UnifiedActivity) => {
+	// Combined view handlers for paginated table
+	const handleCombinedEdit = (activity: CombinedActivity) => {
 		switch (activity.type) {
 			case "movement":
-				handleEditMovement(activity.originalData as Movement);
+				// Create a Movement object from CombinedActivity
+				const movement: Movement = {
+					_id: activity._id,
+					title: activity.title,
+					description: activity.description,
+					movement: activity.movement || "",
+					time: activity.date,
+					dateExpiration: activity.dateExpiration,
+					link: activity.link,
+					source: activity.source === "pjn" ? "pjn" : undefined,
+					folderId: activity.folderId,
+					userId: activity.userId,
+				};
+				handleEditMovement(movement);
 				break;
 			case "notification":
-				handleEditNotification(activity.originalData as NotificationType);
+				// Create a NotificationType object from CombinedActivity
+				const notification: NotificationType = {
+					_id: activity._id,
+					title: activity.title,
+					description: activity.description,
+					notification: activity.notification || "",
+					time: activity.date,
+					user: activity.user || "",
+					dateExpiration: activity.dateExpiration,
+					folderId: activity.folderId,
+					userId: activity.userId,
+				};
+				handleEditNotification(notification);
 				break;
-			case "calendar":
-				handleEditEvent(activity.originalData);
+			case "event":
+				// Create an event object from CombinedActivity
+				const event = {
+					_id: activity._id,
+					title: activity.title,
+					description: activity.description,
+					start: activity.start || activity.date,
+					end: activity.end,
+					allDay: activity.allDay,
+					type: activity.eventType,
+					location: activity.location,
+					folderId: activity.folderId,
+					userId: activity.userId,
+				};
+				handleEditEvent(event);
 				break;
 		}
 	};
 
-	const handleCombinedDelete = (activity: UnifiedActivity) => {
+	const handleCombinedDelete = (activity: CombinedActivity) => {
 		switch (activity.type) {
 			case "movement":
-				handleDeleteMovement(activity.id);
+				handleDeleteMovement(activity._id);
 				break;
 			case "notification":
-				handleDeleteNotification(activity.id);
+				handleDeleteNotification(activity._id);
 				break;
-			case "calendar":
-				handleDeleteEvent(activity.id);
+			case "event":
+				handleDeleteEvent(activity._id);
 				break;
 		}
 	};
 
-	const handleCombinedView = (activity: UnifiedActivity) => {
+	const handleCombinedView = (activity: CombinedActivity) => {
 		switch (activity.type) {
 			case "movement":
-				handleViewMovement(activity.originalData as Movement);
+				// Create a Movement object from CombinedActivity
+				const movement: Movement = {
+					_id: activity._id,
+					title: activity.title,
+					description: activity.description,
+					movement: activity.movement || "",
+					time: activity.date,
+					dateExpiration: activity.dateExpiration,
+					link: activity.link,
+					source: activity.source === "pjn" ? "pjn" : undefined,
+					folderId: activity.folderId,
+					userId: activity.userId,
+				};
+				handleViewMovement(movement);
 				break;
 			case "notification":
-				handleViewNotification(activity.originalData as NotificationType);
+				// Create a NotificationType object from CombinedActivity
+				const notification: NotificationType = {
+					_id: activity._id,
+					title: activity.title,
+					description: activity.description,
+					notification: activity.notification || "",
+					time: activity.date,
+					user: activity.user || "",
+					dateExpiration: activity.dateExpiration,
+					folderId: activity.folderId,
+					userId: activity.userId,
+				};
+				handleViewNotification(notification);
 				break;
-			case "calendar":
-				handleViewEvent(activity.originalData);
+			case "event":
+				// Create an event object from CombinedActivity
+				const event = {
+					_id: activity._id,
+					title: activity.title,
+					description: activity.description,
+					start: activity.start || activity.date,
+					end: activity.end,
+					allDay: activity.allDay,
+					type: activity.eventType,
+					location: activity.location,
+					folderId: activity.folderId,
+					userId: activity.userId,
+				};
+				handleViewEvent(event);
 				break;
 		}
 	};
@@ -410,7 +457,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		(activeTab === "movements" && movementsData.isLoader) ||
 		(activeTab === "notifications" && notificationsData.isLoader) ||
 		(activeTab === "calendar" && eventsData.isLoader) ||
-		(activeTab === "combined" && (movementsData.isLoader || notificationsData.isLoader || eventsData.isLoader));
+		(activeTab === "combined" && activitiesData.isLoading);
 
 	// Sidebar content
 	const sidebarContent = (
@@ -708,14 +755,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											/>
 										)}
 										{activeTab === "combined" && (
-											<CombinedTable
-												movements={movementsData.movements}
-												notifications={notificationsData.notifications}
-												events={eventsData.events}
+											<CombinedTablePaginated
+												activities={activitiesData.activities || []}
 												searchQuery={searchQuery}
 												onEdit={handleCombinedEdit}
 												onDelete={handleCombinedDelete}
 												onView={handleCombinedView}
+												filters={filters}
+												pagination={activitiesData.pagination}
+												isLoading={activitiesData.isLoading}
+												stats={activitiesData.stats}
 											/>
 										)}
 									</Paper>
@@ -895,14 +944,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											/>
 										)}
 										{activeTab === "combined" && (
-											<CombinedTable
-												movements={movementsData.movements}
-												notifications={notificationsData.notifications}
-												events={eventsData.events}
+											<CombinedTablePaginated
+												activities={activitiesData.activities || []}
 												searchQuery={searchQuery}
 												onEdit={handleCombinedEdit}
 												onDelete={handleCombinedDelete}
 												onView={handleCombinedView}
+												filters={filters}
+												pagination={activitiesData.pagination}
+												isLoading={activitiesData.isLoading}
+												stats={activitiesData.stats}
 											/>
 										)}
 									</Paper>

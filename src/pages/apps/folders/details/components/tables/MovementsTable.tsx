@@ -398,7 +398,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
-						<TableRow>
+						<TableRow key="header-row">
 							{headCells.map((headCell) => (
 								<TableCell
 									key={headCell.id}
@@ -428,8 +428,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					</TableHead>
 					<TableBody>
 						{isLoading ? (
-							<>
-								{[...Array(rowsPerPage)].map((_, index) => (
+							[...Array(rowsPerPage)].map((_, index) => (
 									<TableRow key={`skeleton-${index}`}>
 										<TableCell>
 											<Skeleton variant="text" width={80} />
@@ -457,10 +456,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 											</Stack>
 										</TableCell>
 									</TableRow>
-								))}
-							</>
+								))
 						) : movements.length === 0 ? (
-							<TableRow>
+							<TableRow key="no-data-row">
 								<TableCell colSpan={headCells.length} align="center">
 									<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
 										No se encontraron movimientos
@@ -600,7 +598,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 													</IconButton>
 												</Tooltip>
 												{movement.source !== "pjn" && (
-													<>
+													<React.Fragment key={`actions-${movement._id}`}>
 														<Tooltip title="Editar">
 															<IconButton
 																size="small"
@@ -625,7 +623,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																<Trash size={18} />
 															</IconButton>
 														</Tooltip>
-													</>
+													</React.Fragment>
 												)}
 											</Stack>
 										</TableCell>
