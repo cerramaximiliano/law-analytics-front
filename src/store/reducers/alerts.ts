@@ -73,6 +73,21 @@ const alerts = (state = initialState, action: AlertActionProps) => {
 						? state.alerts.filter((alert) => !action.payload.alertIds.includes(alert._id))
 						: state.alerts.filter((alert) => alert.userId !== action.payload.userId),
 			};
+		case ADD_ALERT:
+			// Verificar si la alerta ya existe
+			const alertExists = state.alerts.some(alert => alert._id === action.payload._id);
+			if (alertExists) {
+				console.log(`[Reducer] Alerta con ID ${action.payload._id} ya existe, no se añade`);
+				return state;
+			}
+			
+			console.log(`[Reducer] Añadiendo nueva alerta: ${action.payload._id}`);
+			return {
+				...state,
+				isLoader: false,
+				alerts: [action.payload, ...state.alerts], // Agregar nueva alerta al principio
+			};
+
 		case ADD_MULTIPLE_ALERTS:
 			if (Array.isArray(action.payload)) {
 				console.log(`[Reducer] Procesando ${action.payload.length} alertas para añadir`);
@@ -193,6 +208,23 @@ export const markAlertAsRead = (alertId: string) => {
 				message: error instanceof Error ? error.message : "Error desconocido",
 			};
 		}
+	};
+};
+
+// Acción para añadir una sola alerta (como las recibidas por WebSocket)
+export const addAlert = (alert: Alert) => {
+	if (!alert || typeof alert !== "object" || !alert._id) {
+		console.warn("Alerta inválida para añadir:", alert);
+		return {
+			type: "NO_ACTION",
+		};
+	}
+
+	console.log("addAlert - Ejecutando acción con alerta:", alert._id);
+
+	return {
+		type: ADD_ALERT,
+		payload: alert,
 	};
 };
 

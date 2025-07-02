@@ -37,13 +37,54 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 		Yup.object().shape({
 			title: Yup.string().max(255).required("Campo requerido"),
 			movement: Yup.string().max(255).required("Campo requerido"),
-			dateExpiration: Yup.string().matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-				message: "El formato de fecha debe ser DD/MM/AAAA",
-			}),
+			dateExpiration: Yup.string()
+				.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
+					message: "El formato de fecha debe ser DD/MM/AAAA",
+				})
+				.test("dateExpiration-after-time", "La fecha de vencimiento debe ser posterior a la fecha de dictado", function (value) {
+					if (!value) return true; // Si no hay fecha de vencimiento, es válido
+					const { time } = this.parent;
+					if (!time) return true; // Si no hay fecha de dictado, no podemos validar
+
+					// Convertir las fechas DD/MM/YYYY a objetos Date
+					const parseDate = (dateStr: string) => {
+						const [day, month, year] = dateStr.split("/");
+						return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+					};
+
+					try {
+						const dictadoDate = parseDate(time);
+						const vencimientoDate = parseDate(value);
+						return vencimientoDate > dictadoDate;
+					} catch {
+						return true; // Si hay error al parsear, dejamos que otras validaciones lo manejen
+					}
+				}),
 			time: Yup.string()
 				.required("La fecha es requerida")
 				.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
 					message: "El formato de fecha debe ser DD/MM/AAAA",
+				})
+				.test("time-not-future", "La fecha de dictado no puede ser mayor a la fecha actual", function (value) {
+					if (!value) return true; // Si no hay fecha, otra validación lo manejará
+
+					// Convertir la fecha DD/MM/YYYY a objeto Date
+					const parseDate = (dateStr: string) => {
+						const [day, month, year] = dateStr.split("/");
+						return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+					};
+
+					try {
+						const dictadoDate = parseDate(value);
+						const today = new Date();
+						// Establecer la hora de hoy a 00:00:00 para comparar solo fechas
+						today.setHours(0, 0, 0, 0);
+						dictadoDate.setHours(0, 0, 0, 0);
+
+						return dictadoDate <= today;
+					} catch {
+						return true; // Si hay error al parsear, dejamos que otras validaciones lo manejen
+					}
 				}),
 		}),
 	];
@@ -199,7 +240,9 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 											placeholder="Título del Movimiento"
 											id="title"
 											name="title"
-											startAdornment={<TableDocument />}
+											InputProps={{
+												startAdornment: <TableDocument size={16} style={{ marginRight: 8 }} />,
+											}}
 											sx={customInputStyles}
 										/>
 									</Stack>
@@ -212,8 +255,7 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 											label="Seleccione tipo de Movimiento"
 											data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
 											name="movement"
-											style={{
-												maxHeight: "39.91px",
+											sx={{
 												"& .MuiInputBase-root": {
 													height: "39.91px",
 													fontSize: 12,
@@ -276,7 +318,9 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 											placeholder="Añada un link"
 											id="link"
 											name="link"
-											startAdornment={<Link1 />}
+											InputProps={{
+												startAdornment: <Link1 size={16} style={{ marginRight: 8 }} />,
+											}}
 											sx={customInputStyles}
 										/>
 									</Stack>
@@ -291,7 +335,7 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 											rows={2}
 											placeholder="Ingrese una descripción"
 											name="description"
-											customInputStyles={{
+											sx={{
 												"& .MuiInputBase-input": {
 													fontSize: 12,
 												},

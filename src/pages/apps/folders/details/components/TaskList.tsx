@@ -33,8 +33,8 @@ const TaskList = ({ title, folderName }: TaskListProps) => {
 	const { id } = useParams();
 
 	// Añadimos un valor por defecto de array vacío
-	const tasks = useSelector((state: any) => state.tasksReducer?.tasks || []);
-	const isLoading = useSelector((state: any) => state.tasks?.isLoader || false);
+	const tasks = useSelector((state: any) => state.tasksReducer?.selectedTasks || []);
+	const isLoading = useSelector((state: any) => state.tasksReducer?.isLoader || false);
 
 	const [open, setOpen] = useState(false);
 	const [showAllTasks, setShowAllTasks] = useState(false);

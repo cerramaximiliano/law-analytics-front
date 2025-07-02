@@ -42,7 +42,7 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 	const { id } = useParams<{ id: string }>();
 
 	// Redux state
-	const tasks = useSelector((state: RootState) => state.tasksReducer?.tasks || []) as TaskType[];
+	const tasks = useSelector((state: RootState) => state.tasksReducer?.selectedTasks || []) as TaskType[];
 	const isLoading = useSelector((state: RootState) => state.tasksReducer?.isLoader || false);
 
 	// Local state

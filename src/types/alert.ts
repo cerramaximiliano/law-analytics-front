@@ -30,6 +30,8 @@ export type Alert = {
 	folderId: string;
 	expirationDate: string;
 	read: string;
+	sourceType?: "event" | "task" | "movement" | "system" | "marketing" | "custom";
+	sourceId?: string;
 };
 
 export interface AlertsState {

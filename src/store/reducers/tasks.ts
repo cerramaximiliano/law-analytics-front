@@ -137,19 +137,21 @@ export const getTasksByUserId =
 	async (dispatch: Dispatch, getState: any) => {
 		try {
 			const state = getState();
-			const { isInitialized, lastFetchedUserId } = state.tasks;
+			const { isInitialized, lastFetchedUserId } = state.tasksReducer;
 
 			// Si ya tenemos los datos en cache para este usuario y no forzamos actualización, no hacer la petición
 			if (isInitialized && lastFetchedUserId === userId && !forceRefresh) {
-				return { success: true, tasks: state.tasks.tasks };
+				return { success: true, tasks: state.tasksReducer.tasks };
 			}
 
 			dispatch({ type: SET_LOADING });
 			// Campos optimizados para listas
 			const fields = "_id,name,description,status,priority,dueDate,folderId,folderName,tags,attachments,createdAt,updatedAt,completedAt";
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/user/${userId}`, {
+			const url = `${process.env.REACT_APP_BASE_URL}/api/tasks/user/${userId}`;
+			const response = await axios.get(url, {
 				params: { fields },
 			});
+			
 			dispatch({
 				type: SET_TASKS,
 				payload: response.data,
@@ -184,7 +186,7 @@ export const getTasksByGroupId = (groupId: string) => async (dispatch: Dispatch)
 export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
 	try {
 		const state = getState();
-		const { tasks, isInitialized } = state.tasks;
+		const { tasks, isInitialized } = state.tasksReducer;
 		const auth = state.auth;
 		const userId = auth.user?._id;
 
@@ -198,7 +200,7 @@ export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatc
 		}
 
 		// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
-		const currentTasks = isInitialized ? tasks : getState().tasks.tasks;
+		const currentTasks = isInitialized ? tasks : getState().tasksReducer.tasks;
 		const filteredTasks = currentTasks.filter((task: TaskType) => task.folderId === folderId);
 
 		dispatch({

@@ -74,44 +74,103 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 
 							// Safely extract error message with proper checks
 							let errorMessage = "Error al iniciar sesión";
+							let fullErrorMessage = errorMessage;
 
 							// Handle specific error cases
 							if (err && err.response) {
-								// Handle axios errors with response
-								if (err.response.status === 404) {
-									errorMessage = "El servicio de autenticación no está disponible. Por favor, intente más tarde.";
+								// Handle 429 Too Many Requests
+								if (err.response.status === 429) {
+									const errorData = err.response.data;
+									errorMessage = "Has realizado demasiados intentos fallidos de inicio de sesión.";
+
+									// Calculate remaining time if retryAfter is provided
+									let remainingTimeMessage = "";
+									if (errorData.retryAfter) {
+										const retryAfterDate = new Date(errorData.retryAfter);
+										const now = new Date();
+										const diffMs = retryAfterDate.getTime() - now.getTime();
+
+										if (diffMs > 0) {
+											const diffMinutes = Math.ceil(diffMs / 60000);
+
+											if (diffMinutes >= 60) {
+												const hours = Math.floor(diffMinutes / 60);
+												const minutes = diffMinutes % 60;
+												if (minutes === 0) {
+													remainingTimeMessage = `Podrás intentar nuevamente en ${hours} ${hours === 1 ? "hora" : "horas"}.`;
+												} else {
+													remainingTimeMessage = `Podrás intentar nuevamente en ${hours} ${hours === 1 ? "hora" : "horas"} y ${minutes} ${
+														minutes === 1 ? "minuto" : "minutos"
+													}.`;
+												}
+											} else {
+												remainingTimeMessage = `Podrás intentar nuevamente en ${diffMinutes} ${diffMinutes === 1 ? "minuto" : "minutos"}.`;
+											}
+										}
+									}
+
+									const description =
+										errorData.error || remainingTimeMessage || "Por favor, intenta nuevamente más tarde o restablece tu contraseña.";
+									fullErrorMessage = `${errorMessage} ${description}`;
+								}
+								// Handle new structured error responses
+								else if (err.response.data && err.response.data.error) {
+									const errorData = err.response.data.error;
+									errorMessage = err.response.data.message || errorMessage;
+
+									// Add additional details to the message if available
+									if (errorData.description) {
+										fullErrorMessage = `${errorMessage} ${errorData.description}`;
+									} else {
+										fullErrorMessage = errorMessage;
+									}
+
+									// Add attempts remaining if available
+									if (errorData.attemptsRemaining !== undefined && errorData.attemptsRemaining > 0) {
+										fullErrorMessage += ` Intentos restantes: ${errorData.attemptsRemaining}`;
+									}
+
+									// Add remaining time if account is locked
+									if (errorData.remainingMinutes) {
+										fullErrorMessage += ` Tiempo restante de bloqueo: ${errorData.remainingMinutes} minutos`;
+									}
+								} else if (err.response.status === 404) {
+									fullErrorMessage = "El servicio de autenticación no está disponible. Por favor, intente más tarde.";
 								} else if (err.response.status === 500) {
-									errorMessage = "Error del servidor. Por favor, intente más tarde.";
+									fullErrorMessage = "Error del servidor. Por favor, intente más tarde.";
 								} else if (err.response.status === 401) {
-									errorMessage = "Credenciales inválidas. Por favor, verifique su email y contraseña.";
+									fullErrorMessage = "Credenciales inválidas. Por favor, verifique su email y contraseña.";
 								} else if (err.response.data && err.response.data.message) {
-									errorMessage = err.response.data.message;
+									fullErrorMessage = err.response.data.message;
 								}
 							} else if (err && err.message) {
 								// Handle errors with message property
 								if (err.message.includes("Network Error")) {
-									errorMessage = "Error de conexión. Por favor, verifique su conexión a internet.";
+									fullErrorMessage = "Error de conexión. Por favor, verifique su conexión a internet.";
 								} else if (err.message.includes("timeout")) {
-									errorMessage = "La solicitud ha tardado demasiado. Por favor, intente nuevamente.";
+									fullErrorMessage = "La solicitud ha tardado demasiado. Por favor, intente nuevamente.";
 								} else {
-									errorMessage = err.message;
+									fullErrorMessage = err.message;
 								}
 							} else if (typeof err === "string") {
-								errorMessage = err;
+								fullErrorMessage = err;
 							}
+
+							// Show snackbar with error message
 							dispatch(
 								openSnackbar({
 									open: true,
-									message: errorMessage,
+									message: fullErrorMessage,
 									variant: "alert",
 									alert: {
 										color: "error",
 									},
-									close: false,
+									close: true,
+									autoHideDuration: err.response?.status === 429 ? 10000 : 6000, // Longer duration for 429 errors
 								}),
 							);
-							setErrors({ submit: errorMessage });
 
+							setErrors({ submit: errorMessage });
 							setSubmitting(false);
 						}
 					}

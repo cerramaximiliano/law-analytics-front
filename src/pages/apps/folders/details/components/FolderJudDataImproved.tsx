@@ -521,6 +521,53 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 									</Paper>
 								</Grid>
 
+								{/* Fecha de finalización */}
+								{(values.judFolder.finalDateJudFolder || isEditing) && (
+									<Grid item xs={12}>
+										<Paper
+											elevation={0}
+											sx={{
+												p: 2.5,
+												border: `1px solid ${theme.palette.divider}`,
+												borderRadius: 1.5,
+												bgcolor: alpha(theme.palette.success.main, 0.04),
+											}}
+										>
+											<Stack direction="row" spacing={2} alignItems="center">
+												<Avatar
+													sx={{
+														bgcolor: alpha(theme.palette.success.main, 0.1),
+														color: theme.palette.success.main,
+														width: 44,
+														height: 44,
+													}}
+												>
+													<Calendar size={20} color={theme.palette.success.main} variant="Bold" />
+												</Avatar>
+												<Box flex={1}>
+													<Typography variant="caption" color="text.secondary" fontWeight={500}>
+														FECHA DE FINALIZACIÓN
+													</Typography>
+													{isEditing ? (
+														<DateInputField customInputStyles={customInputStyles} name="judFolder.finalDateJudFolder" />
+													) : (
+														<>
+															<Typography variant="h6" fontWeight={600} color="success.main">
+																{values.judFolder.finalDateJudFolder || "-"}
+															</Typography>
+															{values.judFolder.finalDateJudFolder && (
+																<Typography variant="caption" color="text.secondary">
+																	{moment(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")}
+																</Typography>
+															)}
+														</>
+													)}
+												</Box>
+											</Stack>
+										</Paper>
+									</Grid>
+								)}
+
 								{/* Additional dates if they exist */}
 								{(folder?.sentencia || folder?.apelacion || folder?.fechaPago) && (
 									<Grid item xs={12}>

@@ -157,8 +157,8 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? moment(folder.initialDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? moment(folder.finalDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+		finalDateFolder: folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 	};
 	const [isEditing, setIsEditing] = useState(false);
 
@@ -409,7 +409,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								<Grid item xs={12} sm={6} md={3}>
 									<FieldCard
 										label="Fecha Inicio"
-										value={folder?.initialDateFolder ? moment(folder.initialDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : null}
+										value={folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : null}
 										isLoading={isLoader}
 										icon={<Calendar1 size={16} />}
 										isEditing={isEditing}
@@ -419,7 +419,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								<Grid item xs={12} sm={6} md={3}>
 									<FieldCard
 										label="Fecha Fin"
-										value={folder?.finalDateFolder ? moment(folder.finalDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : null}
+										value={folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : null}
 										isLoading={isLoader}
 										icon={<Calendar1 size={16} />}
 										isEditing={isEditing}

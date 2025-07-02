@@ -19,7 +19,7 @@ import {
 	useTheme,
 } from "@mui/material";
 import { Edit, Trash, Eye, Link2, DocumentText, Judge, NotificationStatus, Status, Clock } from "iconsax-react";
-import { Movement, PaginationInfo } from "types/movements";
+import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import { format, parse, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { visuallyHidden } from "@mui/utils";
@@ -28,6 +28,7 @@ import { getMovementsByFolderId } from "store/reducers/movements";
 import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
 import PaginationWithJump from "components/shared/PaginationWithJump";
+import PjnAccessAlert from "components/shared/PjnAccessAlert";
 
 interface MovementsTableProps {
 	movements: Movement[];
@@ -41,6 +42,7 @@ interface MovementsTableProps {
 	totalWithLinks?: number;
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
+	pjnAccess?: PjnAccess;
 }
 
 type Order = "asc" | "desc";
@@ -159,6 +161,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	totalWithLinks,
 	documentsBeforeThisPage,
 	documentsInThisPage,
+	pjnAccess,
 }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
@@ -395,6 +398,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 
 	return (
 		<Box>
+			<PjnAccessAlert pjnAccess={pjnAccess} />
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
@@ -429,34 +433,34 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					<TableBody>
 						{isLoading ? (
 							[...Array(rowsPerPage)].map((_, index) => (
-									<TableRow key={`skeleton-${index}`}>
-										<TableCell>
-											<Skeleton variant="text" width={80} />
-										</TableCell>
-										<TableCell>
-											<Skeleton variant="text" width="90%" />
-										</TableCell>
-										<TableCell>
-											<Skeleton variant="rectangular" width={100} height={24} />
-										</TableCell>
-										<TableCell>
-											<Skeleton variant="text" width="80%" />
-										</TableCell>
-										<TableCell>
-											<Skeleton variant="rectangular" width={100} height={24} />
-										</TableCell>
-										<TableCell>
-											<Skeleton variant="circular" width={30} height={30} />
-										</TableCell>
-										<TableCell>
-											<Stack direction="row" spacing={0.5}>
-												<Skeleton variant="circular" width={32} height={32} />
-												<Skeleton variant="circular" width={32} height={32} />
-												<Skeleton variant="circular" width={32} height={32} />
-											</Stack>
-										</TableCell>
-									</TableRow>
-								))
+								<TableRow key={`skeleton-${index}`}>
+									<TableCell>
+										<Skeleton variant="text" width={80} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="text" width="90%" />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="rectangular" width={100} height={24} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="text" width="80%" />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="rectangular" width={100} height={24} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="circular" width={30} height={30} />
+									</TableCell>
+									<TableCell>
+										<Stack direction="row" spacing={0.5}>
+											<Skeleton variant="circular" width={32} height={32} />
+											<Skeleton variant="circular" width={32} height={32} />
+											<Skeleton variant="circular" width={32} height={32} />
+										</Stack>
+									</TableCell>
+								</TableRow>
+							))
 						) : movements.length === 0 ? (
 							<TableRow key="no-data-row">
 								<TableCell colSpan={headCells.length} align="center">

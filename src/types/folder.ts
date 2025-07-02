@@ -68,6 +68,13 @@ export type FolderData = {
 	error?: string | null;
 	source?: string; // Fuente de los datos (manual o auto)
 	pjn?: boolean; // Indica si los datos provienen del Poder Judicial de la Nación
+	causaId?: string; // ID de la causa vinculada
+	causaType?: string; // Tipo de causa (CausasCivil, CausasTrabajo, CausasSegSocial)
+	causaVerified?: boolean; // Indica si la causa ha sido verificada
+	causaIsValid?: boolean; // Indica si la causa es válida
+	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
+	causaAssociationStatus?: string; // Estado de asociación (success, pending, failed)
+	causaLastSyncDate?: string; // Fecha de última sincronización
 };
 
 export type FolderState = {

@@ -2,7 +2,7 @@
 import { FormattedMessage } from "react-intl";
 
 // assets
-import { MessageSquare, User, DocumentText, Monitor, Folder2 } from "iconsax-react";
+import { MessageSquare, User, DocumentText, Monitor, Folder2, Notification } from "iconsax-react";
 
 // type
 import { NavItemType } from "types/menu";
@@ -74,6 +74,14 @@ const admin: NavItemType = {
 			type: "item",
 			url: "/admin/server-status",
 			icon: Monitor,
+			breadcrumbs: true,
+		},
+		{
+			id: "notifications",
+			title: <FormattedMessage id="notifications" defaultMessage="Monitoreo de Notificaciones" />,
+			type: "item",
+			url: "/admin/notifications",
+			icon: Notification,
 			breadcrumbs: true,
 		},
 	],

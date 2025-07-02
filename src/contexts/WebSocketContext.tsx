@@ -67,15 +67,16 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 		(state: ConnectionState) => {
 			setConnectionState(state);
 
-			if (state === ConnectionState.CONNECTED) {
-				if (isInitialized) {
-					showNotification("Conexión con el servidor establecida", "success");
-				}
-			} else if (state === ConnectionState.AUTHENTICATED) {
-				showNotification("Autenticación con el servidor establecida", "success");
-			} else if (state === ConnectionState.ERROR) {
-				showNotification("Error en la conexión con el servidor", "error");
-			}
+			// Comentado: Las notificaciones de conexión no son necesarias para el usuario
+			// if (state === ConnectionState.CONNECTED) {
+			// 	if (isInitialized) {
+			// 		showNotification("Conexión con el servidor establecida", "success");
+			// 	}
+			// } else if (state === ConnectionState.AUTHENTICATED) {
+			// 	showNotification("Autenticación con el servidor establecida", "success");
+			// } else if (state === ConnectionState.ERROR) {
+			// 	showNotification("Error en la conexión con el servidor", "error");
+			// }
 		},
 		[isInitialized, showNotification],
 	);

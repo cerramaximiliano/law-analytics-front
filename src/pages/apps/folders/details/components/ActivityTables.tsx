@@ -176,7 +176,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			allDay: "",
 			source: "",
 		});
-		
+
 		// Cargar datos combinados cuando se selecciona esa pestaña
 		if (newValue === "combined" && id) {
 			dispatch(
@@ -190,7 +190,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				}),
 			);
 		}
-		
+
 		if (isMobile) {
 			setMobileOpen(false);
 		}
@@ -734,6 +734,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												totalWithLinks={movementsData.totalWithLinks}
 												documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 												documentsInThisPage={movementsData.documentsInThisPage}
+												pjnAccess={movementsData.pjnAccess}
 											/>
 										)}
 										{activeTab === "notifications" && (
@@ -765,6 +766,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												pagination={activitiesData.pagination}
 												isLoading={activitiesData.isLoading}
 												stats={activitiesData.stats}
+												pjnAccess={activitiesData.pjnAccess}
 											/>
 										)}
 									</Paper>
@@ -923,6 +925,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												totalWithLinks={movementsData.totalWithLinks}
 												documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 												documentsInThisPage={movementsData.documentsInThisPage}
+												pjnAccess={movementsData.pjnAccess}
 											/>
 										)}
 										{activeTab === "notifications" && (
@@ -954,6 +957,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												pagination={activitiesData.pagination}
 												isLoading={activitiesData.isLoading}
 												stats={activitiesData.stats}
+												pjnAccess={activitiesData.pjnAccess}
 											/>
 										)}
 									</Paper>

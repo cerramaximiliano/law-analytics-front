@@ -16,6 +16,7 @@ import {
 	TextField,
 	Typography,
 	Tooltip,
+	CircularProgress,
 } from "@mui/material";
 
 // third-party
@@ -32,6 +33,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 	const theme = useTheme();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedAddresses, setSelectedAddresses] = useState<Contact[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
 	const { contacts } = useSelector((state: any) => state.contacts);
 
 	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +53,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 	};
 
 	const handleVincular = async () => {
+		setIsLoading(true);
 		try {
 			const contactsToUpdate = selectedAddresses
 				.filter((address) => address._id)
@@ -69,7 +72,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 						close: true,
 					}),
 				);
-				closeAddressModal();
+				setIsLoading(false);
 				return;
 			}
 
@@ -90,6 +93,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				);
 
 				dispatch(filterContactsByFolder(folderId));
+				closeAddressModal();
 			} else if (result.contacts?.length) {
 				dispatch(
 					openSnackbar({
@@ -105,6 +109,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				}
 
 				dispatch(filterContactsByFolder(folderId));
+				closeAddressModal();
 			} else {
 				let errorMessage = "Error al vincular los contactos";
 
@@ -140,7 +145,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				}),
 			);
 		} finally {
-			closeAddressModal();
+			setIsLoading(false);
 		}
 	};
 
@@ -381,8 +386,14 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				<Button color="error" onClick={closeAddressModal}>
 					Cancelar
 				</Button>
-				<Button onClick={handleVincular} color="primary" variant="contained" disabled={selectedAddresses.length === 0}>
-					Vincular ({selectedAddresses.length})
+				<Button
+					onClick={handleVincular}
+					color="primary"
+					variant="contained"
+					disabled={selectedAddresses.length === 0 || isLoading}
+					startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
+				>
+					{isLoading ? "Vinculando..." : `Vincular (${selectedAddresses.length})`}
 				</Button>
 			</DialogActions>
 		</Dialog>

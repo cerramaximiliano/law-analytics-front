@@ -487,7 +487,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				} else if (error.response.status === 503) {
 					throw new Error("Servicio temporalmente no disponible");
 				}
-			} else if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
+			} else if (axios.isAxiosError(error) && error.code === "ECONNREFUSED") {
 				throw new Error("No se puede conectar con el servidor");
 			}
 

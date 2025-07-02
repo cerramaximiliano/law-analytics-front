@@ -165,6 +165,60 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 		try {
 			// TODO: Implementar llamada al servicio externo del Poder Judicial
 
+			//INTRUCCIONES PARA IMPLEMENTAR RUTA ---
+			/* PUT /api/folders/link-causa/:folderId
+
+  2. Parámetros de entrada:
+
+  - URL param: folderId - ID del folder a vincular
+  - Body:
+    - pjnCode (requerido) - Código PJN para identificar el tipo de causa
+    - number (requerido) - Número de expediente
+    - year (requerido) - Año del expediente
+    - overwrite (opcional, default: true) - Si se deben sobrescribir los datos del folder
+
+  3. Objetos que devuelve:
+
+  En caso de éxito (200):
+  {
+    "success": true,
+    "message": "Folder vinculado exitosamente a la causa" | "Folder vinculado a causa pendiente de verificación",
+    "folder": {
+      // Objeto completo del folder actualizado con todos sus campos
+    },
+    "causaInfo": {
+      "causaId": "ObjectId de la causa",
+      "causaType": "CausasCivil | CausasTrabajo | CausasSegSocial",
+      "verified": true | false,
+      "isValid": true | false | undefined,
+      "associationStatus": "success" | "pending"
+    }
+  }
+
+  En caso de error (400/404/500):
+  {
+    "success": false,
+    "message": "Descripción del error",
+    "error": "Detalle del error (solo en algunos casos)"
+  }
+
+  4. Comportamiento:
+
+  - Valida que el folder exista y los parámetros sean correctos
+  - Verifica permisos de suscripción del usuario
+  - Intenta usar el microservicio de causas primero
+  - Si falla, usa el método local como fallback
+  - Actualiza los campos del folder:
+    - Siempre actualiza: causaId, causaType, causaVerified, causaIsValid, causaUpdateEnabled, causaAssociationStatus, causaLastSyncDate
+    - Si overwrite=true: actualiza folderName, materia, judFolder.statusJudFolder, judFolder.initialDateJudFolder, initialDateFolder
+    - Siempre preserva o crea judFolder.numberJudFolder con formato número/año
+  - Estados de asociación:
+    - 'pending': Causa encontrada pero no verificada
+    - 'success': Causa verificada
+    - 'failed': Error en la asociación
+
+ */
+
 			// Simulación de llamada exitosa
 			setTimeout(() => {
 				setLoading(false);

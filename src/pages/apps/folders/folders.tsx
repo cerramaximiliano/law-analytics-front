@@ -40,7 +40,7 @@ import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, FolderOpen, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle, DocumentDownload } from "iconsax-react";
+import { Add, FolderOpen, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle, DocumentDownload, TickCircle } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
@@ -669,7 +669,29 @@ const FoldersLayout = () => {
 			{
 				Header: "Carátula",
 				accessor: "folderName",
-				Cell: ({ value }: { value: any }) => {
+				Cell: ({ row }: { row: any }) => {
+					const folder = row.original;
+					const value = folder.folderName;
+					
+					// Si causaVerified es false, mostrar chip de pendiente
+					if (folder.causaVerified === false) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+							</Stack>
+						);
+					}
+					
+					// Si causaVerified es true pero causaIsValid es false, mostrar chip de causa inválida
+					if (folder.causaVerified === true && folder.causaIsValid === false) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Chip color="error" label="Causa inválida" size="small" variant="light" />
+							</Stack>
+						);
+					}
+					
+					// Mantener compatibilidad con el valor "Pendiente" anterior
 					if (value === "Pendiente") {
 						return (
 							<Stack direction="row" alignItems="center" spacing={1}>
@@ -677,6 +699,30 @@ const FoldersLayout = () => {
 							</Stack>
 						);
 					}
+					
+					// Si causaVerified es true y causaIsValid es true, mostrar nombre con badge verde
+					if (folder.causaVerified === true && folder.causaIsValid === true) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<span>{formatFolderName(value, 50)}</span>
+								<Tooltip title={folder.pjn === true ? "Causa vinculada a PJN" : "Causa vinculada"}>
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											width: 18,
+											height: 18,
+										}}
+									>
+										<TickCircle size={16} variant="Bold" color="#22C55E" />
+									</Box>
+								</Tooltip>
+							</Stack>
+						);
+					}
+					
+					// En todos los demás casos, mostrar solo el nombre del folder
 					return <span>{formatFolderName(value, 50)}</span>;
 				},
 			},
@@ -700,30 +746,46 @@ const FoldersLayout = () => {
 			{
 				Header: "Fecha de Inicio",
 				accessor: "initialDateFolder",
-				Cell: ({ value }: { value: any }) => {
-					if (!value) return null;
+				Cell: ({ row }: { row: any }) => {
+					const folder = row.original;
+					
+					// Obtener todas las fechas posibles
+					const dates = [
+						folder.initialDateFolder,
+						folder.judFolder?.initialDateJudFolder,
+						folder.preFolder?.initialDatePreFolder,
+						folder.createdAt
+					].filter(date => date != null && date !== undefined && date !== "");
 
-					// Formatear a DD/MM/YYYY
-					let formattedDate;
+					// Si no hay fechas, devolver null
+					if (dates.length === 0) return <span>-</span>;
+
+					// Encontrar la fecha más antigua
+					let oldestDate = null;
 					try {
-						// Si ya es un string con formato DD/MM/YYYY, lo mantenemos
-						if (typeof value === "string" && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)) {
-							formattedDate = value;
-						}
-						// Cualquier otro formato de fecha incluyendo ISO "2022-08-31T00:00:00.000+00:00"
-						else {
-							const parsedDate = moment(value);
-							if (parsedDate.isValid()) {
-								formattedDate = parsedDate.format("DD/MM/YYYY");
-							} else {
-								formattedDate = "Fecha inválida";
-							}
+						const momentDates = dates
+							.map(date => {
+								// Parsear sin zona horaria para evitar cambios
+								const parsed = moment.parseZone(date);
+								return parsed.isValid() ? parsed : null;
+							})
+							.filter((date): date is moment.Moment => date !== null);
+
+						if (momentDates.length > 0) {
+							// Ordenar por fecha ascendente (más antigua primero)
+							momentDates.sort((a, b) => a.valueOf() - b.valueOf());
+							oldestDate = momentDates[0];
 						}
 					} catch (error) {
-						formattedDate = "Fecha inválida";
+						console.error("Error procesando fechas:", error);
 					}
 
-					return <span>{formattedDate}</span>;
+					// Formatear la fecha más antigua
+					if (oldestDate && oldestDate.isValid()) {
+						return <span>{oldestDate.format("DD/MM/YYYY")}</span>;
+					}
+
+					return <span>-</span>;
 				},
 			},
 			{

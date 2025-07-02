@@ -24,12 +24,22 @@ export interface PaginationInfo {
 	hasPrev: boolean;
 }
 
+export interface PjnAccess {
+	hasAccess: boolean;
+	message: string;
+	requiresUpgrade: boolean;
+	currentPlan: string;
+	requiredPlans: string[];
+	availableMovements?: number;
+}
+
 export interface PaginatedMovementsResponse {
 	movements: Movement[];
 	pagination: PaginationInfo;
 	totalWithLinks?: number;
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
+	pjnAccess?: PjnAccess;
 }
 
 export interface MovementState {
@@ -38,6 +48,7 @@ export interface MovementState {
 	totalWithLinks?: number;
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
+	pjnAccess?: PjnAccess;
 	isLoading: boolean;
 	error?: string;
 }

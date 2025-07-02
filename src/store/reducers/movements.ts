@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Dispatch } from "redux";
-import { Movement, MovementState, PaginationInfo } from "types/movements";
+import { Movement, MovementState, PaginationInfo, PjnAccess } from "types/movements";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
 export const GET_MOVEMENTS = "movements/GET_MOVEMENTS";
@@ -43,6 +43,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				totalWithLinks: action.payload.totalWithLinks || undefined,
 				documentsBeforeThisPage: action.payload.documentsBeforeThisPage || undefined,
 				documentsInThisPage: action.payload.documentsInThisPage || undefined,
+				pjnAccess: action.payload.pjnAccess || undefined,
 				isLoading: false,
 			};
 		case UPDATE_MOVEMENT:
@@ -233,6 +234,7 @@ interface PaginatedSuccessResponse {
 		totalWithLinks?: number;
 		documentsBeforeThisPage?: number;
 		documentsInThisPage?: number;
+		pjnAccess?: PjnAccess;
 	};
 }
 
@@ -297,6 +299,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						totalWithLinks: paginatedData.data.totalWithLinks,
 						documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 						documentsInThisPage: paginatedData.data.documentsInThisPage,
+						pjnAccess: paginatedData.data.pjnAccess,
 					},
 				});
 

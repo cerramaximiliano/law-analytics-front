@@ -64,8 +64,8 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? moment(folder.initialDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? moment(folder.finalDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+		finalDateFolder: folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 	};
 	const [isEditing, setIsEditing] = useState(false);
 
@@ -247,7 +247,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 									<Grid item xs={6} md={3}>
 										<CompactField
 											label="FECHA INICIO"
-											value={folder?.initialDateFolder ? moment(folder.initialDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : null}
+											value={folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : null}
 											isLoading={isLoader}
 											isEditing={isEditing}
 											editComponent={<DateInputField customInputStyles={customInputStyles} name="initialDateFolder" />}
@@ -256,7 +256,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 									<Grid item xs={6} md={3}>
 										<CompactField
 											label="FECHA FIN"
-											value={folder?.finalDateFolder ? moment(folder.finalDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : null}
+											value={folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : null}
 											isLoading={isLoader}
 											isEditing={isEditing}
 											editComponent={<DateInputField customInputStyles={customInputStyles} name="finalDateFolder" />}

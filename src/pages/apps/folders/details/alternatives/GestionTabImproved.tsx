@@ -56,7 +56,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	// Get data from Redux store
 	const { selectedCalculators } = useSelector((state: RootState) => state.calculator);
 	const { selectedContacts, contacts } = useSelector((state: RootState) => state.contacts);
-	const { tasks } = useSelector((state: RootState) => state.tasksReducer);
+	const { selectedTasks } = useSelector((state: RootState) => state.tasksReducer);
 	const userId = useSelector((state: RootState) => state.auth.user?._id);
 
 	// Fetch data when component mounts
@@ -77,8 +77,8 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 		}
 	}, [folder._id, userId]);
 
-	const pendingTasks = tasks?.filter((t: any) => !t.checked).length || 0;
-	const totalTasks = tasks?.length || 0;
+	const pendingTasks = selectedTasks?.filter((t: any) => !t.checked).length || 0;
+	const totalTasks = selectedTasks?.length || 0;
 	const completedTasks = totalTasks - pendingTasks;
 
 	const handleChange = (event: React.SyntheticEvent, newValue: number) => {

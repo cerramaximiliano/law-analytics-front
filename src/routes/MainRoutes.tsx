@@ -84,6 +84,7 @@ const AdminPlansPage = Loadable(lazy(() => import("pages/admin/plans")));
 const AdminUsersPage = Loadable(lazy(() => import("pages/admin/users")));
 const AdminServerStatusPage = Loadable(lazy(() => import("pages/admin/server-status")));
 const AdminCausasPage = Loadable(lazy(() => import("pages/admin/causas")));
+const AdminNotificationsPage = Loadable(lazy(() => import("pages/admin/notifications")));
 
 // render - tasks
 const TasksPage = Loadable(lazy(() => import("pages/tasks")));
@@ -356,6 +357,10 @@ const MainRoutes = {
 						{
 							path: "causas",
 							element: <AdminCausasPage />,
+						},
+						{
+							path: "notifications",
+							element: <AdminNotificationsPage />,
 						},
 					],
 				},

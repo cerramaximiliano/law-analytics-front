@@ -717,7 +717,7 @@ const Calendar = () => {
 
 			{/* Dialog manejado localmente */}
 			<Dialog
-				maxWidth="sm"
+				maxWidth="md"
 				TransitionComponent={PopupTransition}
 				fullWidth
 				onClose={handleModalClose}
@@ -733,7 +733,7 @@ const Calendar = () => {
 						onLink={handleLinkEvent}
 					/>
 				) : (
-					<AddEventForm event={isEditingEvent ? selectedEvent : null} range={selectedRange} onCancel={handleModalClose} />
+					<AddEventForm event={isEditingEvent ? selectedEvent : null} range={selectedRange} onCancel={handleModalClose} userId={id} />
 				)}
 			</Dialog>
 

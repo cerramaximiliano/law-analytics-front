@@ -27,6 +27,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import React, { useCallback, useState, useEffect } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import ModalMembers from "../modals/ModalMembers";
+import ContactProfileModal from "../modals/ContactProfileModal";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { motion } from "framer-motion";
 
@@ -93,6 +94,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 	const [parent] = useAutoAnimate({ duration: 200 });
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [selectedMember, setSelectedMember] = useState<Contact | null>(null);
+	const [profileModalOpen, setProfileModalOpen] = useState(false);
 
 	// Efecto para manejar cierre de modales cuando hay errores 403
 	useEffect(() => {
@@ -151,6 +153,15 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 
 	const handleMenuClose = () => {
 		setAnchorEl(null);
+	};
+
+	const handleViewProfile = () => {
+		setProfileModalOpen(true);
+		handleMenuClose();
+	};
+
+	const handleProfileModalClose = () => {
+		setProfileModalOpen(false);
 		setSelectedMember(null);
 	};
 
@@ -188,7 +199,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 						);
 					}
 				})
-				.catch((error) => {
+				.catch((_error) => {
 					dispatch(
 						openSnackbar({
 							open: true,
@@ -337,7 +348,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				transformOrigin={{ horizontal: "right", vertical: "top" }}
 				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
 			>
-				<MenuItem onClick={handleMenuClose}>
+				<MenuItem onClick={handleViewProfile}>
 					<ListItemIcon>
 						<Profile size={18} />
 					</ListItemIcon>
@@ -434,6 +445,12 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 																height: 24,
 																fontSize: "0.75rem",
 																fontWeight: 500,
+																...(getColorByRole(member.role) === "warning" && {
+																	color: "black",
+																	"& .MuiChip-label": {
+																		color: "black",
+																	},
+																}),
 															}}
 														/>
 														{member.email && (
@@ -482,6 +499,32 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 					</>
 				)}
 			</CardContent>
+
+			{/* Contact Profile Modal */}
+			<ContactProfileModal open={profileModalOpen} onClose={handleProfileModalClose} contact={selectedMember} />
+
+			{/* Add Customer Dialog */}
+			<Dialog
+				maxWidth="sm"
+				TransitionComponent={PopupTransition}
+				keepMounted
+				fullWidth
+				onClose={handleAdd}
+				open={add}
+				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
+				aria-describedby="alert-dialog-slide-description"
+			>
+				<AddCustomer onCancel={handleAdd} onAddMember={handlerAddress} open={add} mode="add" />
+			</Dialog>
+
+			{/* Link Members Modal */}
+			<ModalMembers
+				open={openModal}
+				setOpen={setOpenModal}
+				handlerAddress={handlerAddress}
+				folderId={folderId}
+				membersData={selectedContacts}
+			/>
 		</MainCard>
 	);
 };

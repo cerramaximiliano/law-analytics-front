@@ -62,6 +62,15 @@ export interface PaginationInfo {
 	hasPrev: boolean;
 }
 
+export interface PjnAccess {
+	hasAccess: boolean;
+	message: string;
+	requiresUpgrade: boolean;
+	currentPlan: string;
+	requiredPlans: string[];
+	availableMovements?: number;
+}
+
 export interface CombinedActivitiesResponse {
 	success: boolean;
 	data?: {
@@ -69,6 +78,7 @@ export interface CombinedActivitiesResponse {
 		pagination: PaginationInfo;
 		stats?: ActivityStats;
 		documentsInfo?: DocumentsInfo;
+		pjnAccess?: PjnAccess;
 	};
 	message?: string;
 }
@@ -78,6 +88,7 @@ export interface CombinedActivitiesState {
 	pagination?: PaginationInfo;
 	stats?: ActivityStats;
 	documentsInfo?: DocumentsInfo;
+	pjnAccess?: PjnAccess;
 	isLoading: boolean;
 	error?: string;
 }

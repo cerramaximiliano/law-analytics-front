@@ -15,8 +15,6 @@ import {
 	Avatar,
 	Box,
 	Typography,
-	ToggleButton,
-	ToggleButtonGroup,
 	Skeleton,
 	useMediaQuery,
 	useTheme,
@@ -25,7 +23,6 @@ import {
 	Edit,
 	Trash,
 	Eye,
-	TableDocument,
 	NotificationStatus,
 	Calendar,
 	DocumentText,
@@ -42,8 +39,9 @@ import { es } from "date-fns/locale";
 import { useParams } from "react-router";
 import { useDispatch } from "store";
 import { getCombinedActivities } from "store/reducers/activities";
-import { CombinedActivity } from "types/activities";
+import { CombinedActivity, PjnAccess } from "types/activities";
 import PaginationWithJump from "components/shared/PaginationWithJump";
+import PjnAccessAlert from "components/shared/PjnAccessAlert";
 
 interface CombinedTablePaginatedProps {
 	activities: CombinedActivity[];
@@ -55,6 +53,7 @@ interface CombinedTablePaginatedProps {
 	pagination?: any;
 	isLoading?: boolean;
 	stats?: any;
+	pjnAccess?: PjnAccess;
 }
 
 type Order = "asc" | "desc";
@@ -120,16 +119,17 @@ const formatDate = (dateString?: string) => {
 	}
 };
 
-const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({ 
-	activities = [], 
-	searchQuery = "", 
-	onEdit, 
-	onDelete, 
-	onView, 
+const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
+	activities = [],
+	searchQuery = "",
+	onEdit,
+	onDelete,
+	onView,
 	filters = {},
 	pagination,
 	isLoading = false,
-	stats
+	stats,
+	pjnAccess,
 }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
@@ -140,9 +140,23 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 	const [orderBy, setOrderBy] = useState<keyof CombinedActivity>("date");
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(10);
-	const [filterType, setFilterType] = useState<string[]>(["movement", "notification", "event"]);
 	const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
 	const [localFilters, setLocalFilters] = useState(filters);
+
+	// Determinar qué tipos mostrar basándose en el filtro source
+	const getFilterTypes = () => {
+		const source = localFilters.source || filters.source || "all";
+		switch (source) {
+			case "movements":
+				return ["movement"];
+			case "notifications":
+				return ["notification"];
+			case "events":
+				return ["event"];
+			default:
+				return ["movement", "notification", "event"];
+		}
+	};
 
 	// Actualizar valores locales cuando cambien las props
 	useEffect(() => {
@@ -164,7 +178,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 						search: localSearchQuery,
 						sort: order === "desc" ? `-${orderBy}` : orderBy,
 						filter: {
-							types: filterType,
+							types: getFilterTypes(),
 							...localFilters,
 						},
 					}),
@@ -173,7 +187,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 
 			return () => clearTimeout(timer);
 		}
-	}, [id, localSearchQuery, localFilters, filterType, order, orderBy, rowsPerPage, dispatch]);
+	}, [id, localSearchQuery, localFilters, order, orderBy, rowsPerPage, dispatch]);
 
 	// Sincronizar página con paginación del servidor
 	useEffect(() => {
@@ -198,7 +212,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 					search: localSearchQuery,
 					sort: sortParam,
 					filter: {
-						types: filterType,
+						types: getFilterTypes(),
 						...localFilters,
 					},
 				}),
@@ -217,7 +231,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 					search: localSearchQuery,
 					sort: sortParam,
 					filter: {
-						types: filterType,
+						types: getFilterTypes(),
 						...localFilters,
 					},
 				}),
@@ -242,36 +256,13 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 					search: localSearchQuery,
 					sort: sortParam,
 					filter: {
-						types: filterType,
+						types: getFilterTypes(),
 						...localFilters,
 					},
 				}),
 			);
 		}
 	};
-
-	const handleFilterTypeChange = (_event: React.MouseEvent<HTMLElement>, newTypes: string[]) => {
-		if (newTypes.length > 0) {
-			setFilterType(newTypes);
-			setPage(0);
-			if (id) {
-				const sortParam = order === "desc" ? `-${orderBy}` : orderBy;
-				dispatch(
-					getCombinedActivities(id, {
-						page: 1,
-						limit: rowsPerPage,
-						search: searchQuery,
-						sort: sortParam,
-						filter: {
-							types: newTypes,
-							...filters,
-						},
-					}),
-				);
-			}
-		}
-	};
-
 
 	// Función para obtener el subtipo de la actividad
 	const getActivitySubtype = (activity: CombinedActivity) => {
@@ -303,27 +294,7 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 
 	return (
 		<Box>
-			{/* Filter Toggles */}
-			<Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
-				<Typography variant="subtitle2" color="textSecondary">
-					Filtrar por tipo:
-				</Typography>
-				<ToggleButtonGroup value={filterType} onChange={handleFilterTypeChange} size="small" color="primary">
-					<ToggleButton value="movement" sx={{ gap: 1 }}>
-						<TableDocument size={16} />
-						Movimientos {stats?.totalByType?.movements ? `(${stats.totalByType.movements})` : ""}
-					</ToggleButton>
-					<ToggleButton value="notification" sx={{ gap: 1 }}>
-						<NotificationStatus size={16} />
-						Notificaciones {stats?.totalByType?.notifications ? `(${stats.totalByType.notifications})` : ""}
-					</ToggleButton>
-					<ToggleButton value="event" sx={{ gap: 1 }}>
-						<Calendar size={16} />
-						Eventos {stats?.totalByType?.events ? `(${stats.totalByType.events})` : ""}
-					</ToggleButton>
-				</ToggleButtonGroup>
-			</Box>
-
+			<PjnAccessAlert pjnAccess={pjnAccess} />
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>

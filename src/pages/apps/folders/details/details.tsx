@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, ReactNode, SyntheticEvent } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useSelector } from "react-redux";
 import {
 	Skeleton,
@@ -13,8 +13,9 @@ import {
 	ToggleButtonGroup,
 	Tooltip,
 	useMediaQuery,
+	Paper,
 } from "@mui/material";
-import { ExportSquare, InfoCircle, Activity, Briefcase, Category, TableDocument } from "iconsax-react";
+import { ExportSquare, InfoCircle, Activity, Briefcase, Category, TableDocument, FolderCross, ArrowLeft, TickCircle, CloseCircle } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
@@ -84,12 +85,14 @@ function a11yProps(index: number) {
 const Details = () => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
 	const isDetailedView = viewMode === "detailed";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
+	const [folderNotFound, setFolderNotFound] = useState(false);
 	// const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false); // Removed: Using icon tabs instead
 	const { setCustomLabel, clearCustomLabel } = useBreadcrumb();
 
@@ -115,16 +118,36 @@ const Details = () => {
 			const folderPromise = dispatch(getFolderById(id));
 			const contactsPromise = userId ? dispatch(getContactsByUserId(userId)) : Promise.resolve();
 
-			await Promise.all([folderPromise, contactsPromise]);
-		} catch (error) {}
+			const [folderResult] = await Promise.all([folderPromise, contactsPromise]);
+
+			// Check if folder was not found
+			if (!folderResult.success) {
+				setFolderNotFound(true);
+			}
+		} catch (error) {
+			setFolderNotFound(true);
+		}
 	}, [id, userId]);
 
 	// Data fetch when id changes
 	useEffect(() => {
+		// Reset folder not found state when id changes
+		setFolderNotFound(false);
 		fetchData();
 		// Reset tab to first tab when changing folders
 		setTabValue(0);
 	}, [id, fetchData]);
+
+	// Handle folder not found - redirect after showing message
+	useEffect(() => {
+		if (folderNotFound) {
+			const timer = setTimeout(() => {
+				navigate("/apps/folders/list");
+			}, 3000);
+
+			return () => clearTimeout(timer);
+		}
+	}, [folderNotFound, navigate]);
 
 	// Contacts filtering with debounce
 	useEffect(() => {
@@ -168,7 +191,7 @@ const Details = () => {
 	const handleOpenLinkJudicial = useCallback(() => {
 		// Verificar si el usuario tiene acceso a la característica de vincular carpetas
 		const { canAccess, featureInfo } = canVinculateFolders();
-
+		console.log(canAccess, featureInfo);
 		if (canAccess) {
 			// Si tiene acceso, mostrar el modal de vinculación
 			setOpenLinkJudicial(true);
@@ -239,30 +262,126 @@ const Details = () => {
 			) : (
 				<Box>
 					{folder?.pjn ? (
-						<Box
-							sx={{
-								px: 2,
-								py: 0.75,
-								height: 36,
-								display: "flex",
-								alignItems: "center",
-								gap: 0.75,
-								bgcolor: alpha(theme.palette.success.main, 0.1),
-								border: `1px solid ${theme.palette.success.main}`,
-								borderRadius: 0.5,
-							}}
-						>
-							<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
-							<Typography
-								variant="body2"
-								sx={{
-									fontWeight: 500,
-									color: theme.palette.success.dark,
-									fontSize: "0.8125rem",
-								}}
-							>
-								Vinculado con PJN
-							</Typography>
+						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+							<Box sx={{ position: "relative", display: "inline-flex" }}>
+								<Box
+									sx={{
+										px: 2,
+										py: 0.75,
+										height: 36,
+										display: "flex",
+										alignItems: "center",
+										gap: 0.75,
+										bgcolor: alpha(theme.palette.success.main, 0.1),
+										border: `1px solid ${theme.palette.success.main}`,
+										borderRadius: 0.5,
+									}}
+								>
+									<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+									<Typography
+										variant="body2"
+										sx={{
+											fontWeight: 500,
+											color: theme.palette.success.dark,
+											fontSize: "0.8125rem",
+										}}
+									>
+										Vinculado con PJN
+									</Typography>
+								</Box>
+								{/* Ícono de estado de verificación */}
+								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
+									<Tooltip 
+										title={
+											folder?.causaVerified === false 
+												? "Pendiente de verificación" 
+												: folder.causaIsValid 
+													? "Causa válida" 
+													: "Causa inválida"
+										}
+									>
+										<Box
+											sx={{
+												position: "absolute",
+												bottom: -8,
+												right: -8,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												width: 20,
+												height: 20,
+												bgcolor: theme.palette.background.paper,
+												borderRadius: "50%",
+												boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+											}}
+										>
+											{folder?.causaVerified === false ? (
+												<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
+											) : folder.causaIsValid ? (
+												<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
+											) : (
+												<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
+											)}
+										</Box>
+									</Tooltip>
+								)}
+							</Box>
+							{folder?.causaVerified === false && (
+								<Tooltip title="La causa está pendiente de verificación en el sistema judicial">
+									<Box
+										sx={{
+											px: 1.5,
+											py: 0.5,
+											display: "flex",
+											alignItems: "center",
+											gap: 0.5,
+											bgcolor: alpha(theme.palette.warning.main, 0.1),
+											border: `1px solid ${theme.palette.warning.main}`,
+											borderRadius: 0.5,
+											width: "fit-content",
+										}}
+									>
+										<InfoCircle size={14} variant="Bold" color={theme.palette.warning.main} />
+										<Typography
+											variant="caption"
+											sx={{
+												fontWeight: 500,
+												color: theme.palette.warning.dark,
+												fontSize: "0.75rem",
+											}}
+										>
+											Pendiente verificación
+										</Typography>
+									</Box>
+								</Tooltip>
+							)}
+							{folder?.causaVerified === true && folder?.causaIsValid === false && (
+								<Box
+									sx={{
+										px: 1.5,
+										py: 0.5,
+										display: "flex",
+										alignItems: "center",
+										gap: 0.5,
+										bgcolor: alpha(theme.palette.error.main, 0.1),
+										border: `1px solid ${theme.palette.error.main}`,
+										borderRadius: 0.5,
+										width: "fit-content",
+									}}
+								>
+									<InfoCircle size={14} variant="Bold" color={theme.palette.error.main} />
+									<Typography
+										variant="caption"
+										sx={{
+											fontWeight: 500,
+											color: theme.palette.error.dark,
+											fontSize: "0.75rem",
+										}}
+									>
+										No se pudo verificar en el sitio {folder?.pjn === true ? "del Poder Judicial de la Nación" : ""}
+									</Typography>
+								</Box>
+							)}
 						</Box>
 					) : (
 						<Box
@@ -300,7 +419,7 @@ const Details = () => {
 					)}
 				</Box>
 			),
-		[folder?.pjn, handleOpenLinkJudicial, isLoader, theme],
+		[folder?.pjn, folder?.causaVerified, folder?.causaIsValid, handleOpenLinkJudicial, isLoader, theme],
 	);
 
 	// Memoized components - switch between compact and improved based on isDetailedView
@@ -333,6 +452,99 @@ const Details = () => {
 			),
 		[isLoader, folder, isDetailedView],
 	);
+
+	// Show folder not found message
+	if (folderNotFound) {
+		return (
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					minHeight: "60vh",
+					px: 2,
+				}}
+			>
+				<Paper
+					elevation={0}
+					sx={{
+						maxWidth: 500,
+						width: "100%",
+						borderRadius: 2,
+						overflow: "hidden",
+						border: `1px solid ${theme.palette.divider}`,
+						backgroundColor: theme.palette.background.paper,
+					}}
+				>
+					<Box sx={{ p: 4, textAlign: "center" }}>
+						{/* Icon */}
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								width: 80,
+								height: 80,
+								borderRadius: "50%",
+								backgroundColor: alpha(theme.palette.error.main, 0.08),
+								mb: 3,
+							}}
+						>
+							<FolderCross size={40} color={theme.palette.error.main} variant="Bulk" />
+						</Box>
+
+						{/* Title */}
+						<Typography
+							variant="h4"
+							sx={{
+								fontWeight: 600,
+								color: theme.palette.text.primary,
+								mb: 1.5,
+							}}
+						>
+							Carpeta no encontrada
+						</Typography>
+
+						{/* Description */}
+						<Typography
+							variant="body1"
+							sx={{
+								color: theme.palette.text.secondary,
+								mb: 3,
+								lineHeight: 1.6,
+							}}
+						>
+							La carpeta que intentas acceder no existe o no tienes permisos para verla.
+						</Typography>
+
+						{/* Redirect message with icon */}
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 1,
+								px: 2.5,
+								py: 1,
+								borderRadius: 1,
+								backgroundColor: alpha(theme.palette.primary.main, 0.08),
+							}}
+						>
+							<ArrowLeft size={18} color={theme.palette.primary.main} />
+							<Typography
+								variant="body2"
+								sx={{
+									color: theme.palette.primary.main,
+									fontWeight: 500,
+								}}
+							>
+								Redirigiendo a la lista de carpetas...
+							</Typography>
+						</Box>
+					</Box>
+				</Paper>
+			</Box>
+		);
+	}
 
 	return (
 		<Box
