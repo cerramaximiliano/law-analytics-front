@@ -94,7 +94,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 
 	//
 
-	const status = ["Nueva", "En Proceso", "Finalizada"];
+	const status = ["Nueva", "En Progreso", "Cerrada", "Pendiente"];
 	const [statusFolder, setStatusFolder] = useState(folder?.status || "Nueva");
 
 	const handleStatus = (e: MouseEvent<HTMLButtonElement>) => {
@@ -104,7 +104,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 		const nextIndex = (currentIndex + 1) % status.length;
 		const newStatus = status[nextIndex];
 
-		if (newStatus === "Finalizada") {
+		if (newStatus === "Cerrada") {
 			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
 		} else {
 			folder.finalDateFolder = "";
@@ -184,7 +184,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 				message: "El formato de fecha debe ser DD/MM/AAAA",
 			}),
 			finalDatePreFolder: Yup.string().when("status", {
-				is: (status: any) => status === "Finalizada",
+				is: (status: any) => status === "Cerrada",
 				then: () =>
 					Yup.string()
 						.required("Con el estado finalizado debe completar la fecha")

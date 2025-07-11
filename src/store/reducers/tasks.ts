@@ -151,7 +151,7 @@ export const getTasksByUserId =
 			const response = await axios.get(url, {
 				params: { fields },
 			});
-			
+
 			dispatch({
 				type: SET_TASKS,
 				payload: response.data,

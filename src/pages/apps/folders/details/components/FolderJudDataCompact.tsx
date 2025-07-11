@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip } from "@mui/material";
 import moment from "moment";
@@ -8,11 +8,14 @@ import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
+import GroupedAutocomplete from "components/UI/GroupedAutocomplete";
+import JuzgadoAutocomplete from "components/UI/JuzgadoAutocomplete";
 import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
 
 import "moment/locale/es";
 moment.locale("es");
@@ -74,12 +77,20 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 		finalDateJudFolder: "",
 		numberJudFolder: "",
 		amountJudFolder: "",
-		statusJudFolder: "Nueva",
+		statusJudFolder: "Inicio Demanda",
 		descriptionJudFolder: "",
+		courtNumber: "",
+		secretaryNumber: "",
 	};
 
 	const initialValues = {
 		...folder,
+		folderJuris: folder?.folderJuris
+			? typeof folder.folderJuris === "string"
+				? { item: folder.folderJuris, label: "" }
+				: folder.folderJuris
+			: null,
+		juzgado: folder?.juzgado || null,
 		judFolder: {
 			initialDateJudFolder: formatDate(folder?.judFolder?.initialDateJudFolder) || defaultJudFolder.initialDateJudFolder,
 			finalDateJudFolder: formatDate(folder?.judFolder?.finalDateJudFolder) || defaultJudFolder.finalDateJudFolder,
@@ -87,12 +98,49 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 			amountJudFolder: folder?.judFolder?.amountJudFolder || defaultJudFolder.amountJudFolder,
 			statusJudFolder: folder?.judFolder?.statusJudFolder || defaultJudFolder.statusJudFolder,
 			descriptionJudFolder: folder?.judFolder?.descriptionJudFolder || defaultJudFolder.descriptionJudFolder,
+			courtNumber: folder?.judFolder?.courtNumber || defaultJudFolder.courtNumber,
+			secretaryNumber: folder?.judFolder?.secretaryNumber || defaultJudFolder.secretaryNumber,
 		},
 	};
 
 	const [isEditing, setIsEditing] = useState(false);
+	const [juzgadosOptions, setJuzgadosOptions] = useState<Juzgado[]>([]);
+	const [loadingJuzgados, setLoadingJuzgados] = useState(false);
 
 	const handleEdit = () => setIsEditing(true);
+
+	useEffect(() => {
+		if (folder?.folderJuris && isEditing) {
+			fetchJuzgados(typeof folder.folderJuris === "string" ? folder.folderJuris : folder.folderJuris.item);
+		}
+	}, [folder?.folderJuris, isEditing]);
+
+	const fetchJuzgados = async (jurisdiccion: string) => {
+		if (!jurisdiccion) {
+			setJuzgadosOptions([]);
+			return;
+		}
+
+		setLoadingJuzgados(true);
+		try {
+			const juzgados = await getJuzgadosByJurisdiction(jurisdiccion);
+			setJuzgadosOptions(juzgados);
+		} catch (error: any) {
+			console.error("Error fetching juzgados:", error);
+			// Don't redirect on error, just show empty options
+			if (error?.response?.status !== 401) {
+				enqueueSnackbar("Error al cargar juzgados", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+			setJuzgadosOptions([]);
+		} finally {
+			setLoadingJuzgados(false);
+		}
+	};
 
 	const _submitForm = async (values: any, actions: any) => {
 		if (id) {
@@ -150,21 +198,29 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 
 	const getStatusColor = (status: string) => {
 		switch (status) {
-			case "Nueva":
+			case "Inicio Demanda":
 				return "info";
-			case "En Proceso":
+			case "Contestación Demanda":
+				return "primary";
+			case "Abierto a Prueba":
 				return "warning";
-			case "Finalizada":
+			case "Sentencia":
 				return "success";
 			case "Apelación":
 				return "error";
+			case "Sentencia Cámara":
+				return "secondary";
+			case "Recurso ante Cámara":
+				return "error";
+			case "Sentencia Corte":
+				return "success";
 			default:
 				return "default";
 		}
 	};
 
 	const hasData = folder?.judFolder && Object.values(folder.judFolder).some((value) => value && value !== "");
-	const hasCourtInfo = folder?.juzgado || folder?.secretaria;
+	const hasCourtInfo = folder?.juzgado || folder?.secretaria || folder?.judFolder?.courtNumber || folder?.judFolder?.secretaryNumber;
 
 	return (
 		<Box>
@@ -173,7 +229,7 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 					<Form autoComplete="off" noValidate>
 						<Stack spacing={2}>
 							{/* Court Info - Only if exists */}
-							{hasCourtInfo && (
+							{(hasCourtInfo || isEditing) && (
 								<Paper
 									elevation={0}
 									sx={{
@@ -186,26 +242,46 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 								>
 									<Grid container spacing={2}>
 										<Grid item xs={6}>
-											<Stack direction="row" spacing={0.5} alignItems="center">
+											<Stack direction="row" spacing={0.5} alignItems="center" mb={isEditing ? 0.5 : 0}>
 												<JudgeIcon size={14} />
 												<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
 													JUZGADO
 												</Typography>
 											</Stack>
-											<Typography variant="body2" fontWeight={500}>
-												{folder?.juzgado || "-"}
-											</Typography>
+											{isEditing ? (
+												<InputField
+													size="small"
+													fullWidth
+													placeholder="Número de Juzgado"
+													name="judFolder.courtNumber"
+													sx={customInputStyles}
+												/>
+											) : (
+												<Typography variant="body2" fontWeight={500}>
+													{values.judFolder.courtNumber || folder?.juzgado || "-"}
+												</Typography>
+											)}
 										</Grid>
 										<Grid item xs={6}>
-											<Stack direction="row" spacing={0.5} alignItems="center">
+											<Stack direction="row" spacing={0.5} alignItems="center" mb={isEditing ? 0.5 : 0}>
 												<JudgeIcon size={14} />
 												<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
 													SECRETARÍA
 												</Typography>
 											</Stack>
-											<Typography variant="body2" fontWeight={500}>
-												{folder?.secretaria || "-"}
-											</Typography>
+											{isEditing ? (
+												<InputField
+													size="small"
+													fullWidth
+													placeholder="Número de Secretaría"
+													name="judFolder.secretaryNumber"
+													sx={customInputStyles}
+												/>
+											) : (
+												<Typography variant="body2" fontWeight={500}>
+													{values.judFolder.secretaryNumber || folder?.secretaria || "-"}
+												</Typography>
+											)}
 										</Grid>
 									</Grid>
 								</Paper>
@@ -259,6 +335,56 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 								{/* Compact Content */}
 								<Box sx={{ p: 2 }}>
 									<Grid container spacing={2}>
+										{/* Jurisdiction and Juzgado */}
+										<Grid item xs={6} md={3}>
+											<CompactField
+												label="JURISDICCIÓN"
+												value={
+													folder?.folderJuris
+														? typeof folder.folderJuris === "string"
+															? folder.folderJuris
+															: folder.folderJuris.item
+														: null
+												}
+												isLoading={isLoader}
+												isEditing={isEditing}
+												editComponent={
+													<GroupedAutocomplete
+														data={data.jurisdicciones}
+														placeholder="Jurisdicción"
+														name="folderJuris"
+														size="small"
+														sx={customInputStyles}
+														onChange={(value: any) => {
+															if (value?.item) {
+																fetchJuzgados(value.item);
+															} else {
+																setJuzgadosOptions([]);
+															}
+														}}
+													/>
+												}
+											/>
+										</Grid>
+										<Grid item xs={6} md={3}>
+											<CompactField
+												label="JUZGADO"
+												value={folder?.judFolder?.courtNumber}
+												isLoading={isLoader}
+												isEditing={isEditing}
+												editComponent={
+													<JuzgadoAutocomplete
+														options={juzgadosOptions}
+														loading={loadingJuzgados}
+														disabled={!initialValues.folderJuris}
+														placeholder="Buscar juzgado..."
+														name="judFolder.courtNumber"
+														size="small"
+														sx={customInputStyles}
+													/>
+												}
+											/>
+										</Grid>
 										<Grid item xs={6} md={3}>
 											<CompactField
 												label="EXPEDIENTE"
@@ -281,7 +407,7 @@ const FolderJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoade
 													<SelectField
 														label="Estado"
 														size="small"
-														data={data.statusJudicial || ["Nueva", "En Proceso", "Sentencia", "Apelación", "Finalizada"]}
+														data={data.statusJudicial}
 														name="judFolder.statusJudFolder"
 														sx={customInputStyles}
 													/>

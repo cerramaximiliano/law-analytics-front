@@ -218,17 +218,19 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 		switch (status) {
 			case "Nueva":
 				return "success";
-			case "En Proceso":
+			case "En Progreso":
 				return "primary";
-			case "Finalizada":
+			case "Cerrada":
 				return "error";
+			case "Pendiente":
+				return "warning";
 			default:
 				return "default";
 		}
 	};
 
 	// Calculate data completeness
-	const totalFields = 8;
+	const totalFields = 9;
 	const filledFields = [
 		folder?.folderName,
 		folder?.orderStatus,
@@ -238,6 +240,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 		folder?.initialDateFolder,
 		folder?.finalDateFolder,
 		folder?.situationFolder,
+		folder?.judFolder?.courtNumber,
 	].filter(Boolean).length;
 	const completeness = (filledFields / totalFields) * 100;
 
@@ -440,6 +443,32 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 										}
 									/>
 								</Grid>
+
+								{/* Judicial Data if exists */}
+								{(folder?.judFolder?.courtNumber || folder?.judFolder?.secretaryNumber) && (
+									<>
+										{folder?.judFolder?.courtNumber && (
+											<Grid item xs={12} sm={6} md={3}>
+												<FieldCard
+													label="N° de Juzgado"
+													value={folder?.judFolder?.courtNumber}
+													isLoading={isLoader}
+													icon={<Briefcase size={16} />}
+												/>
+											</Grid>
+										)}
+										{folder?.judFolder?.secretaryNumber && (
+											<Grid item xs={12} sm={6} md={3}>
+												<FieldCard
+													label="N° de Secretaría"
+													value={folder?.judFolder?.secretaryNumber}
+													isLoading={isLoader}
+													icon={<DocumentText size={16} />}
+												/>
+											</Grid>
+										)}
+									</>
+								)}
 
 								{/* Description - Full Width */}
 								{(folder?.description || isEditing) && (

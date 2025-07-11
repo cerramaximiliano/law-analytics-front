@@ -14,6 +14,11 @@ const GroupedAutocomplete = (props: any) => {
 			groupBy={(option) => option.label}
 			getOptionLabel={(option) => option.item}
 			noOptionsText="No disponible"
+			isOptionEqualToValue={(option, value) => {
+				// Comparar solo por item para ser resiliente a cambios en el label
+				// El item es el identificador único de la jurisdicción
+				return option.item === value?.item;
+			}}
 			{...field}
 			value={field.value || null}
 			onChange={(e, value) => helper.setValue(value)}

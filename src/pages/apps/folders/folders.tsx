@@ -40,11 +40,26 @@ import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
-import { Add, FolderOpen, FolderAdd, Edit, Eye, Trash, Maximize, Archive, Box1, InfoCircle, DocumentDownload, TickCircle } from "iconsax-react";
+import {
+	Add,
+	FolderOpen,
+	FolderAdd,
+	Edit,
+	Eye,
+	Trash,
+	Maximize,
+	Archive,
+	Box1,
+	InfoCircle,
+	DocumentDownload,
+	TickCircle,
+	Refresh,
+	CloseCircle,
+} from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
-import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders } from "store/reducers/folder";
+import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders, getFolderById } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
 import moment from "moment";
 
@@ -672,38 +687,91 @@ const FoldersLayout = () => {
 				Cell: ({ row }: { row: any }) => {
 					const folder = row.original;
 					const value = folder.folderName;
-					
-					// Si causaVerified es false, mostrar chip de pendiente
+
+					// Si causaVerified es false, mostrar chip de pendiente con botón de actualización
 					if (folder.causaVerified === false) {
 						return (
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<span>{formatFolderName(value, 50)}</span>
+								<Stack direction="row" alignItems="center" spacing={1}>
+									<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+									<Tooltip title="Actualizar estado de verificación">
+										<IconButton
+											size="small"
+											onClick={async (e) => {
+												e.stopPropagation();
+												await dispatch(getFolderById(folder._id, true));
+											}}
+											sx={{
+												padding: 0.5,
+												"&:hover": {
+													backgroundColor: "warning.lighter",
+												},
+											}}
+										>
+											<Refresh size={16} />
+										</IconButton>
+									</Tooltip>
+								</Stack>
 							</Stack>
 						);
 					}
-					
+
 					// Si causaVerified es true pero causaIsValid es false, mostrar chip de causa inválida
 					if (folder.causaVerified === true && folder.causaIsValid === false) {
 						return (
-							<Stack direction="row" alignItems="center" spacing={1}>
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Chip color="error" label="Causa inválida" size="small" variant="light" />
+								<Tooltip title="Causa inválida - No se pudo verificar en el Poder Judicial">
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											width: 18,
+											height: 18,
+										}}
+									>
+										<CloseCircle size={16} variant="Bold" color="#EF4444" />
+									</Box>
+								</Tooltip>
 							</Stack>
 						);
 					}
-					
+
 					// Mantener compatibilidad con el valor "Pendiente" anterior
 					if (value === "Pendiente") {
 						return (
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<span>{formatFolderName(value, 50)}</span>
+								<Stack direction="row" alignItems="center" spacing={1}>
+									<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+									<Tooltip title="Actualizar estado de verificación">
+										<IconButton
+											size="small"
+											onClick={async (e) => {
+												e.stopPropagation();
+												await dispatch(getFolderById(folder._id, true));
+											}}
+											sx={{
+												padding: 0.5,
+												"&:hover": {
+													backgroundColor: "warning.lighter",
+												},
+											}}
+										>
+											<Refresh size={16} />
+										</IconButton>
+									</Tooltip>
+								</Stack>
 							</Stack>
 						);
 					}
-					
+
 					// Si causaVerified es true y causaIsValid es true, mostrar nombre con badge verde
 					if (folder.causaVerified === true && folder.causaIsValid === true) {
 						return (
-							<Stack direction="row" alignItems="center" spacing={1}>
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<span>{formatFolderName(value, 50)}</span>
 								<Tooltip title={folder.pjn === true ? "Causa vinculada a PJN" : "Causa vinculada"}>
 									<Box
@@ -721,7 +789,7 @@ const FoldersLayout = () => {
 							</Stack>
 						);
 					}
-					
+
 					// En todos los demás casos, mostrar solo el nombre del folder
 					return <span>{formatFolderName(value, 50)}</span>;
 				},
@@ -748,14 +816,14 @@ const FoldersLayout = () => {
 				accessor: "initialDateFolder",
 				Cell: ({ row }: { row: any }) => {
 					const folder = row.original;
-					
+
 					// Obtener todas las fechas posibles
 					const dates = [
 						folder.initialDateFolder,
 						folder.judFolder?.initialDateJudFolder,
 						folder.preFolder?.initialDatePreFolder,
-						folder.createdAt
-					].filter(date => date != null && date !== undefined && date !== "");
+						folder.createdAt,
+					].filter((date) => date != null && date !== undefined && date !== "");
 
 					// Si no hay fechas, devolver null
 					if (dates.length === 0) return <span>-</span>;
@@ -764,7 +832,7 @@ const FoldersLayout = () => {
 					let oldestDate = null;
 					try {
 						const momentDates = dates
-							.map(date => {
+							.map((date) => {
 								// Parsear sin zona horaria para evitar cambios
 								const parsed = moment.parseZone(date);
 								return parsed.isValid() ? parsed : null;
@@ -830,13 +898,16 @@ const FoldersLayout = () => {
 				accessor: "status",
 				Cell: ({ value }: { value: string }) => {
 					switch (value) {
-						case "Finalizada":
-							return <Chip color="error" label="Finalizada" size="small" variant="light" />;
+						case "Cerrada":
+							return <Chip color="error" label="Cerrada" size="small" variant="light" />;
 						case "Nueva":
 							return <Chip color="success" label="Nueva" size="small" variant="light" />;
-						case "En proceso":
+						case "En Proceso":
+							return <Chip color="info" label="En Proceso" size="small" variant="light" />;
+						case "Pendiente":
+							return <Chip color="warning" label="Pendiente" size="small" variant="light" />;
 						default:
-							return <Chip color="info" label="En proceso" size="small" variant="light" />;
+							return <Chip color="default" label={value} size="small" variant="light" />;
 					}
 				},
 			},
@@ -868,7 +939,7 @@ const FoldersLayout = () => {
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Editar">
-								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.values))}>
+								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
 									<Edit variant="Bulk" />
 								</IconButton>
 							</Tooltip>

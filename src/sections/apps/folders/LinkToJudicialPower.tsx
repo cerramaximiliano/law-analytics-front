@@ -28,6 +28,8 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { Add, DocumentUpload, ArrowRight, Lock } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
+import { dispatch } from "store";
+import { linkFolderToCausa } from "store/reducers/folder";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
 interface LinkToJudicialPowerProps {
@@ -163,69 +165,29 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 		setError("");
 
 		try {
-			// TODO: Implementar llamada al servicio externo del Poder Judicial
+			// Llamar a la acción del store para vincular la causa
+			const result = await dispatch(
+				linkFolderToCausa(folderId, {
+					pjnCode: jurisdiction, // El código de jurisdicción se usa como pjnCode
+					number: expedientNumber,
+					year: expedientYear,
+					overwrite: true, // Por defecto, sobrescribir los datos del folder
+					pjn: selectedPower === "nacional", // true si es Poder Judicial de la Nación
+				}),
+			);
 
-			//INTRUCCIONES PARA IMPLEMENTAR RUTA ---
-			/* PUT /api/folders/link-causa/:folderId
-
-  2. Parámetros de entrada:
-
-  - URL param: folderId - ID del folder a vincular
-  - Body:
-    - pjnCode (requerido) - Código PJN para identificar el tipo de causa
-    - number (requerido) - Número de expediente
-    - year (requerido) - Año del expediente
-    - overwrite (opcional, default: true) - Si se deben sobrescribir los datos del folder
-
-  3. Objetos que devuelve:
-
-  En caso de éxito (200):
-  {
-    "success": true,
-    "message": "Folder vinculado exitosamente a la causa" | "Folder vinculado a causa pendiente de verificación",
-    "folder": {
-      // Objeto completo del folder actualizado con todos sus campos
-    },
-    "causaInfo": {
-      "causaId": "ObjectId de la causa",
-      "causaType": "CausasCivil | CausasTrabajo | CausasSegSocial",
-      "verified": true | false,
-      "isValid": true | false | undefined,
-      "associationStatus": "success" | "pending"
-    }
-  }
-
-  En caso de error (400/404/500):
-  {
-    "success": false,
-    "message": "Descripción del error",
-    "error": "Detalle del error (solo en algunos casos)"
-  }
-
-  4. Comportamiento:
-
-  - Valida que el folder exista y los parámetros sean correctos
-  - Verifica permisos de suscripción del usuario
-  - Intenta usar el microservicio de causas primero
-  - Si falla, usa el método local como fallback
-  - Actualiza los campos del folder:
-    - Siempre actualiza: causaId, causaType, causaVerified, causaIsValid, causaUpdateEnabled, causaAssociationStatus, causaLastSyncDate
-    - Si overwrite=true: actualiza folderName, materia, judFolder.statusJudFolder, judFolder.initialDateJudFolder, initialDateFolder
-    - Siempre preserva o crea judFolder.numberJudFolder con formato número/año
-  - Estados de asociación:
-    - 'pending': Causa encontrada pero no verificada
-    - 'success': Causa verificada
-    - 'failed': Error en la asociación
-
- */
-
-			// Simulación de llamada exitosa
-			setTimeout(() => {
+			if (result.success) {
 				setLoading(false);
 				setSuccess(true);
 
+				// Determinar el tipo de mensaje según el estado de asociación
+				let message = "Causa vinculada exitosamente con el Poder Judicial de la Nación";
+				if (result.causaInfo?.associationStatus === "pending") {
+					message = "Causa vinculada. Pendiente de verificación en el sistema judicial.";
+				}
+
 				// Mostrar notificación de éxito
-				enqueueSnackbar("Causa vinculada exitosamente con el Poder Judicial de la Nación", {
+				enqueueSnackbar(message, {
 					variant: "success",
 					anchorOrigin: { vertical: "top", horizontal: "right" },
 				});
@@ -234,9 +196,12 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 				setTimeout(() => {
 					onCancelLink();
 				}, 1500);
-			}, 2000);
+			} else {
+				setError(result.message || "Error al vincular la causa. Por favor intente nuevamente.");
+				setLoading(false);
+			}
 		} catch (err) {
-			setError("Error al vincular la causa. Por favor intente nuevamente.");
+			setError("Error inesperado al vincular la causa. Por favor intente nuevamente.");
 			setLoading(false);
 		}
 	};
@@ -303,8 +268,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 
 	// Escuchar evento de restricción del plan
 	useEffect(() => {
-		const handlePlanRestriction = (event: Event) => {
-			//const customEvent = event as CustomEvent;
+		const handlePlanRestriction = (_event: Event) => {
 			// Cerrar el modal inmediatamente
 			onCancelLink();
 

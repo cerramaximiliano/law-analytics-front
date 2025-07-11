@@ -75,12 +75,12 @@ const alerts = (state = initialState, action: AlertActionProps) => {
 			};
 		case ADD_ALERT:
 			// Verificar si la alerta ya existe
-			const alertExists = state.alerts.some(alert => alert._id === action.payload._id);
+			const alertExists = state.alerts.some((alert) => alert._id === action.payload._id);
 			if (alertExists) {
 				console.log(`[Reducer] Alerta con ID ${action.payload._id} ya existe, no se añade`);
 				return state;
 			}
-			
+
 			console.log(`[Reducer] Añadiendo nueva alerta: ${action.payload._id}`);
 			return {
 				...state,

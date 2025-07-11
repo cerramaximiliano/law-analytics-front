@@ -155,10 +155,12 @@ const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLo
 		switch (status) {
 			case "Nueva":
 				return "warning";
-			case "En Proceso":
+			case "En Progreso":
 				return "info";
-			case "Finalizada":
+			case "Cerrada":
 				return "success";
+			case "Pendiente":
+				return "primary";
 			default:
 				return "default";
 		}

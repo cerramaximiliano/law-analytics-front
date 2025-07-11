@@ -677,7 +677,7 @@
 		"Heredero/os"
 	],
 	"situacion": ["En letra", "En despacho"],
-	"estado": ["Nueva", "En Proceso", "Finalizada"],
+	"estado": ["Nueva", "En Proceso", "Cerrada", "Pendiente"],
 	"jurisdicciones": [
 		{
 			"item": "Jujuy - San Pedro de Jujuy",
@@ -701,7 +701,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Civil y Comercial Federal",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Tucumán - Centro Judicial Concepción",
@@ -797,11 +797,11 @@
 		},
 		{
 			"item": "Justicia Nacional - Comercial",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Justicia Nacional - C.S.J.N",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "San Juan - 1ª Circunscripción - San Juan",
@@ -845,7 +845,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Criminal y Correcional Federal",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Santiago del Estero - Jurisdicción La Banda",
@@ -885,7 +885,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Electoral",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Entre Ríos - Distrito Victoria",
@@ -909,7 +909,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Trabajo",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Río Negro - 3º Circunscripción - S.C. Bariloche",
@@ -953,7 +953,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Criminal y Correccional",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Catamarca - 3º Circunscripción - Villa Angela",
@@ -1021,7 +1021,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Seguridad Social Federal",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Corrientes - 1ª Circunscripción - Corrientes",
@@ -1053,11 +1053,11 @@
 		},
 		{
 			"item": "Justicia Nacional - Contencioso Adm. Federal",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Justicia Nacional - Casación Penal",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Tierra del Fuego - Distrito Judicial Sur",
@@ -1137,7 +1137,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Civil",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Córdoba - 3º Circunscripción",
@@ -1233,7 +1233,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Penal Económico",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Catamarca - Juzgados de Paz",
@@ -1249,7 +1249,7 @@
 		},
 		{
 			"item": "Justicia Nacional - Tribunal Fiscal de la Nación",
-			"label": "CABA"
+			"label": "Nacional"
 		},
 		{
 			"item": "Mendoza - 4º Circunscripción - Tunuyán",
@@ -1367,6 +1367,15 @@
 		{ "label": "Correo Argentino", "item": "PU" },
 		{ "label": "Correo Argentino", "item": "XU" }
 	],
-	"statusJudicial": ["Nueva", "En Proceso", "Sentencia", "Apelación", "Finalizada"],
+	"statusJudicial": [
+		"Inicio Demanda",
+		"Contestación Demanda",
+		"Abierto a Prueba",
+		"Sentencia",
+		"Apelación",
+		"Sentencia Cámara",
+		"Recurso ante Cámara",
+		"Sentencia Corte"
+	],
 	"statusMediacion": ["Nueva", "En Proceso", "Finalizada"]
 }

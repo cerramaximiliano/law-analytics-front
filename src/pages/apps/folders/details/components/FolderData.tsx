@@ -25,6 +25,7 @@ import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import AsynchronousAutocomplete from "components/UI/AsynchronousAutocomplete";
+import GroupedAutocomplete from "components/UI/GroupedAutocomplete";
 import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
@@ -63,12 +64,17 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? moment(folder.initialDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? moment(folder.finalDateFolder, "DD-MM-YYYY").format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+		finalDateFolder: folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+		folderJuris: folder?.folderJuris
+			? typeof folder.folderJuris === "string"
+				? { item: folder.folderJuris, label: "" }
+				: folder.folderJuris
+			: null,
 	};
 	const [isEditing, setIsEditing] = useState(false);
 
-	const status = ["Nueva", "En Proceso", "Finalizada"];
+	const status = ["Nueva", "En Progreso", "Cerrada", "Pendiente"];
 	const [statusFolder, setStatusFolder] = useState(folder?.status || "Nueva");
 
 	const handleStatus = (e: MouseEvent<HTMLButtonElement>) => {
@@ -78,7 +84,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 		const nextIndex = (currentIndex + 1) % status.length;
 		const newStatus = status[nextIndex];
 
-		if (newStatus === "Finalizada") {
+		if (newStatus === "Cerrada") {
 			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
 		} else {
 			folder.finalDateFolder = "";
@@ -159,7 +165,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 			message: "El formato de fecha debe ser DD/MM/AAAA",
 		}),
 		finalDateFolder: Yup.string().when("status", {
-			is: (status: any) => status === "Finalizada",
+			is: (status: any) => status === "Cerrada",
 			then: () =>
 				Yup.string()
 					.required("Con el estado finalizado debe completar la fecha")
@@ -198,7 +204,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 							<Skeleton variant="rectangular" width={40} height={40} style={{ marginRight: 10 }} />
 						) : (
 							<ListItemAvatar>
-								{statusFolder === "Finalizada" && type === "general" && (
+								{statusFolder === "Cerrada" && type === "general" && (
 									<Avatar color="error" variant="rounded">
 										<FolderCross variant="Bold" />
 									</Avatar>
@@ -208,7 +214,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										<Folder variant="Bold" />
 									</Avatar>
 								)}
-								{statusFolder === "En Proceso" && type === "general" && (
+								{statusFolder === "En Progreso" && type === "general" && (
 									<Avatar color="primary" variant="rounded">
 										<FolderOpen variant="Bold" />
 									</Avatar>
@@ -357,7 +363,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 												<DateInputField customInputStyles={customInputStyles} name="initialDateFolder" />
 											) : (
 												<Typography variant="body2">
-													{folder?.initialDateFolder ? moment(folder?.initialDateFolder, "DD-MM-YYYY").format("DD-MM-YYYY") : "-"}
+													{folder?.initialDateFolder ? moment.parseZone(folder?.initialDateFolder).format("DD/MM/YYYY") : "-"}
 												</Typography>
 											)}
 										</>
@@ -377,7 +383,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 											) : (
 												type === "general" && (
 													<Typography variant="body2">
-														{folder?.finalDateFolder ? moment(folder?.finalDateFolder, "DD-MM-YYYY").format("DD-MM-YYYY") : "-"}
+														{folder?.finalDateFolder ? moment.parseZone(folder?.finalDateFolder).format("DD/MM/YYYY") : "-"}
 													</Typography>
 												)
 											)}
@@ -424,6 +430,69 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 									</Grid>
 								)}
 							</Grid>
+							<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
+								<Grid item xs={5}>
+									{isLoader ? (
+										<>
+											<Skeleton />
+											<Skeleton />
+										</>
+									) : (
+										<>
+											<Typography variant="subtitle1">Jurisdicción</Typography>
+											{isEditing ? (
+												<GroupedAutocomplete
+													data={data.jurisdicciones}
+													placeholder="Seleccione una jurisdicción"
+													name="folderJuris"
+												/>
+											) : (
+												<Typography variant="body2">
+													{folder?.folderJuris
+														? typeof folder.folderJuris === "string"
+															? folder.folderJuris
+															: folder.folderJuris.item
+														: "-"}
+												</Typography>
+											)}
+										</>
+									)}
+								</Grid>
+							</Grid>
+							{folder?.judFolder && (folder?.judFolder?.courtNumber || folder?.judFolder?.secretaryNumber) && (
+								<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
+									{folder?.judFolder?.courtNumber && (
+										<Grid item xs={5}>
+											{isLoader ? (
+												<>
+													<Skeleton />
+													<Skeleton />
+												</>
+											) : (
+												<>
+													<Typography variant="subtitle1">N° de Juzgado</Typography>
+													<Typography variant="body2">{folder?.judFolder?.courtNumber || " - "}</Typography>
+												</>
+											)}
+										</Grid>
+									)}
+									{folder?.judFolder?.secretaryNumber && (
+										<Grid item xs={5}>
+											{isLoader ? (
+												<>
+													<Skeleton />
+													<Skeleton />
+												</>
+											) : (
+												<>
+													<Typography variant="subtitle1">N° de Secretaría</Typography>
+													<Typography variant="body2">{folder?.judFolder?.secretaryNumber || " - "}</Typography>
+												</>
+											)}
+										</Grid>
+									)}
+								</Grid>
+							)}
 							<Grid item xs={12} sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Grid>
 									{isLoader ? (

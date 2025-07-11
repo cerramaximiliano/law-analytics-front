@@ -15,7 +15,18 @@ import {
 	useMediaQuery,
 	Paper,
 } from "@mui/material";
-import { ExportSquare, InfoCircle, Activity, Briefcase, Category, TableDocument, FolderCross, ArrowLeft, TickCircle, CloseCircle } from "iconsax-react";
+import {
+	ExportSquare,
+	InfoCircle,
+	Activity,
+	Briefcase,
+	Category,
+	TableDocument,
+	FolderCross,
+	ArrowLeft,
+	TickCircle,
+	CloseCircle,
+} from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
 import useSubscription from "hooks/useSubscription";
@@ -291,13 +302,13 @@ const Details = () => {
 								</Box>
 								{/* Ícono de estado de verificación */}
 								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
-									<Tooltip 
+									<Tooltip
 										title={
-											folder?.causaVerified === false 
-												? "Pendiente de verificación" 
-												: folder.causaIsValid 
-													? "Causa válida" 
-													: "Causa inválida"
+											folder?.causaVerified === false
+												? "Pendiente de verificación"
+												: folder.causaIsValid
+												? "Causa válida"
+												: "Causa inválida"
 										}
 									>
 										<Box
@@ -326,62 +337,6 @@ const Details = () => {
 									</Tooltip>
 								)}
 							</Box>
-							{folder?.causaVerified === false && (
-								<Tooltip title="La causa está pendiente de verificación en el sistema judicial">
-									<Box
-										sx={{
-											px: 1.5,
-											py: 0.5,
-											display: "flex",
-											alignItems: "center",
-											gap: 0.5,
-											bgcolor: alpha(theme.palette.warning.main, 0.1),
-											border: `1px solid ${theme.palette.warning.main}`,
-											borderRadius: 0.5,
-											width: "fit-content",
-										}}
-									>
-										<InfoCircle size={14} variant="Bold" color={theme.palette.warning.main} />
-										<Typography
-											variant="caption"
-											sx={{
-												fontWeight: 500,
-												color: theme.palette.warning.dark,
-												fontSize: "0.75rem",
-											}}
-										>
-											Pendiente verificación
-										</Typography>
-									</Box>
-								</Tooltip>
-							)}
-							{folder?.causaVerified === true && folder?.causaIsValid === false && (
-								<Box
-									sx={{
-										px: 1.5,
-										py: 0.5,
-										display: "flex",
-										alignItems: "center",
-										gap: 0.5,
-										bgcolor: alpha(theme.palette.error.main, 0.1),
-										border: `1px solid ${theme.palette.error.main}`,
-										borderRadius: 0.5,
-										width: "fit-content",
-									}}
-								>
-									<InfoCircle size={14} variant="Bold" color={theme.palette.error.main} />
-									<Typography
-										variant="caption"
-										sx={{
-											fontWeight: 500,
-											color: theme.palette.error.dark,
-											fontSize: "0.75rem",
-										}}
-									>
-										No se pudo verificar en el sitio {folder?.pjn === true ? "del Poder Judicial de la Nación" : ""}
-									</Typography>
-								</Box>
-							)}
 						</Box>
 					) : (
 						<Box

@@ -68,6 +68,8 @@ const folder = (state = initialFolderState, action: any) => {
 			return {
 				...state,
 				folder: action.payload,
+				// También actualizar el folder en la lista si existe
+				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
 				isLoader: false,
 			};
 		case DELETE_FOLDER:
@@ -183,9 +185,9 @@ export const getFoldersByUserId =
 			}
 
 			dispatch({ type: SET_FOLDER_LOADING });
-			// Campos optimizados para listas y vistas resumidas
+			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus";
 			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});
@@ -210,9 +212,9 @@ export const getFoldersByUserId =
 export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		// Campos optimizados para listas y vistas resumidas
+		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus";
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/group/${groupId}`, {
 			params: { fields },
 		});
@@ -230,37 +232,39 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 	}
 };
 
-export const getFolderById = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
-	try {
-		// Obtener el estado actual del store
-		const state = getState();
-		const currentFolder = state.folder.folder;
+export const getFolderById =
+	(folderId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			// Obtener el estado actual del store
+			const state = getState();
+			const currentFolder = state.folder.folder;
 
-		// Si el folder actual tiene el mismo ID, no hacer la petición
-		if (currentFolder && currentFolder._id === folderId) {
-			return { success: true, folder: currentFolder };
-		}
+			// Si el folder actual tiene el mismo ID y no se está forzando la actualización, no hacer la petición
+			if (!forceRefresh && currentFolder && currentFolder._id === folderId) {
+				return { success: true, folder: currentFolder };
+			}
 
-		// Si es diferente o no hay folder, hacer la petición
-		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
-		if (response.data.success) {
+			// Si es diferente o no hay folder, hacer la petición
+			dispatch({ type: SET_FOLDER_LOADING });
+			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
+			if (response.data.success) {
+				dispatch({
+					type: GET_FOLDER_BY_ID,
+					payload: response.data.folder,
+				});
+				return { success: true, folder: response.data.folder };
+			}
+			return { success: false, message: "No se pudo obtener el folder" };
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folder" : "Error desconocido";
 			dispatch({
-				type: GET_FOLDER_BY_ID,
-				payload: response.data.folder,
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
 			});
-			return { success: true, folder: response.data.folder };
+			return { success: false, message: errorMessage };
 		}
-		return { success: false, message: "No se pudo obtener el folder" };
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folder" : "Error desconocido";
-		dispatch({
-			type: SET_FOLDER_ERROR,
-			payload: errorMessage,
-		});
-		return { success: false, message: errorMessage };
-	}
-};
+	};
 
 export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
@@ -340,9 +344,9 @@ export const archiveFolders = (userId: string, folderIds: string[]) => async (di
 export const getArchivedFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		// Campos optimizados para listas y vistas resumidas
+		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn";
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus";
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
 			params: {
 				archived: true,
@@ -578,5 +582,46 @@ export const filterFolders = (filters: FilterFoldersParams) => async (dispatch: 
 export const resetFoldersState = () => ({
 	type: RESET_FOLDERS_STATE,
 });
+
+// Vincular carpeta con causa judicial
+export const linkFolderToCausa =
+	(folderId: string, linkData: { pjnCode: string; number: string; year: string; overwrite?: boolean; pjn?: boolean }) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/folders/link-causa/${folderId}`, linkData);
+
+			if (response.data.success) {
+				// Actualizar el folder en el store con los nuevos datos
+				dispatch({
+					type: UPDATE_FOLDER,
+					payload: response.data.folder,
+				});
+
+				return {
+					success: true,
+					message: response.data.message,
+					folder: response.data.folder,
+					causaInfo: response.data.causaInfo,
+				};
+			} else {
+				return {
+					success: false,
+					message: response.data.message || "No se pudo vincular la causa.",
+				};
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al vincular la causa."
+				: "Error desconocido al vincular la causa.";
+
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+
+			return { success: false, message: errorMessage };
+		}
+	};
 
 export default folder;

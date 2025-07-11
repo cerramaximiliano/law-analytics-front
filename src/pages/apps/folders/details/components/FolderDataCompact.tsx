@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, Divider } from "@mui/material";
 import moment from "moment";
@@ -9,11 +9,14 @@ import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import AsynchronousAutocomplete from "components/UI/AsynchronousAutocomplete";
+import GroupedAutocomplete from "components/UI/GroupedAutocomplete";
+import JuzgadoAutocomplete from "components/UI/JuzgadoAutocomplete";
 import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
 
 import "moment/locale/es";
 moment.locale("es");
@@ -66,10 +69,53 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 		...folder,
 		initialDateFolder: folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
 		finalDateFolder: folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+		folderJuris: folder?.folderJuris
+			? typeof folder.folderJuris === "string"
+				? { item: folder.folderJuris, label: "" }
+				: folder.folderJuris
+			: null,
+		judFolder: folder?.judFolder || {
+			courtNumber: "",
+			secretaryNumber: "",
+		},
 	};
 	const [isEditing, setIsEditing] = useState(false);
+	const [juzgadosOptions, setJuzgadosOptions] = useState<Juzgado[]>([]);
+	const [loadingJuzgados, setLoadingJuzgados] = useState(false);
 
 	const handleEdit = () => setIsEditing(true);
+
+	useEffect(() => {
+		if (folder?.folderJuris && isEditing) {
+			fetchJuzgados(typeof folder.folderJuris === "string" ? folder.folderJuris : folder.folderJuris.item);
+		}
+	}, [folder?.folderJuris, isEditing]);
+
+	const fetchJuzgados = async (jurisdiccion: string) => {
+		if (!jurisdiccion) {
+			setJuzgadosOptions([]);
+			return;
+		}
+
+		setLoadingJuzgados(true);
+		try {
+			const juzgados = await getJuzgadosByJurisdiction(jurisdiccion);
+			setJuzgadosOptions(juzgados);
+		} catch (error: any) {
+			console.error("Error fetching juzgados:", error);
+			if (error?.response?.status !== 401) {
+				enqueueSnackbar("Error al cargar juzgados", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+			setJuzgadosOptions([]);
+		} finally {
+			setLoadingJuzgados(false);
+		}
+	};
 
 	const _submitForm = async (values: any, actions: any) => {
 		if (id) {
@@ -132,10 +178,12 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 		switch (status) {
 			case "Nueva":
 				return "success";
-			case "En Proceso":
+			case "En Progreso":
 				return "primary";
-			case "Finalizada":
+			case "Cerrada":
 				return "error";
+			case "Pendiente":
+				return "warning";
 			default:
 				return "default";
 		}
@@ -273,6 +321,60 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 													<SelectField label="Situación" size="small" data={data.situacion} name="situationFolder" sx={customInputStyles} />
 												}
 											/>
+										</Grid>
+									)}
+
+									{/* Jurisdiction and Juzgado */}
+									<Grid item xs={6} md={3}>
+										<CompactField
+											label="JURISDICCIÓN"
+											value={
+												folder?.folderJuris ? (typeof folder.folderJuris === "string" ? folder.folderJuris : folder.folderJuris.item) : null
+											}
+											isLoading={isLoader}
+											isEditing={isEditing}
+											editComponent={
+												<GroupedAutocomplete
+													data={data.jurisdicciones}
+													placeholder="Jurisdicción"
+													name="folderJuris"
+													size="small"
+													sx={customInputStyles}
+													onChange={(value: any) => {
+														if (value?.item) {
+															fetchJuzgados(value.item);
+														} else {
+															setJuzgadosOptions([]);
+														}
+													}}
+												/>
+											}
+										/>
+									</Grid>
+									<Grid item xs={6} md={3}>
+										<CompactField
+											label="JUZGADO"
+											value={folder?.judFolder?.courtNumber}
+											isLoading={isLoader}
+											isEditing={isEditing}
+											editComponent={
+												<JuzgadoAutocomplete
+													options={juzgadosOptions}
+													loading={loadingJuzgados}
+													disabled={!values.folderJuris}
+													placeholder="Buscar juzgado..."
+													name="judFolder.courtNumber"
+													size="small"
+													sx={customInputStyles}
+												/>
+											}
+										/>
+									</Grid>
+
+									{/* Judicial Data if exists */}
+									{folder?.judFolder?.secretaryNumber && (
+										<Grid item xs={6} md={3}>
+											<CompactField label="N° SECRETARÍA" value={folder?.judFolder?.secretaryNumber} isLoading={isLoader} />
 										</Grid>
 									)}
 

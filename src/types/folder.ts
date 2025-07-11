@@ -1,5 +1,19 @@
 // types/folder.ts
 
+export type JurisdictionData = {
+	item: string;
+	label: string;
+};
+
+export type JuzgadoData = {
+	_id: string;
+	organismo: string;
+	jurisdiccion?: string;
+	codigo?: number;
+	ciudad?: string;
+	[key: string]: any;
+};
+
 export type PreFolderData = {
 	initialDatePreFolder: string;
 	finalDatePreFolder: string;
@@ -17,6 +31,8 @@ export type JudFolderData = {
 	amountJudFolder: string;
 	/* "En letra" | "En despacho"; */
 	descriptionJudFolder: string;
+	courtNumber?: string;
+	secretaryNumber?: string;
 };
 
 export type FolderData = {
@@ -43,13 +59,14 @@ export type FolderData = {
 		| "Incidentista"
 		| "Heredero/os"; */
 	status: string;
-	//"Nueva" | "En Proceso" | "Finalizada";
+	//"Nueva" | "En Proceso" | "Cerrada" | "Pendiente";
 	description: string;
 	initialDateFolder: string;
 	finalDateFolder: string;
 	amount: number;
-	folderJuris: string;
+	folderJuris: string | JurisdictionData;
 	folderFuero: string;
+	juzgado?: JuzgadoData | null;
 	/* 		| "Civil"
 		| "Laboral"
 		| "Previsional"

@@ -1,4 +1,4 @@
-import { useState, MouseEvent } from "react";
+import { useState, MouseEvent, useEffect } from "react";
 import { dispatch } from "store";
 import {
 	Skeleton,
@@ -24,12 +24,14 @@ import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
-//import AsynchronousAutocomplete from "components/UI/AsynchronousAutocomplete";
+import GroupedAutocomplete from "components/UI/GroupedAutocomplete";
+import JuzgadoAutocomplete from "components/UI/JuzgadoAutocomplete";
 import { Formik, Form } from "formik";
 import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
 
 import "moment/locale/es"; // Importa el idioma español
 moment.locale("es"); // Configura moment a español
@@ -69,8 +71,10 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 		finalDateJudFolder: "",
 		numberJudFolder: "",
 		amountJudFolder: "",
-		statusJudFolder: "Nueva",
+		statusJudFolder: "Inicio Demanda",
 		descriptionJudFolder: "",
+		courtNumber: "",
+		secretaryNumber: "",
 	};
 
 	const initialValues = {
@@ -82,12 +86,16 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 			amountJudFolder: folder?.judFolder?.amountJudFolder || defaultJudFolder.amountJudFolder,
 			statusJudFolder: folder?.judFolder?.statusJudFolder || defaultJudFolder.statusJudFolder,
 			descriptionJudFolder: folder?.judFolder?.descriptionJudFolder || defaultJudFolder.descriptionJudFolder,
+			courtNumber: folder?.judFolder?.courtNumber || defaultJudFolder.courtNumber,
+			secretaryNumber: folder?.judFolder?.secretaryNumber || defaultJudFolder.secretaryNumber,
 		},
 	};
 
 	const [isEditing, setIsEditing] = useState(false);
+	const [juzgadosOptions, setJuzgadosOptions] = useState<Juzgado[]>([]);
+	const [loadingJuzgados, setLoadingJuzgados] = useState(false);
 
-	const status = ["Nueva", "En Proceso", "Finalizada"];
+	const status = ["Nueva", "En Progreso", "Cerrada", "Pendiente"];
 	const [statusFolder, setStatusFolder] = useState(folder?.status || "Nueva");
 
 	const handleStatus = (e: MouseEvent<HTMLButtonElement>) => {
@@ -97,7 +105,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 		const nextIndex = (currentIndex + 1) % status.length;
 		const newStatus = status[nextIndex];
 
-		if (newStatus === "Finalizada") {
+		if (newStatus === "Cerrada") {
 			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
 		} else {
 			folder.finalDateFolder = "";
@@ -109,6 +117,39 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 	const handleEdit = (e: any) => {
 		setIsEditing(true);
 		e.preventDefault();
+	};
+
+	useEffect(() => {
+		if (folder?.folderJuris && isEditing) {
+			fetchJuzgados(typeof folder.folderJuris === "string" ? folder.folderJuris : folder.folderJuris.item);
+		}
+	}, [folder?.folderJuris, isEditing]);
+
+	const fetchJuzgados = async (jurisdiccion: string) => {
+		if (!jurisdiccion) {
+			setJuzgadosOptions([]);
+			return;
+		}
+
+		setLoadingJuzgados(true);
+		try {
+			const juzgados = await getJuzgadosByJurisdiction(jurisdiccion);
+			setJuzgadosOptions(juzgados);
+		} catch (error: any) {
+			console.error("Error fetching juzgados:", error);
+			// Don't redirect on error, just show empty options
+			if (error?.response?.status !== 401) {
+				enqueueSnackbar("Error al cargar juzgados", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+			setJuzgadosOptions([]);
+		} finally {
+			setLoadingJuzgados(false);
+		}
 	};
 
 	const _submitForm = async (values: any, actions: any) => {
@@ -181,7 +222,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 			message: "El formato de fecha debe ser DD/MM/AAAA",
 		}),
 		finalDateJudFolder: Yup.string().when("status", {
-			is: (status: any) => status === "Finalizada",
+			is: (status: any) => status === "Cerrada",
 			then: () =>
 				Yup.string()
 					.required("Con el estado finalizado debe completar la fecha")
@@ -273,6 +314,102 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 												<SelectField label="Seleccione el fuero" style={{ maxHeight: "39.91px" }} name="folderFuero" data={data.fuero} />
 											) : (
 												<Typography variant="body2">{folder?.folderFuero || " - "}</Typography>
+											)}
+										</>
+									)}
+								</Grid>
+							</Grid>
+							<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
+								<Grid item xs={5}>
+									{isLoader ? (
+										<>
+											<Skeleton />
+											<Skeleton />
+										</>
+									) : (
+										<>
+											<Typography variant="subtitle1">Jurisdicción</Typography>
+											{isEditing ? (
+												<GroupedAutocomplete
+													data={data.jurisdicciones}
+													placeholder="Seleccione una jurisdicción"
+													name="folderJuris"
+													onChange={(value: any) => {
+														if (value?.item) {
+															fetchJuzgados(value.item);
+														} else {
+															setJuzgadosOptions([]);
+														}
+													}}
+												/>
+											) : (
+												<Typography variant="body2">
+													{folder?.folderJuris
+														? typeof folder.folderJuris === "string"
+															? folder.folderJuris
+															: folder.folderJuris.item
+														: "-"}
+												</Typography>
+											)}
+										</>
+									)}
+								</Grid>
+								<Grid item xs={5}>
+									{isLoader ? (
+										<>
+											<Skeleton />
+											<Skeleton />
+										</>
+									) : (
+										<>
+											<Typography variant="subtitle1">Juzgado</Typography>
+											{isEditing ? (
+												<JuzgadoAutocomplete
+													options={juzgadosOptions}
+													loading={loadingJuzgados}
+													disabled={!values.folderJuris}
+													placeholder="Buscar juzgado..."
+													name="judFolder.courtNumber"
+													sx={{ "& .MuiInputBase-root": { height: 39.91 } }}
+												/>
+											) : (
+												<Typography variant="body2">{folder?.judFolder?.courtNumber || "-"}</Typography>
+											)}
+										</>
+									)}
+								</Grid>
+							</Grid>
+							<Grid item xs={12} columns={4} sx={{ display: "flex", justifyContent: "space-between" }}>
+								<Grid item xs={5}>
+									{isLoader ? (
+										<>
+											<Skeleton />
+											<Skeleton />
+										</>
+									) : (
+										<>
+											<Typography variant="subtitle1">N° de Juzgado</Typography>
+											{isEditing ? (
+												<InputField name="judFolder.courtNumber" sx={customInputStyles} id="judFolder.courtNumber" />
+											) : (
+												<Typography variant="body2">{folder?.judFolder?.courtNumber || " - "}</Typography>
+											)}
+										</>
+									)}
+								</Grid>
+								<Grid item xs={5}>
+									{isLoader ? (
+										<>
+											<Skeleton />
+											<Skeleton />
+										</>
+									) : (
+										<>
+											<Typography variant="subtitle1">N° de Secretaría</Typography>
+											{isEditing ? (
+												<InputField name="judFolder.secretaryNumber" sx={customInputStyles} id="judFolder.secretaryNumber" />
+											) : (
+												<Typography variant="body2">{folder?.judFolder?.secretaryNumber || " - "}</Typography>
 											)}
 										</>
 									)}

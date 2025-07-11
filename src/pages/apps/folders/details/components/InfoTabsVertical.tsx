@@ -127,8 +127,8 @@ const InfoTabsVertical = ({
 				// Opción 1: Basado en el estado general de la carpeta
 				if (!folderData) return "Sin información";
 				if (folderData.status === "Nueva") return "Recién creada";
-				if (folderData.status === "En Proceso") return "En gestión";
-				if (folderData.status === "Finalizada") return "Completada";
+				if (folderData.status === "En Progreso") return "En gestión";
+				if (folderData.status === "Cerrada") return "Completada";
 
 				// Opción 2: Basado en la completitud de datos
 				// const completeness = hasBasicData() ? "Datos completos" : "Datos incompletos";
@@ -153,8 +153,8 @@ const InfoTabsVertical = ({
 			description: "Proceso de mediación",
 			hasData: hasMediationData(),
 			status: (() => {
-				// Si el estado de la carpeta es "Finalizada"
-				if (folderData?.status === "Finalizada") {
+				// Si el estado de la carpeta es "Cerrada"
+				if (folderData?.status === "Cerrada") {
 					return "Terminada";
 				}
 				// Si hay número de expediente judicial, la mediación está terminada
@@ -177,8 +177,8 @@ const InfoTabsVertical = ({
 			description: "Proceso judicial",
 			hasData: hasJudicialData(),
 			status: (() => {
-				// Si el estado de la carpeta es "Finalizada"
-				if (folderData?.status === "Finalizada") {
+				// Si el estado de la carpeta es "Cerrada"
+				if (folderData?.status === "Cerrada") {
 					return "Terminada";
 				}
 				// Si hay número de expediente judicial, está en curso

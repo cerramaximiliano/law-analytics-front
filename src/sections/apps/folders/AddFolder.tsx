@@ -30,6 +30,8 @@ import AlertFolderDelete from "./AlertFolderDelete";
 import { PropsAddFolder } from "types/folders";
 import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import moment from "moment";
+import folderData from "data/folder.json";
 
 const getInitialValues = (folder: FormikValues | null) => {
 	const newFolder = {
@@ -42,6 +44,7 @@ const getInitialValues = (folder: FormikValues | null) => {
 		finalDateFolder: "",
 		folderJurisItem: "",
 		folderJurisLabel: "",
+		folderJuris: null,
 		folderFuero: null,
 		entryMethod: "manual", // Nuevo campo para seleccionar el método de ingreso
 		judicialPower: "", // Poder judicial seleccionado (nacional o buenosaires)
@@ -51,14 +54,23 @@ const getInitialValues = (folder: FormikValues | null) => {
 	};
 
 	if (folder) {
+		// Buscar la jurisdicción actualizada en los datos actuales
+		let updatedJuris = null;
+		if (folder?.folderJuris?.item) {
+			// Buscar por item en los datos actuales de jurisdicciones
+			updatedJuris = folderData.jurisdicciones.find((juris: any) => juris.item === folder.folderJuris.item);
+		}
+
 		return _.merge({}, newFolder, {
 			...folder,
 			folderJurisItem: folder?.folderJuris?.item ?? "",
-			folderJurisLabel: folder?.folderJuris?.label ?? "",
+			folderJurisLabel: updatedJuris?.label ?? folder?.folderJuris?.label ?? "",
+			// Usar la jurisdicción actualizada si la encontramos, sino usar la original
+			folderJuris: updatedJuris || folder?.folderJuris || null,
 			entryMethod: "manual", // Si estamos editando, siempre usamos el método manual
-			// Asegurar que las fechas no sean null
-			initialDateFolder: folder.initialDateFolder || "",
-			finalDateFolder: folder.finalDateFolder || "",
+			// Formatear las fechas a DD/MM/YYYY ignorando la zona horaria
+			initialDateFolder: folder.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+			finalDateFolder: folder.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 		});
 	}
 	return newFolder;
@@ -137,10 +149,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			message: "El formato de fecha debe ser DD/MM/AAAA",
 		}),
 		finalDateFolder: Yup.string().when("status", {
-			is: (status: any) => status === "Finalizada",
+			is: (status: any) => status === "Cerrada",
 			then: () => {
 				return Yup.string()
-					.required("Con el estado finalizado debe completar la fecha")
+					.required("Con el estado cerrado debe completar la fecha")
 					.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
 						message: "El formato de fecha debe ser DD/MM/AAAA",
 					});
