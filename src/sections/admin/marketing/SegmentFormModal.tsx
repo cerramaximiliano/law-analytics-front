@@ -54,6 +54,7 @@ const FIELD_OPTIONS = [
 	{ value: "subscriptionType", label: "Suscripción" },
 	{ value: "isAppUser", label: "Usuario" },
 	{ value: "isVerified", label: "Verificado" },
+	{ value: "isEmailVerified", label: "Email Válido" },
 	{ value: "totalCampaigns", label: "Número de campañas" },
 	{ value: "openRate", label: "Tasa de apertura" },
 	{ value: "clickRate", label: "Tasa de clics" },
@@ -118,6 +119,7 @@ const DEFAULT_OPERATOR_BY_FIELD: { [key: string]: string } = {
 	subscriptionType: "equals",
 	isAppUser: "equals",
 	isVerified: "equals",
+	isEmailVerified: "equals",
 	totalCampaigns: "greater_than",
 	openRate: "greater_than",
 	clickRate: "greater_than",
@@ -537,7 +539,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		if (fieldName === "status") return OPERATOR_OPTIONS.status;
 		if (fieldName === "subscriptionType") return OPERATOR_OPTIONS.status; // Usar los mismos operadores que status
 		if (fieldName === "tags") return OPERATOR_OPTIONS.tags;
-		if (["isAppUser", "isVerified"].includes(fieldName)) return OPERATOR_OPTIONS.boolean;
+		if (["isAppUser", "isVerified", "isEmailVerified"].includes(fieldName)) return OPERATOR_OPTIONS.boolean;
 		if (["totalCampaigns", "openRate", "clickRate"].includes(fieldName)) return OPERATOR_OPTIONS.number;
 		if (["lastActivity", "createdAt"].includes(fieldName)) return OPERATOR_OPTIONS.date;
 		return OPERATOR_OPTIONS.default;
@@ -628,9 +630,16 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			);
 		}
 
-		// Para campos booleanos (Usuario, Verificado)
-		if (filter.field === "isAppUser" || filter.field === "isVerified") {
-			const fieldLabel = filter.field === "isAppUser" ? "Usuario" : "Verificado";
+		// Para campos booleanos (Usuario, Verificado, Email Válido)
+		if (filter.field === "isAppUser" || filter.field === "isVerified" || filter.field === "isEmailVerified") {
+			let fieldLabel = "";
+			if (filter.field === "isAppUser") {
+				fieldLabel = "Usuario";
+			} else if (filter.field === "isVerified") {
+				fieldLabel = "Verificado";
+			} else if (filter.field === "isEmailVerified") {
+				fieldLabel = "Email Válido";
+			}
 			return (
 				<FormControl fullWidth size="small">
 					<InputLabel>{fieldLabel}</InputLabel>

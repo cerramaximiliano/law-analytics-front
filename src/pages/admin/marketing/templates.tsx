@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import { useState, useEffect, useCallback, useRef } from "react";
+import mktAxios from "utils/mktAxios";
 import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 
 // material-ui
@@ -11,6 +11,7 @@ import {
 	CardContent,
 	CardHeader,
 	Chip,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -21,6 +22,7 @@ import {
 	Grid,
 	IconButton,
 	InputLabel,
+	InputAdornment,
 	MenuItem,
 	Paper,
 	Select,
@@ -43,7 +45,7 @@ import {
 
 // project imports
 import MainCard from "components/MainCard";
-import { Add, Edit2, Eye, Trash, AddCircle, Send, Mobile, Monitor, MouseSquare, Copy } from "iconsax-react";
+import { Add, Edit2, Eye, Trash, AddCircle, Send, Mobile, Monitor, MouseSquare, Copy, SearchNormal1, ArrowUp2, ArrowDown2, TextBlock } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import AnimateButton from "components/@extended/AnimateButton";
 import TableSkeleton from "components/UI/TableSkeleton";
@@ -109,12 +111,18 @@ const categoryDisplay: Record<string, string> = {
 	notification: "Notificación",
 	welcome: "Bienvenida",
 	calculadora: "Calculadora",
+	gestionTareas: "Gestión de Tareas",
 	gestionCausas: "Gestión de Causas",
 	gestionContactos: "Gestión de Contactos",
 	gestionCalendario: "Gestión de Calendario",
-	secuenciaOnboarding: "Onboarding",
+	secuenciaOnboarding: "Secuencia Onboarding",
 	promotional: "Promocional",
-	gestionTareas: "Gestión de Tareas",
+	booking: "Reservas",
+	newsletter: "Newsletter",
+	transactional: "Transaccional",
+	reactivation: "Reactivación",
+	improved: "Mejorado",
+	"ab-test": "Test A/B",
 };
 
 // Default blank template HTML
@@ -219,6 +227,7 @@ const EmailTemplates = () => {
 	const [detailOpen, setDetailOpen] = useState<boolean>(false);
 	const [viewTab, setViewTab] = useState<number>(0);
 	const [deviceType, setDeviceType] = useState<DeviceType>(DeviceType.Desktop);
+	const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
 
 	// State for create template modal
 	const [createOpen, setCreateOpen] = useState<boolean>(false);
@@ -252,9 +261,15 @@ const EmailTemplates = () => {
 		textBody: defaultTextTemplate,
 		description: "",
 		variables: ["nombre", "year", "direccion"],
-		isActive: true,
+		isActive: true, // Note: This field is not sent to marketing API, templates are created as active by default
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
+
+	// State for HTML search in edit modal
+	const [htmlSearchQuery, setHtmlSearchQuery] = useState<string>("");
+	const [htmlSearchResults, setHtmlSearchResults] = useState<number[]>([]);
+	const [currentSearchIndex, setCurrentSearchIndex] = useState<number>(0);
+	const htmlTextFieldRef = useRef<HTMLTextAreaElement>(null);
 
 	// State for pagination
 	const [page, setPage] = useState(0);
@@ -268,14 +283,17 @@ const EmailTemplates = () => {
 	const fetchTemplates = useCallback(async () => {
 		try {
 			setLoading(true);
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/email/templates`);
+			// Use marketing API with mktAxios
+			const response = await mktAxios.get("/api/templates");
 			if (response.data.success) {
+				// Marketing API returns only active templates
 				setTemplates(response.data.data);
 				setError(null);
 			} else {
 				setError("Error fetching templates");
 			}
 		} catch (err: any) {
+			console.error("Error fetching templates from marketing API:", err);
 			setError(err.message || "Error fetching templates");
 		} finally {
 			setLoading(false);
@@ -302,12 +320,39 @@ const EmailTemplates = () => {
 		setPage(0);
 	};
 
+	// Fetch template details from marketing API
+	const fetchTemplateDetails = async (templateId: string) => {
+		try {
+			const response = await mktAxios.get(`/api/templates/${templateId}`);
+			if (response.data.success) {
+				return response.data.data;
+			} else {
+				throw new Error("Error fetching template details");
+			}
+		} catch (err: any) {
+			console.error("Error fetching template details from marketing API:", err);
+			enqueueSnackbar(err.message || "Error al cargar los detalles de la plantilla", { variant: "error" });
+			return null;
+		}
+	};
+
 	// Detail modal handlers
-	const handleOpenDetail = (template: EmailTemplate) => {
-		setSelectedTemplate(template);
+	const handleOpenDetail = async (template: EmailTemplate) => {
 		setDetailOpen(true);
 		setViewTab(0); // Reset to rendered view
 		setDeviceType(DeviceType.Desktop); // Reset to desktop view
+		setLoadingDetails(true);
+		
+		// Show the basic template info immediately
+		setSelectedTemplate(template);
+		
+		// Fetch full template details from marketing API
+		const fullTemplate = await fetchTemplateDetails(template._id);
+		if (fullTemplate) {
+			setSelectedTemplate(fullTemplate);
+		}
+		
+		setLoadingDetails(false);
 	};
 
 	const handleCloseDetail = () => {
@@ -384,18 +429,16 @@ const EmailTemplates = () => {
 		setToggling(true);
 
 		try {
-			const url = templateToToggle.isActive
-				? `${process.env.REACT_APP_BASE_URL}/api/email/templates/deactivate/${templateToToggle._id}`
-				: `${process.env.REACT_APP_BASE_URL}/api/email/templates/activate/${templateToToggle._id}`;
+			// Use the marketing API update endpoint to change isActive status
+			const updateData = {
+				isActive: !templateToToggle.isActive
+			};
 
-			const response = await axios.post(url);
+			const response = await mktAxios.put(`/api/templates/${templateToToggle._id}`, updateData);
 
 			if (response.data.success) {
-				// Use the updated template directly from the API response
-				const updatedTemplate = response.data.data;
-
-				// Update template in the list using the response data
-				setTemplates(templates.map((template) => (template._id === templateToToggle._id ? updatedTemplate : template)));
+				// Refresh the templates list to show updated data
+				await fetchTemplates();
 
 				// Close dialog
 				setActivationOpen(false);
@@ -465,18 +508,27 @@ const EmailTemplates = () => {
 		setSending(true);
 
 		try {
+			// Prepare payload for marketing API
 			const payload = {
-				email: emailData.email,
-				templateId: templateToSend._id,
-				variables: emailData.variables,
+				category: templateToSend.category,
+				templateName: templateToSend.name,
+				toEmail: emailData.email,
+				// fromEmail is optional, let the API use its default
+				variables: emailData.variables || {},
 			};
 
-			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/send-with-template`, payload);
+			const response = await mktAxios.post('/api/emails/template', payload);
 
 			if (response.data.success) {
 				// Close dialog
 				setSendEmailOpen(false);
 				setTemplateToSend(null);
+				
+				// Reset email data
+				setEmailData({
+					email: "",
+					variables: {},
+				});
 
 				// Show success message
 				enqueueSnackbar("Email enviado con éxito", { variant: "success" });
@@ -484,7 +536,8 @@ const EmailTemplates = () => {
 				enqueueSnackbar(response.data.message || "Error al enviar el email", { variant: "error" });
 			}
 		} catch (err: any) {
-			enqueueSnackbar(err.message || "Error al enviar el email", { variant: "error" });
+			console.error("Error sending email with template:", err);
+			enqueueSnackbar(err.response?.data?.message || err.message || "Error al enviar el email", { variant: "error" });
 		} finally {
 			setSending(false);
 		}
@@ -505,8 +558,128 @@ const EmailTemplates = () => {
 					[field]: "",
 				});
 			}
+
+			// Clear search when HTML changes
+			if (field === "htmlBody") {
+				setHtmlSearchQuery("");
+				setHtmlSearchResults([]);
+				setCurrentSearchIndex(0);
+			}
 		}
 	};
+
+	// Handle HTML search
+	const handleHtmlSearch = () => {
+		if (!editTemplate || !htmlSearchQuery) {
+			setHtmlSearchResults([]);
+			setCurrentSearchIndex(0);
+			return;
+		}
+
+		const searchText = htmlSearchQuery.toLowerCase();
+		const htmlText = editTemplate.htmlBody.toLowerCase();
+		const results: number[] = [];
+		let index = htmlText.indexOf(searchText);
+
+		while (index !== -1) {
+			results.push(index);
+			index = htmlText.indexOf(searchText, index + 1);
+		}
+
+		setHtmlSearchResults(results);
+		setCurrentSearchIndex(0);
+
+		if (results.length === 0) {
+			enqueueSnackbar("No se encontraron coincidencias", { variant: "info" });
+		} else {
+			// Trigger the highlight effect for the first result
+			if (htmlTextFieldRef.current) {
+				const textarea = htmlTextFieldRef.current;
+				const position = results[0];
+				
+				// Set selection to highlight the match
+				textarea.focus();
+				textarea.setSelectionRange(position, position + htmlSearchQuery.length);
+				
+				// Scroll to make the match visible
+				setTimeout(() => {
+					scrollToMatch(textarea, position);
+				}, 50); // Small delay to ensure selection is set first
+			}
+		}
+	};
+
+	// Navigate search results
+	const navigateSearchResult = (direction: "next" | "prev") => {
+		if (htmlSearchResults.length === 0) return;
+
+		let newIndex = currentSearchIndex;
+		if (direction === "next") {
+			newIndex = (currentSearchIndex + 1) % htmlSearchResults.length;
+		} else {
+			newIndex = currentSearchIndex === 0 ? htmlSearchResults.length - 1 : currentSearchIndex - 1;
+		}
+		setCurrentSearchIndex(newIndex);
+	};
+
+	// Function to scroll to a specific position in textarea
+	const scrollToMatch = (textarea: HTMLTextAreaElement, position: number) => {
+		if (!editTemplate) return;
+		
+		// Ensure textarea is focused
+		textarea.focus();
+		
+		// Clear any existing selection
+		textarea.setSelectionRange(0, 0);
+		
+		// Use a more aggressive approach with multiple attempts
+		const attemptScroll = (attempt: number = 0) => {
+			if (attempt > 3) return; // Max 3 attempts
+			
+			// Set selection to the match
+			textarea.setSelectionRange(position, position + htmlSearchQuery.length);
+			
+			// Check if the selection is visible
+			const currentScrollTop = textarea.scrollTop;
+			const textareaHeight = textarea.clientHeight;
+			
+			// Calculate approximate position of selection
+			// This is a rough estimate based on character position
+			const totalLength = textarea.value.length;
+			const scrollHeight = textarea.scrollHeight;
+			const estimatedPosition = (position / totalLength) * scrollHeight;
+			
+			// If the estimated position is not visible, force scroll
+			if (estimatedPosition < currentScrollTop || estimatedPosition > currentScrollTop + textareaHeight) {
+				// Scroll to show the selection with some padding above
+				const targetScroll = Math.max(0, estimatedPosition - 100);
+				textarea.scrollTop = targetScroll;
+				
+				// Try again after a delay to ensure it worked
+				setTimeout(() => attemptScroll(attempt + 1), 100);
+			}
+		};
+		
+		// Start the scroll attempt
+		setTimeout(() => attemptScroll(0), 10);
+	};
+
+	// Scroll to and highlight current search result
+	useEffect(() => {
+		if (htmlTextFieldRef.current && htmlSearchResults.length > 0 && editTemplate) {
+			const textarea = htmlTextFieldRef.current;
+			const position = htmlSearchResults[currentSearchIndex];
+			
+			// Set selection to highlight the match
+			textarea.focus();
+			textarea.setSelectionRange(position, position + htmlSearchQuery.length);
+			
+			// Scroll to make the match visible
+			setTimeout(() => {
+				scrollToMatch(textarea, position);
+			}, 50); // Small delay to ensure selection is set first
+		}
+	}, [currentSearchIndex, htmlSearchResults, htmlSearchQuery, editTemplate]);
 
 	// Handle template field changes
 	const handleTemplateChange = (field: keyof NewEmailTemplate, value: string | boolean | string[]) => {
@@ -585,13 +758,25 @@ const EmailTemplates = () => {
 		setCreating(true);
 
 		try {
-			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/templates`, newTemplate);
+			// Prepare template data for marketing API
+			const templateData = {
+				category: newTemplate.category,
+				name: newTemplate.name,
+				subject: newTemplate.subject,
+				htmlBody: newTemplate.htmlBody,
+				textBody: newTemplate.textBody,
+				description: newTemplate.description || '',
+				variables: newTemplate.variables || []
+			};
+
+			// Note: Marketing API doesn't accept isActive on creation
+			// Templates are created as active by default
+			
+			const response = await mktAxios.post('/api/templates', templateData);
 
 			if (response.data.success) {
-				// Add the new template from the API response to the list
-				// This ensures we have the complete and accurate data including _id, timestamps, etc.
-				const createdTemplate = response.data.data;
-				setTemplates([...templates, createdTemplate]);
+				// Refresh the templates list to include the new template
+				await fetchTemplates();
 
 				// Close modal
 				setCreateOpen(false);
@@ -639,24 +824,25 @@ const EmailTemplates = () => {
 		setUpdating(true);
 
 		try {
-			// Prepare data to send (only the fields that can be updated)
-			const updateData = {
-				name: editTemplate.name,
-				subject: editTemplate.subject,
-				htmlBody: editTemplate.htmlBody,
-				description: editTemplate.description,
-				isActive: editTemplate.isActive,
-			};
+			// Prepare data to send - marketing API accepts all fields as optional
+			const updateData: any = {};
+			
+			// Only include fields that have changed or that we want to update
+			if (editTemplate.name) updateData.name = editTemplate.name;
+			if (editTemplate.subject) updateData.subject = editTemplate.subject;
+			if (editTemplate.htmlBody) updateData.htmlBody = editTemplate.htmlBody;
+			if (editTemplate.textBody) updateData.textBody = editTemplate.textBody;
+			if (editTemplate.description !== undefined) updateData.description = editTemplate.description;
+			if (editTemplate.variables) updateData.variables = editTemplate.variables;
+			if (editTemplate.isActive !== undefined) updateData.isActive = editTemplate.isActive;
+			// Note: category can also be updated if needed
+			if (editTemplate.category) updateData.category = editTemplate.category;
 
-			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/email/templates/${editTemplate._id}`, updateData);
+			const response = await mktAxios.put(`/api/templates/${editTemplate._id}`, updateData);
 
 			if (response.data.success) {
-				// Use the returned template data from the API response instead of our local update data
-				// This ensures we have the most accurate data without needing to refetch
-				const updatedTemplate = response.data.data;
-
-				// Update the template in the list with the complete updated template from the API
-				setTemplates(templates.map((template) => (template._id === editTemplate._id ? updatedTemplate : template)));
+				// Refresh the templates list to show updated data
+				await fetchTemplates();
 
 				// Close modal
 				setEditOpen(false);
@@ -920,9 +1106,16 @@ const EmailTemplates = () => {
 								<Tab label="Vista renderizada" id="template-tab-0" aria-controls="template-tabpanel-0" />
 								<Tab label="Código HTML" id="template-tab-1" aria-controls="template-tabpanel-1" />
 								<Tab label="Texto plano" id="template-tab-2" aria-controls="template-tabpanel-2" />
+								<Tab label="JSON" id="template-tab-3" aria-controls="template-tabpanel-3" />
 							</Tabs>
 						</Box>
 						<DialogContent sx={{ p: 0, height: 500 }}>
+							{loadingDetails ? (
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+									<CircularProgress />
+								</Box>
+							) : (
+							<>
 							<TabPanel value={viewTab} index={0}>
 								<Box sx={{ p: 2, height: "100%", overflow: "auto" }}>
 									<Box sx={{ mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1069,6 +1262,43 @@ const EmailTemplates = () => {
 									<code>{selectedTemplate.textBody}</code>
 								</Box>
 							</TabPanel>
+							<TabPanel value={viewTab} index={3}>
+								<Box sx={{ position: "relative", height: "100%" }}>
+									<Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
+										<IconButton
+											onClick={() => {
+												navigator.clipboard.writeText(JSON.stringify(selectedTemplate, null, 2));
+												enqueueSnackbar("JSON copiado al portapapeles", { variant: "success" });
+											}}
+											title="Copiar JSON"
+										>
+											<Copy />
+										</IconButton>
+									</Box>
+									<Box
+										component="pre"
+										sx={{
+											p: 2,
+											m: 0,
+											height: "100%",
+											overflow: "auto",
+											bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
+											borderRadius: 0,
+											"& code": {
+												fontFamily: "monospace",
+												fontSize: "0.875rem",
+												display: "block",
+												whiteSpace: "pre-wrap",
+												wordBreak: "break-word",
+											},
+										}}
+									>
+										<code>{JSON.stringify(selectedTemplate, null, 2)}</code>
+									</Box>
+								</Box>
+							</TabPanel>
+							</>
+							)}
 						</DialogContent>
 						<DialogActions>
 							{selectedTemplate.variables.length > 0 && (
@@ -1100,7 +1330,20 @@ const EmailTemplates = () => {
 			</Dialog>
 
 			{/* Edit Template Dialog */}
-			<Dialog open={editOpen} onClose={handleCloseEdit} maxWidth="lg" fullWidth>
+			<Dialog 
+				open={editOpen} 
+				onClose={handleCloseEdit} 
+				maxWidth="lg" 
+				fullWidth
+				sx={{
+					"& .MuiDialog-paper": {
+						height: "90vh",
+						maxHeight: "90vh",
+						display: "flex",
+						flexDirection: "column"
+					}
+				}}
+			>
 				{editTemplate && (
 					<>
 						<DialogTitle>
@@ -1110,10 +1353,10 @@ const EmailTemplates = () => {
 							</Typography>
 						</DialogTitle>
 						<Divider />
-						<DialogContent sx={{ p: 3 }}>
-							<Grid container spacing={3}>
+						<DialogContent sx={{ p: 3, flex: 1, overflow: "hidden" }}>
+							<Grid container spacing={3} sx={{ height: "100%" }}>
 								{/* Basic information */}
-								<Grid item xs={12} md={6}>
+								<Grid item xs={12} md={6} sx={{ display: "flex", flexDirection: "column" }}>
 									<TextField
 										label="Nombre de la plantilla"
 										fullWidth
@@ -1171,7 +1414,7 @@ const EmailTemplates = () => {
 								</Grid>
 
 								{/* Template content and preview */}
-								<Grid item xs={12} md={6}>
+								<Grid item xs={12} md={6} sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
 									<Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
 										<Tabs value={editViewTab} onChange={handleEditChangeTab} aria-label="template edit tabs">
 											<Tab label="Vista previa" id="edit-tab-0" aria-controls="edit-tabpanel-0" />
@@ -1179,8 +1422,9 @@ const EmailTemplates = () => {
 										</Tabs>
 									</Box>
 
+									<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 									<TabPanel value={editViewTab} index={0}>
-										<Box sx={{ height: "450px", overflow: "auto" }}>
+										<Box sx={{ height: "100%", overflow: "auto" }}>
 											<Box sx={{ mb: 2 }}>
 												<Typography variant="subtitle1">Asunto:</Typography>
 												<Typography variant="body1">{editTemplate.subject || "(Sin asunto)"}</Typography>
@@ -1227,34 +1471,115 @@ const EmailTemplates = () => {
 									</TabPanel>
 
 									<TabPanel value={editViewTab} index={1}>
-										<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-											<IconButton
-												onClick={() => {
-													navigator.clipboard.writeText(editTemplate.htmlBody);
-													enqueueSnackbar("Código HTML copiado al portapapeles", { variant: "success" });
-												}}
-											>
-												<Copy />
-											</IconButton>
+										<Box sx={{ mb: 2 }}>
+											<Grid container spacing={2} alignItems="center">
+												<Grid item xs={12} sm={6}>
+													<TextField
+														size="small"
+														fullWidth
+														placeholder="Buscar en el código HTML..."
+														value={htmlSearchQuery}
+														onChange={(e) => setHtmlSearchQuery(e.target.value)}
+														onKeyPress={(e) => {
+															if (e.key === "Enter") {
+																handleHtmlSearch();
+															}
+														}}
+														InputProps={{
+															startAdornment: (
+																<InputAdornment position="start">
+																	<SearchNormal1 size={20} />
+																</InputAdornment>
+															),
+														}}
+													/>
+												</Grid>
+												<Grid item xs={12} sm={6}>
+													<Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+														<Button
+															size="small"
+															variant="outlined"
+															onClick={handleHtmlSearch}
+															startIcon={<SearchNormal1 size={16} />}
+														>
+															Buscar
+														</Button>
+														{htmlSearchResults.length > 0 && (
+															<>
+																<Typography variant="body2" color="textSecondary">
+																	{currentSearchIndex + 1} de {htmlSearchResults.length}
+																</Typography>
+																<IconButton
+																	size="small"
+																	onClick={() => navigateSearchResult("prev")}
+																	title="Anterior"
+																>
+																	<ArrowUp2 size={18} />
+																</IconButton>
+																<IconButton
+																	size="small"
+																	onClick={() => navigateSearchResult("next")}
+																	title="Siguiente"
+																>
+																	<ArrowDown2 size={18} />
+																</IconButton>
+															</>
+														)}
+														<Box sx={{ ml: "auto", display: "flex", gap: 0.5 }}>
+															<IconButton
+																onClick={() => {
+																	if (htmlTextFieldRef.current) {
+																		htmlTextFieldRef.current.select();
+																		htmlTextFieldRef.current.focus();
+																		enqueueSnackbar("Texto seleccionado", { variant: "info" });
+																	}
+																}}
+																title="Seleccionar todo"
+															>
+																<TextBlock />
+															</IconButton>
+															<IconButton
+																onClick={() => {
+																	navigator.clipboard.writeText(editTemplate.htmlBody);
+																	enqueueSnackbar("Código HTML copiado al portapapeles", { variant: "success" });
+																}}
+																title="Copiar código"
+															>
+																<Copy />
+															</IconButton>
+														</Box>
+													</Box>
+												</Grid>
+											</Grid>
 										</Box>
 										<TextField
 											label="Código HTML"
 											fullWidth
 											multiline
-											rows={18}
+											rows={24}
 											value={editTemplate.htmlBody}
 											onChange={(e) => handleEditTemplateChange("htmlBody", e.target.value)}
 											error={!!errors.htmlBody}
 											helperText={errors.htmlBody}
+											inputRef={htmlTextFieldRef}
 											sx={{
 												fontFamily: "monospace",
 												"& .MuiInputBase-input": {
 													fontFamily: "monospace",
 													fontSize: "0.875rem",
+													"&::selection": {
+														backgroundColor: "#FFEB3B",
+														color: "#000",
+													},
+													"&::-moz-selection": {
+														backgroundColor: "#FFEB3B", 
+														color: "#000",
+													},
 												},
 											}}
 										/>
 									</TabPanel>
+									</Box>
 								</Grid>
 							</Grid>
 						</DialogContent>
