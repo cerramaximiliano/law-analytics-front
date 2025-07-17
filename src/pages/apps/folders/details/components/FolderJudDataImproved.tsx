@@ -165,7 +165,11 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 
 	const initialValues = {
 		...folder,
-		folderJuris: folder?.folderJuris ? (typeof folder.folderJuris === "string" ? { item: folder.folderJuris, label: "" } : folder.folderJuris) : null,
+		folderJuris: folder?.folderJuris
+			? typeof folder.folderJuris === "string"
+				? { item: folder.folderJuris, label: "" }
+				: folder.folderJuris
+			: null,
 		judFolder: {
 			initialDateJudFolder: formatDate(folder?.judFolder?.initialDateJudFolder) || defaultJudFolder.initialDateJudFolder,
 			finalDateJudFolder: formatDate(folder?.judFolder?.finalDateJudFolder) || defaultJudFolder.finalDateJudFolder,
@@ -195,7 +199,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 			setJuzgadosOptions([]);
 			return;
 		}
-		
+
 		setLoadingJuzgados(true);
 		try {
 			const juzgados = await getJuzgadosByJurisdiction(jurisdiccion);
@@ -457,12 +461,12 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 														}}
 													/>
 												) : (
-													<Typography
-														variant="h6"
-														fontWeight={600}
-														color={folder?.folderJuris ? "text.primary" : "text.disabled"}
-													>
-														{folder?.folderJuris ? (typeof folder.folderJuris === "string" ? folder.folderJuris : folder.folderJuris.item) : "No especificada"}
+													<Typography variant="h6" fontWeight={600} color={folder?.folderJuris ? "text.primary" : "text.disabled"}>
+														{folder?.folderJuris
+															? typeof folder.folderJuris === "string"
+																? folder.folderJuris
+																: folder.folderJuris.item
+															: "No especificada"}
 													</Typography>
 												)}
 											</Stack>
@@ -482,11 +486,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 														sx={customInputStyles}
 													/>
 												) : (
-													<Typography
-														variant="h6"
-														fontWeight={600}
-														color={values.judFolder.courtNumber ? "text.primary" : "text.disabled"}
-													>
+													<Typography variant="h6" fontWeight={600} color={values.judFolder.courtNumber ? "text.primary" : "text.disabled"}>
 														{values.judFolder.courtNumber || "No especificado"}
 													</Typography>
 												)}

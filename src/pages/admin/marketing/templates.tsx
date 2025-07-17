@@ -45,7 +45,22 @@ import {
 
 // project imports
 import MainCard from "components/MainCard";
-import { Add, Edit2, Eye, Trash, AddCircle, Send, Mobile, Monitor, MouseSquare, Copy, SearchNormal1, ArrowUp2, ArrowDown2, TextBlock } from "iconsax-react";
+import {
+	Add,
+	Edit2,
+	Eye,
+	Trash,
+	AddCircle,
+	Send,
+	Mobile,
+	Monitor,
+	MouseSquare,
+	Copy,
+	SearchNormal1,
+	ArrowUp2,
+	ArrowDown2,
+	TextBlock,
+} from "iconsax-react";
 import { useSnackbar } from "notistack";
 import AnimateButton from "components/@extended/AnimateButton";
 import TableSkeleton from "components/UI/TableSkeleton";
@@ -342,16 +357,16 @@ const EmailTemplates = () => {
 		setViewTab(0); // Reset to rendered view
 		setDeviceType(DeviceType.Desktop); // Reset to desktop view
 		setLoadingDetails(true);
-		
+
 		// Show the basic template info immediately
 		setSelectedTemplate(template);
-		
+
 		// Fetch full template details from marketing API
 		const fullTemplate = await fetchTemplateDetails(template._id);
 		if (fullTemplate) {
 			setSelectedTemplate(fullTemplate);
 		}
-		
+
 		setLoadingDetails(false);
 	};
 
@@ -431,7 +446,7 @@ const EmailTemplates = () => {
 		try {
 			// Use the marketing API update endpoint to change isActive status
 			const updateData = {
-				isActive: !templateToToggle.isActive
+				isActive: !templateToToggle.isActive,
 			};
 
 			const response = await mktAxios.put(`/api/templates/${templateToToggle._id}`, updateData);
@@ -517,13 +532,13 @@ const EmailTemplates = () => {
 				variables: emailData.variables || {},
 			};
 
-			const response = await mktAxios.post('/api/emails/template', payload);
+			const response = await mktAxios.post("/api/emails/template", payload);
 
 			if (response.data.success) {
 				// Close dialog
 				setSendEmailOpen(false);
 				setTemplateToSend(null);
-				
+
 				// Reset email data
 				setEmailData({
 					email: "",
@@ -596,11 +611,11 @@ const EmailTemplates = () => {
 			if (htmlTextFieldRef.current) {
 				const textarea = htmlTextFieldRef.current;
 				const position = results[0];
-				
+
 				// Set selection to highlight the match
 				textarea.focus();
 				textarea.setSelectionRange(position, position + htmlSearchQuery.length);
-				
+
 				// Scroll to make the match visible
 				setTimeout(() => {
 					scrollToMatch(textarea, position);
@@ -625,41 +640,41 @@ const EmailTemplates = () => {
 	// Function to scroll to a specific position in textarea
 	const scrollToMatch = (textarea: HTMLTextAreaElement, position: number) => {
 		if (!editTemplate) return;
-		
+
 		// Ensure textarea is focused
 		textarea.focus();
-		
+
 		// Clear any existing selection
 		textarea.setSelectionRange(0, 0);
-		
+
 		// Use a more aggressive approach with multiple attempts
 		const attemptScroll = (attempt: number = 0) => {
 			if (attempt > 3) return; // Max 3 attempts
-			
+
 			// Set selection to the match
 			textarea.setSelectionRange(position, position + htmlSearchQuery.length);
-			
+
 			// Check if the selection is visible
 			const currentScrollTop = textarea.scrollTop;
 			const textareaHeight = textarea.clientHeight;
-			
+
 			// Calculate approximate position of selection
 			// This is a rough estimate based on character position
 			const totalLength = textarea.value.length;
 			const scrollHeight = textarea.scrollHeight;
 			const estimatedPosition = (position / totalLength) * scrollHeight;
-			
+
 			// If the estimated position is not visible, force scroll
 			if (estimatedPosition < currentScrollTop || estimatedPosition > currentScrollTop + textareaHeight) {
 				// Scroll to show the selection with some padding above
 				const targetScroll = Math.max(0, estimatedPosition - 100);
 				textarea.scrollTop = targetScroll;
-				
+
 				// Try again after a delay to ensure it worked
 				setTimeout(() => attemptScroll(attempt + 1), 100);
 			}
 		};
-		
+
 		// Start the scroll attempt
 		setTimeout(() => attemptScroll(0), 10);
 	};
@@ -669,11 +684,11 @@ const EmailTemplates = () => {
 		if (htmlTextFieldRef.current && htmlSearchResults.length > 0 && editTemplate) {
 			const textarea = htmlTextFieldRef.current;
 			const position = htmlSearchResults[currentSearchIndex];
-			
+
 			// Set selection to highlight the match
 			textarea.focus();
 			textarea.setSelectionRange(position, position + htmlSearchQuery.length);
-			
+
 			// Scroll to make the match visible
 			setTimeout(() => {
 				scrollToMatch(textarea, position);
@@ -765,14 +780,14 @@ const EmailTemplates = () => {
 				subject: newTemplate.subject,
 				htmlBody: newTemplate.htmlBody,
 				textBody: newTemplate.textBody,
-				description: newTemplate.description || '',
-				variables: newTemplate.variables || []
+				description: newTemplate.description || "",
+				variables: newTemplate.variables || [],
 			};
 
 			// Note: Marketing API doesn't accept isActive on creation
 			// Templates are created as active by default
-			
-			const response = await mktAxios.post('/api/templates', templateData);
+
+			const response = await mktAxios.post("/api/templates", templateData);
 
 			if (response.data.success) {
 				// Refresh the templates list to include the new template
@@ -826,7 +841,7 @@ const EmailTemplates = () => {
 		try {
 			// Prepare data to send - marketing API accepts all fields as optional
 			const updateData: any = {};
-			
+
 			// Only include fields that have changed or that we want to update
 			if (editTemplate.name) updateData.name = editTemplate.name;
 			if (editTemplate.subject) updateData.subject = editTemplate.subject;
@@ -1115,81 +1130,81 @@ const EmailTemplates = () => {
 									<CircularProgress />
 								</Box>
 							) : (
-							<>
-							<TabPanel value={viewTab} index={0}>
-								<Box sx={{ p: 2, height: "100%", overflow: "auto" }}>
-									<Box sx={{ mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-										<Box>
-											<Typography variant="subtitle1">Asunto:</Typography>
-											<Typography variant="body1">{selectedTemplate.subject}</Typography>
-										</Box>
+								<>
+									<TabPanel value={viewTab} index={0}>
+										<Box sx={{ p: 2, height: "100%", overflow: "auto" }}>
+											<Box sx={{ mb: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+												<Box>
+													<Typography variant="subtitle1">Asunto:</Typography>
+													<Typography variant="body1">{selectedTemplate.subject}</Typography>
+												</Box>
 
-										{/* Device selector */}
-										<Box>
-											<ButtonGroup aria-label="device view selector">
-												<Tooltip title="Vista Desktop">
-													<Button
-														variant={deviceType === DeviceType.Desktop ? "contained" : "outlined"}
-														onClick={() => handleDeviceTypeChange(DeviceType.Desktop)}
-														aria-label="desktop view"
-													>
-														<Monitor size={18} />
-													</Button>
-												</Tooltip>
-												<Tooltip title="Vista Tablet">
-													<Button
-														variant={deviceType === DeviceType.Tablet ? "contained" : "outlined"}
-														onClick={() => handleDeviceTypeChange(DeviceType.Tablet)}
-														aria-label="tablet view"
-													>
-														<MouseSquare size={18} />
-													</Button>
-												</Tooltip>
-												<Tooltip title="Vista Móvil">
-													<Button
-														variant={deviceType === DeviceType.Mobile ? "contained" : "outlined"}
-														onClick={() => handleDeviceTypeChange(DeviceType.Mobile)}
-														aria-label="mobile view"
-													>
-														<Mobile size={18} />
-													</Button>
-												</Tooltip>
-											</ButtonGroup>
-										</Box>
-									</Box>
-									<Typography variant="subtitle1">Contenido:</Typography>
-									<Box
-										sx={{
-											mt: 1,
-											border: 1,
-											borderColor: "divider",
-											borderRadius: 1,
-											p: 2,
-											height: "calc(100% - 120px)",
-											overflow: "auto",
-											display: "flex",
-											justifyContent: "center",
-											"& .preview-container": {
-												width: deviceDimensions[deviceType].width,
-												height: deviceDimensions[deviceType].height,
-												transition: "width 0.3s, height 0.3s",
-												transform: deviceType !== DeviceType.Desktop ? "scale(0.8)" : "none",
-												transformOrigin: "top center",
-												boxShadow: deviceType !== DeviceType.Desktop ? "0 0 10px rgba(0,0,0,0.1)" : "none",
-												overflow: "hidden",
-												borderRadius: deviceType !== DeviceType.Desktop ? "8px" : "0",
-											},
-											"& iframe": {
-												border: "none",
-												width: "100%",
-												height: "100%",
-											},
-										}}
-									>
-										<Box className="preview-container">
-											<iframe
-												title="Email Preview"
-												srcDoc={`
+												{/* Device selector */}
+												<Box>
+													<ButtonGroup aria-label="device view selector">
+														<Tooltip title="Vista Desktop">
+															<Button
+																variant={deviceType === DeviceType.Desktop ? "contained" : "outlined"}
+																onClick={() => handleDeviceTypeChange(DeviceType.Desktop)}
+																aria-label="desktop view"
+															>
+																<Monitor size={18} />
+															</Button>
+														</Tooltip>
+														<Tooltip title="Vista Tablet">
+															<Button
+																variant={deviceType === DeviceType.Tablet ? "contained" : "outlined"}
+																onClick={() => handleDeviceTypeChange(DeviceType.Tablet)}
+																aria-label="tablet view"
+															>
+																<MouseSquare size={18} />
+															</Button>
+														</Tooltip>
+														<Tooltip title="Vista Móvil">
+															<Button
+																variant={deviceType === DeviceType.Mobile ? "contained" : "outlined"}
+																onClick={() => handleDeviceTypeChange(DeviceType.Mobile)}
+																aria-label="mobile view"
+															>
+																<Mobile size={18} />
+															</Button>
+														</Tooltip>
+													</ButtonGroup>
+												</Box>
+											</Box>
+											<Typography variant="subtitle1">Contenido:</Typography>
+											<Box
+												sx={{
+													mt: 1,
+													border: 1,
+													borderColor: "divider",
+													borderRadius: 1,
+													p: 2,
+													height: "calc(100% - 120px)",
+													overflow: "auto",
+													display: "flex",
+													justifyContent: "center",
+													"& .preview-container": {
+														width: deviceDimensions[deviceType].width,
+														height: deviceDimensions[deviceType].height,
+														transition: "width 0.3s, height 0.3s",
+														transform: deviceType !== DeviceType.Desktop ? "scale(0.8)" : "none",
+														transformOrigin: "top center",
+														boxShadow: deviceType !== DeviceType.Desktop ? "0 0 10px rgba(0,0,0,0.1)" : "none",
+														overflow: "hidden",
+														borderRadius: deviceType !== DeviceType.Desktop ? "8px" : "0",
+													},
+													"& iframe": {
+														border: "none",
+														width: "100%",
+														height: "100%",
+													},
+												}}
+											>
+												<Box className="preview-container">
+													<iframe
+														title="Email Preview"
+														srcDoc={`
 													<!DOCTYPE html>
 													<html>
 														<head>
@@ -1205,99 +1220,99 @@ const EmailTemplates = () => {
 														<body>${selectedTemplate.htmlBody}</body>
 													</html>
 												`}
-												sandbox="allow-same-origin allow-scripts"
-												referrerPolicy="no-referrer"
-											></iframe>
+														sandbox="allow-same-origin allow-scripts"
+														referrerPolicy="no-referrer"
+													></iframe>
+												</Box>
+											</Box>
 										</Box>
-									</Box>
-								</Box>
-							</TabPanel>
-							<TabPanel value={viewTab} index={1}>
-								<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2, mr: 2, mt: 2 }}>
-									<IconButton
-										onClick={() => {
-											navigator.clipboard.writeText(selectedTemplate.htmlBody);
-											enqueueSnackbar("Código HTML copiado al portapapeles", { variant: "success" });
-										}}
-									>
-										<Copy />
-									</IconButton>
-								</Box>
-								<Box
-									component="pre"
-									sx={{
-										p: 2,
-										m: 0,
-										height: "calc(100% - 60px)",
-										overflow: "auto",
-										bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
-										borderRadius: 0,
-										"& code": {
-											fontFamily: "monospace",
-											fontSize: "0.875rem",
-											display: "block",
-										},
-									}}
-								>
-									<code>{selectedTemplate.htmlBody}</code>
-								</Box>
-							</TabPanel>
-							<TabPanel value={viewTab} index={2}>
-								<Box
-									component="pre"
-									sx={{
-										p: 2,
-										m: 0,
-										height: "100%",
-										overflow: "auto",
-										bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
-										borderRadius: 0,
-										"& code": {
-											fontFamily: "monospace",
-											fontSize: "0.875rem",
-											display: "block",
-										},
-									}}
-								>
-									<code>{selectedTemplate.textBody}</code>
-								</Box>
-							</TabPanel>
-							<TabPanel value={viewTab} index={3}>
-								<Box sx={{ position: "relative", height: "100%" }}>
-									<Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
-										<IconButton
-											onClick={() => {
-												navigator.clipboard.writeText(JSON.stringify(selectedTemplate, null, 2));
-												enqueueSnackbar("JSON copiado al portapapeles", { variant: "success" });
+									</TabPanel>
+									<TabPanel value={viewTab} index={1}>
+										<Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2, mr: 2, mt: 2 }}>
+											<IconButton
+												onClick={() => {
+													navigator.clipboard.writeText(selectedTemplate.htmlBody);
+													enqueueSnackbar("Código HTML copiado al portapapeles", { variant: "success" });
+												}}
+											>
+												<Copy />
+											</IconButton>
+										</Box>
+										<Box
+											component="pre"
+											sx={{
+												p: 2,
+												m: 0,
+												height: "calc(100% - 60px)",
+												overflow: "auto",
+												bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
+												borderRadius: 0,
+												"& code": {
+													fontFamily: "monospace",
+													fontSize: "0.875rem",
+													display: "block",
+												},
 											}}
-											title="Copiar JSON"
 										>
-											<Copy />
-										</IconButton>
-									</Box>
-									<Box
-										component="pre"
-										sx={{
-											p: 2,
-											m: 0,
-											height: "100%",
-											overflow: "auto",
-											bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
-											borderRadius: 0,
-											"& code": {
-												fontFamily: "monospace",
-												fontSize: "0.875rem",
-												display: "block",
-												whiteSpace: "pre-wrap",
-												wordBreak: "break-word",
-											},
-										}}
-									>
-										<code>{JSON.stringify(selectedTemplate, null, 2)}</code>
-									</Box>
-								</Box>
-							</TabPanel>
-							</>
+											<code>{selectedTemplate.htmlBody}</code>
+										</Box>
+									</TabPanel>
+									<TabPanel value={viewTab} index={2}>
+										<Box
+											component="pre"
+											sx={{
+												p: 2,
+												m: 0,
+												height: "100%",
+												overflow: "auto",
+												bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
+												borderRadius: 0,
+												"& code": {
+													fontFamily: "monospace",
+													fontSize: "0.875rem",
+													display: "block",
+												},
+											}}
+										>
+											<code>{selectedTemplate.textBody}</code>
+										</Box>
+									</TabPanel>
+									<TabPanel value={viewTab} index={3}>
+										<Box sx={{ position: "relative", height: "100%" }}>
+											<Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
+												<IconButton
+													onClick={() => {
+														navigator.clipboard.writeText(JSON.stringify(selectedTemplate, null, 2));
+														enqueueSnackbar("JSON copiado al portapapeles", { variant: "success" });
+													}}
+													title="Copiar JSON"
+												>
+													<Copy />
+												</IconButton>
+											</Box>
+											<Box
+												component="pre"
+												sx={{
+													p: 2,
+													m: 0,
+													height: "100%",
+													overflow: "auto",
+													bgcolor: theme.palette.mode === "dark" ? theme.palette.grey[900] : theme.palette.grey[100],
+													borderRadius: 0,
+													"& code": {
+														fontFamily: "monospace",
+														fontSize: "0.875rem",
+														display: "block",
+														whiteSpace: "pre-wrap",
+														wordBreak: "break-word",
+													},
+												}}
+											>
+												<code>{JSON.stringify(selectedTemplate, null, 2)}</code>
+											</Box>
+										</Box>
+									</TabPanel>
+								</>
 							)}
 						</DialogContent>
 						<DialogActions>
@@ -1330,18 +1345,18 @@ const EmailTemplates = () => {
 			</Dialog>
 
 			{/* Edit Template Dialog */}
-			<Dialog 
-				open={editOpen} 
-				onClose={handleCloseEdit} 
-				maxWidth="lg" 
+			<Dialog
+				open={editOpen}
+				onClose={handleCloseEdit}
+				maxWidth="lg"
 				fullWidth
 				sx={{
 					"& .MuiDialog-paper": {
 						height: "90vh",
 						maxHeight: "90vh",
 						display: "flex",
-						flexDirection: "column"
-					}
+						flexDirection: "column",
+					},
 				}}
 			>
 				{editTemplate && (
@@ -1423,32 +1438,32 @@ const EmailTemplates = () => {
 									</Box>
 
 									<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-									<TabPanel value={editViewTab} index={0}>
-										<Box sx={{ height: "100%", overflow: "auto" }}>
-											<Box sx={{ mb: 2 }}>
-												<Typography variant="subtitle1">Asunto:</Typography>
-												<Typography variant="body1">{editTemplate.subject || "(Sin asunto)"}</Typography>
-											</Box>
-											<Typography variant="subtitle1">Contenido:</Typography>
-											<Box
-												sx={{
-													mt: 1,
-													border: 1,
-													borderColor: "divider",
-													borderRadius: 1,
-													p: 2,
-													height: "calc(100% - 80px)",
-													overflow: "auto",
-													"& iframe": {
-														border: "none",
-														width: "100%",
-														height: "100%",
-													},
-												}}
-											>
-												<iframe
-													title="Email Preview"
-													srcDoc={`
+										<TabPanel value={editViewTab} index={0}>
+											<Box sx={{ height: "100%", overflow: "auto" }}>
+												<Box sx={{ mb: 2 }}>
+													<Typography variant="subtitle1">Asunto:</Typography>
+													<Typography variant="body1">{editTemplate.subject || "(Sin asunto)"}</Typography>
+												</Box>
+												<Typography variant="subtitle1">Contenido:</Typography>
+												<Box
+													sx={{
+														mt: 1,
+														border: 1,
+														borderColor: "divider",
+														borderRadius: 1,
+														p: 2,
+														height: "calc(100% - 80px)",
+														overflow: "auto",
+														"& iframe": {
+															border: "none",
+															width: "100%",
+															height: "100%",
+														},
+													}}
+												>
+													<iframe
+														title="Email Preview"
+														srcDoc={`
 														<!DOCTYPE html>
 														<html>
 															<head>
@@ -1463,122 +1478,109 @@ const EmailTemplates = () => {
 															<body>${editTemplate.htmlBody}</body>
 														</html>
 													`}
-													sandbox="allow-same-origin allow-scripts"
-													referrerPolicy="no-referrer"
-												></iframe>
+														sandbox="allow-same-origin allow-scripts"
+														referrerPolicy="no-referrer"
+													></iframe>
+												</Box>
 											</Box>
-										</Box>
-									</TabPanel>
+										</TabPanel>
 
-									<TabPanel value={editViewTab} index={1}>
-										<Box sx={{ mb: 2 }}>
-											<Grid container spacing={2} alignItems="center">
-												<Grid item xs={12} sm={6}>
-													<TextField
-														size="small"
-														fullWidth
-														placeholder="Buscar en el código HTML..."
-														value={htmlSearchQuery}
-														onChange={(e) => setHtmlSearchQuery(e.target.value)}
-														onKeyPress={(e) => {
-															if (e.key === "Enter") {
-																handleHtmlSearch();
-															}
-														}}
-														InputProps={{
-															startAdornment: (
-																<InputAdornment position="start">
-																	<SearchNormal1 size={20} />
-																</InputAdornment>
-															),
-														}}
-													/>
-												</Grid>
-												<Grid item xs={12} sm={6}>
-													<Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-														<Button
+										<TabPanel value={editViewTab} index={1}>
+											<Box sx={{ mb: 2 }}>
+												<Grid container spacing={2} alignItems="center">
+													<Grid item xs={12} sm={6}>
+														<TextField
 															size="small"
-															variant="outlined"
-															onClick={handleHtmlSearch}
-															startIcon={<SearchNormal1 size={16} />}
-														>
-															Buscar
-														</Button>
-														{htmlSearchResults.length > 0 && (
-															<>
-																<Typography variant="body2" color="textSecondary">
-																	{currentSearchIndex + 1} de {htmlSearchResults.length}
-																</Typography>
+															fullWidth
+															placeholder="Buscar en el código HTML..."
+															value={htmlSearchQuery}
+															onChange={(e) => setHtmlSearchQuery(e.target.value)}
+															onKeyPress={(e) => {
+																if (e.key === "Enter") {
+																	handleHtmlSearch();
+																}
+															}}
+															InputProps={{
+																startAdornment: (
+																	<InputAdornment position="start">
+																		<SearchNormal1 size={20} />
+																	</InputAdornment>
+																),
+															}}
+														/>
+													</Grid>
+													<Grid item xs={12} sm={6}>
+														<Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+															<Button size="small" variant="outlined" onClick={handleHtmlSearch} startIcon={<SearchNormal1 size={16} />}>
+																Buscar
+															</Button>
+															{htmlSearchResults.length > 0 && (
+																<>
+																	<Typography variant="body2" color="textSecondary">
+																		{currentSearchIndex + 1} de {htmlSearchResults.length}
+																	</Typography>
+																	<IconButton size="small" onClick={() => navigateSearchResult("prev")} title="Anterior">
+																		<ArrowUp2 size={18} />
+																	</IconButton>
+																	<IconButton size="small" onClick={() => navigateSearchResult("next")} title="Siguiente">
+																		<ArrowDown2 size={18} />
+																	</IconButton>
+																</>
+															)}
+															<Box sx={{ ml: "auto", display: "flex", gap: 0.5 }}>
 																<IconButton
-																	size="small"
-																	onClick={() => navigateSearchResult("prev")}
-																	title="Anterior"
+																	onClick={() => {
+																		if (htmlTextFieldRef.current) {
+																			htmlTextFieldRef.current.select();
+																			htmlTextFieldRef.current.focus();
+																			enqueueSnackbar("Texto seleccionado", { variant: "info" });
+																		}
+																	}}
+																	title="Seleccionar todo"
 																>
-																	<ArrowUp2 size={18} />
+																	<TextBlock />
 																</IconButton>
 																<IconButton
-																	size="small"
-																	onClick={() => navigateSearchResult("next")}
-																	title="Siguiente"
+																	onClick={() => {
+																		navigator.clipboard.writeText(editTemplate.htmlBody);
+																		enqueueSnackbar("Código HTML copiado al portapapeles", { variant: "success" });
+																	}}
+																	title="Copiar código"
 																>
-																	<ArrowDown2 size={18} />
+																	<Copy />
 																</IconButton>
-															</>
-														)}
-														<Box sx={{ ml: "auto", display: "flex", gap: 0.5 }}>
-															<IconButton
-																onClick={() => {
-																	if (htmlTextFieldRef.current) {
-																		htmlTextFieldRef.current.select();
-																		htmlTextFieldRef.current.focus();
-																		enqueueSnackbar("Texto seleccionado", { variant: "info" });
-																	}
-																}}
-																title="Seleccionar todo"
-															>
-																<TextBlock />
-															</IconButton>
-															<IconButton
-																onClick={() => {
-																	navigator.clipboard.writeText(editTemplate.htmlBody);
-																	enqueueSnackbar("Código HTML copiado al portapapeles", { variant: "success" });
-																}}
-																title="Copiar código"
-															>
-																<Copy />
-															</IconButton>
+															</Box>
 														</Box>
-													</Box>
+													</Grid>
 												</Grid>
-											</Grid>
-										</Box>
-										<TextField
-											label="Código HTML"
-											fullWidth
-											multiline
-											rows={24}
-											value={editTemplate.htmlBody}
-											onChange={(e) => handleEditTemplateChange("htmlBody", e.target.value)}
-											error={!!errors.htmlBody}
-											helperText={errors.htmlBody}
-											inputRef={htmlTextFieldRef}
-											sx={{
-												fontFamily: "monospace",
-												"& .MuiInputBase-input": {
+											</Box>
+											<TextField
+												label="Código HTML"
+												fullWidth
+												multiline
+												rows={24}
+												value={editTemplate.htmlBody}
+												onChange={(e) => handleEditTemplateChange("htmlBody", e.target.value)}
+												error={!!errors.htmlBody}
+												helperText={errors.htmlBody}
+												inputRef={htmlTextFieldRef}
+												sx={{
 													fontFamily: "monospace",
-													fontSize: "0.875rem",
-													"&::selection": {
-														backgroundColor: "#FFEB3B",
-														color: "#000",
+													"& .MuiInputBase-input": {
+														fontFamily: "monospace",
+														fontSize: "0.875rem",
+														"&::selection": {
+															backgroundColor: "#FFEB3B",
+															color: "#000",
+														},
+														"&::-moz-selection": {
+															backgroundColor: "#FFEB3B",
+															color: "#000",
+														},
 													},
-													"&::-moz-selection": {
-														backgroundColor: "#FFEB3B", 
-														color: "#000",
-													},
-												},
-											}}
-										/>
-									</TabPanel>
+												}}
+											/>
+										</TabPanel>
 									</Box>
 								</Grid>
 							</Grid>

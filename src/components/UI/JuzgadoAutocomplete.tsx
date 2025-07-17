@@ -30,7 +30,7 @@ const JuzgadoAutocomplete = ({ options, loading, disabled, placeholder, name, si
 			isOptionEqualToValue={(option, value) => option._id === value?._id}
 			loading={loading}
 			disabled={disabled || loading}
-			value={options.find(opt => opt.organismo === field.value) || null}
+			value={options.find((opt) => opt.organismo === field.value) || null}
 			onChange={(_e, value) => helper.setValue(value?.organismo || "")}
 			sx={{
 				"& .MuiInputBase-input": {

@@ -441,11 +441,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										<>
 											<Typography variant="subtitle1">Jurisdicción</Typography>
 											{isEditing ? (
-												<GroupedAutocomplete
-													data={data.jurisdicciones}
-													placeholder="Seleccione una jurisdicción"
-													name="folderJuris"
-												/>
+												<GroupedAutocomplete data={data.jurisdicciones} placeholder="Seleccione una jurisdicción" name="folderJuris" />
 											) : (
 												<Typography variant="body2">
 													{folder?.folderJuris
