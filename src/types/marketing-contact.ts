@@ -40,6 +40,17 @@ export interface CampaignMembership {
 	campaignName?: string;
 }
 
+export interface SegmentMembership {
+	segmentId: string;
+	name: string;
+	status: "active" | "inactive";
+	addedAt: Date | string;
+	removedAt?: Date | string | null;
+	removalReason?: string | null;
+	lastVerified?: Date | string;
+	metadata?: Record<string, any>;
+}
+
 export interface MarketingContact {
 	_id?: string;
 	email: string;
@@ -49,14 +60,14 @@ export interface MarketingContact {
 	phone?: string;
 	company?: string;
 	position?: string;
-	tags: ContactTag[];
-	customFields: ContactCustomField[];
+	tags: ContactTag[] | string[];
+	customFields: ContactCustomField[] | Record<string, any>;
 	lastActivity?: Date | string;
 	totalCampaigns?: number;
 	campaignCount?: number;
 	campaigns?: string[]; // IDs de las campañas asociadas
 	campaignMemberships?: CampaignMembership[]; // Detalles de las campañas a las que pertenece
-	segments?: string[]; // IDs de los segmentos a los que pertenece el contacto
+	segments?: SegmentMembership[]; // Detalles de los segmentos a los que pertenece el contacto
 	metrics?: EmailEngagementMetrics;
 	openRate?: number;
 	clickRate?: number;
@@ -72,6 +83,26 @@ export interface MarketingContact {
 		os?: string;
 		deviceType?: string;
 	};
+	preferences?: {
+		frequency?: string;
+		topics?: string[];
+		emailFormat?: string;
+		settings?: Record<string, any>;
+	};
+	lastContactedAt?: Date | string;
+	lastOpenedAt?: Date | string;
+	isAppUser?: boolean;
+	isVerified?: boolean;
+	subscriptionType?: string;
+	emailVerification?: {
+		verified: boolean;
+		verifiedAt?: Date | string;
+		result?: string;
+		provider?: string;
+		lastCheckedAt?: Date | string;
+	};
+	isEmailVerified?: boolean;
+	fullName?: string;
 	createdAt?: Date | string;
 	updatedAt?: Date | string;
 }

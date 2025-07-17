@@ -279,16 +279,17 @@ const ContactsPanel = () => {
 							<TableCell>Estado</TableCell>
 							<TableCell>Fuente</TableCell>
 							<TableCell>Campañas</TableCell>
+							<TableCell>Segmentos</TableCell>
 							<TableCell>Fecha registro</TableCell>
 							<TableCell align="center">Acciones</TableCell>
 						</TableRow>
 					</TableHead>
 					<TableBody>
 						{loading ? (
-							<TableSkeleton columns={8} rows={10} />
+							<TableSkeleton columns={9} rows={10} />
 						) : contacts.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+								<TableCell colSpan={9} align="center" sx={{ py: 3 }}>
 									<Typography variant="subtitle1">No hay contactos disponibles</Typography>
 								</TableCell>
 							</TableRow>
@@ -317,6 +318,26 @@ const ContactsPanel = () => {
 											<Typography variant="body2">
 												{contact.totalCampaigns || contact.campaignCount || (contact.campaigns && contact.campaigns.length) || 0}
 											</Typography>
+										</TableCell>
+										<TableCell>
+											{contact.segments && contact.segments.length > 0 ? (
+												<Tooltip
+													title={`${contact.segments.filter((s: any) => s.status === "active").length} activos de ${
+														contact.segments.length
+													} total`}
+												>
+													<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+														<Typography variant="body2">{contact.segments.filter((s: any) => s.status === "active").length}</Typography>
+														{contact.segments.length > contact.segments.filter((s: any) => s.status === "active").length && (
+															<Typography variant="caption" color="textSecondary">
+																({contact.segments.length})
+															</Typography>
+														)}
+													</Box>
+												</Tooltip>
+											) : (
+												<Typography variant="body2">0</Typography>
+											)}
 										</TableCell>
 										<TableCell>
 											<Typography variant="body2">{contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : "-"}</Typography>

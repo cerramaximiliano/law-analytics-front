@@ -27,6 +27,7 @@ import {
 	Tooltip,
 	Autocomplete,
 	Switch,
+	Skeleton,
 } from "@mui/material";
 import { AddCircle, CloseCircle, Information, Trash } from "iconsax-react";
 import { SegmentInput, FilterOperator, SegmentFilter, ConditionOperator, SegmentType, Segment } from "types/segment";
@@ -158,7 +159,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	const { enqueueSnackbar } = useSnackbar();
 
 	// Estado para carga y errores
-	const [loading, setLoading] = useState<boolean>(false);
+	const [loading, setLoading] = useState<boolean>(true); // Iniciar en true para mostrar carga inicial
 	const [saving, setSaving] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 	const [formError, setFormError] = useState<Record<string, string>>({});
@@ -205,37 +206,52 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Reinicar formulario y cargar datos si es modo edición
 	useEffect(() => {
 		if (open) {
-			resetForm();
-			fetchAvailableContacts();
-			fetchAvailableTags();
+			const loadData = async () => {
+				setLoading(true);
+				setError(null);
 
-			// Si es modo edición, cargar los datos del segmento
-			if (isEditMode && segment) {
-				setName(segment.name);
-				setDescription(segment.description || "");
-				setType(segment.type);
+				try {
+					// Resetear formulario primero
+					resetForm();
 
-				// Cargar configuración de autoUpdate si existe
-				if (segment.autoUpdate) {
-					setAutoUpdateEnabled(segment.autoUpdate.enabled);
-					if (segment.autoUpdate.frequency) {
-						setAutoUpdateFrequencyValue(segment.autoUpdate.frequency.value);
-						setAutoUpdateFrequencyUnit(segment.autoUpdate.frequency.unit as "minutes" | "hours" | "days");
+					// Cargar datos en paralelo
+					await Promise.all([fetchAvailableContacts(), fetchAvailableTags()]);
+
+					// Si es modo edición, cargar los datos del segmento
+					if (isEditMode && segment) {
+						setName(segment.name);
+						setDescription(segment.description || "");
+						setType(segment.type);
+
+						// Cargar configuración de autoUpdate si existe
+						if (segment.autoUpdate) {
+							setAutoUpdateEnabled(segment.autoUpdate.enabled);
+							if (segment.autoUpdate.frequency) {
+								setAutoUpdateFrequencyValue(segment.autoUpdate.frequency.value);
+								setAutoUpdateFrequencyUnit(segment.autoUpdate.frequency.unit as "minutes" | "hours" | "days");
+							}
+						}
+
+						if (segment.type === "dynamic" && segment.conditions) {
+							setConditionOperator(segment.conditions.operator);
+							setFilters(segment.conditions.filters || []);
+						} else if (segment.type === "static" && segment.contacts) {
+							setSelectedContactIds(segment.contacts);
+						}
+
+						// Establecer conteo estimado para segmentos dinámicos
+						if (segment.estimatedCount !== undefined) {
+							setEstimatedCount(segment.estimatedCount);
+						}
 					}
+				} catch (err: any) {
+					setError(err?.message || "Error al cargar los datos");
+				} finally {
+					setLoading(false);
 				}
+			};
 
-				if (segment.type === "dynamic" && segment.conditions) {
-					setConditionOperator(segment.conditions.operator);
-					setFilters(segment.conditions.filters || []);
-				} else if (segment.type === "static" && segment.contacts) {
-					setSelectedContactIds(segment.contacts);
-				}
-
-				// Establecer conteo estimado para segmentos dinámicos
-				if (segment.estimatedCount !== undefined) {
-					setEstimatedCount(segment.estimatedCount);
-				}
-			}
+			loadData();
 		}
 	}, [open, isEditMode, segment]);
 
@@ -249,13 +265,10 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Obtener contactos disponibles para seleccionar en modo estático
 	const fetchAvailableContacts = async () => {
 		try {
-			setLoading(true);
 			const response = await MarketingContactService.getContacts(1, 100);
 			setAvailableContacts(response.data);
 		} catch (err: any) {
-			setError(err?.message || "No se pudieron cargar los contactos");
-		} finally {
-			setLoading(false);
+			throw new Error(err?.message || "No se pudieron cargar los contactos");
 		}
 	};
 
@@ -267,6 +280,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			setAvailableTags(tags);
 		} catch (err: any) {
 			// No mostrar error al usuario para no interrumpir el flujo principal
+			console.warn("No se pudieron cargar las etiquetas:", err);
 		} finally {
 			setLoadingTags(false);
 		}
@@ -743,6 +757,10 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			sx={{
 				"& .MuiDialog-paper": {
 					borderRadius: 2,
+					height: "85vh",
+					maxHeight: "85vh",
+					display: "flex",
+					flexDirection: "column",
 				},
 			}}
 		>
@@ -759,15 +777,62 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				</Grid>
 			</DialogTitle>
 
-			<DialogContent dividers>
+			<DialogContent
+				dividers
+				sx={{
+					flex: 1,
+					overflow: "auto",
+					display: "flex",
+					flexDirection: "column",
+				}}
+			>
 				{loading ? (
-					<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 3 }}>
-						<CircularProgress />
-					</Box>
+					<Grid container spacing={2}>
+						{/* Skeleton for basic info */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={150} height={28} sx={{ mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+						</Grid>
+
+						<Grid item xs={12}>
+							<Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} />
+						</Grid>
+
+						<Grid item xs={12}>
+							<Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+						</Grid>
+
+						{/* Skeleton for segment type */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={150} height={28} sx={{ mt: 1, mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+							<Box sx={{ display: "flex", gap: 3 }}>
+								<Skeleton variant="rectangular" width={120} height={40} sx={{ borderRadius: 1 }} />
+								<Skeleton variant="rectangular" width={120} height={40} sx={{ borderRadius: 1 }} />
+							</Box>
+						</Grid>
+
+						{/* Skeleton for criteria section */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={200} height={28} sx={{ mt: 1, mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+							<Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1, mb: 2 }} />
+							<Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+						</Grid>
+
+						{/* Skeleton for auto-update section */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={250} height={28} sx={{ mt: 3, mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+							<Skeleton variant="rectangular" width={200} height={40} sx={{ borderRadius: 1 }} />
+						</Grid>
+					</Grid>
 				) : error ? (
-					<Alert severity="error" sx={{ my: 2 }}>
-						{error}
-					</Alert>
+					<Box sx={{ minHeight: 450, display: "flex", alignItems: "center", justifyContent: "center" }}>
+						<Alert severity="error" sx={{ my: 2 }}>
+							{error}
+						</Alert>
+					</Box>
 				) : (
 					<Grid container spacing={2}>
 						{/* Información básica */}
