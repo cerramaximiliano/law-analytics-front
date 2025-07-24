@@ -1,9 +1,11 @@
 # Guía de Gestión de Causas
 
 ## Descripción General
+
 Aprende a organizar y gestionar carpetas para tus expedientes legales.
 
 ## Objetivos de Aprendizaje
+
 - Crear y gestionar causas judiciales
 - Importar causas automáticamente desde el Poder Judicial
 - Vincular causas existentes con el sistema PJN
@@ -19,6 +21,7 @@ Aprende a organizar y gestionar carpetas para tus expedientes legales.
 Esta guía te mostrará cómo utilizar el sistema de gestión de causas para administrar eficientemente los expedientes legales, realizar seguimiento de casos y organizar toda la información relacionada con tus asuntos jurídicos.
 
 ### Lo que aprenderás:
+
 - ✅ Crear y gestionar causas judiciales
 - ✅ Importar causas automáticamente desde el Poder Judicial
 - ✅ Vincular causas existentes con el sistema PJN
@@ -32,6 +35,7 @@ Esta guía te mostrará cómo utilizar el sistema de gestión de causas para adm
 ## 2. Creación de Nuevas Causas
 
 ### Pasos para crear una causa:
+
 1. Haz clic en el botón **"Agregar Causa"** en la parte superior derecha de la tabla
 2. Completa el formulario con los datos básicos de la causa
 3. Haz clic en **"Guardar"** para crear la nueva causa en el sistema
@@ -45,6 +49,7 @@ Esta guía te mostrará cómo utilizar el sistema de gestión de causas para adm
 Ahora puedes importar causas directamente desde el Poder Judicial de la Nación:
 
 ### 🔄 Proceso de importación:
+
 1. Haz clic en el botón **"Agregar Causa"**
 2. Selecciona la pestaña **"Importar Automáticamente"**
 3. Selecciona la jurisdicción del Poder Judicial:
@@ -55,11 +60,13 @@ Ahora puedes importar causas directamente desde el Poder Judicial de la Nación:
 5. Haz clic en **"Siguiente"** y luego **"Guardar"**
 
 ### ⚠️ Estado de verificación
+
 Las causas importadas automáticamente aparecerán con estado **"Pendiente de verificación"** hasta que la información sea validada por el sistema. Esto se indica visualmente en la tabla de causas.
 
 > **💡 Nota**: Una vez que los datos hayan sido verificados y procesados, se actualizarán automáticamente con la información completa del expediente.
 
 ### 🏛️ Jurisdicciones disponibles:
+
 - Cámara Nacional de Apelaciones en lo Civil
 - Cámara Federal de la Seguridad Social
 - Cámara Nacional de Apelaciones del Trabajo
@@ -73,6 +80,7 @@ Las causas importadas automáticamente aparecerán con estado **"Pendiente de ve
 Si ya tienes causas creadas en el sistema, puedes vincularlas con el Poder Judicial de la Nación para sincronizar movimientos automáticamente:
 
 ### 🔗 Proceso de vinculación:
+
 1. Abre la causa que deseas vincular
 2. En la vista detallada, busca la sección **"Vincular con Poder Judicial"**
 3. Selecciona la jurisdicción correspondiente:
@@ -83,12 +91,15 @@ Si ya tienes causas creadas en el sistema, puedes vincularlas con el Poder Judic
 5. Haz clic en **"Vincular"**
 
 ### 📊 Estados de vinculación:
+
 - **🔵 Pendiente de verificación**: El sistema está validando la información
 - **✅ Vinculado y verificado**: La causa está correctamente sincronizada
 - **❌ No válido**: Los datos no coinciden con el expediente en PJN
 
 ### 🔄 Sincronización automática:
+
 Una vez vinculada, la causa recibirá actualizaciones automáticas:
+
 - **Movimientos procesales**: Nuevas actuaciones, providencias, sentencias
 - **Notificaciones**: Cambios de estado importantes
 - **Documentos**: Enlaces a documentos públicos disponibles
@@ -100,21 +111,26 @@ Una vez vinculada, la causa recibirá actualizaciones automáticas:
 ## 5. Visualización de Movimientos y Actividad
 
 ### 📋 Vista de Movimientos:
+
 En la vista detallada de cada causa vinculada con PJN, encontrarás una pestaña **"Movimientos"** que muestra:
+
 - **Movimientos manuales**: Agregados por tu equipo
 - **Movimientos sincronizados**: Importados automáticamente desde PJN
 - **Vista combinada**: Todos los movimientos en orden cronológico
 
 ### 🎯 Características de los movimientos:
+
 - **Filtros avanzados**: Por tipo, origen, fecha
-- **Indicadores visuales**: 
+- **Indicadores visuales**:
   - 🔵 Manual (editable)
   - 🟢 Sincronizado PJN (solo lectura)
 - **Detalles completos**: Fecha, tipo, descripción, documentos adjuntos
 - **Vista previa de documentos**: Visualiza PDFs sin descargar
 
 ### 📊 Vista de Actividad Combinada:
+
 Accede a una vista unificada que incluye:
+
 - **Movimientos procesales**
 - **Eventos del calendario**
 - **Notificaciones importantes**
@@ -129,16 +145,19 @@ Todo en una línea de tiempo cronológica para un seguimiento completo del exped
 El formulario contiene los siguientes campos organizados por secciones:
 
 ### 📝 Datos Básicos
+
 - **Carátula**: Nombre identificativo del expediente (ej. "Pérez c/ González s/ Daños")
 - **Parte**: Rol que representa (Actora, Demandada, Tercero, etc.)
 - **Descripción**: Resumen o notas sobre la causa
 
 ### ⚖️ Información Jurisdiccional
+
 - **Jurisdicción**: Ámbito territorial (ej. CABA, Provincia de Buenos Aires)
 - **Fuero**: Especialidad del tribunal (Civil, Laboral, Comercial, etc.)
 - **Materia**: Tipo de proceso (Daños y Perjuicios, Despido, etc.)
 
 ### 📅 Estado y Fechas
+
 - **Fecha de Inicio**: Cuándo comenzó la causa
 - **Fecha Final**: Estimación de finalización o fecha de cierre
 - **Estado**: Situación actual (Nueva, En proceso, Finalizada)
@@ -150,18 +169,23 @@ El formulario contiene los siguientes campos organizados por secciones:
 Una vez creadas, gestiona tus expedientes con estas funciones:
 
 ### 🔍 Ver Causa
+
 Haz clic en el icono de **ojo** para desplegar una vista previa con toda la información detallada de la causa directamente en la tabla.
 
 ### ✏️ Editar Causa
+
 Utiliza el botón de **edición** para modificar cualquier dato de la causa, actualizar su estado o añadir nueva información.
 
 ### 🗑️ Eliminar Causa
+
 Permite eliminar causas del sistema. Esta acción requiere confirmación y es irreversible, por lo que se recomienda archivar en lugar de eliminar.
 
 ### 📂 Abrir Causa
+
 Abre la **vista detallada** de la causa donde podrás gestionar documentos, cálculos y toda la información relacionada con el expediente.
 
 ### 📦 Acciones adicionales:
+
 - **Archivar Causas**: Selecciona una o varias causas y haz clic en "Archivar"
 - **Ver Archivados**: Accede a las causas archivadas y recupera las que necesites
 - **Exportar CSV**: Exporta la lista de causas para uso en otras aplicaciones
@@ -173,28 +197,36 @@ Abre la **vista detallada** de la causa donde podrás gestionar documentos, cál
 Al abrir una causa accederás a:
 
 ### 📋 Información General
+
 Muestra todos los datos básicos de la causa con opción de edición rápida. Si la causa está vinculada con PJN, verás:
+
 - **Badge "Vinculado con PJN"**: Indica conexión activa con el Poder Judicial
 - **Estado de verificación**: Ícono que muestra si la vinculación es válida
 - **Última sincronización**: Fecha y hora de la última actualización
 
 ### 📊 Movimientos
+
 Para causas vinculadas con PJN, esta pestaña muestra:
+
 - **Movimientos sincronizados**: Actuaciones importadas automáticamente del expediente judicial
 - **Movimientos manuales**: Notas y actuaciones agregadas por tu equipo
 - **Filtros y búsqueda**: Encuentra rápidamente movimientos específicos
 - **Vista de documentos**: Previsualiza PDFs adjuntos sin descargar
 
 ### 📎 Documentos Asociados
+
 Permite subir, visualizar y gestionar todos los documentos relacionados con la causa, manteniendo un expediente digital completo y organizado.
 
 ### 🧮 Cálculos Vinculados
+
 Muestra todos los cálculos (laborales, intereses, etc.) que has asociado a esta causa, permitiéndote acceder rápidamente a ellos.
 
 ### 📝 Notas y Comentarios
+
 Espacio para añadir notas, recordatorios o comentarios relacionados con la causa, facilitando el seguimiento y la colaboración.
 
 ### 🔗 Vinculación con Poder Judicial
+
 Si la causa no está vinculada, encontrarás aquí la opción para conectarla con el sistema PJN e iniciar la sincronización automática de movimientos.
 
 > **💡 Consejo**: Puedes vincular cualquier cálculo realizado en el sistema a una causa específica. Para vincular un cálculo, selecciona la opción "Vincular a Causa" al guardar el cálculo.
@@ -206,11 +238,13 @@ Si la causa no está vinculada, encontrarás aquí la opción para conectarla co
 Mantén tu espacio de trabajo organizado:
 
 ### 📥 Proceso de Archivado:
+
 1. Selecciona una o varias causas marcando las casillas de selección
 2. Haz clic en el botón **"Archivar"** en la barra de herramientas
 3. Confirma la acción cuando se te solicite
 
 ### 📤 Gestión de Archivados:
+
 1. Accede mediante el botón **"Ver Archivados"**
 2. Selecciona las causas que deseas recuperar
 3. Haz clic en **"Desarchivar"** para restaurarlas
@@ -224,18 +258,23 @@ Mantén tu espacio de trabajo organizado:
 ## 10. Consejos Prácticos
 
 ### 🏷️ Organización Sistemática
+
 Utiliza un sistema coherente para nombrar las carátulas de tus causas, lo que facilitará su identificación y búsqueda posterior.
 
 ### 🔄 Actualización Regular
+
 Mantén actualizado el estado de tus causas y añade notas relevantes después de cada novedad o actuación procesal importante.
 
 ### 🔗 Vinculación de Contenidos
+
 Vincula todos los cálculos y documentos relacionados a la causa correspondiente para tener un expediente digital completo y centralizado.
 
 ### 📦 Archivado Estratégico
+
 Archiva regularmente las causas finalizadas o inactivas para mantener tu lista principal enfocada en casos activos que requieren atención.
 
 ### 💡 Tips de flujo de trabajo:
+
 - Utiliza la sección de notas para registrar recordatorios, plazos y observaciones importantes
 - Aprovecha la función de vincular cálculos para mantener toda la información financiera asociada
 - Exporta regularmente tus causas a CSV como respaldo adicional
@@ -250,23 +289,24 @@ Archiva regularmente las causas finalizadas o inactivas para mantener tu lista p
 
 ## Resumen de Características Clave
 
-| Característica | Descripción |
-|----------------|-------------|
-| **Creación manual** | Formulario completo para nuevas causas |
-| **Importación automática** | Conexión con Poder Judicial para crear causas |
-| **Vinculación PJN** | Conecta causas existentes con expedientes judiciales |
-| **Movimientos sincronizados** | Actualización automática de actuaciones procesales |
-| **Vista detallada** | Gestión integral del expediente con movimientos |
-| **Actividad combinada** | Línea de tiempo unificada de todos los eventos |
-| **Vinculación** | Documentos y cálculos asociados |
-| **Archivado inteligente** | Organización sin pérdida de datos |
-| **Exportación** | Respaldo y compartir información |
+| Característica                | Descripción                                          |
+| ----------------------------- | ---------------------------------------------------- |
+| **Creación manual**           | Formulario completo para nuevas causas               |
+| **Importación automática**    | Conexión con Poder Judicial para crear causas        |
+| **Vinculación PJN**           | Conecta causas existentes con expedientes judiciales |
+| **Movimientos sincronizados** | Actualización automática de actuaciones procesales   |
+| **Vista detallada**           | Gestión integral del expediente con movimientos      |
+| **Actividad combinada**       | Línea de tiempo unificada de todos los eventos       |
+| **Vinculación**               | Documentos y cálculos asociados                      |
+| **Archivado inteligente**     | Organización sin pérdida de datos                    |
+| **Exportación**               | Respaldo y compartir información                     |
 
 ---
 
 ## Metadatos para Uso Posterior
 
 ### Tags
+
 - causas
 - expedientes
 - gestión
@@ -281,19 +321,24 @@ Archiva regularmente las causas finalizadas o inactivas para mantener tu lista p
 - organización
 
 ### Categoría
+
 Gestión de Expedientes
 
 ### Nivel de Usuario
+
 Principiante - Avanzado
 
 ### Tiempo Estimado
+
 15-20 minutos para dominar la herramienta
 
 ### Prerrequisitos
+
 - Cuenta activa en Law Analytics
 - Información básica de los expedientes
 
 ### Formatos de Salida Posibles
+
 - Tutorial interactivo web
 - Video tutorial con casos de uso
 - Diagrama de flujo de trabajo

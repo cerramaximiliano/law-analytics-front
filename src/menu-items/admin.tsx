@@ -62,11 +62,26 @@ const admin: NavItemType = {
 		},
 		{
 			id: "causas",
-			title: <FormattedMessage id="causas" defaultMessage="Causas Verificadas" />,
-			type: "item",
-			url: "/admin/causas",
+			title: <FormattedMessage id="causas" defaultMessage="Causas" />,
+			type: "collapse",
 			icon: Folder2,
 			breadcrumbs: true,
+			children: [
+				{
+					id: "causas-verified",
+					title: <FormattedMessage id="causas-verified" defaultMessage="Causas Verificadas" />,
+					type: "item",
+					url: "/admin/causas/verified",
+					breadcrumbs: true,
+				},
+				{
+					id: "causas-folders",
+					title: <FormattedMessage id="causas-folders" defaultMessage="Causas con Carpetas" />,
+					type: "item",
+					url: "/admin/causas/folders",
+					breadcrumbs: true,
+				},
+			],
 		},
 		{
 			id: "server-status",

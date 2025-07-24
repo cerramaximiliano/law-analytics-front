@@ -1,9 +1,11 @@
 # Guía de Contactos
 
 ## Descripción General
+
 Aprende a gestionar tus contactos y clientes en el sistema.
 
 ## Objetivos de Aprendizaje
+
 - Crear perfiles detallados para clientes, oponentes, testigos y otros contactos
 - Categorizar contactos para facilitar su búsqueda y organización
 - Vincular contactos a carpetas específicas y casos
@@ -15,6 +17,7 @@ Aprende a gestionar tus contactos y clientes en el sistema.
 El módulo de Contactos te permite organizar y gestionar todas las personas y organizaciones relacionadas con tus casos legales.
 
 ### Lo que aprenderás:
+
 - ✅ Crear perfiles detallados para clientes, oponentes, testigos y otros contactos
 - ✅ Categorizar contactos para facilitar su búsqueda y organización
 - ✅ Vincular contactos a carpetas específicas y casos
@@ -47,6 +50,7 @@ El módulo de Contactos te permite organizar y gestionar todas las personas y or
 El sistema ofrece potentes herramientas:
 
 ### 🔍 Búsqueda avanzada
+
 - Utiliza la **barra de búsqueda** para encontrar contactos por:
   - Nombre
   - Email
@@ -58,6 +62,7 @@ El sistema ofrece potentes herramientas:
   - Fecha de creación
 
 ### 🏷️ Categorización
+
 - **Asigna etiquetas** personalizadas para organizar por:
   - Área legal
   - Estado
@@ -71,11 +76,13 @@ El sistema ofrece potentes herramientas:
 Aprovecha al máximo el sistema vinculando contactos:
 
 ### 📎 Vinculación desde la vista de contacto:
+
 1. Abre el **perfil del contacto** que deseas vincular
 2. Navega a la sección **"Carpetas asociadas"**
 3. Haz clic en **"Vincular a carpeta"** y selecciona la carpeta deseada
 
 ### 📁 Vinculación desde la vista de carpeta:
+
 1. Abre la **carpeta** a la que deseas agregar contactos
 2. Navega a la pestaña **"Contactos"** dentro de la carpeta
 3. Haz clic en **"Agregar contacto"** y selecciona de tu lista existente
@@ -87,6 +94,7 @@ Aprovecha al máximo el sistema vinculando contactos:
 Facilita la migración y compartir datos:
 
 ### 📤 Exportación de contactos:
+
 1. Desde la vista principal, **selecciona** los contactos a exportar
 2. Haz clic en el botón **"Exportar"** en la barra de herramientas
 3. Elige el formato deseado:
@@ -95,6 +103,7 @@ Facilita la migración y compartir datos:
    - **vCard**: Para agendas y aplicaciones de contactos
 
 ### 📥 Importación de contactos:
+
 1. Haz clic en **"Importar contactos"** en la barra de herramientas
 2. Selecciona el archivo (CSV, Excel o vCard) con los datos
 3. **Mapea los campos** del archivo con los campos del sistema
@@ -103,20 +112,21 @@ Facilita la migración y compartir datos:
 
 ## Resumen de Características Clave
 
-| Característica | Descripción |
-|----------------|-------------|
-| **Tipos flexibles** | Personas físicas y jurídicas |
-| **Búsqueda potente** | Por múltiples criterios |
-| **Categorización** | Etiquetas y grupos personalizados |
-| **Vinculación** | Conexión con carpetas y casos |
-| **Importación/Exportación** | Múltiples formatos soportados |
-| **Organización** | Sistema completo de gestión |
+| Característica              | Descripción                       |
+| --------------------------- | --------------------------------- |
+| **Tipos flexibles**         | Personas físicas y jurídicas      |
+| **Búsqueda potente**        | Por múltiples criterios           |
+| **Categorización**          | Etiquetas y grupos personalizados |
+| **Vinculación**             | Conexión con carpetas y casos     |
+| **Importación/Exportación** | Múltiples formatos soportados     |
+| **Organización**            | Sistema completo de gestión       |
 
 ---
 
 ## Metadatos para Uso Posterior
 
 ### Tags
+
 - contactos
 - clientes
 - gestión
@@ -127,19 +137,24 @@ Facilita la migración y compartir datos:
 - categorización
 
 ### Categoría
+
 Gestión de Relaciones
 
 ### Nivel de Usuario
+
 Principiante - Intermedio
 
 ### Tiempo Estimado
+
 10-15 minutos para dominar la herramienta
 
 ### Prerrequisitos
+
 - Cuenta activa en Law Analytics
 - Información básica de contactos
 
 ### Formatos de Salida Posibles
+
 - Tutorial interactivo web
 - Video tutorial
 - Plantillas de importación

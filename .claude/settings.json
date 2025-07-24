@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": {
+      "Edit": {
+        "command": "npm run format && npm run lint"
+      },
+      "Write": {
+        "command": "npm run format && npm run lint"
+      },
+      "MultiEdit": {
+        "command": "npm run format && npm run lint"
+      }
+    }
+  }
+}

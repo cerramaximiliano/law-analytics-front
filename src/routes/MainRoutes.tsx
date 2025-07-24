@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import { Navigate } from "react-router-dom";
 
 // project-imports
 import MainLayout from "layout/MainLayout";
@@ -83,7 +84,8 @@ const AdminContactsPage = Loadable(lazy(() => import("pages/admin/marketing/cont
 const AdminPlansPage = Loadable(lazy(() => import("pages/admin/plans")));
 const AdminUsersPage = Loadable(lazy(() => import("pages/admin/users")));
 const AdminServerStatusPage = Loadable(lazy(() => import("pages/admin/server-status")));
-const AdminCausasPage = Loadable(lazy(() => import("pages/admin/causas")));
+const AdminCausasVerifiedPage = Loadable(lazy(() => import("pages/admin/causas/verified")));
+const AdminCausasFoldersPage = Loadable(lazy(() => import("pages/admin/causas/folders")));
 const AdminNotificationsPage = Loadable(lazy(() => import("pages/admin/notifications")));
 
 // render - tasks
@@ -356,7 +358,20 @@ const MainRoutes = {
 						},
 						{
 							path: "causas",
-							element: <AdminCausasPage />,
+							children: [
+								{
+									path: "",
+									element: <Navigate to="verified" replace />
+								},
+								{
+									path: "verified",
+									element: <AdminCausasVerifiedPage />,
+								},
+								{
+									path: "folders", 
+									element: <AdminCausasFoldersPage />,
+								},
+							],
 						},
 						{
 							path: "notifications",

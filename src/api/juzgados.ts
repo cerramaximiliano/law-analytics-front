@@ -52,10 +52,10 @@ export const searchJuzgados = async (params: JuzgadoSearchParams = {}): Promise<
 				Authorization: token ? `Bearer ${token}` : "",
 			},
 		});
-		
+
 		console.log("✅ Juzgados response:", response.data);
 		console.log("📊 Total juzgados found:", response.data.total);
-		
+
 		return response.data;
 	} catch (error: any) {
 		console.error("❌ Error fetching juzgados:", error);
@@ -64,7 +64,7 @@ export const searchJuzgados = async (params: JuzgadoSearchParams = {}): Promise<
 			statusText: error?.response?.statusText,
 			data: error?.response?.data,
 			url: url,
-			headers: error?.config?.headers
+			headers: error?.config?.headers,
 		});
 		throw error;
 	}

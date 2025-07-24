@@ -110,6 +110,19 @@ export interface Plan {
 		$date: string;
 	};
 	__v?: number;
+	stripePriceId?: string;
+	stripeProductId?: string;
+	metadata?: {
+		lastSyncEnv?: string;
+		lastSyncDate?: string;
+		[key: string]: any;
+	};
+	changeHistory?: Array<{
+		date: string;
+		field: string;
+		oldValue: any;
+		newValue: any;
+	}>;
 }
 
 export interface PlanResourceLimits {
@@ -129,7 +142,8 @@ export interface PlanFeatures {
 export interface PlanPricingInfo {
 	basePrice: number;
 	currency: string;
-	billingPeriod: "monthly" | "yearly";
+	billingPeriod: "monthly" | "yearly" | "daily" | string;
+	stripePriceId?: string;
 }
 
 export interface Subscription {
@@ -550,6 +564,24 @@ class ApiService {
 			const response = await axios.delete(`${API_BASE_URL}/api/plan-configs/${planId}`, {
 				withCredentials: true,
 			});
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Sincroniza todos los planes con Stripe
+	 */
+	static async syncPlansWithStripe(): Promise<ApiResponse<Array<{ planId: string; displayName: string; synced: boolean }>>> {
+		try {
+			const response = await axios.post<ApiResponse<Array<{ planId: string; displayName: string; synced: boolean }>>>(
+				`${API_BASE_URL}/api/plan-configs/sync-with-stripe`,
+				{},
+				{
+					withCredentials: true,
+				},
+			);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);

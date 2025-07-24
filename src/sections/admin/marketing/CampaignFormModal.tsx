@@ -387,31 +387,55 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 									<Typography variant="subtitle2" gutterBottom sx={{ fontWeight: "bold" }}>
 										Tipos de Campaña:
 									</Typography>
+									<Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+										Última actualización: 24 de julio de 2025
+									</Typography>
 									<Box sx={{ mt: 1 }}>
 										<Typography variant="body2" paragraph>
-											<strong>1. Una sola vez (Onetime)</strong>
-											<br />• Envía un único email a todos los contactos
-											<br />• Se ejecuta una sola vez en la fecha programada
-											<br />• Ideal para: anuncios, promociones puntuales
+											<strong>1. ONETIME (Una sola vez)</strong>
+											<br />• Un único email enviado una sola vez
+											<br />• Solo procesa el primer email (campaignEmails[0])
+											<br />• Busca contactos con currentStep: 0
+											<br />• Ideal para: Anuncios puntuales, newsletters únicos
 										</Typography>
 										<Typography variant="body2" paragraph>
-											<strong>2. Secuencia (Sequence)</strong>
-											<br />• Serie de emails con delays entre ellos
-											<br />• Cada contacto avanza paso a paso
-											<br />• Ideal para: cursos por email, educación progresiva
+											<strong>2. SEQUENCE (Secuencia)</strong>
+											<br />• Serie de emails enviados en orden estricto (0, 1, 2, 3...)
+											<br />• Los contactos avanzan paso a paso
+											<br />• No pueden saltar pasos
+											<br />• Respeta tiempos de espera entre emails
+											<br />• Ideal para: Tutoriales paso a paso, cursos por email
+											<br />• Orden inverso de procesamiento (del último al primero) para evitar conflictos
+											<br />• Busca contactos en el paso anterior exacto
+											<br />• No puede saltar pasos - debe ir 0→1→2→3
+											<br />• Solo evalúa timeDelay simple entre emails
 										</Typography>
 										<Typography variant="body2" paragraph>
-											<strong>3. Automatizada (Automated)</strong>
-											<br />• Se activa por eventos (ej: registro de usuario)
-											<br />• Responde automáticamente a acciones
-											<br />• Perfecta para: onboarding, carritos abandonados
-											<br />• Funciona con "Campaña permanente" activado
+											<strong>3. AUTOMATED (Automatizada)</strong>
+											<br />• Emails disparados por condiciones (tiempo o eventos)
+											<br />• Más flexible que sequence
+											<br />• Soporta dos tipos de condiciones:
+											<br />  - Time: Espera X tiempo después del email anterior
+											<br />  - Event: Se envía cuando ocurre un evento específico
+											<br />• Ideal para: Onboarding, nurturing, follow-ups
+											<br />• Orden normal de procesamiento (0→1→2→3)
+											<br />• Evalúa dos tipos de condiciones:
+											<br />  - type: 'time': Espera X tiempo desde el último email
+											<br />  - type: 'event': Espera que ocurra un evento específico
+											<br />• Más flexible: puede tener lógica compleja
+											<br />• Incluye margen de 60 segundos para no perder envíos
+											<br />• Logs más detallados con cálculos de tiempo
 										</Typography>
 										<Typography variant="body2">
-											<strong>4. Recurrente (Recurring)</strong>
-											<br />• Se repite periódicamente (semanal, mensual)
-											<br />• Los contactos pueden recibir la campaña múltiples veces
-											<br />• Ideal para: newsletters, resúmenes periódicos
+											<strong>4. RECURRING (Recurrente)</strong>
+											<br />• Similar a sequence pero puede reiniciarse
+											<br />• Cuando un contacto completa todos los emails, puede volver a empezar
+											<br />• Útil para contenido cíclico
+											<br />• Ideal para: Tips semanales/mensuales que se repiten
+											<br />• Actualmente usa la misma lógica que SEQUENCE
+											<br />• Código indica que debería poder reiniciar contactos que completaron
+											<br />• La implementación está simplificada/incompleta
+											<br />• Falta la lógica de reset para volver a empezar
 										</Typography>
 									</Box>
 								</Alert>

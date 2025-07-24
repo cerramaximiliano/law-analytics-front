@@ -1,14 +1,17 @@
 # Guías de Usuario - Law Analytics
 
 ## Descripción General
+
 Este directorio contiene todas las guías de usuario extraídas del sistema Law Analytics. Las guías están estructuradas en un formato que permite su uso para múltiples propósitos: guías interactivas, videos, tours visuales, documentación, y más.
 
 ## Índice de Guías
 
 ### 1. [Calculadora Laboral](./01-calculadora-laboral.md)
+
 **Descripción**: Aprende a usar la calculadora para indemnizaciones laborales, despidos y liquidaciones.
 
 **Contenido principal**:
+
 - Acceso y navegación de la calculadora
 - Proceso paso a paso para cálculos de despido
 - Fórmulas legales aplicadas (Art. 245 LCT, preaviso, integración)
@@ -20,9 +23,11 @@ Este directorio contiene todas las guías de usuario extraídas del sistema Law 
 ---
 
 ### 2. [Calculadora de Intereses](./02-calculadora-intereses.md)
+
 **Descripción**: Aprende a calcular intereses con distintas tasas para tus procesos legales.
 
 **Contenido principal**:
+
 - Tipos de tasas disponibles (BCRA, CER, CNAT)
 - Métodos de cálculo (indexación vs interés diario)
 - Interpretación de resultados
@@ -33,9 +38,11 @@ Este directorio contiene todas las guías de usuario extraídas del sistema Law 
 ---
 
 ### 3. [Gestión de Causas](./03-gestion-causas.md)
+
 **Descripción**: Aprende a organizar y gestionar carpetas para tus expedientes legales.
 
 **Contenido principal**:
+
 - Creación manual de causas
 - Importación automática desde Poder Judicial
 - Vista detallada y gestión de expedientes
@@ -47,9 +54,11 @@ Este directorio contiene todas las guías de usuario extraídas del sistema Law 
 ---
 
 ### 4. [Contactos](./04-contactos.md)
+
 **Descripción**: Aprende a gestionar tus contactos y clientes en el sistema.
 
 **Contenido principal**:
+
 - Creación de perfiles (personas físicas y jurídicas)
 - Sistema de búsqueda y categorización
 - Vinculación con carpetas y casos
@@ -60,9 +69,11 @@ Este directorio contiene todas las guías de usuario extraídas del sistema Law 
 ---
 
 ### 5. [Calendario](./05-calendario.md)
+
 **Descripción**: Aprende a gestionar eventos y agenda en tu calendario legal.
 
 **Contenido principal**:
+
 - Múltiples vistas (mes, semana, día, agenda)
 - Tipos de eventos (audiencias, vencimientos, reuniones)
 - Sistema de recordatorios y notificaciones
@@ -74,9 +85,11 @@ Este directorio contiene todas las guías de usuario extraídas del sistema Law 
 ---
 
 ### 6. [Sistema de Citas](./06-sistema-citas.md)
+
 **Descripción**: Aprende a configurar y gestionar el sistema de citas online para tus clientes.
 
 **Contenido principal**:
+
 - Configuración de disponibilidad y horarios
 - Personalización de formularios de reserva
 - Gestión de reservaciones
@@ -104,26 +117,31 @@ Cada guía sigue una estructura consistente:
 Las guías están preparadas para ser transformadas en:
 
 ### 📱 Digitales Interactivos
+
 - **Tours guiados in-app**: Usar el contenido para crear tours paso a paso
 - **Tutoriales web interactivos**: Con simulaciones de la interfaz
 - **Chatbot de ayuda**: Base de conocimiento para asistente virtual
 
 ### 🎥 Contenido Audiovisual
+
 - **Videos tutoriales**: Guiones basados en los pasos
 - **Webinars de capacitación**: Presentaciones estructuradas
 - **Podcasts educativos**: Explicaciones en audio
 
 ### 📄 Documentación
+
 - **PDFs descargables**: Manuales de usuario formateados
 - **Wiki interna**: Base de conocimiento searchable
 - **Guías de referencia rápida**: Versiones condensadas
 
 ### 🎨 Contenido Visual
+
 - **Infografías**: Procesos visualizados
 - **Diagramas de flujo**: Workflows de cada módulo
 - **Presentaciones**: Slides para capacitación
 
 ### 🎮 Experiencias Inmersivas
+
 - **Simuladores**: Práctica sin afectar datos reales
 - **Gamificación**: Aprendizaje mediante logros
 - **Realidad aumentada**: Overlay de ayuda contextual
@@ -131,7 +149,9 @@ Las guías están preparadas para ser transformadas en:
 ## Integración Técnica
 
 ### Estructura JSON disponible
+
 El archivo original `guides-data.json` contiene la estructura completa con:
+
 - IDs únicos por guía
 - Pasos con títulos y contenido
 - Bullets, secciones y subsecciones
@@ -139,7 +159,9 @@ El archivo original `guides-data.json` contiene la estructura completa con:
 - Metadatos para categorización
 
 ### APIs sugeridas
+
 Para implementar las guías dinámicamente:
+
 ```javascript
 // Ejemplo de endpoint
 GET /api/guides - Lista todas las guías
@@ -150,11 +172,13 @@ GET /api/guides/:id/steps/:step - Obtiene paso específico
 ## Mantenimiento
 
 ### Actualización de contenido
+
 1. Las guías deben actualizarse cuando cambien las funcionalidades
 2. Mantener consistencia en formato y estructura
 3. Revisar enlaces y referencias cruzadas
 
 ### Versionado sugerido
+
 - Incluir fecha de última actualización
 - Mantener changelog de cambios significativos
 - Archivar versiones anteriores para referencia
@@ -162,6 +186,7 @@ GET /api/guides/:id/steps/:step - Obtiene paso específico
 ## Métricas y Analytics
 
 ### KPIs sugeridos para medir efectividad:
+
 - Tiempo de completación por guía
 - Tasa de finalización
 - Puntos de abandono
@@ -169,6 +194,7 @@ GET /api/guides/:id/steps/:step - Obtiene paso específico
 - Calificación de utilidad
 
 ### Feedback del usuario
+
 - Incluir opción de calificación
 - Comentarios por sección
 - Sugerencias de mejora
@@ -179,6 +205,7 @@ GET /api/guides/:id/steps/:step - Obtiene paso específico
 ## Contacto y Soporte
 
 Para actualizaciones o mejoras en las guías, considerar:
+
 - Sistema de tickets para solicitudes
 - Foro de comunidad para tips
 - Base de conocimiento colaborativa
@@ -186,5 +213,5 @@ Para actualizaciones o mejoras en las guías, considerar:
 
 ---
 
-*Última actualización: Generado desde guides-data.json*
-*Versión: 1.0*
+_Última actualización: Generado desde guides-data.json_
+_Versión: 1.0_

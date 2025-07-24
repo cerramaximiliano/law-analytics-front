@@ -1,9 +1,11 @@
 # Guía de Calculadora de Intereses
 
 ## Descripción General
+
 Aprende a calcular intereses con distintas tasas para tus procesos legales.
 
 ## Objetivos de Aprendizaje
+
 - Acceder y completar el formulario de cálculo de intereses
 - Seleccionar entre diferentes tipos de tasas disponibles
 - Interpretar los resultados y la metodología aplicada
@@ -16,6 +18,7 @@ Aprende a calcular intereses con distintas tasas para tus procesos legales.
 Esta guía te mostrará cómo utilizar la calculadora de intereses para generar, guardar y gestionar distintos tipos de cálculos con diferentes tasas.
 
 ### Lo que aprenderás:
+
 - ✅ Acceder y completar el formulario de cálculo de intereses
 - ✅ Seleccionar entre diferentes tipos de tasas disponibles
 - ✅ Interpretar los resultados y la metodología aplicada
@@ -26,6 +29,7 @@ Esta guía te mostrará cómo utilizar la calculadora de intereses para generar,
 ## 2. Acceso y Formulario Básico
 
 ### Pasos para comenzar:
+
 1. Accede a la calculadora seleccionando la tarjeta "Intereses" en la sección "Cálculos disponibles"
 2. Se abrirá la pantalla de cálculo con un formulario de entrada
 3. Completa los datos requeridos:
@@ -35,7 +39,7 @@ Esta guía te mostrará cómo utilizar la calculadora de intereses para generar,
    - **Tipo de tasa**
    - **Capital**
 
-> **💡 Nota**: Todos los campos marcados con asterisco (*) son obligatorios para poder realizar el cálculo.
+> **💡 Nota**: Todos los campos marcados con asterisco (\*) son obligatorios para poder realizar el cálculo.
 
 ---
 
@@ -44,17 +48,19 @@ Esta guía te mostrará cómo utilizar la calculadora de intereses para generar,
 La calculadora de intereses permite seleccionar entre diferentes tipos de tasas:
 
 ### 📈 Tasas más comunes
-| Tasa | Descripción |
-|------|-------------|
-| **Tasa Pasiva BCRA** | Tasa pasiva publicada por el Banco Central de la República Argentina |
-| **Tasa Activa Banco Nación** | Tasa activa para operaciones de descuento |
-| **CER** | Coeficiente de Estabilización de Referencia - Refleja la variación del IPC |
+
+| Tasa                         | Descripción                                                                |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| **Tasa Pasiva BCRA**         | Tasa pasiva publicada por el Banco Central de la República Argentina       |
+| **Tasa Activa Banco Nación** | Tasa activa para operaciones de descuento                                  |
+| **CER**                      | Coeficiente de Estabilización de Referencia - Refleja la variación del IPC |
 
 ### ⚖️ Tasas específicas del fuero laboral
-| Tasa | Descripción |
-|------|-------------|
+
+| Tasa                           | Descripción                                                        |
+| ------------------------------ | ------------------------------------------------------------------ |
 | **Tasa Activa CNAT Acta 2601** | Tasa establecida por la Cámara Nacional de Apelaciones del Trabajo |
-| **Tasa Activa CNAT Acta 2658** | Actualización posterior de la Cámara Laboral |
+| **Tasa Activa CNAT Acta 2658** | Actualización posterior de la Cámara Laboral                       |
 
 > **💡 Nota**: Al seleccionar una tasa, el sistema mostrará automáticamente el rango de fechas disponible para esa tasa específica.
 
@@ -65,9 +71,11 @@ La calculadora de intereses permite seleccionar entre diferentes tipos de tasas:
 La calculadora utiliza dos métodos principales según el tipo de tasa:
 
 ### 📊 Método de Indexación
+
 **Aplicado a**: CER, ICL y otros índices de ajuste
 
 **Fórmula**:
+
 ```
 Capital × (Valor final / Valor inicial)
 ```
@@ -75,9 +83,11 @@ Capital × (Valor final / Valor inicial)
 **Descripción**: Compara el valor del índice al inicio y al final del período, aplicando la variación proporcional al capital.
 
 ### 📊 Método de Interés Diario
+
 **Aplicado a**: Tasas Pasivas y Activas (BCRA, BNA, CNAT)
 
 **Fórmula**:
+
 ```
 Capital × (1 + Σ [Tasa diaria × días])
 ```
@@ -93,15 +103,19 @@ Capital × (1 + Σ [Tasa diaria × días])
 Después de realizar el cálculo, se mostrará una pantalla con:
 
 ### 📋 Detalles del Cálculo
+
 Muestra los datos ingresados como fechas, tipo de tasa seleccionada y capital base.
 
 ### 🔧 Metodología de Cálculo
+
 Muestra información sobre el método aplicado (indexación o interés diario), coeficiente calculado y otros parámetros técnicos.
 
 ### 💰 Resultados
+
 Muestra el capital base, los intereses generados y el capital actualizado (suma de capital e intereses).
 
 ### 📊 Ver Tasas
+
 Botón que permite visualizar en detalle los valores de las tasas utilizadas en cada período del cálculo.
 
 ---
@@ -111,11 +125,13 @@ Botón que permite visualizar en detalle los valores de las tasas utilizadas en 
 Una vez obtenidos los resultados:
 
 ### 📤 Opciones de exportación:
+
 - **Copiar al portapapeles**: Copia el resultado en formato texto
 - **Enviar por email**: Envía los resultados por correo electrónico
 - **Imprimir**: Genera una versión imprimible del resultado
 
 ### 💾 Gestión de cálculos:
+
 - **Guardar cálculo**: Guarda el cálculo en tu cuenta para acceder posteriormente
 - **Ver cálculos guardados**: Accede desde la pestaña "Guardados"
 - **Vincular a carpetas**: Asocia el cálculo a un expediente específico
@@ -126,20 +142,21 @@ Una vez obtenidos los resultados:
 
 ## Resumen de Características Clave
 
-| Característica | Descripción |
-|----------------|-------------|
-| **Múltiples tasas** | Acceso a tasas oficiales actualizadas |
-| **Métodos precisos** | Indexación y cálculo de interés diario |
-| **Datos oficiales** | Información de BCRA, BNA y organismos |
-| **Resultados detallados** | Desglose completo del cálculo |
-| **Exportación flexible** | Múltiples formatos de salida |
-| **Integración** | Vinculación con expedientes |
+| Característica            | Descripción                            |
+| ------------------------- | -------------------------------------- |
+| **Múltiples tasas**       | Acceso a tasas oficiales actualizadas  |
+| **Métodos precisos**      | Indexación y cálculo de interés diario |
+| **Datos oficiales**       | Información de BCRA, BNA y organismos  |
+| **Resultados detallados** | Desglose completo del cálculo          |
+| **Exportación flexible**  | Múltiples formatos de salida           |
+| **Integración**           | Vinculación con expedientes            |
 
 ---
 
 ## Metadatos para Uso Posterior
 
 ### Tags
+
 - calculadora
 - intereses
 - tasas
@@ -151,19 +168,24 @@ Una vez obtenidos los resultados:
 - tasa activa
 
 ### Categoría
+
 Herramientas de Cálculo
 
 ### Nivel de Usuario
+
 Principiante - Intermedio
 
 ### Tiempo Estimado
+
 5-10 minutos para dominar la herramienta
 
 ### Prerrequisitos
+
 - Cuenta activa en Law Analytics
 - Datos del capital y período a calcular
 
 ### Formatos de Salida Posibles
+
 - Tutorial interactivo web
 - Video tutorial
 - Infografía comparativa de tasas
