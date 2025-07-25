@@ -12,6 +12,7 @@ export type Movement = {
 	description?: string;
 	link?: string;
 	source?: "pjn"; // Campo para identificar movimientos de PJN
+	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 };
 
 // Tipos para paginación

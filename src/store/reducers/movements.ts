@@ -10,6 +10,7 @@ export const SET_MOVEMENT_ERROR = "movements/SET_MOVEMENT_ERROR";
 export const SET_LOADING = "movements/SET_LOADING";
 export const ADD_MOVEMENT = "movements/ADD_MOVEMENT";
 export const SET_PAGINATION = "movements/SET_PAGINATION";
+export const TOGGLE_MOVEMENT_COMPLETE = "movements/TOGGLE_MOVEMENT_COMPLETE";
 
 const initialMovementState: MovementState = {
 	movements: [],
@@ -74,6 +75,14 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				...state,
 				pagination: action.payload,
 			};
+		case TOGGLE_MOVEMENT_COMPLETE:
+			return {
+				...state,
+				movements: state.movements.map((movement) => 
+					movement._id === action.payload._id ? { ...movement, completed: action.payload.completed } : movement
+				),
+				isLoading: false,
+			};
 		default:
 			return state;
 	}
@@ -85,7 +94,7 @@ export const getMovementsByUserId = (userId: string) => async (dispatch: Dispatc
 		dispatch({ type: SET_LOADING });
 
 		// Campos optimizados para listas y vistas
-		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId";
+		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId,completed";
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/movements/user/${userId}`, {
 			params: { fields },
 		});
@@ -263,7 +272,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 		dispatch({ type: SET_LOADING });
 
 		// Campos optimizados para listas y vistas
-		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId,source";
+		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId,source,completed";
 
 		// Construir parámetros de consulta
 		const queryParams: any = { fields };
@@ -351,6 +360,52 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 			success: false,
 			movements: [],
 			error: errorMessage,
+		};
+	}
+};
+
+export const toggleMovementComplete = (movementId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+
+		const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/movements/${movementId}/complete`);
+
+		if (response.data.success && response.data.movement) {
+			dispatch({
+				type: TOGGLE_MOVEMENT_COMPLETE,
+				payload: {
+					_id: movementId,
+					completed: response.data.movement.completed,
+				},
+			});
+			return { 
+				success: true, 
+				movement: response.data.movement,
+				message: response.data.message 
+			};
+		}
+
+		throw new Error(response.data.message || "Error al cambiar el estado del movimiento");
+	} catch (error) {
+		let errorMessage = "Error al cambiar el estado del movimiento";
+		let statusCode = 500;
+
+		if (axios.isAxiosError(error) && error.response) {
+			errorMessage = error.response.data?.message || errorMessage;
+			statusCode = error.response.status;
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+		}
+
+		dispatch({
+			type: SET_MOVEMENT_ERROR,
+			payload: errorMessage,
+		});
+
+		return { 
+			success: false, 
+			error: errorMessage,
+			statusCode
 		};
 	}
 };

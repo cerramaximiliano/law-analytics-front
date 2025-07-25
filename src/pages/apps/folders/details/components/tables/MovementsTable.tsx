@@ -18,13 +18,13 @@ import {
 	useMediaQuery,
 	useTheme,
 } from "@mui/material";
-import { Edit, Trash, Eye, Link2, DocumentText, Judge, NotificationStatus, Status, Clock } from "iconsax-react";
+import { Edit, Trash, Eye, Link2, DocumentText, Judge, NotificationStatus, Status, Clock, TickCircle } from "iconsax-react";
 import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import { format, parse, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { visuallyHidden } from "@mui/utils";
 import { dispatch } from "store";
-import { getMovementsByFolderId } from "store/reducers/movements";
+import { getMovementsByFolderId, toggleMovementComplete } from "store/reducers/movements";
 import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
 import PaginationWithJump from "components/shared/PaginationWithJump";
@@ -56,12 +56,12 @@ interface HeadCell {
 
 const headCells: HeadCell[] = [
 	{ id: "time", label: "Fecha", numeric: false, width: "100px" },
-	{ id: "title", label: "Título", numeric: false, width: "35%" },
+	{ id: "title", label: "Título", numeric: false, width: "30%" },
 	{ id: "movement", label: "Tipo", numeric: false, width: "130px" },
 	{ id: "description", label: "Descripción", numeric: false },
 	{ id: "dateExpiration", label: "Vencimiento", numeric: false, width: "120px" },
 	{ id: "link", label: "Documento", numeric: false, width: "80px" },
-	{ id: "actions", label: "Acciones", numeric: false, width: "100px" },
+	{ id: "actions", label: "Acciones", numeric: false, width: "140px" },
 ];
 
 const getMovementIcon = (movement?: string) => {
@@ -396,6 +396,15 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 		}
 	};
 
+	// Manejar el toggle de completitud
+	const handleToggleComplete = async (movementId: string, e: React.MouseEvent) => {
+		e.stopPropagation();
+		const result = await dispatch(toggleMovementComplete(movementId));
+		if (!result.success) {
+			console.error("Error al cambiar el estado del movimiento:", result.error);
+		}
+	};
+
 	return (
 		<Box>
 			<PjnAccessAlert pjnAccess={pjnAccess} />
@@ -526,15 +535,15 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														const expirationDate = parseDate(movement.dateExpiration);
 														const today = new Date();
 														today.setHours(0, 0, 0, 0);
-														const isExpired = expirationDate < today;
+														const isExpired = !movement.completed && expirationDate < today;
 														const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-														const isNearExpiration = daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
+														const isNearExpiration = !movement.completed && daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
 
 														return (
 															<Stack direction="row" spacing={0.5} alignItems="center">
 																<Chip
 																	label={formatDate(movement.dateExpiration)}
-																	color={isExpired ? "error" : isNearExpiration ? "warning" : "success"}
+																	color={movement.completed ? "default" : isExpired ? "error" : isNearExpiration ? "warning" : "success"}
 																	size="small"
 																	variant={isExpired ? "filled" : "outlined"}
 																	icon={
@@ -552,6 +561,11 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																		},
 																	}}
 																/>
+																{movement.completed && (
+																	<Typography variant="caption" color="text.secondary" fontWeight={500}>
+																		Completado
+																	</Typography>
+																)}
 																{isExpired && (
 																	<Typography variant="caption" color="error" fontWeight={600}>
 																		Vencido
@@ -590,6 +604,21 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 										</TableCell>
 										<TableCell>
 											<Stack direction="row" spacing={0.5}>
+												<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
+													<IconButton
+														size="small"
+														color={movement.completed ? "success" : "default"}
+														onClick={(e) => handleToggleComplete(movement._id!, e)}
+														sx={{
+															backgroundColor: movement.completed ? "success.lighter" : "transparent",
+															"&:hover": {
+																backgroundColor: movement.completed ? "success.light" : "action.hover",
+															},
+														}}
+													>
+														{movement.completed ? <TickCircle size={18} variant="Bold" /> : <TickCircle size={18} />}
+													</IconButton>
+												</Tooltip>
 												<Tooltip title="Ver detalles">
 													<IconButton
 														size="small"
