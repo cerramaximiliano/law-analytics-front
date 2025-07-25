@@ -97,7 +97,9 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 									<Typography variant="subtitle2" color="text.secondary">
 										Plan Default
 									</Typography>
-									<Box mt={1}>{plan.isDefault ? <Chip label="Sí" color="primary" size="small" /> : <Typography variant="body1">No</Typography>}</Box>
+									<Box mt={1}>
+										{plan.isDefault ? <Chip label="Sí" color="primary" size="small" /> : <Typography variant="body1">No</Typography>}
+									</Box>
 								</Grid>
 								<Grid item xs={12} sm={4}>
 									<Typography variant="subtitle2" color="text.secondary">
@@ -139,10 +141,13 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 										Período de Facturación
 									</Typography>
 									<Typography variant="body1" fontWeight="medium">
-										{plan.pricingInfo.billingPeriod === "monthly" ? "Mensual" : 
-										 plan.pricingInfo.billingPeriod === "yearly" ? "Anual" :
-										 plan.pricingInfo.billingPeriod === "daily" ? "Diario" :
-										 plan.pricingInfo.billingPeriod}
+										{plan.pricingInfo.billingPeriod === "monthly"
+											? "Mensual"
+											: plan.pricingInfo.billingPeriod === "yearly"
+											? "Anual"
+											: plan.pricingInfo.billingPeriod === "daily"
+											? "Diario"
+											: plan.pricingInfo.billingPeriod}
 									</Typography>
 								</Grid>
 								{plan.pricingInfo.stripePriceId && (
@@ -182,7 +187,12 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 												</Typography>
 											</TableCell>
 											<TableCell align="center">
-												<Chip label={limit.limit === -1 ? "Ilimitado" : limit.limit.toString()} size="small" color="primary" variant="outlined" />
+												<Chip
+													label={limit.limit === -1 ? "Ilimitado" : limit.limit.toString()}
+													size="small"
+													color="primary"
+													variant="outlined"
+												/>
 											</TableCell>
 											<TableCell>
 												<Typography variant="body2" color="text.secondary">
@@ -219,7 +229,11 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 												</Typography>
 											</TableCell>
 											<TableCell align="center">
-												<Chip label={feature.enabled ? "Habilitado" : "Deshabilitado"} size="small" color={feature.enabled ? "success" : "default"} />
+												<Chip
+													label={feature.enabled ? "Habilitado" : "Deshabilitado"}
+													size="small"
+													color={feature.enabled ? "success" : "default"}
+												/>
 											</TableCell>
 											<TableCell>
 												<Typography variant="body2" color="text.secondary">
@@ -298,14 +312,16 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 										</Grid>
 									)}
 									{/* Mostrar cualquier otro campo en metadata */}
-									{Object.entries(plan.metadata).filter(([key]) => !['lastSyncEnv', 'lastSyncDate'].includes(key)).map(([key, value]) => (
-										<Grid item xs={12} sm={6} key={key}>
-											<Typography variant="subtitle2" color="text.secondary">
-												{key}
-											</Typography>
-											<Typography variant="body2">{JSON.stringify(value)}</Typography>
-										</Grid>
-									))}
+									{Object.entries(plan.metadata)
+										.filter(([key]) => !["lastSyncEnv", "lastSyncDate"].includes(key))
+										.map(([key, value]) => (
+											<Grid item xs={12} sm={6} key={key}>
+												<Typography variant="subtitle2" color="text.secondary">
+													{key}
+												</Typography>
+												<Typography variant="body2">{JSON.stringify(value)}</Typography>
+											</Grid>
+										))}
 								</Grid>
 							</Paper>
 						</Grid>

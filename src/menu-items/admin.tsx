@@ -81,6 +81,13 @@ const admin: NavItemType = {
 					url: "/admin/causas/folders",
 					breadcrumbs: true,
 				},
+				{
+					id: "causas-workers",
+					title: <FormattedMessage id="causas-workers" defaultMessage="Configuración de Workers" />,
+					type: "item",
+					url: "/admin/causas/workers",
+					breadcrumbs: true,
+				},
 			],
 		},
 		{

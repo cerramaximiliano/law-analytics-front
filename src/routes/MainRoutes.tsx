@@ -86,6 +86,7 @@ const AdminUsersPage = Loadable(lazy(() => import("pages/admin/users")));
 const AdminServerStatusPage = Loadable(lazy(() => import("pages/admin/server-status")));
 const AdminCausasVerifiedPage = Loadable(lazy(() => import("pages/admin/causas/verified")));
 const AdminCausasFoldersPage = Loadable(lazy(() => import("pages/admin/causas/folders")));
+const AdminCausasWorkersPage = Loadable(lazy(() => import("pages/admin/causas/workers")));
 const AdminNotificationsPage = Loadable(lazy(() => import("pages/admin/notifications")));
 
 // render - tasks
@@ -361,15 +362,19 @@ const MainRoutes = {
 							children: [
 								{
 									path: "",
-									element: <Navigate to="verified" replace />
+									element: <Navigate to="verified" replace />,
 								},
 								{
 									path: "verified",
 									element: <AdminCausasVerifiedPage />,
 								},
 								{
-									path: "folders", 
+									path: "folders",
 									element: <AdminCausasFoldersPage />,
+								},
+								{
+									path: "workers",
+									element: <AdminCausasWorkersPage />,
 								},
 							],
 						},

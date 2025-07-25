@@ -681,28 +681,16 @@ const CausasVerified = () => {
 														</Typography>
 													</TableCell>
 													<TableCell align="center">
-														<Chip 
-															label={causa.verified ? "Sí" : "No"} 
-															color={causa.verified ? "success" : "default"} 
-															size="small" 
-														/>
+														<Chip label={causa.verified ? "Sí" : "No"} color={causa.verified ? "success" : "default"} size="small" />
 													</TableCell>
 													<TableCell align="center">
-														<Chip 
-															label={causa.isValid ? "Sí" : "No"} 
-															color={causa.isValid ? "success" : "error"} 
-															size="small" 
-														/>
+														<Chip label={causa.isValid ? "Sí" : "No"} color={causa.isValid ? "success" : "error"} size="small" />
 													</TableCell>
 													<TableCell align="center">
-														<Typography variant="body2">
-															{causa.folderIds?.length || 0}
-														</Typography>
+														<Typography variant="body2">{causa.folderIds?.length || 0}</Typography>
 													</TableCell>
 													<TableCell align="center">
-														<Typography variant="body2">
-															{causa.userCausaIds?.length || 0}
-														</Typography>
+														<Typography variant="body2">{causa.userCausaIds?.length || 0}</Typography>
 													</TableCell>
 													<TableCell align="center">
 														<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">

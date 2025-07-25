@@ -46,7 +46,6 @@ const CausasFolders = () => {
 	const [rowsPerPage, setRowsPerPage] = useState<{ [key: string]: number }>({ CIV: 20, CNT: 20, CSS: 20 });
 	const [totalPages, setTotalPages] = useState<{ [key: string]: number }>({ CIV: 0, CNT: 0, CSS: 0 });
 
-
 	// Fetch folder-linked cases
 	const fetchFolderCausas = useCallback(
 		async (fuero: string) => {
@@ -149,7 +148,6 @@ const CausasFolders = () => {
 		}
 	};
 
-
 	// Refresh data
 	const handleRefresh = () => {
 		const fueros = ["CIV", "CNT", "CSS"];
@@ -165,13 +163,7 @@ const CausasFolders = () => {
 						<Typography variant="h3">Causas con Carpetas Vinculadas</Typography>
 					</Grid>
 					<Grid item>
-						<Button
-							variant="contained"
-							color="primary"
-							startIcon={<Refresh />}
-							sx={{ textTransform: "none" }}
-							onClick={handleRefresh}
-						>
+						<Button variant="contained" color="primary" startIcon={<Refresh />} sx={{ textTransform: "none" }} onClick={handleRefresh}>
 							Actualizar
 						</Button>
 					</Grid>
@@ -284,9 +276,7 @@ const CausasFolders = () => {
 										) : currentFolderCausas.length === 0 ? (
 											<TableRow>
 												<TableCell colSpan={9} align="center" sx={{ py: 3 }}>
-													<Typography variant="subtitle1">
-														No hay causas con carpetas vinculadas para {getFueroLabel(fuero)}
-													</Typography>
+													<Typography variant="subtitle1">No hay causas con carpetas vinculadas para {getFueroLabel(fuero)}</Typography>
 												</TableCell>
 											</TableRow>
 										) : (
@@ -300,9 +290,7 @@ const CausasFolders = () => {
 															</Typography>
 														</TableCell>
 														<TableCell>
-															<Typography variant="body2">
-																Juzgado {causa.juzgado}
-															</Typography>
+															<Typography variant="body2">Juzgado {causa.juzgado}</Typography>
 														</TableCell>
 														<TableCell>
 															<Typography variant="body2" sx={{ maxWidth: 200 }} noWrap title={causa.objeto}>
@@ -310,28 +298,16 @@ const CausasFolders = () => {
 															</Typography>
 														</TableCell>
 														<TableCell align="center">
-															<Chip 
-																label={causa.verified ? "Sí" : "No"} 
-																color={causa.verified ? "success" : "default"} 
-																size="small" 
-															/>
+															<Chip label={causa.verified ? "Sí" : "No"} color={causa.verified ? "success" : "default"} size="small" />
 														</TableCell>
 														<TableCell align="center">
-															<Chip 
-																label={causa.isValid ? "Sí" : "No"} 
-																color={causa.isValid ? "success" : "error"} 
-																size="small" 
-															/>
+															<Chip label={causa.isValid ? "Sí" : "No"} color={causa.isValid ? "success" : "error"} size="small" />
 														</TableCell>
 														<TableCell align="center">
-															<Typography variant="body2">
-																{causa.folderIds?.length || 0}
-															</Typography>
+															<Typography variant="body2">{causa.folderIds?.length || 0}</Typography>
 														</TableCell>
 														<TableCell align="center">
-															<Typography variant="body2">
-																{causa.userCausaIds?.length || 0}
-															</Typography>
+															<Typography variant="body2">{causa.userCausaIds?.length || 0}</Typography>
 														</TableCell>
 														<TableCell align="center">
 															<Typography variant="subtitle2">{causa.movimientosCount}</Typography>

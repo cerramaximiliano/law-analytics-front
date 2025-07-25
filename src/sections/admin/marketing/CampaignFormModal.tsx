@@ -415,13 +415,13 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 											<br />• Emails disparados por condiciones (tiempo o eventos)
 											<br />• Más flexible que sequence
 											<br />• Soporta dos tipos de condiciones:
-											<br />  - Time: Espera X tiempo después del email anterior
-											<br />  - Event: Se envía cuando ocurre un evento específico
+											<br /> - Time: Espera X tiempo después del email anterior
+											<br /> - Event: Se envía cuando ocurre un evento específico
 											<br />• Ideal para: Onboarding, nurturing, follow-ups
 											<br />• Orden normal de procesamiento (0→1→2→3)
 											<br />• Evalúa dos tipos de condiciones:
-											<br />  - type: 'time': Espera X tiempo desde el último email
-											<br />  - type: 'event': Espera que ocurra un evento específico
+											<br /> - type: 'time': Espera X tiempo desde el último email
+											<br /> - type: 'event': Espera que ocurra un evento específico
 											<br />• Más flexible: puede tener lógica compleja
 											<br />• Incluye margen de 60 segundos para no perder envíos
 											<br />• Logs más detallados con cálculos de tiempo

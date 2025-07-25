@@ -172,16 +172,16 @@ const PlansManagement = () => {
 		try {
 			setSyncLoading(true);
 			const response = await ApiService.syncPlansWithStripe();
-			
+
 			if (response.success) {
-				const syncedCount = response.data?.filter(plan => plan.synced).length || 0;
-				const failedCount = response.data?.filter(plan => !plan.synced).length || 0;
-				
+				const syncedCount = response.data?.filter((plan) => plan.synced).length || 0;
+				const failedCount = response.data?.filter((plan) => !plan.synced).length || 0;
+
 				let message = response.message || "Sincronización completada";
 				if (failedCount > 0) {
 					message = `${syncedCount} planes sincronizados exitosamente, ${failedCount} con errores`;
 				}
-				
+
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -191,17 +191,17 @@ const PlansManagement = () => {
 						close: false,
 					}),
 				);
-				
+
 				// Recargar los planes después de la sincronización
 				fetchPlans();
 			}
 		} catch (error: any) {
 			let errorMessage = "Error al sincronizar con Stripe";
-			
+
 			if (error.message) {
 				errorMessage = error.message;
 			}
-			
+
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -226,10 +226,10 @@ const PlansManagement = () => {
 				title="Gestión de Planes y Suscripciones"
 				secondary={
 					<Stack direction="row" spacing={2}>
-						<Button 
-							variant="outlined" 
-							color="secondary" 
-							startIcon={syncLoading ? <CircularProgress size={18} /> : <Refresh2 />} 
+						<Button
+							variant="outlined"
+							color="secondary"
+							startIcon={syncLoading ? <CircularProgress size={18} /> : <Refresh2 />}
 							onClick={handleSyncWithStripe}
 							disabled={syncLoading}
 						>
@@ -242,98 +242,96 @@ const PlansManagement = () => {
 				}
 			>
 				{/* Security Notice */}
-				<Alert 
-					severity="info" 
-					sx={{ 
+				<Alert
+					severity="info"
+					sx={{
 						mb: 3,
-						'& .MuiAlert-message': {
-							width: '100%'
-						}
+						"& .MuiAlert-message": {
+							width: "100%",
+						},
 					}}
 					action={
 						<Button
 							variant="outlined"
 							size="small"
 							startIcon={<Link1 size={16} />}
-							onClick={() => window.open('https://dashboard.stripe.com/login', '_blank')}
-							sx={{ whiteSpace: 'nowrap', alignSelf: 'flex-start', mt: 0.5 }}
+							onClick={() => window.open("https://dashboard.stripe.com/login", "_blank")}
+							sx={{ whiteSpace: "nowrap", alignSelf: "flex-start", mt: 0.5 }}
 						>
 							Ir a Stripe
 						</Button>
 					}
 				>
-					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+					<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
 						<Typography variant="subtitle2" fontWeight="bold">
 							Nota de Seguridad sobre Precios
 						</Typography>
-						<IconButton 
-							size="small" 
-							onClick={() => setShowDetailedInfo(!showDetailedInfo)}
-							sx={{ ml: 1 }}
-						>
+						<IconButton size="small" onClick={() => setShowDetailedInfo(!showDetailedInfo)} sx={{ ml: 1 }}>
 							{showDetailedInfo ? <ArrowUp2 size={16} /> : <ArrowDown2 size={16} />}
 						</IconButton>
 					</Box>
-					<Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-						Por razones de seguridad, la modificación de precios debe realizarse desde Stripe Dashboard. 
-						Use "Sincronizar con Stripe" después de hacer cambios.
+					<Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+						Por razones de seguridad, la modificación de precios debe realizarse desde Stripe Dashboard. Use "Sincronizar con Stripe"
+						después de hacer cambios.
 					</Typography>
-					
+
 					<Collapse in={showDetailedInfo}>
 						<Box sx={{ mt: 2 }}>
 							<Divider sx={{ mb: 2 }} />
-							
+
 							<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
 								Funcionamiento del Sistema:
 							</Typography>
-							
+
 							<Box sx={{ pl: 2 }}>
-								<Typography variant="body2" paragraph sx={{ fontSize: '0.875rem' }}>
+								<Typography variant="body2" paragraph sx={{ fontSize: "0.875rem" }}>
 									<strong>1. Primera instalación:</strong>
-									<br />• Ejecutar: <code style={{ backgroundColor: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: '3px', fontSize: '0.8rem' }}>node scripts/initializePlanConfigs.js</code>
+									<br />• Ejecutar:{" "}
+									<code style={{ backgroundColor: "rgba(0,0,0,0.1)", padding: "2px 4px", borderRadius: "3px", fontSize: "0.8rem" }}>
+										node scripts/initializePlanConfigs.js
+									</code>
 									<br />• Crea productos iniciales en Stripe y MongoDB
 								</Typography>
-								
-								<Typography variant="body2" paragraph sx={{ fontSize: '0.875rem' }}>
+
+								<Typography variant="body2" paragraph sx={{ fontSize: "0.875rem" }}>
 									<strong>2. Operación normal:</strong>
 									<br />• Los precios de Stripe se mantienen sin cambios
 									<br />• Para sincronizar use el botón "Sincronizar con Stripe"
 								</Typography>
-								
-								<Typography variant="body2" paragraph sx={{ fontSize: '0.875rem' }}>
+
+								<Typography variant="body2" paragraph sx={{ fontSize: "0.875rem" }}>
 									<strong>3. Para cambiar precios:</strong>
 									<br />• Modifique en Stripe Dashboard
 									<br />• Sincronice con el botón de esta interfaz
 								</Typography>
 							</Box>
-							
+
 							<Divider sx={{ my: 2 }} />
-							
+
 							<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
 								📋 Configuración en Producción:
 							</Typography>
-							
+
 							<Box sx={{ pl: 2 }}>
-								<Typography variant="body2" sx={{ fontSize: '0.875rem', mb: 1 }}>
+								<Typography variant="body2" sx={{ fontSize: "0.875rem", mb: 1 }}>
 									<strong>Variables de entorno:</strong>
 								</Typography>
-								<Box sx={{ bgcolor: 'grey.100', p: 1, borderRadius: 1, mb: 2 }}>
-									<code style={{ fontSize: '0.75rem' }}>
-										STRIPE_SECRET_KEY=sk_live_xxxxx...<br />
+								<Box sx={{ bgcolor: "grey.100", p: 1, borderRadius: 1, mb: 2 }}>
+									<code style={{ fontSize: "0.75rem" }}>
+										STRIPE_SECRET_KEY=sk_live_xxxxx...
+										<br />
 										NODE_ENV=production
 									</code>
 								</Box>
-								
-								<Typography variant="body2" sx={{ fontSize: '0.875rem', mb: 1 }}>
+
+								<Typography variant="body2" sx={{ fontSize: "0.875rem", mb: 1 }}>
 									<strong>Crear productos iniciales:</strong>
 								</Typography>
-								<Box sx={{ bgcolor: 'grey.100', p: 1, borderRadius: 1, mb: 2 }}>
-									<code style={{ fontSize: '0.75rem' }}>
-										NODE_ENV=production node scripts/initializePlanConfigs.js
-									</code>
+								<Box sx={{ bgcolor: "grey.100", p: 1, borderRadius: 1, mb: 2 }}>
+									<code style={{ fontSize: "0.75rem" }}>NODE_ENV=production node scripts/initializePlanConfigs.js</code>
 								</Box>
-								
-								<Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
+
+								<Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
 									<strong>Notas:</strong>
 									<br />• ⚠️ NO usar productos de desarrollo en producción
 									<br />• ✅ Stripe es la fuente de verdad para precios
@@ -343,7 +341,7 @@ const PlansManagement = () => {
 						</Box>
 					</Collapse>
 				</Alert>
-				
+
 				<Grid container spacing={3}>
 					{/* Summary Cards */}
 					<Grid item xs={12} sm={6} md={3}>
