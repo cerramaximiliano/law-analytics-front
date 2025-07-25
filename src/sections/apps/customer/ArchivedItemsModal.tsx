@@ -206,7 +206,7 @@ const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading,
 							}}
 						>
 							<TableContainer sx={{ maxHeight: 400 }}>
-								<Table stickyHeader>
+								<Table>
 									<TableHead>
 										<TableRow>
 											<TableCell

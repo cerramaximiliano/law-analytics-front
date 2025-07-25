@@ -21,9 +21,6 @@ import {
 	Paper,
 	Skeleton,
 	Chip,
-	Select,
-	MenuItem,
-	FormControl,
 	LinearProgress,
 } from "@mui/material";
 import { Edit2, TickCircle, CloseCircle, Refresh } from "iconsax-react";
@@ -97,7 +94,6 @@ const AppUpdateWorker = () => {
 		setEditingId(id);
 		setEditValues({
 			worker_id: config.worker_id,
-			update_mode: config.update_mode,
 			enabled: config.enabled,
 			batch_size: config.batch_size,
 			last_update_threshold_hours: config.last_update_threshold_hours,
@@ -213,27 +209,12 @@ const AppUpdateWorker = () => {
 										)}
 									</TableCell>
 									<TableCell>
-										{isEditing ? (
-											<FormControl size="small" fullWidth>
-												<Select
-													value={editValues.update_mode || ""}
-													onChange={(e) => setEditValues({ ...editValues, update_mode: e.target.value })}
-												>
-													{UPDATE_MODE_OPTIONS.map((option) => (
-														<MenuItem key={option.value} value={option.value}>
-															{option.label}
-														</MenuItem>
-													))}
-												</Select>
-											</FormControl>
-										) : (
-											<Chip
-												label={getUpdateModeLabel(config.update_mode || "")}
-												size="small"
-												color={config.update_mode === "all" ? "secondary" : "default"}
-												variant="outlined"
-											/>
-										)}
+										<Chip
+											label={getUpdateModeLabel(config.update_mode || "")}
+											size="small"
+											color={config.update_mode === "all" ? "secondary" : "default"}
+											variant="outlined"
+										/>
 									</TableCell>
 									<TableCell align="center">
 										{isEditing ? (
