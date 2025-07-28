@@ -11,8 +11,12 @@ export type GuardProps = {
 
 // Definimos la interfaz para el objeto de colegio con matrícula
 interface LawyerCollegeWithRegistration {
+	_id?: string;
 	name: string;
 	registrationNumber: string;
+	taxCondition: 'autonomo' | 'monotributo' | '';
+	taxCode: string;
+	electronicAddress: string;
 }
 
 // Definimos el tipo para las skills que pueden ser string[] o LawyerCollegeWithRegistration[]
@@ -88,6 +92,7 @@ export interface AuthActionProps {
 			id: string;
 			email: string | null;
 		};
+		skills?: UserSkills;
 	};
 }
 

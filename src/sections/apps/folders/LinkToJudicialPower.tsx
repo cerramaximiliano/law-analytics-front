@@ -603,16 +603,11 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 
 							<Grid item xs={12}>
 								<FormControlLabel
-									control={
-										<Checkbox
-											checked={overwriteData}
-											onChange={(e) => setOverwriteData(e.target.checked)}
-											color="primary"
-										/>
-									}
+									control={<Checkbox checked={overwriteData} onChange={(e) => setOverwriteData(e.target.checked)} color="primary" />}
 									label={
 										<Typography variant="body2">
-											Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder Judicial
+											Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder
+											Judicial
 										</Typography>
 									}
 								/>

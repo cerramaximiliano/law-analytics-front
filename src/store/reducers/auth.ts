@@ -9,6 +9,8 @@ import {
 	SET_NEEDS_VERIFICATION,
 	UPDATE_SUBSCRIPTION,
 	UPDATE_PAYMENT_HISTORY,
+	ADD_USER_SKILLS,
+	DELETE_USER_SKILL,
 } from "./actions";
 import axios from "axios";
 
@@ -122,6 +124,30 @@ const auth = (state = initialState, action: AuthActionProps) => {
 			return {
 				...initialState,
 				isInitialized: true,
+			};
+		}
+		case ADD_USER_SKILLS: {
+			const { skills } = action.payload!;
+			return {
+				...state,
+				user: state.user
+					? {
+							...state.user,
+							skill: skills,
+					  }
+					: null,
+			};
+		}
+		case DELETE_USER_SKILL: {
+			const { skills } = action.payload!;
+			return {
+				...state,
+				user: state.user
+					? {
+							...state.user,
+							skill: skills,
+					  }
+					: null,
 			};
 		}
 		default: {
@@ -272,6 +298,7 @@ export const updateUserProfile = (profileData: any) => async (dispatch: Dispatch
 		throw error;
 	}
 };
+
 // Acción para cambiar la contraseña del usuario
 export const changeUserPassword = (passwordData: PasswordChangeData) => async (dispatch: Dispatch) => {
 	try {
@@ -409,6 +436,105 @@ export const selectPaymentHistory = (state: RootState) => state.auth.paymentHist
 
 // Selector para obtener el customer del estado
 export const selectCustomer = (state: RootState) => state.auth.customer;
+
+// Acción para agregar skills
+export const addUserSkills = (skills: any) => async (dispatch: Dispatch) => {
+	try {
+		// Convertir taxCode a número si viene como string
+		const processedSkills = Array.isArray(skills)
+			? skills.map((skill) => ({
+					...skill,
+					taxCode: typeof skill.taxCode === "string" ? parseInt(skill.taxCode.replace(/-/g, "")) : skill.taxCode,
+			  }))
+			: {
+					...skills,
+					taxCode: typeof skills.taxCode === "string" ? parseInt(skills.taxCode.replace(/-/g, "")) : skills.taxCode,
+			  };
+
+		const response = await axios.post(
+			`${process.env.REACT_APP_BASE_URL}/api/auth/skills`,
+			{ skills: processedSkills },
+			{ withCredentials: true },
+		);
+
+		if (response.data.success) {
+			// Actualizar el estado con los nuevos skills
+			dispatch({
+				type: ADD_USER_SKILLS,
+				payload: { skills: response.data.skills },
+			});
+
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: response.data.message || "Datos agregados correctamente",
+					variant: "alert",
+					alert: {
+						color: "success",
+					},
+					close: true,
+				}),
+			);
+
+			return response.data;
+		}
+	} catch (error: any) {
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: error.response?.data?.message || error.message || "Error al agregar skills",
+				variant: "alert",
+				alert: {
+					color: "error",
+				},
+				close: false,
+			}),
+		);
+		throw error;
+	}
+};
+
+// Acción para eliminar un skill
+export const deleteUserSkill = (skillId: string) => async (dispatch: Dispatch) => {
+	try {
+		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/auth/skills/${skillId}`, { withCredentials: true });
+
+		if (response.data.success) {
+			// Actualizar el estado con los skills restantes
+			dispatch({
+				type: DELETE_USER_SKILL,
+				payload: { skills: response.data.skills },
+			});
+
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: response.data.message || "Dato eliminado correctamente",
+					variant: "alert",
+					alert: {
+						color: "success",
+					},
+					close: true,
+				}),
+			);
+
+			return response.data;
+		}
+	} catch (error: any) {
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: error.response?.data?.message || error.message || "Error al eliminar skill",
+				variant: "alert",
+				alert: {
+					color: "error",
+				},
+				close: false,
+			}),
+		);
+		throw error;
+	}
+};
 
 // Acción para actualizar el historial de pagos y customer en el estado
 export const updatePaymentHistory =
