@@ -7,12 +7,14 @@ import Free from "sections/landing/Free";
 import Testimonial from "sections/landing/Testimonial";
 //import Partner from "sections/landing/Partner";
 import ContactUs from "sections/landing/ContactUs";
+import SEO from "components/SEO/SEO";
 
 // ==============================|| SAMPLE PAGE ||============================== //
 
 const Landing = () => {
 	return (
 		<>
+			<SEO path="/" />
 			<Hero />
 			<Technologies />
 			<Combo />

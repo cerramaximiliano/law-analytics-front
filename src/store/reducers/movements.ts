@@ -78,8 +78,8 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 		case TOGGLE_MOVEMENT_COMPLETE:
 			return {
 				...state,
-				movements: state.movements.map((movement) => 
-					movement._id === action.payload._id ? { ...movement, completed: action.payload.completed } : movement
+				movements: state.movements.map((movement) =>
+					movement._id === action.payload._id ? { ...movement, completed: action.payload.completed } : movement,
 				),
 				isLoading: false,
 			};
@@ -378,10 +378,10 @@ export const toggleMovementComplete = (movementId: string) => async (dispatch: D
 					completed: response.data.movement.completed,
 				},
 			});
-			return { 
-				success: true, 
+			return {
+				success: true,
 				movement: response.data.movement,
-				message: response.data.message 
+				message: response.data.message,
 			};
 		}
 
@@ -402,10 +402,10 @@ export const toggleMovementComplete = (movementId: string) => async (dispatch: D
 			payload: errorMessage,
 		});
 
-		return { 
-			success: false, 
+		return {
+			success: false,
 			error: errorMessage,
-			statusCode
+			statusCode,
 		};
 	}
 };

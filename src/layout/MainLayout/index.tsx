@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -27,12 +27,14 @@ import { MenuOrientation } from "types/config";
 
 const MainLayout = () => {
 	const theme = useTheme();
+	const location = useLocation();
 	const downXL = useMediaQuery(theme.breakpoints.down("xl"));
 	const downLG = useMediaQuery(theme.breakpoints.down("lg"));
 
 	const { container, miniDrawer, menuOrientation } = useConfig();
 
 	const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
+	const isDetailPage = location.pathname.includes("/apps/folders/details/");
 
 	// Initialize search entity loader
 	useSearchEntityLoader();
@@ -64,7 +66,14 @@ const MainLayout = () => {
 							flexDirection: "column",
 						}}
 					>
-						<Breadcrumbs navigation={navigation} title titleBottom card={false} divider={false} />
+						<Box
+							sx={{
+								position: "relative",
+								paddingRight: isDetailPage ? { xs: "200px", sm: "250px", md: "350px" } : 0,
+							}}
+						>
+							<Breadcrumbs navigation={navigation} title titleBottom card={false} divider={false} />
+						</Box>
 						<Outlet />
 						<Footer />
 					</Container>

@@ -29,6 +29,7 @@ import {
 import { Edit2, TickCircle, CloseCircle, Refresh, Setting2 } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import { WorkersService, WorkerConfig } from "api/workers";
+import AdvancedConfigModal from "./AdvancedConfigModal";
 
 // Enums para el worker de scraping
 const FUERO_OPTIONS = [
@@ -43,6 +44,8 @@ const ScrapingWorker = () => {
 	const [loading, setLoading] = useState(true);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editValues, setEditValues] = useState<Partial<WorkerConfig>>({});
+	const [advancedConfigOpen, setAdvancedConfigOpen] = useState(false);
+	const [selectedConfig, setSelectedConfig] = useState<WorkerConfig | null>(null);
 
 	// Cargar configuraciones
 	const fetchConfigs = async () => {
@@ -138,6 +141,17 @@ const ScrapingWorker = () => {
 		} catch (error: any) {
 			enqueueSnackbar(error.message || "Error al cambiar el estado", { variant: "error" });
 		}
+	};
+
+	// Manejar configuración avanzada
+	const handleAdvancedConfig = (config: WorkerConfig) => {
+		setSelectedConfig(config);
+		setAdvancedConfigOpen(true);
+	};
+
+	const handleCloseAdvancedConfig = () => {
+		setAdvancedConfigOpen(false);
+		setSelectedConfig(null);
 	};
 
 	if (loading) {
@@ -368,7 +382,7 @@ const ScrapingWorker = () => {
 													</IconButton>
 												</Tooltip>
 												<Tooltip title="Configuración avanzada">
-													<IconButton size="small" color="secondary">
+													<IconButton size="small" color="secondary" onClick={() => handleAdvancedConfig(config)}>
 														<Setting2 size={18} />
 													</IconButton>
 												</Tooltip>
@@ -431,6 +445,17 @@ const ScrapingWorker = () => {
 					</Card>
 				</Grid>
 			</Grid>
+
+			{/* Modal de configuración avanzada */}
+			{selectedConfig && (
+				<AdvancedConfigModal
+					open={advancedConfigOpen}
+					onClose={handleCloseAdvancedConfig}
+					config={selectedConfig}
+					onUpdate={fetchConfigs}
+					workerType="scraping"
+				/>
+			)}
 		</Stack>
 	);
 };

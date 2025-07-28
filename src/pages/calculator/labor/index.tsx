@@ -4,10 +4,12 @@ import { Grid } from "@mui/material";
 
 import LaborTabs from "./labor-tabs";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
+import SEO from "components/SEO/SEO";
 
 function LaborLayouts() {
 	return (
 		<>
+			<SEO path="/calculator/labor" />
 			<DowngradeGracePeriodAlert />
 			<Grid container spacing={3}>
 				<Grid item xs={12}>

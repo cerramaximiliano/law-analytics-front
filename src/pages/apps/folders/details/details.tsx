@@ -524,6 +524,9 @@ const Details = () => {
 						display: "flex",
 						alignItems: "center",
 						height: 36, // Match breadcrumb height
+						// Agregar fondo para asegurar que el texto no se vea detrás
+						backgroundColor: theme.palette.background.default,
+						paddingLeft: 2,
 					}}
 				>
 					<NavigationControls currentFolderId={id} inline />

@@ -195,8 +195,19 @@ const Breadcrumbs = ({
 						</MuiBreadcrumbs>
 					</Grid>
 					{title && titleBottom && (
-						<Grid item sx={{ mt: card === false ? 0 : 1 }}>
-							<Typography variant="h2" sx={{ fontWeight: 700 }}>
+						<Grid item sx={{ mt: card === false ? 0 : 1, width: "100%", overflow: "hidden" }}>
+							<Typography
+								variant="h2"
+								sx={{
+									fontWeight: 700,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									width: "100%",
+									display: "block",
+								}}
+								title={typeof itemTitle === "string" ? itemTitle : ""}
+							>
 								{itemTitle}
 							</Typography>
 						</Grid>
@@ -214,9 +225,25 @@ const Breadcrumbs = ({
 		itemTitle = customLabels[pathWithoutPrefix] || item.title;
 
 		ItemIcon = item.icon ? item.icon : Buildings2;
+		const itemTitleText = typeof itemTitle === "string" ? itemTitle : ""; // Convert to string for title prop
 		itemContent = (
-			<Typography variant="h6" color="secondary" sx={{ display: "flex", alignItems: "center" }}>
-				{icons && <ItemIcon style={iconSX} />}
+			<Typography
+				variant="h6"
+				component="div"
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					color: theme.palette.secondary.main,
+					fontSize: "0.875rem",
+					fontWeight: theme.typography.h6.fontWeight,
+					maxWidth: { xs: "150px", sm: "250px", md: "350px", lg: "450px" },
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					whiteSpace: "nowrap",
+				}}
+				title={itemTitleText}
+			>
+				{icons && <ItemIcon style={{ ...iconSX, flexShrink: 0 }} />}
 				{itemTitle}
 			</Typography>
 		);
@@ -224,8 +251,25 @@ const Breadcrumbs = ({
 		// Special handling for folder details page when item is not found in menu
 		const pathWithoutPrefix = location.pathname.startsWith("/") ? location.pathname.substring(1) : location.pathname;
 		itemTitle = customLabels[pathWithoutPrefix] || "\u00A0"; // Use non-breaking space as fallback
+		const titleText = typeof itemTitle === "string" ? itemTitle : ""; // Convert to string for title prop
 		itemContent = (
-			<Typography variant="h6" color="secondary" sx={{ display: "flex", alignItems: "center", minHeight: "24px" }}>
+			<Typography
+				variant="h6"
+				component="span"
+				sx={{
+					display: "inline-block",
+					maxWidth: { xs: "150px", sm: "250px", md: "350px", lg: "450px" },
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					whiteSpace: "nowrap",
+					color: theme.palette.secondary.main,
+					fontSize: "0.875rem",
+					fontFamily: theme.typography.fontFamily,
+					fontWeight: theme.typography.h6.fontWeight,
+					lineHeight: 1.5,
+				}}
+				title={titleText}
+			>
 				{itemTitle}
 			</Typography>
 		);
@@ -249,20 +293,49 @@ const Breadcrumbs = ({
 					spacing={0.5}
 				>
 					{title && !titleBottom && (
-						<Grid item>
-							<Typography variant="h2" sx={{ fontWeight: 700 }}>
+						<Grid item sx={{ maxWidth: "100%", overflow: "hidden" }}>
+							<Typography
+								variant="h2"
+								sx={{
+									fontWeight: 700,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+								}}
+								title={typeof itemTitle === "string" ? itemTitle : ""}
+							>
 								{itemTitle}
 							</Typography>
 						</Grid>
 					)}
-					<Grid item>
-						<MuiBreadcrumbs aria-label="breadcrumb" maxItems={maxItems || 8} separator={separatorIcon}>
+					<Grid
+						item
+						sx={{
+							flex: 1,
+							minWidth: 0, // Importante para que funcione el text-overflow
+							overflow: "hidden",
+						}}
+					>
+						<MuiBreadcrumbs
+							aria-label="breadcrumb"
+							maxItems={maxItems || 8}
+							separator={separatorIcon}
+							sx={{
+								"& .MuiBreadcrumbs-ol": {
+									flexWrap: "nowrap",
+									overflow: "hidden",
+								},
+								"& .MuiBreadcrumbs-li": {
+									overflow: "hidden",
+								},
+							}}
+						>
 							<Typography
 								component={Link}
 								to="/dashboard/default"
 								color="textPrimary"
 								variant="h6"
-								sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+								sx={{ textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}
 							>
 								{icons && <Home3 style={iconSX} />}
 								{icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
@@ -275,7 +348,7 @@ const Breadcrumbs = ({
 									component={Link}
 									to="/apps/folders/list"
 									variant="h6"
-									sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+									sx={{ textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}
 									color="secondary"
 								>
 									Causas
@@ -314,12 +387,23 @@ const Breadcrumbs = ({
 							)}
 
 							{/* Solo mostrar itemContent si no estamos en la raíz de calculadoras o en la página principal */}
-							{location.pathname === "/apps/calc" || location.pathname === "/dashboard/default" ? null : itemContent || null}
+							{location.pathname === "/apps/calc" || location.pathname === "/dashboard/default" ? null : itemContent}
 						</MuiBreadcrumbs>
 					</Grid>
 					{title && titleBottom && (
-						<Grid item sx={{ mt: card === false ? 0 : 1 }}>
-							<Typography variant="h2" sx={{ fontWeight: 700 }}>
+						<Grid item sx={{ mt: card === false ? 0 : 1, width: "100%", overflow: "hidden" }}>
+							<Typography
+								variant="h2"
+								sx={{
+									fontWeight: 700,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									width: "100%",
+									display: "block",
+								}}
+								title={typeof itemTitle === "string" ? itemTitle : ""}
+							>
 								{itemTitle}
 							</Typography>
 						</Grid>

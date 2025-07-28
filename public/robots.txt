@@ -1,0 +1,27 @@
+# Law Analytics Robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://lawanalytics.app/sitemap.xml
+
+# Disallow admin and private paths
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /profile/
+Disallow: /settings/
+
+# Allow search engine crawlers to access public pages
+Allow: /calculator/
+Allow: /apps/folders
+Allow: /apps/customer
+Allow: /apps/calendar
+Allow: /booking
+Allow: /plans
+Allow: /contact-us
+Allow: /privacy-policy
+Allow: /terms-of-service
+
+# Crawl delay
+Crawl-delay: 1

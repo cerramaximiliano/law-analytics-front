@@ -32,6 +32,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
+import SEO from "components/SEO/SEO";
 
 import AddFolder from "sections/apps/folders/AddFolder";
 import FolderView from "sections/apps/folders/FolderView";
@@ -994,89 +995,92 @@ const FoldersLayout = () => {
 	}
 
 	return (
-		<MainCard content={false}>
-			<DowngradeGracePeriodAlert />
-			<ScrollX>
-				<ReactTable
-					columns={columns as any}
-					data={folders}
-					handleAdd={handleAddFolder}
-					handleArchiveSelected={handleArchiveSelected}
-					handleOpenGuide={handleOpenGuide}
-					handleOpenArchivedModal={handleOpenArchivedModal}
-					renderRowSubComponent={renderRowSubComponent}
-					isLoading={isLoader}
-					expandedRowId={expandedRowId}
-					navigate={navigate}
+		<>
+			<SEO path="/apps/folders" />
+			<MainCard content={false}>
+				<DowngradeGracePeriodAlert />
+				<ScrollX>
+					<ReactTable
+						columns={columns as any}
+						data={folders}
+						handleAdd={handleAddFolder}
+						handleArchiveSelected={handleArchiveSelected}
+						handleOpenGuide={handleOpenGuide}
+						handleOpenArchivedModal={handleOpenArchivedModal}
+						renderRowSubComponent={renderRowSubComponent}
+						isLoading={isLoader}
+						expandedRowId={expandedRowId}
+						navigate={navigate}
+					/>
+				</ScrollX>
+				<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
+				{add && (
+					<Dialog
+						maxWidth="sm"
+						TransitionComponent={PopupTransition}
+						keepMounted
+						fullWidth
+						open={add}
+						sx={{
+							"& .MuiDialog-paper": {
+								p: 0,
+								height: "80vh",
+								maxHeight: "80vh",
+								display: "flex",
+								flexDirection: "column",
+								overflow: "hidden",
+							},
+						}}
+					>
+						<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleCloseDialog} />
+					</Dialog>
+				)}
+
+				{/* El componente AddFolder manejará el LimitErrorModal independientemente */}
+
+				{/* Modal para elementos archivados */}
+				<ArchivedItemsModal
+					open={archivedModalOpen}
+					onClose={handleCloseArchivedModal}
+					title="Causas Archivadas"
+					items={archivedFolders || []}
+					onUnarchive={handleUnarchiveSelected}
+					loading={loadingUnarchive}
+					itemType="folders"
 				/>
-			</ScrollX>
-			<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
-			{add && (
-				<Dialog
-					maxWidth="sm"
-					TransitionComponent={PopupTransition}
-					keepMounted
-					fullWidth
-					open={add}
-					sx={{
-						"& .MuiDialog-paper": {
-							p: 0,
-							height: "80vh",
-							maxHeight: "80vh",
-							display: "flex",
-							flexDirection: "column",
-							overflow: "hidden",
-						},
-					}}
-				>
-					<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleCloseDialog} />
-				</Dialog>
-			)}
 
-			{/* El componente AddFolder manejará el LimitErrorModal independientemente */}
+				{/* Guía de causas */}
+				<GuideFolders open={guideOpen} onClose={() => setGuideOpen(false)} />
 
-			{/* Modal para elementos archivados */}
-			<ArchivedItemsModal
-				open={archivedModalOpen}
-				onClose={handleCloseArchivedModal}
-				title="Causas Archivadas"
-				items={archivedFolders || []}
-				onUnarchive={handleUnarchiveSelected}
-				loading={loadingUnarchive}
-				itemType="folders"
-			/>
+				{/* Modal de límite de recursos */}
+				<LimitErrorModal
+					open={limitErrorOpen}
+					onClose={handleCloseLimitErrorModal}
+					message={limitErrorMessage}
+					limitInfo={limitErrorInfo}
+					upgradeRequired={true}
+				/>
 
-			{/* Guía de causas */}
-			<GuideFolders open={guideOpen} onClose={() => setGuideOpen(false)} />
-
-			{/* Modal de límite de recursos */}
-			<LimitErrorModal
-				open={limitErrorOpen}
-				onClose={handleCloseLimitErrorModal}
-				message={limitErrorMessage}
-				limitInfo={limitErrorInfo}
-				upgradeRequired={true}
-			/>
-
-			<Snackbar
-				open={snackbarOpen}
-				autoHideDuration={6000}
-				onClose={handleSnackbarClose}
-				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-			>
-				<Alert
+				<Snackbar
+					open={snackbarOpen}
+					autoHideDuration={6000}
 					onClose={handleSnackbarClose}
-					severity={snackbarSeverity}
-					variant="filled"
-					sx={{
-						width: "100%",
-						fontWeight: 500,
-					}}
+					anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
 				>
-					{snackbarMessage}
-				</Alert>
-			</Snackbar>
-		</MainCard>
+					<Alert
+						onClose={handleSnackbarClose}
+						severity={snackbarSeverity}
+						variant="filled"
+						sx={{
+							width: "100%",
+							fontWeight: 500,
+						}}
+					>
+						{snackbarMessage}
+					</Alert>
+				</Snackbar>
+			</MainCard>
+		</>
 	);
 };
 

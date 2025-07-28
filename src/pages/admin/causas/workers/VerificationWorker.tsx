@@ -25,9 +25,10 @@ import {
 	MenuItem,
 	FormControl,
 } from "@mui/material";
-import { Edit2, TickCircle, CloseCircle, Refresh } from "iconsax-react";
+import { Edit2, TickCircle, CloseCircle, Refresh, Setting2 } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import { WorkersService, WorkerConfig } from "api/workers";
+import AdvancedConfigModal from "./AdvancedConfigModal";
 
 // Enums según el modelo mongoose
 const VERIFICATION_MODE_OPTIONS = [
@@ -48,6 +49,8 @@ const VerificationWorker = () => {
 	const [loading, setLoading] = useState(true);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editValues, setEditValues] = useState<Partial<WorkerConfig>>({});
+	const [advancedConfigOpen, setAdvancedConfigOpen] = useState(false);
+	const [selectedConfig, setSelectedConfig] = useState<WorkerConfig | null>(null);
 
 	// Helper para obtener labels
 	const getVerificationModeLabel = (value: string) => {
@@ -137,6 +140,17 @@ const VerificationWorker = () => {
 		}
 	};
 
+	// Manejar configuración avanzada
+	const handleAdvancedConfig = (config: WorkerConfig) => {
+		setSelectedConfig(config);
+		setAdvancedConfigOpen(true);
+	};
+
+	const handleCloseAdvancedConfig = () => {
+		setAdvancedConfigOpen(false);
+		setSelectedConfig(null);
+	};
+
 	if (loading) {
 		return (
 			<Grid container spacing={3}>
@@ -169,6 +183,97 @@ const VerificationWorker = () => {
 					información en el sistema.
 				</Typography>
 			</Alert>
+
+			{/* Información detallada del worker */}
+			<Card variant="outlined" sx={{ backgroundColor: "background.default" }}>
+				<CardContent sx={{ py: 2 }}>
+					<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+						Elegibilidad de Documentos - Worker de Verificación
+					</Typography>
+					<Grid container spacing={1.5}>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Source:
+								</Typography>
+								<Typography variant="caption" fontWeight={500}>
+									"app"
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Verified (req):
+								</Typography>
+								<Typography variant="caption" fontWeight={500}>
+									false
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									isValid (req):
+								</Typography>
+								<Typography variant="caption" fontWeight={500}>
+									null
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Update:
+								</Typography>
+								<Typography variant="caption" fontWeight={500}>
+									No importa
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Función:
+								</Typography>
+								<Typography variant="caption" fontWeight={500} color="primary.main">
+									Verificación inicial
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Modifica verified:
+								</Typography>
+								<Typography variant="caption" fontWeight={500} color="success.main">
+									SÍ
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Modifica isValid:
+								</Typography>
+								<Typography variant="caption" fontWeight={500} color="success.main">
+									SÍ
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Frecuencia:
+								</Typography>
+								<Typography variant="caption" fontWeight={500} color="warning.main">
+									Una sola vez
+								</Typography>
+							</Stack>
+						</Grid>
+					</Grid>
+				</CardContent>
+			</Card>
 
 			{/* Tabla de configuraciones */}
 			<TableContainer component={Paper} variant="outlined">
@@ -312,11 +417,18 @@ const VerificationWorker = () => {
 												</Tooltip>
 											</Stack>
 										) : (
-											<Tooltip title="Editar">
-												<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
-													<Edit2 size={18} />
-												</IconButton>
-											</Tooltip>
+											<Stack direction="row" spacing={1} justifyContent="center">
+												<Tooltip title="Editar">
+													<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
+														<Edit2 size={18} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Configuración Avanzada">
+													<IconButton size="small" color="secondary" onClick={() => handleAdvancedConfig(config)}>
+														<Setting2 size={18} />
+													</IconButton>
+												</Tooltip>
+											</Stack>
 										)}
 									</TableCell>
 								</TableRow>
@@ -385,6 +497,17 @@ const VerificationWorker = () => {
 						Proveedor de Captcha: <strong>{configs[0].captcha.defaultProvider}</strong>
 					</Typography>
 				</Alert>
+			)}
+
+			{/* Modal de configuración avanzada */}
+			{selectedConfig && (
+				<AdvancedConfigModal
+					open={advancedConfigOpen}
+					onClose={handleCloseAdvancedConfig}
+					config={selectedConfig}
+					onUpdate={fetchConfigs}
+					workerType="verificacion"
+				/>
 			)}
 		</Stack>
 	);

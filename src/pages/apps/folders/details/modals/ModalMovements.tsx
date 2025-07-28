@@ -21,6 +21,7 @@ import { dispatch, useSelector } from "store";
 import { addMovement, updateMovement } from "store/reducers/movements";
 import { Movement } from "types/movements";
 import { enqueueSnackbar } from "notistack";
+import { format, parseISO, isValid } from "date-fns";
 // types
 import { MovementsModalType } from "types/movements";
 
@@ -32,6 +33,35 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 	function closeTaskModal() {
 		setOpen(false);
 	}
+
+	// Función para convertir fechas al formato DD/MM/YYYY para el formulario
+	const formatDateForForm = (dateString: string | undefined): string => {
+		if (!dateString || dateString.trim() === "") {
+			return "";
+		}
+
+		try {
+			let parsedDate: Date;
+
+			// Si ya está en formato DD/MM/YYYY, lo devolvemos tal cual
+			if (dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+				return dateString;
+			}
+
+			// Si es formato ISO o incluye 'T' o '-'
+			if (dateString.includes("T") || dateString.includes("-")) {
+				parsedDate = parseISO(dateString);
+				if (isValid(parsedDate)) {
+					return format(parsedDate, "dd/MM/yyyy");
+				}
+			}
+
+			// Si no pudimos parsear, devolvemos vacío
+			return "";
+		} catch {
+			return "";
+		}
+	};
 
 	const CustomerSchema = [
 		Yup.object().shape({
@@ -94,8 +124,8 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 	type MovementFormValues = Omit<Movement, "_id">;
 
 	const initialValues: MovementFormValues = {
-		time: movementData?.time || "",
-		dateExpiration: movementData?.dateExpiration || "",
+		time: formatDateForForm(movementData?.time),
+		dateExpiration: formatDateForForm(movementData?.dateExpiration),
 		title: movementData?.title || "",
 		description: movementData?.description || "",
 		movement: movementData?.movement || "",
