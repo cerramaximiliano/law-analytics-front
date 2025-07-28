@@ -1,5 +1,5 @@
 // material-ui
-import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper, Button, Tooltip, alpha, useTheme } from "@mui/material";
+import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper, Tooltip, alpha, useTheme } from "@mui/material";
 
 // project-imports
 import Transitions from "components/@extended/Transitions";
@@ -149,19 +149,38 @@ const FolderView = memo(({ data }: any) => {
 									)}
 								</Box>
 							) : (
-								<Button
-									variant="outlined"
-									color="primary"
-									startIcon={<ExportSquare size="20" />}
+								<Box
 									onClick={handleOpenLinkJudicial}
 									sx={{
-										borderRadius: 1,
-										textTransform: "none",
-										fontWeight: 500,
+										px: 2,
+										py: 0.75,
+										height: 36,
+										display: "flex",
+										alignItems: "center",
+										gap: 0.75,
+										cursor: "pointer",
+										bgcolor: alpha(theme.palette.primary.main, 0.1),
+										border: `1px solid ${theme.palette.primary.main}`,
+										borderRadius: 0.5,
+										transition: "all 0.2s ease",
+										"&:hover": {
+											bgcolor: alpha(theme.palette.primary.main, 0.15),
+											borderColor: theme.palette.primary.dark,
+										},
 									}}
 								>
-									Vincular con Poder Judicial
-								</Button>
+									<ExportSquare size={16} variant="Linear" color={theme.palette.primary.main} />
+									<Typography
+										variant="body2"
+										sx={{
+											fontWeight: 500,
+											color: theme.palette.primary.main,
+											fontSize: "0.8125rem",
+										}}
+									>
+										Vincular con Poder Judicial
+									</Typography>
+								</Box>
 							)}
 						</Stack>
 

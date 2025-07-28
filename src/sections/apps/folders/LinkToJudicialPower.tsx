@@ -23,6 +23,8 @@ import {
 	ListItemIcon,
 	alpha,
 	Chip,
+	Checkbox,
+	FormControlLabel,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
 import { Add, DocumentUpload, ArrowRight, Lock } from "iconsax-react";
@@ -84,6 +86,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 	const [jurisdictionError, setJurisdictionError] = useState("");
 	const [numberError, setNumberError] = useState("");
 	const [error, setError] = useState("");
+	const [overwriteData, setOverwriteData] = useState(true); // Por defecto true para mantener comportamiento actual
 	const [touched, setTouched] = useState({
 		jurisdiction: false,
 		expedientNumber: false,
@@ -171,7 +174,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 					pjnCode: jurisdiction, // El código de jurisdicción se usa como pjnCode
 					number: expedientNumber,
 					year: expedientYear,
-					overwrite: true, // Por defecto, sobrescribir los datos del folder
+					overwrite: overwriteData, // Usar el valor del checkbox
 					pjn: selectedPower === "nacional", // true si es Poder Judicial de la Nación
 				}),
 			);
@@ -216,6 +219,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 			setNumberError("");
 			setJurisdictionError("");
 			setSuccess(false);
+			setOverwriteData(true); // Reiniciar a true por defecto
 			formSubmitAttempted.current = false;
 			setTouched({
 				jurisdiction: false,
@@ -595,6 +599,23 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 										size="small"
 									/>
 								</Stack>
+							</Grid>
+
+							<Grid item xs={12}>
+								<FormControlLabel
+									control={
+										<Checkbox
+											checked={overwriteData}
+											onChange={(e) => setOverwriteData(e.target.checked)}
+											color="primary"
+										/>
+									}
+									label={
+										<Typography variant="body2">
+											Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder Judicial
+										</Typography>
+									}
+								/>
 							</Grid>
 
 							<Grid item xs={12}>
