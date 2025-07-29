@@ -3,6 +3,7 @@
 ## Implementación Realizada
 
 ### 1. Configuración Base
+
 - **react-helmet-async**: Instalado para gestión dinámica de meta tags
 - **SEOProvider**: Wrapper configurado en App.tsx
 - **SEO Component**: Componente reutilizable para cada página
@@ -10,14 +11,18 @@
 ### 2. Archivos de Configuración SEO
 
 #### `/src/config/seo.config.ts`
+
 Contiene:
+
 - Configuración SEO por defecto
 - Configuraciones específicas por página
 - Datos estructurados (JSON-LD)
 - Keywords optimizadas por funcionalidad
 
 #### `/src/components/SEO/SEO.tsx`
+
 Componente que gestiona:
+
 - Meta tags básicos (title, description, keywords)
 - Open Graph tags
 - Twitter Card tags
@@ -25,6 +30,7 @@ Componente que gestiona:
 - Canonical URLs
 
 ### 3. Archivos Públicos
+
 - **sitemap.xml**: Mapa del sitio con todas las páginas principales
 - **robots.txt**: Configuración para crawlers
 - **index.html**: Meta tags por defecto mejorados
@@ -32,16 +38,19 @@ Componente que gestiona:
 ### 4. Páginas Optimizadas
 
 #### Landing Page (`/`)
+
 - Title: "Law Analytics - Software Legal Inteligente para Abogados"
 - Keywords: software legal, gestión causas, calculadora laboral
 - Structured Data: Organization
 
 #### Calculadora Laboral (`/calculator/labor`)
+
 - Title: "Calculadora Laboral Online - Despidos e Indemnizaciones"
 - Keywords: calculadora laboral, indemnización despido, Art. 245 LCT
 - Structured Data: WebApplication
 
 #### Gestión de Causas (`/apps/folders`)
+
 - Title: "Gestión de Causas Judiciales - Expedientes Digitales"
 - Keywords: gestión causas, poder judicial, expedientes digitales
 - Structured Data: SoftwareApplication
@@ -54,12 +63,12 @@ Componente que gestiona:
 import SEO from "components/SEO/SEO";
 
 function NuevaPagina() {
-  return (
-    <>
-      <SEO path="/ruta-de-la-pagina" />
-      {/* Contenido de la página */}
-    </>
-  );
+	return (
+		<>
+			<SEO path="/ruta-de-la-pagina" />
+			{/* Contenido de la página */}
+		</>
+	);
 }
 ```
 
@@ -83,35 +92,39 @@ En `/src/config/seo.config.ts`, agregar:
 ### 3. SEO Personalizado por Página
 
 ```tsx
-<SEO 
-  title="Título personalizado"
-  description="Descripción personalizada"
-  keywords={["custom", "keywords"]}
-  structuredData={customStructuredData}
+<SEO
+	title="Título personalizado"
+	description="Descripción personalizada"
+	keywords={["custom", "keywords"]}
+	structuredData={customStructuredData}
 />
 ```
 
 ## Mejores Prácticas
 
 ### Títulos
+
 - Máximo 60 caracteres
 - Incluir nombre de marca al final
 - Palabras clave al principio
 - Único para cada página
 
 ### Descripciones
+
 - Entre 150-160 caracteres
 - Call to action claro
 - Incluir keywords principales
 - Describir valor único
 
 ### Keywords
+
 - 5-10 keywords por página
 - Relevantes al contenido
 - Incluir variaciones
 - Long-tail keywords
 
 ### Structured Data
+
 - Usar schema.org apropiado
 - Validar con Google's Rich Results Test
 - Incluir información completa
@@ -120,12 +133,14 @@ En `/src/config/seo.config.ts`, agregar:
 ## Monitoreo y Análisis
 
 ### Herramientas Recomendadas
+
 1. Google Search Console
 2. Google Analytics
 3. PageSpeed Insights
 4. Schema Markup Validator
 
 ### Métricas Clave
+
 - CTR (Click-through rate)
 - Posición promedio
 - Impresiones
@@ -134,12 +149,14 @@ En `/src/config/seo.config.ts`, agregar:
 ## Próximos Pasos
 
 ### Optimizaciones Pendientes
+
 1. Implementar páginas AMP
 2. Agregar hreflang para multi-idioma
 3. Optimizar imágenes con lazy loading
 4. Implementar Service Worker para PWA
 
 ### Content Marketing
+
 1. Blog con contenido legal
 2. Guías y tutoriales
 3. Casos de estudio
@@ -164,16 +181,19 @@ En `/src/config/seo.config.ts`, agregar:
 ## Scripts Útiles
 
 ### Generar Sitemap Dinámico
+
 ```bash
 npm run generate-sitemap
 ```
 
 ### Validar SEO
+
 ```bash
 npm run seo-check
 ```
 
 ### Analizar Performance
+
 ```bash
 npm run lighthouse
 ```
@@ -188,6 +208,7 @@ npm run lighthouse
 ## Mantenimiento
 
 Revisar mensualmente:
+
 - Rankings de keywords
 - CTR en Search Console
 - Nuevas páginas sin SEO
