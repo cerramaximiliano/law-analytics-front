@@ -14,7 +14,7 @@ interface LawyerCollegeWithRegistration {
 	_id?: string;
 	name: string;
 	registrationNumber: string;
-	taxCondition: 'autonomo' | 'monotributo' | '';
+	taxCondition: "autonomo" | "monotributo" | "";
 	taxCode: string;
 	electronicAddress: string;
 }

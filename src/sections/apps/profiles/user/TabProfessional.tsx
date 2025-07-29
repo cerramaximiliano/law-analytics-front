@@ -97,11 +97,11 @@ const TabProfessional = () => {
 	// Format CUIT as user types
 	const formatCUIT = (value: string): string => {
 		// Remove all non-digits
-		const numbers = value.replace(/\D/g, '');
-		
+		const numbers = value.replace(/\D/g, "");
+
 		// Limit to 11 digits
 		const truncated = numbers.substring(0, 11);
-		
+
 		// Apply format XX-XXXXXXXX-X
 		if (truncated.length <= 2) {
 			return truncated;
@@ -139,9 +139,9 @@ const TabProfessional = () => {
 		// Si ya es un array de objetos con name y registrationNumber
 		if (Array.isArray(userData.user.skill) && userData.user.skill.length > 0 && typeof userData.user.skill[0] === "object") {
 			// Formatear el CUIT cuando viene del servidor
-			return (userData.user.skill as LawyerCollegeWithRegistration[]).map(skill => ({
+			return (userData.user.skill as LawyerCollegeWithRegistration[]).map((skill) => ({
 				...skill,
-				taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : ""
+				taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : "",
 			}));
 		}
 
@@ -214,7 +214,7 @@ const TabProfessional = () => {
 								// Format CUIT when updating from server response
 								const formattedSkills = result.skills.map((skill: any) => ({
 									...skill,
-									taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : ""
+									taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : "",
 								}));
 								setFieldValue("colleges", formattedSkills);
 								// Clear editing state since all skills are now saved
@@ -369,7 +369,7 @@ const TabProfessional = () => {
 																								// Format CUIT when updating from server response
 																								const formattedSkills = result.skills.map((skill: any) => ({
 																									...skill,
-																									taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : ""
+																									taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : "",
 																								}));
 																								setFieldValue("colleges", formattedSkills);
 																							}
@@ -423,8 +423,8 @@ const TabProfessional = () => {
 															<Stack spacing={1}>
 																<InputLabel htmlFor={`college-${index}-taxCondition`}>Condición fiscal</InputLabel>
 																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="body2" sx={{ py: 1, textTransform: 'capitalize' }}>
-																		{college.taxCondition === 'autonomo' ? 'Autónomo' : 'Monotributo'}
+																	<Typography variant="body2" sx={{ py: 1, textTransform: "capitalize" }}>
+																		{college.taxCondition === "autonomo" ? "Autónomo" : "Monotributo"}
 																	</Typography>
 																) : (
 																	<FormControl fullWidth>
@@ -515,7 +515,7 @@ const TabProfessional = () => {
 												border: "2px dashed",
 												borderColor: "warning.main",
 												bgcolor: "warning.lighter",
-												backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 193, 7, 0.08)' : 'rgba(255, 193, 7, 0.08)'
+												backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 193, 7, 0.08)" : "rgba(255, 193, 7, 0.08)"),
 											}}
 										>
 											<Stack spacing={1.5} alignItems="center">
@@ -526,9 +526,10 @@ const TabProfessional = () => {
 													</Typography>
 												</Stack>
 												<Typography variant="body2" color="text.primary" sx={{ maxWidth: 500 }}>
-													No hay colegios de abogados registrados. Esta información es <strong>necesaria</strong> para generar automáticamente escritos judiciales y documentos legales.
+													No hay colegios de abogados registrados. Esta información es <strong>necesaria</strong> para generar
+													automáticamente escritos judiciales y documentos legales.
 												</Typography>
-												<Typography variant="caption" color="warning.dark" sx={{ fontStyle: 'italic' }}>
+												<Typography variant="caption" color="warning.dark" sx={{ fontStyle: "italic" }}>
 													Agregue al menos un colegio profesional con su matrícula correspondiente.
 												</Typography>
 											</Stack>
@@ -545,10 +546,7 @@ const TabProfessional = () => {
 
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 3 }}>
 								<Button color="error">Cancelar</Button>
-								<Tooltip 
-									title={values.colleges.length === 0 ? "Debe agregar al menos un colegio profesional para guardar" : ""}
-									arrow
-								>
+								<Tooltip title={values.colleges.length === 0 ? "Debe agregar al menos un colegio profesional para guardar" : ""} arrow>
 									<span>
 										<Button
 											disabled={isSubmitting || loading || values.colleges.length === 0}
