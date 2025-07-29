@@ -77,10 +77,17 @@ export interface Campaign {
 export interface CampaignResponse {
 	success: boolean;
 	data: Campaign[];
-	total: number;
-	page: number;
-	limit: number;
+	pagination: {
+		total: number;
+		page: number;
+		limit: number;
+		pages: number;
+	};
 	message?: string;
+	// Legacy support
+	total?: number;
+	page?: number;
+	limit?: number;
 }
 
 // Interface for campaign creation/update

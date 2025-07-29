@@ -14,7 +14,7 @@ import SavedLabor from "./components/SavedLabor";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { dispatch } from "store";
-import { getFoldersByUserId } from "store/reducers/folders";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { GuideLaboral } from "components/guides";
 
 interface TabPanelProps {
@@ -43,7 +43,7 @@ function a11yProps(index: number) {
 export default function LaborTabs() {
 	const [value, setValue] = useState(0);
 	const [searchParams] = useSearchParams();
-	const { folders } = useSelector((state: any) => state.folders);
+	const { folders } = useSelector((state: any) => state.folder);
 	const { id } = useSelector((state: any) => state.auth?.user);
 	const [guideOpen, setGuideOpen] = useState(false);
 
@@ -54,7 +54,7 @@ export default function LaborTabs() {
 		if (id && folderParam) {
 			dispatch(getFoldersByUserId(id));
 		}
-	}, [id, folderParam]);
+	}, [dispatch, id, folderParam]);
 
 	const handleChange = (event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);

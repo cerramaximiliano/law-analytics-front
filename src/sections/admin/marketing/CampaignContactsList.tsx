@@ -215,7 +215,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 			setContacts(response.data);
 			setTotalCount(response.pagination.total);
 		} catch (err: any) {
-			console.error("Error fetching campaign contacts:", err);
 			setError(err.message || "Error al cargar los contactos de la campaña");
 		} finally {
 			setLoading(false);
@@ -265,7 +264,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 				onContactsChange(); // Notificar al componente padre sobre el cambio
 			}
 		} catch (error: any) {
-			console.error("Error removing contacts from campaign:", error);
 			enqueueSnackbar(error.message || "Error al eliminar contactos de la campaña", { variant: "error" });
 		}
 	};
@@ -325,7 +323,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 				throw new Error(result.message || "Error al verificar estado del proceso");
 			}
 		} catch (error: any) {
-			console.error("Error checking deletion process status:", error);
 			const errorMessage = error.response?.data?.message || error.message || "Error al verificar estado del proceso";
 			enqueueSnackbar(errorMessage, { variant: "error" });
 
@@ -378,7 +375,6 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 				throw new Error(result.message || "Error desconocido");
 			}
 		} catch (error: any) {
-			console.error("Error removing all contacts from campaign:", error);
 			enqueueSnackbar(error.message || "Error al eliminar todos los contactos de la campaña", { variant: "error" });
 			setAsyncDeletionProcessing(false);
 		}
@@ -482,117 +478,100 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 						width: "90%",
 						maxWidth: 1200,
 						maxHeight: "90vh",
-						overflow: "auto",
-						p: 3,
 						borderRadius: 2,
+						display: "flex",
+						flexDirection: "column",
+						overflow: "hidden",
 					}}
 				>
-					<Box sx={{ mb: 2 }}>
-						<Grid container alignItems="center" justifyContent="space-between">
-							<Grid item>
-								<Typography variant="h4" id="campaign-contacts-modal-title">
-									Contactos de la Campaña: {campaign.name}
-								</Typography>
-								<Typography variant="caption" color="textSecondary">
-									{campaign.description || ""}
-								</Typography>
-							</Grid>
-							<Grid item>
-								<Box sx={{ display: "flex", gap: 2 }}>
-									{totalCount > 0 && (
-										<Button variant="outlined" color="error" onClick={handleOpenDeleteAllDialog} sx={{ textTransform: "none" }}>
-											Eliminar todos los contactos
+					{/* Header - Siempre visible */}
+					<Box sx={{ p: 3, pb: 0 }}>
+						<Box sx={{ mb: 2 }}>
+							<Grid container alignItems="center" justifyContent="space-between">
+								<Grid item>
+									<Typography variant="h4" id="campaign-contacts-modal-title">
+										Contactos de la Campaña: {campaign.name}
+									</Typography>
+									<Typography variant="caption" color="textSecondary">
+										{campaign.description || ""}
+									</Typography>
+								</Grid>
+								<Grid item>
+									<Box sx={{ display: "flex", gap: 2 }}>
+										{totalCount > 0 && (
+											<Button variant="outlined" color="error" onClick={handleOpenDeleteAllDialog} sx={{ textTransform: "none" }}>
+												Eliminar todos los contactos
+											</Button>
+										)}
+										<Button
+											variant="contained"
+											color="primary"
+											startIcon={<Add />}
+											onClick={handleOpenAddModal}
+											sx={{ textTransform: "none" }}
+										>
+											Añadir Contactos
 										</Button>
-									)}
-									<Button
-										variant="contained"
-										color="primary"
-										startIcon={<Add />}
-										onClick={handleOpenAddModal}
-										sx={{ textTransform: "none" }}
-									>
-										Añadir Contactos
-									</Button>
-								</Box>
+									</Box>
+								</Grid>
 							</Grid>
-						</Grid>
+						</Box>
+
+						<Box mb={2}>
+							<Grid container spacing={2} alignItems="center">
+								<Grid item xs>
+									<TextField
+										fullWidth
+										variant="outlined"
+										size="small"
+										placeholder="Buscar contactos por nombre, email..."
+										value={searchTerm}
+										onChange={(e) => setSearchTerm(e.target.value)}
+										onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+										InputProps={{
+											endAdornment: (
+												<IconButton onClick={handleSearch} edge="end" size="small">
+													<SearchNormal1 size={18} />
+												</IconButton>
+											),
+										}}
+									/>
+								</Grid>
+							</Grid>
+						</Box>
+
+						<Divider />
 					</Box>
 
-					<Box mb={2}>
-						<Grid container spacing={2} alignItems="center">
-							<Grid item xs>
-								<TextField
-									fullWidth
-									variant="outlined"
-									size="small"
-									placeholder="Buscar contactos por nombre, email..."
-									value={searchTerm}
-									onChange={(e) => setSearchTerm(e.target.value)}
-									onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-									InputProps={{
-										endAdornment: (
-											<IconButton onClick={handleSearch} edge="end" size="small">
-												<SearchNormal1 size={18} />
-											</IconButton>
-										),
-									}}
-								/>
-							</Grid>
-						</Grid>
-					</Box>
+					{/* Contenido scrollable */}
+					<Box sx={{ flex: 1, overflow: "auto", px: 3, minHeight: 400, position: "relative" }}>
+						{/* Overlay de carga */}
+						{loading && page > 0 && (
+							<Box
+								sx={{
+									position: "absolute",
+									top: 0,
+									left: 0,
+									right: 0,
+									bottom: 0,
+									backgroundColor: "rgba(255, 255, 255, 0.7)",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									zIndex: 10,
+								}}
+							>
+								<CircularProgress />
+							</Box>
+						)}
 
-					<Divider sx={{ mb: 2 }} />
-
-					{loading ? (
-						<ScrollX>
-							<MainCard content={false} sx={{ border: 1, borderColor: "divider" }}>
-								<TableContainer>
-									<Table sx={{ minWidth: 850 }} aria-label="contacts table">
-										<TableHead>
-											<TableRow>
-												<TableCell>Contacto</TableCell>
-												<TableCell>Email</TableCell>
-												<TableCell>Segmentos</TableCell>
-												<TableCell>Tasa de apertura</TableCell>
-												<TableCell>Tasa de clics</TableCell>
-												<TableCell align="center">Acciones</TableCell>
-											</TableRow>
-										</TableHead>
-										<TableBody>
-											{[...Array(5)].map((_, index) => (
-												<TableRow key={index}>
-													<TableCell>
-														<Skeleton variant="text" width={120} height={24} />
-														<Skeleton variant="text" width={80} height={20} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="text" width={180} height={24} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="rectangular" width={100} height={32} sx={{ borderRadius: 2 }} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="text" width={50} height={24} />
-													</TableCell>
-													<TableCell>
-														<Skeleton variant="text" width={50} height={24} />
-													</TableCell>
-													<TableCell align="center">
-														<Skeleton variant="circular" width={30} height={30} />
-													</TableCell>
-												</TableRow>
-											))}
-										</TableBody>
-									</Table>
-								</TableContainer>
-							</MainCard>
-						</ScrollX>
-					) : error ? (
-						<Typography color="error" sx={{ p: 2 }}>
-							{error}
-						</Typography>
-					) : (
-						<>
+						{error ? (
+							<Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
+								<Typography color="error" sx={{ p: 2 }}>
+									{error}
+								</Typography>
+							</Box>
+						) : loading && page === 0 ? (
 							<ScrollX>
 								<MainCard content={false} sx={{ border: 1, borderColor: "divider" }}>
 									<TableContainer>
@@ -608,90 +587,148 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 												</TableRow>
 											</TableHead>
 											<TableBody>
-												{contacts.length === 0 ? (
-													<TableRow>
-														<TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-															<Typography variant="subtitle1">No hay contactos en esta campaña</Typography>
-															<Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-																Añada contactos a esta campaña para empezar
-															</Typography>
-															<Button variant="outlined" color="primary" startIcon={<Add />} onClick={handleOpenAddModal} sx={{ mt: 2 }}>
-																Añadir Contactos
-															</Button>
+												{[...Array(rowsPerPage)].map((_, index) => (
+													<TableRow key={index}>
+														<TableCell>
+															<Skeleton variant="text" width={120} height={24} />
+															<Skeleton variant="text" width={80} height={20} />
+														</TableCell>
+														<TableCell>
+															<Skeleton variant="text" width={180} height={24} />
+														</TableCell>
+														<TableCell>
+															<Skeleton variant="rectangular" width={100} height={32} sx={{ borderRadius: 2 }} />
+														</TableCell>
+														<TableCell>
+															<Skeleton variant="text" width={50} height={24} />
+														</TableCell>
+														<TableCell>
+															<Skeleton variant="text" width={50} height={24} />
+														</TableCell>
+														<TableCell align="center">
+															<Skeleton variant="circular" width={30} height={30} />
 														</TableCell>
 													</TableRow>
-												) : (
-													contacts.map((contact) => (
-														<TableRow hover key={contact._id} tabIndex={-1}>
-															<TableCell>
-																<Typography variant="subtitle2">
-																	{contact.firstName} {contact.lastName}
-																</Typography>
-																{contact.company && (
-																	<Typography variant="caption" color="textSecondary">
-																		{contact.company}
-																	</Typography>
-																)}
-															</TableCell>
-															<TableCell>{contact.email}</TableCell>
-															<TableCell>
-																{contact.segments && contact.segments.length > 0 ? (
-																	<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-																		{contact.segments.slice(0, 2).map((segmentId, index) => (
-																			<Chip key={index} label={`Segmento ${index + 1}`} size="small" />
-																		))}
-																		{contact.segments.length > 2 && <Chip label={`+${contact.segments.length - 2} más`} size="small" />}
-																	</Box>
-																) : (
-																	<Typography variant="caption" color="textSecondary">
-																		Sin segmentos
-																	</Typography>
-																)}
-															</TableCell>
-															<TableCell>
-																{contact.metrics?.openRate !== undefined ? `${(contact.metrics.openRate * 100).toFixed(1)}%` : "N/A"}
-															</TableCell>
-															<TableCell>
-																{contact.metrics?.clickRate !== undefined ? `${(contact.metrics.clickRate * 100).toFixed(1)}%` : "N/A"}
-															</TableCell>
-															<TableCell align="center">
-																<IconButton
-																	aria-label="eliminar"
-																	size="small"
-																	color="error"
-																	onClick={() => contact._id && handleOpenDeleteDialog([contact._id])}
-																	title="Eliminar contacto de la campaña"
-																>
-																	<Trash size={18} />
-																</IconButton>
-															</TableCell>
-														</TableRow>
-													))
-												)}
+												))}
 											</TableBody>
 										</Table>
 									</TableContainer>
 								</MainCard>
 							</ScrollX>
+						) : (
+							<>
+								<ScrollX>
+									<MainCard content={false} sx={{ border: 1, borderColor: "divider" }}>
+										<TableContainer>
+											<Table sx={{ minWidth: 850 }} aria-label="contacts table">
+												<TableHead>
+													<TableRow>
+														<TableCell>Contacto</TableCell>
+														<TableCell>Email</TableCell>
+														<TableCell>Segmentos</TableCell>
+														<TableCell>Tasa de apertura</TableCell>
+														<TableCell>Tasa de clics</TableCell>
+														<TableCell align="center">Acciones</TableCell>
+													</TableRow>
+												</TableHead>
+												<TableBody>
+													{contacts.length === 0 && !loading ? (
+														<TableRow>
+															<TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+																<Typography variant="subtitle1">No hay contactos en esta campaña</Typography>
+																<Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+																	Añada contactos a esta campaña para empezar
+																</Typography>
+																<Button variant="outlined" color="primary" startIcon={<Add />} onClick={handleOpenAddModal} sx={{ mt: 2 }}>
+																	Añadir Contactos
+																</Button>
+															</TableCell>
+														</TableRow>
+													) : (
+														contacts.map((contact) => (
+															<TableRow hover key={contact._id} tabIndex={-1}>
+																<TableCell>
+																	<Typography variant="subtitle2">
+																		{contact.firstName} {contact.lastName}
+																	</Typography>
+																	{contact.company && (
+																		<Typography variant="caption" color="textSecondary">
+																			{contact.company}
+																		</Typography>
+																	)}
+																</TableCell>
+																<TableCell>{contact.email}</TableCell>
+																<TableCell>
+																	{contact.segments && contact.segments.length > 0 ? (
+																		<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+																			{contact.segments.slice(0, 2).map((segmentId, index) => (
+																				<Chip key={index} label={`Segmento ${index + 1}`} size="small" />
+																			))}
+																			{contact.segments.length > 2 && <Chip label={`+${contact.segments.length - 2} más`} size="small" />}
+																		</Box>
+																	) : (
+																		<Typography variant="caption" color="textSecondary">
+																			Sin segmentos
+																		</Typography>
+																	)}
+																</TableCell>
+																<TableCell>
+																	{contact.metrics?.openRate !== undefined ? `${(contact.metrics.openRate * 100).toFixed(1)}%` : "N/A"}
+																</TableCell>
+																<TableCell>
+																	{contact.metrics?.clickRate !== undefined ? `${(contact.metrics.clickRate * 100).toFixed(1)}%` : "N/A"}
+																</TableCell>
+																<TableCell align="center">
+																	<IconButton
+																		aria-label="eliminar"
+																		size="small"
+																		color="error"
+																		onClick={() => contact._id && handleOpenDeleteDialog([contact._id])}
+																		title="Eliminar contacto de la campaña"
+																	>
+																		<Trash size={18} />
+																	</IconButton>
+																</TableCell>
+															</TableRow>
+														))
+													)}
+												</TableBody>
+											</Table>
+										</TableContainer>
+									</MainCard>
+								</ScrollX>
 
-							<TablePagination
-								component="div"
-								count={totalCount}
-								rowsPerPage={rowsPerPage}
-								page={page}
-								onPageChange={handleChangePage}
-								onRowsPerPageChange={handleChangeRowsPerPage}
-								rowsPerPageOptions={[5, 10, 25, 50]}
-								labelRowsPerPage="Filas por página:"
-								labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-							/>
-						</>
-					)}
+								<Box sx={{ mt: 2, mb: 1 }}>
+									<TablePagination
+										component="div"
+										count={totalCount}
+										rowsPerPage={rowsPerPage}
+										page={page}
+										onPageChange={handleChangePage}
+										onRowsPerPageChange={handleChangeRowsPerPage}
+										rowsPerPageOptions={[5, 10, 25, 50]}
+										labelRowsPerPage="Filas por página:"
+										labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+										sx={{
+											borderTop: 1,
+											borderColor: "divider",
+											"& .MuiTablePagination-toolbar": {
+												minHeight: 52,
+											},
+										}}
+									/>
+								</Box>
+							</>
+						)}
+					</Box>
 
-					<Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-						<Button onClick={onClose} color="inherit">
-							Cerrar
-						</Button>
+					{/* Footer - Siempre visible */}
+					<Box sx={{ p: 3, pt: 2, borderTop: 1, borderColor: "divider" }}>
+						<Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+							<Button onClick={onClose} color="inherit">
+								Cerrar
+							</Button>
+						</Box>
 					</Box>
 
 					{/* Add Contacts Modal */}

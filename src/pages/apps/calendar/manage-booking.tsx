@@ -86,14 +86,12 @@ const ManageBookingPage = () => {
 			if (response.status === 200) {
 				// Guardar todos los datos de la reserva, incluyendo publicUrl si existe
 				setBooking(response.data);
-				console.log("Datos de la reserva:", response.data); // Verificar que venga publicUrl
+				// Verificar que venga publicUrl
 				setSuccess("Información de la reserva encontrada");
 			} else {
 				throw new Error("No se pudo encontrar información sobre la reserva");
 			}
 		} catch (err: any) {
-			console.error("Error al buscar la cita:", err);
-
 			if (err.response && err.response.status === 404) {
 				setError("No se encontró ninguna reserva con ese token. Por favor, verifica e intenta de nuevo.");
 			} else if (err.response && err.response.data && err.response.data.error) {
@@ -130,7 +128,6 @@ const ManageBookingPage = () => {
 				throw new Error("No se pudo cancelar la reserva");
 			}
 		} catch (err: any) {
-			console.error("Error al cancelar la cita:", err);
 			setError("No se pudo cancelar la reserva. Por favor, intenta de nuevo más tarde.");
 			setOpenCancelDialog(false);
 		} finally {

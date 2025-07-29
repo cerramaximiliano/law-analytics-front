@@ -190,8 +190,6 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 						close: false,
 					}),
 				);
-
-				console.error("Error de conexión:", error);
 			}
 		}
 	};

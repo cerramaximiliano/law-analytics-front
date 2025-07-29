@@ -38,6 +38,13 @@ export const Menu = () => {
 						url: "/dashboard/default",
 						breadcrumbs: true,
 					},
+					{
+						id: "analytics",
+						title: "Análisis",
+						type: "item",
+						url: "/dashboard/analytics",
+						breadcrumbs: true,
+					},
 					/* 					{
 						id: "informes",
 						title: "Informes",

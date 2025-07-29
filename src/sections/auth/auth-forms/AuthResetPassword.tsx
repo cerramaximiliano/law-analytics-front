@@ -24,6 +24,7 @@ import useAuth from "hooks/useAuth";
 import useScriptRef from "hooks/useScriptRef";
 import IconButton from "components/@extended/IconButton";
 import AnimateButton from "components/@extended/AnimateButton";
+import secureStorage from "services/secureStorage";
 
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -57,10 +58,10 @@ const AuthResetPassword = () => {
 		from?: string;
 	} | null;
 
-	// Obtener datos de localStorage
-	const storedEmail = localStorage.getItem("reset_email");
-	const storedCode = localStorage.getItem("reset_code");
-	const storedVerified = localStorage.getItem("reset_verified") === "true";
+	// Obtener datos de sessionStorage
+	const storedEmail = secureStorage.getSessionData<string>("reset_email");
+	const storedCode = null; // NO almacenamos el código por seguridad
+	const storedVerified = secureStorage.getSessionData<boolean>("reset_verified") === true;
 
 	// Usar datos de location.state o localStorage
 	const email = locationState?.email || storedEmail;
@@ -68,15 +69,6 @@ const AuthResetPassword = () => {
 	const verified = locationState?.verified || storedVerified;
 
 	// Log para depuración
-	console.log("AuthResetPassword - Datos:", {
-		locationState,
-		storedEmail,
-		storedCode,
-		storedVerified,
-		email,
-		code,
-		verified,
-	});
 
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
@@ -100,7 +92,6 @@ const AuthResetPassword = () => {
 
 		// IMPORTANTE: Solo redireccionar una vez para evitar ciclos infinitos
 		if (!redirected && !verified && !storedVerified) {
-			console.log("No hay verificación previa, redirigiendo a forgot-password");
 			setRedirected(true);
 			// Intentar determinar la ruta correcta
 			const forgotPasswordPath = "/forgot-password";
@@ -158,8 +149,6 @@ const AuthResetPassword = () => {
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
-						console.log("Enviando solicitud de restablecimiento de contraseña");
-
 						if (!email || !code) {
 							throw new Error("Información de verificación incompleta");
 						}
@@ -173,10 +162,10 @@ const AuthResetPassword = () => {
 
 							// Limpiar datos de localStorage
 							// Limpiar todos los datos del proceso de reseteo
-							localStorage.removeItem("reset_email");
-							localStorage.removeItem("reset_code");
-							localStorage.removeItem("reset_verified");
-							localStorage.removeItem("reset_in_progress");
+							secureStorage.removeSessionData("reset_email");
+							secureStorage.removeSessionData("reset_code");
+							secureStorage.removeSessionData("reset_verified");
+							secureStorage.removeSessionData("reset_in_progress");
 
 							// Mensaje de éxito
 							dispatch(
@@ -193,12 +182,10 @@ const AuthResetPassword = () => {
 
 							// Redirigir al login después de restablecer la contraseña
 							setTimeout(() => {
-								console.log("Redirigiendo al login");
 								navigate("/login", { replace: true });
 							}, 1500);
 						}
 					} catch (err: any) {
-						console.error("Error al restablecer contraseña:", err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setErrors({ submit: err.message });

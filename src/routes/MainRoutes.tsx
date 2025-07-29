@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import { Navigate } from "react-router-dom";
 
 // project-imports
 import MainLayout from "layout/MainLayout";
@@ -9,6 +10,7 @@ import AdminRoleGuard from "utils/route-guard/AdminRoleGuard";
 
 // render - dashboard
 const DashboardDefault = Loadable(lazy(() => import("pages/dashboard/default")));
+const DashboardAnalytics = Loadable(lazy(() => import("pages/dashboard/analytics")));
 
 // render - applications
 const AppChat = Loadable(lazy(() => import("pages/apps/chat")));
@@ -81,6 +83,11 @@ const AdminTemplatesPage = Loadable(lazy(() => import("pages/admin/marketing/tem
 const AdminContactsPage = Loadable(lazy(() => import("pages/admin/marketing/contacts")));
 const AdminPlansPage = Loadable(lazy(() => import("pages/admin/plans")));
 const AdminUsersPage = Loadable(lazy(() => import("pages/admin/users")));
+const AdminServerStatusPage = Loadable(lazy(() => import("pages/admin/server-status")));
+const AdminCausasVerifiedPage = Loadable(lazy(() => import("pages/admin/causas/verified")));
+const AdminCausasFoldersPage = Loadable(lazy(() => import("pages/admin/causas/folders")));
+const AdminCausasWorkersPage = Loadable(lazy(() => import("pages/admin/causas/workers")));
+const AdminNotificationsPage = Loadable(lazy(() => import("pages/admin/notifications")));
 
 // render - tasks
 const TasksPage = Loadable(lazy(() => import("pages/tasks")));
@@ -120,6 +127,10 @@ const MainRoutes = {
 						{
 							path: "default",
 							element: <DashboardDefault />,
+						},
+						{
+							path: "analytics",
+							element: <DashboardAnalytics />,
 						},
 					],
 				},
@@ -341,6 +352,35 @@ const MainRoutes = {
 						{
 							path: "users",
 							element: <AdminUsersPage />,
+						},
+						{
+							path: "server-status",
+							element: <AdminServerStatusPage />,
+						},
+						{
+							path: "causas",
+							children: [
+								{
+									path: "",
+									element: <Navigate to="verified" replace />,
+								},
+								{
+									path: "verified",
+									element: <AdminCausasVerifiedPage />,
+								},
+								{
+									path: "folders",
+									element: <AdminCausasFoldersPage />,
+								},
+								{
+									path: "workers",
+									element: <AdminCausasWorkersPage />,
+								},
+							],
+						},
+						{
+							path: "notifications",
+							element: <AdminNotificationsPage />,
 						},
 					],
 				},

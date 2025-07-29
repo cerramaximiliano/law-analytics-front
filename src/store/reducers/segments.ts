@@ -1,9 +1,6 @@
-import axios from "axios";
+import mktAxios from "utils/mktAxios";
 import { Segment, SegmentResponse, SegmentInput } from "types/segment";
 // import { SingleSegmentResponse } from "types/segment";
-
-// Constants
-const baseURL = process.env.REACT_APP_MKT_URL || "https://mkt.lawanalytics.app";
 
 // Use the central axios instance that has token refresh capability
 // We'll only modify the baseURL for marketing API requests
@@ -21,7 +18,7 @@ export const SegmentService = {
 		} = {},
 	): Promise<SegmentResponse> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/segments`, {
+			const response = await mktAxios.get("/api/segments", {
 				params: {
 					page,
 					limit,
@@ -32,7 +29,6 @@ export const SegmentService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching segments:", error);
 			throw error;
 		}
 	},
@@ -40,10 +36,9 @@ export const SegmentService = {
 	// Get a single segment by ID
 	getSegmentById: async (id: string): Promise<Segment> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/segments/${id}`);
+			const response = await mktAxios.get(`/api/segments/${id}`);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error fetching segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -51,10 +46,9 @@ export const SegmentService = {
 	// Create a new segment
 	createSegment: async (segmentData: SegmentInput): Promise<Segment> => {
 		try {
-			const response = await axios.post(`${baseURL}/api/segments`, segmentData);
+			const response = await mktAxios.post("/api/segments", segmentData);
 			return response.data.data;
 		} catch (error) {
-			console.error("Error creating segment:", error);
 			throw error;
 		}
 	},
@@ -62,10 +56,9 @@ export const SegmentService = {
 	// Update an existing segment
 	updateSegment: async (id: string, segmentData: Partial<SegmentInput>): Promise<Segment> => {
 		try {
-			const response = await axios.put(`${baseURL}/api/segments/${id}`, segmentData);
+			const response = await mktAxios.put(`/api/segments/${id}`, segmentData);
 			return response.data.data;
 		} catch (error) {
-			console.error(`Error updating segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -73,10 +66,9 @@ export const SegmentService = {
 	// Delete a segment
 	deleteSegment: async (id: string): Promise<{ success: boolean; message: string }> => {
 		try {
-			const response = await axios.delete(`${baseURL}/api/segments/${id}`);
+			const response = await mktAxios.delete(`/api/segments/${id}`);
 			return response.data;
 		} catch (error) {
-			console.error(`Error deleting segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -84,7 +76,7 @@ export const SegmentService = {
 	// Get contacts belonging to a segment
 	getSegmentContacts: async (id: string, page = 1, limit = 20, sortBy = "email", sortDir = "asc"): Promise<any> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/segments/${id}/contacts`, {
+			const response = await mktAxios.get(`/api/segments/${id}/contacts`, {
 				params: {
 					page,
 					limit,
@@ -94,7 +86,6 @@ export const SegmentService = {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching contacts for segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -102,10 +93,9 @@ export const SegmentService = {
 	// Add contacts to a static segment
 	addContactsToSegment: async (id: string, contactIds: string[]): Promise<{ success: boolean; message: string; count?: number }> => {
 		try {
-			const response = await axios.post(`${baseURL}/api/segments/${id}/contacts`, { contactIds });
+			const response = await mktAxios.post(`/api/segments/${id}/contacts`, { contactIds });
 			return response.data;
 		} catch (error) {
-			console.error(`Error adding contacts to segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -113,12 +103,11 @@ export const SegmentService = {
 	// Remove contacts from a static segment
 	removeContactsFromSegment: async (id: string, contactIds: string[]): Promise<{ success: boolean; message: string; count?: number }> => {
 		try {
-			const response = await axios.delete(`${baseURL}/api/segments/${id}/contacts`, {
+			const response = await mktAxios.delete(`/api/segments/${id}/contacts`, {
 				data: { contactIds },
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error removing contacts from segment ${id}:`, error);
 			throw error;
 		}
 	},
@@ -126,10 +115,9 @@ export const SegmentService = {
 	// Calculate segment membership count (preview)
 	calculateSegmentCount: async (conditions: any): Promise<{ count: number; success: boolean }> => {
 		try {
-			const response = await axios.post(`${baseURL}/api/segments/calculate`, { conditions });
+			const response = await mktAxios.post("/api/segments/calculate", { conditions });
 			return response.data;
 		} catch (error) {
-			console.error("Error calculating segment count:", error);
 			throw error;
 		}
 	},
@@ -137,10 +125,9 @@ export const SegmentService = {
 	// Get segment statistics
 	getSegmentStats: async (): Promise<any> => {
 		try {
-			const response = await axios.get(`${baseURL}/api/segments/stats`);
+			const response = await mktAxios.get("/api/segments/stats");
 			return response.data.data;
 		} catch (error) {
-			console.error("Error fetching segment statistics:", error);
 			throw error;
 		}
 	},

@@ -16,19 +16,23 @@ import {
 	Tabs,
 	Tab,
 	alpha,
-	useTheme
+	useTheme,
 } from "@mui/material";
 import { DocumentCloud, SearchNormal1, People, Edit2 } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useSelector, dispatch } from "store";
-import { getFoldersByUserId } from "store/reducers/folders";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { Folder } from "types/folders";
 
 interface LinkCauseSelectorProps {
 	requiereField: string;
 	requeridoField: string;
-	onMethodChange: (method: "manual" | "causa", selectedFolder: Folder | null, folderData?: {folderId: string, folderName: string}) => void;
+	onMethodChange: (
+		method: "manual" | "causa",
+		selectedFolder: Folder | null,
+		folderData?: { folderId: string; folderName: string },
+	) => void;
 }
 
 interface GetFoldersResponse {
@@ -53,13 +57,9 @@ function TabPanel(props: TabPanelProps) {
 			id={`method-tabpanel-${index}`}
 			aria-labelledby={`method-tab-${index}`}
 			{...other}
-			style={{ height: '100%' }}
+			style={{ height: "100%" }}
 		>
-			{value === index && (
-				<Box sx={{ height: '100%' }}>
-					{children}
-				</Box>
-			)}
+			{value === index && <Box sx={{ height: "100%" }}>{children}</Box>}
 		</div>
 	);
 }
@@ -67,7 +67,7 @@ function TabPanel(props: TabPanelProps) {
 function a11yProps(index: number) {
 	return {
 		id: `method-tab-${index}`,
-		'aria-controls': `method-tabpanel-${index}`,
+		"aria-controls": `method-tabpanel-${index}`,
 	};
 }
 
@@ -94,22 +94,22 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
 		const method = newValue === 0 ? "manual" : "causa";
 		setTabValue(newValue);
-		
+
 		// Notificar al componente padre sobre el cambio
 		if (method === "causa" && selectedFolder) {
 			// Pasar los datos de carpeta (folderId y folderName) cuando hay una carpeta seleccionada
 			onMethodChange(method, selectedFolder, {
 				folderId: selectedFolder._id,
-				folderName: selectedFolder.folderName
+				folderName: selectedFolder.folderName,
 			});
 		} else {
 			onMethodChange(method, method === "causa" ? selectedFolder : null);
 		}
-		
+
 		// Si cambia a manual y hay una carpeta seleccionada, resetear la selección
 		if (method === "manual" && selectedFolder) {
 			setSelectedFolder(null);
-		} 
+		}
 		// Si cambia a causa pero no hay carpeta seleccionada, abrir el modal
 		else if (method === "causa" && !selectedFolder) {
 			setOpenModal(true);
@@ -119,11 +119,11 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 	// Obtener carpetas del usuario
 	const fetchFolders = async () => {
 		setIsLoading(true);
-		
+
 		try {
 			if (userId) {
-				const response = await dispatch(getFoldersByUserId(userId)) as unknown as GetFoldersResponse;
-				
+				const response = (await dispatch(getFoldersByUserId(userId))) as unknown as GetFoldersResponse;
+
 				if (response.success && response.folders) {
 					setFolders(response.folders);
 				} else {
@@ -134,7 +134,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 							variant: "alert",
 							alert: { color: "warning" },
 							close: true,
-						})
+						}),
 					);
 				}
 			} else {
@@ -145,7 +145,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 						variant: "alert",
 						alert: { color: "error" },
 						close: true,
-					})
+					}),
 				);
 			}
 		} catch (error) {
@@ -156,7 +156,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 					variant: "alert",
 					alert: { color: "error" },
 					close: true,
-				})
+				}),
 			);
 		} finally {
 			setIsLoading(false);
@@ -181,13 +181,13 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 	// Manejar selección de carpeta
 	const handleSelectFolder = (folder: Folder) => {
 		setSelectedFolder(folder);
-		
+
 		// Notificar al componente padre sobre el cambio con los datos de folderId y folderName
 		onMethodChange("causa", folder, {
 			folderId: folder._id,
-			folderName: folder.folderName
+			folderName: folder.folderName,
 		});
-		
+
 		// Cerrar el modal
 		setOpenModal(false);
 	};
@@ -202,49 +202,63 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 
 	return (
 		<>
-			<Box sx={{ 
-				width: '100%', 
-				mb: 3.5
-			}}>
-				<Tabs 
-					value={tabValue} 
-					onChange={handleTabChange} 
+			<Box
+				sx={{
+					width: "100%",
+					mb: 3.5,
+				}}
+			>
+				<Tabs
+					value={tabValue}
+					onChange={handleTabChange}
 					variant="fullWidth"
 					sx={{
 						mb: 0.5,
 						borderBottom: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-						'& .MuiTabs-indicator': {
-							height: 3
-						}
+						"& .MuiTabs-indicator": {
+							height: 3,
+						},
 					}}
 				>
-					<Tab 
-						icon={<Edit2 size={18} />} 
-						label="Ingreso Manual" 
+					<Tab
+						icon={<Edit2 size={20} />}
+						label="Ingreso Manual"
 						{...a11yProps(0)}
-						sx={{ py: 1.5, fontWeight: tabValue === 0 ? 600 : 400 }}
+						sx={{
+							py: 1.5,
+							fontWeight: tabValue === 0 ? 600 : 400,
+							"& .MuiTab-iconWrapper": {
+								marginRight: 1,
+							},
+						}}
 					/>
-					<Tab 
-						icon={<DocumentCloud size={18} />} 
-						label="Seleccionar Causa" 
+					<Tab
+						icon={<DocumentCloud size={20} />}
+						label="Seleccionar Causa"
 						{...a11yProps(1)}
-						sx={{ py: 1.5, fontWeight: tabValue === 1 ? 600 : 400 }}
+						sx={{
+							py: 1.5,
+							fontWeight: tabValue === 1 ? 600 : 400,
+							"& .MuiTab-iconWrapper": {
+								marginRight: 1,
+							},
+						}}
 					/>
 				</Tabs>
-				
+
 				<TabPanel value={tabValue} index={0}>
-					<Box 
-						sx={{ 
-							p: 3, 
-							height: boxHeight, 
-							display: 'flex', 
-							flexDirection: 'column', 
-							justifyContent: 'center',
-							alignItems: 'center',
-							bgcolor: alpha(theme.palette.primary.lighter, 0.3)
+					<Box
+						sx={{
+							p: 2,
+							height: boxHeight,
+							display: "flex",
+							flexDirection: "column",
+							justifyContent: "center",
+							alignItems: "center",
+							bgcolor: alpha(theme.palette.primary.lighter, 0.15),
 						}}
 					>
-						<Stack spacing={1} alignItems="center">
+						<Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
 							<People size={32} color={theme.palette.text.secondary} />
 							<Typography variant="h6" color="textSecondary">
 								Ingreso manual de datos
@@ -255,18 +269,18 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 						</Stack>
 					</Box>
 				</TabPanel>
-				
+
 				<TabPanel value={tabValue} index={1}>
 					{selectedFolder ? (
-						<Box 
-							sx={{ 
-								p: 2, 
+						<Box
+							sx={{
+								p: 2,
 								height: boxHeight,
-								display: 'flex',
-								flexDirection: 'column',
-								justifyContent: 'center',
+								display: "flex",
+								flexDirection: "column",
+								justifyContent: "center",
 								borderRadius: 1,
-								bgcolor: alpha(theme.palette.background.default, 0.5)
+								bgcolor: alpha(theme.palette.background.default, 0.5),
 							}}
 						>
 							<Stack spacing={2}>
@@ -275,16 +289,11 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 									<Typography variant="h6" color="primary" sx={{ flex: 1 }}>
 										{selectedFolder.folderName}
 									</Typography>
-									<Button
-										size="small"
-										variant="outlined"
-										color="primary"
-										onClick={handleChangeFolder}
-									>
+									<Button size="small" variant="outlined" color="primary" onClick={handleChangeFolder}>
 										Cambiar
 									</Button>
 								</Stack>
-								
+
 								<Box
 									sx={{
 										p: 1.25,
@@ -308,14 +317,14 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 												Descripción:
 											</Typography>
 											<Tooltip title={selectedFolder.description}>
-												<Typography 
-													variant="body2" 
+												<Typography
+													variant="body2"
 													color="textSecondary"
 													sx={{
-														overflow: 'hidden',
-														textOverflow: 'ellipsis',
-														whiteSpace: 'nowrap',
-														maxWidth: '250px'
+														overflow: "hidden",
+														textOverflow: "ellipsis",
+														whiteSpace: "nowrap",
+														maxWidth: "250px",
 													}}
 												>
 													{selectedFolder.description}
@@ -327,29 +336,24 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 							</Stack>
 						</Box>
 					) : (
-						<Box 
-							sx={{ 
-								p: 2, 
-								height: boxHeight, 
-								display: 'flex', 
-								flexDirection: 'column', 
-								justifyContent: 'center',
-								alignItems: 'center',
+						<Box
+							sx={{
+								p: 2,
+								height: boxHeight,
+								display: "flex",
+								flexDirection: "column",
+								justifyContent: "center",
+								alignItems: "center",
 								bgcolor: alpha(theme.palette.primary.lighter, 0.15),
-								borderRadius: 1
+								borderRadius: 1,
 							}}
 						>
-							<Stack spacing={2} alignItems="center">
+							<Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
 								<DocumentCloud size={32} color={theme.palette.text.secondary} />
 								<Typography variant="h6" color="textSecondary">
 									No hay causa seleccionada
 								</Typography>
-								<Button
-									variant="contained"
-									color="primary"
-									onClick={() => setOpenModal(true)}
-									startIcon={<DocumentCloud />}
-								>
+								<Button variant="contained" color="primary" onClick={() => setOpenModal(true)} startIcon={<DocumentCloud />}>
 									Seleccionar Causa
 								</Button>
 							</Stack>

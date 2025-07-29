@@ -21,6 +21,8 @@ import {
 	Tooltip,
 	Typography,
 	useTheme,
+	Tabs,
+	Tab,
 } from "@mui/material";
 
 // project imports
@@ -35,6 +37,7 @@ import AddUserModal from "./AddUserModal";
 import EditUserModal from "./EditUserModal";
 import DeleteUserDialog from "./DeleteUserDialog";
 import GenerateDataModal from "./GenerateDataModal";
+import StripeSubscriptionsTable from "./StripeSubscriptionsTable";
 
 // assets
 import { Eye, Trash, Edit, Add, Chart } from "iconsax-react";
@@ -108,12 +111,10 @@ const headCells = [
 const UsersList = () => {
 	const theme = useTheme();
 
-	// Añadir console.log para ver el estado completo
-	const storeState = useSelector((state: DefaultRootStateProps) => state);
-	console.log("Estado completo del store:", storeState);
-
 	const { users, loading, error } = useSelector((state: DefaultRootStateProps) => state.users);
-	console.log("Estado específico de usuarios:", { users, loading, error });
+
+	// Estado para los tabs
+	const [tabValue, setTabValue] = useState(0);
 
 	// Estado para la paginación
 	const [page, setPage] = useState(0);
@@ -132,6 +133,10 @@ const UsersList = () => {
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [generateDataModalOpen, setGenerateDataModalOpen] = useState(false);
+
+	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+		setTabValue(newValue);
+	};
 
 	const handleRequestSort = (property: string) => {
 		const isAsc = orderBy === property && order === "asc";
@@ -202,10 +207,7 @@ const UsersList = () => {
 
 	// Aplicamos paginación y ordenamiento
 	const visibleRows = useMemo(() => {
-		console.log("Estado de usuarios:", users);
-
 		if (!users || !Array.isArray(users) || users.length === 0) {
-			console.log("No hay usuarios para mostrar o formato incorrecto:", users);
 			return [];
 		}
 
@@ -275,159 +277,325 @@ const UsersList = () => {
 		);
 	};
 
+	// Renderizado de chip de rol con colores específicos
+	const renderRoleChip = (role: string | undefined | null) => {
+		if (!role) {
+			return (
+				<Chip
+					label="Sin rol"
+					size="small"
+					sx={{
+						borderRadius: "4px",
+						minWidth: 80,
+						backgroundColor: theme.palette.grey[400],
+						color: theme.palette.grey[800],
+						"& .MuiChip-label": {
+							px: 1.5,
+						},
+					}}
+				/>
+			);
+		}
+
+		let backgroundColor;
+		let textColor;
+		let label = role;
+
+		// Asignar colores según el rol
+		switch (role.toLowerCase()) {
+			case "admin":
+			case "administrador":
+				backgroundColor = theme.palette.error.main;
+				textColor = theme.palette.error.contrastText;
+				label = "Admin";
+				break;
+			case "user":
+			case "usuario":
+				backgroundColor = theme.palette.primary.main;
+				textColor = theme.palette.primary.contrastText;
+				label = "Usuario";
+				break;
+			case "moderator":
+			case "moderador":
+				backgroundColor = theme.palette.warning.main;
+				textColor = theme.palette.warning.contrastText;
+				label = "Moderador";
+				break;
+			case "editor":
+				backgroundColor = theme.palette.info.main;
+				textColor = theme.palette.info.contrastText;
+				label = "Editor";
+				break;
+			case "viewer":
+			case "visor":
+				backgroundColor = theme.palette.success.light;
+				textColor = theme.palette.success.dark;
+				label = "Visor";
+				break;
+			case "guest":
+			case "invitado":
+				backgroundColor = theme.palette.grey[300];
+				textColor = theme.palette.grey[800];
+				label = "Invitado";
+				break;
+			default:
+				backgroundColor = theme.palette.mode === "dark" ? theme.palette.grey[700] : theme.palette.grey[300];
+				textColor = theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[800];
+		}
+
+		return (
+			<Chip
+				label={label}
+				size="small"
+				sx={{
+					borderRadius: "4px",
+					minWidth: 80,
+					backgroundColor,
+					color: textColor,
+					fontWeight: 500,
+					"& .MuiChip-label": {
+						px: 1.5,
+					},
+				}}
+			/>
+		);
+	};
+
 	return (
 		<MainCard title="Administración de Usuarios" content={false}>
-			<ScrollX>
-				<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 3 }}>
-					<Typography variant="h5">Lista de Usuarios</Typography>
-					<Button variant="contained" color="primary" onClick={handleAddUser} startIcon={<Add />}>
-						Agregar Usuario
-					</Button>
-				</Stack>
-				<Divider />
+			<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+				<Tabs value={tabValue} onChange={handleTabChange} aria-label="users admin tabs">
+					<Tab label="Usuarios del Sistema" />
+					<Tab label="Suscripciones de Stripe" />
+				</Tabs>
+			</Box>
 
-				<TableContainer>
-					<Table>
-						<TableHead>
-							<TableRow key="header-row">
-								{headCells.map((headCell) => (
-									<TableCell
-										key={headCell.id}
-										align={headCell.align as any}
-										sortDirection={orderBy === headCell.id ? order : false}
-										sx={{ py: 2 }}
-									>
-										{headCell.id === "actions" ? (
-											headCell.label
-										) : (
-											<Box component="span" onClick={() => handleRequestSort(headCell.id)} sx={{ cursor: "pointer" }}>
-												{headCell.label}
-												{orderBy === headCell.id ? <Box component="span">{order === "desc" ? " ▼" : " ▲"}</Box> : null}
-											</Box>
-										)}
-									</TableCell>
-								))}
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{/* Skeleton de carga */}
-							{loading && <TableSkeleton columns={headCells.length} rows={rowsPerPage} />}
+			{tabValue === 0 && (
+				<ScrollX>
+					<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 3 }}>
+						<Typography variant="h5">Lista de Usuarios</Typography>
+						<Button variant="contained" color="primary" onClick={handleAddUser} startIcon={<Add />}>
+							Agregar Usuario
+						</Button>
+					</Stack>
+					<Divider />
 
-							{/* Mensaje de error */}
-							{!loading && error && (
-								<TableRow key="error-row">
-									<TableCell colSpan={headCells.length} align="center" sx={{ py: 3 }}>
-										<Typography variant="h6" color="error" gutterBottom>
-											Error al cargar usuarios
-										</Typography>
-										<Typography variant="body2" color="textSecondary">
-											{error}
-										</Typography>
-									</TableCell>
+					<TableContainer>
+						<Table>
+							<TableHead>
+								<TableRow key="header-row">
+									{headCells.map((headCell) => (
+										<TableCell
+											key={headCell.id}
+											align={headCell.align as any}
+											sortDirection={orderBy === headCell.id ? order : false}
+											sx={{ py: 2 }}
+										>
+											{headCell.id === "actions" ? (
+												headCell.label
+											) : (
+												<Box component="span" onClick={() => handleRequestSort(headCell.id)} sx={{ cursor: "pointer" }}>
+													{headCell.label}
+													{orderBy === headCell.id ? <Box component="span">{order === "desc" ? " ▼" : " ▲"}</Box> : null}
+												</Box>
+											)}
+										</TableCell>
+									))}
 								</TableRow>
-							)}
+							</TableHead>
+							<TableBody>
+								{/* Skeleton de carga */}
+								{loading && <TableSkeleton columns={headCells.length} rows={rowsPerPage} />}
 
-							{/* No hay resultados */}
-							{!loading && !error && (!users || users.length === 0) && (
-								<TableRow key="empty-row">
-									<TableCell colSpan={headCells.length} align="center" sx={{ py: 5 }}>
-										<Typography variant="h6" gutterBottom>
-											No hay usuarios disponibles
-										</Typography>
-										<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-											Para agregar un nuevo usuario, haz clic en el botón "Agregar Usuario"
-										</Typography>
-										<Button variant="outlined" color="primary" onClick={handleAddUser} startIcon={<Add />}>
-											Agregar Usuario
-										</Button>
-									</TableCell>
-								</TableRow>
-							)}
-
-							{/* Listado de usuarios */}
-							{!loading &&
-								!error &&
-								users &&
-								users.length > 0 &&
-								visibleRows.map((userItem) => {
-									const user = userItem as User;
-									return (
-										<TableRow hover role="checkbox" tabIndex={-1} key={user.id}>
-											<TableCell>
-												<Stack direction="row" alignItems="center" spacing={1.5}>
-													<Stack>
-														<Typography variant="subtitle1">{user.name || "Sin nombre"}</Typography>
-													</Stack>
-												</Stack>
-											</TableCell>
-											<TableCell>{user.email || "No disponible"}</TableCell>
-											<TableCell>
-												<Chip
-													label={user.role || "Sin rol"}
-													size="small"
+								{/* Mensaje de error */}
+								{!loading && error && (
+									<TableRow key="error-row">
+										<TableCell colSpan={headCells.length} align="center" sx={{ py: 8 }}>
+											<Stack spacing={2} alignItems="center">
+												<Box
 													sx={{
-														borderRadius: "4px",
-														minWidth: 80,
-														background: theme.palette.mode === "dark" ? theme.palette.dark.main : theme.palette.primary.light,
-														color: theme.palette.primary.main,
-														"& .MuiChip-label": {
-															px: 1.5,
-														},
+														width: 80,
+														height: 80,
+														borderRadius: "50%",
+														backgroundColor: (theme) => (theme.palette.mode === "dark" ? "error.dark" : "error.lighter"),
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														mb: 2,
 													}}
-												/>
-											</TableCell>
-											<TableCell>{renderStatusChip(user.status)}</TableCell>
-											<TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Nunca"}</TableCell>
-											<TableCell align="center">
-												<Stack direction="row" justifyContent="center" alignItems="center">
-													<Tooltip title="Ver detalles">
-														<IconButton color="primary" onClick={() => handleUserView(user)}>
-															<Eye size={18} />
-														</IconButton>
-													</Tooltip>
-													<Tooltip title="Editar">
-														<IconButton color="primary" onClick={() => handleUserEdit(user)}>
-															<Edit size={18} />
-														</IconButton>
-													</Tooltip>
-													<Tooltip title="Generar datos">
-														<IconButton color="success" onClick={() => handleGenerateData(user)}>
-															<Chart size={18} />
-														</IconButton>
-													</Tooltip>
-													<Tooltip title="Eliminar">
-														<IconButton color="error" onClick={() => handleUserDelete(user)}>
-															<Trash size={18} />
-														</IconButton>
-													</Tooltip>
+												>
+													<Typography variant="h2" color="error.main">
+														!
+													</Typography>
+												</Box>
+												<Typography variant="h5" color="text.primary" gutterBottom>
+													Ups, algo salió mal
+												</Typography>
+												<Typography variant="body1" color="text.secondary" align="center" sx={{ maxWidth: 400 }}>
+													{error?.toLowerCase().includes("network") || error?.toLowerCase().includes("conexión")
+														? "Parece que hay problemas de conexión. Verifica tu acceso a internet e intenta de nuevo."
+														: error?.toLowerCase().includes("unauthorized") || error?.toLowerCase().includes("401")
+														? "Tu sesión ha expirado. Por favor, vuelve a iniciar sesión."
+														: error?.toLowerCase().includes("forbidden") || error?.toLowerCase().includes("403")
+														? "No tienes permisos para ver esta información. Contacta al administrador."
+														: error?.toLowerCase().includes("server") || error?.toLowerCase().includes("500")
+														? "Nuestros servidores están experimentando problemas. Intenta más tarde."
+														: "No pudimos cargar la lista de usuarios. Por favor, intenta nuevamente."}
+												</Typography>
+												{error && (
+													<Box
+														sx={{
+															mt: 2,
+															p: 1,
+															borderRadius: 1,
+															backgroundColor: (theme) => (theme.palette.mode === "dark" ? "grey.800" : "grey.100"),
+															maxWidth: 400,
+															width: "100%",
+														}}
+													>
+														<Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-word" }}>
+															Error técnico: {error}
+														</Typography>
+													</Box>
+												)}
+												<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+													<Button variant="contained" color="primary" onClick={() => dispatch(getUsers())}>
+														Reintentar
+													</Button>
+													<Button variant="outlined" color="primary" onClick={() => window.location.reload()}>
+														Recargar página
+													</Button>
 												</Stack>
-											</TableCell>
-										</TableRow>
-									);
-								})}
-						</TableBody>
-					</Table>
-				</TableContainer>
+											</Stack>
+										</TableCell>
+									</TableRow>
+								)}
 
-				{/* Paginación (solo se muestra cuando hay usuarios) */}
-				{!loading && !error && users && users.length > 0 && (
-					<TablePagination
-						rowsPerPageOptions={[5, 10, 25]}
-						component="div"
-						count={users.length}
-						rowsPerPage={rowsPerPage}
-						page={page}
-						onPageChange={handleChangePage}
-						onRowsPerPageChange={handleChangeRowsPerPage}
-						labelRowsPerPage="Filas por página:"
-						labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-					/>
-				)}
-			</ScrollX>
+								{/* No hay resultados */}
+								{!loading && !error && (!users || users.length === 0) && (
+									<TableRow key="empty-row">
+										<TableCell colSpan={headCells.length} align="center" sx={{ py: 8 }}>
+											<Stack spacing={3} alignItems="center">
+												<Box
+													sx={{
+														width: 100,
+														height: 100,
+														borderRadius: "50%",
+														backgroundColor: theme.palette.mode === "dark" ? "background.paper" : "grey.100",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														mb: 2,
+													}}
+												>
+													<Add size={48} color={theme.palette.text.secondary} />
+												</Box>
+												<Stack spacing={1} alignItems="center">
+													<Typography variant="h5" color="text.primary">
+														Comienza agregando usuarios
+													</Typography>
+													<Typography variant="body1" color="text.secondary" align="center" sx={{ maxWidth: 400 }}>
+														Aún no hay usuarios registrados en el sistema. Agrega el primer usuario para comenzar a gestionar tu equipo.
+													</Typography>
+												</Stack>
+												<Button variant="contained" color="primary" onClick={handleAddUser} startIcon={<Add />} size="large" sx={{ mt: 2 }}>
+													Agregar Primer Usuario
+												</Button>
+											</Stack>
+										</TableCell>
+									</TableRow>
+								)}
+
+								{/* Listado de usuarios */}
+								{!loading &&
+									!error &&
+									users &&
+									users.length > 0 &&
+									visibleRows.map((userItem, index) => {
+										const user = userItem as User;
+										return (
+											<TableRow hover role="checkbox" tabIndex={-1} key={user._id || user.id || `user-row-${index}`}>
+												<TableCell>
+													<Stack direction="row" alignItems="center" spacing={1.5}>
+														<Stack>
+															<Typography variant="subtitle1">{user.name || "Sin nombre"}</Typography>
+														</Stack>
+													</Stack>
+												</TableCell>
+												<TableCell>{user.email || "No disponible"}</TableCell>
+												<TableCell>{renderRoleChip(user.role)}</TableCell>
+												<TableCell>{renderStatusChip(user.status)}</TableCell>
+												<TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Nunca"}</TableCell>
+												<TableCell align="center">
+													<Stack direction="row" justifyContent="center" alignItems="center">
+														<Tooltip title="Ver detalles">
+															<IconButton color="primary" onClick={() => handleUserView(user)}>
+																<Eye size={18} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Editar">
+															<IconButton color="primary" onClick={() => handleUserEdit(user)}>
+																<Edit size={18} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Generar datos">
+															<IconButton color="success" onClick={() => handleGenerateData(user)}>
+																<Chart size={18} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Eliminar">
+															<IconButton color="error" onClick={() => handleUserDelete(user)}>
+																<Trash size={18} />
+															</IconButton>
+														</Tooltip>
+													</Stack>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+							</TableBody>
+						</Table>
+					</TableContainer>
+
+					{/* Paginación (solo se muestra cuando hay usuarios) */}
+					{!loading && !error && users && users.length > 0 && (
+						<TablePagination
+							rowsPerPageOptions={[5, 10, 25]}
+							component="div"
+							count={users.length}
+							rowsPerPage={rowsPerPage}
+							page={page}
+							onPageChange={handleChangePage}
+							onRowsPerPageChange={handleChangeRowsPerPage}
+							labelRowsPerPage="Filas por página:"
+							labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+						/>
+					)}
+				</ScrollX>
+			)}
+
+			{tabValue === 1 && (
+				<Box sx={{ p: 3 }}>
+					<StripeSubscriptionsTable />
+				</Box>
+			)}
 
 			{/* Diálogo para ver los detalles de un usuario */}
 			{selectedUser && (
-				<Dialog open={viewDialogOpen} onClose={handleCloseViewDialog} maxWidth="md" fullWidth>
+				<Dialog
+					open={viewDialogOpen}
+					onClose={handleCloseViewDialog}
+					maxWidth="md"
+					fullWidth
+					sx={{
+						"& .MuiDialog-paper": {
+							height: "90vh",
+							maxHeight: "900px",
+							display: "flex",
+							flexDirection: "column",
+						},
+					}}
+				>
 					<UserView user={selectedUser} onClose={handleCloseViewDialog} />
 				</Dialog>
 			)}

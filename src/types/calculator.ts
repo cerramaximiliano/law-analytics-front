@@ -26,6 +26,7 @@ export type CalculatorType = {
 	classType?: "laboral" | "civil" | "intereses";
 	subClassType?: "despido" | "liquidación final" | "intereses";
 	amount: number;
+	capital?: number;
 	user?: string;
 	interest?: number;
 	variables?: object;
@@ -39,6 +40,8 @@ export interface CalculatorState {
 	archivedCalculators: CalculatorType[];
 	isLoader: boolean;
 	error: string | null;
+	isInitialized: boolean;
+	lastFetchedUserId?: string;
 }
 
 export interface FilterParams {

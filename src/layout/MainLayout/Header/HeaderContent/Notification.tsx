@@ -15,6 +15,7 @@ import {
 	Stack,
 	Typography,
 	useMediaQuery,
+	Tooltip,
 } from "@mui/material";
 
 // Importar SimpleBar
@@ -34,6 +35,7 @@ import {
 	Add,
 	NotificationCircle,
 	TaskSquare,
+	TickCircle,
 } from "iconsax-react";
 import Avatar from "components/@extended/Avatar";
 import { ThemeMode } from "types/config";
@@ -43,12 +45,12 @@ import { Alert } from "types/alert";
 import { useNavigate } from "react-router-dom";
 
 const actionSX = {
-	mt: "6px",
-	ml: 1,
-	top: "auto",
-	right: "auto",
-	alignSelf: "flex-start",
-	transform: "none",
+	mt: 0,
+	mr: 0,
+	top: "50%",
+	right: 0,
+	transform: "translateY(-50%)",
+	position: "absolute",
 };
 
 type AvatarColorType = "primary" | "secondary" | "error" | "warning" | "info" | "success" | "default";
@@ -85,8 +87,15 @@ const NotificationPage = () => {
 	const userId = useSelector((state) => state.auth.user?._id || "");
 	const alertsData = useSelector((state) => state.alerts.alerts);
 
+	// Separar alertas leídas y no leídas
+	const unreadAlerts = alertsData.filter((alert: Alert) => !alert.read);
+	const readAlerts = alertsData.filter((alert: Alert) => alert.read);
+
+	// Combinar con las no leídas primero
+	const sortedAlerts = [...unreadAlerts, ...readAlerts];
+
 	// Calcular alertas a mostrar
-	const visibleAlerts = showAll ? alertsData : alertsData.slice(0, 3);
+	const visibleAlerts = showAll ? sortedAlerts : sortedAlerts.slice(0, 3);
 
 	const handleToggle = () => {
 		setOpen((prevOpen) => !prevOpen);
@@ -116,8 +125,6 @@ const NotificationPage = () => {
 				return newIds;
 			});
 		} catch (error) {
-			console.error("Error eliminando alerta:", error);
-
 			// Quitar del conjunto de IDs en procesamiento en caso de error
 			setProcessingIds((prev) => {
 				const newIds = new Set(prev);
@@ -142,8 +149,6 @@ const NotificationPage = () => {
 			newProcessingIds.delete(alertId);
 			setProcessingIds(newProcessingIds);
 		} catch (error) {
-			console.error("Error marcando alerta como leída:", error);
-
 			// Quitar del conjunto de IDs en procesamiento en caso de error
 			const newProcessingIds = new Set(processingIds);
 			newProcessingIds.delete(alertId);
@@ -157,28 +162,36 @@ const NotificationPage = () => {
 	};
 
 	useEffect(() => {
-		const unreadCount = alertsData.filter((alert: Alert) => !alert.read).length;
-		setRead(unreadCount);
-	}, [alertsData]);
+		setRead(unreadAlerts.length);
+	}, [unreadAlerts.length]);
 
 	useEffect(() => {
 		const fetchAlerts = async (userId: string) => {
 			if (!userId) return;
 			try {
 				dispatch(fetchUserAlerts(userId));
-			} catch (error) {
-				console.error("Error recibiendo alerts", error);
-			}
+			} catch (error) {}
 		};
 
 		fetchAlerts(userId);
 	}, [userId]);
 
 	const getFormattedNotification = (notification: Alert) => {
+		// Si la notificación tiene primaryText definido, usarlo directamente
+		if (notification.primaryText) {
+			return {
+				primaryText: notification.primaryText,
+				primaryVariant: "body1" as TypographyVariantType,
+				typographyColor: notification.read ? "text.secondary" : "text.primary",
+				avatarColor: "primary" as AvatarColorType,
+			};
+		}
+
+		// Si no hay fecha de expiración, usar secondaryText como fallback
 		if (!notification.expirationDate) {
 			return {
 				primaryText: notification.secondaryText || "Notificación",
-				primaryVariant: "body1" as TypographyVariantType, // Asegurarse de usar el tipo correcto
+				primaryVariant: "body1" as TypographyVariantType,
 				typographyColor: "info",
 				avatarColor: "primary" as AvatarColorType,
 			};
@@ -246,7 +259,6 @@ const NotificationPage = () => {
 
 			return { primaryText, primaryVariant, typographyColor, avatarColor };
 		} catch (error) {
-			console.error("Error al procesar la fecha de la notificación:", error);
 			// Devolver valores predeterminados si hay algún error
 			return {
 				primaryText: notification.secondaryText || "Notificación",
@@ -258,6 +270,33 @@ const NotificationPage = () => {
 	};
 
 	const handleNotificationClick = (notification: Alert) => {
+		// Navegación para eventos
+		if (notification.sourceType === "event" && notification.sourceId) {
+			handleMarkAlertAsRead(notification._id);
+			setOpen(false);
+			navigate("/apps/calendar");
+			return;
+		}
+
+		// Navegación para tareas
+		if (notification.sourceType === "task" && notification.sourceId) {
+			handleMarkAlertAsRead(notification._id);
+			setOpen(false);
+			navigate("/tareas");
+			return;
+		}
+
+		// Navegación para movimientos
+		if (notification.sourceType === "movement" && notification.sourceId) {
+			handleMarkAlertAsRead(notification._id);
+			setOpen(false);
+			// Si tiene folderId, usar ese en lugar del sourceId
+			const navigationId = notification.folderId || notification.sourceId;
+			navigate(`/apps/folders/details/${navigationId}`);
+			return;
+		}
+
+		// Navegación para carpetas (mantener funcionalidad existente)
 		if (notification.folderId) {
 			handleMarkAlertAsRead(notification._id);
 			setOpen(false);
@@ -268,6 +307,7 @@ const NotificationPage = () => {
 	const listItemSxStyles = {
 		"& .MuiListItemButton-root": {
 			p: 1.5,
+			pr: 10, // Añadir padding derecho para los dos botones
 			my: 1.5,
 			border: `1px solid ${theme.palette.divider}`,
 			borderRadius: 1, // Añadir bordes redondeados para un aspecto más moderno
@@ -313,7 +353,6 @@ const NotificationPage = () => {
 			// Posicionamiento de acciones secundarias
 			"& .MuiListItemSecondaryAction-root": {
 				...actionSX,
-				position: "relative",
 			},
 
 			// Efecto de ripple personalizado
@@ -353,7 +392,7 @@ const NotificationPage = () => {
 	// Renderizar la lista de notificaciones
 	const renderNotificationsList = () => (
 		<>
-			{showAll && alertsData.length > 3 ? (
+			{showAll && sortedAlerts.length > 3 ? (
 				<SimpleBar style={{ maxHeight: 350 }}>
 					<List component="nav" sx={listItemSxStyles}>
 						{visibleAlerts.map((notification: Alert) => (
@@ -382,32 +421,73 @@ const NotificationPage = () => {
 											{getFormattedNotification(notification).primaryText}
 										</Typography>
 									}
-									secondary={notification.secondaryText}
+									secondary={
+										notification.secondaryText ? (
+											<Typography
+												variant="body2"
+												color="text.secondary"
+												sx={{
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													display: "-webkit-box",
+													WebkitLineClamp: 2,
+													WebkitBoxOrient: "vertical",
+												}}
+											>
+												{notification.secondaryText}
+											</Typography>
+										) : null
+									}
 								/>
 								<ListItemSecondaryAction>
-									<IconButton
-										shape="rounded"
-										color={notification.read ? "secondary" : "error"}
-										onClick={(e) => {
-											e.stopPropagation(); // Evitar que el clic se propague al ListItemButton
-											handleDeleteAlert(notification._id);
-										}}
-										disabled={processingIds.has(notification._id)}
-										sx={{
-											transition: "all 0.15s ease-in-out",
-											opacity: notification.read ? 0.6 : 1,
-											"&:hover": {
-												transform: "rotate(90deg)",
-												// Modificar esta línea para usar un color con mayor transparencia
-												bgcolor: notification.read ? alpha(theme.palette.secondary.light, 0.3) : alpha(theme.palette.error.light, 0.3),
-											},
-											"&:active": {
-												transform: "rotate(90deg) scale(0.9)",
-											},
-										}}
-									>
-										<Add style={{ transform: "rotate(45deg)" }} />
-									</IconButton>
+									<Box sx={{ display: "flex", gap: 0.5 }}>
+										{!notification.read && (
+											<Tooltip title="Marcar como leído" placement="left">
+												<IconButton
+													shape="rounded"
+													color="success"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleMarkAlertAsRead(notification._id);
+													}}
+													disabled={processingIds.has(notification._id)}
+													sx={{
+														transition: "all 0.15s ease-in-out",
+														"&:hover": {
+															bgcolor: alpha(theme.palette.success.light, 0.3),
+														},
+													}}
+												>
+													<TickCircle size={20} />
+												</IconButton>
+											</Tooltip>
+										)}
+										<Tooltip title="Eliminar" placement="left">
+											<IconButton
+												shape="rounded"
+												color={notification.read ? "secondary" : "error"}
+												onClick={(e) => {
+													e.stopPropagation(); // Evitar que el clic se propague al ListItemButton
+													handleDeleteAlert(notification._id);
+												}}
+												disabled={processingIds.has(notification._id)}
+												sx={{
+													transition: "all 0.15s ease-in-out",
+													opacity: notification.read ? 0.6 : 1,
+													"&:hover": {
+														transform: "rotate(90deg)",
+														// Modificar esta línea para usar un color con mayor transparencia
+														bgcolor: notification.read ? alpha(theme.palette.secondary.light, 0.3) : alpha(theme.palette.error.light, 0.3),
+													},
+													"&:active": {
+														transform: "rotate(90deg) scale(0.9)",
+													},
+												}}
+											>
+												<Add style={{ transform: "rotate(45deg)" }} />
+											</IconButton>
+										</Tooltip>
+									</Box>
 								</ListItemSecondaryAction>
 							</ListItemButton>
 						))}
@@ -440,39 +520,80 @@ const NotificationPage = () => {
 											{formattedNotification.primaryText}
 										</Typography>
 									}
-									secondary={notification.secondaryText}
+									secondary={
+										notification.secondaryText ? (
+											<Typography
+												variant="body2"
+												color="text.secondary"
+												sx={{
+													overflow: "hidden",
+													textOverflow: "ellipsis",
+													display: "-webkit-box",
+													WebkitLineClamp: 2,
+													WebkitBoxOrient: "vertical",
+												}}
+											>
+												{notification.secondaryText}
+											</Typography>
+										) : null
+									}
 								/>
 								<ListItemSecondaryAction>
-									<IconButton
-										shape="rounded"
-										color={notification.read ? "secondary" : "error"}
-										onClick={(e) => {
-											e.stopPropagation(); // Evitar que el clic se propague al ListItemButton
-											handleDeleteAlert(notification._id);
-										}}
-										disabled={processingIds.has(notification._id)}
-										sx={{
-											transition: "all 0.15s ease-in-out",
-											opacity: notification.read ? 0.6 : 1,
-											"&:hover": {
-												transform: "rotate(90deg)",
-												// Modificar esta línea para usar un color con mayor transparencia
-												bgcolor: notification.read ? alpha(theme.palette.secondary.light, 0.3) : alpha(theme.palette.error.light, 0.3),
-											},
-											"&:active": {
-												transform: "rotate(90deg) scale(0.9)",
-											},
-										}}
-									>
-										<Add style={{ transform: "rotate(45deg)" }} />
-									</IconButton>
+									<Box sx={{ display: "flex", gap: 0.5 }}>
+										{!notification.read && (
+											<Tooltip title="Marcar como leído" placement="left">
+												<IconButton
+													shape="rounded"
+													color="success"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleMarkAlertAsRead(notification._id);
+													}}
+													disabled={processingIds.has(notification._id)}
+													sx={{
+														transition: "all 0.15s ease-in-out",
+														"&:hover": {
+															bgcolor: alpha(theme.palette.success.light, 0.3),
+														},
+													}}
+												>
+													<TickCircle size={20} />
+												</IconButton>
+											</Tooltip>
+										)}
+										<Tooltip title="Eliminar" placement="left">
+											<IconButton
+												shape="rounded"
+												color={notification.read ? "secondary" : "error"}
+												onClick={(e) => {
+													e.stopPropagation(); // Evitar que el clic se propague al ListItemButton
+													handleDeleteAlert(notification._id);
+												}}
+												disabled={processingIds.has(notification._id)}
+												sx={{
+													transition: "all 0.15s ease-in-out",
+													opacity: notification.read ? 0.6 : 1,
+													"&:hover": {
+														transform: "rotate(90deg)",
+														// Modificar esta línea para usar un color con mayor transparencia
+														bgcolor: notification.read ? alpha(theme.palette.secondary.light, 0.3) : alpha(theme.palette.error.light, 0.3),
+													},
+													"&:active": {
+														transform: "rotate(90deg) scale(0.9)",
+													},
+												}}
+											>
+												<Add style={{ transform: "rotate(45deg)" }} />
+											</IconButton>
+										</Tooltip>
+									</Box>
 								</ListItemSecondaryAction>
 							</ListItemButton>
 						);
 					})}
 				</List>
 			)}
-			{alertsData.length > 3 && (
+			{sortedAlerts.length > 3 && (
 				<Stack direction="row" justifyContent="center" sx={{ mt: 1 }}>
 					<Link href="#" variant="h6" color="primary" onClick={toggleShowAll}>
 						{showAll ? "Ver menos" : "Ver todas"}
@@ -582,11 +703,9 @@ const NotificationPage = () => {
 							sx={{
 								boxShadow: theme.customShadows.z1,
 								borderRadius: 1.5,
-								width: "100%",
-								minWidth: 285,
-								maxWidth: 420,
+								width: 420,
 								[theme.breakpoints.down("md")]: {
-									maxWidth: 285,
+									width: 285,
 								},
 							}}
 						>
@@ -596,7 +715,7 @@ const NotificationPage = () => {
 										<Typography variant="h5">Notificaciones</Typography>
 									</Stack>
 
-									{alertsData.length > 0 ? renderNotificationsList() : <NotificationEmptyState />}
+									{sortedAlerts.length > 0 ? renderNotificationsList() : <NotificationEmptyState />}
 								</MainCard>
 							</ClickAwayListener>
 						</Paper>

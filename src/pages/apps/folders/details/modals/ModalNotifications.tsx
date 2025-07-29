@@ -37,8 +37,6 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id || "";
 
-	console.log(editMode);
-
 	function closeModal() {
 		setOpen(false);
 	}
@@ -123,7 +121,6 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 				});
 			}
 		} catch (error) {
-			console.error("Error en _submitForm:", error);
 			enqueueSnackbar(`Error inesperado al ${editMode ? "actualizar" : "crear"} la notificación`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -157,13 +154,18 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 			<Dialog
 				maxWidth="sm"
 				open={open}
+				scroll="paper"
 				PaperProps={{
 					sx: {
 						width: "600px",
 						maxWidth: "600px",
+						maxHeight: "90vh",
+						display: "flex",
+						flexDirection: "column",
 						p: 0,
 						borderRadius: 2,
 						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+						overflow: "hidden",
 					},
 				}}
 				sx={{
@@ -172,12 +174,13 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 			>
 				<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
 					{({ isSubmitting, resetForm, values }) => (
-						<Form autoComplete="off" noValidate>
+						<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
 							<DialogTitle
 								sx={{
 									bgcolor: theme.palette.primary.lighter,
 									p: 3,
 									borderBottom: `1px solid ${theme.palette.divider}`,
+									flexShrink: 0,
 								}}
 							>
 								<Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -216,6 +219,9 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 									display: "flex",
 									flexDirection: "column",
 									gap: 2, // Reducido de 3 a 2 para disminuir el espaciado general
+									overflowY: "auto",
+									flex: 1,
+									minHeight: 0,
 								}}
 							>
 								{/* Título */}
@@ -450,6 +456,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 									p: 2.5,
 									bgcolor: theme.palette.background.default,
 									borderTop: `1px solid ${theme.palette.divider}`,
+									flexShrink: 0,
 								}}
 							>
 								<Button
@@ -461,16 +468,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 								>
 									Cancelar
 								</Button>
-								<Button
-									type="submit"
-									variant="contained"
-									disabled={isSubmitting}
-									sx={{
-										minWidth: 120,
-										py: 1.25,
-										fontWeight: 600,
-									}}
-								>
+								<Button type="submit" variant="contained" disabled={isSubmitting}>
 									Guardar
 								</Button>
 							</DialogActions>

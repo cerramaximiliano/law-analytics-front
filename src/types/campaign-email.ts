@@ -11,10 +11,11 @@ export interface EmailSender {
 }
 
 export interface SendingRestrictions {
-	daysOfWeek?: number[];
-	timeStart?: string;
-	timeEnd?: string;
-	timezone?: string;
+	allowedDays?: number[];
+	timeWindow?: {
+		start: string;
+		end: string;
+	};
 }
 
 export interface EmailTracking {
@@ -60,7 +61,21 @@ export interface CampaignEmail {
 	content?: EmailContent;
 	sender?: EmailSender;
 	replyTo?: string;
-	conditions?: Record<string, any>;
+	conditions?: {
+		type?: "time" | "event" | "custom";
+		timeDelay?: {
+			value: number;
+			unit: "minutes" | "hours" | "days" | "weeks";
+		};
+		eventTrigger?: {
+			eventName?: string;
+			maxWaitTime?: {
+				value: number;
+				unit: "minutes" | "hours" | "days" | "weeks";
+			};
+		};
+		customCondition?: any;
+	};
 	sendingRestrictions?: SendingRestrictions;
 	variables?: Record<string, any>;
 	isFinal?: boolean;
@@ -99,7 +114,21 @@ export interface CampaignEmailInput {
 	content?: EmailContent;
 	sender?: EmailSender;
 	replyTo?: string;
-	conditions?: Record<string, any>;
+	conditions?: {
+		type?: "time" | "event" | "custom";
+		timeDelay?: {
+			value: number;
+			unit: "minutes" | "hours" | "days" | "weeks";
+		};
+		eventTrigger?: {
+			eventName?: string;
+			maxWaitTime?: {
+				value: number;
+				unit: "minutes" | "hours" | "days" | "weeks";
+			};
+		};
+		customCondition?: any;
+	};
 	sendingRestrictions?: SendingRestrictions;
 	variables?: Record<string, any>;
 	isFinal?: boolean;

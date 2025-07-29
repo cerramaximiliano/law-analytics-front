@@ -107,10 +107,9 @@ export function getEvents(id: any) {
 		try {
 			const response = await axios.get("/api/calendar/events");
 			await delay(5000);
-			//console.log(response);
+			//
 			dispatch(calendar.actions.setEvents(response.data.events));
 		} catch (error) {
-			console.log(error);
 			//dispatch(calendar.actions.hasError(error));
 		}
 	};

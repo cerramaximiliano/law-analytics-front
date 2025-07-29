@@ -87,8 +87,13 @@ class WebSocketService {
 				reconnection: this.options.autoReconnect,
 				reconnectionAttempts: this.options.maxReconnectAttempts,
 				reconnectionDelay: this.options.reconnectInterval,
-				query: authToken ? { token: authToken } : undefined,
-				transports: ["websocket", "polling"], // Asegura compatibilidad
+				withCredentials: true, // Usar cookies para autenticación
+				auth: {
+					userId: this.userId,
+					// El token se enviará automáticamente via cookie httpOnly
+				},
+				transports: ["websocket"], // Solo WebSocket para mayor seguridad
+				secure: process.env.NODE_ENV === "production",
 			};
 
 			// Crear nueva conexión Socket.IO

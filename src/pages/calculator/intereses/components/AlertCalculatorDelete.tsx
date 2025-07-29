@@ -27,11 +27,8 @@ export default function AlertCalculatorDelete({ id, title, open, handleClose }: 
 				// Cierra el diálogo después de eliminar con éxito
 				handleClose();
 			} else {
-				console.error("Error al eliminar el cálculo:", result.error);
 			}
-		} catch (error) {
-			console.error("Error al eliminar el cálculo:", error);
-		}
+		} catch (error) {}
 	};
 
 	return (

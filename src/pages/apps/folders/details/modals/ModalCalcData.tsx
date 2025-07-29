@@ -238,16 +238,7 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 								>
 									Cancelar
 								</Button>
-								<Button
-									type="submit"
-									variant="contained"
-									disabled={isSubmitting}
-									sx={{
-										minWidth: 120,
-										py: 1.25,
-										fontWeight: 600,
-									}}
-								>
+								<Button type="submit" variant="contained" disabled={isSubmitting}>
 									Guardar
 								</Button>
 							</DialogActions>

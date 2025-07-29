@@ -32,7 +32,6 @@ const Register = () => {
 			await loginWithGoogle(credentialResponse);
 		} catch (error) {
 			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
-			console.error("Error:", error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -56,7 +55,7 @@ const Register = () => {
 				</Grid>
 				<Grid item xs={12}>
 					<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
-						<Typography variant="h3">Sign up</Typography>
+						<Typography variant="h3">Registro</Typography>
 						<Typography component={Link} to={"/login"} variant="body1" sx={{ textDecoration: "none" }} color="primary">
 							¿Ya tienes una cuenta?
 						</Typography>

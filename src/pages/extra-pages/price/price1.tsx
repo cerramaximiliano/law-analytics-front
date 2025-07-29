@@ -26,13 +26,15 @@ import {
 	Paper,
 } from "@mui/material";
 
+// icons
+import { Lock } from "iconsax-react";
+
 // project-imports
 import MainCard from "components/MainCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import TabLegalDocuments from "./TabPanel";
-import useBankingDisplay from "hooks/useBankingDisplay";
 
 // ==============================|| PRICING ||============================== //
 
@@ -56,8 +58,6 @@ const Pricing = () => {
 	const [downgradeOptions, setDowngradeOptions] = useState<DowngradeOption[]>([]);
 	const [selectedOption, setSelectedOption] = useState<string>("");
 	const [targetPlanId, setTargetPlanId] = useState<string>("");
-	// Determinar si se debe mostrar información bancaria internacional
-	const showBankingData = useBankingDisplay();
 
 	// Obtener los planes al cargar el componente
 	useEffect(() => {
@@ -85,12 +85,10 @@ const Pricing = () => {
 						setCurrentPlanId(responseData.subscription.plan);
 					}
 				} catch (err) {
-					console.error("Error al obtener suscripción actual:", err);
 					// No mostramos error si falla esto, solo para el listado de planes
 				}
 			} catch (err) {
 				setError("Error al cargar los planes. Por favor, intenta más tarde.");
-				console.error(err);
 			} finally {
 				setLoading(false);
 			}
@@ -176,16 +174,15 @@ const Pricing = () => {
 			// Manejo de planes pagos o respuestas normales
 			if (response.success && response.url) {
 				// Redirigir al usuario a la URL de checkout proporcionada por Stripe
-				console.log("Redirigiendo a URL de Stripe:", response.url);
+
 				window.location.href = response.url;
 			} else if (response.success && response.sessionId) {
 				// En caso de que solo devuelva el sessionId sin URL
-				console.log("Obtenido sessionId de Stripe:", response.sessionId);
+
 				alert("Proceso de suscripción iniciado. Serás redirigido a la página de pago.");
 			}
 			// Caso para suscripción pendiente de cancelación (no relacionado con plan gratuito)
 			else if (response.success && response.pendingCancellation) {
-				console.log("Suscripción pendiente de cancelación detectada");
 				// Mostrar mensaje informativo
 				dispatch(
 					openSnackbar({
@@ -207,7 +204,7 @@ const Pricing = () => {
 				}
 			} else if (response.success) {
 				// Respuesta exitosa pero sin URL ni sessionId
-				console.log("Respuesta exitosa sin URL ni sessionId");
+
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -221,7 +218,7 @@ const Pricing = () => {
 				);
 			} else {
 				// Respuesta no exitosa
-				console.error("Error en la respuesta:", response);
+
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -237,7 +234,6 @@ const Pricing = () => {
 				window.location.href = errorUrl;
 			}
 		} catch (error) {
-			console.error("Error al suscribirse:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -320,7 +316,6 @@ const Pricing = () => {
 				throw new Error(response.message || "Error al procesar la solicitud");
 			}
 		} catch (error) {
-			console.error("Error al procesar la opción:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -418,11 +413,24 @@ const Pricing = () => {
 	};
 
 	// Función para obtener el color y el estilo según el tipo de plan
-	const getPlanStyle = (planId: string, isCurrentPlan: boolean) => {
+	const getPlanStyle = (planId: string, isCurrentPlan: boolean, isActive: boolean) => {
+		const baseStyle = {
+			padding: 3,
+			borderRadius: 1,
+		};
+
+		// Si no está activo, usar un estilo gris
+		if (!isActive) {
+			return {
+				...baseStyle,
+				bgcolor: theme.palette.grey[200],
+				opacity: 0.8,
+			};
+		}
+
 		if (isCurrentPlan) {
 			return {
-				padding: 3,
-				borderRadius: 1,
+				...baseStyle,
 				bgcolor: theme.palette.primary.lighter,
 			};
 		}
@@ -430,14 +438,12 @@ const Pricing = () => {
 		switch (planId) {
 			case "free":
 				return {
-					padding: 3,
-					borderRadius: 1,
+					...baseStyle,
 					bgcolor: theme.palette.info.lighter,
 				};
 			case "standard":
 				return {
-					padding: 3,
-					borderRadius: 1,
+					...baseStyle,
 					bgcolor: theme.palette.success.lighter,
 				};
 			case "premium":
@@ -470,7 +476,12 @@ const Pricing = () => {
 	};
 
 	// Función para obtener el chip distintivo según el plan
-	const getPlanChip = (planId: string, isCurrentPlan: boolean, isDefault: boolean) => {
+	const getPlanChip = (planId: string, isCurrentPlan: boolean, isDefault: boolean, isActive: boolean) => {
+		// Si el plan no está activo, mostrar chip de próximamente
+		if (!isActive) {
+			return <Chip label="Próximamente" color="warning" variant="filled" />;
+		}
+
 		if (isCurrentPlan) {
 			return <Chip label="Plan Actual" color="primary" />;
 		}
@@ -555,14 +566,14 @@ const Pricing = () => {
 
 					return (
 						<Grid item xs={12} sm={6} md={4} key={plan.planId}>
-							<MainCard>
+							<MainCard sx={{ position: "relative", overflow: "hidden" }}>
 								<Grid container spacing={3}>
 									<Grid item xs={12}>
-										<Box sx={getPlanStyle(plan.planId, isCurrentPlan)}>
+										<Box sx={getPlanStyle(plan.planId, isCurrentPlan, plan.isActive)}>
 											<Grid container spacing={3}>
 												{/* Mostramos el chip correspondiente */}
 												<Grid item xs={12} sx={{ textAlign: "center" }}>
-													{getPlanChip(plan.planId, isCurrentPlan, plan.isDefault)}
+													{getPlanChip(plan.planId, isCurrentPlan, plan.isDefault, plan.isActive)}
 												</Grid>
 												<Grid item xs={12}>
 													<Stack spacing={0} textAlign="center">
@@ -585,10 +596,17 @@ const Pricing = () => {
 														color={getButtonColor(plan.planId, isCurrentPlan)}
 														variant={isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined"}
 														fullWidth
-														disabled={isCurrentPlan}
-														onClick={() => handleSubscribe(plan.planId)}
+														disabled={isCurrentPlan || !plan.isActive}
+														onClick={() => plan.isActive && handleSubscribe(plan.planId)}
+														startIcon={!plan.isActive ? <Lock size={16} /> : undefined}
 													>
-														{isCurrentPlan ? "Plan Actual" : isDowngradeToFree ? "Bajar a Free" : "Suscribirme"}
+														{!plan.isActive
+															? "No disponible"
+															: isCurrentPlan
+															? "Plan Actual"
+															: isDowngradeToFree
+															? "Bajar a Free"
+															: "Suscribirme"}
 													</Button>
 												</Grid>
 											</Grid>
@@ -638,6 +656,45 @@ const Pricing = () => {
 										</List>
 									</Grid>
 								</Grid>
+
+								{/* Overlay para planes no activos */}
+								{!plan.isActive && (
+									<Box
+										sx={{
+											position: "absolute",
+											top: 0,
+											left: 0,
+											right: 0,
+											bottom: 0,
+											backgroundColor: theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.85)" : "rgba(255, 255, 255, 0.85)",
+											backdropFilter: "blur(5px)",
+											WebkitBackdropFilter: "blur(5px)",
+											zIndex: 100,
+											borderRadius: "inherit",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+										}}
+									>
+										<Paper
+											elevation={3}
+											sx={{
+												p: 2,
+												textAlign: "center",
+												backgroundColor: "background.paper",
+												maxWidth: "80%",
+											}}
+										>
+											<Lock variant="Bulk" size={32} color={theme.palette.warning.main} style={{ marginBottom: 8 }} />
+											<Typography variant="h6" gutterBottom color="warning.main">
+												Próximamente
+											</Typography>
+											<Typography variant="caption" color="text.secondary">
+												Este plan estará disponible pronto
+											</Typography>
+										</Paper>
+									</Box>
+								)}
 							</MainCard>
 						</Grid>
 					);
@@ -662,11 +719,6 @@ const Pricing = () => {
 						</Link>
 						.
 					</Typography>
-					{showBankingData && (
-						<Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-							Puedes realizar pagos bancarios internacionales a: Banco XYZ, Cuenta: 123-456-789, SWIFT: ABCDEFGH.
-						</Typography>
-					)}
 				</Box>
 			</Grid>
 

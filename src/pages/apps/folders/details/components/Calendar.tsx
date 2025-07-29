@@ -1,7 +1,6 @@
-import { Box, Skeleton, Grid, CardContent, IconButton, Typography, Dialog, Tooltip, Stack } from "@mui/material";
+import { Box, Skeleton, CardContent, IconButton, Typography, Dialog, Tooltip, Stack } from "@mui/material";
 import { Trash, Edit2, Eye, Add, CalendarRemove } from "iconsax-react";
 import MainCard from "components/MainCard";
-import Avatar from "components/@extended/Avatar";
 import { PopupTransition } from "components/@extended/Transitions";
 import {
 	toggleModal,
@@ -23,6 +22,7 @@ import { getEventsById, deleteEvent, selectEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
 import { EventContentArg } from "@fullcalendar/core";
 import { parseISO, format } from "date-fns";
+import EmptyStateCard from "components/EmptyStateCard";
 
 interface CalendarProps {
 	title: string;
@@ -228,9 +228,7 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 				try {
 					await dispatch(getEventsById(id));
 					setIsLoading(false);
-				} catch (error) {
-					console.error(error);
-				}
+				} catch (error) {}
 			};
 			fetchData();
 		}
@@ -240,7 +238,6 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 	useEffect(() => {
 		// Manejador para eventos de restricción de plan
 		const handlePlanRestriction = () => {
-			console.log("Calendar: Restricción de plan detectada, cerrando modal Agregar Evento");
 			if (isModalOpen) {
 				dispatch(toggleModal()); // Cerrar el modal
 				dispatch(selectEvent(null)); // Limpiar evento seleccionado
@@ -250,7 +247,6 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 		// Revisar periódicamente si hay una flag global para cerrar modales
 		const checkGlobalFlag = () => {
 			if ((window as any).FORCE_CLOSE_ALL_MODALS && isModalOpen) {
-				console.log("Calendar: Flag global detectada, cerrando modal Agregar Evento");
 				dispatch(toggleModal()); // Cerrar el modal
 				dispatch(selectEvent(null)); // Limpiar evento seleccionado
 			}
@@ -275,12 +271,19 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 			title={title}
 			content={false}
 			secondary={
-				<Tooltip title="Agregar Evento">
-					<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleModal}>
-						<Add />
-					</IconButton>
-				</Tooltip>
+				<Stack direction="row" spacing={1}>
+					<Tooltip title="Agregar Evento">
+						<IconButton color="secondary" sx={{ color: "secondary.darker" }} onClick={handleModal} disabled={isLoading}>
+							<Add />
+						</IconButton>
+					</Tooltip>
+				</Stack>
 			}
+			sx={{
+				"& .MuiCardContent-root": {
+					p: 0,
+				},
+			}}
 		>
 			<Dialog
 				maxWidth="sm"
@@ -302,104 +305,71 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 				/>
 			</Dialog>
 
-			<CardContent
-				sx={{
-					display: "grid",
-					gridTemplateRows: "1fr auto", // Ajusta automáticamente
-					height: "100%",
-				}}
-			>
+			<CardContent sx={{ p: 3 }}>
 				{isLoading ? (
-					<>
-						<Skeleton />
-						<Skeleton />
-						<Skeleton />
-						<Skeleton />
-						<Skeleton />
-						<Skeleton />
-						<Skeleton />
-					</>
+					<Stack spacing={3}>
+						<Skeleton variant="rounded" height={60} />
+						<Skeleton variant="rounded" height={60} />
+						<Skeleton variant="rounded" height={60} />
+					</Stack>
+				) : events.length > 0 ? (
+					<SimpleBar
+						sx={{
+							overflowX: "hidden",
+							height: "100%",
+							maxHeight: "600px", // Ajusta este valor si necesitas más espacio
+							overflowY: "auto", // Scroll vertical
+						}}
+					>
+						<CalendarStyled
+							sx={{
+								height: "auto",
+								maxHeight: "600px", // Límite máximo para evitar desbordamientos
+								overflowY: "auto", // Scroll si el contenido excede
+							}}
+						>
+							<CalendarToolbar
+								date={date}
+								view={currentView}
+								onClickNext={handleDateNext}
+								onClickPrev={handleDatePrev}
+								onClickToday={handleDateToday}
+								onChangeView={handleViewChange}
+							/>
+							<FullCalendar
+								events={events}
+								initialView="listMonth"
+								ref={calendarRef}
+								rerenderDelay={10}
+								initialDate={date}
+								dayMaxEventRows={3}
+								headerToolbar={false}
+								allDayMaintainDuration
+								eventResizableFromStart
+								locale={esLocale}
+								plugins={[listPlugin, dayGridPlugin, timeGridPlugin]}
+								height={"auto"}
+								eventContent={(eventInfo) => renderEventContent(eventInfo)}
+								views={{
+									listMonth: {
+										buttonText: "Mes",
+										titleFormat: { year: "numeric", month: "long" },
+									},
+									listYear: {
+										buttonText: "Año",
+										titleFormat: { year: "numeric" },
+										duration: { years: 1 },
+									},
+								}}
+							/>
+						</CalendarStyled>
+					</SimpleBar>
 				) : (
-					<>
-						{events.length > 0 ? (
-							<Grid container>
-								<SimpleBar
-									sx={{
-										overflowX: "hidden",
-										height: "100%",
-										maxHeight: "600px", // Ajusta este valor si necesitas más espacio
-										overflowY: "auto", // Scroll vertical
-									}}
-								>
-									<CalendarStyled
-										sx={{
-											height: "auto",
-											maxHeight: "600px", // Límite máximo para evitar desbordamientos
-											overflowY: "auto", // Scroll si el contenido excede
-										}}
-									>
-										<CalendarToolbar
-											date={date}
-											view={currentView}
-											onClickNext={handleDateNext}
-											onClickPrev={handleDatePrev}
-											onClickToday={handleDateToday}
-											onChangeView={handleViewChange}
-										/>
-										<FullCalendar
-											events={events}
-											initialView="listMonth"
-											ref={calendarRef}
-											rerenderDelay={10}
-											initialDate={date}
-											dayMaxEventRows={3}
-											headerToolbar={false}
-											allDayMaintainDuration
-											eventResizableFromStart
-											locale={esLocale}
-											plugins={[listPlugin, dayGridPlugin, timeGridPlugin]}
-											height={"auto"}
-											eventContent={(eventInfo) => renderEventContent(eventInfo)}
-											views={{
-												listMonth: {
-													buttonText: "Mes",
-													titleFormat: { year: "numeric", month: "long" },
-												},
-												listYear: {
-													buttonText: "Año",
-													titleFormat: { year: "numeric" },
-													duration: { years: 1 },
-												},
-											}}
-										/>
-									</CalendarStyled>
-								</SimpleBar>
-							</Grid>
-						) : (
-							<>
-								<Stack spacing={2} alignItems="center" py={4}>
-									<Avatar
-										color="error"
-										variant="rounded"
-										sx={{
-											width: 64,
-											height: 64,
-											bgcolor: "error.lighter",
-										}}
-									>
-										<CalendarRemove variant="Bold" />
-									</Avatar>
-
-									<Typography variant="subtitle1" color="textSecondary" align="center">
-										No hay eventos registrados
-									</Typography>
-									<Typography variant="body2" color="textSecondary" align="center">
-										Comienza agregando un nuevo evento usando el botón +
-									</Typography>
-								</Stack>
-							</>
-						)}
-					</>
+					<EmptyStateCard
+						icon={<CalendarRemove variant="Bold" />}
+						title="No hay eventos registrados"
+						subtitle="Comienza agregando un nuevo evento usando el botón +"
+					/>
 				)}
 			</CardContent>
 		</MainCard>

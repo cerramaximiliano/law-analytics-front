@@ -23,11 +23,15 @@ import {
 	ListItemIcon,
 	alpha,
 	Chip,
+	Checkbox,
+	FormControlLabel,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
 import { Add, DocumentUpload, ArrowRight, Lock } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
+import { dispatch } from "store";
+import { linkFolderToCausa } from "store/reducers/folder";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
 interface LinkToJudicialPowerProps {
@@ -82,6 +86,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 	const [jurisdictionError, setJurisdictionError] = useState("");
 	const [numberError, setNumberError] = useState("");
 	const [error, setError] = useState("");
+	const [overwriteData, setOverwriteData] = useState(true); // Por defecto true para mantener comportamiento actual
 	const [touched, setTouched] = useState({
 		jurisdiction: false,
 		expedientNumber: false,
@@ -163,22 +168,29 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 		setError("");
 
 		try {
-			// TODO: Implementar llamada al servicio externo del Poder Judicial
-			console.log("Vinculando causa:", {
-				folderId,
-				folderName,
-				expedientNumber,
-				expedientYear,
-				jurisdiction,
-			});
+			// Llamar a la acción del store para vincular la causa
+			const result = await dispatch(
+				linkFolderToCausa(folderId, {
+					pjnCode: jurisdiction, // El código de jurisdicción se usa como pjnCode
+					number: expedientNumber,
+					year: expedientYear,
+					overwrite: overwriteData, // Usar el valor del checkbox
+					pjn: selectedPower === "nacional", // true si es Poder Judicial de la Nación
+				}),
+			);
 
-			// Simulación de llamada exitosa
-			setTimeout(() => {
+			if (result.success) {
 				setLoading(false);
 				setSuccess(true);
 
+				// Determinar el tipo de mensaje según el estado de asociación
+				let message = "Causa vinculada exitosamente con el Poder Judicial de la Nación";
+				if (result.causaInfo?.associationStatus === "pending") {
+					message = "Causa vinculada. Pendiente de verificación en el sistema judicial.";
+				}
+
 				// Mostrar notificación de éxito
-				enqueueSnackbar("Causa vinculada exitosamente con el Poder Judicial de la Nación", {
+				enqueueSnackbar(message, {
 					variant: "success",
 					anchorOrigin: { vertical: "top", horizontal: "right" },
 				});
@@ -187,9 +199,12 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 				setTimeout(() => {
 					onCancelLink();
 				}, 1500);
-			}, 2000);
+			} else {
+				setError(result.message || "Error al vincular la causa. Por favor intente nuevamente.");
+				setLoading(false);
+			}
 		} catch (err) {
-			setError("Error al vincular la causa. Por favor intente nuevamente.");
+			setError("Error inesperado al vincular la causa. Por favor intente nuevamente.");
 			setLoading(false);
 		}
 	};
@@ -204,6 +219,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 			setNumberError("");
 			setJurisdictionError("");
 			setSuccess(false);
+			setOverwriteData(true); // Reiniciar a true por defecto
 			formSubmitAttempted.current = false;
 			setTouched({
 				jurisdiction: false,
@@ -256,13 +272,7 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 
 	// Escuchar evento de restricción del plan
 	useEffect(() => {
-		const handlePlanRestriction = (event: Event) => {
-			const customEvent = event as CustomEvent;
-			console.log(
-				"Restricción de plan detectada, cerrando modal de vinculación",
-				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
-			);
-
+		const handlePlanRestriction = (_event: Event) => {
 			// Cerrar el modal inmediatamente
 			onCancelLink();
 
@@ -589,6 +599,18 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 										size="small"
 									/>
 								</Stack>
+							</Grid>
+
+							<Grid item xs={12}>
+								<FormControlLabel
+									control={<Checkbox checked={overwriteData} onChange={(e) => setOverwriteData(e.target.checked)} color="primary" />}
+									label={
+										<Typography variant="body2">
+											Sobrescribir datos actuales de la causa (carátula, juzgado y número de expediente) con los datos obtenidos del Poder
+											Judicial
+										</Typography>
+									}
+								/>
 							</Grid>
 
 							<Grid item xs={12}>

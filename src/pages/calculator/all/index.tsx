@@ -72,6 +72,7 @@ import { GuideSelector } from "components/guides";
 // Importamos componentes para gestión de archivado
 import ArchivedCalculatorsModal from "sections/apps/calculator/ArchivedCalculatorsModal";
 import AlertCalculatorDelete from "sections/apps/calculator/AlertCalculatorDelete";
+import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 
 // ==============================|| CALCULATOR CARD COMPONENT ||============================== //
 
@@ -255,7 +256,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 									{new Intl.NumberFormat("es-AR", {
 										style: "currency",
 										currency: "ARS",
-									}).format(data.amount)}
+									}).format(data.capital !== undefined ? data.capital : data.amount - (data.interest || 0))}
 								</Typography>
 							</Stack>
 							{data.interest !== undefined && (
@@ -280,7 +281,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 											{new Intl.NumberFormat("es-AR", {
 												style: "currency",
 												currency: "ARS",
-											}).format(data.amount + (data.interest || 0))}
+											}).format(data.amount)}
 										</Typography>
 									</Stack>
 								</>
@@ -678,7 +679,7 @@ function ReactTable({
 										))}
 									</TableRow>
 									<TableRow>
-										<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+										<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
 											<Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
 												<Box sx={{ margin: 1 }}>{renderRowSubComponent({ row })}</Box>
 											</Collapse>
@@ -689,7 +690,7 @@ function ReactTable({
 						})}
 						{page.length === 0 && (
 							<TableRow>
-								<TableCell colSpan={8} sx={{ textAlign: "center", py: 5 }}>
+								<TableCell colSpan={9} sx={{ textAlign: "center", py: 5 }}>
 									<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
 										<Calculator
 											variant="Bulk"
@@ -712,7 +713,7 @@ function ReactTable({
 						)}
 						{page.length > 0 && (
 							<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-								<TableCell sx={{ p: 2, py: 3 }} colSpan={8}>
+								<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
 									<CustomTablePagination
 										gotoPage={gotoPage}
 										rows={rows}
@@ -734,7 +735,8 @@ function ReactTable({
 
 const AllCalculators = () => {
 	const theme = useTheme();
-	const { calculators, archivedCalculators, isLoader } = useSelector((state: any) => state.calculator);
+	const navigate = useNavigate();
+	const { calculators, archivedCalculators, isLoader, isInitialized, lastFetchedUserId } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 	const [loading, setLoading] = useState(true);
@@ -771,8 +773,13 @@ const AllCalculators = () => {
 			setLoading(true);
 
 			if (userId) {
-				await dispatch(getCalculatorsByUserId(userId));
-				await dispatch(getArchivedCalculatorsByUserId(userId));
+				// Solo hacer fetch si no está inicializado o si el usuario cambió
+				const shouldFetch = !isInitialized || lastFetchedUserId !== userId;
+
+				if (shouldFetch) {
+					await dispatch(getCalculatorsByUserId(userId));
+					await dispatch(getArchivedCalculatorsByUserId(userId));
+				}
 			}
 
 			const timer = setTimeout(() => {
@@ -783,7 +790,7 @@ const AllCalculators = () => {
 		};
 
 		fetchData();
-	}, [userId]);
+	}, [userId, isInitialized, lastFetchedUserId]);
 
 	// Handle delete multiple calculators
 	const handleDeleteSelectedCalculators = async () => {
@@ -1077,13 +1084,62 @@ const AllCalculators = () => {
 			{
 				Header: "Capital",
 				accessor: "amount",
-				Cell: ({ value }) => {
+				Cell: ({ row }: { row: Row<CalculatorType> }) => {
+					// Si existe la propiedad capital, usarla
+					if (row.original.capital !== undefined) {
+						return (
+							<Typography fontWeight="500">
+								{new Intl.NumberFormat("es-AR", {
+									style: "currency",
+									currency: "ARS",
+								}).format(row.original.capital)}
+							</Typography>
+						);
+					}
+
+					// Si no existe capital pero hay intereses, calcular capital = amount - interest
+					const capital = row.original.amount - (row.original.interest || 0);
+
 					return (
 						<Typography fontWeight="500">
 							{new Intl.NumberFormat("es-AR", {
 								style: "currency",
 								currency: "ARS",
-							}).format(value)}
+							}).format(capital)}
+						</Typography>
+					);
+				},
+			},
+			{
+				Header: "Intereses",
+				accessor: "interest",
+				Cell: ({ row }: { row: Row<CalculatorType> }) => {
+					const hasInterest = row.original.interest !== undefined && row.original.interest !== null && row.original.interest > 0;
+
+					if (!hasInterest) {
+						return (
+							<Button
+								variant="contained"
+								size="small"
+								color="success"
+								onClick={(e) => {
+									e.stopPropagation();
+									// Navegar a la sección de intereses
+									navigate("/apps/calc/intereses");
+								}}
+								startIcon={<Coin size={16} />}
+							>
+								Calcular
+							</Button>
+						);
+					}
+
+					return (
+						<Typography fontWeight="500" color="success.main">
+							{new Intl.NumberFormat("es-AR", {
+								style: "currency",
+								currency: "ARS",
+							}).format(row.original.interest || 0)}
 						</Typography>
 					);
 				},
@@ -1157,6 +1213,7 @@ const AllCalculators = () => {
 	return (
 		<MainCard title="Cálculos Legales">
 			<Container maxWidth="lg">
+				<DowngradeGracePeriodAlert />
 				{/* PRIMERO: Tabla de cálculos guardados */}
 				<MainCard
 					title={

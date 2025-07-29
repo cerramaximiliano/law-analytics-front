@@ -1,13 +1,14 @@
 //AlertFolderDelete.tsx
-import { Button, Dialog, DialogContent, Stack, Typography } from "@mui/material";
+import { Button, Dialog, DialogContent, Stack, Typography, Zoom } from "@mui/material";
 import Avatar from "components/@extended/Avatar";
 import { PopupTransition } from "components/@extended/Transitions";
 // assets
 import { Trash } from "iconsax-react";
 import { dispatch } from "store";
-import { deleteFolder } from "store/reducers/folders";
+import { deleteFolderById } from "store/reducers/folder";
 import { useContext, useEffect } from "react";
 import AuthContext from "contexts/ServerContext";
+import { enqueueSnackbar } from "notistack";
 
 // types
 import { PropsAlert } from "types/folders";
@@ -16,10 +17,9 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 	// Obtener el contexto para verificar errores de restricción
 	const authContext = useContext(AuthContext);
 	// Verificar si hay un error de restricción del plan para evitar proceder
-	const handleClick = () => {
+	const handleClick = async () => {
 		// Prevenir la eliminación si hay un error reciente de restricción del plan
 		if (authContext && authContext.hasPlanRestrictionError) {
-			console.log("Eliminación cancelada debido a un error reciente de restricción del plan");
 			handleClose(false); // Cerrar sin eliminar
 			return;
 		}
@@ -27,7 +27,24 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 		// Continuar normalmente si no hay restricciones
 		handleClose(true);
 		if (id) {
-			dispatch(deleteFolder(id));
+			const result = await dispatch(deleteFolderById(id));
+
+			if (result.success) {
+				enqueueSnackbar("Causa eliminada correctamente", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			} else {
+				enqueueSnackbar(result.message || "Error al eliminar la causa", {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+			}
+
 			// Llamar al callback de eliminación si existe
 			if (onDelete) {
 				onDelete();
@@ -39,13 +56,11 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 	useEffect(() => {
 		// Cerrar por estado de restricción del plan
 		if (open && authContext && authContext.hasPlanRestrictionError) {
-			console.log("AlertFolderDelete: Cerrando modal de eliminación debido a un error de restricción del plan");
 			handleClose(false);
 		}
 
 		// Manejador para eventos de restricción de plan
 		const handlePlanRestriction = () => {
-			console.log("AlertFolderDelete: Evento de restricción del plan recibido, cerrando modal");
 			if (open) {
 				handleClose(false);
 			}
@@ -54,7 +69,6 @@ export default function AlertFolderDelete({ title, open, handleClose, id, onDele
 		// Verificar periódicamente si hay una flag global para cerrar modales
 		const checkGlobalFlag = () => {
 			if ((window as any).FORCE_CLOSE_ALL_MODALS && open) {
-				console.log("AlertFolderDelete: Flag global detectada, cerrando modal");
 				handleClose(false);
 			}
 		};

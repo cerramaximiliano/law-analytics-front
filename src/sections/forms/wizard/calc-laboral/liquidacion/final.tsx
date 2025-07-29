@@ -14,7 +14,7 @@ const FinalStep: React.FC<Props> = (props) => {
 	values.liquidacion.forEach((element: string) => {
 		liquidacionElements += `${formField.liquidacion.labels[element]} - `;
 	});
-	console.log(values);
+
 	return (
 		<>
 			<Typography variant="h5" gutterBottom sx={{ mb: 2 }}>

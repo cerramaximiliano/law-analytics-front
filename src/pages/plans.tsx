@@ -16,17 +16,20 @@ import {
 	Typography,
 	CircularProgress,
 	Alert,
+	Paper,
 } from "@mui/material";
 
 // third-party
 import { motion } from "framer-motion";
+
+// icons
+import { Lock } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
-import useBankingDisplay from "hooks/useBankingDisplay";
 
 // ==============================|| PLANES PÚBLICOS ||============================== //
 
@@ -48,8 +51,6 @@ const Plans = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
-	// Determinar si se debe mostrar información bancaria internacional
-	const showBankingData = useBankingDisplay();
 
 	// breadcrumb items
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Planes y Precios" }];
@@ -67,7 +68,6 @@ const Plans = () => {
 				}
 			} catch (err) {
 				setError("Error al cargar los planes. Por favor, intenta más tarde.");
-				console.error(err);
 			} finally {
 				setLoading(false);
 			}
@@ -134,28 +134,39 @@ const Plans = () => {
 	};
 
 	// Función para obtener el color y el estilo según el tipo de plan
-	const getPlanStyle = (planId: string) => {
+	const getPlanStyle = (planId: string, isActive: boolean) => {
+		const baseStyle = {
+			padding: 3,
+			borderRadius: 1,
+		};
+
+		// Si no está activo, usar un estilo gris
+		if (!isActive) {
+			return {
+				...baseStyle,
+				bgcolor: theme.palette.grey[200],
+				opacity: 0.8,
+			};
+		}
+
 		switch (planId) {
 			case "free":
 				return {
-					padding: 3,
-					borderRadius: 1,
+					...baseStyle,
 					bgcolor: theme.palette.info.lighter,
 				};
 			case "standard":
 				return {
-					padding: 3,
-					borderRadius: 1,
+					...baseStyle,
 					bgcolor: theme.palette.success.lighter,
 				};
 			case "premium":
 				return {
-					padding: 3,
-					borderRadius: 1,
+					...baseStyle,
 					bgcolor: theme.palette.secondary.lighter,
 				};
 			default:
-				return { padding: 3 };
+				return baseStyle;
 		}
 	};
 
@@ -174,7 +185,12 @@ const Plans = () => {
 	};
 
 	// Función para obtener el chip distintivo según el plan
-	const getPlanChip = (planId: string, isDefault: boolean) => {
+	const getPlanChip = (planId: string, isDefault: boolean, isActive: boolean) => {
+		// Si el plan no está activo, mostrar chip de próximamente
+		if (!isActive) {
+			return <Chip label="Próximamente" color="warning" variant="filled" />;
+		}
+
 		switch (planId) {
 			case "standard":
 				return <Chip label="Popular" color="success" />;
@@ -281,17 +297,6 @@ const Plans = () => {
 						</Grid>
 					)}
 
-					{/* Información bancaria internacional si corresponde */}
-					{!loading && !error && showBankingData && (
-						<Grid item xs={12}>
-							<Box sx={{ textAlign: "center", mb: 3 }}>
-								<Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-									También aceptamos pagos bancarios internacionales a: Banco XYZ, Cuenta: 123-456-789, SWIFT: ABCDEFGH.
-								</Typography>
-							</Box>
-						</Grid>
-					)}
-
 					{/* Planes */}
 					{!loading && !error && (
 						<Grid item container spacing={3} xs={12} alignItems="center">
@@ -304,14 +309,14 @@ const Plans = () => {
 
 								return (
 									<Grid item xs={12} sm={6} md={4} key={plan.planId}>
-										<MainCard>
+										<MainCard sx={{ position: "relative", overflow: "hidden" }}>
 											<Grid container spacing={3}>
 												<Grid item xs={12}>
-													<Box sx={getPlanStyle(plan.planId)}>
+													<Box sx={getPlanStyle(plan.planId, plan.isActive)}>
 														<Grid container spacing={3}>
 															{/* Mostramos el chip correspondiente */}
 															<Grid item xs={12} sx={{ textAlign: "center" }}>
-																{getPlanChip(plan.planId, plan.isDefault)}
+																{getPlanChip(plan.planId, plan.isDefault, plan.isActive)}
 															</Grid>
 															<Grid item xs={12}>
 																<Stack spacing={0} textAlign="center">
@@ -334,9 +339,11 @@ const Plans = () => {
 																	color={getButtonColor(plan.planId)}
 																	variant={plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined"}
 																	fullWidth
-																	href="/login"
+																	href={plan.isActive ? "/login" : undefined}
+																	disabled={!plan.isActive}
+																	startIcon={!plan.isActive ? <Lock size={16} /> : undefined}
 																>
-																	Comenzar
+																	{plan.isActive ? "Comenzar" : "No disponible"}
 																</Button>
 															</Grid>
 														</Grid>
@@ -373,6 +380,45 @@ const Plans = () => {
 													</List>
 												</Grid>
 											</Grid>
+
+											{/* Overlay para planes no activos */}
+											{!plan.isActive && (
+												<Box
+													sx={{
+														position: "absolute",
+														top: 0,
+														left: 0,
+														right: 0,
+														bottom: 0,
+														backgroundColor: theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.85)" : "rgba(255, 255, 255, 0.85)",
+														backdropFilter: "blur(5px)",
+														WebkitBackdropFilter: "blur(5px)",
+														zIndex: 100,
+														borderRadius: "inherit",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+													}}
+												>
+													<Paper
+														elevation={3}
+														sx={{
+															p: 2,
+															textAlign: "center",
+															backgroundColor: "background.paper",
+															maxWidth: "80%",
+														}}
+													>
+														<Lock variant="Bulk" size={32} color={theme.palette.warning.main} style={{ marginBottom: 8 }} />
+														<Typography variant="h6" gutterBottom color="warning.main">
+															Próximamente
+														</Typography>
+														<Typography variant="caption" color="text.secondary">
+															Este plan estará disponible pronto
+														</Typography>
+													</Paper>
+												</Box>
+											)}
 										</MainCard>
 									</Grid>
 								);

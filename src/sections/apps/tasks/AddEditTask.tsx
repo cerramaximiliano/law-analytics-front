@@ -5,6 +5,7 @@ import { Button, FormControl, Grid, InputLabel, MenuItem, Select, Stack, TextFie
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { es } from "date-fns/locale";
 
 // third-party
 import * as Yup from "yup";
@@ -38,7 +39,7 @@ const TaskSchema = Yup.object().shape({
 // ==============================|| ADD / EDIT TASK ||============================== //
 
 const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
-	const { folders } = useSelector((state) => state.folders);
+	const { folders } = useSelector((state) => state.folder);
 	const { user } = useSelector((state) => state.auth);
 
 	const isCreating = !task;
@@ -76,7 +77,6 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 					showSnackbar(result.error || "Error al procesar la tarea", "error");
 				}
 			} catch (error: any) {
-				console.error(error);
 				showSnackbar("Error al procesar la tarea", "error");
 			} finally {
 				setSubmitting(false);
@@ -88,7 +88,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 	return (
 		<FormikProvider value={formik}>
-			<LocalizationProvider dateAdapter={AdapterDateFns}>
+			<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
 				<Form autoComplete="off" noValidate onSubmit={handleSubmit}>
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
@@ -128,11 +128,13 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 								<DatePicker
 									value={values.dueDate}
 									onChange={(date) => setFieldValue("dueDate", date)}
+									format="dd/MM/yyyy"
 									slotProps={{
 										textField: {
 											fullWidth: true,
 											error: Boolean(touched.dueDate && errors.dueDate),
 											helperText: touched.dueDate && (errors.dueDate as string),
+											placeholder: "DD/MM/AAAA",
 										},
 									}}
 								/>
@@ -171,13 +173,25 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 							<Stack spacing={1}>
 								<InputLabel htmlFor="task-folder">Carpeta</InputLabel>
 								<FormControl fullWidth>
-									<Select id="task-folder" {...getFieldProps("folderId")} error={Boolean(touched.folderId && errors.folderId)}>
+									<Select
+										id="task-folder"
+										{...getFieldProps("folderId")}
+										error={Boolean(touched.folderId && errors.folderId)}
+										displayEmpty
+										renderValue={(selected) => {
+											if (!selected) {
+												return <em style={{ color: "#919EAB" }}>Seleccione una carpeta</em>;
+											}
+											const selectedFolder = folders?.find((f: any) => f._id === selected);
+											return selectedFolder ? selectedFolder.folderName : "";
+										}}
+									>
 										<MenuItem value="">
-											<em>Sin carpeta</em>
+											<em>Sin carpeta asignada</em>
 										</MenuItem>
 										{folders?.map((folder: any) => (
 											<MenuItem key={folder._id} value={folder._id}>
-												{folder.folderNumber} - {folder.folderName}
+												{folder.folderName}
 											</MenuItem>
 										))}
 									</Select>

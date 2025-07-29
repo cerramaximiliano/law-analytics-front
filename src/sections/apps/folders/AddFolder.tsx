@@ -5,7 +5,6 @@ import {
 	DialogActions,
 	DialogTitle,
 	DialogContent,
-	Divider,
 	Grid,
 	Stack,
 	Tooltip,
@@ -25,12 +24,14 @@ import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
 import JudicialPowerSelection from "./step-components/judicialPowerSelection";
 import { useSelector, dispatch } from "store";
-import { addFolder, updateFolder } from "store/reducers/folders";
+import { addFolder, updateFolderById } from "store/reducers/folder";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
 import { PropsAddFolder } from "types/folders";
 import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import moment from "moment";
+import folderData from "data/folder.json";
 
 const getInitialValues = (folder: FormikValues | null) => {
 	const newFolder = {
@@ -43,6 +44,7 @@ const getInitialValues = (folder: FormikValues | null) => {
 		finalDateFolder: "",
 		folderJurisItem: "",
 		folderJurisLabel: "",
+		folderJuris: null,
 		folderFuero: null,
 		entryMethod: "manual", // Nuevo campo para seleccionar el método de ingreso
 		judicialPower: "", // Poder judicial seleccionado (nacional o buenosaires)
@@ -52,11 +54,23 @@ const getInitialValues = (folder: FormikValues | null) => {
 	};
 
 	if (folder) {
+		// Buscar la jurisdicción actualizada en los datos actuales
+		let updatedJuris = null;
+		if (folder?.folderJuris?.item) {
+			// Buscar por item en los datos actuales de jurisdicciones
+			updatedJuris = folderData.jurisdicciones.find((juris: any) => juris.item === folder.folderJuris.item);
+		}
+
 		return _.merge({}, newFolder, {
 			...folder,
 			folderJurisItem: folder?.folderJuris?.item ?? "",
-			folderJurisLabel: folder?.folderJuris?.label ?? "",
+			folderJurisLabel: updatedJuris?.label ?? folder?.folderJuris?.label ?? "",
+			// Usar la jurisdicción actualizada si la encontramos, sino usar la original
+			folderJuris: updatedJuris || folder?.folderJuris || null,
 			entryMethod: "manual", // Si estamos editando, siempre usamos el método manual
+			// Formatear las fechas a DD/MM/YYYY ignorando la zona horaria
+			initialDateFolder: folder.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+			finalDateFolder: folder.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 		});
 	}
 	return newFolder;
@@ -135,10 +149,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			message: "El formato de fecha debe ser DD/MM/AAAA",
 		}),
 		finalDateFolder: Yup.string().when("status", {
-			is: (status: any) => status === "Finalizada",
+			is: (status: any) => status === "Cerrada",
 			then: () => {
 				return Yup.string()
-					.required("Con el estado finalizado debe completar la fecha")
+					.required("Con el estado cerrado debe completar la fecha")
 					.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
 						message: "El formato de fecha debe ser DD/MM/AAAA",
 					});
@@ -230,11 +244,6 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	useEffect(() => {
 		// Cuando el modal se abre, resetear los estados relacionados con la verificación
 		if (open) {
-			// Resetear el paso activo
-			const timer = setTimeout(() => {
-				setActiveStep(0);
-			}, 0);
-
 			// Si estamos creando, verificar límites
 			if (isCreating) {
 				// Resetear el estado del modal
@@ -278,7 +287,9 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 							}
 						} else {
 							// Si hay un error en la respuesta, mostrar el modal de nueva causa por defecto
-							console.error("Error al verificar el límite de recursos:", response.message);
+							if (!response.success) {
+								console.error("Error al verificar el límite de recursos:", response.message);
+							}
 							setShowAddFolderModal(true);
 						}
 					} catch (error) {
@@ -292,11 +303,11 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 				// Si estamos editando, mostrar directamente el modal sin verificar límites
 				setShowAddFolderModal(true);
 			}
-
-			return () => clearTimeout(timer);
 		} else {
 			// Cuando el modal se cierra, limpiar los estados
 			setShowAddFolderModal(false);
+			// Resetear el paso activo cuando se cierra el modal
+			setActiveStep(0);
 		}
 	}, [open, isCreating, onCancel]);
 
@@ -313,7 +324,6 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	async function _submitForm(values: any, actions: any, mode: string | undefined) {
 		const userId = auth.user?._id;
 		const id = values._id;
-		setActiveStep(0);
 
 		let results;
 		let message;
@@ -323,7 +333,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			message = "agregar";
 		}
 		if (mode === "edit") {
-			results = await dispatch(updateFolder(id, values));
+			results = await dispatch(updateFolderById(id, values));
 			message = "editar";
 		}
 
@@ -344,17 +354,16 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		}
 
 		actions.setSubmitting(false);
-		setActiveStep(activeStep + 1);
 		onAddFolder(values);
 	}
 
-	function _handleSubmit(formValues: any, actions: any) {
+	async function _handleSubmit(formValues: any, actions: any) {
 		// Actualizamos el estado de los valores para las validaciones condicionales
 		setValues(formValues);
 
 		// Si estamos en el último paso, enviamos el formulario
 		if (isLastStep) {
-			_submitForm(formValues, actions, mode);
+			await _submitForm(formValues, actions, mode);
 			onCancel();
 		} else {
 			// Si es ingreso automático y acabamos de completar el formulario de importación (paso 2)
@@ -363,7 +372,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 			if (isAutomaticImportStep && formValues.folderName && formValues.materia && formValues.orderStatus && formValues.status) {
 				// Si todos los datos requeridos están completos, enviamos directo
-				_submitForm(formValues, actions, mode);
+				await _submitForm(formValues, actions, mode);
 				onCancel();
 			} else {
 				// Continuamos al siguiente paso
@@ -395,12 +404,13 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 			{/* El contenido del modal de AddFolder solo se muestra cuando corresponde */}
 			{showAddFolderModal && (
-				<>
+				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
 					<DialogTitle
 						sx={{
 							bgcolor: theme.palette.primary.lighter,
 							p: 3,
 							borderBottom: `1px solid ${theme.palette.divider}`,
+							flexShrink: 0,
 						}}
 					>
 						<Stack spacing={1}>
@@ -415,12 +425,11 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 							</Typography>
 						</Stack>
 					</DialogTitle>
-					<Divider />
 
 					<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
 						{({ isSubmitting, values }) => (
-							<Form autoComplete="off" noValidate>
-								<DialogContent sx={{ p: 2.5 }}>
+							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+								<DialogContent sx={{ p: 2.5, overflow: "auto", flex: 1 }}>
 									<Box sx={{ minHeight: 400 }}>
 										{/* Steps Progress */}
 										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
@@ -453,13 +462,12 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 									</Box>
 								</DialogContent>
 
-								<Divider />
-
 								<DialogActions
 									sx={{
 										p: 2.5,
 										bgcolor: theme.palette.background.default,
 										borderTop: `1px solid ${theme.palette.divider}`,
+										flexShrink: 0,
 									}}
 								>
 									<Grid container justifyContent="space-between" alignItems="center">
@@ -511,7 +519,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					</Formik>
 
 					{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
-				</>
+				</Box>
 			)}
 		</>
 	);

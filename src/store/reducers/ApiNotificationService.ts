@@ -44,7 +44,6 @@ class NotificationServiceClass {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching notification preferences:", error);
 			throw error;
 		}
 	}
@@ -60,7 +59,6 @@ class NotificationServiceClass {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error updating notification preferences:", error);
 			throw error;
 		}
 	}
@@ -75,7 +73,6 @@ class NotificationServiceClass {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching unread notification count:", error);
 			throw error;
 		}
 	}
@@ -95,7 +92,6 @@ class NotificationServiceClass {
 			);
 			return response.data;
 		} catch (error) {
-			console.error("Error marking notification as read:", error);
 			throw error;
 		}
 	}
@@ -114,7 +110,6 @@ class NotificationServiceClass {
 			);
 			return response.data;
 		} catch (error) {
-			console.error("Error marking all notifications as read:", error);
 			throw error;
 		}
 	}

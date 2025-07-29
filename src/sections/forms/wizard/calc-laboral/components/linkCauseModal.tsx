@@ -19,7 +19,7 @@ import { Add, SearchNormal1, TickCircle } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
-import { getFoldersByUserId } from "store/reducers/folders";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { updateCalculator } from "store/reducers/calculator";
 import { Folder } from "types/folders";
 
@@ -61,7 +61,6 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 					}
 				}
 			} catch (error) {
-				console.log(error);
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -127,7 +126,6 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 				);
 			}
 		} catch (error) {
-			console.error("Error al desvincular la causa:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -174,7 +172,6 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 				);
 			}
 		} catch (error) {
-			console.error("Error al vincular el cálculo:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

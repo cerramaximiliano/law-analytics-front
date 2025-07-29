@@ -10,10 +10,13 @@ export const SET_LOADING = "@users/SET_LOADING";
 export const SET_ERROR = "@users/SET_ERROR";
 export const UPDATE_USER = "@users/UPDATE_USER";
 export const DELETE_USER = "@users/DELETE_USER";
+export const SET_LIGHT_DATA = "@users/SET_LIGHT_DATA";
+export const CLEAR_USER_DATA = "@users/CLEAR_USER_DATA";
 
 export interface UsersStateProps {
 	users: any[];
 	user: any | null;
+	lightData: any | null;
 	loading: boolean;
 	error: object | string | null;
 }
@@ -21,6 +24,7 @@ export interface UsersStateProps {
 export const initialState: UsersStateProps = {
 	users: [],
 	user: null,
+	lightData: null,
 	loading: false,
 	error: null,
 };
@@ -96,15 +100,22 @@ const users = (state = initialState, action: any) => {
 			return {
 				...state,
 				user: action.payload,
-				users: state.users.map((user: any) => (user.id === action.payload.id ? action.payload : user)),
+				users: state.users.map((user: any) => {
+					const userId = user._id || user.id;
+					const payloadId = action.payload._id || action.payload.id;
+					return userId === payloadId ? action.payload : user;
+				}),
 			};
 		case DELETE_USER:
 			// Eliminar el usuario de la lista
 			return {
 				...state,
-				users: state.users.filter((user: any) => user.id !== action.payload),
+				users: state.users.filter((user: any) => {
+					const userId = user._id || user.id;
+					return userId !== action.payload;
+				}),
 				// Si el usuario activo es el eliminado, limpiarlo
-				user: state.user && state.user.id === action.payload ? null : state.user,
+				user: state.user && (state.user._id || state.user.id) === action.payload ? null : state.user,
 			};
 		case SET_LOADING:
 			return {
@@ -115,6 +126,17 @@ const users = (state = initialState, action: any) => {
 			return {
 				...state,
 				error: action.payload,
+			};
+		case SET_LIGHT_DATA:
+			return {
+				...state,
+				lightData: action.payload,
+			};
+		case CLEAR_USER_DATA:
+			return {
+				...state,
+				user: null,
+				lightData: null,
 			};
 		default:
 			return state;
@@ -137,7 +159,6 @@ export const getUsers = () => {
 			});
 
 			const response = await userApi.get("/api/users");
-			console.log("Respuesta de la API de usuarios:", response.data);
 
 			// Asegurarse de que estamos usando el formato correcto
 			let userData = Array.isArray(response.data)
@@ -150,8 +171,13 @@ export const getUsers = () => {
 
 			// Si no hay datos, usar datos de ejemplo
 			if (!userData || userData.length === 0) {
-				console.log("No se recibieron datos de la API, usando datos de ejemplo");
 				userData = mockUsers;
+			} else {
+				// Asegurar que cada usuario tenga un id además de _id
+				userData = userData.map((user: any) => ({
+					...user,
+					id: user.id || user._id,
+				}));
 			}
 
 			dispatch({
@@ -159,10 +185,8 @@ export const getUsers = () => {
 				payload: userData,
 			});
 		} catch (error) {
-			console.error("Error al obtener usuarios:", error);
-
 			// En caso de error, usar datos de ejemplo
-			console.log("Error en la API, usando datos de ejemplo");
+
 			dispatch({
 				type: SET_USERS,
 				payload: mockUsers,
@@ -194,7 +218,6 @@ export const updateUser = (userId: string, userData: any) => {
 			});
 
 			const response = await userApi.put(`/api/users/${userId}`, userData);
-			console.log("Respuesta de actualización de usuario:", response.data);
 
 			// Extraer el usuario actualizado dependiendo de la estructura de la respuesta
 			const updatedUser = response.data.user || response.data;
@@ -206,7 +229,6 @@ export const updateUser = (userId: string, userData: any) => {
 
 			return updatedUser;
 		} catch (error) {
-			console.error("Error al actualizar usuario:", error);
 			dispatch({
 				type: SET_ERROR,
 				payload: error,
@@ -234,14 +256,12 @@ export const deleteUser = (userId: string) => {
 			});
 
 			await userApi.delete(`/api/users/${userId}`);
-			console.log("Usuario eliminado:", userId);
 
 			dispatch({
 				type: DELETE_USER,
 				payload: userId,
 			});
 		} catch (error) {
-			console.error("Error al eliminar usuario:", error);
 			dispatch({
 				type: SET_ERROR,
 				payload: error,
@@ -268,39 +288,40 @@ export const getUserById = (userId: string) => {
 				payload: null,
 			});
 
-			const response = await userApi.get(`/api/users/${userId}`);
-			console.log("Respuesta de la API de usuario por ID:", response.data);
+			const response = await userApi.get(`/api/users/${userId}?includeLightData=true`);
 
-			// Asegurarse de que estamos usando el formato correcto
-			// La nueva estructura devuelve user y subscription por separado
-			let userData;
-			if (response.data.user) {
-				// Si recibimos la nueva estructura con usuario + suscripción
-				userData = {
+			// La API devuelve success, user, subscription y lightData
+			if (response.data.success && response.data.user) {
+				// Combinar user con subscription en un solo objeto
+				const userData = {
 					...response.data.user,
 					subscription: response.data.subscription || undefined,
 				};
+
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
+
+				// Guardar lightData por separado
+				if (response.data.lightData) {
+					dispatch({
+						type: SET_LIGHT_DATA,
+						payload: response.data.lightData,
+					});
+				}
 			} else {
-				userData = response.data.data ? response.data.data : response.data;
+				// Fallback para estructura antigua
+				const userData = response.data.data ? response.data.data : response.data;
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
 			}
-
-			// Si no hay datos, usar datos de ejemplo
-			if (!userData || Object.keys(userData).length === 0) {
-				console.log("No se recibieron datos del usuario específico, buscando en datos de ejemplo");
-				userData = mockUsers.find((user) => user.id === userId) || null;
-			}
-
-			dispatch({
-				type: SET_USER,
-				payload: userData,
-			});
 		} catch (error) {
-			console.error("Error al obtener usuario por ID:", error);
-
 			// En caso de error, buscar en datos de ejemplo
 			const mockUser = mockUsers.find((user) => user.id === userId) || null;
 			if (mockUser) {
-				console.log("Error en la API, usando datos de ejemplo para el usuario:", userId);
 				dispatch({
 					type: SET_USER,
 					payload: mockUser,
@@ -333,8 +354,6 @@ export function getUsers_Static() {
 			});
 
 			const response = await userApi.get("/api/users");
-			console.log("Respuesta de la API de usuarios (Static):", response.data);
-
 			// Asegurarse de que estamos usando el formato correcto
 			let userData = Array.isArray(response.data)
 				? response.data
@@ -346,8 +365,13 @@ export function getUsers_Static() {
 
 			// Si no hay datos, usar datos de ejemplo
 			if (!userData || userData.length === 0) {
-				console.log("No se recibieron datos de la API (Static), usando datos de ejemplo");
 				userData = mockUsers;
+			} else {
+				// Asegurar que cada usuario tenga un id además de _id
+				userData = userData.map((user: any) => ({
+					...user,
+					id: user.id || user._id,
+				}));
 			}
 
 			dispatch({
@@ -355,10 +379,6 @@ export function getUsers_Static() {
 				payload: userData,
 			});
 		} catch (error) {
-			console.error("Error al obtener usuarios (Static):", error);
-
-			// En caso de error, usar datos de ejemplo
-			console.log("Error en la API (Static), usando datos de ejemplo");
 			dispatch({
 				type: SET_USERS,
 				payload: mockUsers,
@@ -389,39 +409,40 @@ export function getUserById_Static(userId: string) {
 				payload: null,
 			});
 
-			const response = await userApi.get(`/api/users/${userId}`);
-			console.log("Respuesta de la API de usuario por ID (Static):", response.data);
+			const response = await userApi.get(`/api/users/${userId}?includeLightData=true`);
 
-			// Asegurarse de que estamos usando el formato correcto
-			// La nueva estructura devuelve user y subscription por separado
-			let userData;
-			if (response.data.user) {
-				// Si recibimos la nueva estructura con usuario + suscripción
-				userData = {
+			// La API devuelve success, user, subscription y lightData
+			if (response.data.success && response.data.user) {
+				// Combinar user con subscription en un solo objeto
+				const userData = {
 					...response.data.user,
 					subscription: response.data.subscription || undefined,
 				};
+
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
+
+				// Guardar lightData por separado
+				if (response.data.lightData) {
+					dispatch({
+						type: SET_LIGHT_DATA,
+						payload: response.data.lightData,
+					});
+				}
 			} else {
-				userData = response.data.data ? response.data.data : response.data;
+				// Fallback para estructura antigua
+				const userData = response.data.data ? response.data.data : response.data;
+				dispatch({
+					type: SET_USER,
+					payload: userData,
+				});
 			}
-
-			// Si no hay datos, usar datos de ejemplo
-			if (!userData || Object.keys(userData).length === 0) {
-				console.log("No se recibieron datos del usuario específico (Static), buscando en datos de ejemplo");
-				userData = mockUsers.find((user) => user.id === userId) || null;
-			}
-
-			dispatch({
-				type: SET_USER,
-				payload: userData,
-			});
 		} catch (error) {
-			console.error("Error al obtener usuario por ID (Static):", error);
-
 			// En caso de error, buscar en datos de ejemplo
 			const mockUser = mockUsers.find((user) => user.id === userId) || null;
 			if (mockUser) {
-				console.log("Error en la API (Static), usando datos de ejemplo para el usuario:", userId);
 				dispatch({
 					type: SET_USER,
 					payload: mockUser,
@@ -440,3 +461,11 @@ export function getUserById_Static(userId: string) {
 		}
 	};
 }
+
+export const clearUserData = () => {
+	return async () => {
+		dispatch({
+			type: CLEAR_USER_DATA,
+		});
+	};
+};

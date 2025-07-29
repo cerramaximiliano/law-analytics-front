@@ -43,7 +43,7 @@ function getStepContent(step: number, values: any) {
 const CompensacionWizard = () => {
 	const [activeStep, setActiveStep] = useState(0);
 	const isLastStep = activeStep === steps.length - 1;
-	const [tasasData, setTasasData] = useState(null);
+	//const [tasasData, setTasasData] = useState(null);
 	const [validationSchema, setValidationSchema] = useState(esquemaInicial);
 	const currentValidationSchema = validationSchema[activeStep];
 	const [hayRangos, setHayRangos] = useState(false);
@@ -61,9 +61,12 @@ const CompensacionWizard = () => {
 	useEffect(() => {
 		const checkRangos = () => {
 			const tieneRangos = hayRangosFechas();
-			if (tieneRangos !== hayRangos) {
-				setHayRangos(tieneRangos);
-			}
+			setHayRangos((prevHayRangos) => {
+				if (tieneRangos !== prevHayRangos) {
+					return tieneRangos;
+				}
+				return prevHayRangos;
+			});
 		};
 
 		// Verificar inmediatamente
@@ -73,11 +76,10 @@ const CompensacionWizard = () => {
 		const interval = setInterval(checkRangos, 1000);
 
 		return () => clearInterval(interval);
-	}, [hayRangos]);
+	}, []);
 
 	useEffect(() => {
 		if (hayRangos) {
-			console.log("Actualizando esquema de validación con rangos de fechas");
 			setValidationSchema(crearEsquemaValidacion());
 		}
 	}, [hayRangos]);
@@ -100,8 +102,8 @@ const CompensacionWizard = () => {
 			});
 
 			const tasasResult = response.data;
-			console.log("Resultados de tasas:", tasasResult);
-			setTasasData(tasasResult);
+
+			//setTasasData(tasasResult);
 
 			let interesTotal = 0;
 			if (Array.isArray(tasasResult)) {
@@ -111,16 +113,15 @@ const CompensacionWizard = () => {
 			}
 
 			await _sleep(1000);
-			//console.log(values);
 
 			const finalResult = {
 				...values,
 				tasasResult,
 				interesTotal,
 				capitalActualizado: parseFloat(values.capital || 0) + interesTotal,
+				folderId: values.folderId,
+				folderName: values.folderName,
 			};
-
-			console.log(tasasData);
 
 			setCalculationResult(finalResult);
 			actions.setSubmitting(false);
@@ -128,7 +129,6 @@ const CompensacionWizard = () => {
 			actions.setSubmitting(false);
 			setActiveStep(activeStep + 1);
 		} catch (error) {
-			console.error("Error al consultar tasas:", error);
 			enqueueSnackbar("Error al consultar tasas. Por favor intente nuevamente.", {
 				variant: "error",
 				anchorOrigin: {
@@ -144,7 +144,6 @@ const CompensacionWizard = () => {
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		console.log("submit", values, actions);
 		if (isLastStep) {
 			_submitForm(values, actions);
 		} else {
@@ -165,7 +164,13 @@ const CompensacionWizard = () => {
 			</Stepper>
 			<>
 				{activeStep === steps.length ? (
-					<ResultsView values={calculationResult} formField={formField} onReset={handleReset} />
+					<ResultsView
+						values={calculationResult}
+						formField={formField}
+						onReset={handleReset}
+						folderId={calculationResult?.folderId}
+						folderName={calculationResult?.folderName}
+					/>
 				) : (
 					<Formik
 						initialValues={initialValues}

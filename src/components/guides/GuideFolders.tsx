@@ -256,7 +256,7 @@ const FormFieldsContent = () => {
 						<Box display="flex" alignItems="center">
 							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.success.main }} />
 							<Typography>
-								<strong>Estado:</strong> Situación actual (Nueva, En proceso, Finalizada)
+								<strong>Estado:</strong> Situación actual (Nueva, En Progreso, Cerrada, Pendiente)
 							</Typography>
 						</Box>
 					</Stack>

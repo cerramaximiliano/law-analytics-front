@@ -70,7 +70,6 @@ const UnsubscribePage = () => {
 					close: true,
 				}),
 			);
-			console.error("Error unsubscribing:", error);
 		} finally {
 			setLoading(false);
 		}

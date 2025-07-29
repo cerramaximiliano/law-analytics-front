@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -45,11 +46,11 @@ import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
 
 // assets
-import { Add, Eye, Trash, DocumentDownload } from "iconsax-react";
+import { Add, Eye, Trash, DocumentDownload, Coin } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-import { getCalculatorsByFilter } from "store/reducers/calculator";
+import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
 import despidoFormModel from "sections/forms/wizard/calc-laboral/despido/formModel/despidoFormModel";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
 
@@ -63,6 +64,7 @@ interface CalculatorData {
 	type: string;
 	subClassType: string;
 	amount: number;
+	capital?: number;
 	interest?: number;
 	variables?: Record<string, any>;
 }
@@ -89,6 +91,7 @@ interface GroupedResults {
 	liquidacion: ResultItem[];
 	multas: ResultItem[];
 	otros: ResultItem[];
+	intereses: ResultItem[];
 	[key: string]: ResultItem[];
 }
 
@@ -115,6 +118,11 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	const { formField } = despidoFormModel;
 
 	const getLabelForKey = (key: string): string => {
+		// Manejo especial para carátula
+		if (key === "caratula") {
+			return "Carátula";
+		}
+
 		const field = formField[key as keyof typeof formField];
 		return field?.label || key;
 	};
@@ -314,16 +322,86 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			liquidacion: [],
 			multas: [],
 			otros: [],
+			intereses: [],
 		};
 
 		if (!variables) return groups;
 
+		// Detectar si hay una carpeta vinculada
+		const isLinkedToFolder =
+			variables.reclamante && typeof variables.reclamante === "string" && variables.reclamante.startsWith("__CAUSA_VINCULADA__");
+
+		// Si hay carpeta vinculada, extraer el nombre de la carpeta
+		if (isLinkedToFolder) {
+			const folderName =
+				variables.folderName ||
+				(typeof variables.reclamante === "string" ? variables.reclamante.replace("__CAUSA_VINCULADA__", "").trim() : "");
+
+			if (folderName) {
+				groups.reclamo.push({ key: "caratula", value: folderName });
+			}
+		}
+
+		// Procesar datos de calculationResult si existe
+		if (variables.calculationResult) {
+			const result = variables.calculationResult;
+
+			// Procesar cada sección del resultado
+			if (result.reclamo) {
+				result.reclamo.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.reclamo.push(item);
+					}
+				});
+			}
+
+			if (result.indemnizacion) {
+				result.indemnizacion.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.indemnizacion.push(item);
+					}
+				});
+			}
+
+			if (result.liquidacion) {
+				result.liquidacion.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.liquidacion.push(item);
+					}
+				});
+			}
+
+			if (result.multas) {
+				result.multas.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.multas.push(item);
+					}
+				});
+			}
+
+			if (result.intereses) {
+				result.intereses.forEach((item: ResultItem) => {
+					if (item.value != null && item.value !== "") {
+						groups.intereses.push(item);
+					}
+				});
+			}
+
+			return groups;
+		}
+
+		// Fallback al procesamiento anterior si no hay calculationResult
 		Object.entries(variables).forEach(([key, value]) => {
 			if (value == null || value === "" || value === false) return;
 			if (typeof value === "object" || typeof value === "boolean") return;
 			if (typeof value === "number" && value === 0) return;
 
 			const item: ResultItem = { key, value };
+
+			// Excluir reclamante y reclamado si hay carpeta vinculada
+			if (isLinkedToFolder && (key === "reclamante" || key === "reclamado")) {
+				return;
+			}
 
 			if (["reclamante", "reclamado", "fechaIngreso", "fechaEgreso", "remuneracion"].includes(key)) {
 				groups.reclamo.push(item);
@@ -364,7 +442,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			generateHtmlContent={generateHtmlContent}
 			generatePlainText={generatePlainText}
 			customTitle="Liquidación por Despido - Law||Analytics"
-			hideInterestButton={false}
+			hideInterestButton={true}
 		/>
 	);
 };
@@ -571,9 +649,10 @@ function ReactTable({ columns, data, renderRowSubComponent, handleAdd, isLoading
 
 const SavedLabor = () => {
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const mode = theme.palette.mode;
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
-	const auth = useSelector((state) => state.auth);
+	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -583,19 +662,39 @@ const SavedLabor = () => {
 	const [calculatorIdToDelete, setCalculatorIdToDelete] = useState<string>("");
 	const [add, setAdd] = useState<boolean>(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	const isMountedRef = useRef(false);
+	const isFirstRenderRef = useRef(true);
 
 	useEffect(() => {
-		const fetchData = async () => {
-			await dispatch(
-				getCalculatorsByFilter({
-					userId,
-					type: "Calculado",
-					classType: "laboral",
-				}),
-			);
+		// Marcar como montado
+		isMountedRef.current = true;
+
+		// Usar setTimeout para retrasar la primera ejecución y evitar conflictos
+		const timeoutId = setTimeout(
+			() => {
+				if (userId && isMountedRef.current) {
+					// getCalculatorsByFilter ya maneja la lógica de cache internamente
+					dispatch(
+						getCalculatorsByFilter({
+							userId,
+							type: "Calculado",
+							classType: "laboral",
+						}),
+					);
+				}
+			},
+			isFirstRenderRef.current ? 100 : 0,
+		); // Retrasar la primera ejecución
+
+		isFirstRenderRef.current = false;
+
+		return () => {
+			clearTimeout(timeoutId);
+			isMountedRef.current = false;
+			// Limpiar selectedCalculators cuando el componente se desmonta
+			dispatch(clearSelectedCalculators());
 		};
-		fetchData();
-	}, [dispatch]);
+	}, [userId, dispatch]); // Incluir dispatch en las dependencias
 
 	const handleAdd = () => {
 		setAdd(!add);
@@ -689,30 +788,53 @@ const SavedLabor = () => {
 			{
 				Header: "Capital",
 				accessor: "amount",
-				Cell: ({ row }: { row: Row<CalculatorData> }) => (
-					<Typography>
-						{row.original.amount
-							? new Intl.NumberFormat("es-AR", {
+				Cell: ({ row }: { row: Row<CalculatorData> }) => {
+					// Si existe la propiedad capital, usarla
+					if (row.original.capital !== undefined) {
+						return (
+							<Typography fontWeight="500">
+								{new Intl.NumberFormat("es-AR", {
 									style: "currency",
 									currency: "ARS",
-							  }).format(row.original.amount)
-							: "-"}
-					</Typography>
-				),
+								}).format(row.original.capital)}
+							</Typography>
+						);
+					}
+
+					// Si no existe capital pero hay intereses, calcular capital = amount - interest
+					const interestAmount = row.original.variables?.datosIntereses?.montoIntereses || 0;
+					const capital = row.original.amount - interestAmount;
+
+					return (
+						<Typography fontWeight="500">
+							{capital
+								? new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+								  }).format(capital)
+								: "-"}
+						</Typography>
+					);
+				},
 			},
 			{
 				Header: "Intereses",
 				accessor: "interest",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
-					if (!row.original.interest) {
+					const interestAmount = row.original.variables?.datosIntereses?.montoIntereses;
+
+					if (!interestAmount && interestAmount !== 0) {
 						return (
 							<Button
 								variant="contained"
 								size="small"
+								color="success"
 								onClick={(e) => {
 									e.stopPropagation();
-									console.log("Calcular intereses");
+									// Navegar a la sección de intereses
+									navigate("/apps/calc/intereses");
 								}}
+								startIcon={<Coin size={16} />}
 							>
 								Calcular
 							</Button>
@@ -720,11 +842,11 @@ const SavedLabor = () => {
 					}
 
 					return (
-						<Typography>
+						<Typography fontWeight="500" color="success.main">
 							{new Intl.NumberFormat("es-AR", {
 								style: "currency",
 								currency: "ARS",
-							}).format(row.original.interest)}
+							}).format(interestAmount)}
 						</Typography>
 					);
 				},

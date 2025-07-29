@@ -41,7 +41,6 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 					setUsageStats(response.data.data);
 				}
 			} catch (error) {
-				console.error("Error fetching usage statistics:", error);
 				// Fallback to some default values based on limits
 				const maxFolders = getLimitLocal("maxFolders");
 				const maxCalcs = getLimitLocal("maxCalculators");

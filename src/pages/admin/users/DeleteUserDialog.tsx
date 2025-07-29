@@ -3,13 +3,24 @@ import { useSelector } from "react-redux";
 import { dispatch } from "store/index";
 
 // material-ui
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography, Box } from "@mui/material";
+import {
+	Button,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
+	Typography,
+	Box,
+	CircularProgress,
+} from "@mui/material";
 
 // project imports
 import { User } from "types/user";
 import { DefaultRootStateProps } from "types/root";
-import userApi from "utils/userApi";
+import axios from "axios";
 import { DELETE_USER, SET_ERROR } from "store/reducers/users";
+import { openSnackbar } from "store/reducers/snackbar";
 
 interface DeleteUserDialogProps {
 	user: User;
@@ -20,36 +31,90 @@ interface DeleteUserDialogProps {
 const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose }) => {
 	const { loading } = useSelector((state: DefaultRootStateProps) => state.users);
 	const [error, setError] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	// Función para eliminar el usuario
 	const handleDelete = async () => {
 		try {
 			setError(null);
+			setIsDeleting(true);
+
+			// Usar _id o id según lo que esté disponible
+			const userId = user._id || user.id;
+
+			if (!userId) {
+				throw new Error("No se pudo obtener el ID del usuario");
+			}
 
 			// Realizar la petición a la API
-			await userApi.delete(`/api/users/${user.id}`);
-			console.log("Usuario eliminado:", user.id);
+			const response = await axios.delete(`/api/users/${userId}`);
 
-			// Actualizar el estado global
-			dispatch({
-				type: DELETE_USER,
-				payload: user.id,
-			});
+			// Verificar la respuesta del servidor
+			if (response.data.success) {
+				// Actualizar el estado global
+				dispatch({
+					type: DELETE_USER,
+					payload: userId,
+				});
 
-			// Cerrar el diálogo
-			onClose();
+				// Mostrar notificación de éxito
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.data.message || "Usuario y todos sus datos relacionados eliminados correctamente",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: true,
+					}),
+				);
+
+				// Cerrar el diálogo
+				onClose();
+			} else {
+				// Mostrar notificación de error
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.data.message || "Error al eliminar usuario",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
+				setError(response.data.message || "Error al eliminar usuario");
+			}
 		} catch (err: any) {
-			console.error("Error al eliminar usuario:", err);
-			setError(err.message || "Error al eliminar el usuario");
+			const errorMessage = err.response?.data?.message || err.message || "Error al eliminar el usuario";
+			setError(errorMessage);
+
 			dispatch({
 				type: SET_ERROR,
-				payload: err.message || "Error al eliminar el usuario",
+				payload: errorMessage,
 			});
+
+			// Mostrar notificación de error
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: errorMessage,
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: true,
+				}),
+			);
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+		<Dialog open={open} onClose={isDeleting ? undefined : onClose} maxWidth="sm" fullWidth disableEscapeKeyDown={isDeleting}>
 			<DialogTitle>Eliminar Usuario</DialogTitle>
 			<DialogContent>
 				<DialogContentText>
@@ -71,11 +136,17 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 				{error && <Box sx={{ color: "error.main", mt: 2 }}>{error}</Box>}
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={onClose} color="primary">
+				<Button onClick={onClose} color="primary" disabled={isDeleting}>
 					Cancelar
 				</Button>
-				<Button onClick={handleDelete} color="error" variant="contained" disabled={loading}>
-					Eliminar
+				<Button
+					onClick={handleDelete}
+					color="error"
+					variant="contained"
+					disabled={loading || isDeleting}
+					startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : null}
+				>
+					{isDeleting ? "Eliminando..." : "Eliminar"}
 				</Button>
 			</DialogActions>
 		</Dialog>

@@ -67,15 +67,16 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 		(state: ConnectionState) => {
 			setConnectionState(state);
 
-			if (state === ConnectionState.CONNECTED) {
-				if (isInitialized) {
-					showNotification("Conexión con el servidor establecida", "success");
-				}
-			} else if (state === ConnectionState.AUTHENTICATED) {
-				showNotification("Autenticación con el servidor establecida", "success");
-			} else if (state === ConnectionState.ERROR) {
-				showNotification("Error en la conexión con el servidor", "error");
-			}
+			// Comentado: Las notificaciones de conexión no son necesarias para el usuario
+			// if (state === ConnectionState.CONNECTED) {
+			// 	if (isInitialized) {
+			// 		showNotification("Conexión con el servidor establecida", "success");
+			// 	}
+			// } else if (state === ConnectionState.AUTHENTICATED) {
+			// 	showNotification("Autenticación con el servidor establecida", "success");
+			// } else if (state === ConnectionState.ERROR) {
+			// 	showNotification("Error en la conexión con el servidor", "error");
+			// }
 		},
 		[isInitialized, showNotification],
 	);
@@ -87,15 +88,11 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 
 			// Manejar tipos específicos de mensajes
 			if (message.type === "NOTIFICATION") {
-				console.log("Nueva notificación recibida:", message.payload);
-
 				// Manejar alertas pendientes - formato {pendingAlerts: Alert[]}
 				if (message.payload && message.payload.pendingAlerts) {
 					try {
 						const pendingAlerts = message.payload.pendingAlerts as Alert[];
 						if (pendingAlerts.length > 0) {
-							console.log(`Recibidas ${pendingAlerts.length} alertas pendientes`);
-
 							// Usar la acción directamente con el formato correcto
 							dispatch({
 								type: ADD_MULTIPLE_ALERTS,
@@ -103,14 +100,11 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 							});
 
 							// Registrar para depuración
-							console.log("Dispatched ADD_MULTIPLE_ALERTS with payload:", pendingAlerts);
 
 							// Mostrar notificación de alertas recibidas
 							showNotification(`Recibidas ${pendingAlerts.length} notificaciones pendientes`, "info");
 						}
-					} catch (error) {
-						console.error("Error al procesar alertas pendientes:", error);
-					}
+					} catch (error) {}
 				}
 				// Manejar una sola alerta - formato directo Alert
 				else if (message.payload) {
@@ -124,16 +118,13 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 						});
 
 						// Registrar para depuración
-						console.log("Dispatched ADD_ALERT with payload:", alert);
 
 						// Mostrar notificación al usuario
 						showNotification(
 							alert.primaryText || "Nueva notificación recibida",
 							(alert.primaryVariant as "success" | "error" | "warning" | "info") || "info",
 						);
-					} catch (error) {
-						console.error("Error al procesar alerta individual:", error);
-					}
+					} catch (error) {}
 				}
 			}
 		},
@@ -143,11 +134,9 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 	// Conectar al WebSocket
 	const connect = useCallback(() => {
 		if (!userId) {
-			console.warn("No se puede conectar: falta el ID de usuario");
 			return;
 		}
 
-		console.log("Conectando con userId:", userId);
 		webSocketService.connect(userId);
 		setIsInitialized(true);
 	}, [userId]);

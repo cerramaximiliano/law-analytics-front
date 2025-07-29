@@ -31,15 +31,37 @@ const root = createRoot(container!);
 
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 
+// Wrapper component to handle persist errors
+const PersistGateWrapper = ({ children }: { children: React.ReactNode }) => {
+	try {
+		return (
+			<PersistGate
+				loading={null}
+				persistor={persister}
+				onBeforeLift={() => {
+					// Ensure persist is ready before lifting
+					console.log("PersistGate: Before lift");
+				}}
+			>
+				{children}
+			</PersistGate>
+		);
+	} catch (error) {
+		console.error("PersistGate error:", error);
+		// If PersistGate fails, render children directly
+		return <>{children}</>;
+	}
+};
+
 root.render(
 	<ReduxProvider store={store}>
-		<PersistGate loading={null} persistor={persister}>
+		<PersistGateWrapper>
 			<ConfigProvider>
 				<BrowserRouter basename={process.env.REACT_APP_BASE_NAME}>
 					<App />
 				</BrowserRouter>
 			</ConfigProvider>
-		</PersistGate>
+		</PersistGateWrapper>
 	</ReduxProvider>,
 );
 

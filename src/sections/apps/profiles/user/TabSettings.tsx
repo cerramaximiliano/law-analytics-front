@@ -174,7 +174,6 @@ const TabSettings = () => {
 					setChecked(newChecked);
 				}
 			} catch (error) {
-				console.error("Error al cargar preferencias:", error);
 				setError("No se pudieron cargar las preferencias de notificaciones");
 			} finally {
 				setLoading(false);
@@ -214,7 +213,7 @@ const TabSettings = () => {
 			};
 
 			const response = await ApiService.updateNotificationPreferences(updatedPreferences);
-			console.log(response);
+
 			if (response.success && response.data) {
 				setPreferences(response.data);
 				dispatch(
@@ -230,7 +229,6 @@ const TabSettings = () => {
 				);
 			}
 		} catch (error) {
-			console.error("Error al guardar preferencias:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -463,9 +461,9 @@ const TabSettings = () => {
 				</Alert>
 			</Snackbar>
 
-			<List sx={{ "& .MuiListItem-root": { p: 0 } }}>
+			<Box>
 				{/* Canales de comunicación - Accordion */}
-				<ListItem divider>
+				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 					<Accordion expanded={expanded === "panel1"} onChange={handleAccordionChange("panel1")} sx={{ width: "100%" }}>
 						<AccordionSummary expandIcon={<ArrowDown2 size={16} />} aria-controls="panel1-content" id="panel1-header" sx={{ px: 2, py: 1 }}>
 							<Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
@@ -527,10 +525,10 @@ const TabSettings = () => {
 							</List>
 						</AccordionDetails>
 					</Accordion>
-				</ListItem>
+				</Box>
 
 				{/* Notificaciones de usuario - Accordion */}
-				<ListItem divider>
+				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 					<Accordion expanded={expanded === "panel2"} onChange={handleAccordionChange("panel2")} sx={{ width: "100%" }}>
 						<AccordionSummary expandIcon={<ArrowDown2 size={16} />} aria-controls="panel2-content" id="panel2-header" sx={{ px: 2, py: 1 }}>
 							<Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
@@ -609,10 +607,10 @@ const TabSettings = () => {
 							</List>
 						</AccordionDetails>
 					</Accordion>
-				</ListItem>
+				</Box>
 
 				{/* Notificaciones de sistema - Accordion */}
-				<ListItem divider>
+				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 					<Accordion expanded={expanded === "panel3"} onChange={handleAccordionChange("panel3")} sx={{ width: "100%" }}>
 						<AccordionSummary expandIcon={<ArrowDown2 size={16} />} aria-controls="panel3-content" id="panel3-header" sx={{ px: 2, py: 1 }}>
 							<Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
@@ -691,8 +689,8 @@ const TabSettings = () => {
 							</List>
 						</AccordionDetails>
 					</Accordion>
-				</ListItem>
-			</List>
+				</Box>
+			</Box>
 			<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
 				<Button color="error">Cancelar</Button>
 				<Button variant="contained" onClick={savePreferences} disabled={saving} startIcon={saving ? <CircularProgress size={20} /> : null}>

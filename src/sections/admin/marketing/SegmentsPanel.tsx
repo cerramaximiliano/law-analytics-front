@@ -115,7 +115,6 @@ const SegmentsPanel = () => {
 			setSegments(filteredSegments);
 			setTotalCount(response.pagination.total);
 		} catch (err) {
-			console.error("Error fetching segments:", err);
 			setError("Error al cargar los segmentos. Por favor, intente de nuevo más tarde.");
 		} finally {
 			setLoading(false);
@@ -137,9 +136,7 @@ const SegmentsPanel = () => {
 					compound: 0,
 				},
 			});
-		} catch (error) {
-			console.error("Error fetching segment statistics:", error);
-		}
+		} catch (error) {}
 	};
 
 	// Pagination handlers
@@ -251,7 +248,6 @@ const SegmentsPanel = () => {
 			setDeleteDialogOpen(false);
 			setDeletingSegment(null);
 		} catch (err: any) {
-			console.error("Error deleting segment:", err);
 			setError(err?.message || "Error al eliminar el segmento. Por favor, intente de nuevo más tarde.");
 		} finally {
 			setDeleteLoading(false);

@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import {
+	Alert,
 	Box,
 	Button,
 	Card,
 	CardContent,
 	Chip,
+	Collapse,
+	Divider,
 	Grid,
 	IconButton,
 	Paper,
@@ -17,8 +20,9 @@ import {
 	TableRow,
 	Tooltip,
 	Typography,
+	CircularProgress,
 } from "@mui/material";
-import { Edit, Trash, Eye, Add } from "iconsax-react";
+import { Edit, Trash, Eye, Add, Refresh2, Link1, ArrowDown2, ArrowUp2 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import Loader from "components/Loader";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -28,17 +32,19 @@ import { formatCurrency } from "utils/formatCurrency";
 import ApiService, { Plan } from "store/reducers/ApiService";
 import PlanFormModal from "./PlanFormModal";
 import DeletePlanDialog from "./DeletePlanDialog";
-import useBankingDisplay from "hooks/useBankingDisplay";
+import PlanDetailModal from "./PlanDetailModal";
 
 const PlansManagement = () => {
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [formOpen, setFormOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [detailModalOpen, setDetailModalOpen] = useState(false);
 	const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
+	const [syncLoading, setSyncLoading] = useState(false);
+	const [showDetailedInfo, setShowDetailedInfo] = useState(false);
 	// Determinar si se debe mostrar información bancaria internacional
-	const showBankingData = useBankingDisplay();
 
 	const fetchPlans = async () => {
 		try {
@@ -46,7 +52,6 @@ const PlansManagement = () => {
 			const response = await ApiService.getAllPlans();
 			setPlans(response.data || []);
 		} catch (error) {
-			console.error("Error fetching plans:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -75,9 +80,14 @@ const PlansManagement = () => {
 		setDeleteDialogOpen(true);
 	};
 
-	const handleView = (planId: string) => {
-		// TODO: Implement view details functionality
-		console.log("View plan:", planId);
+	const handleView = (plan: Plan) => {
+		setSelectedPlan(plan);
+		setDetailModalOpen(true);
+	};
+
+	const handleDetailClose = () => {
+		setDetailModalOpen(false);
+		setSelectedPlan(null);
 	};
 
 	const handleAddNew = () => {
@@ -111,7 +121,6 @@ const PlansManagement = () => {
 				fetchPlans();
 			}
 		} catch (error) {
-			console.error("Error saving plan:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -145,7 +154,6 @@ const PlansManagement = () => {
 				handleDeleteClose();
 			}
 		} catch (error) {
-			console.error("Error deleting plan:", error);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -160,6 +168,54 @@ const PlansManagement = () => {
 		}
 	};
 
+	const handleSyncWithStripe = async () => {
+		try {
+			setSyncLoading(true);
+			const response = await ApiService.syncPlansWithStripe();
+
+			if (response.success) {
+				const syncedCount = response.data?.filter((plan) => plan.synced).length || 0;
+				const failedCount = response.data?.filter((plan) => !plan.synced).length || 0;
+
+				let message = response.message || "Sincronización completada";
+				if (failedCount > 0) {
+					message = `${syncedCount} planes sincronizados exitosamente, ${failedCount} con errores`;
+				}
+
+				dispatch(
+					openSnackbar({
+						open: true,
+						message,
+						variant: "alert",
+						alert: { color: failedCount > 0 ? "warning" : "success" },
+						close: false,
+					}),
+				);
+
+				// Recargar los planes después de la sincronización
+				fetchPlans();
+			}
+		} catch (error: any) {
+			let errorMessage = "Error al sincronizar con Stripe";
+
+			if (error.message) {
+				errorMessage = error.message;
+			}
+
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: errorMessage,
+					variant: "alert",
+					alert: { color: "error" },
+					close: false,
+				}),
+			);
+		} finally {
+			setSyncLoading(false);
+		}
+	};
+
 	if (loading) {
 		return <Loader />;
 	}
@@ -169,11 +225,123 @@ const PlansManagement = () => {
 			<MainCard
 				title="Gestión de Planes y Suscripciones"
 				secondary={
-					<Button variant="contained" color="primary" startIcon={<Add />} onClick={handleAddNew}>
-						Agregar Plan
-					</Button>
+					<Stack direction="row" spacing={2}>
+						<Button
+							variant="outlined"
+							color="secondary"
+							startIcon={syncLoading ? <CircularProgress size={18} /> : <Refresh2 />}
+							onClick={handleSyncWithStripe}
+							disabled={syncLoading}
+						>
+							{syncLoading ? "Sincronizando..." : "Sincronizar con Stripe"}
+						</Button>
+						<Button variant="contained" color="primary" startIcon={<Add />} onClick={handleAddNew}>
+							Agregar Plan
+						</Button>
+					</Stack>
 				}
 			>
+				{/* Security Notice */}
+				<Alert
+					severity="info"
+					sx={{
+						mb: 3,
+						"& .MuiAlert-message": {
+							width: "100%",
+						},
+					}}
+					action={
+						<Button
+							variant="outlined"
+							size="small"
+							startIcon={<Link1 size={16} />}
+							onClick={() => window.open("https://dashboard.stripe.com/login", "_blank")}
+							sx={{ whiteSpace: "nowrap", alignSelf: "flex-start", mt: 0.5 }}
+						>
+							Ir a Stripe
+						</Button>
+					}
+				>
+					<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+						<Typography variant="subtitle2" fontWeight="bold">
+							Nota de Seguridad sobre Precios
+						</Typography>
+						<IconButton size="small" onClick={() => setShowDetailedInfo(!showDetailedInfo)} sx={{ ml: 1 }}>
+							{showDetailedInfo ? <ArrowUp2 size={16} /> : <ArrowDown2 size={16} />}
+						</IconButton>
+					</Box>
+					<Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+						Por razones de seguridad, la modificación de precios debe realizarse desde Stripe Dashboard. Use "Sincronizar con Stripe"
+						después de hacer cambios.
+					</Typography>
+
+					<Collapse in={showDetailedInfo}>
+						<Box sx={{ mt: 2 }}>
+							<Divider sx={{ mb: 2 }} />
+
+							<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+								Funcionamiento del Sistema:
+							</Typography>
+
+							<Box sx={{ pl: 2 }}>
+								<Typography variant="body2" paragraph sx={{ fontSize: "0.875rem" }}>
+									<strong>1. Primera instalación:</strong>
+									<br />• Ejecutar:{" "}
+									<code style={{ backgroundColor: "rgba(0,0,0,0.1)", padding: "2px 4px", borderRadius: "3px", fontSize: "0.8rem" }}>
+										node scripts/initializePlanConfigs.js
+									</code>
+									<br />• Crea productos iniciales en Stripe y MongoDB
+								</Typography>
+
+								<Typography variant="body2" paragraph sx={{ fontSize: "0.875rem" }}>
+									<strong>2. Operación normal:</strong>
+									<br />• Los precios de Stripe se mantienen sin cambios
+									<br />• Para sincronizar use el botón "Sincronizar con Stripe"
+								</Typography>
+
+								<Typography variant="body2" paragraph sx={{ fontSize: "0.875rem" }}>
+									<strong>3. Para cambiar precios:</strong>
+									<br />• Modifique en Stripe Dashboard
+									<br />• Sincronice con el botón de esta interfaz
+								</Typography>
+							</Box>
+
+							<Divider sx={{ my: 2 }} />
+
+							<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+								📋 Configuración en Producción:
+							</Typography>
+
+							<Box sx={{ pl: 2 }}>
+								<Typography variant="body2" sx={{ fontSize: "0.875rem", mb: 1 }}>
+									<strong>Variables de entorno:</strong>
+								</Typography>
+								<Box sx={{ bgcolor: "grey.100", p: 1, borderRadius: 1, mb: 2 }}>
+									<code style={{ fontSize: "0.75rem" }}>
+										STRIPE_SECRET_KEY=sk_live_xxxxx...
+										<br />
+										NODE_ENV=production
+									</code>
+								</Box>
+
+								<Typography variant="body2" sx={{ fontSize: "0.875rem", mb: 1 }}>
+									<strong>Crear productos iniciales:</strong>
+								</Typography>
+								<Box sx={{ bgcolor: "grey.100", p: 1, borderRadius: 1, mb: 2 }}>
+									<code style={{ fontSize: "0.75rem" }}>NODE_ENV=production node scripts/initializePlanConfigs.js</code>
+								</Box>
+
+								<Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+									<strong>Notas:</strong>
+									<br />• ⚠️ NO usar productos de desarrollo en producción
+									<br />• ✅ Stripe es la fuente de verdad para precios
+									<br />• 📌 El script de inicialización solo se ejecuta una vez
+								</Typography>
+							</Box>
+						</Box>
+					</Collapse>
+				</Alert>
+
 				<Grid container spacing={3}>
 					{/* Summary Cards */}
 					<Grid item xs={12} sm={6} md={3}>
@@ -275,7 +443,7 @@ const PlansManagement = () => {
 											<TableCell align="center">
 												<Stack direction="row" spacing={1} justifyContent="center">
 													<Tooltip title="Ver detalles">
-														<IconButton size="small" color="primary" onClick={() => handleView(plan.planId)}>
+														<IconButton size="small" color="primary" onClick={() => handleView(plan)}>
 															<Eye size={18} />
 														</IconButton>
 													</Tooltip>
@@ -297,21 +465,6 @@ const PlansManagement = () => {
 							</Table>
 						</TableContainer>
 					</Grid>
-
-					{/* Información bancaria internacional */}
-					{showBankingData && (
-						<Grid item xs={12}>
-							<Paper sx={{ p: 2, mb: 3, borderLeft: "4px solid", borderColor: "info.main" }}>
-								<Typography variant="subtitle1" color="info.main" gutterBottom>
-									Información de Pagos Bancarios Internacionales
-								</Typography>
-								<Typography variant="body2">Banco: XYZ Bank | Cuenta: 123-456-789 | SWIFT: ABCDEFGH</Typography>
-								<Typography variant="caption" color="textSecondary">
-									Esta información se muestra a los usuarios cuando se suscriben a un plan.
-								</Typography>
-							</Paper>
-						</Grid>
-					)}
 
 					{/* Plan Details Cards */}
 					<Grid item xs={12}>
@@ -394,6 +547,9 @@ const PlansManagement = () => {
 				plan={selectedPlan}
 				loading={deleteLoading}
 			/>
+
+			{/* Plan Detail Modal */}
+			<PlanDetailModal open={detailModalOpen} onClose={handleDetailClose} plan={selectedPlan} />
 		</>
 	);
 };

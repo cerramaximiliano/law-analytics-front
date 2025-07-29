@@ -49,7 +49,6 @@ const DeleteCampaignDialog = ({ open, onClose, onSuccess, campaign }: DeleteCamp
 			onSuccess();
 		} catch (err: any) {
 			setError(err.message || "Error al eliminar la campaña");
-			console.error(`Error deleting campaign ${campaign._id}:`, err);
 		} finally {
 			setLoading(false);
 		}

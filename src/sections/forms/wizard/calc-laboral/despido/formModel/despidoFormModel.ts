@@ -8,14 +8,19 @@ interface FormField {
 interface FormModel {
 	formId: string;
 	formField: {
+		// Paso 1: Datos básicos
 		reclamante: FormField;
 		reclamado: FormField;
 		fechaIngreso: FormField;
 		fechaEgreso: FormField;
 		remuneracion: FormField;
+		remuneracionTope: FormField;
 		otrasSumas: FormField;
 		dias: FormField;
 		incluirSAC: FormField;
+		aplicarLey27742: FormField;
+
+		// Paso 2: Cálculos opcionales
 		liquidacion: FormField;
 		isLiquidacion: FormField;
 		topes: FormField;
@@ -26,6 +31,14 @@ interface FormModel {
 		multaLE: FormField;
 		fechaFalsa: FormField;
 		salarioFalso: FormField;
+
+		// Paso 3: Actualización por intereses
+		aplicarIntereses: FormField;
+		fechaInicialIntereses: FormField;
+		fechaFinalIntereses: FormField;
+		tasaIntereses: FormField;
+
+		// Campos de datos vinculados
 		folderId: FormField;
 		folderName: FormField;
 	};
@@ -34,6 +47,7 @@ interface FormModel {
 const despidoFormModel: FormModel = {
 	formId: "despidoForm",
 	formField: {
+		// Paso 1: Datos básicos
 		reclamante: {
 			name: "reclamante",
 			label: "Nombre del reclamante*",
@@ -64,6 +78,11 @@ const despidoFormModel: FormModel = {
 			requiredErrorMsg: "La remuneración es requerida",
 			type: "reclamo",
 		},
+		remuneracionTope: {
+			name: "remuneracionTope",
+			label: "Remuneración Tope",
+			type: "reclamo",
+		},
 		otrasSumas: {
 			name: "otrasSumas",
 			label: "Otras Sumas Adeudadas",
@@ -79,6 +98,13 @@ const despidoFormModel: FormModel = {
 			label: "Incluir SAC",
 			type: "reclamo",
 		},
+		aplicarLey27742: {
+			name: "aplicarLey27742",
+			label: "Aplicar Ley 27.742",
+			type: "reclamo",
+		},
+
+		// Paso 2: Cálculos opcionales
 		isLiquidacion: {
 			name: "isLiquidacion",
 			label: "Liquidación Final",
@@ -135,6 +161,33 @@ const despidoFormModel: FormModel = {
 			requiredErrorMsg: "Debe consignar un salario",
 			type: "multas",
 		},
+
+		// Paso 3: Actualización por intereses
+		aplicarIntereses: {
+			name: "aplicarIntereses",
+			label: "Aplicar Intereses",
+			type: "intereses",
+		},
+		fechaInicialIntereses: {
+			name: "fechaInicialIntereses",
+			label: "Fecha Inicial de Intereses",
+			requiredErrorMsg: "La fecha inicial de intereses es requerida",
+			type: "intereses",
+		},
+		fechaFinalIntereses: {
+			name: "fechaFinalIntereses",
+			label: "Fecha Final de Intereses",
+			requiredErrorMsg: "La fecha final de intereses es requerida",
+			type: "intereses",
+		},
+		tasaIntereses: {
+			name: "tasaIntereses",
+			label: "Tasa de Interés",
+			requiredErrorMsg: "Debe seleccionar una tasa de interés",
+			type: "intereses",
+		},
+
+		// Campos de datos vinculados
 		folderId: {
 			name: "folderId",
 			label: "Folder ID",

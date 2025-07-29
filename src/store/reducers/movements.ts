@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Dispatch } from "redux";
-import { Movement, MovementState } from "types/movements";
+import { Movement, MovementState, PaginationInfo, PjnAccess } from "types/movements";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
 export const GET_MOVEMENTS = "movements/GET_MOVEMENTS";
@@ -9,9 +9,15 @@ export const DELETE_MOVEMENT = "movements/DELETE_MOVEMENT";
 export const SET_MOVEMENT_ERROR = "movements/SET_MOVEMENT_ERROR";
 export const SET_LOADING = "movements/SET_LOADING";
 export const ADD_MOVEMENT = "movements/ADD_MOVEMENT";
+export const SET_PAGINATION = "movements/SET_PAGINATION";
+export const TOGGLE_MOVEMENT_COMPLETE = "movements/TOGGLE_MOVEMENT_COMPLETE";
 
 const initialMovementState: MovementState = {
 	movements: [],
+	pagination: undefined,
+	totalWithLinks: undefined,
+	documentsBeforeThisPage: undefined,
+	documentsInThisPage: undefined,
 	isLoading: false,
 	error: undefined,
 };
@@ -33,7 +39,12 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 		case GET_MOVEMENTS_BY_FOLDER:
 			return {
 				...state,
-				movements: action.payload,
+				movements: action.payload.movements || action.payload,
+				pagination: action.payload.pagination || undefined,
+				totalWithLinks: action.payload.totalWithLinks || undefined,
+				documentsBeforeThisPage: action.payload.documentsBeforeThisPage || undefined,
+				documentsInThisPage: action.payload.documentsInThisPage || undefined,
+				pjnAccess: action.payload.pjnAccess || undefined,
 				isLoading: false,
 			};
 		case UPDATE_MOVEMENT:
@@ -59,6 +70,19 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				...state,
 				isLoading: true,
 			};
+		case SET_PAGINATION:
+			return {
+				...state,
+				pagination: action.payload,
+			};
+		case TOGGLE_MOVEMENT_COMPLETE:
+			return {
+				...state,
+				movements: state.movements.map((movement) =>
+					movement._id === action.payload._id ? { ...movement, completed: action.payload.completed } : movement,
+				),
+				isLoading: false,
+			};
 		default:
 			return state;
 	}
@@ -69,7 +93,11 @@ export const getMovementsByUserId = (userId: string) => async (dispatch: Dispatc
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/movements/user/${userId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId,completed";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/movements/user/${userId}`, {
+			params: { fields },
+		});
 
 		if (Array.isArray(response.data)) {
 			dispatch({
@@ -207,30 +235,105 @@ interface SuccessResponse {
 	count: number;
 }
 
+interface PaginatedSuccessResponse {
+	success: true;
+	data: {
+		movements: Movement[];
+		pagination: PaginationInfo;
+		totalWithLinks?: number;
+		documentsBeforeThisPage?: number;
+		documentsInThisPage?: number;
+		pjnAccess?: PjnAccess;
+	};
+}
+
 interface ErrorResponse {
 	success: false;
 	message: string;
 }
 
 type MovementsResponse = SuccessResponse | ErrorResponse;
+type PaginatedMovementsResponse = PaginatedSuccessResponse | ErrorResponse;
 
-export const getMovementsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
+// Parámetros de paginación y filtros
+export interface MovementQueryParams {
+	page?: number;
+	limit?: number;
+	search?: string;
+	sort?: string; // Agregado para ordenamiento
+	filter?: {
+		movement?: string;
+		dateRange?: string;
+	};
+}
+
+export const getMovementsByFolderId = (folderId: string, params?: MovementQueryParams) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.get<MovementsResponse>(`${process.env.REACT_APP_BASE_URL}/api/movements/folder/${folderId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId,source,completed";
+
+		// Construir parámetros de consulta
+		const queryParams: any = { fields };
+
+		if (params) {
+			if (params.page !== undefined) queryParams.page = params.page;
+			if (params.limit !== undefined) queryParams.limit = params.limit;
+			if (params.search) queryParams.search = params.search;
+			if (params.sort) queryParams.sort = params.sort;
+			if (params.filter) {
+				if (params.filter.movement) queryParams["filter[movement]"] = params.filter.movement;
+				if (params.filter.dateRange) queryParams["filter[dateRange]"] = params.filter.dateRange;
+			}
+		}
+
+		// Determinar el tipo de respuesta basado en si se usa paginación
+		const isPaginated = params?.page !== undefined || params?.limit !== undefined;
+
+		const response = await axios.get<MovementsResponse | PaginatedMovementsResponse>(
+			`${process.env.REACT_APP_BASE_URL}/api/movements/folder/${folderId}`,
+			{ params: queryParams },
+		);
 
 		if (response.data.success) {
-			dispatch({
-				type: GET_MOVEMENTS_BY_FOLDER,
-				payload: response.data.movements,
-			});
+			// Manejar respuesta paginada
+			if (isPaginated && "data" in response.data) {
+				const paginatedData = response.data as PaginatedSuccessResponse;
+				dispatch({
+					type: GET_MOVEMENTS_BY_FOLDER,
+					payload: {
+						movements: paginatedData.data.movements,
+						pagination: paginatedData.data.pagination,
+						totalWithLinks: paginatedData.data.totalWithLinks,
+						documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
+						documentsInThisPage: paginatedData.data.documentsInThisPage,
+						pjnAccess: paginatedData.data.pjnAccess,
+					},
+				});
 
-			return {
-				success: true,
-				movements: response.data.movements,
-				count: response.data.count,
-			};
+				return {
+					success: true,
+					movements: paginatedData.data.movements,
+					pagination: paginatedData.data.pagination,
+					totalWithLinks: paginatedData.data.totalWithLinks,
+					documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
+					documentsInThisPage: paginatedData.data.documentsInThisPage,
+				};
+			} else {
+				// Manejar respuesta no paginada (retrocompatibilidad)
+				const nonPaginatedData = response.data as SuccessResponse;
+				dispatch({
+					type: GET_MOVEMENTS_BY_FOLDER,
+					payload: nonPaginatedData.movements,
+				});
+
+				return {
+					success: true,
+					movements: nonPaginatedData.movements,
+					count: nonPaginatedData.count,
+				};
+			}
 		}
 
 		// Si no hay éxito, ya sabemos que response.data es ErrorResponse
@@ -257,6 +360,52 @@ export const getMovementsByFolderId = (folderId: string) => async (dispatch: Dis
 			success: false,
 			movements: [],
 			error: errorMessage,
+		};
+	}
+};
+
+export const toggleMovementComplete = (movementId: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch({ type: SET_LOADING });
+
+		const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/movements/${movementId}/complete`);
+
+		if (response.data.success && response.data.movement) {
+			dispatch({
+				type: TOGGLE_MOVEMENT_COMPLETE,
+				payload: {
+					_id: movementId,
+					completed: response.data.movement.completed,
+				},
+			});
+			return {
+				success: true,
+				movement: response.data.movement,
+				message: response.data.message,
+			};
+		}
+
+		throw new Error(response.data.message || "Error al cambiar el estado del movimiento");
+	} catch (error) {
+		let errorMessage = "Error al cambiar el estado del movimiento";
+		let statusCode = 500;
+
+		if (axios.isAxiosError(error) && error.response) {
+			errorMessage = error.response.data?.message || errorMessage;
+			statusCode = error.response.status;
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+		}
+
+		dispatch({
+			type: SET_MOVEMENT_ERROR,
+			payload: errorMessage,
+		});
+
+		return {
+			success: false,
+			error: errorMessage,
+			statusCode,
 		};
 	}
 };

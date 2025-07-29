@@ -78,7 +78,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					setError("No se pudieron cargar los planes");
 				}
 			} catch (err) {
-				console.error("Error al cargar los planes:", err);
 				setError("Error al cargar los planes. Por favor, intenta más tarde.");
 			} finally {
 				setLoading(false);
@@ -104,7 +103,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	// Registrar la apertura y cierre del modal
 	React.useEffect(() => {
 		if (open && !modalOpenedRef.current) {
-			console.log("LimitErrorModal: Modal de restricción de plan abierto");
 			modalOpenedRef.current = true;
 		}
 
@@ -315,31 +313,34 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 						{featureInfo.availableIn.length > 0 && (
 							<Box>
-								<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-									<strong>Planes que incluyen esta función:</strong>
-								</Typography>
-								<Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-									{featureInfo.availableIn.map((plan, index) => (
-										<Box
-											key={index}
-											sx={{
-												display: "inline-flex",
-												alignItems: "center",
-												px: 1.5,
-												py: 0.5,
-												border: `1px solid ${theme.palette.primary.light}`,
-												borderRadius: 1,
-												bgcolor: theme.palette.primary.lighter,
-												color: theme.palette.primary.dark,
-												fontSize: "0.75rem",
-												gap: 0.5,
-											}}
-										>
-											<Crown size={14} variant="Bulk" />
-											{plan}
-										</Box>
-									))}
-								</Stack>
+								<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+									<Typography variant="body2" color="text.secondary">
+										<strong>Planes que incluyen esta función:</strong>
+									</Typography>
+									<Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+										{featureInfo.availableIn.map((plan, index) => (
+											<Box
+												key={index}
+												sx={{
+													display: "inline-flex",
+													alignItems: "center",
+													px: 1.5,
+													py: 0.5,
+													border: `1px solid ${theme.palette.primary.light}`,
+													borderRadius: 1,
+													bgcolor: theme.palette.primary.lighter,
+													color: theme.palette.primary.dark,
+													fontSize: "0.75rem",
+													gap: 0.5,
+												}}
+											>
+												<Crown size={14} variant="Bulk" />
+												{plan}
+											</Box>
+										))}
+									</Stack>
+								</Box>
+								<Divider />
 							</Box>
 						)}
 					</Stack>
@@ -383,6 +384,14 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 		const recommendedPlans = getRecommendedPlans();
 
+		// Filtrar solo planes activos
+		const activePlans = recommendedPlans.filter((plan) => plan.isActive);
+
+		// Si no hay planes activos disponibles
+		if (activePlans.length === 0) {
+			return <Alert severity="info">No hay planes disponibles para actualizar en este momento.</Alert>;
+		}
+
 		return (
 			<Grid container spacing={2}>
 				<Box sx={{ width: "100%", display: "flex", justifyContent: "center", mt: 0 }}>
@@ -395,12 +404,12 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 							margin: "auto",
 						}}
 					>
-						{recommendedPlans.map((plan) => {
+						{activePlans.map((plan) => {
 							// Usar siempre el precio mensual
 							const displayPrice = plan.pricingInfo.basePrice;
 
 							return (
-								<Grid item xs={12} sm={6} md={recommendedPlans.length <= 2 ? 5 : 4} key={plan.planId}>
+								<Grid item xs={12} sm={6} md={activePlans.length <= 2 ? 5 : 4} key={plan.planId}>
 									<MainCard
 										elevation={2}
 										sx={{

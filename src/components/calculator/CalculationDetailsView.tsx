@@ -20,6 +20,7 @@ import {
 	Autocomplete,
 	GlobalStyles,
 } from "@mui/material";
+import logo from "assets/images/large_logo_transparent.png";
 import {
 	Copy,
 	Sms,
@@ -32,6 +33,7 @@ import {
 	Warning2,
 	SearchNormal1,
 	UserAdd,
+	Save2,
 } from "iconsax-react";
 import { useReactToPrint } from "react-to-print";
 import { dispatch, useSelector } from "store";
@@ -63,6 +65,11 @@ interface CalculationDetailsViewProps {
 	generateHtmlContent: () => string;
 	customTitle?: string;
 	hideInterestButton?: boolean;
+	showInfoButton?: boolean;
+	onInfoClick?: () => void;
+	showSaveButton?: boolean;
+	onSaveClick?: () => void;
+	isSaved?: boolean;
 }
 
 // Iconos para cada sección
@@ -85,6 +92,11 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	generateHtmlContent,
 	customTitle,
 	hideInterestButton = false,
+	showInfoButton = false,
+	onInfoClick,
+	showSaveButton = false,
+	onSaveClick,
+	isSaved = false,
 }) => {
 	const theme = useTheme();
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -229,7 +241,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	const handleUpdateWithInterest = async () => {
 		try {
 			// Aquí iría la lógica para actualizar con intereses
-			console.log("Actualizando con tasa:", interestRate);
+
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -258,10 +270,11 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 		const titles: Record<string, string> = {
 			detalles: "Detalles del Cálculo",
 			calculos: "Metodología de Cálculo",
-			intereses: "Resultados",
+			intereses: "Intereses",
 			reclamo: "Datos del Reclamo",
 			indemnizacion: "Indemnización",
 			liquidacion: "Liquidación Final",
+			otrasSumas: "Otros Rubros",
 			multas: "Multas",
 		};
 		return titles[groupKey] || groupKey;
@@ -356,11 +369,66 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					</IconButton>
 				</Tooltip>
 			)}
+			{showInfoButton && onInfoClick && (
+				<Tooltip title="Información sobre los cálculos">
+					<IconButton
+						onClick={onInfoClick}
+						size="small"
+						sx={{
+							border: "1px solid",
+							borderColor: "divider",
+							bgcolor: "background.paper",
+							"&:hover": {
+								bgcolor: "action.hover",
+								borderColor: "primary.main",
+							},
+						}}
+					>
+						<Information size={18} />
+					</IconButton>
+				</Tooltip>
+			)}
+			{showSaveButton && onSaveClick && (
+				<Tooltip title={isSaved ? "El cálculo ya fue guardado" : "Guardar cálculo"}>
+					<span>
+						<IconButton
+							onClick={onSaveClick}
+							disabled={isSaved}
+							size="small"
+							sx={{
+								border: "1px solid",
+								borderColor: "divider",
+								bgcolor: "background.paper",
+								"&:hover": {
+									bgcolor: "action.hover",
+									borderColor: "primary.main",
+								},
+								"&:disabled": {
+									bgcolor: "action.disabledBackground",
+									borderColor: "divider",
+								},
+							}}
+						>
+							<Save2 size={18} />
+						</IconButton>
+					</span>
+				</Tooltip>
+			)}
 		</Stack>
 	);
 
 	const renderSection = (title: string, items: ResultItem[], sectionKey: string, index: number) => {
 		if (!items || !items.length) return null;
+
+		// Filtrar items para ocultar montoTotalConIntereses y capitalActualizado en la sección de intereses
+		const visibleItems = items.filter((item) => {
+			if (sectionKey === "intereses" && (item.key === "montoTotalConIntereses" || item.key === "capitalActualizado")) {
+				return false;
+			}
+			return true;
+		});
+
+		if (!visibleItems.length) return null;
 
 		const Icon = SectionIcons[sectionKey] || Information;
 
@@ -398,7 +466,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					</Typography>
 				</Box>
 				<Box sx={{ px: 2, py: 1.5 }}>
-					{items.map(({ key, value, customLabel, formatType }, itemIndex) => (
+					{visibleItems.map(({ key, value, customLabel, formatType }, itemIndex) => (
 						<Box
 							key={key}
 							sx={{
@@ -419,6 +487,55 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 							</Typography>
 						</Box>
 					))}
+
+					{/* Calcular y mostrar subtotal para secciones monetarias */}
+					{(() => {
+						const sectionsWithSubtotal = ["indemnizacion", "liquidacion", "multas", "intereses", "otrasSumas"];
+						if (!sectionsWithSubtotal.includes(sectionKey)) return null;
+
+						const subtotal = visibleItems.reduce((sum, item) => {
+							// No sumar campos no monetarios
+							if (
+								item.key === "Periodos" ||
+								item.key === "Días Vacaciones" ||
+								item.key === "fechaInicialIntereses" ||
+								item.key === "fechaFinalIntereses" ||
+								item.key === "tasaIntereses"
+							) {
+								return sum;
+							}
+							const numValue = typeof item.value === "number" ? item.value : parseFloat(item.value);
+							return sum + (isNaN(numValue) ? 0 : numValue);
+						}, 0);
+
+						if (subtotal <= 0) return null;
+
+						return (
+							<Box
+								sx={{
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									py: 0.75,
+									borderTop: `2px solid ${theme.palette.divider}`,
+									mt: 1,
+									bgcolor: theme.palette.mode === "dark" ? "grey.800" : "grey.100",
+									mx: -2,
+									px: 2,
+								}}
+							>
+								<Typography variant="body2" fontWeight={600} color="text.primary">
+									Subtotal:
+								</Typography>
+								<Typography variant="body2" fontWeight={600} sx={{ ml: 2, color: "primary.main" }}>
+									{new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+									}).format(subtotal)}
+								</Typography>
+							</Box>
+						);
+					})()}
 				</Box>
 			</Paper>
 		);
@@ -472,6 +589,15 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						"td, th": {
 							padding: "4px 8px !important",
 						},
+						".print-logo": {
+							display: "block !important",
+							width: "150px !important",
+							height: "auto !important",
+							marginBottom: "20px !important",
+						},
+					},
+					".print-logo": {
+						display: "none",
 					},
 				}}
 			/>
@@ -498,10 +624,17 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					}}
 				>
 					<div ref={printRef}>
+						{/* Logo para impresión */}
+						<Box className="print-logo" sx={{ textAlign: "center", mb: 3 }}>
+							<img src={logo} alt="Law Analytics" style={{ maxWidth: "150px", height: "auto" }} />
+						</Box>
+
 						{/* Contenido principal */}
 						<Stack spacing={1}>
 							{/* Renderizar las secciones disponibles */}
-							{Object.entries(groupedData).map(([key, items], index) => renderSection(key, items as ResultItem[], key, index))}
+							{Object.entries(groupedData).map(([key, items], index) => (
+								<React.Fragment key={`section-${key}-${index}`}>{renderSection(key, items as ResultItem[], key, index)}</React.Fragment>
+							))}
 
 							{/* Card del total con diseño minimalista */}
 							<Paper
@@ -592,8 +725,14 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 									Destinatarios:
 								</Typography>
 								<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-									{emailList.map((emailItem) => (
-										<Chip key={emailItem} label={emailItem} onDelete={() => handleRemoveEmail(emailItem)} size="small" sx={{ m: 0.5 }} />
+									{emailList.map((emailItem, index) => (
+										<Chip
+											key={`email-chip-${index}`}
+											label={emailItem}
+											onDelete={() => handleRemoveEmail(emailItem)}
+											size="small"
+											sx={{ m: 0.5 }}
+										/>
 									))}
 								</Box>
 							</Box>

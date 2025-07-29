@@ -113,10 +113,27 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 		initialValues: initialValues,
 		enableReinitialize: true,
 		validationSchema: EventSchema,
-		onSubmit: (values, { setSubmitting }) => {
+		onSubmit: async (values, { setSubmitting }) => {
 			try {
+				// Validar que haya un userId
+				if (!userId) {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: "Error: No se pudo identificar el usuario. Por favor, recargue la página.",
+							variant: "alert",
+							alert: {
+								color: "error",
+							},
+							close: true,
+						}),
+					);
+					setSubmitting(false);
+					return;
+				}
+
 				const newEvent = {
-					userId: userId || undefined,
+					userId: userId,
 					folderId: folderId || undefined,
 					title: values.title,
 					description: values.description,
@@ -128,31 +145,63 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 				};
 
 				if (event) {
-					dispatch(updateEvent(event._id, newEvent));
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: "Evento editado correctamente.",
-							variant: "alert",
-							alert: {
-								color: "success",
-							},
-							close: true,
-						}),
-					);
+					const result = (await dispatch(updateEvent(event._id, newEvent))) as any;
+					if (result && result.success) {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: "Evento editado correctamente.",
+								variant: "alert",
+								alert: {
+									color: "success",
+								},
+								close: true,
+							}),
+						);
+						onCancel();
+					} else {
+						const errorMessage = result?.error?.response?.data?.message || "Error al editar el evento. Intente más tarde.";
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: errorMessage,
+								variant: "alert",
+								alert: {
+									color: "error",
+								},
+								close: true,
+							}),
+						);
+					}
 				} else {
-					dispatch(addEvent(newEvent));
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: "Evento agregado correctamente.",
-							variant: "alert",
-							alert: {
-								color: "success",
-							},
-							close: true,
-						}),
-					);
+					const result = (await dispatch(addEvent(newEvent))) as any;
+					if (result && result.success) {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: "Evento agregado correctamente.",
+								variant: "alert",
+								alert: {
+									color: "success",
+								},
+								close: true,
+							}),
+						);
+						onCancel();
+					} else {
+						const errorMessage = result?.error?.response?.data?.message || "Error al crear el evento. Intente más tarde.";
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: errorMessage,
+								variant: "alert",
+								alert: {
+									color: "error",
+								},
+								close: true,
+							}),
+						);
+					}
 				}
 
 				setSubmitting(false);
@@ -160,7 +209,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Ha ocurrido un error. Intente más tarde.",
+						message: "Ha ocurrido un error inesperado. Intente más tarde.",
 						variant: "alert",
 						alert: {
 							color: "error",
@@ -168,8 +217,8 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 						close: true,
 					}),
 				);
+				setSubmitting(false);
 			}
-			onCancel();
 		},
 	});
 
@@ -260,12 +309,12 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 							}}
 						/>
 
-						<Grid container spacing={3} sx={{ marginLeft: 0, marginTop: 0.2 }}>
-							<Grid item xs={12} md={5.6} sx={{ display: "flex", alignItems: "center", paddingLeft: 2 }}>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={6}>
 								<FormControlLabel control={<Switch checked={values.allDay} {...getFieldProps("allDay")} />} label="Todo el día" />
 							</Grid>
-							<Grid item xs={12} md={6} sx={{ display: "flex", alignItems: "center", paddingLeft: 2 }}>
-								<Stack spacing={1.25} flex={1}>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={1.25}>
 									<InputLabel id="demo-simple-select-label">Seleccione un tipo</InputLabel>
 									<FormControl fullWidth error={Boolean(touched.type && errors.type)}>
 										<Select
@@ -311,67 +360,66 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 									</FormControl>
 								</Stack>
 							</Grid>
-						</Grid>
-
-						<Grid item xs={12} md={6}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="cal-start-date">Fecha Inicio</InputLabel>
-								<MobileDateTimePicker
-									value={values.start}
-									format="dd/MM/yyyy hh:mm a"
-									onChange={(date) => setFieldValue("start", date)}
-									slotProps={{
-										textField: {
-											InputProps: {
-												endAdornment: (
-													<InputAdornment position="end" sx={{ cursor: "pointer" }}>
-														<Calendar />
-													</InputAdornment>
-												),
-												sx: {
-													height: 39.91,
-													fontSize: 12,
-													"::placeholder": {
-														color: theme.palette.text.secondary,
-														opacity: 0.6,
+							<Grid item xs={12} md={6}>
+								<Stack spacing={1.25}>
+									<InputLabel htmlFor="cal-start-date">Fecha Inicio</InputLabel>
+									<MobileDateTimePicker
+										value={values.start}
+										format="dd/MM/yyyy hh:mm a"
+										onChange={(date) => setFieldValue("start", date)}
+										slotProps={{
+											textField: {
+												InputProps: {
+													endAdornment: (
+														<InputAdornment position="end" sx={{ cursor: "pointer" }}>
+															<Calendar />
+														</InputAdornment>
+													),
+													sx: {
+														height: 39.91,
+														fontSize: 12,
+														"::placeholder": {
+															color: theme.palette.text.secondary,
+															opacity: 0.6,
+														},
 													},
 												},
 											},
-										},
-									}}
-								/>
-								{touched.start && typeof errors.start === "string" && <FormHelperText>{errors.start as string}</FormHelperText>}
-							</Stack>
-						</Grid>
-						<Grid item xs={12} md={6}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="cal-end-date">Fecha Fin</InputLabel>
-								<MobileDateTimePicker
-									value={values.end}
-									format="dd/MM/yyyy hh:mm a"
-									onChange={(date) => setFieldValue("end", date)}
-									slotProps={{
-										textField: {
-											InputProps: {
-												endAdornment: (
-													<InputAdornment position="end" sx={{ cursor: "pointer" }}>
-														<Calendar />
-													</InputAdornment>
-												),
-												sx: {
-													height: 39.91,
-													fontSize: 12,
-													"::placeholder": {
-														color: theme.palette.text.secondary,
-														opacity: 0.6,
+										}}
+									/>
+									{touched.start && typeof errors.start === "string" && <FormHelperText>{errors.start as string}</FormHelperText>}
+								</Stack>
+							</Grid>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={1.25}>
+									<InputLabel htmlFor="cal-end-date">Fecha Fin</InputLabel>
+									<MobileDateTimePicker
+										value={values.end}
+										format="dd/MM/yyyy hh:mm a"
+										onChange={(date) => setFieldValue("end", date)}
+										slotProps={{
+											textField: {
+												InputProps: {
+													endAdornment: (
+														<InputAdornment position="end" sx={{ cursor: "pointer" }}>
+															<Calendar />
+														</InputAdornment>
+													),
+													sx: {
+														height: 39.91,
+														fontSize: 12,
+														"::placeholder": {
+															color: theme.palette.text.secondary,
+															opacity: 0.6,
+														},
 													},
 												},
 											},
-										},
-									}}
-								/>
-								{touched.end && typeof errors.end === "string" && <FormHelperText error={true}>{errors.end}</FormHelperText>}
-							</Stack>
+										}}
+									/>
+									{touched.end && typeof errors.end === "string" && <FormHelperText error={true}>{errors.end}</FormHelperText>}
+								</Stack>
+							</Grid>
 						</Grid>
 					</DialogContent>
 					<Divider />

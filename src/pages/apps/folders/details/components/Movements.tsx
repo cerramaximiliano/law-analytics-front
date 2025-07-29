@@ -11,7 +11,6 @@ import {
 	Typography,
 	Stack,
 	Tooltip,
-	Box,
 	Chip,
 	useTheme,
 	Paper,
@@ -43,6 +42,7 @@ import { es } from "date-fns/locale";
 import { parse, format } from "date-fns";
 import AlertMemberDelete from "../modals/alertMemberDelete";
 import { Movement } from "types/movements";
+import EmptyStateCard from "components/EmptyStateCard";
 
 interface MovementsProps {
 	title: string;
@@ -65,36 +65,6 @@ const formatDate = (dateString: string) => {
 		return dateString;
 	}
 };
-
-const EmptyState = () => (
-	<Paper elevation={0} sx={{ p: 4, textAlign: "center", bgcolor: "transparent" }}>
-		<Stack spacing={3} alignItems="center">
-			<Avatar
-				color="error"
-				variant="rounded"
-				sx={{
-					width: 80,
-					height: 80,
-					bgcolor: "error.lighter",
-					transition: "transform 0.3s ease-in-out",
-					"&:hover": {
-						transform: "scale(1.1)",
-					},
-				}}
-			>
-				<TableDocument variant="Bulk" size={40} />
-			</Avatar>
-			<Box>
-				<Typography variant="h5" gutterBottom>
-					No hay movimientos registrados
-				</Typography>
-				<Typography variant="body2" color="textSecondary">
-					Comienza agregando un nuevo movimiento usando el botón +
-				</Typography>
-			</Box>
-		</Stack>
-	</Paper>
-);
 
 const MovementsLoader = () => (
 	<Stack spacing={3} px={3}>
@@ -483,7 +453,11 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 						<FooterActions />
 					</>
 				) : (
-					<EmptyState />
+					<EmptyStateCard
+						icon={<TableDocument variant="Bulk" />}
+						title="No hay movimientos registrados"
+						subtitle="Comienza agregando un nuevo movimiento usando el botón +"
+					/>
 				)}
 			</CardContent>
 		</MainCard>

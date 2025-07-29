@@ -122,7 +122,6 @@ const NewCampaignModal = ({ open, onClose, onSuccess }: NewCampaignModalProps) =
 				onSuccess();
 			} catch (err: any) {
 				setError(err.message || "Error al crear la campaña");
-				console.error("Error creating campaign:", err);
 			} finally {
 				setLoading(false);
 			}

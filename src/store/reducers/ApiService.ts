@@ -1,4 +1,7 @@
 import axios from "axios";
+import { StripeCustomersResponse } from "../../types/stripe-subscription";
+import { StripeCustomerHistory } from "../../types/stripe-history";
+import { Subscription as UserSubscription } from "../../types/user";
 
 const API_BASE_URL = process.env.REACT_APP_BASE_URL; // Ajusta esto según tu configuración
 
@@ -73,80 +76,8 @@ export interface SessionData {
 }
 
 // ===============================
-// Interfaces de estadísticas
+// Interfaces para los planes
 // ===============================
-
-export interface TrendItem {
-	month: string;
-	count: number;
-}
-
-export interface FolderDistribution {
-	nueva: number;
-	enProceso: number;
-	cerrada: number;
-	pendiente: number;
-}
-
-export interface ResolutionTimes {
-	overall: number;
-	byStatus: {
-		nueva: number;
-		enProceso: number;
-		pendiente: number;
-	};
-}
-
-export interface UpcomingDeadlines {
-	next7Days: number;
-	next15Days: number;
-	next30Days: number;
-}
-
-export interface TaskMetrics {
-	completionRate: number;
-	pendingTasks: number;
-	completedTasks: number;
-	overdueTasks: number;
-}
-
-export interface DashboardSummary {
-	folderStats: {
-		active: number;
-		closed: number;
-		distribution: FolderDistribution;
-	};
-	financialStats: {
-		totalActiveAmount: number;
-		calculatorsAmount: number;
-	};
-	upcomingDeadlines: number;
-	taskMetrics: {
-		pendingTasks: number;
-		completionRate: number;
-	};
-	notificationMetrics: {
-		unreadCount: number;
-	};
-	trends: {
-		newFolders: TrendItem[];
-		movements: TrendItem[];
-	};
-	lastUpdated: string;
-}
-
-export interface FolderAnalytics {
-	distribution: FolderDistribution;
-	resolutionTimes: ResolutionTimes;
-	deadlines: UpcomingDeadlines;
-}
-
-export interface UserAnalytics {
-	folderStatusDistribution: FolderDistribution;
-	// ...otros campos
-}
-
-// Añadir nuevas interfaces para los planes
 
 export interface ResourceLimit {
 	name: string;
@@ -179,6 +110,19 @@ export interface Plan {
 		$date: string;
 	};
 	__v?: number;
+	stripePriceId?: string;
+	stripeProductId?: string;
+	metadata?: {
+		lastSyncEnv?: string;
+		lastSyncDate?: string;
+		[key: string]: any;
+	};
+	changeHistory?: Array<{
+		date: string;
+		field: string;
+		oldValue: any;
+		newValue: any;
+	}>;
 }
 
 export interface PlanResourceLimits {
@@ -198,7 +142,8 @@ export interface PlanFeatures {
 export interface PlanPricingInfo {
 	basePrice: number;
 	currency: string;
-	billingPeriod: "monthly" | "yearly";
+	billingPeriod: "monthly" | "yearly" | "daily" | string;
+	stripePriceId?: string;
 }
 
 export interface Subscription {
@@ -325,7 +270,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching active sessions:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -341,7 +285,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error terminating session:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -356,7 +299,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error terminating all other sessions:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -372,7 +314,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error updating current session:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -391,7 +332,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching notification preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -407,7 +347,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error updating notification preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -422,7 +361,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching user preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -438,7 +376,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error updating user preferences:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -458,7 +395,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error deactivating account:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -472,91 +408,34 @@ class ApiService {
 			const response = await axios.post<ApiResponse>(`${API_BASE_URL}/api/reactivate-account`, data);
 			return response.data;
 		} catch (error) {
-			console.error("Error reactivating account:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
 
 	// ================================
-	// Estadísticas y análisis
+	// Estadísticas y análisis - API Unificada
 	// ================================
 
 	/**
-	 * Obtiene el resumen del dashboard
-	 * @param userId - ID de usuario opcional para administradores
+	 * Obtiene estadísticas unificadas del usuario
+	 * @param userId - ID del usuario
+	 * @param sections - Secciones específicas a obtener (por defecto: 'all')
 	 */
-	static async getDashboardSummary(userId?: string | null): Promise<DashboardSummary> {
+	static async getUnifiedStats(userId: string, sections: string = "all"): Promise<any> {
 		try {
-			const response = await axios.get(`${API_BASE_URL}/api/stats/dashboard${userId ? `/${userId}` : ""}`, { withCredentials: true });
-
-			if (!response.data || !response.data.summary) {
-				throw new Error("Formato de respuesta inválido");
-			}
-
-			return response.data.summary;
-		} catch (error) {
-			console.error("Error fetching dashboard summary:", error);
-			throw this.handleAxiosError(error);
-		}
-	}
-
-	/**
-	 * Obtiene análisis completos del usuario
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getFullAnalytics(userId?: string | null): Promise<UserAnalytics> {
-		try {
-			const response = await axios.get(`${API_BASE_URL}/api/stats/analytics${userId ? `/${userId}` : ""}`, { withCredentials: true });
-
-			if (!response.data || !response.data.analytics) {
-				throw new Error("Formato de respuesta inválido");
-			}
-
-			return response.data.analytics;
-		} catch (error) {
-			console.error("Error fetching full analytics:", error);
-			throw this.handleAxiosError(error);
-		}
-	}
-
-	/**
-	 * Obtiene análisis por categoría específica
-	 * @param category - La categoría de análisis a obtener
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getCategoryAnalysis<T>(category: string, userId?: string | null): Promise<T> {
-		try {
-			const path = userId ? `/api/stats/${userId}/category/${category}` : `/api/stats/category/${category}`;
-
-			const response = await axios.get(`${API_BASE_URL}${path}`, {
+			const response = await axios.get(`${API_BASE_URL}/api/stats/unified/${userId}`, {
+				params: { sections },
 				withCredentials: true,
 			});
 
-			if (!response.data || !response.data.data) {
+			if (!response.data || !response.data.success) {
 				throw new Error("Formato de respuesta inválido");
 			}
 
-			return response.data.data;
+			return response.data;
 		} catch (error) {
-			console.error(`Error fetching ${category} analysis:`, error);
 			throw this.handleAxiosError(error);
 		}
-	}
-
-	/**
-	 * Obtiene análisis de carpetas
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getFolderAnalytics(userId?: string | null): Promise<FolderAnalytics> {
-		return this.getCategoryAnalysis<FolderAnalytics>("folders", userId);
-	}
-
-	/**
-	 * Obtiene métricas de tareas
-	 * @param userId - ID de usuario opcional para administradores
-	 */
-	static async getTaskMetrics(userId?: string | null): Promise<TaskMetrics> {
-		return this.getCategoryAnalysis<TaskMetrics>("tasks", userId);
 	}
 
 	// ================================
@@ -628,7 +507,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching public plans:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -643,7 +521,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching all plans:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -659,7 +536,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error fetching plan ${planId}:`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -675,7 +551,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error("Error creating/updating plan:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -691,7 +566,24 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error deleting plan ${planId}:`, error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Sincroniza todos los planes con Stripe
+	 */
+	static async syncPlansWithStripe(): Promise<ApiResponse<Array<{ planId: string; displayName: string; synced: boolean }>>> {
+		try {
+			const response = await axios.post<ApiResponse<Array<{ planId: string; displayName: string; synced: boolean }>>>(
+				`${API_BASE_URL}/api/plan-configs/sync-with-stripe`,
+				{},
+				{
+					withCredentials: true,
+				},
+			);
+			return response.data;
+		} catch (error) {
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -704,9 +596,9 @@ class ApiService {
 			const response = await axios.get(`${API_BASE_URL}/api/subscriptions/current`, {
 				withCredentials: true,
 			});
+			console.log("/api/subscriptions/current", response.data);
 			return response.data;
 		} catch (error) {
-			console.error("Error fetching current subscription:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -722,9 +614,9 @@ class ApiService {
 				{ atPeriodEnd },
 				{ withCredentials: true },
 			);
+			console.log("/api/subscriptions/cancel", response.data);
 			return response.data;
 		} catch (error) {
-			console.error("Error al cancelar suscripción:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -750,22 +642,12 @@ class ApiService {
 			);
 			return response.data;
 		} catch (error) {
-			console.error("Error subscribing to plan:", error);
 			throw this.handleAxiosError(error);
 		}
 	}
 
-	static async getPaymentHistory(): Promise<ApiResponse<PaymentHistoryResponse>> {
-		try {
-			const response = await axios.get<ApiResponse<PaymentHistoryResponse>>(`${API_BASE_URL}/api/subscriptions/payments`, {
-				withCredentials: true,
-			});
-			return response.data;
-		} catch (error) {
-			console.error("Error obteniendo historial de pagos:", error);
-			throw this.handleAxiosError(error);
-		}
-	}
+	// getPaymentHistory method has been removed - payment history is now fetched during login
+	// and stored in Redux auth state. Use the fetchPaymentHistory action from auth reducer instead.
 
 	/**
 	 * Cancela un downgrade programado
@@ -776,9 +658,9 @@ class ApiService {
 			const response = await axios.post("/api/subscriptions/cancel-downgrade", {
 				withCredentials: true,
 			});
+			console.log(response.data);
 			return response.data;
 		} catch (error: any) {
-			console.error("Error al cancelar downgrade programado:", error);
 			return {
 				success: false,
 				message: error.response?.data?.message || "Error al cancelar el downgrade programado",
@@ -802,7 +684,6 @@ class ApiService {
 			);
 			return response.data;
 		} catch (error: any) {
-			console.error("Error al cambiar plan inmediatamente:", error);
 			return {
 				success: false,
 				message: error.response?.data?.message || "Error al cambiar el plan",
@@ -820,7 +701,6 @@ class ApiService {
 			const response = await axios.post("/api/subscriptions/schedule-change", { planId }, { withCredentials: true });
 			return response.data;
 		} catch (error: any) {
-			console.error("Error al programar cambio de plan:", error);
 			return {
 				success: false,
 				message: error.response?.data?.message || "Error al programar el cambio de plan",
@@ -837,7 +717,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error obteniendo documento legal (${documentType}):`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -886,7 +765,6 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error checking feature availability (${featureName}):`, error);
 			throw this.handleAxiosError(error);
 		}
 	}
@@ -912,7 +790,61 @@ class ApiService {
 			});
 			return response.data;
 		} catch (error) {
-			console.error(`Error checking resource limit (${resourceType}):`, error);
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Obtiene todos los clientes de Stripe (solo administradores)
+	 * @param cursor - Cursor para paginación (opcional)
+	 */
+	static async getStripeCustomers(cursor?: string): Promise<StripeCustomersResponse> {
+		try {
+			const params = cursor ? { cursor } : {};
+			const response = await axios.get<StripeCustomersResponse>(`${API_BASE_URL}/api/subscriptions/stripe-subscriptions`, {
+				params,
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Obtiene el historial completo de Stripe para un usuario específico
+	 * @param userId - ID del usuario
+	 */
+	static async getStripeCustomerHistory(userId: string): Promise<ApiResponse<StripeCustomerHistory>> {
+		try {
+			const response = await axios.get<ApiResponse<StripeCustomerHistory>>(
+				`${API_BASE_URL}/api/subscriptions/user/${userId}/stripe-history`,
+				{
+					withCredentials: true,
+				},
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Actualiza la suscripción de un usuario específico
+	 * @param userId - ID del usuario
+	 * @param subscriptionData - Datos de suscripción a actualizar
+	 */
+	static async updateUserSubscription(userId: string, subscriptionData: Partial<UserSubscription>): Promise<ApiResponse<UserSubscription>> {
+		try {
+			const response = await axios.patch<ApiResponse<UserSubscription>>(
+				`${API_BASE_URL}/api/subscriptions/user/${userId}`,
+				subscriptionData,
+				{
+					withCredentials: true,
+				},
+			);
+			return response.data;
+		} catch (error) {
 			throw this.handleAxiosError(error);
 		}
 	}

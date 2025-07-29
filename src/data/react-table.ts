@@ -9,7 +9,7 @@ const newPerson = (index: number) => {
 	let status: string;
 	switch (statusCode) {
 		case 2:
-			status = "Finalizada";
+			status = "Cerrada";
 			break;
 		case 1:
 			status = "Nueva";

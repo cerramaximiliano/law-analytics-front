@@ -48,7 +48,6 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 				try {
 					await dispatch(getFoldersByUserId(user._id));
 				} catch (error) {
-					console.error("Error loading folders:", error);
 				} finally {
 					setIsLoading(false);
 				}
@@ -111,7 +110,6 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 					);
 				}
 			} catch (error) {
-				console.error("Error en handleLink:", error);
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -137,7 +135,8 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 
 	return (
 		<Dialog
-			maxWidth="sm"
+			maxWidth="md"
+			fullWidth
 			open={openLink}
 			onClose={onCancelLink}
 			sx={{

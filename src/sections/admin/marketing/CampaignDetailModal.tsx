@@ -44,12 +44,9 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({ open, onClose
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		console.log("CampaignDetailModal useEffect - open:", open, "campaignId:", campaignId);
 		if (open && campaignId) {
-			console.log("Calling fetchCampaignDetails with ID:", campaignId);
 			fetchCampaignDetails(campaignId);
 		} else {
-			console.log("Not fetching - open:", open, "campaignId:", campaignId);
 		}
 	}, [open, campaignId]);
 
@@ -57,9 +54,9 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({ open, onClose
 		try {
 			setLoading(true);
 			setError(null);
-			console.log(`Fetching campaign details for ID: ${id}`);
+
 			const campaign = await CampaignService.getCampaignById(id);
-			console.log("Campaign data:", campaign);
+
 			// Ensure campaign has an _id before setting it
 			if (campaign && campaign._id) {
 				setCampaign(campaign as CampaignDetail);
@@ -67,7 +64,6 @@ const CampaignDetailModal: React.FC<CampaignDetailModalProps> = ({ open, onClose
 				setError("La campaña no tiene un ID válido");
 			}
 		} catch (err: any) {
-			console.error("Error al obtener detalles de la campaña:", err);
 			if (err.response?.status === 401) {
 				setError("Sesión expirada. Por favor, inicie sesión nuevamente.");
 			} else if (err.response?.status === 404) {

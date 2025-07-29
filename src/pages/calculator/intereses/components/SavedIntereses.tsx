@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, FC, Fragment, MouseEvent, useRef } from "react";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -49,7 +49,7 @@ import { Add, Eye, Trash, DocumentDownload } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-import { getCalculatorsByFilter } from "store/reducers/calculator";
+import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
 
 // ==============================|| REACT TABLE ||============================== //
@@ -345,7 +345,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			  <span class="total-label">CAPITAL ACTUALIZADO</span>
 			  <span class="total-value">${totalFormatted}</span>
 			</div>
-	  
+
 			<div class="footer">
 			  <p>Este documento fue generado automáticamente por Law||Analytics.</p>
 			</div>
@@ -666,7 +666,7 @@ const SavedIntereses = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
-	const auth = useSelector((state) => state.auth);
+	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -677,19 +677,39 @@ const SavedIntereses = () => {
 	const [calculatorIdToDelete, setCalculatorIdToDelete] = useState<string>("");
 	const [add, setAdd] = useState<boolean>(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	const isMountedRef = useRef(false);
+	const isFirstRenderRef = useRef(true);
 
 	useEffect(() => {
-		const fetchData = async () => {
-			await dispatch(
-				getCalculatorsByFilter({
-					userId,
-					type: "Calculado",
-					classType: "intereses",
-				}),
-			);
+		// Marcar como montado
+		isMountedRef.current = true;
+
+		// Usar setTimeout para retrasar la primera ejecución y evitar conflictos
+		const timeoutId = setTimeout(
+			() => {
+				if (userId && isMountedRef.current) {
+					// getCalculatorsByFilter ya maneja la lógica de cache internamente
+					dispatch(
+						getCalculatorsByFilter({
+							userId,
+							type: "Calculado",
+							classType: "intereses",
+						}),
+					);
+				}
+			},
+			isFirstRenderRef.current ? 100 : 0,
+		); // Retrasar la primera ejecución
+
+		isFirstRenderRef.current = false;
+
+		return () => {
+			clearTimeout(timeoutId);
+			isMountedRef.current = false;
+			// Limpiar selectedCalculators cuando el componente se desmonta
+			dispatch(clearSelectedCalculators());
 		};
-		fetchData();
-	}, [userId]);
+	}, [userId, dispatch]); // Incluir dispatch en las dependencias
 
 	const handleDeleteDialogClose = () => {
 		setOpen(false);
@@ -842,7 +862,6 @@ const SavedIntereses = () => {
 								size="small"
 								onClick={(e) => {
 									e.stopPropagation();
-									console.log("Calcular intereses");
 								}}
 							>
 								Calcular

@@ -67,7 +67,6 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 	useEffect(() => {
 		// Manejador para eventos de restricción de plan
 		const handlePlanRestriction = () => {
-			console.log("Members: Restricción de plan detectada, cerrando modales");
 			if (add) {
 				setAdd(false);
 			}
@@ -79,7 +78,6 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 		// Verificar periódicamente si hay una flag global para cerrar modales
 		const checkGlobalFlag = () => {
 			if ((window as any).FORCE_CLOSE_ALL_MODALS) {
-				console.log("Members: Flag global detectada, cerrando modales");
 				if (add) {
 					setAdd(false);
 				}
@@ -199,7 +197,6 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 				);
 			}
 		} catch (error) {
-			console.error("Error en handleUnlink:", error);
 			dispatch(
 				openSnackbar({
 					open: true,

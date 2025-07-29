@@ -23,24 +23,13 @@ import { useNavigate } from "react-router-dom";
 
 // Importar acción para obtener tareas próximas
 import { getUpcomingTasks, toggleTaskStatus } from "store/reducers/tasks";
-
-import ApiService, { TaskMetrics } from "store/reducers/ApiService";
+import { getUnifiedStats } from "store/reducers/unifiedStats";
 
 // Componente para mostrar un listado simple de tareas
 const TaskWidget = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
-	const [loading, setLoading] = useState<boolean>(true);
 	const [showAllTasks, setShowAllTasks] = useState<boolean>(false);
-	const [taskMetrics, setTaskMetrics] = useState<{
-		pendingTasks: number;
-		completionRate: number;
-		overdueTasks: number;
-	}>({
-		pendingTasks: 0,
-		completionRate: 0,
-		overdueTasks: 0,
-	});
 
 	// Constante para los días a mostrar
 	const DAYS_TO_SHOW = 7;
@@ -53,44 +42,31 @@ const TaskWidget = () => {
 	const upcomingTasks = useSelector((state: RootState) => state.tasksReducer.upcomingTasks);
 	const isTasksLoading = useSelector((state: RootState) => state.tasksReducer.isLoader);
 
+	// Obtener datos del store unificado
+	const { data: unifiedData, isLoading: isStatsLoading, isInitialized } = useSelector((state: RootState) => state.unifiedStats);
+
+	// Crear un objeto normalizado para las métricas de tareas
+	const dashboardTasks = unifiedData?.dashboard?.tasks;
+	const taskStats = unifiedData?.tasks;
+
+	const taskMetrics = {
+		pending: dashboardTasks?.pending || taskStats?.metrics?.pendingTasks || 0,
+		completed: dashboardTasks?.completed || taskStats?.metrics?.completedTasks || 0,
+		overdue: dashboardTasks?.overdue || taskStats?.metrics?.overdueTasks || 0,
+	};
+
 	// Cargar datos de tareas y métricas
 	useEffect(() => {
-		const fetchData = async () => {
-			if (userId) {
-				try {
-					setLoading(true);
-
-					// Obtener el resumen del dashboard que incluye taskMetrics
-					const summary = await ApiService.getDashboardSummary(userId);
-
-					// Obtener métricas de tareas más detalladas
-					let taskMetricsData: TaskMetrics | null = null;
-					try {
-						taskMetricsData = await ApiService.getCategoryAnalysis<TaskMetrics>("tasks", userId);
-					} catch (error) {
-						console.warn("No se pudieron obtener métricas detalladas de tareas:", error);
-						// Continuamos con las métricas del dashboard summary
-					}
-
-					// Actualizar métricas de tareas
-					setTaskMetrics({
-						pendingTasks: taskMetricsData?.pendingTasks || summary.taskMetrics.pendingTasks || 0,
-						completionRate: taskMetricsData?.completionRate || summary.taskMetrics.completionRate || 0,
-						overdueTasks: taskMetricsData?.overdueTasks || 0,
-					});
-
-					// Cargar tareas próximas a vencer
-					dispatch(getUpcomingTasks(userId, DAYS_TO_SHOW));
-				} catch (error) {
-					console.error("Error al cargar datos de tareas:", error);
-				} finally {
-					setLoading(false);
-				}
+		if (userId) {
+			// Cargar estadísticas unificadas si no están disponibles
+			if (!isInitialized && !unifiedData?.dashboard && !unifiedData?.tasks) {
+				dispatch(getUnifiedStats(userId, "dashboard,tasks"));
 			}
-		};
 
-		fetchData();
-	}, [userId]);
+			// Cargar tareas próximas a vencer
+			dispatch(getUpcomingTasks(userId, DAYS_TO_SHOW));
+		}
+	}, [userId, isInitialized, unifiedData]);
 
 	// Función para mostrar todas las tareas y navegar a la página
 	const handleViewAllTasks = () => {
@@ -113,7 +89,7 @@ const TaskWidget = () => {
 	const tasksToShow = showAllTasks ? upcomingTasks : upcomingTasks.slice(0, 5);
 
 	// Estado de carga
-	if (loading || isTasksLoading) {
+	if ((isStatsLoading && !unifiedData) || isTasksLoading) {
 		return (
 			<MainCard>
 				<CardContent>
@@ -180,7 +156,8 @@ const TaskWidget = () => {
 								</Tooltip>
 							</Stack>
 							<Typography variant="caption" color="secondary">
-								Próximos {DAYS_TO_SHOW} días • {taskMetrics.pendingTasks} pendientes • {taskMetrics.overdueTasks} vencidas
+								Próximos {DAYS_TO_SHOW} días • {taskMetrics.pending} pendientes
+								{taskMetrics.overdue > 0 ? ` • ${taskMetrics.overdue} vencidas` : ""}
 							</Typography>
 						</Stack>
 

@@ -67,7 +67,6 @@ const Locales = ({ children }: Props) => {
 				if (err.code === "MISSING_TRANSLATION") {
 					return;
 				}
-				console.error(err);
 			}}
 		>
 			{children}

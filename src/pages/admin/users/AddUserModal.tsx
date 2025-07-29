@@ -21,7 +21,7 @@ import {
 
 // project imports
 import { DefaultRootStateProps } from "types/root";
-import userApi from "utils/userApi";
+import axios from "axios";
 import { SET_ERROR, SET_USERS } from "store/reducers/users";
 
 // third party
@@ -89,8 +89,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, onClose }) => {
 			const { confirmPassword, ...payload } = values;
 
 			// Realizar la petición a la API
-			const response = await userApi.post("/api/users", payload);
-			console.log("Usuario creado:", response.data);
+			const response = await axios.post("/api/users", payload);
 
 			// Actualizar el estado global con el nuevo usuario
 			const newUser = response.data.user || response.data;
@@ -102,7 +101,6 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, onClose }) => {
 			// Cerrar el modal
 			onClose();
 		} catch (err: any) {
-			console.error("Error al crear usuario:", err);
 			setError(err.message || "Error al crear el usuario");
 			dispatch({
 				type: SET_ERROR,

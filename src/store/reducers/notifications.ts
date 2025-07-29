@@ -61,7 +61,7 @@ const handleError = (error: unknown): string => {
 export const addNotification = (data: Omit<NotificationType, "_id">) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/notifications`, data);
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications`, data);
 		dispatch({
 			type: ADD_NOTIFICATION,
 			payload: response.data.notification,
@@ -77,7 +77,11 @@ export const addNotification = (data: Omit<NotificationType, "_id">) => async (d
 export const getNotificationsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/notifications/user/${userId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,dateExpiration,notification,user,description,folderId";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/user/${userId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_NOTIFICATIONS,
 			payload: response.data.notifications,
@@ -93,7 +97,11 @@ export const getNotificationsByUserId = (userId: string) => async (dispatch: Dis
 export const getNotificationsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/notifications/group/${groupId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,dateExpiration,notification,user,description,folderId";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/group/${groupId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_NOTIFICATIONS,
 			payload: response.data.notifications,
@@ -109,7 +117,11 @@ export const getNotificationsByGroupId = (groupId: string) => async (dispatch: D
 export const getNotificationsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/notifications/folder/${folderId}`);
+		// Campos optimizados para listas y vistas
+		const fields = "_id,title,time,dateExpiration,notification,user,description,folderId";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/folder/${folderId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_NOTIFICATIONS,
 			payload: response.data.notifications,
@@ -125,7 +137,7 @@ export const getNotificationsByFolderId = (folderId: string) => async (dispatch:
 export const updateNotification = (id: string, data: Partial<NotificationType>) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/notifications/${id}`, data);
+		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/${id}`, data);
 		dispatch({
 			type: UPDATE_NOTIFICATION,
 			payload: response.data.notification,
@@ -141,7 +153,7 @@ export const updateNotification = (id: string, data: Partial<NotificationType>) 
 export const deleteNotification = (id: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/notifications/${id}`);
+		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/folder-notifications/${id}`);
 		dispatch({
 			type: DELETE_NOTIFICATION,
 			payload: id,

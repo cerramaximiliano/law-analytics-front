@@ -12,8 +12,9 @@ const UPDATE_CONTACT = "UPDATE_CONTACT";
 const FILTER_CONTACTS_BY_FOLDER = "FILTER_CONTACTS_BY_FOLDER";
 const ARCHIVE_CONTACTS = "ARCHIVE_CONTACTS";
 const UNARCHIVE_CONTACTS = "UNARCHIVE_CONTACTS";
-const SET_LOADING = "SET_LOADING";
+const SET_CONTACT_LOADING = "SET_CONTACT_LOADING";
 const GET_ARCHIVED_CONTACTS = "GET_ARCHIVED_CONTACTS";
+const RESET_CONTACTS_STATE = "RESET_CONTACTS_STATE";
 
 // initial state
 const initialContactState: ContactState = {
@@ -22,6 +23,8 @@ const initialContactState: ContactState = {
 	selectedContacts: [],
 	error: null,
 	isLoader: false,
+	isInitialized: false,
+	lastFetchedUserId: undefined,
 };
 
 // ==============================|| CONTACT REDUCER & ACTIONS ||============================== //
@@ -30,7 +33,7 @@ const initialContactState: ContactState = {
 // Reducer para manejar el estado de los contactos
 const contacts = (state = initialContactState, action: Action): ContactState => {
 	switch (action.type) {
-		case SET_LOADING:
+		case SET_CONTACT_LOADING:
 			return {
 				...state,
 				isLoader: true,
@@ -43,6 +46,13 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 				isLoader: false,
 			};
 		case GET_CONTACTS_BY_USER:
+			return {
+				...state,
+				contacts: action.payload?.contacts || action.payload || [],
+				isLoader: false,
+				isInitialized: true,
+				lastFetchedUserId: action.payload?.userId,
+			};
 		case GET_CONTACTS_BY_GROUP:
 			return {
 				...state,
@@ -118,6 +128,8 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 				error: action.payload,
 				isLoader: false,
 			};
+		case RESET_CONTACTS_STATE:
+			return initialContactState;
 		default:
 			return state;
 	}
@@ -258,8 +270,6 @@ export const updateMultipleContacts = (contacts: { id: string; updateData: Parti
 			errors: response.data.errors,
 		};
 	} catch (error: any) {
-		console.error("Error en updateMultipleContacts:", error);
-
 		let errorMessage = "Error al actualizar los contactos";
 
 		if (axios.isAxiosError(error) && error.response?.data) {
@@ -283,24 +293,39 @@ export const updateMultipleContacts = (contacts: { id: string; updateData: Parti
 
 // Obtener contactos por userId
 export const getContactsByUserId =
-	(userId: string) =>
-	async (dispatch: Dispatch): Promise<void> => {
+	(userId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any): Promise<{ success: boolean; contacts?: any; message?: string }> => {
 		try {
-			dispatch({ type: SET_LOADING });
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/user/${userId}`);
+			// Obtener el estado actual del store
+			const state = getState();
+			const { isInitialized, lastFetchedUserId } = state.contacts;
+
+			// Si ya está inicializado y es el mismo usuario, no hacer la petición
+			if (isInitialized && lastFetchedUserId === userId && !forceRefresh) {
+				return { success: true, contacts: state.contacts.contacts };
+			}
+
+			dispatch({ type: SET_CONTACT_LOADING });
+			// Campos optimizados para listas y vistas resumidas
+			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
+			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/user/${userId}`, {
+				params: { fields },
+			});
 
 			// Pasamos toda la respuesta como payload, y el reducer extraerá los contactos
 			dispatch({
 				type: GET_CONTACTS_BY_USER,
-				payload: response.data,
+				payload: { ...response.data, userId },
 			});
-		} catch (error) {
-			console.error("Error al obtener contactos del usuario:", error);
 
+			return { success: true, contacts: response.data.contacts };
+		} catch (error) {
+			const errorMessage = (error as any).response?.data?.message || "Error al obtener contactos del usuario";
 			dispatch({
 				type: SET_CONTACT_ERROR,
-				payload: (error as any).response?.data?.message || "Error al obtener contactos del usuario",
+				payload: errorMessage,
 			});
+			return { success: false, message: errorMessage };
 		}
 	};
 // Obtener contactos por groupId
@@ -308,12 +333,17 @@ export const getContactsByGroupId =
 	(groupId: string, archived: boolean = false) =>
 	async (dispatch: Dispatch) => {
 		try {
-			dispatch({ type: SET_LOADING });
+			dispatch({ type: SET_CONTACT_LOADING });
 
-			// Añadir parámetro archived a la URL si es necesario
-			const url = `${process.env.REACT_APP_BASE_URL}/api/contacts/group/${groupId}${archived ? "?archived=true" : ""}`;
+			// Campos optimizados para listas y vistas resumidas
+			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
 
-			const response = await axios.get(url);
+			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/group/${groupId}`, {
+				params: {
+					archived,
+					fields,
+				},
+			});
 
 			if (response.data && response.data.success) {
 				dispatch({
@@ -329,8 +359,6 @@ export const getContactsByGroupId =
 				return { success: false, message: response.data?.message };
 			}
 		} catch (error) {
-			console.error("Error al obtener contactos del grupo:", error);
-
 			let errorMessage = "Error al obtener contactos del grupo";
 			if (axios.isAxiosError(error) && error.response?.data) {
 				errorMessage = error.response.data.message || errorMessage;
@@ -373,22 +401,35 @@ export const deleteContact = (contactId: string) => async (dispatch: Dispatch) =
 	}
 };
 
-export const filterContactsByFolder = (folderId: string) => (dispatch: Dispatch, getState: () => { contacts: ContactState }) => {
+export const filterContactsByFolder = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
 	try {
 		// Obtiene el estado actual
-		const { contacts } = getState();
+		const state = getState();
+		const { contacts, isInitialized } = state.contacts;
+		const auth = state.auth;
+		const userId = auth.user?._id;
 
-		// Verifica que contacts.contacts existe y es un array
-		if (!Array.isArray(contacts.contacts)) {
-			console.error("contacts.contacts no es un array:", contacts.contacts);
-			return;
+		// Si tenemos userId y no hay datos en cache, descargar todos primero
+		if (userId && !isInitialized) {
+			// Descargar todos los contactos del usuario
+			const result = await dispatch(getContactsByUserId(userId) as any);
+			if (!result.success) {
+				return result;
+			}
+		}
+
+		// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
+		const currentContacts = isInitialized ? contacts : getState().contacts.contacts;
+
+		// Verifica que currentContacts existe y es un array
+		if (!Array.isArray(currentContacts)) {
+			return { success: false, error: "No hay contactos disponibles" };
 		}
 
 		// Filtra los contactos que tienen el folderId en su array de folderIds
-		const filteredContacts = contacts.contacts.filter((contact) => {
+		const filteredContacts = currentContacts.filter((contact) => {
 			// Verifica que folderIds existe y es un array
 			if (!Array.isArray(contact.folderIds)) {
-				console.warn(`Contact ${contact._id} no tiene folderIds válido:`, contact.folderIds);
 				return false;
 			}
 
@@ -401,13 +442,15 @@ export const filterContactsByFolder = (folderId: string) => (dispatch: Dispatch,
 			type: FILTER_CONTACTS_BY_FOLDER,
 			payload: filteredContacts,
 		});
+
+		return { success: true, contacts: filteredContacts };
 	} catch (error) {
-		console.error("Error al filtrar contactos por folder:", error);
-		// Opcionalmente, podrías despachar una acción de error
-		/* dispatch({
-		  type: FILTER_CONTACTS_ERROR,
-		  payload: error.message,
-		}); */
+		const errorMessage = error instanceof Error ? error.message : "Error al filtrar contactos";
+		dispatch({
+			type: SET_CONTACT_ERROR,
+			payload: errorMessage,
+		});
+		return { success: false, error: errorMessage };
 	}
 };
 
@@ -432,8 +475,6 @@ export const unlinkFolderFromContact = (contactId: string, folderId: string) => 
 
 		throw new Error(response.data.message);
 	} catch (error) {
-		console.error("Error al desvincular folder:", error);
-
 		let errorMessage = "Error al desvincular el contacto";
 		if (axios.isAxiosError(error) && error.response?.data) {
 			errorMessage = error.response.data.message;
@@ -481,8 +522,6 @@ export const linkFoldersToContact = (contactId: string, folderIds: string[]) => 
 
 		throw new Error(response.data.message || "Error al vincular folders");
 	} catch (error) {
-		console.error("Error linking folders:", error);
-
 		let errorMessage = "Error al vincular las causas";
 		if (axios.isAxiosError(error) && error.response?.data) {
 			errorMessage = error.response.data.message || errorMessage;
@@ -504,7 +543,7 @@ export const linkFoldersToContact = (contactId: string, folderIds: string[]) => 
 
 export const archiveContacts = (userId: string, contactIds: string[]) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_CONTACT_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
 			resourceType: "contacts",
 			itemIds: contactIds,
@@ -534,8 +573,15 @@ export const archiveContacts = (userId: string, contactIds: string[]) => async (
 
 export const getArchivedContactsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/user/${userId}?archived=true`);
+		dispatch({ type: SET_CONTACT_LOADING });
+		// Campos optimizados para listas y vistas resumidas
+		const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/user/${userId}`, {
+			params: {
+				archived: true,
+				fields,
+			},
+		});
 
 		dispatch({
 			type: GET_ARCHIVED_CONTACTS,
@@ -544,8 +590,6 @@ export const getArchivedContactsByUserId = (userId: string) => async (dispatch: 
 
 		return { success: true };
 	} catch (error) {
-		console.error("Error al obtener contactos archivados:", error);
-
 		dispatch({
 			type: SET_CONTACT_ERROR,
 			payload: (error as any).response?.data?.message || "Error al obtener contactos archivados del usuario",
@@ -557,7 +601,7 @@ export const getArchivedContactsByUserId = (userId: string) => async (dispatch: 
 
 export const unarchiveContacts = (userId: string, contactIds: string[]) => async (dispatch: Dispatch) => {
 	try {
-		dispatch({ type: SET_LOADING });
+		dispatch({ type: SET_CONTACT_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
 			resourceType: "contacts",
 			itemIds: contactIds,
@@ -580,12 +624,22 @@ export const unarchiveContacts = (userId: string, contactIds: string[]) => async
 				};
 			} else {
 				// Ningún contacto fue desarchivado (posiblemente por límites)
+				// Importante: Despachar SET_CONTACT_ERROR para resetear isLoader
+				dispatch({
+					type: SET_CONTACT_ERROR,
+					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
+				});
 				return {
 					success: false,
 					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
 				};
 			}
 		} else {
+			// Importante: Despachar SET_CONTACT_ERROR para resetear isLoader
+			dispatch({
+				type: SET_CONTACT_ERROR,
+				payload: response.data.message || "No se pudieron desarchivar los contactos.",
+			});
 			return {
 				success: false,
 				message: response.data.message || "No se pudieron desarchivar los contactos.",
@@ -603,5 +657,10 @@ export const unarchiveContacts = (userId: string, contactIds: string[]) => async
 		return { success: false, message: errorMessage };
 	}
 };
+
+// Reset contacts state
+export const resetContactsState = () => ({
+	type: RESET_CONTACTS_STATE,
+});
 
 export default contacts;

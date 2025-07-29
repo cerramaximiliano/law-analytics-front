@@ -13,6 +13,7 @@ import useScriptRef from "hooks/useScriptRef";
 import AnimateButton from "components/@extended/AnimateButton";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import secureStorage from "services/secureStorage";
 
 // ============================|| AUTH - FORGOT PASSWORD ||============================ //
 
@@ -54,8 +55,8 @@ const AuthForgotPassword = () => {
 								// Usar la ruta correcta: /auth/code-verification
 								// Almacenar en localStorage que estamos en proceso de reseteo
 								// Esto ayudará a mantener el contexto incluso si se recarga la página
-								localStorage.setItem("reset_in_progress", "true");
-								localStorage.setItem("reset_email", values.email);
+								secureStorage.setSessionData("reset_in_progress", true);
+								secureStorage.setSessionData("reset_email", values.email);
 
 								setTimeout(() => {
 									navigate("/auth/code-verification", {
@@ -71,7 +72,6 @@ const AuthForgotPassword = () => {
 							},
 						);
 					} catch (err: any) {
-						console.error(err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setErrors({ submit: err.response.data.message });

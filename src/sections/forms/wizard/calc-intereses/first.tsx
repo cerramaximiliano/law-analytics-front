@@ -9,11 +9,11 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { UserSquare, DocumentText } from "iconsax-react";
 import DateInputField from "components/UI/DateInputField";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useFormikContext } from "formik";
 import { actualizarRangoFechasTasa } from "./formModel/tasasFechasStore";
-import moment from "moment";
 import LinkCauseSelector from "./components/LinkCauseSelector";
+import { useSelector, dispatch } from "store";
+import { getInterestRates } from "store/reducers/interestRates";
 
 interface FormField {
 	reclamante: {
@@ -52,12 +52,14 @@ export default function FirstForm(props: FirstFormProps) {
 		formField: { reclamante, reclamado, fechaInicial, fechaFinal, tasa, capital },
 	} = props;
 
-	const [tasasOpciones, setTasasOpciones] = useState<TasaOpcion[]>([]);
-	const [cargandoTasas, setCargandoTasas] = useState<boolean>(true);
-	const [errorTasas, setErrorTasas] = useState<string | null>(null);
 	const [tasaSeleccionada, setTasaSeleccionada] = useState<TasaOpcion | null>(null);
 	const [inputMethod, setInputMethod] = useState<"manual" | "causa">("manual");
 	const [selectedFolder, setSelectedFolder] = useState<any>(null);
+
+	// Obtener datos del store
+	const user = useSelector((state) => state.auth.user);
+	const userId = user?._id;
+	const { rates: tasasOpciones, isLoading: cargandoTasas, error: errorTasas, isInitialized } = useSelector((state) => state.interestRates);
 
 	const esLocale = esES.components.MuiLocalizationProvider.defaultProps.localeText;
 	const theme = useTheme();
@@ -66,7 +68,7 @@ export default function FirstForm(props: FirstFormProps) {
 	const { values, setFieldValue } = useFormikContext<any>();
 
 	// Manejador para el cambio de método de entrada
-	const handleMethodChange = (method: "manual" | "causa", folder: any, folderData?: {folderId: string, folderName: string}) => {
+	const handleMethodChange = (method: "manual" | "causa", folder: any, folderData?: { folderId: string; folderName: string }) => {
 		setInputMethod(method);
 		setSelectedFolder(folder);
 
@@ -75,7 +77,7 @@ export default function FirstForm(props: FirstFormProps) {
 			// campos especiales para indicar que se está utilizando una causa vinculada
 			setFieldValue(reclamante.name, `__CAUSA_VINCULADA__${folder._id}`);
 			setFieldValue(reclamado.name, `__CAUSA_VINCULADA__${folder._id}`);
-			
+
 			// Almacenar folderId y folderName para guardarlos en la base de datos
 			if (folderData) {
 				// Guardar estos valores en campos ocultos o estado del formulario
@@ -93,61 +95,27 @@ export default function FirstForm(props: FirstFormProps) {
 		}
 	};
 
+	// Cargar tasas del store
 	useEffect(() => {
-		const obtenerTasas = async () => {
-			try {
-				setCargandoTasas(true);
-				setErrorTasas(null);
+		if (userId && !isInitialized) {
+			dispatch(getInterestRates(userId));
+		}
+	}, [userId, isInitialized]);
 
-				const respuesta = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasas/listado`, {
-					withCredentials: true,
-				});
+	// Actualizar el mapa global de rangos de fechas cuando se cargan las tasas
+	useEffect(() => {
+		tasasOpciones.forEach((tasa) => {
+			actualizarRangoFechasTasa(tasa.value, tasa.fechaInicio, tasa.fechaUltima);
+		});
 
-				// Convertir fechas de string a objetos Date
-				const tasasConFechas = respuesta.data.map((tasa: any) => {
-					// Usar moment para manejar fechas correctamente
-					const fechaInicio = moment.utc(tasa.fechaInicio).startOf("day").toDate();
-					const fechaUltima = moment.utc(tasa.fechaUltima).startOf("day").toDate();
-
-					// Actualizar el mapa global de rangos de fechas
-					actualizarRangoFechasTasa(tasa.value, fechaInicio, fechaUltima);
-
-					return {
-						...tasa,
-						fechaInicio,
-						fechaUltima,
-					};
-				});
-
-				setTasasOpciones(tasasConFechas);
-
-				// Si ya hay una tasa seleccionada en el formulario, encontrarla y establecerla
-				if (values[tasa.name] && values[tasa.name] !== 0) {
-					const tasaActual = tasasConFechas.find((t: TasaOpcion) => t.value === values[tasa.name]);
-					if (tasaActual) {
-						setTasaSeleccionada(tasaActual);
-					}
-				}
-			} catch (error) {
-				console.error("Error al cargar las tasas:", error);
-				setErrorTasas("No se pudieron cargar las tasas. Por favor, intenta de nuevo más tarde.");
-				// Opciones de fallback
-				setTasasOpciones([
-					{
-						label: "Tasa Pasiva BCRA",
-						value: "tasaPasivaBCRA",
-						fechaInicio: new Date("2000-01-01"),
-						fechaUltima: new Date(),
-					},
-					// Otras opciones de fallback...
-				]);
-			} finally {
-				setCargandoTasas(false);
+		// Si ya hay una tasa seleccionada en el formulario, encontrarla y establecerla
+		if (values[tasa.name] && values[tasa.name] !== 0) {
+			const tasaActual = tasasOpciones.find((t: TasaOpcion) => t.value === values[tasa.name]);
+			if (tasaActual) {
+				setTasaSeleccionada(tasaActual);
 			}
-		};
-
-		obtenerTasas();
-	}, []);
+		}
+	}, [tasasOpciones, values, tasa.name]);
 
 	// Efecto para actualizar tasaSeleccionada cuando cambia la selección en el formulario
 	useEffect(() => {

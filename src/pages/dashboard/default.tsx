@@ -1,146 +1,75 @@
 // material-ui
 import { useState, useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
-import { CircularProgress, Grid, Stack, Typography, Snackbar, Alert } from "@mui/material";
+import { Grid, Stack, Typography, Snackbar, Alert, Skeleton } from "@mui/material";
 
 // project-imports
 import EcommerceDataCard from "components/cards/statistics/WidgetDataCard";
 import BarsDataWidget from "sections/widget/chart/BarsDataWidget";
+import ErrorStateCard from "components/ErrorStateCard";
 
 import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
+import FinancialWidget from "sections/widget/chart/FinancialWidget";
+import ActiveFoldersWidget from "sections/widget/chart/ActiveFoldersWidget";
 
 import ProjectOverview from "sections/widget/chart/ProjectOverview";
 import ProjectRelease from "sections/widget/chart/ProjectRelease";
 import AssignUsers from "sections/widget/chart/TaskWidget";
 
 // assets
-import { ArrowDown, ArrowUp, Book, Calendar, CloudChange, Wallet3 } from "iconsax-react";
+import { Calendar, CloudChange } from "iconsax-react";
 import WelcomeBanner from "sections/dashboard/default/WelcomeBanner";
-import { useSelector } from "store";
-
-import ApiService from "store/reducers/ApiService";
-
-interface TrendItem {
-	month: string;
-	count: number;
-}
-
-interface DashboardData {
-	financialStats: {
-		totalActiveAmount: number;
-	};
-	folderStats: {
-		active: number;
-		distribution?: {
-			nueva: number;
-			enProceso: number;
-			pendiente: number;
-		};
-	};
-	taskMetrics: {
-		pendingTasks: number;
-		completionRate: number;
-	};
-	upcomingDeadlines: number;
-	trends: {
-		[key: string]: TrendItem[];
-	};
-	lastUpdated?: string;
-}
+import { useSelector, dispatch } from "store";
+import { getUnifiedStats } from "store/reducers/unifiedStats";
+import { DashboardStats } from "types/unified-stats";
 
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 const DashboardDefault = () => {
 	const theme = useTheme();
 
-	const [loading, setLoading] = useState<boolean>(true);
-	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-	const [error, setError] = useState<string | null>(null);
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
 		open: false,
 		message: "",
 	});
-	const [retryCount, setRetryCount] = useState(0);
 
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
 
-	// Cargar datos del dashboard
+	// Obtener datos del store unificado
+	const { data: unifiedData, isLoading, error, lastUpdated, isInitialized } = useSelector((state) => state.unifiedStats);
+	const dashboardData = unifiedData?.dashboard || null;
+
+	// Cargar datos del dashboard usando el store unificado
 	useEffect(() => {
-		const fetchDashboardData = async () => {
-			// Esperar a que el usuario esté cargado
-			if (!user) {
-				console.log("Usuario no disponible, esperando...");
-				return;
-			}
+		if (userId && !isInitialized) {
+			dispatch(getUnifiedStats(userId, "dashboard,folders"));
+		}
+	}, [userId, isInitialized]);
 
-			try {
-				setLoading(true);
-				setError(null);
-
-				console.log("Cargando dashboard para usuario:", userId);
-				console.log("User object:", user);
-
-				// Usar directamente ApiService en lugar de hacer una llamada fetch adicional
-				const summaryData = await ApiService.getDashboardSummary(userId);
-				console.log("SUMMARY", summaryData);
-
-				// Verificar que se obtuvieron datos
-				if (!summaryData) {
-					throw new Error("No se recibieron datos del servidor");
-				}
-
-				// Asignar datos directamente
-				setDashboardData(summaryData);
-			} catch (err) {
-				console.error("Error loading dashboard data:", err);
-				let errorMessage = "No se pudieron cargar los datos del dashboard";
-
-				// Manejar diferentes tipos de errores
-				if (err instanceof Error) {
-					// Si es un error de autorización o sesión
-					if (err.message.includes("No autorizado") || err.message.includes("sesión")) {
-						errorMessage = "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.";
-					} else if (err.message.includes("permisos")) {
-						errorMessage = "No tienes permisos para ver esta información.";
-					} else if (err.message.includes("404") || err.message.includes("no fue encontrado")) {
-						// Posible error de endpoint - reintentar después de 1 segundo
-						if (retryCount < 3) {
-							console.log(`Reintentando conexión (intento ${retryCount + 1}/3)...`);
-							setTimeout(() => {
-								setRetryCount(retryCount + 1);
-							}, 1000);
-							return;
-						}
-						errorMessage = "No se pudo conectar con el servidor. Intente más tarde.";
-					} else {
-						errorMessage = err.message;
-					}
-				}
-
-				setError(errorMessage);
-				setSnackbar({ open: true, message: errorMessage });
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchDashboardData();
-	}, [user, userId, retryCount]);
+	// Manejar errores
+	useEffect(() => {
+		if (error) {
+			setSnackbar({ open: true, message: error });
+		}
+	}, [error]);
 
 	// Función para cerrar el snackbar
 	const handleCloseSnackbar = () => {
 		setSnackbar({ open: false, message: "" });
 	};
 
-	const calculateTrend = (dataKey: string) => {
+	const calculateTrend = (dataKey: keyof DashboardStats["trends"]) => {
 		// Verificar si dashboardData existe
-		if (!dashboardData || !dashboardData.trends || !dashboardData.trends[dataKey] || dashboardData.trends[dataKey].length < 2) {
+		const trendData = dashboardData?.trends?.[dataKey];
+
+		// Check if trendData is an array with at least 2 items
+		if (!dashboardData || !dashboardData.trends || !trendData || !Array.isArray(trendData) || trendData.length < 2) {
 			return { direction: "up", percentage: 0 };
 		}
 
-		const currentMonth = dashboardData.trends[dataKey][0].count;
-		const previousMonth = dashboardData.trends[dataKey][1].count;
+		const currentMonth = trendData[0].count;
+		const previousMonth = trendData[1].count;
 
 		if (previousMonth === 0) return { direction: "up", percentage: 100 };
 
@@ -163,49 +92,52 @@ const DashboardDefault = () => {
 
 	//const movementsTrend = dashboardData ? calculateTrend("movements") : { direction: "up", percentage: 0 };
 
-	// Mostrar indicador de carga
-	if (loading) {
-		return (
-			<Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 400 }}>
-				<CircularProgress />
-			</Grid>
-		);
-	}
+	// Función para reintentar la carga
+	const handleRetry = () => {
+		if (userId) {
+			dispatch(getUnifiedStats(userId, "dashboard", true));
+		}
+	};
 
-	// Mostrar mensaje de error
-	if (error) {
-		return (
-			<>
-				<Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 400 }}>
-					<Typography color="error" variant="h5">
-						{error}
-					</Typography>
+	// Renderizar skeleton loader para las tarjetas
+	const renderSkeletonCards = () => (
+		<>
+			{[1, 2, 3, 4].map((item) => (
+				<Grid item xs={12} sm={6} lg={3} key={item}>
+					<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1.5 }} />
 				</Grid>
-				<Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-					<Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: "100%" }}>
-						{snackbar.message}
-					</Alert>
-				</Snackbar>
-			</>
-		);
-	}
-
-	// Si no hay datos, mostrar mensaje
-	if (!dashboardData) {
-		return (
-			<Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 400 }}>
-				<Typography variant="h5">No hay datos disponibles</Typography>
+			))}
+			<Grid item xs={12} md={8} lg={9}>
+				<Stack spacing={3}>
+					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+				</Stack>
 			</Grid>
-		);
-	}
+			<Grid item xs={12} md={4} lg={3}>
+				<Stack spacing={3}>
+					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
+				</Stack>
+			</Grid>
+		</>
+	);
 
-	// Renderizar el dashboard con los datos
+	// Determinar tipo de error para el componente ErrorStateCard
+	const getErrorType = () => {
+		if (error?.includes("sesión") || error?.includes("autorizado")) return "permission";
+		if (error?.includes("conectar") || error?.includes("conexión")) return "connection";
+		if (error?.includes("404") || error?.includes("encontrado")) return "notFound";
+		return "general";
+	};
+
+	// Renderizar el dashboard - siempre mostrar el banner
 	return (
 		<>
 			<Grid container rowSpacing={4.5} columnSpacing={2.75}>
+				{/* Banner siempre visible */}
 				<Grid item xs={12}>
 					<WelcomeBanner />
-					{dashboardData.lastUpdated && (
+					{lastUpdated && !isLoading && !error && (
 						<Typography
 							variant="caption"
 							sx={{
@@ -217,7 +149,7 @@ const DashboardDefault = () => {
 							}}
 						>
 							Última actualización:{" "}
-							{new Date(dashboardData.lastUpdated).toLocaleString("es-AR", {
+							{new Date(lastUpdated).toLocaleString("es-AR", {
 								day: "2-digit",
 								month: "2-digit",
 								year: "numeric",
@@ -228,135 +160,107 @@ const DashboardDefault = () => {
 					)}
 				</Grid>
 
-				{/* row 1 - Mostrar estadísticas clave del dashboard */}
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Monto Activo"
-						count={new Intl.NumberFormat("es-AR", {
-							style: "currency",
-							currency: "ARS",
-							maximumFractionDigits: 0,
-						}).format(dashboardData.financialStats.totalActiveAmount)}
-						iconPrimary={<Wallet3 />}
-						percentage={
-							<Typography
-								color={foldersTrend.direction === "up" ? "primary" : "error.dark"}
-								sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-							>
-								{foldersTrend.direction === "up" ? (
-									<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
-								) : (
-									<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
-								)}
-								{foldersTrend.percentage}%
-							</Typography>
-						}
-					>
-						<BarsDataWidget color={theme.palette.primary.main} data={dashboardData.trends.financialAmounts?.map((item) => item.count)} />
-					</EcommerceDataCard>
-				</Grid>
+				{/* Contenido del dashboard */}
+				{isLoading && renderSkeletonCards()}
 
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Carpetas Activas"
-						count={dashboardData.folderStats.active.toString()}
-						color="warning"
-						iconPrimary={<Book color={theme.palette.warning.dark} />}
-						percentage={
-							<Typography
-								color={foldersTrend.direction === "up" ? "warning.dark" : "error.dark"}
-								sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-							>
-								{foldersTrend.direction === "up" ? (
-									<ArrowUp size={16} style={{ transform: "rotate(45deg)" }} />
-								) : (
-									<ArrowDown size={16} style={{ transform: "rotate(-45deg)" }} />
-								)}
-								{foldersTrend.percentage}%
-							</Typography>
-						}
-					>
-						<BarsDataWidget
-							color={theme.palette.warning.dark}
-							height={50}
-							data={
-								dashboardData.folderStats.distribution
-									? [
-											dashboardData.folderStats.distribution.nueva,
-											dashboardData.folderStats.distribution.enProceso,
-											dashboardData.folderStats.distribution.pendiente,
-									  ]
+				{/* Mostrar error si existe */}
+				{error && !isLoading && (
+					<Grid item xs={12}>
+						<ErrorStateCard
+							type={getErrorType()}
+							onRetry={handleRetry}
+							title={
+								error.includes("sesión")
+									? "Sesión expirada"
+									: error.includes("permisos")
+									? "Acceso restringido"
+									: error.includes("conectar")
+									? "Sin conexión al servidor"
 									: undefined
 							}
-							labels={["Nueva", "En Proceso", "Pendiente"]}
-							noDataMessage="No hay carpetas disponibles"
 						/>
-					</EcommerceDataCard>
-				</Grid>
-
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Tareas Pendientes"
-						count={dashboardData.taskMetrics.pendingTasks.toString()}
-						color="success"
-						iconPrimary={<Calendar color={theme.palette.success.darker} />}
-						percentage={
-							<Typography color="success.darker" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-								<Typography variant="caption">{dashboardData.taskMetrics.completionRate}% completado</Typography>
-							</Typography>
-						}
-					>
-						<BarsDataWidget
-							color={theme.palette.success.darker}
-							data={dashboardData.trends.tasks?.map((item) => item.count) || undefined}
-						/>
-					</EcommerceDataCard>
-				</Grid>
-
-				<Grid item xs={12} sm={6} lg={3}>
-					<EcommerceDataCard
-						title="Vencimientos Próximos"
-						count={dashboardData.upcomingDeadlines.toString()}
-						color="error"
-						iconPrimary={<CloudChange color={theme.palette.error.dark} />}
-						percentage={
-							<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-								<Typography variant="caption">En los próximos 7 días</Typography>
-							</Typography>
-						}
-					>
-						<BarsDataWidget
-							color={theme.palette.error.dark}
-							data={dashboardData.trends.deadlines?.map((item) => item.count) || undefined}
-						/>
-					</EcommerceDataCard>
-				</Grid>
-
-				{/* row 2 */}
-				<Grid item xs={12} md={8} lg={9}>
-					<Grid container spacing={3}>
-						<Grid item xs={12}>
-							<RepeatCustomerRate />
-						</Grid>
-						<Grid item xs={12}>
-							<ProjectOverview />
-						</Grid>
 					</Grid>
-				</Grid>
-				<Grid item xs={12} md={4} lg={3}>
-					<Stack spacing={3}>
-						<ProjectRelease />
-						<AssignUsers />
-					</Stack>
-				</Grid>
+				)}
 
-				{/* row 3 */}
-				{/* 			<Grid item xs={12} md={6}>
-				<Transactions />
-			</Grid>
-			<Grid item xs={12} md={6}>
-				<TotalIncome />
-			</Grid> */}
+				{/* Mostrar datos si están disponibles */}
+				{!isLoading && !error && dashboardData && (
+					<>
+						{/* row 1 - Mostrar estadísticas clave del dashboard */}
+						<Grid item xs={12} sm={6} lg={3}>
+							<FinancialWidget foldersTrend={foldersTrend} />
+						</Grid>
+
+						<Grid item xs={12} sm={6} lg={3}>
+							<ActiveFoldersWidget />
+						</Grid>
+
+						<Grid item xs={12} sm={6} lg={3}>
+							<EcommerceDataCard
+								title="Tareas Pendientes"
+								count={(dashboardData?.tasks?.pending || 0).toString()}
+								color="success"
+								iconPrimary={<Calendar color={theme.palette.success.darker} />}
+								percentage={
+									<Typography color="success.darker" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+										<Typography variant="caption">
+											{dashboardData?.tasks?.completed || 0} completadas • {dashboardData?.tasks?.overdue || 0} vencidas
+										</Typography>
+									</Typography>
+								}
+							>
+								<BarsDataWidget
+									color={theme.palette.success.darker}
+									data={dashboardData?.trends?.tasks?.map((item) => item.count) || undefined}
+								/>
+							</EcommerceDataCard>
+						</Grid>
+
+						<Grid item xs={12} sm={6} lg={3}>
+							<EcommerceDataCard
+								title="Vencimientos Próximos"
+								count={(dashboardData?.deadlines?.nextWeek || 0).toString()}
+								color="error"
+								iconPrimary={<CloudChange color={theme.palette.error.dark} />}
+								percentage={
+									<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+										<Typography variant="caption">En los próximos 7 días</Typography>
+									</Typography>
+								}
+							>
+								<BarsDataWidget
+									color={theme.palette.error.dark}
+									data={dashboardData?.trends?.deadlines?.map((item) => item.count) || undefined}
+								/>
+							</EcommerceDataCard>
+						</Grid>
+
+						{/* row 2 */}
+						<Grid item xs={12} md={8} lg={9}>
+							<Grid container spacing={3}>
+								<Grid item xs={12}>
+									<RepeatCustomerRate />
+								</Grid>
+								<Grid item xs={12}>
+									<ProjectOverview />
+								</Grid>
+							</Grid>
+						</Grid>
+						<Grid item xs={12} md={4} lg={3}>
+							<Stack spacing={3}>
+								<ProjectRelease />
+								<AssignUsers />
+							</Stack>
+						</Grid>
+
+						{/* row 3 */}
+						{/* 			<Grid item xs={12} md={6}>
+					<Transactions />
+				</Grid>
+				<Grid item xs={12} md={6}>
+					<TotalIncome />
+				</Grid> */}
+					</>
+				)}
 			</Grid>
 
 			{/* Agregar Snackbar para mostrar mensajes de error */}

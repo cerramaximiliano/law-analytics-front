@@ -14,8 +14,6 @@ import {
 	Tooltip,
 	useMediaQuery,
 	Skeleton,
-	Snackbar,
-	Alert,
 	Typography,
 	Container,
 	IconButton,
@@ -57,6 +55,7 @@ import { Add, Task, Eye, Trash, Edit2, DocumentDownload, InfoCircle } from "icon
 import { dispatch, useSelector } from "store";
 import { getTasksByUserId, deleteTask, getTaskDetail } from "store/reducers/tasks";
 import { getFoldersByUserId } from "store/reducers/folder";
+import { openSnackbar } from "store/reducers/snackbar";
 import { TaskType } from "types/task";
 import moment from "moment";
 import { CSVLink } from "react-csv";
@@ -74,6 +73,10 @@ interface Props {
 	onViewTask: (taskId: string) => void;
 	taskDetails: { [key: string]: TaskType };
 	taskDetailsLoading: { [key: string]: boolean };
+	pageIndex: number;
+	pageSize: number;
+	onPageChange: (pageIndex: number) => void;
+	onPageSizeChange: (pageSize: number) => void;
 }
 
 function ReactTable({
@@ -87,13 +90,17 @@ function ReactTable({
 	onViewTask,
 	taskDetails,
 	taskDetailsLoading,
+	pageIndex: controlledPageIndex,
+	pageSize: controlledPageSize,
+	onPageChange,
+	onPageSizeChange,
 }: Props) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
-	const sortBy = [{ id: "name", desc: false }];
+	const [sortBy, setSortByState] = useState([{ id: "name", desc: false }]);
 
 	const defaultHiddenColumns = useMemo(
 		() => (matchDownSM ? ["_id", "description", "groupId", "folderId", "assignedTo", "subtasks"] : ["_id", "groupId", "assignedTo"]),
@@ -122,11 +129,13 @@ function ReactTable({
 			data,
 			filterTypes,
 			initialState: {
-				pageIndex: 0,
-				pageSize: 10,
+				pageIndex: controlledPageIndex,
+				pageSize: controlledPageSize,
 				sortBy: sortBy,
 				hiddenColumns: defaultHiddenColumns,
 			},
+			pageCount: Math.ceil(data.length / controlledPageSize),
+			manualPagination: false,
 		},
 		useGlobalFilter,
 		useFilters,
@@ -164,6 +173,29 @@ function ReactTable({
 		setSortBy(sortBy);
 	}, [setSortBy, sortBy]);
 
+	// Sincronizar el estado de paginación con el controlador externo
+	useEffect(() => {
+		if (pageIndex !== controlledPageIndex) {
+			gotoPage(controlledPageIndex);
+		}
+	}, [controlledPageIndex, gotoPage, pageIndex]);
+
+	useEffect(() => {
+		if (pageSize !== controlledPageSize) {
+			setPageSize(controlledPageSize);
+		}
+	}, [controlledPageSize, setPageSize, pageSize]);
+
+	// Wrapper functions para manejar cambios de paginación
+	const handleGotoPage = (newPageIndex: number) => {
+		onPageChange(newPageIndex);
+	};
+
+	const handleSetPageSize = (newPageSize: number) => {
+		onPageSizeChange(newPageSize);
+		onPageChange(0); // Reset to first page when changing page size
+	};
+
 	const csvHeaders = columns
 		.filter((column: any) => column.accessor && typeof column.accessor === "string")
 		.map((column: any) => ({
@@ -188,7 +220,14 @@ function ReactTable({
 						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
 
 						{/* Segunda línea: Selector de ordenamiento */}
-						<SortingSelect sortBy={sortBy[0].id} setSortBy={setSortBy} allColumns={allColumns} />
+						<SortingSelect
+							sortBy={sortBy[0]?.id || "name"}
+							setSortBy={(newSortBy: any) => {
+								setSortByState(newSortBy);
+								setSortBy(newSortBy);
+							}}
+							allColumns={allColumns}
+						/>
 					</Stack>
 
 					{/* Lado derecho - Botones de acción */}
@@ -296,7 +335,9 @@ function ReactTable({
 																	taskData={taskDetails[row.original._id]}
 																	colSpan={visibleColumns.length}
 																	folders={folders}
-																	onError={(message) => console.error(message)}
+																	onError={(message) => {
+																		console.log(message);
+																	}}
 																/>
 															)}
 														</Box>
@@ -323,7 +364,7 @@ function ReactTable({
 						)}
 					</TableBody>
 				</Table>
-				<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageIndex={pageIndex} pageSize={pageSize} />
+				<TablePagination gotoPage={handleGotoPage} rows={rows} setPageSize={handleSetPageSize} pageIndex={pageIndex} pageSize={pageSize} />
 			</Stack>
 		</>
 	);
@@ -337,7 +378,7 @@ const Tasks = () => {
 	const userId = user?._id;
 
 	const { tasks, isLoader, taskDetails, taskDetailsLoading } = useSelector((state) => state.tasksReducer);
-	const { folders } = useSelector((state) => state.folders);
+	const { folders } = useSelector((state) => state.folder);
 	const [taskData, setTaskData] = useState<TaskType[]>([]);
 	const [editModal, setEditModal] = useState<{ open: boolean; task: TaskType | undefined }>({
 		open: false,
@@ -348,13 +389,12 @@ const Tasks = () => {
 		taskId: null,
 		taskName: "",
 	});
-	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
-		open: false,
-		message: "",
-		severity: "success",
-	});
+	// Removed local snackbar state - using global Redux snackbar instead
 	const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 	const [openGuide, setOpenGuide] = useState(false);
+	// Agregar estado para controlar la paginación
+	const [pageIndex, setPageIndex] = useState(0);
+	const [pageSize, setPageSize] = useState(10);
 
 	useEffect(() => {
 		if (userId) {
@@ -384,26 +424,32 @@ const Tasks = () => {
 			const result = await dispatch(deleteTask(deleteModal.taskId));
 
 			if (result.success) {
-				setSnackbar({
-					open: true,
-					message: "Tarea eliminada correctamente",
-					severity: "success",
-				});
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Tarea eliminada correctamente",
+						variant: "alert",
+						alert: { color: "success" },
+						close: true,
+					}),
+				);
 			} else {
-				setSnackbar({
-					open: true,
-					message: result.error || "Error al eliminar la tarea",
-					severity: "error",
-				});
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: result.error || "Error al eliminar la tarea",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
 			}
 		}
 
 		setDeleteModal({ open: false, taskId: null, taskName: "" });
 	};
 
-	const handleCloseSnackbar = () => {
-		setSnackbar({ ...snackbar, open: false });
-	};
+	// Removed handleCloseSnackbar - handled by global snackbar
 
 	const handleViewTask = useCallback(
 		async (taskId: string) => {
@@ -618,14 +664,14 @@ const Tasks = () => {
 					onViewTask={handleViewTask}
 					taskDetails={taskDetails}
 					taskDetailsLoading={taskDetailsLoading}
+					pageIndex={pageIndex}
+					pageSize={pageSize}
+					onPageChange={setPageIndex}
+					onPageSizeChange={setPageSize}
 				/>
 			</MainCard>
 
-			<Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
-				<Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
-					{snackbar.message}
-				</Alert>
-			</Snackbar>
+			{/* Snackbar now handled globally by Redux */}
 
 			<AlertTaskDelete title={deleteModal.taskName} open={deleteModal.open} handleClose={handleDeleteConfirm} />
 
@@ -634,7 +680,15 @@ const Tasks = () => {
 				handleClose={() => setEditModal({ open: false, task: undefined })}
 				task={editModal.task}
 				showSnackbar={(message: string, severity: "success" | "error") => {
-					setSnackbar({ open: true, message, severity });
+					dispatch(
+						openSnackbar({
+							open: true,
+							message,
+							variant: "alert",
+							alert: { color: severity },
+							close: true,
+						}),
+					);
 				}}
 			/>
 

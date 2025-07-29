@@ -22,8 +22,9 @@ import {
 // project imports
 import { User } from "types/user";
 import { DefaultRootStateProps } from "types/root";
-import userApi from "utils/userApi";
+import axios from "axios";
 import { SET_ERROR, UPDATE_USER } from "store/reducers/users";
+import { openSnackbar } from "store/reducers/snackbar";
 
 // third party
 import * as Yup from "yup";
@@ -74,31 +75,82 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, open, onClose }) =>
 	const handleSubmit = async (values: any, { setSubmitting }: any) => {
 		try {
 			setError(null);
+
+			// Usar _id o id según lo que esté disponible
+			const userId = user._id || user.id;
+
+			if (!userId) {
+				throw new Error("No se pudo obtener el ID del usuario");
+			}
+
 			const payload = {
 				...values,
-				id: user.id,
+				id: userId,
 			};
 
 			// Realizar la petición a la API
-			const response = await userApi.put(`/api/users/${user.id}`, payload);
-			console.log("Usuario actualizado:", response.data);
+			const response = await axios.put(`/api/users/${userId}`, payload);
 
-			// Actualizar el estado global
-			const updatedUser = response.data.user || response.data;
-			dispatch({
-				type: UPDATE_USER,
-				payload: updatedUser,
-			});
+			// Verificar la respuesta del servidor
+			if (response.data.success) {
+				// Actualizar el estado global
+				const updatedUser = response.data.user || response.data;
+				dispatch({
+					type: UPDATE_USER,
+					payload: updatedUser,
+				});
 
-			// Cerrar el modal
-			onClose();
+				// Mostrar notificación de éxito
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.data.message || "Usuario actualizado correctamente",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: true,
+					}),
+				);
+
+				// Cerrar el modal
+				onClose();
+			} else {
+				// Mostrar notificación de error
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.data.message || "Error al actualizar usuario",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					}),
+				);
+				setError(response.data.message || "Error al actualizar usuario");
+			}
 		} catch (err: any) {
-			console.error("Error al actualizar usuario:", err);
-			setError(err.message || "Error al actualizar el usuario");
+			const errorMessage = err.response?.data?.message || err.message || "Error al actualizar el usuario";
+			setError(errorMessage);
+
 			dispatch({
 				type: SET_ERROR,
-				payload: err.message || "Error al actualizar el usuario",
+				payload: errorMessage,
 			});
+
+			// Mostrar notificación de error
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: errorMessage,
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: true,
+				}),
+			);
 		} finally {
 			setSubmitting(false);
 		}

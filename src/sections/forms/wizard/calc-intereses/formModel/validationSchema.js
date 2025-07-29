@@ -43,12 +43,6 @@ export const crearEsquemaValidacion = () => {
 					const fechaInicioStr = moment(fechaInicioAjustada).add(1, "days").format("YYYY-MM-DD");
 					const fechaUltimaStr = moment(fechaUltimaAjustada).add(1, "days").format("YYYY-MM-DD");
 
-					console.log("Comparando fechas (inicial):", {
-						ingresada: fechaIngresoStr,
-						rangoInicio: fechaInicioStr,
-						rangoFin: fechaUltimaStr,
-					});
-
 					if (fechaIngresoStr < fechaInicioStr) {
 						return this.createError({
 							message: `La fecha inicial debe ser posterior a ${moment(fechaInicioAjustada).add(1, "days").format("DD/MM/YYYY")}`,
@@ -90,12 +84,6 @@ export const crearEsquemaValidacion = () => {
 
 					const fechaInicioStr = moment(fechaInicioAjustada).add(1, "days").format("YYYY-MM-DD");
 					const fechaUltimaStr = moment(fechaUltimaAjustada).add(1, "days").format("YYYY-MM-DD");
-
-					console.log("Comparando fechas (final):", {
-						ingresada: fechaFinalStr,
-						rangoInicio: fechaInicioStr,
-						rangoFin: fechaUltimaStr,
-					});
 
 					if (fechaFinalStr < fechaInicioStr) {
 						return this.createError({

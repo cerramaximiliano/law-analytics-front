@@ -7,6 +7,7 @@ const SET_LOADING = "tasks/SET_LOADING";
 const SET_ERROR = "tasks/SET_ERROR";
 const ADD_TASK = "tasks/ADD_TASK";
 const SET_TASKS = "tasks/SET_TASKS";
+const SET_SELECTED_TASKS = "tasks/SET_SELECTED_TASKS";
 const UPDATE_TASK = "tasks/UPDATE_TASK";
 const DELETE_TASK = "tasks/DELETE_TASK";
 const ADD_COMMENT = "tasks/ADD_COMMENT";
@@ -18,12 +19,15 @@ const SET_TASK_DETAIL_LOADING = "tasks/SET_TASK_DETAIL_LOADING";
 
 const initialState: TaskState = {
 	tasks: [],
+	selectedTasks: [], // Tareas filtradas
 	upcomingTasks: [], // Nueva propiedad para tareas próximas
 	task: null, // Single task for detail view
 	taskDetails: {}, // Task details by ID
 	taskDetailsLoading: {}, // Loading state for each task detail
 	isLoader: false,
 	error: null,
+	isInitialized: false,
+	lastFetchedUserId: undefined,
 };
 
 const tasksReducer = (state = initialState, action: any) => {
@@ -42,6 +46,14 @@ const tasksReducer = (state = initialState, action: any) => {
 			return {
 				...state,
 				tasks: action.payload,
+				isLoader: false,
+				isInitialized: true,
+				lastFetchedUserId: action.userId || state.lastFetchedUserId,
+			};
+		case SET_SELECTED_TASKS:
+			return {
+				...state,
+				selectedTasks: action.payload,
 				isLoader: false,
 			};
 		case UPDATE_TASK:
@@ -106,14 +118,13 @@ export const addTask = (data: Omit<TaskType, "_id">) => async (dispatch: Dispatc
 	try {
 		dispatch({ type: SET_LOADING });
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks`, data);
-		console.log(response);
+
 		dispatch({
 			type: ADD_TASK,
 			payload: response.data,
 		});
 		return { success: true, task: response.data };
 	} catch (error: unknown) {
-		console.log(error);
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al crear la tarea" : "Error al crear la tarea";
 		dispatch({ type: SET_ERROR, payload: errorMessage });
@@ -121,22 +132,39 @@ export const addTask = (data: Omit<TaskType, "_id">) => async (dispatch: Dispatc
 	}
 };
 
-export const getTasksByUserId = (userId: string) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/user/${userId}`);
-		dispatch({
-			type: SET_TASKS,
-			payload: response.data,
-		});
-		return { success: true };
-	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
+export const getTasksByUserId =
+	(userId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			const state = getState();
+			const { isInitialized, lastFetchedUserId } = state.tasksReducer;
+
+			// Si ya tenemos los datos en cache para este usuario y no forzamos actualización, no hacer la petición
+			if (isInitialized && lastFetchedUserId === userId && !forceRefresh) {
+				return { success: true, tasks: state.tasksReducer.tasks };
+			}
+
+			dispatch({ type: SET_LOADING });
+			// Campos optimizados para listas
+			const fields = "_id,name,description,status,priority,dueDate,folderId,folderName,tags,attachments,createdAt,updatedAt,completedAt";
+			const url = `${process.env.REACT_APP_BASE_URL}/api/tasks/user/${userId}`;
+			const response = await axios.get(url, {
+				params: { fields },
+			});
+
+			dispatch({
+				type: SET_TASKS,
+				payload: response.data,
+				userId: userId,
+			});
+			return { success: true, tasks: response.data };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+	};
 
 export const getTasksByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
@@ -155,15 +183,32 @@ export const getTasksByGroupId = (groupId: string) => async (dispatch: Dispatch)
 	}
 };
 
-export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
+export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
 	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/folder/${folderId}`);
+		const state = getState();
+		const { tasks, isInitialized } = state.tasksReducer;
+		const auth = state.auth;
+		const userId = auth.user?._id;
+
+		// Si tenemos userId y no hay datos en cache, descargar todos primero
+		if (userId && !isInitialized) {
+			// Descargar todas las tareas del usuario
+			const result = await dispatch(getTasksByUserId(userId) as any);
+			if (!result.success) {
+				return result;
+			}
+		}
+
+		// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
+		const currentTasks = isInitialized ? tasks : getState().tasksReducer.tasks;
+		const filteredTasks = currentTasks.filter((task: TaskType) => task.folderId === folderId);
+
 		dispatch({
-			type: SET_TASKS,
-			payload: response.data,
+			type: SET_SELECTED_TASKS,
+			payload: filteredTasks,
 		});
-		return { success: true };
+
+		return { success: true, tasks: filteredTasks };
 	} catch (error: unknown) {
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";

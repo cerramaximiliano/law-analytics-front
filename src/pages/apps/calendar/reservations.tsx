@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useRequestQueueRefresh } from "hooks/useRequestQueueRefresh";
 import {
 	Box,
 	Button,
@@ -154,7 +155,6 @@ const AvailabilityCard: React.FC<{
 					.join("; ") + additionalSlots
 			);
 		} catch (error) {
-			console.error("Error formatting time slots:", error);
 			return "Formato de horario no válido";
 		}
 	};
@@ -659,7 +659,7 @@ const BookingsManagement = () => {
 				setLimitModalOpen(true);
 			}
 		}
-	}, [subscription, hasFeatureLocal, hasModalBeenClosed]);
+	}, [subscription, hasModalBeenClosed]);
 
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {
@@ -670,53 +670,58 @@ const BookingsManagement = () => {
 		setLimitModalOpen(false);
 	};
 
-	// Cargar disponibilidad y reservas
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				// Si estamos viendo una disponibilidad específica
-				if (isSpecificAvailability) {
-					// Cargar disponibilidad
-					const availabilityResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`);
+	// Función para cargar datos - convertida a callback para reutilizar
+	const fetchData = useCallback(async () => {
+		try {
+			setLoading(true);
+			// Si estamos viendo una disponibilidad específica
+			if (isSpecificAvailability) {
+				// Cargar disponibilidad
+				const availabilityResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`);
 
-					setAvailability(availabilityResponse.data);
+				setAvailability(availabilityResponse.data);
 
-					// Cargar reservas para esta disponibilidad específica
-					const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}/bookings`);
+				// Cargar reservas para esta disponibilidad específica
+				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}/bookings`);
 
-					setBookings(bookingsResponse.data);
-				} else {
-					// Cargar todas las reservas del usuario
-					const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings`);
+				setBookings(bookingsResponse.data);
+			} else {
+				// Cargar todas las reservas del usuario
+				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings`);
 
-					setBookings(bookingsResponse.data);
+				setBookings(bookingsResponse.data);
 
-					// Cargar todas las disponibilidades cuando estamos en la vista general
-					const availabilitiesResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
+				// Cargar todas las disponibilidades cuando estamos en la vista general
+				const availabilitiesResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
 
-					setAvailabilities(availabilitiesResponse.data);
-				}
-			} catch (error) {
-				console.error(error);
-
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: "Error al cargar datos",
-						variant: "alert",
-						alert: {
-							color: "error",
-						},
-						close: false,
-					}),
-				);
-			} finally {
-				setLoading(false);
+				setAvailabilities(availabilitiesResponse.data);
 			}
-		};
-
-		fetchData();
+		} catch (error) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al cargar datos",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: false,
+				}),
+			);
+		} finally {
+			setLoading(false);
+		}
 	}, [availabilityId, isSpecificAvailability]);
+
+	// Cargar datos al montar o cuando cambien las dependencias
+	useEffect(() => {
+		fetchData();
+	}, [fetchData]);
+
+	// Refrescar datos cuando se procesen las peticiones encoladas
+	useRequestQueueRefresh(() => {
+		fetchData();
+	}, [fetchData]);
 
 	// Filtrar reservas
 	const filteredBookings = bookings
@@ -811,8 +816,6 @@ const BookingsManagement = () => {
 				}),
 			);
 		} catch (error) {
-			console.error(error);
-
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -862,8 +865,6 @@ const BookingsManagement = () => {
 					}),
 				);
 			} catch (error) {
-				console.error(error);
-
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -914,8 +915,6 @@ const BookingsManagement = () => {
 					}),
 				);
 			} catch (error) {
-				console.error(error);
-
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -963,8 +962,6 @@ const BookingsManagement = () => {
 				}),
 			);
 		} catch (error) {
-			console.error(error);
-
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -1011,8 +1008,6 @@ const BookingsManagement = () => {
 				}),
 			);
 		} catch (error) {
-			console.error(error);
-
 			if (axios.isAxiosError(error)) {
 				// Intentamos obtener el mensaje de error del servidor, si existe
 				const serverErrorMsg = error.response?.data?.error || error.response?.data?.message;

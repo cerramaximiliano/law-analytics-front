@@ -9,7 +9,6 @@ const templates = JSON.parse(fs.readFileSync(templatesPath, "utf8"));
 const templateIndex = templates.findIndex((t) => t.name === "promo_12_judicial_standard_subscription");
 
 if (templateIndex === -1) {
-	console.error("Template not found");
 	process.exit(1);
 }
 
@@ -91,12 +90,3 @@ Cancelar suscripción: \${process.env.BASE_URL}/unsubscribe?email={{email}}&tag=
 
 // Write back to file
 fs.writeFileSync(templatesPath, JSON.stringify(templates, null, 2), "utf8");
-
-console.log("Template promo_12_judicial_standard_subscription has been successfully updated!");
-console.log("Fixed:");
-console.log("- Added #222E43 background to judicial logo section");
-console.log("- Removed icon next to the logo");
-console.log("- Fixed circular numbering (proper width/height)");
-console.log('- Removed "Todas las funciones premium"');
-console.log("- Fixed check mark alignment (now beside text, not above)");
-console.log("- Fixed card cut-off issues in the cards section");

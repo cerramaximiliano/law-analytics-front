@@ -26,12 +26,15 @@ import {
 	Radio,
 	Tooltip,
 	Autocomplete,
+	Switch,
+	Skeleton,
 } from "@mui/material";
 import { AddCircle, CloseCircle, Information, Trash } from "iconsax-react";
 import { SegmentInput, FilterOperator, SegmentFilter, ConditionOperator, SegmentType, Segment } from "types/segment";
 import { SegmentService } from "store/reducers/segments";
 import { MarketingContactService } from "store/reducers/marketing-contacts";
 import { MarketingContact } from "types/marketing-contact";
+import { useSnackbar } from "notistack";
 
 interface SegmentFormModalProps {
 	open: boolean;
@@ -52,10 +55,12 @@ const FIELD_OPTIONS = [
 	{ value: "subscriptionType", label: "Suscripción" },
 	{ value: "isAppUser", label: "Usuario" },
 	{ value: "isVerified", label: "Verificado" },
+	{ value: "isEmailVerified", label: "Email Válido" },
 	{ value: "totalCampaigns", label: "Número de campañas" },
 	{ value: "openRate", label: "Tasa de apertura" },
 	{ value: "clickRate", label: "Tasa de clics" },
 	{ value: "lastActivity", label: "Última actividad" },
+	{ value: "createdAt", label: "Creado (fecha)" },
 ];
 
 // Opciones de operadores para condiciones
@@ -115,10 +120,12 @@ const DEFAULT_OPERATOR_BY_FIELD: { [key: string]: string } = {
 	subscriptionType: "equals",
 	isAppUser: "equals",
 	isVerified: "equals",
+	isEmailVerified: "equals",
 	totalCampaigns: "greater_than",
 	openRate: "greater_than",
 	clickRate: "greater_than",
 	lastActivity: "greater_than",
+	createdAt: "greater_than",
 };
 
 // Operadores que no necesitan valor
@@ -149,8 +156,10 @@ const BOOLEAN_OPTIONS = [
 ];
 
 const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSave, segment }) => {
+	const { enqueueSnackbar } = useSnackbar();
+
 	// Estado para carga y errores
-	const [loading, setLoading] = useState<boolean>(false);
+	const [loading, setLoading] = useState<boolean>(true); // Iniciar en true para mostrar carga inicial
 	const [saving, setSaving] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 	const [formError, setFormError] = useState<Record<string, string>>({});
@@ -165,7 +174,6 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Consola de depuración (eliminar en producción)
 	useEffect(() => {
 		if (availableTags.length > 0) {
-			console.log("Tags loaded:", availableTags);
 		}
 	}, [availableTags]);
 
@@ -174,6 +182,11 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	const [description, setDescription] = useState<string>("");
 	const [type, setType] = useState<SegmentType>("dynamic");
 	const [conditionOperator, setConditionOperator] = useState<ConditionOperator>("and");
+
+	// Estado para autoUpdate
+	const [autoUpdateEnabled, setAutoUpdateEnabled] = useState<boolean>(true);
+	const [autoUpdateFrequencyValue, setAutoUpdateFrequencyValue] = useState<number>(1);
+	const [autoUpdateFrequencyUnit, setAutoUpdateFrequencyUnit] = useState<"minutes" | "hours" | "days">("days");
 
 	// Para segmentos dinámicos
 	const [filters, setFilters] = useState<SegmentFilter[]>([
@@ -193,28 +206,52 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Reinicar formulario y cargar datos si es modo edición
 	useEffect(() => {
 		if (open) {
-			resetForm();
-			fetchAvailableContacts();
-			fetchAvailableTags();
+			const loadData = async () => {
+				setLoading(true);
+				setError(null);
 
-			// Si es modo edición, cargar los datos del segmento
-			if (isEditMode && segment) {
-				setName(segment.name);
-				setDescription(segment.description || "");
-				setType(segment.type);
+				try {
+					// Resetear formulario primero
+					resetForm();
 
-				if (segment.type === "dynamic" && segment.conditions) {
-					setConditionOperator(segment.conditions.operator);
-					setFilters(segment.conditions.filters || []);
-				} else if (segment.type === "static" && segment.contacts) {
-					setSelectedContactIds(segment.contacts);
+					// Cargar datos en paralelo
+					await Promise.all([fetchAvailableContacts(), fetchAvailableTags()]);
+
+					// Si es modo edición, cargar los datos del segmento
+					if (isEditMode && segment) {
+						setName(segment.name);
+						setDescription(segment.description || "");
+						setType(segment.type);
+
+						// Cargar configuración de autoUpdate si existe
+						if (segment.autoUpdate) {
+							setAutoUpdateEnabled(segment.autoUpdate.enabled);
+							if (segment.autoUpdate.frequency) {
+								setAutoUpdateFrequencyValue(segment.autoUpdate.frequency.value);
+								setAutoUpdateFrequencyUnit(segment.autoUpdate.frequency.unit as "minutes" | "hours" | "days");
+							}
+						}
+
+						if (segment.type === "dynamic" && segment.conditions) {
+							setConditionOperator(segment.conditions.operator);
+							setFilters(segment.conditions.filters || []);
+						} else if (segment.type === "static" && segment.contacts) {
+							setSelectedContactIds(segment.contacts);
+						}
+
+						// Establecer conteo estimado para segmentos dinámicos
+						if (segment.estimatedCount !== undefined) {
+							setEstimatedCount(segment.estimatedCount);
+						}
+					}
+				} catch (err: any) {
+					setError(err?.message || "Error al cargar los datos");
+				} finally {
+					setLoading(false);
 				}
+			};
 
-				// Establecer conteo estimado para segmentos dinámicos
-				if (segment.estimatedCount !== undefined) {
-					setEstimatedCount(segment.estimatedCount);
-				}
-			}
+			loadData();
 		}
 	}, [open, isEditMode, segment]);
 
@@ -228,14 +265,10 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 	// Obtener contactos disponibles para seleccionar en modo estático
 	const fetchAvailableContacts = async () => {
 		try {
-			setLoading(true);
 			const response = await MarketingContactService.getContacts(1, 100);
 			setAvailableContacts(response.data);
 		} catch (err: any) {
-			console.error("Error fetching contacts:", err);
-			setError(err?.message || "No se pudieron cargar los contactos");
-		} finally {
-			setLoading(false);
+			throw new Error(err?.message || "No se pudieron cargar los contactos");
 		}
 	};
 
@@ -246,8 +279,8 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			const tags = await MarketingContactService.getTags();
 			setAvailableTags(tags);
 		} catch (err: any) {
-			console.error("Error fetching tags:", err);
 			// No mostrar error al usuario para no interrumpir el flujo principal
+			console.warn("No se pudieron cargar las etiquetas:", err);
 		} finally {
 			setLoadingTags(false);
 		}
@@ -259,6 +292,9 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		setDescription("");
 		setType("dynamic");
 		setConditionOperator("and");
+		setAutoUpdateEnabled(true);
+		setAutoUpdateFrequencyValue(30);
+		setAutoUpdateFrequencyUnit("minutes");
 		setFilters([{ field: "email", operator: "contains", value: "" }]);
 		setContacts([]);
 		setSelectedContactIds([]);
@@ -319,7 +355,6 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			const response = await SegmentService.calculateSegmentCount(conditions);
 			setEstimatedCount(response.count);
 		} catch (err) {
-			console.error("Error calculating count:", err);
 			setEstimatedCount(0);
 		} finally {
 			setIsCalculating(false);
@@ -435,6 +470,15 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				isActive: true,
 			};
 
+			// Agregar configuración de autoUpdate
+			segmentData.autoUpdate = {
+				enabled: autoUpdateEnabled,
+				frequency: {
+					value: autoUpdateFrequencyValue,
+					unit: autoUpdateFrequencyUnit,
+				},
+			};
+
 			// Solo enviar el tipo en modo creación, no se puede cambiar en edición
 			if (!isEditMode) {
 				segmentData.type = type;
@@ -458,20 +502,47 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				segmentData.contacts = selectedContactIds;
 			}
 
+			// Log para depuración
+			console.log(`[SegmentFormModal] ${isEditMode ? "Actualizando" : "Creando"} segmento:`, {
+				segmentId: segment?._id,
+				segmentData,
+			});
+
 			if (isEditMode && segment?._id) {
 				// Modo edición - actualizar segmento existente
 				await SegmentService.updateSegment(segment._id, segmentData);
+				enqueueSnackbar("Segmento actualizado exitosamente", { variant: "success" });
 			} else {
 				// Modo creación - crear nuevo segmento
 				await SegmentService.createSegment(segmentData);
+				enqueueSnackbar("Segmento creado exitosamente", { variant: "success" });
 			}
 
 			// Éxito - cerrar modal y actualizar lista
 			onSave();
 			onClose();
 		} catch (err: any) {
-			console.error(isEditMode ? "Error updating segment:" : "Error creating segment:", err);
-			setError(err?.message || (isEditMode ? "No se pudo actualizar el segmento" : "No se pudo crear el segmento"));
+			// Log detallado del error
+			console.error(`[SegmentFormModal] Error al ${isEditMode ? "actualizar" : "crear"} segmento:`, {
+				error: err,
+				response: err.response,
+				data: err.response?.data,
+				status: err.response?.status,
+			});
+
+			// Obtener mensaje de error más específico
+			let errorMessage = isEditMode ? "No se pudo actualizar el segmento" : "No se pudo crear el segmento";
+
+			if (err.response?.data?.error) {
+				errorMessage = err.response.data.error;
+			} else if (err.response?.data?.message) {
+				errorMessage = err.response.data.message;
+			} else if (err.message) {
+				errorMessage = err.message;
+			}
+
+			setError(errorMessage);
+			enqueueSnackbar(errorMessage, { variant: "error" });
 		} finally {
 			setSaving(false);
 		}
@@ -482,9 +553,9 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		if (fieldName === "status") return OPERATOR_OPTIONS.status;
 		if (fieldName === "subscriptionType") return OPERATOR_OPTIONS.status; // Usar los mismos operadores que status
 		if (fieldName === "tags") return OPERATOR_OPTIONS.tags;
-		if (["isAppUser", "isVerified"].includes(fieldName)) return OPERATOR_OPTIONS.boolean;
+		if (["isAppUser", "isVerified", "isEmailVerified"].includes(fieldName)) return OPERATOR_OPTIONS.boolean;
 		if (["totalCampaigns", "openRate", "clickRate"].includes(fieldName)) return OPERATOR_OPTIONS.number;
-		if (fieldName === "lastActivity") return OPERATOR_OPTIONS.date;
+		if (["lastActivity", "createdAt"].includes(fieldName)) return OPERATOR_OPTIONS.date;
 		return OPERATOR_OPTIONS.default;
 	};
 
@@ -573,9 +644,16 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			);
 		}
 
-		// Para campos booleanos (Usuario, Verificado)
-		if (filter.field === "isAppUser" || filter.field === "isVerified") {
-			const fieldLabel = filter.field === "isAppUser" ? "Usuario" : "Verificado";
+		// Para campos booleanos (Usuario, Verificado, Email Válido)
+		if (filter.field === "isAppUser" || filter.field === "isVerified" || filter.field === "isEmailVerified") {
+			let fieldLabel = "";
+			if (filter.field === "isAppUser") {
+				fieldLabel = "Usuario";
+			} else if (filter.field === "isVerified") {
+				fieldLabel = "Verificado";
+			} else if (filter.field === "isEmailVerified") {
+				fieldLabel = "Email Válido";
+			}
 			return (
 				<FormControl fullWidth size="small">
 					<InputLabel>{fieldLabel}</InputLabel>
@@ -642,7 +720,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 		}
 
 		// Para fechas
-		if (filter.field === "lastActivity") {
+		if (["lastActivity", "createdAt"].includes(filter.field)) {
 			return (
 				<TextField
 					fullWidth
@@ -679,6 +757,10 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			sx={{
 				"& .MuiDialog-paper": {
 					borderRadius: 2,
+					height: "85vh",
+					maxHeight: "85vh",
+					display: "flex",
+					flexDirection: "column",
 				},
 			}}
 		>
@@ -695,15 +777,62 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				</Grid>
 			</DialogTitle>
 
-			<DialogContent dividers>
+			<DialogContent
+				dividers
+				sx={{
+					flex: 1,
+					overflow: "auto",
+					display: "flex",
+					flexDirection: "column",
+				}}
+			>
 				{loading ? (
-					<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 3 }}>
-						<CircularProgress />
-					</Box>
+					<Grid container spacing={2}>
+						{/* Skeleton for basic info */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={150} height={28} sx={{ mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+						</Grid>
+
+						<Grid item xs={12}>
+							<Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} />
+						</Grid>
+
+						<Grid item xs={12}>
+							<Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+						</Grid>
+
+						{/* Skeleton for segment type */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={150} height={28} sx={{ mt: 1, mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+							<Box sx={{ display: "flex", gap: 3 }}>
+								<Skeleton variant="rectangular" width={120} height={40} sx={{ borderRadius: 1 }} />
+								<Skeleton variant="rectangular" width={120} height={40} sx={{ borderRadius: 1 }} />
+							</Box>
+						</Grid>
+
+						{/* Skeleton for criteria section */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={200} height={28} sx={{ mt: 1, mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+							<Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1, mb: 2 }} />
+							<Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+						</Grid>
+
+						{/* Skeleton for auto-update section */}
+						<Grid item xs={12}>
+							<Skeleton variant="text" width={250} height={28} sx={{ mt: 3, mb: 1 }} />
+							<Divider sx={{ mb: 2 }} />
+							<Skeleton variant="rectangular" width={200} height={40} sx={{ borderRadius: 1 }} />
+						</Grid>
+					</Grid>
 				) : error ? (
-					<Alert severity="error" sx={{ my: 2 }}>
-						{error}
-					</Alert>
+					<Box sx={{ minHeight: 450, display: "flex", alignItems: "center", justifyContent: "center" }}>
+						<Alert severity="error" sx={{ my: 2 }}>
+							{error}
+						</Alert>
+					</Box>
 				) : (
 					<Grid container spacing={2}>
 						{/* Información básica */}
@@ -805,6 +934,15 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 										</Tooltip>
 									</Box>
 									<Divider sx={{ mb: 2 }} />
+
+									{/* Nota informativa sobre segmentos dinámicos */}
+									<Alert severity="info" sx={{ mb: 2 }}>
+										<Typography variant="body2">
+											<strong>Nota sobre segmentos dinámicos:</strong> Los segmentos se actualizan automáticamente al ser utilizados (ej. al
+											enviar campañas), pero el conteo estimado que se muestra aquí solo se actualiza al crear o modificar el segmento. El
+											número real de contactos puede variar.
+										</Typography>
+									</Alert>
 
 									<Box sx={{ mb: 2 }}>
 										<FormControl component="fieldset">
@@ -1005,6 +1143,91 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 								</Grid>
 							</>
 						)}
+
+						{/* Configuración de Actualización Automática */}
+						<Grid item xs={12}>
+							<Box sx={{ display: "flex", alignItems: "center", mb: 2, mt: 3 }}>
+								<Typography variant="subtitle1" fontWeight="bold">
+									Configuración de Actualización Automática
+								</Typography>
+								<Tooltip title="Configure cómo y cuándo se actualiza automáticamente este segmento">
+									<IconButton size="small">
+										<Information variant="Bold" size={16} />
+									</IconButton>
+								</Tooltip>
+							</Box>
+							<Divider sx={{ mb: 2 }} />
+
+							<Grid container spacing={2}>
+								<Grid item xs={12}>
+									<FormControlLabel
+										control={
+											<Switch checked={autoUpdateEnabled} onChange={(e) => setAutoUpdateEnabled(e.target.checked)} color="primary" />
+										}
+										label="Actualización automática habilitada"
+										disabled={saving}
+									/>
+								</Grid>
+
+								{autoUpdateEnabled && (
+									<>
+										<Grid item xs={12} sm={6}>
+											<FormControl fullWidth>
+												<InputLabel>Unidad</InputLabel>
+												<Select
+													value={autoUpdateFrequencyUnit}
+													label="Unidad"
+													onChange={(e) => {
+														const newUnit = e.target.value as "minutes" | "hours" | "days";
+														setAutoUpdateFrequencyUnit(newUnit);
+
+														// Ajustar el valor según la unidad seleccionada
+														if (newUnit === "minutes") {
+															setAutoUpdateFrequencyValue(30); // Por defecto 30 minutos
+														} else {
+															setAutoUpdateFrequencyValue(1); // Por defecto 1 hora o 1 día
+														}
+													}}
+													disabled={saving}
+												>
+													<MenuItem value="minutes">Minutos</MenuItem>
+													<MenuItem value="hours">Horas</MenuItem>
+													<MenuItem value="days">Días</MenuItem>
+												</Select>
+											</FormControl>
+										</Grid>
+										<Grid item xs={12} sm={6}>
+											{autoUpdateFrequencyUnit === "minutes" ? (
+												<FormControl fullWidth>
+													<InputLabel>Frecuencia</InputLabel>
+													<Select
+														value={autoUpdateFrequencyValue}
+														label="Frecuencia"
+														onChange={(e) => setAutoUpdateFrequencyValue(Number(e.target.value))}
+														disabled={saving}
+													>
+														<MenuItem value={15}>Cada 15 minutos</MenuItem>
+														<MenuItem value={30}>Cada 30 minutos</MenuItem>
+														<MenuItem value={45}>Cada 45 minutos</MenuItem>
+													</Select>
+												</FormControl>
+											) : (
+												<TextField
+													fullWidth
+													type="number"
+													label="Frecuencia"
+													value={autoUpdateFrequencyValue}
+													onChange={(e) => setAutoUpdateFrequencyValue(Number(e.target.value))}
+													inputProps={{ min: 1 }}
+													disabled={saving}
+													helperText={`Cada ${autoUpdateFrequencyValue} ${autoUpdateFrequencyUnit === "hours" ? "hora(s)" : "día(s)"}`}
+												/>
+											)}
+										</Grid>
+									</>
+								)}
+							</Grid>
+						</Grid>
 					</Grid>
 				)}
 			</DialogContent>

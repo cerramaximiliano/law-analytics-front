@@ -13,6 +13,8 @@ const UPDATE_CALCULATOR = "calculators/UPDATE_CALCULATOR";
 const DELETE_CALCULATOR = "calculators/DELETE_CALCULATOR";
 const ARCHIVE_CALCULATORS = "calculators/ARCHIVE_CALCULATORS";
 const UNARCHIVE_CALCULATORS = "calculators/UNARCHIVE_CALCULATORS";
+const RESET_CALCULATORS_STATE = "calculators/RESET_CALCULATORS_STATE";
+const CLEAR_SELECTED_CALCULATORS = "calculators/CLEAR_SELECTED_CALCULATORS";
 
 const initialState: CalculatorState = {
 	calculators: [],
@@ -20,6 +22,8 @@ const initialState: CalculatorState = {
 	archivedCalculators: [],
 	isLoader: false,
 	error: null,
+	isInitialized: false,
+	lastFetchedUserId: undefined,
 };
 
 const calculatorsReducer = (state = initialState, action: any) => {
@@ -39,6 +43,11 @@ const calculatorsReducer = (state = initialState, action: any) => {
 				...state,
 				calculators: action.payload,
 				isLoader: false,
+				// Solo actualizar isInitialized y lastFetchedUserId si se proporciona userId
+				...(action.userId && {
+					isInitialized: true,
+					lastFetchedUserId: action.userId,
+				}),
 			};
 		case SET_SELECTED_CALCULATORS:
 			return {
@@ -96,6 +105,13 @@ const calculatorsReducer = (state = initialState, action: any) => {
 				archivedCalculators: state.archivedCalculators.filter((calc) => !calculatorIdsToUnarchive.includes(calc._id)),
 				isLoader: false,
 			};
+		case RESET_CALCULATORS_STATE:
+			return initialState;
+		case CLEAR_SELECTED_CALCULATORS:
+			return {
+				...state,
+				selectedCalculators: [],
+			};
 		default:
 			return state;
 	}
@@ -119,27 +135,45 @@ export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "e
 	}
 };
 
-export const getCalculatorsByUserId = (userId: string) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`);
-		dispatch({
-			type: SET_CALCULATORS,
-			payload: response.data.calculators,
-		});
-		return { success: true };
-	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
+export const getCalculatorsByUserId =
+	(userId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			const state = getState();
+			const { isInitialized, lastFetchedUserId } = state.calculator;
+			// Si ya tenemos los datos en cache para este usuario y no forzamos actualización, no hacer la petición
+			if (isInitialized && lastFetchedUserId === userId && !forceRefresh) {
+				return { success: true, calculators: state.calculator.calculators };
+			}
+
+			dispatch({ type: SET_LOADING });
+			// Campos optimizados para listas
+			const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+				params: { fields },
+			});
+			dispatch({
+				type: SET_CALCULATORS,
+				payload: response.data.calculators,
+				userId: userId,
+			});
+			return { success: true, calculators: response.data.calculators };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+	};
 
 export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/group/${groupId}`);
+		// Campos optimizados para listas
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/group/${groupId}`, {
+			params: { fields },
+		});
 		dispatch({
 			type: SET_CALCULATORS,
 			payload: response.data.calculators,
@@ -153,15 +187,32 @@ export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dis
 	}
 };
 
-export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: Dispatch) => {
+export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
 	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/folder/${folderId}`);
+		const state = getState();
+		const { calculators, isInitialized } = state.calculator;
+		const auth = state.auth;
+		const userId = auth.user?._id;
+
+		// Si tenemos userId y no hay datos en cache, descargar todos primero
+		if (userId && !isInitialized) {
+			// Descargar todos los calculadores del usuario
+			const result = await dispatch(getCalculatorsByUserId(userId) as any);
+			if (!result.success) {
+				return result;
+			}
+		}
+
+		// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
+		const currentCalculators = isInitialized ? calculators : getState().calculator.calculators;
+		const filteredCalculators = currentCalculators.filter((calc: CalculatorType) => calc.folderId === folderId);
+
 		dispatch({
 			type: SET_SELECTED_CALCULATORS,
-			payload: response.data.calculators,
+			payload: filteredCalculators,
 		});
-		return { success: true };
+
+		return { success: true, calculators: filteredCalculators };
 	} catch (error: unknown) {
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
@@ -170,7 +221,7 @@ export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: D
 	}
 };
 
-export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch: Dispatch) => {
+export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch: Dispatch, getState: any) => {
 	try {
 		const { userId = "", groupId = "", folderId = "", type = "", classType = "" } = params;
 		if (!folderId && !userId && !groupId) {
@@ -179,30 +230,92 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 			return { success: false, error: errorMessage };
 		}
 
+		const state = getState();
+		const { calculators, isInitialized, lastFetchedUserId } = state.calculator;
+
+		// Si estamos filtrando por userId
+		if (userId) {
+			// Caso 1: No tenemos datos en cache o es un usuario diferente - descargar todos
+			if (!isInitialized || lastFetchedUserId !== userId) {
+				dispatch({ type: SET_LOADING });
+
+				// Descargar TODOS los calculadores del usuario
+				const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+					params: { fields },
+				});
+
+				// Guardar todos los calculadores en el estado principal
+				dispatch({
+					type: SET_CALCULATORS,
+					payload: response.data.calculators,
+					userId: userId,
+				});
+
+				// Ahora filtrar localmente los datos recién descargados
+				let filteredCalculators = response.data.calculators;
+
+				if (folderId) {
+					filteredCalculators = filteredCalculators.filter((calc: CalculatorType) => calc.folderId === folderId);
+				}
+				if (type) {
+					filteredCalculators = filteredCalculators.filter((calc: CalculatorType) => calc.type === type);
+				}
+				if (classType) {
+					filteredCalculators = filteredCalculators.filter((calc: CalculatorType) => calc.classType === classType);
+				}
+
+				// Guardar los filtrados en selectedCalculators
+				dispatch({
+					type: SET_SELECTED_CALCULATORS,
+					payload: filteredCalculators,
+				});
+
+				return { success: true, calculators: filteredCalculators };
+			}
+
+			// Caso 2: Ya tenemos los datos en cache - solo filtrar localmente
+			let filteredCalculators = calculators;
+
+			if (folderId) {
+				filteredCalculators = filteredCalculators.filter((calc: CalculatorType) => calc.folderId === folderId);
+			}
+			if (type) {
+				filteredCalculators = filteredCalculators.filter((calc: CalculatorType) => calc.type === type);
+			}
+			if (classType) {
+				filteredCalculators = filteredCalculators.filter((calc: CalculatorType) => calc.classType === classType);
+			}
+
+			// Actualizar selectedCalculators con los resultados filtrados localmente
+			dispatch({
+				type: SET_SELECTED_CALCULATORS,
+				payload: filteredCalculators,
+			});
+
+			return { success: true, calculators: filteredCalculators };
+		}
+
+		// Si no es por userId (groupId u otros casos), hacer petición específica al servidor
 		dispatch({ type: SET_LOADING });
 
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
 		const queryParams = new URLSearchParams({
 			...(folderId && { folderId }),
 			...(type && { type }),
 			...(classType && { classType }),
 			...(groupId && { groupId }),
-			...(userId && { userId }),
+			fields,
 		}).toString();
 
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/filter?${queryParams}`);
 
-		// Si hay tipo y classType específicos, actualizar selectedCalculators
-		if (type || classType) {
-			const filteredCalculators = response.data.calculators.filter(
-				(calc: CalculatorType) => (!type || calc.type === type) && (!classType || calc.classType === classType),
-			);
-			dispatch({
-				type: SET_SELECTED_CALCULATORS,
-				payload: filteredCalculators,
-			});
-		}
+		dispatch({
+			type: SET_SELECTED_CALCULATORS,
+			payload: response.data.calculators,
+		});
 
-		return { success: true };
+		return { success: true, calculators: response.data.calculators };
 	} catch (error: unknown) {
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
@@ -301,12 +414,22 @@ export const unarchiveCalculators = (userId: string, calculatorIds: string[]) =>
 				};
 			} else {
 				// Ningún cálculo fue desarchivado (posiblemente por límites)
+				// Importante: Despachar SET_ERROR para resetear isLoader
+				dispatch({
+					type: SET_ERROR,
+					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
+				});
 				return {
 					success: false,
 					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
 				};
 			}
 		} else {
+			// Importante: Despachar SET_ERROR para resetear isLoader
+			dispatch({
+				type: SET_ERROR,
+				payload: response.data.message || "No se pudieron desarchivar los cálculos.",
+			});
 			return {
 				success: false,
 				message: response.data.message || "No se pudieron desarchivar los cálculos.",
@@ -328,7 +451,14 @@ export const unarchiveCalculators = (userId: string, calculatorIds: string[]) =>
 export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}?archived=true`);
+		// Campos optimizados para listas
+		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+			params: {
+				archived: true,
+				fields,
+			},
+		});
 
 		dispatch({
 			type: SET_ARCHIVED_CALCULATORS,
@@ -345,5 +475,15 @@ export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatc
 		return { success: false, error: errorMessage };
 	}
 };
+
+// Action to reset calculators state
+export const resetCalculatorsState = () => ({
+	type: RESET_CALCULATORS_STATE,
+});
+
+// Action to clear selected calculators
+export const clearSelectedCalculators = () => ({
+	type: CLEAR_SELECTED_CALCULATORS,
+});
 
 export default calculatorsReducer;

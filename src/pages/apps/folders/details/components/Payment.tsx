@@ -26,8 +26,8 @@ const Payment = (props: { title: string; payments: PaymentDataType[] }) => {
 	const [payments, setPayments] = useState<PaymentDataType[]>(initialPayments);
 	const [showAll, setShowAll] = useState(false);
 	const [parent] = useAutoAnimate({ duration: 200 });
-	const [isLoading, setIsLoading] = useState(true);
-	console.log(isLoading, setIsLoading);
+	const [isLoading] = useState(true);
+
 	const handleOpen = () => {
 		if (isLoading === true) {
 			return;

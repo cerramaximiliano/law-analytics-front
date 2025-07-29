@@ -39,7 +39,7 @@ const Localization = () => {
 
 	const handleListItemClick = (lang: I18n) => {
 		// La función onChangeLocalization ha sido eliminada
-		console.log("Cambio de idioma desactivado:", lang);
+
 		setOpen(false);
 	};
 

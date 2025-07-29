@@ -48,6 +48,10 @@ import { CSVLink } from "react-csv";
 
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import CustomerView from "sections/apps/customer/CustomerView";
+// import CustomerView from "sections/apps/customer/CustomerViewFixed";
+// import CustomerView from "sections/apps/customer/CustomerViewRobust";
+// import CustomerView from "sections/apps/customer/CustomerViewSimple";
+// import CustomerView from "sections/apps/customer/CustomerViewSimple2";
 import AlertCustomerDelete from "sections/apps/customer/AlertCustomerDelete";
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
 import LinkToCause from "sections/apps/customer/LinkToCause";
@@ -63,6 +67,7 @@ import { dispatch, useSelector } from "store";
 import { getContactsByUserId, archiveContacts, getArchivedContactsByUserId, unarchiveContacts } from "store/reducers/contacts";
 import { Contact } from "types/contact";
 import { GuideContacts } from "components/guides";
+import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 // import useSubscription from "hooks/useSubscription";
 
 // ==============================|| REACT TABLE ||============================== //
@@ -394,8 +399,26 @@ function ReactTable({
 									</TableRow>
 									<TableRow>
 										<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={visibleColumns.length}>
-											<Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
-												<Box sx={{ margin: 1 }}>{renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}</Box>
+											<Collapse
+												in={expandedRowId === row.id}
+												timeout={{
+													enter: 400,
+													exit: 300,
+												}}
+												easing={{
+													enter: "cubic-bezier(0.4, 0, 0.2, 1)",
+													exit: "cubic-bezier(0.4, 0, 0.2, 1)",
+												}}
+												unmountOnExit
+											>
+												<Box
+													sx={{
+														margin: 1,
+														transition: "all 0.3s ease-in-out",
+													}}
+												>
+													{expandedRowId === row.id && renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}
+												</Box>
 											</Collapse>
 										</TableCell>
 									</TableRow>
@@ -405,11 +428,9 @@ function ReactTable({
 					</TableBody>
 				</Table>
 				{page.length > 0 && (
-					<TableRow sx={{ "&:hover": { bgcolor: "transparent !important" } }}>
-						<TableCell sx={{ p: 2, py: 3 }} colSpan={9}>
-							<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
-						</TableCell>
-					</TableRow>
+					<Box sx={{ p: 2, py: 3 }}>
+						<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
+					</Box>
 				)}
 				{page.length === 0 && (
 					<Box
@@ -493,7 +514,6 @@ const CustomerListPage = () => {
 			const initialLoad = async () => {
 				// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
 				if (!user?._id) {
-					console.log("No hay usuario disponible, mostrando UI vacía");
 					setIsInitialLoad(false);
 					return;
 				}
@@ -501,22 +521,18 @@ const CustomerListPage = () => {
 				if (loadingRef.current) return;
 
 				try {
-					console.log("Cargando contactos para el usuario:", user._id);
 					// Garantizar que user._id es un string
 					const userId = user._id;
 					if (!userId) {
-						console.error("User ID no disponible para cargar contactos");
 						return;
 					}
 
 					loadingRef.current = true;
 					await dispatch(getContactsByUserId(userId));
 				} catch (error) {
-					console.error("Error loading contacts:", error);
 				} finally {
 					loadingRef.current = false;
 					setIsInitialLoad(false);
-					console.log("Carga inicial de contactos completada");
 				}
 			};
 
@@ -525,20 +541,17 @@ const CustomerListPage = () => {
 
 		// Este efecto también debe ejecutarse cuando cambia el usuario después del login
 		if (user?._id && !loadingRef.current && mountedRef.current) {
-			console.log("Usuario cambió después del montaje, recargando contactos");
 			const reloadContacts = async () => {
 				try {
 					// Garantizar que user._id es un string
 					const userId = user._id;
 					if (!userId) {
-						console.error("User ID no disponible para recargar contactos");
 						return;
 					}
 
 					loadingRef.current = true;
 					await dispatch(getContactsByUserId(userId));
 				} catch (error) {
-					console.error("Error reloading contacts after user change:", error);
 				} finally {
 					loadingRef.current = false;
 					setIsInitialLoad(false);
@@ -611,12 +624,11 @@ const CustomerListPage = () => {
 			// Garantizar que user._id es un string
 			const userId = user._id;
 			if (!userId) {
-				console.error("User ID no disponible para refrescar datos");
 				return;
 			}
 
 			loadingRef.current = true;
-			await dispatch(getContactsByUserId(userId));
+			await dispatch(getContactsByUserId(userId, true)); // forceRefresh=true para recargar después de cambios
 		} finally {
 			loadingRef.current = false;
 		}
@@ -638,7 +650,6 @@ const CustomerListPage = () => {
 			// Garantizar que user._id es un string
 			const userId = user._id;
 			if (!userId) {
-				console.error("User ID no disponible para archivar contactos");
 				return;
 			}
 
@@ -660,7 +671,6 @@ const CustomerListPage = () => {
 
 				setSnackbarOpen(true);
 			} catch (error) {
-				console.error("Error al archivar contactos:", error);
 				setSnackbarMessage("Error al archivar contactos");
 				setSnackbarSeverity("error");
 				setSnackbarOpen(true);
@@ -679,7 +689,6 @@ const CustomerListPage = () => {
 			// Garantizar que user._id es un string
 			const userId = user._id;
 			if (!userId) {
-				console.error("User ID no disponible para obtener contactos archivados");
 				return;
 			}
 
@@ -687,7 +696,6 @@ const CustomerListPage = () => {
 			await dispatch(getArchivedContactsByUserId(userId));
 			setArchivedModalOpen(true);
 		} catch (error) {
-			console.error("Error al obtener contactos archivados:", error);
 			setSnackbarMessage("Error al obtener contactos archivados");
 			setSnackbarSeverity("error");
 			setSnackbarOpen(true);
@@ -716,7 +724,6 @@ const CustomerListPage = () => {
 			// Garantizar que user._id es un string
 			const userId = user._id;
 			if (!userId) {
-				console.error("User ID no disponible para desarchivar contactos");
 				return;
 			}
 
@@ -737,7 +744,6 @@ const CustomerListPage = () => {
 
 				setSnackbarOpen(true);
 			} catch (error) {
-				console.error("Error al desarchivar contactos:", error);
 				setSnackbarMessage("Error al desarchivar contactos");
 				setSnackbarSeverity("error");
 				setSnackbarOpen(true);
@@ -862,12 +868,23 @@ const CustomerListPage = () => {
 				Header: "Acciones",
 				id: "actions",
 				Cell: ({ row }: any) => {
-					const collapseIcon =
-						expandedRowId === row.id ? (
-							<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
-						) : (
-							<Eye variant="Bulk" />
-						);
+					const isExpanded = expandedRowId === row.id;
+					const collapseIcon = isExpanded ? (
+						<Add
+							style={{
+								color: theme.palette.error.main,
+								transform: "rotate(45deg)",
+								transition: "transform 0.3s ease-in-out",
+							}}
+						/>
+					) : (
+						<Eye
+							variant="Bulk"
+							style={{
+								transition: "transform 0.3s ease-in-out",
+							}}
+						/>
+					);
 
 					// Usar original que contiene los datos completos sin ambigüedades
 					const { original } = row;
@@ -880,9 +897,14 @@ const CustomerListPage = () => {
 									onClick={(e) =>
 										handleRowAction(e, () => {
 											handleToggleExpanded(row.id);
-											row.toggleRowExpanded();
 										})
 									}
+									sx={{
+										transition: "all 0.3s ease-in-out",
+										"&:hover": {
+											transform: "scale(1.1)",
+										},
+									}}
 								>
 									{collapseIcon}
 								</IconButton>
@@ -933,10 +955,12 @@ const CustomerListPage = () => {
 	// Row sub component memoizado
 	const renderRowSubComponent = useCallback(
 		({ row }: { row: Row<Contact>; rowProps: any; visibleColumns: any; expanded: any }) => {
-			const contactData = contacts.find((c: Contact) => c._id === row.original._id);
-			return contactData ? <CustomerView data={contactData} /> : null;
+			// Usar directamente row.original que ya contiene los datos completos del contacto
+			// No es necesario buscar en contacts porque row.original ya tiene la información
+
+			return <CustomerView data={row.original} />;
 		},
-		[contacts],
+		[], // No necesitamos dependencias ya que usamos row.original directamente
 	);
 
 	// Renderizar un loader o un componente vacío durante la carga inicial
@@ -955,6 +979,7 @@ const CustomerListPage = () => {
 
 	return (
 		<MainCard content={false}>
+			<DowngradeGracePeriodAlert />
 			<ScrollX>
 				<ReactTable
 					columns={columns}
@@ -984,7 +1009,7 @@ const CustomerListPage = () => {
 
 			{/* El componente AddCustomer manejará el LimitErrorModal independientemente */}
 
-			<Dialog maxWidth="sm" TransitionComponent={PopupTransition} keepMounted fullWidth open={link} sx={{ "& .MuiDialog-paper": { p: 0 } }}>
+			<Dialog maxWidth="md" TransitionComponent={PopupTransition} keepMounted fullWidth open={link} sx={{ "& .MuiDialog-paper": { p: 0 } }}>
 				<LinkToCause openLink={link} onCancelLink={handleCloseLink} contactId={customerId} folderIds={folderIds} />
 			</Dialog>
 

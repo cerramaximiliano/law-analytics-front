@@ -195,8 +195,19 @@ const Breadcrumbs = ({
 						</MuiBreadcrumbs>
 					</Grid>
 					{title && titleBottom && (
-						<Grid item sx={{ mt: card === false ? 0 : 1 }}>
-							<Typography variant="h2" sx={{ fontWeight: 700 }}>
+						<Grid item sx={{ mt: card === false ? 0 : 1, width: "100%", overflow: "hidden" }}>
+							<Typography
+								variant="h2"
+								sx={{
+									fontWeight: 700,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									width: "100%",
+									display: "block",
+								}}
+								title={typeof itemTitle === "string" ? itemTitle : ""}
+							>
 								{itemTitle}
 							</Typography>
 						</Grid>
@@ -214,111 +225,193 @@ const Breadcrumbs = ({
 		itemTitle = customLabels[pathWithoutPrefix] || item.title;
 
 		ItemIcon = item.icon ? item.icon : Buildings2;
+		const itemTitleText = typeof itemTitle === "string" ? itemTitle : ""; // Convert to string for title prop
 		itemContent = (
-			<Typography variant="h6" color="secondary" sx={{ display: "flex", alignItems: "center" }}>
-				{icons && <ItemIcon style={iconSX} />}
+			<Typography
+				variant="h6"
+				component="div"
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					color: theme.palette.secondary.main,
+					fontSize: "0.875rem",
+					fontWeight: theme.typography.h6.fontWeight,
+					maxWidth: { xs: "150px", sm: "250px", md: "350px", lg: "450px" },
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					whiteSpace: "nowrap",
+				}}
+				title={itemTitleText}
+			>
+				{icons && <ItemIcon style={{ ...iconSX, flexShrink: 0 }} />}
 				{itemTitle}
 			</Typography>
 		);
+	} else if (location.pathname.includes("/apps/folders/details/")) {
+		// Special handling for folder details page when item is not found in menu
+		const pathWithoutPrefix = location.pathname.startsWith("/") ? location.pathname.substring(1) : location.pathname;
+		itemTitle = customLabels[pathWithoutPrefix] || "\u00A0"; // Use non-breaking space as fallback
+		const titleText = typeof itemTitle === "string" ? itemTitle : ""; // Convert to string for title prop
+		itemContent = (
+			<Typography
+				variant="h6"
+				component="span"
+				sx={{
+					display: "inline-block",
+					maxWidth: { xs: "150px", sm: "250px", md: "350px", lg: "450px" },
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					whiteSpace: "nowrap",
+					color: theme.palette.secondary.main,
+					fontSize: "0.875rem",
+					fontFamily: theme.typography.fontFamily,
+					fontWeight: theme.typography.h6.fontWeight,
+					lineHeight: 1.5,
+				}}
+				title={titleText}
+			>
+				{itemTitle}
+			</Typography>
+		);
+	}
 
-		// main
-		if (item.breadcrumbs !== false) {
-			breadcrumbContent = (
-				<MainCard
-					border={card}
-					sx={card === false ? { mb: 3, bgcolor: "transparent", ...sx } : { mb: 3, ...sx }}
-					{...others}
-					content={card}
-					boxShadow={false}
+	// main
+	if ((item && item.type === "item" && item.breadcrumbs !== false) || location.pathname.includes("/apps/folders/details/")) {
+		breadcrumbContent = (
+			<MainCard
+				border={card}
+				sx={card === false ? { mb: 3, bgcolor: "transparent", ...sx } : { mb: 3, ...sx }}
+				{...others}
+				content={card}
+				boxShadow={false}
+			>
+				<Grid
+					container
+					direction={rightAlign ? "row" : "column"}
+					justifyContent={rightAlign ? "space-between" : "flex-start"}
+					alignItems={rightAlign ? "center" : "flex-start"}
+					spacing={0.5}
 				>
+					{title && !titleBottom && (
+						<Grid item sx={{ maxWidth: "100%", overflow: "hidden" }}>
+							<Typography
+								variant="h2"
+								sx={{
+									fontWeight: 700,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+								}}
+								title={typeof itemTitle === "string" ? itemTitle : ""}
+							>
+								{itemTitle}
+							</Typography>
+						</Grid>
+					)}
 					<Grid
-						container
-						direction={rightAlign ? "row" : "column"}
-						justifyContent={rightAlign ? "space-between" : "flex-start"}
-						alignItems={rightAlign ? "center" : "flex-start"}
-						spacing={0.5}
+						item
+						sx={{
+							flex: 1,
+							minWidth: 0, // Importante para que funcione el text-overflow
+							overflow: "hidden",
+						}}
 					>
-						{title && !titleBottom && (
-							<Grid item>
-								<Typography variant="h2" sx={{ fontWeight: 700 }}>
-									{itemTitle}
-								</Typography>
-							</Grid>
-						)}
-						<Grid item>
-							<MuiBreadcrumbs aria-label="breadcrumb" maxItems={maxItems || 8} separator={separatorIcon}>
+						<MuiBreadcrumbs
+							aria-label="breadcrumb"
+							maxItems={maxItems || 8}
+							separator={separatorIcon}
+							sx={{
+								"& .MuiBreadcrumbs-ol": {
+									flexWrap: "nowrap",
+									overflow: "hidden",
+								},
+								"& .MuiBreadcrumbs-li": {
+									overflow: "hidden",
+								},
+							}}
+						>
+							<Typography
+								component={Link}
+								to="/dashboard/default"
+								color="textPrimary"
+								variant="h6"
+								sx={{ textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}
+							>
+								{icons && <Home3 style={iconSX} />}
+								{icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
+								{(!icon || icons) && "Home"}
+							</Typography>
+
+							{/* Custom breadcrumb paths */}
+							{location.pathname.includes("/apps/folders/details/") ? (
 								<Typography
 									component={Link}
-									to="/dashboard/default"
-									color="textPrimary"
+									to="/apps/folders/list"
+									variant="h6"
+									sx={{ textDecoration: "none", display: "flex", alignItems: "center", flexShrink: 0 }}
+									color="secondary"
+								>
+									Causas
+								</Typography>
+							) : location.pathname.includes("/calculator/") || location.pathname.includes("/apps/calc") ? (
+								<Typography
+									component={location.pathname === "/apps/calc" ? "span" : Link}
+									to={location.pathname === "/apps/calc" ? undefined : "/apps/calc"}
 									variant="h6"
 									sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+									color="secondary"
 								>
-									{icons && <Home3 style={iconSX} />}
-									{icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
-									{(!icon || icons) && "Home"}
+									Cálculos
 								</Typography>
-
-								{/* Custom breadcrumb paths */}
-								{location.pathname.includes("/apps/folders/details/") ? (
-									<Typography
-										component={Link}
-										to="/apps/folders/list"
-										variant="h6"
-										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
-										color="secondary"
-									>
-										Causas
-									</Typography>
-								) : location.pathname.includes("/calculator/") || location.pathname.includes("/apps/calc") ? (
-									<Typography
-										component={location.pathname === "/apps/calc" ? "span" : Link}
-										to={location.pathname === "/apps/calc" ? undefined : "/apps/calc"}
-										variant="h6"
-										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
-										color="secondary"
-									>
-										Cálculos
-									</Typography>
-								) : location.pathname.includes("/apps/calendar") ? (
-									<Typography
-										component={location.pathname === "/apps/calendar" ? "span" : Link}
-										to="/apps/calendar"
-										variant="h6"
-										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
-										color="secondary"
-									>
-										Calendario
-									</Typography>
-								) : location.pathname === "/dashboard/default" ? (
-									<Typography
-										component="span"
-										variant="h6"
-										sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
-										color="secondary"
-									>
-										Inicio
-									</Typography>
-								) : (
-									mainContent
-								)}
-
-								{/* Solo mostrar itemContent si no estamos en la raíz de calculadoras o en la página principal */}
-								{location.pathname === "/apps/calc" || location.pathname === "/dashboard/default" ? null : itemContent}
-							</MuiBreadcrumbs>
-						</Grid>
-						{title && titleBottom && (
-							<Grid item sx={{ mt: card === false ? 0 : 1 }}>
-								<Typography variant="h2" sx={{ fontWeight: 700 }}>
-									{itemTitle}
+							) : location.pathname.includes("/apps/calendar") ? (
+								<Typography
+									component={location.pathname === "/apps/calendar" ? "span" : Link}
+									to="/apps/calendar"
+									variant="h6"
+									sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+									color="secondary"
+								>
+									Calendario
 								</Typography>
-							</Grid>
-						)}
+							) : location.pathname === "/dashboard/default" ? (
+								<Typography
+									component="span"
+									variant="h6"
+									sx={{ textDecoration: "none", display: "flex", alignItems: "center" }}
+									color="secondary"
+								>
+									Inicio
+								</Typography>
+							) : (
+								mainContent
+							)}
+
+							{/* Solo mostrar itemContent si no estamos en la raíz de calculadoras o en la página principal */}
+							{location.pathname === "/apps/calc" || location.pathname === "/dashboard/default" ? null : itemContent}
+						</MuiBreadcrumbs>
 					</Grid>
-					{card === false && divider !== false && <Divider sx={{ mt: 2 }} />}
-				</MainCard>
-			);
-		}
+					{title && titleBottom && (
+						<Grid item sx={{ mt: card === false ? 0 : 1, width: "100%", overflow: "hidden" }}>
+							<Typography
+								variant="h2"
+								sx={{
+									fontWeight: 700,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									width: "100%",
+									display: "block",
+								}}
+								title={typeof itemTitle === "string" ? itemTitle : ""}
+							>
+								{itemTitle}
+							</Typography>
+						</Grid>
+					)}
+				</Grid>
+				{card === false && divider !== false && <Divider sx={{ mt: 2 }} />}
+			</MainCard>
+		);
 	}
 
 	return breadcrumbContent;

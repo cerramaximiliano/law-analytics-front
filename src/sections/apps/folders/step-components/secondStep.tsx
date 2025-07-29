@@ -35,7 +35,7 @@ const SecondStep = ({ values }: any) => {
 								{/* <InputField fullWidth sx={customInputStyles} id="folder-date" placeholder="DD/MM/YYYY" name="initialDateFolder" /> */}
 							</Stack>
 						</Grid>
-						{values.status === "Finalizada" && (
+						{values.status === "Cerrada" && (
 							<Grid item xs={12}>
 								<Stack spacing={1.25}>
 									<InputLabel htmlFor="finalDateFolder">Fecha de Fin</InputLabel>

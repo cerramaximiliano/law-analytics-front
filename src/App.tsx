@@ -10,6 +10,8 @@ import RTLLayout from "components/RTLLayout";
 import ScrollTop from "components/ScrollTop";
 import Snackbar from "components/@extended/Snackbar";
 import Notistack from "components/third-party/Notistack";
+import SearchModal from "components/search/SearchModal";
+import SEOProvider from "components/SEO/SEOProvider";
 
 import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
@@ -38,24 +40,27 @@ const App = () => {
 	if (loading) return <Loader />;
 
 	return (
-		<ThemeCustomization>
-			<RTLLayout>
-				<Locales>
-					<ScrollTop>
-						<GoogleOAuthProvider clientId={googleClientId}>
-							<AuthProvider>
-								<WebSocketProvider>
-									<Notistack>
-										<Routes />
-										<Snackbar />
-									</Notistack>
-								</WebSocketProvider>
-							</AuthProvider>
-						</GoogleOAuthProvider>
-					</ScrollTop>
-				</Locales>
-			</RTLLayout>
-		</ThemeCustomization>
+		<SEOProvider>
+			<ThemeCustomization>
+				<RTLLayout>
+					<Locales>
+						<ScrollTop>
+							<GoogleOAuthProvider clientId={googleClientId}>
+								<AuthProvider>
+									<WebSocketProvider>
+										<Notistack>
+											<Routes />
+											<Snackbar />
+											<SearchModal />
+										</Notistack>
+									</WebSocketProvider>
+								</AuthProvider>
+							</GoogleOAuthProvider>
+						</ScrollTop>
+					</Locales>
+				</RTLLayout>
+			</ThemeCustomization>
+		</SEOProvider>
 	);
 };
 

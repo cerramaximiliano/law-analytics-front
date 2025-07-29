@@ -15,7 +15,7 @@ export default function GroupedAutocomplete() {
 			...option,
 		};
 	});
-	console.log(options);
+
 	const groupAutocompleteCodeString = `<Autocomplete
   id="grouped-demo"
   fullWidth

@@ -19,6 +19,9 @@ export const HEADER_HEIGHT = 74;
 export const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://api.example.com";
 export const WS_BASE_URL = process.env.REACT_APP_WS_URL || "wss://api.example.com/ws";
 
+// Environment
+export const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+
 // ==============================|| THEME CONFIG ||============================== //
 
 const config: DefaultConfigProps = {

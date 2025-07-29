@@ -1,5 +1,5 @@
 // material-ui
-import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper, Button } from "@mui/material";
+import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper, Tooltip, alpha, useTheme } from "@mui/material";
 
 // project-imports
 import Transitions from "components/@extended/Transitions";
@@ -8,13 +8,14 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 
 // assets
-import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare } from "iconsax-react";
+import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare, TickCircle, CloseCircle, InfoCircle } from "iconsax-react";
 import { memo, useState } from "react";
 import moment from "moment";
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
 const FolderView = memo(({ data }: any) => {
+	const theme = useTheme();
 	const notAvailableMsg = "No disponible";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
@@ -88,32 +89,98 @@ const FolderView = memo(({ data }: any) => {
 								<Chip size="small" label={data.status || "Sin estado"} color={getStatusColor(data.status)} />
 							</Stack>
 							{data.pjn ? (
-								<Chip
-									label="Vinculado con Poder Judicial de la Nación"
-									color="success"
-									variant="filled"
-									icon={<ExportSquare size="16" />}
-									sx={{
-										fontWeight: 600,
-										fontSize: "0.875rem",
-										px: 2,
-										py: 0.5,
-									}}
-								/>
+								<Box sx={{ position: "relative", display: "inline-flex" }}>
+									<Box
+										sx={{
+											px: 2,
+											py: 0.75,
+											height: 36,
+											display: "flex",
+											alignItems: "center",
+											gap: 0.75,
+											bgcolor: alpha(theme.palette.success.main, 0.1),
+											border: `1px solid ${theme.palette.success.main}`,
+											borderRadius: 0.5,
+										}}
+									>
+										<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+										<Typography
+											variant="body2"
+											sx={{
+												fontWeight: 500,
+												color: theme.palette.success.dark,
+												fontSize: "0.8125rem",
+											}}
+										>
+											Vinculado con PJN
+										</Typography>
+									</Box>
+									{/* Ícono de estado de verificación */}
+									{(data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
+										<Tooltip
+											title={
+												data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida"
+											}
+										>
+											<Box
+												sx={{
+													position: "absolute",
+													bottom: -8,
+													right: -8,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													width: 20,
+													height: 20,
+													bgcolor: theme.palette.background.paper,
+													borderRadius: "50%",
+													boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+												}}
+											>
+												{data.causaVerified === false ? (
+													<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
+												) : data.causaIsValid ? (
+													<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
+												) : (
+													<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
+												)}
+											</Box>
+										</Tooltip>
+									)}
+								</Box>
 							) : (
-								<Button
-									variant="outlined"
-									color="primary"
-									startIcon={<ExportSquare size="20" />}
+								<Box
 									onClick={handleOpenLinkJudicial}
 									sx={{
-										borderRadius: 1,
-										textTransform: "none",
-										fontWeight: 500,
+										px: 2,
+										py: 0.75,
+										height: 36,
+										display: "flex",
+										alignItems: "center",
+										gap: 0.75,
+										cursor: "pointer",
+										bgcolor: alpha(theme.palette.primary.main, 0.1),
+										border: `1px solid ${theme.palette.primary.main}`,
+										borderRadius: 0.5,
+										transition: "all 0.2s ease",
+										"&:hover": {
+											bgcolor: alpha(theme.palette.primary.main, 0.15),
+											borderColor: theme.palette.primary.dark,
+										},
 									}}
 								>
-									Vincular con Poder Judicial
-								</Button>
+									<ExportSquare size={16} variant="Linear" color={theme.palette.primary.main} />
+									<Typography
+										variant="body2"
+										sx={{
+											fontWeight: 500,
+											color: theme.palette.primary.main,
+											fontSize: "0.8125rem",
+										}}
+									>
+										Vincular con Poder Judicial
+									</Typography>
+								</Box>
 							)}
 						</Stack>
 
@@ -173,6 +240,24 @@ const FolderView = memo(({ data }: any) => {
 												</Typography>
 												<Typography variant="body2">{data.folderName || notAvailableMsg}</Typography>
 											</Stack>
+
+											{data.judFolder?.courtNumber && (
+												<Stack direction="row" spacing={1}>
+													<Typography variant="body2" color="textSecondary" sx={{ minWidth: 120 }}>
+														N° de Juzgado:
+													</Typography>
+													<Typography variant="body2">{data.judFolder.courtNumber}</Typography>
+												</Stack>
+											)}
+
+											{data.judFolder?.secretaryNumber && (
+												<Stack direction="row" spacing={1}>
+													<Typography variant="body2" color="textSecondary" sx={{ minWidth: 120 }}>
+														N° de Secretaría:
+													</Typography>
+													<Typography variant="body2">{data.judFolder.secretaryNumber}</Typography>
+												</Stack>
+											)}
 										</Stack>
 									</Stack>
 								</Paper>

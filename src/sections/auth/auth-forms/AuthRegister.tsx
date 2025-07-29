@@ -101,20 +101,18 @@ const AuthRegister = () => {
 							);
 							// Redirigir a la ruta según `needsVerification`
 							// Redirigir a la ruta de verificación de código
-							console.log("Registro exitoso. Redirigiendo a verificación de código");
 
 							// Forzamos la verificación y la redirección independientemente de lo que venga del backend
 							dispatch(setNeedsVerification(values.email));
 
 							// Redirección directa - usar window.location para garantizar que el navegador haga una carga completa
-							console.log("Redirigiendo a /code-verification mediante window.location.href");
+
 							// Usar un timeout para asegurar que el estado se actualice antes de la redirección
 							setTimeout(() => {
 								window.location.href = "/code-verification?email=" + encodeURIComponent(values.email) + "&mode=register";
 							}, 500);
 						}
 					} catch (err: any) {
-						console.error("Error", err);
 						if (scriptedRef.current) {
 							setStatus({ success: false });
 							setTimeout(() => {
@@ -266,12 +264,12 @@ const AuthRegister = () => {
 							</Grid>
 							<Grid item xs={12}>
 								<Typography variant="body2">
-									Registránse, está de acuerdo con &nbsp;
-									<Link variant="subtitle2" component={RouterLink} to="#">
+									Registrándose, está de acuerdo con &nbsp;
+									<Link variant="subtitle2" component={RouterLink} to="/terms" target="_blank" rel="noopener noreferrer">
 										Términos del Servicio
 									</Link>
-									&nbsp; and &nbsp;
-									<Link variant="subtitle2" component={RouterLink} to="#">
+									&nbsp; y &nbsp;
+									<Link variant="subtitle2" component={RouterLink} to="/privacy-policy" target="_blank" rel="noopener noreferrer">
 										Política de Privacidad
 									</Link>
 								</Typography>

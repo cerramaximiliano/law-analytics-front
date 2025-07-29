@@ -10,12 +10,6 @@ import { ArrowRight, Chart, Calendar, Book1, Calculator } from "iconsax-react";
 import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
 
-// assets
-import dashboardImg from "assets/images/widget/dashborad-1.jpg";
-import calendarImg from "assets/images/widget/dashborad-2.jpg";
-import foldersImg from "assets/images/widget/dashborad-3.jpg";
-import welcomeBanner from "assets/images/analytics/welcome-banner.png";
-
 interface SystemScreenItem {
 	image: string;
 	title: string;
@@ -27,7 +21,7 @@ interface SystemScreenItem {
 
 const SystemScreens: SystemScreenItem[] = [
 	{
-		image: dashboardImg,
+		image: "https://res.cloudinary.com/dqyoeolib/image/upload/v1752693971/ChatGPT_Image_16_jul_2025_04_25_52_p.m._azhane.png",
 		title: "Dashboard Analítico",
 		description:
 			"Visualiza todos los datos de tu estudio jurídico en tiempo real con gráficos detallados y métricas clave para la toma de decisiones.",
@@ -36,7 +30,7 @@ const SystemScreens: SystemScreenItem[] = [
 		link: "/login",
 	},
 	{
-		image: calendarImg,
+		image: "https://res.cloudinary.com/dqyoeolib/image/upload/v1752696521/ChatGPT_Image_16_jul_2025_05_08_26_p.m._pluo94.png",
 		title: "Calendario Integrado",
 		description:
 			"Gestiona vencimientos, audiencias y reuniones de forma eficiente. Sincronización con Google Calendar e integración con expedientes.",
@@ -45,7 +39,7 @@ const SystemScreens: SystemScreenItem[] = [
 		link: "/login",
 	},
 	{
-		image: foldersImg,
+		image: "https://res.cloudinary.com/dqyoeolib/image/upload/v1752696998/ChatGPT_Image_16_jul_2025_05_16_21_p.m._tu3dps.png",
 		title: "Gestión de Expedientes",
 		description:
 			"Centraliza toda la información de tus causas legales, movimientos y documentos en un sistema de gestión completo y eficiente.",
@@ -54,7 +48,7 @@ const SystemScreens: SystemScreenItem[] = [
 		link: "/login",
 	},
 	{
-		image: welcomeBanner,
+		image: "https://res.cloudinary.com/dqyoeolib/image/upload/v1752693206/ChatGPT_Image_16_jul_2025_03_57_15_p.m._xhyamw.png",
 		title: "Herramientas Legales",
 		description: "Accede a calculadoras laborales, de intereses, y más herramientas especializadas para profesionales del derecho.",
 		icon: Calculator,

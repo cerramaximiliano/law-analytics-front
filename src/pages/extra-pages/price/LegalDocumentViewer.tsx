@@ -35,14 +35,13 @@ const LegalDocumentViewer = ({ documentType, planId, title }: LegalDocumentViewe
 						response = await ApiService.getBillingTerms(planId);
 						break;
 				}
-				console.log(response);
+
 				if (response && response.success && response.document) {
 					setDocument(response.document);
 				} else {
 					setError("No se pudo obtener el documento solicitado");
 				}
 			} catch (err: any) {
-				console.error(`Error al obtener documento ${documentType}:`, err);
 				setError(err.message || "Error al cargar el documento");
 			} finally {
 				setLoading(false);

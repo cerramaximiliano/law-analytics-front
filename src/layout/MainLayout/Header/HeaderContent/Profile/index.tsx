@@ -73,9 +73,7 @@ const ProfilePage = () => {
 					from: "",
 				},
 			});
-		} catch (err) {
-			console.error(err);
-		}
+		} catch (err) {}
 	};
 
 	const anchorRef = useRef<any>(null);

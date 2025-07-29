@@ -92,9 +92,9 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 
 	const [isEditing, setIsEditing] = useState(false);
 
-	//console.log(folder.preFolder);
+	//
 
-	const status = ["Nueva", "En Proceso", "Finalizada"];
+	const status = ["Nueva", "En Progreso", "Cerrada", "Pendiente"];
 	const [statusFolder, setStatusFolder] = useState(folder?.status || "Nueva");
 
 	const handleStatus = (e: MouseEvent<HTMLButtonElement>) => {
@@ -104,7 +104,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 		const nextIndex = (currentIndex + 1) % status.length;
 		const newStatus = status[nextIndex];
 
-		if (newStatus === "Finalizada") {
+		if (newStatus === "Cerrada") {
 			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
 		} else {
 			folder.finalDateFolder = "";
@@ -119,10 +119,23 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 	};
 
 	const _submitForm = async (values: any, actions: any) => {
-		console.log(values);
 		if (id) {
 			try {
-				const result = await dispatch(updateFolderById(id, values));
+				// Convertir fechas de DD/MM/YYYY a formato ISO (YYYY-MM-DD) antes de enviar al backend
+				const formattedValues = {
+					...values,
+					preFolder: {
+						...values.preFolder,
+						initialDatePreFolder: values.preFolder.initialDatePreFolder
+							? moment(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							: values.preFolder.initialDatePreFolder,
+						finalDatePreFolder: values.preFolder.finalDatePreFolder
+							? moment(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							: values.preFolder.finalDatePreFolder,
+					},
+				};
+
+				const result = await dispatch(updateFolderById(id, formattedValues));
 
 				if (result.success) {
 					enqueueSnackbar("Se actualizó correctamente", {
@@ -131,7 +144,6 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 						TransitionComponent: Zoom,
 						autoHideDuration: 3000,
 					});
-					console.log("Folder actualizado con éxito:", result.folder);
 				} else {
 					enqueueSnackbar(result.message || "Error al actualizar el folder", {
 						variant: "error",
@@ -139,7 +151,6 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 						TransitionComponent: Zoom,
 						autoHideDuration: 3000,
 					});
-					console.error("Error al actualizar folder:", result.message);
 				}
 			} catch (error) {
 				enqueueSnackbar("Ocurrió un error inesperado. Por favor, intente nuevamente más tarde.", {
@@ -148,10 +159,8 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
-				console.error("Error inesperado:", error);
 			}
 		} else {
-			console.error("ID is undefined, unable to update folder");
 			enqueueSnackbar("No se puede actualizar. Intente nuevamente más tarde.", {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -163,7 +172,6 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 	};
 
 	const _handleSubmit = (values: any, actions: any) => {
-		console.log(values);
 		if (isEditing) {
 			setIsEditing(false);
 			_submitForm(values, actions);
@@ -176,7 +184,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 				message: "El formato de fecha debe ser DD/MM/AAAA",
 			}),
 			finalDatePreFolder: Yup.string().when("status", {
-				is: (status: any) => status === "Finalizada",
+				is: (status: any) => status === "Cerrada",
 				then: () =>
 					Yup.string()
 						.required("Con el estado finalizado debe completar la fecha")
@@ -308,7 +316,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 										</>
 									) : (
 										<>
-											<Typography variant="subtitle1">Monto</Typography>
+											<Typography variant="subtitle1">Monto de Reclamo</Typography>
 											{isEditing ? (
 												<NumberField
 													thousandSeparator={","}

@@ -25,7 +25,7 @@ const ComponentBreadcrumb = () => {
 
 	const separatorBreadcrumbsCodeString = `<Breadcrumb
   navigation={navigation}
-  
+
   sx={{
     mb: '0px !important',
     bgcolor: 'secondary.lighter'
@@ -35,7 +35,7 @@ const ComponentBreadcrumb = () => {
 	const titleBreadcrumbsCodeString = `<Breadcrumb
   title
   navigation={navigation}
-  
+
   sx={{
     mb: '0px !important',
     bgcolor: 'secondary.lighter'
@@ -46,7 +46,7 @@ const ComponentBreadcrumb = () => {
   title
   titleBottom
   navigation={navigation}
-  
+
   sx={{
     mb: '0px !important',
     bgcolor: 'secondary.lighter'
@@ -57,7 +57,7 @@ const ComponentBreadcrumb = () => {
   title
   icons
   navigation={navigation}
-  
+
   sx={{
     mb: '0px !important',
     bgcolor: 'secondary.lighter'
@@ -68,7 +68,7 @@ const ComponentBreadcrumb = () => {
   title
   icon
   navigation={navigation}
-  
+
   sx={{
     mb: '0px !important',
     bgcolor: 'secondary.lighter'
@@ -79,7 +79,7 @@ const ComponentBreadcrumb = () => {
   title
   maxItems={2}
   navigation={navigation}
-  
+
   sx={{
     mb: '0px !important',
     bgcolor: 'secondary.lighter'
@@ -91,7 +91,7 @@ const ComponentBreadcrumb = () => {
 	const noDividerBreadcrumbsCodeString = `<Breadcrumb
   title
   navigation={navigation}
-  
+
   card={false}
   divider={false}
   sx={{ mb: '0px !important' }}

@@ -1,6 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
-	CardContent,
 	Typography,
 	Stack,
 	IconButton,
@@ -19,15 +18,25 @@ import {
 	TableHead,
 	TableRow,
 	Paper,
+	Box,
+	Chip,
+	Divider,
+	Checkbox,
+	InputAdornment,
+	Autocomplete,
+	useTheme,
+	GlobalStyles,
 } from "@mui/material";
-import MainCard from "components/MainCard";
-import { Copy, Sms, Printer, Save2 } from "iconsax-react";
+import logo from "assets/images/large_logo_transparent.png";
+import { Copy, Sms, Printer, Save2, SearchNormal1, UserAdd, Information, Calculator, StatusUp } from "iconsax-react";
 import styled from "@emotion/styled";
 import { useReactToPrint } from "react-to-print";
 import { enqueueSnackbar } from "notistack";
 import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";
 import { CalculatorType } from "types/calculator";
+import { openSnackbar } from "store/reducers/snackbar";
+import { getContactsByUserId } from "store/reducers/contacts";
 
 //third party
 import moment from "moment";
@@ -104,16 +113,36 @@ const formatTipoIndice = (tipoIndice: string): string => {
 	return tiposIndiceMap[tipoIndice] || tipoIndice;
 };
 
+// Iconos para cada sección
+const SectionIcons: Record<string, React.ElementType> = {
+	detalles: Information,
+	calculos: Calculator,
+	intereses: StatusUp,
+};
+
 const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, onSave, currentUser, folderId, folderName, groupId }) => {
-	console.log(values);
+	const theme = useTheme();
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
 	const [email, setEmail] = useState("");
+	const [emailList, setEmailList] = useState<string[]>([]);
+	const [copyToMe, setCopyToMe] = useState(false);
+	const [customMessage, setCustomMessage] = useState("");
 	const [isSaved, setIsSaved] = useState(false);
 	const [showTasasModal, setShowTasasModal] = useState(false);
+	const [contactsLoaded, setContactsLoaded] = useState(false);
 
 	const printRef = useRef<HTMLDivElement>(null);
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
+	const { contacts, isLoader: contactsLoading } = useSelector((state: RootState) => state.contacts);
+
+	// Cargar contactos cuando se abre el modal de email
+	useEffect(() => {
+		if (emailModalOpen && !contactsLoaded && userFromRedux?._id) {
+			dispatch(getContactsByUserId(userFromRedux._id));
+			setContactsLoaded(true);
+		}
+	}, [emailModalOpen, contactsLoaded, userFromRedux?._id]);
 
 	// Función mejorada para obtener etiquetas, ahora puede usar etiquetas personalizadas
 	const getLabelForKey = (key: string, customLabel?: string): string => {
@@ -144,6 +173,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			if (!isNaN(numValue)) {
 				return numValue.toFixed(6); // Mostrar con 6 decimales sin formato de moneda
 			}
+		}
+
+		// Para campos de texto que no deben ser formateados
+		if (key === "reclamante" || key === "reclamado" || key === "folderName") {
+			return String(value);
 		}
 
 		// Formatos por defecto según la clave
@@ -195,6 +229,31 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			detalles: [],
 			calculos: [],
 		};
+
+		// Agregar información de carpeta o reclamante/reclamado al inicio de los resultados
+		if (inputValues.folderName) {
+			groups.intereses.unshift({
+				key: "folderName",
+				value: inputValues.folderName,
+				customLabel: "Nombre de carpeta",
+			});
+		} else {
+			// Solo mostrar reclamante y reclamado si no hay carpeta
+			if (inputValues.reclamante) {
+				groups.intereses.unshift({
+					key: "reclamante",
+					value: inputValues.reclamante,
+					customLabel: "Nombre del reclamante",
+				});
+			}
+			if (inputValues.reclamado) {
+				groups.intereses.unshift({
+					key: "reclamado",
+					value: inputValues.reclamado,
+					customLabel: "Nombre del reclamado",
+				});
+			}
+		}
 
 		// Agregar datos básicos del caso
 		if (inputValues.tasa) {
@@ -438,40 +497,117 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		content: () => printRef.current,
 	});
 
+	const handleAddEmail = () => {
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+		if (email && emailRegex.test(email) && !emailList.includes(email)) {
+			setEmailList([...emailList, email]);
+			setEmail("");
+		} else if (email && !emailRegex.test(email)) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Por favor ingrese un email válido",
+					variant: "alert",
+					alert: { color: "warning" },
+					close: true,
+				}),
+			);
+		} else if (email && emailList.includes(email)) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Este email ya fue agregado a la lista",
+					variant: "alert",
+					alert: { color: "info" },
+					close: true,
+				}),
+			);
+			setEmail("");
+		}
+	};
+
+	const handleRemoveEmail = (emailToRemove: string) => {
+		setEmailList(emailList.filter((e) => e !== emailToRemove));
+	};
+
+	const generateHtmlContent = () => {
+		let html = "<h2>LIQUIDACIÓN DE INTERESES</h2>";
+		Object.entries(groupedResults).forEach(([group, items]: [string, ResultItem[]]) => {
+			if (items.length) {
+				html += `<h3>${getGroupTitle(group).toUpperCase()}</h3>`;
+				html += "<table style='width: 100%; border-collapse: collapse;'>";
+				items.forEach((item: ResultItem) => {
+					html += `<tr>
+						<td style='padding: 8px; border-bottom: 1px solid #ddd;'>${getLabelForKey(item.key, item.customLabel)}:</td>
+						<td style='padding: 8px; border-bottom: 1px solid #ddd; text-align: right;'>${formatValue(item.key, item.value, item.formatType)}</td>
+					</tr>`;
+				});
+				html += "</table><br/>";
+			}
+		});
+		html += `<h3>TOTAL: ${formatValue("total", total)}</h3>`;
+
+		if (customMessage) {
+			html = `<p>${customMessage.replace(/\n/g, "<br>")}</p><br><hr><br>` + html;
+		}
+
+		return html;
+	};
+
 	const handleEmailSend = async () => {
 		try {
-			// Simplificado para ejemplo - idealmente usaría la función generateHtmlContent
 			const textBody = generatePlainText();
+			const htmlBody = generateHtmlContent();
 			const subject = "Liquidación de Intereses";
-			console.log(process.env.REACT_APP_BASE_URL);
+			const allEmails = [...emailList];
+
+			if (allEmails.length === 0) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Debe agregar al menos un email a la lista de destinatarios",
+						variant: "alert",
+						alert: { color: "warning" },
+						close: true,
+					}),
+				);
+				return;
+			}
+
 			await axios.post(`${process.env.REACT_APP_BASE_URL || "http://localhost:5000"}/api/email/send-email`, {
-				to: email,
+				to: allEmails,
 				subject,
 				textBody,
+				htmlBody,
+				copyToMe: copyToMe,
 			});
 
-			enqueueSnackbar("Liquidación enviada correctamente", {
-				variant: "success",
-				anchorOrigin: {
-					vertical: "bottom",
-					horizontal: "right",
-				},
-				TransitionComponent: Zoom,
-				autoHideDuration: 3000,
-			});
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: `Cálculo enviado correctamente.`,
+					variant: "alert",
+					alert: { color: "success" },
+					close: true,
+				}),
+			);
 
 			setEmailModalOpen(false);
 			setEmail("");
-		} catch (error: any) {
-			enqueueSnackbar("Ha ocurrido un error. Intente más tarde.", {
-				variant: "error",
-				anchorOrigin: {
-					vertical: "bottom",
-					horizontal: "right",
-				},
-				TransitionComponent: Zoom,
-				autoHideDuration: 5000,
-			});
+			setEmailList([]);
+			setCopyToMe(false);
+			setCustomMessage("");
+		} catch (error) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Ha ocurrido un error. Intente más tarde.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
 		}
 	};
 
@@ -558,7 +694,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				throw new Error(result.error || "Error al guardar el cálculo");
 			}
 		} catch (error) {
-			console.error("Error al guardar el cálculo:", error);
 			enqueueSnackbar(error instanceof Error ? error.message : "Error al guardar el cálculo", {
 				variant: "error",
 				anchorOrigin: {
@@ -573,48 +708,145 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	const renderActionButtons = () => (
 		<Stack direction="row" spacing={1} sx={{ mb: 2 }} justifyContent="center" className="no-print">
 			<Tooltip title="Copiar al portapapeles">
-				<IconButton onClick={handleCopyToClipboard} color="primary">
-					<Copy size={24} />
+				<IconButton
+					onClick={handleCopyToClipboard}
+					size="small"
+					sx={{
+						border: "1px solid",
+						borderColor: "divider",
+						bgcolor: "background.paper",
+						"&:hover": {
+							bgcolor: "action.hover",
+							borderColor: "primary.main",
+						},
+					}}
+				>
+					<Copy size={18} />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Enviar por email">
-				<IconButton onClick={() => setEmailModalOpen(true)} color="primary">
-					<Sms size={24} />
+				<IconButton
+					onClick={() => setEmailModalOpen(true)}
+					size="small"
+					sx={{
+						border: "1px solid",
+						borderColor: "divider",
+						bgcolor: "background.paper",
+						"&:hover": {
+							bgcolor: "action.hover",
+							borderColor: "primary.main",
+						},
+					}}
+				>
+					<Sms size={18} />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Imprimir">
-				<IconButton onClick={handlePrint} color="primary">
-					<Printer size={24} />
+				<IconButton
+					onClick={handlePrint}
+					size="small"
+					sx={{
+						border: "1px solid",
+						borderColor: "divider",
+						bgcolor: "background.paper",
+						"&:hover": {
+							bgcolor: "action.hover",
+							borderColor: "primary.main",
+						},
+					}}
+				>
+					<Printer size={18} />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title={isSaved ? "El cálculo ya fue guardado" : "Guardar cálculo"}>
 				<span>
-					<IconButton onClick={handleSaveCalculation} color="primary" disabled={isSaved}>
-						<Save2 size={24} />
+					<IconButton
+						onClick={handleSaveCalculation}
+						disabled={isSaved}
+						size="small"
+						sx={{
+							border: "1px solid",
+							borderColor: "divider",
+							bgcolor: "background.paper",
+							"&:hover": {
+								bgcolor: "action.hover",
+								borderColor: "primary.main",
+							},
+							"&:disabled": {
+								bgcolor: "action.disabledBackground",
+								borderColor: "divider",
+							},
+						}}
+					>
+						<Save2 size={18} />
 					</IconButton>
 				</span>
 			</Tooltip>
 		</Stack>
 	);
 
-	const renderGroup = (title: string, items: ResultItem[]): React.ReactNode => {
-		if (!items.length) return null;
+	const renderSection = (title: string, items: ResultItem[], sectionKey: string): React.ReactNode => {
+		if (!items || !items.length) return null;
+
+		const Icon = SectionIcons[sectionKey] || Information;
 
 		return (
-			<MainCard title={title} shadow={3} sx={{ mb: 2 }}>
-				<CardContent>
-					{items.map(({ key, value, customLabel, formatType }) => (
-						<Stack key={key} direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1 }}>
-							<Typography variant="body1" color="text.secondary">
+			<Paper
+				elevation={0}
+				sx={{
+					mb: 1.5,
+					overflow: "hidden",
+					borderRadius: 2,
+					border: `1px solid ${theme.palette.divider}`,
+					bgcolor: "background.paper",
+					boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+				}}
+			>
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						px: 2,
+						py: 1.5,
+						borderBottom: `1px solid ${theme.palette.divider}`,
+						bgcolor: theme.palette.mode === "dark" ? "grey.900" : "grey.50",
+					}}
+				>
+					<Icon
+						size={18}
+						style={{
+							marginRight: theme.spacing(1),
+							color: theme.palette.primary.main,
+						}}
+					/>
+					<Typography variant="body1" fontWeight={600}>
+						{title}
+					</Typography>
+				</Box>
+				<Box sx={{ px: 2, py: 1.5 }}>
+					{items.map(({ key, value, customLabel, formatType }, itemIndex) => (
+						<Box
+							key={key}
+							sx={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								py: 0.75,
+								"&:not(:last-child)": {
+									borderBottom: `1px solid ${theme.palette.divider}`,
+								},
+							}}
+						>
+							<Typography variant="body2" color="text.secondary">
 								{getLabelForKey(key, customLabel)}:
 							</Typography>
-							<Typography variant="body1" fontWeight="medium">
+							<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
 								{formatValue(key, value, formatType)}
 							</Typography>
-						</Stack>
+						</Box>
 					))}
-				</CardContent>
-			</MainCard>
+				</Box>
+			</Paper>
 		);
 	};
 
@@ -630,37 +862,87 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	};
 
 	const PrintableContent = React.forwardRef<HTMLDivElement>((_, ref) => (
-		<div ref={ref}>
-			<Typography variant="h4" gutterBottom sx={{ mb: 3, textAlign: "center" }}>
-				Liquidación de Intereses
-			</Typography>
-
-			{renderGroup(getGroupTitle("detalles"), groupedResults.detalles)}
-			{/* Solo renderizamos el grupo capital si tiene elementos */}
-			{groupedResults.capital.length > 0 && renderGroup(getGroupTitle("capital"), groupedResults.capital)}
-			{renderGroup(getGroupTitle("calculos"), groupedResults.calculos)}
-			{renderGroup(getGroupTitle("intereses"), groupedResults.intereses)}
-
-			<MainCard
-				shadow={3}
-				className="total-card"
+		<Box sx={{ p: 2, maxWidth: 800, mx: "auto" }}>
+			<Box
+				ref={ref}
 				sx={{
-					mt: 3,
-					bgcolor: "primary.main",
-					color: "primary.contrastText",
+					bgcolor: theme.palette.mode === "dark" ? "grey.900" : "#f8f8f8",
+					borderRadius: 2,
+					p: 2,
+					border: `1px solid ${theme.palette.divider}`,
+					boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
+					"&:hover": {
+						bgcolor: theme.palette.mode === "dark" ? "grey.900" : "#f8f8f8",
+					},
+					"@media print": {
+						bgcolor: "white !important",
+						border: "none !important",
+						boxShadow: "none !important",
+						p: 0,
+					},
 				}}
-				content={false}
 			>
-				<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2 }}>
-					<Typography variant="h5" color="inherit">
-						CAPITAL ACTUALIZADO
+				<Stack spacing={1}>
+					{/* Logo para impresión */}
+					<Box className="print-logo" sx={{ textAlign: "center", mb: 3 }}>
+						<img src={logo} alt="Law Analytics" style={{ maxWidth: "150px", height: "auto" }} />
+					</Box>
+
+					{/* Título */}
+					<Typography variant="h4" gutterBottom sx={{ mb: 3, textAlign: "center" }}>
+						Liquidación de Intereses
 					</Typography>
-					<Typography variant="h5" color="inherit">
-						{formatValue("total", total)}
-					</Typography>
+
+					{/* Renderizar las secciones disponibles */}
+					{Object.entries(groupedResults).map(([key, items]) => renderSection(getGroupTitle(key), items as ResultItem[], key))}
+
+					{/* Card del total con diseño minimalista */}
+					<Paper
+						elevation={0}
+						sx={{
+							mt: 1.5,
+							overflow: "hidden",
+							borderRadius: 2,
+							border: `1px solid ${theme.palette.divider}`,
+							bgcolor: "background.paper",
+							boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+						}}
+					>
+						<Box
+							sx={{
+								display: "flex",
+								alignItems: "center",
+								px: 2,
+								py: 1.5,
+								borderBottom: `1px solid ${theme.palette.divider}`,
+								bgcolor: theme.palette.mode === "dark" ? "grey.900" : "grey.50",
+							}}
+						>
+							<Typography variant="body1" fontWeight={600}>
+								Capital Actualizado
+							</Typography>
+						</Box>
+						<Box sx={{ px: 2, py: 1.5 }}>
+							<Box
+								sx={{
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									py: 0.75,
+								}}
+							>
+								<Typography variant="body2" color="text.secondary">
+									Capital actualizado:
+								</Typography>
+								<Typography variant="body2" fontWeight={700} sx={{ ml: 2, color: "primary.main" }}>
+									{formatValue("total", total)}
+								</Typography>
+							</Box>
+						</Box>
+					</Paper>
 				</Stack>
-			</MainCard>
-		</div>
+			</Box>
+		</Box>
 	));
 
 	// Renderizar tabla de tasas
@@ -765,6 +1047,62 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 
 	return (
 		<PrintContainer>
+			<GlobalStyles
+				styles={{
+					"@media print": {
+						"@page": {
+							margin: "2cm",
+							size: "A4",
+						},
+						body: {
+							margin: "0",
+							padding: "0",
+							backgroundColor: "white",
+						},
+						".no-print": {
+							display: "none !important",
+						},
+						".MuiPaper-root": {
+							boxShadow: "none !important",
+							border: "1px solid #ddd !important",
+							pageBreakInside: "avoid",
+							marginBottom: "10px !important",
+						},
+						".MuiBox-root": {
+							pageBreakInside: "avoid",
+						},
+						".MuiTypography-root": {
+							fontSize: "12px !important",
+							pageBreakInside: "avoid",
+						},
+						".MuiTypography-h6": {
+							fontSize: "14px !important",
+							fontWeight: "bold !important",
+						},
+						".MuiTypography-body1": {
+							fontSize: "12px !important",
+						},
+						".MuiTypography-body2": {
+							fontSize: "11px !important",
+						},
+						".MuiStack-root": {
+							spacing: "8px !important",
+						},
+						"td, th": {
+							padding: "4px 8px !important",
+						},
+						".print-logo": {
+							display: "block !important",
+							width: "150px !important",
+							height: "auto !important",
+							marginBottom: "20px !important",
+						},
+					},
+					".print-logo": {
+						display: "none",
+					},
+				}}
+			/>
 			{renderActionButtons()}
 
 			<PrintableContent ref={printRef} />
@@ -779,21 +1117,141 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			</Stack>
 
 			{/* Modal para enviar email */}
-			<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)}>
+			<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)} maxWidth="md" fullWidth>
 				<DialogTitle>Enviar por Email</DialogTitle>
 				<DialogContent>
-					<TextField
-						autoFocus
-						margin="dense"
-						label="Dirección de Email"
-						type="email"
-						fullWidth
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-					/>
+					<Stack spacing={2} sx={{ mt: 1 }}>
+						<Stack direction="row" spacing={1}>
+							<TextField
+								autoFocus
+								margin="dense"
+								label="Dirección de Email"
+								type="email"
+								fullWidth
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault();
+										handleAddEmail();
+									}
+								}}
+								placeholder="Escribe un email y haz clic en Agregar"
+								size="small"
+							/>
+							<Button variant="contained" onClick={handleAddEmail} color="primary" disabled={!email.trim()} size="small">
+								Agregar
+							</Button>
+						</Stack>
+						<Typography variant="caption" color="textSecondary">
+							* Debes agregar cada email a la lista de destinatarios antes de enviar.
+						</Typography>
+
+						{emailList.length > 0 && (
+							<Box sx={{ mt: 2 }}>
+								<Typography variant="subtitle2" gutterBottom>
+									Destinatarios:
+								</Typography>
+								<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+									{emailList.map((emailItem) => (
+										<Chip key={emailItem} label={emailItem} onDelete={() => handleRemoveEmail(emailItem)} size="small" sx={{ m: 0.5 }} />
+									))}
+								</Box>
+							</Box>
+						)}
+
+						<Divider sx={{ my: 2 }}>
+							<Typography variant="caption" color="textSecondary">
+								o seleccionar de mis contactos
+							</Typography>
+						</Divider>
+
+						{contactsLoading ? (
+							<Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+								<Typography>Cargando contactos...</Typography>
+							</Box>
+						) : contacts && contacts.length > 0 ? (
+							<Autocomplete
+								size="small"
+								options={contacts.filter((contact: any) => contact.email)}
+								getOptionLabel={(option: any) => `${option.name} ${option.lastName} (${option.email})`}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										label="Buscar contacto"
+										variant="outlined"
+										size="small"
+										InputProps={{
+											...params.InputProps,
+											startAdornment: (
+												<InputAdornment position="start">
+													<SearchNormal1 size={16} />
+												</InputAdornment>
+											),
+										}}
+									/>
+								)}
+								renderOption={(props, option: any) => (
+									<li {...props}>
+										<Stack direction="row" spacing={1} alignItems="center" width="100%">
+											<UserAdd size={16} />
+											<Stack direction="column" sx={{ overflow: "hidden" }}>
+												<Typography variant="body2" noWrap>
+													{option.name} {option.lastName}
+												</Typography>
+												<Typography variant="caption" color="textSecondary" noWrap>
+													{option.email}
+												</Typography>
+											</Stack>
+										</Stack>
+									</li>
+								)}
+								onChange={(_, newValue) => {
+									if (newValue && newValue.email && !emailList.includes(newValue.email)) {
+										setEmailList([...emailList, newValue.email]);
+									}
+								}}
+								sx={{ mt: 1 }}
+							/>
+						) : null}
+
+						<Box sx={{ mt: 2 }}>
+							<Typography variant="subtitle2" gutterBottom>
+								Mensaje (opcional):
+							</Typography>
+							<TextField
+								multiline
+								fullWidth
+								rows={4}
+								placeholder="Escriba un mensaje personalizado que se incluirá en el correo (opcional)"
+								value={customMessage}
+								onChange={(e) => setCustomMessage(e.target.value)}
+								variant="outlined"
+								size="small"
+							/>
+						</Box>
+
+						<Box sx={{ mt: 1, display: "flex", alignItems: "center" }}>
+							<Checkbox size="small" checked={copyToMe} onChange={(e) => setCopyToMe(e.target.checked)} id="copy-to-me" />
+							<Typography component="label" htmlFor="copy-to-me" variant="body2" sx={{ cursor: "pointer" }}>
+								Enviarme una copia
+							</Typography>
+						</Box>
+					</Stack>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={() => setEmailModalOpen(false)}>Cancelar</Button>
+					<Button
+						color="error"
+						onClick={() => {
+							setEmailModalOpen(false);
+							setEmail("");
+							setEmailList([]);
+							setCopyToMe(false);
+							setCustomMessage("");
+						}}
+					>
+						Cancelar
+					</Button>
 					<Button onClick={handleEmailSend} variant="contained">
 						Enviar
 					</Button>

@@ -19,11 +19,17 @@ import movements from "./movements";
 import auth from "./auth";
 import alerts from "./alerts";
 import contacts from "./contacts";
-import folders from "./folders";
 import events from "./events";
 import tasksReducer from "./tasks";
 import userStats from "./userStats";
 import users from "./users";
+import search from "./search";
+import unifiedStats from "./unifiedStats";
+import interestRates from "./interestRates";
+import stripeSubscriptions from "./stripe-subscriptions";
+import causas from "./causas";
+import activities from "./activities";
+import notificationMonitoring from "./notificationMonitoring";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -50,11 +56,17 @@ const reducers = combineReducers({
 	auth,
 	alerts,
 	contacts,
-	folders,
 	events,
 	tasksReducer,
 	userStats,
 	users,
+	search,
+	unifiedStats,
+	interestRates,
+	stripeSubscriptions,
+	causas,
+	activities,
+	notificationMonitoring,
 });
 
 export default reducers;

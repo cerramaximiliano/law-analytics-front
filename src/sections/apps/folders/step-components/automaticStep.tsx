@@ -1,4 +1,16 @@
-import { Grid, Stack, InputLabel, DialogContent, Typography, Alert, MenuItem, Select, FormControl, SelectChangeEvent } from "@mui/material";
+import {
+	Grid,
+	Stack,
+	InputLabel,
+	DialogContent,
+	Typography,
+	Alert,
+	MenuItem,
+	Select,
+	FormControl,
+	SelectChangeEvent,
+	Collapse,
+} from "@mui/material";
 import { DocumentUpload } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { useFormikContext } from "formik";
@@ -447,13 +459,29 @@ const AutomaticStep = () => {
 						El expediente debe ser de acceso público.
 					</Alert>
 
-					{success && (
+					<Collapse in={success} timeout={500}>
 						<Grid item xs={12}>
-							<Alert severity="success" sx={{ mb: 2 }}>
-								Datos cargados exitosamente. Haga clic en el botón "Siguiente" para guardar el expendiente.
+							<Alert
+								severity="success"
+								sx={{
+									mb: 2,
+									animation: success ? "fadeIn 0.5s ease-in-out" : "none",
+									"@keyframes fadeIn": {
+										"0%": {
+											opacity: 0,
+											transform: "translateY(-10px)",
+										},
+										"100%": {
+											opacity: 1,
+											transform: "translateY(0)",
+										},
+									},
+								}}
+							>
+								Datos cargados exitosamente. Haga clic en el botón "Siguiente" para guardar el expediente.
 							</Alert>
 						</Grid>
-					)}
+					</Collapse>
 
 					<Grid container spacing={3}>
 						<Grid item xs={12}>

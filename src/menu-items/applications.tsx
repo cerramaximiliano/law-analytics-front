@@ -2,7 +2,6 @@
 import { FormattedMessage } from "react-intl";
 // assets
 import {
-	DollarSquare,
 	Calculator,
 	Folder,
 	KyberNetwork,
@@ -11,9 +10,7 @@ import {
 	Kanban,
 	Profile2User,
 	Bill,
-	UserSquare,
 	ShoppingBag,
-	InfoCircle,
 	CalendarTick,
 	Task,
 	DocumentText,
@@ -31,11 +28,8 @@ const icons = {
 	kanban: Kanban,
 	customer: Profile2User,
 	invoice: Bill,
-	profile: UserSquare,
 	ecommerce: ShoppingBag,
-	price: DollarSquare,
 	tasks: Task,
-	help: InfoCircle,
 	booking: CalendarTick,
 	documents: DocumentText,
 };
@@ -64,7 +58,7 @@ const applications: NavItemType = {
 			children: [
 				{
 					id: "all-calculators",
-					title: <FormattedMessage id="Todos los Cálculos" />,
+					title: <FormattedMessage id="Mis Cálculos" />,
 					type: "item",
 					url: "/apps/calc",
 				},
@@ -193,42 +187,6 @@ const applications: NavItemType = {
 				},
 			],
 		}, */
-		{
-			id: "price",
-			title: <FormattedMessage id="Planes" />,
-			icon: icons.price,
-			type: "item",
-			url: "/suscripciones/tables",
-		},
-
-		{
-			id: "profile",
-			title: <FormattedMessage id="Perfil" />,
-			type: "collapse",
-			icon: icons.profile,
-			children: [
-				{
-					id: "user-profile",
-					title: <FormattedMessage id="Usuario" />,
-					type: "item",
-					url: "/apps/profiles/user/personal",
-					breadcrumbs: false,
-				},
-				{
-					id: "account-profile",
-					title: <FormattedMessage id="Cuenta" />,
-					type: "item",
-					url: "/apps/profiles/account/my-account",
-				},
-			],
-		},
-		{
-			id: "help",
-			title: <FormattedMessage id="Ayuda" />,
-			icon: icons.help,
-			type: "item",
-			url: "/ayuda",
-		},
 	],
 };
 

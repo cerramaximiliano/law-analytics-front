@@ -16,7 +16,6 @@ interface Props {
 }
 
 const BarsDataWidget = ({ color, height, data, noDataMessage, seriesName = "Value", labels }: Props) => {
-	console.log(data);
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 
