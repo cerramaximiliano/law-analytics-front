@@ -82,11 +82,11 @@ function DocumentsLayout() {
 				]);
 
 				console.log('Folder fetch result:', folderResult);
-				if (folderResult?.success && folderResult?.data) {
+				if (folderResult?.success && folderResult?.folder) {
 					// Filter contacts by folder
 					await dispatch(filterContactsByFolder(folderId) as any);
 
-					setFolderData(folderResult.data);
+					setFolderData(folderResult.folder);
 					
 					// Create a new document with pre-filled template
 					const templateContent = `Sr. Juez: 
@@ -95,7 +95,7 @@ function DocumentsLayout() {
 					dispatch(
 						setCurrentDocument({
 							id: `doc_${Date.now()}`,
-							title: `Escrito - ${folderResult.data.folderName}`,
+							title: `Escrito - ${folderResult.folder.folderName}`,
 							type: "escrito",
 							status: "draft",
 							content: `<p>${templateContent}</p>`,
@@ -103,7 +103,7 @@ function DocumentsLayout() {
 							version: 1,
 							tags: [],
 							metadata: {
-								folderData: folderResult.data,
+								folderData: folderResult.folder,
 								user: user,
 								templateVariables: true,
 							},
