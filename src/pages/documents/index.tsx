@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router";
 
 // material-ui
 import {
@@ -31,22 +32,76 @@ import TiptapCSSPagedEditor from "sections/documents/TiptapCSSPagedEditor";
 // assets
 import { Add, SearchNormal1, DocumentDownload } from "iconsax-react";
 
+// actions
+import { getFolderById } from "store/reducers/folder";
+import { setCurrentDocument } from "store/reducers/documents";
+import { getContactsByUserId, filterContactsByFolder } from "store/reducers/contacts";
+
 // types
 import { DocumentStatus, DocumentType } from "types/documents";
 
 function DocumentsLayout() {
 	const dispatch = useDispatch();
+	const location = useLocation();
 	const { documents, filters } = useSelector((state: RootState) => state.documents);
 	const searchTerm = filters.searchTerm || "";
+	const { user } = useSelector((state: RootState) => state.auth);
+	const { selectedContacts } = useSelector((state: RootState) => state.contacts);
+
+	// Get folderId from query params
+	const queryParams = new URLSearchParams(location.search);
+	const folderId = queryParams.get("folderId");
 
 	const [activeTab, setActiveTab] = useState(0);
 	const [showEditor, setShowEditor] = useState(false);
+	const [folderData, setFolderData] = useState<any>(null);
 
 	// Load mock data on mount
 	useEffect(() => {
 		dispatch(setDocuments(mockDocuments));
 		dispatch(setTemplates(mockTemplates));
 	}, [dispatch]);
+
+	// Handle folder-based document creation
+	useEffect(() => {
+		if (folderId && user?._id) {
+			// Fetch folder data and contacts
+			Promise.all([dispatch(getFolderById(folderId)), dispatch(getContactsByUserId(user._id))]).then(
+				([folderResult, _contactsResult]: any[]) => {
+					if (folderResult.success && folderResult.data) {
+						// Filter contacts by folder
+						dispatch(filterContactsByFolder(folderId));
+
+						setFolderData(folderResult.data);
+						// Create a new document with pre-filled template
+						const templateContent = `Sr. Juez: 
+{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:`;
+
+						dispatch(
+							setCurrentDocument({
+								id: null,
+								title: `Escrito - ${folderResult.data.folderName}`,
+								type: "escrito",
+								status: "draft",
+								content: `<p>${templateContent}</p>`,
+								folderId: folderId,
+								version: 1,
+								tags: [],
+								metadata: {
+									folderData: folderResult.data,
+									user: user,
+									templateVariables: true,
+								},
+							}),
+						);
+						// Switch to editor tab and show editor
+						setActiveTab(2);
+						setShowEditor(true);
+					}
+				},
+			);
+		}
+	}, [folderId, user?._id, dispatch]);
 
 	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
 		setActiveTab(newValue);
@@ -184,7 +239,9 @@ function DocumentsLayout() {
 							</Box>
 						)}
 
-						{showEditor && <TiptapCSSPagedEditor onClose={() => setShowEditor(false)} />}
+						{showEditor && (
+							<TiptapCSSPagedEditor onClose={() => setShowEditor(false)} folderData={folderData} selectedContacts={selectedContacts} />
+						)}
 					</Stack>
 				</MainCard>
 			</Grid>

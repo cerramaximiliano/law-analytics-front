@@ -14,6 +14,7 @@ import {
 	Tooltip,
 	useMediaQuery,
 	Paper,
+	Button,
 } from "@mui/material";
 import {
 	ExportSquare,
@@ -26,6 +27,7 @@ import {
 	ArrowLeft,
 	TickCircle,
 	CloseCircle,
+	DocumentText,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -696,6 +698,23 @@ const Details = () => {
 											</Tooltip>
 										</ToggleButton>
 									</ToggleButtonGroup>
+								)}
+								{/* Crear Escrito Button */}
+								{tabValue === 0 && (
+									<Button
+										variant="contained"
+										size="small"
+										startIcon={<DocumentText size={16} />}
+										onClick={() => navigate(`/apps/documents?folderId=${id}`)}
+										sx={{
+											height: 36,
+											px: 2,
+											fontSize: "0.8125rem",
+											fontWeight: 500,
+										}}
+									>
+										Crear Escrito
+									</Button>
 								)}
 								{renderJudicialLink}
 							</Box>

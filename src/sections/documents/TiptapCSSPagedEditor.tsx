@@ -53,10 +53,13 @@ import {
 } from "iconsax-react";
 
 // types
+import { Contact } from "types/contact";
 import { DocumentType, DocumentStatus, Document } from "types/documents";
 
 interface TiptapCSSPagedEditorProps {
 	onClose: () => void;
+	folderData?: any;
+	selectedContacts?: Contact[];
 }
 
 // Constants for A4 page dimensions at 96 DPI
@@ -347,7 +350,41 @@ const editorStyles = `
 }
 `;
 
-function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
+// Helper function to replace template variables
+function replaceTemplateVariables(content: string, data: any): string {
+	if (!data) return content;
+
+	// Replace variables in format {{path.to.variable}}
+	return content.replace(/{{([^}]+)}}/g, (match, path) => {
+		const keys = path.trim().split(".");
+		let value = data;
+
+		// Special handling for user.skill which can be an array
+		if (keys[0] === "user" && keys[1] === "skill" && keys.length > 2) {
+			const user = data.user;
+			if (user && user.skill && Array.isArray(user.skill) && user.skill.length > 0) {
+				const skill = user.skill[0]; // Get first skill
+				if (typeof skill === "object") {
+					value = skill[keys[2]];
+					return value?.toString() || match;
+				}
+			}
+			return match;
+		}
+
+		for (const key of keys) {
+			if (value && typeof value === "object" && key in value) {
+				value = value[key];
+			} else {
+				return match; // Keep original if path not found
+			}
+		}
+
+		return value?.toString() || match;
+	});
+}
+
+function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapCSSPagedEditorProps) {
 	const dispatch = useDispatch();
 	const { currentDocument, templates } = useSelector((state: RootState) => state.documents);
 	const { user } = useSelector((state: RootState) => state.auth);
@@ -375,18 +412,31 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 			}),
 			TextAlign.configure({
 				types: ["heading", "paragraph"],
-				defaultAlignment: 'left',
+				defaultAlignment: "left",
 			}),
 			Underline,
 			TextStyle,
 			FontFamily.configure({
-				types: ['textStyle'],
+				types: ["textStyle"],
 			}),
 			Placeholder.configure({
 				placeholder: "Comience a escribir su documento legal...",
 			}),
 		],
-		content: currentDocument?.content || "",
+		content: (() => {
+			if (currentDocument?.content && currentDocument?.metadata?.templateVariables) {
+				// Prepare data for variable substitution
+				const templateData = {
+					user: currentDocument.metadata.user || user,
+					folder: currentDocument.metadata.folderData || folderData,
+					contact: selectedContacts?.[0] || {}, // Use first selected contact
+				};
+
+				// Replace template variables
+				return replaceTemplateVariables(currentDocument.content, templateData);
+			}
+			return currentDocument?.content || "";
+		})(),
 		editable: true,
 		editorProps: {
 			attributes: {
@@ -394,18 +444,18 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 			},
 			handleKeyDown: (view, event) => {
 				// Handle TAB key
-				if (event.key === 'Tab') {
+				if (event.key === "Tab") {
 					event.preventDefault();
-					
+
 					// Insert tab character or spaces
 					const { state, dispatch } = view;
 					const { selection } = state;
 					const { $from } = selection;
-					
+
 					// Insert 4 spaces as tab
-					const transaction = state.tr.insertText('    ', $from.pos);
+					const transaction = state.tr.insertText("    ", $from.pos);
 					dispatch(transaction);
-					
+
 					return true;
 				}
 				return false;
@@ -413,16 +463,16 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 		},
 		onUpdate: ({ editor }) => {
 			calculatePages();
-			
+
 			// Update current block type
-			if (editor.isActive('heading', { level: 1 })) {
-				setCurrentBlockType('h1');
-			} else if (editor.isActive('heading', { level: 2 })) {
-				setCurrentBlockType('h2');
-			} else if (editor.isActive('heading', { level: 3 })) {
-				setCurrentBlockType('h3');
+			if (editor.isActive("heading", { level: 1 })) {
+				setCurrentBlockType("h1");
+			} else if (editor.isActive("heading", { level: 2 })) {
+				setCurrentBlockType("h2");
+			} else if (editor.isActive("heading", { level: 3 })) {
+				setCurrentBlockType("h3");
 			} else {
-				setCurrentBlockType('paragraph');
+				setCurrentBlockType("paragraph");
 			}
 		},
 		onCreate: ({ editor }) => {
@@ -430,24 +480,24 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 		},
 		onSelectionUpdate: ({ editor }) => {
 			// Update font family when selection changes
-			const attrs = editor.getAttributes('textStyle');
+			const attrs = editor.getAttributes("textStyle");
 			if (attrs.fontFamily) {
 				setFontFamily(attrs.fontFamily);
 			} else {
 				setFontFamily("'Times New Roman', Times, serif");
 			}
-			
+
 			// Update current block type
-			if (editor.isActive('heading', { level: 1 })) {
-				setCurrentBlockType('h1');
-			} else if (editor.isActive('heading', { level: 2 })) {
-				setCurrentBlockType('h2');
-			} else if (editor.isActive('heading', { level: 3 })) {
-				setCurrentBlockType('h3');
+			if (editor.isActive("heading", { level: 1 })) {
+				setCurrentBlockType("h1");
+			} else if (editor.isActive("heading", { level: 2 })) {
+				setCurrentBlockType("h2");
+			} else if (editor.isActive("heading", { level: 3 })) {
+				setCurrentBlockType("h3");
 			} else {
-				setCurrentBlockType('paragraph');
+				setCurrentBlockType("paragraph");
 			}
-			
+
 			// Force re-render to update alignment buttons
 			calculatePages();
 		},
@@ -533,16 +583,16 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 
 	const setTextAlignment = (_event: React.MouseEvent<HTMLElement> | null, alignment: string | null) => {
 		if (!editor || !alignment) return;
-		
+
 		// First unset any existing alignment, then set the new one
-		if (alignment === 'left') {
+		if (alignment === "left") {
 			// For left alignment, just unset the text-align
 			editor.chain().focus().unsetTextAlign().run();
 		} else {
 			// For other alignments, unset first then set the new alignment
 			editor.chain().focus().unsetTextAlign().setTextAlign(alignment).run();
 		}
-		
+
 		// Force update
 		setTimeout(() => {
 			editor.commands.focus();
@@ -627,7 +677,7 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 			}
 			return;
 		}
-		
+
 		const template = templates.find((t) => t.id === templateId);
 		if (template && editor) {
 			editor.commands.setContent(template.content);
@@ -639,15 +689,15 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 		// Try to suggest print settings to remove headers/footers
 		// Note: Browsers restrict programmatic control of print settings for security
 		// Users must manually disable headers/footers in their print dialog
-		
+
 		// Store the original title
 		const originalTitle = document.title;
-		
+
 		// Set a clean title for printing
 		document.title = title || "Documento Legal";
-		
+
 		// Add a style to hide print margins
-		const style = document.createElement('style');
+		const style = document.createElement("style");
 		style.textContent = `
 			@media print {
 				@page { margin: 0; }
@@ -655,10 +705,10 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 			}
 		`;
 		document.head.appendChild(style);
-		
+
 		// Open print dialog
 		window.print();
-		
+
 		// Restore original title and remove temporary style
 		setTimeout(() => {
 			document.title = originalTitle;
@@ -675,7 +725,7 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 		if (editor.isActive({ textAlign: "center" })) return "center";
 		if (editor.isActive({ textAlign: "right" })) return "right";
 		if (editor.isActive({ textAlign: "justify" })) return "justify";
-		
+
 		// Default to left if no alignment is set
 		return "left";
 	};
@@ -720,29 +770,29 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 								variant="outlined"
 								size="small"
 								sx={{
-									'& .MuiInputLabel-root': {
-										backgroundColor: 'white',
+									"& .MuiInputLabel-root": {
+										backgroundColor: "white",
 										px: 0.5,
 									},
-									'& .MuiInputLabel-shrink': {
-										transform: 'translate(14px, -9px) scale(0.75)',
-									}
+									"& .MuiInputLabel-shrink": {
+										transform: "translate(14px, -9px) scale(0.75)",
+									},
 								}}
 							/>
 						</Grid>
 						<Grid item xs={12} md={3}>
-							<FormControl 
-								fullWidth 
-								size="small" 
+							<FormControl
+								fullWidth
+								size="small"
 								variant="outlined"
 								sx={{
-									'& .MuiInputLabel-root': {
-										backgroundColor: 'white',
+									"& .MuiInputLabel-root": {
+										backgroundColor: "white",
 										px: 0.5,
 									},
-									'& .MuiInputLabel-shrink': {
-										transform: 'translate(14px, -9px) scale(0.75)',
-									}
+									"& .MuiInputLabel-shrink": {
+										transform: "translate(14px, -9px) scale(0.75)",
+									},
 								}}
 							>
 								<InputLabel>Tipo</InputLabel>
@@ -759,18 +809,18 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 							</FormControl>
 						</Grid>
 						<Grid item xs={12} md={3}>
-							<FormControl 
-								fullWidth 
-								size="small" 
+							<FormControl
+								fullWidth
+								size="small"
 								variant="outlined"
 								sx={{
-									'& .MuiInputLabel-root': {
-										backgroundColor: 'white',
+									"& .MuiInputLabel-root": {
+										backgroundColor: "white",
 										px: 0.5,
 									},
-									'& .MuiInputLabel-shrink': {
-										transform: 'translate(14px, -9px) scale(0.75)',
-									}
+									"& .MuiInputLabel-shrink": {
+										transform: "translate(14px, -9px) scale(0.75)",
+									},
 								}}
 							>
 								<InputLabel>Estado</InputLabel>
@@ -784,18 +834,18 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 
 						{!currentDocument && templates.length > 0 && (
 							<Grid item xs={12}>
-								<FormControl 
-									fullWidth 
-									size="small" 
+								<FormControl
+									fullWidth
+									size="small"
 									variant="outlined"
 									sx={{
-										'& .MuiInputLabel-root': {
-											backgroundColor: 'white',
+										"& .MuiInputLabel-root": {
+											backgroundColor: "white",
 											px: 0.5,
 										},
-										'& .MuiInputLabel-shrink': {
-											transform: 'translate(14px, -9px) scale(0.75)',
-										}
+										"& .MuiInputLabel-shrink": {
+											transform: "translate(14px, -9px) scale(0.75)",
+										},
 									}}
 								>
 									<InputLabel>Usar Plantilla (Opcional)</InputLabel>
@@ -835,12 +885,7 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 							</FormControl>
 
 							<FormControl size="small" sx={{ minWidth: 120, mr: 1 }}>
-								<Select
-									value={currentBlockType}
-									onChange={(e) => setBlockType(null, e.target.value)}
-									displayEmpty
-									sx={{ height: 32 }}
-								>
+								<Select value={currentBlockType} onChange={(e) => setBlockType(null, e.target.value)} displayEmpty sx={{ height: 32 }}>
 									<MenuItem value="paragraph">Normal</MenuItem>
 									<MenuItem value="h1">Título 1</MenuItem>
 									<MenuItem value="h2">Título 2</MenuItem>
@@ -873,37 +918,37 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 							<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
 							<Tooltip title="Alinear a la izquierda">
-								<IconButton 
-									size="small" 
-									onClick={() => setTextAlignment(null, 'left')}
-									color={getActiveAlignment() === 'left' ? "primary" : "default"}
+								<IconButton
+									size="small"
+									onClick={() => setTextAlignment(null, "left")}
+									color={getActiveAlignment() === "left" ? "primary" : "default"}
 								>
 									<AlignLeft size={18} />
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Centrar">
-								<IconButton 
-									size="small" 
-									onClick={() => setTextAlignment(null, 'center')}
-									color={getActiveAlignment() === 'center' ? "primary" : "default"}
+								<IconButton
+									size="small"
+									onClick={() => setTextAlignment(null, "center")}
+									color={getActiveAlignment() === "center" ? "primary" : "default"}
 								>
 									<TextalignCenter size={18} />
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Alinear a la derecha">
-								<IconButton 
-									size="small" 
-									onClick={() => setTextAlignment(null, 'right')}
-									color={getActiveAlignment() === 'right' ? "primary" : "default"}
+								<IconButton
+									size="small"
+									onClick={() => setTextAlignment(null, "right")}
+									color={getActiveAlignment() === "right" ? "primary" : "default"}
 								>
 									<AlignRight size={18} />
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Justificar">
-								<IconButton 
-									size="small" 
-									onClick={() => setTextAlignment(null, 'justify')}
-									color={getActiveAlignment() === 'justify' ? "primary" : "default"}
+								<IconButton
+									size="small"
+									onClick={() => setTextAlignment(null, "justify")}
+									color={getActiveAlignment() === "justify" ? "primary" : "default"}
 								>
 									<TextalignJustifycenter size={18} />
 								</IconButton>
