@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router";
 
@@ -59,11 +59,9 @@ function DocumentsLayout() {
 	const [showContactDialog, setShowContactDialog] = useState(false);
 	const [pendingDocumentData, setPendingDocumentData] = useState<any>(null);
 	
-	// Debug render
-	console.log('DocumentsLayout render - activeTab:', activeTab, 'showEditor:', showEditor, 'folderId:', folderId);
 	
 	// Function to create document with selected contact
-	const createDocumentWithContact = (folder: any, contact: any, user: any, folderId: string) => {
+	const createDocumentWithContact = useCallback((folder: any, contact: any, user: any, folderId: string) => {
 		const templateContent = `Sr. Juez: 
 {{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:`;
 
@@ -87,22 +85,22 @@ function DocumentsLayout() {
 		);
 		
 		// Switch to editor tab and show editor
-		console.log('Setting activeTab to 2 and showing editor');
 		setActiveTab(2);
 		setShowEditor(true);
-	};
+	}, [dispatch]);
 
 	// Load mock data on mount
 	useEffect(() => {
 		dispatch(setDocuments(mockDocuments));
 		dispatch(setTemplates(mockTemplates));
-		console.log('Documents page mounted - folderId:', folderId);
-	}, [dispatch, folderId]);
+	}, [dispatch]);
 
+	// Watch for selectedContacts changes
+	const [waitingForContacts, setWaitingForContacts] = useState(false);
+	
 	// Handle folder-based document creation
 	useEffect(() => {
 		const handleFolderDocument = async () => {
-			console.log('Document creation effect - folderId:', folderId, 'user:', user);
 			if (!folderId || !user?._id) {
 				return;
 			}
@@ -114,39 +112,12 @@ function DocumentsLayout() {
 					dispatch(getContactsByUserId(user._id) as any)
 				]);
 
-				console.log('Folder fetch result:', folderResult);
 				if (folderResult?.success && folderResult?.folder) {
 					// Filter contacts by folder
 					await dispatch(filterContactsByFolder(folderId) as any);
 
 					setFolderData(folderResult.folder);
-					
-					// Wait a bit for contacts to be filtered
-					setTimeout(() => {
-						// Access the Redux store properly
-						const state = dispatch((_, getState) => getState());
-						const contacts = state?.contacts?.selectedContacts || [];
-						console.log('Selected contacts after filtering:', contacts);
-						
-						// Check if there's a Cliente contact
-						const clienteContact = contacts.find((c: any) => c.role === "Cliente");
-						
-						if (clienteContact) {
-							// Use the Cliente contact directly
-							createDocumentWithContact(folderResult.folder, clienteContact, user, folderId);
-						} else if (contacts.length > 0) {
-							// Show contact selection dialog
-							setPendingDocumentData({
-								folder: folderResult.folder,
-								user: user,
-								folderId: folderId
-							});
-							setShowContactDialog(true);
-						} else {
-							// No contacts, create document without contact data
-							createDocumentWithContact(folderResult.folder, null, user, folderId);
-						}
-					}, 500);
+					setWaitingForContacts(true);
 				}
 			} catch (error) {
 				console.error('Error loading folder document:', error);
@@ -155,6 +126,34 @@ function DocumentsLayout() {
 
 		handleFolderDocument();
 	}, [folderId, user, dispatch]);
+	
+	// Watch for contacts to be loaded and process document creation
+	useEffect(() => {
+		if (waitingForContacts && folderData && user) {
+			
+			// Check if there's a Cliente contact
+			const clienteContact = selectedContacts.find((c) => c.role === "Cliente");
+			
+			if (clienteContact) {
+				// Use the Cliente contact directly
+				createDocumentWithContact(folderData, clienteContact, user, folderId!);
+				setWaitingForContacts(false);
+			} else if (selectedContacts.length > 0) {
+				// Show contact selection dialog
+				setPendingDocumentData({
+					folder: folderData,
+					user: user,
+					folderId: folderId
+				});
+				setShowContactDialog(true);
+				setWaitingForContacts(false);
+			} else {
+				// No contacts, create document without contact data
+				createDocumentWithContact(folderData, null, user, folderId!);
+				setWaitingForContacts(false);
+			}
+		}
+	}, [waitingForContacts, folderData, user, selectedContacts, folderId, createDocumentWithContact]);
 
 	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
 		setActiveTab(newValue);
