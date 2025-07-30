@@ -66,11 +66,14 @@ function DocumentsLayout() {
 	useEffect(() => {
 		if (folderId && user?._id) {
 			// Fetch folder data and contacts
-			Promise.all([dispatch(getFolderById(folderId)), dispatch(getContactsByUserId(user._id))]).then(
+			Promise.all([
+				dispatch(getFolderById(folderId) as any),
+				dispatch(getContactsByUserId(user._id) as any)
+			]).then(
 				([folderResult, _contactsResult]: any[]) => {
 					if (folderResult.success && folderResult.data) {
 						// Filter contacts by folder
-						dispatch(filterContactsByFolder(folderId));
+						dispatch(filterContactsByFolder(folderId) as any);
 
 						setFolderData(folderResult.data);
 						// Create a new document with pre-filled template
@@ -79,7 +82,7 @@ function DocumentsLayout() {
 
 						dispatch(
 							setCurrentDocument({
-								id: null,
+								id: `doc_${Date.now()}`,
 								title: `Escrito - ${folderResult.data.folderName}`,
 								type: "escrito",
 								status: "draft",
@@ -92,7 +95,7 @@ function DocumentsLayout() {
 									user: user,
 									templateVariables: true,
 								},
-							}),
+							} as any),
 						);
 						// Switch to editor tab and show editor
 						setActiveTab(2);
