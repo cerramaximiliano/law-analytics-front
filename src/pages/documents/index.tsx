@@ -28,6 +28,7 @@ import { mockDocuments, mockTemplates } from "data/mockDocuments";
 // components
 import DocumentList from "sections/documents/DocumentList";
 import TiptapCSSPagedEditor from "sections/documents/TiptapCSSPagedEditor";
+import ContactSelectionDialog from "sections/documents/ContactSelectionDialog";
 
 // assets
 import { Add, SearchNormal1, DocumentDownload } from "iconsax-react";
@@ -55,9 +56,41 @@ function DocumentsLayout() {
 	const [activeTab, setActiveTab] = useState(0);
 	const [showEditor, setShowEditor] = useState(false);
 	const [folderData, setFolderData] = useState<any>(null);
+	const [showContactDialog, setShowContactDialog] = useState(false);
+	const [pendingDocumentData, setPendingDocumentData] = useState<any>(null);
 	
 	// Debug render
 	console.log('DocumentsLayout render - activeTab:', activeTab, 'showEditor:', showEditor, 'folderId:', folderId);
+	
+	// Function to create document with selected contact
+	const createDocumentWithContact = (folder: any, contact: any, user: any, folderId: string) => {
+		const templateContent = `Sr. Juez: 
+{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:`;
+
+		dispatch(
+			setCurrentDocument({
+				id: `doc_${Date.now()}`,
+				title: `Escrito - ${folder.folderName}`,
+				type: "escrito",
+				status: "draft",
+				content: `<p>${templateContent}</p>`,
+				folderId: folderId,
+				version: 1,
+				tags: [],
+				metadata: {
+					folderData: folder,
+					user: user,
+					contact: contact,
+					templateVariables: true,
+				},
+			} as any),
+		);
+		
+		// Switch to editor tab and show editor
+		console.log('Setting activeTab to 2 and showing editor');
+		setActiveTab(2);
+		setShowEditor(true);
+	};
 
 	// Load mock data on mount
 	useEffect(() => {
@@ -88,32 +121,32 @@ function DocumentsLayout() {
 
 					setFolderData(folderResult.folder);
 					
-					// Create a new document with pre-filled template
-					const templateContent = `Sr. Juez: 
-{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:`;
-
-					dispatch(
-						setCurrentDocument({
-							id: `doc_${Date.now()}`,
-							title: `Escrito - ${folderResult.folder.folderName}`,
-							type: "escrito",
-							status: "draft",
-							content: `<p>${templateContent}</p>`,
-							folderId: folderId,
-							version: 1,
-							tags: [],
-							metadata: {
-								folderData: folderResult.folder,
+					// Wait a bit for contacts to be filtered
+					setTimeout(() => {
+						// Access the Redux store properly
+						const state = dispatch((_, getState) => getState());
+						const contacts = state?.contacts?.selectedContacts || [];
+						console.log('Selected contacts after filtering:', contacts);
+						
+						// Check if there's a Cliente contact
+						const clienteContact = contacts.find((c: any) => c.role === "Cliente");
+						
+						if (clienteContact) {
+							// Use the Cliente contact directly
+							createDocumentWithContact(folderResult.folder, clienteContact, user, folderId);
+						} else if (contacts.length > 0) {
+							// Show contact selection dialog
+							setPendingDocumentData({
+								folder: folderResult.folder,
 								user: user,
-								templateVariables: true,
-							},
-						} as any),
-					);
-					
-					// Switch to editor tab and show editor
-					console.log('Setting activeTab to 2 and showing editor');
-					setActiveTab(2);
-					setShowEditor(true);
+								folderId: folderId
+							});
+							setShowContactDialog(true);
+						} else {
+							// No contacts, create document without contact data
+							createDocumentWithContact(folderResult.folder, null, user, folderId);
+						}
+					}, 500);
 				}
 			} catch (error) {
 				console.error('Error loading folder document:', error);
@@ -286,6 +319,28 @@ function DocumentsLayout() {
 					</Stack>
 				</MainCard>
 			</Grid>
+			
+			{/* Contact Selection Dialog */}
+			<ContactSelectionDialog
+				open={showContactDialog}
+				contacts={selectedContacts}
+				onSelect={(contact) => {
+					setShowContactDialog(false);
+					if (pendingDocumentData) {
+						createDocumentWithContact(
+							pendingDocumentData.folder,
+							contact,
+							pendingDocumentData.user,
+							pendingDocumentData.folderId
+						);
+						setPendingDocumentData(null);
+					}
+				}}
+				onCancel={() => {
+					setShowContactDialog(false);
+					setPendingDocumentData(null);
+				}}
+			/>
 		</Grid>
 	);
 }

@@ -429,9 +429,11 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 				const templateData = {
 					user: currentDocument.metadata.user || user,
 					folder: currentDocument.metadata.folderData || folderData,
-					contact: selectedContacts?.[0] || {}, // Use first selected contact
+					contact: currentDocument.metadata.contact || selectedContacts?.[0] || {} // Use metadata contact first
 				};
-
+				
+				console.log('Template data for substitution:', templateData);
+				
 				// Replace template variables
 				return replaceTemplateVariables(currentDocument.content, templateData);
 			}
