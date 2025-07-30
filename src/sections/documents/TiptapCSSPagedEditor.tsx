@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -353,9 +353,11 @@ const editorStyles = `
 // Helper function to replace template variables
 function replaceTemplateVariables(content: string, data: any): string {
 	if (!data) return content;
+	
+	console.log('replaceTemplateVariables called with:', { content, data });
 
 	// Replace variables in format {{path.to.variable}}
-	return content.replace(/\{\{([^}]+)\}\}/g, (match, path) => {
+	const result = content.replace(/\{\{([^}]+)\}\}/g, (match, path) => {
 		const keys = path.trim().split(".");
 		let value = data;
 
@@ -383,6 +385,9 @@ function replaceTemplateVariables(content: string, data: any): string {
 
 		return value?.toString() || "";
 	});
+	
+	console.log('replaceTemplateVariables result:', result);
+	return result;
 }
 
 function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapCSSPagedEditorProps) {
@@ -403,6 +408,25 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 	const contentRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<HTMLDivElement>(null);
 
+	// Process template content only once
+	const processedContent = useMemo(() => {
+		if (currentDocument?.content && currentDocument?.metadata?.templateVariables) {
+			// Prepare data for variable substitution
+			const templateData = {
+				user: currentDocument.metadata.user || user,
+				folder: currentDocument.metadata.folderData || folderData,
+				contact: currentDocument.metadata.contact || selectedContacts?.[0] || {}
+			};
+			
+			console.log('Processing template - metadata:', currentDocument.metadata);
+			console.log('Processing template - templateData:', templateData);
+			
+			// Replace template variables
+			return replaceTemplateVariables(currentDocument.content, templateData);
+		}
+		return currentDocument?.content || "";
+	}, [currentDocument?.id]); // Only re-process when document changes
+	
 	// Create editor instance
 	const editor = useEditor({
 		extensions: [
@@ -424,20 +448,7 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 				placeholder: "Comience a escribir su documento legal...",
 			}),
 		],
-		content: (() => {
-			if (currentDocument?.content && currentDocument?.metadata?.templateVariables) {
-				// Prepare data for variable substitution
-				const templateData = {
-					user: currentDocument.metadata.user || user,
-					folder: currentDocument.metadata.folderData || folderData,
-					contact: currentDocument.metadata.contact || selectedContacts?.[0] || {} // Use metadata contact first
-				};
-				
-				// Replace template variables
-				return replaceTemplateVariables(currentDocument.content, templateData);
-			}
-			return currentDocument?.content || "";
-		})(),
+		content: processedContent,
 		editable: true,
 		editorProps: {
 			attributes: {
