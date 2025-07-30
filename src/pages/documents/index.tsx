@@ -116,7 +116,7 @@ function DocumentsLayout() {
 
 			try {
 				// Fetch folder data and contacts
-				const [folderResult, _contactsResult] = await Promise.all([
+				const [folderResult] = await Promise.all([
 					dispatch(getFolderById(folderId) as any),
 					dispatch(getContactsByUserId(user._id) as any)
 				]);
