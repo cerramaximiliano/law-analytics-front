@@ -355,7 +355,7 @@ function replaceTemplateVariables(content: string, data: any): string {
 	if (!data) return content;
 
 	// Replace variables in format {{path.to.variable}}
-	return content.replace(/{{([^}]+)}}/g, (match, path) => {
+	return content.replace(/\{\{([^}]+)\}\}/g, (match, path) => {
 		const keys = path.trim().split(".");
 		let value = data;
 
@@ -366,21 +366,22 @@ function replaceTemplateVariables(content: string, data: any): string {
 				const skill = user.skill[0]; // Get first skill
 				if (typeof skill === "object") {
 					value = skill[keys[2]];
-					return value?.toString() || match;
+					return value?.toString() || "";
 				}
 			}
-			return match;
+			return "";
 		}
 
+		// Navigate through the object path
 		for (const key of keys) {
 			if (value && typeof value === "object" && key in value) {
 				value = value[key];
 			} else {
-				return match; // Keep original if path not found
+				return ""; // Return empty string instead of keeping the placeholder
 			}
 		}
 
-		return value?.toString() || match;
+		return value?.toString() || "";
 	});
 }
 

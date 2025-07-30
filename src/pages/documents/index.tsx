@@ -117,7 +117,10 @@ function DocumentsLayout() {
 					await dispatch(filterContactsByFolder(folderId) as any);
 
 					setFolderData(folderResult.folder);
-					setWaitingForContacts(true);
+					// Wait a bit more for contacts to be properly filtered
+					setTimeout(() => {
+						setWaitingForContacts(true);
+					}, 1000);
 				}
 			} catch (error) {
 				console.error('Error loading folder document:', error);
@@ -130,6 +133,7 @@ function DocumentsLayout() {
 	// Watch for contacts to be loaded and process document creation
 	useEffect(() => {
 		if (waitingForContacts && folderData && user) {
+			console.log('Processing contacts - selectedContacts:', selectedContacts);
 			
 			// Check if there's a Cliente contact
 			const clienteContact = selectedContacts.find((c) => c.role === "Cliente");
