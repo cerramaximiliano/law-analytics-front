@@ -425,7 +425,7 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			return replaceTemplateVariables(currentDocument.content, templateData);
 		}
 		return currentDocument?.content || "";
-	}, [currentDocument?.id]); // Only re-process when document changes
+	}, [currentDocument?.id, currentDocument?.content, currentDocument?.metadata, user, folderData, selectedContacts]); // Re-process when any dependency changes
 	
 	// Create editor instance
 	const editor = useEditor({
@@ -543,12 +543,18 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			setTitle(currentDocument.title);
 			setType(currentDocument.type);
 			setStatus(currentDocument.status);
-			editor.commands.setContent(currentDocument.content);
+			// Use processed content instead of raw content
+			if (currentDocument.metadata?.templateVariables && processedContent) {
+				console.log('Setting processed content in editor:', processedContent);
+				editor.commands.setContent(processedContent);
+			} else {
+				editor.commands.setContent(currentDocument.content);
+			}
 		}
 
 		// Calculate pages after content loads
 		setTimeout(calculatePages, 100);
-	}, [currentDocument, editor]);
+	}, [currentDocument, editor, processedContent]);
 
 	// Update pages on scroll
 	useEffect(() => {
