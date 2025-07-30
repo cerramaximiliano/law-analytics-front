@@ -4,7 +4,6 @@ import { Grid } from "@mui/material";
 
 // project-imports
 import ReactDraft from "sections/forms/plugins/ReactDraft";
-import ReactQuill from "sections/forms/plugins/ReactQuill";
 import MainCard from "components/MainCard";
 import useConfig from "hooks/useConfig";
 
@@ -89,37 +88,6 @@ const Editor = () => {
 			>
 				<MainCard title="React Draft" sx={{ overflow: "visible" }}>
 					<ReactDraft />
-				</MainCard>
-			</Grid>
-			<Grid
-				item
-				xs={12}
-				sx={{
-					"& .quill": {
-						bgcolor: theme.palette.mode === ThemeMode.DARK ? "dark.main" : "secondary.lighter",
-						borderRadius: "4px",
-						"& .ql-toolbar": {
-							bgcolor: theme.palette.mode === ThemeMode.DARK ? "dark.light" : "secondary.100",
-							borderColor: theme.palette.divider,
-							borderTopLeftRadius: "4px",
-							borderTopRightRadius: "4px",
-						},
-						"& .ql-container": {
-							borderColor: `${theme.palette.divider} !important`,
-							borderBottomLeftRadius: "4px",
-							borderBottomRightRadius: "4px",
-							"& .ql-editor": {
-								minHeight: 135,
-							},
-						},
-						"& .ql-snow .ql-picker:not(.ql-color-picker):not(.ql-icon-picker) svg": {
-							position: themeDirection === ThemeDirection.RTL ? "initial" : "absolute",
-						},
-					},
-				}}
-			>
-				<MainCard title="React Quill">
-					<ReactQuill />
 				</MainCard>
 			</Grid>
 		</Grid>
