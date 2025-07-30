@@ -5,6 +5,8 @@ import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { FontFamily } from "@tiptap/extension-font-family";
 // Removed unused import
 
 // material-ui
@@ -25,9 +27,8 @@ import {
 	Grid,
 	Chip,
 	Stack,
-	ToggleButton,
-	ToggleButtonGroup,
 	Divider,
+	Tooltip,
 } from "@mui/material";
 
 // project imports
@@ -166,6 +167,15 @@ const editorStyles = `
 	font-style: italic;
 	pointer-events: none;
 	height: 0;
+}
+
+/* Font family styles */
+.css-paged-tiptap .ProseMirror span[style*="Times New Roman"] {
+	font-family: 'Times New Roman', Times, serif !important;
+}
+
+.css-paged-tiptap .ProseMirror span[style*="Arial"] {
+	font-family: Arial, sans-serif !important;
 }
 
 /* Ensure the editor is focusable */
@@ -349,6 +359,8 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 	const [isSaving, setIsSaving] = useState(false);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
+	const [fontFamily, setFontFamily] = useState("'Times New Roman', Times, serif");
+	const [currentBlockType, setCurrentBlockType] = useState("paragraph");
 
 	const contentRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<HTMLDivElement>(null);
@@ -363,8 +375,13 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 			}),
 			TextAlign.configure({
 				types: ["heading", "paragraph"],
+				defaultAlignment: 'left',
 			}),
 			Underline,
+			TextStyle,
+			FontFamily.configure({
+				types: ['textStyle'],
+			}),
 			Placeholder.configure({
 				placeholder: "Comience a escribir su documento legal...",
 			}),
@@ -375,13 +392,64 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 			attributes: {
 				class: "css-paged-tiptap",
 			},
+			handleKeyDown: (view, event) => {
+				// Handle TAB key
+				if (event.key === 'Tab') {
+					event.preventDefault();
+					
+					// Insert tab character or spaces
+					const { state, dispatch } = view;
+					const { selection } = state;
+					const { $from } = selection;
+					
+					// Insert 4 spaces as tab
+					const transaction = state.tr.insertText('    ', $from.pos);
+					dispatch(transaction);
+					
+					return true;
+				}
+				return false;
+			},
 		},
 		onUpdate: ({ editor }) => {
 			calculatePages();
+			
+			// Update current block type
+			if (editor.isActive('heading', { level: 1 })) {
+				setCurrentBlockType('h1');
+			} else if (editor.isActive('heading', { level: 2 })) {
+				setCurrentBlockType('h2');
+			} else if (editor.isActive('heading', { level: 3 })) {
+				setCurrentBlockType('h3');
+			} else {
+				setCurrentBlockType('paragraph');
+			}
 		},
 		onCreate: ({ editor }) => {
-			console.log("Editor created:", editor);
 			editor.commands.focus();
+		},
+		onSelectionUpdate: ({ editor }) => {
+			// Update font family when selection changes
+			const attrs = editor.getAttributes('textStyle');
+			if (attrs.fontFamily) {
+				setFontFamily(attrs.fontFamily);
+			} else {
+				setFontFamily("'Times New Roman', Times, serif");
+			}
+			
+			// Update current block type
+			if (editor.isActive('heading', { level: 1 })) {
+				setCurrentBlockType('h1');
+			} else if (editor.isActive('heading', { level: 2 })) {
+				setCurrentBlockType('h2');
+			} else if (editor.isActive('heading', { level: 3 })) {
+				setCurrentBlockType('h3');
+			} else {
+				setCurrentBlockType('paragraph');
+			}
+			
+			// Force re-render to update alignment buttons
+			calculatePages();
 		},
 	});
 
@@ -463,12 +531,25 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 		}
 	};
 
-	const setTextAlignment = (_event: React.MouseEvent<HTMLElement>, alignment: string | null) => {
+	const setTextAlignment = (_event: React.MouseEvent<HTMLElement> | null, alignment: string | null) => {
 		if (!editor || !alignment) return;
-		editor.chain().focus().setTextAlign(alignment).run();
+		
+		// First unset any existing alignment, then set the new one
+		if (alignment === 'left') {
+			// For left alignment, just unset the text-align
+			editor.chain().focus().unsetTextAlign().run();
+		} else {
+			// For other alignments, unset first then set the new alignment
+			editor.chain().focus().unsetTextAlign().setTextAlign(alignment).run();
+		}
+		
+		// Force update
+		setTimeout(() => {
+			editor.commands.focus();
+		}, 10);
 	};
 
-	const setBlockType = (_event: React.MouseEvent<HTMLElement>, blockType: string | null) => {
+	const setBlockType = (_event: React.MouseEvent<HTMLElement> | null, blockType: string | null) => {
 		if (!editor || !blockType) return;
 
 		switch (blockType) {
@@ -576,25 +657,16 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 	};
 
 	// Get editor states for toolbar
-	const getActiveBlockType = () => {
-		if (!editor) return "paragraph";
-
-		if (editor.isActive("heading", { level: 1 })) return "h1";
-		if (editor.isActive("heading", { level: 2 })) return "h2";
-		if (editor.isActive("heading", { level: 3 })) return "h3";
-		if (editor.isActive("bulletList")) return "bulletList";
-		if (editor.isActive("orderedList")) return "orderedList";
-
-		return "paragraph";
-	};
 
 	const getActiveAlignment = () => {
 		if (!editor) return "left";
 
+		// Check for active alignments
 		if (editor.isActive({ textAlign: "center" })) return "center";
 		if (editor.isActive({ textAlign: "right" })) return "right";
 		if (editor.isActive({ textAlign: "justify" })) return "justify";
-
+		
+		// Default to left if no alignment is set
 		return "left";
 	};
 
@@ -686,79 +758,140 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 
 					{editor && (
 						<Box className="toolbar">
-							<ToggleButtonGroup size="small" exclusive value={getActiveBlockType()} onChange={setBlockType}>
-								<ToggleButton value="paragraph">P</ToggleButton>
-								<ToggleButton value="h1">H1</ToggleButton>
-								<ToggleButton value="h2">H2</ToggleButton>
-								<ToggleButton value="h3">H3</ToggleButton>
-							</ToggleButtonGroup>
+							<FormControl size="small" sx={{ minWidth: 150, mr: 1 }}>
+								<Select
+									value={fontFamily}
+									onChange={(e) => {
+										const font = e.target.value;
+										setFontFamily(font);
+										if (editor) {
+											editor.chain().focus().setFontFamily(font).run();
+										}
+									}}
+									displayEmpty
+									sx={{ height: 32 }}
+								>
+									<MenuItem value="'Times New Roman', Times, serif">Times New Roman</MenuItem>
+									<MenuItem value="Arial, sans-serif">Arial</MenuItem>
+								</Select>
+							</FormControl>
+
+							<FormControl size="small" sx={{ minWidth: 120, mr: 1 }}>
+								<Select
+									value={currentBlockType}
+									onChange={(e) => setBlockType(null, e.target.value)}
+									displayEmpty
+									sx={{ height: 32 }}
+								>
+									<MenuItem value="paragraph">Normal</MenuItem>
+									<MenuItem value="h1">Título 1</MenuItem>
+									<MenuItem value="h2">Título 2</MenuItem>
+									<MenuItem value="h3">Título 3</MenuItem>
+								</Select>
+							</FormControl>
 
 							<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-							<IconButton size="small" onClick={() => toggleFormat("bold")} color={editor.isActive("bold") ? "primary" : "default"}>
-								<TextBold size={18} />
-							</IconButton>
-							<IconButton size="small" onClick={() => toggleFormat("italic")} color={editor.isActive("italic") ? "primary" : "default"}>
-								<TextItalic size={18} />
-							</IconButton>
-							<IconButton
-								size="small"
-								onClick={() => toggleFormat("underline")}
-								color={editor.isActive("underline") ? "primary" : "default"}
-							>
-								<TextUnderline size={18} />
-							</IconButton>
+							<Tooltip title="Negrita">
+								<IconButton size="small" onClick={() => toggleFormat("bold")} color={editor.isActive("bold") ? "primary" : "default"}>
+									<TextBold size={18} />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Cursiva">
+								<IconButton size="small" onClick={() => toggleFormat("italic")} color={editor.isActive("italic") ? "primary" : "default"}>
+									<TextItalic size={18} />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Subrayado">
+								<IconButton
+									size="small"
+									onClick={() => toggleFormat("underline")}
+									color={editor.isActive("underline") ? "primary" : "default"}
+								>
+									<TextUnderline size={18} />
+								</IconButton>
+							</Tooltip>
 
 							<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-							<ToggleButtonGroup size="small" exclusive value={getActiveAlignment()} onChange={setTextAlignment}>
-								<ToggleButton value="left">
+							<Tooltip title="Alinear a la izquierda">
+								<IconButton 
+									size="small" 
+									onClick={() => setTextAlignment(null, 'left')}
+									color={getActiveAlignment() === 'left' ? "primary" : "default"}
+								>
 									<AlignLeft size={18} />
-								</ToggleButton>
-								<ToggleButton value="center">
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Centrar">
+								<IconButton 
+									size="small" 
+									onClick={() => setTextAlignment(null, 'center')}
+									color={getActiveAlignment() === 'center' ? "primary" : "default"}
+								>
 									<TextalignCenter size={18} />
-								</ToggleButton>
-								<ToggleButton value="right">
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Alinear a la derecha">
+								<IconButton 
+									size="small" 
+									onClick={() => setTextAlignment(null, 'right')}
+									color={getActiveAlignment() === 'right' ? "primary" : "default"}
+								>
 									<AlignRight size={18} />
-								</ToggleButton>
-								<ToggleButton value="justify">
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Justificar">
+								<IconButton 
+									size="small" 
+									onClick={() => setTextAlignment(null, 'justify')}
+									color={getActiveAlignment() === 'justify' ? "primary" : "default"}
+								>
 									<TextalignJustifycenter size={18} />
-								</ToggleButton>
-							</ToggleButtonGroup>
+								</IconButton>
+							</Tooltip>
 
 							<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-							<IconButton
-								size="small"
-								onClick={() => {
-									if (editor) {
-										editor.chain().focus().toggleBulletList().run();
-									}
-								}}
-								color={editor.isActive("bulletList") ? "primary" : "default"}
-							>
-								• ─
-							</IconButton>
-							<IconButton
-								size="small"
-								onClick={() => {
-									if (editor) {
-										editor.chain().focus().toggleOrderedList().run();
-									}
-								}}
-								color={editor.isActive("orderedList") ? "primary" : "default"}
-							>
-								1. ─
-							</IconButton>
+							<Tooltip title="Lista con viñetas">
+								<IconButton
+									size="small"
+									onClick={() => {
+										if (editor) {
+											editor.chain().focus().toggleBulletList().run();
+										}
+									}}
+									color={editor.isActive("bulletList") ? "primary" : "default"}
+								>
+									• ─
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Lista numerada">
+								<IconButton
+									size="small"
+									onClick={() => {
+										if (editor) {
+											editor.chain().focus().toggleOrderedList().run();
+										}
+									}}
+									color={editor.isActive("orderedList") ? "primary" : "default"}
+								>
+									1. ─
+								</IconButton>
+							</Tooltip>
 
 							<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-							<IconButton size="small" onClick={() => handleCommand("undo")}>
-								<ArrowRotateLeft size={18} />
-							</IconButton>
-							<IconButton size="small" onClick={() => handleCommand("redo")}>
-								<ArrowRotateRight size={18} />
-							</IconButton>
+							<Tooltip title="Deshacer">
+								<IconButton size="small" onClick={() => handleCommand("undo")}>
+									<ArrowRotateLeft size={18} />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Rehacer">
+								<IconButton size="small" onClick={() => handleCommand("redo")}>
+									<ArrowRotateRight size={18} />
+								</IconButton>
+							</Tooltip>
 						</Box>
 					)}
 
