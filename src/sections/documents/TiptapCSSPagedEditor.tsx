@@ -354,7 +354,6 @@ const editorStyles = `
 function replaceTemplateVariables(content: string, data: any): string {
 	if (!data) return content;
 	
-	console.log('replaceTemplateVariables called with:', { content, data });
 
 	// Replace variables in format {{path.to.variable}}
 	const result = content.replace(/\{\{([^}]+)\}\}/g, (match, path) => {
@@ -385,8 +384,6 @@ function replaceTemplateVariables(content: string, data: any): string {
 
 		return value?.toString() || "";
 	});
-	
-	console.log('replaceTemplateVariables result:', result);
 	return result;
 }
 
@@ -417,9 +414,6 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 				folder: currentDocument.metadata.folderData || folderData,
 				contact: currentDocument.metadata.contact || selectedContacts?.[0] || {}
 			};
-			
-			console.log('Processing template - metadata:', currentDocument.metadata);
-			console.log('Processing template - templateData:', templateData);
 			
 			// Replace template variables
 			return replaceTemplateVariables(currentDocument.content, templateData);
@@ -545,7 +539,6 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			setStatus(currentDocument.status);
 			// Use processed content instead of raw content
 			if (currentDocument.metadata?.templateVariables && processedContent) {
-				console.log('Setting processed content in editor:', processedContent);
 				editor.commands.setContent(processedContent);
 			} else {
 				editor.commands.setContent(currentDocument.content);
