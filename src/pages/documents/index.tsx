@@ -55,59 +55,73 @@ function DocumentsLayout() {
 	const [activeTab, setActiveTab] = useState(0);
 	const [showEditor, setShowEditor] = useState(false);
 	const [folderData, setFolderData] = useState<any>(null);
+	
+	// Debug render
+	console.log('DocumentsLayout render - activeTab:', activeTab, 'showEditor:', showEditor, 'folderId:', folderId);
 
 	// Load mock data on mount
 	useEffect(() => {
 		dispatch(setDocuments(mockDocuments));
 		dispatch(setTemplates(mockTemplates));
-	}, [dispatch]);
+		console.log('Documents page mounted - folderId:', folderId);
+	}, [dispatch, folderId]);
 
 	// Handle folder-based document creation
 	useEffect(() => {
-		if (folderId && user?._id) {
-			// Fetch folder data and contacts
-			Promise.all([
-				dispatch(getFolderById(folderId) as any),
-				dispatch(getContactsByUserId(user._id) as any)
-			]).then(
-				([folderResult, _contactsResult]: any[]) => {
-					if (folderResult.success && folderResult.data) {
-						// Filter contacts by folder
-						dispatch(filterContactsByFolder(folderId) as any);
+		const handleFolderDocument = async () => {
+			console.log('Document creation effect - folderId:', folderId, 'user:', user);
+			if (!folderId || !user?._id) {
+				return;
+			}
 
-						setFolderData(folderResult.data);
-						// Create a new document with pre-filled template
-						const templateContent = `Sr. Juez: 
+			try {
+				// Fetch folder data and contacts
+				const [folderResult, _contactsResult] = await Promise.all([
+					dispatch(getFolderById(folderId) as any),
+					dispatch(getContactsByUserId(user._id) as any)
+				]);
+
+				console.log('Folder fetch result:', folderResult);
+				if (folderResult?.success && folderResult?.data) {
+					// Filter contacts by folder
+					await dispatch(filterContactsByFolder(folderId) as any);
+
+					setFolderData(folderResult.data);
+					
+					// Create a new document with pre-filled template
+					const templateContent = `Sr. Juez: 
 {{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:`;
 
-						dispatch(
-							setCurrentDocument({
-								id: `doc_${Date.now()}`,
-								title: `Escrito - ${folderResult.data.folderName}`,
-								type: "escrito",
-								status: "draft",
-								content: `<p>${templateContent}</p>`,
-								folderId: folderId,
-								version: 1,
-								tags: [],
-								metadata: {
-									folderData: folderResult.data,
-									user: user,
-									templateVariables: true,
-								},
-							} as any),
-						);
-						// Switch to editor tab and show editor
-						setActiveTab(2);
-						// Small delay to ensure DOM is updated
-						setTimeout(() => {
-							setShowEditor(true);
-						}, 100);
-					}
-				},
-			);
-		}
-	}, [folderId, user?._id, dispatch]);
+					dispatch(
+						setCurrentDocument({
+							id: `doc_${Date.now()}`,
+							title: `Escrito - ${folderResult.data.folderName}`,
+							type: "escrito",
+							status: "draft",
+							content: `<p>${templateContent}</p>`,
+							folderId: folderId,
+							version: 1,
+							tags: [],
+							metadata: {
+								folderData: folderResult.data,
+								user: user,
+								templateVariables: true,
+							},
+						} as any),
+					);
+					
+					// Switch to editor tab and show editor
+					console.log('Setting activeTab to 2 and showing editor');
+					setActiveTab(2);
+					setShowEditor(true);
+				}
+			} catch (error) {
+				console.error('Error loading folder document:', error);
+			}
+		};
+
+		handleFolderDocument();
+	}, [folderId, user, dispatch]);
 
 	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
 		setActiveTab(newValue);
