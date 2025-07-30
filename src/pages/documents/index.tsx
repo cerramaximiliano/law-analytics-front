@@ -62,8 +62,17 @@ function DocumentsLayout() {
 	
 	// Function to create document with selected contact
 	const createDocumentWithContact = useCallback((folder: any, contact: any, user: any, folderId: string) => {
-		const templateContent = `Sr. Juez: 
+		let templateContent: string;
+		
+		if (contact) {
+			// Template with contact data
+			templateContent = `Sr. Juez: 
 {{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:`;
+		} else {
+			// Template without contact data - leave placeholders for manual completion
+			templateContent = `Sr. Juez: 
+[NOMBRE Y APELLIDO DEL CLIENTE], DNI [NÚMERO DE DOCUMENTO], por derecho propio, con domicilio en [DIRECCIÓN], [CIUDAD], [PROVINCIA], conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:`;
+		}
 
 		dispatch(
 			setCurrentDocument({
@@ -133,8 +142,6 @@ function DocumentsLayout() {
 	// Watch for contacts to be loaded and process document creation
 	useEffect(() => {
 		if (waitingForContacts && folderData && user) {
-			console.log('Processing contacts - selectedContacts:', selectedContacts);
-			
 			// Check if there's a Cliente contact
 			const clienteContact = selectedContacts.find((c) => c.role === "Cliente");
 			
