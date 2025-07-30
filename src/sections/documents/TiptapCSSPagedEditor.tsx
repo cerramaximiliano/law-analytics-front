@@ -240,12 +240,41 @@ const editorStyles = `
 @media print {
 	@page {
 		size: A4;
-		margin: 0;
+		margin: 25mm 20mm 25mm 20mm; /* Top Right Bottom Left */
+	}
+	
+	/* Remove browser print headers and footers */
+	@page {
+		@top-left {
+			content: none;
+		}
+		@top-center {
+			content: none;
+		}
+		@top-right {
+			content: none;
+		}
+		@bottom-left {
+			content: none;
+		}
+		@bottom-center {
+			content: none;
+		}
+		@bottom-right {
+			content: none;
+		}
+	}
+	
+	/* Hide page title */
+	title {
+		display: none !important;
 	}
 	
 	body {
 		margin: 0;
 		padding: 0;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
 	}
 	
 	body * {
@@ -260,15 +289,23 @@ const editorStyles = `
 		position: absolute;
 		left: 0;
 		top: 0;
+		width: 100%;
 	}
 	
 	.css-pages-container {
-		width: 210mm;
+		width: 100%;
 		box-shadow: none;
+		margin: 0;
+		padding: 0;
 	}
 	
 	.css-paged-content {
-		padding: 25mm 20mm;
+		/* Remove padding as it's handled by @page margins */
+		padding: 0;
+		width: 100%;
+		/* Break columns into pages */
+		column-break-after: always;
+		break-after: column;
 	}
 	
 	.page-break-line,
@@ -277,9 +314,15 @@ const editorStyles = `
 		display: none !important;
 	}
 	
-	/* Force page breaks at specific heights */
+	/* Ensure content respects page boundaries */
 	.css-paged-tiptap .ProseMirror {
-		page-break-after: always;
+		margin: 0;
+		padding: 0;
+	}
+	
+	.css-paged-tiptap .ProseMirror > * {
+		page-break-inside: avoid;
+		break-inside: avoid;
 	}
 }
 
@@ -508,7 +551,34 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 	};
 
 	const handlePrint = () => {
+		// Try to suggest print settings to remove headers/footers
+		// Note: Browsers restrict programmatic control of print settings for security
+		// Users must manually disable headers/footers in their print dialog
+		
+		// Store the original title
+		const originalTitle = document.title;
+		
+		// Set a clean title for printing
+		document.title = title || "Documento Legal";
+		
+		// Add a style to hide print margins
+		const style = document.createElement('style');
+		style.textContent = `
+			@media print {
+				@page { margin: 0; }
+				body { margin: 25mm 20mm 25mm 20mm; }
+			}
+		`;
+		document.head.appendChild(style);
+		
+		// Open print dialog
 		window.print();
+		
+		// Restore original title and remove temporary style
+		setTimeout(() => {
+			document.title = originalTitle;
+			document.head.removeChild(style);
+		}, 1000);
 	};
 
 	// Get editor states for toolbar
@@ -557,7 +627,7 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 								{showPreview ? "Editar" : "Vista Previa"}
 							</Button>
 							<Button startIcon={<Printer />} onClick={handlePrint} variant="outlined" size="small">
-								Imprimir
+								Imprimir / PDF
 							</Button>
 							<IconButton onClick={handleClose}>
 								<CloseCircle />
