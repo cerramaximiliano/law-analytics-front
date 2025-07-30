@@ -99,7 +99,10 @@ function DocumentsLayout() {
 						);
 						// Switch to editor tab and show editor
 						setActiveTab(2);
-						setShowEditor(true);
+						// Small delay to ensure DOM is updated
+						setTimeout(() => {
+							setShowEditor(true);
+						}, 100);
 					}
 				},
 			);
@@ -108,9 +111,15 @@ function DocumentsLayout() {
 
 	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
 		setActiveTab(newValue);
+		// Reset editor state when changing tabs
+		if (newValue !== 2) {
+			setShowEditor(false);
+			setFolderData(null);
+		}
 	};
 
 	const handleNewDocument = () => {
+		setActiveTab(2);
 		setShowEditor(true);
 	};
 
@@ -224,26 +233,41 @@ function DocumentsLayout() {
 						</Box>
 
 						{/* Content */}
-						{activeTab === 0 && <DocumentList documents={filteredDocuments} onEdit={() => setShowEditor(true)} />}
+						{activeTab === 0 && <DocumentList documents={filteredDocuments} onEdit={() => {
+							setActiveTab(2);
+							setShowEditor(true);
+						}} />}
 
 						{activeTab === 1 && <Typography color="textSecondary">Las plantillas estarán disponibles próximamente</Typography>}
 
-						{activeTab === 2 && !showEditor && (
-							<Box sx={{ textAlign: "center", py: 4 }}>
-								<Typography variant="h6" gutterBottom>
-									Editor de Documentos Legales
-								</Typography>
-								<Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-									Cree y edite documentos con formato profesional
-								</Typography>
-								<Button variant="contained" startIcon={<Add />} onClick={() => setShowEditor(true)}>
-									Crear Nuevo Documento
-								</Button>
-							</Box>
-						)}
-
-						{showEditor && (
-							<TiptapCSSPagedEditor onClose={() => setShowEditor(false)} folderData={folderData} selectedContacts={selectedContacts} />
+						{activeTab === 2 && (
+							showEditor ? (
+								<TiptapCSSPagedEditor 
+									onClose={() => {
+										setShowEditor(false);
+										setFolderData(null);
+										// Clear the URL parameter when closing editor
+										const searchParams = new URLSearchParams(location.search);
+										searchParams.delete('folderId');
+										const newUrl = searchParams.toString() ? `${location.pathname}?${searchParams.toString()}` : location.pathname;
+										window.history.replaceState({}, '', newUrl);
+									}} 
+									folderData={folderData} 
+									selectedContacts={selectedContacts} 
+								/>
+							) : (
+								<Box sx={{ textAlign: "center", py: 4 }}>
+									<Typography variant="h6" gutterBottom>
+										Editor de Documentos Legales
+									</Typography>
+									<Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+										Cree y edite documentos con formato profesional
+									</Typography>
+									<Button variant="contained" startIcon={<Add />} onClick={() => setShowEditor(true)}>
+										Crear Nuevo Documento
+									</Button>
+								</Box>
+							)
 						)}
 					</Stack>
 				</MainCard>
