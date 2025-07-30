@@ -40,7 +40,6 @@ import {
 	Save2,
 	DocumentText,
 	Printer,
-	Eye,
 	TextBold,
 	TextItalic,
 	TextUnderline,
@@ -231,10 +230,6 @@ const editorStyles = `
 	z-index: 10;
 }
 
-/* Preview mode */
-.preview-mode .css-paged-content {
-	background: white;
-}
 
 /* Print styles */
 @media print {
@@ -352,7 +347,6 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 	const [status, setStatus] = useState<DocumentStatus>(currentDocument?.status || "draft");
 	const [selectedTemplate, setSelectedTemplate] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
-	const [showPreview, setShowPreview] = useState(false);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
 
@@ -623,9 +617,6 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 					<Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 						<Typography variant="h5">{currentDocument ? "Editar Documento" : "Nuevo Documento"}</Typography>
 						<Stack direction="row" spacing={1}>
-							<Button startIcon={<Eye />} onClick={() => setShowPreview(!showPreview)} variant="outlined" size="small">
-								{showPreview ? "Editar" : "Vista Previa"}
-							</Button>
 							<Button startIcon={<Printer />} onClick={handlePrint} variant="outlined" size="small">
 								Imprimir / PDF
 							</Button>
@@ -693,7 +684,7 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 						)}
 					</Grid>
 
-					{!showPreview && editor && (
+					{editor && (
 						<Box className="toolbar">
 							<ToggleButtonGroup size="small" exclusive value={getActiveBlockType()} onChange={setBlockType}>
 								<ToggleButton value="paragraph">P</ToggleButton>
@@ -771,37 +762,29 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 						</Box>
 					)}
 
-					<Box className={`css-paged-editor-wrapper ${showPreview ? "preview-mode" : ""}`} sx={{ flex: 1 }} ref={editorRef}>
+					<Box className="css-paged-editor-wrapper" sx={{ flex: 1 }} ref={editorRef}>
 						<div className="print-content">
 							<div className="css-pages-container">
 								<div className="css-paged-content" ref={contentRef}>
-									{showPreview ? (
-										<div dangerouslySetInnerHTML={{ __html: editor?.getHTML() || "" }} />
-									) : (
-										<>
-											<EditorContent editor={editor} className="css-paged-tiptap" />
-											{/* Page break indicators */}
-											{Array.from({ length: totalPages - 1 }, (_, i) => (
-												<div
-													key={i}
-													className="page-break-line"
-													style={{
-														top: `${(i + 1) * PAGE_HEIGHT - PAGE_PADDING_TOP}px`,
-													}}
-													data-page={`Página ${i + 1}`}
-												/>
-											))}
-										</>
-									)}
+									<EditorContent editor={editor} className="css-paged-tiptap" />
+									{/* Page break indicators */}
+									{Array.from({ length: totalPages - 1 }, (_, i) => (
+										<div
+											key={i}
+											className="page-break-line"
+											style={{
+												top: `${(i + 1) * PAGE_HEIGHT - PAGE_PADDING_TOP}px`,
+											}}
+											data-page={`Página ${i + 1}`}
+										/>
+									))}
 								</div>
 							</div>
 						</div>
 
-						{!showPreview && (
-							<div className="current-page-indicator">
-								Página {currentPage} de {totalPages}
-							</div>
-						)}
+						<div className="current-page-indicator">
+							Página {currentPage} de {totalPages}
+						</div>
 					</Box>
 				</DialogContent>
 				<DialogActions sx={{ p: 3 }}>
