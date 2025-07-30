@@ -618,6 +618,16 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 
 	const handleTemplateSelect = (templateId: string) => {
 		setSelectedTemplate(templateId);
+		if (!templateId && editor) {
+			// If "Sin plantilla" is selected, clear the content or restore original
+			if (currentDocument?.content) {
+				editor.commands.setContent(currentDocument.content);
+			} else {
+				editor.commands.clearContent();
+			}
+			return;
+		}
+		
 		const template = templates.find((t) => t.id === templateId);
 		if (template && editor) {
 			editor.commands.setContent(template.content);
@@ -699,7 +709,7 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 					</Box>
 				</DialogTitle>
 				<DialogContent sx={{ display: "flex", flexDirection: "column", overflow: "hidden", p: 2 }}>
-					<Grid container spacing={2} sx={{ mb: 2 }}>
+					<Grid container spacing={3} sx={{ mb: 2, mt: 1 }}>
 						<Grid item xs={12} md={6}>
 							<TextField
 								fullWidth
@@ -709,10 +719,32 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 								required
 								variant="outlined"
 								size="small"
+								sx={{
+									'& .MuiInputLabel-root': {
+										backgroundColor: 'white',
+										px: 0.5,
+									},
+									'& .MuiInputLabel-shrink': {
+										transform: 'translate(14px, -9px) scale(0.75)',
+									}
+								}}
 							/>
 						</Grid>
 						<Grid item xs={12} md={3}>
-							<FormControl fullWidth size="small" variant="outlined">
+							<FormControl 
+								fullWidth 
+								size="small" 
+								variant="outlined"
+								sx={{
+									'& .MuiInputLabel-root': {
+										backgroundColor: 'white',
+										px: 0.5,
+									},
+									'& .MuiInputLabel-shrink': {
+										transform: 'translate(14px, -9px) scale(0.75)',
+									}
+								}}
+							>
 								<InputLabel>Tipo</InputLabel>
 								<Select value={type} onChange={(e) => setType(e.target.value as DocumentType)} label="Tipo">
 									<MenuItem value="demanda">Demanda</MenuItem>
@@ -727,7 +759,20 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 							</FormControl>
 						</Grid>
 						<Grid item xs={12} md={3}>
-							<FormControl fullWidth size="small" variant="outlined">
+							<FormControl 
+								fullWidth 
+								size="small" 
+								variant="outlined"
+								sx={{
+									'& .MuiInputLabel-root': {
+										backgroundColor: 'white',
+										px: 0.5,
+									},
+									'& .MuiInputLabel-shrink': {
+										transform: 'translate(14px, -9px) scale(0.75)',
+									}
+								}}
+							>
 								<InputLabel>Estado</InputLabel>
 								<Select value={status} onChange={(e) => setStatus(e.target.value as DocumentStatus)} label="Estado">
 									<MenuItem value="draft">Borrador</MenuItem>
@@ -739,7 +784,20 @@ function TiptapCSSPagedEditor({ onClose }: TiptapCSSPagedEditorProps) {
 
 						{!currentDocument && templates.length > 0 && (
 							<Grid item xs={12}>
-								<FormControl fullWidth size="small" variant="outlined">
+								<FormControl 
+									fullWidth 
+									size="small" 
+									variant="outlined"
+									sx={{
+										'& .MuiInputLabel-root': {
+											backgroundColor: 'white',
+											px: 0.5,
+										},
+										'& .MuiInputLabel-shrink': {
+											transform: 'translate(14px, -9px) scale(0.75)',
+										}
+									}}
+								>
 									<InputLabel>Usar Plantilla (Opcional)</InputLabel>
 									<Select value={selectedTemplate} onChange={(e) => handleTemplateSelect(e.target.value)} label="Usar Plantilla (Opcional)">
 										<MenuItem value="">
