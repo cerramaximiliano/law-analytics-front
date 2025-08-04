@@ -1,10 +1,23 @@
 // Tipos base para el sistema de documentos
 
+// Variable Detail para el nuevo sistema de plantillas
+export interface TemplateVariableDetail {
+	model: "Contact" | "Folder" | "User" | "Skill" | "JudFolder";
+	property: string;
+	path: string;
+	label: string;
+	type: "contact" | "folder" | "user" | "other";
+	required: boolean;
+	description?: string;
+	fallback?: string;
+	displayName: string;
+}
+
 export interface DocumentVariable {
 	id: string;
 	name: string;
 	label: string;
-	type: 'text' | 'date' | 'number' | 'select' | 'folder_field';
+	type: "text" | "date" | "number" | "select" | "folder_field";
 	value?: string | number | Date;
 	options?: string[]; // Para tipo 'select'
 	required?: boolean;
@@ -13,17 +26,26 @@ export interface DocumentVariable {
 }
 
 export interface DocumentTemplate {
-	id: string;
+	id?: string;
+	_id?: string; // MongoDB ID
 	name: string;
 	description: string;
 	category: DocumentCategory;
 	content: string; // HTML content with variables
-	variables: DocumentVariable[];
-	isPublic: boolean;
-	createdBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	requiredModels?: ("Contact" | "Folder" | "User" | "Skill" | "JudFolder")[];
+	variableDetails?: TemplateVariableDetail[];
 	tags?: string[];
+	isGeneral?: boolean;
+	owner?: string;
+	isActive?: boolean;
+	usageCount?: number;
+	lastUsedAt?: string;
+	createdAt?: string;
+	updatedAt?: string;
+	// Legacy fields for compatibility
+	variables?: string[] | DocumentVariable[];
+	isPublic?: boolean;
+	createdBy?: string;
 }
 
 export interface Document {
@@ -38,8 +60,8 @@ export interface Document {
 	version: number;
 	createdBy: string;
 	lastModifiedBy: string;
-	createdAt: Date;
-	updatedAt: Date;
+	createdAt: string;
+	updatedAt: string;
 	tags?: string[];
 	metadata?: {
 		court?: string;
@@ -56,32 +78,14 @@ export interface DocumentVersion {
 	content: string;
 	changes?: string; // Descripción de cambios
 	createdBy: string;
-	createdAt: Date;
+	createdAt: string;
 }
 
-export type DocumentType = 
-	| 'demanda'
-	| 'contestacion'
-	| 'escrito'
-	| 'notificacion'
-	| 'contrato'
-	| 'poder'
-	| 'recurso'
-	| 'otros';
+export type DocumentType = "demanda" | "contestacion" | "escrito" | "notificacion" | "contrato" | "poder" | "recurso" | "otros";
 
-export type DocumentStatus = 
-	| 'draft'
-	| 'final'
-	| 'archived';
+export type DocumentStatus = "draft" | "final" | "archived";
 
-export type DocumentCategory = 
-	| 'civil'
-	| 'laboral'
-	| 'comercial'
-	| 'familia'
-	| 'penal'
-	| 'administrativo'
-	| 'general';
+export type DocumentCategory = "civil" | "laboral" | "comercial" | "familia" | "penal" | "administrativo" | "general";
 
 // Estado Redux
 export interface DocumentsState {
@@ -127,7 +131,7 @@ export interface CreateTemplatePayload {
 	description: string;
 	category: DocumentCategory;
 	content: string;
-	variables: Omit<DocumentVariable, 'id'>[];
+	variables: Omit<DocumentVariable, "id">[];
 	isPublic?: boolean;
 	tags?: string[];
 }

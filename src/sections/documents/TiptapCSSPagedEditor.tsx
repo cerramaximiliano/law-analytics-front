@@ -54,7 +54,11 @@ import {
 
 // types
 import { Contact } from "types/contact";
-import { DocumentType, DocumentStatus, Document } from "types/documents";
+import { DocumentType, DocumentStatus, Document, DocumentCategory } from "types/documents";
+
+// utils
+import { replaceTemplateVariablesWithFallback } from "utils/templateValidation";
+import { getTemplateById } from "data/documentTemplates";
 
 interface TiptapCSSPagedEditorProps {
 	onClose: () => void;
@@ -350,43 +354,6 @@ const editorStyles = `
 }
 `;
 
-// Helper function to replace template variables
-function replaceTemplateVariables(content: string, data: any): string {
-	if (!data) return content;
-	
-
-	// Replace variables in format {{path.to.variable}}
-	const result = content.replace(/\{\{([^}]+)\}\}/g, (match, path) => {
-		const keys = path.trim().split(".");
-		let value = data;
-
-		// Special handling for user.skill which can be an array
-		if (keys[0] === "user" && keys[1] === "skill" && keys.length > 2) {
-			const user = data.user;
-			if (user && user.skill && Array.isArray(user.skill) && user.skill.length > 0) {
-				const skill = user.skill[0]; // Get first skill
-				if (typeof skill === "object") {
-					value = skill[keys[2]];
-					return value?.toString() || "";
-				}
-			}
-			return "";
-		}
-
-		// Navigate through the object path
-		for (const key of keys) {
-			if (value && typeof value === "object" && key in value) {
-				value = value[key];
-			} else {
-				return ""; // Return empty string instead of keeping the placeholder
-			}
-		}
-
-		return value?.toString() || "";
-	});
-	return result;
-}
-
 function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapCSSPagedEditorProps) {
 	const dispatch = useDispatch();
 	const { currentDocument, templates } = useSelector((state: RootState) => state.documents);
@@ -412,18 +379,25 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			const templateData = {
 				user: currentDocument.metadata.user || user,
 				folder: currentDocument.metadata.folderData || folderData,
-				contact: currentDocument.metadata.contact || selectedContacts?.[0] || {}
+				contact: currentDocument.metadata.contact || selectedContacts?.[0] || {},
 			};
-			
-			// Replace template variables
-			return replaceTemplateVariables(currentDocument.content, templateData);
+
+			// Get template if available
+			const template = currentDocument.metadata.templateId ? getTemplateById(currentDocument.metadata.templateId) : null;
+
+			// Replace template variables with fallback support
+			return replaceTemplateVariablesWithFallback(
+				currentDocument.content,
+				templateData,
+				template || { id: "default", name: "", description: "", category: "general" as DocumentCategory, content: "" },
+			);
 		}
 		return currentDocument?.content || "";
 	}, [currentDocument?.id, currentDocument?.content, currentDocument?.metadata, user, folderData, selectedContacts]); // Re-process when any dependency changes
-	
-	// Create editor instance
-	const editor = useEditor({
-		extensions: [
+
+	// Memoize extensions to prevent recreation
+	const extensions = useMemo(
+		() => [
 			StarterKit.configure({
 				heading: {
 					levels: [1, 2, 3],
@@ -442,6 +416,12 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 				placeholder: "Comience a escribir su documento legal...",
 			}),
 		],
+		[],
+	);
+
+	// Create editor instance
+	const editor = useEditor({
+		extensions,
 		content: processedContent,
 		editable: true,
 		editorProps: {
@@ -654,8 +634,8 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			templateId: selectedTemplate || currentDocument?.templateId,
 			createdBy: currentDocument?.createdBy || user?.id || "user_1",
 			lastModifiedBy: user?.id || "user_1",
-			createdAt: currentDocument?.createdAt || new Date(),
-			updatedAt: new Date(),
+			createdAt: currentDocument?.createdAt || new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
 			tags: currentDocument?.tags || [],
 			metadata: currentDocument?.metadata || {},
 		};

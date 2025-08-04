@@ -1,0 +1,147 @@
+import { useState, useEffect } from "react";
+import {
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	Button,
+	List,
+	ListItem,
+	ListItemButton,
+	ListItemAvatar,
+	ListItemText,
+	Avatar,
+	Radio,
+	Typography,
+	Box,
+	TextField,
+	InputAdornment,
+	CircularProgress,
+} from "@mui/material";
+import { Folder2, SearchNormal1 } from "iconsax-react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "store";
+import { getFoldersByUserId } from "store/reducers/folder";
+
+interface FolderSelectionDialogProps {
+	open: boolean;
+	onSelect: (folder: any) => void;
+	onCancel: () => void;
+}
+
+function FolderSelectionDialog({ open, onSelect, onCancel }: FolderSelectionDialogProps) {
+	const dispatch = useDispatch();
+	const [selectedFolder, setSelectedFolder] = useState<any>(null);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [loading, setLoading] = useState(false);
+
+	const { folders } = useSelector((state: RootState) => state.folder);
+	const { user } = useSelector((state: RootState) => state.auth);
+
+	useEffect(() => {
+		if (open && user?._id) {
+			setLoading(true);
+			dispatch(getFoldersByUserId(user._id) as any).finally(() => {
+				setLoading(false);
+			});
+		}
+	}, [open, user, dispatch]);
+
+	const handleSelect = () => {
+		if (selectedFolder) {
+			onSelect(selectedFolder);
+		}
+	};
+
+	// Filter folders based on search term
+	const filteredFolders = folders.filter(
+		(folder: any) =>
+			folder.folderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			folder.materia?.toLowerCase().includes(searchTerm.toLowerCase()),
+	);
+
+	return (
+		<Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth disableRestoreFocus>
+			<DialogTitle>
+				<Box>
+					<Typography variant="h6" component="span">
+						Seleccionar Carpeta
+					</Typography>
+					<Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+						Seleccione una carpeta para autocompletar los datos del documento
+					</Typography>
+				</Box>
+			</DialogTitle>
+			<DialogContent dividers>
+				<TextField
+					fullWidth
+					placeholder="Buscar carpeta..."
+					value={searchTerm}
+					onChange={(e) => setSearchTerm(e.target.value)}
+					sx={{ mb: 2 }}
+					InputProps={{
+						startAdornment: (
+							<InputAdornment position="start">
+								<SearchNormal1 size={18} />
+							</InputAdornment>
+						),
+					}}
+				/>
+
+				{loading ? (
+					<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+						<CircularProgress />
+					</Box>
+				) : (
+					<List sx={{ maxHeight: 400, overflow: "auto" }}>
+						{filteredFolders.length === 0 ? (
+							<Box sx={{ textAlign: "center", py: 4 }}>
+								<Typography color="textSecondary">{searchTerm ? "No se encontraron carpetas" : "No hay carpetas disponibles"}</Typography>
+							</Box>
+						) : (
+							filteredFolders.map((folder: any) => (
+								<ListItem key={folder._id} disablePadding>
+									<ListItemButton onClick={() => setSelectedFolder(folder)} selected={selectedFolder?._id === folder._id}>
+										<Radio edge="start" checked={selectedFolder?._id === folder._id} tabIndex={-1} disableRipple />
+										<ListItemAvatar>
+											<Avatar sx={{ bgcolor: "primary.lighter" }}>
+												<Folder2 size={20} />
+											</Avatar>
+										</ListItemAvatar>
+										<ListItemText
+											primary={folder.folderName}
+											secondary={
+												<>
+													{folder.materia && (
+														<Typography component="span" variant="caption" color="textSecondary">
+															Materia: {folder.materia}
+														</Typography>
+													)}
+													{folder.judFolder?.numberJudFolder && (
+														<Typography component="span" variant="caption" color="textSecondary" display="block">
+															Expte: {folder.judFolder.numberJudFolder}
+														</Typography>
+													)}
+												</>
+											}
+										/>
+									</ListItemButton>
+								</ListItem>
+							))
+						)}
+					</List>
+				)}
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onCancel} color="secondary">
+					Cancelar
+				</Button>
+				<Button onClick={handleSelect} variant="contained" disabled={!selectedFolder}>
+					Seleccionar
+				</Button>
+			</DialogActions>
+		</Dialog>
+	);
+}
+
+export default FolderSelectionDialog;

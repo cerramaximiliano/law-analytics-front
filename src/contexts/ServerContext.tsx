@@ -19,6 +19,7 @@ import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
+import Cookies from "js-cookie";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = process.env.REACT_APP_HIDE_BANKING_DATA === "true";
@@ -250,9 +251,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		// Variable para almacenar los IDs de interceptores (para limpieza)
 		const interceptors: number[] = [];
 
-		// Interceptor de solicitud para ver qué peticiones se están haciendo
+		// Interceptor de solicitud para agregar el token de autorización
 		const requestInterceptor = axios.interceptors.request.use(
 			(config) => {
+				// Obtener el token de autorización
+				const serviceToken = authTokenService.getToken();
+				const storageToken = secureStorage.getAuthToken();
+				const cookieToken = Cookies.get("authToken") || Cookies.get("token");
+
+				const token = serviceToken || storageToken || cookieToken;
+
+				// Agregar el token al header si está disponible
+				if (token && !config.headers.Authorization) {
+					config.headers.Authorization = `Bearer ${token}`;
+				}
+
 				return config;
 			},
 			(error) => {

@@ -4,6 +4,21 @@ import axios from "axios";
 import { Dispatch } from "redux";
 import { FolderData, FolderState } from "types/folder";
 
+// Helper function to serialize dates in objects
+const serializeDates = (obj: any): any => {
+	if (obj === null || obj === undefined) return obj;
+	if (obj instanceof Date) return obj.toISOString();
+	if (Array.isArray(obj)) return obj.map(serializeDates);
+	if (typeof obj === "object") {
+		const serialized: any = {};
+		for (const key in obj) {
+			serialized[key] = serializeDates(obj[key]);
+		}
+		return serialized;
+	}
+	return obj;
+};
+
 // Action types
 const SET_FOLDER_LOADING = "SET_FOLDER_LOADING";
 const ADD_FOLDER = "ADD_FOLDER";
@@ -41,13 +56,13 @@ const folder = (state = initialFolderState, action: any) => {
 		case ADD_FOLDER:
 			return {
 				...state,
-				folders: [...state.folders, action.payload],
+				folders: [...state.folders, serializeDates(action.payload)],
 				isLoader: false,
 			};
 		case GET_FOLDERS_BY_USER:
 			return {
 				...state,
-				folders: action.payload,
+				folders: serializeDates(action.payload),
 				isLoader: false,
 				isInitialized: true,
 				lastFetchedUserId: action.userId,
@@ -55,21 +70,22 @@ const folder = (state = initialFolderState, action: any) => {
 		case GET_FOLDERS_BY_GROUP:
 			return {
 				...state,
-				folders: action.payload,
+				folders: serializeDates(action.payload),
 				isLoader: false,
 			};
 		case GET_ARCHIVED_FOLDERS:
 			return {
 				...state,
-				archivedFolders: action.payload,
+				archivedFolders: serializeDates(action.payload),
 				isLoader: false,
 			};
 		case GET_FOLDER_BY_ID:
+			const serializedFolder = serializeDates(action.payload);
 			return {
 				...state,
-				folder: action.payload,
+				folder: serializedFolder,
 				// También actualizar el folder en la lista si existe
-				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+				folders: state.folders.map((folder: FolderData) => (folder._id === serializedFolder._id ? serializedFolder : folder)),
 				isLoader: false,
 			};
 		case DELETE_FOLDER:
@@ -110,10 +126,11 @@ const folder = (state = initialFolderState, action: any) => {
 				isLoader: false,
 			};
 		case UPDATE_FOLDER:
+			const updatedFolder = serializeDates(action.payload);
 			return {
 				...state,
-				folder: action.payload,
-				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+				folder: updatedFolder,
+				folders: state.folders.map((folder: FolderData) => (folder._id === updatedFolder._id ? updatedFolder : folder)),
 				isLoader: false,
 			};
 		case SET_FOLDER_ERROR:
