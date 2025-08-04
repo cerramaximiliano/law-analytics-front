@@ -15,8 +15,8 @@ import {
 	InputLabel,
 	Select,
 	MenuItem,
-	CircularProgress,
 	Alert,
+	Skeleton,
 } from "@mui/material";
 import { SearchNormal1, DocumentText, Add } from "iconsax-react";
 import { DocumentTemplate } from "types/documents";
@@ -34,9 +34,14 @@ function TemplateSelector({ onSelect, showCreateBlank = true }: TemplateSelector
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
+	// State to track if initial load is happening
+	const [isInitialLoad, setIsInitialLoad] = useState(true);
+
 	// Cargar plantillas desde la API al montar el componente
 	useEffect(() => {
-		dispatch(fetchTemplates() as any);
+		dispatch(fetchTemplates() as any).finally(() => {
+			setIsInitialLoad(false);
+		});
 	}, [dispatch]);
 
 	// Get unique categories
@@ -76,40 +81,83 @@ function TemplateSelector({ onSelect, showCreateBlank = true }: TemplateSelector
 			{/* Search and Filter Controls */}
 			<Grid container spacing={2} sx={{ mb: 3 }}>
 				<Grid item xs={12} md={8}>
-					<TextField
-						fullWidth
-						placeholder="Buscar plantillas..."
-						value={searchTerm}
-						onChange={(e) => setSearchTerm(e.target.value)}
-						InputProps={{
-							startAdornment: (
-								<InputAdornment position="start">
-									<SearchNormal1 size={18} />
-								</InputAdornment>
-							),
-						}}
-						size="small"
-					/>
+					{isInitialLoad ? (
+						<Skeleton variant="rounded" height={40} />
+					) : (
+						<TextField
+							fullWidth
+							placeholder="Buscar plantillas..."
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position="start">
+										<SearchNormal1 size={18} />
+									</InputAdornment>
+								),
+							}}
+							size="small"
+						/>
+					)}
 				</Grid>
 				<Grid item xs={12} md={4}>
-					<FormControl fullWidth size="small">
-						<InputLabel>Categoría</InputLabel>
-						<Select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} label="Categoría">
-							{categories.map((cat) => (
-								<MenuItem key={cat} value={cat}>
-									{getCategoryLabel(cat)}
-								</MenuItem>
-							))}
-						</Select>
-					</FormControl>
+					{isInitialLoad ? (
+						<Skeleton variant="rounded" height={40} />
+					) : (
+						<FormControl fullWidth size="small">
+							<InputLabel>Categoría</InputLabel>
+							<Select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} label="Categoría">
+								{categories.map((cat) => (
+									<MenuItem key={cat} value={cat}>
+										{getCategoryLabel(cat)}
+									</MenuItem>
+								))}
+							</Select>
+						</FormControl>
+					)}
 				</Grid>
 			</Grid>
 
-			{/* Loading State */}
+			{/* Loading State with Skeletons */}
 			{isLoading && (
-				<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-					<CircularProgress />
-				</Box>
+				<Grid container spacing={2}>
+					{/* Skeleton for blank document */}
+					{showCreateBlank && (
+						<Grid item xs={12} sm={6} md={4}>
+							<Card variant="outlined">
+								<CardContent sx={{ height: 180 }}>
+									<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
+										<Skeleton variant="circular" width={48} height={48} />
+										<Skeleton variant="text" width={150} sx={{ mt: 2, fontSize: "1.25rem" }} />
+										<Skeleton variant="text" width={200} sx={{ mt: 1 }} />
+									</Box>
+								</CardContent>
+							</Card>
+						</Grid>
+					)}
+					{/* Skeletons for template cards */}
+					{[1, 2, 3, 4, 5, 6].map((index) => (
+						<Grid item xs={12} sm={6} md={4} key={index}>
+							<Card variant="outlined">
+								<CardContent sx={{ height: 180 }}>
+									<Box sx={{ display: "flex", alignItems: "start", mb: 1 }}>
+										<Skeleton variant="rectangular" width={24} height={24} />
+										<Box sx={{ ml: 1, flex: 1 }}>
+											<Skeleton variant="text" width="80%" sx={{ fontSize: "1.25rem" }} />
+											<Skeleton variant="text" width="100%" />
+											<Skeleton variant="text" width="90%" />
+										</Box>
+									</Box>
+									<Box sx={{ mt: "auto", display: "flex", gap: 0.5 }}>
+										<Skeleton variant="rounded" width={60} height={24} />
+										<Skeleton variant="rounded" width={80} height={24} />
+										<Skeleton variant="rounded" width={70} height={24} />
+									</Box>
+								</CardContent>
+							</Card>
+						</Grid>
+					))}
+				</Grid>
 			)}
 
 			{/* Error State */}

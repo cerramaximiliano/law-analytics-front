@@ -17,6 +17,9 @@ import {
 	TextField,
 	InputAdornment,
 	CircularProgress,
+	Stack,
+	Chip,
+	useTheme,
 } from "@mui/material";
 import { Folder2, SearchNormal1 } from "iconsax-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -30,6 +33,7 @@ interface FolderSelectionDialogProps {
 }
 
 function FolderSelectionDialog({ open, onSelect, onCancel }: FolderSelectionDialogProps) {
+	const theme = useTheme();
 	const dispatch = useDispatch();
 	const [selectedFolder, setSelectedFolder] = useState<any>(null);
 	const [searchTerm, setSearchTerm] = useState("");
@@ -62,17 +66,33 @@ function FolderSelectionDialog({ open, onSelect, onCancel }: FolderSelectionDial
 
 	return (
 		<Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth disableRestoreFocus>
-			<DialogTitle>
-				<Box>
-					<Typography variant="h6" component="span">
-						Seleccionar Carpeta
-					</Typography>
-					<Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+			<DialogTitle
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Stack spacing={1}>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<Folder2 size={24} color={theme.palette.primary.main} />
+						<Typography
+							variant="h5"
+							color="primary"
+							sx={{
+								color: theme.palette.primary.main,
+								fontWeight: 600,
+							}}
+						>
+							Seleccionar Carpeta
+						</Typography>
+					</Stack>
+					<Typography variant="body2" color="textSecondary">
 						Seleccione una carpeta para autocompletar los datos del documento
 					</Typography>
-				</Box>
+				</Stack>
 			</DialogTitle>
-			<DialogContent dividers>
+			<DialogContent dividers sx={{ px: 3, py: 2 }}>
 				<TextField
 					fullWidth
 					placeholder="Buscar carpeta..."
@@ -89,13 +109,13 @@ function FolderSelectionDialog({ open, onSelect, onCancel }: FolderSelectionDial
 				/>
 
 				{loading ? (
-					<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+					<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 350 }}>
 						<CircularProgress />
 					</Box>
 				) : (
-					<List sx={{ maxHeight: 400, overflow: "auto" }}>
+					<List sx={{ maxHeight: 350, minHeight: 350, overflow: "auto" }}>
 						{filteredFolders.length === 0 ? (
-							<Box sx={{ textAlign: "center", py: 4 }}>
+							<Box sx={{ textAlign: "center", py: 8, minHeight: 350, display: "flex", alignItems: "center", justifyContent: "center" }}>
 								<Typography color="textSecondary">{searchTerm ? "No se encontraron carpetas" : "No hay carpetas disponibles"}</Typography>
 							</Box>
 						) : (
@@ -104,25 +124,21 @@ function FolderSelectionDialog({ open, onSelect, onCancel }: FolderSelectionDial
 									<ListItemButton onClick={() => setSelectedFolder(folder)} selected={selectedFolder?._id === folder._id}>
 										<Radio edge="start" checked={selectedFolder?._id === folder._id} tabIndex={-1} disableRipple />
 										<ListItemAvatar>
-											<Avatar sx={{ bgcolor: "primary.lighter" }}>
+											<Avatar>
 												<Folder2 size={20} />
 											</Avatar>
 										</ListItemAvatar>
 										<ListItemText
 											primary={folder.folderName}
 											secondary={
-												<>
-													{folder.materia && (
-														<Typography component="span" variant="caption" color="textSecondary">
-															Materia: {folder.materia}
-														</Typography>
-													)}
+												<Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+													{folder.materia && <Chip label={folder.materia} size="small" color="primary" />}
 													{folder.judFolder?.numberJudFolder && (
-														<Typography component="span" variant="caption" color="textSecondary" display="block">
+														<Typography variant="caption" color="textSecondary">
 															Expte: {folder.judFolder.numberJudFolder}
 														</Typography>
 													)}
-												</>
+												</Box>
 											}
 										/>
 									</ListItemButton>
@@ -132,7 +148,7 @@ function FolderSelectionDialog({ open, onSelect, onCancel }: FolderSelectionDial
 					</List>
 				)}
 			</DialogContent>
-			<DialogActions>
+			<DialogActions sx={{ p: 2 }}>
 				<Button onClick={onCancel} color="secondary">
 					Cancelar
 				</Button>

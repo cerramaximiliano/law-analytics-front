@@ -10,7 +10,7 @@ export const variableDisplayNames: Record<string, string> = {
 	"contact.phone": "TELEFONO_CLIENTE",
 	"contact.email": "EMAIL_CLIENTE",
 	"contact.role": "ROL_CONTACTO",
-	
+
 	// Folder variables
 	"folder.folderName": "NOMBRE_CARPETA",
 	"folder.materia": "MATERIA",
@@ -18,7 +18,7 @@ export const variableDisplayNames: Record<string, string> = {
 	"folder.judFolder.radicacion": "RADICACION",
 	"folder.judFolder.juzgado": "JUZGADO",
 	"folder.judFolder.secretaria": "SECRETARIA",
-	
+
 	// User/Lawyer variables
 	"user.firstName": "NOMBRE_ABOGADO",
 	"user.lastName": "APELLIDO_ABOGADO",
@@ -28,12 +28,12 @@ export const variableDisplayNames: Record<string, string> = {
 	"user.skill.electronicAddress": "DOMICILIO_ELECTRONICO",
 	"user.skill.taxCondition": "CONDICION_TRIBUTARIA",
 	"user.skill.taxCode": "CUIT_ABOGADO",
-	
+
 	// Date variables
-	"currentDate": "FECHA_ACTUAL",
-	"currentYear": "AÑO_ACTUAL",
-	"currentMonth": "MES_ACTUAL",
-	"currentDay": "DIA_ACTUAL",
+	currentDate: "FECHA_ACTUAL",
+	currentYear: "AÑO_ACTUAL",
+	currentMonth: "MES_ACTUAL",
+	currentDay: "DIA_ACTUAL",
 };
 
 // Función para obtener el nombre amigable de una variable
@@ -56,7 +56,7 @@ export function standardizePlaceholders(content: string): string {
 		"[PROVINCIA]": "{{PROVINCIA_CLIENTE}}",
 		"[CONTACT CITY]": "{{CIUDAD_CLIENTE}}",
 		"[CONTACT STATE]": "{{PROVINCIA_CLIENTE}}",
-		
+
 		// Generic contact placeholders
 		"[NOMBRE_CONTACTO]": "{{NOMBRE_CLIENTE}}",
 		"[APELLIDO_CONTACTO]": "{{APELLIDO_CLIENTE}}",
@@ -64,26 +64,26 @@ export function standardizePlaceholders(content: string): string {
 		"[DIRECCION_CONTACTO]": "{{DIRECCION_CLIENTE}}",
 		"[CIUDAD_CONTACTO]": "{{CIUDAD_CLIENTE}}",
 		"[PROVINCIA_CONTACTO]": "{{PROVINCIA_CLIENTE}}",
-		
+
 		// Other placeholders
 		"[CARPETA]": "{{NOMBRE_CARPETA}}",
 		"[MATERIA]": "{{MATERIA}}",
 		"[EXPEDIENTE]": "{{NUMERO_EXPEDIENTE}}",
 	};
-	
+
 	// Reemplazar todos los placeholders conocidos
 	let standardizedContent = content;
 	for (const [oldPlaceholder, newPlaceholder] of Object.entries(placeholderMap)) {
 		standardizedContent = standardizedContent.replace(new RegExp(escapeRegExp(oldPlaceholder), "g"), newPlaceholder);
 	}
-	
+
 	// Reemplazar cualquier placeholder restante que siga el formato [ALGO]
 	standardizedContent = standardizedContent.replace(/\[([^\]]+)\]/g, (match, p1) => {
 		// Convertir el contenido a mayúsculas y reemplazar espacios con guiones bajos
 		const normalized = p1.toUpperCase().replace(/\s+/g, "_");
 		return `{{${normalized}}}`;
 	});
-	
+
 	return standardizedContent;
 }
 
@@ -95,10 +95,10 @@ function escapeRegExp(string: string): string {
 // Función para reemplazar variables con placeholders amigables cuando faltan datos
 export function replaceWithFriendlyPlaceholders(content: string, missingVariables: string[]): string {
 	let processedContent = content;
-	
+
 	// Primero estandarizar cualquier placeholder antiguo
 	processedContent = standardizePlaceholders(processedContent);
-	
+
 	// Luego reemplazar las variables faltantes con sus placeholders amigables
 	for (const variable of missingVariables) {
 		const displayName = getVariableDisplayName(variable);
@@ -106,6 +106,6 @@ export function replaceWithFriendlyPlaceholders(content: string, missingVariable
 		const regex = new RegExp(`{{${escapeRegExp(variable)}}}`, "g");
 		processedContent = processedContent.replace(regex, `{{${displayName}}}`);
 	}
-	
+
 	return processedContent;
 }

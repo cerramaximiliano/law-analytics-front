@@ -29,7 +29,7 @@ export const documentTemplates: DocumentTemplate[] = [
 		description: "Acápite de presentación para actuar como letrado patrocinante",
 		category: "general" as DocumentCategory,
 		content: `<p>Sr. Juez:</p>
-<p>{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:</p>`,
+<p style="text-align: justify;">{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:</p>`,
 		variables: ["contact", "user", "folder"],
 		variableDetails: [
 			{
@@ -198,7 +198,8 @@ export const documentTemplates: DocumentTemplate[] = [
 		name: "Solicitud de Medida Cautelar",
 		description: "Plantilla para solicitar medidas cautelares",
 		category: "general" as DocumentCategory,
-		content: `<h1 style="text-align: center;">SOLICITA MEDIDA CAUTELAR</h1>
+		content: `<div style="text-align: justify;">
+<h1 style="text-align: center;">SOLICITA MEDIDA CAUTELAR</h1>
 <p>Sr. Juez:</p>
 <p>{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. respetuosamente digo:</p>
 <h2>I.- OBJETO</h2>
@@ -214,7 +215,8 @@ export const documentTemplates: DocumentTemplate[] = [
 <p>1) Se decrete la medida cautelar solicitada.</p>
 <p>2) Se libre el mandamiento correspondiente.</p>
 <p>Proveer de conformidad,</p>
-<p style="text-align: center;">SERÁ JUSTICIA</p>`,
+<p style="text-align: center;">SERÁ JUSTICIA</p>
+</div>`,
 		variables: ["contact", "user", "folder"],
 		tags: ["cautelar", "embargo", "urgente"],
 	},
