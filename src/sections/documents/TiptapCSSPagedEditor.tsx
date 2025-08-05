@@ -379,14 +379,13 @@ const isTemporaryId = (id: string | undefined): boolean => {
 
 function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapCSSPagedEditorProps) {
 	const dispatch = useDispatch();
-	const { currentDocument, templates } = useSelector((state: RootState) => state.documents);
+	const { currentDocument } = useSelector((state: RootState) => state.documents);
 	const { user } = useSelector((state: RootState) => state.auth);
 	const { enqueueSnackbar } = useSnackbar();
 
 	const [title, setTitle] = useState(currentDocument?.title || "");
 	const [type, setType] = useState<DocumentType>(currentDocument?.type || "escrito");
 	const [status, setStatus] = useState<DocumentStatus>(currentDocument?.status || "draft");
-	const [selectedTemplate, setSelectedTemplate] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
@@ -662,7 +661,7 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			status: status as "draft" | "final" | "signed" | "sent" | "archived",
 			folderId: folderId,
 			userId: user?._id || user?.id,
-			templateId: selectedTemplate || currentDocument?.templateId || undefined,
+			templateId: currentDocument?.metadata?.templateId || currentDocument?.templateId || undefined,
 			metadata: {
 				createdFrom: currentDocument?.metadata?.templateId ? "template" : "blank",
 				tags: currentDocument?.tags || [],
@@ -718,25 +717,6 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 	const handleClose = () => {
 		dispatch(setCurrentDocument(null));
 		onClose();
-	};
-
-	const handleTemplateSelect = (templateId: string) => {
-		setSelectedTemplate(templateId);
-		if (!templateId && editor) {
-			// If "Sin plantilla" is selected, clear the content or restore original
-			if (currentDocument?.content) {
-				editor.commands.setContent(currentDocument.content);
-			} else {
-				editor.commands.clearContent();
-			}
-			return;
-		}
-
-		const template = templates.find((t) => t.id === templateId);
-		if (template && editor) {
-			editor.commands.setContent(template.content);
-			setType(template.category === "laboral" ? "demanda" : "escrito");
-		}
 	};
 
 	const handlePrint = () => {
@@ -885,37 +865,6 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 								</Select>
 							</FormControl>
 						</Grid>
-
-						{!currentDocument && templates.length > 0 && (
-							<Grid item xs={12}>
-								<FormControl
-									fullWidth
-									size="small"
-									variant="outlined"
-									sx={{
-										"& .MuiInputLabel-root": {
-											backgroundColor: "white",
-											px: 0.5,
-										},
-										"& .MuiInputLabel-shrink": {
-											transform: "translate(14px, -9px) scale(0.75)",
-										},
-									}}
-								>
-									<InputLabel>Usar Plantilla (Opcional)</InputLabel>
-									<Select value={selectedTemplate} onChange={(e) => handleTemplateSelect(e.target.value)} label="Usar Plantilla (Opcional)">
-										<MenuItem value="">
-											<em>Sin plantilla</em>
-										</MenuItem>
-										{templates.map((template) => (
-											<MenuItem key={template.id} value={template.id}>
-												{template.name} - {template.description}
-											</MenuItem>
-										))}
-									</Select>
-								</FormControl>
-							</Grid>
-						)}
 					</Grid>
 
 					{editor && (
