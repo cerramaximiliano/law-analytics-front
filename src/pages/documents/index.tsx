@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router";
+import { useSnackbar } from "notistack";
 
 // material-ui
 import {
@@ -59,6 +60,7 @@ function DocumentsLayout() {
 	const dispatch = useDispatch();
 	const location = useLocation();
 	const navigate = useNavigate();
+	const { enqueueSnackbar } = useSnackbar();
 	const { documents, filters, templates } = useSelector((state: RootState) => state.documents);
 	const searchTerm = filters.searchTerm || "";
 	const { user } = useSelector((state: RootState) => state.auth);
@@ -184,12 +186,12 @@ function DocumentsLayout() {
 						// Show the editor
 						setShowEditor(true);
 					} else {
-						alert("Error al crear el documento");
+						enqueueSnackbar(result.message || "Error al crear el documento", { variant: "error" });
 					}
 				})
-				.catch(() => {
+				.catch((error) => {
 					setIsCreatingDocument(false);
-					alert("Error al crear el documento");
+					enqueueSnackbar("Error al crear el documento", { variant: "error" });
 				});
 		},
 		[dispatch, templates],
@@ -360,14 +362,15 @@ function DocumentsLayout() {
 	const handleExportAllPDF = async () => {
 		try {
 			if (filteredDocuments.length === 0) {
-				alert("No hay documentos para exportar");
+				enqueueSnackbar("No hay documentos para exportar", { variant: "warning" });
 				return;
 			}
 			// TODO: Implement batch PDF export
 			console.log("Exporting PDFs:", filteredDocuments);
+			enqueueSnackbar("Función de exportación en desarrollo", { variant: "info" });
 		} catch (error) {
 			console.error("Error exporting PDFs:", error);
-			alert("Error al exportar los documentos");
+			enqueueSnackbar("Error al exportar los documentos", { variant: "error" });
 		}
 	};
 

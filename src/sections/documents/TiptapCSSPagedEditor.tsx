@@ -7,6 +7,7 @@ import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
+import { useSnackbar } from "notistack";
 // Removed unused import
 
 // material-ui
@@ -380,6 +381,7 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 	const dispatch = useDispatch();
 	const { currentDocument, templates } = useSelector((state: RootState) => state.documents);
 	const { user } = useSelector((state: RootState) => state.auth);
+	const { enqueueSnackbar } = useSnackbar();
 
 	const [title, setTitle] = useState(currentDocument?.title || "");
 	const [type, setType] = useState<DocumentType>(currentDocument?.type || "escrito");
@@ -640,14 +642,14 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 
 	const handleSave = async () => {
 		if (!title.trim() || !editor) {
-			alert("Por favor ingrese un título para el documento");
+			enqueueSnackbar("Por favor ingrese un título para el documento", { variant: "warning" });
 			return;
 		}
 
 		// Verify we have a folderId
 		const folderId = currentDocument?.folderId || folderData?._id;
 		if (!folderId) {
-			alert("El documento debe estar asociado a una carpeta");
+			enqueueSnackbar("El documento debe estar asociado a una carpeta", { variant: "warning" });
 			return;
 		}
 
@@ -691,7 +693,13 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			}
 
 			if (result.success) {
-				// Success message could be shown here
+				// Success message
+				enqueueSnackbar(
+					currentDocument?.id && !isTemporaryId(currentDocument.id)
+						? "Documento actualizado correctamente"
+						: "Documento creado correctamente",
+					{ variant: "success" },
+				);
 				setTimeout(() => {
 					setIsSaving(false);
 					handleClose();
@@ -699,11 +707,11 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			} else {
 				// Error handling
 				setIsSaving(false);
-				alert(result.message || "Error al guardar el documento");
+				enqueueSnackbar(result.message || "Error al guardar el documento", { variant: "error" });
 			}
 		} catch (error) {
 			setIsSaving(false);
-			alert("Error al guardar el documento");
+			enqueueSnackbar("Error al guardar el documento", { variant: "error" });
 		}
 	};
 
