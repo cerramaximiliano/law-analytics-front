@@ -21,13 +21,13 @@ import {
 	AlertTitle,
 	Snackbar,
 	Skeleton,
+	CircularProgress,
 } from "@mui/material";
 
 // project imports
 import MainCard from "components/MainCard";
 import { RootState } from "store";
-import { setDocuments, setSearchTerm, setStatusFilter, setTypeFilter } from "store/reducers/documents";
-import { mockDocuments } from "data/mockDocuments";
+import { setSearchTerm, setStatusFilter, setTypeFilter, fetchDocuments, fetchTemplates, createDocument } from "store/reducers/documents";
 
 // components
 import DocumentList from "sections/documents/DocumentList";
@@ -59,7 +59,7 @@ function DocumentsLayout() {
 	const dispatch = useDispatch();
 	const location = useLocation();
 	const navigate = useNavigate();
-	const { documents, filters } = useSelector((state: RootState) => state.documents);
+	const { documents, filters, templates } = useSelector((state: RootState) => state.documents);
 	const searchTerm = filters.searchTerm || "";
 	const { user } = useSelector((state: RootState) => state.auth);
 	const { selectedContacts } = useSelector((state: RootState) => state.contacts);
@@ -83,6 +83,7 @@ function DocumentsLayout() {
 		severity: "info",
 	});
 	const [isFolderLoading, setIsFolderLoading] = useState(false);
+	const [isCreatingDocument, setIsCreatingDocument] = useState(false);
 
 	// Function to create document with selected contact
 	const createDocumentWithContact = useCallback(
@@ -102,7 +103,8 @@ function DocumentsLayout() {
 			if (templateId) {
 				const template = getTemplateById(templateId);
 				if (template) {
-					templateContent = template.content;
+					// Replace literal \n with actual line breaks and unescape quotes
+					templateContent = template.content.replace(/\\n/g, "\n").replace(/\\"/g, '"');
 					// Set document type based on template category
 					if (template.category === "laboral") documentType = "demanda";
 					else if (template.category === "penal" || template.category === "civil") documentType = "recurso";
@@ -113,52 +115,95 @@ function DocumentsLayout() {
 					templateContent = "";
 				}
 			} else if (folder) {
-				// Default template for folder-based creation
-				if (contact) {
-					// Template with contact data
-					templateContent = `<p>Sr. Juez:</p>
-<p>{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:</p>`;
+				// Try to find "Presentación como Patrocinante" template from database
+				const defaultTemplate = templates.find((t) => t.name === "Presentación como Patrocinante" && t.isGeneral === true);
+
+				if (defaultTemplate) {
+					// Use template from database
+					// Replace literal \n with actual line breaks and unescape quotes
+					templateContent = defaultTemplate.content.replace(/\\n/g, "\n").replace(/\\"/g, '"');
+					templateId = defaultTemplate._id || defaultTemplate.id;
+					documentTitle = `${defaultTemplate.name} - ${folder.folderName}`;
 				} else {
-					// Template without contact data - leave placeholders for manual completion
-					templateContent = `<p>Sr. Juez:</p>
+					// Fallback to hardcoded template only if database template not found
+					if (contact) {
+						// Template with contact data
+						templateContent = `<p>Sr. Juez:</p>
+<p>{{contact.name}} {{contact.lastName}}, DNI {{contact.document}}, por derecho propio, con domicilio en {{contact.address}}, {{contact.city}}, {{contact.state}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:</p>`;
+					} else {
+						// Template without contact data - leave placeholders for manual completion
+						templateContent = `<p>Sr. Juez:</p>
 <p>{{NOMBRE_CLIENTE}} {{APELLIDO_CLIENTE}}, DNI {{DNI_CLIENTE}}, por derecho propio, con domicilio en {{DIRECCION_CLIENTE}}, {{CIUDAD_CLIENTE}}, {{PROVINCIA_CLIENTE}}, conjuntamente con mi letrado patrocinante Dr. {{user.firstName}} {{user.lastName}}, {{user.skill.registrationNumber}} - {{user.skill.name}}, con domicilio electrónico {{user.skill.electronicAddress}}, condición tributaria {{user.skill.taxCondition}}, CUIT {{user.skill.taxCode}}, en autos "{{folder.folderName}} s/ {{folder.materia}}", EXPTE. {{folder.judFolder.numberJudFolder}}, a V.S. decimos:</p>`;
+					}
 				}
 			} else {
 				// Empty document
 				templateContent = "";
 			}
 
-			dispatch(
-				setCurrentDocument({
-					id: `doc_${Date.now()}`,
-					title: documentTitle,
-					type: documentType,
-					status: "draft",
-					content: templateContent,
-					folderId: folderId || undefined,
-					version: 1,
+			// Create document in backend first to get real ID
+			const documentData = {
+				title: documentTitle,
+				content: templateContent,
+				status: "draft" as const,
+				folderId: folderId || undefined,
+				userId: user?._id || user?.id,
+				templateId: templateId || undefined,
+				metadata: {
+					createdFrom: templateId ? "template" : "blank",
 					tags: [],
-					metadata: {
-						folderData: folder,
-						user: processedUser,
-						contact: contact,
-						templateVariables: !!folder || !!templateId,
-						documentSettings: settings,
-						templateId: templateId,
-					},
-				} as any),
-			);
+					collaborators: [],
+				},
+			};
 
-			// Show the editor
-			setShowEditor(true);
+			// Show loading state
+			setIsCreatingDocument(true);
+
+			// Create the document in backend
+			dispatch(createDocument(documentData) as any)
+				.then((result: any) => {
+					setIsCreatingDocument(false);
+					if (result.success && result.document) {
+						// Set the document with the real ID from backend
+						dispatch(
+							setCurrentDocument({
+								...result.document,
+								id: result.document._id || result.document.id,
+								type: documentType,
+								metadata: {
+									...result.document.metadata,
+									folderData: folder,
+									user: processedUser,
+									contact: contact,
+									templateVariables: !!folder || !!templateId,
+									documentSettings: settings,
+									templateId: templateId,
+								},
+							} as any),
+						);
+						// Show the editor
+						setShowEditor(true);
+					} else {
+						alert("Error al crear el documento");
+					}
+				})
+				.catch(() => {
+					setIsCreatingDocument(false);
+					alert("Error al crear el documento");
+				});
 		},
-		[dispatch],
+		[dispatch, templates],
 	);
 
-	// Load mock data on mount
+	// Load documents from backend on mount
 	useEffect(() => {
-		dispatch(setDocuments(mockDocuments));
-	}, [dispatch]);
+		// Load documents from API
+		dispatch(fetchDocuments({ folderId: folderId || undefined }) as any);
+		// Load templates if not already loaded
+		if (templates.length === 0) {
+			dispatch(fetchTemplates() as any);
+		}
+	}, [dispatch, folderId]);
 
 	// Watch for selectedContacts changes
 	const [waitingForContacts, setWaitingForContacts] = useState(false);
@@ -379,6 +424,28 @@ function DocumentsLayout() {
 			<Grid item xs={12}>
 				<MainCard title="Documentos Legales">
 					<Stack spacing={3}>
+						{/* Loading overlay when creating document */}
+						{isCreatingDocument && (
+							<Box
+								sx={{
+									position: "fixed",
+									top: 0,
+									left: 0,
+									right: 0,
+									bottom: 0,
+									backgroundColor: "rgba(0, 0, 0, 0.5)",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									zIndex: 9999,
+								}}
+							>
+								<Box sx={{ textAlign: "center", backgroundColor: "white", p: 3, borderRadius: 2 }}>
+									<CircularProgress />
+									<Typography sx={{ mt: 2 }}>Creando documento...</Typography>
+								</Box>
+							</Box>
+						)}
 						{/* Filters and Actions */}
 						<Grid container spacing={2} alignItems="center">
 							<Grid item xs={12} md={4}>

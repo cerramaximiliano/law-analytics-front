@@ -33,7 +33,7 @@ import {
 
 // project imports
 import { RootState } from "store";
-import { addDocument, updateDocument, setCurrentDocument } from "store/reducers/documents";
+import { setCurrentDocument, createDocument, saveDocument } from "store/reducers/documents";
 
 // assets
 import {
@@ -54,7 +54,7 @@ import {
 
 // types
 import { Contact } from "types/contact";
-import { DocumentType, DocumentStatus, Document, DocumentCategory } from "types/documents";
+import { DocumentType, DocumentStatus, DocumentCategory } from "types/documents";
 
 // utils
 import { replaceTemplateVariablesWithFallback } from "utils/templateValidation";
@@ -122,9 +122,25 @@ const editorStyles = `
 
 .css-paged-tiptap .ProseMirror p {
 	margin-bottom: 12px;
-	text-align: justify;
+	text-align: left; /* Default alignment, inline styles will override */
 	orphans: 3;
 	widows: 3;
+}
+
+/* Respect inline styles and data attributes for justification */
+.css-paged-tiptap .ProseMirror p[style*="text-align: justify"],
+.css-paged-tiptap .ProseMirror p[data-text-align="justify"] {
+	text-align: justify !important;
+}
+
+/* Support for text indentation */
+.css-paged-tiptap .ProseMirror p[style*="text-indent"] {
+	text-indent: 2em !important;
+}
+
+/* Support for padding-left (alternative to text-indent) */
+.css-paged-tiptap .ProseMirror p[style*="padding-left"] {
+	padding-left: 2em !important;
 }
 
 .css-paged-tiptap .ProseMirror h1,
@@ -354,6 +370,12 @@ const editorStyles = `
 }
 `;
 
+// Helper function to check if document ID is temporary
+const isTemporaryId = (id: string | undefined): boolean => {
+	if (!id) return true;
+	return id.startsWith("doc_") || !id.match(/^[0-9a-fA-F]{24}$/);
+};
+
 function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapCSSPagedEditorProps) {
 	const dispatch = useDispatch();
 	const { currentDocument, templates } = useSelector((state: RootState) => state.documents);
@@ -406,6 +428,7 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			TextAlign.configure({
 				types: ["heading", "paragraph"],
 				defaultAlignment: "left",
+				alignments: ["left", "center", "right", "justify"],
 			}),
 			Underline,
 			TextStyle,
@@ -621,35 +644,67 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			return;
 		}
 
-		setIsSaving(true);
-
-		const documentData: Document = {
-			id: currentDocument?.id || `doc_${Date.now()}`,
-			title,
-			type,
-			status,
-			content: editor.getHTML(),
-			version: currentDocument?.version || 1,
-			folderId: currentDocument?.folderId,
-			templateId: selectedTemplate || currentDocument?.templateId,
-			createdBy: currentDocument?.createdBy || user?.id || "user_1",
-			lastModifiedBy: user?.id || "user_1",
-			createdAt: currentDocument?.createdAt || new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			tags: currentDocument?.tags || [],
-			metadata: currentDocument?.metadata || {},
-		};
-
-		if (currentDocument) {
-			dispatch(updateDocument(documentData));
-		} else {
-			dispatch(addDocument(documentData));
+		// Verify we have a folderId
+		const folderId = currentDocument?.folderId || folderData?._id;
+		if (!folderId) {
+			alert("El documento debe estar asociado a una carpeta");
+			return;
 		}
 
-		setTimeout(() => {
+		setIsSaving(true);
+
+		// Prepare document data matching backend model
+		const documentData: any = {
+			title,
+			content: editor.getHTML(),
+			status: status as "draft" | "final" | "signed" | "sent" | "archived",
+			folderId: folderId,
+			userId: user?._id || user?.id,
+			templateId: selectedTemplate || currentDocument?.templateId || undefined,
+			metadata: {
+				createdFrom: currentDocument?.metadata?.templateId ? "template" : "blank",
+				tags: currentDocument?.tags || [],
+				collaborators: currentDocument?.metadata?.collaborators || [],
+			},
+		};
+
+		try {
+			let result;
+			// Check if this is a new document (temporary ID) or existing document
+			if (currentDocument?.id && !isTemporaryId(currentDocument.id)) {
+				// Existing document with valid MongoDB ID - use PUT
+				result = await dispatch(saveDocument(currentDocument.id, documentData) as any);
+			} else {
+				// New document or temporary ID - use POST
+				result = await dispatch(createDocument(documentData) as any);
+
+				// If creation successful, update currentDocument with the real ID
+				if (result.success && result.document) {
+					dispatch(
+						setCurrentDocument({
+							...currentDocument,
+							...result.document,
+							id: result.document._id || result.document.id,
+						}),
+					);
+				}
+			}
+
+			if (result.success) {
+				// Success message could be shown here
+				setTimeout(() => {
+					setIsSaving(false);
+					handleClose();
+				}, 500);
+			} else {
+				// Error handling
+				setIsSaving(false);
+				alert(result.message || "Error al guardar el documento");
+			}
+		} catch (error) {
 			setIsSaving(false);
-			handleClose();
-		}, 500);
+			alert("Error al guardar el documento");
+		}
 	};
 
 	const handleClose = () => {

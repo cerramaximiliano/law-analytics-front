@@ -45,7 +45,7 @@ const documentsSlice = createSlice({
 			state.error = null;
 		},
 
-		deleteDocument: (state, action: PayloadAction<string>) => {
+		removeDocument: (state, action: PayloadAction<string>) => {
 			state.documents = state.documents.filter((doc) => doc.id !== action.payload);
 			if (state.currentDocument?.id === action.payload) {
 				state.currentDocument = null;
@@ -139,7 +139,7 @@ const documentsSlice = createSlice({
 		},
 
 		// Clear state
-		clearDocumentsState: (state) => {
+		clearDocumentsState: (_state) => {
 			return initialState;
 		},
 
@@ -163,7 +163,7 @@ export const {
 	setDocuments,
 	addDocument,
 	updateDocument,
-	deleteDocument,
+	removeDocument,
 	setCurrentDocument,
 	// Template actions
 	setTemplates,
@@ -191,6 +191,136 @@ export const {
 } = documentsSlice.actions;
 
 export default documentsSlice.reducer;
+
+// ==============================|| ASYNC ACTIONS - DOCUMENTS ||============================== //
+
+// Crear nuevo documento
+export const createDocument = (documentData: Partial<Document>) => async (dispatch: Dispatch) => {
+	try {
+		dispatch(setLoading(true));
+		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/documents`, documentData);
+
+		if (response.data.success) {
+			dispatch(addDocument(response.data.document));
+			return { success: true, document: response.data.document };
+		}
+		return { success: false, message: response.data.message || "Error al crear el documento" };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al crear el documento" : "Error desconocido";
+		dispatch(setError(errorMessage));
+		return { success: false, message: errorMessage };
+	} finally {
+		dispatch(setLoading(false));
+	}
+};
+
+// Actualizar documento existente
+export const saveDocument = (id: string, documentData: Partial<Document>) => async (dispatch: Dispatch) => {
+	try {
+		dispatch(setLoading(true));
+		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/documents/${id}`, documentData);
+
+		if (response.data.success) {
+			dispatch(updateDocument(response.data.document));
+			return { success: true, document: response.data.document };
+		}
+		return { success: false, message: response.data.message || "Error al actualizar el documento" };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al actualizar el documento"
+			: "Error desconocido";
+		dispatch(setError(errorMessage));
+		return { success: false, message: errorMessage };
+	} finally {
+		dispatch(setLoading(false));
+	}
+};
+
+// Obtener documentos del usuario
+export const fetchDocuments = (params?: { status?: string; folderId?: string; search?: string }) => async (dispatch: Dispatch) => {
+	try {
+		dispatch(setLoading(true));
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/documents`, { params });
+
+		if (response.data.success) {
+			dispatch(setDocuments(response.data.documents));
+			return { success: true, documents: response.data.documents };
+		}
+		return { success: false, documents: [] };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al cargar los documentos"
+			: "Error desconocido";
+		dispatch(setError(errorMessage));
+		return { success: false, documents: [], error: errorMessage };
+	} finally {
+		dispatch(setLoading(false));
+	}
+};
+
+// Obtener documento por ID
+export const fetchDocumentById = (id: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch(setLoading(true));
+		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/documents/${id}`);
+
+		if (response.data.success) {
+			dispatch(setCurrentDocument(response.data.document));
+			return { success: true, document: response.data.document };
+		}
+		return { success: false };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al cargar el documento" : "Error desconocido";
+		dispatch(setError(errorMessage));
+		return { success: false, error: errorMessage };
+	} finally {
+		dispatch(setLoading(false));
+	}
+};
+
+// Eliminar documento (soft delete)
+export const deleteDocument = (id: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch(setLoading(true));
+		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/documents/${id}`);
+
+		if (response.data.success) {
+			dispatch(removeDocument(id));
+			return { success: true };
+		}
+		return { success: false };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al eliminar el documento"
+			: "Error desconocido";
+		dispatch(setError(errorMessage));
+		return { success: false, error: errorMessage };
+	} finally {
+		dispatch(setLoading(false));
+	}
+};
+
+// Cambiar estado del documento
+export const changeDocumentStatus = (id: string, newStatus: string) => async (dispatch: Dispatch) => {
+	try {
+		dispatch(setLoading(true));
+		const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/documents/${id}/status`, { status: newStatus });
+
+		if (response.data.success) {
+			dispatch(updateDocument(response.data.document));
+			return { success: true, document: response.data.document };
+		}
+		return { success: false };
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al cambiar el estado del documento"
+			: "Error desconocido";
+		dispatch(setError(errorMessage));
+		return { success: false, error: errorMessage };
+	} finally {
+		dispatch(setLoading(false));
+	}
+};
 
 // ==============================|| ASYNC ACTIONS - TEMPLATES ||============================== //
 
@@ -306,3 +436,5 @@ export const deleteDocumentTemplate = (id: string) => async (dispatch: Dispatch)
 		dispatch(setLoading(false));
 	}
 };
+
+// Async actions are already exported individually above

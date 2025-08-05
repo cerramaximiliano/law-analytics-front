@@ -74,7 +74,7 @@ function DocumentList({ documents, onEdit }: DocumentListProps) {
 	const handleDelete = async (id: string) => {
 		if (window.confirm("¿Está seguro de eliminar este documento?")) {
 			// TODO: API call to delete document
-			dispatch(deleteDocument(id));
+			dispatch(deleteDocument(id) as any);
 		}
 		handleMenuClose();
 	};
