@@ -189,7 +189,7 @@ function DocumentsLayout() {
 						enqueueSnackbar(result.message || "Error al crear el documento", { variant: "error" });
 					}
 				})
-				.catch((error) => {
+				.catch((error: any) => {
 					setIsCreatingDocument(false);
 					enqueueSnackbar("Error al crear el documento", { variant: "error" });
 				});
