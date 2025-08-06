@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router";
-import { useSnackbar } from "notistack";
 
 // material-ui
 import {
@@ -22,13 +21,12 @@ import {
 	AlertTitle,
 	Snackbar,
 	Skeleton,
-	CircularProgress,
 } from "@mui/material";
 
 // project imports
 import MainCard from "components/MainCard";
 import { RootState } from "store";
-import { setSearchTerm, setStatusFilter, setTypeFilter, fetchDocuments, fetchTemplates, createDocument } from "store/reducers/documents";
+import { setSearchTerm, setStatusFilter, setTypeFilter, fetchDocuments, fetchTemplates } from "store/reducers/documents";
 
 // components
 import DocumentList from "sections/documents/DocumentList";
@@ -40,7 +38,7 @@ import FolderSelectionDialog from "sections/documents/FolderSelectionDialog";
 import TemplateSelector from "sections/documents/TemplateSelector";
 
 // assets
-import { Add, SearchNormal1, DocumentDownload, Folder2 } from "iconsax-react";
+import { Add, SearchNormal1, Folder2 } from "iconsax-react";
 
 // actions
 import { getFolderById } from "store/reducers/folder";
@@ -60,8 +58,7 @@ function DocumentsLayout() {
 	const dispatch = useDispatch();
 	const location = useLocation();
 	const navigate = useNavigate();
-	const { enqueueSnackbar } = useSnackbar();
-	const { documents, filters, templates } = useSelector((state: RootState) => state.documents);
+	const { documents, filters, templates, isLoading } = useSelector((state: RootState) => state.documents);
 	const searchTerm = filters.searchTerm || "";
 	const { user } = useSelector((state: RootState) => state.auth);
 	const { selectedContacts } = useSelector((state: RootState) => state.contacts);
@@ -85,7 +82,6 @@ function DocumentsLayout() {
 		severity: "info",
 	});
 	const [isFolderLoading, setIsFolderLoading] = useState(false);
-	const [isCreatingDocument, setIsCreatingDocument] = useState(false);
 
 	// Function to create document with selected contact
 	const createDocumentWithContact = useCallback(
@@ -143,56 +139,30 @@ function DocumentsLayout() {
 				templateContent = "";
 			}
 
-			// Create document in backend first to get real ID
-			const documentData = {
-				title: documentTitle,
-				content: templateContent,
-				status: "draft" as const,
-				folderId: folderId || undefined,
-				userId: user?._id || user?.id,
-				templateId: templateId || undefined,
-				metadata: {
-					createdFrom: templateId ? "template" : "blank",
+			// Create document locally (not in backend yet)
+			dispatch(
+				setCurrentDocument({
+					id: `doc_${Date.now()}`, // Temporary ID
+					title: documentTitle,
+					type: documentType,
+					status: "draft",
+					content: templateContent,
+					folderId: folderId || undefined,
+					version: 1,
 					tags: [],
-					collaborators: [],
-				},
-			};
+					metadata: {
+						folderData: folder,
+						user: processedUser,
+						contact: contact,
+						templateVariables: !!folder || !!templateId,
+						documentSettings: settings,
+						templateId: templateId,
+					},
+				} as any),
+			);
 
-			// Show loading state
-			setIsCreatingDocument(true);
-
-			// Create the document in backend
-			dispatch(createDocument(documentData) as any)
-				.then((result: any) => {
-					setIsCreatingDocument(false);
-					if (result.success && result.document) {
-						// Set the document with the real ID from backend
-						dispatch(
-							setCurrentDocument({
-								...result.document,
-								id: result.document._id || result.document.id,
-								type: documentType,
-								metadata: {
-									...result.document.metadata,
-									folderData: folder,
-									user: processedUser,
-									contact: contact,
-									templateVariables: !!folder || !!templateId,
-									documentSettings: settings,
-									templateId: templateId,
-								},
-							} as any),
-						);
-						// Show the editor
-						setShowEditor(true);
-					} else {
-						enqueueSnackbar(result.message || "Error al crear el documento", { variant: "error" });
-					}
-				})
-				.catch((error: any) => {
-					setIsCreatingDocument(false);
-					enqueueSnackbar("Error al crear el documento", { variant: "error" });
-				});
+			// Show the editor immediately
+			setShowEditor(true);
 		},
 		[dispatch, templates],
 	);
@@ -359,20 +329,6 @@ function DocumentsLayout() {
 		dispatch(setTypeFilter(event.target.value === "" ? undefined : (event.target.value as DocumentType)));
 	};
 
-	const handleExportAllPDF = async () => {
-		try {
-			if (filteredDocuments.length === 0) {
-				enqueueSnackbar("No hay documentos para exportar", { variant: "warning" });
-				return;
-			}
-			// TODO: Implement batch PDF export
-			console.log("Exporting PDFs:", filteredDocuments);
-			enqueueSnackbar("Función de exportación en desarrollo", { variant: "info" });
-		} catch (error) {
-			console.error("Error exporting PDFs:", error);
-			enqueueSnackbar("Error al exportar los documentos", { variant: "error" });
-		}
-	};
 
 	const handleFolderSelect = async (folder: any) => {
 		setShowFolderDialog(false);
@@ -427,86 +383,6 @@ function DocumentsLayout() {
 			<Grid item xs={12}>
 				<MainCard title="Documentos Legales">
 					<Stack spacing={3}>
-						{/* Loading overlay when creating document */}
-						{isCreatingDocument && (
-							<Box
-								sx={{
-									position: "fixed",
-									top: 0,
-									left: 0,
-									right: 0,
-									bottom: 0,
-									backgroundColor: "rgba(0, 0, 0, 0.5)",
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									zIndex: 9999,
-								}}
-							>
-								<Box sx={{ textAlign: "center", backgroundColor: "white", p: 3, borderRadius: 2 }}>
-									<CircularProgress />
-									<Typography sx={{ mt: 2 }}>Creando documento...</Typography>
-								</Box>
-							</Box>
-						)}
-						{/* Filters and Actions */}
-						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} md={4}>
-								<TextField
-									fullWidth
-									placeholder="Buscar documentos..."
-									value={searchTerm}
-									onChange={handleSearchChange}
-									InputProps={{
-										startAdornment: (
-											<InputAdornment position="start">
-												<SearchNormal1 size={18} />
-											</InputAdornment>
-										),
-									}}
-								/>
-							</Grid>
-							<Grid item xs={12} sm={6} md={2}>
-								<FormControl fullWidth size="small">
-									<InputLabel>Estado</InputLabel>
-									<Select value={filters.status || ""} onChange={handleStatusFilterChange} label="Estado">
-										<MenuItem value="">Todos</MenuItem>
-										<MenuItem value="draft">Borrador</MenuItem>
-										<MenuItem value="final">Final</MenuItem>
-										<MenuItem value="archived">Archivado</MenuItem>
-									</Select>
-								</FormControl>
-							</Grid>
-							<Grid item xs={12} sm={6} md={2}>
-								<FormControl fullWidth size="small">
-									<InputLabel>Tipo</InputLabel>
-									<Select value={filters.type || ""} onChange={handleTypeFilterChange} label="Tipo">
-										<MenuItem value="">Todos</MenuItem>
-										<MenuItem value="demanda">Demanda</MenuItem>
-										<MenuItem value="escrito">Escrito</MenuItem>
-										<MenuItem value="contestacion">Contestación</MenuItem>
-										<MenuItem value="notificacion">Notificación</MenuItem>
-										<MenuItem value="contrato">Contrato</MenuItem>
-										<MenuItem value="poder">Poder</MenuItem>
-										<MenuItem value="recurso">Recurso</MenuItem>
-										<MenuItem value="otros">Otros</MenuItem>
-									</Select>
-								</FormControl>
-							</Grid>
-							<Grid item xs={12} md={4} sx={{ textAlign: { xs: "left", md: "right" } }}>
-								<Stack direction="row" spacing={1} justifyContent={{ xs: "flex-start", md: "flex-end" }}>
-									{filteredDocuments.length > 0 && (
-										<Button variant="outlined" startIcon={<DocumentDownload />} onClick={handleExportAllPDF} size="medium">
-											Exportar Todo
-										</Button>
-									)}
-									<Button variant="contained" startIcon={<Add />} onClick={handleNewDocument}>
-										Nuevo Documento
-									</Button>
-								</Stack>
-							</Grid>
-						</Grid>
-
 						{showEditor ? (
 							// Show editor when a document is being edited
 							<TiptapCSSPagedEditor
@@ -530,14 +406,68 @@ function DocumentsLayout() {
 
 								{/* Content */}
 								{activeTab === 0 && (
-									<DocumentList
-										documents={filteredDocuments}
-										onEdit={() => {
-											// For now, show the editor with a blank document
-											// TODO: Implement document selection and editing
-											setShowEditor(true);
-										}}
-									/>
+									<Box>
+										{/* Filters and Actions - Only visible in Mis Documentos tab */}
+										<Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+											<Grid item xs={12} md={4}>
+												<TextField
+													fullWidth
+													placeholder="Buscar documentos..."
+													value={searchTerm}
+													onChange={handleSearchChange}
+													InputProps={{
+														startAdornment: (
+															<InputAdornment position="start">
+																<SearchNormal1 size={18} />
+															</InputAdornment>
+														),
+													}}
+												/>
+											</Grid>
+											<Grid item xs={12} sm={6} md={2}>
+												<FormControl fullWidth size="small">
+													<InputLabel>Estado</InputLabel>
+													<Select value={filters.status || ""} onChange={handleStatusFilterChange} label="Estado">
+														<MenuItem value="">Todos</MenuItem>
+														<MenuItem value="draft">Borrador</MenuItem>
+														<MenuItem value="final">Final</MenuItem>
+														<MenuItem value="archived">Archivado</MenuItem>
+													</Select>
+												</FormControl>
+											</Grid>
+											<Grid item xs={12} sm={6} md={2}>
+												<FormControl fullWidth size="small">
+													<InputLabel>Tipo</InputLabel>
+													<Select value={filters.type || ""} onChange={handleTypeFilterChange} label="Tipo">
+														<MenuItem value="">Todos</MenuItem>
+														<MenuItem value="demanda">Demanda</MenuItem>
+														<MenuItem value="escrito">Escrito</MenuItem>
+														<MenuItem value="contestacion">Contestación</MenuItem>
+														<MenuItem value="notificacion">Notificación</MenuItem>
+														<MenuItem value="contrato">Contrato</MenuItem>
+														<MenuItem value="poder">Poder</MenuItem>
+														<MenuItem value="recurso">Recurso</MenuItem>
+														<MenuItem value="otros">Otros</MenuItem>
+													</Select>
+												</FormControl>
+											</Grid>
+											<Grid item xs={12} md={4} sx={{ textAlign: { xs: "left", md: "right" } }}>
+												<Button variant="contained" startIcon={<Add />} onClick={handleNewDocument}>
+													Nuevo Documento
+												</Button>
+											</Grid>
+										</Grid>
+
+										<DocumentList
+											documents={filteredDocuments}
+											isLoading={isLoading}
+											onEdit={() => {
+												// For now, show the editor with a blank document
+												// TODO: Implement document selection and editing
+												setShowEditor(true);
+											}}
+										/>
+									</Box>
 								)}
 
 								{activeTab === 1 && (

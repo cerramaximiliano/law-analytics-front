@@ -8,7 +8,8 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { FontFamily } from "@tiptap/extension-font-family";
 import { useSnackbar } from "notistack";
-// Removed unused import
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 // material-ui
 import {
@@ -38,10 +39,10 @@ import { setCurrentDocument, createDocument, saveDocument } from "store/reducers
 
 // assets
 import {
-	CloseCircle,
 	Save2,
 	DocumentText,
 	Printer,
+	DocumentDownload,
 	TextBold,
 	TextItalic,
 	TextUnderline,
@@ -720,34 +721,201 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 	};
 
 	const handlePrint = () => {
-		// Try to suggest print settings to remove headers/footers
-		// Note: Browsers restrict programmatic control of print settings for security
-		// Users must manually disable headers/footers in their print dialog
+		if (!editor) return;
 
-		// Store the original title
-		const originalTitle = document.title;
+		// Get the HTML content from the editor
+		const content = editor.getHTML();
 
-		// Set a clean title for printing
-		document.title = title || "Documento Legal";
+		// Create a hidden iframe for printing
+		const printFrame = document.createElement("iframe");
+		printFrame.style.position = "absolute";
+		printFrame.style.top = "-10000px";
+		printFrame.style.left = "-10000px";
+		document.body.appendChild(printFrame);
 
-		// Add a style to hide print margins
-		const style = document.createElement("style");
-		style.textContent = `
-			@media print {
-				@page { margin: 0; }
-				body { margin: 25mm 20mm 25mm 20mm; }
+		const printDocument = printFrame.contentDocument || printFrame.contentWindow?.document;
+		if (printDocument) {
+			printDocument.open();
+			printDocument.write(`
+				<!DOCTYPE html>
+				<html>
+					<head>
+						<title>${title || "Documento Legal"}</title>
+						<style>
+							@page { 
+								size: A4; 
+								margin: 25mm 20mm;
+							}
+							body { 
+								font-family: 'Times New Roman', serif;
+								font-size: 12pt;
+								line-height: 1.8;
+								margin: 0;
+								padding: 0;
+							}
+							p { 
+								margin-bottom: 12px;
+								text-align: justify;
+							}
+							h1, h2, h3 {
+								font-weight: bold;
+								margin-top: 24px;
+								margin-bottom: 12px;
+							}
+							h1 { font-size: 18pt; }
+							h2 { font-size: 16pt; }
+							h3 { font-size: 14pt; }
+							ul, ol {
+								margin-bottom: 12px;
+								padding-left: 30px;
+							}
+							li {
+								margin-bottom: 6px;
+							}
+							/* Respect inline styles for alignment */
+							[style*="text-align: left"] { text-align: left !important; }
+							[style*="text-align: center"] { text-align: center !important; }
+							[style*="text-align: right"] { text-align: right !important; }
+							[style*="text-align: justify"] { text-align: justify !important; }
+							[data-text-align="left"] { text-align: left !important; }
+							[data-text-align="center"] { text-align: center !important; }
+							[data-text-align="right"] { text-align: right !important; }
+							[data-text-align="justify"] { text-align: justify !important; }
+						</style>
+					</head>
+					<body>
+						${content}
+					</body>
+				</html>
+			`);
+			printDocument.close();
+
+			// Wait for content to load, then print
+			printFrame.onload = () => {
+				printFrame.contentWindow?.print();
+				// Remove iframe after printing
+				setTimeout(() => {
+					document.body.removeChild(printFrame);
+				}, 1000);
+			};
+		}
+	};
+
+	const handleDownloadPDF = async () => {
+		if (!editor) return;
+
+		try {
+			// Show loading message
+			enqueueSnackbar("Generando PDF...", { variant: "info" });
+
+			// Get the HTML content from the editor
+			const content = editor.getHTML();
+
+			// Create a temporary container for rendering
+			const tempContainer = document.createElement("div");
+			tempContainer.style.position = "absolute";
+			tempContainer.style.left = "-9999px";
+			tempContainer.style.width = "210mm"; // A4 width
+			tempContainer.style.padding = "25mm 20mm"; // Standard margins
+			tempContainer.style.backgroundColor = "white";
+			tempContainer.style.fontFamily = "Times New Roman, serif";
+			tempContainer.innerHTML = `
+				<style>
+					* {
+						font-family: 'Times New Roman', serif !important;
+					}
+					p {
+						font-size: 12pt;
+						line-height: 1.8;
+						margin-bottom: 12px;
+						text-align: justify;
+					}
+					h1, h2, h3 {
+						font-weight: bold;
+						margin-top: 24px;
+						margin-bottom: 12px;
+					}
+					h1 { font-size: 18pt; }
+					h2 { font-size: 16pt; }
+					h3 { font-size: 14pt; }
+					ul, ol {
+						margin-bottom: 12px;
+						padding-left: 30px;
+					}
+					li {
+						margin-bottom: 6px;
+					}
+					/* Respect inline styles for alignment */
+					[style*="text-align: left"] { text-align: left !important; }
+					[style*="text-align: center"] { text-align: center !important; }
+					[style*="text-align: right"] { text-align: right !important; }
+					[style*="text-align: justify"] { text-align: justify !important; }
+					[data-text-align="left"] { text-align: left !important; }
+					[data-text-align="center"] { text-align: center !important; }
+					[data-text-align="right"] { text-align: right !important; }
+					[data-text-align="justify"] { text-align: justify !important; }
+				</style>
+				${content}
+			`;
+			document.body.appendChild(tempContainer);
+
+			// Wait for fonts to load
+			await document.fonts.ready;
+
+			// Convert HTML to canvas
+			const canvas = await html2canvas(tempContainer, {
+				scale: 2, // Higher quality
+				backgroundColor: "#ffffff",
+				logging: false,
+				useCORS: true,
+				allowTaint: true,
+			});
+
+			// Remove temporary container
+			document.body.removeChild(tempContainer);
+
+			// Create PDF
+			const pdf = new jsPDF({
+				orientation: "portrait",
+				unit: "mm",
+				format: "a4",
+			});
+
+			// Calculate dimensions
+			const imgWidth = 210; // A4 width in mm
+			const imgHeight = (canvas.height * imgWidth) / canvas.width;
+			const pageHeight = 297; // A4 height in mm
+			const margin = 0; // We already have margins in the content
+
+			let heightLeft = imgHeight;
+			let position = margin;
+
+			// Add image to PDF
+			const imgData = canvas.toDataURL("image/png");
+
+			// First page
+			pdf.addImage(imgData, "PNG", margin, position, imgWidth - 2 * margin, imgHeight);
+			heightLeft -= pageHeight;
+
+			// Add additional pages if needed
+			while (heightLeft > 0) {
+				position = heightLeft - imgHeight;
+				pdf.addPage();
+				pdf.addImage(imgData, "PNG", margin, position, imgWidth - 2 * margin, imgHeight);
+				heightLeft -= pageHeight;
 			}
-		`;
-		document.head.appendChild(style);
 
-		// Open print dialog
-		window.print();
+			// Generate filename
+			const filename = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.pdf`;
 
-		// Restore original title and remove temporary style
-		setTimeout(() => {
-			document.title = originalTitle;
-			document.head.removeChild(style);
-		}, 1000);
+			// Save PDF
+			pdf.save(filename);
+
+			enqueueSnackbar("PDF descargado correctamente", { variant: "success" });
+		} catch (error) {
+			console.error("Error generating PDF:", error);
+			enqueueSnackbar("Error al generar el PDF", { variant: "error" });
+		}
 	};
 
 	// Get editor states for toolbar
@@ -781,14 +949,16 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 			>
 				<DialogTitle>
 					<Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-						<Typography variant="h5">{currentDocument ? "Editar Documento" : "Nuevo Documento"}</Typography>
+						<Typography variant="h5">
+							{currentDocument?.id && !isTemporaryId(currentDocument.id) ? "Editar Documento" : "Nuevo Documento"}
+						</Typography>
 						<Stack direction="row" spacing={1}>
 							<Button startIcon={<Printer />} onClick={handlePrint} variant="outlined" size="small">
-								Imprimir / PDF
+								Imprimir
 							</Button>
-							<IconButton onClick={handleClose}>
-								<CloseCircle />
-							</IconButton>
+							<Button startIcon={<DocumentDownload />} onClick={handleDownloadPDF} variant="outlined" size="small">
+								Descargar PDF
+							</Button>
 						</Stack>
 					</Box>
 				</DialogTitle>
@@ -1034,7 +1204,11 @@ function TiptapCSSPagedEditor({ onClose, folderData, selectedContacts }: TiptapC
 								Cancelar
 							</Button>
 							<Button variant="contained" onClick={handleSave} startIcon={<Save2 />} disabled={!title.trim() || isSaving}>
-								{isSaving ? "Guardando..." : currentDocument ? "Actualizar" : "Crear"} Documento
+								{isSaving
+									? "Guardando..."
+									: currentDocument?.id && !isTemporaryId(currentDocument.id)
+									? "Actualizar Documento"
+									: "Guardar Documento"}
 							</Button>
 						</Stack>
 					</Stack>

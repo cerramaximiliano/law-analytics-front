@@ -201,8 +201,13 @@ export const createDocument = (documentData: Partial<Document>) => async (dispat
 		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/documents`, documentData);
 
 		if (response.data.success) {
-			dispatch(addDocument(response.data.document));
-			return { success: true, document: response.data.document };
+			// Normalize document to ensure it has 'id' field
+			const normalizedDocument = {
+				...response.data.document,
+				id: response.data.document.id || response.data.document._id,
+			};
+			dispatch(addDocument(normalizedDocument));
+			return { success: true, document: normalizedDocument };
 		}
 		return { success: false, message: response.data.message || "Error al crear el documento" };
 	} catch (error) {
@@ -221,8 +226,13 @@ export const saveDocument = (id: string, documentData: Partial<Document>) => asy
 		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/documents/${id}`, documentData);
 
 		if (response.data.success) {
-			dispatch(updateDocument(response.data.document));
-			return { success: true, document: response.data.document };
+			// Normalize document to ensure it has 'id' field
+			const normalizedDocument = {
+				...response.data.document,
+				id: response.data.document.id || response.data.document._id,
+			};
+			dispatch(updateDocument(normalizedDocument));
+			return { success: true, document: normalizedDocument };
 		}
 		return { success: false, message: response.data.message || "Error al actualizar el documento" };
 	} catch (error) {
@@ -243,8 +253,13 @@ export const fetchDocuments = (params?: { status?: string; folderId?: string; se
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/documents`, { params });
 
 		if (response.data.success) {
-			dispatch(setDocuments(response.data.documents));
-			return { success: true, documents: response.data.documents };
+			// Normalize documents to ensure they have 'id' field
+			const normalizedDocuments = response.data.documents.map((doc: any) => ({
+				...doc,
+				id: doc.id || doc._id, // Use id if exists, otherwise use _id
+			}));
+			dispatch(setDocuments(normalizedDocuments));
+			return { success: true, documents: normalizedDocuments };
 		}
 		return { success: false, documents: [] };
 	} catch (error) {
@@ -265,8 +280,13 @@ export const fetchDocumentById = (id: string) => async (dispatch: Dispatch) => {
 		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/documents/${id}`);
 
 		if (response.data.success) {
-			dispatch(setCurrentDocument(response.data.document));
-			return { success: true, document: response.data.document };
+			// Normalize document to ensure it has 'id' field
+			const normalizedDocument = {
+				...response.data.document,
+				id: response.data.document.id || response.data.document._id,
+			};
+			dispatch(setCurrentDocument(normalizedDocument));
+			return { success: true, document: normalizedDocument };
 		}
 		return { success: false };
 	} catch (error) {
@@ -307,8 +327,13 @@ export const changeDocumentStatus = (id: string, newStatus: string) => async (di
 		const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/documents/${id}/status`, { status: newStatus });
 
 		if (response.data.success) {
-			dispatch(updateDocument(response.data.document));
-			return { success: true, document: response.data.document };
+			// Normalize document to ensure it has 'id' field
+			const normalizedDocument = {
+				...response.data.document,
+				id: response.data.document.id || response.data.document._id,
+			};
+			dispatch(updateDocument(normalizedDocument));
+			return { success: true, document: normalizedDocument };
 		}
 		return { success: false };
 	} catch (error) {
