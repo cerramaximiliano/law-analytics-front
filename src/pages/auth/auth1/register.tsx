@@ -18,6 +18,9 @@ const Register = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
+	// Verificar si el sitio está en modo mantenimiento
+	const isMaintenanceMode = process.env.REACT_APP_MAINTENANCE_MODE === "true";
+
 	const handleGoogleSuccess = async (tokenResponse: any) => {
 		setIsLoading(true);
 		try {
@@ -46,6 +49,29 @@ const Register = () => {
 		},
 		flow: "implicit",
 	});
+
+	// Mostrar mensaje de mantenimiento si está activo
+	if (isMaintenanceMode) {
+		return (
+			<AuthWrapper>
+				<Grid container spacing={3}>
+					<Grid item xs={12} sx={{ textAlign: "center" }}>
+						<Logo />
+					</Grid>
+					<Grid item xs={12}>
+						<Alert severity="info" sx={{ mt: 3 }}>
+							<Typography variant="h5" sx={{ mb: 1 }}>
+								Sitio en Mantenimiento
+							</Typography>
+							<Typography variant="body1">
+								Estamos realizando mejoras en nuestro sistema. Por favor, vuelve a intentarlo más tarde.
+							</Typography>
+						</Alert>
+					</Grid>
+				</Grid>
+			</AuthWrapper>
+		);
+	}
 
 	return (
 		<AuthWrapper>
