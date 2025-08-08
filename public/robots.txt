@@ -21,7 +21,7 @@ Allow: /booking
 Allow: /plans
 Allow: /contact-us
 Allow: /privacy-policy
-Allow: /terms-of-service
+Allow: /terms
 
 # Crawl delay
 Crawl-delay: 1
