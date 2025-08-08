@@ -122,6 +122,15 @@ class WorkerConfigService {
 			throw WorkersService.handleError(error);
 		}
 	}
+
+	async updateRange(id: string, data: { range_start: number; range_end: number }): Promise<WorkerConfigResponse> {
+		try {
+			const response = await causasAxios.put(`${this.endpoint}${id}/range`, data);
+			return response.data;
+		} catch (error) {
+			throw WorkersService.handleError(error);
+		}
+	}
 }
 
 // Servicio principal de Workers
@@ -201,6 +210,10 @@ export class WorkersService {
 
 	static async updateScrapingConfig(id: string, data: Partial<WorkerConfig>): Promise<WorkerConfigResponse> {
 		return this.updateConfig("scraping", id, data);
+	}
+
+	static async updateScrapingRange(id: string, data: { range_start: number; range_end: number }): Promise<WorkerConfigResponse> {
+		return this.services["scraping"].updateRange(id, data);
 	}
 
 	static async getAppUpdateConfigs(params?: { activo?: boolean; page?: number; limit?: number }): Promise<WorkerConfigResponse> {
