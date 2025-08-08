@@ -69,7 +69,7 @@ const ComboPage = () => {
 					<Grid container spacing={2} justifyContent="center" sx={{ textAlign: "center", marginBottom: 5 }}>
 						<Grid item xs={12}>
 							<motion.div
-								initial={{ opacity: 0, translateY: 550 }}
+								initial={{ opacity: 0, translateY: 50 }}
 								animate={{ opacity: 1, translateY: 0 }}
 								transition={{
 									type: "spring",
@@ -83,7 +83,7 @@ const ComboPage = () => {
 						</Grid>
 						<Grid item xs={12} md={8}>
 							<motion.div
-								initial={{ opacity: 0, translateY: 550 }}
+								initial={{ opacity: 0, translateY: 30 }}
 								animate={{ opacity: 1, translateY: 0 }}
 								transition={{
 									type: "spring",

@@ -51,7 +51,7 @@ const HeaderPage = () => {
 			}}
 		>
 			<PageBackground variant="default" />
-			<Container sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+			<Container sx={{ flex: 1, display: "flex", flexDirection: "column", px: { xs: 2, sm: 3 } }}>
 				{/* Contenido principal centrado verticalmente */}
 				<Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
 					<Grid container alignItems="center" justifyContent="center" spacing={2}>
@@ -59,7 +59,7 @@ const HeaderPage = () => {
 							<Grid container spacing={3} sx={{ textAlign: "center" }}>
 								<Grid item xs={12}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 550 }}
+										initial={{ opacity: 0, translateY: 50 }}
 										animate={{ opacity: 1, translateY: 0 }}
 										transition={{
 											type: "spring",
@@ -98,9 +98,9 @@ const HeaderPage = () => {
 									</motion.div>
 								</Grid>
 								<Grid container justifyContent="center" item xs={12}>
-									<Grid item xs={8}>
+									<Grid item xs={12} sm={10} md={8}>
 										<motion.div
-											initial={{ opacity: 0, translateY: 550 }}
+											initial={{ opacity: 0, translateY: 30 }}
 											animate={{ opacity: 1, translateY: 0 }}
 											transition={{
 												type: "spring",
@@ -125,7 +125,7 @@ const HeaderPage = () => {
 								</Grid>
 								<Grid item xs={12}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 550 }}
+										initial={{ opacity: 0, translateY: 30 }}
 										animate={{ opacity: 1, translateY: 0 }}
 										transition={{
 											type: "spring",
@@ -147,7 +147,7 @@ const HeaderPage = () => {
 								</Grid>
 								<Grid item xs={12}>
 									<motion.div
-										initial={{ opacity: 0, translateY: 550 }}
+										initial={{ opacity: 0, translateY: 30 }}
 										animate={{ opacity: 1, translateY: 0 }}
 										transition={{
 											type: "spring",
@@ -170,6 +170,7 @@ const HeaderPage = () => {
 														right: "-12px",
 														width: "1px",
 														background: theme.palette.divider,
+														display: { xs: "none", sm: "block" },
 													},
 												}}
 											>
@@ -224,7 +225,7 @@ const HeaderPage = () => {
 						{technologies.map((tech, index) => (
 							<Grid item key={index} xs={4} sm={2} sx={{ textAlign: "center" }}>
 								<motion.div
-									initial={{ opacity: 0, translateY: 80 }}
+									initial={{ opacity: 0, translateY: 20 }}
 									animate={{ opacity: 1, translateY: 0 }}
 									transition={{
 										type: "spring",

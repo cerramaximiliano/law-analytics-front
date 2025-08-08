@@ -183,7 +183,7 @@ const TestimonialPage = () => {
 					<Grid container spacing={2} justifyContent="center" sx={{ textAlign: "center", marginBottom: 4 }}>
 						<Grid item xs={12}>
 							<motion.div
-								initial={{ opacity: 0, translateY: 550 }}
+								initial={{ opacity: 0, translateY: 50 }}
 								animate={{ opacity: 1, translateY: 0 }}
 								transition={{
 									type: "spring",
@@ -209,7 +209,7 @@ const TestimonialPage = () => {
 						</Grid>
 						<Grid item xs={12} md={7}>
 							<motion.div
-								initial={{ opacity: 0, translateY: 550 }}
+								initial={{ opacity: 0, translateY: 30 }}
 								animate={{ opacity: 1, translateY: 0 }}
 								transition={{
 									type: "spring",

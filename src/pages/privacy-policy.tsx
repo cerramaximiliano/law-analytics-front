@@ -19,25 +19,32 @@ const PrivacyPolicy = () => {
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Política de Privacidad" }];
 
 	return (
-		<Box component="section" sx={{ pt: { xs: 10, md: 15 }, pb: { xs: 5, md: 10 }, position: "relative", overflow: "hidden" }}>
+		<Box component="section" sx={{ pt: { xs: 8, sm: 10, md: 15 }, pb: { xs: 5, md: 10 }, position: "relative", overflow: "hidden" }}>
 			<PageBackground variant="light" />
-			<Container>
+			<Container sx={{ px: { xs: 2, sm: 3 } }}>
 				<Grid container spacing={3}>
 					<Grid item xs={12}>
 						<CustomBreadcrumbs items={breadcrumbItems} />
 						<Box
 							sx={{
 								position: "relative",
-								mb: 6,
-								pb: 6,
+								mb: { xs: 3, sm: 4, md: 6 },
+								pb: { xs: 3, sm: 4, md: 6 },
 								borderBottom: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
 							}}
 						>
 							<motion.div initial={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} transition={{ duration: 0.5 }}>
-								<Typography variant="h1" sx={{ mb: 1 }}>
+								<Typography
+									variant="h1"
+									sx={{
+										mb: 1,
+										fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3rem" },
+										lineHeight: { xs: 1.3, sm: 1.2 },
+									}}
+								>
 									Política de Privacidad
 								</Typography>
-								<Typography variant="body1" color="text.secondary">
+								<Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Última actualización: 1 de Mayo de 2025
 								</Typography>
 							</motion.div>
@@ -45,106 +52,155 @@ const PrivacyPolicy = () => {
 					</Grid>
 
 					<Grid item xs={12}>
-						<MainCard>
-							<Typography variant="body1" paragraph>
+						<MainCard sx={{ overflow: "hidden" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								La presente Política de Privacidad establece los términos en que Law||Analytics usa y protege la información que es
 								proporcionada por sus usuarios al momento de utilizar su sitio web y aplicación. Esta compañía está comprometida con la
 								seguridad de los datos de sus usuarios. Cuando le pedimos llenar los campos de información personal con la cual usted pueda
 								ser identificado, lo hacemos asegurando que sólo se empleará de acuerdo con los términos de este documento.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Información que recopilamos
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Nuestro sitio web y aplicación podrán recoger información personal, por ejemplo:
 							</Typography>
-							<ul>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 } }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Nombre y apellidos
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Información de contacto incluyendo dirección de correo electrónico
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Información demográfica como preferencias e intereses
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Otra información relevante para encuestas y ofertas
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Datos específicos relacionados con su práctica legal
 								</Typography>
-							</ul>
+							</Box>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Uso de la información recogida
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Nuestro sitio web y aplicación emplea la información con el fin de proporcionar el mejor servicio posible, particularmente
 								para:
 							</Typography>
-							<ul>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 } }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Personalizar la experiencia del usuario y responder mejor a sus necesidades individuales
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Mejorar nuestros productos y servicios
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Procesar transacciones
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Enviar correos electrónicos periódicos con información relevante a su práctica jurídica
 								</Typography>
-								<Typography component="li" variant="body1" sx={{ mb: 1 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
 									Administrar promociones, encuestas u otras características del sitio
 								</Typography>
-							</ul>
+							</Box>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Cookies
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Una cookie se refiere a un fichero que es enviado con la finalidad de solicitar permiso para almacenarse en su ordenador. Al
 								aceptar, dicho fichero se crea y la cookie sirve entonces para tener información respecto al tráfico web, y también facilita
 								las futuras visitas a una web recurrente. Para más información sobre nuestro uso de cookies, por favor consulte nuestra{" "}
 								<Link href="/cookies-policy">Política de Cookies</Link>.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Seguridad
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Law||Analytics se compromete a proteger su información personal. Utilizamos sistemas seguros para la protección de la
 								información y la actualizamos constantemente para asegurarnos de que no exista ningún acceso no autorizado.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Enlaces a Terceros
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Este sitio web puede contener enlaces a otros sitios que pudieran ser de su interés. Una vez que usted hace clic en estos
 								enlaces y abandona nuestra página, ya no tenemos control sobre el sitio al que es redirigido y por lo tanto no somos
 								responsables de los términos o privacidad ni de la protección de sus datos en esos otros sitios terceros.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Control de su información personal
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								En cualquier momento usted puede restringir la recopilación o el uso de la información personal que es proporcionada a
 								nuestro sitio web. Puede acceder a su información personal almacenada en su cuenta para corregirla o eliminarla.
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Law||Analytics no venderá, cederá ni distribuirá la información personal que es recopilada sin su consentimiento, salvo que
 								sea requerido por un juez con una orden judicial.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Cambios en la Política de Privacidad
 							</Typography>
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Law||Analytics se reserva el derecho de cambiar los términos de la presente Política de Privacidad en cualquier momento. Le
 								notificaremos cualquier cambio significativo en la forma en que tratamos su información personal enviando un aviso a la
 								dirección de correo electrónico principal especificada en su cuenta o colocando un aviso prominente en nuestro sitio.
@@ -152,7 +208,7 @@ const PrivacyPolicy = () => {
 
 							<Divider sx={{ my: 4 }} />
 
-							<Typography variant="body1" paragraph>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través de nuestro formulario de contacto o
 								por correo electrónico a privacy@lawanalytics.app.
 							</Typography>
