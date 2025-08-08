@@ -82,6 +82,20 @@ export interface WorkerConfig {
 	documents_checked?: number;
 	documents_failed?: number;
 	last_update_threshold_hours?: number;
+	// Historial de rangos completados
+	rangeHistory?: Array<{
+		version?: number;
+		range_start?: number;
+		range_end?: number;
+		year?: string | number;
+		completedAt?: { $date: string } | string;
+		lastProcessedNumber?: number;
+		documentsProcessed?: number;
+		documentsFound?: number;
+		enabled?: boolean;
+		completionEmailSent?: boolean;
+		_id?: string | { $oid: string };
+	}>;
 }
 
 export interface WorkerConfigResponse {

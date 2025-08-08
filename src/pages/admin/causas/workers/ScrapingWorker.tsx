@@ -82,6 +82,49 @@ const ScrapingWorker = () => {
 		return new Date(dateStr).toLocaleString("es-ES");
 	};
 
+	// Calcular tiempo relativo
+	const getRelativeTime = (date: any): string => {
+		if (!date) return "N/A";
+		const dateStr = typeof date === "string" ? date : date.$date;
+		const timestamp = new Date(dateStr).getTime();
+		const now = Date.now();
+		const diff = now - timestamp;
+
+		// Convertir a segundos
+		const seconds = Math.floor(diff / 1000);
+		if (seconds < 60) {
+			return `hace ${seconds} segundo${seconds !== 1 ? "s" : ""}`;
+		}
+
+		// Convertir a minutos
+		const minutes = Math.floor(seconds / 60);
+		if (minutes < 60) {
+			return `hace ${minutes} minuto${minutes !== 1 ? "s" : ""}`;
+		}
+
+		// Convertir a horas
+		const hours = Math.floor(minutes / 60);
+		if (hours < 24) {
+			return `hace ${hours} hora${hours !== 1 ? "s" : ""}`;
+		}
+
+		// Convertir a días
+		const days = Math.floor(hours / 24);
+		if (days < 30) {
+			return `hace ${days} día${days !== 1 ? "s" : ""}`;
+		}
+
+		// Convertir a meses
+		const months = Math.floor(days / 30);
+		if (months < 12) {
+			return `hace ${months} mes${months !== 1 ? "es" : ""}`;
+		}
+
+		// Convertir a años
+		const years = Math.floor(months / 12);
+		return `hace ${years} año${years !== 1 ? "s" : ""}`;
+	};
+
 	// Calcular progreso del rango
 	const calculateProgress = (config: WorkerConfig): number => {
 		if (!config.range_start || !config.range_end || !config.number) return 0;
@@ -198,6 +241,7 @@ const ScrapingWorker = () => {
 							<TableCell align="center">Número Actual</TableCell>
 							<TableCell align="center">Rango</TableCell>
 							<TableCell align="center">Progreso</TableCell>
+							<TableCell align="center">Rangos Completados</TableCell>
 							<TableCell align="center">Balance</TableCell>
 							<TableCell align="center">Captchas</TableCell>
 							<TableCell align="center">Proxy</TableCell>
@@ -314,6 +358,39 @@ const ScrapingWorker = () => {
 										</Box>
 									</TableCell>
 									<TableCell align="center">
+										{config.rangeHistory && config.rangeHistory.length > 0 ? (
+											<Stack alignItems="center" spacing={0.5}>
+												<Typography variant="body2" fontWeight={500}>
+													{config.rangeHistory.length}
+												</Typography>
+												<Tooltip
+													title={
+														<Stack spacing={0.5}>
+															{config.rangeHistory.slice(-3).map((history, index) => (
+																<Typography key={index} variant="caption">
+																	Año {history.year}: {history.range_start?.toLocaleString()}-{history.range_end?.toLocaleString()}
+																</Typography>
+															))}
+															{config.rangeHistory.length > 3 && (
+																<Typography variant="caption" sx={{ fontStyle: "italic" }}>
+																	...y {config.rangeHistory.length - 3} más
+																</Typography>
+															)}
+														</Stack>
+													}
+												>
+													<Typography variant="caption" color="text.secondary" sx={{ cursor: "help" }}>
+														Ver detalles
+													</Typography>
+												</Tooltip>
+											</Stack>
+										) : (
+											<Typography variant="caption" color="text.secondary">
+												Ninguno
+											</Typography>
+										)}
+									</TableCell>
+									<TableCell align="center">
 										<Stack alignItems="center" spacing={0.5}>
 											<Typography
 												variant="body2"
@@ -358,7 +435,9 @@ const ScrapingWorker = () => {
 										/>
 									</TableCell>
 									<TableCell align="center">
-										<Typography variant="caption">{formatDate(config.last_check)}</Typography>
+										<Tooltip title={formatDate(config.updatedAt || config.last_check)}>
+											<Typography variant="caption">{getRelativeTime(config.updatedAt || config.last_check)}</Typography>
+										</Tooltip>
 									</TableCell>
 									<TableCell align="center">
 										{isEditing ? (
