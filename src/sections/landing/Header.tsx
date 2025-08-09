@@ -2,7 +2,7 @@ import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
-import { Box, Button, Container, Grid, Rating, Typography } from "@mui/material";
+import { Box, Button, Container, Grid, Rating, Typography, Link } from "@mui/material";
 import { PaletteColor } from "@mui/material/styles";
 
 // third party
@@ -143,6 +143,29 @@ const HeaderPage = () => {
 												</AnimateButton>
 											</Grid>
 										</Grid>
+									</motion.div>
+								</Grid>
+								<Grid item xs={12}>
+									<motion.div
+										initial={{ opacity: 0, translateY: 30 }}
+										animate={{ opacity: 1, translateY: 0 }}
+										transition={{
+											type: "spring",
+											stiffness: 150,
+											damping: 30,
+											delay: 0.5,
+										}}
+									>
+										<Typography variant="caption" sx={{ mt: 2, display: "block", color: theme.palette.text.secondary }}>
+											Al continuar, acepta nuestros{" "}
+											<Link component={RouterLink} to="/terms" underline="hover" sx={{ color: theme.palette.primary.main }}>
+												Términos y Condiciones
+											</Link>{" "}
+											y{" "}
+											<Link component={RouterLink} to="/privacy-policy" underline="hover" sx={{ color: theme.palette.primary.main }}>
+												Política de Privacidad
+											</Link>
+										</Typography>
 									</motion.div>
 								</Grid>
 								<Grid item xs={12}>
