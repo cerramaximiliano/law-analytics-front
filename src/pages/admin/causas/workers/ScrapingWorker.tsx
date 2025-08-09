@@ -25,10 +25,12 @@ import {
 	MenuItem,
 	FormControl,
 	LinearProgress,
+	TablePagination,
+	CircularProgress,
 } from "@mui/material";
 import { Edit2, TickCircle, CloseCircle, Refresh, Setting2 } from "iconsax-react";
 import { useSnackbar } from "notistack";
-import { WorkersService, WorkerConfig } from "api/workers";
+import { WorkersService, WorkerConfig, ScrapingHistory } from "api/workers";
 import AdvancedConfigModal from "./AdvancedConfigModal";
 
 // Enums para el worker de scraping
@@ -46,6 +48,10 @@ const ScrapingWorker = () => {
 	const [editValues, setEditValues] = useState<Partial<WorkerConfig>>({});
 	const [advancedConfigOpen, setAdvancedConfigOpen] = useState(false);
 	const [selectedConfig, setSelectedConfig] = useState<WorkerConfig | null>(null);
+	const [scrapingHistory, setScrapingHistory] = useState<ScrapingHistory[]>([]);
+	const [historyLoading, setHistoryLoading] = useState(false);
+	const [historyPage, setHistoryPage] = useState(1);
+	const [historyTotal, setHistoryTotal] = useState(0);
 
 	// Cargar configuraciones
 	const fetchConfigs = async () => {
@@ -63,8 +69,27 @@ const ScrapingWorker = () => {
 		}
 	};
 
+	// Cargar historial de scraping
+	const fetchScrapingHistory = async (page = 1) => {
+		try {
+			setHistoryLoading(true);
+			const response = await WorkersService.getScrapingHistory({ page, limit: 10 });
+			if (response.success) {
+				setScrapingHistory(response.data);
+				setHistoryTotal(response.total || 0);
+				setHistoryPage(page);
+			}
+		} catch (error) {
+			enqueueSnackbar("Error al cargar el historial de scraping", { variant: "error" });
+			console.error(error);
+		} finally {
+			setHistoryLoading(false);
+		}
+	};
+
 	useEffect(() => {
 		fetchConfigs();
+		fetchScrapingHistory();
 	}, []);
 
 	// Obtener el ID real del documento
@@ -241,7 +266,6 @@ const ScrapingWorker = () => {
 							<TableCell align="center">Número Actual</TableCell>
 							<TableCell align="center">Rango</TableCell>
 							<TableCell align="center">Progreso</TableCell>
-							<TableCell align="center">Rangos Completados</TableCell>
 							<TableCell align="center">Balance</TableCell>
 							<TableCell align="center">Captchas</TableCell>
 							<TableCell align="center">Proxy</TableCell>
@@ -356,39 +380,6 @@ const ScrapingWorker = () => {
 												{progress.toFixed(1)}%
 											</Typography>
 										</Box>
-									</TableCell>
-									<TableCell align="center">
-										{config.rangeHistory && config.rangeHistory.length > 0 ? (
-											<Stack alignItems="center" spacing={0.5}>
-												<Typography variant="body2" fontWeight={500}>
-													{config.rangeHistory.length}
-												</Typography>
-												<Tooltip
-													title={
-														<Stack spacing={0.5}>
-															{config.rangeHistory.slice(-3).map((history, index) => (
-																<Typography key={index} variant="caption">
-																	Año {history.year}: {history.range_start?.toLocaleString()}-{history.range_end?.toLocaleString()}
-																</Typography>
-															))}
-															{config.rangeHistory.length > 3 && (
-																<Typography variant="caption" sx={{ fontStyle: "italic" }}>
-																	...y {config.rangeHistory.length - 3} más
-																</Typography>
-															)}
-														</Stack>
-													}
-												>
-													<Typography variant="caption" color="text.secondary" sx={{ cursor: "help" }}>
-														Ver detalles
-													</Typography>
-												</Tooltip>
-											</Stack>
-										) : (
-											<Typography variant="caption" color="text.secondary">
-												Ninguno
-											</Typography>
-										)}
 									</TableCell>
 									<TableCell align="center">
 										<Stack alignItems="center" spacing={0.5}>
@@ -524,6 +515,110 @@ const ScrapingWorker = () => {
 					</Card>
 				</Grid>
 			</Grid>
+
+			{/* Historial de rangos procesados */}
+			<Box>
+				<Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+					<Typography variant="h6">Historial de Rangos Procesados</Typography>
+					<Button
+						variant="text"
+						size="small"
+						startIcon={<Refresh size={16} />}
+						onClick={() => fetchScrapingHistory(historyPage)}
+						disabled={historyLoading}
+					>
+						Actualizar
+					</Button>
+				</Box>
+
+				<TableContainer component={Paper} variant="outlined">
+					{historyLoading && scrapingHistory.length === 0 ? (
+						<Box display="flex" justifyContent="center" alignItems="center" p={4}>
+							<CircularProgress />
+						</Box>
+					) : (
+						<>
+							<Table>
+								<TableHead>
+									<TableRow>
+										<TableCell>Worker ID</TableCell>
+										<TableCell>Fuero</TableCell>
+										<TableCell align="center">Año</TableCell>
+										<TableCell align="center">Rango Procesado</TableCell>
+										<TableCell align="center">Documentos Procesados</TableCell>
+										<TableCell align="center">Documentos Encontrados</TableCell>
+										<TableCell align="center">Fecha de Completado</TableCell>
+									</TableRow>
+								</TableHead>
+								<TableBody>
+									{scrapingHistory.length > 0 ? (
+										scrapingHistory.map((history) => {
+											const historyId = typeof history._id === "string" ? history._id : history._id.$oid;
+											return (
+												<TableRow key={historyId}>
+													<TableCell>
+														<Typography variant="body2" fontWeight={500}>
+															{history.worker_id}
+														</Typography>
+													</TableCell>
+													<TableCell>
+														<Chip label={history.fuero} size="small" color="primary" variant="outlined" />
+													</TableCell>
+													<TableCell align="center">
+														<Typography variant="body2">{history.year}</Typography>
+													</TableCell>
+													<TableCell align="center">
+														<Typography variant="body2">
+															{history.range_start?.toLocaleString()} - {history.range_end?.toLocaleString()}
+														</Typography>
+													</TableCell>
+													<TableCell align="center">
+														<Typography variant="body2">{history.documents_processed?.toLocaleString() || "0"}</Typography>
+													</TableCell>
+													<TableCell align="center">
+														<Typography
+															variant="body2"
+															color={history.documents_found && history.documents_found > 0 ? "success.main" : "text.secondary"}
+															fontWeight={history.documents_found && history.documents_found > 0 ? 500 : 400}
+														>
+															{history.documents_found?.toLocaleString() || "0"}
+														</Typography>
+													</TableCell>
+													<TableCell align="center">
+														<Tooltip title={formatDate(history.completedAt)}>
+															<Typography variant="caption">{getRelativeTime(history.completedAt)}</Typography>
+														</Tooltip>
+													</TableCell>
+												</TableRow>
+											);
+										})
+									) : (
+										<TableRow>
+											<TableCell colSpan={7} align="center">
+												<Typography variant="body2" color="text.secondary" py={3}>
+													No hay historial de rangos procesados
+												</Typography>
+											</TableCell>
+										</TableRow>
+									)}
+								</TableBody>
+							</Table>
+							{historyTotal > 10 && (
+								<TablePagination
+									rowsPerPageOptions={[10]}
+									component="div"
+									count={historyTotal}
+									rowsPerPage={10}
+									page={historyPage - 1}
+									onPageChange={(event, newPage) => fetchScrapingHistory(newPage + 1)}
+									labelRowsPerPage="Filas por página:"
+									labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+								/>
+							)}
+						</>
+					)}
+				</TableContainer>
+			</Box>
 
 			{/* Modal de configuración avanzada */}
 			{selectedConfig && (

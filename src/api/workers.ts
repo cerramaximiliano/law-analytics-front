@@ -1,6 +1,31 @@
 import causasAxios from "utils/causasAxios";
 import axios from "axios";
 
+// Interface para historial de scraping
+export interface ScrapingHistory {
+	_id: string | { $oid: string };
+	worker_id: string;
+	fuero: string;
+	year: number;
+	range_start: number;
+	range_end: number;
+	documents_processed?: number;
+	documents_found?: number;
+	completedAt: { $date: string } | string;
+	createdAt?: { $date: string } | string;
+	updatedAt?: { $date: string } | string;
+}
+
+export interface ScrapingHistoryResponse {
+	success: boolean;
+	message?: string;
+	count?: number;
+	total?: number;
+	page?: number;
+	pages?: number;
+	data: ScrapingHistory[];
+}
+
 // Interfaces para Workers
 export interface WorkerConfig {
 	_id: string | { $oid: string };
@@ -236,6 +261,22 @@ export class WorkersService {
 
 	static async updateAppUpdateConfig(id: string, data: Partial<WorkerConfig>): Promise<WorkerConfigResponse> {
 		return this.updateConfig("app-update", id, data);
+	}
+
+	// Métodos para historial de scraping
+	static async getScrapingHistory(params?: { 
+		page?: number; 
+		limit?: number;
+		worker_id?: string;
+		fuero?: string;
+		year?: number;
+	}): Promise<ScrapingHistoryResponse> {
+		try {
+			const response = await causasAxios.get("/api/configuracion-scraping-history/", { params });
+			return response.data;
+		} catch (error) {
+			throw this.handleError(error);
+		}
 	}
 
 	// Manejo de errores
