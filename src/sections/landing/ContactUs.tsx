@@ -1,8 +1,20 @@
 // material-ui
 import { useState } from "react";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Box, Button, Container, Grid, Typography, InputAdornment, OutlinedInput, FormHelperText, CircularProgress } from "@mui/material";
+import {
+	Box,
+	Button,
+	Container,
+	Grid,
+	Typography,
+	InputAdornment,
+	OutlinedInput,
+	FormHelperText,
+	CircularProgress,
+	Link,
+} from "@mui/material";
 import { Sms, Send } from "iconsax-react";
+import { Link as RouterLink } from "react-router-dom";
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
@@ -211,7 +223,22 @@ const ContactUsPage = () => {
 									</Box>
 
 									<Typography variant="caption" color="textSecondary" sx={{ display: "block", mt: 2 }}>
-										Nunca compartiremos tu correo con terceros. Lee nuestra política de privacidad para más información.
+										Nunca compartiremos tu correo con terceros. Lee nuestra{" "}
+										<Link
+											component={RouterLink}
+											to="/privacy-policy"
+											color="primary"
+											underline="always"
+											sx={{
+												fontWeight: 500,
+												"&:hover": {
+													color: theme.palette.primary.dark,
+												},
+											}}
+										>
+											Política de Privacidad
+										</Link>{" "}
+										para más información.
 									</Typography>
 								</Grid>
 							</Grid>
