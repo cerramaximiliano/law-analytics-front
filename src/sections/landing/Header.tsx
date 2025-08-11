@@ -44,8 +44,8 @@ const HeaderPage = () => {
 				overflow: "hidden",
 				minHeight: "100vh",
 				bgcolor: theme.palette.background.default, // Fondo consistente con otros componentes
-				pt: { xs: 5, md: 5 }, // Padding vertical consistente
-				pb: { xs: 10, md: 15 }, // Padding bottom mayor para dejar espacio a los iconos
+				pt: { xs: 8, sm: 9, md: 10, lg: 8, xl: 6 }, // Padding ajustado para todas las resoluciones
+				pb: { xs: 4, sm: 6, md: 8, lg: 10, xl: 12 }, // Padding bottom reducido y progresivo
 				display: "flex",
 				flexDirection: "column",
 			}}
@@ -56,7 +56,7 @@ const HeaderPage = () => {
 				<Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
 					<Grid container alignItems="center" justifyContent="center" spacing={2}>
 						<Grid item xs={12} md={9}>
-							<Grid container spacing={3} sx={{ textAlign: "center" }}>
+							<Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5, lg: 3 }} sx={{ textAlign: "center" }}>
 								<Grid item xs={12}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 50 }}
@@ -70,9 +70,9 @@ const HeaderPage = () => {
 										<Typography
 											variant="h1"
 											sx={{
-												fontSize: { xs: "1.825rem", sm: "2rem", md: "3.4375rem" },
+												fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2.25rem", lg: "2.75rem", xl: "3.4375rem" },
 												fontWeight: 700,
-												lineHeight: 1.2,
+												lineHeight: 1.1,
 											}}
 										>
 											<span>Explore las</span>
@@ -113,9 +113,9 @@ const HeaderPage = () => {
 												variant="h6"
 												component="div"
 												sx={{
-													fontSize: { xs: "0.875rem", md: "1rem" },
+													fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.9rem", lg: "0.95rem", xl: "1rem" },
 													fontWeight: 400,
-													lineHeight: { xs: 1.4, md: 1.4 },
+													lineHeight: 1.3,
 												}}
 											>
 												Law||Analytics es una de las herramientas legales más potentes del mercado legal hoy disponible.
@@ -134,7 +134,7 @@ const HeaderPage = () => {
 											delay: 0.4,
 										}}
 									>
-										<Grid container spacing={2} justifyContent="center">
+										<Grid container spacing={{ xs: 1, sm: 1.5, md: 2 }} justifyContent="center">
 											<Grid item>
 												<AnimateButton>
 													<Button component={RouterLink} to="/login" target="_blank" size="large" color="primary" variant="contained">
@@ -179,7 +179,7 @@ const HeaderPage = () => {
 											delay: 0.6,
 										}}
 									>
-										<Grid container spacing={3} justifyContent="center">
+										<Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }} justifyContent="center">
 											<Grid
 												item
 												sx={{
@@ -235,7 +235,7 @@ const HeaderPage = () => {
 				</Box>
 
 				{/* Sección de iconos en la parte inferior, dentro del mismo container */}
-				<Box sx={{ mt: "auto", mb: 0, py: 2 }}>
+				<Box sx={{ mt: "auto", mb: 0, py: { xs: 0.5, sm: 1, md: 1.5, lg: 2 } }}>
 					<Grid
 						container
 						spacing={2}
@@ -268,19 +268,19 @@ const HeaderPage = () => {
 									>
 										<Box
 											sx={{
-												p: 1.5,
+												p: { xs: 0.75, sm: 1, md: 1.25, lg: 1.5 },
 												borderRadius: "50%",
 												bgcolor: alpha((theme.palette[tech.color] as PaletteColor).main, 0.12),
 												display: "flex",
 												justifyContent: "center",
 												alignItems: "center",
-												mb: 1,
-												width: { xs: 50, sm: 64 },
-												height: { xs: 50, sm: 64 },
+												mb: { xs: 0, sm: 0.5, md: 1 },
+												width: { xs: 40, sm: 48, md: 56, lg: 64 },
+												height: { xs: 40, sm: 48, md: 56, lg: 64 },
 											}}
 										>
 											<tech.icon
-												size={32}
+												size={24}
 												variant="Bulk"
 												style={{
 													color: (theme.palette[tech.color] as PaletteColor).main,
