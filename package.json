@@ -112,28 +112,10 @@
 		"start": "BROWSER=none craco start",
 		"build-stage": "env-cmd -f .env.qa craco build",
 		"build": "craco build",
-		"build:prod": "craco build && react-snap",
-		"build:ci": "craco build",
-		"postbuild": "if [ \"$SKIP_REACT_SNAP\" != \"true\" ]; then react-snap; fi",
 		"test": "craco test",
 		"eject": "react-scripts eject",
 		"format": "prettier --write .",
 		"lint": "eslint --fix . --ext .js,.jsx,.tx,.tsx"
-	},
-	"reactSnap": {
-		"include": ["/", "/privacy-policy", "/terms", "/cookies-policy", "/contact-us"],
-		"inlineCss": false,
-		"headless": true,
-		"puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-web-security"],
-		"skipThirdPartyRequests": true,
-		"minify": false,
-		"removeStyleTags": false,
-		"removeScriptTags": false,
-		"fixWebpackChunksIssue": false,
-		"crawl": false,
-		"waitFor": 1000,
-		"asyncScriptTags": true,
-		"preloadResources": false
 	},
 	"eslintConfig": {
 		"extends": [
@@ -194,7 +176,6 @@
 		"prettier": "^2.8.8",
 		"prettier-eslint-cli": "^7.1.0",
 		"react-error-overlay": "6.0.11",
-		"react-snap": "^1.23.0",
 		"typescript": "^4.9.5"
 	}
 }

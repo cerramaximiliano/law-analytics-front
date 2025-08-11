@@ -27,6 +27,7 @@ import { ConfigProvider } from "contexts/ConfigContext";
 import reportWebVitals from "./reportWebVitals";
 
 const container = document.getElementById("root");
+const root = createRoot(container!);
 
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 
@@ -52,21 +53,17 @@ const PersistGateWrapper = ({ children }: { children: React.ReactNode }) => {
 	}
 };
 
-// Check if react-snap is running
-if (container && !container.hasChildNodes()) {
-	const root = createRoot(container);
-	root.render(
-		<ReduxProvider store={store}>
-			<PersistGateWrapper>
-				<ConfigProvider>
-					<BrowserRouter basename={process.env.REACT_APP_BASE_NAME}>
-						<App />
-					</BrowserRouter>
-				</ConfigProvider>
-			</PersistGateWrapper>
-		</ReduxProvider>,
-	);
-}
+root.render(
+	<ReduxProvider store={store}>
+		<PersistGateWrapper>
+			<ConfigProvider>
+				<BrowserRouter basename={process.env.REACT_APP_BASE_NAME}>
+					<App />
+				</BrowserRouter>
+			</ConfigProvider>
+		</PersistGateWrapper>
+	</ReduxProvider>,
+);
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
