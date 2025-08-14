@@ -101,6 +101,8 @@ class GoogleCalendarService {
 		const googleEvent: GoogleCalendarEvent = {
 			summary: event.title,
 			description: event.description || "",
+			start: { dateTime: "", timeZone: "" },
+			end: { dateTime: "", timeZone: "" },
 		};
 
 		// Handle all-day events
@@ -327,7 +329,6 @@ class GoogleCalendarService {
 		try {
 			// Fetch Google Calendar events
 			const googleEvents = await this.fetchEvents();
-			const googleEventIds = new Set(googleEvents.map((e) => e.googleCalendarId));
 
 			// Create a map of local events by their Google Calendar ID
 			const localEventMap = new Map<string, Event>();
@@ -351,9 +352,9 @@ class GoogleCalendarService {
 			// Create new events in Google Calendar for local events without Google ID
 			for (const localEvent of localEventsWithoutGoogleId) {
 				try {
-					const googleId = await this.createEvent(localEvent);
+					await this.createEvent(localEvent);
 					stats.created++;
-					// You would update the local event with the Google ID here
+					// The local event would be updated with the Google ID in the calling function
 				} catch (error) {
 					console.error("Error creating event in Google Calendar:", error);
 				}

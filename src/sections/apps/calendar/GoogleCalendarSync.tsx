@@ -31,9 +31,7 @@ interface GoogleCalendarSyncProps {
 
 const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyncProps) => {
 	const dispatch = useDispatch();
-	const { isConnected, isLoading, isSyncing, userProfile, lastSyncTime, syncStats } = useSelector(
-		(state: any) => state.googleCalendar,
-	);
+	const { isConnected, isLoading, isSyncing, userProfile, lastSyncTime, syncStats } = useSelector((state: any) => state.googleCalendar);
 
 	useEffect(() => {
 		// Initialize Google Calendar API on component mount
@@ -84,15 +82,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 							<Google size={24} variant="Bold" />
 							<Typography variant="h6">Google Calendar</Typography>
 						</Stack>
-						{isConnected && (
-							<Chip
-								icon={<TickCircle size={16} />}
-								label="Conectado"
-								color="success"
-								size="small"
-								variant="outlined"
-							/>
-						)}
+						{isConnected && <Chip icon={<TickCircle size={16} />} label="Conectado" color="success" size="small" variant="outlined" />}
 					</Stack>
 
 					{!isConnected ? (
@@ -100,13 +90,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 							<Typography variant="body2" color="text.secondary">
 								Conecta tu cuenta de Google para sincronizar eventos con Google Calendar
 							</Typography>
-							<Button
-								variant="contained"
-								startIcon={<Link21 />}
-								onClick={handleConnect}
-								disabled={isLoading}
-								fullWidth
-							>
+							<Button variant="contained" startIcon={<Link21 />} onClick={handleConnect} disabled={isLoading} fullWidth>
 								Conectar con Google Calendar
 							</Button>
 						</Stack>
@@ -153,8 +137,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 									</Typography>
 									{syncStats && (
 										<Typography variant="caption" display="block" color="text.secondary">
-											{syncStats.created} creados, {syncStats.imported} importados,{" "}
-											{syncStats.updated} actualizados
+											{syncStats.created} creados, {syncStats.imported} importados, {syncStats.updated} actualizados
 										</Typography>
 									)}
 								</Box>

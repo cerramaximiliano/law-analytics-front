@@ -264,8 +264,8 @@ export class WorkersService {
 	}
 
 	// Métodos para historial de scraping
-	static async getScrapingHistory(params?: { 
-		page?: number; 
+	static async getScrapingHistory(params?: {
+		page?: number;
 		limit?: number;
 		worker_id?: string;
 		fuero?: string;

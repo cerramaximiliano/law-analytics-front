@@ -650,11 +650,8 @@ const Calendar = () => {
 	return (
 		<Box sx={{ position: "relative" }}>
 			{/* Google Calendar Sync Component */}
-			<GoogleCalendarSync 
-				localEvents={events} 
-				onEventsImported={handleEventsImported}
-			/>
-			
+			<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
+
 			<CalendarStyled>
 				{/* Botones en la parte superior */}
 				<Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mb: 2 }}>

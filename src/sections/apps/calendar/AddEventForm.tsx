@@ -32,7 +32,7 @@ import { Calendar, Trash, Google } from "iconsax-react";
 import { DateRange } from "types/calendar";
 import { addEvent } from "store/reducers/events";
 import { useMemo, useState } from "react";
-import { createGoogleEvent, updateGoogleEvent, deleteGoogleEvent } from "store/reducers/googleCalendar";
+import { createGoogleEvent, updateGoogleEvent } from "store/reducers/googleCalendar";
 
 const getInitialValues = (event: FormikValues | null, range: DateRange | null) => {
 	if (event) {
@@ -331,16 +331,16 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 							</Grid>
 							{isGoogleConnected && (
 								<Grid item xs={12} md={6}>
-									<FormControlLabel 
+									<FormControlLabel
 										control={
-											<Checkbox 
-												checked={syncWithGoogle} 
+											<Checkbox
+												checked={syncWithGoogle}
 												onChange={(e) => setSyncWithGoogle(e.target.checked)}
 												icon={<Google size={20} />}
 												checkedIcon={<Google size={20} variant="Bold" />}
 											/>
-										} 
-										label="Sincronizar con Google Calendar" 
+										}
+										label="Sincronizar con Google Calendar"
 									/>
 								</Grid>
 							)}

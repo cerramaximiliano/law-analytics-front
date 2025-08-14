@@ -57,8 +57,18 @@ const googleCalendarSlice = createSlice({
 		setGoogleEvents: (state, action: PayloadAction<EventInput[]>) => {
 			state.googleEvents = action.payload;
 		},
-		setSyncStats: (state, action: PayloadAction<GoogleCalendarState["syncStats"]>) => {
-			state.syncStats = action.payload;
+		setSyncStats: (
+			state,
+			action: PayloadAction<{ created: number; updated: number; deleted: number; imported: EventInput[] | number }>,
+		) => {
+			// Handle both EventInput[] and number for imported
+			const imported = Array.isArray(action.payload.imported) ? action.payload.imported.length : action.payload.imported;
+			state.syncStats = {
+				created: action.payload.created,
+				updated: action.payload.updated,
+				deleted: action.payload.deleted,
+				imported: imported,
+			};
 			state.lastSyncTime = new Date().toISOString();
 		},
 		resetState: () => initialState,
@@ -188,7 +198,14 @@ export const syncWithGoogleCalendar = (localEvents: Event[]) => async () => {
 	dispatch(setSyncing(true));
 	try {
 		const stats = await googleCalendarService.syncEvents(localEvents);
-		dispatch(setSyncStats(stats));
+		dispatch(
+			setSyncStats({
+				created: stats.created,
+				updated: stats.updated,
+				deleted: stats.deleted,
+				imported: stats.imported.length,
+			}),
+		);
 		dispatch(
 			openSnackbar({
 				open: true,
