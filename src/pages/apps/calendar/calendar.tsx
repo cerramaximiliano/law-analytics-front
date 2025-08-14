@@ -40,6 +40,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import CalendarStyled from "sections/apps/calendar/CalendarStyled";
 import Toolbar from "sections/apps/calendar/Toolbar";
 import AddEventForm from "sections/apps/calendar/AddEventForm";
+import GoogleCalendarSync from "sections/apps/calendar/GoogleCalendarSync";
 import { GuideCalendar } from "components/guides";
 
 import {
@@ -635,8 +636,25 @@ const Calendar = () => {
 		},
 	}));
 
+	// Función para manejar eventos importados de Google Calendar
+	const handleEventsImported = (importedEvents: any[]) => {
+		// Aquí puedes procesar los eventos importados
+		// Por ejemplo, agregarlos al estado local o enviarlos al backend
+		console.log("Eventos importados de Google Calendar:", importedEvents);
+		// Recargar eventos después de la importación
+		if (id && id !== "undefined") {
+			dispatch(getEventsByUserId(id));
+		}
+	};
+
 	return (
 		<Box sx={{ position: "relative" }}>
+			{/* Google Calendar Sync Component */}
+			<GoogleCalendarSync 
+				localEvents={events} 
+				onEventsImported={handleEventsImported}
+			/>
+			
 			<CalendarStyled>
 				{/* Botones en la parte superior */}
 				<Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mb: 2 }}>

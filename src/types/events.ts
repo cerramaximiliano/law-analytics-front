@@ -14,6 +14,8 @@ export interface Event {
 	groupId?: string; // ID del grupo asociado (opcional)
 	folderId?: string;
 	folderName?: string;
+	googleCalendarId?: string; // ID del evento en Google Calendar
+	syncedWithGoogle?: boolean; // Si el evento está sincronizado con Google
 }
 
 // Estado del reducer de eventos
