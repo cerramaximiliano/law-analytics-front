@@ -1,19 +1,6 @@
-import { useEffect } from "react";
-import {
-	Box,
-	Button,
-	Card,
-	CardContent,
-	Typography,
-	Stack,
-	Avatar,
-	CircularProgress,
-	Chip,
-	IconButton,
-	Tooltip,
-	Divider,
-} from "@mui/material";
-import { Google, Refresh, Link21, Trash, TickCircle } from "iconsax-react";
+import { useEffect, useState } from "react";
+import { Box, Button, Typography, Stack, Avatar, CircularProgress, IconButton, Tooltip, Dialog, DialogContent } from "@mui/material";
+import { Google, Refresh, Link21, CloseCircle } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
 import {
 	initializeGoogleCalendar,
@@ -23,6 +10,8 @@ import {
 	fetchGoogleEvents,
 } from "store/reducers/googleCalendar";
 import { Event } from "types/events";
+import { PopupTransition } from "components/@extended/Transitions";
+import Avatar2 from "components/@extended/Avatar";
 
 interface GoogleCalendarSyncProps {
 	localEvents: Event[];
@@ -32,121 +21,193 @@ interface GoogleCalendarSyncProps {
 const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyncProps) => {
 	const dispatch = useDispatch();
 	const { isConnected, isLoading, isSyncing, userProfile, lastSyncTime, syncStats } = useSelector((state: any) => state.googleCalendar);
+	const [openDisconnectDialog, setOpenDisconnectDialog] = useState(false);
 
 	useEffect(() => {
 		// Initialize Google Calendar API on component mount
 		dispatch(initializeGoogleCalendar());
 	}, [dispatch]);
 
-	const handleConnect = () => {
-		dispatch(connectGoogleCalendar());
+	useEffect(() => {
+		// Cuando se conecta pero no hay perfil aún, intentar obtenerlo nuevamente
+		if (isConnected && !userProfile && !isLoading) {
+			// Pequeño delay para asegurar que Google haya actualizado todo
+			const timer = setTimeout(() => {
+				dispatch(initializeGoogleCalendar());
+			}, 500);
+			return () => clearTimeout(timer);
+		}
+	}, [isConnected, userProfile, isLoading, dispatch]);
+
+	const handleConnect = async () => {
+		try {
+			const profile = await dispatch(connectGoogleCalendar());
+			// Los eventos se importan automáticamente en connectGoogleCalendar
+			// Si el perfil se obtuvo exitosamente, la importación ya se realizó
+			if (profile) {
+				console.log("Conexión exitosa, eventos importados automáticamente");
+			}
+		} catch (error) {
+			// El error ya se maneja en el reducer
+			console.error("Error al conectar:", error);
+		}
 	};
 
 	const handleDisconnect = () => {
+		setOpenDisconnectDialog(true);
+	};
+
+	const handleConfirmDisconnect = () => {
 		dispatch(disconnectGoogleCalendar());
+		setOpenDisconnectDialog(false);
+	};
+
+	const handleCancelDisconnect = () => {
+		setOpenDisconnectDialog(false);
 	};
 
 	const handleSync = async () => {
-		const result = await dispatch(syncWithGoogleCalendar(localEvents));
-		if (result && result.imported && result.imported.length > 0 && onEventsImported) {
-			onEventsImported(result.imported);
+		try {
+			const result = await dispatch(syncWithGoogleCalendar(localEvents));
+			if (result && result.imported && result.imported.length > 0 && onEventsImported) {
+				await onEventsImported(result.imported);
+			}
+		} catch (error) {
+			console.error("Error durante la sincronización:", error);
 		}
 	};
 
 	const handleFetchEvents = async () => {
-		const events = await dispatch(fetchGoogleEvents());
-		if (events && events.length > 0 && onEventsImported) {
-			onEventsImported(events);
+		try {
+			const events = await dispatch(fetchGoogleEvents());
+			if (events && events.length > 0 && onEventsImported) {
+				await onEventsImported(events);
+			}
+		} catch (error) {
+			console.error("Error al obtener eventos:", error);
 		}
 	};
 
 	if (isLoading) {
 		return (
-			<Card>
-				<CardContent>
-					<Stack direction="row" spacing={2} alignItems="center" justifyContent="center">
-						<CircularProgress size={24} />
-						<Typography variant="body2">Cargando Google Calendar...</Typography>
-					</Stack>
-				</CardContent>
-			</Card>
+			<Box sx={{ mb: 2, p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+				<Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+					<CircularProgress size={20} />
+					<Typography variant="caption">Cargando...</Typography>
+				</Stack>
+			</Box>
 		);
 	}
 
 	return (
-		<Card sx={{ mb: 2 }}>
-			<CardContent>
-				<Stack spacing={2}>
+		<>
+			<Box
+				sx={{
+					mb: 2,
+					p: 1.5,
+					border: "1px solid",
+					borderColor: isConnected ? "success.main" : "divider",
+					borderRadius: 1,
+					bgcolor: isConnected ? "success.lighter" : "background.paper",
+				}}
+			>
+				{!isConnected ? (
 					<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-						<Stack direction="row" spacing={2} alignItems="center">
-							<Google size={24} variant="Bold" />
-							<Typography variant="h6">Google Calendar</Typography>
+						<Stack direction="row" spacing={1.5} alignItems="center">
+							<Google size={20} variant="Bold" color={isConnected ? "#4caf50" : "#666"} />
+							<Typography variant="body2">Google Calendar</Typography>
 						</Stack>
-						{isConnected && <Chip icon={<TickCircle size={16} />} label="Conectado" color="success" size="small" variant="outlined" />}
+						<Button variant="contained" startIcon={<Link21 size={16} />} onClick={handleConnect} disabled={isLoading} size="small">
+							Conectar
+						</Button>
 					</Stack>
-
-					{!isConnected ? (
-						<Stack spacing={2}>
-							<Typography variant="body2" color="text.secondary">
-								Conecta tu cuenta de Google para sincronizar eventos con Google Calendar
-							</Typography>
-							<Button variant="contained" startIcon={<Link21 />} onClick={handleConnect} disabled={isLoading} fullWidth>
-								Conectar con Google Calendar
-							</Button>
-						</Stack>
-					) : (
-						<Stack spacing={2}>
-							<Stack direction="row" spacing={2} alignItems="center">
-								<Avatar src={userProfile?.imageUrl} sx={{ width: 40, height: 40 }}>
+				) : (
+					<Stack spacing={1}>
+						<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+							<Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+								<Avatar src={userProfile?.imageUrl} sx={{ width: 28, height: 28, fontSize: "0.875rem" }}>
 									{userProfile?.name?.charAt(0)}
 								</Avatar>
-								<Box flex={1}>
-									<Typography variant="subtitle2">{userProfile?.name}</Typography>
-									<Typography variant="caption" color="text.secondary">
+								<Box sx={{ minWidth: 0, flex: 1 }}>
+									<Typography variant="body2" noWrap>
+										{userProfile?.name}
+									</Typography>
+									<Typography variant="caption" color="text.secondary" noWrap>
 										{userProfile?.email}
 									</Typography>
 								</Box>
-								<Tooltip title="Desconectar">
-									<IconButton size="small" onClick={handleDisconnect} color="error">
-										<Trash size={20} />
+							</Stack>
+
+							<Stack direction="row" spacing={0.5}>
+								<Tooltip title="Sincronizar eventos">
+									<IconButton onClick={handleSync} disabled={isSyncing} size="small" color="primary">
+										{isSyncing ? <CircularProgress size={18} /> : <Refresh size={18} />}
+									</IconButton>
+								</Tooltip>
+								<Tooltip title="Importar de Google">
+									<IconButton onClick={handleFetchEvents} disabled={isSyncing} size="small" color="primary">
+										<Google size={18} />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title="Desvincular">
+									<IconButton onClick={handleDisconnect} size="small" sx={{ color: "error.main" }}>
+										<CloseCircle size={18} />
 									</IconButton>
 								</Tooltip>
 							</Stack>
-
-							<Divider />
-
-							<Stack direction="row" spacing={1}>
-								<Button
-									variant="outlined"
-									startIcon={isSyncing ? <CircularProgress size={16} /> : <Refresh />}
-									onClick={handleSync}
-									disabled={isSyncing}
-									fullWidth
-								>
-									{isSyncing ? "Sincronizando..." : "Sincronizar Eventos"}
-								</Button>
-								<Button variant="outlined" onClick={handleFetchEvents} disabled={isSyncing}>
-									Importar
-								</Button>
-							</Stack>
-
-							{lastSyncTime && (
-								<Box>
-									<Typography variant="caption" color="text.secondary">
-										Última sincronización: {new Date(lastSyncTime).toLocaleString("es-ES")}
-									</Typography>
-									{syncStats && (
-										<Typography variant="caption" display="block" color="text.secondary">
-											{syncStats.created} creados, {syncStats.imported} importados, {syncStats.updated} actualizados
-										</Typography>
-									)}
-								</Box>
-							)}
 						</Stack>
-					)}
-				</Stack>
-			</CardContent>
-		</Card>
+
+						{lastSyncTime && (
+							<Typography variant="caption" color="text.secondary" sx={{ pl: 5 }}>
+								Sincronizado: {new Date(lastSyncTime).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+								{syncStats && syncStats.imported > 0 && ` • ${syncStats.imported} importados`}
+							</Typography>
+						)}
+					</Stack>
+				)}
+			</Box>
+
+			{/* Modal de confirmación para desvincular */}
+			<Dialog
+				open={openDisconnectDialog}
+				onClose={handleCancelDisconnect}
+				keepMounted
+				TransitionComponent={PopupTransition}
+				maxWidth="xs"
+				aria-labelledby="disconnect-dialog-title"
+				aria-describedby="disconnect-dialog-description"
+			>
+				<DialogContent sx={{ mt: 2, my: 1 }}>
+					<Stack alignItems="center" spacing={3.5}>
+						<Avatar2 color="error" sx={{ width: 72, height: 72, fontSize: "1.75rem" }}>
+							<CloseCircle variant="Bold" />
+						</Avatar2>
+						<Stack spacing={2}>
+							<Typography variant="h4" align="center">
+								¿Estás seguro de desvincular Google Calendar?
+							</Typography>
+							<Typography align="center">
+								Al desvincular tu cuenta de Google Calendar,
+								<Typography variant="subtitle1" component="span" color="error">
+									{" "}
+									todos los eventos importados desde Google{" "}
+								</Typography>
+								serán eliminados del calendario local. Los eventos creados localmente se mantendrán.
+							</Typography>
+						</Stack>
+
+						<Stack direction="row" spacing={2} sx={{ width: 1 }}>
+							<Button fullWidth onClick={handleCancelDisconnect} color="secondary" variant="outlined">
+								Cancelar
+							</Button>
+							<Button fullWidth color="error" variant="contained" onClick={handleConfirmDisconnect} autoFocus>
+								Desvincular
+							</Button>
+						</Stack>
+					</Stack>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 };
 

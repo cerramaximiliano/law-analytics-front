@@ -52,7 +52,7 @@ import {
 // types
 import { Add, Calendar as CalendarIcon, Edit2, InfoCircle, Link1, Trash } from "iconsax-react";
 import { dispatch, useSelector } from "store";
-import { deleteEvent, getEventsByUserId, selectEvent, updateEvent } from "store/reducers/events";
+import { addBatchEvents, deleteEvent, getEventsByUserId, selectEvent, updateEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // Importación de eventos y carpetas types
@@ -366,6 +366,7 @@ const Calendar = () => {
 
 	const { calendarView, selectedRange } = useSelector((state) => state.calendar);
 	const { events } = useSelector((state) => state.events);
+	const { isConnected: isGoogleConnected } = useSelector((state) => state.googleCalendar);
 
 	const auth = useSelector((state) => state.auth);
 	const id = auth.user?._id;
@@ -393,6 +394,18 @@ const Calendar = () => {
 			fetchData();
 		}
 	}, [id, dispatch]);
+
+	// Recargar eventos cuando cambie el estado de conexión de Google Calendar
+	useEffect(() => {
+		// Solo recargar si hay un userId válido y Google Calendar se acaba de desconectar
+		if (id && id !== "undefined" && !isGoogleConnected) {
+			// Pequeño delay para asegurar que el backend completó la eliminación
+			const timer = setTimeout(() => {
+				dispatch(getEventsByUserId(id));
+			}, 500);
+			return () => clearTimeout(timer);
+		}
+	}, [isGoogleConnected, id, dispatch]);
 
 	useEffect(() => {
 		const calendarEl = calendarRef.current;
@@ -637,13 +650,136 @@ const Calendar = () => {
 	}));
 
 	// Función para manejar eventos importados de Google Calendar
-	const handleEventsImported = (importedEvents: any[]) => {
-		// Aquí puedes procesar los eventos importados
-		// Por ejemplo, agregarlos al estado local o enviarlos al backend
-		console.log("Eventos importados de Google Calendar:", importedEvents);
-		// Recargar eventos después de la importación
-		if (id && id !== "undefined") {
-			dispatch(getEventsByUserId(id));
+	const handleEventsImported = async (importedEvents: any[]) => {
+		if (!id || id === "undefined") return;
+
+		const totalEvents = importedEvents.length;
+
+		// Mostrar mensaje de inicio
+		dispatch(
+			openSnackbar({
+				open: true,
+				message: `Preparando importación de ${totalEvents} evento(s) de Google Calendar...`,
+				variant: "alert",
+				alert: {
+					color: "info",
+				},
+				close: false,
+			}),
+		);
+
+		// Filtrar eventos que ya existen localmente antes de intentar crearlos
+		const existingGoogleIds = new Set(events.filter((e) => e.googleCalendarId).map((e) => e.googleCalendarId));
+
+		// Preparar solo eventos que no existen localmente
+		const eventsToCreate: Event[] = importedEvents
+			.filter((googleEvent) => {
+				const googleId = googleEvent.googleCalendarId || googleEvent.id;
+				// Filtrar si ya existe por googleCalendarId
+				if (googleId && existingGoogleIds.has(googleId)) {
+					console.log(`Evento omitido (ya existe): ${googleEvent.title}`);
+					return false;
+				}
+				return true;
+			})
+			.map((googleEvent) => ({
+				title: googleEvent.title || "Sin título",
+				description: googleEvent.description || "",
+				type: "other", // Tipo por defecto para eventos de Google
+				color: googleEvent.color || "#1890ff",
+				allDay: googleEvent.allDay || false,
+				start: googleEvent.start,
+				end: googleEvent.end || googleEvent.start,
+				googleCalendarId: googleEvent.googleCalendarId || googleEvent.id,
+				userId: id, // Agregar el userId del contexto
+			}));
+
+		// Si todos los eventos ya existen, informar al usuario
+		if (eventsToCreate.length === 0 && importedEvents.length > 0) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Todos los eventos ya están sincronizados",
+					variant: "alert",
+					alert: {
+						color: "info",
+					},
+					close: true,
+				}),
+			);
+			return;
+		}
+
+		// Callback para mostrar progreso
+		const handleProgress = (processed: number, total: number) => {
+			const percentage = Math.round((processed / total) * 100);
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: `Importando eventos... ${processed}/${total} (${percentage}%)`,
+					variant: "alert",
+					alert: {
+						color: "info",
+					},
+					close: false,
+				}),
+			);
+		};
+
+		// Procesar todos los eventos usando el endpoint batch optimizado
+		// El addBatchEvents ahora maneja automáticamente:
+		// - Lotes de hasta 100 eventos
+		// - Retry con backoff exponencial
+		// - Respeto del header Retry-After
+		// - Fallback a creación individual si es necesario
+		const result = await dispatch(addBatchEvents(eventsToCreate, handleProgress));
+
+		// Mostrar mensaje de resultado final
+		const { successCount = 0, errorCount = 0 } = result;
+
+		if (successCount > 0 || errorCount > 0) {
+			let message = "";
+			let color: "success" | "warning" | "error" = "success";
+
+			if (successCount > 0 && errorCount === 0) {
+				message = `✓ Importación completada: ${successCount} evento(s) importado(s) exitosamente`;
+				color = "success";
+			} else if (successCount > 0 && errorCount > 0) {
+				message = `Importación parcial: ${successCount} exitoso(s), ${errorCount} error(es)`;
+				color = "warning";
+			} else {
+				message = `Error en la importación: No se pudieron importar ${errorCount} evento(s)`;
+				color = "error";
+			}
+
+			dispatch(
+				openSnackbar({
+					open: true,
+					message,
+					variant: "alert",
+					alert: {
+						color,
+					},
+					close: true,
+				}),
+			);
+
+			// Recargar eventos después de la importación
+			if (successCount > 0) {
+				dispatch(getEventsByUserId(id));
+			}
+		} else {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "No se encontraron eventos para importar",
+					variant: "alert",
+					alert: {
+						color: "info",
+					},
+					close: true,
+				}),
+			);
 		}
 	};
 

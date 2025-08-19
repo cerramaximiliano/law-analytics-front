@@ -34,6 +34,21 @@ class GoogleCalendarService {
 	// Initialize Google API client
 	async init(): Promise<void> {
 		return new Promise((resolve, reject) => {
+			// Verificar que las credenciales estén configuradas
+			if (!GOOGLE_CALENDAR_CONFIG.CLIENT_ID) {
+				const error = new Error("Google Client ID no configurado. Agrega REACT_APP_AUTH0_GOOGLE_ID en tu archivo .env");
+				console.error(error);
+				reject(error);
+				return;
+			}
+
+			if (!GOOGLE_CALENDAR_CONFIG.API_KEY) {
+				const error = new Error("Google API Key no configurada. Agrega REACT_APP_GOOGLE_API_KEY en tu archivo .env");
+				console.error(error);
+				reject(error);
+				return;
+			}
+
 			gapi.load("client:auth2", async () => {
 				try {
 					await gapi.client.init({
@@ -53,9 +68,22 @@ class GoogleCalendarService {
 					// Handle initial sign-in state
 					this.isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
 					resolve();
-				} catch (error) {
-					console.error("Error initializing Google Calendar API:", error);
-					reject(error);
+				} catch (error: any) {
+					let errorMessage = "Error inicializando Google Calendar API";
+					
+					// Analizar el error para dar mensajes más específicos
+					if (error?.details) {
+						errorMessage = error.details;
+					} else if (error?.error === "idpiframe_initialization_failed") {
+						errorMessage = "Error de configuración: Verifica que el dominio esté autorizado en Google Cloud Console";
+					} else if (error?.error === "popup_closed_by_user") {
+						errorMessage = "Autenticación cancelada por el usuario";
+					} else if (error?.error === "access_denied") {
+						errorMessage = "Acceso denegado: Verifica los permisos en Google Cloud Console";
+					}
+					
+					console.error(errorMessage, error);
+					reject(new Error(errorMessage));
 				}
 			});
 		});
@@ -66,7 +94,21 @@ class GoogleCalendarService {
 		if (!this.isInitialized) {
 			await this.init();
 		}
-		return gapi.auth2.getAuthInstance().signIn();
+		// Forzar que siempre muestre la pantalla de consentimiento
+		// prompt: 'consent' - Siempre muestra la pantalla de consentimiento
+		// prompt: 'select_account' - Permite elegir cuenta
+		// prompt: 'select_account consent' - Ambas opciones
+		await gapi.auth2.getAuthInstance().signIn({
+			prompt: 'select_account consent'
+		});
+		
+		// Actualizar el estado de signed in
+		this.isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
+		
+		// Verificar que el login fue exitoso
+		if (!this.isSignedIn) {
+			throw new Error("No se pudo completar el inicio de sesión");
+		}
 	}
 
 	// Sign out from Google
@@ -74,7 +116,22 @@ class GoogleCalendarService {
 		if (!this.isInitialized) {
 			return;
 		}
-		return gapi.auth2.getAuthInstance().signOut();
+		const auth = gapi.auth2.getAuthInstance();
+		
+		// Opcionalmente, revocar el acceso completamente
+		// Esto forzará al usuario a volver a autorizar la próxima vez
+		try {
+			// Desconectar (solo cierra sesión)
+			await auth.signOut();
+			
+			// Opcional: Revocar acceso completamente
+			// await auth.disconnect();
+			// Si descomentas la línea anterior, el usuario tendrá que 
+			// volver a autorizar todos los permisos la próxima vez
+		} catch (error) {
+			console.error("Error al cerrar sesión de Google:", error);
+			// Continuar aunque falle el signOut
+		}
 	}
 
 	// Check if user is signed in
@@ -84,16 +141,34 @@ class GoogleCalendarService {
 
 	// Get user profile
 	getUserProfile() {
+		// Actualizar el estado primero
+		if (gapi && gapi.auth2 && gapi.auth2.getAuthInstance()) {
+			this.isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
+		}
+		
 		if (!this.isSignedIn) {
 			return null;
 		}
-		const profile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
-		return {
-			id: profile.getId(),
-			name: profile.getName(),
-			email: profile.getEmail(),
-			imageUrl: profile.getImageUrl(),
-		};
+		
+		try {
+			const currentUser = gapi.auth2.getAuthInstance().currentUser.get();
+			const profile = currentUser.getBasicProfile();
+			
+			if (!profile) {
+				console.warn("Profile not available yet");
+				return null;
+			}
+			
+			return {
+				id: profile.getId(),
+				name: profile.getName(),
+				email: profile.getEmail(),
+				imageUrl: profile.getImageUrl(),
+			};
+		} catch (error) {
+			console.error("Error getting user profile:", error);
+			return null;
+		}
 	}
 
 	// Convert local event to Google Calendar format
@@ -330,8 +405,9 @@ class GoogleCalendarService {
 			// Fetch Google Calendar events
 			const googleEvents = await this.fetchEvents();
 
-			// Create a map of local events by their Google Calendar ID
+			// Create maps for efficient lookup
 			const localEventMap = new Map<string, Event>();
+			const localEventsByTitle = new Map<string, Event>();
 			const localEventsWithoutGoogleId: Event[] = [];
 
 			localEvents.forEach((event) => {
@@ -340,23 +416,111 @@ class GoogleCalendarService {
 				} else {
 					localEventsWithoutGoogleId.push(event);
 				}
+				// También mapear por título y fecha para evitar duplicados
+				// Normalizar la clave para comparación más robusta
+				const eventKey = `${event.title}_${new Date(event.start).toISOString()}`.toLowerCase().trim();
+				localEventsByTitle.set(eventKey, event);
 			});
 
 			// Import events from Google that don't exist locally
+			const importedIds = new Set<string>();
+			
 			for (const googleEvent of googleEvents) {
-				if (!localEventMap.has(googleEvent.googleCalendarId!)) {
+				// Convertir DateInput a string de manera segura
+				const startDate = googleEvent.start ? 
+					(typeof googleEvent.start === 'string' ? googleEvent.start : 
+					 Array.isArray(googleEvent.start) ? new Date(googleEvent.start[0], googleEvent.start[1] - 1, googleEvent.start[2]).toISOString() :
+					 new Date(googleEvent.start).toISOString()) : '';
+				
+				// Crear clave única más robusta
+				const googleEventKey = `${googleEvent.title}_${startDate}`.toLowerCase().trim();
+				const googleId = googleEvent.googleCalendarId || googleEvent.id || '';
+				
+				// Verificar si el evento ya existe por ID o por título+fecha
+				const existsByGoogleId = googleId && localEventMap.has(googleId);
+				const existsByTitleAndDate = localEventsByTitle.has(googleEventKey);
+				const alreadyImportedInThisBatch = importedIds.has(googleId) || importedIds.has(googleEventKey);
+				
+				if (!existsByGoogleId && !existsByTitleAndDate && !alreadyImportedInThisBatch) {
 					stats.imported.push(googleEvent);
+					// Marcar como importado para evitar duplicados en el mismo batch
+					if (googleId) importedIds.add(googleId);
+					importedIds.add(googleEventKey);
 				}
 			}
 
 			// Create new events in Google Calendar for local events without Google ID
+			// Solo crear si no son duplicados
+			// Optimizado para grandes volúmenes
+			const eventsToCreate = [];
+			
+			// Crear un Set para búsqueda rápida O(1) en lugar de O(n)
+			const googleEventKeys = new Set<string>();
+			googleEvents.forEach((gEvent) => {
+				const gStartDate = gEvent.start ? 
+					(typeof gEvent.start === 'string' ? gEvent.start : 
+					 Array.isArray(gEvent.start) ? new Date(gEvent.start[0], gEvent.start[1] - 1, gEvent.start[2]).toISOString() :
+					 new Date(gEvent.start).toISOString()) : '';
+				const gEventKey = `${gEvent.title}_${gStartDate}`.toLowerCase().trim();
+				googleEventKeys.add(gEventKey);
+			});
+			
+			// Filtrar eventos que no existen en Google
 			for (const localEvent of localEventsWithoutGoogleId) {
-				try {
-					await this.createEvent(localEvent);
-					stats.created++;
-					// The local event would be updated with the Google ID in the calling function
-				} catch (error) {
-					console.error("Error creating event in Google Calendar:", error);
+				const eventKey = `${localEvent.title}_${new Date(localEvent.start).toISOString()}`.toLowerCase().trim();
+				if (!googleEventKeys.has(eventKey)) {
+					eventsToCreate.push(localEvent);
+				}
+			}
+			
+			// Si hay muchos eventos, mostrar advertencia
+			if (eventsToCreate.length > 100) {
+				console.warn(`⚠️ Creando ${eventsToCreate.length} eventos en Google Calendar. Esto puede tomar varios minutos...`);
+			}
+			
+			// Procesar en lotes más grandes pero con delay para evitar rate limits
+			const batchSize = 10; // Aumentar tamaño del lote
+			const delayBetweenBatches = 1000; // 1 segundo entre lotes
+			
+			console.log(`Creando ${eventsToCreate.length} eventos en Google Calendar...`);
+			
+			for (let i = 0; i < eventsToCreate.length; i += batchSize) {
+				const batch = eventsToCreate.slice(i, Math.min(i + batchSize, eventsToCreate.length));
+				const currentBatch = Math.floor(i / batchSize) + 1;
+				const totalBatches = Math.ceil(eventsToCreate.length / batchSize);
+				
+				console.log(`Procesando lote ${currentBatch}/${totalBatches} (${batch.length} eventos)...`);
+				
+				// Procesar batch en paralelo
+				const promises = batch.map(async (event) => {
+					try {
+						await this.createEvent(event);
+						return true;
+					} catch (error: any) {
+						// Si es error de cuota, esperar más
+						if (error?.message?.includes('quota') || error?.status === 429) {
+							console.warn("Límite de API alcanzado, esperando...");
+							await new Promise(resolve => setTimeout(resolve, 5000));
+							// Reintentar una vez
+							try {
+								await this.createEvent(event);
+								return true;
+							} catch (retryError) {
+								console.error("Error al reintentar:", retryError);
+								return false;
+							}
+						}
+						console.error("Error creating event:", error);
+						return false;
+					}
+				});
+				
+				const results = await Promise.all(promises);
+				stats.created += results.filter(r => r).length;
+				
+				// Delay entre lotes para evitar rate limits (excepto en el último)
+				if (i + batchSize < eventsToCreate.length) {
+					await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
 				}
 			}
 

@@ -45,7 +45,7 @@ const PrivacyPolicy = () => {
 									Política de Privacidad
 								</Typography>
 								<Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-									Última actualización: 1 de Mayo de 2025
+									Última actualización: 19 de Agosto de 2025
 								</Typography>
 							</motion.div>
 						</Box>
@@ -163,6 +163,113 @@ const PrivacyPolicy = () => {
 									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
 								}}
 							>
+								Integración con Google Calendar
+							</Typography>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+								Law||Analytics ofrece integración opcional con Google Calendar para mejorar la gestión de eventos y audiencias legales. Esta
+								integración es completamente voluntaria y puede ser activada o desactivada en cualquier momento por el usuario.
+							</Typography>
+							
+							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
+								Permisos de Google Calendar
+							</Typography>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+								Cuando usted conecta su cuenta de Google Calendar, solicitamos los siguientes permisos específicos:
+							</Typography>
+							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 }, mb: 2 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									<strong>Ver y editar eventos en todos sus calendarios</strong> (auth/calendar.events): Permite sincronizar audiencias, 
+									vencimientos y reuniones entre Law||Analytics y Google Calendar
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									<strong>Ver la lista de control de acceso de los calendarios</strong> (auth/calendar.acls.readonly): Permite verificar 
+									los permisos de acceso para asegurar la correcta sincronización de eventos
+								</Typography>
+							</Box>
+							
+							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
+								Uso de los Datos de Google Calendar
+							</Typography>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+								Los datos obtenidos de Google Calendar se utilizan exclusivamente para:
+							</Typography>
+							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 }, mb: 2 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Importar eventos de Google Calendar a su calendario de Law||Analytics
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Crear eventos en Google Calendar desde Law||Analytics (audiencias, vencimientos, reuniones)
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Mantener sincronizados los eventos entre ambas plataformas
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Actualizar o eliminar eventos cuando se modifican en cualquiera de las plataformas
+								</Typography>
+							</Box>
+							
+							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
+								Almacenamiento y Seguridad de Datos de Google
+							</Typography>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+								<strong>Importante:</strong> Los tokens de autenticación de Google se almacenan únicamente en su navegador web (sessionStorage) 
+								y nunca se envían ni almacenan en nuestros servidores. Los eventos importados desde Google Calendar se almacenan en nuestra 
+								base de datos con un identificador especial (googleCalendarId) que permite mantener la sincronización.
+							</Typography>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+								Solo almacenamos la siguiente información de eventos de Google Calendar:
+							</Typography>
+							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 }, mb: 2 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Título del evento
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Descripción del evento
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Fecha y hora de inicio y fin
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									ID único del evento en Google Calendar (para sincronización)
+								</Typography>
+							</Box>
+							
+							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
+								Desvinculación y Eliminación de Datos de Google
+							</Typography>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+								Usted puede desvincular su cuenta de Google Calendar en cualquier momento desde la sección de calendario de la aplicación. 
+								Al desvincular:
+							</Typography>
+							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 }, mb: 2 }}>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Se revocan inmediatamente todos los permisos de acceso a Google Calendar
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Se eliminan automáticamente todos los eventos importados desde Google Calendar de nuestra base de datos
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Se eliminan los tokens de autenticación de su navegador
+								</Typography>
+								<Typography component="li" variant="body1" sx={{ mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+									Los eventos creados localmente en Law||Analytics permanecen intactos
+								</Typography>
+							</Box>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+								Para revocar el acceso de Law||Analytics a su cuenta de Google, también puede hacerlo directamente desde su 
+								<Link href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" sx={{ ml: 0.5 }}>
+									configuración de permisos de Google
+								</Link>.
+							</Typography>
+
+							<Typography
+								variant="h3"
+								gutterBottom
+								sx={{
+									mt: 4,
+									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+								}}
+							>
 								Enlaces a Terceros
 							</Typography>
 							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
@@ -210,7 +317,7 @@ const PrivacyPolicy = () => {
 
 							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través de nuestro formulario de contacto o
-								por correo electrónico a privacy@lawanalytics.app.
+								por correo electrónico a soporte@lawanalytics.app.
 							</Typography>
 						</MainCard>
 					</Grid>
