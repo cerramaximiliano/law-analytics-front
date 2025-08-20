@@ -113,3 +113,7 @@ dist
 
 # Email templates
 src/templates/
+
+# Claude AI files
+.claude/
+
