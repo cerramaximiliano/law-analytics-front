@@ -116,7 +116,8 @@
 		"test": "craco test",
 		"eject": "react-scripts eject",
 		"format": "prettier --write .",
-		"lint": "eslint --fix . --ext .js,.jsx,.tx,.tsx"
+		"lint": "eslint --fix . --ext .js,.jsx,.tx,.tsx",
+		"analyze": "npm run build && webpack-bundle-analyzer build/static/js/*.js --mode static -r build/bundle-report.html -O"
 	},
 	"eslintConfig": {
 		"extends": [
@@ -177,6 +178,7 @@
 		"prettier": "^2.8.8",
 		"prettier-eslint-cli": "^7.1.0",
 		"react-error-overlay": "6.0.11",
-		"typescript": "^4.9.5"
+		"typescript": "^4.9.5",
+		"webpack-bundle-analyzer": "^4.10.2"
 	}
 }
