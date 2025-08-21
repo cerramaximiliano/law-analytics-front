@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Alert, AlertTitle, Button, Stack, Typography, IconButton, Collapse } from "@mui/material";
-import { InfoCircle, Crown, Add } from "iconsax-react";
+import { Crown, Add } from "iconsax-react";
 import { PjnAccess } from "types/movements";
 import { useNavigate } from "react-router-dom";
 
@@ -30,11 +30,14 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 		<Collapse in={open} timeout={300}>
 			<Alert
 				severity="warning"
-				icon={<Crown size={24} />}
+				icon={<Crown size={20} />}
 				sx={{
 					mb: 2,
 					"& .MuiAlert-icon": {
 						color: "warning.main",
+					},
+					"& .MuiAlert-message": {
+						width: "100%",
 					},
 				}}
 				action={
@@ -70,29 +73,24 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 					</Stack>
 				}
 			>
-				<AlertTitle sx={{ fontWeight: 600 }}>Acceso Limitado</AlertTitle>
-				<Typography variant="body2" sx={{ mb: 1 }}>
-					{pjnAccess.message}
-				</Typography>
-				{pjnAccess.availableMovements && pjnAccess.availableMovements > 0 && (
-					<Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-						Hay {pjnAccess.availableMovements} movimiento{pjnAccess.availableMovements > 1 ? "s" : ""} adicional
-						{pjnAccess.availableMovements > 1 ? "es" : ""} disponible{pjnAccess.availableMovements > 1 ? "s" : ""} con un plan superior.
+				<AlertTitle sx={{ fontWeight: 600, fontSize: "0.95rem" }}>
+					{pjnAccess.availableMovements && pjnAccess.availableMovements > 0 
+						? `+${pjnAccess.availableMovements} movimientos disponibles`
+						: "Acceso Limitado"}
+				</AlertTitle>
+				<Stack spacing={0.5}>
+					<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
+						{pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0 
+							? `Disponible con plan ${pjnAccess.requiredPlans.map(plan => 
+								plan.charAt(0).toUpperCase() + plan.slice(1)).join(" o ")}`
+							: pjnAccess.message}
 					</Typography>
-				)}
-				{pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0 && (
-					<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-						<InfoCircle size={16} />
-						<Typography variant="caption" color="text.secondary">
-							Disponible en planes: {pjnAccess.requiredPlans.join(", ")}
+					{pjnAccess.currentPlan && (
+						<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
+							Tu plan actual: {pjnAccess.currentPlan}
 						</Typography>
-					</Stack>
-				)}
-				{pjnAccess.currentPlan && (
-					<Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-						Tu plan actual: {pjnAccess.currentPlan}
-					</Typography>
-				)}
+					)}
+				</Stack>
 			</Alert>
 		</Collapse>
 	);
