@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 
 // third-party
 import { motion, useCycle } from "framer-motion";
