@@ -21,9 +21,11 @@ module.exports = {
 			// Optimización de chunks para reducir el tamaño del bundle
 			webpackConfig.optimization = {
 				...webpackConfig.optimization,
+				runtimeChunk: "single",
 				splitChunks: {
 					chunks: "all",
-					maxInitialRequests: 25,
+					maxInitialRequests: 10,
+					maxAsyncRequests: 30,
 					minSize: 20000,
 					cacheGroups: {
 						default: false,
