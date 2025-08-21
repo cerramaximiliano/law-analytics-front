@@ -1,21 +1,42 @@
 import axios from "axios";
 
-const axiosServices = axios.create({
-	baseURL: process.env.REACT_APP_API_URL || "http://localhost:3010/",
+// Configuración base de axios
+const baseURL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+
+// Crear instancia de axios con configuración por defecto
+const axiosInstance = axios.create({
+	baseURL,
+	timeout: 30000,
+	headers: {
+		"Content-Type": "application/json",
+	},
 });
 
-// ==============================|| AXIOS - FOR MOCK SERVICES ||============================== //
-
-axiosServices.interceptors.response.use(
-	(response) => response,
-	(error) => {
-		if (error.response?.status === 401 && !window.location.href.includes("/login")) {
-			window.location.pathname = "/login";
+// Interceptor para agregar token si existe
+axiosInstance.interceptors.request.use(
+	(config) => {
+		const token = localStorage.getItem("token");
+		if (token) {
+			config.headers.Authorization = `Bearer ${token}`;
 		}
-
-		// Return the full error object to preserve status codes and allow specific handling
-		return Promise.reject(error);
+		return config;
 	},
+	(error) => {
+		return Promise.reject(error);
+	}
 );
 
-export default axiosServices;
+// Interceptor para manejar errores
+axiosInstance.interceptors.response.use(
+	(response) => response,
+	(error) => {
+		if (error.response?.status === 401) {
+			// Token expirado o inválido
+			localStorage.removeItem("token");
+			window.location.href = "/login";
+		}
+		return Promise.reject(error);
+	}
+);
+
+export default axiosInstance;
