@@ -1,3 +1,4 @@
+import React from "react";
 // Componente para mostrar la distribución de carpetas
 import { useEffect } from "react";
 import { useTheme } from "@mui/material/styles";

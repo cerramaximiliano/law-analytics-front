@@ -1,3 +1,4 @@
+import React from "react";
 // MUESTRA DATOS DE TENDENCIA MOVIMIENTOS Y CARPETAS
 
 import { useEffect } from "react";

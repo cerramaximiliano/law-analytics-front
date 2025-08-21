@@ -1,3 +1,4 @@
+import React from "react";
 // Componente compacto para mostrar carpetas activas vs cerradas
 import { useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
