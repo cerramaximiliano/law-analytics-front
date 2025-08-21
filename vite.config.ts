@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
+import viteImagemin from "vite-plugin-imagemin";
 import path from "path";
 
 // https://vitejs.dev/config/
@@ -16,6 +17,18 @@ export default defineConfig({
 		svgr({
 			svgrOptions: {
 				icon: true,
+			},
+		}),
+		viteImagemin({
+			gifsicle: { optimizationLevel: 3 },
+			optipng: { optimizationLevel: 5 },
+			mozjpeg: { quality: 75 },
+			pngquant: { quality: [0.8, 0.9] },
+			svgo: {
+				plugins: [
+					{ name: 'removeViewBox', active: false },
+					{ name: 'removeEmptyAttrs', active: false },
+				],
 			},
 		}),
 	],
