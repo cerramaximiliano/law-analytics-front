@@ -1,6 +1,9 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
+// Import env helper first for compatibility
+import "./utils/env";
+
 // third-party
 import { Provider as ReduxProvider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
