@@ -1,3 +1,4 @@
+import React from "react";
 // project-imports
 import Hero from "sections/landing/Header";
 import Technologies from "sections/landing/Technologies";

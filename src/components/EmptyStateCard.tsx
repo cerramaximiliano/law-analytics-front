@@ -1,3 +1,4 @@
+import React from "react";
 import { Stack, Typography, Paper, Box } from "@mui/material";
 import Avatar from "components/@extended/Avatar";
 import { ReactElement } from "react";

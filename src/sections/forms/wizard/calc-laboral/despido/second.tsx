@@ -1,3 +1,4 @@
+import React from "react";
 import { Divider, Switch, FormControlLabel, Grid, Typography, Box } from "@mui/material";
 import LaborTopes from "../components/labor-topes";
 import LaborMultas from "../components/labor-multas";

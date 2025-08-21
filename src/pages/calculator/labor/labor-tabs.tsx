@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
 import BasicWizard from "sections/forms/wizard/calc-laboral/despido";
 import LiquidacionWizard from "sections/forms/wizard/calc-laboral/liquidacion";

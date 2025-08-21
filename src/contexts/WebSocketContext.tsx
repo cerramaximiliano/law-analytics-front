@@ -1,3 +1,4 @@
+import React from "react";
 import { createContext, useEffect, useContext, ReactNode, useState, useCallback, useMemo } from "react";
 import webSocketService, { ConnectionState, WSMessageType, WSMessage, MessageListener } from "../store/reducers/WebSocketService";
 import AuthContext from "./ServerContext";

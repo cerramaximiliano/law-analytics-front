@@ -1,3 +1,4 @@
+import React from "react";
 //AlertCalculatorDelete.tsx
 import { Button, Dialog, DialogContent, Stack, Typography } from "@mui/material";
 import Avatar from "components/@extended/Avatar";

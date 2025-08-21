@@ -1,3 +1,4 @@
+import React from "react";
 import { ElementType, Suspense } from "react";
 
 // project-imports

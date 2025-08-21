@@ -1,3 +1,4 @@
+import React from "react";
 //AlertFolderDelete.tsx
 import { Button, Dialog, DialogContent, Stack, Typography, Zoom } from "@mui/material";
 import Avatar from "components/@extended/Avatar";

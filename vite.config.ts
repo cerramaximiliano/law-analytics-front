@@ -19,12 +19,6 @@ export default defineConfig({
 			},
 		}),
 	],
-	esbuild: {
-		// Inyectar React automáticamente en todos los archivos JSX/TSX
-		jsxInject: `import React from 'react'`,
-		jsxFactory: 'React.createElement',
-		jsxFragment: 'React.Fragment',
-	},
 	server: {
 		port: 3000,
 		open: false,

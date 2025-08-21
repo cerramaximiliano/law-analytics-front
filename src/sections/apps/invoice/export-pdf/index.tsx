@@ -1,3 +1,4 @@
+import React from "react";
 // third-party
 import { Page, View, Document, StyleSheet } from "@react-pdf/renderer";
 
