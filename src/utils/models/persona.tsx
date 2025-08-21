@@ -1,3 +1,4 @@
+import React from "react";
 // Definición del enum para las categorías
 enum Categoria {
 	Cliente = "Cliente",
