@@ -1,3 +1,5 @@
+import React from "react";
+
 // third-party
 import { FormattedMessage } from "react-intl";
 // assets
