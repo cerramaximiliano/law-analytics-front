@@ -35,9 +35,10 @@ const ExperimentalStyled = styled("div")(({ theme }) => ({
 		display: "grid",
 		"& .fc-daygrid-day-number": {
 			textAlign: "center",
-			marginTop: 4,
-			marginBottom: 4,
-			fontSize: "0.875rem",
+			marginTop: 2,
+			marginBottom: 2,
+			fontSize: "0.75rem",
+			lineHeight: 1,
 		},
 	},
 
@@ -53,21 +54,34 @@ const ExperimentalStyled = styled("div")(({ theme }) => ({
 
 	// events
 	"& .fc-direction-ltr .fc-daygrid-event.fc-event-end, .fc-direction-rtl .fc-daygrid-event.fc-event-start": {
-		marginLeft: 8,
-		marginRight: 8,
-		marginBottom: 6,
-		borderRadius: 12,
+		marginLeft: 4,
+		marginRight: 4,
+		marginBottom: 3,
+		borderRadius: 8,
 		backgroundColor: theme.palette.primary.main,
 		border: "none",
 		overflow: "hidden",
 	},
 	"& .fc-v-event .fc-event-title": {
 		overflow: "unset",
+		fontSize: "0.75rem",
 	},
 
 	"& .fc-h-event .fc-event-main": {
-		padding: 4,
-		paddingLeft: 12,
+		padding: 2,
+		paddingLeft: 8,
+		fontSize: "0.75rem",
+	},
+	
+	// Título del evento más pequeño
+	"& .fc-event-title": {
+		fontSize: "0.75rem",
+		lineHeight: 1.2,
+	},
+	
+	// Hora del evento más pequeña
+	"& .fc-event-time": {
+		fontSize: "0.7rem",
 	},
 
 	// popover when multiple events
@@ -114,9 +128,25 @@ const ExperimentalStyled = styled("div")(({ theme }) => ({
 	},
 
 	"& .fc-timegrid-event-harness-inset .fc-timegrid-event, .fc-timegrid-event.fc-event-mirror, .fc-timegrid-more-link": {
-		padding: 8,
-		margin: 2,
-		borderRadius: 12,
+		padding: 4,
+		margin: 1,
+		borderRadius: 8,
+		fontSize: "0.75rem",
+	},
+	
+	// Botón de más eventos
+	"& .fc-daygrid-more-link": {
+		fontSize: "0.7rem",
+		marginTop: 1,
+	},
+	
+	// Eventos en vista de lista
+	"& .fc-list-event-title": {
+		fontSize: "0.8rem",
+	},
+	
+	"& .fc-list-event-time": {
+		fontSize: "0.75rem",
 	},
 }));
 

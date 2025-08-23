@@ -375,6 +375,7 @@ const Calendar = () => {
 	const { calendarView, selectedRange } = useSelector((state) => state.calendar);
 	const { events } = useSelector((state) => state.events);
 	const { isConnected: isGoogleConnected } = useSelector((state) => state.googleCalendar);
+	const { drawerOpen } = useSelector((state) => state.menu);
 
 	const auth = useSelector((state) => state.auth);
 	const id = auth.user?._id;
@@ -426,6 +427,54 @@ const Calendar = () => {
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [matchDownSM]);
+
+	// Forzar re-renderizado cuando cambia el tamaño del contenedor
+	useEffect(() => {
+		const handleResize = () => {
+			const calendarEl = calendarRef.current;
+			if (calendarEl) {
+				const calendarApi = calendarEl.getApi();
+				// Forzar al calendario a recalcular su tamaño
+				setTimeout(() => {
+					calendarApi.updateSize();
+				}, 300); // Delay para esperar que termine la animación del sidebar
+			}
+		};
+
+		// Escuchar cambios de tamaño de la ventana
+		window.addEventListener('resize', handleResize);
+
+		// También escuchar cambios en el sidebar (si existe un estado global para esto)
+		// Opción alternativa: usar ResizeObserver para detectar cambios en el contenedor
+		const calendarContainer = calendarRef.current?.getApi().el;
+		let resizeObserver: ResizeObserver | null = null;
+		
+		if (calendarContainer) {
+			resizeObserver = new ResizeObserver(() => {
+				handleResize();
+			});
+			resizeObserver.observe(calendarContainer.parentElement || calendarContainer);
+		}
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			if (resizeObserver) {
+				resizeObserver.disconnect();
+			}
+		};
+	}, []);
+
+	// Actualizar el calendario cuando cambia el estado del drawer
+	useEffect(() => {
+		const calendarEl = calendarRef.current;
+		if (calendarEl) {
+			const calendarApi = calendarEl.getApi();
+			// Esperar a que termine la animación del drawer
+			setTimeout(() => {
+				calendarApi.updateSize();
+			}, 350);
+		}
+	}, [drawerOpen]);
 
 	const calendarRef = useRef<FullCalendar>(null);
 
@@ -1046,7 +1095,7 @@ const Calendar = () => {
 						rerenderDelay={10}
 						initialDate={date}
 						initialView={calendarView}
-						dayMaxEventRows={3}
+						dayMaxEventRows={4}
 						eventDisplay="block"
 						headerToolbar={false}
 						allDayMaintainDuration
