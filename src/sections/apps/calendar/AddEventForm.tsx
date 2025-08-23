@@ -34,6 +34,7 @@ import { DateRange } from "types/calendar";
 import { addEvent } from "store/reducers/events";
 import { useMemo, useState } from "react";
 import { createGoogleEvent, updateGoogleEvent } from "store/reducers/googleCalendar";
+import googleCalendarService from "services/googleCalendarService";
 
 const getInitialValues = (event: FormikValues | null, range: DateRange | null) => {
 	if (event) {
@@ -65,6 +66,7 @@ const eventTypes = [
 	{ label: "Audiencia", value: "audiencia", color: "#1890ff" },
 	{ label: "Vencimiento", value: "vencimiento", color: "#ff4d4f" },
 	{ label: "Reunión", value: "reunion", color: "#52c41a" },
+	{ label: "Google Calendar", value: "google", color: "#4285f4" },
 	{ label: "Otro", value: "otro", color: "#faad14" },
 ];
 
@@ -80,8 +82,8 @@ export interface AddEventFormProps {
 const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: AddEventFormProps) => {
 	const theme = useTheme();
 	const isCreating = useMemo(() => event == null || Object.keys(event).length === 0, [event]);
-	const [syncWithGoogle, setSyncWithGoogle] = useState(false);
 	const { isConnected: isGoogleConnected } = useSelector((state: any) => state.googleCalendar);
+	const [syncWithGoogle, setSyncWithGoogle] = useState(isGoogleConnected);
 
 	const EventSchema = Yup.object().shape({
 		title: Yup.string().max(255).required("El título es requerido"),
@@ -183,16 +185,24 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 						);
 					}
 				} else {
-					const result = (await dispatch(addEvent(newEvent))) as any;
-					if (result && result.success) {
-						// Si está conectado a Google y marcó sync, crear también en Google
-						if (isGoogleConnected && syncWithGoogle && result.event) {
-							const googleId = await dispatch(createGoogleEvent(result.event));
-							if (googleId) {
-								// Actualizar el evento con el ID de Google
-								await dispatch(updateEvent(result.event._id, { ...result.event, googleCalendarId: googleId }));
-							}
+					// Si está conectado a Google y marcó sync, crear primero en Google
+					let googleCalendarId = null;
+					if (isGoogleConnected && syncWithGoogle) {
+						try {
+							// Crear primero en Google Calendar
+							const tempEvent = { ...newEvent, _id: 'temp-' + Date.now() };
+							googleCalendarId = await dispatch(createGoogleEvent(tempEvent));
+						} catch (error) {
+							console.warn("No se pudo crear en Google Calendar, continuando sin sincronización:", error);
+							// Continuar sin Google Calendar ID si falla
 						}
+					}
+
+					// Crear en la base de datos (con o sin googleCalendarId)
+					const eventToCreate = googleCalendarId ? { ...newEvent, googleCalendarId } : newEvent;
+					const result = (await dispatch(addEvent(eventToCreate))) as any;
+					
+					if (result && result.success) {
 						dispatch(
 							openSnackbar({
 								open: true,
@@ -206,6 +216,15 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 						);
 						onCancel();
 					} else {
+						// Si falló la creación en BD pero se creó en Google, intentar eliminar de Google
+						if (googleCalendarId) {
+							try {
+								await googleCalendarService.deleteEvent(googleCalendarId);
+							} catch (error) {
+								console.error("Error al revertir evento de Google Calendar:", error);
+							}
+						}
+						
 						const errorMessage = result?.error?.response?.data?.message || "Error al crear el evento. Intente más tarde.";
 						dispatch(
 							openSnackbar({

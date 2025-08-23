@@ -168,6 +168,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					});
 
 					reduxDispatch(fetchUserStats());
+				
+				// Verificar conexión previa con Google Calendar
+				const { checkGoogleCalendarConnection } = await import("store/reducers/googleCalendar");
+				reduxDispatch(checkGoogleCalendarConnection());
 
 					showSnackbar("¡Inicio de sesión con Google exitoso!", "success");
 
@@ -224,6 +228,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				});
 
 				reduxDispatch(fetchUserStats());
+				
+				// Verificar conexión previa con Google Calendar
+				const { checkGoogleCalendarConnection } = await import("store/reducers/googleCalendar");
+				reduxDispatch(checkGoogleCalendarConnection());
 			} catch (error) {
 				// No redirigir al login, solo inicializar el estado como logged out
 				// Solo mostrar errores que no sean 401 para evitar ruido en los logs durante el registro
@@ -590,6 +598,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 					// Cargar estadísticas de usuario si es necesario
 					reduxDispatch(fetchUserStats());
+				
+				// Verificar conexión previa con Google Calendar
+				const { checkGoogleCalendarConnection } = await import("store/reducers/googleCalendar");
+				reduxDispatch(checkGoogleCalendarConnection());
 				}
 
 				setNeedsVerification(false);

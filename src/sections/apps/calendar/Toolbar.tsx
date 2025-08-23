@@ -65,45 +65,42 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 	};
 
 	return (
-		<Stack direction="column" spacing={3} {...others} sx={{ pb: 3 }}>
-			{/* Fila superior con botones de navegación y título del mes */}
-			<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+		<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} {...others} sx={{ mb: 1.5 }}>
+			<Stack direction="row" alignItems="center" spacing={1}>
+				<IconButton onClick={onClickPrev} size="small">
+					<ArrowLeft2 size={18} />
+				</IconButton>
+				<IconButton onClick={onClickNext} size="small">
+					<ArrowRight2 size={18} />
+				</IconButton>
 				<Tooltip title="Ir a hoy">
-					<IconButton color="primary" onClick={onClickToday} size={matchDownSM ? "medium" : "large"}>
-						<Calendar1 variant="Bulk" />
+					<IconButton color="primary" onClick={onClickToday} size="small">
+						<Calendar1 size={18} variant="Bulk" />
 					</IconButton>
 				</Tooltip>
+			</Stack>
+			
+			<Typography variant={matchDownSM ? "h6" : "h5"} color="textPrimary" sx={{ fontWeight: 600 }}>
+				{capitalizeFirstLetter(format(date, "MMMM yyyy", { locale: es }))}
+			</Typography>
 
-				<Stack direction="row" alignItems="center" spacing={matchDownSM ? 1 : 2}>
-					<IconButton onClick={onClickPrev} size={matchDownSM ? "medium" : "large"}>
-						<ArrowLeft2 />
-					</IconButton>
-					<Typography variant={matchDownSM ? "h5" : "h4"} color="textPrimary" sx={{ fontWeight: 600 }}>
-						{capitalizeFirstLetter(format(date, "MMMM yyyy", { locale: es }))}
-					</Typography>
-					<IconButton onClick={onClickNext} size={matchDownSM ? "medium" : "large"}>
-						<ArrowRight2 />
-					</IconButton>
-				</Stack>
-
-				{/* Botones de vista */}
-				<Stack direction="row" spacing={1}>
-					{viewFilter.map((viewOption) => {
-						const Icon = viewOption.icon;
-						const isActive = viewOption.value === view;
-						return (
-							<Tooltip title={viewOption.label} key={viewOption.value}>
-								<IconButton
-									color={isActive ? "primary" : "default"}
-									size={matchDownSM ? "medium" : "large"}
-									onClick={() => onChangeView(viewOption.value)}
-								>
-									<Icon variant={isActive ? "Bulk" : "Linear"} />
-								</IconButton>
-							</Tooltip>
-						);
-					})}
-				</Stack>
+			{/* Botones de vista */}
+			<Stack direction="row" spacing={0.5}>
+				{viewFilter.map((viewOption) => {
+					const Icon = viewOption.icon;
+					const isActive = viewOption.value === view;
+					return (
+						<Tooltip title={viewOption.label} key={viewOption.value}>
+							<IconButton
+								color={isActive ? "primary" : "default"}
+								size="small"
+								onClick={() => onChangeView(viewOption.value)}
+							>
+								<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
+							</IconButton>
+						</Tooltip>
+					);
+				})}
 			</Stack>
 		</Stack>
 	);

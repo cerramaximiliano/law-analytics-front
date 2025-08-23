@@ -1,5 +1,6 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 
 // material-ui
 import { Theme, useTheme } from "@mui/material/styles";
@@ -24,6 +25,9 @@ import {
 	ListItemText,
 	Checkbox,
 	CircularProgress,
+	Skeleton,
+	Card,
+	Paper,
 } from "@mui/material";
 
 // third-party
@@ -35,11 +39,12 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import timelinePlugin from "@fullcalendar/timeline";
 import esLocale from "@fullcalendar/core/locales/es";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 // project imports
 import Loader from "components/Loader";
 import { PopupTransition } from "components/@extended/Transitions";
 import CalendarStyled from "sections/apps/calendar/CalendarStyled";
-import Toolbar from "sections/apps/calendar/Toolbar";
 import AddEventForm from "sections/apps/calendar/AddEventForm";
 import GoogleCalendarSync from "sections/apps/calendar/GoogleCalendarSync";
 import { GuideCalendar } from "components/guides";
@@ -51,7 +56,7 @@ import {
 } from "store/reducers/calendar";
 
 // types
-import { Add, Calendar as CalendarIcon, Edit2, InfoCircle, Link1, Trash } from "iconsax-react";
+import { Add, Calendar as CalendarIcon, Edit2, InfoCircle, Link1, Trash, ArrowLeft2, ArrowRight2, Calendar1, Category, Grid6 } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { addBatchEvents, deleteEvent, getEventsByUserId, selectEvent, updateEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -60,6 +65,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { Event } from "types/events";
 import { Folder } from "types/folders";
 import { getFoldersByUserId } from "store/reducers/folder";
+import googleCalendarService from "services/googleCalendarService";
 
 // ==============================|| LINK FOLDERS MODAL ||============================== //
 
@@ -192,6 +198,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete }: EventDet
 		vencimiento: "Vencimiento",
 		reunion: "Reunión",
 		otro: "Otro",
+		google: "Google Calendar",
 	};
 
 	// Obtener el tipo formateado en español
@@ -440,7 +447,6 @@ const Calendar = () => {
 		const calendarEl = calendarRef.current;
 		if (calendarEl) {
 			const calendarApi = calendarEl.getApi();
-
 			calendarApi.changeView(newView);
 			dispatch(updateCalendarView(newView));
 		}
@@ -526,16 +532,77 @@ const Calendar = () => {
 		setIsEditingEvent(true);
 	};
 
-	const handleDeleteEvent = () => {
+	const handleDeleteEvent = async () => {
 		if (selectedEvent?._id) {
+			let googleIdToDelete = selectedEvent.googleCalendarId;
+			
+			// Si no tiene googleCalendarId pero está autenticado, intentar buscarlo
+			if (!googleIdToDelete && googleCalendarService.isSignedIn && selectedEvent.title && selectedEvent.start) {
+				googleIdToDelete = await googleCalendarService.findGoogleEventByTitleAndDate(
+					selectedEvent.title,
+					new Date(selectedEvent.start)
+				);
+				
+				if (googleIdToDelete) {
+					// Opcionalmente, actualizar la BD con el ID encontrado
+					try {
+						const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+						await axios.patch(
+							`${baseUrl}/api/events/${selectedEvent._id}/google-id`,
+							{ googleCalendarId: googleIdToDelete },
+							{
+								headers: {
+									'Content-Type': 'application/json',
+									'Authorization': `Bearer ${localStorage.getItem('token')}`
+								}
+							}
+						);
+					} catch (err) {
+						// Ignorar errores de actualización, no son críticos
+					}
+				}
+			}
+			
+			// Si tenemos un ID de Google (original o encontrado), eliminarlo
+			let googleDeleteSuccess = true;
+			let googleDeleteMessage = "";
+			
+			if (googleIdToDelete && googleCalendarService.isSignedIn) {
+				try {
+					await googleCalendarService.deleteEvent(googleIdToDelete);
+					console.log("Evento eliminado de Google Calendar exitosamente");
+				} catch (error: any) {
+					// Solo marcar como fallo si no es porque el evento ya fue eliminado
+					if (error?.status !== 404 && error?.status !== 410) {
+						console.error("Error eliminando de Google Calendar:", error);
+						googleDeleteSuccess = false;
+						googleDeleteMessage = " (No se pudo eliminar de Google Calendar)";
+					}
+					// Continuar con la eliminación local aunque falle en Google
+				}
+			} else if (googleIdToDelete && !googleCalendarService.isSignedIn) {
+				// Tiene ID de Google pero no está conectado
+				googleDeleteSuccess = false;
+				googleDeleteMessage = " (Conecta Google Calendar para eliminar también de Google)";
+			}
+			
+			// Eliminar de la base de datos local
 			dispatch(deleteEvent(selectedEvent._id));
+			
+			// Mensaje diferenciado según el resultado
+			const message = googleDeleteSuccess 
+				? "Evento eliminado correctamente." 
+				: `Evento eliminado localmente${googleDeleteMessage}`;
+			
+			const alertColor = googleDeleteSuccess ? "success" : "warning";
+			
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Evento eliminado correctamente.",
+					message,
 					variant: "alert",
 					alert: {
-						color: "success",
+						color: alertColor,
 					},
 					close: false,
 				}),
@@ -631,7 +698,112 @@ const Calendar = () => {
 		}
 	};
 
-	if (loading) return <Loader />;
+	// Componente de Skeleton para el calendario
+	if (loading) {
+		return (
+			<Box sx={{ position: "relative" }}>
+				<CalendarStyled>
+					{/* Skeleton para barra superior integrada */}
+					<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+						{/* Skeleton para Google Calendar Sync */}
+						<Box sx={{ maxWidth: { xs: '200px', sm: '300px', md: '400px' } }}>
+							<Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
+						</Box>
+						
+						{/* Skeleton para controles del calendario */}
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Skeleton variant="circular" width={28} height={28} />
+							<Skeleton variant="circular" width={28} height={28} />
+							<Skeleton variant="circular" width={28} height={28} />
+							<Skeleton variant="text" width={150} height={28} sx={{ mx: 2 }} />
+						</Stack>
+						
+						{/* Skeleton para botones de vista y acciones */}
+						<Stack direction="row" spacing={1} alignItems="center">
+							<Stack direction="row" spacing={0.5}>
+								<Skeleton variant="circular" width={28} height={28} />
+								<Skeleton variant="circular" width={28} height={28} />
+								<Skeleton variant="circular" width={28} height={28} />
+							</Stack>
+							<Skeleton variant="rectangular" width={1} height={24} sx={{ mx: 1 }} />
+							<Skeleton variant="circular" width={40} height={40} />
+							<Skeleton variant="circular" width={40} height={40} />
+						</Stack>
+					</Stack>
+					
+					{/* Skeleton para FullCalendar */}
+					<Card sx={{ overflow: 'hidden' }}>
+						<Box sx={{ p: 2 }}>
+							{/* Encabezados de días de la semana */}
+							<Grid container sx={{ mb: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+								{['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((day) => (
+									<Grid item xs key={day} sx={{ textAlign: 'center' }}>
+										<Typography variant="subtitle2" color="text.secondary">
+											{matchDownSM ? day.substring(0, 3) : day}
+										</Typography>
+									</Grid>
+								))}
+							</Grid>
+							
+							{/* Grid del calendario - 5 semanas típicamente */}
+							<Grid container>
+								{Array.from({ length: 35 }, (_, i) => (
+									<Grid 
+										item 
+										xs={1.714} 
+										key={i} 
+										sx={{ 
+											border: '1px solid',
+											borderColor: 'divider',
+											minHeight: matchDownSM ? 60 : 80,
+											p: 0.5
+										}}
+									>
+										{/* Número del día */}
+										<Skeleton variant="text" width={25} height={20} sx={{ mb: 0.5 }} />
+										
+										{/* Eventos simulados */}
+										{i % 3 === 0 && (
+											<Skeleton 
+												variant="rectangular" 
+												height={18} 
+												sx={{ 
+													mb: 0.5, 
+													borderRadius: 0.5,
+													bgcolor: 'primary.lighter'
+												}} 
+											/>
+										)}
+										{i % 7 === 0 && (
+											<Skeleton 
+												variant="rectangular" 
+												height={18} 
+												sx={{ 
+													mb: 0.5, 
+													borderRadius: 0.5,
+													bgcolor: 'secondary.lighter'
+												}} 
+											/>
+										)}
+										{i % 5 === 0 && i % 3 !== 0 && (
+											<Skeleton 
+												variant="rectangular" 
+												height={18} 
+												sx={{ 
+													borderRadius: 0.5,
+													bgcolor: 'success.lighter'
+												}} 
+											/>
+										)}
+									</Grid>
+								))}
+							</Grid>
+						</Box>
+					</Card>
+				</CalendarStyled>
+			</Box>
+		);
+	}
 
 	// Preprocesar los eventos para asegurarnos de que tengan el formato correcto
 	const formattedEvents = events.map((event) => ({
@@ -653,6 +825,16 @@ const Calendar = () => {
 	// Función para manejar eventos importados de Google Calendar
 	const handleEventsImported = async (importedEvents: any[]) => {
 		if (!id || id === "undefined") return;
+
+		console.log("📥 Eventos recibidos para importar:", {
+			total: importedEvents?.length || 0,
+			primerosEventos: importedEvents?.slice(0, 5).map(e => ({
+				title: e.title,
+				start: e.start,
+				googleId: e.googleCalendarId || e.id,
+				allDay: e.allDay
+			}))
+		});
 
 		const totalEvents = importedEvents.length;
 
@@ -686,8 +868,8 @@ const Calendar = () => {
 			.map((googleEvent) => ({
 				title: googleEvent.title || "Sin título",
 				description: googleEvent.description || "",
-				type: "other", // Tipo por defecto para eventos de Google
-				color: googleEvent.color || "#1890ff",
+				type: "google", // Tipo específico para eventos de Google Calendar
+				color: googleEvent.color || "#4285f4", // Color azul de Google
 				allDay: googleEvent.allDay || false,
 				start: googleEvent.start,
 				end: googleEvent.end || googleEvent.start,
@@ -786,65 +968,100 @@ const Calendar = () => {
 
 	return (
 		<Box sx={{ position: "relative" }}>
-			{/* Google Calendar Sync Component */}
-			<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
-
 			<CalendarStyled>
-				{/* Botones en la parte superior */}
-				<Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mb: 2 }}>
-					<Tooltip title="Agregar Nuevo Evento">
-						<IconButton color="primary" onClick={handleAddEventClick} size="medium">
-							<Add variant="Bulk" />
+				{/* Barra superior integrada con todas las funciones */}
+				<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+					{/* Google Calendar Sync Component - Lado izquierdo */}
+					<Box sx={{ maxWidth: { xs: '200px', sm: '300px', md: '400px' } }}>
+						<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
+					</Box>
+					
+					{/* Controles del calendario - Centro */}
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<IconButton onClick={handleDatePrev} size="small">
+							<ArrowLeft2 size={18} />
 						</IconButton>
-					</Tooltip>
-
-					{/* 					<Tooltip title="Exportar Eventos">
-						<IconButton 
-							color="secondary"
-							size="medium"
-						>
-							<DocumentDownload variant="Bulk" />
+						<IconButton onClick={handleDateNext} size="small">
+							<ArrowRight2 size={18} />
 						</IconButton>
-					</Tooltip> */}
-
-					<Tooltip title="Ver Guía">
-						<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
-							<InfoCircle variant="Bulk" />
-						</IconButton>
-					</Tooltip>
+						<Tooltip title="Ir a hoy">
+							<IconButton color="primary" onClick={handleDateToday} size="small">
+								<Calendar1 size={18} variant="Bulk" />
+							</IconButton>
+						</Tooltip>
+						<Typography variant={matchDownSM ? "h6" : "h5"} color="textPrimary" sx={{ fontWeight: 600, mx: 2 }}>
+							{format(date, "MMMM yyyy", { locale: es })}
+						</Typography>
+					</Stack>
+					
+					{/* Botones de vista y acciones - Lado derecho */}
+					<Stack direction="row" spacing={1} alignItems="center">
+						{/* Botones de vista */}
+						<Stack direction="row" spacing={0.5}>
+							{[
+								{ label: "Mes", value: "dayGridMonth", icon: Category },
+								{ label: "Semana", value: "timeGridWeek", icon: Grid6 },
+								{ label: "Día", value: "timeGridDay", icon: Calendar1 }
+							].filter(item => !matchDownSM || (item.value !== "dayGridMonth" && item.value !== "timeGridWeek"))
+							.map((viewOption) => {
+								const Icon = viewOption.icon;
+								const isActive = viewOption.value === calendarView;
+								return (
+									<Tooltip title={viewOption.label} key={viewOption.value}>
+										<IconButton
+											color={isActive ? "primary" : "default"}
+											size="small"
+											onClick={() => handleViewChange(viewOption.value)}
+										>
+											<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
+										</IconButton>
+									</Tooltip>
+								);
+							})}
+						</Stack>
+						
+						<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+						
+						{/* Botones de acción */}
+						<Tooltip title="Agregar Nuevo Evento">
+							<IconButton color="primary" onClick={handleAddEventClick} size="medium">
+								<Add variant="Bulk" />
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Ver Guía">
+							<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
+								<InfoCircle variant="Bulk" />
+							</IconButton>
+						</Tooltip>
+					</Stack>
 				</Stack>
 
-				<Toolbar
-					date={date}
-					view={calendarView}
-					onClickNext={handleDateNext}
-					onClickPrev={handleDatePrev}
-					onClickToday={handleDateToday}
-					onChangeView={handleViewChange}
-				/>
-
 				<FullCalendar
-					weekends
-					editable
-					droppable
-					selectable
-					events={formattedEvents as EventSourceInput}
-					ref={calendarRef}
-					rerenderDelay={10}
-					initialDate={date}
-					initialView={calendarView}
-					dayMaxEventRows={3}
-					eventDisplay="block"
-					headerToolbar={false}
-					allDayMaintainDuration
-					eventResizableFromStart
-					select={handleRangeSelect}
-					eventDrop={handleEventUpdate}
-					eventClick={handleEventSelect}
-					eventResize={handleEventUpdate}
-					locale={esLocale}
-					height={matchDownSM ? "auto" : 720}
-					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
+						weekends
+						editable
+						droppable
+						selectable
+						events={formattedEvents as EventSourceInput}
+						ref={calendarRef}
+						rerenderDelay={10}
+						initialDate={date}
+						initialView={calendarView}
+						dayMaxEventRows={3}
+						eventDisplay="block"
+						headerToolbar={false}
+						allDayMaintainDuration
+						eventResizableFromStart
+						select={handleRangeSelect}
+						eventDrop={handleEventUpdate}
+						eventClick={handleEventSelect}
+						eventResize={handleEventUpdate}
+						locale={esLocale}
+						height="auto"
+						contentHeight="auto"
+						aspectRatio={matchDownSM ? 1.2 : 2.1}
+						fixedWeekCount={false}
+						showNonCurrentDates={false}
+						plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
 					noEventsContent={
 						<Box
 							sx={{

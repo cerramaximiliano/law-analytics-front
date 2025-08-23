@@ -5,9 +5,8 @@ import { styled } from "@mui/material/styles";
 // ==============================|| CALENDAR - STYLED ||============================== //
 
 const ExperimentalStyled = styled("div")(({ theme }) => ({
-	width: "calc(100% + 2px)",
-	marginLeft: -1,
-	marginBottom: "-50px",
+	width: "100%",
+	marginBottom: 16,
 
 	// hide license message
 	"& .fc-license-message": {
@@ -36,8 +35,9 @@ const ExperimentalStyled = styled("div")(({ theme }) => ({
 		display: "grid",
 		"& .fc-daygrid-day-number": {
 			textAlign: "center",
-			marginTop: 12,
-			marginBottom: 12,
+			marginTop: 4,
+			marginBottom: 4,
+			fontSize: "0.875rem",
 		},
 	},
 
@@ -48,7 +48,7 @@ const ExperimentalStyled = styled("div")(({ theme }) => ({
 
 	"& .fc .fc-col-header-cell-cushion": {
 		color: theme.palette.secondary.darker,
-		padding: 16,
+		padding: 8,
 	},
 
 	// events

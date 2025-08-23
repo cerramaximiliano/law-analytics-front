@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import tsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
 import viteImagemin from "vite-plugin-imagemin";
@@ -9,9 +9,8 @@ import path from "path";
 export default defineConfig({
 	plugins: [
 		react({
-			babel: {
-				presets: ["@babel/preset-react"],
-			},
+			// SWC es mucho más rápido que Babel
+			// No necesita configuración adicional
 		}),
 		tsconfigPaths(),
 		svgr({

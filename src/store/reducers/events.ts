@@ -96,7 +96,12 @@ const eventReducer = (state = initialEventState, action: Action): EventState => 
 export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/events`, eventData);
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const response = await axios.post(`${baseUrl}/api/events`, eventData, {
+			headers: {
+				'X-Calendar-Operation': 'true' // Evitar rate limit para operaciones de calendario
+			}
+		});
 
 		if (response.data && response.data.event) {
 			dispatch({
@@ -127,7 +132,12 @@ export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
 export const updateEvent = (eventId: string, updateData: Partial<Event>) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/events/${eventId}`, updateData);
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const response = await axios.put(`${baseUrl}/api/events/${eventId}`, updateData, {
+			headers: {
+				'X-Calendar-Operation': 'true' // Evitar rate limit para operaciones de calendario
+			}
+		});
 
 		if (response.data && response.data.event) {
 			dispatch({
@@ -158,9 +168,10 @@ export const updateEvent = (eventId: string, updateData: Partial<Event>) => asyn
 export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		// Campos optimizados para listas
-		const fields = "_id,title,description,type,color,allDay,start,end,folderId,folderName";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/user/${userId}`, {
+		// Campos optimizados para listas - IMPORTANTE: incluir googleCalendarId
+		const fields = "_id,title,description,type,color,allDay,start,end,folderId,folderName,googleCalendarId,syncedWithGoogle";
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const response = await axios.get(`${baseUrl}/api/events/user/${userId}`, {
 			params: { fields },
 		});
 
@@ -187,7 +198,8 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/id/${_id}`);
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const response = await axios.get(`${baseUrl}/api/events/id/${_id}`);
 		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
 				type: GET_EVENTS_BY_ID,
@@ -211,7 +223,8 @@ export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/group/${groupId}`);
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const response = await axios.get(`${baseUrl}/api/events/group/${groupId}`);
 		dispatch({
 			type: GET_EVENTS_BY_GROUP,
 			payload: response.data,
@@ -228,7 +241,8 @@ export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch
 export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/events/${eventId}`);
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		await axios.delete(`${baseUrl}/api/events/${eventId}`);
 		dispatch({
 			type: DELETE_EVENT,
 			payload: eventId,
@@ -279,12 +293,17 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 			
 			while (!batchProcessed && retryCount < MAX_RETRIES) {
 				try {
+					const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
 					const response = await axios.post(
-						`${process.env.REACT_APP_BASE_URL}/api/events/batch`,
-						{ events: batch },
+						`${baseUrl}/api/events/batch`,
+						{ 
+							events: batch,
+							syncSource: 'google-calendar' // Indicar que es sincronización de Google
+						},
 						{
 							headers: {
 								"Content-Type": "application/json",
+								"X-Sync-Source": "google-calendar", // Header para bypass de rate limit
 							},
 						}
 					);
