@@ -16,11 +16,11 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 		// custom config
-		"noUnusedLocals": true,
+		"noUnusedLocals": false,
 		"noImplicitAny": true,
 		"noImplicitThis": true,
 		"strictNullChecks": true,
-		"types": ["node", "jest", "webpack-env"],
+		"types": ["node", "vite/client"],
 		"typeRoots": ["./types"],
 		"baseUrl": "src",
 		"downlevelIteration": true

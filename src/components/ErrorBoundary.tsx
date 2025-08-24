@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Box, Button, Card, Typography, Stack } from "@mui/material";
-import { Warning } from "iconsax-react";
+import { Warning2 } from "iconsax-react";
 
 interface Props {
 	children: ReactNode;
@@ -74,7 +74,7 @@ class ErrorBoundary extends Component<Props, State> {
 					}}
 				>
 					<Card sx={{ maxWidth: 500, p: 4, textAlign: "center" }}>
-						<Warning size={64} color="#FF4444" style={{ marginBottom: 16 }} />
+						<Warning2 size={64} color="#FF4444" style={{ marginBottom: 16 }} />
 						
 						<Typography variant="h4" gutterBottom>
 							¡Ups! Algo salió mal
