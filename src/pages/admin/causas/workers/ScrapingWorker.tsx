@@ -37,7 +37,7 @@ import AdvancedConfigModal from "./AdvancedConfigModal";
 // Enums para el worker de scraping
 const FUERO_OPTIONS = [
 	{ value: "CIV", label: "Civil" },
-	{ value: "CSS", label: "Contencioso Social y Seguridad" },
+	{ value: "CSS", label: "Seguridad Social" },
 	{ value: "CNT", label: "Contencioso Tributario" },
 ];
 
@@ -53,6 +53,7 @@ const ScrapingWorker = () => {
 	const [historyLoading, setHistoryLoading] = useState(false);
 	const [historyPage, setHistoryPage] = useState(1);
 	const [historyTotal, setHistoryTotal] = useState(0);
+	const [fueroFilter, setFueroFilter] = useState<string>("TODOS");
 
 	// Cargar configuraciones
 	const fetchConfigs = async () => {
@@ -235,14 +236,46 @@ const ScrapingWorker = () => {
 		);
 	}
 
+	// Filtrar configuraciones por fuero
+	const filteredConfigs = fueroFilter === "TODOS" 
+		? configs 
+		: configs.filter(config => config.fuero === fueroFilter);
+
 	return (
 		<Stack spacing={3}>
 			{/* Header con acciones */}
 			<Box display="flex" justifyContent="space-between" alignItems="center">
 				<Typography variant="h5">Configuración del Worker de Scraping</Typography>
-				<Button variant="outlined" size="small" startIcon={<Refresh size={16} />} onClick={fetchConfigs}>
-					Actualizar
-				</Button>
+				<Stack direction="row" spacing={2} alignItems="center">
+					<FormControl size="small" sx={{ minWidth: 200 }}>
+						<Select
+							value={fueroFilter}
+							onChange={(e) => setFueroFilter(e.target.value)}
+							displayEmpty
+						>
+							<MenuItem value="TODOS">
+								<Stack direction="row" spacing={1} alignItems="center">
+									<Typography variant="body2">Todos los Fueros</Typography>
+									<Chip label={configs.length} size="small" />
+								</Stack>
+							</MenuItem>
+							{FUERO_OPTIONS.map((option) => {
+								const count = configs.filter(c => c.fuero === option.value).length;
+								return (
+									<MenuItem key={option.value} value={option.value}>
+										<Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%', justifyContent: 'space-between' }}>
+											<Typography variant="body2">{option.label}</Typography>
+											<Chip label={count} size="small" variant="outlined" />
+										</Stack>
+									</MenuItem>
+								);
+							})}
+						</Select>
+					</FormControl>
+					<Button variant="outlined" size="small" startIcon={<Refresh size={16} />} onClick={fetchConfigs}>
+						Actualizar
+					</Button>
+				</Stack>
 			</Box>
 
 			{/* Información del worker */}
@@ -276,7 +309,18 @@ const ScrapingWorker = () => {
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{configs.map((config) => {
+						{filteredConfigs.length === 0 ? (
+							<TableRow>
+								<TableCell colSpan={12} align="center">
+									<Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+										{fueroFilter === "TODOS" 
+											? "No hay configuraciones disponibles" 
+											: `No hay configuraciones para el fuero ${FUERO_OPTIONS.find(f => f.value === fueroFilter)?.label || fueroFilter}`}
+									</Typography>
+								</TableCell>
+							</TableRow>
+						) : (
+							filteredConfigs.map((config) => {
 							const configId = getConfigId(config);
 							const isEditing = editingId === configId;
 							const progress = calculateProgress(config);
@@ -462,7 +506,8 @@ const ScrapingWorker = () => {
 									</TableCell>
 								</TableRow>
 							);
-						})}
+						})
+						)}
 					</TableBody>
 				</Table>
 			</TableContainer>
@@ -473,9 +518,14 @@ const ScrapingWorker = () => {
 					<Card variant="outlined">
 						<CardContent>
 							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
-								Total Workers
+								Total Workers {fueroFilter !== "TODOS" && `(${FUERO_OPTIONS.find(f => f.value === fueroFilter)?.label})`}
 							</Typography>
-							<Typography variant="h4">{configs.length}</Typography>
+							<Typography variant="h4">{filteredConfigs.length}</Typography>
+							{fueroFilter !== "TODOS" && (
+								<Typography variant="caption" color="text.secondary">
+									de {configs.length} totales
+								</Typography>
+							)}
 						</CardContent>
 					</Card>
 				</Grid>
@@ -486,7 +536,7 @@ const ScrapingWorker = () => {
 								Workers Activos
 							</Typography>
 							<Typography variant="h4" color="success.main">
-								{configs.filter((c) => c.enabled).length}
+								{filteredConfigs.filter((c) => c.enabled).length}
 							</Typography>
 						</CardContent>
 					</Card>
