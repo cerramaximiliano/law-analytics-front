@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { dispatch } from "store";
-import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, Divider } from "@mui/material";
+import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, Divider, useMediaQuery } from "@mui/material";
 import moment from "moment";
 import data from "data/folder.json";
 import { Edit2, Clock } from "iconsax-react";
@@ -65,6 +65,8 @@ const CompactField: React.FC<CompactFieldProps> = ({ label, value, isLoading, ed
 const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
 	const initialValues = {
 		...folder,
@@ -208,7 +210,14 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 							>
 								<Stack direction="row" justifyContent="space-between" alignItems="center">
 									<Box>
-										<Typography variant="subtitle1" fontWeight={600}>
+										<Typography 
+											variant={isMobile ? "body1" : "subtitle1"} 
+											fontWeight={600}
+											sx={{
+												fontSize: isMobile ? "0.875rem" : isTablet ? "1rem" : "1.125rem",
+												lineHeight: 1.3
+											}}
+										>
 											{isLoader ? <Skeleton width={200} /> : folder?.folderName || "Sin carátula"}
 										</Typography>
 										<Stack direction="row" spacing={1.5} alignItems="center" mt={0.5}>

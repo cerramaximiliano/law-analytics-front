@@ -38,7 +38,7 @@ import AdvancedConfigModal from "./AdvancedConfigModal";
 const FUERO_OPTIONS = [
 	{ value: "CIV", label: "Civil" },
 	{ value: "CSS", label: "Seguridad Social" },
-	{ value: "CNT", label: "Contencioso Tributario" },
+	{ value: "CNT", label: "Trabajo" },
 ];
 
 const ScrapingWorker = () => {
@@ -64,7 +64,10 @@ const ScrapingWorker = () => {
 				setConfigs(response.data);
 			}
 		} catch (error) {
-			enqueueSnackbar("Error al cargar las configuraciones de scraping", { variant: "error" });
+			enqueueSnackbar("Error al cargar las configuraciones de scraping", { 
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			console.error(error);
 		} finally {
 			setLoading(false);
@@ -82,7 +85,10 @@ const ScrapingWorker = () => {
 				setHistoryPage(page);
 			}
 		} catch (error) {
-			enqueueSnackbar("Error al cargar el historial de scraping", { variant: "error" });
+			enqueueSnackbar("Error al cargar el historial de scraping", { 
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			console.error(error);
 		} finally {
 			setHistoryLoading(false);
@@ -189,12 +195,18 @@ const ScrapingWorker = () => {
 		try {
 			const response = await WorkersService.updateScrapingConfig(editingId, editValues);
 			if (response.success) {
-				enqueueSnackbar("Configuración actualizada exitosamente", { variant: "success" });
+				enqueueSnackbar("Configuración actualizada exitosamente", { 
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				});
 				await fetchConfigs();
 				handleCancelEdit();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al actualizar la configuración", { variant: "error" });
+			enqueueSnackbar(error.message || "Error al actualizar la configuración", { 
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		}
 	};
 
@@ -205,11 +217,17 @@ const ScrapingWorker = () => {
 				enabled: !config.enabled,
 			});
 			if (response.success) {
-				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, { variant: "success" });
+				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, { 
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				});
 				await fetchConfigs();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al cambiar el estado", { variant: "error" });
+			enqueueSnackbar(error.message || "Error al cambiar el estado", { 
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		}
 	};
 
@@ -661,7 +679,7 @@ const ScrapingWorker = () => {
 									count={historyTotal}
 									rowsPerPage={10}
 									page={historyPage - 1}
-									onPageChange={(event, newPage) => fetchScrapingHistory(newPage + 1)}
+									onPageChange={(_event, newPage) => fetchScrapingHistory(newPage + 1)}
 									labelRowsPerPage="Filas por página:"
 									labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
 								/>

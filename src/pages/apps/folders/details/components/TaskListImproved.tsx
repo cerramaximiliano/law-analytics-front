@@ -10,6 +10,7 @@ import {
 	Box,
 	Paper,
 	useTheme,
+	useMediaQuery,
 	alpha,
 	List,
 	ListItem,
@@ -25,6 +26,7 @@ import moment from "moment";
 import { useParams } from "react-router";
 import ModalTasks from "../modals/MoldalTasks";
 import LinkTaskModal from "../modals/LinkTaskModal";
+import ResponsiveButton from "./ResponsiveButton";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -39,6 +41,8 @@ import { TaskListProps, TaskType } from "types/task";
 
 const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	const { id } = useParams<{ id: string }>();
 
 	// Redux state
@@ -401,20 +405,33 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 					<>
 						<EmptyState />
 						{/* Task Action Buttons */}
-						<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-							<Button variant="contained" fullWidth color="primary" startIcon={<Add size={18} />} onClick={handleOpen} disabled={isLoading}>
+						<Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 1 : 2} sx={{ mt: 3 }}>
+							<ResponsiveButton
+								variant="contained"
+								fullWidth={!isMobile}
+								color="primary"
+								startIcon={<Add size={18} />}
+								onClick={handleOpen}
+								disabled={isLoading}
+								mobileText="Nueva"
+								desktopText="Nueva Tarea"
+								hideTextOnMobile={false}
+							>
 								Nueva Tarea
-							</Button>
-							<Button
+							</ResponsiveButton>
+							<ResponsiveButton
 								variant="outlined"
-								fullWidth
+								fullWidth={!isMobile}
 								color="primary"
 								startIcon={<TaskSquare size={18} />}
 								onClick={() => setLinkModalOpen(true)}
 								disabled={isLoading}
+								mobileText="Vincular"
+								desktopText="Vincular Tarea"
+								hideTextOnMobile={false}
 							>
 								Vincular Tarea
-							</Button>
+							</ResponsiveButton>
 						</Stack>
 					</>
 				) : (

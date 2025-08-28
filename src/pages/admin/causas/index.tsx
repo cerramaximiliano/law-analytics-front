@@ -497,14 +497,23 @@ const CausasAdmin = () => {
 			const result = await dispatch(deleteCausa({ fuero: causaToDelete.fuero, causaId: causaToDelete._id })).unwrap();
 
 			if (result.success) {
-				enqueueSnackbar(result.message || "Causa eliminada correctamente", { variant: "success" });
+				enqueueSnackbar(result.message || "Causa eliminada correctamente", {
+				variant: "success",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 				setDeleteDialogOpen(false);
 				setCausaToDelete(null);
 			} else {
-				enqueueSnackbar(result.message || "Error al eliminar la causa", { variant: "error" });
+				enqueueSnackbar(result.message || "Error al eliminar la causa", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error || "Error al eliminar la causa", { variant: "error" });
+			enqueueSnackbar(error || "Error al eliminar la causa", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setDeleteLoading(false);
 		}

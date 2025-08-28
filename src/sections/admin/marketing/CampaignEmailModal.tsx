@@ -144,7 +144,10 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 				const activeTemplates = response.data.data.filter((template: EmailTemplate) => template.isActive);
 				setTemplates(activeTemplates);
 			} else {
-				enqueueSnackbar("Error al cargar las plantillas de email", { variant: "error" });
+				enqueueSnackbar("Error al cargar las plantillas de email", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			}
 		} catch (err: any) {
 			// Mejorar el manejo de errores para proporcionar mensajes más amigables
@@ -166,7 +169,10 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 				errorMessage = err.message;
 			}
 
-			enqueueSnackbar(errorMessage, { variant: "error" });
+			enqueueSnackbar(errorMessage, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setTemplatesLoading(false);
 		}
@@ -323,7 +329,10 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 	// Submit handler
 	const handleSubmit = async (values: any) => {
 		if (!campaign._id) {
-			enqueueSnackbar("ID de campaña no válido", { variant: "error" });
+			enqueueSnackbar("ID de campaña no válido", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			return;
 		}
 
@@ -358,7 +367,10 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 				errorMessage = err.message;
 			}
 
-			enqueueSnackbar(errorMessage, { variant: "error" });
+			enqueueSnackbar(errorMessage, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setSubmitting(false);
 		}

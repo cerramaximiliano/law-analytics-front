@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Calculator, People, TaskSquare, Menu } from "iconsax-react";
 import MainCard from "components/MainCard";
-import CalcTableCompact from "../components/CalcTableCompact";
+import CalcTableResponsive from "../components/CalcTableResponsive";
 import MembersImproved from "../components/MembersImproved";
 import TaskListImproved from "../components/TaskListImproved";
 import { FolderData } from "types/folder";
@@ -228,27 +228,32 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	);
 
 	return (
-		<MainCard content={false} sx={{ display: "flex", height: "calc(100vh - 200px)" }}>
+		<MainCard content={false} sx={{ display: "flex", flexDirection: "column", height: isMobile ? "auto" : "calc(100vh - 200px)", overflow: "hidden" }}>
 			{isMobile ? (
 				<>
-					<Box sx={{ width: "100%", p: 3 }}>
-						<Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+					<Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+						<Box sx={{ display: "flex", alignItems: "center", p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
 							<IconButton onClick={() => setMobileOpen(true)} sx={{ mr: 1 }}>
 								<Menu />
 							</IconButton>
-							<Typography variant="h5" sx={{ fontWeight: 600 }}>
-								{tabData[value].label}
+							<Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+								{tabData[value].shortLabel}
+							</Typography>
+							<Typography variant="caption" color="text.secondary">
+								{tabData[value].description}
 							</Typography>
 						</Box>
-						<TabPanel value={value} index={0}>
-							<CalcTableCompact title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
-						</TabPanel>
-						<TabPanel value={value} index={1}>
-							<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
-						</TabPanel>
-						<TabPanel value={value} index={2}>
-							<TaskListImproved title="" folderName={folder.folderName} />
-						</TabPanel>
+						<Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
+							<TabPanel value={value} index={0}>
+								<CalcTableResponsive title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
+							</TabPanel>
+							<TabPanel value={value} index={1}>
+								<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
+							</TabPanel>
+							<TabPanel value={value} index={2}>
+								<TaskListImproved title="" folderName={folder.folderName} />
+							</TabPanel>
+						</Box>
 					</Box>
 					<Drawer
 						anchor="left"
@@ -262,20 +267,21 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 					</Drawer>
 				</>
 			) : (
-				<>
+				<Box sx={{ display: "flex", width: "100%", height: "100%" }}>
 					<Paper
 						elevation={0}
 						sx={{
 							borderRight: `1px solid ${theme.palette.divider}`,
 							bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
+							flexShrink: 0,
 						}}
 					>
 						{sidebarContent}
 					</Paper>
-					<Box sx={{ flexGrow: 1, overflow: "auto" }}>
-						<Box sx={{ p: 3 }}>
+					<Box sx={{ flexGrow: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
+						<Box sx={{ flex: 1, p: 3, overflow: "auto" }}>
 							<TabPanel value={value} index={0}>
-								<CalcTableCompact title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
+								<CalcTableResponsive title="" folderData={{ folderName: folder.folderName, monto: folder.amount || 0 }} />
 							</TabPanel>
 							<TabPanel value={value} index={1}>
 								<MembersImproved title="" membersData={selectedContacts || []} isLoader={false} folderId={folder._id} />
@@ -285,7 +291,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							</TabPanel>
 						</Box>
 					</Box>
-				</>
+				</Box>
 			)}
 		</MainCard>
 	);

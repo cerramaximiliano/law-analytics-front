@@ -13,6 +13,7 @@ import {
 	Box,
 	Paper,
 	useTheme,
+	useMediaQuery,
 	alpha,
 	Chip,
 	Menu,
@@ -28,6 +29,7 @@ import React, { useCallback, useState, useEffect } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import ModalMembers from "../modals/ModalMembers";
 import ContactProfileModal from "../modals/ContactProfileModal";
+import ResponsiveButton from "./ResponsiveButton";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { motion } from "framer-motion";
 
@@ -87,6 +89,8 @@ const getRoleIcon = (role: string) => {
 
 const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId }) => {
 	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	// Get selectedContacts from Redux store (contacts filtered by folder)
 	const selectedContacts = useSelector((state: any) => state.contacts.selectedContacts || []);
 	const [add, setAdd] = useState<boolean>(false);
@@ -481,20 +485,33 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 						)}
 
 						{/* Action Buttons */}
-						<Stack direction="row" spacing={2} mt={3}>
-							<Button
+						<Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 1 : 2} mt={3}>
+							<ResponsiveButton
 								variant="contained"
-								fullWidth
+								fullWidth={!isMobile}
 								color="primary"
 								startIcon={<UserAdd size={18} />}
 								onClick={handleAdd}
 								disabled={isLoader}
+								mobileText="Nuevo"
+								desktopText="Nuevo Interviniente"
+								hideTextOnMobile={false}
 							>
 								Nuevo Interviniente
-							</Button>
-							<Button variant="outlined" fullWidth color="primary" startIcon={<Link1 size={18} />} onClick={handleOpen} disabled={isLoader}>
+							</ResponsiveButton>
+							<ResponsiveButton
+								variant="outlined"
+								fullWidth={!isMobile}
+								color="primary"
+								startIcon={<Link1 size={18} />}
+								onClick={handleOpen}
+								disabled={isLoader}
+								mobileText="Vincular"
+								desktopText="Vincular Existente"
+								hideTextOnMobile={false}
+							>
 								Vincular Existente
-							</Button>
+							</ResponsiveButton>
 						</Stack>
 					</>
 				)}

@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { Divider, Grid, Typography } from "@mui/material";
+import { Divider, Grid, Typography, useMediaQuery } from "@mui/material";
 import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 
 // project-imports
@@ -58,6 +58,8 @@ const Breadcrumbs = ({
 	const { customLabels } = useBreadcrumb();
 	const [main, setMain] = useState<NavItemType | undefined>();
 	const [item, setItem] = useState<NavItemType>();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
 	const iconSX = {
 		marginRight: theme.spacing(0.75),
@@ -198,7 +200,7 @@ const Breadcrumbs = ({
 					{title && titleBottom && (
 						<Grid item sx={{ mt: card === false ? 0 : 1, width: "100%", overflow: "hidden" }}>
 							<Typography
-								variant="h2"
+								variant={isMobile ? "h4" : isTablet ? "h3" : "h2"}
 								sx={{
 									fontWeight: 700,
 									overflow: "hidden",
@@ -206,6 +208,7 @@ const Breadcrumbs = ({
 									whiteSpace: "nowrap",
 									width: "100%",
 									display: "block",
+									fontSize: isMobile ? "1.125rem" : isTablet ? "1.5rem" : undefined,
 								}}
 								title={typeof itemTitle === "string" ? itemTitle : ""}
 							>
@@ -235,7 +238,7 @@ const Breadcrumbs = ({
 					display: "flex",
 					alignItems: "center",
 					color: theme.palette.secondary.main,
-					fontSize: "0.875rem",
+					fontSize: isMobile ? "0.75rem" : isTablet ? "0.8125rem" : "0.875rem",
 					fontWeight: theme.typography.h6.fontWeight,
 					maxWidth: { xs: "150px", sm: "250px", md: "350px", lg: "450px" },
 					overflow: "hidden",
@@ -264,7 +267,7 @@ const Breadcrumbs = ({
 					textOverflow: "ellipsis",
 					whiteSpace: "nowrap",
 					color: theme.palette.secondary.main,
-					fontSize: "0.875rem",
+					fontSize: isMobile ? "0.75rem" : isTablet ? "0.8125rem" : "0.875rem",
 					fontFamily: theme.typography.fontFamily,
 					fontWeight: theme.typography.h6.fontWeight,
 					lineHeight: 1.5,
@@ -296,12 +299,13 @@ const Breadcrumbs = ({
 					{title && !titleBottom && (
 						<Grid item sx={{ maxWidth: "100%", overflow: "hidden" }}>
 							<Typography
-								variant="h2"
+								variant={isMobile ? "h4" : isTablet ? "h3" : "h2"}
 								sx={{
 									fontWeight: 700,
 									overflow: "hidden",
 									textOverflow: "ellipsis",
 									whiteSpace: "nowrap",
+									fontSize: isMobile ? "1.125rem" : isTablet ? "1.5rem" : undefined,
 								}}
 								title={typeof itemTitle === "string" ? itemTitle : ""}
 							>
@@ -394,7 +398,7 @@ const Breadcrumbs = ({
 					{title && titleBottom && (
 						<Grid item sx={{ mt: card === false ? 0 : 1, width: "100%", overflow: "hidden" }}>
 							<Typography
-								variant="h2"
+								variant={isMobile ? "h4" : isTablet ? "h3" : "h2"}
 								sx={{
 									fontWeight: 700,
 									overflow: "hidden",
@@ -402,6 +406,7 @@ const Breadcrumbs = ({
 									whiteSpace: "nowrap",
 									width: "100%",
 									display: "block",
+									fontSize: isMobile ? "1.125rem" : isTablet ? "1.5rem" : undefined,
 								}}
 								title={typeof itemTitle === "string" ? itemTitle : ""}
 							>

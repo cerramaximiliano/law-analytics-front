@@ -121,7 +121,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			setContacts(response.data);
 			setTotalContacts(response.pagination.total);
 		} catch (error) {
-			enqueueSnackbar("Error al cargar la lista de contactos", { variant: "error" });
+			enqueueSnackbar("Error al cargar la lista de contactos", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setLoadingContacts(false);
 		}
@@ -135,7 +138,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			setSegments(response.data);
 			setTotalSegments(response.pagination.total);
 		} catch (error) {
-			enqueueSnackbar("Error al cargar la lista de segmentos", { variant: "error" });
+			enqueueSnackbar("Error al cargar la lista de segmentos", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setLoadingSegments(false);
 		}
@@ -190,7 +196,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 				requestData.segmentId = selectedSegment;
 				successMessage = "Segmento añadido a la campaña exitosamente";
 			} else {
-				enqueueSnackbar("Seleccione al menos un contacto o un segmento", { variant: "warning" });
+				enqueueSnackbar("Seleccione al menos un contacto o un segmento", {
+				variant: "warning",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 				setSubmitting(false);
 				return;
 			}
@@ -198,7 +207,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			const result = await CampaignService.addContactsToCampaign(campaign._id!, requestData);
 
 			if (result.success) {
-				enqueueSnackbar(successMessage, { variant: "success" });
+				enqueueSnackbar(successMessage, {
+				variant: "success",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 				if (onContactsChange) {
 					onContactsChange(); // Notificar al componente padre sobre el cambio
 				}
@@ -237,7 +249,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			}
 
 			// Mostrar mensaje de error mejorado
-			enqueueSnackbar(errorMessage, { variant: "error" });
+			enqueueSnackbar(errorMessage, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setSubmitting(false);
 		}
@@ -271,7 +286,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 
 					// Mostrar mensaje de éxito
 					const successMessage = `Proceso completado: se añadieron ${result.data.addedCount || 0} contactos`;
-					enqueueSnackbar(successMessage, { variant: "success" });
+					enqueueSnackbar(successMessage, {
+				variant: "success",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 
 					// Notificar al componente padre
 					if (onContactsChange) {
@@ -285,7 +303,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 					setAsyncProcessing(false);
 					setAddingAllContacts(false);
 
-					enqueueSnackbar(`El proceso falló: ${result.data.message || result.message}`, { variant: "error" });
+					enqueueSnackbar(`El proceso falló: ${result.data.message || result.message}`, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 					return true;
 				}
 
@@ -296,7 +317,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			}
 		} catch (error: any) {
 			const errorMessage = error.response?.data?.message || error.message || "Error al verificar estado del proceso";
-			enqueueSnackbar(errorMessage, { variant: "error" });
+			enqueueSnackbar(errorMessage, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 
 			setAsyncProcessing(false);
 			setAddingAllContacts(false);
@@ -327,7 +351,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 					});
 
 					// Mostrar mensaje inicial
-					enqueueSnackbar(result.message || "Procesando contactos en segundo plano...", { variant: "info" });
+					enqueueSnackbar(result.message || "Procesando contactos en segundo plano...", {
+				variant: "info",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 
 					// Configurar intervalo para verificar estado
 					const checkStatus = async () => {
@@ -352,11 +379,17 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 						}
 						onClose();
 					} else {
-						enqueueSnackbar(result.message || "No hay contactos activos para añadir", { variant: "info" });
+						enqueueSnackbar(result.message || "No hay contactos activos para añadir", {
+				variant: "info",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 						setAddingAllContacts(false);
 					}
 				} else {
-					enqueueSnackbar(result.message || "Operación iniciada", { variant: "info" });
+					enqueueSnackbar(result.message || "Operación iniciada", {
+				variant: "info",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 					setAddingAllContacts(false);
 				}
 			} else {
@@ -364,7 +397,10 @@ const CampaignContactsModal = ({ campaign, open, onClose, onContactsChange }: Ca
 			}
 		} catch (error: any) {
 			const errorMessage = error.response?.data?.message || error.message || "Error al añadir todos los contactos activos";
-			enqueueSnackbar(errorMessage, { variant: "error" });
+			enqueueSnackbar(errorMessage, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			setAddingAllContacts(false);
 			setAsyncProcessing(false);
 		}

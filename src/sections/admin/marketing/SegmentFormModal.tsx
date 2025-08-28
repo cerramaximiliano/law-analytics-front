@@ -511,11 +511,17 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			if (isEditMode && segment?._id) {
 				// Modo edición - actualizar segmento existente
 				await SegmentService.updateSegment(segment._id, segmentData);
-				enqueueSnackbar("Segmento actualizado exitosamente", { variant: "success" });
+				enqueueSnackbar("Segmento actualizado exitosamente", {
+				variant: "success",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			} else {
 				// Modo creación - crear nuevo segmento
 				await SegmentService.createSegment(segmentData);
-				enqueueSnackbar("Segmento creado exitosamente", { variant: "success" });
+				enqueueSnackbar("Segmento creado exitosamente", {
+				variant: "success",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			}
 
 			// Éxito - cerrar modal y actualizar lista
@@ -542,7 +548,10 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 			}
 
 			setError(errorMessage);
-			enqueueSnackbar(errorMessage, { variant: "error" });
+			enqueueSnackbar(errorMessage, {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setSaving(false);
 		}

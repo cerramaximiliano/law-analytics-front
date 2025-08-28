@@ -229,7 +229,10 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const handleSaveGracePeriod = async () => {
 		const userId = userData?.id || userData?._id;
 		if (!userId) {
-			enqueueSnackbar("No se pudo identificar el usuario", { variant: "error" });
+			enqueueSnackbar("No se pudo identificar el usuario", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			return;
 		}
 
@@ -244,16 +247,25 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 			});
 
 			if (response.success) {
-				enqueueSnackbar("Período de gracia actualizado correctamente", { variant: "success" });
+				enqueueSnackbar("Período de gracia actualizado correctamente", {
+				variant: "success",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 				setIsEditingGracePeriod(false);
 				// Recargar los datos del usuario para reflejar los cambios
 				dispatch(getUserById(userId) as any);
 			} else {
-				enqueueSnackbar(response.message || "Error al actualizar el período de gracia", { variant: "error" });
+				enqueueSnackbar(response.message || "Error al actualizar el período de gracia", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			}
 		} catch (error) {
 			console.error("Error updating grace period:", error);
-			enqueueSnackbar("Error al actualizar el período de gracia", { variant: "error" });
+			enqueueSnackbar("Error al actualizar el período de gracia", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		} finally {
 			setSavingGracePeriod(false);
 		}

@@ -67,7 +67,10 @@ const VerificationWorker = () => {
 				setConfigs(response.data);
 			}
 		} catch (error) {
-			enqueueSnackbar("Error al cargar las configuraciones", { variant: "error" });
+			enqueueSnackbar("Error al cargar las configuraciones", { 
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 			console.error(error);
 		} finally {
 			setLoading(false);
@@ -117,12 +120,18 @@ const VerificationWorker = () => {
 		try {
 			const response = await WorkersService.updateVerificationConfig(editingId, editValues);
 			if (response.success) {
-				enqueueSnackbar("Configuración actualizada exitosamente", { variant: "success" });
+				enqueueSnackbar("Configuración actualizada exitosamente", { 
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				});
 				await fetchConfigs();
 				handleCancelEdit();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al actualizar la configuración", { variant: "error" });
+			enqueueSnackbar(error.message || "Error al actualizar la configuración", { 
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		}
 	};
 
@@ -133,11 +142,17 @@ const VerificationWorker = () => {
 				enabled: !config.enabled,
 			});
 			if (response.success) {
-				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, { variant: "success" });
+				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, { 
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				});
 				await fetchConfigs();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al cambiar el estado", { variant: "error" });
+			enqueueSnackbar(error.message || "Error al cambiar el estado", { 
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+			});
 		}
 	};
 
