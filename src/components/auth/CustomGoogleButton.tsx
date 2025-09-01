@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, ButtonProps } from "@mui/material";
+import { Button, ButtonProps, CircularProgress } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
 // Project-imports
@@ -20,6 +20,13 @@ const GoogleButton = styled(Button)<ButtonProps & { customheight?: string }>(({ 
 	"&:hover": {
 		backgroundColor: theme.palette.primary.dark,
 		boxShadow: "none",
+	},
+	
+	// Estado deshabilitado
+	"&.Mui-disabled": {
+		backgroundColor: theme.palette.primary.main,
+		color: theme.palette.primary.contrastText,
+		opacity: 0.7,
 	},
 
 	// Ajustes al icono
@@ -47,6 +54,7 @@ interface CustomGoogleButtonProps {
 	disabled?: boolean;
 	fullWidth?: boolean;
 	customHeight?: string;
+	showLoader?: boolean;
 }
 
 const CustomGoogleButton = ({
@@ -55,13 +63,24 @@ const CustomGoogleButton = ({
 	disabled = false,
 	fullWidth = true,
 	customHeight,
+	showLoader = false,
 }: CustomGoogleButtonProps) => {
 	return (
 		<AnimateButton type="scale">
 			<GoogleButton
 				variant="contained"
 				color="primary"
-				startIcon={<img src={GoogleIcon} alt="Google" style={{ width: 16, height: 16 }} />}
+				startIcon={showLoader ? (
+					<CircularProgress 
+						size={16} 
+						sx={{ 
+							color: (theme) => theme.palette.primary.contrastText,
+							opacity: 0.9
+						}} 
+					/>
+				) : (
+					<img src={GoogleIcon} alt="Google" style={{ width: 16, height: 16 }} />
+				)}
 				onClick={onClick}
 				disabled={disabled}
 				fullWidth={fullWidth}

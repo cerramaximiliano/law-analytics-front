@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useState } from "react";
 // material-ui
-import { Grid, Stack, Alert, Typography } from "@mui/material";
+import { Grid, Stack, Alert, Typography, Box, LinearProgress } from "@mui/material";
 
 // project-imports
 import Logo from "components/logo";
@@ -19,12 +19,17 @@ const Login = () => {
 	const { loginWithGoogle } = useAuth();
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [isEmailLoading, setIsEmailLoading] = useState<boolean>(false);
+	
+	// Estado combinado de loading
+	const isAnyLoading = isLoading || isEmailLoading;
 
 	// Verificar si el sitio está en modo mantenimiento
 	const isMaintenanceMode = process.env.REACT_APP_MAINTENANCE_MODE === "true";
 
 	const handleGoogleSuccess = async (tokenResponse: any) => {
 		setIsLoading(true);
+		setIsEmailLoading(true); // Bloquear también el formulario de email
 		try {
 			// Crear un objeto de credencial para mantener la compatibilidad con el sistema existente
 			const credentialResponse: CredentialResponse = {
@@ -39,6 +44,7 @@ const Login = () => {
 			setError("Error al autenticar con Google. Por favor, intenta nuevamente.");
 		} finally {
 			setIsLoading(false);
+			setIsEmailLoading(false);
 		}
 	};
 
@@ -78,36 +84,71 @@ const Login = () => {
 
 	return (
 		<AuthWrapper>
-			<Grid container spacing={3}>
-				<Grid item xs={12} sx={{ textAlign: "center" }}>
-					<Logo />
+			<Box sx={{ position: "relative" }}>
+				{/* Barra de progreso global */}
+				{isAnyLoading && (
+					<Box sx={{ 
+						position: "absolute", 
+						top: 0, 
+						left: 0, 
+						right: 0, 
+						zIndex: 1000 
+					}}>
+						<LinearProgress />
+					</Box>
+				)}
+				
+				<Grid container spacing={3}>
+					<Grid item xs={12} sx={{ textAlign: "center" }}>
+						<Logo />
+					</Grid>
+					<Grid item xs={12}>
+						<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
+							<Typography variant="h3">Inicio</Typography>
+							<Typography 
+								component={isAnyLoading ? Box : Link} 
+								to={isAnyLoading ? undefined : "/register"} 
+								variant="body1" 
+								sx={{ 
+									textDecoration: "none",
+									color: isAnyLoading ? "text.disabled" : "primary.main",
+									cursor: isAnyLoading ? "not-allowed" : "pointer",
+									pointerEvents: isAnyLoading ? "none" : "auto"
+								}}
+							>
+								¿No tienes una cuenta?
+							</Typography>
+						</Stack>
+					</Grid>
+					<Grid item xs={12}>
+						{error && (
+							<Alert severity="error" sx={{ mb: 2 }}>
+								{error}
+							</Alert>
+						)}
+						<AuthLogin 
+							forgot="/auth/forgot-password" 
+							isGoogleLoading={isLoading}
+							onLoadingChange={setIsEmailLoading}
+						/>
+					</Grid>
+					<Grid item xs={12}>
+						<AuthDivider>
+							<Typography variant="body1">O</Typography>
+						</AuthDivider>
+					</Grid>
+					<Grid item xs={12}>
+						{/* Botón personalizado que llama a googleLogin.login() */}
+						<CustomGoogleButton 
+							onClick={() => googleLogin()} 
+							disabled={isLoading || isEmailLoading} 
+							text={isLoading ? "Iniciando sesión..." : "Iniciar sesión con Google"} 
+							fullWidth 
+							showLoader={isLoading}
+						/>
+					</Grid>
 				</Grid>
-				<Grid item xs={12}>
-					<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
-						<Typography variant="h3">Inicio</Typography>
-						<Typography component={Link} to={"/register"} variant="body1" sx={{ textDecoration: "none" }} color="primary">
-							¿No tienes una cuenta?
-						</Typography>
-					</Stack>
-				</Grid>
-				<Grid item xs={12}>
-					{error && (
-						<Alert severity="error" sx={{ mb: 2 }}>
-							{error}
-						</Alert>
-					)}
-					<AuthLogin forgot="/auth/forgot-password" />
-				</Grid>
-				<Grid item xs={12}>
-					<AuthDivider>
-						<Typography variant="body1">O</Typography>
-					</AuthDivider>
-				</Grid>
-				<Grid item xs={12}>
-					{/* Botón personalizado que llama a googleLogin.login() */}
-					<CustomGoogleButton onClick={() => googleLogin()} disabled={isLoading} text="Iniciar sesión con Google" fullWidth />
-				</Grid>
-			</Grid>
+			</Box>
 		</AuthWrapper>
 	);
 };

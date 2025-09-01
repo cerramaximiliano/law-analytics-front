@@ -16,6 +16,7 @@ import {
 	OutlinedInput,
 	Stack,
 	Typography,
+	Box,
 } from "@mui/material";
 
 // third-party
@@ -35,7 +36,13 @@ import { openSnackbar } from "store/reducers/snackbar";
 
 // ============================|| JWT - LOGIN ||============================ //
 
-const AuthLogin = ({ forgot }: { forgot?: string }) => {
+interface AuthLoginProps {
+	forgot?: string;
+	isGoogleLoading?: boolean;
+	onLoadingChange?: (loading: boolean) => void;
+}
+
+const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLoginProps) => {
 	const [checked, setChecked] = useState(false);
 
 	const { isLoggedIn, login } = useAuth();
@@ -64,6 +71,9 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
+						if (onLoadingChange) {
+							onLoadingChange(true);
+						}
 						await login(values.email, values.password);
 						if (scriptedRef.current) {
 							setStatus({ success: true });
@@ -173,11 +183,21 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 
 							setErrors({ submit: errorMessage });
 							setSubmitting(false);
+							if (onLoadingChange) {
+								onLoadingChange(false);
+							}
+						}
+					} finally {
+						if (onLoadingChange) {
+							onLoadingChange(false);
 						}
 					}
 				}}
 			>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => {
+					// Check if either form is loading
+					const isAnyFormLoading = isSubmitting || isGoogleLoading;
+					
 					// Create a custom submit handler to avoid the persist error
 					const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 						e.preventDefault();
@@ -204,7 +224,7 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 											placeholder="Ingrese su dirección de correo electrónico"
 											fullWidth
 											error={Boolean(touched.email && errors.email)}
-											disabled={isSubmitting}
+											disabled={isAnyFormLoading}
 											autoComplete="email"
 											onKeyDown={(e) => {
 												// Prevent form submission on Enter in input fields
@@ -233,7 +253,7 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 											name="password"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											disabled={isSubmitting}
+											disabled={isAnyFormLoading}
 											autoComplete="current-password"
 											onKeyDown={(e) => {
 												// Prevent form submission on Enter in input fields
@@ -250,7 +270,7 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 														onMouseDown={handleMouseDownPassword}
 														edge="end"
 														color="secondary"
-														disabled={isSubmitting}
+														disabled={isAnyFormLoading}
 													>
 														{showPassword ? <Eye /> : <EyeSlash />}
 													</IconButton>
@@ -276,13 +296,23 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 													name="checked"
 													color="primary"
 													size="small"
-													disabled={isSubmitting}
+													disabled={isAnyFormLoading}
 												/>
 											}
 											label={<Typography variant="h6">Mantener la sesión abierta</Typography>}
 										/>
 
-										<Link variant="h6" component={RouterLink} to={isLoggedIn && forgot ? forgot : "/forgot-password"} color="text.primary">
+										<Link 
+											variant="h6" 
+											component={isAnyFormLoading ? Box : RouterLink} 
+											to={isAnyFormLoading ? undefined : (isLoggedIn && forgot ? forgot : "/forgot-password")} 
+											color={isAnyFormLoading ? "text.disabled" : "text.primary"}
+											sx={{
+												cursor: isAnyFormLoading ? "not-allowed" : "pointer",
+												pointerEvents: isAnyFormLoading ? "none" : "auto",
+												textDecoration: isAnyFormLoading ? "none" : undefined
+											}}
+										>
 											Olvidé mi Password
 										</Link>
 									</Stack>
@@ -291,21 +321,36 @@ const AuthLogin = ({ forgot }: { forgot?: string }) => {
 									<AnimateButton>
 										<Button
 											disableElevation
-											disabled={isSubmitting}
+											disabled={isAnyFormLoading}
 											fullWidth
 											size="large"
 											type="button"
 											variant="contained"
 											color="primary"
-											startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+											startIcon={isAnyFormLoading ? (
+												<CircularProgress 
+													size={20} 
+													sx={{ 
+														color: (theme) => theme.palette.primary.contrastText,
+														opacity: 0.9
+													}} 
+												/>
+											) : null}
 											onClick={(e) => {
 												e.preventDefault();
-												if (!isSubmitting) {
+												if (!isAnyFormLoading) {
 													handleSubmit();
 												}
 											}}
+											sx={{
+												"&.Mui-disabled": {
+													backgroundColor: (theme) => theme.palette.primary.main,
+													color: (theme) => theme.palette.primary.contrastText,
+													opacity: 0.7
+												}
+											}}
 										>
-											{isSubmitting ? "Iniciando sesión..." : "Login"}
+											{isSubmitting ? "Iniciando sesión..." : isGoogleLoading ? "Autenticando con Google..." : "Login"}
 										</Button>
 									</AnimateButton>
 								</Grid>
