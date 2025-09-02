@@ -22,7 +22,7 @@ import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
 
 // Global setting for hiding international banking data
-export const HIDE_INTERNATIONAL_BANKING_DATA = process.env.REACT_APP_HIDE_BANKING_DATA === "true";
+export const HIDE_INTERNATIONAL_BANKING_DATA = import.meta.env.VITE_HIDE_BANKING_DATA === "true";
 
 const initialState: AuthProps = {
 	isLoggedIn: false,
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			setIsLogoutProcess(true);
 			navigate("/login", { replace: true });
 
-			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/logout`);
+			await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/logout`);
 
 			// Limpiar estado local
 			if (isGoogleLoggedIn) {
@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		try {
 			const credential = tokenResponse.credential;
 			if (credential) {
-				const result = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/google`, { token: credential });
+				const result = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/google`, { token: credential });
 
 				const { user, success, subscription, paymentHistory, customer } = result.data;
 
@@ -200,7 +200,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					subscription?: Subscription;
 					paymentHistory?: Payment[];
 					customer?: { id: string; email: string | null };
-				}>(`${process.env.REACT_APP_BASE_URL}/api/auth/me`);
+				}>(`${import.meta.env.VITE_BASE_URL}/api/auth/me`);
 				const { user, subscription, paymentHistory, customer } = response.data;
 
 				localDispatch({
@@ -323,7 +323,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					if (error.response?.data && (error.response.data as any).needRefresh === true) {
 						try {
 							// Intentar refrescar el token automáticamente
-							const refreshResponse = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/refresh-token`);
+							const refreshResponse = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`);
 
 							// Si el refresh es exitoso, reintentar la petición original
 							if (refreshResponse.status === 200) {
@@ -449,7 +449,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	// Login normal
 	const login = async (email: string, password: string): Promise<boolean> => {
 		try {
-			const response = await axios.post<LoginResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/login`, { email, password });
+			const response = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/login`, { email, password });
 
 			const { user, subscription, paymentHistory, customer } = response.data;
 
@@ -512,7 +512,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		lastName: string,
 	): Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }> => {
 		try {
-			const response = await axios.post<RegisterResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/register`, {
+			const response = await axios.post<RegisterResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/register`, {
 				email,
 				password,
 				firstName,
@@ -563,7 +563,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const verifyCode = async (email: string, code: string): Promise<any> => {
 		try {
 			// Enviar email y code directamente al endpoint verify-code
-			const response = await axios.post<VerifyCodeResponse>(`${process.env.REACT_APP_BASE_URL}/api/auth/verify-code`, {
+			const response = await axios.post<VerifyCodeResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/verify-code`, {
 				email,
 				code,
 			});
@@ -626,7 +626,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	// Restablecer contraseña
 	const resetPassword = async (email: string): Promise<void> => {
 		try {
-			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/reset-request`, { email });
+			await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/reset-request`, { email });
 			showSnackbar("Instrucciones enviadas a tu correo", "success");
 		} catch (error) {
 			showSnackbar("Error al solicitar restablecimiento de contraseña", "error");
@@ -637,7 +637,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	// Actualizar perfil
 	const updateProfile = async (userData: Partial<UserProfile>): Promise<void> => {
 		try {
-			const response = await axios.put<{ user: UserProfile }>(`${process.env.REACT_APP_BASE_URL}/api/auth/update-profile`, userData);
+			const response = await axios.put<{ user: UserProfile }>(`${import.meta.env.VITE_BASE_URL}/api/auth/update-profile`, userData);
 
 			const { user } = response.data;
 
@@ -671,7 +671,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 	const setNewPassword = async (email: string, code: string, newPassword: string): Promise<boolean> => {
 		try {
-			const response = await axios.post<{ success: boolean; message: string }>(`${process.env.REACT_APP_BASE_URL}/api/auth/reset`, {
+			const response = await axios.post<{ success: boolean; message: string }>(`${import.meta.env.VITE_BASE_URL}/api/auth/reset`, {
 				email,
 				code,
 				newPassword,
@@ -696,7 +696,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const verifyResetCode = async (email: string, code: string): Promise<boolean> => {
 		try {
 			const response = await axios.post<{ success: boolean; message: string }>(
-				`${process.env.REACT_APP_BASE_URL}/api/auth/verify-reset-code`,
+				`${import.meta.env.VITE_BASE_URL}/api/auth/verify-reset-code`,
 				{
 					email,
 					code,

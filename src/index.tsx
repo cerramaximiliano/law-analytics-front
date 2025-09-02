@@ -64,7 +64,7 @@ root.render(
 	<ReduxProvider store={store}>
 		<PersistGateWrapper>
 			<ConfigProvider>
-				<BrowserRouter basename={process.env.REACT_APP_BASE_NAME}>
+				<BrowserRouter basename={import.meta.env.VITE_BASE_NAME}>
 					<App />
 				</BrowserRouter>
 			</ConfigProvider>

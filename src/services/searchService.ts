@@ -29,7 +29,7 @@ export const searchService = {
 				types: entityTypes?.join(",") || "folder,contact,calculator,task,event",
 			};
 
-			const response = await axios.get<ServerSearchResponse>(`${process.env.REACT_APP_BASE_URL}/api/search`, { params });
+			const response = await axios.get<ServerSearchResponse>(`${import.meta.env.VITE_BASE_URL}/api/search`, { params });
 			const results: SearchResult[] = [];
 
 			// Handle response structure - the API may return data wrapped or unwrapped
@@ -138,7 +138,7 @@ export const searchService = {
 	 */
 	async searchEntity(entityType: string, query: string): Promise<SearchResult[]> {
 		try {
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/${entityType}/search`, {
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/${entityType}/search`, {
 				params: { q: query },
 			});
 
