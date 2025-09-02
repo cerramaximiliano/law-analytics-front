@@ -31,7 +31,6 @@ import {
 import ResponsiveButton from "./ResponsiveButton";
 import MainCard from "components/MainCard";
 import SimpleBar from "components/third-party/SimpleBar";
-import Avatar from "components/@extended/Avatar";
 import { Calculator, TrendUp, TrendDown, More, Edit2, Trash, Eye, DocumentCopy, Add, ArrowDown2, ArrowUp2 } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
