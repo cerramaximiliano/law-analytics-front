@@ -143,6 +143,8 @@ export default defineConfig(({ mode }) => {
 				"immer",
 				"redux",
 				"reselect",
+				"apexcharts",
+				"react-apexcharts",
 			],
 			exclude: ["@react-pdf/renderer"],
 			esbuildOptions: {
@@ -160,6 +162,10 @@ export default defineConfig(({ mode }) => {
 			"process.env": {},
 			// Polyfill para globalThis
 			global: "globalThis",
+		},
+		esbuild: {
+			// Inyectar React automáticamente
+			jsxInject: `import React from 'react'`,
 		},
 	};
 });
