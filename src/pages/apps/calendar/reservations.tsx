@@ -685,12 +685,16 @@ const BookingsManagement = () => {
 				// Cargar reservas para esta disponibilidad específica
 				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}/bookings`);
 
-				setBookings(bookingsResponse.data);
+				// Asegurar que siempre sea un array
+				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
+				setBookings(bookingsData);
 			} else {
 				// Cargar todas las reservas del usuario
 				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings`);
 
-				setBookings(bookingsResponse.data);
+				// Asegurar que siempre sea un array
+				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
+				setBookings(bookingsData);
 
 				// Cargar todas las disponibilidades cuando estamos en la vista general
 				const availabilitiesResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
@@ -698,6 +702,9 @@ const BookingsManagement = () => {
 				setAvailabilities(availabilitiesResponse.data);
 			}
 		} catch (error) {
+			console.error("Error fetching reservations data:", error);
+			// Si hay un error, asegurar que bookings sea un array vacío
+			setBookings([]);
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -724,8 +731,8 @@ const BookingsManagement = () => {
 		fetchData();
 	}, [fetchData]);
 
-	// Filtrar reservas
-	const filteredBookings = bookings
+	// Filtrar reservas - Asegurar que bookings sea un array
+	const filteredBookings = (Array.isArray(bookings) ? bookings : [])
 		.filter((booking) => {
 			const bookingDate = new Date(booking.startTime);
 			const now = new Date();
