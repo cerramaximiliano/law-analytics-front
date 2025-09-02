@@ -1,14 +1,12 @@
 // Configuración global para ApexCharts
-import React from "react";
+import * as React from "react";
 
 // Asegurar que React esté disponible globalmente para ApexCharts
-if (typeof window !== "undefined") {
+// Esto es necesario porque react-apexcharts espera React en el scope global
+if (typeof window !== "undefined" && !window.React) {
 	// @ts-ignore
 	window.React = React;
 }
-
-// Re-exportar React para uso en componentes
-export { React };
 
 // Configuración por defecto para ApexCharts
 export const defaultApexOptions = {

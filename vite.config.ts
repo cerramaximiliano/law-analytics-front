@@ -15,7 +15,8 @@ export default defineConfig(({ mode }) => {
 		plugins: [
 			react({
 				// SWC es mucho más rápido que Babel
-				// No necesita configuración adicional
+				// Configuración para el runtime de JSX
+				jsxRuntime: "automatic",
 			}),
 			tsconfigPaths(),
 			svgr({
@@ -162,10 +163,6 @@ export default defineConfig(({ mode }) => {
 			"process.env": {},
 			// Polyfill para globalThis
 			global: "globalThis",
-		},
-		esbuild: {
-			// Inyectar React automáticamente
-			jsxInject: `import React from 'react'`,
 		},
 	};
 });
