@@ -21,29 +21,7 @@ if (typeof globalThis === "undefined") {
 	})();
 }
 
-// Fix para Immer y Redux Toolkit
-// @ts-ignore
-if (typeof window !== "undefined") {
-	// @ts-ignore
-	if (!window.ES5) {
-		// @ts-ignore
-		window.ES5 = {
-			Object: Object,
-			Array: Array,
-		};
-	}
-	
-	// Asegurar que Reflect esté disponible
-	if (typeof Reflect === "undefined") {
-		// @ts-ignore
-		window.Reflect = {};
-	}
-	
-	// Polyfill para Proxy si no está disponible
-	if (typeof Proxy === "undefined") {
-		console.warn("Proxy not available, Immer may not work correctly");
-	}
-}
+// Polyfills mínimos necesarios
 
 // Polyfill para Object.fromEntries si no está disponible
 if (!Object.fromEntries) {

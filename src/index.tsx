@@ -8,9 +8,6 @@ import "./polyfills";
 // Import env helper for compatibility
 import "./utils/env";
 
-// Fix React for ApexCharts
-import "./utils/fixReactForApexCharts";
-
 // third-party
 import { Provider as ReduxProvider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
