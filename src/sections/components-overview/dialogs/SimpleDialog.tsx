@@ -12,7 +12,7 @@ import IconButton from "components/@extended/IconButton";
 import { Add } from "iconsax-react";
 
 const emails = ["username@gmail.com", "user02@gmail.com"];
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| DIALOG - SIMPLE ||============================== //
 

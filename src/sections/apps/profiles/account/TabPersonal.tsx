@@ -38,7 +38,7 @@ import { ThemeMode } from "types/config";
 import { dispatch, useSelector } from "store";
 import { updatePicture } from "store/reducers/auth";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 // ==============================|| ACCOUNT PROFILE - PERSONAL ||============================== //
 
 const TabPersonal = () => {

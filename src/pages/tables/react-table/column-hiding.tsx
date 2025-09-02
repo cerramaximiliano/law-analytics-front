@@ -15,8 +15,7 @@ import ScrollX from "components/ScrollX";
 import Avatar from "components/@extended/Avatar";
 import LinearWithLabel from "components/@extended/progress/LinearWithLabel";
 import { CSVExport, HidingSelect } from "components/third-party/ReactTable";
-
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| REACT TABLE ||============================== //
 

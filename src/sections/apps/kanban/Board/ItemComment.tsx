@@ -17,7 +17,7 @@ interface Props {
 	profile: KanbanProfile;
 }
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| KANBAN BOARD - ITEM COMMENT ||============================== //
 

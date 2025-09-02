@@ -6,7 +6,7 @@ import { Divider, List, ListItem, ListItemAvatar, ListItemText, Typography } fro
 import MainCard from "components/MainCard";
 import AntAvatar from "components/@extended/Avatar";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| LIST - ALIGN ||============================== //
 

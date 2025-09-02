@@ -139,6 +139,7 @@
 		"@types/react-csv": "^1.1.10",
 		"@types/react-dom": "^18.2.4",
 		"@types/react-draft-wysiwyg": "^1.13.8",
+		"@types/react-google-recaptcha": "^2.1.9",
 		"@types/react-slick": "^0.23.13",
 		"@types/react-syntax-highlighter": "^15.5.13",
 		"@types/react-table": "^7.7.20",

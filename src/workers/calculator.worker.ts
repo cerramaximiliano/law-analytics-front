@@ -3,7 +3,7 @@
 // Ejecuta en thread separado sin bloquear UI
 
 /// <reference lib="webworker" />
-declare const self: ServiceWorkerGlobalScope;
+declare const self: DedicatedWorkerGlobalScope;
 
 interface CalculationMessage {
 	type: "CALCULATE_LABOR" | "CALCULATE_INTEREST" | "CALCULATE_CIVIL";

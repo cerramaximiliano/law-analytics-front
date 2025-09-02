@@ -43,7 +43,7 @@ interface Props {
 	handleDrawerOpen: () => void;
 }
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 const validationSchema = yup.object({
 	title: yup.string().required("Task title is required"),
 	dueDate: yup.date(),

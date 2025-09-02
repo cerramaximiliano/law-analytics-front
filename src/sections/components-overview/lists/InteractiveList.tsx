@@ -25,7 +25,7 @@ import MainCard from "components/MainCard";
 // assets
 import { FolderOpen, Trash } from "iconsax-react";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 function generate(element: ReactElement) {
 	return [0, 1, 2].map((value) =>

@@ -244,16 +244,6 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onMenuOpen,
 								{row.user || "N/D"}
 							</Typography>
 						</Stack>
-						{row.description && (
-							<Stack direction="row" justifyContent="space-between">
-								<Typography variant="caption" color="text.secondary">
-									Descripción:
-								</Typography>
-								<Typography variant="caption" fontWeight={500}>
-									{row.description}
-								</Typography>
-							</Stack>
-						)}
 					</Stack>
 				</Box>
 			</Collapse>

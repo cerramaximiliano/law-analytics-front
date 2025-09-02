@@ -148,7 +148,7 @@ class GoogleCalendarService {
 	async signInSilently(): Promise<boolean> {
 		try {
 			if (!gapi || !gapi.auth2) {
-				await this.initClient();
+				await this.init();
 			}
 
 			const auth = gapi.auth2.getAuthInstance();
@@ -500,7 +500,16 @@ class GoogleCalendarService {
 	// Helper para crear un hash único de un evento para evitar duplicados
 	private createEventHash(event: Event | EventInput): string {
 		const normalizedTitle = (event.title || "").toLowerCase().trim().replace(/\s+/g, " ");
-		const startDate = new Date(event.start);
+		let startDate: Date;
+		
+		if (!event.start) {
+			startDate = new Date();
+		} else if (typeof event.start === 'string' || typeof event.start === 'number' || event.start instanceof Date) {
+			startDate = new Date(event.start);
+		} else {
+			// For other DateInput types, use current date as fallback
+			startDate = new Date();
+		}
 		// Usar solo fecha y hora (sin milisegundos) para evitar diferencias mínimas
 		const dateKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}-${startDate.getHours()}-${startDate.getMinutes()}`;
 		const eventType = (event as Event).type || "default";

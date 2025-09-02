@@ -14,8 +14,7 @@ import ComponentSkeleton from "sections/components-overview/ComponentSkeleton";
 
 // assets
 import { Add, Coin, InfoCircle, Profile, Setting2, Sms, TickCircle, Trash, Warning2 } from "iconsax-react";
-
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| COMPONENTS - AVATAR ||============================== //
 

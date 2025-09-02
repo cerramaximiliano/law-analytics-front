@@ -18,6 +18,7 @@ import IconButton from "components/@extended/IconButton";
 
 // assets
 import { Hierarchy, More } from "iconsax-react";
+import { backImage } from "utils/imageLoader";
 
 // types
 import { KanbanItem } from "types/kanban";
@@ -26,8 +27,6 @@ interface Props {
 	item: KanbanItem;
 	index: number;
 }
-
-const backImage = require.context("assets/images/profile", true);
 
 // item drag wrapper
 const getDragWrapper = (

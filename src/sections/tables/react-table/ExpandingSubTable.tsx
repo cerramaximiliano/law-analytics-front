@@ -21,7 +21,7 @@ import mockData from "utils/mock-data";
 // assets
 import { ArrowDown2, ArrowRight2 } from "iconsax-react";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| SUB TABLE ||============================== //
 

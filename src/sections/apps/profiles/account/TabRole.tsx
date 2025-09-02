@@ -26,7 +26,7 @@ import Avatar from "components/@extended/Avatar";
 import { More } from "iconsax-react";
 import { useSelector } from "store";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| ACCOUNT PROFILE - ROLE ||============================== //
 

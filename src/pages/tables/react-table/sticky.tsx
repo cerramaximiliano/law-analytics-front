@@ -9,8 +9,7 @@ import makeData from "data/react-table";
 import Avatar from "components/@extended/Avatar";
 import LinearWithLabel from "components/@extended/progress/LinearWithLabel";
 import StickyTable from "sections/tables/react-table/StickyTable";
-
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| REACT TABLE - STICKY ||============================== //
 

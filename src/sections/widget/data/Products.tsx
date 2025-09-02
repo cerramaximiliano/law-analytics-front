@@ -34,8 +34,7 @@ import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
 // assets
 import { ArrowDown, ArrowUp, Star1 } from "iconsax-react";
-
-const productImage = require.context("assets/images/widget", true);
+import { productImage } from "utils/imageLoader";
 
 // ==============================|| REACT TABLE ||============================== //
 

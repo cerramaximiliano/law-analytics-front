@@ -72,7 +72,7 @@ interface InvoiceWidgets {
 	chartData: number[];
 }
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| REACT TABLE ||============================== //
 

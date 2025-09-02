@@ -7,7 +7,7 @@ import MainCard from "components/MainCard";
 import AntAvatar from "components/@extended/Avatar";
 
 // assets
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // sx styles
 const actionSX = {

@@ -28,7 +28,7 @@ import MainCard from "components/MainCard";
 // assets
 import { CallCalling, Link1, Location, Sms } from "iconsax-react";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| EXPANDING TABLE - USER DETAILS ||============================== //
 

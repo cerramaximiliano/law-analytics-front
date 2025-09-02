@@ -87,11 +87,10 @@ import {
 
 // assets
 import { ArrowDown2, ArrowRight2, Edit, LayoutMaximize, Maximize1, Send } from "iconsax-react";
+import { avatarImage } from "utils/imageLoader";
 
 // types
 import { ThemeMode } from "types/config";
-
-const avatarImage = require.context("assets/images/users", true);
 
 // ==============================|| REACT TABLE ||============================== //
 

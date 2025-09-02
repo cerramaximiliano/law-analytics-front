@@ -12,7 +12,7 @@ import IconButton from "components/@extended/IconButton";
 // assets
 import { Add, More, Profile } from "iconsax-react";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ===========================|| STATISTICS - ASSIGN USERS ||=========================== //
 

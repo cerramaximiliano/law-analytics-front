@@ -18,7 +18,7 @@ export const VirtualList = memo(({ items, itemHeight, renderItem, overscan = 5 }
 
 	return (
 		<AutoSizer>
-			{({ height, width }) => (
+			{({ height, width }: { height: number; width: number }) => (
 				<List height={height} itemCount={items.length} itemSize={itemHeight} width={width} overscanCount={overscan} itemData={items}>
 					{renderItem}
 				</List>

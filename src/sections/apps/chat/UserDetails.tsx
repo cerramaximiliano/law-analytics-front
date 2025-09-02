@@ -19,7 +19,7 @@ import { Add, ArrowDown2, ArrowRight2, Camera, Document, DocumentLike, FolderOpe
 import { ThemeMode } from "types/config";
 import { UserProfile } from "types/user-profile";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| CHAT - USER DETAILS ||============================== //
 

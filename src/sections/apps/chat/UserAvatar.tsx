@@ -8,7 +8,7 @@ import { UserProfile } from "types/user-profile";
 import Avatar from "components/@extended/Avatar";
 
 // assets
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| CHAT - USER AVATAR WITH STATUS ICON ||============================== //
 

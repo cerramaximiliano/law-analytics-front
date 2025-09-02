@@ -456,14 +456,20 @@ const Calendar = () => {
 
 		// También escuchar cambios en el sidebar (si existe un estado global para esto)
 		// Opción alternativa: usar ResizeObserver para detectar cambios en el contenedor
-		const calendarContainer = calendarRef.current?.getApi().el;
+		const calendarApi = calendarRef.current?.getApi();
 		let resizeObserver: ResizeObserver | null = null;
 
-		if (calendarContainer) {
+		if (calendarApi) {
+			// Usar el elemento DOM del calendario a través de elementos específicos si es necesario
+			// Por ahora, simplemente observar cambios en el documento
 			resizeObserver = new ResizeObserver(() => {
 				handleResize();
 			});
-			resizeObserver.observe(calendarContainer.parentElement || calendarContainer);
+			// Observar el elemento padre del calendario si existe
+			const calendarElement = document.querySelector('.fc-daygrid') || document.querySelector('.fc-view-harness');
+			if (calendarElement) {
+				resizeObserver.observe(calendarElement);
+			}
 		}
 
 		return () => {
@@ -593,7 +599,7 @@ const Calendar = () => {
 
 	const handleDeleteEvent = async () => {
 		if (selectedEvent?._id) {
-			let googleIdToDelete = selectedEvent.googleCalendarId;
+			let googleIdToDelete: string | null = selectedEvent.googleCalendarId || null;
 
 			// Si no tiene googleCalendarId pero está autenticado, intentar buscarlo
 			if (!googleIdToDelete && googleCalendarService.isSignedIn && selectedEvent.title && selectedEvent.start) {

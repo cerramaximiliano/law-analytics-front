@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
 	},
 });
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| CUSTOMER - CARD ||============================== //
 

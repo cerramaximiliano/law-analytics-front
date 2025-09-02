@@ -10,7 +10,7 @@ import IconButton from "components/@extended/IconButton";
 // assets
 import { More } from "iconsax-react";
 
-const avatarImage = require.context("assets/images/users", true);
+import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| LIST - USER ||============================== //
 
