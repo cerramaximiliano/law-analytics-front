@@ -2,7 +2,10 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
-// Import env helper first for compatibility
+// Import polyfills first
+import "./polyfills";
+
+// Import env helper for compatibility
 import "./utils/env";
 
 // third-party

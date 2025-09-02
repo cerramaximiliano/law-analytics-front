@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => {
 			// Solo sourcemaps en desarrollo
 			sourcemap: !isProd,
 			// Target browsers modernos para evitar problemas con ES5
-			target: "es2015",
+			target: ["es2020", "edge88", "firefox78", "chrome87", "safari14"],
 			// Optimización de chunks mejorada
 			rollupOptions: {
 				output: {
@@ -140,15 +140,23 @@ export default defineConfig(({ mode }) => {
 				"@reduxjs/toolkit",
 				"react-redux",
 				"redux-persist",
+				"immer",
+				"redux",
+				"reselect",
 			],
 			exclude: ["@react-pdf/renderer"],
 			esbuildOptions: {
 				target: "es2015",
+				define: {
+					global: "globalThis",
+				},
 			},
 		},
 		define: {
 			// Para compatibilidad con código que usa process.env
 			"process.env": {},
+			// Polyfill para globalThis
+			global: "globalThis",
 		},
 	};
 });
