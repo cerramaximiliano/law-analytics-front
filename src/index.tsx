@@ -8,8 +8,8 @@ import "./polyfills";
 // Import env helper for compatibility
 import "./utils/env";
 
-// Configure ApexCharts
-import "./utils/apexchartsConfig";
+// Fix React for ApexCharts
+import "./utils/fixReactForApexCharts";
 
 // third-party
 import { Provider as ReduxProvider } from "react-redux";

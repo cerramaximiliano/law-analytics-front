@@ -75,8 +75,14 @@ export default defineConfig(({ mode }) => {
 							if (id.includes("@fullcalendar")) {
 								return "fullcalendar";
 							}
-							if (id.includes("apexcharts") || id.includes("recharts")) {
-								return "charts";
+							if (id.includes("apexcharts")) {
+								return "apexcharts";
+							}
+							if (id.includes("react-apexcharts")) {
+								return "react-apexcharts";
+							}
+							if (id.includes("recharts")) {
+								return "recharts";
 							}
 							if (id.includes("@react-pdf")) {
 								return "pdf";
