@@ -48,21 +48,26 @@ if (!Object.getOwnPropertyDescriptors) {
 
 // Polyfill para Array.prototype.flat si no está disponible
 if (!Array.prototype.flat) {
-	Array.prototype.flat = function (depth = 1) {
+	// @ts-ignore
+	Array.prototype.flat = function (depth: number = 1): any[] {
+		// @ts-ignore
+		const arr = this as any[];
 		return depth > 0
-			? this.reduce((acc, val) => {
+			? arr.reduce((acc: any[], val: any) => {
 					if (Array.isArray(val)) {
-						return acc.concat(val.flat(depth - 1));
+						return acc.concat((val as any).flat(depth - 1));
 					}
 					return acc.concat(val);
 			  }, [])
-			: this.slice();
+			: arr.slice();
 	};
 }
 
 // Polyfill para Array.prototype.flatMap si no está disponible
 if (!Array.prototype.flatMap) {
-	Array.prototype.flatMap = function (callback: any, thisArg?: any) {
+	// @ts-ignore
+	Array.prototype.flatMap = function (callback: any, thisArg?: any): any[] {
+		// @ts-ignore
 		return this.map(callback, thisArg).flat();
 	};
 }

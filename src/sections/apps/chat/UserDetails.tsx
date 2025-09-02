@@ -104,7 +104,7 @@ const UserDetails = ({ user, onClose }: Props) => {
 						>
 							<AvatarStatus status={user.online_status!} />
 							<Chip
-								label={user?.online_status!.replaceAll("_", " ")}
+								label={user?.online_status!.replace(/_/g, " ")}
 								sx={{
 									bgcolor: statusBGColor,
 									textTransform: "capitalize",
