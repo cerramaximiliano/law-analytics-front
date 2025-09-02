@@ -57,6 +57,8 @@ export default defineConfig(({ mode }) => {
 			outDir: "build",
 			// Solo sourcemaps en desarrollo
 			sourcemap: !isProd,
+			// Target browsers modernos para evitar problemas con ES5
+			target: "es2015",
 			// Optimización de chunks mejorada
 			rollupOptions: {
 				output: {
@@ -137,10 +139,12 @@ export default defineConfig(({ mode }) => {
 				"axios",
 				"@reduxjs/toolkit",
 				"react-redux",
+				"redux-persist",
 			],
 			exclude: ["@react-pdf/renderer"],
-			// Optimización de dependencias en desarrollo
-			force: true,
+			esbuildOptions: {
+				target: "es2015",
+			},
 		},
 		define: {
 			// Para compatibilidad con código que usa process.env
