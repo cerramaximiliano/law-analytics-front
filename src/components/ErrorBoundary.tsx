@@ -27,7 +27,7 @@ class ErrorBoundary extends Component<Props, State> {
 
 	public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
 		console.error("Error caught by boundary:", error, errorInfo);
-		
+
 		// Llamar callback si existe
 		if (this.props.onError) {
 			this.props.onError(error, errorInfo);
@@ -75,11 +75,11 @@ class ErrorBoundary extends Component<Props, State> {
 				>
 					<Card sx={{ maxWidth: 500, p: 4, textAlign: "center" }}>
 						<Warning2 size={64} color="#FF4444" style={{ marginBottom: 16 }} />
-						
+
 						<Typography variant="h4" gutterBottom>
 							¡Ups! Algo salió mal
 						</Typography>
-						
+
 						<Typography variant="body1" color="text.secondary" paragraph>
 							Ha ocurrido un error inesperado. Por favor, intenta recargar la página.
 						</Typography>
@@ -135,10 +135,7 @@ export const useErrorHandler = () => {
 };
 
 // HOC para envolver componentes con ErrorBoundary
-export const withErrorBoundary = <P extends object>(
-	Component: React.ComponentType<P>,
-	fallback?: ReactNode
-) => {
+export const withErrorBoundary = <P extends object>(Component: React.ComponentType<P>, fallback?: ReactNode) => {
 	const WrappedComponent = (props: P) => (
 		<ErrorBoundary fallback={fallback}>
 			<Component {...props} />
@@ -146,7 +143,7 @@ export const withErrorBoundary = <P extends object>(
 	);
 
 	WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-	
+
 	return WrappedComponent;
 };
 

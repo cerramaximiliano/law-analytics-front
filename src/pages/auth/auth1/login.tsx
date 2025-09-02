@@ -20,7 +20,7 @@ const Login = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [isEmailLoading, setIsEmailLoading] = useState<boolean>(false);
-	
+
 	// Estado combinado de loading
 	const isAnyLoading = isLoading || isEmailLoading;
 
@@ -87,17 +87,19 @@ const Login = () => {
 			<Box sx={{ position: "relative" }}>
 				{/* Barra de progreso global */}
 				{isAnyLoading && (
-					<Box sx={{ 
-						position: "absolute", 
-						top: 0, 
-						left: 0, 
-						right: 0, 
-						zIndex: 1000 
-					}}>
+					<Box
+						sx={{
+							position: "absolute",
+							top: 0,
+							left: 0,
+							right: 0,
+							zIndex: 1000,
+						}}
+					>
 						<LinearProgress />
 					</Box>
 				)}
-				
+
 				<Grid container spacing={3}>
 					<Grid item xs={12} sx={{ textAlign: "center" }}>
 						<Logo />
@@ -105,15 +107,15 @@ const Login = () => {
 					<Grid item xs={12}>
 						<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
 							<Typography variant="h3">Inicio</Typography>
-							<Typography 
-								component={isAnyLoading ? Box : Link} 
-								to={isAnyLoading ? undefined : "/register"} 
-								variant="body1" 
-								sx={{ 
+							<Typography
+								component={isAnyLoading ? Box : Link}
+								to={isAnyLoading ? undefined : "/register"}
+								variant="body1"
+								sx={{
 									textDecoration: "none",
 									color: isAnyLoading ? "text.disabled" : "primary.main",
 									cursor: isAnyLoading ? "not-allowed" : "pointer",
-									pointerEvents: isAnyLoading ? "none" : "auto"
+									pointerEvents: isAnyLoading ? "none" : "auto",
 								}}
 							>
 								¿No tienes una cuenta?
@@ -126,11 +128,7 @@ const Login = () => {
 								{error}
 							</Alert>
 						)}
-						<AuthLogin 
-							forgot="/auth/forgot-password" 
-							isGoogleLoading={isLoading}
-							onLoadingChange={setIsEmailLoading}
-						/>
+						<AuthLogin forgot="/auth/forgot-password" isGoogleLoading={isLoading} onLoadingChange={setIsEmailLoading} />
 					</Grid>
 					<Grid item xs={12}>
 						<AuthDivider>
@@ -139,11 +137,11 @@ const Login = () => {
 					</Grid>
 					<Grid item xs={12}>
 						{/* Botón personalizado que llama a googleLogin.login() */}
-						<CustomGoogleButton 
-							onClick={() => googleLogin()} 
-							disabled={isLoading || isEmailLoading} 
-							text={isLoading ? "Iniciando sesión..." : "Iniciar sesión con Google"} 
-							fullWidth 
+						<CustomGoogleButton
+							onClick={() => googleLogin()}
+							disabled={isLoading || isEmailLoading}
+							text={isLoading ? "Iniciando sesión..." : "Iniciar sesión con Google"}
+							fullWidth
 							showLoader={isLoading}
 						/>
 					</Grid>

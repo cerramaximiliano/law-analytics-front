@@ -64,9 +64,9 @@ const ScrapingWorker = () => {
 				setConfigs(response.data);
 			}
 		} catch (error) {
-			enqueueSnackbar("Error al cargar las configuraciones de scraping", { 
+			enqueueSnackbar("Error al cargar las configuraciones de scraping", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			console.error(error);
 		} finally {
@@ -85,9 +85,9 @@ const ScrapingWorker = () => {
 				setHistoryPage(page);
 			}
 		} catch (error) {
-			enqueueSnackbar("Error al cargar el historial de scraping", { 
+			enqueueSnackbar("Error al cargar el historial de scraping", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			console.error(error);
 		} finally {
@@ -195,17 +195,17 @@ const ScrapingWorker = () => {
 		try {
 			const response = await WorkersService.updateScrapingConfig(editingId, editValues);
 			if (response.success) {
-				enqueueSnackbar("Configuración actualizada exitosamente", { 
+				enqueueSnackbar("Configuración actualizada exitosamente", {
 					variant: "success",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				});
 				await fetchConfigs();
 				handleCancelEdit();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al actualizar la configuración", { 
+			enqueueSnackbar(error.message || "Error al actualizar la configuración", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		}
 	};
@@ -217,16 +217,16 @@ const ScrapingWorker = () => {
 				enabled: !config.enabled,
 			});
 			if (response.success) {
-				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, { 
+				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, {
 					variant: "success",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				});
 				await fetchConfigs();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al cambiar el estado", { 
+			enqueueSnackbar(error.message || "Error al cambiar el estado", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		}
 	};
@@ -255,9 +255,7 @@ const ScrapingWorker = () => {
 	}
 
 	// Filtrar configuraciones por fuero
-	const filteredConfigs = fueroFilter === "TODOS" 
-		? configs 
-		: configs.filter(config => config.fuero === fueroFilter);
+	const filteredConfigs = fueroFilter === "TODOS" ? configs : configs.filter((config) => config.fuero === fueroFilter);
 
 	return (
 		<Stack spacing={3}>
@@ -266,11 +264,7 @@ const ScrapingWorker = () => {
 				<Typography variant="h5">Configuración del Worker de Scraping</Typography>
 				<Stack direction="row" spacing={2} alignItems="center">
 					<FormControl size="small" sx={{ minWidth: 200 }}>
-						<Select
-							value={fueroFilter}
-							onChange={(e) => setFueroFilter(e.target.value)}
-							displayEmpty
-						>
+						<Select value={fueroFilter} onChange={(e) => setFueroFilter(e.target.value)} displayEmpty>
 							<MenuItem value="TODOS">
 								<Stack direction="row" spacing={1} alignItems="center">
 									<Typography variant="body2">Todos los Fueros</Typography>
@@ -278,10 +272,10 @@ const ScrapingWorker = () => {
 								</Stack>
 							</MenuItem>
 							{FUERO_OPTIONS.map((option) => {
-								const count = configs.filter(c => c.fuero === option.value).length;
+								const count = configs.filter((c) => c.fuero === option.value).length;
 								return (
 									<MenuItem key={option.value} value={option.value}>
-										<Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%', justifyContent: 'space-between' }}>
+										<Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%", justifyContent: "space-between" }}>
 											<Typography variant="body2">{option.label}</Typography>
 											<Chip label={count} size="small" variant="outlined" />
 										</Stack>
@@ -331,200 +325,200 @@ const ScrapingWorker = () => {
 							<TableRow>
 								<TableCell colSpan={12} align="center">
 									<Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-										{fueroFilter === "TODOS" 
-											? "No hay configuraciones disponibles" 
-											: `No hay configuraciones para el fuero ${FUERO_OPTIONS.find(f => f.value === fueroFilter)?.label || fueroFilter}`}
+										{fueroFilter === "TODOS"
+											? "No hay configuraciones disponibles"
+											: `No hay configuraciones para el fuero ${FUERO_OPTIONS.find((f) => f.value === fueroFilter)?.label || fueroFilter}`}
 									</Typography>
 								</TableCell>
 							</TableRow>
 						) : (
 							filteredConfigs.map((config) => {
-							const configId = getConfigId(config);
-							const isEditing = editingId === configId;
-							const progress = calculateProgress(config);
+								const configId = getConfigId(config);
+								const isEditing = editingId === configId;
+								const progress = calculateProgress(config);
 
-							return (
-								<TableRow key={configId}>
-									<TableCell>
-										{isEditing ? (
-											<TextField
-												size="small"
-												value={editValues.worker_id || ""}
-												onChange={(e) => setEditValues({ ...editValues, worker_id: e.target.value })}
-												fullWidth
-											/>
-										) : (
-											<Typography variant="body2" fontWeight={500}>
-												{config.worker_id}
-											</Typography>
-										)}
-									</TableCell>
-									<TableCell>
-										{isEditing ? (
-											<FormControl size="small" fullWidth>
-												<Select value={editValues.fuero || ""} onChange={(e) => setEditValues({ ...editValues, fuero: e.target.value })}>
-													{FUERO_OPTIONS.map((option) => (
-														<MenuItem key={option.value} value={option.value}>
-															{option.label}
-														</MenuItem>
-													))}
-												</Select>
-											</FormControl>
-										) : (
-											<Chip label={config.fuero || ""} size="small" color="primary" variant="outlined" />
-										)}
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<TextField
-												size="small"
-												type="number"
-												value={editValues.year || ""}
-												onChange={(e) => setEditValues({ ...editValues, year: Number(e.target.value) })}
-												sx={{ width: 80 }}
-											/>
-										) : (
-											<Typography variant="body2">{config.year}</Typography>
-										)}
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<TextField
-												size="small"
-												type="number"
-												value={editValues.number || ""}
-												onChange={(e) => setEditValues({ ...editValues, number: Number(e.target.value) })}
-												sx={{ width: 100 }}
-											/>
-										) : (
-											<Stack alignItems="center" spacing={0.5}>
+								return (
+									<TableRow key={configId}>
+										<TableCell>
+											{isEditing ? (
+												<TextField
+													size="small"
+													value={editValues.worker_id || ""}
+													onChange={(e) => setEditValues({ ...editValues, worker_id: e.target.value })}
+													fullWidth
+												/>
+											) : (
 												<Typography variant="body2" fontWeight={500}>
-													{config.number?.toLocaleString() || 0}
+													{config.worker_id}
+												</Typography>
+											)}
+										</TableCell>
+										<TableCell>
+											{isEditing ? (
+												<FormControl size="small" fullWidth>
+													<Select value={editValues.fuero || ""} onChange={(e) => setEditValues({ ...editValues, fuero: e.target.value })}>
+														{FUERO_OPTIONS.map((option) => (
+															<MenuItem key={option.value} value={option.value}>
+																{option.label}
+															</MenuItem>
+														))}
+													</Select>
+												</FormControl>
+											) : (
+												<Chip label={config.fuero || ""} size="small" color="primary" variant="outlined" />
+											)}
+										</TableCell>
+										<TableCell align="center">
+											{isEditing ? (
+												<TextField
+													size="small"
+													type="number"
+													value={editValues.year || ""}
+													onChange={(e) => setEditValues({ ...editValues, year: Number(e.target.value) })}
+													sx={{ width: 80 }}
+												/>
+											) : (
+												<Typography variant="body2">{config.year}</Typography>
+											)}
+										</TableCell>
+										<TableCell align="center">
+											{isEditing ? (
+												<TextField
+													size="small"
+													type="number"
+													value={editValues.number || ""}
+													onChange={(e) => setEditValues({ ...editValues, number: Number(e.target.value) })}
+													sx={{ width: 100 }}
+												/>
+											) : (
+												<Stack alignItems="center" spacing={0.5}>
+													<Typography variant="body2" fontWeight={500}>
+														{config.number?.toLocaleString() || 0}
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														No encontrados: {config.consecutive_not_found || 0}
+													</Typography>
+												</Stack>
+											)}
+										</TableCell>
+										<TableCell align="center">
+											{isEditing ? (
+												<Stack direction="row" spacing={1}>
+													<TextField
+														size="small"
+														type="number"
+														value={editValues.range_start || ""}
+														onChange={(e) => setEditValues({ ...editValues, range_start: Number(e.target.value) })}
+														sx={{ width: 80 }}
+														placeholder="Inicio"
+													/>
+													<Typography variant="body2" sx={{ alignSelf: "center" }}>
+														-
+													</Typography>
+													<TextField
+														size="small"
+														type="number"
+														value={editValues.range_end || ""}
+														onChange={(e) => setEditValues({ ...editValues, range_end: Number(e.target.value) })}
+														sx={{ width: 80 }}
+														placeholder="Fin"
+													/>
+												</Stack>
+											) : (
+												<Typography variant="body2">
+													{config.range_start?.toLocaleString()} - {config.range_end?.toLocaleString()}
+												</Typography>
+											)}
+										</TableCell>
+										<TableCell align="center">
+											<Box sx={{ width: 100 }}>
+												<LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
+												<Typography variant="caption" color="text.secondary">
+													{progress.toFixed(1)}%
+												</Typography>
+											</Box>
+										</TableCell>
+										<TableCell align="center">
+											<Stack alignItems="center" spacing={0.5}>
+												<Typography
+													variant="body2"
+													fontWeight={500}
+													color={config.balance?.current && config.balance.current > 1 ? "success.main" : "warning.main"}
+												>
+													${config.balance?.current?.toFixed(2) || "0.00"}
 												</Typography>
 												<Typography variant="caption" color="text.secondary">
-													No encontrados: {config.consecutive_not_found || 0}
+													{config.balance?.provider || "N/A"}
 												</Typography>
 											</Stack>
-										)}
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<Stack direction="row" spacing={1}>
-												<TextField
-													size="small"
-													type="number"
-													value={editValues.range_start || ""}
-													onChange={(e) => setEditValues({ ...editValues, range_start: Number(e.target.value) })}
-													sx={{ width: 80 }}
-													placeholder="Inicio"
-												/>
-												<Typography variant="body2" sx={{ alignSelf: "center" }}>
-													-
+										</TableCell>
+										<TableCell align="center">
+											<Stack alignItems="center" spacing={0.5}>
+												<Typography variant="body2" fontWeight={500}>
+													{config.capsolver?.totalCaptchas?.toLocaleString() || 0}
 												</Typography>
-												<TextField
-													size="small"
-													type="number"
-													value={editValues.range_end || ""}
-													onChange={(e) => setEditValues({ ...editValues, range_end: Number(e.target.value) })}
-													sx={{ width: 80 }}
-													placeholder="Fin"
-												/>
+												<Chip label={config.captcha?.defaultProvider || "2captcha"} size="small" color="secondary" variant="outlined" />
 											</Stack>
-										) : (
-											<Typography variant="body2">
-												{config.range_start?.toLocaleString()} - {config.range_end?.toLocaleString()}
-											</Typography>
-										)}
-									</TableCell>
-									<TableCell align="center">
-										<Box sx={{ width: 100 }}>
-											<LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4 }} />
-											<Typography variant="caption" color="text.secondary">
-												{progress.toFixed(1)}%
-											</Typography>
-										</Box>
-									</TableCell>
-									<TableCell align="center">
-										<Stack alignItems="center" spacing={0.5}>
-											<Typography
-												variant="body2"
-												fontWeight={500}
-												color={config.balance?.current && config.balance.current > 1 ? "success.main" : "warning.main"}
-											>
-												${config.balance?.current?.toFixed(2) || "0.00"}
-											</Typography>
-											<Typography variant="caption" color="text.secondary">
-												{config.balance?.provider || "N/A"}
-											</Typography>
-										</Stack>
-									</TableCell>
-									<TableCell align="center">
-										<Stack alignItems="center" spacing={0.5}>
-											<Typography variant="body2" fontWeight={500}>
-												{config.capsolver?.totalCaptchas?.toLocaleString() || 0}
-											</Typography>
-											<Chip label={config.captcha?.defaultProvider || "2captcha"} size="small" color="secondary" variant="outlined" />
-										</Stack>
-									</TableCell>
-									<TableCell align="center">
-										<Chip
-											label={config.proxy?.enabled ? "Activo" : "Inactivo"}
-											size="small"
-											color={config.proxy?.enabled ? "success" : "default"}
-											variant="outlined"
-										/>
-									</TableCell>
-									<TableCell align="center">
-										<Switch
-											checked={isEditing ? editValues.enabled : config.enabled}
-											onChange={() => {
-												if (isEditing) {
-													setEditValues({ ...editValues, enabled: !editValues.enabled });
-												} else {
-													handleToggleEnabled(config);
-												}
-											}}
-											size="small"
-											color="primary"
-										/>
-									</TableCell>
-									<TableCell align="center">
-										<Tooltip title={formatDate(config.updatedAt || config.last_check)}>
-											<Typography variant="caption">{getRelativeTime(config.updatedAt || config.last_check)}</Typography>
-										</Tooltip>
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<Stack direction="row" spacing={1} justifyContent="center">
-												<Tooltip title="Guardar">
-													<IconButton size="small" color="primary" onClick={handleSave}>
-														<TickCircle size={18} />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Cancelar">
-													<IconButton size="small" color="error" onClick={handleCancelEdit}>
-														<CloseCircle size={18} />
-													</IconButton>
-												</Tooltip>
-											</Stack>
-										) : (
-											<Stack direction="row" spacing={1} justifyContent="center">
-												<Tooltip title="Editar">
-													<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
-														<Edit2 size={18} />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Configuración avanzada">
-													<IconButton size="small" color="secondary" onClick={() => handleAdvancedConfig(config)}>
-														<Setting2 size={18} />
-													</IconButton>
-												</Tooltip>
-											</Stack>
-										)}
-									</TableCell>
-								</TableRow>
-							);
-						})
+										</TableCell>
+										<TableCell align="center">
+											<Chip
+												label={config.proxy?.enabled ? "Activo" : "Inactivo"}
+												size="small"
+												color={config.proxy?.enabled ? "success" : "default"}
+												variant="outlined"
+											/>
+										</TableCell>
+										<TableCell align="center">
+											<Switch
+												checked={isEditing ? editValues.enabled : config.enabled}
+												onChange={() => {
+													if (isEditing) {
+														setEditValues({ ...editValues, enabled: !editValues.enabled });
+													} else {
+														handleToggleEnabled(config);
+													}
+												}}
+												size="small"
+												color="primary"
+											/>
+										</TableCell>
+										<TableCell align="center">
+											<Tooltip title={formatDate(config.updatedAt || config.last_check)}>
+												<Typography variant="caption">{getRelativeTime(config.updatedAt || config.last_check)}</Typography>
+											</Tooltip>
+										</TableCell>
+										<TableCell align="center">
+											{isEditing ? (
+												<Stack direction="row" spacing={1} justifyContent="center">
+													<Tooltip title="Guardar">
+														<IconButton size="small" color="primary" onClick={handleSave}>
+															<TickCircle size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Cancelar">
+														<IconButton size="small" color="error" onClick={handleCancelEdit}>
+															<CloseCircle size={18} />
+														</IconButton>
+													</Tooltip>
+												</Stack>
+											) : (
+												<Stack direction="row" spacing={1} justifyContent="center">
+													<Tooltip title="Editar">
+														<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
+															<Edit2 size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Configuración avanzada">
+														<IconButton size="small" color="secondary" onClick={() => handleAdvancedConfig(config)}>
+															<Setting2 size={18} />
+														</IconButton>
+													</Tooltip>
+												</Stack>
+											)}
+										</TableCell>
+									</TableRow>
+								);
+							})
 						)}
 					</TableBody>
 				</Table>
@@ -536,7 +530,7 @@ const ScrapingWorker = () => {
 					<Card variant="outlined">
 						<CardContent>
 							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
-								Total Workers {fueroFilter !== "TODOS" && `(${FUERO_OPTIONS.find(f => f.value === fueroFilter)?.label})`}
+								Total Workers {fueroFilter !== "TODOS" && `(${FUERO_OPTIONS.find((f) => f.value === fueroFilter)?.label})`}
 							</Typography>
 							<Typography variant="h4">{filteredConfigs.length}</Typography>
 							{fueroFilter !== "TODOS" && (

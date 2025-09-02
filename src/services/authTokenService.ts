@@ -32,4 +32,5 @@ class AuthTokenService {
 	}
 }
 
-export default new AuthTokenService();
+const authTokenService = new AuthTokenService();
+export default authTokenService;

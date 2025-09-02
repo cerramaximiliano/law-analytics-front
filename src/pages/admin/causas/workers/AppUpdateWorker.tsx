@@ -58,9 +58,9 @@ const AppUpdateWorker = () => {
 				setConfigs(response.data);
 			}
 		} catch (error) {
-			enqueueSnackbar("Error al cargar las configuraciones de actualización", { 
+			enqueueSnackbar("Error al cargar las configuraciones de actualización", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			console.error(error);
 		} finally {
@@ -118,17 +118,17 @@ const AppUpdateWorker = () => {
 		try {
 			const response = await WorkersService.updateAppUpdateConfig(editingId, editValues);
 			if (response.success) {
-				enqueueSnackbar("Configuración actualizada exitosamente", { 
+				enqueueSnackbar("Configuración actualizada exitosamente", {
 					variant: "success",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				});
 				await fetchConfigs();
 				handleCancelEdit();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al actualizar la configuración", { 
+			enqueueSnackbar(error.message || "Error al actualizar la configuración", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		}
 	};
@@ -140,16 +140,16 @@ const AppUpdateWorker = () => {
 				enabled: !config.enabled,
 			});
 			if (response.success) {
-				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, { 
+				enqueueSnackbar(`Worker ${!config.enabled ? "activado" : "desactivado"}`, {
 					variant: "success",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				});
 				await fetchConfigs();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al cambiar el estado", { 
+			enqueueSnackbar(error.message || "Error al cambiar el estado", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		}
 	};

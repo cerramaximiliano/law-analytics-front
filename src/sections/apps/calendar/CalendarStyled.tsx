@@ -1,4 +1,3 @@
-import React from "react";
 // material-ui
 import { styled } from "@mui/material/styles";
 
@@ -72,13 +71,13 @@ const ExperimentalStyled = styled("div")(({ theme }) => ({
 		paddingLeft: 8,
 		fontSize: "0.75rem",
 	},
-	
+
 	// Título del evento más pequeño
 	"& .fc-event-title": {
 		fontSize: "0.75rem",
 		lineHeight: 1.2,
 	},
-	
+
 	// Hora del evento más pequeña
 	"& .fc-event-time": {
 		fontSize: "0.7rem",
@@ -133,18 +132,18 @@ const ExperimentalStyled = styled("div")(({ theme }) => ({
 		borderRadius: 8,
 		fontSize: "0.75rem",
 	},
-	
+
 	// Botón de más eventos
 	"& .fc-daygrid-more-link": {
 		fontSize: "0.7rem",
 		marginTop: 1,
 	},
-	
+
 	// Eventos en vista de lista
 	"& .fc-list-event-title": {
 		fontSize: "0.8rem",
 	},
-	
+
 	"& .fc-list-event-time": {
 		fontSize: "0.75rem",
 	},

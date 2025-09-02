@@ -1,7 +1,21 @@
 import React from "react";
 import { useState } from "react";
 import { dispatch } from "store";
-import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, LinearProgress, useMediaQuery } from "@mui/material";
+import {
+	Skeleton,
+	Button,
+	Grid,
+	Stack,
+	Typography,
+	Zoom,
+	Box,
+	Paper,
+	useTheme,
+	alpha,
+	Chip,
+	LinearProgress,
+	useMediaQuery,
+} from "@mui/material";
 import moment from "moment";
 import data from "data/folder.json";
 import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText } from "iconsax-react";
@@ -275,12 +289,12 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 											<Stack direction="row" spacing={2} alignItems="center">
 												<Briefcase size={24} variant="Bold" color={theme.palette.primary.main} />
 												<Box flex={1}>
-													<Typography 
-														variant={isMobile ? "h6" : "h5"} 
+													<Typography
+														variant={isMobile ? "h6" : "h5"}
 														fontWeight={600}
 														sx={{
 															fontSize: isMobile ? "1rem" : isTablet ? "1.25rem" : "1.5rem",
-															lineHeight: 1.3
+															lineHeight: 1.3,
 														}}
 													>
 														{isLoader ? <Skeleton width={isMobile ? 200 : 300} /> : folder?.folderName || "Sin carátula"}

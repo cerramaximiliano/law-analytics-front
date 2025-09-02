@@ -1,4 +1,3 @@
-import React from "react";
 // project-imports
 import applications from "./applications";
 import admin from "./admin";

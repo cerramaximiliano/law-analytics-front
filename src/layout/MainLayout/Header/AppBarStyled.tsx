@@ -1,4 +1,3 @@
-import React from "react";
 // material-ui
 import { styled } from "@mui/material/styles";
 import AppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";

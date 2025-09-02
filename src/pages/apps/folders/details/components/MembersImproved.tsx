@@ -8,7 +8,6 @@ import {
 	ListItemAvatar,
 	ListItemText,
 	Typography,
-	Button,
 	Dialog,
 	Box,
 	Paper,
@@ -90,7 +89,6 @@ const getRoleIcon = (role: string) => {
 const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	// Get selectedContacts from Redux store (contacts filtered by folder)
 	const selectedContacts = useSelector((state: any) => state.contacts.selectedContacts || []);
 	const [add, setAdd] = useState<boolean>(false);

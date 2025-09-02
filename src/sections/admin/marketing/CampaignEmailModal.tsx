@@ -145,9 +145,9 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 				setTemplates(activeTemplates);
 			} else {
 				enqueueSnackbar("Error al cargar las plantillas de email", {
-				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			}
 		} catch (err: any) {
 			// Mejorar el manejo de errores para proporcionar mensajes más amigables
@@ -171,7 +171,7 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 
 			enqueueSnackbar(errorMessage, {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setTemplatesLoading(false);
@@ -331,7 +331,7 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 		if (!campaign._id) {
 			enqueueSnackbar("ID de campaña no válido", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			return;
 		}
@@ -369,7 +369,7 @@ const CampaignEmailModal = ({ open, onClose, onSuccess, campaign, email, mode }:
 
 			enqueueSnackbar(errorMessage, {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setSubmitting(false);

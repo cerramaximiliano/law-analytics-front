@@ -13,26 +13,13 @@ interface VirtualListProps {
 export const VirtualList = memo(({ items, itemHeight, renderItem, overscan = 5 }: VirtualListProps) => {
 	// Solo usar virtual scrolling si hay muchos items
 	if (items.length < 100) {
-		return (
-			<>
-				{items.map((item, index) => 
-					renderItem({ index, style: {}, data: item })
-				)}
-			</>
-		);
+		return <>{items.map((item, index) => renderItem({ index, style: {}, data: item }))}</>;
 	}
 
 	return (
 		<AutoSizer>
 			{({ height, width }) => (
-				<List
-					height={height}
-					itemCount={items.length}
-					itemSize={itemHeight}
-					width={width}
-					overscanCount={overscan}
-					itemData={items}
-				>
+				<List height={height} itemCount={items.length} itemSize={itemHeight} width={width} overscanCount={overscan} itemData={items}>
 					{renderItem}
 				</List>
 			)}

@@ -12,7 +12,7 @@ interface ResponsiveButtonProps extends ButtonProps {
 
 /**
  * Responsive button component that adapts text and layout based on screen size
- * 
+ *
  * @param mobileText - Text to show on mobile devices (optional, defaults to shorter version)
  * @param desktopText - Text to show on desktop (optional, defaults to children)
  * @param mobileIcon - Icon to show on mobile when text is hidden
@@ -35,7 +35,7 @@ const ResponsiveButton: React.FC<ResponsiveButtonProps> = ({
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
-	
+
 	// Determine what text to show
 	const getText = () => {
 		if (isMobile && hideTextOnMobile) return null;
@@ -60,7 +60,7 @@ const ResponsiveButton: React.FC<ResponsiveButtonProps> = ({
 			sx={{
 				minWidth: isMobile && hideTextOnMobile ? "auto" : undefined,
 				px: isMobile && hideTextOnMobile ? 1.5 : undefined,
-				...props.sx
+				...props.sx,
 			}}
 		>
 			{getText()}
@@ -69,11 +69,7 @@ const ResponsiveButton: React.FC<ResponsiveButtonProps> = ({
 
 	// Wrap with tooltip if needed
 	if (isMobile && hideTextOnMobile && tooltip) {
-		return (
-			<Tooltip title={tooltip}>
-				{buttonContent}
-			</Tooltip>
-		);
+		return <Tooltip title={tooltip}>{buttonContent}</Tooltip>;
 	}
 
 	return buttonContent;

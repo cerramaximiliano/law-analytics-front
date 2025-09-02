@@ -128,54 +128,50 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 	dispatch(setLoading(true));
 	try {
 		await googleCalendarService.signIn();
-		
+
 		// Pequeña espera para asegurar que Google haya actualizado el estado
-		await new Promise(resolve => setTimeout(resolve, 100));
-		
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
 		// Obtener el perfil del usuario
 		const profile = googleCalendarService.getUserProfile();
-		
+
 		if (!profile) {
 			throw new Error("No se pudo obtener el perfil del usuario");
 		}
-		
+
 		console.log("Perfil de Google obtenido:", profile);
 		console.log("URL de imagen:", profile.imageUrl);
-		
+
 		// Actualizar el estado en el orden correcto
 		dispatch(setConnected(true));
 		dispatch(setUserProfile(profile));
-		
+
 		// Guardar estado de conexión en el backend
 		const state = getState();
 		const userId = state.auth?.user?._id;
-		
+
 		if (userId) {
 			try {
-				const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+				const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 				const updateData = {
 					connected: true,
 					email: profile?.email,
 					imageUrl: profile?.imageUrl,
-					lastSync: new Date().toISOString()
+					lastSync: new Date().toISOString(),
 				};
 				console.log("Guardando en backend:", updateData);
-				
-				await axios.put(
-					`${baseUrl}/api/users/${userId}/google-calendar-connection`,
-					updateData,
-					{
-						headers: {
-							'Authorization': `Bearer ${localStorage.getItem('token')}`
-						}
-					}
-				);
+
+				await axios.put(`${baseUrl}/api/users/${userId}/google-calendar-connection`, updateData, {
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("token")}`,
+					},
+				});
 				console.log("Estado de Google Calendar guardado en el backend");
 			} catch (error) {
 				console.error("Error al guardar estado de Google Calendar:", error);
 			}
 		}
-		
+
 		dispatch(
 			openSnackbar({
 				open: true,
@@ -187,10 +183,10 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 				close: true,
 			}),
 		);
-		
+
 		// Importar eventos de Google Calendar automáticamente
 		console.log("Iniciando importación automática de eventos de Google Calendar...");
-		
+
 		try {
 			// Mostrar Snackbar con progreso inicial
 			dispatch(
@@ -205,11 +201,11 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 					autoHideDuration: null,
 				}),
 			);
-			
+
 			// Obtener eventos de Google Calendar
 			const googleEvents = await googleCalendarService.fetchEvents();
 			console.log(`Eventos encontrados en Google Calendar: ${googleEvents.length}`);
-			
+
 			if (googleEvents.length > 0) {
 				dispatch(
 					openSnackbar({
@@ -226,60 +222,59 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 				// Obtener userId del estado
 				const state = getState();
 				const userId = state.auth?.user?._id;
-				
+
 				if (userId) {
 					// Obtener eventos existentes para evitar duplicados
 					const { getEventsByUserId, addBatchEvents } = await import("./events");
-					
+
 					// Primero obtener eventos existentes
 					await dispatch(getEventsByUserId(userId));
 					const updatedState = getState();
 					const existingEvents = updatedState.events?.events || [];
-					
+
 					// Filtrar eventos que ya existen
-					const existingGoogleIds = new Set(
-						existingEvents
-							.filter((e: any) => e.googleCalendarId)
-							.map((e: any) => e.googleCalendarId)
-					);
-					
+					const existingGoogleIds = new Set(existingEvents.filter((e: any) => e.googleCalendarId).map((e: any) => e.googleCalendarId));
+
 					// Preparar eventos para importar
 					const eventsToImport: Event[] = googleEvents
-						.filter(googleEvent => {
+						.filter((googleEvent) => {
 							const googleId = googleEvent.googleCalendarId || googleEvent.id;
 							return googleId && !existingGoogleIds.has(googleId);
 						})
-						.map(googleEvent => ({
-							title: googleEvent.title || "Sin título",
-							description: googleEvent.description || "",
-							type: "other",
-							color: googleEvent.color || "#1890ff",
-							allDay: googleEvent.allDay || false,
-							start: googleEvent.start,
-							end: googleEvent.end || googleEvent.start,
-							googleCalendarId: googleEvent.googleCalendarId || googleEvent.id,
-							userId: userId,
-						} as Event));
-					
+						.map(
+							(googleEvent) =>
+								({
+									title: googleEvent.title || "Sin título",
+									description: googleEvent.description || "",
+									type: "other",
+									color: googleEvent.color || "#1890ff",
+									allDay: googleEvent.allDay || false,
+									start: googleEvent.start,
+									end: googleEvent.end || googleEvent.start,
+									googleCalendarId: googleEvent.googleCalendarId || googleEvent.id,
+									userId: userId,
+								} as Event),
+						);
+
 					if (eventsToImport.length > 0) {
 						console.log(`Importando ${eventsToImport.length} eventos nuevos...`);
-						
+
 						// Dividir en lotes de 50 eventos para mejor rendimiento
 						const BATCH_SIZE = 50;
 						const batches = [];
 						for (let i = 0; i < eventsToImport.length; i += BATCH_SIZE) {
 							batches.push(eventsToImport.slice(i, i + BATCH_SIZE));
 						}
-						
+
 						let totalImported = 0;
 						let hasErrors = false;
-						
+
 						// Procesar cada lote
 						for (let i = 0; i < batches.length; i++) {
 							const batch = batches[i];
 							const batchNumber = i + 1;
 							const percentage = Math.round((totalImported / eventsToImport.length) * 100);
-							
+
 							// Actualizar Snackbar con progreso
 							dispatch(
 								openSnackbar({
@@ -293,7 +288,7 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 									autoHideDuration: null,
 								}),
 							);
-							
+
 							try {
 								const result = await dispatch(addBatchEvents(batch));
 								if (result.success) {
@@ -301,24 +296,24 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 								} else {
 									hasErrors = true;
 								}
-								
+
 								// Pequeña pausa entre lotes para no sobrecargar
 								if (i < batches.length - 1) {
-									await new Promise(resolve => setTimeout(resolve, 500));
+									await new Promise((resolve) => setTimeout(resolve, 500));
 								}
 							} catch (error) {
 								console.error(`Error en lote ${batchNumber}:`, error);
 								hasErrors = true;
 							}
 						}
-						
+
 						// Resultado final
-						const result = { 
-							success: totalImported > 0, 
+						const result = {
+							success: totalImported > 0,
 							successCount: totalImported,
-							hasErrors
+							hasErrors,
 						};
-						
+
 						if (result.success) {
 							const successCount = result.successCount || eventsToImport.length;
 							dispatch(
@@ -332,7 +327,7 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 									close: true,
 								}),
 							);
-							
+
 							// Recargar eventos
 							await dispatch(getEventsByUserId(userId));
 						}
@@ -380,19 +375,19 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 				}),
 			);
 		}
-		
+
 		// Retornar el profile para uso posterior si es necesario
 		return profile;
 	} catch (error: any) {
 		console.error("Error connecting to Google Calendar:", error);
 		let errorMessage = "Error al conectar con Google Calendar";
-		
+
 		if (error?.error === "popup_closed_by_user") {
 			errorMessage = "Conexión cancelada por el usuario";
 		} else if (error?.message) {
 			errorMessage = error.message;
 		}
-		
+
 		dispatch(
 			openSnackbar({
 				open: true,
@@ -414,51 +409,51 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 	dispatch(setLoading(true));
 	try {
 		console.log("Iniciando desconexión de Google Calendar...");
-		
+
 		// Primero, eliminar eventos importados de Google del backend
 		const { deleteGoogleCalendarEvents } = await import("./events");
 		console.log("Eliminando eventos de Google Calendar del backend...");
-		
+
 		const deleteResult = await dispatch(deleteGoogleCalendarEvents());
 		console.log("Resultado de eliminación:", deleteResult);
-		
+
 		// Luego, desconectar de Google
 		await googleCalendarService.signOut();
 		dispatch(resetState());
-		
+
 		// Actualizar estado en el backend
 		const state = getState();
 		const userId = state.auth?.user?._id;
-		
+
 		if (userId) {
 			try {
-				const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+				const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 				await axios.put(
 					`${baseUrl}/api/users/${userId}/google-calendar-connection`,
 					{
 						connected: false,
 						email: null,
-						lastSync: null
+						lastSync: null,
 					},
 					{
 						headers: {
-							'Authorization': `Bearer ${localStorage.getItem('token')}`
-						}
-					}
+							Authorization: `Bearer ${localStorage.getItem("token")}`,
+						},
+					},
 				);
 				console.log("Estado de desconexión guardado en el backend");
 			} catch (error) {
 				console.error("Error al actualizar estado de desconexión:", error);
 			}
 		}
-		
+
 		let message = "Desconectado de Google Calendar";
 		if (deleteResult && deleteResult.deletedCount) {
 			message = `Desconectado de Google Calendar. ${deleteResult.deletedCount} evento(s) de Google eliminado(s)`;
 		} else if (deleteResult && deleteResult.success) {
 			message = "Desconectado de Google Calendar y eventos de Google eliminados";
 		}
-		
+
 		dispatch(
 			openSnackbar({
 				open: true,
@@ -470,19 +465,19 @@ export const disconnectGoogleCalendar = () => async (dispatch: any, getState: an
 				close: true,
 			}),
 		);
-		
+
 		// Recargar eventos desde la base de datos para asegurarnos de que el calendario se actualice
 		const currentState = getState();
 		const currentUserId = currentState.auth?.user?._id;
-		
+
 		if (currentUserId) {
 			// Importar la función para obtener eventos
 			const { getEventsByUserId } = await import("./events");
-			
+
 			// Recargar eventos después de eliminar los de Google
 			console.log("Recargando eventos después de desvincular Google Calendar...");
 			await dispatch(getEventsByUserId(currentUserId));
-			
+
 			// Verificar el estado actualizado
 			const updatedState = getState();
 			const remainingEvents = updatedState.events?.events || [];
@@ -533,7 +528,7 @@ export const fetchGoogleEvents = () => async () => {
 
 export const syncWithGoogleCalendar = (localEvents: Event[]) => async () => {
 	dispatch(setSyncing(true));
-	
+
 	// Mostrar mensaje de inicio con duración extendida
 	dispatch(
 		openSnackbar({
@@ -547,27 +542,27 @@ export const syncWithGoogleCalendar = (localEvents: Event[]) => async () => {
 			autoHideDuration: null, // No auto-cerrar
 		}),
 	);
-	
+
 	try {
 		// Calcular timeout dinámico basado en cantidad de eventos
 		// Aproximadamente 3 segundos por evento + 30 segundos base
-		const timeoutMs = Math.max(30000 + (localEvents.length * 3000), 300000); // Máximo 5 minutos
+		const timeoutMs = Math.max(30000 + localEvents.length * 3000, 300000); // Máximo 5 minutos
 		console.log(`Timeout configurado: ${timeoutMs / 1000} segundos para ${localEvents.length} eventos`);
-		
-		const timeoutPromise = new Promise((_, reject) => 
-			setTimeout(() => reject(new Error("Timeout: La sincronización está tardando demasiado")), timeoutMs)
+
+		const timeoutPromise = new Promise((_, reject) =>
+			setTimeout(() => reject(new Error("Timeout: La sincronización está tardando demasiado")), timeoutMs),
 		);
-		
+
 		const syncPromise = googleCalendarService.syncEvents(localEvents);
-		
+
 		// Ejecutar con timeout
-		const stats = await Promise.race([syncPromise, timeoutPromise]) as {
+		const stats = (await Promise.race([syncPromise, timeoutPromise])) as {
 			created: number;
 			updated: number;
 			deleted: number;
 			imported: EventInput[];
 		};
-		
+
 		dispatch(
 			setSyncStats({
 				created: stats.created,
@@ -576,7 +571,7 @@ export const syncWithGoogleCalendar = (localEvents: Event[]) => async () => {
 				imported: stats.imported.length,
 			}),
 		);
-		
+
 		// Mostrar mensaje informativo si hay eventos para importar
 		if (stats.imported.length > 0) {
 			dispatch(
@@ -606,14 +601,14 @@ export const syncWithGoogleCalendar = (localEvents: Event[]) => async () => {
 		return stats;
 	} catch (error: any) {
 		console.error("Error syncing with Google Calendar:", error);
-		
+
 		let errorMessage = "Error al sincronizar con Google Calendar";
 		if (error?.message?.includes("Timeout")) {
 			errorMessage = "La sincronización está tardando demasiado. Por favor, intenta nuevamente.";
 		} else if (error?.message) {
 			errorMessage = `Error: ${error.message}`;
 		}
-		
+
 		dispatch(
 			openSnackbar({
 				open: true,
@@ -639,47 +634,46 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 	try {
 		const state = getState();
 		const userId = state.auth?.user?._id;
-		
+
 		if (!userId) return;
-		
-		const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
-		const response = await axios.get(
-			`${baseUrl}/api/users/${userId}/google-calendar-status`,
-			{
-				headers: {
-					'Authorization': `Bearer ${localStorage.getItem('token')}`
-				}
-			}
-		);
-		
+
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
+		const response = await axios.get(`${baseUrl}/api/users/${userId}/google-calendar-status`, {
+			headers: {
+				Authorization: `Bearer ${localStorage.getItem("token")}`,
+			},
+		});
+
 		if (response.data?.googleCalendarStatus?.connected) {
 			const { email, imageUrl, lastSync } = response.data.googleCalendarStatus;
-			
+
 			console.log("Estado de Google Calendar recuperado del backend:", {
 				email,
 				imageUrl,
-				lastSync
+				lastSync,
 			});
-			
+
 			// Actualizar UI para mostrar que había una conexión previa
-			dispatch(setUserProfile({
-				id: '',
-				name: '',
-				email: email || '',
-				imageUrl: imageUrl || ''
-			}));
-			
+			dispatch(
+				setUserProfile({
+					id: "",
+					name: "",
+					email: email || "",
+					imageUrl: imageUrl || "",
+				}),
+			);
+
 			// Intentar reconexión silenciosa
 			try {
 				await googleCalendarService.signInSilently();
 				const isSignedIn = googleCalendarService.isSignedIn;
-				
+
 				if (isSignedIn) {
 					// Reconexión exitosa
 					const profile = googleCalendarService.getUserProfile();
 					dispatch(setConnected(true));
 					dispatch(setUserProfile(profile));
-					
+
 					dispatch(
 						openSnackbar({
 							open: true,

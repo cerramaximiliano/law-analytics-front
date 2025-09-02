@@ -4,7 +4,6 @@ import { useParams } from "react-router";
 import moment from "moment";
 import {
 	Skeleton,
-	Button,
 	CardContent,
 	Grid,
 	Stack,
@@ -15,10 +14,6 @@ import {
 	TableHead,
 	TableRow,
 	Typography,
-	List,
-	ListItem,
-	ListItemAvatar,
-	ListItemText,
 	IconButton,
 	Box,
 	Chip,
@@ -37,20 +32,7 @@ import ResponsiveButton from "./ResponsiveButton";
 import MainCard from "components/MainCard";
 import SimpleBar from "components/third-party/SimpleBar";
 import Avatar from "components/@extended/Avatar";
-import { 
-	Calculator, 
-	TrendUp, 
-	TrendDown, 
-	More, 
-	Edit2, 
-	Trash, 
-	Eye, 
-	ArrowRight2, 
-	DocumentCopy, 
-	Add,
-	ArrowDown2,
-	ArrowUp2 
-} from "iconsax-react";
+import { Calculator, TrendUp, TrendDown, More, Edit2, Trash, Eye, DocumentCopy, Add, ArrowDown2, ArrowUp2 } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
 import { dispatch, useSelector } from "store";
@@ -66,9 +48,7 @@ const formatAmount = (amount: number | null | undefined): string => {
 	return `$${amount.toLocaleString("es-AR")}`;
 };
 
-const LoadingContent = ({ isLoader, content, skeleton }: LoadingContentProps): JSX.Element => (
-	isLoader ? <>{skeleton}</> : <>{content}</>
-);
+const LoadingContent = ({ isLoader, content, skeleton }: LoadingContentProps): JSX.Element => (isLoader ? <>{skeleton}</> : <>{content}</>);
 
 // Animation variants
 const cardVariants = {
@@ -87,15 +67,7 @@ interface CompactStatsCardProps {
 	isLoading?: boolean;
 }
 
-const CompactStatsCard: React.FC<CompactStatsCardProps> = ({ 
-	title, 
-	value, 
-	trend, 
-	icon, 
-	color = "primary", 
-	subtitle, 
-	isLoading 
-}) => {
+const CompactStatsCard: React.FC<CompactStatsCardProps> = ({ title, value, trend, icon, color = "primary", subtitle, isLoading }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -119,9 +91,7 @@ const CompactStatsCard: React.FC<CompactStatsCardProps> = ({
 			}}
 		>
 			<Stack direction="row" spacing={isMobile ? 1.5 : 2} alignItems="center" height="100%">
-				<Box sx={{ color: theme.palette[color].main, display: isMobile ? "none" : "block" }}>
-					{icon}
-				</Box>
+				<Box sx={{ color: theme.palette[color].main, display: isMobile ? "none" : "block" }}>{icon}</Box>
 				<Box flex={1}>
 					<Typography variant="caption" color="text.secondary" fontWeight={500}>
 						{title}
@@ -129,11 +99,7 @@ const CompactStatsCard: React.FC<CompactStatsCardProps> = ({
 					{isLoading ? (
 						<Skeleton width="80%" height={28} />
 					) : (
-						<Typography 
-							variant={isMobile ? "h6" : "h5"} 
-							fontWeight={600} 
-							color={theme.palette[color].main}
-						>
+						<Typography variant={isMobile ? "h6" : "h5"} fontWeight={600} color={theme.palette[color].main}>
 							{value}
 						</Typography>
 					)}
@@ -177,13 +143,7 @@ interface MobileCalcCardProps {
 	previousAmount?: number;
 }
 
-const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ 
-	row, 
-	index, 
-	onMenuOpen, 
-	onDelete,
-	previousAmount 
-}) => {
+const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onMenuOpen, onDelete, previousAmount }) => {
 	const theme = useTheme();
 	const [expanded, setExpanded] = useState(false);
 
@@ -200,9 +160,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({
 		}
 	};
 
-	const percentageChange = previousAmount && row.amount
-		? ((row.amount - previousAmount) / previousAmount) * 100
-		: null;
+	const percentageChange = previousAmount && row.amount ? ((row.amount - previousAmount) / previousAmount) * 100 : null;
 
 	return (
 		<Card
@@ -266,11 +224,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({
 								) : (
 									<TrendDown size={14} color={theme.palette.error.main} />
 								)}
-								<Typography
-									variant="caption"
-									color={percentageChange > 0 ? "success.main" : "error.main"}
-									fontWeight={500}
-								>
+								<Typography variant="caption" color={percentageChange > 0 ? "success.main" : "error.main"} fontWeight={500}>
 									{Math.abs(percentageChange).toFixed(1)}%
 								</Typography>
 							</Stack>
@@ -278,7 +232,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({
 					</Stack>
 				</Stack>
 			</Box>
-			
+
 			<Collapse in={expanded}>
 				<Divider />
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.grey[500], 0.05) }}>
@@ -308,13 +262,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({
 	);
 };
 
-const CalcTableResponsive = ({ 
-	title, 
-	folderData 
-}: { 
-	title: string; 
-	folderData: { folderName: string; monto: number } 
-}) => {
+const CalcTableResponsive = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
@@ -328,9 +276,7 @@ const CalcTableResponsive = ({
 	const { id } = useParams();
 
 	const sortedData = useMemo(
-		() => selectedCalculators.slice().sort((a: any, b: any) => 
-			moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))
-		),
+		() => selectedCalculators.slice().sort((a: any, b: any) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
 		[selectedCalculators],
 	);
 
@@ -481,20 +427,15 @@ const CalcTableResponsive = ({
 							onClick={() => setOpenItemModal(true)}
 							mobileText="Nuevo"
 							desktopText="Agregar"
-							sx={{ 
+							sx={{
 								minWidth: isMobile ? "auto" : "120px",
-								px: isMobile ? 1 : 2 
+								px: isMobile ? 1 : 2,
 							}}
 						>
 							Agregar
 						</ResponsiveButton>
 						{!isMobile && (
-							<ResponsiveButton
-								size="small"
-								variant="outlined"
-								onClick={() => setOpen(true)}
-								desktopText="Ver Todo"
-							>
+							<ResponsiveButton size="small" variant="outlined" onClick={() => setOpen(true)} desktopText="Ver Todo">
 								Ver Todo
 							</ResponsiveButton>
 						)}
@@ -503,18 +444,8 @@ const CalcTableResponsive = ({
 			}
 		>
 			{/* Modales */}
-			<ModalCalcData 
-				open={openItemModal} 
-				setOpen={setOpenItemModal} 
-				folderId={id} 
-				folderName={folderData?.folderName} 
-			/>
-			<ModalCalcTable 
-				open={open} 
-				setOpen={setOpen} 
-				folderName={folderData?.folderName} 
-				folderId={id} 
-			/>
+			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} folderName={folderData?.folderName} />
+			<ModalCalcTable open={open} setOpen={setOpen} folderName={folderData?.folderName} folderId={id} />
 
 			{/* Actions Menu */}
 			<Menu
@@ -574,11 +505,7 @@ const CalcTableResponsive = ({
 							trend={calculateTrend}
 							icon={<TrendUp size={24} />}
 							color={latestOfferedAmount ? "success" : "warning"}
-							subtitle={
-								differencePercentage 
-									? `${differencePercentage}% del monto reclamado` 
-									: "Aún no hay ofertas registradas"
-							}
+							subtitle={differencePercentage ? `${differencePercentage}% del monto reclamado` : "Aún no hay ofertas registradas"}
 							isLoading={isLoader}
 						/>
 					</Grid>
@@ -607,11 +534,7 @@ const CalcTableResponsive = ({
 												index={index}
 												onMenuOpen={handleMenuOpen}
 												onDelete={handleDelete}
-												previousAmount={
-													index < sortedData.length - 1 
-														? sortedData[index + 1].amount 
-														: undefined
-												}
+												previousAmount={index < sortedData.length - 1 ? sortedData[index + 1].amount : undefined}
 											/>
 										</motion.div>
 									))}
@@ -657,22 +580,14 @@ const CalcTableResponsive = ({
 																bgcolor: theme.palette.grey[50],
 															}}
 														>
-															<LoadingContent 
-																isLoader={isLoader} 
-																content={header} 
-																skeleton={<Skeleton />} 
-															/>
+															<LoadingContent isLoader={isLoader} content={header} skeleton={<Skeleton />} />
 														</TableCell>
 													))}
 												</TableRow>
 											</TableHead>
 											<TableBody>
 												{sortedData.map((row: CalculatorType, index: number) => (
-													<TableRow
-														key={row._id}
-														onMouseEnter={() => setHoveredRow(row._id)}
-														onMouseLeave={() => setHoveredRow(null)}
-													>
+													<TableRow key={row._id} onMouseEnter={() => setHoveredRow(row._id)} onMouseLeave={() => setHoveredRow(null)}>
 														<TableCell>
 															<Stack spacing={0.25}>
 																<Typography variant="body2" fontWeight={500}>
@@ -683,9 +598,7 @@ const CalcTableResponsive = ({
 																</Typography>
 															</Stack>
 														</TableCell>
-														<TableCell>
-															{getTypeChip(row.type || "N/D")}
-														</TableCell>
+														<TableCell>{getTypeChip(row.type || "N/D")}</TableCell>
 														<TableCell>
 															<Typography variant="body2" color="text.secondary">
 																{row.user || "N/D"}
@@ -705,16 +618,12 @@ const CalcTableResponsive = ({
 																		)}
 																		<Typography
 																			variant="caption"
-																			color={
-																				row.amount > sortedData[index - 1].amount 
-																					? "success.main" 
-																					: "error.main"
-																			}
+																			color={row.amount > sortedData[index - 1].amount ? "success.main" : "error.main"}
 																		>
-																			{Math.abs(
-																				((row.amount - sortedData[index - 1].amount) / 
-																					sortedData[index - 1].amount) * 100
-																			).toFixed(1)}%
+																			{Math.abs(((row.amount - sortedData[index - 1].amount) / sortedData[index - 1].amount) * 100).toFixed(
+																				1,
+																			)}
+																			%
 																		</Typography>
 																	</Stack>
 																)}

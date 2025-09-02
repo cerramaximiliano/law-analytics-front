@@ -13,12 +13,12 @@ export const usePrefetch = () => {
 				import("pages/calculator/labor/index");
 				import("pages/calculator/civil/index");
 			}
-			
+
 			// En folders, precargar detalles
 			if (location.pathname.includes("/folders")) {
 				import("pages/apps/folders/details/details");
 			}
-			
+
 			// Precargar componentes pesados con baja prioridad
 			if ("requestIdleCallback" in window) {
 				requestIdleCallback(() => {

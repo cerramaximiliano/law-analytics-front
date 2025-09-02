@@ -123,4 +123,5 @@ class SecureStorageService {
 	}
 }
 
-export default new SecureStorageService();
+const secureStorageService = new SecureStorageService();
+export default secureStorageService;

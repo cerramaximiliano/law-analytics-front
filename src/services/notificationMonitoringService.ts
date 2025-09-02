@@ -361,4 +361,5 @@ class NotificationMonitoringService {
 	}
 }
 
-export default new NotificationMonitoringService();
+const notificationMonitoringService = new NotificationMonitoringService();
+export default notificationMonitoringService;

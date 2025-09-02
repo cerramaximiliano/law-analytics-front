@@ -228,7 +228,10 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	);
 
 	return (
-		<MainCard content={false} sx={{ display: "flex", flexDirection: "column", height: isMobile ? "auto" : "calc(100vh - 200px)", overflow: "hidden" }}>
+		<MainCard
+			content={false}
+			sx={{ display: "flex", flexDirection: "column", height: isMobile ? "auto" : "calc(100vh - 200px)", overflow: "hidden" }}
+		>
 			{isMobile ? (
 				<>
 					<Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>

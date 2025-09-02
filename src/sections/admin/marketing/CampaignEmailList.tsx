@@ -160,9 +160,9 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 		setCreateModalOpen(false);
 		fetchCampaignEmails();
 		enqueueSnackbar("Email creado con éxito", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+			variant: "success",
+			anchorOrigin: { vertical: "bottom", horizontal: "right" },
+		});
 	};
 
 	const handleEmailUpdated = () => {
@@ -170,9 +170,9 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 		setSelectedEmail(null);
 		fetchCampaignEmails();
 		enqueueSnackbar("Email actualizado con éxito", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+			variant: "success",
+			anchorOrigin: { vertical: "bottom", horizontal: "right" },
+		});
 	};
 
 	const handleEmailDeleted = async () => {
@@ -185,7 +185,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 			fetchCampaignEmails();
 			enqueueSnackbar("Email eliminado con éxito", {
 				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} catch (err: any) {
 			// Mejorar el manejo de errores para el delete
@@ -207,7 +207,7 @@ const CampaignEmailList = ({ campaign, open, onClose }: CampaignEmailListProps) 
 
 			enqueueSnackbar(errorMessage, {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		}
 	};

@@ -27,7 +27,6 @@ import {
 	CircularProgress,
 	Skeleton,
 	Card,
-	Paper,
 } from "@mui/material";
 
 // third-party
@@ -42,7 +41,6 @@ import esLocale from "@fullcalendar/core/locales/es";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 // project imports
-import Loader from "components/Loader";
 import { PopupTransition } from "components/@extended/Transitions";
 import CalendarStyled from "sections/apps/calendar/CalendarStyled";
 import AddEventForm from "sections/apps/calendar/AddEventForm";
@@ -56,7 +54,19 @@ import {
 } from "store/reducers/calendar";
 
 // types
-import { Add, Calendar as CalendarIcon, Edit2, InfoCircle, Link1, Trash, ArrowLeft2, ArrowRight2, Calendar1, Category, Grid6 } from "iconsax-react";
+import {
+	Add,
+	Calendar as CalendarIcon,
+	Edit2,
+	InfoCircle,
+	Link1,
+	Trash,
+	ArrowLeft2,
+	ArrowRight2,
+	Calendar1,
+	Category,
+	Grid6,
+} from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { addBatchEvents, deleteEvent, getEventsByUserId, selectEvent, updateEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -442,13 +452,13 @@ const Calendar = () => {
 		};
 
 		// Escuchar cambios de tamaño de la ventana
-		window.addEventListener('resize', handleResize);
+		window.addEventListener("resize", handleResize);
 
 		// También escuchar cambios en el sidebar (si existe un estado global para esto)
 		// Opción alternativa: usar ResizeObserver para detectar cambios en el contenedor
 		const calendarContainer = calendarRef.current?.getApi().el;
 		let resizeObserver: ResizeObserver | null = null;
-		
+
 		if (calendarContainer) {
 			resizeObserver = new ResizeObserver(() => {
 				handleResize();
@@ -457,7 +467,7 @@ const Calendar = () => {
 		}
 
 		return () => {
-			window.removeEventListener('resize', handleResize);
+			window.removeEventListener("resize", handleResize);
 			if (resizeObserver) {
 				resizeObserver.disconnect();
 			}
@@ -584,38 +594,35 @@ const Calendar = () => {
 	const handleDeleteEvent = async () => {
 		if (selectedEvent?._id) {
 			let googleIdToDelete = selectedEvent.googleCalendarId;
-			
+
 			// Si no tiene googleCalendarId pero está autenticado, intentar buscarlo
 			if (!googleIdToDelete && googleCalendarService.isSignedIn && selectedEvent.title && selectedEvent.start) {
-				googleIdToDelete = await googleCalendarService.findGoogleEventByTitleAndDate(
-					selectedEvent.title,
-					new Date(selectedEvent.start)
-				);
-				
+				googleIdToDelete = await googleCalendarService.findGoogleEventByTitleAndDate(selectedEvent.title, new Date(selectedEvent.start));
+
 				if (googleIdToDelete) {
 					// Opcionalmente, actualizar la BD con el ID encontrado
 					try {
-						const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+						const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 						await axios.patch(
 							`${baseUrl}/api/events/${selectedEvent._id}/google-id`,
 							{ googleCalendarId: googleIdToDelete },
 							{
 								headers: {
-									'Content-Type': 'application/json',
-									'Authorization': `Bearer ${localStorage.getItem('token')}`
-								}
-							}
+									"Content-Type": "application/json",
+									Authorization: `Bearer ${localStorage.getItem("token")}`,
+								},
+							},
 						);
 					} catch (err) {
 						// Ignorar errores de actualización, no son críticos
 					}
 				}
 			}
-			
+
 			// Si tenemos un ID de Google (original o encontrado), eliminarlo
 			let googleDeleteSuccess = true;
 			let googleDeleteMessage = "";
-			
+
 			if (googleIdToDelete && googleCalendarService.isSignedIn) {
 				try {
 					await googleCalendarService.deleteEvent(googleIdToDelete);
@@ -634,17 +641,15 @@ const Calendar = () => {
 				googleDeleteSuccess = false;
 				googleDeleteMessage = " (Conecta Google Calendar para eliminar también de Google)";
 			}
-			
+
 			// Eliminar de la base de datos local
 			dispatch(deleteEvent(selectedEvent._id));
-			
+
 			// Mensaje diferenciado según el resultado
-			const message = googleDeleteSuccess 
-				? "Evento eliminado correctamente." 
-				: `Evento eliminado localmente${googleDeleteMessage}`;
-			
+			const message = googleDeleteSuccess ? "Evento eliminado correctamente." : `Evento eliminado localmente${googleDeleteMessage}`;
+
 			const alertColor = googleDeleteSuccess ? "success" : "warning";
-			
+
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -755,10 +760,10 @@ const Calendar = () => {
 					{/* Skeleton para barra superior integrada */}
 					<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
 						{/* Skeleton para Google Calendar Sync */}
-						<Box sx={{ maxWidth: { xs: '200px', sm: '300px', md: '400px' } }}>
+						<Box sx={{ maxWidth: { xs: "200px", sm: "300px", md: "400px" } }}>
 							<Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
 						</Box>
-						
+
 						{/* Skeleton para controles del calendario */}
 						<Stack direction="row" alignItems="center" spacing={1}>
 							<Skeleton variant="circular" width={28} height={28} />
@@ -766,7 +771,7 @@ const Calendar = () => {
 							<Skeleton variant="circular" width={28} height={28} />
 							<Skeleton variant="text" width={150} height={28} sx={{ mx: 2 }} />
 						</Stack>
-						
+
 						{/* Skeleton para botones de vista y acciones */}
 						<Stack direction="row" spacing={1} alignItems="center">
 							<Stack direction="row" spacing={0.5}>
@@ -779,69 +784,69 @@ const Calendar = () => {
 							<Skeleton variant="circular" width={40} height={40} />
 						</Stack>
 					</Stack>
-					
+
 					{/* Skeleton para FullCalendar */}
-					<Card sx={{ overflow: 'hidden' }}>
+					<Card sx={{ overflow: "hidden" }}>
 						<Box sx={{ p: 2 }}>
 							{/* Encabezados de días de la semana */}
-							<Grid container sx={{ mb: 1, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-								{['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((day) => (
-									<Grid item xs key={day} sx={{ textAlign: 'center' }}>
+							<Grid container sx={{ mb: 1, pb: 1, borderBottom: "1px solid", borderColor: "divider" }}>
+								{["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map((day) => (
+									<Grid item xs key={day} sx={{ textAlign: "center" }}>
 										<Typography variant="subtitle2" color="text.secondary">
 											{matchDownSM ? day.substring(0, 3) : day}
 										</Typography>
 									</Grid>
 								))}
 							</Grid>
-							
+
 							{/* Grid del calendario - 5 semanas típicamente */}
 							<Grid container>
 								{Array.from({ length: 35 }, (_, i) => (
-									<Grid 
-										item 
-										xs={1.714} 
-										key={i} 
-										sx={{ 
-											border: '1px solid',
-											borderColor: 'divider',
+									<Grid
+										item
+										xs={1.714}
+										key={i}
+										sx={{
+											border: "1px solid",
+											borderColor: "divider",
 											minHeight: matchDownSM ? 60 : 80,
-											p: 0.5
+											p: 0.5,
 										}}
 									>
 										{/* Número del día */}
 										<Skeleton variant="text" width={25} height={20} sx={{ mb: 0.5 }} />
-										
+
 										{/* Eventos simulados */}
 										{i % 3 === 0 && (
-											<Skeleton 
-												variant="rectangular" 
-												height={18} 
-												sx={{ 
-													mb: 0.5, 
+											<Skeleton
+												variant="rectangular"
+												height={18}
+												sx={{
+													mb: 0.5,
 													borderRadius: 0.5,
-													bgcolor: 'primary.lighter'
-												}} 
+													bgcolor: "primary.lighter",
+												}}
 											/>
 										)}
 										{i % 7 === 0 && (
-											<Skeleton 
-												variant="rectangular" 
-												height={18} 
-												sx={{ 
-													mb: 0.5, 
+											<Skeleton
+												variant="rectangular"
+												height={18}
+												sx={{
+													mb: 0.5,
 													borderRadius: 0.5,
-													bgcolor: 'secondary.lighter'
-												}} 
+													bgcolor: "secondary.lighter",
+												}}
 											/>
 										)}
 										{i % 5 === 0 && i % 3 !== 0 && (
-											<Skeleton 
-												variant="rectangular" 
-												height={18} 
-												sx={{ 
+											<Skeleton
+												variant="rectangular"
+												height={18}
+												sx={{
 													borderRadius: 0.5,
-													bgcolor: 'success.lighter'
-												}} 
+													bgcolor: "success.lighter",
+												}}
 											/>
 										)}
 									</Grid>
@@ -877,12 +882,12 @@ const Calendar = () => {
 
 		console.log("📥 Eventos recibidos para importar:", {
 			total: importedEvents?.length || 0,
-			primerosEventos: importedEvents?.slice(0, 5).map(e => ({
+			primerosEventos: importedEvents?.slice(0, 5).map((e) => ({
 				title: e.title,
 				start: e.start,
 				googleId: e.googleCalendarId || e.id,
-				allDay: e.allDay
-			}))
+				allDay: e.allDay,
+			})),
 		});
 
 		const totalEvents = importedEvents.length;
@@ -1021,10 +1026,10 @@ const Calendar = () => {
 				{/* Barra superior integrada con todas las funciones */}
 				<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
 					{/* Google Calendar Sync Component - Lado izquierdo */}
-					<Box sx={{ maxWidth: { xs: '200px', sm: '300px', md: '400px' } }}>
+					<Box sx={{ maxWidth: { xs: "200px", sm: "300px", md: "400px" } }}>
 						<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
 					</Box>
-					
+
 					{/* Controles del calendario - Centro */}
 					<Stack direction="row" alignItems="center" spacing={1}>
 						<IconButton onClick={handleDatePrev} size="small">
@@ -1042,7 +1047,7 @@ const Calendar = () => {
 							{format(date, "MMMM yyyy", { locale: es })}
 						</Typography>
 					</Stack>
-					
+
 					{/* Botones de vista y acciones - Lado derecho */}
 					<Stack direction="row" spacing={1} alignItems="center">
 						{/* Botones de vista */}
@@ -1050,27 +1055,24 @@ const Calendar = () => {
 							{[
 								{ label: "Mes", value: "dayGridMonth", icon: Category },
 								{ label: "Semana", value: "timeGridWeek", icon: Grid6 },
-								{ label: "Día", value: "timeGridDay", icon: Calendar1 }
-							].filter(item => !matchDownSM || (item.value !== "dayGridMonth" && item.value !== "timeGridWeek"))
-							.map((viewOption) => {
-								const Icon = viewOption.icon;
-								const isActive = viewOption.value === calendarView;
-								return (
-									<Tooltip title={viewOption.label} key={viewOption.value}>
-										<IconButton
-											color={isActive ? "primary" : "default"}
-											size="small"
-											onClick={() => handleViewChange(viewOption.value)}
-										>
-											<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
-										</IconButton>
-									</Tooltip>
-								);
-							})}
+								{ label: "Día", value: "timeGridDay", icon: Calendar1 },
+							]
+								.filter((item) => !matchDownSM || (item.value !== "dayGridMonth" && item.value !== "timeGridWeek"))
+								.map((viewOption) => {
+									const Icon = viewOption.icon;
+									const isActive = viewOption.value === calendarView;
+									return (
+										<Tooltip title={viewOption.label} key={viewOption.value}>
+											<IconButton color={isActive ? "primary" : "default"} size="small" onClick={() => handleViewChange(viewOption.value)}>
+												<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
+											</IconButton>
+										</Tooltip>
+									);
+								})}
 						</Stack>
-						
+
 						<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-						
+
 						{/* Botones de acción */}
 						<Tooltip title="Agregar Nuevo Evento">
 							<IconButton color="primary" onClick={handleAddEventClick} size="medium">
@@ -1086,31 +1088,31 @@ const Calendar = () => {
 				</Stack>
 
 				<FullCalendar
-						weekends
-						editable
-						droppable
-						selectable
-						events={formattedEvents as EventSourceInput}
-						ref={calendarRef}
-						rerenderDelay={10}
-						initialDate={date}
-						initialView={calendarView}
-						dayMaxEventRows={4}
-						eventDisplay="block"
-						headerToolbar={false}
-						allDayMaintainDuration
-						eventResizableFromStart
-						select={handleRangeSelect}
-						eventDrop={handleEventUpdate}
-						eventClick={handleEventSelect}
-						eventResize={handleEventUpdate}
-						locale={esLocale}
-						height="auto"
-						contentHeight="auto"
-						aspectRatio={matchDownSM ? 1.2 : 2.1}
-						fixedWeekCount={false}
-						showNonCurrentDates={false}
-						plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
+					weekends
+					editable
+					droppable
+					selectable
+					events={formattedEvents as EventSourceInput}
+					ref={calendarRef}
+					rerenderDelay={10}
+					initialDate={date}
+					initialView={calendarView}
+					dayMaxEventRows={4}
+					eventDisplay="block"
+					headerToolbar={false}
+					allDayMaintainDuration
+					eventResizableFromStart
+					select={handleRangeSelect}
+					eventDrop={handleEventUpdate}
+					eventClick={handleEventSelect}
+					eventResize={handleEventUpdate}
+					locale={esLocale}
+					height="auto"
+					contentHeight="auto"
+					aspectRatio={matchDownSM ? 1.2 : 2.1}
+					fixedWeekCount={false}
+					showNonCurrentDates={false}
+					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
 					noEventsContent={
 						<Box
 							sx={{

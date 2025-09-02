@@ -259,7 +259,7 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 			await CampaignService.removeContactsFromCampaign(campaign._id!, selectedContactIds);
 			enqueueSnackbar("Contactos eliminados de la campaña con éxito", {
 				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			handleCloseDeleteDialog();
 			fetchCampaignContacts();
@@ -269,7 +269,7 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 		} catch (error: any) {
 			enqueueSnackbar(error.message || "Error al eliminar contactos de la campaña", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		}
 	};
@@ -304,9 +304,9 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 					// Mostrar mensaje de éxito
 					const successMessage = `Proceso completado: se eliminaron ${result.data.totalRemoved} contactos`;
 					enqueueSnackbar(successMessage, {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+						variant: "success",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					});
 
 					// Actualizar datos
 					fetchCampaignContacts();
@@ -323,9 +323,9 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 					setAsyncDeletionProcessing(false);
 
 					enqueueSnackbar(`El proceso falló: ${result.data.message || "Error durante la eliminación de contactos"}`, {
-				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+						variant: "error",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					});
 					return true;
 				}
 
@@ -338,7 +338,7 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 			const errorMessage = error.response?.data?.message || error.message || "Error al verificar estado del proceso";
 			enqueueSnackbar(errorMessage, {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 
 			setAsyncDeletionProcessing(false);
@@ -365,9 +365,9 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 
 					// Mostrar mensaje inicial
 					enqueueSnackbar(result.message || "Procesando eliminación de contactos en segundo plano...", {
-				variant: "info",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+						variant: "info",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					});
 
 					// Configurar verificación de estado
 					const checkStatus = async () => {
@@ -384,9 +384,9 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 				// Si es una respuesta inmediata/síncrona
 				else {
 					enqueueSnackbar("Todos los contactos han sido eliminados de la campaña", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+						variant: "success",
+						anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					});
 					fetchCampaignContacts();
 					if (onContactsChange) {
 						onContactsChange(); // Notificar al componente padre sobre el cambio
@@ -398,7 +398,7 @@ const CampaignContactsList = ({ campaign, open, onClose, onContactsChange }: Cam
 		} catch (error: any) {
 			enqueueSnackbar(error.message || "Error al eliminar todos los contactos de la campaña", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			setAsyncDeletionProcessing(false);
 		}

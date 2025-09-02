@@ -197,7 +197,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => {
 					// Check if either form is loading
 					const isAnyFormLoading = isSubmitting || isGoogleLoading;
-					
+
 					// Create a custom submit handler to avoid the persist error
 					const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 						e.preventDefault();
@@ -302,15 +302,15 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											label={<Typography variant="h6">Mantener la sesión abierta</Typography>}
 										/>
 
-										<Link 
-											variant="h6" 
-											component={isAnyFormLoading ? Box : RouterLink} 
-											to={isAnyFormLoading ? undefined : (isLoggedIn && forgot ? forgot : "/forgot-password")} 
+										<Link
+											variant="h6"
+											component={isAnyFormLoading ? Box : RouterLink}
+											to={isAnyFormLoading ? undefined : isLoggedIn && forgot ? forgot : "/forgot-password"}
 											color={isAnyFormLoading ? "text.disabled" : "text.primary"}
 											sx={{
 												cursor: isAnyFormLoading ? "not-allowed" : "pointer",
 												pointerEvents: isAnyFormLoading ? "none" : "auto",
-												textDecoration: isAnyFormLoading ? "none" : undefined
+												textDecoration: isAnyFormLoading ? "none" : undefined,
 											}}
 										>
 											Olvidé mi Password
@@ -327,15 +327,17 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											type="button"
 											variant="contained"
 											color="primary"
-											startIcon={isAnyFormLoading ? (
-												<CircularProgress 
-													size={20} 
-													sx={{ 
-														color: (theme) => theme.palette.primary.contrastText,
-														opacity: 0.9
-													}} 
-												/>
-											) : null}
+											startIcon={
+												isAnyFormLoading ? (
+													<CircularProgress
+														size={20}
+														sx={{
+															color: (theme) => theme.palette.primary.contrastText,
+															opacity: 0.9,
+														}}
+													/>
+												) : null
+											}
 											onClick={(e) => {
 												e.preventDefault();
 												if (!isAnyFormLoading) {
@@ -346,8 +348,8 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 												"&.Mui-disabled": {
 													backgroundColor: (theme) => theme.palette.primary.main,
 													color: (theme) => theme.palette.primary.contrastText,
-													opacity: 0.7
-												}
+													opacity: 0.7,
+												},
 											}}
 										>
 											{isSubmitting ? "Iniciando sesión..." : isGoogleLoading ? "Autenticando con Google..." : "Login"}

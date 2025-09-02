@@ -190,7 +190,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 					if (isGoogleConnected && syncWithGoogle) {
 						try {
 							// Crear primero en Google Calendar
-							const tempEvent = { ...newEvent, _id: 'temp-' + Date.now() };
+							const tempEvent = { ...newEvent, _id: "temp-" + Date.now() };
 							googleCalendarId = await dispatch(createGoogleEvent(tempEvent));
 						} catch (error) {
 							console.warn("No se pudo crear en Google Calendar, continuando sin sincronización:", error);
@@ -201,7 +201,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 					// Crear en la base de datos (con o sin googleCalendarId)
 					const eventToCreate = googleCalendarId ? { ...newEvent, googleCalendarId } : newEvent;
 					const result = (await dispatch(addEvent(eventToCreate))) as any;
-					
+
 					if (result && result.success) {
 						dispatch(
 							openSnackbar({
@@ -224,7 +224,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 								console.error("Error al revertir evento de Google Calendar:", error);
 							}
 						}
-						
+
 						const errorMessage = result?.error?.response?.data?.message || "Error al crear el evento. Intente más tarde.";
 						dispatch(
 							openSnackbar({

@@ -113,17 +113,17 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 			const response = await WorkersService.updateConfig(workerType, configId, updateData);
 
 			if (response.success) {
-				enqueueSnackbar("Configuración avanzada actualizada exitosamente", { 
+				enqueueSnackbar("Configuración avanzada actualizada exitosamente", {
 					variant: "success",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				});
 				onUpdate();
 				onClose();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al actualizar la configuración", { 
+			enqueueSnackbar(error.message || "Error al actualizar la configuración", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setLoading(false);
@@ -158,9 +158,9 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 	// Actualizar rango
 	const handleUpdateRange = async () => {
 		if (!isRangeValid()) {
-			enqueueSnackbar("Por favor ingrese un rango válido", { 
+			enqueueSnackbar("Por favor ingrese un rango válido", {
 				variant: "warning",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			return;
 		}
@@ -171,17 +171,17 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 			const response = await WorkersService.updateScrapingRange(configId, rangeData);
 
 			if (response.success) {
-				enqueueSnackbar("Rango actualizado exitosamente", { 
+				enqueueSnackbar("Rango actualizado exitosamente", {
 					variant: "success",
-					anchorOrigin: { vertical: "bottom", horizontal: "right" }
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				});
 				onUpdate();
 				onClose();
 			}
 		} catch (error: any) {
-			enqueueSnackbar(error.message || "Error al actualizar el rango", { 
+			enqueueSnackbar(error.message || "Error al actualizar el rango", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setLoading(false);

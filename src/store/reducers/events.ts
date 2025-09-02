@@ -96,11 +96,11 @@ const eventReducer = (state = initialEventState, action: Action): EventState => 
 export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 		const response = await axios.post(`${baseUrl}/api/events`, eventData, {
 			headers: {
-				'X-Calendar-Operation': 'true' // Evitar rate limit para operaciones de calendario
-			}
+				"X-Calendar-Operation": "true", // Evitar rate limit para operaciones de calendario
+			},
 		});
 
 		if (response.data && response.data.event) {
@@ -132,11 +132,11 @@ export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
 export const updateEvent = (eventId: string, updateData: Partial<Event>) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 		const response = await axios.put(`${baseUrl}/api/events/${eventId}`, updateData, {
 			headers: {
-				'X-Calendar-Operation': 'true' // Evitar rate limit para operaciones de calendario
-			}
+				"X-Calendar-Operation": "true", // Evitar rate limit para operaciones de calendario
+			},
 		});
 
 		if (response.data && response.data.event) {
@@ -170,7 +170,7 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 	try {
 		// Campos optimizados para listas - IMPORTANTE: incluir googleCalendarId
 		const fields = "_id,title,description,type,color,allDay,start,end,folderId,folderName,googleCalendarId,syncedWithGoogle";
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/user/${userId}`, {
 			params: { fields },
 		});
@@ -198,7 +198,7 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/id/${_id}`);
 		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
@@ -223,7 +223,7 @@ export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/group/${groupId}`);
 		dispatch({
 			type: GET_EVENTS_BY_GROUP,
@@ -241,7 +241,7 @@ export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch
 export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 		await axios.delete(`${baseUrl}/api/events/${eventId}`);
 		dispatch({
 			type: DELETE_EVENT,
@@ -266,72 +266,72 @@ export const selectEvent = (eventId: string | null) => (dispatch: Dispatch) => {
 const waitWithBackoff = async (attempt: number, retryAfter?: number) => {
 	if (retryAfter) {
 		// Si el servidor nos dice cuándo reintentar, usar ese valor
-		await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+		await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
 	} else {
 		// Backoff exponencial: 2s, 4s, 8s, 16s, max 30s
 		const delay = Math.min(Math.pow(2, attempt) * 1000, 30000);
-		await new Promise(resolve => setTimeout(resolve, delay));
+		await new Promise((resolve) => setTimeout(resolve, delay));
 	}
 };
 
 // Agregar múltiples eventos en lote (para importación de Google Calendar)
 export const addBatchEvents = (events: Event[], onProgress?: (processed: number, total: number) => void) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
-	
+
 	const MAX_BATCH_SIZE = 100; // Máximo permitido por el servidor
 	const MAX_RETRIES = 3;
 	let totalSuccessCount = 0;
 	let totalErrorCount = 0;
 	const allCreatedEvents: Event[] = [];
-	
+
 	try {
 		// Dividir eventos en lotes de máximo 100
 		for (let i = 0; i < events.length; i += MAX_BATCH_SIZE) {
 			const batch = events.slice(i, i + MAX_BATCH_SIZE);
 			let retryCount = 0;
 			let batchProcessed = false;
-			
+
 			while (!batchProcessed && retryCount < MAX_RETRIES) {
 				try {
-					const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
+					const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
 					const response = await axios.post(
 						`${baseUrl}/api/events/batch`,
-						{ 
+						{
 							events: batch,
-							syncSource: 'google-calendar' // Indicar que es sincronización de Google
+							syncSource: "google-calendar", // Indicar que es sincronización de Google
 						},
 						{
 							headers: {
 								"Content-Type": "application/json",
 								"X-Sync-Source": "google-calendar", // Header para bypass de rate limit
 							},
-						}
+						},
 					);
 
 					if (response.data) {
 						const createdEvents = response.data.events || [];
 						const successCount = response.data.successCount || createdEvents.length;
-						const errorCount = response.data.errorCount || (batch.length - successCount);
+						const errorCount = response.data.errorCount || batch.length - successCount;
 						const duplicatesCount = response.data.duplicatesCount || 0;
-						
+
 						allCreatedEvents.push(...createdEvents);
 						totalSuccessCount += successCount;
 						totalErrorCount += errorCount;
 						batchProcessed = true;
-						
+
 						// Log si hay duplicados (no son errores reales)
 						if (duplicatesCount > 0) {
 							console.log(`${duplicatesCount} eventos omitidos por ser duplicados (ya existen en la base de datos)`);
 						}
-						
+
 						// Notificar progreso si hay callback
 						if (onProgress) {
 							onProgress(Math.min(i + MAX_BATCH_SIZE, events.length), events.length);
 						}
-						
+
 						// Esperar 2 segundos entre batches para respetar rate limit
 						if (i + MAX_BATCH_SIZE < events.length) {
-							await new Promise(resolve => setTimeout(resolve, 2000));
+							await new Promise((resolve) => setTimeout(resolve, 2000));
 						}
 					}
 				} catch (error: any) {
@@ -339,18 +339,18 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 						// Rate limit alcanzado
 						retryCount++;
 						console.log(`Rate limit alcanzado. Intento ${retryCount}/${MAX_RETRIES}`);
-						
+
 						// Obtener el header Retry-After si existe
-						const retryAfter = error.response.headers['retry-after'];
+						const retryAfter = error.response.headers["retry-after"];
 						await waitWithBackoff(retryCount, retryAfter ? parseInt(retryAfter) : undefined);
 					} else if (error?.response?.status === 404) {
 						// Endpoint batch no existe, fallback a creación individual
 						console.log("Endpoint batch no disponible, usando creación individual con throttling...");
-						
+
 						for (const event of batch) {
 							try {
-								await new Promise(resolve => setTimeout(resolve, 600)); // 600ms entre peticiones (máx 10/min)
-								
+								await new Promise((resolve) => setTimeout(resolve, 600)); // 600ms entre peticiones (máx 10/min)
+
 								const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/events`, event);
 								if (response.data && response.data.event) {
 									allCreatedEvents.push(response.data.event);
@@ -361,14 +361,14 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 							} catch (individualError: any) {
 								console.error("Error al crear evento individual:", individualError);
 								totalErrorCount++;
-								
+
 								if (individualError?.response?.status === 429) {
 									// Rate limit en endpoint individual
-									const retryAfter = individualError.response.headers['retry-after'];
+									const retryAfter = individualError.response.headers["retry-after"];
 									await waitWithBackoff(1, retryAfter ? parseInt(retryAfter) : 6);
 								}
 							}
-							
+
 							// Notificar progreso
 							if (onProgress) {
 								const processed = i + allCreatedEvents.length - totalSuccessCount + totalErrorCount;
@@ -384,13 +384,13 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 					}
 				}
 			}
-			
+
 			if (!batchProcessed) {
 				// Después de todos los reintentos, marcar como error
 				totalErrorCount += batch.length;
 			}
 		}
-		
+
 		// Actualizar el estado con todos los eventos creados
 		if (allCreatedEvents.length > 0) {
 			dispatch({
@@ -398,25 +398,24 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 				payload: allCreatedEvents,
 			});
 		}
-		
-		return { 
-			success: totalSuccessCount > 0, 
+
+		return {
+			success: totalSuccessCount > 0,
 			events: allCreatedEvents,
 			successCount: totalSuccessCount,
-			errorCount: totalErrorCount
+			errorCount: totalErrorCount,
 		};
-		
 	} catch (error: any) {
 		console.error("Error general al agregar eventos en lote:", error);
 		dispatch({
 			type: SET_EVENT_ERROR,
 			payload: error?.response?.data?.message || "Error al agregar eventos en lote",
 		});
-		return { 
-			success: false, 
+		return {
+			success: false,
 			error,
 			successCount: totalSuccessCount,
-			errorCount: events.length
+			errorCount: events.length,
 		};
 	}
 };
@@ -430,35 +429,35 @@ export const deleteGoogleCalendarEvents = () => async (dispatch: Dispatch, getSt
 		const state = getState();
 		const userId = state.auth?.user?._id;
 		console.log("deleteGoogleCalendarEvents: userId obtenido desde Redux:", userId);
-		
+
 		if (!userId) {
 			throw new Error("No se pudo obtener el ID del usuario desde el store");
 		}
-		
+
 		const url = `${process.env.REACT_APP_BASE_URL}/api/events/google-events/${userId}`;
 		console.log("deleteGoogleCalendarEvents: Haciendo DELETE a:", url);
-		
+
 		// Eliminar del backend todos los eventos con googleCalendarId para este usuario
 		const response = await axios.delete(url, {
 			headers: {
 				"Content-Type": "application/json",
 			},
 		});
-		
+
 		console.log("deleteGoogleCalendarEvents: Respuesta del servidor:", response.data);
-		
+
 		// Pequeño delay para asegurar que el backend completó la eliminación
-		await new Promise(resolve => setTimeout(resolve, 500));
-		
+		await new Promise((resolve) => setTimeout(resolve, 500));
+
 		// Actualizar el estado local eliminando eventos con googleCalendarId
 		dispatch({
 			type: DELETE_GOOGLE_EVENTS,
 		});
-		
+
 		console.log("deleteGoogleCalendarEvents: Estado de Redux actualizado");
-		
+
 		console.log("deleteGoogleCalendarEvents: Eliminación exitosa");
-		
+
 		// Retornar información sobre la eliminación
 		const deletedCount = response.data?.deletedCount || response.data?.count || 0;
 		return { success: true, deletedCount };
@@ -474,7 +473,7 @@ export const deleteGoogleCalendarEvents = () => async (dispatch: Dispatch, getSt
 					if (eventsResponse.data.success && Array.isArray(eventsResponse.data.events)) {
 						const googleEvents = eventsResponse.data.events.filter((e: Event) => e.googleCalendarId);
 						let deletedCount = 0;
-						
+
 						console.log(`Eliminando ${googleEvents.length} eventos de Google Calendar...`);
 						for (const event of googleEvents) {
 							if (event._id) {
@@ -486,17 +485,17 @@ export const deleteGoogleCalendarEvents = () => async (dispatch: Dispatch, getSt
 								}
 							}
 						}
-						
+
 						// Pequeño delay para asegurar que el backend completó todas las eliminaciones
-						await new Promise(resolve => setTimeout(resolve, 500));
-						
+						await new Promise((resolve) => setTimeout(resolve, 500));
+
 						// Actualizar el estado local
 						dispatch({
 							type: DELETE_GOOGLE_EVENTS,
 						});
-						
+
 						console.log("deleteGoogleCalendarEvents: Estado de Redux actualizado (fallback)");
-						
+
 						console.log(`Eliminados ${deletedCount} de ${googleEvents.length} eventos`);
 						return { success: true, deletedCount };
 					}
@@ -518,7 +517,7 @@ export const deleteGoogleCalendarEvents = () => async (dispatch: Dispatch, getSt
 			});
 			return { success: false };
 		}
-		
+
 		dispatch({
 			type: SET_EVENT_ERROR,
 			payload: "Error al eliminar eventos de Google Calendar",

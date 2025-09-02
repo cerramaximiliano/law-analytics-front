@@ -30,7 +30,7 @@ interface GoogleCalendarEvent {
 class GoogleCalendarService {
 	private isInitialized = false;
 	private _isSignedIn = false;
-	
+
 	// Getter público para verificar el estado de autenticación
 	get isSignedIn(): boolean {
 		return this._isSignedIn;
@@ -75,7 +75,7 @@ class GoogleCalendarService {
 					resolve();
 				} catch (error: any) {
 					let errorMessage = "Error inicializando Google Calendar API";
-					
+
 					// Analizar el error para dar mensajes más específicos
 					if (error?.details) {
 						errorMessage = error.details;
@@ -86,7 +86,7 @@ class GoogleCalendarService {
 					} else if (error?.error === "access_denied") {
 						errorMessage = "Acceso denegado: Verifica los permisos en Google Cloud Console";
 					}
-					
+
 					console.error(errorMessage, error);
 					reject(new Error(errorMessage));
 				}
@@ -104,12 +104,12 @@ class GoogleCalendarService {
 		// prompt: 'select_account' - Permite elegir cuenta
 		// prompt: 'select_account consent' - Ambas opciones
 		await gapi.auth2.getAuthInstance().signIn({
-			prompt: 'select_account consent'
+			prompt: "select_account consent",
 		});
-		
+
 		// Actualizar el estado de signed in
 		this._isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
-		
+
 		// Verificar que el login fue exitoso
 		if (!this._isSignedIn) {
 			throw new Error("No se pudo completar el inicio de sesión");
@@ -122,16 +122,16 @@ class GoogleCalendarService {
 			return;
 		}
 		const auth = gapi.auth2.getAuthInstance();
-		
+
 		// Opcionalmente, revocar el acceso completamente
 		// Esto forzará al usuario a volver a autorizar la próxima vez
 		try {
 			// Desconectar (solo cierra sesión)
 			await auth.signOut();
-			
+
 			// Opcional: Revocar acceso completamente
 			// await auth.disconnect();
-			// Si descomentas la línea anterior, el usuario tendrá que 
+			// Si descomentas la línea anterior, el usuario tendrá que
 			// volver a autorizar todos los permisos la próxima vez
 		} catch (error) {
 			console.error("Error al cerrar sesión de Google:", error);
@@ -158,7 +158,7 @@ class GoogleCalendarService {
 			}
 
 			// Intentar sign in silencioso
-			const user = await auth.signIn({ prompt: 'none' });
+			const user = await auth.signIn({ prompt: "none" });
 			if (user) {
 				this._isSignedIn = true;
 				return true;
@@ -177,33 +177,33 @@ class GoogleCalendarService {
 		if (gapi && gapi.auth2 && gapi.auth2.getAuthInstance()) {
 			this._isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
 		}
-		
+
 		if (!this._isSignedIn) {
 			return null;
 		}
-		
+
 		try {
 			const currentUser = gapi.auth2.getAuthInstance().currentUser.get();
 			const profile = currentUser.getBasicProfile();
-			
+
 			if (!profile) {
 				console.warn("Profile not available yet");
 				return null;
 			}
-			
+
 			// Obtener la URL de la imagen y procesarla
 			let imageUrl = profile.getImageUrl();
-			
+
 			// Si la URL tiene parámetros, intentar obtener una versión sin restricciones
 			if (imageUrl) {
 				// Remover el parámetro s96-c si existe y reemplazar con s400 para mejor calidad
-				imageUrl = imageUrl.replace(/=s\d+-c/, '=s400-c');
+				imageUrl = imageUrl.replace(/=s\d+-c/, "=s400-c");
 				// Agregar parámetro para evitar restricciones
-				if (!imageUrl.includes('?')) {
-					imageUrl += '?sz=400';
+				if (!imageUrl.includes("?")) {
+					imageUrl += "?sz=400";
 				}
 			}
-			
+
 			return {
 				id: profile.getId(),
 				name: profile.getName(),
@@ -232,7 +232,7 @@ class GoogleCalendarService {
 			// Necesitamos extraer la fecha UTC y ajustarla a la zona local
 			const startDate = new Date(event.start);
 			const endDate = new Date(event.end || event.start);
-			
+
 			// Ajustar las fechas considerando el offset de zona horaria
 			// Si la fecha tiene offset (ej: T03:00:00), significa que ya está ajustada
 			// y debemos usar la fecha UTC directamente
@@ -242,21 +242,21 @@ class GoogleCalendarService {
 				const month = date.getUTCMonth() + 1;
 				const day = date.getUTCDate();
 				const hours = date.getUTCHours();
-				
+
 				// Si las horas UTC no son 0, significa que la fecha tiene offset de zona horaria
 				// En ese caso, usamos la fecha UTC directamente
 				if (hours !== 0) {
 					// La fecha ya está ajustada (ej: 03:00 UTC = 00:00 Argentina)
-					return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+					return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 				} else {
 					// La fecha está en UTC puro, usar fecha local
 					const localYear = date.getFullYear();
 					const localMonth = date.getMonth() + 1;
 					const localDay = date.getDate();
-					return `${localYear}-${String(localMonth).padStart(2, '0')}-${String(localDay).padStart(2, '0')}`;
+					return `${localYear}-${String(localMonth).padStart(2, "0")}-${String(localDay).padStart(2, "0")}`;
 				}
 			};
-			
+
 			googleEvent.start = {
 				date: formatDateForGoogle(startDate),
 			};
@@ -296,20 +296,20 @@ class GoogleCalendarService {
 			// All-day event - Ajustar a zona horaria local
 			// Google envía fechas como YYYY-MM-DD (ej: "2025-08-14")
 			// Necesitamos convertirlas para que se guarden correctamente en la BD
-			
+
 			// Crear las fechas en la zona horaria local (00:00 hora local)
-			const [startYear, startMonth, startDay] = googleEvent.start.date.split('-').map(Number);
-			const [endYear, endMonth, endDay] = googleEvent.end.date.split('-').map(Number);
-			
+			const [startYear, startMonth, startDay] = googleEvent.start.date.split("-").map(Number);
+			const [endYear, endMonth, endDay] = googleEvent.end.date.split("-").map(Number);
+
 			// Crear fechas en hora local (00:00)
 			const startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0);
 			const endDate = new Date(endYear, endMonth - 1, endDay, 0, 0, 0);
-			
+
 			// Convertir a ISO string (esto mantendrá el offset correcto)
 			event.start = startDate.toISOString();
 			event.end = endDate.toISOString();
 			event.allDay = true;
-			
+
 			// Debug para verificar la conversión
 			console.log(`Evento todo el día convertido: ${googleEvent.summary}`);
 			console.log(`  Google date: ${googleEvent.start.date} -> ISO: ${event.start}`);
@@ -365,11 +365,11 @@ class GoogleCalendarService {
 			// Si no se especifica timeMin, obtener eventos desde hace 1 año
 			const defaultTimeMin = new Date();
 			defaultTimeMin.setFullYear(defaultTimeMin.getFullYear() - 1);
-			
+
 			// Si no se especifica timeMax, obtener eventos hasta dentro de 2 años
 			const defaultTimeMax = new Date();
 			defaultTimeMax.setFullYear(defaultTimeMax.getFullYear() + 2);
-			
+
 			const response = await gapi.client.calendar.events.list({
 				calendarId: "primary",
 				timeMin: timeMin ? timeMin.toISOString() : defaultTimeMin.toISOString(),
@@ -383,7 +383,7 @@ class GoogleCalendarService {
 			const events = response.result.items || [];
 			console.log(`📅 Eventos obtenidos de Google Calendar: ${events.length}`, {
 				desde: timeMin ? timeMin.toISOString() : defaultTimeMin.toISOString(),
-				hasta: timeMax ? timeMax.toISOString() : defaultTimeMax.toISOString()
+				hasta: timeMax ? timeMax.toISOString() : defaultTimeMax.toISOString(),
 			});
 			return events.map((event: any) => this.convertFromGoogleEvent(event));
 		} catch (error) {
@@ -487,24 +487,24 @@ class GoogleCalendarService {
 				console.log("ℹ️ El evento ya no existe en Google Calendar, continuando...");
 				return; // No lanzar error si el evento ya no existe
 			}
-			
+
 			console.error("❌ Error eliminando evento de Google Calendar:", {
 				status: error?.status,
-				message: error?.message || error?.result?.error?.message
+				message: error?.message || error?.result?.error?.message,
 			});
-			
+
 			throw error;
 		}
 	}
 
 	// Helper para crear un hash único de un evento para evitar duplicados
 	private createEventHash(event: Event | EventInput): string {
-		const normalizedTitle = (event.title || '').toLowerCase().trim().replace(/\s+/g, ' ');
+		const normalizedTitle = (event.title || "").toLowerCase().trim().replace(/\s+/g, " ");
 		const startDate = new Date(event.start);
 		// Usar solo fecha y hora (sin milisegundos) para evitar diferencias mínimas
 		const dateKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}-${startDate.getHours()}-${startDate.getMinutes()}`;
-		const eventType = (event as Event).type || 'default';
-		
+		const eventType = (event as Event).type || "default";
+
 		return `${normalizedTitle}_${dateKey}_${eventType}`;
 	}
 
@@ -519,7 +519,7 @@ class GoogleCalendarService {
 			// Crear ventana de tiempo para buscar (día del evento)
 			const timeMin = new Date(startDate);
 			timeMin.setHours(0, 0, 0, 0);
-			
+
 			const timeMax = new Date(startDate);
 			timeMax.setHours(23, 59, 59, 999);
 
@@ -532,11 +532,11 @@ class GoogleCalendarService {
 			});
 
 			const events = response.result.items || [];
-			
+
 			// Buscar evento con título similar
 			const normalizedSearchTitle = title.toLowerCase().trim();
 			const foundEvent = events.find((event: any) => {
-				const eventTitle = (event.summary || '').toLowerCase().trim();
+				const eventTitle = (event.summary || "").toLowerCase().trim();
 				return eventTitle === normalizedSearchTitle;
 			});
 
@@ -573,10 +573,10 @@ class GoogleCalendarService {
 		try {
 			// Fetch Google Calendar events
 			const googleEvents = await this.fetchEvents();
-			
+
 			console.log(`📊 Sincronización iniciada:`, {
 				eventosGoogle: googleEvents.length,
-				eventosLocales: localEvents.length
+				eventosLocales: localEvents.length,
 			});
 
 			// Create maps for efficient lookup
@@ -597,23 +597,22 @@ class GoogleCalendarService {
 
 			// Import events from Google that don't exist locally
 			const importedIds = new Set<string>();
-			
+
 			const skippedEvents: any[] = [];
-			
+
 			for (const googleEvent of googleEvents) {
 				// Usar el hash robusto para comparación
-				const googleEventHash = this.createEventHash(googleEvent);
-				const googleId = googleEvent.googleCalendarId || googleEvent.id || '';
-				
+				const googleId = googleEvent.googleCalendarId || googleEvent.id || "";
+
 				// Verificar si el evento ya existe SOLO por su ID único de Google
 				// NO verificar por hash para permitir eventos con mismo título en diferentes fechas
 				const existsByGoogleId = googleId && localEventMap.has(googleId);
 				const alreadyImportedInThisBatch = importedIds.has(googleId);
-				
+
 				// Verificar por hash SOLO si queremos evitar duplicados exactos (mismo título Y fecha)
 				// Por ahora, comentado para permitir importar todos los eventos
 				// const existsByHash = localEventsByHash.has(googleEventHash);
-				
+
 				if (!existsByGoogleId && !alreadyImportedInThisBatch) {
 					stats.imported.push(googleEvent);
 					// Marcar como importado para evitar duplicados SOLO por ID, no por hash
@@ -625,11 +624,11 @@ class GoogleCalendarService {
 						title: googleEvent.title,
 						start: googleEvent.start,
 						googleId,
-						reason: existsByGoogleId ? 'Ya existe localmente' : 'Ya importado en este batch'
+						reason: existsByGoogleId ? "Ya existe localmente" : "Ya importado en este batch",
 					});
 				}
 			}
-			
+
 			if (skippedEvents.length > 0) {
 				console.log(`⚠️ Eventos de Google no importados (${skippedEvents.length}):`, skippedEvents);
 			}
@@ -638,16 +637,16 @@ class GoogleCalendarService {
 			// Solo crear si no son duplicados
 			// Optimizado para grandes volúmenes
 			const eventsToCreate = [];
-			
+
 			// Crear un Set para búsqueda rápida O(1) en lugar de O(n)
 			const googleEventKeys = new Set<string>();
 			const processedLocalEvents = new Set<string>();
-			
+
 			googleEvents.forEach((gEvent) => {
 				const hash = this.createEventHash(gEvent);
 				googleEventKeys.add(hash);
 			});
-			
+
 			// Filtrar eventos que no existen en Google y evitar duplicados
 			for (const localEvent of localEventsWithoutGoogleId) {
 				const eventHash = this.createEventHash(localEvent);
@@ -657,103 +656,103 @@ class GoogleCalendarService {
 					processedLocalEvents.add(eventHash);
 				}
 			}
-			
+
 			// Si hay muchos eventos, mostrar advertencia
 			if (eventsToCreate.length > 100) {
 				console.warn(`⚠️ Creando ${eventsToCreate.length} eventos en Google Calendar. Esto puede tomar varios minutos...`);
 			}
-			
+
 			// Procesar en lotes más grandes pero con delay para evitar rate limits
 			const batchSize = 10; // Aumentar tamaño del lote
 			const delayBetweenBatches = 1000; // 1 segundo entre lotes
-			
+
 			console.log(`Creando ${eventsToCreate.length} eventos en Google Calendar...`);
-			
+
 			for (let i = 0; i < eventsToCreate.length; i += batchSize) {
 				const batch = eventsToCreate.slice(i, Math.min(i + batchSize, eventsToCreate.length));
 				const currentBatch = Math.floor(i / batchSize) + 1;
 				const totalBatches = Math.ceil(eventsToCreate.length / batchSize);
-				
+
 				console.log(`Procesando lote ${currentBatch}/${totalBatches} (${batch.length} eventos)...`);
-				
+
 				// Procesar batch en paralelo
 				const promises = batch.map(async (event) => {
 					try {
 						const googleEventId = await this.createEvent(event);
-						
+
 						// Actualizar el evento en la BD con el googleCalendarId
 						if (event._id && googleEventId) {
 							try {
 								// Usar axios en lugar de fetch para evitar problemas con extensiones
-								const axios = (window as any).axios || await import('axios').then(m => m.default);
-								const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+								const axios = (window as any).axios || (await import("axios").then((m) => m.default));
+								const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 								const updateUrl = `${baseUrl}/api/events/${event._id}/google-id`;
-								
+
 								console.log(`📝 Actualizando evento ${event._id} con googleCalendarId: ${googleEventId}`);
-								
+
 								const response = await axios.patch(
 									updateUrl,
 									{ googleCalendarId: googleEventId },
 									{
 										headers: {
-											'Content-Type': 'application/json',
-											'Authorization': `Bearer ${localStorage.getItem('token')}`
-										}
-									}
+											"Content-Type": "application/json",
+											Authorization: `Bearer ${localStorage.getItem("token")}`,
+										},
+									},
 								);
-								
+
 								if (response.data?.success) {
 									console.log(`✅ Evento ${event._id} actualizado con googleCalendarId: ${googleEventId}`);
 								}
 							} catch (updateError: any) {
 								// Solo loguear error si no es de red (podría ser extensión del navegador)
-								if (updateError?.code !== 'ERR_NETWORK') {
+								if (updateError?.code !== "ERR_NETWORK") {
 									console.error("Error actualizando googleCalendarId:", updateError?.message);
 								}
 							}
 						}
-						
+
 						return true;
 					} catch (error: any) {
 						// Si es error de cuota, esperar más
-						if (error?.message?.includes('quota') || error?.status === 429) {
+						if (error?.message?.includes("quota") || error?.status === 429) {
 							console.warn("Límite de API alcanzado, esperando...");
-							await new Promise(resolve => setTimeout(resolve, 5000));
+							await new Promise((resolve) => setTimeout(resolve, 5000));
 							// Reintentar una vez
 							try {
 								const googleEventId = await this.createEvent(event);
-								
+
 								// Actualizar el evento en la BD con el googleCalendarId
 								if (event._id && googleEventId) {
 									try {
 										// Usar axios en lugar de fetch
-										const axios = (window as any).axios || await import('axios').then(m => m.default);
-										const baseUrl = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+										const axios = (window as any).axios || (await import("axios").then((m) => m.default));
+										const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 										const updateUrl = `${baseUrl}/api/events/${event._id}/google-id`;
-										
+
 										console.log(`📝 [Reintento] Actualizando evento ${event._id} con googleCalendarId: ${googleEventId}`);
-										
+
 										const response = await axios.patch(
 											updateUrl,
 											{ googleCalendarId: googleEventId },
 											{
 												headers: {
-													'Content-Type': 'application/json',
-													'Authorization': `Bearer ${localStorage.getItem('token')}`
-												}
-											}
+													"Content-Type": "application/json",
+													Authorization: `Bearer ${localStorage.getItem("token")}`,
+												},
+											},
 										);
-										
+
 										if (response.data?.success) {
 											console.log(`✅ [Reintento] Evento ${event._id} actualizado con googleCalendarId`);
 										}
 									} catch (updateError: any) {
-										if (updateError?.code !== 'ERR_NETWORK') {
+										if (updateError?.code !== "ERR_NETWORK") {
 											console.error("[Reintento] Error actualizando googleCalendarId:", updateError?.message);
 										}
 									}
 								}
-								
+
 								return true;
 							} catch (retryError) {
 								console.error("Error al reintentar:", retryError);
@@ -764,13 +763,13 @@ class GoogleCalendarService {
 						return false;
 					}
 				});
-				
+
 				const results = await Promise.all(promises);
-				stats.created += results.filter(r => r).length;
-				
+				stats.created += results.filter((r) => r).length;
+
 				// Delay entre lotes para evitar rate limits (excepto en el último)
 				if (i + batchSize < eventsToCreate.length) {
-					await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+					await new Promise((resolve) => setTimeout(resolve, delayBetweenBatches));
 				}
 			}
 
@@ -782,4 +781,5 @@ class GoogleCalendarService {
 	}
 }
 
-export default new GoogleCalendarService();
+const googleCalendarService = new GoogleCalendarService();
+export default googleCalendarService;

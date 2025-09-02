@@ -1,7 +1,8 @@
 import React from "react";
+import { Link as RouterLink } from "react-router-dom";
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { Box, Button, Container, Grid, Link, Typography } from "@mui/material";
+import { Box, Button, Container, Grid, Typography } from "@mui/material";
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
@@ -46,11 +47,10 @@ const FreePage = () => {
 									color="primary"
 									size="large"
 									startIcon={<ExportSquare />}
-									component={Link}
-									href="#"
-									target="_self"
+									component={RouterLink}
+									to="/register"
 								>
-									Gratis (próximamente)
+									Registrarse Gratis
 								</Button>
 							</Grid>
 						</Grid>

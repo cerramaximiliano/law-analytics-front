@@ -38,4 +38,5 @@ class CausasService {
 	}
 }
 
-export default new CausasService();
+const causasService = new CausasService();
+export default causasService;

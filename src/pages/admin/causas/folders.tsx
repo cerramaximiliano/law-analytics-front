@@ -81,9 +81,9 @@ const CausasFolders = () => {
 			} catch (error: any) {
 				setError(error.message || `Error al cargar causas con carpetas para ${fuero}`);
 				enqueueSnackbar(error.message || `Error al cargar causas con carpetas para ${fuero}`, {
-				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			} finally {
 				setLoading(false);
 			}

@@ -79,7 +79,7 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 					</IconButton>
 				</Tooltip>
 			</Stack>
-			
+
 			<Typography variant={matchDownSM ? "h6" : "h5"} color="textPrimary" sx={{ fontWeight: 600 }}>
 				{capitalizeFirstLetter(format(date, "MMMM yyyy", { locale: es }))}
 			</Typography>
@@ -91,11 +91,7 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 					const isActive = viewOption.value === view;
 					return (
 						<Tooltip title={viewOption.label} key={viewOption.value}>
-							<IconButton
-								color={isActive ? "primary" : "default"}
-								size="small"
-								onClick={() => onChangeView(viewOption.value)}
-							>
+							<IconButton color={isActive ? "primary" : "default"} size="small" onClick={() => onChangeView(viewOption.value)}>
 								<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
 							</IconButton>
 						</Tooltip>

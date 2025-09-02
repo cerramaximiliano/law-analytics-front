@@ -1,6 +1,18 @@
 import React from "react";
-import { useEffect, useState, SyntheticEvent } from "react";
-import { Box, Button, Typography, Stack, Avatar, CircularProgress, IconButton, Tooltip, Dialog, DialogContent, Skeleton } from "@mui/material";
+import { useEffect, useState } from "react";
+import {
+	Box,
+	Button,
+	Typography,
+	Stack,
+	Avatar,
+	CircularProgress,
+	IconButton,
+	Tooltip,
+	Dialog,
+	DialogContent,
+	Skeleton,
+} from "@mui/material";
 import { Google, Refresh, Link21, CloseCircle } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
 import {
@@ -22,10 +34,10 @@ interface GoogleCalendarSyncProps {
 
 const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyncProps) => {
 	const dispatch = useDispatch();
-	const { isConnected, isLoading, isSyncing, userProfile, lastSyncTime, syncStats } = useSelector((state: any) => state.googleCalendar);
+	const { isConnected, isLoading, isSyncing, userProfile, lastSyncTime } = useSelector((state: any) => state.googleCalendar);
 	const [openDisconnectDialog, setOpenDisconnectDialog] = useState(false);
 	const [imageError, setImageError] = useState(false);
-	
+
 	// Calcular si la sincronización está pendiente
 	const isSyncPending = (() => {
 		if (!isConnected || !lastSyncTime) return false;
@@ -39,7 +51,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 		// Initialize Google Calendar API on component mount
 		dispatch(initializeGoogleCalendar());
 	}, [dispatch]);
-	
+
 	// Reset image error when profile changes
 	useEffect(() => {
 		setImageError(false);
@@ -74,11 +86,11 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 				const lastSync = new Date(lastSyncTime);
 				const now = new Date();
 				const daysDiff = Math.floor((now.getTime() - lastSync.getTime()) / (1000 * 60 * 60 * 24));
-				
+
 				// Si han pasado 15 días o más, sincronizar automáticamente
 				if (daysDiff >= 15) {
 					console.log(`Han pasado ${daysDiff} días desde la última sincronización. Sincronizando automáticamente...`);
-					
+
 					// Mostrar notificación de sincronización automática
 					dispatch(
 						openSnackbar({
@@ -91,16 +103,18 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 							close: false,
 						}),
 					);
-					
+
 					// Ejecutar sincronización
 					handleSync();
 				} else {
-					console.log(`Han pasado ${daysDiff} días desde la última sincronización. Se sincronizará automáticamente en ${15 - daysDiff} días.`);
+					console.log(
+						`Han pasado ${daysDiff} días desde la última sincronización. Se sincronizará automáticamente en ${15 - daysDiff} días.`,
+					);
 				}
 			} else {
 				// Si está conectado pero nunca se ha sincronizado, sincronizar ahora
 				console.log("Primera sincronización automática al cargar el calendario");
-				
+
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -112,7 +126,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 						close: false,
 					}),
 				);
-				
+
 				handleSync();
 			}
 		};
@@ -208,18 +222,18 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 						<Stack direction="row" spacing={1} alignItems="center">
 							{userProfile?.email ? (
 								// Si hay perfil previo guardado, mostrar avatar
-								<Avatar 
-									src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined} 
-									sx={{ 
-										width: 20, 
-										height: 20, 
+								<Avatar
+									src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined}
+									sx={{
+										width: 20,
+										height: 20,
 										fontSize: "0.7rem",
-										bgcolor: 'primary.lighter',
-										color: 'primary.main'
+										bgcolor: "primary.lighter",
+										color: "primary.main",
 									}}
 									imgProps={{
 										referrerPolicy: "no-referrer",
-										onError: () => setImageError(true)
+										onError: () => setImageError(true),
 									}}
 								>
 									{userProfile?.email?.charAt(0)?.toUpperCase()}
@@ -229,58 +243,61 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 								<Google size={18} variant="Bold" color="#666" />
 							)}
 							<Box>
-								<Typography variant="caption" sx={{ lineHeight: 1.2 }}>Google Calendar</Typography>
+								<Typography variant="caption" sx={{ lineHeight: 1.2 }}>
+									Google Calendar
+								</Typography>
 								{userProfile?.email && (
-									<Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.7rem' }}>
+									<Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem" }}>
 										{userProfile.email}
 									</Typography>
 								)}
 							</Box>
 						</Stack>
-						<Button 
-							variant="contained" 
-							startIcon={<Link21 size={14} />} 
-							onClick={handleConnect} 
-							disabled={isLoading} 
+						<Button
+							variant="contained"
+							startIcon={<Link21 size={14} />}
+							onClick={handleConnect}
+							disabled={isLoading}
 							size="small"
-							sx={{ minWidth: 'auto', fontSize: '0.75rem', py: 0.5, px: 1 }}
+							sx={{ minWidth: "auto", fontSize: "0.75rem", py: 0.5, px: 1 }}
 						>
-							{userProfile?.email ? 'Reconectar' : 'Conectar'}
+							{userProfile?.email ? "Reconectar" : "Conectar"}
 						</Button>
 					</Stack>
 				) : (
 					<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
 						<Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-							<Avatar 
-								src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined} 
-								sx={{ 
-									width: 24, 
-									height: 24, 
+							<Avatar
+								src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined}
+								sx={{
+									width: 24,
+									height: 24,
 									fontSize: "0.75rem",
-									bgcolor: 'success.lighter',
-									color: 'success.darker'
+									bgcolor: "success.lighter",
+									color: "success.darker",
 								}}
 								imgProps={{
 									referrerPolicy: "no-referrer",
-									onError: () => setImageError(true)
+									onError: () => setImageError(true),
 								}}
 							>
 								{userProfile?.name?.charAt(0) || userProfile?.email?.charAt(0)?.toUpperCase()}
 							</Avatar>
 							<Box sx={{ minWidth: 0, flex: 1 }}>
-								<Typography variant="caption" noWrap sx={{ display: 'block', lineHeight: 1.2 }}>
+								<Typography variant="caption" noWrap sx={{ display: "block", lineHeight: 1.2 }}>
 									{userProfile?.name}
 								</Typography>
-								<Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: '0.7rem' }}>
+								<Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: "0.7rem" }}>
 									{userProfile?.email}
 								</Typography>
 								{lastSyncTime && (
-									<Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: '0.65rem', display: 'block' }}>
-										Última sincronización: {(() => {
+									<Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: "0.65rem", display: "block" }}>
+										Última sincronización:{" "}
+										{(() => {
 											const lastSync = new Date(lastSyncTime);
 											const now = new Date();
 											const daysDiff = Math.floor((now.getTime() - lastSync.getTime()) / (1000 * 60 * 60 * 24));
-											
+
 											if (daysDiff === 0) {
 												return `Hoy ${lastSync.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
 											} else if (daysDiff === 1) {

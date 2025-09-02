@@ -8,12 +8,7 @@ export const TableSkeleton = ({ rows = 5, columns = 4 }) => (
 		{[...Array(rows)].map((_, rowIndex) => (
 			<Stack key={rowIndex} direction="row" spacing={1} sx={{ mb: 1 }}>
 				{[...Array(columns)].map((_, colIndex) => (
-					<Skeleton
-						key={colIndex}
-						variant="rectangular"
-						height={35}
-						sx={{ flex: 1 }}
-					/>
+					<Skeleton key={colIndex} variant="rectangular" height={35} sx={{ flex: 1 }} />
 				))}
 			</Stack>
 		))}
@@ -81,7 +76,7 @@ export const useSkeletonLoader = (isLoading: boolean, SkeletonComponent: React.F
 
 	React.useEffect(() => {
 		let timeout: NodeJS.Timeout;
-		
+
 		if (isLoading) {
 			// Mostrar skeleton después de un delay para evitar flashes
 			timeout = setTimeout(() => setShowSkeleton(true), delay);

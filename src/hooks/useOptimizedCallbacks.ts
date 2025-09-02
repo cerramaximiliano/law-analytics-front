@@ -1,10 +1,7 @@
 import { useCallback, useRef, useEffect, useMemo } from "react";
 
 // Debounce hook - retrasa ejecución hasta que pase un tiempo sin llamadas
-export const useDebounce = <T extends (...args: any[]) => any>(
-	callback: T,
-	delay: number
-): T => {
+export const useDebounce = <T extends (...args: any[]) => any>(callback: T, delay: number): T => {
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const callbackRef = useRef(callback);
 
@@ -23,7 +20,7 @@ export const useDebounce = <T extends (...args: any[]) => any>(
 				callbackRef.current(...args);
 			}, delay);
 		},
-		[delay]
+		[delay],
 	) as T;
 
 	// Cleanup
@@ -39,10 +36,7 @@ export const useDebounce = <T extends (...args: any[]) => any>(
 };
 
 // Throttle hook - limita frecuencia de ejecución
-export const useThrottle = <T extends (...args: any[]) => any>(
-	callback: T,
-	delay: number
-): T => {
+export const useThrottle = <T extends (...args: any[]) => any>(callback: T, delay: number): T => {
 	const lastRun = useRef(Date.now() - delay);
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const callbackRef = useRef(callback);
@@ -70,7 +64,7 @@ export const useThrottle = <T extends (...args: any[]) => any>(
 				}, delay - timeSinceLastRun);
 			}
 		},
-		[delay]
+		[delay],
 	) as T;
 
 	useEffect(() => {
@@ -85,25 +79,19 @@ export const useThrottle = <T extends (...args: any[]) => any>(
 };
 
 // Hook para búsqueda optimizada
-export const useOptimizedSearch = (
-	searchFunction: (query: string) => void,
-	delay = 300
-) => {
+export const useOptimizedSearch = (searchFunction: (query: string) => void, delay = 300) => {
 	const debouncedSearch = useDebounce(searchFunction, delay);
-	
+
 	return useMemo(
 		() => ({
 			search: debouncedSearch,
 			immediate: searchFunction,
 		}),
-		[debouncedSearch, searchFunction]
+		[debouncedSearch, searchFunction],
 	);
 };
 
 // Hook para scroll optimizado
-export const useOptimizedScroll = (
-	handleScroll: () => void,
-	delay = 100
-) => {
+export const useOptimizedScroll = (handleScroll: () => void, delay = 100) => {
 	return useThrottle(handleScroll, delay);
 };

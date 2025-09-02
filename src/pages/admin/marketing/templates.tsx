@@ -349,7 +349,7 @@ const EmailTemplates = () => {
 			console.error("Error fetching template details from marketing API:", err);
 			enqueueSnackbar(err.message || "Error al cargar los detalles de la plantilla", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 			return null;
 		}
@@ -466,19 +466,19 @@ const EmailTemplates = () => {
 				// Show success message
 				const action = templateToToggle.isActive ? "desactivada" : "activada";
 				enqueueSnackbar(`Plantilla ${action} con éxito`, {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			} else {
 				enqueueSnackbar(response.data.message || `Error al cambiar estado de la plantilla`, {
-				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			}
 		} catch (err: any) {
 			enqueueSnackbar(err.message || `Error al cambiar estado de la plantilla`, {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setToggling(false);
@@ -560,20 +560,20 @@ const EmailTemplates = () => {
 
 				// Show success message
 				enqueueSnackbar("Email enviado con éxito", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			} else {
 				enqueueSnackbar(response.data.message || "Error al enviar el email", {
-				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			}
 		} catch (err: any) {
 			console.error("Error sending email with template:", err);
 			enqueueSnackbar(err.response?.data?.message || err.message || "Error al enviar el email", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setSending(false);
@@ -629,7 +629,7 @@ const EmailTemplates = () => {
 		if (results.length === 0) {
 			enqueueSnackbar("No se encontraron coincidencias", {
 				variant: "info",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} else {
 			// Trigger the highlight effect for the first result
@@ -744,9 +744,9 @@ const EmailTemplates = () => {
 			// Check if variable already exists
 			if (newTemplate.variables.includes(variableName.value)) {
 				enqueueSnackbar("Esta variable ya existe", {
-				variant: "warning",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "warning",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 				return;
 			}
 
@@ -826,19 +826,19 @@ const EmailTemplates = () => {
 
 				// Show success message
 				enqueueSnackbar("Plantilla creada con éxito", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			} else {
 				enqueueSnackbar(response.data.message || "Error al crear la plantilla", {
-				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			}
 		} catch (err: any) {
 			enqueueSnackbar(err.message || "Error al crear la plantilla", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setCreating(false);
@@ -901,19 +901,19 @@ const EmailTemplates = () => {
 
 				// Show success message
 				enqueueSnackbar("Plantilla actualizada con éxito", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			} else {
 				enqueueSnackbar(response.data.message || "Error al actualizar la plantilla", {
-				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
 			}
 		} catch (err: any) {
 			enqueueSnackbar(err.message || "Error al actualizar la plantilla", {
 				variant: "error",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 			});
 		} finally {
 			setUpdating(false);
@@ -1279,9 +1279,9 @@ const EmailTemplates = () => {
 												onClick={() => {
 													navigator.clipboard.writeText(selectedTemplate.htmlBody);
 													enqueueSnackbar("Código HTML copiado al portapapeles", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+														variant: "success",
+														anchorOrigin: { vertical: "bottom", horizontal: "right" },
+													});
 												}}
 											>
 												<Copy />
@@ -1333,9 +1333,9 @@ const EmailTemplates = () => {
 													onClick={() => {
 														navigator.clipboard.writeText(JSON.stringify(selectedTemplate, null, 2));
 														enqueueSnackbar("JSON copiado al portapapeles", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+															variant: "success",
+															anchorOrigin: { vertical: "bottom", horizontal: "right" },
+														});
 													}}
 													title="Copiar JSON"
 												>
@@ -1585,9 +1585,9 @@ const EmailTemplates = () => {
 																		if (htmlTextFieldRef.current) {
 																			htmlTextFieldRef.current.select();
 																			htmlTextFieldRef.current.focus();
-																			enqueueSnackbar("Texto seleccionado", { 
+																			enqueueSnackbar("Texto seleccionado", {
 																				variant: "info",
-																				anchorOrigin: { vertical: "bottom", horizontal: "right" }
+																				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 																			});
 																		}
 																	}}
@@ -1599,9 +1599,9 @@ const EmailTemplates = () => {
 																	onClick={() => {
 																		navigator.clipboard.writeText(editTemplate.htmlBody);
 																		enqueueSnackbar("Código HTML copiado al portapapeles", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+																			variant: "success",
+																			anchorOrigin: { vertical: "bottom", horizontal: "right" },
+																		});
 																	}}
 																	title="Copiar código"
 																>
@@ -1962,9 +1962,9 @@ const EmailTemplates = () => {
 										onClick={() => {
 											navigator.clipboard.writeText(newTemplate.htmlBody);
 											enqueueSnackbar("Código HTML copiado al portapapeles", {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" }
-			});
+												variant: "success",
+												anchorOrigin: { vertical: "bottom", horizontal: "right" },
+											});
 										}}
 									>
 										Copiar al portapapeles

@@ -210,12 +210,12 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 							>
 								<Stack direction="row" justifyContent="space-between" alignItems="center">
 									<Box>
-										<Typography 
-											variant={isMobile ? "body1" : "subtitle1"} 
+										<Typography
+											variant={isMobile ? "body1" : "subtitle1"}
 											fontWeight={600}
 											sx={{
 												fontSize: isMobile ? "0.875rem" : isTablet ? "1rem" : "1.125rem",
-												lineHeight: 1.3
+												lineHeight: 1.3,
 											}}
 										>
 											{isLoader ? <Skeleton width={200} /> : folder?.folderName || "Sin carátula"}

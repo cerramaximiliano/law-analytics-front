@@ -21,7 +21,7 @@ const GoogleButton = styled(Button)<ButtonProps & { customheight?: string }>(({ 
 		backgroundColor: theme.palette.primary.dark,
 		boxShadow: "none",
 	},
-	
+
 	// Estado deshabilitado
 	"&.Mui-disabled": {
 		backgroundColor: theme.palette.primary.main,
@@ -70,17 +70,19 @@ const CustomGoogleButton = ({
 			<GoogleButton
 				variant="contained"
 				color="primary"
-				startIcon={showLoader ? (
-					<CircularProgress 
-						size={16} 
-						sx={{ 
-							color: (theme) => theme.palette.primary.contrastText,
-							opacity: 0.9
-						}} 
-					/>
-				) : (
-					<img src={GoogleIcon} alt="Google" style={{ width: 16, height: 16 }} />
-				)}
+				startIcon={
+					showLoader ? (
+						<CircularProgress
+							size={16}
+							sx={{
+								color: (theme) => theme.palette.primary.contrastText,
+								opacity: 0.9,
+							}}
+						/>
+					) : (
+						<img src={GoogleIcon} alt="Google" style={{ width: 16, height: 16 }} />
+					)
+				}
 				onClick={onClick}
 				disabled={disabled}
 				fullWidth={fullWidth}
