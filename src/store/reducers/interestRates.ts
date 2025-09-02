@@ -122,7 +122,7 @@ export function getInterestRates(userId: string, forceRefresh: boolean = false) 
 		dispatch(slice.actions.startLoading());
 
 		try {
-			const baseURL = process.env.REACT_APP_BASE_URL || "";
+			const baseURL = import.meta.env.VITE_BASE_URL || "";
 			const response = await axios.get(`${baseURL}/api/tasas/listado`, {
 				withCredentials: true,
 			});

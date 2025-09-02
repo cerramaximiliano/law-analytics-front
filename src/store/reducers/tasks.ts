@@ -117,7 +117,7 @@ const tasksReducer = (state = initialState, action: any) => {
 export const addTask = (data: Omit<TaskType, "_id">) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks`, data);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/tasks`, data);
 
 		dispatch({
 			type: ADD_TASK,
@@ -147,7 +147,7 @@ export const getTasksByUserId =
 			dispatch({ type: SET_LOADING });
 			// Campos optimizados para listas
 			const fields = "_id,name,description,status,priority,dueDate,folderId,folderName,tags,attachments,createdAt,updatedAt,completedAt";
-			const url = `${process.env.REACT_APP_BASE_URL}/api/tasks/user/${userId}`;
+			const url = `${import.meta.env.VITE_BASE_URL}/api/tasks/user/${userId}`;
 			const response = await axios.get(url, {
 				params: { fields },
 			});
@@ -169,7 +169,7 @@ export const getTasksByUserId =
 export const getTasksByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/group/${groupId}`);
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/group/${groupId}`);
 		dispatch({
 			type: SET_TASKS,
 			payload: response.data,
@@ -220,7 +220,7 @@ export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatc
 export const updateTask = (id: string, data: Partial<TaskType>) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}`, data);
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}`, data);
 		dispatch({
 			type: UPDATE_TASK,
 			payload: response.data,
@@ -242,7 +242,7 @@ export const getTaskDetail = (id: string) => async (dispatch: Dispatch) => {
 			payload: { id, loading: true },
 		});
 
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}`);
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}`);
 
 		dispatch({
 			type: SET_TASK_DETAIL,
@@ -271,7 +271,7 @@ export const getTaskDetail = (id: string) => async (dispatch: Dispatch) => {
 export const toggleTaskStatus = (id: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/toggle`);
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}/toggle`);
 		dispatch({
 			type: UPDATE_TASK,
 			payload: response.data,
@@ -290,7 +290,7 @@ export const toggleTaskStatus = (id: string) => async (dispatch: Dispatch) => {
 export const deleteTask = (id: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}`);
+		await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}`);
 		dispatch({
 			type: DELETE_TASK,
 			payload: id,
@@ -312,7 +312,7 @@ export const deleteTask = (id: string) => async (dispatch: Dispatch) => {
 export const addComment = (id: string, commentData: { text: string; author: string }) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/comments`, commentData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}/comments`, commentData);
 		dispatch({
 			type: ADD_COMMENT,
 			payload: response.data,
@@ -332,7 +332,7 @@ export const addComment = (id: string, commentData: { text: string; author: stri
 export const addSubtask = (id: string, subtaskData: { name: string; completed?: boolean }) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/subtasks`, subtaskData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}/subtasks`, subtaskData);
 		dispatch({
 			type: UPDATE_SUBTASK,
 			payload: response.data,
@@ -353,7 +353,7 @@ export const updateSubtask =
 	(id: string, subtaskData: { subtaskId: string; name?: string; completed?: boolean }) => async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_LOADING });
-			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/subtasks`, subtaskData);
+			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}/subtasks`, subtaskData);
 			dispatch({
 				type: UPDATE_SUBTASK,
 				payload: response.data,
@@ -377,7 +377,7 @@ export const getUpcomingTasks =
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_LOADING });
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/tasks/upcoming/${userId}?days=${days}`);
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/upcoming/${userId}?days=${days}`);
 			dispatch({
 				type: SET_UPCOMING_TASKS,
 				payload: response.data,
@@ -399,7 +399,7 @@ export const getUpcomingTasks =
 export const assignTask = (id: string, userIds: string[]) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/tasks/${id}/assign`, { userIds });
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/tasks/${id}/assign`, { userIds });
 		dispatch({
 			type: UPDATE_TASK_ASSIGNMENTS,
 			payload: response.data,

@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Creamos una instancia de axios específica para el servicio de usuarios
 const userApi = axios.create({
-	baseURL: process.env.REACT_APP_BASE_URL || "http://localhost:3010/",
+	baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:3010/",
 	withCredentials: true, // Importante: enviar cookies con cada petición
 });
 

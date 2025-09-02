@@ -16,8 +16,8 @@ export const HEADER_HEIGHT = 74;
 // ==============================|| API ENDPOINTS ||============================== //
 
 // API Base URLs
-export const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://api.example.com";
-export const WS_BASE_URL = process.env.REACT_APP_WS_URL || "wss://api.example.com/ws";
+export const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://api.example.com";
+export const WS_BASE_URL = import.meta.env.VITE_WS_URL || "wss://api.example.com/ws";
 
 // Environment
 export const IS_DEVELOPMENT = process.env.NODE_ENV === "development";

@@ -120,7 +120,7 @@ export const getCombinedActivities = (folderId: string, params?: ActivityQueryPa
 		}
 
 		const response = await axios.get<CombinedActivitiesResponse>(
-			`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}/activities/combined`,
+			`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}/activities/combined`,
 			{ params: queryParams },
 		);
 

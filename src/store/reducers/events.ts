@@ -96,7 +96,7 @@ const eventReducer = (state = initialEventState, action: Action): EventState => 
 export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.post(`${baseUrl}/api/events`, eventData, {
 			headers: {
 				"X-Calendar-Operation": "true", // Evitar rate limit para operaciones de calendario
@@ -132,7 +132,7 @@ export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
 export const updateEvent = (eventId: string, updateData: Partial<Event>) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.put(`${baseUrl}/api/events/${eventId}`, updateData, {
 			headers: {
 				"X-Calendar-Operation": "true", // Evitar rate limit para operaciones de calendario
@@ -170,7 +170,7 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 	try {
 		// Campos optimizados para listas - IMPORTANTE: incluir googleCalendarId
 		const fields = "_id,title,description,type,color,allDay,start,end,folderId,folderName,googleCalendarId,syncedWithGoogle";
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/user/${userId}`, {
 			params: { fields },
 		});
@@ -198,7 +198,7 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/id/${_id}`);
 		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
@@ -223,7 +223,7 @@ export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
 export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/group/${groupId}`);
 		dispatch({
 			type: GET_EVENTS_BY_GROUP,
@@ -241,7 +241,7 @@ export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch
 export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
-		const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		await axios.delete(`${baseUrl}/api/events/${eventId}`);
 		dispatch({
 			type: DELETE_EVENT,
@@ -293,7 +293,7 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 
 			while (!batchProcessed && retryCount < MAX_RETRIES) {
 				try {
-					const baseUrl = import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+					const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 					const response = await axios.post(
 						`${baseUrl}/api/events/batch`,
 						{
@@ -351,7 +351,7 @@ export const addBatchEvents = (events: Event[], onProgress?: (processed: number,
 							try {
 								await new Promise((resolve) => setTimeout(resolve, 600)); // 600ms entre peticiones (máx 10/min)
 
-								const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/events`, event);
+								const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/events`, event);
 								if (response.data && response.data.event) {
 									allCreatedEvents.push(response.data.event);
 									totalSuccessCount++;
@@ -434,7 +434,7 @@ export const deleteGoogleCalendarEvents = () => async (dispatch: Dispatch, getSt
 			throw new Error("No se pudo obtener el ID del usuario desde el store");
 		}
 
-		const url = `${process.env.REACT_APP_BASE_URL}/api/events/google-events/${userId}`;
+		const url = `${import.meta.env.VITE_BASE_URL}/api/events/google-events/${userId}`;
 		console.log("deleteGoogleCalendarEvents: Haciendo DELETE a:", url);
 
 		// Eliminar del backend todos los eventos con googleCalendarId para este usuario
@@ -469,7 +469,7 @@ export const deleteGoogleCalendarEvents = () => async (dispatch: Dispatch, getSt
 				const userId = state.auth?.user?._id;
 				if (userId) {
 					console.log("Endpoint masivo no disponible, eliminando eventos uno por uno...");
-					const eventsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/events/user/${userId}`);
+					const eventsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/events/user/${userId}`);
 					if (eventsResponse.data.success && Array.isArray(eventsResponse.data.events)) {
 						const googleEvents = eventsResponse.data.events.filter((e: Event) => e.googleCalendarId);
 						let deletedCount = 0;
@@ -478,7 +478,7 @@ export const deleteGoogleCalendarEvents = () => async (dispatch: Dispatch, getSt
 						for (const event of googleEvents) {
 							if (event._id) {
 								try {
-									await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/events/${event._id}`);
+									await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/events/${event._id}`);
 									deletedCount++;
 								} catch (deleteError) {
 									console.error(`Error eliminando evento ${event._id}:`, deleteError);

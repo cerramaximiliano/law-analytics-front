@@ -100,7 +100,7 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 		dispatch(slice.actions.startLoading());
 
 		try {
-			const baseURL = process.env.REACT_APP_BASE_URL || "";
+			const baseURL = import.meta.env.VITE_BASE_URL || "";
 			const response = await axios.get<UnifiedStatsResponse>(`${baseURL}/api/stats/unified/${userId}`, {
 				params: { sections },
 				withCredentials: true,
@@ -153,7 +153,7 @@ export function updateStatsSections(userId: string, sections: string[]) {
 	return async () => {
 		try {
 			const sectionsParam = sections.join(",");
-			const baseURL = process.env.REACT_APP_BASE_URL || "";
+			const baseURL = import.meta.env.VITE_BASE_URL || "";
 			const response = await axios.get<UnifiedStatsResponse>(`${baseURL}/api/stats/unified/${userId}`, {
 				params: { sections: sectionsParam },
 				withCredentials: true,

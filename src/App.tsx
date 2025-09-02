@@ -25,7 +25,7 @@ import { WebSocketProvider } from "contexts/WebSocketContext";
 //import { UnauthorizedProvider } from "contexts/UnauthorizedContext";
 
 // En Vite las variables de entorno empiezan con VITE_
-const googleClientId = import.meta.env.VITE_AUTH0_GOOGLE_ID || process.env.REACT_APP_AUTH0_GOOGLE_ID;
+const googleClientId = import.meta.env.VITE_AUTH0_GOOGLE_ID;
 if (!googleClientId) {
 	throw new Error("VITE_AUTH0_GOOGLE_ID no está definida. Asegúrate de configurarla en tu archivo .env");
 }

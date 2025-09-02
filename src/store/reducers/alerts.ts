@@ -141,7 +141,7 @@ export const fetchUserAlerts = (userId: string) => {
 	return async (dispatch: Dispatch) => {
 		dispatch({ type: ALERTS_LOADING });
 		try {
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/alert/useralerts/${userId}`);
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/alert/useralerts/${userId}`);
 			if (response.data && response.data.success) {
 				dispatch({
 					type: SET_ALERT_DATA,
@@ -168,7 +168,7 @@ export const markAlertAsRead = (alertId: string) => {
 			dispatch({ type: ALERTS_LOADING });
 
 			// Enviar solicitud al servidor
-			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/alert/markAsRead/${alertId}`);
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/alert/markAsRead/${alertId}`);
 
 			// Comprobar si la operación fue exitosa
 			if (response.data && response.data.success) {
@@ -252,7 +252,7 @@ export const deleteAlert = (alertId: string) => {
 			dispatch({ type: ALERTS_LOADING });
 
 			// Enviar solicitud al servidor para eliminar la alerta
-			const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/alert/alerts/${alertId}`);
+			const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/alert/alerts/${alertId}`);
 
 			// Comprobar si la operación fue exitosa
 			if (response.data && response.data.success) {

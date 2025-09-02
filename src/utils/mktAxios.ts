@@ -4,7 +4,7 @@ import authTokenService from "services/authTokenService";
 
 // Create a dedicated axios instance for MKT API
 const mktAxios = axios.create({
-	baseURL: process.env.REACT_APP_MKT_URL || "https://mkt.lawanalytics.app",
+	baseURL: import.meta.env.VITE_MKT_URL || "https://mkt.lawanalytics.app",
 	withCredentials: true,
 });
 
@@ -80,7 +80,7 @@ mktAxios.interceptors.response.use(
 
 			try {
 				// Try to refresh the token
-				await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth/refresh-token`, {}, { withCredentials: true });
+				await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`, {}, { withCredentials: true });
 
 				// Get the new token and retry the request
 				const newToken = getAuthToken();

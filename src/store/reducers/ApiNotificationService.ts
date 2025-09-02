@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_BASE_URL; // Ajusta esto según tu configuración
+const API_BASE_URL = import.meta.env.VITE_BASE_URL; // Ajusta esto según tu configuración
 
 // Definiciones de tipos
 export interface NotificationPreferences {

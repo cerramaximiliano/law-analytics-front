@@ -3,7 +3,7 @@ import { StripeCustomersResponse } from "../../types/stripe-subscription";
 import { StripeCustomerHistory } from "../../types/stripe-history";
 import { Subscription as UserSubscription } from "../../types/user";
 
-const API_BASE_URL = process.env.REACT_APP_BASE_URL; // Ajusta esto según tu configuración
+const API_BASE_URL = import.meta.env.VITE_BASE_URL; // Ajusta esto según tu configuración
 
 // ===============================
 // Interfaces de respuesta API

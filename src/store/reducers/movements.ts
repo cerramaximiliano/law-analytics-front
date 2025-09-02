@@ -95,7 +95,7 @@ export const getMovementsByUserId = (userId: string) => async (dispatch: Dispatc
 
 		// Campos optimizados para listas y vistas
 		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId,completed";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/movements/user/${userId}`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/movements/user/${userId}`, {
 			params: { fields },
 		});
 
@@ -129,7 +129,7 @@ export const updateMovement = (movementId: string, updateData: Partial<Movement>
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/movements/${movementId}`, updateData);
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/movements/${movementId}`, updateData);
 
 		if (response.data.success && response.data.movement) {
 			dispatch({
@@ -161,7 +161,7 @@ export const deleteMovement = (movementId: string) => async (dispatch: Dispatch)
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/movements/${movementId}`);
+		const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/movements/${movementId}`);
 
 		if (response.data.success) {
 			dispatch({
@@ -193,7 +193,7 @@ export const addMovement = (movementData: Omit<Movement, "_id">) => async (dispa
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/movements`, movementData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/movements`, movementData);
 
 		if (response.data.success && response.data.movement) {
 			dispatch({
@@ -292,7 +292,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 		const isPaginated = params?.page !== undefined || params?.limit !== undefined;
 
 		const response = await axios.get<MovementsResponse | PaginatedMovementsResponse>(
-			`${process.env.REACT_APP_BASE_URL}/api/movements/folder/${folderId}`,
+			`${import.meta.env.VITE_BASE_URL}/api/movements/folder/${folderId}`,
 			{ params: queryParams },
 		);
 
@@ -368,7 +368,7 @@ export const toggleMovementComplete = (movementId: string) => async (dispatch: D
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/movements/${movementId}/complete`);
+		const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/movements/${movementId}/complete`);
 
 		if (response.data.success && response.data.movement) {
 			dispatch({

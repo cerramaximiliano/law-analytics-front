@@ -153,7 +153,7 @@ const folder = (state = initialFolderState, action: any) => {
 export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/folders`, folderData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/folders`, folderData);
 		if (response.data.success) {
 			dispatch({
 				type: ADD_FOLDER,
@@ -188,7 +188,7 @@ export const getFoldersByUserId =
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
 				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus";
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});
 			if (response.data.success) {
@@ -215,7 +215,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
 			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/group/${groupId}`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 			params: { fields },
 		});
 		if (response.data.success) {
@@ -247,7 +247,7 @@ export const getFolderById =
 
 			// Si es diferente o no hay folder, hacer la petición
 			dispatch({ type: SET_FOLDER_LOADING });
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}`);
 			if (response.data.success) {
 				dispatch({
 					type: GET_FOLDER_BY_ID,
@@ -269,7 +269,7 @@ export const getFolderById =
 export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`);
+		const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}`);
 		if (response.data.success) {
 			dispatch({
 				type: DELETE_FOLDER,
@@ -291,7 +291,7 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 export const updateFolderById = (folderId: string, updatedData: Partial<FolderData>) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/folders/${folderId}`, updatedData);
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/${folderId}`, updatedData);
 		if (response.data.success) {
 			dispatch({
 				type: UPDATE_FOLDER,
@@ -314,7 +314,7 @@ export const updateFolderById = (folderId: string, updatedData: Partial<FolderDa
 export const archiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
 			resourceType: "folders",
 			itemIds: folderIds,
 		});
@@ -347,7 +347,7 @@ export const getArchivedFoldersByUserId = (userId: string) => async (dispatch: D
 		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
 			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/folders/user/${userId}`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 			params: {
 				archived: true,
 				fields,
@@ -370,7 +370,7 @@ export const getArchivedFoldersByUserId = (userId: string) => async (dispatch: D
 export const unarchiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
 			resourceType: "folders",
 			itemIds: folderIds,
 		});
@@ -453,7 +453,7 @@ export const getFoldersByIds =
 
 			// Add timeout to the axios request
 			const response = await axios.post(
-				`${process.env.REACT_APP_BASE_URL}/api/folders/batch`,
+				`${import.meta.env.VITE_BASE_URL}/api/folders/batch`,
 				{
 					folderIds,
 					fields,
@@ -589,7 +589,7 @@ export const linkFolderToCausa =
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_FOLDER_LOADING });
-			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/folders/link-causa/${folderId}`, linkData);
+			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/link-causa/${folderId}`, linkData);
 
 			if (response.data.success) {
 				// Actualizar el folder en el store con los nuevos datos

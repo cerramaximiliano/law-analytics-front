@@ -121,7 +121,7 @@ const calculatorsReducer = (state = initialState, action: any) => {
 export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "error">) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/calculators`, data);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/calculators`, data);
 		dispatch({
 			type: ADD_CALCULATOR,
 			payload: response.data.calculator,
@@ -149,7 +149,7 @@ export const getCalculatorsByUserId =
 			dispatch({ type: SET_LOADING });
 			// Campos optimizados para listas
 			const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 				params: { fields },
 			});
 			dispatch({
@@ -171,7 +171,7 @@ export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dis
 		dispatch({ type: SET_LOADING });
 		// Campos optimizados para listas
 		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/group/${groupId}`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/group/${groupId}`, {
 			params: { fields },
 		});
 		dispatch({
@@ -241,7 +241,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 
 				// Descargar TODOS los calculadores del usuario
 				const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
-				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 					params: { fields },
 				});
 
@@ -308,7 +308,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 			fields,
 		}).toString();
 
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/filter?${queryParams}`);
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/filter?${queryParams}`);
 
 		dispatch({
 			type: SET_SELECTED_CALCULATORS,
@@ -328,7 +328,7 @@ export const updateCalculator =
 	(_id: string, data: Partial<Omit<CalculatorType, "_id" | "isLoader" | "error">>) => async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_LOADING });
-			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/calculators/${_id}`, data);
+			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/calculators/${_id}`, data);
 			dispatch({
 				type: UPDATE_CALCULATOR,
 				payload: response.data.calculator,
@@ -345,7 +345,7 @@ export const updateCalculator =
 export const deleteCalculator = (id: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/calculators/${id}`);
+		await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/calculators/${id}`);
 		dispatch({
 			type: DELETE_CALCULATOR,
 			payload: id,
@@ -362,7 +362,7 @@ export const deleteCalculator = (id: string) => async (dispatch: Dispatch) => {
 export const archiveCalculators = (userId: string, calculatorIds: string[]) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
 			resourceType: "calculators",
 			itemIds: calculatorIds,
 		});
@@ -392,7 +392,7 @@ export const archiveCalculators = (userId: string, calculatorIds: string[]) => a
 export const unarchiveCalculators = (userId: string, calculatorIds: string[]) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
 			resourceType: "calculators",
 			itemIds: calculatorIds,
 		});
@@ -453,7 +453,7 @@ export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatc
 		dispatch({ type: SET_LOADING });
 		// Campos optimizados para listas
 		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/calculators/user/${userId}`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 			params: {
 				archived: true,
 				fields,

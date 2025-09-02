@@ -140,7 +140,7 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 // Agregar un nuevo contacto
 export const addContact = (contactData: Contact) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/contacts/create`, contactData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/contacts/create`, contactData);
 
 		if (response.data && response.data.contact) {
 			dispatch({
@@ -182,7 +182,7 @@ export const updateContact =
 	(contactId: string, updateData: Partial<Contact>) =>
 	async (dispatch: Dispatch): Promise<UpdateContactResponse> => {
 		try {
-			const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/contacts/${contactId}`, updateData);
+			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/contacts/${contactId}`, updateData);
 			if (response.data && response.data.contact) {
 				dispatch({
 					type: UPDATE_CONTACT,
@@ -220,7 +220,7 @@ interface UpdateResponse {
 
 export const updateMultipleContacts = (contacts: { id: string; updateData: Partial<Contact> }[]) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.put<UpdateResponse>(`${process.env.REACT_APP_BASE_URL}/api/contacts/batch-update`, { contacts });
+		const response = await axios.put<UpdateResponse>(`${import.meta.env.VITE_BASE_URL}/api/contacts/batch-update`, { contacts });
 
 		// Si la respuesta indica éxito y hay contactos actualizados
 		if (response.data.success && response.data.contacts?.length) {
@@ -308,7 +308,7 @@ export const getContactsByUserId =
 			dispatch({ type: SET_CONTACT_LOADING });
 			// Campos optimizados para listas y vistas resumidas
 			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/user/${userId}`, {
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
 				params: { fields },
 			});
 
@@ -338,7 +338,7 @@ export const getContactsByGroupId =
 			// Campos optimizados para listas y vistas resumidas
 			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
 
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/group/${groupId}`, {
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/group/${groupId}`, {
 				params: {
 					archived,
 					fields,
@@ -382,7 +382,7 @@ export const getArchivedContactsByGroupId = (groupId: string) => {
 // Eliminar contacto por _id
 export const deleteContact = (contactId: string) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/contacts/${contactId}`);
+		const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/contacts/${contactId}`);
 		if (response.status === 200) {
 			dispatch({
 				type: DELETE_CONTACT,
@@ -462,7 +462,7 @@ interface UnlinkResponse {
 
 export const unlinkFolderFromContact = (contactId: string, folderId: string) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.delete<UnlinkResponse>(`${process.env.REACT_APP_BASE_URL}/api/contacts/${contactId}/folders/${folderId}`);
+		const response = await axios.delete<UnlinkResponse>(`${import.meta.env.VITE_BASE_URL}/api/contacts/${contactId}/folders/${folderId}`);
 
 		if (response.data.success && response.data.contact) {
 			dispatch({
@@ -503,7 +503,7 @@ interface LinkFoldersResponse {
 
 export const linkFoldersToContact = (contactId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.post<LinkFoldersResponse>(`${process.env.REACT_APP_BASE_URL}/api/contacts/${contactId}/link-folders`, {
+		const response = await axios.post<LinkFoldersResponse>(`${import.meta.env.VITE_BASE_URL}/api/contacts/${contactId}/link-folders`, {
 			folderIds,
 		});
 
@@ -544,7 +544,7 @@ export const linkFoldersToContact = (contactId: string, folderIds: string[]) => 
 export const archiveContacts = (userId: string, contactIds: string[]) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_CONTACT_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
 			resourceType: "contacts",
 			itemIds: contactIds,
 		});
@@ -576,7 +576,7 @@ export const getArchivedContactsByUserId = (userId: string) => async (dispatch: 
 		dispatch({ type: SET_CONTACT_LOADING });
 		// Campos optimizados para listas y vistas resumidas
 		const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/contacts/user/${userId}`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
 			params: {
 				archived: true,
 				fields,
@@ -602,7 +602,7 @@ export const getArchivedContactsByUserId = (userId: string) => async (dispatch: 
 export const unarchiveContacts = (userId: string, contactIds: string[]) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_CONTACT_LOADING });
-		const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
 			resourceType: "contacts",
 			itemIds: contactIds,
 		});

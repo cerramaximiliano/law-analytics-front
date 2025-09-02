@@ -233,7 +233,7 @@ export const updateUser = (userData: any) => (dispatch: Dispatch) => {
 export const updateUserProfile = (profileData: any) => async (dispatch: Dispatch, getState: () => RootState) => {
 	try {
 		// Realizar la llamada a la API
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/auth/update`, profileData, {
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/auth/update`, profileData, {
 			withCredentials: true,
 		});
 
@@ -303,7 +303,7 @@ export const updateUserProfile = (profileData: any) => async (dispatch: Dispatch
 export const changeUserPassword = (passwordData: PasswordChangeData) => async (dispatch: Dispatch) => {
 	try {
 		// Realizar la llamada a la API
-		const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/auth/change-password`, passwordData, {
+		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/auth/change-password`, passwordData, {
 			headers: {
 				"Content-Type": "application/json",
 			},
@@ -394,7 +394,7 @@ export const fetchCurrentSubscription = () => async (dispatch: any, getState: ()
 		}
 
 		// Si no existe, hacer la llamada a la API
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/subscription/current`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscription/current`, {
 			withCredentials: true,
 		});
 
@@ -452,7 +452,7 @@ export const addUserSkills = (skills: any) => async (dispatch: Dispatch) => {
 			  };
 
 		const response = await axios.post(
-			`${process.env.REACT_APP_BASE_URL}/api/auth/skills`,
+			`${import.meta.env.VITE_BASE_URL}/api/auth/skills`,
 			{ skills: processedSkills },
 			{ withCredentials: true },
 		);
@@ -497,7 +497,7 @@ export const addUserSkills = (skills: any) => async (dispatch: Dispatch) => {
 // Acción para eliminar un skill
 export const deleteUserSkill = (skillId: string) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/auth/skills/${skillId}`, { withCredentials: true });
+		const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/auth/skills/${skillId}`, { withCredentials: true });
 
 		if (response.data.success) {
 			// Actualizar el estado con los skills restantes
@@ -555,7 +555,7 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 		}
 
 		// Si no existe, hacer la llamada a la API
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/subscriptions/payments`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/payments`, {
 			withCredentials: true,
 		});
 

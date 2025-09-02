@@ -4,7 +4,7 @@ import authTokenService from "../services/authTokenService";
 import secureStorage from "../services/secureStorage";
 
 const causasAxios: AxiosInstance = axios.create({
-	baseURL: process.env.REACT_APP_CAUSAS_URL || "https://api.lawanalytics.app",
+	baseURL: import.meta.env.VITE_CAUSAS_URL || "https://api.lawanalytics.app",
 	timeout: 30000,
 	headers: {
 		"Content-Type": "application/json",
