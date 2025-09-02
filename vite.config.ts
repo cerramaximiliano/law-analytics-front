@@ -57,8 +57,8 @@ export default defineConfig(({ mode }) => {
 			outDir: "build",
 			// Solo sourcemaps en desarrollo
 			sourcemap: !isProd,
-			// Target browsers modernos para evitar problemas con ES5
-			target: ["es2020", "edge88", "firefox78", "chrome87", "safari14"],
+			// Target browsers con compatibilidad ES5
+			target: "es2015",
 			// Optimización de chunks mejorada
 			rollupOptions: {
 				output: {
@@ -147,6 +147,9 @@ export default defineConfig(({ mode }) => {
 			exclude: ["@react-pdf/renderer"],
 			esbuildOptions: {
 				target: "es2015",
+				supported: {
+					"object-rest-spread": true,
+				},
 				define: {
 					global: "globalThis",
 				},

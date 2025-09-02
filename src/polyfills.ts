@@ -1,4 +1,4 @@
-// Polyfills para compatibilidad con navegadores y Redux Toolkit
+// Polyfills para compatibilidad con navegadores y Redux Toolkit/Immer
 
 // Asegurar que globalThis esté disponible
 if (typeof globalThis === "undefined") {
@@ -21,6 +21,30 @@ if (typeof globalThis === "undefined") {
 	})();
 }
 
+// Fix para Immer y Redux Toolkit
+// @ts-ignore
+if (typeof window !== "undefined") {
+	// @ts-ignore
+	if (!window.ES5) {
+		// @ts-ignore
+		window.ES5 = {
+			Object: Object,
+			Array: Array,
+		};
+	}
+	
+	// Asegurar que Reflect esté disponible
+	if (typeof Reflect === "undefined") {
+		// @ts-ignore
+		window.Reflect = {};
+	}
+	
+	// Polyfill para Proxy si no está disponible
+	if (typeof Proxy === "undefined") {
+		console.warn("Proxy not available, Immer may not work correctly");
+	}
+}
+
 // Polyfill para Object.fromEntries si no está disponible
 if (!Object.fromEntries) {
 	Object.fromEntries = function <T = any>(entries: Iterable<readonly [PropertyKey, T]>): { [k: string]: T } {
@@ -29,6 +53,18 @@ if (!Object.fromEntries) {
 			obj[String(key)] = value;
 		}
 		return obj;
+	};
+}
+
+// Polyfills para Object que Immer necesita
+if (!Object.getOwnPropertyDescriptors) {
+	Object.getOwnPropertyDescriptors = function (obj: any) {
+		const descriptors: any = {};
+		const keys = Object.keys(obj);
+		for (let i = 0; i < keys.length; i++) {
+			descriptors[keys[i]] = Object.getOwnPropertyDescriptor(obj, keys[i]);
+		}
+		return descriptors;
 	};
 }
 
