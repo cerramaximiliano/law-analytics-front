@@ -41,14 +41,14 @@ class GoogleCalendarService {
 		return new Promise((resolve, reject) => {
 			// Verificar que las credenciales estén configuradas
 			if (!GOOGLE_CALENDAR_CONFIG.CLIENT_ID) {
-				const error = new Error("Google Client ID no configurado. Agrega REACT_APP_AUTH0_GOOGLE_ID en tu archivo .env");
+				const error = new Error("Google Client ID no configurado. Agrega VITE_AUTH0_GOOGLE_ID en tu archivo .env");
 				console.error(error);
 				reject(error);
 				return;
 			}
 
 			if (!GOOGLE_CALENDAR_CONFIG.API_KEY) {
-				const error = new Error("Google API Key no configurada. Agrega REACT_APP_GOOGLE_API_KEY en tu archivo .env");
+				const error = new Error("Google API Key no configurada. Agrega VITE_GOOGLE_API_KEY en tu archivo .env");
 				console.error(error);
 				reject(error);
 				return;
