@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiando Caché - Law Analytics</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            margin-bottom: 1rem;
+        }
+        .status {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+        }
+        .success {
+            background: rgba(52, 211, 153, 0.3);
+        }
+        .error {
+            background: rgba(248, 113, 113, 0.3);
+        }
+        button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpiando Caché</h1>
+        <div id="status" class="status">
+            Iniciando limpieza de caché...
+        </div>
+        <button onclick="window.location.href='/'">Ir al Inicio</button>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        let messages = [];
+
+        async function clearAllCaches() {
+            try {
+                // 1. Desregistrar todos los service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        messages.push('✓ Service Worker desregistrado');
+                    }
+                    if (registrations.length === 0) {
+                        messages.push('✓ No había Service Workers activos');
+                    }
+                }
+
+                // 2. Limpiar todos los cachés
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    for (let cacheName of cacheNames) {
+                        await caches.delete(cacheName);
+                        messages.push(`✓ Caché "${cacheName}" eliminado`);
+                    }
+                    if (cacheNames.length === 0) {
+                        messages.push('✓ No había cachés para limpiar');
+                    }
+                }
+
+                // 3. Limpiar localStorage
+                if (window.localStorage) {
+                    const keys = Object.keys(localStorage);
+                    localStorage.clear();
+                    messages.push(`✓ LocalStorage limpiado (${keys.length} items)`);
+                }
+
+                // 4. Limpiar sessionStorage
+                if (window.sessionStorage) {
+                    const keys = Object.keys(sessionStorage);
+                    sessionStorage.clear();
+                    messages.push(`✓ SessionStorage limpiado (${keys.length} items)`);
+                }
+
+                // 5. Mostrar resultado exitoso
+                statusEl.className = 'status success';
+                statusEl.innerHTML = `
+                    <h3>✅ Limpieza Completada</h3>
+                    <ul style="text-align: left; display: inline-block;">
+                        ${messages.map(msg => `<li>${msg}</li>`).join('')}
+                    </ul>
+                    <p><strong>La aplicación se actualizará completamente en tu próxima visita.</strong></p>
+                `;
+
+                // 6. Registrar nuevo service worker después de 2 segundos
+                setTimeout(async () => {
+                    if ('serviceWorker' in navigator) {
+                        try {
+                            await navigator.serviceWorker.register('/sw.js');
+                            console.log('Nuevo Service Worker registrado');
+                        } catch (error) {
+                            console.log('No se pudo registrar el Service Worker:', error);
+                        }
+                    }
+                }, 2000);
+
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.innerHTML = `
+                    <h3>❌ Error durante la limpieza</h3>
+                    <p>${error.message}</p>
+                    <p>Por favor, intenta limpiar el caché manualmente:</p>
+                    <ol style="text-align: left; display: inline-block;">
+                        <li>Abre DevTools (F12)</li>
+                        <li>Ve a Application/Storage</li>
+                        <li>Click en "Clear site data"</li>
+                        <li>Recarga con Ctrl+Shift+R</li>
+                    </ol>
+                `;
+            }
+        }
+
+        // Ejecutar limpieza automáticamente al cargar
+        clearAllCaches();
+    </script>
+</body>
+</html>

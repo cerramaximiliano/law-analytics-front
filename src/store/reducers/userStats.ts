@@ -120,7 +120,7 @@ export const fetchUserStats = () => async (dispatch: Dispatch) => {
 	dispatch({ type: FETCH_USER_STATS_REQUEST });
 
 	try {
-		const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/user-stats/user`, {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/user-stats/user`, {
 			withCredentials: true,
 		});
 

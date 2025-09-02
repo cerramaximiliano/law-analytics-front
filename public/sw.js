@@ -1,10 +1,11 @@
 // Service Worker para caché offline y mejor performance
-const CACHE_NAME = 'law-analytics-v1';
+// IMPORTANTE: Incrementar versión para forzar actualización
+const CACHE_NAME = 'law-analytics-v2-vite';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
+  // Vite genera archivos en /assets/, no en /static/
+  // Los archivos específicos se cachean dinámicamente
 ];
 
 // Install - cachea recursos iniciales
