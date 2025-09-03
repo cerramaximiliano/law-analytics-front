@@ -102,6 +102,12 @@ export interface Plan {
 	isDefault: boolean;
 	resourceLimits: ResourceLimit[];
 	features: PlanFeature[];
+	// Información de entornos con los datos de Stripe
+	environments?: {
+		development?: EnvironmentConfig;
+		production?: EnvironmentConfig;
+	};
+	// Campos legacy para compatibilidad
 	pricingInfo: PlanPricingInfo;
 	createdAt?: {
 		$date: string;
@@ -142,8 +148,17 @@ export interface PlanFeatures {
 export interface PlanPricingInfo {
 	basePrice: number;
 	currency: string;
-	billingPeriod: "monthly" | "yearly" | "daily" | string;
+	billingPeriod: "monthly" | "yearly" | "daily" | "weekly" | "annual" | string;
 	stripePriceId?: string;
+}
+
+export interface EnvironmentConfig {
+	stripeProductId?: string;
+	stripePriceId?: string;
+	basePrice?: number;
+	currency?: string;
+	billingPeriod?: "daily" | "weekly" | "monthly" | "annual";
+	lastSync?: string | Date;
 }
 
 export interface Subscription {

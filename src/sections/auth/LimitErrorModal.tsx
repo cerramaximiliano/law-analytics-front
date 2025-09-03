@@ -26,6 +26,7 @@ import { Lock, ArrowRight, TickCircle, CloseCircle, Crown } from "iconsax-react"
 import MainCard from "components/MainCard";
 // Importar el servicio API para obtener planes dinámicamente
 import ApiService, { Plan } from "store/reducers/ApiService";
+import { getPlanPricing, formatPrice, getBillingPeriodText } from "utils/planPricingUtils";
 
 interface LimitInfo {
 	resourceType: string;
@@ -405,8 +406,9 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 						}}
 					>
 						{activePlans.map((plan) => {
-							// Usar siempre el precio mensual
-							const displayPrice = plan.pricingInfo.basePrice;
+							// Obtener la información de precios según el entorno
+							const pricing = getPlanPricing(plan);
+							const displayPrice = pricing.basePrice;
 
 							return (
 								<Grid item xs={12} sm={6} md={activePlans.length <= 2 ? 5 : 4} key={plan.planId}>
@@ -448,7 +450,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 																	${displayPrice}
 																</Typography>
 																<Typography variant="h6" color="textSecondary" sx={{ ml: 1 }}>
-																	/mes
+																	{getBillingPeriodText(pricing.billingPeriod)}
 																</Typography>
 															</Box>
 														</Grid>

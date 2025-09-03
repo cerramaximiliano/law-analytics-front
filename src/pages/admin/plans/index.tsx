@@ -31,6 +31,7 @@ import { dispatch } from "store";
 import { formatCurrency } from "utils/formatCurrency";
 // import SecondaryAction from "components/SecondaryAction";
 import ApiService, { Plan } from "store/reducers/ApiService";
+import { getPlanPricing, getBillingPeriodText } from "utils/planPricingUtils";
 import PlanFormModal from "./PlanFormModal";
 import DeletePlanDialog from "./DeletePlanDialog";
 import PlanDetailModal from "./PlanDetailModal";
@@ -392,7 +393,7 @@ const PlansManagement = () => {
 							<CardContent>
 								<Stack spacing={1}>
 									<Typography variant="h3" color="info.main">
-										{plans.filter((plan) => plan.pricingInfo.basePrice === 0).length}
+										{plans.filter((plan) => getPlanPricing(plan).basePrice === 0).length}
 									</Typography>
 									<Typography variant="body2" color="textSecondary">
 										Planes Gratuitos
@@ -432,9 +433,11 @@ const PlansManagement = () => {
 												</Typography>
 											</TableCell>
 											<TableCell align="center">
-												<Typography variant="subtitle2">{formatCurrency(plan.pricingInfo.basePrice, plan.pricingInfo.currency)}</Typography>
+												<Typography variant="subtitle2">
+													{formatCurrency(getPlanPricing(plan).basePrice, getPlanPricing(plan).currency)}
+												</Typography>
 												<Typography variant="caption" color="textSecondary">
-													/{plan.pricingInfo.billingPeriod === "monthly" ? "mes" : "año"}
+													{getBillingPeriodText(getPlanPricing(plan).billingPeriod)}
 												</Typography>
 											</TableCell>
 											<TableCell align="center">
@@ -492,9 +495,9 @@ const PlansManagement = () => {
 												</Box>
 
 												<Typography variant="h4" color="primary">
-													{formatCurrency(plan.pricingInfo.basePrice, plan.pricingInfo.currency)}
+													{formatCurrency(getPlanPricing(plan).basePrice, getPlanPricing(plan).currency)}
 													<Typography variant="body2" component="span" color="textSecondary">
-														/{plan.pricingInfo.billingPeriod === "monthly" ? "mes" : "año"}
+														{getBillingPeriodText(getPlanPricing(plan).billingPeriod)}
 													</Typography>
 												</Typography>
 

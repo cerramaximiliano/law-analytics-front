@@ -12,7 +12,7 @@ const widgetImages = import.meta.glob<ImageModule>("/src/assets/images/widget/*"
 // Helper function to get image path from filename
 const getImagePath = (imageMap: Record<string, ImageModule>, filename: string): string => {
 	// Find the key that ends with the filename
-	const key = Object.keys(imageMap).find(path => path.endsWith(filename) || path.includes(filename));
+	const key = Object.keys(imageMap).find((path) => path.endsWith(filename) || path.includes(filename));
 	if (key && imageMap[key]) {
 		return imageMap[key].default;
 	}
@@ -62,11 +62,11 @@ export const createImageContext = (type: "users" | "profile" | "widget") => {
 	const loaderMap = {
 		users: avatarImage,
 		profile: backImage,
-		widget: productImage
+		widget: productImage,
 	};
 
 	const loader = loaderMap[type];
-	
+
 	// Return a function that mimics require.context behavior
 	return (filename: string) => loader(filename);
 };
@@ -74,7 +74,7 @@ export const createImageContext = (type: "users" | "profile" | "widget") => {
 // Export default loaders
 export default {
 	avatarImage,
-	backImage, 
+	backImage,
 	productImage,
-	createImageContext
+	createImageContext,
 };

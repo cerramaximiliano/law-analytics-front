@@ -492,14 +492,15 @@ const BookingCard: React.FC<{
 								<Typography variant="subtitle2" sx={{ mb: 1 }}>
 									Campos personalizados:
 								</Typography>
-								{Array.isArray(booking.customFields) && booking.customFields.map((field, index) => (
-									<Box key={index} sx={{ mb: 1 }}>
-										<Typography variant="caption" sx={{ fontWeight: 500 }}>
-											{field.name}:
-										</Typography>
-										<Typography variant="body2">{field.value.toString()}</Typography>
-									</Box>
-								))}
+								{Array.isArray(booking.customFields) &&
+									booking.customFields.map((field, index) => (
+										<Box key={index} sx={{ mb: 1 }}>
+											<Typography variant="caption" sx={{ fontWeight: 500 }}>
+												{field.name}:
+											</Typography>
+											<Typography variant="body2">{field.value.toString()}</Typography>
+										</Box>
+									))}
 							</Box>
 						)}
 
@@ -1200,11 +1201,13 @@ const BookingsManagement = () => {
 
 						{availabilities.length > 0 ? (
 							<Grid container spacing={3}>
-								{Array.isArray(availabilities) ? availabilities.map((availability) => (
-									<Grid item xs={12} sm={6} md={4} key={availability._id}>
-										<AvailabilityCard availability={availability} onDelete={handleDeleteAvailabilityClick} />
-									</Grid>
-								)) : null}
+								{Array.isArray(availabilities)
+									? availabilities.map((availability) => (
+											<Grid item xs={12} sm={6} md={4} key={availability._id}>
+												<AvailabilityCard availability={availability} onDelete={handleDeleteAvailabilityClick} />
+											</Grid>
+									  ))
+									: null}
 							</Grid>
 						) : (
 							<Card sx={{ mb: 3 }}>
@@ -1301,107 +1304,109 @@ const BookingsManagement = () => {
 					</Box>
 				) : (
 					<Grid container spacing={3}>
-						{Array.isArray(filteredBookings) ? filteredBookings.map((booking) => {
-							// Verificar si ya pasó la fecha
-							const isPast = booking.startTime ? isAfter(new Date(), new Date(booking.startTime)) : false;
+						{Array.isArray(filteredBookings)
+							? filteredBookings.map((booking) => {
+									// Verificar si ya pasó la fecha
+									const isPast = booking.startTime ? isAfter(new Date(), new Date(booking.startTime)) : false;
 
-							return (
-								<Grid item xs={12} sm={6} md={4} key={booking._id}>
-									{/* Si tenemos información de disponibilidad, mostramos la tarjeta normal */}
-									{booking.availability || availability ? (
-										<BookingCard
-											booking={booking}
-											availability={booking.availability || (availability as AvailabilityType)}
-											onStatusChange={handleStatusChange}
-											onDelete={handleDeleteClick}
-											showAvailabilityInfo={!isSpecificAvailability}
-										/>
-									) : (
-										/* Si no tenemos información de disponibilidad, mostramos una versión simplificada */
-										<Card
-											variant="outlined"
-											sx={{
-												height: "100%",
-												borderLeft: "4px solid",
-												borderLeftColor:
-													booking.status === "confirmed"
-														? "success.main"
-														: booking.status === "pending"
-														? "warning.main"
-														: booking.status === "cancelled" || booking.status === "rejected"
-														? "error.main"
-														: "info.main",
-											}}
-										>
-											<CardContent>
-												<Typography variant="h6" gutterBottom>
-													{booking.clientName}
-												</Typography>
-												<Typography variant="body2">{format(new Date(booking.startTime), "d/M/yyyy - HH:mm")}</Typography>
-												<Typography variant="body2" color="text.secondary" gutterBottom>
-													{booking.clientEmail}
-												</Typography>
-												<Box sx={{ mt: 1 }}>
-													{booking.status === "confirmed" && <Chip label="Confirmada" size="small" color="success" />}
-													{booking.status === "pending" && <Chip label="Pendiente" size="small" color="warning" />}
-													{booking.status === "cancelled" && <Chip label="Cancelada" size="small" color="error" />}
-													{booking.status === "rejected" && <Chip label="Rechazada" size="small" color="error" />}
-													{booking.status === "completed" && <Chip label="Completada" size="small" color="info" />}
-												</Box>
-											</CardContent>
-											{booking.status === "pending" && (
-												<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
-													<Button
-														size="small"
-														color="success"
-														startIcon={<ClipboardTick size={16} />}
-														onClick={() => handleStatusChange(booking._id, "confirmed")}
-														sx={{ textTransform: "none" }}
-													>
-														Confirmar
-													</Button>
-													<Button
-														size="small"
-														color="error"
-														startIcon={<Trash size={16} />}
-														onClick={() => handleStatusChange(booking._id, "rejected")}
-														sx={{ textTransform: "none" }}
-													>
-														Rechazar
-													</Button>
-												</Box>
+									return (
+										<Grid item xs={12} sm={6} md={4} key={booking._id}>
+											{/* Si tenemos información de disponibilidad, mostramos la tarjeta normal */}
+											{booking.availability || availability ? (
+												<BookingCard
+													booking={booking}
+													availability={booking.availability || (availability as AvailabilityType)}
+													onStatusChange={handleStatusChange}
+													onDelete={handleDeleteClick}
+													showAvailabilityInfo={!isSpecificAvailability}
+												/>
+											) : (
+												/* Si no tenemos información de disponibilidad, mostramos una versión simplificada */
+												<Card
+													variant="outlined"
+													sx={{
+														height: "100%",
+														borderLeft: "4px solid",
+														borderLeftColor:
+															booking.status === "confirmed"
+																? "success.main"
+																: booking.status === "pending"
+																? "warning.main"
+																: booking.status === "cancelled" || booking.status === "rejected"
+																? "error.main"
+																: "info.main",
+													}}
+												>
+													<CardContent>
+														<Typography variant="h6" gutterBottom>
+															{booking.clientName}
+														</Typography>
+														<Typography variant="body2">{format(new Date(booking.startTime), "d/M/yyyy - HH:mm")}</Typography>
+														<Typography variant="body2" color="text.secondary" gutterBottom>
+															{booking.clientEmail}
+														</Typography>
+														<Box sx={{ mt: 1 }}>
+															{booking.status === "confirmed" && <Chip label="Confirmada" size="small" color="success" />}
+															{booking.status === "pending" && <Chip label="Pendiente" size="small" color="warning" />}
+															{booking.status === "cancelled" && <Chip label="Cancelada" size="small" color="error" />}
+															{booking.status === "rejected" && <Chip label="Rechazada" size="small" color="error" />}
+															{booking.status === "completed" && <Chip label="Completada" size="small" color="info" />}
+														</Box>
+													</CardContent>
+													{booking.status === "pending" && (
+														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
+															<Button
+																size="small"
+																color="success"
+																startIcon={<ClipboardTick size={16} />}
+																onClick={() => handleStatusChange(booking._id, "confirmed")}
+																sx={{ textTransform: "none" }}
+															>
+																Confirmar
+															</Button>
+															<Button
+																size="small"
+																color="error"
+																startIcon={<Trash size={16} />}
+																onClick={() => handleStatusChange(booking._id, "rejected")}
+																sx={{ textTransform: "none" }}
+															>
+																Rechazar
+															</Button>
+														</Box>
+													)}
+													{booking.status === "confirmed" && !isPast && (
+														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
+															<Button
+																size="small"
+																color="error"
+																startIcon={<Trash size={16} />}
+																onClick={() => handleStatusChange(booking._id, "cancelled")}
+																sx={{ textTransform: "none" }}
+															>
+																Cancelar
+															</Button>
+														</Box>
+													)}
+													{booking.status === "confirmed" && isPast && (
+														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
+															<Button
+																size="small"
+																color="info"
+																startIcon={<ClipboardTick size={16} />}
+																onClick={() => handleStatusChange(booking._id, "completed")}
+																sx={{ textTransform: "none" }}
+															>
+																Completada
+															</Button>
+														</Box>
+													)}
+												</Card>
 											)}
-											{booking.status === "confirmed" && !isPast && (
-												<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
-													<Button
-														size="small"
-														color="error"
-														startIcon={<Trash size={16} />}
-														onClick={() => handleStatusChange(booking._id, "cancelled")}
-														sx={{ textTransform: "none" }}
-													>
-														Cancelar
-													</Button>
-												</Box>
-											)}
-											{booking.status === "confirmed" && isPast && (
-												<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
-													<Button
-														size="small"
-														color="info"
-														startIcon={<ClipboardTick size={16} />}
-														onClick={() => handleStatusChange(booking._id, "completed")}
-														sx={{ textTransform: "none" }}
-													>
-														Completada
-													</Button>
-												</Box>
-											)}
-										</Card>
-									)}
-								</Grid>
-							);
-						}) : null}
+										</Grid>
+									);
+							  })
+							: null}
 					</Grid>
 				)}
 			</MainCard>

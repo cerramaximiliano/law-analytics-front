@@ -16,6 +16,8 @@ import Mail from "assets/images/icons/mail.png";
 import Maps from "assets/images/icons/map.png";
 import Phone from "assets/images/icons/phone.png";
 
+import { avatarImage } from "utils/imageLoader";
+
 const textPrimary = "#262626";
 const textSecondary = "#8c8c8c";
 const border = "#f0f0f0";
@@ -109,8 +111,6 @@ const styles = StyleSheet.create({
 		marginTop: 25,
 	},
 });
-
-import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| CUSTOMER - CARD ||============================== //
 

@@ -13,6 +13,7 @@
 			name="description"
 			content="Software Legal Inteligente para Abogados. Gestiona causas judiciales, calcula indemnizaciones laborales y optimiza tu estudio jurídico."
 		/>
+		<link rel="manifest" href="/manifest.json" />
 		<meta name="keywords" content="software legal, gestión causas judiciales, calculadora laboral, abogados argentina, poder judicial" />
 		<meta name="author" content="Law Analytics" />
 		<link rel="apple-touch-icon" href="/logo192.png" />
@@ -42,5 +43,40 @@
 		<noscript>You need to enable JavaScript to run this app.</noscript>
 		<div id="root"></div>
 		<script type="module" src="/src/index.tsx"></script>
+		<script>
+			// Registro del Service Worker con manejo mejorado para móviles
+			if ('serviceWorker' in navigator) {
+				// Esperar a que la página esté completamente cargada
+				window.addEventListener('load', function() {
+					navigator.serviceWorker.register('/sw.js').then(
+						function(registration) {
+							console.log('ServiceWorker registrado con éxito:', registration.scope);
+							
+							// Detectar actualizaciones del Service Worker
+							registration.addEventListener('updatefound', () => {
+								const newWorker = registration.installing;
+								if (newWorker) {
+									newWorker.addEventListener('statechange', () => {
+										if (newWorker.state === 'activated') {
+											// Nueva versión disponible, recargar automáticamente
+											console.log('Nueva versión disponible, recargando...');
+											window.location.reload();
+										}
+									});
+								}
+							});
+
+							// Verificar actualizaciones cada 30 minutos
+							setInterval(() => {
+								registration.update();
+							}, 30 * 60 * 1000);
+						},
+						function(err) {
+							console.log('Fallo el registro del ServiceWorker: ', err);
+						}
+					);
+				});
+			}
+		</script>
 	</body>
 </html>

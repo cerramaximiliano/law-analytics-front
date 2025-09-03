@@ -674,30 +674,44 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 					dispatch(setConnected(true));
 					dispatch(setUserProfile(profile));
 
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: `Reconectado automáticamente a Google Calendar como ${profile?.email}`,
-							variant: "alert",
-							alert: {
-								color: "success",
-							},
-							close: true,
-						}),
-					);
+					// Solo mostrar el mensaje si estamos en una página relacionada con calendario
+					const currentPath = window.location.pathname;
+					const isCalendarPage =
+						currentPath.includes("/calendar") || currentPath.includes("/reservation") || currentPath.includes("/booking");
+
+					if (isCalendarPage) {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: `Reconectado automáticamente a Google Calendar como ${profile?.email}`,
+								variant: "alert",
+								alert: {
+									color: "success",
+								},
+								close: true,
+							}),
+						);
+					}
 				} else {
 					// No se pudo reconectar silenciosamente, mostrar estado previo
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: `Conexión previa con ${email} detectada. Haz clic en "Conectar Google Calendar" para reactivar.`,
-							variant: "alert",
-							alert: {
-								color: "info",
-							},
-							close: true,
-						}),
-					);
+					// Solo mostrar el mensaje si estamos en una página relacionada con calendario
+					const currentPath = window.location.pathname;
+					const isCalendarPage =
+						currentPath.includes("/calendar") || currentPath.includes("/reservation") || currentPath.includes("/booking");
+
+					if (isCalendarPage) {
+						dispatch(
+							openSnackbar({
+								open: true,
+								message: `Conexión previa con ${email} detectada. Haz clic en "Conectar Google Calendar" para reactivar.`,
+								variant: "alert",
+								alert: {
+									color: "info",
+								},
+								close: true,
+							}),
+						);
+					}
 				}
 			} catch (error) {
 				console.log("No se pudo reconectar automáticamente:", error);

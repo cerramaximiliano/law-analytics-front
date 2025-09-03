@@ -32,9 +32,13 @@ import App from "./App";
 import { store, persister } from "store";
 import { ConfigProvider } from "contexts/ConfigContext";
 import reportWebVitals from "./reportWebVitals";
+import { initMobileAutoUpdate } from "./utils/mobileCache";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
+
+// Inicializar auto-actualización para móviles
+initMobileAutoUpdate();
 
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 

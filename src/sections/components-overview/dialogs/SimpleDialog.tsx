@@ -10,9 +10,9 @@ import IconButton from "components/@extended/IconButton";
 
 // assets
 import { Add } from "iconsax-react";
+import { avatarImage } from "utils/imageLoader";
 
 const emails = ["username@gmail.com", "user02@gmail.com"];
-import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| DIALOG - SIMPLE ||============================== //
 

@@ -1,7 +1,8 @@
 // Service Worker para caché offline y mejor performance
 // IMPORTANTE: Incrementar versión para forzar actualización
-const CACHE_VERSION = 'v4-2025-01-03'; // Cambiar esta versión con cada deployment
+const CACHE_VERSION = 'v6-2025-01-03-mobile-fix'; // Cambiar esta versión con cada deployment
 const CACHE_NAME = 'law-analytics-' + CACHE_VERSION;
+const SKIP_CACHE_FOR = ['/api/', '/auth/', '.json']; // Rutas que nunca se cachean
 const urlsToCache = [
   '/',
   '/index.html',
@@ -15,8 +16,18 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    // Limpiar TODOS los cachés viejos al instalar
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames
+          .filter(name => name.startsWith('law-analytics-'))
+          .filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      );
+    }).then(() => {
+      return caches.open(CACHE_NAME)
+        .then(cache => cache.addAll(urlsToCache));
+    })
   );
 });
 
@@ -24,6 +35,13 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // No cachear ciertas rutas
+  const shouldSkipCache = SKIP_CACHE_FOR.some(path => url.pathname.includes(path));
+  if (shouldSkipCache) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   // Para archivos HTML, siempre buscar la versión más reciente
   if (request.mode === 'navigate' || url.pathname.endsWith('.html')) {

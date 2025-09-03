@@ -42,14 +42,7 @@ const FreePage = () => {
 					<FadeInWhenVisible>
 						<Grid container spacing={2} justifyContent="end" alignItems="center">
 							<Grid item>
-								<Button
-									variant="contained"
-									color="primary"
-									size="large"
-									startIcon={<ExportSquare />}
-									component={RouterLink}
-									to="/register"
-								>
+								<Button variant="contained" color="primary" size="large" startIcon={<ExportSquare />} component={RouterLink} to="/register">
 									Registrarse Gratis
 								</Button>
 							</Grid>

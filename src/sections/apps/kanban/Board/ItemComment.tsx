@@ -12,12 +12,12 @@ import Avatar from "components/@extended/Avatar";
 import { ThemeMode } from "types/config";
 import { KanbanComment, KanbanProfile } from "types/kanban";
 
+import { avatarImage } from "utils/imageLoader";
+
 interface Props {
 	comment: KanbanComment;
 	profile: KanbanProfile;
 }
-
-import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| KANBAN BOARD - ITEM COMMENT ||============================== //
 

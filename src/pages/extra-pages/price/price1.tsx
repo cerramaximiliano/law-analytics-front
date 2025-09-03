@@ -36,6 +36,7 @@ import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/Api
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import TabLegalDocuments from "./TabPanel";
+import { getPlanPricing, formatPrice, getBillingPeriodText, getCurrentEnvironment } from "utils/planPricingUtils";
 
 // ==============================|| PRICING ||============================== //
 
@@ -52,6 +53,7 @@ const Pricing = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
+	const isDevelopment = getCurrentEnvironment() === "development";
 	// Estado para el diálogo de documentos legales
 	const [legalDocsDialogOpen, setLegalDocsDialogOpen] = useState(false);
 	// Estado para el diálogo de opciones de downgrade
@@ -537,20 +539,22 @@ const Pricing = () => {
 
 	return (
 		<Grid container spacing={3}>
-			<Grid item xs={12}>
-				<Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
-					<Stack spacing={0}></Stack>
-					<Stack direction="row" spacing={1.5} alignItems="center">
-						<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-							Cobro Anual
-						</Typography>
-						<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
-						<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-							Cobro Mensual
-						</Typography>
+			{!isDevelopment && (
+				<Grid item xs={12}>
+					<Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
+						<Stack spacing={0}></Stack>
+						<Stack direction="row" spacing={1.5} alignItems="center">
+							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
+								Cobro Anual
+							</Typography>
+							<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
+							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
+								Cobro Mensual
+							</Typography>
+						</Stack>
 					</Stack>
-				</Stack>
-			</Grid>
+				</Grid>
+			)}
 			<Grid item container spacing={3} xs={12} alignItems="center">
 				{plans.map((plan) => {
 					// Determinar si este es el plan activo del usuario
@@ -559,11 +563,15 @@ const Pricing = () => {
 					// Determinar si es plan Free y hay otro plan activo (para el caso de downgrade)
 					const isDowngradeToFree = plan.planId === "free" && currentPlanId && currentPlanId !== "free";
 
+					// Obtener la información de precios según el entorno
+					const pricing = getPlanPricing(plan);
+
 					// Calcular el precio según el periodo seleccionado
+					// Solo aplicar descuento anual si estamos en producción con planes mensuales
 					const displayPrice =
-						!timePeriod && plan.pricingInfo.billingPeriod === "monthly"
-							? Math.round(plan.pricingInfo.basePrice * 12 * 0.75) // Descuento anual del 25%
-							: plan.pricingInfo.basePrice;
+						!isDevelopment && !timePeriod && pricing.billingPeriod === "monthly"
+							? Math.round(pricing.basePrice * 12 * 0.75) // Descuento anual del 25%
+							: pricing.basePrice;
 
 					return (
 						<Grid item xs={12} sm={6} md={4} key={plan.planId}>
@@ -588,7 +596,7 @@ const Pricing = () => {
 															${displayPrice}
 														</Typography>
 														<Typography variant="h6" color="textSecondary">
-															{timePeriod ? "/mes" : "/año"}
+															{getBillingPeriodText(pricing.billingPeriod)}
 														</Typography>
 													</Stack>
 												</Grid>

@@ -35,6 +35,8 @@ import UploadMultiFile from "components/third-party/dropzone/MultiFile";
 import { KanbanItem, KanbanProfile, KanbanUserStory, KanbanColumn } from "types/kanban";
 import { DropzopType } from "types/dropzone";
 
+import { avatarImage } from "utils/imageLoader";
+
 interface Props {
 	item: KanbanItem;
 	profiles: KanbanProfile[];
@@ -42,8 +44,6 @@ interface Props {
 	columns: KanbanColumn[];
 	handleDrawerOpen: () => void;
 }
-
-import { avatarImage } from "utils/imageLoader";
 const validationSchema = yup.object({
 	title: yup.string().required("Task title is required"),
 	dueDate: yup.date(),

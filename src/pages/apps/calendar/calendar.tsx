@@ -466,7 +466,7 @@ const Calendar = () => {
 				handleResize();
 			});
 			// Observar el elemento padre del calendario si existe
-			const calendarElement = document.querySelector('.fc-daygrid') || document.querySelector('.fc-view-harness');
+			const calendarElement = document.querySelector(".fc-daygrid") || document.querySelector(".fc-view-harness");
 			if (calendarElement) {
 				resizeObserver.observe(calendarElement);
 			}

@@ -501,10 +501,10 @@ class GoogleCalendarService {
 	private createEventHash(event: Event | EventInput): string {
 		const normalizedTitle = (event.title || "").toLowerCase().trim().replace(/\s+/g, " ");
 		let startDate: Date;
-		
+
 		if (!event.start) {
 			startDate = new Date();
-		} else if (typeof event.start === 'string' || typeof event.start === 'number' || event.start instanceof Date) {
+		} else if (typeof event.start === "string" || typeof event.start === "number" || event.start instanceof Date) {
 			startDate = new Date(event.start);
 		} else {
 			// For other DateInput types, use current date as fallback

@@ -10,6 +10,8 @@ import { Page, View, Document, StyleSheet, Image, Text, Link } from "@react-pdf/
 // types
 import { UserCardProps } from "types/user-profile";
 
+import { avatarImage } from "utils/imageLoader";
+
 const textPrimary = "#262626";
 const textSecondary = "#8c8c8c";
 const border = "#f0f0f0";
@@ -125,8 +127,6 @@ const styles = StyleSheet.create({
 		marginBottom: 15,
 	},
 });
-
-import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| CUSTOMER - PREVIEW ||============================== //
 

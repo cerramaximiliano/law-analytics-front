@@ -51,13 +51,13 @@ import { Add, Trash } from "iconsax-react";
 import { KanbanColumn, KanbanProfile, KanbanUserStory } from "types/kanban";
 import { DropzopType } from "types/dropzone";
 
+import { avatarImage } from "utils/imageLoader";
+
 interface Props {
 	story: KanbanUserStory;
 	open: boolean;
 	handleDrawerOpen: () => void;
 }
-
-import { avatarImage } from "utils/imageLoader";
 const validationSchema = yup.object({
 	title: yup.string().required("User story title is required"),
 	dueDate: yup.date(),

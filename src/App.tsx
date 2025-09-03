@@ -37,7 +37,7 @@ const App = () => {
 	useEffect(() => {
 		// Configurar detector de actualizaciones
 		setupUpdateChecker();
-		
+
 		dispatch(fetchMenu()).then(() => {
 			setLoading(false);
 		});

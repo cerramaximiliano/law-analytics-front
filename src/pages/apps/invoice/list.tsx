@@ -62,6 +62,8 @@ import { Edit, Eye, InfoCircle, ProfileTick, Trash } from "iconsax-react";
 import { InvoiceList } from "types/invoice";
 import { PaletteColor } from "@mui/material";
 
+import { avatarImage } from "utils/imageLoader";
+
 interface InvoiceWidgets {
 	title: string;
 	count: string;
@@ -71,8 +73,6 @@ interface InvoiceWidgets {
 	color: PaletteColor;
 	chartData: number[];
 }
-
-import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| REACT TABLE ||============================== //
 

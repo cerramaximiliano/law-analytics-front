@@ -31,6 +31,7 @@ import MainCard from "components/MainCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import { getPlanPricing, formatPrice, getBillingPeriodText } from "utils/planPricingUtils";
 
 // ==============================|| PLANES PÚBLICOS ||============================== //
 
@@ -302,11 +303,14 @@ const Plans = () => {
 					{!loading && !error && (
 						<Grid item container spacing={3} xs={12} alignItems="center">
 							{plans.map((plan) => {
+								// Obtener la información de precios según el entorno
+								const pricing = getPlanPricing(plan);
+
 								// Calcular el precio según el periodo seleccionado
 								const displayPrice =
-									!timePeriod && plan.pricingInfo.billingPeriod === "monthly"
-										? Math.round(plan.pricingInfo.basePrice * 12 * 0.75) // Descuento anual del 25%
-										: plan.pricingInfo.basePrice;
+									!timePeriod && pricing.billingPeriod === "monthly"
+										? Math.round(pricing.basePrice * 12 * 0.75) // Descuento anual del 25%
+										: pricing.basePrice;
 
 								return (
 									<Grid item xs={12} sm={6} md={4} key={plan.planId}>
