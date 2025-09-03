@@ -1401,7 +1401,7 @@ const BookingsManagement = () => {
 									)}
 								</Grid>
 							);
-						})}
+						}) : null}
 					</Grid>
 				)}
 			</MainCard>
