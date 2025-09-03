@@ -12,14 +12,10 @@ export const setupUpdateChecker = () => {
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'activated' && !refreshing) {
-              // Nueva versión disponible
-              console.log('Nueva versión de la aplicación disponible');
-              
-              // Mostrar notificación al usuario (opcional)
-              if (window.confirm('Hay una nueva versión disponible. ¿Deseas actualizar ahora?')) {
-                refreshing = true;
-                window.location.reload();
-              }
+              // Nueva versión disponible - actualizar automáticamente sin preguntar
+              console.log('Nueva versión detectada, actualizando automáticamente...');
+              refreshing = true;
+              window.location.reload();
             }
           });
         }
