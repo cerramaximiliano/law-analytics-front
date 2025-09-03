@@ -1,6 +1,6 @@
 // Service Worker para caché offline y mejor performance
 // IMPORTANTE: Incrementar versión para forzar actualización
-const CACHE_VERSION = 'v3-' + new Date().getTime(); // Versión única basada en timestamp
+const CACHE_VERSION = 'v4-2025-01-03'; // Cambiar esta versión con cada deployment
 const CACHE_NAME = 'law-analytics-' + CACHE_VERSION;
 const urlsToCache = [
   '/',
@@ -20,32 +20,50 @@ self.addEventListener('install', event => {
   );
 });
 
-// Fetch - sirve desde caché cuando es posible
+// Fetch - estrategia network-first para HTML, cache-first para assets
 self.addEventListener('fetch', event => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Para archivos HTML, siempre buscar la versión más reciente
+  if (request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          // Actualizar caché con la nueva versión
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(request, responseToCache);
+          });
+          return response;
+        })
+        .catch(() => {
+          // Si falla, usar caché
+          return caches.match(request);
+        })
+    );
+    return;
+  }
+
+  // Para assets (JS, CSS, etc), usar caché primero
   event.respondWith(
-    caches.match(event.request)
+    caches.match(request)
       .then(response => {
-        // Cache hit - return response
         if (response) {
           return response;
         }
         
-        // Clone the request
-        const fetchRequest = event.request.clone();
-        
-        return fetch(fetchRequest).then(response => {
-          // Check if valid response
+        // Si no está en caché, buscar en red
+        return fetch(request).then(response => {
+          // Solo cachear respuestas exitosas
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
           
-          // Clone the response
           const responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(request, responseToCache);
+          });
           
           return response;
         });
