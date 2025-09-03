@@ -492,7 +492,7 @@ const BookingCard: React.FC<{
 								<Typography variant="subtitle2" sx={{ mb: 1 }}>
 									Campos personalizados:
 								</Typography>
-								{booking.customFields.map((field, index) => (
+								{Array.isArray(booking.customFields) && booking.customFields.map((field, index) => (
 									<Box key={index} sx={{ mb: 1 }}>
 										<Typography variant="caption" sx={{ fontWeight: 500 }}>
 											{field.name}:
@@ -699,7 +699,9 @@ const BookingsManagement = () => {
 				// Cargar todas las disponibilidades cuando estamos en la vista general
 				const availabilitiesResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
 
-				setAvailabilities(availabilitiesResponse.data);
+				// Asegurar que siempre sea un array
+				const availabilitiesData = Array.isArray(availabilitiesResponse.data) ? availabilitiesResponse.data : [];
+				setAvailabilities(availabilitiesData);
 			}
 		} catch (error) {
 			console.error("Error fetching reservations data:", error);
@@ -800,7 +802,7 @@ const BookingsManagement = () => {
 			const updatedBooking = response.data;
 
 			// Actualizar bookings
-			setBookings(bookings.map((b) => (b._id === bookingId ? updatedBooking : b)));
+			setBookings(Array.isArray(bookings) ? bookings.map((b) => (b._id === bookingId ? updatedBooking : b)) : []);
 
 			dispatch(
 				openSnackbar({
@@ -859,7 +861,7 @@ const BookingsManagement = () => {
 				const updatedBooking = response.data;
 
 				// Actualizar bookings
-				setBookings(bookings.map((b) => (b._id === selectedBooking._id ? updatedBooking : b)));
+				setBookings(Array.isArray(bookings) ? bookings.map((b) => (b._id === selectedBooking._id ? updatedBooking : b)) : []);
 
 				dispatch(
 					openSnackbar({
@@ -909,7 +911,7 @@ const BookingsManagement = () => {
 				const updatedBooking = response.data;
 
 				// Actualizar bookings
-				setBookings(bookings.map((b) => (b._id === selectedBooking._id ? updatedBooking : b)));
+				setBookings(Array.isArray(bookings) ? bookings.map((b) => (b._id === selectedBooking._id ? updatedBooking : b)) : []);
 
 				dispatch(
 					openSnackbar({
@@ -1002,7 +1004,7 @@ const BookingsManagement = () => {
 			await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`);
 
 			// Actualizar la lista de disponibilidades
-			setAvailabilities(availabilities.filter((a) => a._id !== selectedAvailabilityId));
+			setAvailabilities(Array.isArray(availabilities) ? availabilities.filter((a) => a._id !== selectedAvailabilityId) : []);
 
 			dispatch(
 				openSnackbar({
@@ -1198,11 +1200,11 @@ const BookingsManagement = () => {
 
 						{availabilities.length > 0 ? (
 							<Grid container spacing={3}>
-								{availabilities.map((availability) => (
+								{Array.isArray(availabilities) ? availabilities.map((availability) => (
 									<Grid item xs={12} sm={6} md={4} key={availability._id}>
 										<AvailabilityCard availability={availability} onDelete={handleDeleteAvailabilityClick} />
 									</Grid>
-								))}
+								)) : null}
 							</Grid>
 						) : (
 							<Card sx={{ mb: 3 }}>
@@ -1299,7 +1301,7 @@ const BookingsManagement = () => {
 					</Box>
 				) : (
 					<Grid container spacing={3}>
-						{filteredBookings.map((booking) => {
+						{Array.isArray(filteredBookings) ? filteredBookings.map((booking) => {
 							// Verificar si ya pasó la fecha
 							const isPast = booking.startTime ? isAfter(new Date(), new Date(booking.startTime)) : false;
 
