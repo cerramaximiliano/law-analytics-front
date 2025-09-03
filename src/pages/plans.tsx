@@ -31,7 +31,7 @@ import MainCard from "components/MainCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
-import { getPlanPricing, formatPrice, getBillingPeriodText } from "utils/planPricingUtils";
+import { getPlanPricing, formatPrice, getBillingPeriodText, getCurrentEnvironment } from "utils/planPricingUtils";
 
 // ==============================|| PLANES PÚBLICOS ||============================== //
 
@@ -53,6 +53,7 @@ const Plans = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
+	const isDevelopment = getCurrentEnvironment() === "development";
 
 	// breadcrumb items
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Planes y Precios" }];
@@ -270,15 +271,17 @@ const Plans = () => {
 								</Typography>
 							</motion.div>
 						</Box>
-						<Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
-							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-								Cobro Anual
-							</Typography>
-							<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
-							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-								Cobro Mensual
-							</Typography>
-						</Stack>
+						{!isDevelopment && (
+							<Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
+								<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
+									Cobro Anual
+								</Typography>
+								<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
+								<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
+									Cobro Mensual
+								</Typography>
+							</Stack>
+						)}
 					</Grid>
 
 					{/* Si está cargando, mostrar indicador */}
@@ -307,8 +310,9 @@ const Plans = () => {
 								const pricing = getPlanPricing(plan);
 
 								// Calcular el precio según el periodo seleccionado
+								// Solo aplicar descuento anual si estamos en producción con planes mensuales
 								const displayPrice =
-									!timePeriod && pricing.billingPeriod === "monthly"
+									!isDevelopment && !timePeriod && pricing.billingPeriod === "monthly"
 										? Math.round(pricing.basePrice * 12 * 0.75) // Descuento anual del 25%
 										: pricing.basePrice;
 
@@ -335,7 +339,7 @@ const Plans = () => {
 																		${displayPrice}
 																	</Typography>
 																	<Typography variant="h6" color="textSecondary">
-																		{timePeriod ? "/mes" : "/año"}
+																		{getBillingPeriodText(pricing.billingPeriod)}
 																	</Typography>
 																</Stack>
 															</Grid>
