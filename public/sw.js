@@ -1,6 +1,7 @@
 // Service Worker para caché offline y mejor performance
 // IMPORTANTE: Incrementar versión para forzar actualización
-const CACHE_NAME = 'law-analytics-v2-vite';
+const CACHE_VERSION = 'v3-' + new Date().getTime(); // Versión única basada en timestamp
+const CACHE_NAME = 'law-analytics-' + CACHE_VERSION;
 const urlsToCache = [
   '/',
   '/index.html',
@@ -8,8 +9,11 @@ const urlsToCache = [
   // Los archivos específicos se cachean dinámicamente
 ];
 
-// Install - cachea recursos iniciales
+// Install - cachea recursos iniciales y activa inmediatamente
 self.addEventListener('install', event => {
+  // Forzar activación inmediata del nuevo service worker
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
@@ -49,17 +53,22 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Activate - limpia caché viejo
+// Activate - limpia caché viejo y toma control inmediato
 self.addEventListener('activate', event => {
+  // Tomar control de todas las páginas inmediatamente
   event.waitUntil(
     caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
+      return Promise.all([
+        // Eliminar todos los cachés viejos
+        ...cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
+            console.log('Eliminando caché antiguo:', cacheName);
             return caches.delete(cacheName);
           }
-        })
-      );
+        }),
+        // Tomar control de todos los clientes inmediatamente
+        clients.claim()
+      ]);
     })
   );
 });

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 // project-imports
 import Routes from "routes";
 import ThemeCustomization from "themes";
+import { setupUpdateChecker } from "utils/updateChecker";
 
 import Loader from "components/Loader";
 import Locales from "components/Locales";
@@ -34,6 +35,9 @@ const App = () => {
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
+		// Configurar detector de actualizaciones
+		setupUpdateChecker();
+		
 		dispatch(fetchMenu()).then(() => {
 			setLoading(false);
 		});
