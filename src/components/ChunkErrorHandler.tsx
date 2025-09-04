@@ -17,22 +17,18 @@ const ChunkErrorHandler = () => {
 				console.error("Error de chunk detectado:", error.message);
 				event.preventDefault(); // Prevenir que se muestre en consola
 				
-				// Mostrar mensaje y recargar
-				const shouldReload = window.confirm(
-					"Se detectó una actualización de la aplicación. ¿Deseas recargar ahora?"
-				);
+				// Recargar automáticamente sin preguntar
+				console.log("Actualizando aplicación automáticamente...");
 				
-				if (shouldReload) {
-					// Limpiar caché y recargar
-					if ("caches" in window) {
-						caches.keys().then(names => {
-							Promise.all(names.map(name => caches.delete(name))).then(() => {
-								window.location.reload();
-							});
+				// Limpiar caché y recargar
+				if ("caches" in window) {
+					caches.keys().then(names => {
+						Promise.all(names.map(name => caches.delete(name))).then(() => {
+							window.location.reload();
 						});
-					} else {
-						(window as Window).location.reload();
-					}
+					});
+				} else {
+					(window as Window).location.reload();
 				}
 			}
 		};
@@ -58,13 +54,11 @@ const ChunkErrorHandler = () => {
 						window.location.reload();
 					}, 1500);
 				} else {
-					// En desktop, preguntar
-					const shouldReload = window.confirm(
-						"Error al cargar recursos. ¿Deseas recargar la página?"
-					);
-					if (shouldReload) {
+					// En desktop, también recargar automáticamente
+					console.log("Recargando página por error de recursos...");
+					setTimeout(() => {
 						window.location.reload();
-					}
+					}, 1500);
 				}
 			}
 		};

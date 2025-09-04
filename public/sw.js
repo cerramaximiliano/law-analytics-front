@@ -34,6 +34,11 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // IMPORTANTE: No interceptar peticiones a otros dominios (API)
+  if (!url.origin.includes(self.location.origin)) {
+    return; // Dejar pasar sin modificar
+  }
+
   // No cachear ciertas rutas
   const shouldSkipCache = SKIP_CACHE_FOR.some(path => url.pathname.includes(path));
   if (shouldSkipCache) {
@@ -44,12 +49,7 @@ self.addEventListener('fetch', event => {
   // Para archivos HTML y navegación, SIEMPRE buscar del servidor
   if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
     event.respondWith(
-      fetch(request, {
-        cache: 'no-store', // NUNCA usar caché del navegador para HTML
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-      }).catch(() => {
+      fetch(request).catch(() => {
         // Solo como fallback extremo si está offline
         return caches.match(request);
       })

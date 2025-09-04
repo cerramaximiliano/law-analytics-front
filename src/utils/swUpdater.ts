@@ -56,26 +56,13 @@ export class ServiceWorkerUpdater {
   }
 
   private handleUpdate() {
-    console.log('Aplicando actualización...');
+    console.log('Aplicando actualización automáticamente...');
     
-    // En móviles, actualizar automáticamente sin preguntar
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      // Mostrar notificación breve y recargar
-      this.showUpdateNotification();
-      setTimeout(() => {
-        this.applyUpdate();
-      }, 2000);
-    } else {
-      // En desktop, preguntar al usuario
-      const shouldUpdate = window.confirm(
-        'Hay una nueva versión disponible. ¿Deseas actualizar ahora?'
-      );
-      if (shouldUpdate) {
-        this.applyUpdate();
-      }
-    }
+    // Actualizar automáticamente sin preguntar en todos los dispositivos
+    this.showUpdateNotification();
+    setTimeout(() => {
+      this.applyUpdate();
+    }, 2000);
   }
 
   private showUpdateNotification() {

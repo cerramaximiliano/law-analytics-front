@@ -86,6 +86,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
+  // IMPORTANTE: No interceptar peticiones a otros dominios (API, etc)
+  if (!url.origin.includes(self.location.origin)) {
+    // Para peticiones externas (API), dejar pasar sin modificar
+    return;
+  }
+  
   // Para navegación y HTML - SIEMPRE de red
   if (request.mode === 'navigate' || 
       url.pathname.endsWith('.html') || 
@@ -93,14 +99,8 @@ self.addEventListener('fetch', (event) => {
       !shouldCache(url.href)) {
     
     event.respondWith(
-      fetch(request, {
-        // Forzar no-cache para HTML
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      }).catch(() => {
+      // Para HTML, usar la petición original sin modificar headers
+      fetch(request).catch(() => {
         // Si falla la red (offline), intentar caché como fallback
         return caches.match(request);
       })
