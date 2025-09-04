@@ -64,21 +64,21 @@ const admin: NavItemType = {
 		},
 		{
 			id: "causas",
-			title: <FormattedMessage id="causas" defaultMessage="Causas" />,
+			title: <FormattedMessage id="causas" defaultMessage="Carpetas" />,
 			type: "collapse",
 			icon: Folder2,
 			breadcrumbs: true,
 			children: [
 				{
 					id: "causas-verified",
-					title: <FormattedMessage id="causas-verified" defaultMessage="Causas Verificadas" />,
+					title: <FormattedMessage id="causas-verified" defaultMessage="Carpetas Verificadas" />,
 					type: "item",
 					url: "/admin/causas/verified",
 					breadcrumbs: true,
 				},
 				{
 					id: "causas-folders",
-					title: <FormattedMessage id="causas-folders" defaultMessage="Causas con Carpetas" />,
+					title: <FormattedMessage id="causas-folders" defaultMessage="Carpetas con Documentos" />,
 					type: "item",
 					url: "/admin/causas/folders",
 					breadcrumbs: true,

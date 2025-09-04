@@ -90,7 +90,7 @@ function getStepContent(step: number, values: any) {
 		}
 	}
 
-	// Si estamos creando una nueva causa
+	// Si estamos creando una nueva carpeta
 	switch (step) {
 		case 0:
 			return <InitialStep />;
@@ -225,7 +225,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		const handlePlanRestriction = (event: Event) => {
 			const customEvent = event as CustomEvent;
 			console.log(
-				"Restricción de plan detectada, cerrando modal de nueva causa",
+				"Restricción de plan detectada, cerrando modal de nueva carpeta",
 				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
 			);
 
@@ -258,12 +258,12 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 							if (response.data.hasReachedLimit) {
 								// Si ha alcanzado el límite, mostrar el modal de error y cerrar este modal
 								setLimitErrorInfo({
-									resourceType: "Carpetas/Causas",
+									resourceType: "Carpetas",
 									plan: response.data.currentPlan || "free",
 									currentCount: `${response.data.currentCount}`,
 									limit: response.data.limit,
 								});
-								setLimitErrorMessage("Has alcanzado el límite de causas disponibles en tu plan actual.");
+								setLimitErrorMessage("Has alcanzado el límite de carpetas disponibles en tu plan actual.");
 
 								// Cerrar el modal actual y mostrar el LimitErrorModal
 								onCancel();
@@ -283,11 +283,11 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 									);
 								}, 100);
 							} else {
-								// Si no ha alcanzado el límite, mostrar el modal de nueva causa
+								// Si no ha alcanzado el límite, mostrar el modal de nueva carpeta
 								setShowAddFolderModal(true);
 							}
 						} else {
-							// Si hay un error en la respuesta, mostrar el modal de nueva causa por defecto
+							// Si hay un error en la respuesta, mostrar el modal de nueva carpeta por defecto
 							if (!response.success) {
 								console.error("Error al verificar el límite de recursos:", response.message);
 							}
@@ -295,7 +295,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 						}
 					} catch (error) {
 						console.error("Error al verificar el límite de recursos:", error);
-						// En caso de error, permitir crear la causa de todos modos
+						// En caso de error, permitir crear la carpeta de todos modos
 						setShowAddFolderModal(true);
 					}
 				};
@@ -339,14 +339,14 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		}
 
 		if (results && results.success) {
-			enqueueSnackbar(`Éxito al ${message} la causa`, {
+			enqueueSnackbar(`Éxito al ${message} la carpeta`, {
 				variant: "success",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				TransitionComponent: Zoom,
 				autoHideDuration: 3000,
 			});
 		} else {
-			enqueueSnackbar(`Error al ${message} la causa`, {
+			enqueueSnackbar(`Error al ${message} la carpeta`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				TransitionComponent: Zoom,
@@ -418,7 +418,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 							<Stack direction="row" alignItems="center" spacing={1}>
 								<FolderAdd size={24} color={theme.palette.primary.main} />
 								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-									{isCreating ? "Nueva Causa" : "Editar Causa"}
+									{isCreating ? "Nueva Carpeta" : "Editar Carpeta"}
 								</Typography>
 							</Stack>
 							<Typography variant="body2" color="textSecondary">
@@ -474,7 +474,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 									<Grid container justifyContent="space-between" alignItems="center">
 										<Grid item>
 											{!isCreating && (
-												<Tooltip title="Eliminar Causa" placement="top">
+												<Tooltip title="Eliminar Carpeta" placement="top">
 													<IconButton
 														onClick={() => setOpenAlert(true)}
 														size="large"

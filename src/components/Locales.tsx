@@ -28,7 +28,8 @@ const Locales = ({ children }: Props) => {
 	const baseMessages = {
 		// Elementos del menú principal que deben estar capitalizados
 		aplicaciones: "Aplicaciones",
-		causas: "Causas",
+		causas: "Carpetas",
+		carpetas: "Carpetas",
 		cálculos: "Cálculos",
 		calendario: "Calendario",
 		contactos: "Contactos",

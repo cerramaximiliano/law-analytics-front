@@ -14,6 +14,7 @@ import Snackbar from "components/@extended/Snackbar";
 import Notistack from "components/third-party/Notistack";
 import SearchModal from "components/search/SearchModal";
 import SEOProvider from "components/SEO/SEOProvider";
+import ChunkErrorHandler from "components/ChunkErrorHandler";
 
 import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
@@ -51,6 +52,7 @@ const App = () => {
 				<RTLLayout>
 					<Locales>
 						<ScrollTop>
+							<ChunkErrorHandler />
 							<GoogleOAuthProvider clientId={googleClientId}>
 								<AuthProvider>
 									<WebSocketProvider>

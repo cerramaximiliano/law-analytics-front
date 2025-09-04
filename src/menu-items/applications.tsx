@@ -46,7 +46,7 @@ const applications: NavItemType = {
 	children: [
 		{
 			id: "folders",
-			title: <FormattedMessage id="causas" />,
+			title: <FormattedMessage id="carpetas" />,
 			type: "item",
 			icon: icons.folders,
 			url: "/apps/folders/list",
