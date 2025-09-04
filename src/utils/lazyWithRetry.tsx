@@ -41,7 +41,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 				window.location.href = url.toString();
 				
 				// Retornar un componente vacío mientras recarga
-				return { default: (() => null) as T };
+				return { default: (() => null) as unknown as T };
 			}
 
 			// Si ya intentamos recargar o no es error de chunk, mostrar error
@@ -75,7 +75,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 						Recargar
 					</button>
 				</div>
-			)) as T;
+			)) as unknown as T;
 
 			return { default: ErrorComponent };
 		}

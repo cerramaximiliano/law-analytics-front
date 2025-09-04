@@ -1,5 +1,5 @@
 import React from "react";
-import { lazyWithRetry } from "react";
+import { lazyWithRetry } from "utils/lazyWithRetry";
 
 // project-imports
 import GuestGuard from "utils/route-guard/GuestGuard";

@@ -31,7 +31,7 @@ const ChunkErrorHandler = () => {
 							});
 						});
 					} else {
-						window.location.reload();
+						(window as Window).location.reload();
 					}
 				}
 			}

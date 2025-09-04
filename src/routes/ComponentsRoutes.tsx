@@ -1,5 +1,5 @@
 import React from "react";
-import { lazyWithRetry } from "react";
+import { lazyWithRetry } from "utils/lazyWithRetry";
 
 // project-imports
 import CommonLayout from "layout/CommonLayout";

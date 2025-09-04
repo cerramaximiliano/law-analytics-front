@@ -51,9 +51,10 @@ const App = () => {
 			<ThemeCustomization>
 				<RTLLayout>
 					<Locales>
-						<ScrollTop>
+						<>
 							<ChunkErrorHandler />
-							<GoogleOAuthProvider clientId={googleClientId}>
+							<ScrollTop>
+								<GoogleOAuthProvider clientId={googleClientId}>
 								<AuthProvider>
 									<WebSocketProvider>
 										<Notistack>
@@ -64,7 +65,8 @@ const App = () => {
 									</WebSocketProvider>
 								</AuthProvider>
 							</GoogleOAuthProvider>
-						</ScrollTop>
+							</ScrollTop>
+						</>
 					</Locales>
 				</RTLLayout>
 			</ThemeCustomization>
