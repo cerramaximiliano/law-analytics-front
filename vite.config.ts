@@ -31,6 +31,22 @@ export default defineConfig({
 		outDir: "build",
 		sourcemap: false,
 		chunkSizeWarningLimit: 2000,
+		rollupOptions: {
+			output: {
+				// Forzar nombres únicos con hash basado en contenido
+				entryFileNames: `assets/[name]-[hash].js`,
+				chunkFileNames: `assets/[name]-[hash].js`,
+				assetFileNames: `assets/[name]-[hash].[ext]`,
+				// Estrategia manual de chunks para mejor caché
+				manualChunks: {
+					vendor: ['react', 'react-dom', 'react-router-dom'],
+					mui: ['@mui/material', '@mui/system', '@mui/lab'],
+					utils: ['lodash', 'date-fns', 'axios'],
+				}
+			}
+		},
+		// Limpiar directorio de build antes de cada compilación
+		emptyOutDir: true,
 	},
 	resolve: {
 		alias: {

@@ -1,13 +1,11 @@
 // Service Worker para caché offline y mejor performance
 // IMPORTANTE: Incrementar versión para forzar actualización
-const CACHE_VERSION = 'v6-2025-01-03-mobile-fix'; // Cambiar esta versión con cada deployment
+const CACHE_VERSION = 'v-20250103-fix'; // Auto-actualizado por script
 const CACHE_NAME = 'law-analytics-' + CACHE_VERSION;
-const SKIP_CACHE_FOR = ['/api/', '/auth/', '.json']; // Rutas que nunca se cachean
+const SKIP_CACHE_FOR = ['/api/', '/auth/', '.json', '/index.html']; // NUNCA cachear index.html
 const urlsToCache = [
-  '/',
-  '/index.html',
-  // Vite genera archivos en /assets/, no en /static/
-  // Los archivos específicos se cachean dinámicamente
+  // NO cachear index.html ni rutas principales en la instalación
+  // Solo cachear dinámicamente los assets con hash
 ];
 
 // Install - cachea recursos iniciales y activa inmediatamente
@@ -43,22 +41,18 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Para archivos HTML, siempre buscar la versión más reciente
-  if (request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+  // Para archivos HTML y navegación, SIEMPRE buscar del servidor
+  if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          // Actualizar caché con la nueva versión
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(request, responseToCache);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Si falla, usar caché
-          return caches.match(request);
-        })
+      fetch(request, {
+        cache: 'no-store', // NUNCA usar caché del navegador para HTML
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      }).catch(() => {
+        // Solo como fallback extremo si está offline
+        return caches.match(request);
+      })
     );
     return;
   }
