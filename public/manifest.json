@@ -1,7 +1,7 @@
 {
 	"short_name": "Law Analytics",
 	"name": "Law Analytics - Sistema de Gestión Legal",
-	"version": "9.1.3",
+	"version": "9.1.3-20250904-091415",
 	"icons": [
 		{
 			"src": "favicon.ico",

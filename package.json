@@ -97,6 +97,7 @@
 	"scripts": {
 		"dev": "vite",
 		"start": "vite",
+		"prebuild": "node -e \"const d=new Date().toISOString().replace(/[:.]/g,'-'); require('fs').writeFileSync('public/sw.js', require('fs').readFileSync('public/sw.js','utf8').replace(/const CACHE_VERSION = .*/,'const CACHE_VERSION = \\'v-'+d+'\\';'))\"",
 		"build": "tsc -p tsconfig.build.json && vite build",
 		"build:fast": "vite build",
 		"build:prod": "cross-env VITE_OPTIMIZE_IMAGES=true vite build --mode production",
