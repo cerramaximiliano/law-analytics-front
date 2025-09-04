@@ -1,7 +1,7 @@
 // Service Worker Optimizado para PWAs - Basado en mejores prácticas 2024
 // NUNCA cachea index.html para evitar problemas en móviles
 
-const SW_VERSION = '1.0.20250904-131540';
+const SW_VERSION = '1.0.20250904-173945';
 const CACHE_NAME = `law-analytics-v${SW_VERSION}`;
 const RUNTIME_CACHE = `runtime-${SW_VERSION}`;
 

@@ -1,6 +1,6 @@
 // Service Worker para caché offline y mejor performance
 // IMPORTANTE: Incrementar versión para forzar actualización
-const CACHE_VERSION = 'v-2025-09-04T16-15-40-401Z';
+const CACHE_VERSION = 'v-2025-09-04T20-39-45-921Z';
 const CACHE_NAME = 'law-analytics-' + CACHE_VERSION;
 const SKIP_CACHE_FOR = ['/api/', '/auth/', '.json', '/index.html']; // NUNCA cachear index.html
 const urlsToCache = [
