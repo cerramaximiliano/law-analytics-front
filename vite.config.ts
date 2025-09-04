@@ -33,28 +33,14 @@ export default defineConfig({
 		chunkSizeWarningLimit: 2000,
 		rollupOptions: {
 			output: {
-				// CRÍTICO: Usar hash de contenido para forzar actualización
+				// Usar hash de contenido para forzar actualización
 				entryFileNames: `assets/[name]-[hash].js`,
 				chunkFileNames: `assets/[name]-[hash].js`, 
 				assetFileNames: `assets/[name]-[hash].[ext]`,
-				// Estrategia manual de chunks para mejor caché
-				manualChunks: (id) => {
-					// Vendor chunks estables
-					if (id.includes('node_modules')) {
-						if (id.includes('react')) return 'vendor-react';
-						if (id.includes('@mui')) return 'vendor-mui';
-						if (id.includes('lodash')) return 'vendor-utils';
-						return 'vendor';
-					}
-				}
 			}
 		},
 		// Limpiar directorio de build antes de cada compilación
 		emptyOutDir: true,
-		// Mejorar la generación de manifest
-		manifest: true,
-		// Asegurar que el index.html no se cachee
-		ssrManifest: false,
 	},
 	resolve: {
 		alias: {
