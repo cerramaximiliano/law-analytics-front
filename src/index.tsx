@@ -32,13 +32,13 @@ import App from "./App";
 import { store, persister } from "store";
 import { ConfigProvider } from "contexts/ConfigContext";
 import reportWebVitals from "./reportWebVitals";
-import { initMobileAutoUpdate } from "./utils/mobileCache";
+import { initServiceWorkerUpdater } from "./utils/swUpdater";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
 
-// Inicializar auto-actualización para móviles
-initMobileAutoUpdate();
+// Inicializar el sistema de actualización del Service Worker
+initServiceWorkerUpdater();
 
 // ==============================|| MAIN - REACT DOM RENDER  ||============================== //
 
