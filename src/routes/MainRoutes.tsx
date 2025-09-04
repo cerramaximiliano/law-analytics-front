@@ -7,91 +7,91 @@ import CommonLayout from "layout/CommonLayout";
 import Loadable from "components/Loadable";
 import AuthGuard from "utils/route-guard/AuthGuard";
 import AdminRoleGuard from "utils/route-guard/AdminRoleGuard";
-import { lazyWithRetry } from "utils/lazyWithRetry";
+import { lazyRetry } from "utils/lazyRetry";
 
 // render - dashboard
-const DashboardDefault = Loadable(lazyWithRetry(() => import("pages/dashboard/default")));
-const DashboardAnalytics = Loadable(lazyWithRetry(() => import("pages/dashboard/analytics")));
+const DashboardDefault = Loadable(lazyRetry(() => import("pages/dashboard/default"), "DashboardDefault"));
+const DashboardAnalytics = Loadable(lazyRetry(() => import("pages/dashboard/analytics"), "DashboardAnalytics"));
 
 // render - applications
-const AppChat = Loadable(lazyWithRetry(() => import("pages/apps/chat")));
-const AppCalendar = Loadable(lazyWithRetry(() => import("pages/apps/calendar/calendar")));
-const AppAvailability = Loadable(lazyWithRetry(() => import("pages/apps/calendar/availability")));
-const AppReservations = Loadable(lazyWithRetry(() => import("pages/apps/calendar/reservations")));
+const AppChat = Loadable(lazyRetry(() => import("pages/apps/chat")));
+const AppCalendar = Loadable(lazyRetry(() => import("pages/apps/calendar/calendar")));
+const AppAvailability = Loadable(lazyRetry(() => import("pages/apps/calendar/availability")));
+const AppReservations = Loadable(lazyRetry(() => import("pages/apps/calendar/reservations")));
 
-const AppCustomerList = Loadable(lazyWithRetry(() => import("pages/apps/customer/list")));
+const AppCustomerList = Loadable(lazyRetry(() => import("pages/apps/customer/list")));
 
-const AppInvoiceCreate = Loadable(lazyWithRetry(() => import("pages/apps/invoice/create")));
-const AppInvoiceDashboard = Loadable(lazyWithRetry(() => import("pages/apps/invoice/dashboard")));
-const AppInvoiceList = Loadable(lazyWithRetry(() => import("pages/apps/invoice/list")));
-const AppInvoiceDetails = Loadable(lazyWithRetry(() => import("pages/apps/invoice/details")));
-const AppInvoiceEdit = Loadable(lazyWithRetry(() => import("pages/apps/invoice/edit")));
+const AppInvoiceCreate = Loadable(lazyRetry(() => import("pages/apps/invoice/create")));
+const AppInvoiceDashboard = Loadable(lazyRetry(() => import("pages/apps/invoice/dashboard")));
+const AppInvoiceList = Loadable(lazyRetry(() => import("pages/apps/invoice/list")));
+const AppInvoiceDetails = Loadable(lazyRetry(() => import("pages/apps/invoice/details")));
+const AppInvoiceEdit = Loadable(lazyRetry(() => import("pages/apps/invoice/edit")));
 
-const UserProfile = Loadable(lazyWithRetry(() => import("pages/apps/profiles/user")));
-const UserTabPersonal = Loadable(lazyWithRetry(() => import("sections/apps/profiles/user/TabPersonal")));
-const UserTabPayment = Loadable(lazyWithRetry(() => import("sections/apps/profiles/user/TabPayment")));
-const UserTabPassword = Loadable(lazyWithRetry(() => import("sections/apps/profiles/user/TabPassword")));
-const UserTabSettings = Loadable(lazyWithRetry(() => import("sections/apps/profiles/user/TabSettings")));
-const UserTabProfessional = Loadable(lazyWithRetry(() => import("sections/apps/profiles/user/TabProfessional")));
+const UserProfile = Loadable(lazyRetry(() => import("pages/apps/profiles/user")));
+const UserTabPersonal = Loadable(lazyRetry(() => import("sections/apps/profiles/user/TabPersonal")));
+const UserTabPayment = Loadable(lazyRetry(() => import("sections/apps/profiles/user/TabPayment")));
+const UserTabPassword = Loadable(lazyRetry(() => import("sections/apps/profiles/user/TabPassword")));
+const UserTabSettings = Loadable(lazyRetry(() => import("sections/apps/profiles/user/TabSettings")));
+const UserTabProfessional = Loadable(lazyRetry(() => import("sections/apps/profiles/user/TabProfessional")));
 
-const AccountProfile = Loadable(lazyWithRetry(() => import("pages/apps/profiles/account")));
-const AccountTabAccount = Loadable(lazyWithRetry(() => import("sections/apps/profiles/account/TabAccount")));
-const AccountTabPassword = Loadable(lazyWithRetry(() => import("sections/apps/profiles/account/TabPassword")));
-const AccountTabRole = Loadable(lazyWithRetry(() => import("sections/apps/profiles/account/TabRole")));
-const AccountTabSettings = Loadable(lazyWithRetry(() => import("sections/apps/profiles/account/TabSettings")));
+const AccountProfile = Loadable(lazyRetry(() => import("pages/apps/profiles/account")));
+const AccountTabAccount = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabAccount")));
+const AccountTabPassword = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPassword")));
+const AccountTabRole = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabRole")));
+const AccountTabSettings = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabSettings")));
 
 // render - folders
-const FoldersLayout = Loadable(lazyWithRetry(() => import("pages/apps/folders/folders")));
+const FoldersLayout = Loadable(lazyRetry(() => import("pages/apps/folders/folders")));
 
 // render - calculator
-const LaborLayout = Loadable(lazyWithRetry(() => import("pages/calculator/labor/index")));
-const CivilLayouts = Loadable(lazyWithRetry(() => import("pages/calculator/civil/index")));
-const InteresesLayouts = Loadable(lazyWithRetry(() => import("pages/calculator/intereses/index")));
-const AllCalculatorsLayout = Loadable(lazyWithRetry(() => import("pages/calculator/all/index")));
+const LaborLayout = Loadable(lazyRetry(() => import("pages/calculator/labor/index")));
+const CivilLayouts = Loadable(lazyRetry(() => import("pages/calculator/civil/index")));
+const InteresesLayouts = Loadable(lazyRetry(() => import("pages/calculator/intereses/index")));
+const AllCalculatorsLayout = Loadable(lazyRetry(() => import("pages/calculator/all/index")));
 
 // render - documents
-const DocumentsLayout = Loadable(lazyWithRetry(() => import("pages/documents/index")));
+const DocumentsLayout = Loadable(lazyRetry(() => import("pages/documents/index")));
 
 // pages routing - auth
-const AuthLogin = Loadable(lazyWithRetry(() => import("pages/auth/auth1/login")));
-const AuthRegister = Loadable(lazyWithRetry(() => import("pages/auth/auth1/register")));
-const AuthForgotPassword = Loadable(lazyWithRetry(() => import("pages/auth/auth1/forgot-password")));
-const AuthResetPassword = Loadable(lazyWithRetry(() => import("pages/auth/auth1/reset-password")));
-const AuthCheckMail = Loadable(lazyWithRetry(() => import("pages/auth/auth1/check-mail")));
-const AuthCodeVerification = Loadable(lazyWithRetry(() => import("pages/auth/auth1/code-verification")));
+const AuthLogin = Loadable(lazyRetry(() => import("pages/auth/auth1/login")));
+const AuthRegister = Loadable(lazyRetry(() => import("pages/auth/auth1/register")));
+const AuthForgotPassword = Loadable(lazyRetry(() => import("pages/auth/auth1/forgot-password")));
+const AuthResetPassword = Loadable(lazyRetry(() => import("pages/auth/auth1/reset-password")));
+const AuthCheckMail = Loadable(lazyRetry(() => import("pages/auth/auth1/check-mail")));
+const AuthCodeVerification = Loadable(lazyRetry(() => import("pages/auth/auth1/code-verification")));
 
 // pages routing - error
-const MaintenanceError = Loadable(lazyWithRetry(() => import("pages/maintenance/error/404")));
+const MaintenanceError = Loadable(lazyRetry(() => import("pages/maintenance/error/404")));
 
 // render - sample page
-const Details = Loadable(lazyWithRetry(() => import("pages/apps/folders/details/details")));
-const PricingPage = Loadable(lazyWithRetry(() => import("pages/extra-pages/price/price1")));
+const Details = Loadable(lazyRetry(() => import("pages/apps/folders/details/details")));
+const PricingPage = Loadable(lazyRetry(() => import("pages/extra-pages/price/price1")));
 
 // render - booking page
-const BookingPage = Loadable(lazyWithRetry(() => import("pages/booking")));
-const ManageBookingPage = Loadable(lazyWithRetry(() => import("pages/apps/calendar/manage-booking")));
+const BookingPage = Loadable(lazyRetry(() => import("pages/booking")));
+const ManageBookingPage = Loadable(lazyRetry(() => import("pages/apps/calendar/manage-booking")));
 
 // subscription pages
-const SubscriptionSuccess = Loadable(lazyWithRetry(() => import("pages/apps/subscription/success")));
-const SubscriptionError = Loadable(lazyWithRetry(() => import("pages/apps/subscription/error")));
+const SubscriptionSuccess = Loadable(lazyRetry(() => import("pages/apps/subscription/success")));
+const SubscriptionError = Loadable(lazyRetry(() => import("pages/apps/subscription/error")));
 
 // help page
-const HelpPage = Loadable(lazyWithRetry(() => import("pages/help")));
+const HelpPage = Loadable(lazyRetry(() => import("pages/help")));
 
 // admin pages
-const AdminMailingPage = Loadable(lazyWithRetry(() => import("pages/admin/marketing/mailing")));
-const AdminTemplatesPage = Loadable(lazyWithRetry(() => import("pages/admin/marketing/templates")));
-const AdminContactsPage = Loadable(lazyWithRetry(() => import("pages/admin/marketing/contacts")));
-const AdminPlansPage = Loadable(lazyWithRetry(() => import("pages/admin/plans")));
-const AdminUsersPage = Loadable(lazyWithRetry(() => import("pages/admin/users")));
-const AdminServerStatusPage = Loadable(lazyWithRetry(() => import("pages/admin/server-status")));
-const AdminCausasVerifiedPage = Loadable(lazyWithRetry(() => import("pages/admin/causas/verified")));
-const AdminCausasFoldersPage = Loadable(lazyWithRetry(() => import("pages/admin/causas/folders")));
-const AdminCausasWorkersPage = Loadable(lazyWithRetry(() => import("pages/admin/causas/workers")));
-const AdminNotificationsPage = Loadable(lazyWithRetry(() => import("pages/admin/notifications")));
+const AdminMailingPage = Loadable(lazyRetry(() => import("pages/admin/marketing/mailing")));
+const AdminTemplatesPage = Loadable(lazyRetry(() => import("pages/admin/marketing/templates")));
+const AdminContactsPage = Loadable(lazyRetry(() => import("pages/admin/marketing/contacts")));
+const AdminPlansPage = Loadable(lazyRetry(() => import("pages/admin/plans")));
+const AdminUsersPage = Loadable(lazyRetry(() => import("pages/admin/users")));
+const AdminServerStatusPage = Loadable(lazyRetry(() => import("pages/admin/server-status")));
+const AdminCausasVerifiedPage = Loadable(lazyRetry(() => import("pages/admin/causas/verified")));
+const AdminCausasFoldersPage = Loadable(lazyRetry(() => import("pages/admin/causas/folders")));
+const AdminCausasWorkersPage = Loadable(lazyRetry(() => import("pages/admin/causas/workers")));
+const AdminNotificationsPage = Loadable(lazyRetry(() => import("pages/admin/notifications")));
 
 // render - tasks
-const TasksPage = Loadable(lazyWithRetry(() => import("pages/tasks")));
+const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
 
 // ==============================|| MAIN ROUTES ||============================== //
 

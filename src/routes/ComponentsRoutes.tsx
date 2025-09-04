@@ -1,53 +1,53 @@
 import React from "react";
-import { lazyWithRetry } from "utils/lazyWithRetry";
+import { lazyRetry } from "utils/lazyRetry";
 
 // project-imports
 import CommonLayout from "layout/CommonLayout";
 import Loadable from "components/Loadable";
 
 // render - inputs components page
-const Autocomplete = Loadable(lazyWithRetry(() => import("pages/components-overview/autocomplete")));
-const Buttons = Loadable(lazyWithRetry(() => import("pages/components-overview/buttons")));
-const Checkbox = Loadable(lazyWithRetry(() => import("pages/components-overview/checkbox")));
-const Radio = Loadable(lazyWithRetry(() => import("pages/components-overview/radio")));
-const Rating = Loadable(lazyWithRetry(() => import("pages/components-overview/rating")));
-const Select = Loadable(lazyWithRetry(() => import("pages/components-overview/select")));
-const Slider = Loadable(lazyWithRetry(() => import("pages/components-overview/slider")));
-const Switch = Loadable(lazyWithRetry(() => import("pages/components-overview/switch")));
-const TextField = Loadable(lazyWithRetry(() => import("pages/components-overview/textfield")));
+const Autocomplete = Loadable(lazyRetry(() => import("pages/components-overview/autocomplete")));
+const Buttons = Loadable(lazyRetry(() => import("pages/components-overview/buttons")));
+const Checkbox = Loadable(lazyRetry(() => import("pages/components-overview/checkbox")));
+const Radio = Loadable(lazyRetry(() => import("pages/components-overview/radio")));
+const Rating = Loadable(lazyRetry(() => import("pages/components-overview/rating")));
+const Select = Loadable(lazyRetry(() => import("pages/components-overview/select")));
+const Slider = Loadable(lazyRetry(() => import("pages/components-overview/slider")));
+const Switch = Loadable(lazyRetry(() => import("pages/components-overview/switch")));
+const TextField = Loadable(lazyRetry(() => import("pages/components-overview/textfield")));
 
 // render - feedback components page
-const Alert = Loadable(lazyWithRetry(() => import("pages/components-overview/alert")));
-const Dialogs = Loadable(lazyWithRetry(() => import("pages/components-overview/dialogs")));
-const Progress = Loadable(lazyWithRetry(() => import("pages/components-overview/progress")));
-const Snackbar = Loadable(lazyWithRetry(() => import("pages/components-overview/snackbar")));
+const Alert = Loadable(lazyRetry(() => import("pages/components-overview/alert")));
+const Dialogs = Loadable(lazyRetry(() => import("pages/components-overview/dialogs")));
+const Progress = Loadable(lazyRetry(() => import("pages/components-overview/progress")));
+const Snackbar = Loadable(lazyRetry(() => import("pages/components-overview/snackbar")));
 
 // render - data display components
-const Avatars = Loadable(lazyWithRetry(() => import("pages/components-overview/avatars")));
-const Badges = Loadable(lazyWithRetry(() => import("pages/components-overview/badges")));
-const Chips = Loadable(lazyWithRetry(() => import("pages/components-overview/chips")));
-const Lists = Loadable(lazyWithRetry(() => import("pages/components-overview/lists")));
-const Tooltip = Loadable(lazyWithRetry(() => import("pages/components-overview/tooltip")));
-const Typography = Loadable(lazyWithRetry(() => import("pages/components-overview/typography")));
+const Avatars = Loadable(lazyRetry(() => import("pages/components-overview/avatars")));
+const Badges = Loadable(lazyRetry(() => import("pages/components-overview/badges")));
+const Chips = Loadable(lazyRetry(() => import("pages/components-overview/chips")));
+const Lists = Loadable(lazyRetry(() => import("pages/components-overview/lists")));
+const Tooltip = Loadable(lazyRetry(() => import("pages/components-overview/tooltip")));
+const Typography = Loadable(lazyRetry(() => import("pages/components-overview/typography")));
 
 // render - navigation components page
-const Breadcrumbs = Loadable(lazyWithRetry(() => import("pages/components-overview/breadcrumbs")));
-const Pagination = Loadable(lazyWithRetry(() => import("pages/components-overview/pagination")));
-const Speeddial = Loadable(lazyWithRetry(() => import("pages/components-overview/speeddial")));
-const Stepper = Loadable(lazyWithRetry(() => import("pages/components-overview/stepper")));
-const Tabs = Loadable(lazyWithRetry(() => import("pages/components-overview/tabs")));
+const Breadcrumbs = Loadable(lazyRetry(() => import("pages/components-overview/breadcrumbs")));
+const Pagination = Loadable(lazyRetry(() => import("pages/components-overview/pagination")));
+const Speeddial = Loadable(lazyRetry(() => import("pages/components-overview/speeddial")));
+const Stepper = Loadable(lazyRetry(() => import("pages/components-overview/stepper")));
+const Tabs = Loadable(lazyRetry(() => import("pages/components-overview/tabs")));
 
 // render - surfaces components page
-const Accordion = Loadable(lazyWithRetry(() => import("pages/components-overview/accordion")));
-const Cards = Loadable(lazyWithRetry(() => import("pages/components-overview/cards")));
+const Accordion = Loadable(lazyRetry(() => import("pages/components-overview/accordion")));
+const Cards = Loadable(lazyRetry(() => import("pages/components-overview/cards")));
 
 // render - utils components page
-const Color = Loadable(lazyWithRetry(() => import("pages/components-overview/color")));
-const DateTimePicker = Loadable(lazyWithRetry(() => import("pages/components-overview/date-time-picker")));
-const Modal = Loadable(lazyWithRetry(() => import("pages/components-overview/modal")));
-const Shadow = Loadable(lazyWithRetry(() => import("pages/components-overview/shadows")));
-const Timeline = Loadable(lazyWithRetry(() => import("pages/components-overview/timeline")));
-const TreeView = Loadable(lazyWithRetry(() => import("pages/components-overview/treeview")));
+const Color = Loadable(lazyRetry(() => import("pages/components-overview/color")));
+const DateTimePicker = Loadable(lazyRetry(() => import("pages/components-overview/date-time-picker")));
+const Modal = Loadable(lazyRetry(() => import("pages/components-overview/modal")));
+const Shadow = Loadable(lazyRetry(() => import("pages/components-overview/shadows")));
+const Timeline = Loadable(lazyRetry(() => import("pages/components-overview/timeline")));
+const TreeView = Loadable(lazyRetry(() => import("pages/components-overview/treeview")));
 
 // ==============================|| COMPONENTS ROUTES ||============================== //
 
