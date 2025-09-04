@@ -32,14 +32,12 @@ import App from "./App";
 import { store, persister } from "store";
 import { ConfigProvider } from "contexts/ConfigContext";
 import reportWebVitals from "./reportWebVitals";
-import { initServiceWorkerUpdater } from "./utils/swUpdater";
 import { preloadCriticalRoutes } from "./utils/lazyRetry";
 
 const container = document.getElementById("root");
 const root = createRoot(container!);
 
 // Inicializar el sistema de actualización del Service Worker
-initServiceWorkerUpdater();
 
 // Precargar rutas críticas en segundo plano
 preloadCriticalRoutes();

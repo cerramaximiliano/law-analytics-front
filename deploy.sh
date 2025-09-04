@@ -1,13 +1,12 @@
 #!/bin/bash
 
-# Script completo de deployment con limpieza de cachés
-# Este script hace TODO en una sola ejecución
+# Script único de deployment para Law Analytics
+# Sin Service Worker - Sin problemas de caché
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
-MAGENTA='\033[0;35m'
 NC='\033[0m'
 
 echo "========================================="
@@ -28,7 +27,7 @@ if [ -d "/var/www/law-analytics-front" ] && [ "$PWD" == "/var/www/law-analytics-
 fi
 
 # 1. Git pull si estamos en el servidor
-if [ "$IS_SERVER" = true ] || [ "$1" == "--pull" ]; then
+if [ "$IS_SERVER" = true ]; then
     echo -e "${YELLOW}1. Actualizando desde git...${NC}"
     git pull
     if [ $? -ne 0 ]; then
@@ -40,171 +39,23 @@ else
     echo -e "${BLUE}1. Modo local - saltando git pull${NC}"
 fi
 
-# 2. Generar versión única
-TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-VERSION="2.0.${TIMESTAMP}"
-echo -e "${MAGENTA}2. Versión de deployment: ${VERSION}${NC}"
+# 2. Generar versión única basada en timestamp
+TIMESTAMP=$(date +"%Y%m%d.%H%M%S")
+VERSION="${TIMESTAMP}"
+echo -e "${BLUE}2. Versión de deployment: ${VERSION}${NC}"
 
-# 3. Crear Service Worker de limpieza temporal
-echo -e "${YELLOW}3. Creando Service Worker de limpieza...${NC}"
-cat > public/sw-temp.js << 'EOF'
-// Service Worker temporal - Limpieza completa de cachés
-const TEMP_VERSION = 'cleanup-VERSION_PLACEHOLDER';
+# 3. Crear variable de entorno con versión
+echo -e "${YELLOW}3. Configurando versión...${NC}"
+echo "VITE_APP_VERSION=${VERSION}" > .env.production.local
+echo -e "${GREEN}✓ Versión configurada${NC}"
 
-self.addEventListener('install', event => {
-  console.log('[SW] Instalando limpieza v' + TEMP_VERSION);
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', event => {
-  console.log('[SW] Activando limpieza');
-  event.waitUntil(
-    (async () => {
-      // Eliminar TODOS los cachés
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames.map(name => {
-          console.log('[SW] Eliminando caché:', name);
-          return caches.delete(name);
-        })
-      );
-      
-      // Tomar control inmediato
-      await clients.claim();
-      
-      // Notificar a clientes
-      const allClients = await clients.matchAll({ type: 'window' });
-      allClients.forEach(client => {
-        client.postMessage({
-          type: 'FORCE_UPDATE',
-          version: TEMP_VERSION
-        });
-      });
-      
-      // Registrar el Service Worker real después de limpiar
-      setTimeout(() => {
-        console.log('[SW] Limpieza completa');
-      }, 500);
-    })()
-  );
-});
-
-// No cachear nada durante la limpieza
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-  
-  // No interceptar APIs externas
-  if (!url.origin.includes(self.location.origin)) {
-    return;
-  }
-  
-  // Para todo lo demás, ir directo a la red
-  event.respondWith(fetch(event.request));
-});
-EOF
-
-# Reemplazar VERSION_PLACEHOLDER con la versión actual
-sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" public/sw-temp.js
-
-# 4. Actualizar Service Workers principales con nueva versión
-echo -e "${YELLOW}4. Actualizando Service Workers principales...${NC}"
-
-# Actualizar sw.js
-cat > public/sw.js << 'EOF'
-// Service Worker principal - Versión actualizada
-const CACHE_VERSION = 'v-VERSION_PLACEHOLDER';
-const CACHE_NAME = 'law-analytics-' + CACHE_VERSION;
-const SKIP_CACHE_FOR = ['/api/', '/auth/', '.json', '/index.html'];
-
-// Install - activación inmediata
-self.addEventListener('install', event => {
-  console.log('[SW] Instalando versión:', CACHE_VERSION);
-  self.skipWaiting();
-});
-
-// Activate - limpiar cachés viejos
-self.addEventListener('activate', event => {
-  console.log('[SW] Activando versión:', CACHE_VERSION);
-  event.waitUntil(
-    (async () => {
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames
-          .filter(name => name !== CACHE_NAME)
-          .map(name => caches.delete(name))
-      );
-      await clients.claim();
-    })()
-  );
-});
-
-// Fetch - estrategia optimizada
-self.addEventListener('fetch', event => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // No interceptar APIs externas
-  if (!url.origin.includes(self.location.origin)) {
-    return;
-  }
-
-  // No cachear rutas específicas
-  const shouldSkipCache = SKIP_CACHE_FOR.some(path => url.pathname.includes(path));
-  if (shouldSkipCache) {
-    event.respondWith(fetch(request));
-    return;
-  }
-
-  // HTML siempre desde red
-  if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
-    event.respondWith(
-      fetch(request).catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // Assets - cache first
-  event.respondWith(
-    caches.match(request).then(response => {
-      if (response) return response;
-      
-      return fetch(request).then(response => {
-        if (!response || response.status !== 200) return response;
-        
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(request, responseToCache);
-        });
-        
-        return response;
-      });
-    })
-  );
-});
-
-// Auto-actualización silenciosa
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-EOF
-
-# Reemplazar VERSION_PLACEHOLDER
-sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" public/sw.js
-
-# Copiar sw.js a sw-new.js
-cp public/sw.js public/sw-new.js
-
-echo -e "${GREEN}✓ Service Workers actualizados${NC}"
-
-# 5. Limpiar builds anteriores
-echo -e "${YELLOW}5. Limpiando builds anteriores...${NC}"
+# 4. Limpiar builds anteriores
+echo -e "${YELLOW}4. Limpiando builds anteriores...${NC}"
 rm -rf build/ node_modules/.vite/ node_modules/.cache/
-echo -e "${GREEN}✓ Limpieza completada${NC}"
+echo -e "${GREEN}✓ Directorios limpiados${NC}"
 
-# 6. Construir aplicación
-echo -e "${YELLOW}6. Construyendo aplicación...${NC}"
+# 5. Construir aplicación
+echo -e "${YELLOW}5. Construyendo aplicación...${NC}"
 npm run build
 if [ $? -ne 0 ]; then
     echo -e "${RED}✗ Error durante el build${NC}"
@@ -212,112 +63,111 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Build completado${NC}"
 
-# 7. Primera fase: Instalar SW de limpieza
-echo -e "${MAGENTA}7. Instalando Service Worker de limpieza...${NC}"
-cp public/sw-temp.js build/sw.js
-cp public/sw-temp.js build/sw-new.js
-cp public/sw-temp.js build/service-worker.js
+# 6. Crear archivo de versión para tracking
+echo -e "${YELLOW}6. Creando archivo de versión...${NC}"
+cat > build/version.json <<EOF
+{
+  "version": "${VERSION}",
+  "timestamp": "${TIMESTAMP}",
+  "deployment": "$([ "$IS_SERVER" = true ] && echo "production" || echo "local")",
+  "git_commit": "$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')",
+  "no_service_worker": true
+}
+EOF
+echo -e "${GREEN}✓ Archivo de versión creado${NC}"
 
-# 8. Copiar recursos adicionales
+# 7. Optimizar index.html
+echo -e "${YELLOW}7. Optimizando index.html...${NC}"
+if [ -f "build/index.html" ]; then
+    # Añadir versión como meta tag
+    sed -i "s|</head>|<meta name=\"app-version\" content=\"${VERSION}\">\\n</head>|" build/index.html
+    
+    # Asegurar headers de no-cache
+    if ! grep -q "no-store" build/index.html; then
+        sed -i '/<head>/a <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />' build/index.html
+        sed -i '/<head>/a <meta http-equiv="Pragma" content="no-cache" />' build/index.html
+    fi
+    
+    # Eliminar cualquier referencia a Service Worker que pudiera quedar
+    sed -i '/serviceWorker/d' build/index.html
+    sed -i '/sw\.js/d' build/index.html
+    sed -i '/sw-new\.js/d' build/index.html
+    
+    echo -e "${GREEN}✓ index.html optimizado${NC}"
+fi
+
+# 8. Copiar recursos adicionales si existen
 echo -e "${YELLOW}8. Copiando recursos...${NC}"
 [ -f public/logo192.png ] && cp public/logo192.png build/
 [ -f public/logo512.png ] && cp public/logo512.png build/
 [ -f public/manifest.json ] && cp public/manifest.json build/
 echo -e "${GREEN}✓ Recursos copiados${NC}"
 
-# 9. Crear archivo de versión
-echo -e "${YELLOW}9. Creando archivo de versión...${NC}"
-cat > build/version.json <<EOF
-{
-  "version": "${VERSION}",
-  "buildTime": "${TIMESTAMP}",
-  "deployment": "production",
-  "cleanupPhase": "active"
-}
+# 9. Crear Service Worker de limpieza (temporal)
+echo -e "${YELLOW}9. Instalando limpiador de Service Workers viejos...${NC}"
+cat > build/sw.js << 'EOF'
+// Service Worker de limpieza - Se auto-elimina
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    (async () => {
+      // Eliminar TODOS los cachés
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      
+      // Desregistrarse a sí mismo
+      await self.registration.unregister();
+      
+      // Notificar a todos los clientes
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({ type: 'SW_REMOVED' });
+      });
+    })()
+  );
+});
 EOF
-echo -e "${GREEN}✓ Archivo de versión creado${NC}"
 
-# 10. Optimizar index.html
-echo -e "${YELLOW}10. Optimizando index.html...${NC}"
-if [ -f "build/index.html" ]; then
-    # Añadir versión
-    sed -i "1i<!-- Build Version: ${VERSION} -->" build/index.html
-    
-    # Asegurar no-cache
-    if ! grep -q "no-store" build/index.html; then
-        sed -i '/<head>/a <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />' build/index.html
-        sed -i '/<head>/a <meta http-equiv="Pragma" content="no-cache" />' build/index.html
-    fi
-    echo -e "${GREEN}✓ index.html optimizado${NC}"
-fi
+# Copiar como sw-new.js también
+cp build/sw.js build/sw-new.js
+cp build/sw.js build/service-worker.js
+echo -e "${GREEN}✓ Limpiador de SW instalado${NC}"
 
-# 11. Recargar nginx si está disponible
+# 10. Recargar nginx si está disponible y estamos en servidor
 if [ "$IS_SERVER" = true ] && command -v nginx &> /dev/null; then
-    echo -e "${YELLOW}11. Recargando nginx...${NC}"
+    echo -e "${YELLOW}10. Recargando nginx...${NC}"
     sudo nginx -t &> /dev/null
     if [ $? -eq 0 ]; then
         sudo systemctl reload nginx
         echo -e "${GREEN}✓ Nginx recargado${NC}"
+    else
+        echo -e "${YELLOW}⚠ Verifica la configuración de nginx manualmente${NC}"
     fi
 fi
 
-# 12. Esperar para la limpieza
-echo ""
-echo -e "${MAGENTA}=========================================${NC}"
-echo -e "${MAGENTA}FASE 1: LIMPIEZA INICIADA${NC}"
-echo -e "${MAGENTA}=========================================${NC}"
-echo ""
-echo -e "${YELLOW}⏱️  Esperando 30 segundos para limpieza de cachés...${NC}"
-sleep 30
-
-# 13. Segunda fase: Instalar SW normal
-echo ""
-echo -e "${MAGENTA}=========================================${NC}"
-echo -e "${MAGENTA}FASE 2: INSTALANDO SERVICE WORKER NORMAL${NC}"
-echo -e "${MAGENTA}=========================================${NC}"
-echo ""
-
-echo -e "${YELLOW}Instalando Service Worker optimizado...${NC}"
-cp public/sw.js build/sw.js
-cp public/sw-new.js build/sw-new.js
-cp public/sw.js build/service-worker.js
-
-# Actualizar archivo de versión
-cat > build/version.json <<EOF
-{
-  "version": "${VERSION}",
-  "buildTime": "${TIMESTAMP}",
-  "deployment": "production",
-  "status": "completed"
-}
-EOF
-
-echo -e "${GREEN}✓ Service Worker normal instalado${NC}"
-
-# 14. Limpiar archivos temporales
-rm -f public/sw-temp.js
-
-# 15. Mostrar resumen
+# 11. Mostrar resumen
 echo ""
 echo -e "${GREEN}=========================================${NC}"
-echo -e "${GREEN}✅ DEPLOYMENT COMPLETADO EXITOSAMENTE${NC}"
+echo -e "${GREEN}✅ DEPLOYMENT COMPLETADO${NC}"
 echo -e "${GREEN}=========================================${NC}"
 echo ""
 echo -e "${BLUE}📊 Información del deployment:${NC}"
 echo "   • Versión: ${VERSION}"
 echo "   • Hora: $(date)"
-echo "   • Modo: $([ "$IS_SERVER" = true ] && echo "Servidor" || echo "Local")"
-echo ""
-echo -e "${GREEN}✨ Características aplicadas:${NC}"
-echo "   ✓ Cachés antiguos eliminados"
-echo "   ✓ Service Workers actualizados"
-echo "   ✓ Actualización automática sin alerts"
-echo "   ✓ Optimizado para móviles"
+echo "   • Commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+echo "   • Service Worker: ELIMINADO"
 echo ""
 
 if [ "$IS_SERVER" = true ]; then
-    echo -e "${GREEN}🌐 La aplicación está actualizada en producción${NC}"
-    echo -e "${GREEN}📱 Los dispositivos móviles se actualizarán automáticamente${NC}"
+    echo -e "${GREEN}🌐 Aplicación actualizada en producción${NC}"
+    echo ""
+    echo -e "${YELLOW}Importante para usuarios con problemas:${NC}"
+    echo "   • Los Service Workers viejos se eliminarán automáticamente"
+    echo "   • Si persisten problemas, limpiar caché del navegador"
+    echo ""
 else
     echo -e "${BLUE}📝 Para desplegar en el servidor:${NC}"
     echo ""
@@ -332,5 +182,8 @@ else
 fi
 
 echo ""
-echo -e "${MAGENTA}🎯 Los usuarios ya no verán mensajes de confirmación${NC}"
-echo -e "${MAGENTA}🔄 Las actualizaciones serán completamente automáticas${NC}"
+echo -e "${GREEN}✨ Beneficios de este deployment:${NC}"
+echo "   ✅ Sin problemas de caché en móviles"
+echo "   ✅ Actualizaciones instantáneas"
+echo "   ✅ Menos complejidad"
+echo "   ✅ Mejor experiencia de usuario"
