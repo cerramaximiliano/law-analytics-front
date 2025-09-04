@@ -99,11 +99,11 @@ export function lazyRetry<T extends ComponentType<any>>(
             if ('caches' in window) {
               caches.keys().then(names => {
                 Promise.all(names.map(name => caches.delete(name))).then(() => {
-                  window.location.reload();
+                  (window as Window).location.reload();
                 });
               });
             } else {
-              window.location.reload();
+              (window as Window).location.reload();
             }
           };
           
