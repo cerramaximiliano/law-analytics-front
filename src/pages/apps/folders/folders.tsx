@@ -230,7 +230,7 @@ function ReactTable({
 
 					{/* Lado derecho - Botones de acción */}
 					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						{/* Primera línea: Agregar Causa, Ver Archivados, Archivar seleccionados */}
+						{/* Primera línea: Agregar Carpeta, Ver Archivados, Archivar seleccionados */}
 						<Stack
 							direction={matchDownSM ? "column" : "row"}
 							alignItems="center"
@@ -242,7 +242,7 @@ function ReactTable({
 						>
 							{/* Acción principal */}
 							<Button variant="contained" startIcon={<FolderAdd />} onClick={handleAdd} size="small">
-								Agregar Causa
+								Agregar Carpeta
 							</Button>
 
 							{/* Botón para ver elementos archivados */}
@@ -406,7 +406,7 @@ function ReactTable({
 							}}
 						/>
 						<Typography variant="h5" gutterBottom align="center">
-							No hay causas creadas. Puedes crear una usando el botón 'Agregar Causa'.
+							No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'.
 						</Typography>
 						<Typography variant="body2" color="textSecondary" align="center">
 							Las causas que guardes aparecerán aquí

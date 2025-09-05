@@ -14,6 +14,8 @@ import {
 	IconButton,
 	Zoom,
 	useTheme,
+	CircularProgress,
+	Backdrop,
 } from "@mui/material";
 import _ from "lodash";
 import * as Yup from "yup";
@@ -119,6 +121,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [limitErrorMessage, setLimitErrorMessage] = useState("");
 	const [showAddFolderModal, setShowAddFolderModal] = useState(false);
+	const [isProcessing, setIsProcessing] = useState(false);
+	const [isCheckingLimit, setIsCheckingLimit] = useState(false);
 
 	const theme = useTheme();
 
@@ -249,6 +253,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			if (isCreating) {
 				// Resetear el estado del modal
 				setShowAddFolderModal(false);
+				setIsCheckingLimit(true);
 
 				// Verificar el límite de recursos para carpetas (folders)
 				const checkLimit = async () => {
@@ -265,25 +270,32 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 								});
 								setLimitErrorMessage("Has alcanzado el límite de carpetas disponibles en tu plan actual.");
 
-								// Cerrar el modal actual y mostrar el LimitErrorModal
-								onCancel();
+								// Primero dejar de mostrar el indicador de carga
+								setIsCheckingLimit(false);
 
 								// Lanzar un pequeño delay para evitar problemas de renderizado
 								setTimeout(() => {
-									setLimitErrorOpen(true);
+									// Cerrar el modal actual
+									onCancel();
+									
+									// Mostrar el modal de límite después de otro pequeño delay
+									setTimeout(() => {
+										setLimitErrorOpen(true);
 
-									// Disparar evento para coordinación con otros componentes
-									window.dispatchEvent(
-										new CustomEvent("planRestrictionError", {
-											detail: {
-												resourceType: "folders",
-												openDialogsCount: 1,
-											},
-										}),
-									);
+										// Disparar evento para coordinación con otros componentes
+										window.dispatchEvent(
+											new CustomEvent("planRestrictionError", {
+												detail: {
+													resourceType: "folders",
+													openDialogsCount: 1,
+												},
+											}),
+										);
+									}, 100);
 								}, 100);
 							} else {
 								// Si no ha alcanzado el límite, mostrar el modal de nueva carpeta
+								setIsCheckingLimit(false);
 								setShowAddFolderModal(true);
 							}
 						} else {
@@ -291,11 +303,13 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 							if (!response.success) {
 								console.error("Error al verificar el límite de recursos:", response.message);
 							}
+							setIsCheckingLimit(false);
 							setShowAddFolderModal(true);
 						}
 					} catch (error) {
 						console.error("Error al verificar el límite de recursos:", error);
 						// En caso de error, permitir crear la carpeta de todos modos
+						setIsCheckingLimit(false);
 						setShowAddFolderModal(true);
 					}
 				};
@@ -307,6 +321,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		} else {
 			// Cuando el modal se cierra, limpiar los estados
 			setShowAddFolderModal(false);
+			setIsCheckingLimit(false);
 			// Resetear el paso activo cuando se cierra el modal
 			setActiveStep(0);
 		}
@@ -329,23 +344,42 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		let results;
 		let message;
 
-		if (mode === "add") {
-			results = await dispatch(addFolder({ ...values, userId }));
-			message = "agregar";
-		}
-		if (mode === "edit") {
-			results = await dispatch(updateFolderById(id, values));
-			message = "editar";
-		}
+		// Activar el indicador de procesamiento
+		setIsProcessing(true);
 
-		if (results && results.success) {
-			enqueueSnackbar(`Éxito al ${message} la carpeta`, {
-				variant: "success",
-				anchorOrigin: { vertical: "bottom", horizontal: "right" },
-				TransitionComponent: Zoom,
-				autoHideDuration: 3000,
-			});
-		} else {
+		try {
+			if (mode === "add") {
+				results = await dispatch(addFolder({ ...values, userId }));
+				message = "agregar";
+			}
+			if (mode === "edit") {
+				results = await dispatch(updateFolderById(id, values));
+				message = "editar";
+			}
+
+			if (results && results.success) {
+				enqueueSnackbar(`Éxito al ${message} la carpeta`, {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+				// Pequeño delay para que el usuario vea el mensaje de éxito
+				setTimeout(() => {
+					setIsProcessing(false);
+					onAddFolder(values);
+				}, 500);
+			} else {
+				enqueueSnackbar(`Error al ${message} la carpeta`, {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 3000,
+				});
+				setIsProcessing(false);
+			}
+		} catch (error) {
+			setIsProcessing(false);
 			enqueueSnackbar(`Error al ${message} la carpeta`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -355,7 +389,6 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		}
 
 		actions.setSubmitting(false);
-		onAddFolder(values);
 	}
 
 	async function _handleSubmit(formValues: any, actions: any) {
@@ -403,8 +436,25 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 				upgradeRequired={true}
 			/>
 
+			{/* Mostrar indicador de carga mientras se verifican los límites */}
+			{isCheckingLimit && (
+				<Box sx={{ 
+					display: "flex", 
+					flexDirection: "column", 
+					alignItems: "center",
+					justifyContent: "center",
+					minHeight: 400,
+					p: 4
+				}}>
+					<CircularProgress size={48} sx={{ mb: 2 }} />
+					<Typography variant="h6" color="text.secondary">
+						Verificando disponibilidad...
+					</Typography>
+				</Box>
+			)}
+
 			{/* El contenido del modal de AddFolder solo se muestra cuando corresponde */}
-			{showAddFolderModal && (
+			{!isCheckingLimit && showAddFolderModal && (
 				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
 					<DialogTitle
 						sx={{
@@ -503,13 +553,23 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 												<Button
 													type="submit"
 													variant="contained"
-													disabled={isSubmitting}
-													endIcon={!isLastStep && <ArrowRight2 size={18} />}
+													disabled={isSubmitting || isProcessing}
+													endIcon={
+														isProcessing ? (
+															<CircularProgress size={16} color="inherit" />
+														) : (
+															!isLastStep && <ArrowRight2 size={18} />
+														)
+													}
 													sx={{ minWidth: 100 }}
 												>
-													{folder && isLastStep && "Editar"}
-													{!folder && isLastStep && "Crear"}
-													{!isLastStep && "Siguiente"}
+													{isProcessing
+														? "Procesando..."
+														: folder && isLastStep
+														? "Editar"
+														: !folder && isLastStep
+														? "Crear"
+														: "Siguiente"}
 												</Button>
 											</Stack>
 										</Grid>
@@ -520,6 +580,24 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					</Formik>
 
 					{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
+					
+					{/* Backdrop con indicador de carga mientras se procesa */}
+					<Backdrop
+						open={isProcessing}
+						sx={{
+							color: "#fff",
+							zIndex: (theme) => theme.zIndex.drawer + 1,
+							position: "absolute",
+							borderRadius: 2,
+						}}
+					>
+						<Stack spacing={2} alignItems="center">
+							<CircularProgress color="inherit" size={48} />
+							<Typography variant="h6" color="inherit">
+								{folder ? "Actualizando carpeta..." : "Creando carpeta..."}
+							</Typography>
+						</Stack>
+					</Backdrop>
 				</Box>
 			)}
 		</>

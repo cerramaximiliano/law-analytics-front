@@ -10,7 +10,6 @@ import {
 	Typography,
 	Stack,
 	Divider,
-	Paper,
 	useTheme,
 	Grid,
 	Chip,
@@ -227,7 +226,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	};
 
 	const price = {
-		fontSize: "40px",
+		fontSize: "28px",
 		fontWeight: 700,
 		lineHeight: 1,
 	};
@@ -235,119 +234,87 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	const getContentMessage = () => {
 		if (isLimitError && limitInfo) {
 			return (
-				<Paper
-					elevation={0}
+				<Box
 					sx={{
-						mb: 2,
-						p: 3,
-						borderRadius: 2,
-						maxWidth: "540px",
+						mb: 1.5,
+						p: 1.5,
+						borderRadius: 1,
+						maxWidth: "700px",
 						mx: "auto",
-						bgcolor: theme.palette.mode === "dark" ? "background.paper" : "grey.50",
-						border: `1px solid ${theme.palette.divider}`,
+						bgcolor: theme.palette.background.paper,
 					}}
 				>
-					<Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
+					<Typography variant="body1" color="text.primary" sx={{ mb: 1 }}>
 						{message}
 					</Typography>
-					<Stack spacing={2.5}>
-						<Box>
-							<Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-								<Typography variant="body2">{limitInfo.resourceType}</Typography>
-							</Box>
-							<Divider />
-						</Box>
-
-						<Box sx={{ mt: 2 }}>
-							<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-								<Typography variant="body2" color="text.secondary">
-									<strong>Uso actual:</strong>
-								</Typography>
-								<Typography variant="body2" fontWeight="medium">
-									{limitInfo.currentCount} / {limitInfo.limit}
-								</Typography>
-							</Box>
+					<Stack spacing={1.5}>
+						<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+							<Typography variant="body2" color="text.secondary">
+								{limitInfo.resourceType} - Uso actual:
+							</Typography>
+							<Typography variant="body2" fontWeight="medium" color="error">
+								{limitInfo.currentCount} / {limitInfo.limit}
+							</Typography>
 						</Box>
 					</Stack>
-				</Paper>
+				</Box>
 			);
 		}
 
 		if (isFeatureError && featureInfo) {
 			return (
-				<Paper
-					elevation={0}
+				<Box
 					sx={{
-						mb: 2,
-						p: 3,
-						borderRadius: 2,
-						maxWidth: "540px",
+						mb: 1.5,
+						p: 1.5,
+						borderRadius: 1,
+						maxWidth: "700px",
 						mx: "auto",
-						bgcolor: theme.palette.mode === "dark" ? "background.paper" : "grey.50",
-						border: `1px solid ${theme.palette.divider}`,
+						bgcolor: theme.palette.background.paper,
 					}}
 				>
-					<Typography variant="h6" color="text.primary" sx={{ mb: 2 }}>
+					<Typography variant="body1" color="text.primary" sx={{ mb: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 						{message}
 					</Typography>
-					<Stack spacing={2.5}>
-						<Box>
-							<Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-								<Typography variant="body2" color="text.secondary">
-									<strong>Función:</strong>
-								</Typography>
-								<Typography variant="body2">{featureInfo.feature}</Typography>
-							</Box>
-							<Divider />
+					<Stack spacing={1}>
+						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
+							<Typography variant="body2" color="text.secondary">
+								Función:
+							</Typography>
+							<Typography variant="body2" fontWeight="medium">{featureInfo.feature}</Typography>
 						</Box>
-
-						<Box>
-							<Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-								<Typography variant="body2" color="text.secondary">
-									<strong>Tu plan:</strong>
-								</Typography>
-								<Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-									<Crown size={16} variant="Bulk" color={theme.palette.primary.main} />
-									{featureInfo.plan}
-								</Typography>
-							</Box>
-							<Divider />
+						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
+							<Typography variant="body2" color="text.secondary">
+								Tu plan actual:
+							</Typography>
+							<Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+								<Crown size={14} variant="Bulk" color={theme.palette.primary.main} />
+								{featureInfo.plan}
+							</Typography>
 						</Box>
 
 						{featureInfo.availableIn.length > 0 && (
-							<Box>
-								<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-									<Typography variant="body2" color="text.secondary">
-										<strong>Planes que incluyen esta función:</strong>
-									</Typography>
-									<Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
-										{featureInfo.availableIn.map((plan, index) => (
-											<Box
-												key={index}
-												sx={{
-													display: "inline-flex",
-													alignItems: "center",
-													px: 1.5,
-													py: 0.5,
-													border: `1px solid ${theme.palette.primary.light}`,
-													borderRadius: 1,
-													bgcolor: theme.palette.primary.lighter,
-													color: theme.palette.primary.dark,
-													fontSize: "0.75rem",
-													gap: 0.5,
-												}}
-											>
-												<Crown size={14} variant="Bulk" />
-												{plan}
-											</Box>
-										))}
-									</Stack>
-								</Box>
-								<Divider />
+							<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+								<Typography variant="body2" color="text.secondary">
+									Disponible en:
+								</Typography>
+								<Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ gap: 0.5 }}>
+									{featureInfo.availableIn.map((plan, index) => (
+										<Chip
+											key={index}
+											size="small"
+											label={plan}
+											icon={<Crown size={12} variant="Bulk" />}
+											color="primary"
+											variant="outlined"
+											sx={{ height: 22 }}
+										/>
+									))}
+								</Stack>
 							</Box>
 						)}
 					</Stack>
-				</Paper>
+				</Box>
 			);
 		}
 
@@ -415,15 +382,17 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 							return (
 								<Grid item xs={12} sm={6} md={activePlans.length <= 2 ? 5 : 4} key={plan.planId}>
 									<MainCard
-										elevation={2}
+										elevation={0}
 										sx={{
 											height: "100%",
 											minHeight: "380px",
 											overflow: "visible",
+											border: `1px solid ${theme.palette.divider}`,
 											transition: "all 0.3s ease-in-out",
 											"&:hover": {
 												transform: "translateY(-5px)",
-												boxShadow: theme.shadows[10],
+												boxShadow: theme.shadows[4],
+												borderColor: theme.palette.primary.main,
 											},
 										}}
 									>
@@ -591,19 +560,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			onClose={onClose}
 			maxWidth="md"
 			fullWidth
-			TransitionProps={{
-				timeout: 400,
-			}}
-			PaperProps={{
-				sx: {
-					borderRadius: 3,
-					overflow: "hidden",
-					maxWidth: { xs: "95%", sm: "85%", md: "800px" },
-					maxHeight: "90vh",
-					margin: "auto",
-					boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
-				},
-			}}
+			sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}
 		>
 			<DialogTitle
 				sx={{
@@ -626,15 +583,9 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			</DialogTitle>
 			<Divider />
 
-			<DialogContent
-				sx={{
-					p: 2.5,
-					pb: 3,
-					bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.default, 0.8) : alpha(theme.palette.grey[50], 0.8),
-				}}
-			>
+			<DialogContent sx={{ p: 2.5 }}>
 				<Box sx={{ mx: "auto" }}>
-					<Box sx={{ maxWidth: "600px", mx: "auto", mb: 2 }}>{getContentMessage()}</Box>
+					<Box sx={{ maxWidth: "100%", mx: "auto", mb: 1.5 }}>{getContentMessage()}</Box>
 					{renderPlansList()}
 				</Box>
 			</DialogContent>
