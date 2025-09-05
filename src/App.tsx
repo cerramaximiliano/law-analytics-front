@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 // project-imports
 import Routes from "routes";
 import ThemeCustomization from "themes";
-import { setupUpdateChecker } from "utils/updateChecker";
 
 import Loader from "components/Loader";
 import Locales from "components/Locales";
@@ -14,7 +13,6 @@ import Snackbar from "components/@extended/Snackbar";
 import Notistack from "components/third-party/Notistack";
 import SearchModal from "components/search/SearchModal";
 import SEOProvider from "components/SEO/SEOProvider";
-import ChunkErrorHandler from "components/ChunkErrorHandler";
 
 import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
@@ -36,9 +34,6 @@ const App = () => {
 	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
-		// Configurar detector de actualizaciones
-		setupUpdateChecker();
-
 		dispatch(fetchMenu()).then(() => {
 			setLoading(false);
 		});
@@ -51,22 +46,19 @@ const App = () => {
 			<ThemeCustomization>
 				<RTLLayout>
 					<Locales>
-						<>
-							<ChunkErrorHandler />
-							<ScrollTop>
-								<GoogleOAuthProvider clientId={googleClientId}>
-								<AuthProvider>
-									<WebSocketProvider>
-										<Notistack>
-											<Routes />
-											<Snackbar />
-											<SearchModal />
-										</Notistack>
-									</WebSocketProvider>
-								</AuthProvider>
-							</GoogleOAuthProvider>
-							</ScrollTop>
-						</>
+						<ScrollTop>
+							<GoogleOAuthProvider clientId={googleClientId}>
+							<AuthProvider>
+								<WebSocketProvider>
+									<Notistack>
+										<Routes />
+										<Snackbar />
+										<SearchModal />
+									</Notistack>
+								</WebSocketProvider>
+							</AuthProvider>
+						</GoogleOAuthProvider>
+						</ScrollTop>
 					</Locales>
 				</RTLLayout>
 			</ThemeCustomization>
