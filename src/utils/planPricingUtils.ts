@@ -10,6 +10,7 @@ export function getCurrentEnvironment(): "development" | "production" {
 	
 	// Si la variable está definida, usarla directamente
 	if (envVariable === "production" || envVariable === "development") {
+		console.log("🔧 Environment from VITE_ENVIRONMENT:", envVariable);
 		return envVariable;
 	}
 	
@@ -22,17 +23,19 @@ export function getCurrentEnvironment(): "development" | "production" {
 		(baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) &&
 		(currentUrl === "localhost" || currentUrl === "127.0.0.1");
 		
-	// Descomentar para debug
-	// console.log("Environment detection:", {
-	//	envVariable,
-	//	baseUrl,
-	//	currentUrl,
-	//	isLocalhost,
-	//	result: isLocalhost ? "development" : "production"
-	// });
+	const detectedEnv = isLocalhost ? "development" : "production";
+	
+	// Log para debug
+	console.log("🔧 Environment detection:", {
+		VITE_ENVIRONMENT: envVariable || "not defined",
+		baseUrl,
+		currentUrl,
+		isLocalhost,
+		detectedEnvironment: detectedEnv
+	});
 	
 	// Por defecto, asumimos producción si no es claramente localhost
-	return isLocalhost ? "development" : "production";
+	return detectedEnv;
 }
 
 /**

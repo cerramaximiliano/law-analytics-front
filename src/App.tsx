@@ -32,6 +32,16 @@ if (!googleClientId) {
 
 const App = () => {
 	const [loading, setLoading] = useState<boolean>(true);
+	
+	// Debug: Ver variables de entorno (eliminar en producción)
+	if (import.meta.env.DEV) {
+		console.log("🔧 Variables de entorno:", {
+			MODE: import.meta.env.MODE,
+			BASE_URL: import.meta.env.VITE_BASE_URL,
+			WS_URL: import.meta.env.VITE_WS_URL,
+			ENV: import.meta.env.VITE_ENVIRONMENT
+		});
+	}
 
 	useEffect(() => {
 		dispatch(fetchMenu()).then(() => {
