@@ -64,7 +64,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Error al cargar las causas",
+						message: "Error al cargar las carpetas",
 						variant: "alert",
 						alert: { color: "error" },
 						close: true,
@@ -107,7 +107,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Causa desvinculada correctamente",
+						message: "Carpeta desvinculada correctamente",
 						variant: "alert",
 						alert: { color: "success" },
 						close: true,
@@ -118,7 +118,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: result.error || "Error al desvincular la causa",
+						message: result.error || "Error al desvincular la carpeta",
 						variant: "alert",
 						alert: { color: "error" },
 						close: true,
@@ -129,7 +129,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error inesperado al desvincular la causa",
+					message: "Error inesperado al desvincular la carpeta",
 					variant: "alert",
 					alert: { color: "error" },
 					close: true,
@@ -202,7 +202,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 							Cambiar Vinculación
 						</Typography>
 						<Typography variant="body2" color="textSecondary">
-							Este cálculo ya tiene una causa vinculada
+							Este cálculo ya tiene una carpeta vinculada
 						</Typography>
 					</Stack>
 				</DialogTitle>
@@ -229,7 +229,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 										}}
 									/>
 									<Typography variant="subtitle1" color="primary" sx={{ fontWeight: 600 }}>
-										Causa Actual
+										Carpeta Actual
 									</Typography>
 								</Stack>
 
@@ -287,7 +287,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 									¿Qué desea hacer?
 								</Typography>
 								<Typography variant="body2" color="textSecondary">
-									Para vincular una nueva causa, primero debe desvincular la causa actual.
+									Para vincular una nueva carpeta, primero debe desvincular la carpeta actual.
 								</Typography>
 							</Stack>
 						</Box>
@@ -305,19 +305,13 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 					}}
 				>
 					<Button
-						color="inherit"
+						color="error"
 						onClick={onClose}
-						sx={{
-							color: theme.palette.text.secondary,
-							"&:hover": {
-								bgcolor: theme.palette.action.hover,
-							},
-						}}
 					>
 						Cancelar
 					</Button>
 					<Button onClick={handleUnlink} variant="contained" color="primary" startIcon={<Add style={{ transform: "rotate(45deg)" }} />}>
-						Desvincular Causa
+						Desvincular Carpeta
 					</Button>
 				</DialogActions>
 			</Dialog>
@@ -339,13 +333,19 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
 			}}
 		>
-			<DialogTitle sx={{ bgcolor: theme.palette.primary.lighter, pb: 2 }}>
+			<DialogTitle 
+				sx={{ 
+					bgcolor: theme.palette.primary.lighter, 
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`
+				}}
+			>
 				<Stack spacing={1}>
 					<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-						Seleccione Causa
+						Seleccionar Carpeta
 					</Typography>
 					<Typography variant="body2" color="textSecondary">
-						{selectedFolder ? "1 causa seleccionada" : "Seleccione la causa a la que desea vincular este cálculo"}
+						{selectedFolder ? "1 carpeta seleccionada" : "Seleccione la carpeta a la que desea vincular este cálculo"}
 					</Typography>
 				</Stack>
 			</DialogTitle>
@@ -356,7 +356,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 					<Box sx={{ mb: 2.5 }}>
 						<Stack spacing={1}>
 							<Typography variant="subtitle2" color="textSecondary">
-								Causa Seleccionada:
+								Carpeta Seleccionada:
 							</Typography>
 							<Box
 								sx={{
@@ -414,7 +414,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 								},
 							},
 						}}
-						placeholder="Buscar causas..."
+						placeholder="Buscar carpetas..."
 						fullWidth
 					/>
 				</FormControl>
@@ -523,7 +523,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 									border: `1px dashed ${theme.palette.divider}`,
 								}}
 							>
-								<Typography color="textSecondary">No se encontraron causas</Typography>
+								<Typography color="textSecondary">No se encontraron carpetas</Typography>
 							</Box>
 						)}
 					</Stack>
@@ -534,19 +534,13 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 
 			<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
 				<Button
-					color="inherit"
 					onClick={onClose}
-					sx={{
-						color: theme.palette.text.secondary,
-						"&:hover": {
-							bgcolor: theme.palette.action.hover,
-						},
-					}}
+					color="error"
 				>
 					Cancelar
 				</Button>
 				<Button onClick={handleLink} color="primary" variant="contained" disabled={!selectedFolder}>
-					Vincular Causa
+					Vincular Carpeta
 				</Button>
 			</DialogActions>
 		</Dialog>

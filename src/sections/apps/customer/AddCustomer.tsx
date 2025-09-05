@@ -12,6 +12,7 @@ import {
 	Typography,
 	IconButton,
 	Zoom,
+	CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import _ from "lodash";
@@ -106,6 +107,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [limitErrorMessage, setLimitErrorMessage] = useState("");
 	const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+	const [isCheckingLimit, setIsCheckingLimit] = useState(false);
 
 	const handleCancel = () => {
 		// Resetea el formulario a los valores iniciales correspondientes a un nuevo contacto
@@ -154,12 +156,11 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			type: Yup.string().required("El tipo es requerido"),
 		}),
 		Yup.object().shape({
-			state: Yup.string(), // No requerido
-			city: Yup.string(), // No requerido
-			zipCode: Yup.string(), // No requerido
-			email: Yup.string().email("Correo electrónico inválido").required("El correo electrónico es requerido"),
+			state: Yup.string().required("La provincia/estado es requerida"),
+			city: Yup.string().required("La ciudad es requerida"),
+			zipCode: Yup.string(), // Opcional
+			email: Yup.string().email("Correo electrónico inválido"), // Ahora es opcional
 			phone: Yup.string()
-				.required("El teléfono es requerido")
 				.test("phone-format", "Complete el código de área sin el 0 y móvil sin el 15", function (value) {
 					if (!value) return true; // Skip validation if no value
 
@@ -213,8 +214,9 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 			// Si estamos creando, verificar límites
 			if (isCreating) {
-				// Mostrar el modal inmediatamente para mejorar la experiencia del usuario
-				setShowAddCustomerModal(true);
+				// Resetear el estado del modal
+				setShowAddCustomerModal(false);
+				setIsCheckingLimit(true);
 
 				// Configurar valores iniciales para crear
 				const emptyValues = getInitialValues(null);
@@ -224,7 +226,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 					formikRef.current.setValues(emptyValues);
 				}
 
-				// Verificar el límite de recursos para contactos en paralelo
+				// Verificar el límite de recursos para contactos
 				const checkLimit = async () => {
 					try {
 						const response = await ApiService.checkResourceLimit("contacts");
@@ -239,29 +241,47 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 								});
 								setLimitErrorMessage("Has alcanzado el límite de contactos disponibles en tu plan actual.");
 
-								// Cerrar el modal actual y mostrar el LimitErrorModal
-								onCancel();
+								// Primero dejar de mostrar el indicador de carga
+								setIsCheckingLimit(false);
 
 								// Lanzar un pequeño delay para evitar problemas de renderizado
 								setTimeout(() => {
-									setLimitErrorOpen(true);
+									// Cerrar el modal actual
+									onCancel();
+									
+									// Mostrar el modal de límite después de otro pequeño delay
+									setTimeout(() => {
+										setLimitErrorOpen(true);
 
-									// Disparar evento para coordinación con otros componentes
-									window.dispatchEvent(
-										new CustomEvent("planRestrictionError", {
-											detail: {
-												resourceType: "contacts",
-												openDialogsCount: 1,
-											},
-										}),
-									);
+										// Disparar evento para coordinación con otros componentes
+										window.dispatchEvent(
+											new CustomEvent("planRestrictionError", {
+												detail: {
+													resourceType: "contacts",
+													openDialogsCount: 1,
+												},
+											}),
+										);
+									}, 100);
 								}, 100);
+							} else {
+								// Si no ha alcanzado el límite, mostrar el modal de nuevo contacto
+								setIsCheckingLimit(false);
+								setShowAddCustomerModal(true);
 							}
-							// Si no ha alcanzado el límite, ya se mostró el modal anteriormente
+						} else {
+							// Si hay un error en la respuesta, mostrar el modal de nuevo contacto por defecto
+							if (!response.success) {
+								console.error("Error al verificar el límite de recursos:", response.message);
+							}
+							setIsCheckingLimit(false);
+							setShowAddCustomerModal(true);
 						}
-						// Si hay un error en la respuesta, permitir crear (ya se mostró el modal)
 					} catch (error) {
-						// En caso de error, permitir crear el contacto (ya se mostró el modal)
+						console.error("Error al verificar el límite de recursos:", error);
+						// En caso de error, permitir crear el contacto de todos modos
+						setIsCheckingLimit(false);
+						setShowAddCustomerModal(true);
 					}
 				};
 				checkLimit();
@@ -282,6 +302,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 		} else {
 			// Cuando se cierra el modal, limpiar el estado
 			setShowAddCustomerModal(false);
+			setIsCheckingLimit(false);
 
 			// Opcionalmente limpiar el formulario
 			if (formikRef.current) {
@@ -299,10 +320,39 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 		try {
 			const userId = auth.user?._id;
 
+			// Limpiar el número de teléfono si existe
+			const cleanedPhone = values.phone ? cleanArgentinePhoneNumber(values.phone) : '';
+
+			// Preparar los datos asegurando que los campos requeridos estén presentes
 			const cleanedValues = {
 				...values,
-				phone: cleanArgentinePhoneNumber(values.phone),
+				phone: cleanedPhone,
+				// Asegurar que los campos requeridos no estén vacíos
+				name: values.name?.trim() || '',
+				lastName: values.lastName?.trim() || '',
+				role: values.role?.trim() || '',
+				type: values.type?.trim() || '',
+				state: values.state?.trim() || '',
+				city: values.city?.trim() || '',
+				// Campos opcionales - solo incluir si tienen valor
+				...(values.address?.trim() && { address: values.address.trim() }),
+				...(values.zipCode?.trim() && { zipCode: values.zipCode.trim() }),
+				...(values.email?.trim() && { email: values.email.trim() }),
+				...(values.nationality?.trim() && { nationality: values.nationality.trim() }),
+				...(values.document?.trim() && { document: values.document.trim() }),
+				...(values.cuit?.trim() && { cuit: values.cuit.trim() }),
+				...(values.status?.trim() && { status: values.status.trim() }),
+				...(values.activity?.trim() && { activity: values.activity.trim() }),
+				...(values.company?.trim() && { company: values.company.trim() }),
+				...(values.fiscal?.trim() && { fiscal: values.fiscal.trim() }),
 			};
+
+			// Remover campos vacíos para los opcionales
+			Object.keys(cleanedValues).forEach(key => {
+				if (cleanedValues[key] === '' && !['name', 'lastName', 'role', 'type', 'state', 'city'].includes(key)) {
+					delete cleanedValues[key];
+				}
+			});
 
 			let results;
 			let message;
@@ -394,14 +444,32 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 				upgradeRequired={true}
 			/>
 
+			{/* Mostrar indicador de carga mientras se verifican los límites */}
+			{isCheckingLimit && (
+				<Box sx={{ 
+					display: "flex", 
+					flexDirection: "column", 
+					alignItems: "center",
+					justifyContent: "center",
+					minHeight: 400,
+					p: 4
+				}}>
+					<CircularProgress size={48} sx={{ mb: 2 }} />
+					<Typography variant="h6" color="text.secondary">
+						Verificando disponibilidad...
+					</Typography>
+				</Box>
+			)}
+
 			{/* El contenido del modal de AddCustomer solo se muestra cuando corresponde */}
-			{showAddCustomerModal && (
-				<>
+			{!isCheckingLimit && showAddCustomerModal && (
+				<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
 					<DialogTitle
 						sx={{
 							bgcolor: theme.palette.primary.lighter,
 							p: 3,
 							borderBottom: `1px solid ${theme.palette.divider}`,
+							flexShrink: 0,
 						}}
 					>
 						<Stack spacing={1}>
@@ -433,9 +501,13 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 						innerRef={formikRef}
 					>
 						{({ isSubmitting, values }) => (
-							<Form autoComplete="off" noValidate>
-								<DialogContent sx={{ p: 2.5 }}>
-									<Box sx={{ minHeight: 400 }}>
+							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+								<DialogContent sx={{ 
+									p: 2.5,
+									flex: 1,
+									overflow: "auto"
+								}}>
+									<Box>
 										{/* Progress Steps */}
 										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
 											{steps.map((label, index) => (
@@ -469,7 +541,11 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 								<Divider />
 
-								<DialogActions sx={{ p: 2.5 }}>
+								<DialogActions sx={{ 
+									p: 2.5,
+									flexShrink: 0,
+									borderTop: `1px solid ${theme.palette.divider}`
+								}}>
 									<Grid container justifyContent="space-between" alignItems="center">
 										<Grid item>
 											{!isCreating && (
@@ -526,7 +602,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 							id={customer._id}
 						/>
 					)}
-				</>
+				</Box>
 			)}
 		</>
 	);

@@ -1007,7 +1007,7 @@ const TabSubscription = () => {
 														minWidth: 200,
 													}}
 												>
-													Gestionar Causas
+													Gestionar Carpetas
 												</Button>
 												<Button
 													variant="contained"

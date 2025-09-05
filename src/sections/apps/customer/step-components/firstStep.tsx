@@ -25,34 +25,35 @@ const FirstStep = () => {
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="name">Nombre</InputLabel>
-								<InputField fullWidth sx={customInputStyles} id="name" name="name" placeholder="Ingrese un nombre" />
+								<InputLabel htmlFor="name" required>Nombre</InputLabel>
+								<InputField fullWidth sx={customInputStyles} id="name" name="name" placeholder="Ingrese un nombre" required />
 							</Stack>
 						</Grid>
 
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="lastName">Apellido</InputLabel>
-								<InputField fullWidth sx={customInputStyles} id="lastName" placeholder="Ingrese un apellido" name="lastName" />
+								<InputLabel htmlFor="lastName" required>Apellido</InputLabel>
+								<InputField fullWidth sx={customInputStyles} id="lastName" placeholder="Ingrese un apellido" name="lastName" required />
 							</Stack>
 						</Grid>
 
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="role">Categoría</InputLabel>
+								<InputLabel htmlFor="role" required>Categoría</InputLabel>
 								<SelectField
 									label="Seleccione una categoría"
 									data={data.categorias}
 									name="role"
 									style={{ maxHeight: "39.91px" }}
+									required
 								></SelectField>
 							</Stack>
 						</Grid>
 
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="type">Tipos</InputLabel>
-								<SelectField label="Seleccione un tipo" data={data.tipos} name="type" style={{ maxHeight: "39.91px" }}></SelectField>
+								<InputLabel htmlFor="type" required>Tipos</InputLabel>
+								<SelectField label="Seleccione un tipo" data={data.tipos} name="type" style={{ maxHeight: "39.91px" }} required></SelectField>
 							</Stack>
 						</Grid>
 					</Grid>

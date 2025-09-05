@@ -148,7 +148,7 @@ export default function FirstForm(props: FirstFormProps) {
 						<Grid item xs={12}>
 							<Box sx={{ mb: 4 }}>
 								<Typography variant="subtitle1" color="primary" gutterBottom>
-									Causa vinculada
+									Carpeta vinculada
 								</Typography>
 								<Box
 									sx={{

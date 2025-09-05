@@ -5,7 +5,7 @@ import { RootState, useSelector, dispatch } from "store";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { Box, Divider, FormLabel, Grid, TextField, Stack, Typography } from "@mui/material";
+import { Box, Divider, FormLabel, Grid, TextField, Stack, Typography, LinearProgress, Chip } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -88,6 +88,31 @@ const ProfileTabs = ({ focusInput }: Props) => {
 	const clientesCount = userStats?.counts?.contacts || 0;
 	const calculosCount = userStats?.counts?.calculators || 0;
 
+	// Funciones helper para formatear bytes
+	const formatBytes = (bytes: number): string => {
+		if (bytes === 0) return '0 Bytes';
+		const k = 1024;
+		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+		const i = Math.floor(Math.log(bytes) / Math.log(k));
+		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+	};
+
+	// Usar los valores directamente de la API
+	const storageUsed = userStats?.storage?.total || 0;
+	const storageLimit = userStats?.storage?.limit || 52428800; // Default 50MB si no viene de la API
+	
+	// Calcular porcentaje - si la API lo provee, usarlo, sino calcularlo
+	const storagePercentage = userStats?.storage?.usedPercentage !== undefined 
+		? userStats.storage.usedPercentage 
+		: storageLimit > 0 ? Math.min((storageUsed / storageLimit) * 100, 100) : 0;
+	
+	// Determinar color de la barra según el uso
+	const getStorageColor = (percentage: number) => {
+		if (percentage < 60) return 'primary';
+		if (percentage < 80) return 'warning';
+		return 'error';
+	};
+
 	return (
 		<MainCard>
 			<Grid container spacing={6}>
@@ -149,7 +174,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 					<Stack direction="row" justifyContent="space-around" alignItems="center">
 						<Stack spacing={0.5} alignItems="center">
 							<Typography variant="h5">{causasCount}</Typography>
-							<Typography color="secondary">Causas</Typography>
+							<Typography color="secondary">Carpetas</Typography>
 						</Stack>
 						<Divider orientation="vertical" flexItem />
 						<Stack spacing={0.5} alignItems="center">
@@ -165,6 +190,89 @@ const ProfileTabs = ({ focusInput }: Props) => {
 				</Grid>
 				<Grid item xs={12}>
 					<ProfileTab />
+				</Grid>
+				<Grid item xs={12}>
+					<Divider />
+				</Grid>
+				<Grid item xs={12}>
+					<Stack spacing={2}>
+						<Stack direction="row" justifyContent="space-between" alignItems="center">
+							<Stack spacing={0.5}>
+								<Typography variant="h6">Almacenamiento</Typography>
+								{userStats?.planInfo?.planName && (
+									<Typography variant="caption" color="text.secondary">
+										{userStats.planInfo.planName}
+									</Typography>
+								)}
+							</Stack>
+							<Chip 
+								label={`${storagePercentage.toFixed(1)}%`} 
+								color={getStorageColor(storagePercentage) as any}
+								size="small"
+								variant="outlined"
+							/>
+						</Stack>
+						<LinearProgress 
+							variant="determinate" 
+							value={storagePercentage} 
+							color={getStorageColor(storagePercentage) as any}
+							sx={{
+								height: 8,
+								borderRadius: 1,
+								backgroundColor: theme.palette.grey[300],
+								'& .MuiLinearProgress-bar': {
+									borderRadius: 1,
+								}
+							}}
+						/>
+						<Stack direction="row" justifyContent="space-between" alignItems="center">
+							<Typography variant="caption" color="text.secondary">
+								{formatBytes(storageUsed)} utilizados
+							</Typography>
+							<Typography variant="caption" color="text.secondary">
+								{formatBytes(storageLimit)} totales
+							</Typography>
+						</Stack>
+						{userStats?.storage && (
+							<Stack spacing={1} sx={{ mt: 1 }}>
+								<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+									Desglose por tipo:
+								</Typography>
+								<Grid container spacing={2}>
+									<Grid item xs={12} sm={4}>
+										<Stack spacing={0.5}>
+											<Typography variant="caption" color="text.secondary">
+												Carpetas
+											</Typography>
+											<Typography variant="caption" sx={{ fontWeight: 500 }}>
+												{formatBytes(userStats.storage.folders || 0)}
+											</Typography>
+										</Stack>
+									</Grid>
+									<Grid item xs={12} sm={4}>
+										<Stack spacing={0.5}>
+											<Typography variant="caption" color="text.secondary">
+												Contactos
+											</Typography>
+											<Typography variant="caption" sx={{ fontWeight: 500 }}>
+												{formatBytes(userStats.storage.contacts || 0)}
+											</Typography>
+										</Stack>
+									</Grid>
+									<Grid item xs={12} sm={4}>
+										<Stack spacing={0.5}>
+											<Typography variant="caption" color="text.secondary">
+												Cálculos
+											</Typography>
+											<Typography variant="caption" sx={{ fontWeight: 500 }}>
+												{formatBytes(userStats.storage.calculators || 0)}
+											</Typography>
+										</Stack>
+									</Grid>
+								</Grid>
+							</Stack>
+						)}
+					</Stack>
 				</Grid>
 			</Grid>
 		</MainCard>

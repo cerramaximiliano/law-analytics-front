@@ -61,7 +61,7 @@ const TabProfile = () => {
 									<Stack direction="row" justifyContent="space-around" alignItems="center">
 										<Stack spacing={0.5} alignItems="center">
 											<Typography variant="h5">86</Typography>
-											<Typography color="secondary">Causas</Typography>
+											<Typography color="secondary">Carpetas</Typography>
 										</Stack>
 										<Divider orientation="vertical" flexItem />
 										<Stack spacing={0.5} alignItems="center">

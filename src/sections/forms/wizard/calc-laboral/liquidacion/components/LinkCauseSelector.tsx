@@ -130,7 +130,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 					dispatch(
 						openSnackbar({
 							open: true,
-							message: "No se encontraron causas disponibles",
+							message: "No se encontraron carpetas disponibles",
 							variant: "alert",
 							alert: { color: "warning" },
 							close: true,
@@ -141,7 +141,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Necesita iniciar sesión para acceder a las causas",
+						message: "Necesita iniciar sesión para acceder a las carpetas",
 						variant: "alert",
 						alert: { color: "error" },
 						close: true,
@@ -152,7 +152,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al cargar las causas",
+					message: "Error al cargar las carpetas",
 					variant: "alert",
 					alert: { color: "error" },
 					close: true,
@@ -194,7 +194,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 
 	// Cambiar selección de carpeta
 	const handleChangeFolder = () => {
-		// Abrir el modal para seleccionar una nueva causa
+		// Abrir el modal para seleccionar una nueva carpeta
 		setOpenModal(true);
 	};
 
@@ -234,7 +234,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 					/>
 					<Tab
 						icon={<DocumentCloud size={20} />}
-						label="Seleccionar Causa"
+						label="Seleccionar Carpeta"
 						{...a11yProps(1)}
 						sx={{
 							py: 1.5,
@@ -351,10 +351,10 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 							<Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
 								<DocumentCloud size={32} color={theme.palette.text.secondary} />
 								<Typography variant="h6" color="textSecondary">
-									No hay causa seleccionada
+									No hay carpeta seleccionada
 								</Typography>
 								<Button variant="contained" color="primary" onClick={() => setOpenModal(true)} startIcon={<DocumentCloud />}>
-									Seleccionar Causa
+									Seleccionar Carpeta
 								</Button>
 							</Stack>
 						</Box>
@@ -362,7 +362,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 				</TabPanel>
 			</Box>
 
-			{/* Modal de selección de causa */}
+			{/* Modal de selección de carpeta */}
 			<Dialog
 				open={openModal}
 				onClose={() => setOpenModal(false)}
@@ -377,10 +377,10 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 				<DialogTitle sx={{ bgcolor: theme.palette.primary.lighter, pb: 2 }}>
 					<Stack spacing={1}>
 						<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-							Seleccione Causa
+							Seleccionar Carpeta
 						</Typography>
 						<Typography variant="body2" color="textSecondary">
-							Seleccione la causa para completar automáticamente los datos
+							Seleccione la carpeta para completar automáticamente los datos
 						</Typography>
 					</Stack>
 				</DialogTitle>
@@ -405,7 +405,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 									},
 								},
 							}}
-							placeholder="Buscar causas..."
+							placeholder="Buscar carpetas..."
 							fullWidth
 						/>
 					</FormControl>
@@ -505,9 +505,9 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 									}}
 								>
 									{isLoading ? (
-										<Typography>Cargando causas...</Typography>
+										<Typography>Cargando carpetas...</Typography>
 									) : (
-										<Typography color="textSecondary">No se encontraron causas</Typography>
+										<Typography color="textSecondary">No se encontraron carpetas</Typography>
 									)}
 								</Box>
 							)}
@@ -517,7 +517,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 
 				<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
 					<Button
-						color="inherit"
+						color="error"
 						onClick={() => setOpenModal(false)}
 						sx={{
 							color: theme.palette.text.secondary,

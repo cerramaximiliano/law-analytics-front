@@ -19,6 +19,30 @@ export interface UserStatsState {
 			events: number;
 			contacts: number;
 			alerts: number;
+			foldersTotal?: number;
+			contactsTotal?: number;
+			calculatorsTotal?: number;
+		};
+		storage?: {
+			total: number;
+			folders: number;
+			contacts: number;
+			calculators: number;
+			files: number;
+			fileCount: number;
+			limit: number; // Límite de almacenamiento en bytes
+			limitMB?: number; // Límite en MB
+			usedPercentage?: number; // Porcentaje usado
+		};
+		planInfo?: {
+			planId: string;
+			planName: string;
+			limits: {
+				folders: number;
+				contacts: number;
+				calculators: number;
+				storage: number; // En MB
+			};
 		};
 		lastUpdated: string | null;
 	};
@@ -87,6 +111,8 @@ const userStatsReducer = (state = initialState, action: UserStatsActionTypes): U
 				data: {
 					...state.data,
 					counts: action.payload.counts,
+					storage: action.payload.storage,
+					planInfo: action.payload.planInfo,
 					lastUpdated: action.payload.lastUpdated,
 				},
 			};

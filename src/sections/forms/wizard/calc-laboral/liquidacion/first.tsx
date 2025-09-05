@@ -96,7 +96,7 @@ export default function FirstForm(props: FirstFormProps) {
 					{inputMethod === "causa" && selectedFolder ? (
 						<Grid item xs={12} sx={{ mb: 2 }}>
 							<Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
-								Causa vinculada:
+								Carpeta vinculada:
 							</Typography>
 							<Box
 								sx={{

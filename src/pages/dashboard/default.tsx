@@ -16,12 +16,14 @@ import ActiveFoldersWidget from "sections/widget/chart/ActiveFoldersWidget";
 import ProjectOverview from "sections/widget/chart/ProjectOverview";
 import ProjectRelease from "sections/widget/chart/ProjectRelease";
 import AssignUsers from "sections/widget/chart/TaskWidget";
+import StorageWidget from "sections/widget/chart/StorageWidget";
 
 // assets
 import { Calendar, CloudChange } from "iconsax-react";
 import WelcomeBanner from "sections/dashboard/default/WelcomeBanner";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
+import { fetchUserStats } from "store/reducers/userStats";
 import { DashboardStats } from "types/unified-stats";
 
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
@@ -47,6 +49,13 @@ const DashboardDefault = () => {
 			dispatch(getUnifiedStats(userId, "dashboard,folders"));
 		}
 	}, [userId, isInitialized]);
+
+	// Cargar datos de userStats para el widget de almacenamiento
+	useEffect(() => {
+		if (userId) {
+			dispatch(fetchUserStats());
+		}
+	}, [userId, dispatch]);
 
 	// Manejar errores
 	useEffect(() => {
@@ -248,6 +257,7 @@ const DashboardDefault = () => {
 						</Grid>
 						<Grid item xs={12} md={4} lg={3}>
 							<Stack spacing={3}>
+								<StorageWidget />
 								<ProjectRelease />
 								<AssignUsers />
 							</Stack>

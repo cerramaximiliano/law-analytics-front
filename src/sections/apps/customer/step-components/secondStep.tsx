@@ -32,20 +32,21 @@ const SecondStep = () => {
 
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="state">Provincia</InputLabel>
+								<InputLabel htmlFor="state" required>Provincia</InputLabel>
 								<SelectField
 									label="Seleccione una provincia"
 									data={data.provincias}
 									name="state"
 									style={{ maxHeight: "39.91px" }}
+									required
 								></SelectField>
 							</Stack>
 						</Grid>
 
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
-								<InputLabel htmlFor="city">Localidad</InputLabel>
-								<InputField fullWidth sx={customInputStyles} id="city" name="city" placeholder="Ingrese una localidad" />
+								<InputLabel htmlFor="city" required>Localidad</InputLabel>
+								<InputField fullWidth sx={customInputStyles} id="city" name="city" placeholder="Ingrese una localidad" required />
 							</Stack>
 						</Grid>
 
