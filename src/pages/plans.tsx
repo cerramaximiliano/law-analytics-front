@@ -53,6 +53,7 @@ const Plans = () => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
+	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null); // Para tracking del plan siendo procesado
 	const isDevelopment = getCurrentEnvironment() === "development";
 
 	// breadcrumb items
@@ -371,11 +372,26 @@ const Plans = () => {
 																	color={getButtonColor(plan.planId)}
 																	variant={plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined"}
 																	fullWidth
-																	href={plan.isActive ? "/login" : undefined}
-																	disabled={!plan.isActive}
-																	startIcon={!plan.isActive ? <Lock size={16} /> : undefined}
+																	href={plan.isActive && !loadingPlanId ? "/login" : undefined}
+																	disabled={!plan.isActive || loadingPlanId !== null}
+																	onClick={() => {
+																		if (plan.isActive) {
+																			setLoadingPlanId(plan.planId);
+																		}
+																	}}
+																	startIcon={
+																		!plan.isActive ? (
+																			<Lock size={16} />
+																		) : loadingPlanId === plan.planId ? (
+																			<CircularProgress size={16} color="inherit" />
+																		) : undefined
+																	}
 																>
-																	{plan.isActive ? "Comenzar" : "No disponible"}
+																	{!plan.isActive 
+																		? "No disponible" 
+																		: loadingPlanId === plan.planId 
+																		? "Procesando..." 
+																		: "Comenzar"}
 																</Button>
 															</Grid>
 														</Grid>

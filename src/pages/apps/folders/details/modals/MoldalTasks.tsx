@@ -1,5 +1,17 @@
 import React from "react";
-import { Dialog, DialogTitle, Divider, Button, Stack, DialogContent, DialogActions, useTheme, Typography, InputLabel } from "@mui/material";
+import { 
+	Dialog, 
+	DialogTitle, 
+	Divider, 
+	Button, 
+	Stack, 
+	DialogContent, 
+	DialogActions, 
+	useTheme, 
+	Typography, 
+	InputLabel,
+	CircularProgress
+} from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import * as Yup from "yup";
@@ -8,9 +20,14 @@ import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { addTask } from "store/reducers/tasks";
 
+// icons
+import { TaskSquare } from "iconsax-react";
+
+// project imports
+import { PopupTransition } from "components/@extended/Transitions";
+
 // types
 import { TaskModalType, TaskFormValues } from "types/task";
-import { TaskSquare } from "iconsax-react";
 
 const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: TaskModalType) => {
 	const theme = useTheme();
@@ -107,153 +124,108 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 		<Formik initialValues={initialValues} validationSchema={CustomerSchema} onSubmit={_handleSubmit} enableReinitialize>
 			{({ isSubmitting, resetForm, handleSubmit }) => {
 				const handleClose = () => {
-					closeTaskModal();
-					resetForm();
+					if (!isSubmitting) {
+						closeTaskModal();
+						resetForm();
+					}
 				};
 
 				return (
 					<Dialog
-						maxWidth="sm"
 						open={open}
 						onClose={handleClose}
+						TransitionComponent={PopupTransition}
+						keepMounted
+						maxWidth="sm"
+						fullWidth
+						aria-labelledby="task-modal-title"
 						PaperProps={{
+							elevation: 5,
 							sx: {
-								width: "600px",
-								maxWidth: "600px",
-								p: 0,
 								borderRadius: 2,
-								boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+								overflow: "hidden",
 							},
-						}}
-						sx={{
-							"& .MuiBackdrop-root": { opacity: "0.5 !important" },
 						}}
 					>
 						<Form>
 							<DialogTitle
+								id="task-modal-title"
 								sx={{
 									bgcolor: theme.palette.primary.lighter,
 									p: 3,
 									borderBottom: `1px solid ${theme.palette.divider}`,
 								}}
 							>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Stack spacing={1}>
 									<Stack direction="row" alignItems="center" spacing={1}>
-										<TaskSquare size={24} color={theme.palette.primary.main} />
-										<Typography
-											variant="h5"
-											sx={{
-												color: theme.palette.primary.main,
-												fontWeight: 600,
-											}}
-										>
-											Agregar Tarea
+										<TaskSquare size={24} color={theme.palette.primary.main} variant="Bold" />
+										<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+											Nueva Tarea
 										</Typography>
 									</Stack>
-									<Typography
-										color="textSecondary"
-										variant="subtitle2"
-										sx={{
-											maxWidth: "30%",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											whiteSpace: "nowrap",
-										}}
-									>
-										Carpeta: {folderName}
+									<Typography variant="body2" color="textSecondary">
+										Agrega una nueva tarea a la carpeta "{folderName}"
 									</Typography>
 								</Stack>
 							</DialogTitle>
-
 							<Divider />
-
-							<DialogContent
-								sx={{
-									p: 3,
-									display: "flex",
-									flexDirection: "column",
-									gap: 3,
-								}}
-							>
-								<Stack spacing={1}>
-									{" "}
-									{/* Contenedor con menor espacio para cada grupo label-input */}
-									<InputLabel htmlFor="name">Tarea</InputLabel>
-									<InputField
-										fullWidth
-										id="name"
-										placeholder="Ingrese una tarea"
-										name="name"
-										customInputStyles={{
-											"& .MuiInputBase-root": {
-												height: 39.91,
-											},
-											"& .MuiInputBase-input": {
-												fontSize: 12,
-											},
-											"& input::placeholder": {
-												color: "#000000",
-												opacity: 0.6,
-											},
-										}}
-									/>
-								</Stack>
-
-								<Stack spacing={1}>
-									<InputLabel htmlFor="dueDate">Fecha de Vencimiento</InputLabel>
-									<DateInputField
-										name="dueDate"
-										customInputStyles={{
-											"& .MuiInputBase-root": {
-												height: 39.91,
-											},
-											"& .MuiInputBase-input": {
-												fontSize: 12,
-											},
-											"& input::placeholder": {
-												color: "#000000",
-												opacity: 0.6,
-											},
-										}}
-									/>
-								</Stack>
-
-								<Stack spacing={1}>
-									<InputLabel htmlFor="description">Descripción</InputLabel>
-									<InputField
-										fullWidth
-										id="description"
-										multiline
-										rows={2}
-										placeholder="Ingrese una descripción"
-										name="description"
-										customInputStyles={{
-											"& .MuiInputBase-input": {
-												fontSize: 12,
-											},
-											"& textarea::placeholder": {
-												color: "#000000",
-												opacity: 0.6,
-											},
-										}}
-									/>
+							
+							<DialogContent sx={{ p: 3 }}>
+								<Stack spacing={2.5}>
+									<div>
+										<InputLabel htmlFor="name" sx={{ mb: 1 }}>
+											Nombre de la tarea *
+										</InputLabel>
+										<InputField 
+											id="name" 
+											autoFocus 
+											placeholder="Ingresa el nombre de la tarea" 
+											disabled={isSubmitting}
+										/>
+									</div>
+									
+									<div>
+										<InputLabel htmlFor="dueDate" sx={{ mb: 1 }}>
+											Fecha de vencimiento *
+										</InputLabel>
+										<DateInputField 
+											id="dueDate" 
+											placeholder="DD/MM/AAAA" 
+											disabled={isSubmitting}
+										/>
+									</div>
+									
+									<div>
+										<InputLabel htmlFor="description" sx={{ mb: 1 }}>
+											Descripción (opcional)
+										</InputLabel>
+										<InputField
+											id="description"
+											placeholder="Agrega una descripción de la tarea"
+											multiline
+											rows={4}
+											disabled={isSubmitting}
+										/>
+									</div>
 								</Stack>
 							</DialogContent>
-
+							
 							<Divider />
-
-							<DialogActions
-								sx={{
-									p: 2.5,
-									bgcolor: theme.palette.background.default,
-									borderTop: `1px solid ${theme.palette.divider}`,
-								}}
-							>
-								<Button color="error" onClick={handleClose}>
+							<DialogActions sx={{ px: 3, py: 2 }}>
+								<Button 
+									onClick={handleClose} 
+									color="error"
+									disabled={isSubmitting}
+								>
 									Cancelar
 								</Button>
-								<Button type="submit" variant="contained" disabled={isSubmitting}>
-									Guardar
+								<Button 
+									type="submit" 
+									variant="contained" 
+									disabled={isSubmitting}
+									startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+								>
+									{isSubmitting ? "Creando..." : "Crear tarea"}
 								</Button>
 							</DialogActions>
 						</Form>

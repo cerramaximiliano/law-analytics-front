@@ -7,6 +7,7 @@ import {
 	Dialog,
 	DialogContent,
 	DialogTitle,
+	DialogActions,
 	FormControl,
 	InputLabel,
 	MenuItem,
@@ -18,9 +19,17 @@ import {
 	useTheme,
 	useMediaQuery,
 	SelectChangeEvent,
+	Divider,
+	Box,
+	Alert,
+	CircularProgress,
 } from "@mui/material";
-import MainCard from "components/MainCard";
-import AnimateButton from "components/@extended/AnimateButton";
+
+// icons
+import { MessageQuestion, TickCircle } from "iconsax-react";
+
+// project imports
+import { PopupTransition } from "components/@extended/Transitions";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 
@@ -39,7 +48,15 @@ interface SupportModalProps {
 }
 
 // Lista de asuntos predefinidos
-const subjectOptions = ["Consulta general", "Problema técnico", "Facturación", "Actualización de datos", "Recuperación de cuenta", "Otro"];
+const subjectOptions = [
+	"Consulta general", 
+	"Problema técnico", 
+	"Facturación", 
+	"Actualización de datos", 
+	"Recuperación de cuenta",
+	"Error en proceso de pago",
+	"Otro"
+];
 
 // Lista de prioridades
 const priorityOptions = [
@@ -70,7 +87,8 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 		message: false,
 	});
 
-	// Estado para mensaje de éxito
+	// Estado para envío
+	const [submitting, setSubmitting] = useState(false);
 	const [submitted, setSubmitted] = useState(false);
 
 	// Resetear el formulario cuando se abre
@@ -89,6 +107,7 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 			message: false,
 		});
 		setSubmitted(false);
+		setSubmitting(false);
 	};
 
 	// Manejar cambios en campos de texto
@@ -134,12 +153,18 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 		event.preventDefault();
 
 		if (validateForm()) {
+			setSubmitting(true);
 			try {
-				const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/support-contacts`, formData, {
-					headers: {
-						"Content-Type": "application/json",
-					},
-				});
+				const response = await axios.post(
+					`${import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL}/api/support-contacts`, 
+					formData, 
+					{
+						headers: {
+							"Content-Type": "application/json",
+						},
+						withCredentials: true,
+					}
+				);
 
 				// Si la solicitud es exitosa
 				if (response.data.success) {
@@ -147,7 +172,7 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 					dispatch(
 						openSnackbar({
 							open: true,
-							message: "Consulta enviada correctamente",
+							message: "Tu consulta ha sido enviada correctamente. Te responderemos pronto.",
 							variant: "alert",
 							alert: {
 								color: "success",
@@ -158,23 +183,20 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 
 					setSubmitted(true);
 
-					// Cerrar el modal después de 3 segundos
+					// Cerrar el modal después de 2 segundos
 					setTimeout(() => {
 						onClose();
 						resetForm();
-					}, 3000);
+					}, 2000);
 				}
 			} catch (error) {
 				// Manejar diferentes tipos de errores
-				let errorMessage = "Error al enviar la consulta. Inténtalo más tarde.";
+				let errorMessage = "Error al enviar la consulta. Por favor, intenta más tarde.";
 
 				if (axios.isAxiosError(error)) {
-					// Error de Axios
 					if (error.response) {
-						// El servidor respondió con un código de estado diferente de 2xx
 						errorMessage = error.response.data.error || errorMessage;
 					} else if (error.request) {
-						// La solicitud se realizó pero no se recibió respuesta
 						errorMessage = "No se pudo conectar con el servidor. Verifica tu conexión.";
 					}
 				}
@@ -191,80 +213,118 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 						close: false,
 					}),
 				);
+			} finally {
+				setSubmitting(false);
 			}
 		}
 	};
 
 	// Manejar cierre del modal
 	const handleClose = () => {
-		onClose();
-		// Resetear el formulario después de cerrar
-		setTimeout(resetForm, 300);
+		if (!submitting) {
+			onClose();
+			// Resetear el formulario después de cerrar
+			setTimeout(resetForm, 300);
+		}
 	};
 
 	return (
 		<Dialog
 			open={open}
 			onClose={handleClose}
-			fullScreen={fullScreen}
+			TransitionComponent={PopupTransition}
+			keepMounted
 			maxWidth="sm"
 			fullWidth
-			sx={{ "& .MuiDialog-paper": { borderRadius: 2 } }}
+			aria-labelledby="support-modal-title"
+			PaperProps={{
+				elevation: 5,
+				sx: {
+					borderRadius: 2,
+					overflow: "hidden",
+				},
+			}}
 		>
-			<DialogTitle>
-				<Stack direction="row" justifyContent="space-between" alignItems="center">
-					<Typography variant="h5">Contactar a Soporte</Typography>
+			<DialogTitle
+				id="support-modal-title"
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Stack spacing={1}>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<MessageQuestion size={24} color={theme.palette.primary.main} variant="Bold" />
+						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+							Contactar a Soporte
+						</Typography>
+					</Stack>
+					<Typography variant="body2" color="textSecondary">
+						Completa el formulario y te responderemos dentro de las próximas 24 horas
+					</Typography>
 				</Stack>
 			</DialogTitle>
+			<Divider />
 
-			<DialogContent>
+			<DialogContent sx={{ p: 3 }}>
 				{submitted ? (
-					<MainCard>
-						<Stack spacing={2} alignItems="center" sx={{ py: 3 }}>
-							<Typography variant="h4" color="success.main">
-								¡Solicitud enviada!
-							</Typography>
-							<Typography align="center" color="text.secondary">
-								Gracias por contactarnos. Responderemos a tu consulta en menos de 24 horas.
-							</Typography>
-						</Stack>
-					</MainCard>
+					<Box sx={{ py: 4, textAlign: "center" }}>
+						<TickCircle size={64} color={theme.palette.success.main} variant="Bulk" />
+						<Typography variant="h4" color="success.main" sx={{ mt: 2, mb: 1 }}>
+							¡Consulta enviada exitosamente!
+						</Typography>
+						<Typography color="text.secondary">
+							Hemos recibido tu mensaje y te responderemos pronto.
+						</Typography>
+					</Box>
 				) : (
-					<form onSubmit={handleSubmit}>
-						<Stack spacing={3} sx={{ mt: 1 }}>
+					<Box component="form" onSubmit={handleSubmit}>
+						<Stack spacing={2.5}>
+							{/* Alert informativo */}
+							<Alert severity="info" sx={{ mb: 1 }}>
+								Si tu consulta es sobre un error de pago, incluye todos los detalles posibles para ayudarte mejor.
+							</Alert>
+
 							{/* Nombre */}
 							<TextField
 								fullWidth
-								label="Nombre"
+								label="Nombre completo"
 								name="name"
 								value={formData.name}
 								onChange={handleChange}
 								error={errors.name}
 								helperText={errors.name ? "El nombre es requerido" : ""}
+								disabled={submitting}
+								required
 							/>
 
 							{/* Email */}
 							<TextField
 								fullWidth
-								label="Email"
+								label="Correo electrónico"
 								name="email"
 								type="email"
 								value={formData.email}
 								onChange={handleChange}
 								error={errors.email}
-								helperText={errors.email ? "Ingresa un email válido" : ""}
+								helperText={errors.email ? "Ingresa un correo válido" : ""}
+								disabled={submitting}
+								required
 							/>
 
 							{/* Asunto */}
 							<TextField
 								fullWidth
-								label="Asunto"
+								label="Tipo de consulta"
 								name="subject"
 								select
 								value={formData.subject}
 								onChange={handleChange}
 								error={errors.subject}
-								helperText={errors.subject ? "Selecciona un asunto" : ""}
+								helperText={errors.subject ? "Selecciona un tipo de consulta" : ""}
+								disabled={submitting}
+								required
 							>
 								{subjectOptions.map((option) => (
 									<MenuItem key={option} value={option}>
@@ -281,6 +341,7 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 									value={formData.priority}
 									onChange={handlePriorityChange}
 									input={<OutlinedInput label="Prioridad" />}
+									disabled={submitting}
 								>
 									{priorityOptions.map((option) => (
 										<MenuItem key={option.value} value={option.value}>
@@ -293,31 +354,45 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 							{/* Mensaje */}
 							<TextField
 								fullWidth
-								label="Mensaje"
+								label="Describe tu consulta"
 								name="message"
 								multiline
-								rows={4}
+								rows={5}
 								value={formData.message}
 								onChange={handleChange}
 								error={errors.message}
-								helperText={errors.message ? "El mensaje es requerido" : ""}
+								helperText={errors.message ? "El mensaje es requerido" : "Proporciona todos los detalles posibles"}
+								disabled={submitting}
+								required
+								placeholder="Describe detalladamente tu consulta o problema..."
 							/>
-
-							{/* Botones */}
-							<Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
-								<Button color="error" onClick={handleClose}>
-									Cancelar
-								</Button>
-								<AnimateButton>
-									<Button variant="contained" type="submit">
-										Enviar consulta
-									</Button>
-								</AnimateButton>
-							</Stack>
 						</Stack>
-					</form>
+					</Box>
 				)}
 			</DialogContent>
+
+			{!submitted && (
+				<>
+					<Divider />
+					<DialogActions sx={{ px: 3, py: 2 }}>
+						<Button 
+							onClick={handleClose} 
+							color="error"
+							disabled={submitting}
+						>
+							Cancelar
+						</Button>
+						<Button 
+							variant="contained" 
+							onClick={handleSubmit}
+							disabled={submitting}
+							startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : null}
+						>
+							{submitting ? "Enviando..." : "Enviar consulta"}
+						</Button>
+					</DialogActions>
+				</>
+			)}
 		</Dialog>
 	);
 };

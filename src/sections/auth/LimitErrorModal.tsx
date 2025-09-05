@@ -63,6 +63,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null); // Para tracking del plan siendo procesado
 
 	// Cargar planes cuando se abra el modal
 	useEffect(() => {
@@ -89,6 +90,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	}, [open]);
 
 	const handleUpgrade = (planId?: string) => {
+		setLoadingPlanId(planId || "default"); // Activar loading
 		onClose();
 		if (planId) {
 			navigate(`/suscripciones/tables?plan=${planId}`);
@@ -463,8 +465,15 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 																		: "outlined"
 																}
 																fullWidth
-																onClick={() => handleUpgrade(plan.planId)}
-																endIcon={<ArrowRight size={16} />}
+																onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
+																disabled={loadingPlanId !== null}
+																endIcon={
+																	loadingPlanId === plan.planId ? (
+																		<CircularProgress size={16} color="inherit" />
+																	) : (
+																		<ArrowRight size={16} />
+																	)
+																}
 																size="medium"
 																sx={{
 																	py: 1,
@@ -475,7 +484,9 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 																	},
 																}}
 															>
-																Suscribirme Ahora
+																{loadingPlanId === plan.planId 
+																	? "Procesando..." 
+																	: "Suscribirme Ahora"}
 															</Button>
 														</Grid>
 													</Grid>

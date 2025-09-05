@@ -61,6 +61,7 @@ const Pricing = () => {
 	const [downgradeOptions, setDowngradeOptions] = useState<DowngradeOption[]>([]);
 	const [selectedOption, setSelectedOption] = useState<string>("");
 	const [targetPlanId, setTargetPlanId] = useState<string>("");
+	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null); // Para tracking del plan siendo procesado
 
 	// Obtener los planes al cargar el componente
 	useEffect(() => {
@@ -102,6 +103,8 @@ const Pricing = () => {
 
 	const handleSubscribe = async (planId: string) => {
 		try {
+			setLoadingPlanId(planId); // Activar loading para este plan
+			
 			// URLs de redirección según el resultado de la operación
 			const successUrl = `${window.location.origin}/apps/subscription/success`;
 			const errorUrl = `${window.location.origin}/apps/subscription/error`;
@@ -248,6 +251,8 @@ const Pricing = () => {
 					close: false,
 				}),
 			);
+		} finally {
+			setLoadingPlanId(null); // Limpiar loading al finalizar
 		}
 	};
 
@@ -605,14 +610,22 @@ const Pricing = () => {
 														color={getButtonColor(plan.planId, isCurrentPlan)}
 														variant={isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined"}
 														fullWidth
-														disabled={isCurrentPlan || !plan.isActive}
-														onClick={() => plan.isActive && handleSubscribe(plan.planId)}
-														startIcon={!plan.isActive ? <Lock size={16} /> : undefined}
+														disabled={isCurrentPlan || !plan.isActive || loadingPlanId !== null}
+														onClick={() => plan.isActive && !loadingPlanId && handleSubscribe(plan.planId)}
+														startIcon={
+															!plan.isActive ? (
+																<Lock size={16} />
+															) : loadingPlanId === plan.planId ? (
+																<CircularProgress size={16} color="inherit" />
+															) : undefined
+														}
 													>
 														{!plan.isActive
 															? "No disponible"
 															: isCurrentPlan
 															? "Plan Actual"
+															: loadingPlanId === plan.planId
+															? "Procesando..."
 															: isDowngradeToFree
 															? "Bajar a Free"
 															: "Suscribirme"}
