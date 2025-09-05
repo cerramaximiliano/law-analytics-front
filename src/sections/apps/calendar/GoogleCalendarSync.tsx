@@ -210,26 +210,38 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 		<>
 			<Box
 				sx={{
-					p: 1,
+					p: { xs: 0.5, sm: 1 },
 					border: "1px solid",
 					borderColor: isConnected ? (isSyncPending ? "warning.main" : "success.main") : "divider",
 					borderRadius: 1,
 					bgcolor: isConnected ? (isSyncPending ? "warning.lighter" : "success.lighter") : "background.paper",
+					overflow: "hidden",
 				}}
 			>
 				{!isConnected ? (
-					<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-						<Stack direction="row" spacing={1} alignItems="center">
+					<Stack 
+						direction="row" 
+						spacing={{ xs: 0.5, sm: 1 }} 
+						alignItems="center" 
+						justifyContent="space-between"
+					>
+						<Stack 
+							direction="row" 
+							spacing={{ xs: 0.5, sm: 1 }} 
+							alignItems="center"
+							sx={{ minWidth: 0, flex: 1 }}
+						>
 							{userProfile?.email ? (
 								// Si hay perfil previo guardado, mostrar avatar
 								<Avatar
 									src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined}
 									sx={{
-										width: 20,
-										height: 20,
+										width: { xs: 18, sm: 20 },
+										height: { xs: 18, sm: 20 },
 										fontSize: "0.7rem",
 										bgcolor: "primary.lighter",
 										color: "primary.main",
+										flexShrink: 0,
 									}}
 									imgProps={{
 										referrerPolicy: "no-referrer",
@@ -242,12 +254,17 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 								// Si no hay perfil previo, mostrar icono de Google
 								<Google size={18} variant="Bold" color="#666" />
 							)}
-							<Box>
-								<Typography variant="caption" sx={{ lineHeight: 1.2 }}>
+							<Box sx={{ minWidth: 0, flex: 1, display: { xs: "none", sm: "block" } }}>
+								<Typography variant="caption" sx={{ lineHeight: 1.2 }} noWrap>
 									Google Calendar
 								</Typography>
 								{userProfile?.email && (
-									<Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem" }}>
+									<Typography 
+										variant="caption" 
+										color="text.secondary" 
+										sx={{ display: "block", fontSize: "0.7rem" }}
+										noWrap
+									>
 										{userProfile.email}
 									</Typography>
 								)}
@@ -259,22 +276,39 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 							onClick={handleConnect}
 							disabled={isLoading}
 							size="small"
-							sx={{ minWidth: "auto", fontSize: "0.75rem", py: 0.5, px: 1 }}
+							sx={{ 
+								minWidth: "auto", 
+								fontSize: { xs: "0.7rem", sm: "0.75rem" }, 
+								py: 0.5, 
+								px: { xs: 0.75, sm: 1 },
+								flexShrink: 0,
+							}}
 						>
 							{userProfile?.email ? "Reconectar" : "Conectar"}
 						</Button>
 					</Stack>
 				) : (
-					<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-						<Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+					<Stack 
+						direction="row" 
+						spacing={{ xs: 0.5, sm: 1 }} 
+						alignItems="center" 
+						justifyContent="space-between"
+					>
+						<Stack 
+							direction="row" 
+							spacing={{ xs: 0.5, sm: 1 }} 
+							alignItems="center" 
+							sx={{ flex: 1, minWidth: 0 }}
+						>
 							<Avatar
 								src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined}
 								sx={{
-									width: 24,
-									height: 24,
+									width: { xs: 20, sm: 24 },
+									height: { xs: 20, sm: 24 },
 									fontSize: "0.75rem",
 									bgcolor: "success.lighter",
 									color: "success.darker",
+									flexShrink: 0,
 								}}
 								imgProps={{
 									referrerPolicy: "no-referrer",
@@ -283,7 +317,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 							>
 								{userProfile?.name?.charAt(0) || userProfile?.email?.charAt(0)?.toUpperCase()}
 							</Avatar>
-							<Box sx={{ minWidth: 0, flex: 1 }}>
+							<Box sx={{ minWidth: 0, flex: 1, display: { xs: "none", sm: "block" } }}>
 								<Typography variant="caption" noWrap sx={{ display: "block", lineHeight: 1.2 }}>
 									{userProfile?.name}
 								</Typography>
@@ -313,20 +347,39 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 							</Box>
 						</Stack>
 
-						<Stack direction="row" spacing={0.5}>
+						<Stack direction="row" spacing={{ xs: 0.25, sm: 0.5 }} sx={{ flexShrink: 0 }}>
 							<Tooltip title="Sincronizar eventos">
-								<IconButton onClick={handleSync} disabled={isSyncing} size="small" color="primary">
-									{isSyncing ? <CircularProgress size={16} /> : <Refresh size={16} />}
+								<IconButton 
+									onClick={handleSync} 
+									disabled={isSyncing} 
+									size="small" 
+									color="primary"
+									sx={{ padding: { xs: 0.25, sm: 0.5 } }}
+								>
+									{isSyncing ? <CircularProgress size={14} /> : <Refresh size={14} />}
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Importar de Google">
-								<IconButton onClick={handleFetchEvents} disabled={isSyncing} size="small" color="primary">
-									<Google size={16} />
+								<IconButton 
+									onClick={handleFetchEvents} 
+									disabled={isSyncing} 
+									size="small" 
+									color="primary"
+									sx={{ padding: { xs: 0.25, sm: 0.5 } }}
+								>
+									<Google size={14} />
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Desvincular">
-								<IconButton onClick={handleDisconnect} size="small" sx={{ color: "error.main" }}>
-									<CloseCircle size={16} />
+								<IconButton 
+									onClick={handleDisconnect} 
+									size="small" 
+									sx={{ 
+										color: "error.main",
+										padding: { xs: 0.25, sm: 0.5 }
+									}}
+								>
+									<CloseCircle size={14} />
 								</IconButton>
 							</Tooltip>
 						</Stack>

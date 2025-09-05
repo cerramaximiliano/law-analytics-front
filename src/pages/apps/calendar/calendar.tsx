@@ -1030,66 +1030,112 @@ const Calendar = () => {
 		<Box sx={{ position: "relative" }}>
 			<CalendarStyled>
 				{/* Barra superior integrada con todas las funciones */}
-				<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-					{/* Google Calendar Sync Component - Lado izquierdo */}
-					<Box sx={{ maxWidth: { xs: "200px", sm: "300px", md: "400px" } }}>
+				<Stack 
+					direction={{ xs: "column", md: "row" }}
+					justifyContent="space-between"
+					alignItems={{ xs: "stretch", md: "center" }}
+					spacing={2}
+					sx={{ mb: 2, flexWrap: { sm: "wrap", md: "nowrap" } }}
+				>
+					{/* Google Calendar Sync Component - Primero en móvil */}
+					<Box sx={{ 
+						width: { xs: "100%", sm: "auto" },
+						maxWidth: { xs: "100%", sm: "300px", md: "400px" },
+						order: { xs: 1, md: 1 }
+					}}>
 						<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
 					</Box>
 
-					{/* Controles del calendario - Centro */}
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<IconButton onClick={handleDatePrev} size="small">
-							<ArrowLeft2 size={18} />
-						</IconButton>
-						<IconButton onClick={handleDateNext} size="small">
-							<ArrowRight2 size={18} />
-						</IconButton>
-						<Tooltip title="Ir a hoy">
-							<IconButton color="primary" onClick={handleDateToday} size="small">
-								<Calendar1 size={18} variant="Bulk" />
+					{/* Controles del calendario y botones - Agrupados en móvil */}
+					<Stack 
+						direction="row"
+						justifyContent="space-between"
+						alignItems="center"
+						spacing={1}
+						sx={{ 
+							width: { xs: "100%", md: "auto" },
+							order: { xs: 2, md: 2 },
+							flexWrap: "wrap",
+							gap: { xs: 1, sm: 0 }
+						}}
+					>
+						{/* Navegación y fecha */}
+						<Stack direction="row" alignItems="center" spacing={0.5}>
+							<IconButton onClick={handleDatePrev} size="small">
+								<ArrowLeft2 size={matchDownSM ? 16 : 18} />
 							</IconButton>
-						</Tooltip>
-						<Typography variant={matchDownSM ? "h6" : "h5"} color="textPrimary" sx={{ fontWeight: 600, mx: 2 }}>
-							{format(date, "MMMM yyyy", { locale: es })}
-						</Typography>
-					</Stack>
-
-					{/* Botones de vista y acciones - Lado derecho */}
-					<Stack direction="row" spacing={1} alignItems="center">
-						{/* Botones de vista */}
-						<Stack direction="row" spacing={0.5}>
-							{[
-								{ label: "Mes", value: "dayGridMonth", icon: Category },
-								{ label: "Semana", value: "timeGridWeek", icon: Grid6 },
-								{ label: "Día", value: "timeGridDay", icon: Calendar1 },
-							]
-								.filter((item) => !matchDownSM || (item.value !== "dayGridMonth" && item.value !== "timeGridWeek"))
-								.map((viewOption) => {
-									const Icon = viewOption.icon;
-									const isActive = viewOption.value === calendarView;
-									return (
-										<Tooltip title={viewOption.label} key={viewOption.value}>
-											<IconButton color={isActive ? "primary" : "default"} size="small" onClick={() => handleViewChange(viewOption.value)}>
-												<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
-											</IconButton>
-										</Tooltip>
-									);
-								})}
+							<IconButton onClick={handleDateNext} size="small">
+								<ArrowRight2 size={matchDownSM ? 16 : 18} />
+							</IconButton>
+							<Tooltip title="Ir a hoy">
+								<IconButton color="primary" onClick={handleDateToday} size="small">
+									<Calendar1 size={matchDownSM ? 16 : 18} variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+							<Typography 
+								variant={matchDownSM ? "body1" : "h6"} 
+								color="textPrimary" 
+								sx={{ 
+									fontWeight: 600, 
+									ml: { xs: 1, sm: 2 },
+									minWidth: { xs: "auto", sm: "150px" },
+									whiteSpace: "nowrap"
+								}}
+							>
+								{format(date, matchDownSM ? "MMM yyyy" : "MMMM yyyy", { locale: es })}
+							</Typography>
 						</Stack>
 
-						<Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+						{/* Botones de vista y acciones */}
+						<Stack direction="row" spacing={0.5} alignItems="center">
+							{/* Botones de vista - Ocultos en móvil muy pequeño */}
+							{!matchDownSM && (
+								<>
+									<Stack direction="row" spacing={0.5}>
+										{[
+											{ label: "Mes", value: "dayGridMonth", icon: Category },
+											{ label: "Semana", value: "timeGridWeek", icon: Grid6 },
+											{ label: "Día", value: "timeGridDay", icon: Calendar1 },
+										].map((viewOption) => {
+											const Icon = viewOption.icon;
+											const isActive = viewOption.value === calendarView;
+											return (
+												<Tooltip title={viewOption.label} key={viewOption.value}>
+													<IconButton 
+														color={isActive ? "primary" : "default"} 
+														size="small" 
+														onClick={() => handleViewChange(viewOption.value)}
+													>
+														<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
+													</IconButton>
+												</Tooltip>
+											);
+										})}
+									</Stack>
+									<Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+								</>
+							)}
 
-						{/* Botones de acción */}
-						<Tooltip title="Agregar Nuevo Evento">
-							<IconButton color="primary" onClick={handleAddEventClick} size="medium">
-								<Add variant="Bulk" />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Ver Guía">
-							<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
-								<InfoCircle variant="Bulk" />
-							</IconButton>
-						</Tooltip>
+							{/* Botones de acción */}
+							<Tooltip title="Agregar Nuevo Evento">
+								<IconButton 
+									color="primary" 
+									onClick={handleAddEventClick} 
+									size={matchDownSM ? "small" : "medium"}
+								>
+									<Add variant="Bulk" size={matchDownSM ? 20 : 24} />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Ver Guía">
+								<IconButton 
+									color="success" 
+									onClick={() => setGuideOpen(true)} 
+									size={matchDownSM ? "small" : "medium"}
+								>
+									<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
+								</IconButton>
+							</Tooltip>
+						</Stack>
 					</Stack>
 				</Stack>
 
