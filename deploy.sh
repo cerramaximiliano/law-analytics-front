@@ -88,8 +88,7 @@ if [ -f "build/index.html" ]; then
         sed -i '/<head>/a <meta http-equiv="Pragma" content="no-cache" />' build/index.html
     fi
     
-    # Agregar registro del Service Worker de limpieza (temporal)
-    sed -i 's|</body>|<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").then(function(r){console.log("SW limpieza OK");r.update();}).catch(function(e){console.log("SW error:",e);});}</script></body>|' build/index.html
+    # No agregar Service Workers
     
     echo -e "${GREEN}✓ index.html optimizado${NC}"
 fi
@@ -101,38 +100,10 @@ echo -e "${YELLOW}8. Copiando recursos...${NC}"
 [ -f public/manifest.json ] && cp public/manifest.json build/
 echo -e "${GREEN}✓ Recursos copiados${NC}"
 
-# 9. Crear Service Worker de limpieza (temporal)
-echo -e "${YELLOW}9. Instalando limpiador de Service Workers viejos...${NC}"
-cat > build/sw.js << 'EOF'
-// Service Worker de limpieza - Se auto-elimina
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    (async () => {
-      // Eliminar TODOS los cachés
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
-      
-      // Desregistrarse a sí mismo
-      await self.registration.unregister();
-      
-      // Notificar a todos los clientes
-      const clients = await self.clients.matchAll();
-      clients.forEach(client => {
-        client.postMessage({ type: 'SW_REMOVED' });
-      });
-    })()
-  );
-});
-EOF
-
-# Copiar como sw-new.js también
-cp build/sw.js build/sw-new.js
-cp build/sw.js build/service-worker.js
-echo -e "${GREEN}✓ Limpiador de SW instalado${NC}"
+# 9. Archivo vacío por compatibilidad (algunos navegadores pueden cachear la ruta)
+echo -e "${YELLOW}9. Creando archivo SW vacío por compatibilidad...${NC}"
+echo "// No Service Worker" > build/sw.js
+echo -e "${GREEN}✓ Archivo de compatibilidad creado${NC}"
 
 # 10. Recargar nginx si está disponible y estamos en servidor
 if [ "$IS_SERVER" = true ] && command -v nginx &> /dev/null; then
@@ -156,16 +127,10 @@ echo -e "${BLUE}📊 Información del deployment:${NC}"
 echo "   • Versión: ${VERSION}"
 echo "   • Hora: $(date)"
 echo "   • Commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
-echo "   • Service Worker: ELIMINADO"
 echo ""
 
 if [ "$IS_SERVER" = true ]; then
     echo -e "${GREEN}🌐 Aplicación actualizada en producción${NC}"
-    echo ""
-    echo -e "${YELLOW}Importante para usuarios con problemas:${NC}"
-    echo "   • Los Service Workers viejos se eliminarán automáticamente"
-    echo "   • Si persisten problemas, limpiar caché del navegador"
-    echo ""
 else
     echo -e "${BLUE}📝 Para desplegar en el servidor:${NC}"
     echo ""
@@ -179,9 +144,3 @@ else
     echo -e "      ${YELLOW}./deploy.sh${NC}"
 fi
 
-echo ""
-echo -e "${GREEN}✨ Beneficios de este deployment:${NC}"
-echo "   ✅ Sin problemas de caché en móviles"
-echo "   ✅ Actualizaciones instantáneas"
-echo "   ✅ Menos complejidad"
-echo "   ✅ Mejor experiencia de usuario"
