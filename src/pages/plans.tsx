@@ -63,9 +63,17 @@ const Plans = () => {
 		const fetchPlans = async () => {
 			try {
 				setLoading(true);
+				
+				// Log el entorno actual para debug
+				const currentEnv = getCurrentEnvironment();
+				console.log("📍 Current environment in Plans component:", currentEnv);
+				
 				const response = await ApiService.getPublicPlans();
 				if (response.success && response.data) {
 					setPlans(response.data);
+					
+					// Log para ver qué datos vienen del backend
+					console.log("📦 Plans received from API:", response.data);
 				} else {
 					setError("No se pudieron cargar los planes");
 				}
@@ -308,6 +316,13 @@ const Plans = () => {
 							{plans.map((plan) => {
 								// Obtener la información de precios según el entorno
 								const pricing = getPlanPricing(plan);
+								
+								// Log para debug de precios
+								console.log(`💰 Pricing for ${plan.planId}:`, {
+									environment: getCurrentEnvironment(),
+									pricing,
+									plan
+								});
 
 								// Calcular el precio según el periodo seleccionado
 								// Solo aplicar descuento anual si estamos en producción con planes mensuales
