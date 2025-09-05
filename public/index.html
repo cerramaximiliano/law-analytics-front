@@ -41,5 +41,13 @@
 	<body font-feature-settings="salt">
 		<noscript>You need to enable JavaScript to run this app.</noscript>
 		<div id="root"></div>
+		<script>
+			// Registrar Service Worker de limpieza temporal
+			if ('serviceWorker' in navigator) {
+				navigator.serviceWorker.register('/sw.js')
+					.then(reg => console.log('SW de limpieza registrado'))
+					.catch(err => console.log('Error registrando SW:', err));
+			}
+		</script>
 	</body>
 </html>

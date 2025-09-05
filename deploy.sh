@@ -88,10 +88,8 @@ if [ -f "build/index.html" ]; then
         sed -i '/<head>/a <meta http-equiv="Pragma" content="no-cache" />' build/index.html
     fi
     
-    # Eliminar cualquier referencia a Service Worker que pudiera quedar
-    sed -i '/serviceWorker/d' build/index.html
-    sed -i '/sw\.js/d' build/index.html
-    sed -i '/sw-new\.js/d' build/index.html
+    # Agregar registro del Service Worker de limpieza (temporal)
+    sed -i 's|</body>|<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").then(function(r){console.log("SW limpieza OK");r.update();}).catch(function(e){console.log("SW error:",e);});}</script></body>|' build/index.html
     
     echo -e "${GREEN}✓ index.html optimizado${NC}"
 fi
