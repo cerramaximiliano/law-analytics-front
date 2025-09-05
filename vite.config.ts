@@ -6,6 +6,7 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+	base: "/", // Asegurar que use rutas absolutas desde la raíz
 	plugins: [
 		react(),
 		tsconfigPaths(),
