@@ -1,42 +1,38 @@
 import { Plan, EnvironmentConfig, PlanPricingInfo } from "../store/reducers/ApiService";
 
 /**
- * Obtiene el entorno actual basado en la URL base y la URL actual
- * Si la URL contiene localhost o 127.0.0.1, es desarrollo
- * De lo contrario, es producción
+ * Obtiene el entorno actual basado en variable de entorno VITE_ENVIRONMENT
+ * Si no está definida, intenta detectarlo basado en la URL
  */
 export function getCurrentEnvironment(): "development" | "production" {
-	// Primero verificar la variable de entorno
-	const baseUrl = import.meta.env.VITE_BASE_URL || "";
+	// Primero verificar la variable de entorno VITE_ENVIRONMENT
+	const envVariable = import.meta.env.VITE_ENVIRONMENT;
 	
-	// También verificar la URL actual del navegador
+	// Si la variable está definida, usarla directamente
+	if (envVariable === "production" || envVariable === "development") {
+		return envVariable;
+	}
+	
+	// Fallback: detectar basado en URL (para compatibilidad)
+	const baseUrl = import.meta.env.VITE_BASE_URL || "";
 	const currentUrl = window.location.hostname;
 	
-	// Es desarrollo SOLO si:
-	// 1. La URL base contiene localhost o 127.0.0.1
-	// 2. Y la URL actual del navegador es localhost o 127.0.0.1
+	// Es desarrollo SOLO si las URLs son localhost o 127.0.0.1
 	const isLocalhost = 
 		(baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) &&
 		(currentUrl === "localhost" || currentUrl === "127.0.0.1");
 		
-	// Si estamos en un dominio real (.com, .app, etc.) siempre es producción
-	const isProductionDomain = 
-		currentUrl.includes(".com") || 
-		currentUrl.includes(".app") || 
-		currentUrl.includes(".net") || 
-		currentUrl.includes(".org") ||
-		!isLocalhost; // Si no es localhost, asumimos producción
-		
 	// Descomentar para debug
 	// console.log("Environment detection:", {
+	//	envVariable,
 	//	baseUrl,
 	//	currentUrl,
 	//	isLocalhost,
-	//	isProductionDomain,
-	//	result: isProductionDomain ? "production" : "development"
+	//	result: isLocalhost ? "development" : "production"
 	// });
 	
-	return isProductionDomain ? "production" : "development";
+	// Por defecto, asumimos producción si no es claramente localhost
+	return isLocalhost ? "development" : "production";
 }
 
 /**
