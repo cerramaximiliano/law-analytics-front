@@ -115,5 +115,5 @@ dist
 src/templates/
 
 # Claude AI files
-.claude/
+# .claude/
 
