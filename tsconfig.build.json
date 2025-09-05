@@ -3,8 +3,7 @@
 	"compilerOptions": {
 		// Optimizaciones para builds más rápidos
 		"skipLibCheck": true,
-		"incremental": true,
-		"tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo",
+		"incremental": false,
 		// Desactivar checks que no son necesarios en build
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,

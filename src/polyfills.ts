@@ -1,5 +1,8 @@
 // Polyfills para compatibilidad con navegadores y Redux Toolkit/Immer
 
+// Importar regenerator-runtime para async/await en navegadores antiguos
+import "regenerator-runtime/runtime";
+
 // Asegurar que globalThis esté disponible
 if (typeof globalThis === "undefined") {
 	(function () {
