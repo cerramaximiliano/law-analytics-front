@@ -46,10 +46,17 @@ export function getCurrentEnvironment(): "development" | "production" {
 export function getPlanPricing(plan: Plan): PlanPricingInfo {
 	const environment = getCurrentEnvironment();
 
+	console.log(`🔍 getPlanPricing for ${plan.planId} in ${environment}:`, {
+		hasEnvironments: !!plan.environments,
+		environmentConfig: plan.environments?.[environment],
+		pricingInfo: plan.pricingInfo
+	});
+
 	// Si existe configuración de environments para el entorno actual
 	if (plan.environments && plan.environments[environment]) {
 		const envConfig = plan.environments[environment];
 		if (envConfig) {
+			console.log(`✅ Using environment config for ${plan.planId}:`, envConfig);
 			return {
 				basePrice: envConfig.basePrice ?? plan.pricingInfo.basePrice,
 				currency: envConfig.currency ?? plan.pricingInfo.currency,
@@ -71,6 +78,7 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 		};
 
 		if (developmentPrices[plan.planId] !== undefined) {
+			console.log(`⚠️ Using hardcoded development prices for ${plan.planId}`);
 			return {
 				basePrice: developmentPrices[plan.planId],
 				currency: "USD",
@@ -81,6 +89,7 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 	}
 
 	// Fallback a pricingInfo (legacy)
+	console.log(`📌 Using fallback pricingInfo for ${plan.planId}:`, plan.pricingInfo);
 	return plan.pricingInfo;
 }
 

@@ -70,10 +70,18 @@ const Plans = () => {
 				
 				const response = await ApiService.getPublicPlans();
 				if (response.success && response.data) {
-					setPlans(response.data);
-					
-					// Log para ver qué datos vienen del backend
+					// Log detallado de lo que viene del backend
 					console.log("📦 Plans received from API:", response.data);
+					response.data.forEach((plan: Plan) => {
+						console.log(`📋 Plan ${plan.planId}:`, {
+							displayName: plan.displayName,
+							pricingInfo: plan.pricingInfo,
+							environments: plan.environments,
+							hasEnvironments: !!plan.environments
+						});
+					});
+					
+					setPlans(response.data);
 				} else {
 					setError("No se pudieron cargar los planes");
 				}
