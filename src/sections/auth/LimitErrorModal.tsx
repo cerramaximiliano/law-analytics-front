@@ -26,7 +26,7 @@ import { Lock, ArrowRight, TickCircle, CloseCircle, Crown } from "iconsax-react"
 import MainCard from "components/MainCard";
 // Importar el servicio API para obtener planes dinámicamente
 import ApiService, { Plan } from "store/reducers/ApiService";
-import { getPlanPricing, formatPrice, getBillingPeriodText } from "utils/planPricingUtils";
+import { getPlanPricing, formatPrice, getBillingPeriodText, cleanPlanDisplayName } from "utils/planPricingUtils";
 
 interface LimitInfo {
 	resourceType: string;
@@ -441,7 +441,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 														</Grid>
 														<Grid item xs={12}>
 															<Stack spacing={0} textAlign="center">
-																<Typography variant="h4">{plan.displayName}</Typography>
+																<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
 															</Stack>
 														</Grid>
 														<Grid item xs={12}>

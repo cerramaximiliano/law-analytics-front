@@ -36,7 +36,7 @@ import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/Api
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import TabLegalDocuments from "./TabPanel";
-import { getPlanPricing, formatPrice, getBillingPeriodText, getCurrentEnvironment } from "utils/planPricingUtils";
+import { getPlanPricing, formatPrice, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
 
 // ==============================|| PRICING ||============================== //
 
@@ -586,7 +586,7 @@ const Pricing = () => {
 												</Grid>
 												<Grid item xs={12}>
 													<Stack spacing={0} textAlign="center">
-														<Typography variant="h4">{plan.displayName}</Typography>
+														<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
 														<Typography>{plan.description}</Typography>
 													</Stack>
 												</Grid>

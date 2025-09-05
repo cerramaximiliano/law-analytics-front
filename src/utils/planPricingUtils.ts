@@ -155,3 +155,12 @@ export function getBillingPeriodText(period: string): string {
 
 	return periods[period] || period;
 }
+
+/**
+ * Limpia el nombre del plan quitando indicadores de entorno
+ * Ej: "Plan Estándar (production)" -> "Plan Estándar"
+ */
+export function cleanPlanDisplayName(displayName: string): string {
+	// Quitar (development), (production), (staging), etc.
+	return displayName.replace(/\s*\((development|production|staging|test|dev|prod)\)\s*/gi, '').trim();
+}
