@@ -123,14 +123,14 @@ const userStatsReducer = (state = initialState, action: UserStatsActionTypes): U
 				error: action.payload,
 			};
 		case INCREMENT_USER_STAT:
+			const currentCount = state.data.counts?.[action.payload.counterType as keyof typeof state.data.counts] || 0;
 			return {
 				...state,
 				data: {
 					...state.data,
 					counts: {
 						...state.data.counts,
-						[action.payload.counterType]:
-							state.data.counts[action.payload.counterType as keyof typeof state.data.counts] + action.payload.value,
+						[action.payload.counterType]: currentCount + action.payload.value,
 					},
 				},
 			};
