@@ -12,23 +12,31 @@ export function getCurrentEnvironment(): "development" | "production" {
 	// También verificar la URL actual del navegador
 	const currentUrl = window.location.hostname;
 	
-	// Es desarrollo si cualquiera de estas condiciones se cumple
+	// Es desarrollo SOLO si:
+	// 1. La URL base contiene localhost o 127.0.0.1
+	// 2. Y la URL actual del navegador es localhost o 127.0.0.1
 	const isLocalhost = 
-		baseUrl.includes("localhost") || 
-		baseUrl.includes("127.0.0.1") ||
-		currentUrl === "localhost" ||
-		currentUrl === "127.0.0.1" ||
-		currentUrl.includes("localhost");
+		(baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) &&
+		(currentUrl === "localhost" || currentUrl === "127.0.0.1");
+		
+	// Si estamos en un dominio real (.com, .app, etc.) siempre es producción
+	const isProductionDomain = 
+		currentUrl.includes(".com") || 
+		currentUrl.includes(".app") || 
+		currentUrl.includes(".net") || 
+		currentUrl.includes(".org") ||
+		!isLocalhost; // Si no es localhost, asumimos producción
 		
 	// Descomentar para debug
 	// console.log("Environment detection:", {
 	//	baseUrl,
 	//	currentUrl,
 	//	isLocalhost,
-	//	result: isLocalhost ? "development" : "production"
+	//	isProductionDomain,
+	//	result: isProductionDomain ? "production" : "development"
 	// });
 	
-	return isLocalhost ? "development" : "production";
+	return isProductionDomain ? "production" : "development";
 }
 
 /**
@@ -54,7 +62,9 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 
 	// Solución temporal: Si estamos en desarrollo y no hay configuración de environments,
 	// usar valores predefinidos para desarrollo
-	if (environment === "development" && !plan.environments) {
+	// IMPORTANTE: Solo aplicar estos valores si realmente estamos en desarrollo local
+	if (environment === "development" && !plan.environments && 
+		(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
 		const developmentPrices: Record<string, number> = {
 			"free": 0,
 			"standard": 1.99,
