@@ -641,6 +641,28 @@ class ApiService {
 	}
 
 	/**
+	 * Repara la suscripción de un usuario específico sincronizándola con Stripe
+	 * @param userId - ID del usuario a sincronizar
+	 */
+	static async repairUserSubscription(userId: string): Promise<{
+		success: boolean;
+		message: string;
+		user?: any;
+		subscription?: any;
+	}> {
+		try {
+			const response = await axios.get(
+				`${API_BASE_URL}/api/repair/fix-user-subscription/${userId}`,
+				{ withCredentials: true }
+			);
+			console.log(`/api/repair/fix-user-subscription/${userId}`, response.data);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
 	 * Cancela la suscripción actual del usuario
 	 * @param atPeriodEnd - Si es true, la suscripción se cancela al finalizar el período actual
 	 */

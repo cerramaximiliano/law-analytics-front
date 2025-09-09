@@ -23,6 +23,7 @@ import {
 	FormControlLabel,
 	Checkbox,
 	CircularProgress,
+	Tooltip,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -52,6 +53,7 @@ import {
 	Edit2,
 	Save2,
 	CloseCircle,
+	RefreshCircle,
 } from "iconsax-react";
 
 // API and types
@@ -124,6 +126,9 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const [gracePeriodExpiresAt, setGracePeriodExpiresAt] = useState<Date | null>(null);
 	const [autoArchiveScheduled, setAutoArchiveScheduled] = useState(false);
 	const [savingGracePeriod, setSavingGracePeriod] = useState(false);
+	
+	// Estado para sincronización de suscripción
+	const [syncingSubscription, setSyncingSubscription] = useState(false);
 
 	const { enqueueSnackbar } = useSnackbar();
 
@@ -282,6 +287,35 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		}
 	};
 
+	// Función para sincronizar suscripción con Stripe
+	const handleSyncSubscription = async () => {
+		const userId = userData?.id || userData?._id;
+		if (!userId) {
+			enqueueSnackbar("No se pudo obtener el ID del usuario", { variant: "error" });
+			return;
+		}
+
+		setSyncingSubscription(true);
+		try {
+			const response = await ApiService.repairUserSubscription(userId);
+			
+			if (response.success) {
+				enqueueSnackbar(response.message || "Suscripción sincronizada exitosamente", { variant: "success" });
+				
+				// Recargar los datos del usuario para mostrar la suscripción actualizada
+				dispatch(getUserById(userId) as any);
+			} else {
+				enqueueSnackbar(response.message || "Error al sincronizar la suscripción", { variant: "error" });
+			}
+		} catch (error: any) {
+			console.error("Error syncing subscription:", error);
+			const errorMessage = error?.response?.data?.message || error?.message || "Error al sincronizar la suscripción";
+			enqueueSnackbar(errorMessage, { variant: "error" });
+		} finally {
+			setSyncingSubscription(false);
+		}
+	};
+
 	// Renderizado de chip de estado
 	const renderStatusChip = (status: string) => {
 		let color;
@@ -378,11 +412,33 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		if (!subscription) {
 			return (
 				<Stack spacing={3}>
-					<Alert severity="info" sx={{ mb: 2 }}>
-						<Typography variant="body2">
-							<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
-						</Typography>
-					</Alert>
+					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+						<Alert severity="info" sx={{ flex: 1, mr: 2 }}>
+							<Typography variant="body2">
+								<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
+							</Typography>
+						</Alert>
+						<Tooltip title="Sincronizar con Stripe para obtener información de suscripción">
+							<Button
+								variant="outlined"
+								size="small"
+								startIcon={syncingSubscription ? <CircularProgress size={16} /> : <RefreshCircle size={16} />}
+								onClick={handleSyncSubscription}
+								disabled={syncingSubscription}
+								sx={{
+									minWidth: 150,
+									borderColor: theme.palette.primary.main,
+									color: theme.palette.primary.main,
+									'&:hover': {
+										borderColor: theme.palette.primary.dark,
+										backgroundColor: theme.palette.action.hover,
+									},
+								}}
+							>
+								{syncingSubscription ? 'Sincronizando...' : 'Sincronizar'}
+							</Button>
+						</Tooltip>
+					</Box>
 					<Paper
 						elevation={0}
 						sx={{
@@ -394,6 +450,9 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 						<Typography variant="body1" align="center">
 							El usuario no posee información sobre suscripción dentro de la colección de suscripciones.
 						</Typography>
+						<Typography variant="body2" align="center" sx={{ mt: 2, color: 'text.secondary' }}>
+							Usa el botón "Sincronizar" para intentar obtener la información desde Stripe.
+						</Typography>
 					</Paper>
 				</Stack>
 			);
@@ -401,11 +460,33 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 		return (
 			<Stack spacing={3}>
-				<Alert severity="info" sx={{ mb: 2 }}>
-					<Typography variant="body2">
-						<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
-					</Typography>
-				</Alert>
+				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+					<Alert severity="info" sx={{ flex: 1, mr: 2 }}>
+						<Typography variant="body2">
+							<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
+						</Typography>
+					</Alert>
+					<Tooltip title="Sincronizar con Stripe para actualizar la información de suscripción">
+						<Button
+							variant="outlined"
+							size="small"
+							startIcon={syncingSubscription ? <CircularProgress size={16} /> : <RefreshCircle size={16} />}
+							onClick={handleSyncSubscription}
+							disabled={syncingSubscription}
+							sx={{
+								minWidth: 150,
+								borderColor: theme.palette.primary.main,
+								color: theme.palette.primary.main,
+								'&:hover': {
+									borderColor: theme.palette.primary.dark,
+									backgroundColor: theme.palette.action.hover,
+								},
+							}}
+						>
+							{syncingSubscription ? 'Sincronizando...' : 'Sincronizar'}
+						</Button>
+					</Tooltip>
+				</Box>
 
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="subtitle1">Plan</Typography>
