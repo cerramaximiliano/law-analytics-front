@@ -30,6 +30,8 @@ import Avatar from "components/@extended/Avatar";
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { fetchUserStats } from "store/reducers/userStats";
+import { updateUser } from "store/reducers/auth";
+import ApiService from "store/reducers/ApiService";
 
 // assets
 import { TickCircle, Star1, Flash, Crown, ArrowRight2 } from "iconsax-react";
@@ -64,7 +66,41 @@ const SubscriptionSuccess = () => {
 			}),
 		);
 
-		// Actualizar stats del usuario
+		// Sincronizar suscripción como fallback (en caso de que el webhook falle)
+		const syncSubscription = async () => {
+			try {
+				const response = await ApiService.syncSubscription();
+				
+				if (response.success && response.user) {
+					// Actualizar usuario en Redux con la información sincronizada
+					dispatch(updateUser(response.user));
+					
+					// Si hay stats, actualizarlos también
+					if (response.userStats) {
+						// Actualizar los stats con la estructura correcta
+						dispatch({
+							type: "FETCH_USER_STATS_SUCCESS",
+							payload: {
+								totalFolders: response.userStats.totalFolders,
+								totalContacts: response.userStats.totalContacts,
+								totalCalculators: response.userStats.totalCalculators,
+								planInfo: response.userStats.planInfo
+							}
+						});
+					}
+					
+					console.log("Suscripción sincronizada exitosamente");
+				}
+			} catch (error) {
+				// Error silencioso - no interrumpir la experiencia del usuario
+				console.error("Error al sincronizar suscripción:", error);
+			}
+		};
+
+		// Ejecutar sincronización
+		syncSubscription();
+
+		// Actualizar stats del usuario (puede obtener datos adicionales)
 		dispatch(fetchUserStats());
 
 		// Animaciones escalonadas

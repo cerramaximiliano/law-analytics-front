@@ -619,6 +619,28 @@ class ApiService {
 	}
 
 	/**
+	 * Sincroniza la suscripción del usuario con Stripe (fallback para cuando webhook falla)
+	 */
+	static async syncSubscription(): Promise<{
+		success: boolean;
+		message: string;
+		user?: any;
+		userStats?: any;
+	}> {
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/subscriptions/sync`, 
+				{}, 
+				{ withCredentials: true }
+			);
+			console.log("/api/subscriptions/sync", response.data);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
 	 * Cancela la suscripción actual del usuario
 	 * @param atPeriodEnd - Si es true, la suscripción se cancela al finalizar el período actual
 	 */

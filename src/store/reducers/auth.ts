@@ -25,6 +25,7 @@ import { Payment } from "./ApiService";
 import { resetFoldersState } from "./folder";
 import { resetContactsState } from "./contacts";
 import { resetCalculatorsState } from "./calculator";
+import { extractErrorMessage } from "utils/errorMessages";
 
 // initial state
 export const initialState: AuthProps = {
@@ -286,7 +287,7 @@ export const updateUserProfile = (profileData: any) => async (dispatch: Dispatch
 		dispatch(
 			openSnackbar({
 				open: true,
-				message: error.response?.data?.message || error.message || "Error al actualizar el perfil",
+				message: extractErrorMessage(error),
 				variant: "alert",
 				alert: {
 					color: "error",
@@ -339,7 +340,7 @@ export const changeUserPassword = (passwordData: PasswordChangeData) => async (d
 		dispatch(
 			openSnackbar({
 				open: true,
-				message: error.response?.data?.message || error.message || "Error al cambiar la contraseña",
+				message: extractErrorMessage(error),
 				variant: "alert",
 				alert: {
 					color: "error",
@@ -414,7 +415,7 @@ export const fetchCurrentSubscription = () => async (dispatch: any, getState: ()
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: error.response?.data?.message || error.message || "Error al obtener la información de suscripción",
+					message: extractErrorMessage(error),
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -482,7 +483,7 @@ export const addUserSkills = (skills: any) => async (dispatch: Dispatch) => {
 		dispatch(
 			openSnackbar({
 				open: true,
-				message: error.response?.data?.message || error.message || "Error al agregar skills",
+				message: extractErrorMessage(error),
 				variant: "alert",
 				alert: {
 					color: "error",
@@ -524,7 +525,7 @@ export const deleteUserSkill = (skillId: string) => async (dispatch: Dispatch) =
 		dispatch(
 			openSnackbar({
 				open: true,
-				message: error.response?.data?.message || error.message || "Error al eliminar skill",
+				message: extractErrorMessage(error),
 				variant: "alert",
 				alert: {
 					color: "error",
@@ -578,7 +579,7 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: error.response?.data?.message || error.message || "Error al obtener el historial de pagos",
+					message: extractErrorMessage(error),
 					variant: "alert",
 					alert: {
 						color: "error",

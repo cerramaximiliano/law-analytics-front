@@ -2,6 +2,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
 import { openSnackbar } from "store/reducers/snackbar";
+import { extractErrorMessage } from "utils/errorMessages";
 
 // Tipos de acciones
 import { FETCH_USER_STATS_REQUEST, FETCH_USER_STATS_SUCCESS, FETCH_USER_STATS_FAILURE, INCREMENT_USER_STAT } from "./actions";
@@ -159,15 +160,16 @@ export const fetchUserStats = () => async (dispatch: Dispatch) => {
 			throw new Error(response.data.message || "Error al obtener estadísticas");
 		}
 	} catch (error: any) {
+		const errorMessage = extractErrorMessage(error);
 		dispatch({
 			type: FETCH_USER_STATS_FAILURE,
-			payload: error.response?.data?.message || error.message || "Error al obtener estadísticas",
+			payload: errorMessage,
 		});
 
 		dispatch(
 			openSnackbar({
 				open: true,
-				message: error.response?.data?.message || error.message || "Error al obtener estadísticas",
+				message: errorMessage,
 				variant: "alert",
 				alert: {
 					color: "error",

@@ -28,6 +28,7 @@ import { dispatch as reduxDispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
+import { extractErrorMessage } from "utils/errorMessages";
 
 // Types
 interface UnauthorizedContextType {
@@ -117,7 +118,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 		} catch (err: any) {
 			setStatus({ success: false });
 
-			const errorMessage = err?.response?.data?.message || err.message || "Error al iniciar sesión";
+			const errorMessage = extractErrorMessage(err);
 
 			setErrors({
 				submit: `${errorMessage}${submitAttempts.current >= maxRetries ? ". Demasiados intentos, serás redirigido." : ""}`,

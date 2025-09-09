@@ -20,6 +20,7 @@ import { AppDispatch } from "store";
 import secureStorage from "services/secureStorage";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
+import { extractErrorMessage } from "utils/errorMessages";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = import.meta.env.VITE_HIDE_BANKING_DATA === "true";
@@ -554,7 +555,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 			return { email, isLoggedIn: false, needsVerification: true };
 		} catch (error) {
-			showSnackbar("Error en el registro", "error");
+			showSnackbar(extractErrorMessage(error), "error");
 			throw error;
 		}
 	};
@@ -614,10 +615,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				throw new Error(response.data.message || "Error de verificación");
 			}
 		} catch (error) {
-			const errorMessage = axios.isAxiosError(error)
-				? (error.response?.data as any)?.message || "Error al verificar el código"
-				: "Error al verificar el código";
-
+			const errorMessage = extractErrorMessage(error);
 			showSnackbar(errorMessage, "error");
 			throw error;
 		}
@@ -684,10 +682,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				throw new Error(response.data.message || "Error al restablecer la contraseña");
 			}
 		} catch (error) {
-			const errorMessage = axios.isAxiosError(error)
-				? (error.response?.data as any)?.message || "Error al restablecer la contraseña"
-				: "Error al restablecer la contraseña";
-
+			const errorMessage = extractErrorMessage(error);
 			showSnackbar(errorMessage, "error");
 			throw error;
 		}
@@ -710,10 +705,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 				throw new Error(response.data.message || "Error al verificar el código");
 			}
 		} catch (error) {
-			const errorMessage = axios.isAxiosError(error)
-				? (error.response?.data as any)?.message || "Error al verificar el código"
-				: "Error al verificar el código";
-
+			const errorMessage = extractErrorMessage(error);
 			showSnackbar(errorMessage, "error");
 			throw error;
 		}
