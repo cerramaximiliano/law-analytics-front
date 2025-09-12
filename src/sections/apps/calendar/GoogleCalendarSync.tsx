@@ -219,18 +219,8 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 				}}
 			>
 				{!isConnected ? (
-					<Stack 
-						direction="row" 
-						spacing={{ xs: 0.5, sm: 1 }} 
-						alignItems="center" 
-						justifyContent="space-between"
-					>
-						<Stack 
-							direction="row" 
-							spacing={{ xs: 0.5, sm: 1 }} 
-							alignItems="center"
-							sx={{ minWidth: 0, flex: 1 }}
-						>
+					<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="space-between">
+						<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
 							{userProfile?.email ? (
 								// Si hay perfil previo guardado, mostrar avatar
 								<Avatar
@@ -259,12 +249,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 									Google Calendar
 								</Typography>
 								{userProfile?.email && (
-									<Typography 
-										variant="caption" 
-										color="text.secondary" 
-										sx={{ display: "block", fontSize: "0.7rem" }}
-										noWrap
-									>
+									<Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem" }} noWrap>
 										{userProfile.email}
 									</Typography>
 								)}
@@ -276,10 +261,10 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 							onClick={handleConnect}
 							disabled={isLoading}
 							size="small"
-							sx={{ 
-								minWidth: "auto", 
-								fontSize: { xs: "0.7rem", sm: "0.75rem" }, 
-								py: 0.5, 
+							sx={{
+								minWidth: "auto",
+								fontSize: { xs: "0.7rem", sm: "0.75rem" },
+								py: 0.5,
 								px: { xs: 0.75, sm: 1 },
 								flexShrink: 0,
 							}}
@@ -288,18 +273,8 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 						</Button>
 					</Stack>
 				) : (
-					<Stack 
-						direction="row" 
-						spacing={{ xs: 0.5, sm: 1 }} 
-						alignItems="center" 
-						justifyContent="space-between"
-					>
-						<Stack 
-							direction="row" 
-							spacing={{ xs: 0.5, sm: 1 }} 
-							alignItems="center" 
-							sx={{ flex: 1, minWidth: 0 }}
-						>
+					<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="space-between">
+						<Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
 							<Avatar
 								src={!imageError && userProfile?.imageUrl ? userProfile.imageUrl : undefined}
 								sx={{
@@ -349,21 +324,15 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 
 						<Stack direction="row" spacing={{ xs: 0.25, sm: 0.5 }} sx={{ flexShrink: 0 }}>
 							<Tooltip title="Sincronizar eventos">
-								<IconButton 
-									onClick={handleSync} 
-									disabled={isSyncing} 
-									size="small" 
-									color="primary"
-									sx={{ padding: { xs: 0.25, sm: 0.5 } }}
-								>
+								<IconButton onClick={handleSync} disabled={isSyncing} size="small" color="primary" sx={{ padding: { xs: 0.25, sm: 0.5 } }}>
 									{isSyncing ? <CircularProgress size={14} /> : <Refresh size={14} />}
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Importar de Google">
-								<IconButton 
-									onClick={handleFetchEvents} 
-									disabled={isSyncing} 
-									size="small" 
+								<IconButton
+									onClick={handleFetchEvents}
+									disabled={isSyncing}
+									size="small"
 									color="primary"
 									sx={{ padding: { xs: 0.25, sm: 0.5 } }}
 								>
@@ -371,12 +340,12 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Desvincular">
-								<IconButton 
-									onClick={handleDisconnect} 
-									size="small" 
-									sx={{ 
+								<IconButton
+									onClick={handleDisconnect}
+									size="small"
+									sx={{
 										color: "error.main",
-										padding: { xs: 0.25, sm: 0.5 }
+										padding: { xs: 0.25, sm: 0.5 },
 									}}
 								>
 									<CloseCircle size={14} />

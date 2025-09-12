@@ -49,13 +49,13 @@ interface SupportModalProps {
 
 // Lista de asuntos predefinidos
 const subjectOptions = [
-	"Consulta general", 
-	"Problema técnico", 
-	"Facturación", 
-	"Actualización de datos", 
+	"Consulta general",
+	"Problema técnico",
+	"Facturación",
+	"Actualización de datos",
 	"Recuperación de cuenta",
 	"Error en proceso de pago",
-	"Otro"
+	"Otro",
 ];
 
 // Lista de prioridades
@@ -156,14 +156,14 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 			setSubmitting(true);
 			try {
 				const response = await axios.post(
-					`${import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL}/api/support-contacts`, 
-					formData, 
+					`${import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL}/api/support-contacts`,
+					formData,
 					{
 						headers: {
 							"Content-Type": "application/json",
 						},
 						withCredentials: true,
-					}
+					},
 				);
 
 				// Si la solicitud es exitosa
@@ -274,9 +274,7 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 						<Typography variant="h4" color="success.main" sx={{ mt: 2, mb: 1 }}>
 							¡Consulta enviada exitosamente!
 						</Typography>
-						<Typography color="text.secondary">
-							Hemos recibido tu mensaje y te responderemos pronto.
-						</Typography>
+						<Typography color="text.secondary">Hemos recibido tu mensaje y te responderemos pronto.</Typography>
 					</Box>
 				) : (
 					<Box component="form" onSubmit={handleSubmit}>
@@ -375,15 +373,11 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 				<>
 					<Divider />
 					<DialogActions sx={{ px: 3, py: 2 }}>
-						<Button 
-							onClick={handleClose} 
-							color="error"
-							disabled={submitting}
-						>
+						<Button onClick={handleClose} color="error" disabled={submitting}>
 							Cancelar
 						</Button>
-						<Button 
-							variant="contained" 
+						<Button
+							variant="contained"
 							onClick={handleSubmit}
 							disabled={submitting}
 							startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : null}

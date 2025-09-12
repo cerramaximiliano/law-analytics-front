@@ -1030,7 +1030,7 @@ const Calendar = () => {
 		<Box sx={{ position: "relative" }}>
 			<CalendarStyled>
 				{/* Barra superior integrada con todas las funciones */}
-				<Stack 
+				<Stack
 					direction={{ xs: "column", md: "row" }}
 					justifyContent="space-between"
 					alignItems={{ xs: "stretch", md: "center" }}
@@ -1038,25 +1038,27 @@ const Calendar = () => {
 					sx={{ mb: 2, flexWrap: { sm: "wrap", md: "nowrap" } }}
 				>
 					{/* Google Calendar Sync Component - Primero en móvil */}
-					<Box sx={{ 
-						width: { xs: "100%", sm: "auto" },
-						maxWidth: { xs: "100%", sm: "300px", md: "400px" },
-						order: { xs: 1, md: 1 }
-					}}>
+					<Box
+						sx={{
+							width: { xs: "100%", sm: "auto" },
+							maxWidth: { xs: "100%", sm: "300px", md: "400px" },
+							order: { xs: 1, md: 1 },
+						}}
+					>
 						<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
 					</Box>
 
 					{/* Controles del calendario y botones - Agrupados en móvil */}
-					<Stack 
+					<Stack
 						direction="row"
 						justifyContent="space-between"
 						alignItems="center"
 						spacing={1}
-						sx={{ 
+						sx={{
 							width: { xs: "100%", md: "auto" },
 							order: { xs: 2, md: 2 },
 							flexWrap: "wrap",
-							gap: { xs: 1, sm: 0 }
+							gap: { xs: 1, sm: 0 },
 						}}
 					>
 						{/* Navegación y fecha */}
@@ -1072,14 +1074,14 @@ const Calendar = () => {
 									<Calendar1 size={matchDownSM ? 16 : 18} variant="Bulk" />
 								</IconButton>
 							</Tooltip>
-							<Typography 
-								variant={matchDownSM ? "body1" : "h6"} 
-								color="textPrimary" 
-								sx={{ 
-									fontWeight: 600, 
+							<Typography
+								variant={matchDownSM ? "body1" : "h6"}
+								color="textPrimary"
+								sx={{
+									fontWeight: 600,
 									ml: { xs: 1, sm: 2 },
 									minWidth: { xs: "auto", sm: "150px" },
-									whiteSpace: "nowrap"
+									whiteSpace: "nowrap",
 								}}
 							>
 								{format(date, matchDownSM ? "MMM yyyy" : "MMMM yyyy", { locale: es })}
@@ -1101,9 +1103,9 @@ const Calendar = () => {
 											const isActive = viewOption.value === calendarView;
 											return (
 												<Tooltip title={viewOption.label} key={viewOption.value}>
-													<IconButton 
-														color={isActive ? "primary" : "default"} 
-														size="small" 
+													<IconButton
+														color={isActive ? "primary" : "default"}
+														size="small"
 														onClick={() => handleViewChange(viewOption.value)}
 													>
 														<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
@@ -1118,20 +1120,12 @@ const Calendar = () => {
 
 							{/* Botones de acción */}
 							<Tooltip title="Agregar Nuevo Evento">
-								<IconButton 
-									color="primary" 
-									onClick={handleAddEventClick} 
-									size={matchDownSM ? "small" : "medium"}
-								>
+								<IconButton color="primary" onClick={handleAddEventClick} size={matchDownSM ? "small" : "medium"}>
 									<Add variant="Bulk" size={matchDownSM ? 20 : 24} />
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Ver Guía">
-								<IconButton 
-									color="success" 
-									onClick={() => setGuideOpen(true)} 
-									size={matchDownSM ? "small" : "medium"}
-								>
+								<IconButton color="success" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"}>
 									<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
 								</IconButton>
 							</Tooltip>

@@ -90,27 +90,30 @@ const ProfileTabs = ({ focusInput }: Props) => {
 
 	// Funciones helper para formatear bytes
 	const formatBytes = (bytes: number): string => {
-		if (bytes === 0) return '0 Bytes';
+		if (bytes === 0) return "0 Bytes";
 		const k = 1024;
-		const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+		const sizes = ["Bytes", "KB", "MB", "GB"];
 		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 	};
 
 	// Usar los valores directamente de la API
 	const storageUsed = userStats?.storage?.total || 0;
 	const storageLimit = userStats?.storage?.limit || 52428800; // Default 50MB si no viene de la API
-	
+
 	// Calcular porcentaje - si la API lo provee, usarlo, sino calcularlo
-	const storagePercentage = userStats?.storage?.usedPercentage !== undefined 
-		? userStats.storage.usedPercentage 
-		: storageLimit > 0 ? Math.min((storageUsed / storageLimit) * 100, 100) : 0;
-	
+	const storagePercentage =
+		userStats?.storage?.usedPercentage !== undefined
+			? userStats.storage.usedPercentage
+			: storageLimit > 0
+			? Math.min((storageUsed / storageLimit) * 100, 100)
+			: 0;
+
 	// Determinar color de la barra según el uso
 	const getStorageColor = (percentage: number) => {
-		if (percentage < 60) return 'primary';
-		if (percentage < 80) return 'warning';
-		return 'error';
+		if (percentage < 60) return "primary";
+		if (percentage < 80) return "warning";
+		return "error";
 	};
 
 	return (
@@ -205,24 +208,24 @@ const ProfileTabs = ({ focusInput }: Props) => {
 									</Typography>
 								)}
 							</Stack>
-							<Chip 
-								label={`${storagePercentage.toFixed(1)}%`} 
+							<Chip
+								label={`${storagePercentage.toFixed(1)}%`}
 								color={getStorageColor(storagePercentage) as any}
 								size="small"
 								variant="outlined"
 							/>
 						</Stack>
-						<LinearProgress 
-							variant="determinate" 
-							value={storagePercentage} 
+						<LinearProgress
+							variant="determinate"
+							value={storagePercentage}
 							color={getStorageColor(storagePercentage) as any}
 							sx={{
 								height: 8,
 								borderRadius: 1,
 								backgroundColor: theme.palette.grey[300],
-								'& .MuiLinearProgress-bar': {
+								"& .MuiLinearProgress-bar": {
 									borderRadius: 1,
-								}
+								},
 							}}
 						/>
 						<Stack direction="row" justifyContent="space-between" alignItems="center">

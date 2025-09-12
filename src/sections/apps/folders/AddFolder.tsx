@@ -277,7 +277,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 								setTimeout(() => {
 									// Cerrar el modal actual
 									onCancel();
-									
+
 									// Mostrar el modal de límite después de otro pequeño delay
 									setTimeout(() => {
 										setLimitErrorOpen(true);
@@ -438,14 +438,16 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 			{/* Mostrar indicador de carga mientras se verifican los límites */}
 			{isCheckingLimit && (
-				<Box sx={{ 
-					display: "flex", 
-					flexDirection: "column", 
-					alignItems: "center",
-					justifyContent: "center",
-					minHeight: 400,
-					p: 4
-				}}>
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						minHeight: 400,
+						p: 4,
+					}}
+				>
 					<CircularProgress size={48} sx={{ mb: 2 }} />
 					<Typography variant="h6" color="text.secondary">
 						Verificando disponibilidad...
@@ -554,22 +556,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 													type="submit"
 													variant="contained"
 													disabled={isSubmitting || isProcessing}
-													endIcon={
-														isProcessing ? (
-															<CircularProgress size={16} color="inherit" />
-														) : (
-															!isLastStep && <ArrowRight2 size={18} />
-														)
-													}
+													endIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : !isLastStep && <ArrowRight2 size={18} />}
 													sx={{ minWidth: 100 }}
 												>
-													{isProcessing
-														? "Procesando..."
-														: folder && isLastStep
-														? "Editar"
-														: !folder && isLastStep
-														? "Crear"
-														: "Siguiente"}
+													{isProcessing ? "Procesando..." : folder && isLastStep ? "Editar" : !folder && isLastStep ? "Crear" : "Siguiente"}
 												</Button>
 											</Stack>
 										</Grid>
@@ -580,7 +570,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					</Formik>
 
 					{!isCreating && <AlertFolderDelete title={folder.folderName} open={openAlert} handleClose={handleAlertClose} id={folder._id} />}
-					
+
 					{/* Backdrop con indicador de carga mientras se procesa */}
 					<Backdrop
 						open={isProcessing}

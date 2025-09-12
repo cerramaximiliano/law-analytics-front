@@ -160,19 +160,18 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			city: Yup.string().required("La ciudad es requerida"),
 			zipCode: Yup.string(), // Opcional
 			email: Yup.string().email("Correo electrónico inválido"), // Ahora es opcional
-			phone: Yup.string()
-				.test("phone-format", "Complete el código de área sin el 0 y móvil sin el 15", function (value) {
-					if (!value) return true; // Skip validation if no value
+			phone: Yup.string().test("phone-format", "Complete el código de área sin el 0 y móvil sin el 15", function (value) {
+				if (!value) return true; // Skip validation if no value
 
-					const cleanNumber = cleanArgentinePhoneNumber(value);
-					const originalDigitsOnly = value.replace(/[^0-9]/g, "");
+				const cleanNumber = cleanArgentinePhoneNumber(value);
+				const originalDigitsOnly = value.replace(/[^0-9]/g, "");
 
-					return (
-						cleanNumber.length === originalDigitsOnly.length ||
-						(originalDigitsOnly.startsWith("0") && cleanNumber.length === originalDigitsOnly.length - 1) ||
-						(originalDigitsOnly.includes("15") && cleanNumber.length <= originalDigitsOnly.length - 2)
-					);
-				}),
+				return (
+					cleanNumber.length === originalDigitsOnly.length ||
+					(originalDigitsOnly.startsWith("0") && cleanNumber.length === originalDigitsOnly.length - 1) ||
+					(originalDigitsOnly.includes("15") && cleanNumber.length <= originalDigitsOnly.length - 2)
+				);
+			}),
 		}),
 	];
 
@@ -248,7 +247,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 								setTimeout(() => {
 									// Cerrar el modal actual
 									onCancel();
-									
+
 									// Mostrar el modal de límite después de otro pequeño delay
 									setTimeout(() => {
 										setLimitErrorOpen(true);
@@ -321,19 +320,19 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			const userId = auth.user?._id;
 
 			// Limpiar el número de teléfono si existe
-			const cleanedPhone = values.phone ? cleanArgentinePhoneNumber(values.phone) : '';
+			const cleanedPhone = values.phone ? cleanArgentinePhoneNumber(values.phone) : "";
 
 			// Preparar los datos asegurando que los campos requeridos estén presentes
 			const cleanedValues = {
 				...values,
 				phone: cleanedPhone,
 				// Asegurar que los campos requeridos no estén vacíos
-				name: values.name?.trim() || '',
-				lastName: values.lastName?.trim() || '',
-				role: values.role?.trim() || '',
-				type: values.type?.trim() || '',
-				state: values.state?.trim() || '',
-				city: values.city?.trim() || '',
+				name: values.name?.trim() || "",
+				lastName: values.lastName?.trim() || "",
+				role: values.role?.trim() || "",
+				type: values.type?.trim() || "",
+				state: values.state?.trim() || "",
+				city: values.city?.trim() || "",
 				// Campos opcionales - solo incluir si tienen valor
 				...(values.address?.trim() && { address: values.address.trim() }),
 				...(values.zipCode?.trim() && { zipCode: values.zipCode.trim() }),
@@ -348,8 +347,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			};
 
 			// Remover campos vacíos para los opcionales
-			Object.keys(cleanedValues).forEach(key => {
-				if (cleanedValues[key] === '' && !['name', 'lastName', 'role', 'type', 'state', 'city'].includes(key)) {
+			Object.keys(cleanedValues).forEach((key) => {
+				if (cleanedValues[key] === "" && !["name", "lastName", "role", "type", "state", "city"].includes(key)) {
 					delete cleanedValues[key];
 				}
 			});
@@ -446,14 +445,16 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 			{/* Mostrar indicador de carga mientras se verifican los límites */}
 			{isCheckingLimit && (
-				<Box sx={{ 
-					display: "flex", 
-					flexDirection: "column", 
-					alignItems: "center",
-					justifyContent: "center",
-					minHeight: 400,
-					p: 4
-				}}>
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						minHeight: 400,
+						p: 4,
+					}}
+				>
 					<CircularProgress size={48} sx={{ mb: 2 }} />
 					<Typography variant="h6" color="text.secondary">
 						Verificando disponibilidad...
@@ -502,11 +503,13 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 					>
 						{({ isSubmitting, values }) => (
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-								<DialogContent sx={{ 
-									p: 2.5,
-									flex: 1,
-									overflow: "auto"
-								}}>
+								<DialogContent
+									sx={{
+										p: 2.5,
+										flex: 1,
+										overflow: "auto",
+									}}
+								>
 									<Box>
 										{/* Progress Steps */}
 										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
@@ -541,11 +544,13 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 								<Divider />
 
-								<DialogActions sx={{ 
-									p: 2.5,
-									flexShrink: 0,
-									borderTop: `1px solid ${theme.palette.divider}`
-								}}>
+								<DialogActions
+									sx={{
+										p: 2.5,
+										flexShrink: 0,
+										borderTop: `1px solid ${theme.palette.divider}`,
+									}}
+								>
 									<Grid container justifyContent="space-between" alignItems="center">
 										<Grid item>
 											{!isCreating && (

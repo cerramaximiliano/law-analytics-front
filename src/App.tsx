@@ -32,14 +32,14 @@ if (!googleClientId) {
 
 const App = () => {
 	const [loading, setLoading] = useState<boolean>(true);
-	
+
 	// Debug: Ver variables de entorno (eliminar en producción)
 	if (import.meta.env.DEV) {
 		console.log("🔧 Variables de entorno:", {
 			MODE: import.meta.env.MODE,
 			BASE_URL: import.meta.env.VITE_BASE_URL,
 			WS_URL: import.meta.env.VITE_WS_URL,
-			ENV: import.meta.env.VITE_ENVIRONMENT
+			ENV: import.meta.env.VITE_ENVIRONMENT,
 		});
 	}
 
@@ -58,16 +58,16 @@ const App = () => {
 					<Locales>
 						<ScrollTop>
 							<GoogleOAuthProvider clientId={googleClientId}>
-							<AuthProvider>
-								<WebSocketProvider>
-									<Notistack>
-										<Routes />
-										<Snackbar />
-										<SearchModal />
-									</Notistack>
-								</WebSocketProvider>
-							</AuthProvider>
-						</GoogleOAuthProvider>
+								<AuthProvider>
+									<WebSocketProvider>
+										<Notistack>
+											<Routes />
+											<Snackbar />
+											<SearchModal />
+										</Notistack>
+									</WebSocketProvider>
+								</AuthProvider>
+							</GoogleOAuthProvider>
 						</ScrollTop>
 					</Locales>
 				</RTLLayout>

@@ -4,13 +4,13 @@ import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { 
-	Button, 
-	Box, 
-	Container, 
-	Grid, 
-	Stack, 
-	Typography, 
+import {
+	Button,
+	Box,
+	Container,
+	Grid,
+	Stack,
+	Typography,
 	useMediaQuery,
 	LinearProgress,
 	Fade,
@@ -21,7 +21,7 @@ import {
 	ListItem,
 	ListItemIcon,
 	ListItemText,
-	alpha
+	alpha,
 } from "@mui/material";
 
 // project-imports
@@ -44,11 +44,11 @@ const SubscriptionSuccess = () => {
 	const navigate = useNavigate();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const matchDownMD = useMediaQuery(theme.breakpoints.down("md"));
-	
+
 	const [showContent, setShowContent] = useState(false);
 	const [showFeatures, setShowFeatures] = useState(false);
 	const [redirectCountdown, setRedirectCountdown] = useState(10);
-	
+
 	const user = useSelector((state) => state.auth.user);
 	const userStats = useSelector((state) => state.userStats.data);
 
@@ -139,7 +139,7 @@ const SubscriptionSuccess = () => {
 							sx={{
 								background: `linear-gradient(135deg, ${alpha(theme.palette.success.lighter, 0.1)} 0%, ${alpha(
 									theme.palette.background.paper,
-									0.9
+									0.9,
 								)} 100%)`,
 								border: `1px solid ${alpha(theme.palette.success.main, 0.15)}`,
 								boxShadow: `0 20px 60px ${alpha(theme.palette.success.main, 0.1)}`,
@@ -155,7 +155,7 @@ const SubscriptionSuccess = () => {
 												p: matchDownSM ? 3 : 5,
 												bgcolor: `linear-gradient(135deg, ${theme.palette.success.lighter} 0%, ${alpha(
 													theme.palette.success.light,
-													0.3
+													0.3,
 												)} 100%)`,
 												textAlign: "center",
 												borderRadius: 3,
@@ -244,12 +244,7 @@ const SubscriptionSuccess = () => {
 											>
 												¡Suscripción Exitosa!
 											</Typography>
-											<Typography
-												variant="h5"
-												color="textSecondary"
-												align={matchDownSM ? "center" : "left"}
-												sx={{ fontWeight: 400 }}
-											>
+											<Typography variant="h5" color="textSecondary" align={matchDownSM ? "center" : "left"} sx={{ fontWeight: 400 }}>
 												Tu cuenta ha sido actualizada correctamente
 											</Typography>
 										</Box>
@@ -342,11 +337,7 @@ const SubscriptionSuccess = () => {
 												/>
 											</Box>
 
-											<Stack
-												direction={matchDownSM ? "column" : "row"}
-												spacing={2}
-												sx={{ width: matchDownSM ? "100%" : "auto" }}
-											>
+											<Stack direction={matchDownSM ? "column" : "row"} spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
 												<Button
 													component={RouterLink}
 													to="/dashboard/default"

@@ -273,7 +273,11 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 						bgcolor: theme.palette.background.paper,
 					}}
 				>
-					<Typography variant="body1" color="text.primary" sx={{ mb: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+					<Typography
+						variant="body1"
+						color="text.primary"
+						sx={{ mb: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+					>
 						{message}
 					</Typography>
 					<Stack spacing={1}>
@@ -281,7 +285,9 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 							<Typography variant="body2" color="text.secondary">
 								Función:
 							</Typography>
-							<Typography variant="body2" fontWeight="medium">{featureInfo.feature}</Typography>
+							<Typography variant="body2" fontWeight="medium">
+								{featureInfo.feature}
+							</Typography>
 						</Box>
 						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
 							<Typography variant="body2" color="text.secondary">
@@ -437,11 +443,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 																onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
 																disabled={loadingPlanId !== null}
 																endIcon={
-																	loadingPlanId === plan.planId ? (
-																		<CircularProgress size={16} color="inherit" />
-																	) : (
-																		<ArrowRight size={16} />
-																	)
+																	loadingPlanId === plan.planId ? <CircularProgress size={16} color="inherit" /> : <ArrowRight size={16} />
 																}
 																size="medium"
 																sx={{
@@ -453,9 +455,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 																	},
 																}}
 															>
-																{loadingPlanId === plan.planId 
-																	? "Procesando..." 
-																	: "Suscribirme Ahora"}
+																{loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme Ahora"}
 															</Button>
 														</Grid>
 													</Grid>
@@ -555,13 +555,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	};
 
 	return (
-		<Dialog
-			open={open}
-			onClose={onClose}
-			maxWidth="md"
-			fullWidth
-			sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}
-		>
+		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}>
 			<DialogTitle
 				sx={{
 					bgcolor: theme.palette.primary.lighter,

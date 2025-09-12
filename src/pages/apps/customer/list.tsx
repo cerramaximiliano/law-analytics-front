@@ -1002,13 +1002,13 @@ const CustomerListPage = () => {
 					keepMounted
 					fullWidth
 					open={add}
-					sx={{ 
-						"& .MuiDialog-paper": { 
+					sx={{
+						"& .MuiDialog-paper": {
 							p: 0,
 							display: "flex",
 							flexDirection: "column",
-							maxHeight: "90vh"
-						} 
+							maxHeight: "90vh",
+						},
 					}}
 				>
 					<AddCustomer open={add} customer={customer} mode={addCustomerMode} onCancel={handleCloseDialog} onAddMember={handleRefreshData} />

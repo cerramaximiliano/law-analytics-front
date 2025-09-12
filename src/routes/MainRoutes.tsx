@@ -89,6 +89,7 @@ const AdminCausasVerifiedPage = Loadable(lazyRetry(() => import("pages/admin/cau
 const AdminCausasFoldersPage = Loadable(lazyRetry(() => import("pages/admin/causas/folders")));
 const AdminCausasWorkersPage = Loadable(lazyRetry(() => import("pages/admin/causas/workers")));
 const AdminNotificationsPage = Loadable(lazyRetry(() => import("pages/admin/notifications")));
+const AdminJudicialMovementsPage = Loadable(lazyRetry(() => import("pages/admin/notifications/judicial-movements")));
 
 // render - tasks
 const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
@@ -381,7 +382,16 @@ const MainRoutes = {
 						},
 						{
 							path: "notifications",
-							element: <AdminNotificationsPage />,
+							children: [
+								{
+									path: "",
+									element: <AdminNotificationsPage />,
+								},
+								{
+									path: "judicial-movements",
+									element: <AdminJudicialMovementsPage />,
+								},
+							],
 						},
 					],
 				},

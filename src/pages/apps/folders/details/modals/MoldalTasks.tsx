@@ -1,16 +1,16 @@
 import React from "react";
-import { 
-	Dialog, 
-	DialogTitle, 
-	Divider, 
-	Button, 
-	Stack, 
-	DialogContent, 
-	DialogActions, 
-	useTheme, 
-	Typography, 
+import {
+	Dialog,
+	DialogTitle,
+	Divider,
+	Button,
+	Stack,
+	DialogContent,
+	DialogActions,
+	useTheme,
+	Typography,
 	InputLabel,
-	CircularProgress
+	CircularProgress,
 } from "@mui/material";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
@@ -169,32 +169,23 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 								</Stack>
 							</DialogTitle>
 							<Divider />
-							
+
 							<DialogContent sx={{ p: 3 }}>
 								<Stack spacing={2.5}>
 									<div>
 										<InputLabel htmlFor="name" sx={{ mb: 1 }}>
 											Nombre de la tarea *
 										</InputLabel>
-										<InputField 
-											id="name" 
-											autoFocus 
-											placeholder="Ingresa el nombre de la tarea" 
-											disabled={isSubmitting}
-										/>
+										<InputField id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} />
 									</div>
-									
+
 									<div>
 										<InputLabel htmlFor="dueDate" sx={{ mb: 1 }}>
 											Fecha de vencimiento *
 										</InputLabel>
-										<DateInputField 
-											id="dueDate" 
-											placeholder="DD/MM/AAAA" 
-											disabled={isSubmitting}
-										/>
+										<DateInputField id="dueDate" placeholder="DD/MM/AAAA" disabled={isSubmitting} />
 									</div>
-									
+
 									<div>
 										<InputLabel htmlFor="description" sx={{ mb: 1 }}>
 											Descripción (opcional)
@@ -209,19 +200,15 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 									</div>
 								</Stack>
 							</DialogContent>
-							
+
 							<Divider />
 							<DialogActions sx={{ px: 3, py: 2 }}>
-								<Button 
-									onClick={handleClose} 
-									color="error"
-									disabled={isSubmitting}
-								>
+								<Button onClick={handleClose} color="error" disabled={isSubmitting}>
 									Cancelar
 								</Button>
-								<Button 
-									type="submit" 
-									variant="contained" 
+								<Button
+									type="submit"
+									variant="contained"
 									disabled={isSubmitting}
 									startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
 								>

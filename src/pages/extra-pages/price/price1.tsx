@@ -104,7 +104,7 @@ const Pricing = () => {
 	const handleSubscribe = async (planId: string) => {
 		try {
 			setLoadingPlanId(planId); // Activar loading para este plan
-			
+
 			// URLs de redirección según el resultado de la operación
 			const successUrl = `${window.location.origin}/apps/subscription/success`;
 			const errorUrl = `${window.location.origin}/apps/subscription/error`;

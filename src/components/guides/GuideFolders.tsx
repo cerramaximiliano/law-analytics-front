@@ -100,8 +100,8 @@ const CreationContent = () => {
 				</Stack>
 			</Paper>
 			<Typography paragraph>
-				Al crear una nueva carpeta, asegúrate de incluir toda la información relevante como jurisdicción, materia, parte representada y fechas
-				importantes para facilitar su seguimiento posterior.
+				Al crear una nueva carpeta, asegúrate de incluir toda la información relevante como jurisdicción, materia, parte representada y
+				fechas importantes para facilitar su seguimiento posterior.
 			</Typography>
 		</Stack>
 	);
@@ -111,7 +111,9 @@ const ImportContent = () => {
 	const theme = useTheme();
 	return (
 		<Stack spacing={3}>
-			<Typography paragraph>Ahora puedes importar carpetas directamente desde el Poder Judicial de la Nación de forma automática:</Typography>
+			<Typography paragraph>
+				Ahora puedes importar carpetas directamente desde el Poder Judicial de la Nación de forma automática:
+			</Typography>
 			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.2) }}>
 				<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
 					Proceso de Importación:
@@ -143,8 +145,8 @@ const ImportContent = () => {
 			<Alert severity="warning" sx={{ mt: 2 }}>
 				<AlertTitle>Carpetas Pendientes de Verificación</AlertTitle>
 				<Typography paragraph>
-					Las carpetas importadas automáticamente aparecerán con estado <strong>"Pendiente de verificación"</strong> hasta que la información
-					sea validada por el sistema. Esto se indica visualmente en la tabla de carpetas.
+					Las carpetas importadas automáticamente aparecerán con estado <strong>"Pendiente de verificación"</strong> hasta que la
+					información sea validada por el sistema. Esto se indica visualmente en la tabla de carpetas.
 				</Typography>
 				<Typography>
 					Una vez que los datos hayan sido verificados y procesados, se actualizarán automáticamente con la información completa del
@@ -312,8 +314,8 @@ const ManagementContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Permite eliminar carpetas del sistema. Esta acción requiere confirmación y es irreversible, por lo que se recomienda archivar en
-							lugar de eliminar.
+							Permite eliminar carpetas del sistema. Esta acción requiere confirmación y es irreversible, por lo que se recomienda archivar
+							en lugar de eliminar.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -405,8 +407,8 @@ const DetailedViewContent = () => {
 							<Box>
 								<Typography fontWeight="bold">Cálculos Vinculados</Typography>
 								<Typography variant="body2">
-									Muestra todos los cálculos (laborales, intereses, etc.) que has asociado a esta carpeta, permitiéndote acceder rápidamente a
-									ellos.
+									Muestra todos los cálculos (laborales, intereses, etc.) que has asociado a esta carpeta, permitiéndote acceder rápidamente
+									a ellos.
 								</Typography>
 							</Box>
 						</Box>
@@ -427,8 +429,8 @@ const DetailedViewContent = () => {
 			<Alert severity="info" sx={{ mt: 3 }}>
 				<AlertTitle>Vinculación de Cálculos</AlertTitle>
 				<Typography paragraph>
-					Puedes vincular cualquier cálculo realizado en el sistema (laboral, intereses, etc.) a una carpeta específica para mantener toda la
-					información relacionada organizada.
+					Puedes vincular cualquier cálculo realizado en el sistema (laboral, intereses, etc.) a una carpeta específica para mantener toda
+					la información relacionada organizada.
 				</Typography>
 				<Stack direction="row" spacing={1} alignItems="center">
 					<Calculator size={20} />
@@ -597,8 +599,8 @@ const PracticalTipsContent = () => {
 
 			<Alert severity="info" sx={{ mt: 3 }}>
 				<AlertTitle>Mejora Continua</AlertTitle>
-				Estamos constantemente mejorando el sistema de gestión de carpetas. Si tienes sugerencias o detectas oportunidades de mejora, háznoslo
-				saber para seguir perfeccionando la herramienta.
+				Estamos constantemente mejorando el sistema de gestión de carpetas. Si tienes sugerencias o detectas oportunidades de mejora,
+				háznoslo saber para seguir perfeccionando la herramienta.
 			</Alert>
 		</Stack>
 	);

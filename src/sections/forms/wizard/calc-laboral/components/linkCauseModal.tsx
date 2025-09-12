@@ -304,10 +304,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 						borderBottomRightRadius: "inherit",
 					}}
 				>
-					<Button
-						color="error"
-						onClick={onClose}
-					>
+					<Button color="error" onClick={onClose}>
 						Cancelar
 					</Button>
 					<Button onClick={handleUnlink} variant="contained" color="primary" startIcon={<Add style={{ transform: "rotate(45deg)" }} />}>
@@ -333,11 +330,11 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 				"& .MuiBackdrop-root": { opacity: "0.5 !important" },
 			}}
 		>
-			<DialogTitle 
-				sx={{ 
-					bgcolor: theme.palette.primary.lighter, 
+			<DialogTitle
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
 					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`
+					borderBottom: `1px solid ${theme.palette.divider}`,
 				}}
 			>
 				<Stack spacing={1}>
@@ -533,10 +530,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 			<Divider />
 
 			<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
-				<Button
-					onClick={onClose}
-					color="error"
-				>
+				<Button onClick={onClose} color="error">
 					Cancelar
 				</Button>
 				<Button onClick={handleLink} color="primary" variant="contained" disabled={!selectedFolder}>

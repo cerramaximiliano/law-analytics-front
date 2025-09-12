@@ -102,11 +102,26 @@ const admin: NavItemType = {
 		},
 		{
 			id: "notifications",
-			title: <FormattedMessage id="notifications" defaultMessage="Monitoreo de Notificaciones" />,
-			type: "item",
-			url: "/admin/notifications",
+			title: <FormattedMessage id="notifications" defaultMessage="Notificaciones" />,
+			type: "collapse",
 			icon: Notification,
 			breadcrumbs: true,
+			children: [
+				{
+					id: "notifications-monitoring",
+					title: <FormattedMessage id="notifications-monitoring" defaultMessage="Monitoreo" />,
+					type: "item",
+					url: "/admin/notifications",
+					breadcrumbs: true,
+				},
+				{
+					id: "notifications-judicial",
+					title: <FormattedMessage id="notifications-judicial" defaultMessage="Movimientos Judiciales" />,
+					type: "item",
+					url: "/admin/notifications/judicial-movements",
+					breadcrumbs: true,
+				},
+			],
 		},
 	],
 };

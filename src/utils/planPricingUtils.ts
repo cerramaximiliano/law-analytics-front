@@ -7,33 +7,32 @@ import { Plan, EnvironmentConfig, PlanPricingInfo } from "../store/reducers/ApiS
 export function getCurrentEnvironment(): "development" | "production" {
 	// Primero verificar la variable de entorno VITE_ENVIRONMENT
 	const envVariable = import.meta.env.VITE_ENVIRONMENT;
-	
+
 	// Si la variable está definida, usarla directamente
 	if (envVariable === "production" || envVariable === "development") {
 		console.log("🔧 Environment from VITE_ENVIRONMENT:", envVariable);
 		return envVariable;
 	}
-	
+
 	// Fallback: detectar basado en URL (para compatibilidad)
 	const baseUrl = import.meta.env.VITE_BASE_URL || "";
 	const currentUrl = window.location.hostname;
-	
+
 	// Es desarrollo SOLO si las URLs son localhost o 127.0.0.1
-	const isLocalhost = 
-		(baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) &&
-		(currentUrl === "localhost" || currentUrl === "127.0.0.1");
-		
+	const isLocalhost =
+		(baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) && (currentUrl === "localhost" || currentUrl === "127.0.0.1");
+
 	const detectedEnv = isLocalhost ? "development" : "production";
-	
+
 	// Log para debug
 	console.log("🔧 Environment detection:", {
 		VITE_ENVIRONMENT: envVariable || "not defined",
 		baseUrl,
 		currentUrl,
 		isLocalhost,
-		detectedEnvironment: detectedEnv
+		detectedEnvironment: detectedEnv,
 	});
-	
+
 	// Por defecto, asumimos producción si no es claramente localhost
 	return detectedEnv;
 }
@@ -49,7 +48,7 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 	console.log(`🔍 getPlanPricing for ${plan.planId} in ${environment}:`, {
 		hasEnvironments: !!plan.environments,
 		environmentConfig: plan.environments?.[environment],
-		pricingInfo: plan.pricingInfo
+		pricingInfo: plan.pricingInfo,
 	});
 
 	// Si existe configuración de environments para el entorno actual
@@ -69,12 +68,15 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 	// Solución temporal: Si estamos en desarrollo y no hay configuración de environments,
 	// usar valores predefinidos para desarrollo
 	// IMPORTANTE: Solo aplicar estos valores si realmente estamos en desarrollo local
-	if (environment === "development" && !plan.environments && 
-		(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+	if (
+		environment === "development" &&
+		!plan.environments &&
+		(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+	) {
 		const developmentPrices: Record<string, number> = {
-			"free": 0,
-			"standard": 1.99,
-			"premium": 4.99
+			free: 0,
+			standard: 1.99,
+			premium: 4.99,
 		};
 
 		if (developmentPrices[plan.planId] !== undefined) {
@@ -83,7 +85,7 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 				basePrice: developmentPrices[plan.planId],
 				currency: "USD",
 				billingPeriod: "daily",
-				stripePriceId: plan.pricingInfo.stripePriceId
+				stripePriceId: plan.pricingInfo.stripePriceId,
 			};
 		}
 	}
@@ -162,5 +164,5 @@ export function getBillingPeriodText(period: string): string {
  */
 export function cleanPlanDisplayName(displayName: string): string {
 	// Quitar (development), (production), (staging), etc.
-	return displayName.replace(/\s*\((development|production|staging|test|dev|prod)\)\s*/gi, '').trim();
+	return displayName.replace(/\s*\((development|production|staging|test|dev|prod)\)\s*/gi, "").trim();
 }

@@ -1,23 +1,32 @@
 import React from "react";
-import { Box, Card, CardContent, Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip } from "@mui/material";
+import {
+	Box,
+	Card,
+	CardContent,
+	Container,
+	Typography,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	Paper,
+	Chip,
+} from "@mui/material";
 
 const EnvCheck = () => {
 	// Obtener todas las variables de entorno que empiezan con VITE_
 	const envVars = Object.keys(import.meta.env)
-		.filter(key => key.startsWith("VITE_"))
-		.map(key => ({
+		.filter((key) => key.startsWith("VITE_"))
+		.map((key) => ({
 			key,
 			value: import.meta.env[key],
-			type: typeof import.meta.env[key]
+			type: typeof import.meta.env[key],
 		}));
 
 	// Variables críticas que deberían estar definidas
-	const criticalVars = [
-		"VITE_AUTH0_GOOGLE_ID",
-		"VITE_BASE_URL",
-		"VITE_WS_URL",
-		"VITE_ENVIRONMENT"
-	];
+	const criticalVars = ["VITE_AUTH0_GOOGLE_ID", "VITE_BASE_URL", "VITE_WS_URL", "VITE_ENVIRONMENT"];
 
 	return (
 		<Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -26,7 +35,7 @@ const EnvCheck = () => {
 					<Typography variant="h4" gutterBottom>
 						🔧 Variables de Entorno - Vite
 					</Typography>
-					
+
 					<Box sx={{ mb: 3 }}>
 						<Typography variant="h6" gutterBottom>
 							Información del Build:
@@ -48,45 +57,45 @@ const EnvCheck = () => {
 					<Typography variant="h6" gutterBottom>
 						Variables de Entorno Configuradas:
 					</Typography>
-					
+
 					<TableContainer component={Paper}>
 						<Table>
 							<TableHead>
 								<TableRow>
-									<TableCell><strong>Variable</strong></TableCell>
-									<TableCell><strong>Valor</strong></TableCell>
-									<TableCell><strong>Tipo</strong></TableCell>
-									<TableCell><strong>Estado</strong></TableCell>
+									<TableCell>
+										<strong>Variable</strong>
+									</TableCell>
+									<TableCell>
+										<strong>Valor</strong>
+									</TableCell>
+									<TableCell>
+										<strong>Tipo</strong>
+									</TableCell>
+									<TableCell>
+										<strong>Estado</strong>
+									</TableCell>
 								</TableRow>
 							</TableHead>
 							<TableBody>
 								{envVars.map((env) => {
 									const isCritical = criticalVars.includes(env.key);
 									const isDefined = env.value !== undefined && env.value !== "";
-									
+
 									return (
 										<TableRow key={env.key}>
 											<TableCell>
 												<code>{env.key}</code>
 											</TableCell>
-											<TableCell>
-												{env.key.includes("KEY") || env.key.includes("SECRET") 
-													? "***OCULTO***" 
-													: String(env.value)}
-											</TableCell>
+											<TableCell>{env.key.includes("KEY") || env.key.includes("SECRET") ? "***OCULTO***" : String(env.value)}</TableCell>
 											<TableCell>{env.type}</TableCell>
 											<TableCell>
 												{isDefined ? (
-													<Chip 
-														label="Definida" 
-														color="success" 
-														size="small" 
-													/>
+													<Chip label="Definida" color="success" size="small" />
 												) : (
-													<Chip 
-														label={isCritical ? "FALTA - CRÍTICA" : "No definida"} 
-														color={isCritical ? "error" : "warning"} 
-														size="small" 
+													<Chip
+														label={isCritical ? "FALTA - CRÍTICA" : "No definida"}
+														color={isCritical ? "error" : "warning"}
+														size="small"
 													/>
 												)}
 											</TableCell>
@@ -96,9 +105,7 @@ const EnvCheck = () => {
 								{envVars.length === 0 && (
 									<TableRow>
 										<TableCell colSpan={4} align="center">
-											<Typography color="error">
-												No se encontraron variables de entorno VITE_
-											</Typography>
+											<Typography color="error">No se encontraron variables de entorno VITE_</Typography>
 										</TableCell>
 									</TableRow>
 								)}
@@ -110,15 +117,9 @@ const EnvCheck = () => {
 						<Typography variant="subtitle2" gutterBottom>
 							<strong>Nota:</strong>
 						</Typography>
-						<Typography variant="body2">
-							• Las variables con KEY o SECRET se ocultan por seguridad
-						</Typography>
-						<Typography variant="body2">
-							• Las variables VITE_ se incluyen en el build y son visibles en el cliente
-						</Typography>
-						<Typography variant="body2">
-							• Para cambiar estas variables, modifica el archivo .env correspondiente y reconstruye
-						</Typography>
+						<Typography variant="body2">• Las variables con KEY o SECRET se ocultan por seguridad</Typography>
+						<Typography variant="body2">• Las variables VITE_ se incluyen en el build y son visibles en el cliente</Typography>
+						<Typography variant="body2">• Para cambiar estas variables, modifica el archivo .env correspondiente y reconstruye</Typography>
 					</Box>
 				</CardContent>
 			</Card>

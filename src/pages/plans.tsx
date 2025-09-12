@@ -64,11 +64,11 @@ const Plans = () => {
 		const fetchPlans = async () => {
 			try {
 				setLoading(true);
-				
+
 				// Log el entorno actual para debug
 				const currentEnv = getCurrentEnvironment();
 				console.log("📍 Current environment in Plans component:", currentEnv);
-				
+
 				const response = await ApiService.getPublicPlans();
 				if (response.success && response.data) {
 					// Log detallado de lo que viene del backend
@@ -78,10 +78,10 @@ const Plans = () => {
 							displayName: plan.displayName,
 							pricingInfo: plan.pricingInfo,
 							environments: plan.environments,
-							hasEnvironments: !!plan.environments
+							hasEnvironments: !!plan.environments,
 						});
 					});
-					
+
 					setPlans(response.data);
 				} else {
 					setError("No se pudieron cargar los planes");
@@ -325,12 +325,12 @@ const Plans = () => {
 							{plans.map((plan) => {
 								// Obtener la información de precios según el entorno
 								const pricing = getPlanPricing(plan);
-								
+
 								// Log para debug de precios
 								console.log(`💰 Pricing for ${plan.planId}:`, {
 									environment: getCurrentEnvironment(),
 									pricing,
-									plan
+									plan,
 								});
 
 								// Calcular el precio según el periodo seleccionado
@@ -387,11 +387,7 @@ const Plans = () => {
 																		) : undefined
 																	}
 																>
-																	{!plan.isActive 
-																		? "No disponible" 
-																		: loadingPlanId === plan.planId 
-																		? "Procesando..." 
-																		: "Comenzar"}
+																	{!plan.isActive ? "No disponible" : loadingPlanId === plan.planId ? "Procesando..." : "Comenzar"}
 																</Button>
 															</Grid>
 														</Grid>

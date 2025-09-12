@@ -1,15 +1,6 @@
 import React from "react";
 // material-ui
-import { 
-	Box, 
-	Dialog, 
-	DialogContent, 
-	DialogTitle, 
-	Divider,
-	Stack,
-	Typography,
-	useTheme
-} from "@mui/material";
+import { Box, Dialog, DialogContent, DialogTitle, Divider, Stack, Typography, useTheme } from "@mui/material";
 
 // icons
 import { TaskSquare } from "iconsax-react";
@@ -66,9 +57,7 @@ const TaskModal = ({ open, handleClose, task, showSnackbar }: Props) => {
 						</Typography>
 					</Stack>
 					<Typography variant="body2" color="textSecondary">
-						{task 
-							? "Modifica los detalles de la tarea existente" 
-							: "Completa la información para crear una nueva tarea"}
+						{task ? "Modifica los detalles de la tarea existente" : "Completa la información para crear una nueva tarea"}
 					</Typography>
 				</Stack>
 			</DialogTitle>

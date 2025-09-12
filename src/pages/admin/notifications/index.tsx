@@ -28,7 +28,6 @@ import {
 	TaskSquare,
 	DocumentText,
 	Trash,
-	Setting2,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { RootState } from "store";
@@ -38,7 +37,6 @@ import NotificationHistory from "./components/NotificationHistory";
 import NotificationSummary from "./components/NotificationSummary";
 import FailedNotifications from "./components/FailedNotifications";
 import AlertManagement from "./components/AlertManagement";
-import JudicialMovementsConfig from "./components/JudicialMovementsConfig";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import notificationAxios from "utils/notificationAxios";
@@ -215,8 +213,7 @@ const NotificationMonitoring = () => {
 							<Tab icon={<NotificationStatus size={20} />} iconPosition="start" label="Resumen Estadístico" {...a11yProps(2)} />
 							<Tab icon={<InfoCircle size={20} />} iconPosition="start" label="Notificaciones Fallidas" {...a11yProps(3)} />
 							<Tab icon={<NotificationBing size={20} />} iconPosition="start" label="Gestión de Alertas" {...a11yProps(4)} />
-							<Tab icon={<Setting2 size={20} />} iconPosition="start" label="Config. Movimientos Judiciales" {...a11yProps(5)} />
-							<Tab icon={<Refresh size={20} />} iconPosition="start" label="Ejecución Manual" {...a11yProps(6)} />
+							<Tab icon={<Refresh size={20} />} iconPosition="start" label="Ejecución Manual" {...a11yProps(5)} />
 						</Tabs>
 					</Box>
 				</Grid>
@@ -238,9 +235,6 @@ const NotificationMonitoring = () => {
 						<AlertManagement />
 					</TabPanel>
 					<TabPanel value={activeTab} index={5}>
-						<JudicialMovementsConfig />
-					</TabPanel>
-					<TabPanel value={activeTab} index={6}>
 						<Grid container spacing={3}>
 							<Grid item xs={12}>
 								<Alert severity="warning" sx={{ mb: 3 }}>
