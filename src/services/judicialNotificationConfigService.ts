@@ -31,6 +31,13 @@ interface JudicialNotificationConfig {
 		excludedKeywords: string[];
 		includedMovementTypes: string[];
 	};
+	dataRetention: {
+		judicialMovementRetentionDays: number;
+		notificationLogRetentionDays: number;
+		alertRetentionDays: number;
+		autoCleanupEnabled: boolean;
+		cleanupHour: number;
+	};
 	endpoints: {
 		notificationServiceUrl: string;
 		judicialMovementsEndpoint: string;

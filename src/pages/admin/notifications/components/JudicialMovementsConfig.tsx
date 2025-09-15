@@ -33,6 +33,7 @@ import {
 	ArrowUp2,
 	Save2,
 	RefreshCircle,
+	Archive,
 } from "iconsax-react";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -68,6 +69,13 @@ interface JudicialNotificationConfig {
 		excludedMovementTypes: string[];
 		excludedKeywords: string[];
 		includedMovementTypes: string[];
+	};
+	dataRetention: {
+		judicialMovementRetentionDays: number;
+		notificationLogRetentionDays: number;
+		alertRetentionDays: number;
+		autoCleanupEnabled: boolean;
+		cleanupHour: number;
 	};
 	endpoints: {
 		notificationServiceUrl: string;
@@ -111,6 +119,7 @@ const JudicialMovementsConfig: React.FC = () => {
 		retry: false,
 		content: false,
 		filters: false,
+		dataRetention: false,
 		endpoints: false,
 		status: true,
 	});
@@ -189,6 +198,7 @@ const JudicialMovementsConfig: React.FC = () => {
 				"retryConfig",
 				"contentConfig",
 				"filters",
+				"dataRetention",
 				"endpoints",
 				"status"
 			];
@@ -701,6 +711,104 @@ const JudicialMovementsConfig: React.FC = () => {
 										<TextField {...params} label="Tipos de movimiento incluidos (solo estos)" placeholder="Agregar tipo" />
 									)}
 								/>
+							</Grid>
+						</Grid>
+					</Collapse>
+				</CardContent>
+			</Card>
+
+			{/* Data Retention Configuration */}
+			<Card sx={{ mb: 2 }}>
+				<CardContent>
+					<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+						<Stack direction="row" spacing={1} alignItems="center">
+							<Archive size={20} />
+							<Typography variant="h6">Retención de Datos</Typography>
+						</Stack>
+						<IconButton size="small" onClick={() => handleToggleSection("dataRetention")}>
+							{expandedSections.dataRetention ? <ArrowUp2 /> : <ArrowDown2 />}
+						</IconButton>
+					</Stack>
+					<Collapse in={expandedSections.dataRetention}>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={3}>
+								<TextField
+									label="Retención de movimientos (días)"
+									type="number"
+									value={config.dataRetention?.judicialMovementRetentionDays || 60}
+									onChange={(e) => handleFieldChange("dataRetention.judicialMovementRetentionDays", Number(e.target.value))}
+									fullWidth
+									InputProps={{
+										inputProps: { min: 7, max: 365 }
+									}}
+									helperText="Días para retener movimientos notificados (7-365)"
+								/>
+							</Grid>
+							<Grid item xs={12} md={3}>
+								<TextField
+									label="Retención de logs (días)"
+									type="number"
+									value={config.dataRetention?.notificationLogRetentionDays || 30}
+									onChange={(e) => handleFieldChange("dataRetention.notificationLogRetentionDays", Number(e.target.value))}
+									fullWidth
+									InputProps={{
+										inputProps: { min: 7, max: 180 }
+									}}
+									helperText="Días para retener logs (7-180)"
+								/>
+							</Grid>
+							<Grid item xs={12} md={3}>
+								<TextField
+									label="Retención de alertas (días)"
+									type="number"
+									value={config.dataRetention?.alertRetentionDays || 30}
+									onChange={(e) => handleFieldChange("dataRetention.alertRetentionDays", Number(e.target.value))}
+									fullWidth
+									InputProps={{
+										inputProps: { min: 7, max: 180 }
+									}}
+									helperText="Días para retener alertas (7-180)"
+								/>
+							</Grid>
+							<Grid item xs={12} md={3}>
+								<TextField
+									label="Hora de limpieza"
+									type="number"
+									value={config.dataRetention?.cleanupHour || 3}
+									onChange={(e) => handleFieldChange("dataRetention.cleanupHour", Number(e.target.value))}
+									fullWidth
+									InputProps={{
+										inputProps: { min: 0, max: 23 }
+									}}
+									helperText="Hora del día para ejecutar limpieza (0-23)"
+								/>
+							</Grid>
+							<Grid item xs={12}>
+								<FormControlLabel
+									control={
+										<Switch
+											checked={config.dataRetention?.autoCleanupEnabled ?? true}
+											onChange={(e) => handleFieldChange("dataRetention.autoCleanupEnabled", e.target.checked)}
+										/>
+									}
+									label="Habilitar limpieza automática de datos antiguos"
+								/>
+							</Grid>
+							<Grid item xs={12}>
+								<Alert severity="info">
+									<Typography variant="body2" paragraph>
+										<strong>Política de Retención:</strong>
+									</Typography>
+									<Typography variant="body2" component="div">
+										• Los movimientos con estado <strong>"enviado"</strong> se eliminarán después del período configurado.
+										<br />
+										• Los movimientos con estado <strong>"pendiente"</strong> o <strong>"fallido"</strong> se conservan indefinidamente.
+										<br />
+										• La limpieza se ejecuta diariamente a la hora configurada.
+										<br />
+										• Los cambios en la configuración de retención se aplicarán en la próxima ejecución de limpieza.
+									</Typography>
+								</Alert>
 							</Grid>
 						</Grid>
 					</Collapse>
