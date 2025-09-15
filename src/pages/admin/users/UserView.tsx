@@ -106,6 +106,33 @@ interface UserViewProps {
 	onClose: () => void;
 }
 
+// Helper function to get the correct Stripe value based on environment
+const getStripeValue = (value: any): string => {
+	if (typeof value === 'string') {
+		return value;
+	}
+
+	if (typeof value === 'object' && value !== null) {
+		// Detectar si estamos en desarrollo o producción
+		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes('localhost') ||
+							  import.meta.env.MODE === 'development';
+
+		if (isDevelopment && value.test) {
+			return value.test;
+		} else if (!isDevelopment && value.live) {
+			return value.live;
+		} else if (value.test) {
+			// Fallback to test if live is not available
+			return value.test;
+		} else if (value.live) {
+			// Fallback to live if test is not available
+			return value.live;
+		}
+	}
+
+	return "Información no disponible";
+};
+
 const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const theme = useTheme();
 	const dispatch = useDispatch();
@@ -510,7 +537,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="subtitle1">ID de Cliente Stripe</Typography>
 					<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
-						{subscription.stripeCustomerId || "Información no disponible"}
+						{getStripeValue(subscription.stripeCustomerId)}
 					</Typography>
 				</Stack>
 
@@ -518,7 +545,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
 						<Typography variant="subtitle1">ID de Suscripción Stripe</Typography>
 						<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
-							{subscription.stripeSubscriptionId}
+							{getStripeValue(subscription.stripeSubscriptionId)}
 						</Typography>
 					</Stack>
 				)}
@@ -578,7 +605,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 						<Stack direction="row" justifyContent="space-between" alignItems="center">
 							<Typography variant="subtitle1">Método</Typography>
 							<Typography variant="body2" fontWeight="medium">
-								{subscription.paymentInfo.method}
+								{getStripeValue(subscription.paymentInfo.method)}
 							</Typography>
 						</Stack>
 
@@ -609,7 +636,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 							<Stack direction="row" justifyContent="space-between" alignItems="center">
 								<Typography variant="subtitle1">Marca de tarjeta</Typography>
 								<Typography variant="body2" fontWeight="medium">
-									{subscription.paymentInfo.brand}
+									{getStripeValue(subscription.paymentInfo.brand)}
 								</Typography>
 							</Stack>
 						)}
@@ -704,7 +731,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 								<Grid item xs={12} md={6}>
 									<Paper elevation={0} sx={{ p: 1.5, backgroundColor: "warning.light", height: "100%" }}>
 										<Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
-											Cambio pendiente: {subscription.pendingPlanChange.planId}
+											Cambio pendiente: {getStripeValue(subscription.pendingPlanChange.planId)}
 										</Typography>
 										<Typography variant="caption">
 											Efectivo:{" "}
@@ -720,7 +747,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 								<Grid item xs={12} md={6}>
 									<Paper elevation={0} sx={{ p: 1.5, backgroundColor: "warning.light", height: "100%" }}>
 										<Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
-											Cambio programado: {subscription.scheduledPlanChange.targetPlan}
+											Cambio programado: {getStripeValue(subscription.scheduledPlanChange.targetPlan)}
 										</Typography>
 										<Typography variant="caption">
 											Efectivo:{" "}
