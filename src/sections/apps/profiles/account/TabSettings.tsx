@@ -601,10 +601,10 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.limits
-													? subscription.limits.maxFolders === 999999
+												{subscription && subscription.features
+													? subscription.features.maxFolders === 999999
 														? "Ilimitadas"
-														: subscription.limits.maxFolders
+														: subscription.features.maxFolders
 													: "No disponible"}
 											</Typography>
 										}
@@ -619,10 +619,10 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.limits
-													? subscription.limits.maxCalculators === 999999
+												{subscription && subscription.features
+													? subscription.features.maxCalculators === 999999
 														? "Ilimitados"
-														: subscription.limits.maxCalculators
+														: subscription.features.maxCalculators
 													: "No disponible"}
 											</Typography>
 										}
@@ -637,10 +637,10 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.limits
-													? subscription.limits.maxContacts === 999999
+												{subscription && subscription.features
+													? subscription.features.maxContacts === 999999
 														? "Ilimitados"
-														: subscription.limits.maxContacts
+														: subscription.features.maxContacts
 													: "No disponible"}
 											</Typography>
 										}
@@ -655,7 +655,7 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.limits ? `${subscription.limits.storageLimit} MB` : "No disponible"}
+												{subscription && subscription.features ? `${subscription.features.storageLimit} MB` : "No disponible"}
 											</Typography>
 										}
 									/>
@@ -690,7 +690,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.features && subscription.features.advancedAnalytics ? (
+									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.advancedAnalytics ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -704,7 +704,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.features && subscription.features.exportReports ? (
+									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.exportReports ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -718,7 +718,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.features && subscription.features.taskAutomation ? (
+									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.taskAutomation ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -732,7 +732,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.features && subscription.features.bulkOperations ? (
+									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.bulkOperations ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -746,7 +746,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.features && subscription.features.prioritySupport ? (
+									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.prioritySupport ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -1211,10 +1211,10 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.limits
-														? subscription.limits.maxFolders === 999999
+													{subscription && subscription.features
+														? subscription.features.maxFolders === 999999
 															? "Ilimitadas"
-															: subscription.limits.maxFolders
+															: subscription.features.maxFolders
 														: "No disponible"}
 												</TableCell>
 											</TableRow>
@@ -1257,10 +1257,10 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.limits
-														? subscription.limits.maxCalculators === 999999
+													{subscription && subscription.features
+														? subscription.features.maxCalculators === 999999
 															? "Ilimitados"
-															: subscription.limits.maxCalculators
+															: subscription.features.maxCalculators
 														: "No disponible"}
 												</TableCell>
 											</TableRow>
@@ -1303,10 +1303,10 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.limits
-														? subscription.limits.maxContacts === 999999
+													{subscription && subscription.features
+														? subscription.features.maxContacts === 999999
 															? "Ilimitados"
-															: subscription.limits.maxContacts
+															: subscription.features.maxContacts
 														: "No disponible"}
 												</TableCell>
 											</TableRow>
@@ -1343,10 +1343,10 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.limits && subscription.limits.storageLimit >= 1024
-														? `${subscription.limits.storageLimit / 1024} GB`
-														: subscription && subscription.limits
-														? `${subscription.limits.storageLimit} MB`
+													{subscription && subscription.features && subscription.features.storageLimit >= 1024
+														? `${subscription.features.storageLimit / 1024} GB`
+														: subscription && subscription.features
+														? `${subscription.features.storageLimit} MB`
 														: "No disponible"}
 												</TableCell>
 											</TableRow>
