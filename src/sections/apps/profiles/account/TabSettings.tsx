@@ -158,24 +158,6 @@ const TabSubscription = () => {
 		if (!subscription) {
 			fetchSubscription();
 		} else {
-			// Debug: verificar estructura de datos
-			console.log("=== DEBUG SUBSCRIPTION DATA ===");
-			console.log("Full subscription object:", subscription);
-			console.log("Type of subscription.features:", typeof subscription.features);
-			console.log("subscription.features:", subscription.features);
-			console.log("subscription.enabledFeatures:", subscription.enabledFeatures);
-
-			// Si features es un Map, intentar acceder a sus valores
-			if (subscription.features instanceof Map) {
-				console.log("features is a Map:");
-				console.log("maxFolders from Map:", subscription.features.get("maxFolders"));
-				console.log("maxContacts from Map:", subscription.features.get("maxContacts"));
-			} else if (subscription.features) {
-				console.log("features is an object:");
-				console.log("maxFolders:", subscription.features.maxFolders);
-				console.log("maxContacts:", subscription.features.maxContacts);
-			}
-
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscription.pendingPlanChange) {
 				setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
