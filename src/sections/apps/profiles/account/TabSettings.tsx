@@ -69,22 +69,6 @@ const getStripeValue = (value: any): string => {
 	return "No disponible";
 };
 
-// Helper function to get value from features (handles both Map and Object)
-const getFeatureValue = (features: any, key: string): any => {
-	if (!features) return undefined;
-
-	// Si es un Map
-	if (features instanceof Map) {
-		return features.get(key);
-	}
-
-	// Si es un objeto regular
-	if (typeof features === 'object') {
-		return features[key];
-	}
-
-	return undefined;
-};
 
 const TabSubscription = () => {
 	const dispatch = useDispatch<AppDispatch>();
@@ -619,9 +603,9 @@ const TabSubscription = () => {
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
 												{(() => {
-													const maxFolders = getFeatureValue(subscription?.features, 'maxFolders');
-													if (maxFolders === undefined) return "No disponible";
-													return maxFolders === 999999 ? "Ilimitadas" : maxFolders;
+													const folders = subscription?.limits?.folders;
+													if (folders === undefined) return "No disponible";
+													return folders === 999999 ? "Ilimitadas" : folders;
 												})()}
 											</Typography>
 										}
@@ -637,9 +621,9 @@ const TabSubscription = () => {
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
 												{(() => {
-													const maxCalculators = getFeatureValue(subscription?.features, 'maxCalculators');
-													if (maxCalculators === undefined) return "No disponible";
-													return maxCalculators === 999999 ? "Ilimitados" : maxCalculators;
+													const calculators = subscription?.limits?.calculators;
+													if (calculators === undefined) return "No disponible";
+													return calculators === 999999 ? "Ilimitados" : calculators;
 												})()}
 											</Typography>
 										}
@@ -655,9 +639,9 @@ const TabSubscription = () => {
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
 												{(() => {
-													const maxContacts = getFeatureValue(subscription?.features, 'maxContacts');
-													if (maxContacts === undefined) return "No disponible";
-													return maxContacts === 999999 ? "Ilimitados" : maxContacts;
+													const contacts = subscription?.limits?.contacts;
+													if (contacts === undefined) return "No disponible";
+													return contacts === 999999 ? "Ilimitados" : contacts;
 												})()}
 											</Typography>
 										}
@@ -673,9 +657,9 @@ const TabSubscription = () => {
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
 												{(() => {
-													const storageLimit = getFeatureValue(subscription?.features, 'storageLimit');
-													if (storageLimit === undefined) return "No disponible";
-													return `${storageLimit} MB`;
+													const storage = subscription?.limits?.storage;
+													if (storage === undefined) return "No disponible";
+													return `${storage} MB`;
 												})()}
 											</Typography>
 										}
@@ -711,7 +695,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{getFeatureValue(subscription?.enabledFeatures, 'advancedAnalytics') ? (
+									{subscription?.features?.advancedAnalytics ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -725,7 +709,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{getFeatureValue(subscription?.enabledFeatures, 'exportReports') ? (
+									{subscription?.features?.exportReports ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -739,7 +723,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{getFeatureValue(subscription?.enabledFeatures, 'taskAutomation') ? (
+									{subscription?.features?.taskAutomation ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -753,7 +737,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{getFeatureValue(subscription?.enabledFeatures, 'bulkOperations') ? (
+									{subscription?.features?.bulkOperations ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -767,7 +751,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{getFeatureValue(subscription?.enabledFeatures, 'prioritySupport') ? (
+									{subscription?.features?.prioritySupport ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
