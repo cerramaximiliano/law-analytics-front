@@ -42,6 +42,33 @@ import { fetchCurrentSubscription, updateSubscription, fetchPaymentHistory, sele
 
 // ==============================|| ACCOUNT PROFILE - SUBSCRIPTION ||============================== //
 
+// Helper function to get the correct Stripe value based on environment
+const getStripeValue = (value: any): string => {
+	if (typeof value === 'string') {
+		return value;
+	}
+
+	if (typeof value === 'object' && value !== null) {
+		// Detectar si estamos en desarrollo o producción
+		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes('localhost') ||
+							  import.meta.env.MODE === 'development';
+
+		if (isDevelopment && value.test) {
+			return value.test;
+		} else if (!isDevelopment && value.live) {
+			return value.live;
+		} else if (value.test) {
+			// Fallback to test if live is not available
+			return value.test;
+		} else if (value.live) {
+			// Fallback to live if test is not available
+			return value.live;
+		}
+	}
+
+	return "No disponible";
+};
+
 const TabSubscription = () => {
 	const dispatch = useDispatch<AppDispatch>();
 	const navigate = useNavigate();
@@ -78,7 +105,7 @@ const TabSubscription = () => {
 
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscriptionData && subscriptionData.pendingPlanChange) {
-				setNextPlan(subscriptionData.pendingPlanChange.planId);
+				setNextPlan(getStripeValue(subscriptionData.pendingPlanChange.planId));
 			}
 		} catch (err: any) {
 			// Solo mostrar error si no es 401 (usuario no autenticado)
@@ -116,7 +143,7 @@ const TabSubscription = () => {
 		} else {
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscription.pendingPlanChange) {
-				setNextPlan(subscription.pendingPlanChange.planId);
+				setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
 			}
 		}
 	}, [subscription]);
@@ -749,7 +776,7 @@ const TabSubscription = () => {
 										ID de cliente
 									</Typography>
 									<Typography variant="body2" sx={{ wordBreak: "break-all", mt: 0.5 }}>
-										{(subscription && subscription.stripeCustomerId) || "No disponible"}
+										{subscription ? getStripeValue(subscription.stripeCustomerId) : "No disponible"}
 									</Typography>
 								</Grid>
 
@@ -758,7 +785,7 @@ const TabSubscription = () => {
 										ID de suscripción
 									</Typography>
 									<Typography variant="body2" sx={{ wordBreak: "break-all", mt: 0.5 }}>
-										{(subscription && subscription.stripeSubscriptionId) || "No disponible"}
+										{subscription ? getStripeValue(subscription.stripeSubscriptionId) : "No disponible"}
 									</Typography>
 								</Grid>
 
