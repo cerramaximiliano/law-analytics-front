@@ -133,6 +133,33 @@ const getStripeValue = (value: any): string => {
 	return "Información no disponible";
 };
 
+// Helper function to get Stripe value with environment indicator
+const getStripeValueWithIndicator = (value: any): { value: string; isTest?: boolean } => {
+	if (typeof value === 'string') {
+		return { value };
+	}
+
+	if (typeof value === 'object' && value !== null) {
+		// Detectar si estamos en desarrollo o producción
+		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes('localhost') ||
+							  import.meta.env.MODE === 'development';
+
+		if (isDevelopment && value.test) {
+			return { value: value.test, isTest: true };
+		} else if (!isDevelopment && value.live) {
+			return { value: value.live, isTest: false };
+		} else if (value.test) {
+			// Fallback to test if live is not available
+			return { value: value.test, isTest: true };
+		} else if (value.live) {
+			// Fallback to live if test is not available
+			return { value: value.live, isTest: false };
+		}
+	}
+
+	return { value: "Información no disponible" };
+};
+
 const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const theme = useTheme();
 	const dispatch = useDispatch();
@@ -536,17 +563,63 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="subtitle1">ID de Cliente Stripe</Typography>
-					<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
-						{getStripeValue(subscription.stripeCustomerId)}
-					</Typography>
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+						<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
+							{(() => {
+								const stripeData = getStripeValueWithIndicator(subscription.stripeCustomerId);
+								return stripeData.value;
+							})()}
+						</Typography>
+						{(() => {
+							const stripeData = getStripeValueWithIndicator(subscription.stripeCustomerId);
+							if (stripeData.isTest !== undefined) {
+								return (
+									<Chip
+										label={stripeData.isTest ? "TEST" : "LIVE"}
+										size="small"
+										color={stripeData.isTest ? "warning" : "success"}
+										sx={{
+											height: 20,
+											fontSize: '0.7rem',
+											fontWeight: 'bold'
+										}}
+									/>
+								);
+							}
+							return null;
+						})()}
+					</Box>
 				</Stack>
 
 				{subscription.stripeSubscriptionId && (
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
 						<Typography variant="subtitle1">ID de Suscripción Stripe</Typography>
-						<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
-							{getStripeValue(subscription.stripeSubscriptionId)}
-						</Typography>
+						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+							<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
+								{(() => {
+									const stripeData = getStripeValueWithIndicator(subscription.stripeSubscriptionId);
+									return stripeData.value;
+								})()}
+							</Typography>
+							{(() => {
+								const stripeData = getStripeValueWithIndicator(subscription.stripeSubscriptionId);
+								if (stripeData.isTest !== undefined) {
+									return (
+										<Chip
+											label={stripeData.isTest ? "TEST" : "LIVE"}
+											size="small"
+											color={stripeData.isTest ? "warning" : "success"}
+											sx={{
+												height: 20,
+												fontSize: '0.7rem',
+												fontWeight: 'bold'
+											}}
+										/>
+									);
+								}
+								return null;
+							})()}
+						</Box>
 					</Stack>
 				)}
 
