@@ -69,6 +69,23 @@ const getStripeValue = (value: any): string => {
 	return "No disponible";
 };
 
+// Helper function to get value from features (handles both Map and Object)
+const getFeatureValue = (features: any, key: string): any => {
+	if (!features) return undefined;
+
+	// Si es un Map
+	if (features instanceof Map) {
+		return features.get(key);
+	}
+
+	// Si es un objeto regular
+	if (typeof features === 'object') {
+		return features[key];
+	}
+
+	return undefined;
+};
+
 const TabSubscription = () => {
 	const dispatch = useDispatch<AppDispatch>();
 	const navigate = useNavigate();
@@ -141,6 +158,24 @@ const TabSubscription = () => {
 		if (!subscription) {
 			fetchSubscription();
 		} else {
+			// Debug: verificar estructura de datos
+			console.log("=== DEBUG SUBSCRIPTION DATA ===");
+			console.log("Full subscription object:", subscription);
+			console.log("Type of subscription.features:", typeof subscription.features);
+			console.log("subscription.features:", subscription.features);
+			console.log("subscription.enabledFeatures:", subscription.enabledFeatures);
+
+			// Si features es un Map, intentar acceder a sus valores
+			if (subscription.features instanceof Map) {
+				console.log("features is a Map:");
+				console.log("maxFolders from Map:", subscription.features.get("maxFolders"));
+				console.log("maxContacts from Map:", subscription.features.get("maxContacts"));
+			} else if (subscription.features) {
+				console.log("features is an object:");
+				console.log("maxFolders:", subscription.features.maxFolders);
+				console.log("maxContacts:", subscription.features.maxContacts);
+			}
+
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscription.pendingPlanChange) {
 				setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
@@ -601,11 +636,11 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.features
-													? subscription.features.maxFolders === 999999
-														? "Ilimitadas"
-														: subscription.features.maxFolders
-													: "No disponible"}
+												{(() => {
+													const maxFolders = getFeatureValue(subscription?.features, 'maxFolders');
+													if (maxFolders === undefined) return "No disponible";
+													return maxFolders === 999999 ? "Ilimitadas" : maxFolders;
+												})()}
 											</Typography>
 										}
 									/>
@@ -619,11 +654,11 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.features
-													? subscription.features.maxCalculators === 999999
-														? "Ilimitados"
-														: subscription.features.maxCalculators
-													: "No disponible"}
+												{(() => {
+													const maxCalculators = getFeatureValue(subscription?.features, 'maxCalculators');
+													if (maxCalculators === undefined) return "No disponible";
+													return maxCalculators === 999999 ? "Ilimitados" : maxCalculators;
+												})()}
 											</Typography>
 										}
 									/>
@@ -637,11 +672,11 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.features
-													? subscription.features.maxContacts === 999999
-														? "Ilimitados"
-														: subscription.features.maxContacts
-													: "No disponible"}
+												{(() => {
+													const maxContacts = getFeatureValue(subscription?.features, 'maxContacts');
+													if (maxContacts === undefined) return "No disponible";
+													return maxContacts === 999999 ? "Ilimitados" : maxContacts;
+												})()}
 											</Typography>
 										}
 									/>
@@ -655,7 +690,11 @@ const TabSubscription = () => {
 										}
 										secondary={
 											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{subscription && subscription.features ? `${subscription.features.storageLimit} MB` : "No disponible"}
+												{(() => {
+													const storageLimit = getFeatureValue(subscription?.features, 'storageLimit');
+													if (storageLimit === undefined) return "No disponible";
+													return `${storageLimit} MB`;
+												})()}
 											</Typography>
 										}
 									/>
@@ -690,7 +729,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.advancedAnalytics ? (
+									{getFeatureValue(subscription?.enabledFeatures, 'advancedAnalytics') ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -704,7 +743,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.exportReports ? (
+									{getFeatureValue(subscription?.enabledFeatures, 'exportReports') ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -718,7 +757,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.taskAutomation ? (
+									{getFeatureValue(subscription?.enabledFeatures, 'taskAutomation') ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -732,7 +771,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.bulkOperations ? (
+									{getFeatureValue(subscription?.enabledFeatures, 'bulkOperations') ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -746,7 +785,7 @@ const TabSubscription = () => {
 											</Typography>
 										}
 									/>
-									{subscription && subscription.enabledFeatures && subscription.enabledFeatures.prioritySupport ? (
+									{getFeatureValue(subscription?.enabledFeatures, 'prioritySupport') ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
@@ -1211,11 +1250,11 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.features
-														? subscription.features.maxFolders === 999999
-															? "Ilimitadas"
-															: subscription.features.maxFolders
-														: "No disponible"}
+													{(() => {
+														const maxFolders = getFeatureValue(subscription?.features, 'maxFolders');
+														if (maxFolders === undefined) return "No disponible";
+														return maxFolders === 999999 ? "Ilimitadas" : maxFolders;
+													})()}
 												</TableCell>
 											</TableRow>
 											<TableRow hover>
@@ -1257,11 +1296,11 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.features
-														? subscription.features.maxCalculators === 999999
-															? "Ilimitados"
-															: subscription.features.maxCalculators
-														: "No disponible"}
+													{(() => {
+														const maxCalculators = getFeatureValue(subscription?.features, 'maxCalculators');
+														if (maxCalculators === undefined) return "No disponible";
+														return maxCalculators === 999999 ? "Ilimitados" : maxCalculators;
+													})()}
 												</TableCell>
 											</TableRow>
 											<TableRow hover>
@@ -1303,11 +1342,11 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.features
-														? subscription.features.maxContacts === 999999
-															? "Ilimitados"
-															: subscription.features.maxContacts
-														: "No disponible"}
+													{(() => {
+														const maxContacts = getFeatureValue(subscription?.features, 'maxContacts');
+														if (maxContacts === undefined) return "No disponible";
+														return maxContacts === 999999 ? "Ilimitados" : maxContacts;
+													})()}
 												</TableCell>
 											</TableRow>
 											<TableRow hover>
@@ -1343,11 +1382,11 @@ const TabSubscription = () => {
 														py: 2,
 													}}
 												>
-													{subscription && subscription.features && subscription.features.storageLimit >= 1024
-														? `${subscription.features.storageLimit / 1024} GB`
-														: subscription && subscription.features
-														? `${subscription.features.storageLimit} MB`
-														: "No disponible"}
+													{(() => {
+														const storageLimit = getFeatureValue(subscription?.features, 'storageLimit');
+														if (storageLimit === undefined) return "No disponible";
+														return storageLimit >= 1024 ? `${storageLimit / 1024} GB` : `${storageLimit} MB`;
+													})()}
 												</TableCell>
 											</TableRow>
 										</TableBody>
