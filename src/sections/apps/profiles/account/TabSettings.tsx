@@ -613,7 +613,7 @@ const TabSubscription = () => {
 							>
 								{subscription?.limitsWithDescriptions ? (
 									// Usar limitsWithDescriptions si está disponible
-									subscription.limitsWithDescriptions.map((item: any) => (
+									[...subscription.limitsWithDescriptions].map((item: any) => (
 										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
 											<ListItemText
 												primary={
@@ -724,7 +724,7 @@ const TabSubscription = () => {
 							>
 								{subscription?.featuresWithDescriptions ? (
 									// Usar featuresWithDescriptions si está disponible
-									subscription.featuresWithDescriptions
+									[...subscription.featuresWithDescriptions] // Crear copia para evitar mutar el estado
 										.sort((a: any, b: any) => {
 											// Primero ordenar por enabled (activos primero)
 											if (a.enabled === b.enabled) {
