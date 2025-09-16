@@ -395,29 +395,70 @@ const TabSubscription = () => {
 		}
 	};
 
+	// Función para verificar si está en período de gracia
+	const isInGracePeriod = () => {
+		if (!subscription) return false;
+
+		// Caso 1: Período de gracia por pagos fallidos
+		if (subscription.accountStatus === "grace_period") {
+			return true;
+		}
+
+		// Caso 2: Período de gracia por downgrade con fecha futura
+		if (subscription.downgradeGracePeriod?.expiresAt &&
+			new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
+			return true;
+		}
+
+		// Caso 3: Período de gracia por cancelación
+		if (subscription.cancelAtPeriodEnd === true &&
+			subscription.currentPeriodEnd &&
+			new Date(subscription.currentPeriodEnd) > new Date()) {
+			return true;
+		}
+
+		return false;
+	};
+
 	// Función para obtener toda la información del período de gracia
 	const getGracePeriodInfo = () => {
-		// Verificar que subscription existe
-		if (!subscription) return null;
+		// Verificar que subscription existe y está en período de gracia
+		if (!subscription || !isInGracePeriod()) return null;
 
-		// No mostrar información para plan gratuito sin plan previo
-		if (
-			!subscription ||
-			!subscription.downgradeGracePeriod ||
-			(subscription.plan === "free" && !subscription.downgradeGracePeriod.previousPlan)
-		)
-			return null;
+		let gracePeriodType = "";
+		let expiryDate = subscription.currentPeriodEnd;
+		let previousPlan = subscription.plan;
+		let targetPlan = "free";
 
-		const willDowngradeToFreePlan = subscription.cancelAtPeriodEnd && subscription.plan !== "free";
-		const previousPlanName = getPlanName(subscription.downgradeGracePeriod.previousPlan);
-		const currentPlanName = getPlanName(subscription.plan);
-		const targetPlanName = willDowngradeToFreePlan ? "Plan Gratuito" : currentPlanName;
+		// Determinar tipo de período de gracia y datos relevantes
+		if (subscription.accountStatus === "grace_period") {
+			// Período de gracia por pagos fallidos
+			gracePeriodType = "payment_failed";
+			// En este caso, mantenemos el mismo plan
+			targetPlan = subscription.plan;
+		} else if (subscription.downgradeGracePeriod?.expiresAt &&
+				   new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
+			// Período de gracia por downgrade
+			gracePeriodType = "downgrade";
+			expiryDate = subscription.downgradeGracePeriod.expiresAt;
+			previousPlan = subscription.downgradeGracePeriod.previousPlan || subscription.plan;
+			targetPlan = subscription.downgradeGracePeriod.targetPlan || "free";
+		} else if (subscription.cancelAtPeriodEnd === true) {
+			// Período de gracia por cancelación
+			gracePeriodType = "cancellation";
+			expiryDate = subscription.currentPeriodEnd;
+			targetPlan = "free";
+		}
 
-		const expiryDate = subscription.downgradeGracePeriod.expiresAt;
 		const daysRemaining = calculateRemainingDays(expiryDate);
 		const isExpiringSoon = daysRemaining <= 3;
+		const willDowngradeToFreePlan = targetPlan === "free";
+		const previousPlanName = getPlanName(previousPlan);
+		const currentPlanName = getPlanName(subscription.plan);
+		const targetPlanName = getPlanName(targetPlan);
 
 		return {
+			gracePeriodType,
 			willDowngradeToFreePlan,
 			previousPlanName,
 			currentPlanName,
@@ -428,7 +469,7 @@ const TabSubscription = () => {
 			isExpiringSoon,
 			cancellationDate: subscription.currentPeriodEnd,
 			cancellationFormatted: formatDate(subscription.currentPeriodEnd),
-			title: willDowngradeToFreePlan ? "Período de Gracia por Cancelación" : "Período de Gracia por Cambio de Plan",
+			title: "Período de Gracia",
 		};
 	};
 
@@ -537,7 +578,7 @@ const TabSubscription = () => {
 														"& .MuiAlert-icon": { color: "warning.dark" },
 													}}
 												>
-													<Typography variant="body2">{getGracePeriodMessage(subscription.downgradeGracePeriod.expiresAt)}</Typography>
+													<Typography variant="body2">{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}</Typography>
 												</Alert>
 											)}
 									</>
@@ -881,9 +922,7 @@ const TabSubscription = () => {
 			</Grid>
 
 			{/* Sección de Período de Gracia */}
-			{subscription &&
-				subscription.downgradeGracePeriod &&
-				(subscription.plan !== "free" || subscription.downgradeGracePeriod.previousPlan) && (
+			{subscription && isInGracePeriod() && (
 					<Grid item xs={12}>
 						<MainCard
 							title={getGracePeriodInfo()?.title || "Período de Gracia"}
@@ -902,7 +941,7 @@ const TabSubscription = () => {
 							>
 								<Grid container spacing={3}>
 									<Grid item xs={12}>
-										{getGracePeriodStatus(subscription.downgradeGracePeriod.expiresAt) === "past" ? (
+										{getGracePeriodInfo() && getGracePeriodStatus(getGracePeriodInfo()?.expiryDate) === "past" ? (
 											<Alert
 												severity="info"
 												variant="outlined"
@@ -916,7 +955,7 @@ const TabSubscription = () => {
 														Período de gracia finalizado
 													</Typography>
 													<Typography variant="body2">
-														El período de gracia finalizó el {formatDate(subscription.downgradeGracePeriod.expiresAt)}. El contenido que
+														El período de gracia finalizó el {formatDate(getGracePeriodInfo()?.expiryDate)}. El contenido que
 														excedía los límites de tu {getGracePeriodInfo()?.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha
 														sido archivado automáticamente.
 													</Typography>
@@ -1077,7 +1116,7 @@ const TabSubscription = () => {
 												mt: 1,
 											}}
 										>
-											{getGracePeriodStatus(subscription.downgradeGracePeriod.expiresAt) === "past" ? (
+											{getGracePeriodInfo() && getGracePeriodStatus(getGracePeriodInfo()?.expiryDate) === "past" ? (
 												<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
 													Archivado automático completado
 												</Typography>
