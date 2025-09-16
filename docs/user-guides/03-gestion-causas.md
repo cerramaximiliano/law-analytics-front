@@ -82,27 +82,145 @@ Si ya tienes causas creadas en el sistema, puedes vincularlas con el Poder Judic
 ### 🔗 Proceso de vinculación:
 
 1. Abre la causa que deseas vincular
-2. En la vista detallada, busca la sección **"Vincular con Poder Judicial"**
-3. Selecciona la jurisdicción correspondiente:
-   - Cámara Nacional de Apelaciones en lo Civil
-   - Cámara Federal de la Seguridad Social
-   - Cámara Nacional de Apelaciones del Trabajo
-4. Ingresa el **número de expediente** y el **año**
-5. Haz clic en **"Vincular"**
+2. En la vista detallada, busca el botón **"Vincular con Poder Judicial"**
+3. Se abrirá un modal con las opciones disponibles
 
-### 📊 Estados de vinculación:
+#### Primera pantalla - Selección del Poder Judicial:
 
-- **🔵 Pendiente de verificación**: El sistema está validando la información
-- **✅ Vinculado y verificado**: La causa está correctamente sincronizada
-- **❌ No válido**: Los datos no coinciden con el expediente en PJN
+```
+┌─────────────────────────────────────────────┐
+│ 📄 Vincular con Poder Judicial              │
+├─────────────────────────────────────────────┤
+│                                             │
+│ Seleccione el poder judicial:              │
+│                                             │
+│ ┌─────────────────────────────────────┐   │
+│ │ ⚖️ Poder Judicial de la Nación      │   │
+│ │   Vincule causas del fuero federal  │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ ┌─────────────────────────────────────┐   │
+│ │ 🏛️ Poder Judicial de Buenos Aires   │   │
+│ │   [Próximamente]                    │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│                      [Cancelar]             │
+└─────────────────────────────────────────────┘
+```
+
+#### Segunda pantalla - Formulario de vinculación:
+
+Al seleccionar "Poder Judicial de la Nación", verás:
+
+```
+┌─────────────────────────────────────────────┐
+│ 📄 Vincular con Poder Judicial de la Nación │
+├─────────────────────────────────────────────┤
+│                                             │
+│ Jurisdicción *                             │
+│ ┌─────────────────────────────────────┐   │
+│ │ Seleccione una jurisdicción     ▼   │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ Número de Expediente *                     │
+│ ┌─────────────────────────────────────┐   │
+│ │ Ej: 12345                           │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ Año del Expediente *                       │
+│ ┌─────────────────────────────────────┐   │
+│ │ Ej: 2024                            │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ ☑ Sobrescribir datos locales con los      │
+│   del Poder Judicial                       │
+│                                             │
+│            [Atrás]  [Vincular Causa]       │
+└─────────────────────────────────────────────┘
+```
+
+### 📋 Campos del formulario:
+
+| **Campo** | **Descripción** | **Requerido** | **Ejemplo** |
+|-----------|----------------|---------------|-------------|
+| **Jurisdicción** | Tribunal específico del PJN | Sí | "Cámara Civil" |
+| **Número de Expediente** | Identificador numérico del caso | Sí | "12345" |
+| **Año del Expediente** | Año de inicio del expediente | Sí | "2024" |
+| **Sobrescribir datos** | Actualiza información local con la del PJN | No | Activado por defecto |
+
+### 📊 Estados post-vinculación:
+
+Una vez completada la vinculación, tu causa mostrará diferentes estados visuales:
+
+#### Estado 1: Vinculación iniciada
+```
+Carátula: [Nombre del Expediente] 🟡 Pendiente de verificación [🔄]
+```
+- El sistema está validando la información con el Poder Judicial
+- Puedes hacer clic en el botón de actualización (🔄) para verificar el estado
+
+#### Estado 2: Verificación exitosa
+```
+Carátula: [Nombre del Expediente] ✅
+```
+- **Indicador**: Ícono de tilde verde
+- **Tooltip**: "Causa vinculada a PJN"
+- El expediente fue encontrado y validado exitosamente
+- La sincronización automática está activa
+
+#### Estado 3: Verificación fallida
+```
+Carátula: [Nombre del Expediente] ❌ Causa inválida
+```
+- **Indicador**: Ícono de cruz roja con chip rojo
+- **Tooltip**: "Causa inválida - No se pudo verificar en el Poder Judicial"
+- Los datos no coinciden con ningún expediente en el sistema judicial
+- Verifica el número y año del expediente
 
 ### 🔄 Sincronización automática:
 
-Una vez vinculada, la causa recibirá actualizaciones automáticas:
+Una vez vinculada exitosamente, la causa recibirá actualizaciones automáticas:
 
 - **Movimientos procesales**: Nuevas actuaciones, providencias, sentencias
 - **Notificaciones**: Cambios de estado importantes
 - **Documentos**: Enlaces a documentos públicos disponibles
+- **Frecuencia**: Las actualizaciones se sincronizan periódicamente
+
+### 📝 Datos enviados al sistema:
+
+Al vincular, el sistema envía automáticamente:
+
+| **Dato** | **Valor** | **Descripción** |
+|----------|-----------|-----------------|
+| `pjn` | `true` | Marca la causa como vinculada al PJN |
+| `pjnCode` | Código de jurisdicción | Identifica el tribunal específico |
+| `number` | Número de expediente | Para localizar el caso |
+| `year` | Año | Para identificación única |
+| `overwrite` | `true/false` | Si sobrescribir datos locales |
+
+### ⚡ Actualización manual del estado:
+
+Si tu causa muestra "Pendiente de verificación", puedes:
+
+1. Hacer clic en el **botón de actualización (🔄)** junto al chip amarillo
+2. El sistema intentará verificar nuevamente con el PJN
+3. El estado se actualizará según el resultado de la verificación
+
+### 🎯 Beneficios de la vinculación:
+
+- ✅ **Actualizaciones automáticas**: No necesitas revisar manualmente el expediente
+- ✅ **Validación oficial**: Confirma que el expediente existe en el sistema judicial
+- ✅ **Historial completo**: Todos los movimientos procesales en un solo lugar
+- ✅ **Notificaciones**: Alertas de movimientos importantes (si está habilitado)
+- ✅ **Documentos sincronizados**: Acceso a documentos públicos del expediente
+
+### ⚠️ Notas importantes:
+
+- **Solo causas federales**: Actualmente solo disponible para el Poder Judicial de la Nación
+- **Indicadores visuales**: Solo se muestran si la causa está vinculada (pjn = true)
+- **Tiempo de verificación**: La verificación inicial puede tomar algunos segundos
+- **Estado temporal**: "Pendiente de verificación" es temporal mientras se valida
+- **Movimientos de solo lectura**: Los movimientos sincronizados no pueden editarse para mantener la integridad
 
 > **💡 Nota**: Los movimientos sincronizados desde PJN se muestran con la etiqueta "Sincronizado • PJN" y son de solo lectura para mantener la integridad de los datos oficiales.
 

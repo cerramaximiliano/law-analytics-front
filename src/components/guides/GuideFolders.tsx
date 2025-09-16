@@ -68,6 +68,7 @@ const IntroductionContent = () => {
 					<ul>
 						<li>Crear y gestionar carpetas judiciales</li>
 						<li>Importar carpetas automáticamente desde el Poder Judicial</li>
+						<li>Vincular carpetas existentes con el Poder Judicial para sincronización automática</li>
 						<li>Organizar documentos y cálculos asociados a cada carpeta</li>
 						<li>Manejar el estado y seguimiento de tus expedientes</li>
 						<li>Archivar carpetas finalizadas y mantener tu sistema organizado</li>
@@ -167,6 +168,155 @@ const ImportContent = () => {
 				La importación automática te permite ahorrar tiempo en la carga de datos y reducir errores de transcripción, facilitando la gestión
 				de múltiples expedientes.
 			</Typography>
+		</Stack>
+	);
+};
+
+const LinkingContent = () => {
+	const theme = useTheme();
+	return (
+		<Stack spacing={3}>
+			<Typography paragraph>
+				Si ya tienes carpetas creadas en el sistema, puedes vincularlas con el Poder Judicial de la Nación para sincronizar movimientos automáticamente:
+			</Typography>
+
+			<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+				🔗 Proceso de vinculación:
+			</Typography>
+
+			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.2), mb: 3 }}>
+				<Stack spacing={2}>
+					<Box display="flex" alignItems="center">
+						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+						<Typography>Abre la carpeta que deseas vincular</Typography>
+					</Box>
+					<Box display="flex" alignItems="center">
+						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+						<Typography>En la vista detallada, busca el botón "Vincular con Poder Judicial"</Typography>
+					</Box>
+					<Box display="flex" alignItems="center">
+						<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+						<Typography>Se abrirá un modal con las opciones disponibles</Typography>
+					</Box>
+				</Stack>
+			</Paper>
+
+			<StyledPaper>
+				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+					<Typography variant="subtitle1" fontWeight="bold">
+						Primera pantalla - Selección del Poder Judicial
+					</Typography>
+				</Box>
+				<Box sx={{ p: 2 }}>
+					<Typography variant="body2" gutterBottom>Verás las siguientes opciones:</Typography>
+					<Stack spacing={1.5} sx={{ mt: 1 }}>
+						<Box display="flex" alignItems="flex-start">
+							<Typography fontWeight="bold" sx={{ minWidth: "24px" }}>⚖️</Typography>
+							<Box>
+								<Typography fontWeight="bold">Poder Judicial de la Nación</Typography>
+								<Typography variant="body2">Vincule carpetas del fuero federal</Typography>
+							</Box>
+						</Box>
+						<Box display="flex" alignItems="flex-start">
+							<Typography fontWeight="bold" sx={{ minWidth: "24px" }}>🏛️</Typography>
+							<Box>
+								<Typography fontWeight="bold">Poder Judicial de Buenos Aires</Typography>
+								<Typography variant="body2">[Próximamente] - Vincule carpetas del fuero provincial</Typography>
+							</Box>
+						</Box>
+					</Stack>
+				</Box>
+			</StyledPaper>
+
+			<StyledPaper>
+				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
+					<Typography variant="subtitle1" fontWeight="bold">
+						Segunda pantalla - Formulario de vinculación
+					</Typography>
+				</Box>
+				<Box sx={{ p: 2 }}>
+					<Typography variant="body2" gutterBottom>Al seleccionar "Poder Judicial de la Nación", deberás completar:</Typography>
+					<Stack spacing={1.5} sx={{ mt: 1 }}>
+						<Box display="flex" alignItems="center">
+							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
+							<Typography><strong>Jurisdicción:</strong> Tribunal específico del PJN (ej. "Cámara Civil")</Typography>
+						</Box>
+						<Box display="flex" alignItems="center">
+							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
+							<Typography><strong>Número de Expediente:</strong> Identificador numérico del caso (ej. "12345")</Typography>
+						</Box>
+						<Box display="flex" alignItems="center">
+							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
+							<Typography><strong>Año del Expediente:</strong> Año de inicio del expediente (ej. "2024")</Typography>
+						</Box>
+						<Box display="flex" alignItems="center">
+							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
+							<Typography><strong>Sobrescribir datos:</strong> Actualiza información local con la del PJN (activado por defecto)</Typography>
+						</Box>
+					</Stack>
+				</Box>
+			</StyledPaper>
+
+			<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ mt: 3 }}>
+				📊 Estados visuales post-vinculación:
+			</Typography>
+
+			<Grid container spacing={2}>
+				<Grid item xs={12} md={4}>
+					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.warning.lighter, 0.1) }}>
+						<Box display="flex" alignItems="center" mb={1}>
+							<Typography sx={{ fontSize: "20px", mr: 1 }}>🟡</Typography>
+							<Typography variant="subtitle2" fontWeight="bold">Pendiente de verificación</Typography>
+						</Box>
+						<Typography variant="body2">
+							El sistema está validando la información con el Poder Judicial. Puedes hacer clic en el botón 🔄 para verificar el estado.
+						</Typography>
+					</Paper>
+				</Grid>
+				<Grid item xs={12} md={4}>
+					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.success.lighter, 0.1) }}>
+						<Box display="flex" alignItems="center" mb={1}>
+							<Typography sx={{ fontSize: "20px", mr: 1 }}>✅</Typography>
+							<Typography variant="subtitle2" fontWeight="bold">Verificación exitosa</Typography>
+						</Box>
+						<Typography variant="body2">
+							El expediente fue encontrado y validado exitosamente. La sincronización automática está activa.
+						</Typography>
+					</Paper>
+				</Grid>
+				<Grid item xs={12} md={4}>
+					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.error.lighter, 0.1) }}>
+						<Box display="flex" alignItems="center" mb={1}>
+							<Typography sx={{ fontSize: "20px", mr: 1 }}>❌</Typography>
+							<Typography variant="subtitle2" fontWeight="bold">Verificación fallida</Typography>
+						</Box>
+						<Typography variant="body2">
+							Los datos no coinciden con ningún expediente. Verifica el número y año del expediente.
+						</Typography>
+					</Paper>
+				</Grid>
+			</Grid>
+
+			<Alert severity="success" sx={{ mt: 3 }}>
+				<AlertTitle>🎯 Beneficios de la vinculación</AlertTitle>
+				<Stack spacing={1}>
+					<Typography>✅ <strong>Actualizaciones automáticas:</strong> No necesitas revisar manualmente el expediente</Typography>
+					<Typography>✅ <strong>Validación oficial:</strong> Confirma que el expediente existe en el sistema judicial</Typography>
+					<Typography>✅ <strong>Historial completo:</strong> Todos los movimientos procesales en un solo lugar</Typography>
+					<Typography>✅ <strong>Notificaciones:</strong> Alertas de movimientos importantes (si está habilitado)</Typography>
+					<Typography>✅ <strong>Documentos sincronizados:</strong> Acceso a documentos públicos del expediente</Typography>
+				</Stack>
+			</Alert>
+
+			<Alert severity="info" sx={{ mt: 2 }}>
+				<AlertTitle>⚠️ Notas importantes</AlertTitle>
+				<Stack spacing={0.5}>
+					<Typography variant="body2">• Solo disponible para el Poder Judicial de la Nación actualmente</Typography>
+					<Typography variant="body2">• Los indicadores visuales solo se muestran si la carpeta está vinculada</Typography>
+					<Typography variant="body2">• La verificación inicial puede tomar algunos segundos</Typography>
+					<Typography variant="body2">• Los movimientos sincronizados son de solo lectura para mantener la integridad</Typography>
+				</Stack>
+			</Alert>
 		</Stack>
 	);
 };
@@ -643,6 +793,10 @@ const GuideFolders: React.FC<GuideFoldersProps> = ({ open, onClose }) => {
 		{
 			title: "Importación Automática de Carpetas",
 			content: <ImportContent />,
+		},
+		{
+			title: "Vinculación con Poder Judicial",
+			content: <LinkingContent />,
 		},
 		{
 			title: "Campos del Formulario de Carpeta",
