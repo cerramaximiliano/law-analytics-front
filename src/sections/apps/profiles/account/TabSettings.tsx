@@ -1289,9 +1289,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const maxFolders = getFeatureValue(subscription?.features, 'maxFolders');
-														if (maxFolders === undefined) return "No disponible";
-														return maxFolders === 999999 ? "Ilimitadas" : maxFolders;
+														const folders = subscription?.limits?.folders || subscription?.limits?.maxFolders;
+														if (folders === undefined) return "No disponible";
+														return folders === 999999 ? "Ilimitadas" : folders;
 													})()}
 												</TableCell>
 											</TableRow>
@@ -1335,9 +1335,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const maxCalculators = getFeatureValue(subscription?.features, 'maxCalculators');
-														if (maxCalculators === undefined) return "No disponible";
-														return maxCalculators === 999999 ? "Ilimitados" : maxCalculators;
+														const calculators = subscription?.limits?.calculators || subscription?.limits?.maxCalculators;
+														if (calculators === undefined) return "No disponible";
+														return calculators === 999999 ? "Ilimitados" : calculators;
 													})()}
 												</TableCell>
 											</TableRow>
@@ -1381,9 +1381,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const maxContacts = getFeatureValue(subscription?.features, 'maxContacts');
-														if (maxContacts === undefined) return "No disponible";
-														return maxContacts === 999999 ? "Ilimitados" : maxContacts;
+														const contacts = subscription?.limits?.contacts || subscription?.limits?.maxContacts;
+														if (contacts === undefined) return "No disponible";
+														return contacts === 999999 ? "Ilimitados" : contacts;
 													})()}
 												</TableCell>
 											</TableRow>
@@ -1421,9 +1421,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const storageLimit = getFeatureValue(subscription?.features, 'storageLimit');
-														if (storageLimit === undefined) return "No disponible";
-														return storageLimit >= 1024 ? `${storageLimit / 1024} GB` : `${storageLimit} MB`;
+														const storage = subscription?.limits?.storage || subscription?.limits?.storageLimit;
+														if (storage === undefined) return "No disponible";
+														return storage >= 1024 ? `${storage / 1024} GB` : `${storage} MB`;
 													})()}
 												</TableCell>
 											</TableRow>

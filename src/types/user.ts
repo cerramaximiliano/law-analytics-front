@@ -81,19 +81,49 @@ export interface Subscription {
 		expiryYear?: number;
 	};
 	limits: {
-		maxFolders: number;
-		maxCalculators: number;
-		maxContacts: number;
-		storageLimit: number;
+		maxFolders?: number;
+		maxCalculators?: number;
+		maxContacts?: number;
+		storageLimit?: number;
+		// Nuevas propiedades del API
+		folders?: number;
+		calculators?: number;
+		contacts?: number;
+		storage?: number;
 	};
 	features: {
-		advancedAnalytics: boolean;
-		exportReports: boolean;
-		taskAutomation: boolean;
-		bulkOperations: boolean;
-		prioritySupport: boolean;
-		vinculateFolders: boolean;
-		booking: boolean;
+		advancedAnalytics?: boolean;
+		exportReports?: boolean;
+		taskAutomation?: boolean;
+		bulkOperations?: boolean;
+		prioritySupport?: boolean;
+		vinculateFolders?: boolean;
+		booking?: boolean;
+		movements?: boolean;
+		[key: string]: boolean | undefined; // Permitir propiedades dinámicas
+	};
+	// Nuevas propiedades con descripciones
+	featuresWithDescriptions?: Array<{
+		name: string;
+		enabled: boolean;
+		description: string;
+	}>;
+	featureDetails?: {
+		[key: string]: {
+			enabled: boolean;
+			description: string;
+		};
+	};
+	limitsWithDescriptions?: Array<{
+		name: string;
+		limit: number;
+		description: string;
+	}>;
+	limitDetails?: {
+		[key: string]: {
+			limit: number;
+			description: string;
+		};
 	};
 	pendingPlanChange?: {
 		planId: string;

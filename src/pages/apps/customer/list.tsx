@@ -588,7 +588,7 @@ const CustomerListPage = () => {
 			const currentContactCount = contacts.length;
 
 			// Si el número de contactos es igual o superior al límite, mostrar modal de error
-			if (currentContactCount >= maxContacts) {
+			if (maxContacts !== undefined && currentContactCount >= maxContacts) {
 				// Configuramos la información para el modal de error
 				setLimitErrorInfo({
 					resourceType: "Contactos",

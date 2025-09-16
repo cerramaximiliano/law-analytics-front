@@ -213,7 +213,7 @@ export const canCreateMoreFolders = (
 				resourceType: "Carpetas/Causas",
 				plan: subscription.plan,
 				currentCount: `${currentFolderCount}`,
-				limit: maxFolders,
+				limit: maxFolders || 0,
 			},
 		};
 	}

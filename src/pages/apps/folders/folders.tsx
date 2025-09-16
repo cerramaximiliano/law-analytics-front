@@ -538,7 +538,7 @@ const FoldersLayout = () => {
 		const currentFolderCount = folders.length;
 
 		// Verificar si se ha alcanzado el límite
-		if (currentFolderCount >= maxFolders) {
+		if (maxFolders !== undefined && currentFolderCount >= maxFolders) {
 			// Si se ha alcanzado el límite, mostrar el modal de error
 			setLimitErrorInfo({
 				resourceType: "Carpetas/Causas",
