@@ -4,38 +4,50 @@
 
 Este documento describe los diferentes estados visuales que puede tener un folder/causa en la tabla de la vista `/apps/folders/list` de Law Analytics. Estos estados indican el nivel de verificación y validación de cada expediente judicial en el sistema.
 
+## ⚠️ Condición Principal para Mostrar Indicadores
+
+**IMPORTANTE**: Los indicadores visuales de estado SOLO se mostrarán cuando:
+- `pjn === true` (Folder vinculado al Poder Judicial de la Nación) **O**
+- `mev === true` (Folder con Movimientos Electrónicos Verificados)
+
+Si ambas propiedades son `false`, se mostrará únicamente el nombre del folder sin ningún indicador visual.
+
 ## 📊 Tabla de Estados Visuales
 
 | **Indicador Visual** | **Descripción** | **Condiciones Técnicas** | **Tooltip/Mensaje** | **Acciones Disponibles** |
 |---------------------|-----------------|--------------------------|---------------------|-------------------------|
-| 🟢 **Ícono de tilde verde** (TickCircle) | Causa verificada y válida | `causaVerified === true` Y `causaIsValid === true` | • "Causa vinculada a PJN" (si `pjn === true`)<br>• "Causa vinculada" (si `pjn === false`) | Ninguna |
-| 🟡 **Chip amarillo** "Pendiente de verificación" | Causa pendiente de verificar | `causaVerified === false` | "Actualizar estado de verificación" | Botón de actualización (🔄) |
-| 🔴 **Ícono cruz roja** (CloseCircle) + **Chip rojo** "Causa inválida" | Causa verificada pero inválida | `causaVerified === true` Y `causaIsValid === false` | "Causa inválida - No se pudo verificar en el Poder Judicial" | Ninguna |
-| 🟡 **Chip amarillo** "Pendiente" | Estado legacy para compatibilidad | `folderName === "Pendiente"` | "Actualizar estado de verificación" | Botón de actualización (🔄) |
-| **Solo nombre del folder** | Estado por defecto | Ninguna condición anterior cumplida | Ninguno | Ninguna |
+| **Solo nombre del folder** | Sin vinculación judicial | `pjn === false` Y `mev === false` | Ninguno | Ninguna |
+| 🟢 **Ícono de tilde verde** (TickCircle) | Causa verificada y válida | (`pjn === true` O `mev === true`) Y `causaVerified === true` Y `causaIsValid === true` | • "Causa vinculada a PJN" (si `pjn === true`)<br>• "Causa vinculada" (si `pjn === false`) | Ninguna |
+| 🟡 **Chip amarillo** "Pendiente de verificación" | Causa pendiente de verificar | (`pjn === true` O `mev === true`) Y `causaVerified === false` | "Actualizar estado de verificación" | Botón de actualización (🔄) |
+| 🔴 **Ícono cruz roja** (CloseCircle) + **Chip rojo** "Causa inválida" | Causa verificada pero inválida | (`pjn === true` O `mev === true`) Y `causaVerified === true` Y `causaIsValid === false` | "Causa inválida - No se pudo verificar en el Poder Judicial" | Ninguna |
+| 🟡 **Chip amarillo** "Pendiente" | Estado legacy para compatibilidad | (`pjn === true` O `mev === true`) Y `folderName === "Pendiente"` | "Actualizar estado de verificación" | Botón de actualización (🔄) |
 
 ## 🔄 Diagrama de Flujo de Estados
 
 ```mermaid
 graph TD
-    A[Folder Creado] --> B{causaVerified?}
-    B -->|false| C[🟡 Pendiente de verificación]
-    C -->|Usuario hace clic en actualizar| D[Proceso de verificación]
-    D --> E{Verificación exitosa?}
-    E -->|Sí| F{causaVerified = true}
-    F --> G{causaIsValid?}
-    G -->|true| H[🟢 Causa Válida<br/>Ícono tilde verde]
-    G -->|false| I[🔴 Causa Inválida<br/>Ícono cruz roja]
-    E -->|No| C
+    A[Folder Creado] --> B{pjn === true O<br/>mev === true?}
+    B -->|No| C[Solo nombre del folder<br/>Sin indicadores visuales]
+    B -->|Sí| D{causaVerified?}
+    D -->|false| E[🟡 Pendiente de verificación]
+    E -->|Usuario hace clic en actualizar| F[Proceso de verificación]
+    F --> G{Verificación exitosa?}
+    G -->|Sí| H{causaVerified = true}
+    H --> I{causaIsValid?}
+    I -->|true| J[🟢 Causa Válida<br/>Ícono tilde verde]
+    I -->|false| K[🔴 Causa Inválida<br/>Ícono cruz roja]
+    G -->|No| E
+    D -->|true| I
 ```
 
 ## 📋 Propiedades del Sistema
 
 ### Propiedades Principales
 
+- **`pjn`** (Boolean): Indica si la causa está vinculada al Poder Judicial de la Nación
+- **`mev`** (Boolean): Indica si el folder tiene Movimientos Electrónicos Verificados
 - **`causaVerified`** (Boolean): Indica si se ha intentado verificar la causa en el sistema judicial
 - **`causaIsValid`** (Boolean): Indica si la causa es válida en el sistema judicial
-- **`pjn`** (Boolean): Indica si la causa está vinculada al Poder Judicial de la Nación
 - **`causaAssociationStatus`** (String): Estado de asociación (success, pending, failed)
 - **`causaUpdateEnabled`** (Boolean): Indica si las actualizaciones automáticas están habilitadas
 
@@ -49,8 +61,21 @@ graph TD
 
 ### Ubicación del Código
 - **Archivo principal**: `/src/pages/apps/folders/folders.tsx`
-- **Líneas**: 687-798 (definición de la columna "Carátula")
+- **Líneas**: 689-804 (definición de la columna "Carátula")
 - **Tipos**: `/src/types/folder.ts`
+
+### Lógica de Visualización
+```javascript
+// Verificación principal antes de mostrar cualquier indicador
+const showStatusIndicators = folder.pjn === true || folder.mev === true;
+
+if (!showStatusIndicators) {
+    // Si pjn y mev son false, solo mostrar el nombre
+    return <span>{formatFolderName(value, 50)}</span>;
+}
+
+// Si pasa la verificación, aplicar la lógica de estados visuales
+```
 
 ### Función de Actualización
 Cuando el usuario hace clic en el botón de actualización (🔄):
@@ -90,20 +115,33 @@ causaVerified, causaIsValid, causaAssociationStatus
 
 ## 📌 Casos de Uso
 
-### Caso 1: Folder Nuevo
+### Caso 1: Folder sin vinculación judicial
 1. Usuario crea un nuevo folder
+2. No activa PJN ni MEV (`pjn === false` y `mev === false`)
+3. Sistema muestra SOLO el nombre del folder
+4. No hay indicadores visuales de estado
+
+### Caso 2: Folder con vinculación pendiente
+1. Usuario crea folder con PJN o MEV activado
 2. Sistema muestra chip amarillo "Pendiente de verificación"
 3. Usuario puede hacer clic en actualizar para verificar
 
-### Caso 2: Verificación Exitosa
+### Caso 3: Verificación exitosa
 1. Sistema verifica el expediente en el Poder Judicial
 2. Expediente existe y es válido
 3. Se muestra ícono de tilde verde
+4. Solo visible si `pjn === true` o `mev === true`
 
-### Caso 3: Verificación Fallida
+### Caso 4: Verificación fallida
 1. Sistema intenta verificar el expediente
 2. Expediente no existe o datos no coinciden
 3. Se muestra ícono de cruz roja con chip "Causa inválida"
+4. Solo visible si `pjn === true` o `mev === true`
+
+### Caso 5: Folder mixto
+1. Folder tiene `pjn === false` pero `mev === true`
+2. Se muestran los indicadores de estado
+3. Permite verificación de movimientos electrónicos sin PJN
 
 ## 🔍 Consideraciones Adicionales
 
@@ -123,7 +161,8 @@ El sistema mantiene compatibilidad con folders antiguos que tienen `folderName =
 ## 📅 Última Actualización
 
 - **Fecha**: Enero 2025
-- **Versión**: 1.0.0
+- **Versión**: 2.0.0
+- **Cambio principal**: Agregada condición para mostrar indicadores solo cuando `pjn === true` o `mev === true`
 - **Autor**: Sistema Law Analytics
 
 ---

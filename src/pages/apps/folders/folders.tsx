@@ -690,6 +690,14 @@ const FoldersLayout = () => {
 					const folder = row.original;
 					const value = folder.folderName;
 
+					// Solo mostrar indicadores visuales si pjn === true o mev === true
+					const showStatusIndicators = folder.pjn === true || folder.mev === true;
+
+					// Si no se deben mostrar indicadores, solo mostrar el nombre
+					if (!showStatusIndicators) {
+						return <span>{formatFolderName(value, 50)}</span>;
+					}
+
 					// Si causaVerified es false, mostrar chip de pendiente con botón de actualización
 					if (folder.causaVerified === false) {
 						return (
