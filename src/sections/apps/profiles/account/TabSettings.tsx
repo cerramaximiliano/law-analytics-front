@@ -611,78 +611,95 @@ const TabSubscription = () => {
 									},
 								}}
 							>
-								<ListItem sx={{ px: 1, py: 1 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.secondary" variant="subtitle2">
-												Carpetas
-											</Typography>
-										}
-										secondary={
-											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{(() => {
-													const folders = subscription?.limits?.folders;
-													if (folders === undefined) return "No disponible";
-													return folders === 999999 ? "Ilimitadas" : folders;
-												})()}
-											</Typography>
-										}
-									/>
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.secondary" variant="subtitle2">
-												Cálculos
-											</Typography>
-										}
-										secondary={
-											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{(() => {
-													const calculators = subscription?.limits?.calculators;
-													if (calculators === undefined) return "No disponible";
-													return calculators === 999999 ? "Ilimitados" : calculators;
-												})()}
-											</Typography>
-										}
-									/>
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.secondary" variant="subtitle2">
-												Contactos
-											</Typography>
-										}
-										secondary={
-											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{(() => {
-													const contacts = subscription?.limits?.contacts;
-													if (contacts === undefined) return "No disponible";
-													return contacts === 999999 ? "Ilimitados" : contacts;
-												})()}
-											</Typography>
-										}
-									/>
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.secondary" variant="subtitle2">
-												Almacenamiento
-											</Typography>
-										}
-										secondary={
-											<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-												{(() => {
-													const storage = subscription?.limits?.storage;
-													if (storage === undefined) return "No disponible";
-													return `${storage} MB`;
-												})()}
-											</Typography>
-										}
-									/>
-								</ListItem>
+								{subscription?.limitsWithDescriptions ? (
+									// Usar limitsWithDescriptions si está disponible
+									subscription.limitsWithDescriptions.map((item: any) => (
+										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
+											<ListItemText
+												primary={
+													<Typography color="text.secondary" variant="subtitle2">
+														{item.description || item.name}
+													</Typography>
+												}
+												secondary={
+													<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
+														{(() => {
+															if (item.limit === undefined) return "No disponible";
+															if (item.limit === 999999) return "Ilimitado";
+															if (item.name === 'storage') return `${item.limit} MB`;
+															return item.limit;
+														})()}
+													</Typography>
+												}
+											/>
+										</ListItem>
+									))
+								) : subscription?.limitDetails ? (
+									// Fallback a limitDetails si limitsWithDescriptions no está disponible
+									Object.entries(subscription.limitDetails).map(([key, value]: [string, any]) => (
+										<ListItem key={key} sx={{ px: 1, py: 1 }}>
+											<ListItemText
+												primary={
+													<Typography color="text.secondary" variant="subtitle2">
+														{value.description || key}
+													</Typography>
+												}
+												secondary={
+													<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
+														{(() => {
+															const limit = value.limit;
+															if (limit === undefined) return "No disponible";
+															if (limit === 999999) return "Ilimitado";
+															if (key === 'storage') return `${limit} MB`;
+															return limit;
+														})()}
+													</Typography>
+												}
+											/>
+										</ListItem>
+									))
+								) : subscription?.limits ? (
+									// Fallback final a limits con nombres hardcodeados
+									Object.entries(subscription.limits).map(([key, value]) => {
+										const limitNames: { [key: string]: string } = {
+											folders: "Carpetas",
+											calculators: "Cálculos",
+											contacts: "Contactos",
+											storage: "Almacenamiento"
+										};
+										return (
+											<ListItem key={key} sx={{ px: 1, py: 1 }}>
+												<ListItemText
+													primary={
+														<Typography color="text.secondary" variant="subtitle2">
+															{limitNames[key] || key}
+														</Typography>
+													}
+													secondary={
+														<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
+															{(() => {
+																if (value === undefined) return "No disponible";
+																if (value === 999999) return "Ilimitado";
+																if (key === 'storage') return `${value} MB`;
+																return value;
+															})()}
+														</Typography>
+													}
+												/>
+											</ListItem>
+										);
+									})
+								) : (
+									<ListItem sx={{ px: 1, py: 1 }}>
+										<ListItemText
+											primary={
+												<Typography color="text.secondary" variant="subtitle2">
+													No hay límites disponibles
+												</Typography>
+											}
+										/>
+									</ListItem>
+								)}
 							</List>
 						</Grid>
 
@@ -705,52 +722,103 @@ const TabSubscription = () => {
 									},
 								}}
 							>
-								{subscription?.features && Object.entries(subscription.features)
-									.sort(([keyA, valueA], [keyB, valueB]) => {
-										// Primero ordenar por valor (activos primero)
-										if (valueA === valueB) {
-											// Si tienen el mismo valor, ordenar alfabéticamente
-											return keyA.localeCompare(keyB);
-										}
-										// Los true (activos) van primero
-										return valueA ? -1 : 1;
-									})
-									.map(([key, value]) => {
-										// Mapeo de nombres técnicos a nombres amigables
-										const featureNames: { [key: string]: string } = {
-											advancedAnalytics: "Análisis avanzados",
-											exportReports: "Exportación de reportes",
-											taskAutomation: "Automatización de tareas",
-											bulkOperations: "Operaciones masivas",
-											prioritySupport: "Soporte prioritario",
-											movements: "Movimientos judiciales",
-											vinculateFolders: "Vincular carpetas",
-											booking: "Sistema de reservas",
-											// Agregar aquí nuevas características cuando aparezcan
-										};
-
-										const displayName = featureNames[key] ||
-											// Si no está mapeado, convertir camelCase a texto legible
-											key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-
-										return (
-											<ListItem key={key} sx={{ px: 1, py: 1.25 }}>
+								{subscription?.featuresWithDescriptions ? (
+									// Usar featuresWithDescriptions si está disponible
+									subscription.featuresWithDescriptions
+										.sort((a: any, b: any) => {
+											// Primero ordenar por enabled (activos primero)
+											if (a.enabled === b.enabled) {
+												// Si tienen el mismo estado, ordenar alfabéticamente por descripción
+												return (a.description || a.name).localeCompare(b.description || b.name);
+											}
+											// Los true (activos) van primero
+											return a.enabled ? -1 : 1;
+										})
+										.map((feature: any) => (
+											<ListItem key={feature.name} sx={{ px: 1, py: 1.25 }}>
 												<ListItemText
 													primary={
 														<Typography color="text.primary" variant="subtitle2">
-															{displayName}
+															{feature.description || feature.name}
 														</Typography>
 													}
 												/>
-												{value ? (
+												{feature.enabled ? (
 													<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 												) : (
 													<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 												)}
 											</ListItem>
-										);
-									})}
-								{(!subscription?.features || Object.keys(subscription.features).length === 0) && (
+										))
+								) : subscription?.featureDetails ? (
+									// Fallback a featureDetails si featuresWithDescriptions no está disponible
+									Object.entries(subscription.featureDetails)
+										.sort(([keyA, valueA]: [string, any], [keyB, valueB]: [string, any]) => {
+											// Primero ordenar por enabled (activos primero)
+											if (valueA.enabled === valueB.enabled) {
+												// Si tienen el mismo estado, ordenar alfabéticamente por descripción
+												return (valueA.description || keyA).localeCompare(valueB.description || keyB);
+											}
+											// Los true (activos) van primero
+											return valueA.enabled ? -1 : 1;
+										})
+										.map(([key, value]: [string, any]) => (
+											<ListItem key={key} sx={{ px: 1, py: 1.25 }}>
+												<ListItemText
+													primary={
+														<Typography color="text.primary" variant="subtitle2">
+															{value.description || key}
+														</Typography>
+													}
+												/>
+												{value.enabled ? (
+													<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+												) : (
+													<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+												)}
+											</ListItem>
+										))
+								) : subscription?.features ? (
+									// Fallback final a features con nombres hardcodeados
+									Object.entries(subscription.features)
+										.sort(([keyA, valueA], [keyB, valueB]) => {
+											if (valueA === valueB) {
+												return keyA.localeCompare(keyB);
+											}
+											return valueA ? -1 : 1;
+										})
+										.map(([key, value]) => {
+											const featureNames: { [key: string]: string } = {
+												advancedAnalytics: "Análisis avanzados",
+												exportReports: "Exportación de reportes",
+												taskAutomation: "Automatización de tareas",
+												bulkOperations: "Operaciones masivas",
+												prioritySupport: "Soporte prioritario",
+												movements: "Movimientos judiciales",
+												vinculateFolders: "Vincular carpetas",
+												booking: "Sistema de reservas",
+											};
+											const displayName = featureNames[key] ||
+												key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+											return (
+												<ListItem key={key} sx={{ px: 1, py: 1.25 }}>
+													<ListItemText
+														primary={
+															<Typography color="text.primary" variant="subtitle2">
+																{displayName}
+															</Typography>
+														}
+													/>
+													{value ? (
+														<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+													) : (
+														<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+													)}
+												</ListItem>
+											);
+										})
+								) : (
 									<ListItem sx={{ px: 1, py: 1.25 }}>
 										<ListItemText
 											primary={
