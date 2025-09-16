@@ -14,13 +14,19 @@ Si ambas propiedades son `false`, se mostrará únicamente el nombre del folder 
 
 ## 📊 Tabla de Estados Visuales
 
-| **Indicador Visual** | **Descripción** | **Condiciones Técnicas** | **Tooltip/Mensaje** | **Acciones Disponibles** |
-|---------------------|-----------------|--------------------------|---------------------|-------------------------|
-| **Solo nombre del folder** | Sin vinculación judicial | `pjn === false` Y `mev === false` | Ninguno | Ninguna |
-| 🟢 **Ícono de tilde verde** (TickCircle) | Causa verificada y válida | (`pjn === true` O `mev === true`) Y `causaVerified === true` Y `causaIsValid === true` | • "Causa vinculada a PJN" (si `pjn === true`)<br>• "Causa vinculada" (si `pjn === false`) | Ninguna |
-| 🟡 **Chip amarillo** "Pendiente de verificación" | Causa pendiente de verificar | (`pjn === true` O `mev === true`) Y `causaVerified === false` | "Actualizar estado de verificación" | Botón de actualización (🔄) |
-| 🔴 **Ícono cruz roja** (CloseCircle) + **Chip rojo** "Causa inválida" | Causa verificada pero inválida | (`pjn === true` O `mev === true`) Y `causaVerified === true` Y `causaIsValid === false` | "Causa inválida - No se pudo verificar en el Poder Judicial" | Ninguna |
-| 🟡 **Chip amarillo** "Pendiente" | Estado legacy para compatibilidad | (`pjn === true` O `mev === true`) Y `folderName === "Pendiente"` | "Actualizar estado de verificación" | Botón de actualización (🔄) |
+| **Indicador Visual** | **Descripción** | **Condición Previa** | **Condiciones de Estado** | **Tooltip/Mensaje** | **Acciones** |
+|---------------------|-----------------|---------------------|--------------------------|---------------------|--------------|
+| **Solo nombre del folder** | Sin vinculación judicial | `pjn = false`<br>`mev = false` | N/A | Ninguno | Ninguna |
+| 🟢 **Ícono de tilde verde** (TickCircle) | Causa verificada y válida | `pjn = true` **O**<br>`mev = true` | `causaVerified = true`<br>**Y**<br>`causaIsValid = true` | • "Causa vinculada a PJN" (si `pjn = true`)<br>• "Causa vinculada" (si `pjn = false`) | Ninguna |
+| 🟡 **Chip amarillo** "Pendiente de verificación" | Causa pendiente de verificar | `pjn = true` **O**<br>`mev = true` | `causaVerified = false` | "Actualizar estado de verificación" | Botón 🔄 |
+| 🔴 **Ícono cruz roja** (CloseCircle) + **Chip rojo** "Causa inválida" | Causa verificada pero inválida | `pjn = true` **O**<br>`mev = true` | `causaVerified = true`<br>**Y**<br>`causaIsValid = false` | "Causa inválida - No se pudo verificar en el Poder Judicial" | Ninguna |
+| 🟡 **Chip amarillo** "Pendiente" | Estado legacy para compatibilidad | `pjn = true` **O**<br>`mev = true` | `folderName = "Pendiente"` | "Actualizar estado de verificación" | Botón 🔄 |
+
+### 📝 Notas sobre la tabla:
+- **Condición Previa**: Debe cumplirse PRIMERO para que se evalúen las condiciones de estado
+- **Condiciones de Estado**: Se evalúan SOLO si la condición previa es verdadera
+- Los operadores lógicos son: **Y** (ambas condiciones deben ser verdaderas), **O** (al menos una debe ser verdadera)
+- Si `pjn = false` Y `mev = false`, no se evalúan las condiciones de estado y solo se muestra el nombre
 
 ## 🔄 Diagrama de Flujo de Estados
 
