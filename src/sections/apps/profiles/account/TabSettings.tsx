@@ -705,118 +705,62 @@ const TabSubscription = () => {
 									},
 								}}
 							>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Análisis avanzados
-											</Typography>
+								{subscription?.features && Object.entries(subscription.features)
+									.sort(([keyA, valueA], [keyB, valueB]) => {
+										// Primero ordenar por valor (activos primero)
+										if (valueA === valueB) {
+											// Si tienen el mismo valor, ordenar alfabéticamente
+											return keyA.localeCompare(keyB);
 										}
-									/>
-									{subscription?.features?.advancedAnalytics ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Exportación de reportes
-											</Typography>
-										}
-									/>
-									{subscription?.features?.exportReports ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Automatización de tareas
-											</Typography>
-										}
-									/>
-									{subscription?.features?.taskAutomation ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Operaciones masivas
-											</Typography>
-										}
-									/>
-									{subscription?.features?.bulkOperations ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Soporte prioritario
-											</Typography>
-										}
-									/>
-									{subscription?.features?.prioritySupport ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Movimientos judiciales
-											</Typography>
-										}
-									/>
-									{subscription?.features?.movements ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Vincular carpetas
-											</Typography>
-										}
-									/>
-									{subscription?.features?.vinculateFolders ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
-								<ListItem sx={{ px: 1, py: 1.25 }}>
-									<ListItemText
-										primary={
-											<Typography color="text.primary" variant="subtitle2">
-												Sistema de reservas
-											</Typography>
-										}
-									/>
-									{subscription?.features?.booking ? (
-										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									) : (
-										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
-									)}
-								</ListItem>
+										// Los true (activos) van primero
+										return valueA ? -1 : 1;
+									})
+									.map(([key, value]) => {
+										// Mapeo de nombres técnicos a nombres amigables
+										const featureNames: { [key: string]: string } = {
+											advancedAnalytics: "Análisis avanzados",
+											exportReports: "Exportación de reportes",
+											taskAutomation: "Automatización de tareas",
+											bulkOperations: "Operaciones masivas",
+											prioritySupport: "Soporte prioritario",
+											movements: "Movimientos judiciales",
+											vinculateFolders: "Vincular carpetas",
+											booking: "Sistema de reservas",
+											// Agregar aquí nuevas características cuando aparezcan
+										};
+
+										const displayName = featureNames[key] ||
+											// Si no está mapeado, convertir camelCase a texto legible
+											key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+										return (
+											<ListItem key={key} sx={{ px: 1, py: 1.25 }}>
+												<ListItemText
+													primary={
+														<Typography color="text.primary" variant="subtitle2">
+															{displayName}
+														</Typography>
+													}
+												/>
+												{value ? (
+													<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+												) : (
+													<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+												)}
+											</ListItem>
+										);
+									})}
+								{(!subscription?.features || Object.keys(subscription.features).length === 0) && (
+									<ListItem sx={{ px: 1, py: 1.25 }}>
+										<ListItemText
+											primary={
+												<Typography color="text.secondary" variant="subtitle2">
+													No hay características disponibles
+												</Typography>
+											}
+										/>
+									</ListItem>
+								)}
 							</List>
 						</Grid>
 					</Grid>
