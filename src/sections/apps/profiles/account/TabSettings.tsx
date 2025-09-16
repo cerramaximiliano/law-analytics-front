@@ -142,6 +142,24 @@ const TabSubscription = () => {
 		if (!subscription) {
 			fetchSubscription();
 		} else {
+			// Log temporal para ver todas las características
+			console.log("=== TODAS LAS CARACTERÍSTICAS DE LA SUSCRIPCIÓN ===");
+			console.log("Plan:", subscription.plan);
+			console.log("Status:", subscription.status);
+			console.log("\n--- LÍMITES (subscription.limits) ---");
+			console.log("Folders:", subscription.limits?.folders);
+			console.log("Calculators:", subscription.limits?.calculators);
+			console.log("Contacts:", subscription.limits?.contacts);
+			console.log("Storage:", subscription.limits?.storage);
+			console.log("\n--- CARACTERÍSTICAS (subscription.features) ---");
+			if (subscription.features) {
+				Object.entries(subscription.features).forEach(([key, value]) => {
+					console.log(`${key}:`, value);
+				});
+			}
+			console.log("\n--- OBJETO COMPLETO ---");
+			console.log(subscription);
+
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscription.pendingPlanChange) {
 				setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
@@ -752,6 +770,48 @@ const TabSubscription = () => {
 										}
 									/>
 									{subscription?.features?.prioritySupport ? (
+										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+									) : (
+										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+									)}
+								</ListItem>
+								<ListItem sx={{ px: 1, py: 1.25 }}>
+									<ListItemText
+										primary={
+											<Typography color="text.primary" variant="subtitle2">
+												Movimientos judiciales
+											</Typography>
+										}
+									/>
+									{subscription?.features?.movements ? (
+										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+									) : (
+										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+									)}
+								</ListItem>
+								<ListItem sx={{ px: 1, py: 1.25 }}>
+									<ListItemText
+										primary={
+											<Typography color="text.primary" variant="subtitle2">
+												Vincular carpetas
+											</Typography>
+										}
+									/>
+									{subscription?.features?.vinculateFolders ? (
+										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+									) : (
+										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+									)}
+								</ListItem>
+								<ListItem sx={{ px: 1, py: 1.25 }}>
+									<ListItemText
+										primary={
+											<Typography color="text.primary" variant="subtitle2">
+												Sistema de reservas
+											</Typography>
+										}
+									/>
+									{subscription?.features?.booking ? (
 										<Chip label="Activo" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
 									) : (
 										<Chip label="No disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
