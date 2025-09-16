@@ -103,15 +103,7 @@ const InvoiceView = ({ open, onClose, payment }: InvoiceProps) => {
 								<Typography variant="subtitle1" sx={{ mt: 2 }}>
 									Rumba LLC
 								</Typography>
-								<Typography variant="body2">
-									65 Hudson Avenue, Suite 2B
-									<br />
-									New York, NY 10013
-									<br />
-									Estados Unidos
-								</Typography>
 								<Typography variant="body2" sx={{ mt: 1 }}>
-									CIF: B-12345678
 									<br />
 									soporte@lawanalytics.app
 								</Typography>
