@@ -149,6 +149,144 @@ causaVerified, causaIsValid, causaAssociationStatus
 2. Se muestran los indicadores de estado
 3. Permite verificación de movimientos electrónicos sin PJN
 
+## 🔗 Proceso de Vinculación con el Poder Judicial
+
+### Descripción General
+Los usuarios pueden vincular sus folders/causas con el Poder Judicial de la Nación (PJN) para recibir actualizaciones automáticas y verificar el estado de sus expedientes.
+
+### 🖥️ Interfaz de Vinculación
+
+#### Modal "Vincular con Poder Judicial"
+
+Cuando el usuario hace clic en "Vincular con Poder Judicial", se presenta un modal con dos opciones:
+
+```
+┌─────────────────────────────────────────────┐
+│ 📄 Vincular con Poder Judicial              │
+├─────────────────────────────────────────────┤
+│                                             │
+│ Seleccione el poder judicial:              │
+│                                             │
+│ ┌─────────────────────────────────────┐   │
+│ │ ⚖️ Poder Judicial de la Nación      │   │
+│ │   Vincule causas del fuero federal  │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ ┌─────────────────────────────────────┐   │
+│ │ 🏛️ Poder Judicial de Buenos Aires   │   │
+│ │   [Próximamente]                    │   │
+│ │   Vincule causas del fuero provincial│   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│                      [Cancelar]             │
+└─────────────────────────────────────────────┘
+```
+
+#### Formulario de Vinculación con PJN
+
+Al seleccionar "Poder Judicial de la Nación", se muestra:
+
+```
+┌─────────────────────────────────────────────┐
+│ 📄 Vincular con Poder Judicial de la Nación │
+├─────────────────────────────────────────────┤
+│                                             │
+│ ┌─────────────────────────────────────┐   │
+│ │      [Logo PJN en fondo #222E43]     │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ Jurisdicción *                             │
+│ ┌─────────────────────────────────────┐   │
+│ │ Seleccione una jurisdicción     ▼   │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ Número de Expediente *                     │
+│ ┌─────────────────────────────────────┐   │
+│ │ Ej: 12345                           │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ Año del Expediente *                       │
+│ ┌─────────────────────────────────────┐   │
+│ │ Ej: 2024                            │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ ☑ Sobrescribir datos locales con los      │
+│   del Poder Judicial                       │
+│                                             │
+│            [Atrás]  [Vincular Causa]       │
+└─────────────────────────────────────────────┘
+```
+
+### 📊 Estados Post-Vinculación
+
+Una vez que el usuario completa el proceso de vinculación, el folder pasa por los siguientes estados:
+
+#### 1️⃣ **Vinculación Iniciada**
+```
+Carátula: [Nombre del Expediente] 🟡 Pendiente de verificación [🔄]
+```
+- El sistema envía `pjn: true` al backend
+- Se muestra chip amarillo mientras se verifica
+
+#### 2️⃣ **Verificación Exitosa**
+```
+Carátula: [Nombre del Expediente] 🟢
+```
+- Tooltip: "Causa vinculada a PJN"
+- El expediente fue encontrado y validado en el sistema judicial
+- `causaVerified: true` y `causaIsValid: true`
+
+#### 3️⃣ **Verificación Fallida**
+```
+Carátula: [Causa inválida] 🔴
+```
+- El expediente no pudo ser verificado en el PJN
+- `causaVerified: true` pero `causaIsValid: false`
+- Tooltip: "Causa inválida - No se pudo verificar en el Poder Judicial"
+
+### 🔄 Actualización Manual
+
+En cualquier momento, si el folder muestra "Pendiente de verificación", el usuario puede:
+
+1. **Hacer clic en el botón de actualización (🔄)**
+   - Intenta verificar nuevamente contra el PJN
+   - Actualiza el estado según el resultado
+
+### 📝 Datos Enviados al Vincular
+
+Cuando se vincula una causa, se envían los siguientes datos:
+
+| **Campo** | **Descripción** | **Ejemplo** |
+|-----------|-----------------|-------------|
+| `pjnCode` | Código de jurisdicción | "1" (Civil) |
+| `number` | Número de expediente | "12345" |
+| `year` | Año del expediente | "2024" |
+| `overwrite` | Sobrescribir datos locales | true/false |
+| `pjn` | Vinculado con PJN | **true** |
+
+### ⚡ Creación Directa con Vinculación
+
+Los usuarios también pueden crear un nuevo folder directamente vinculado al PJN:
+
+1. En la pantalla de folders, hacer clic en "➕ Agregar Causa"
+2. Seleccionar "Importar desde Poder Judicial"
+3. Completar el formulario de vinculación
+4. El sistema crea el folder ya vinculado con `pjn: true`
+
+### 🎯 Beneficios de la Vinculación
+
+- ✅ **Actualizaciones automáticas**: Recibe movimientos judiciales
+- ✅ **Validación oficial**: Confirma que el expediente existe
+- ✅ **Sincronización de datos**: Mantiene la información actualizada
+- ✅ **Notificaciones**: Alertas de nuevos movimientos (si está habilitado)
+
+### ⚠️ Notas Importantes
+
+- Solo se muestran indicadores visuales si `pjn === true` o `mev === true`
+- Los folders sin vinculación judicial solo muestran el nombre
+- La verificación inicial puede tomar algunos segundos
+- El estado "Pendiente" es temporal mientras se verifica
+
 ## 🔍 Consideraciones Adicionales
 
 ### Compatibilidad Legacy
@@ -167,8 +305,11 @@ El sistema mantiene compatibilidad con folders antiguos que tienen `folderName =
 ## 📅 Última Actualización
 
 - **Fecha**: Enero 2025
-- **Versión**: 2.0.0
-- **Cambio principal**: Agregada condición para mostrar indicadores solo cuando `pjn === true` o `mev === true`
+- **Versión**: 3.0.0
+- **Cambios principales**:
+  - Agregada condición para mostrar indicadores solo cuando `pjn === true` o `mev === true`
+  - Documentado el proceso completo de vinculación con el Poder Judicial
+  - Agregadas visualizaciones de la interfaz de usuario
 - **Autor**: Sistema Law Analytics
 
 ---
