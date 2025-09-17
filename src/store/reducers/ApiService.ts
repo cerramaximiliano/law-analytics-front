@@ -559,9 +559,9 @@ class ApiService {
 	 * Crea o actualiza un plan
 	 * @param planData - Datos del plan
 	 */
-	static async createOrUpdatePlan(planData: Partial<Plan>): Promise<ApiResponse<Plan>> {
+	static async createOrUpdatePlan(planData: Partial<Plan>, updateSubscriptions: boolean = false): Promise<ApiResponse<Plan>> {
 		try {
-			const response = await axios.post(`${API_BASE_URL}/api/plan-configs`, planData, {
+			const response = await axios.post(`${API_BASE_URL}/api/plan-configs?updateSubscriptions=${updateSubscriptions}`, planData, {
 				withCredentials: true,
 			});
 			return response.data;

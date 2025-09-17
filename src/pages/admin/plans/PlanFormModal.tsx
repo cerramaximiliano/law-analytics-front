@@ -25,7 +25,7 @@ import { PlanPricingInfo, ResourceLimit, PlanFeature, Plan } from "store/reducer
 interface PlanFormModalProps {
 	open: boolean;
 	onClose: () => void;
-	onSave: (planData: Partial<Plan>) => Promise<void>;
+	onSave: (planData: Partial<Plan>, updateSubscriptions: boolean) => Promise<void>;
 	plan?: Plan | null;
 }
 
@@ -47,6 +47,7 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [updateSubscriptions, setUpdateSubscriptions] = useState(false);
 
 	useEffect(() => {
 		if (plan) {
@@ -138,8 +139,9 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 		setLoading(true);
 		setError(null);
 		try {
-			await onSave(formData);
+			await onSave(formData, updateSubscriptions);
 			onClose();
+			setUpdateSubscriptions(false); // Reset after save
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Error al guardar el plan");
 		} finally {
@@ -329,6 +331,33 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 							/>
 						</Box>
 					</Grid>
+
+					{/* Update Subscriptions Option - Only show when editing */}
+					{plan && (
+						<Grid item xs={12}>
+							<Alert severity="warning" sx={{ mb: 2 }}>
+								<FormControlLabel
+									control={
+										<Switch
+											checked={updateSubscriptions}
+											onChange={(e) => setUpdateSubscriptions(e.target.checked)}
+										/>
+									}
+									label={
+										<Box>
+											<Typography variant="subtitle2" fontWeight="bold">
+												Actualizar todas las suscripciones existentes
+											</Typography>
+											<Typography variant="body2" color="text.secondary">
+												Al activar esta opción, los cambios en los límites y características se aplicarán
+												a todas las suscripciones activas con este plan.
+											</Typography>
+										</Box>
+									}
+								/>
+							</Alert>
+						</Grid>
+					)}
 				</Grid>
 			</DialogContent>
 			<DialogActions>

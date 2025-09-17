@@ -107,14 +107,18 @@ const PlansManagement = () => {
 		setSelectedPlan(null);
 	};
 
-	const handleSavePlan = async (planData: Partial<Plan>) => {
+	const handleSavePlan = async (planData: Partial<Plan>, updateSubscriptions: boolean = false) => {
 		try {
-			const response = await ApiService.createOrUpdatePlan(planData);
+			const response = await ApiService.createOrUpdatePlan(planData, updateSubscriptions);
 			if (response.success) {
+				let message = selectedPlan ? "Plan actualizado correctamente" : "Plan creado correctamente";
+				if (updateSubscriptions && selectedPlan) {
+					message += " y se aplicaron los cambios a todas las suscripciones existentes";
+				}
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: selectedPlan ? "Plan actualizado correctamente" : "Plan creado correctamente",
+						message,
 						variant: "alert",
 						alert: { color: "success" },
 						close: false,
