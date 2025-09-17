@@ -1,17 +1,17 @@
 import React from "react";
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 // mui
-import { Grid, Box, Alert, Button, useTheme, Tooltip, Paper, Stack, Typography } from "@mui/material";
+import { Grid, Box, Alert, Button, useTheme, Tooltip, Paper, Stack, Typography, Skeleton } from "@mui/material";
 
 // icons
 import { Lock, Export, Crown } from "iconsax-react";
 
 // project imports
 import MainCard from "components/MainCard";
-import { AppDispatch } from "store";
+import { AppDispatch, RootState } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
@@ -42,6 +42,9 @@ const DashboardAnalytics = () => {
 	const subscriptionData = useSubscription();
 	const subscription = subscriptionData?.subscription;
 	const hasFeatureLocal = subscriptionData?.hasFeatureLocal || (() => false);
+
+	// Obtener el estado de las estadísticas
+	const { data: statsData, isLoading: statsLoading, error: statsError } = useSelector((state: RootState) => state.unifiedStats);
 
 	// Estados para el control del modal
 	const [hasAdvancedAnalytics, setHasAdvancedAnalytics] = useState(false);
@@ -101,12 +104,45 @@ const DashboardAnalytics = () => {
 		setLimitModalOpen(false);
 	};
 
+	// Estado para controlar si ya intentamos cargar los datos
+	const [hasTriedToLoad, setHasTriedToLoad] = useState(false);
+
 	useEffect(() => {
-		if (user?.id) {
+		console.log("📊 [Analytics] useEffect triggered:", {
+			hasUser: !!user,
+			userId: user?.id,
+			userName: user?.name,
+			statsLoading,
+			hasData: !!statsData,
+			hasTriedToLoad
+		});
+
+		if (user?.id && !hasTriedToLoad) {
+			console.log("📊 [Analytics] Fetching stats for user:", user.id);
 			// Fetch all sections for analytics
 			dispatch(getUnifiedStats(user.id, "all", false));
+			setHasTriedToLoad(true);
+		} else if (!user?.id) {
+			console.log("⚠️ [Analytics] No user ID available yet");
 		}
-	}, [dispatch, user?.id]);
+	}, [dispatch, user?.id, hasTriedToLoad]);
+
+	// Mostrar skeleton mientras se carga el usuario o los datos
+	if (!user || statsLoading) {
+		return (
+			<Box>
+				<MainCard title="Panel de Analíticas">
+					<Grid container spacing={3}>
+						{[...Array(12)].map((_, index) => (
+							<Grid item xs={12} md={6} lg={index < 4 ? 3 : index < 6 ? 8 : 6} key={index}>
+								<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
+							</Grid>
+						))}
+					</Grid>
+				</MainCard>
+			</Box>
+		);
+	}
 
 	return (
 		<Box>
