@@ -16,6 +16,7 @@ import { getUnifiedStats } from "store/reducers/unifiedStats";
 import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
+import ExportReportModal from "sections/dashboard/analytics/ExportReportModal";
 
 // widgets
 import AverageResolutionTime from "sections/widget/analytics/AverageResolutionTime";
@@ -48,6 +49,7 @@ const DashboardAnalytics = () => {
 	const [featureInfo, setFeatureInfo] = useState<any>(null);
 	const [limitModalOpen, setLimitModalOpen] = useState(false);
 	const [hasModalBeenClosed, setHasModalBeenClosed] = useState(false);
+	const [exportModalOpen, setExportModalOpen] = useState(false);
 
 	// Función para crear el objeto featureInfo
 	const createFeatureInfo = () => ({
@@ -113,7 +115,7 @@ const DashboardAnalytics = () => {
 				secondary={
 					<Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
 						{hasExportReports ? (
-							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => console.log("Export functionality")}>
+							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => setExportModalOpen(true)}>
 								Exportar Reporte
 							</Button>
 						) : (
@@ -279,6 +281,12 @@ const DashboardAnalytics = () => {
 				message="Para acceder a las analíticas avanzadas y exportación de reportes, necesitas actualizar tu plan."
 				featureInfo={featureInfo || createFeatureInfo()}
 				upgradeRequired={true}
+			/>
+
+			{/* Modal de exportación de reporte */}
+			<ExportReportModal
+				open={exportModalOpen}
+				onClose={() => setExportModalOpen(false)}
 			/>
 		</Box>
 	);
