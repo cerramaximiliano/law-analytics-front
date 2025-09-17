@@ -12,6 +12,7 @@ const initialState: UnifiedStatsState = {
 	error: null,
 	data: null,
 	lastUpdated: null,
+	descriptions: null,
 };
 
 // Tiempo de caché en milisegundos (24 horas)
@@ -34,7 +35,7 @@ const slice = createSlice({
 		},
 
 		// SET STATS DATA
-		setStatsSuccess(state, action: PayloadAction<{ data: UnifiedStatsData; userId: string; lastUpdated?: string }>) {
+		setStatsSuccess(state, action: PayloadAction<{ data: UnifiedStatsData; userId: string; lastUpdated?: string; descriptions?: any }>) {
 			state.isLoading = false;
 			state.error = null;
 			state.data = action.payload.data;
@@ -42,6 +43,7 @@ const slice = createSlice({
 			state.lastFetchTime = Date.now();
 			state.isInitialized = true;
 			state.lastUpdated = action.payload.lastUpdated || null;
+			state.descriptions = action.payload.descriptions || null;
 		},
 
 		// UPDATE PARTIAL DATA
@@ -63,6 +65,7 @@ const slice = createSlice({
 			state.error = null;
 			state.data = null;
 			state.lastUpdated = null;
+			state.descriptions = null;
 		},
 	},
 });
@@ -101,9 +104,30 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 
 		try {
 			const baseURL = import.meta.env.VITE_BASE_URL || "";
-			const response = await axios.get<UnifiedStatsResponse>(`${baseURL}/api/stats/unified/${userId}`, {
+			const url = `${baseURL}/api/stats/unified/${userId}`;
+
+			// Log para debugging
+			console.log("🔍 [UnifiedStats] Fetching stats:", {
+				environment: import.meta.env.MODE,
+				baseURL,
+				fullURL: url,
+				userId,
+				sections
+			});
+
+			const response = await axios.get<UnifiedStatsResponse>(url, {
 				params: { sections },
 				withCredentials: true,
+			});
+
+			// Log de respuesta
+			console.log("✅ [UnifiedStats] Response received:", {
+				environment: import.meta.env.MODE,
+				success: response.data.success,
+				resolutionTime: response.data.data?.folders?.resolutionTimes?.overall,
+				activefolders: response.data.data?.dashboard?.folders?.active,
+				closedFolders: response.data.data?.dashboard?.folders?.closed,
+				lastUpdated: response.data.lastUpdated
 			});
 
 			if (response.data.success && response.data.data) {
@@ -112,6 +136,7 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 						data: response.data.data,
 						userId: userId,
 						lastUpdated: response.data.lastUpdated,
+						descriptions: response.data.descriptions,
 					}),
 				);
 			} else {

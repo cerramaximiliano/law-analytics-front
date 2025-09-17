@@ -7,6 +7,7 @@ export interface UnifiedStatsResponse {
 	userId: string;
 	lastUpdated: string;
 	data: UnifiedStatsData;
+	descriptions?: UnifiedStatsDescriptions;
 }
 
 export interface UnifiedStatsData {
@@ -183,4 +184,83 @@ export interface UnifiedStatsState {
 	error: string | null;
 	data: UnifiedStatsData | null;
 	lastUpdated: string | null;
+	descriptions: UnifiedStatsDescriptions | null;
+}
+
+// Tipos para las descripciones
+export interface UnifiedStatsDescriptions {
+	dashboard?: {
+		folders?: {
+			active?: string;
+			closed?: string;
+			total?: string;
+		};
+		financial?: {
+			activeAmount?: string;
+			receivedAmount?: string;
+			pendingAmount?: string;
+		};
+		deadlines?: {
+			nextWeek?: string;
+			next15Days?: string;
+			next30Days?: string;
+		};
+		tasks?: {
+			pending?: string;
+			completed?: string;
+			overdue?: string;
+		};
+		notifications?: {
+			unread?: string;
+			total?: string;
+		};
+		trends?: string;
+	};
+	folders?: {
+		distribution?: string;
+		resolutionTimes?: {
+			overall?: string;
+			byStatus?: string;
+		};
+		upcomingDeadlines?: string;
+		byMatter?: {
+			distribution?: string;
+			averageAmount?: string;
+			resolutionTime?: string;
+		};
+	};
+	tasks?: {
+		metrics?: {
+			completionRate?: string;
+			pendingTasks?: string;
+			completedTasks?: string;
+			overdueTasks?: string;
+		};
+	};
+	financial?: {
+		totalActiveAmount?: string;
+		averageAmountPerFolder?: string;
+		amountByStatus?: string;
+		calculatorsByType?: string;
+		calculatorsAmountByType?: string;
+	};
+	activity?: {
+		metrics?: {
+			dailyAverage?: string;
+			weeklyAverage?: string;
+			monthlyAverage?: string;
+			mostActiveDay?: string;
+		};
+		trends?: string;
+	};
+	notifications?: {
+		unreadCount?: string;
+		averageReadTime?: string;
+		responseRate?: string;
+	};
+	matters?: {
+		distribution?: string;
+		averageAmount?: string;
+		resolutionTime?: string;
+	};
 }
