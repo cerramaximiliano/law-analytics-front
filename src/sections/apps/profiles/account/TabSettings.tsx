@@ -400,7 +400,7 @@ const TabSubscription = () => {
 		if (!subscription) return false;
 
 		// Caso 1: Período de gracia por pagos fallidos
-		if (subscription.accountStatus === "grace_period") {
+		if (subscription.status === "past_due" || subscription.status === "unpaid") {
 			return true;
 		}
 
@@ -431,7 +431,7 @@ const TabSubscription = () => {
 		let targetPlan = "free";
 
 		// Determinar tipo de período de gracia y datos relevantes
-		if (subscription.accountStatus === "grace_period") {
+		if (subscription.status === "past_due" || subscription.status === "unpaid") {
 			// Período de gracia por pagos fallidos
 			gracePeriodType = "payment_failed";
 			// En este caso, mantenemos el mismo plan
@@ -441,7 +441,7 @@ const TabSubscription = () => {
 			// Período de gracia por downgrade
 			gracePeriodType = "downgrade";
 			expiryDate = subscription.downgradeGracePeriod.expiresAt;
-			previousPlan = subscription.downgradeGracePeriod.previousPlan || subscription.plan;
+			previousPlan = (subscription.downgradeGracePeriod.previousPlan as "free" | "standard" | "premium") || subscription.plan;
 			targetPlan = subscription.downgradeGracePeriod.targetPlan || "free";
 		} else if (subscription.cancelAtPeriodEnd === true) {
 			// Período de gracia por cancelación
@@ -941,7 +941,10 @@ const TabSubscription = () => {
 							>
 								<Grid container spacing={3}>
 									<Grid item xs={12}>
-										{getGracePeriodInfo() && getGracePeriodStatus(getGracePeriodInfo()?.expiryDate) === "past" ? (
+										{(() => {
+											const gracePeriodInfo = getGracePeriodInfo();
+											return gracePeriodInfo?.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past";
+										})() ? (
 											<Alert
 												severity="info"
 												variant="outlined"
@@ -955,7 +958,10 @@ const TabSubscription = () => {
 														Período de gracia finalizado
 													</Typography>
 													<Typography variant="body2">
-														El período de gracia finalizó el {formatDate(getGracePeriodInfo()?.expiryDate)}. El contenido que
+														El período de gracia finalizó el {(() => {
+															const info = getGracePeriodInfo();
+															return info?.expiryDate ? formatDate(info.expiryDate) : "";
+														})()}. El contenido que
 														excedía los límites de tu {getGracePeriodInfo()?.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha
 														sido archivado automáticamente.
 													</Typography>
@@ -1116,7 +1122,10 @@ const TabSubscription = () => {
 												mt: 1,
 											}}
 										>
-											{getGracePeriodInfo() && getGracePeriodStatus(getGracePeriodInfo()?.expiryDate) === "past" ? (
+											{(() => {
+											const gracePeriodInfo = getGracePeriodInfo();
+											return gracePeriodInfo?.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past";
+										})() ? (
 												<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
 													Archivado automático completado
 												</Typography>
