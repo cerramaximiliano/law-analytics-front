@@ -397,10 +397,97 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 							</View>
 						)}
 
+						{/* Tendencia de Movimientos */}
+						{statsData?.trends?.movements && Array.isArray(statsData.trends.movements) && statsData.trends.movements.length > 0 ? (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Movimientos por Mes
+								</Text>
+								<View style={styles.statsTable}>
+									<View style={[styles.tableRow, styles.tableHeader]}>
+										<Text style={styles.tableCell}>Mes</Text>
+										<Text style={styles.tableCell}>Cantidad</Text>
+									</View>
+									{statsData.trends.movements.slice(0, 6).map((item, index) => (
+										<View style={styles.tableRow} key={`mov-${index}`}>
+											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
+										</View>
+									))}
+								</View>
+							</View>
+						) : (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Movimientos por Mes
+								</Text>
+								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+							</View>
+						)}
+
+						{/* Tendencia de Calculadoras */}
+						{statsData?.trends?.calculators && Array.isArray(statsData.trends.calculators) && statsData.trends.calculators.length > 0 ? (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Uso de Calculadoras por Mes
+								</Text>
+								<View style={styles.statsTable}>
+									<View style={[styles.tableRow, styles.tableHeader]}>
+										<Text style={styles.tableCell}>Mes</Text>
+										<Text style={styles.tableCell}>Cantidad</Text>
+									</View>
+									{statsData.trends.calculators.slice(0, 6).map((item, index) => (
+										<View style={styles.tableRow} key={`calc-${index}`}>
+											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
+										</View>
+									))}
+								</View>
+							</View>
+						) : (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Uso de Calculadoras por Mes
+								</Text>
+								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+							</View>
+						)}
+
+						{/* Tendencia de Plazos */}
+						{statsData?.trends?.deadlines && Array.isArray(statsData.trends.deadlines) && statsData.trends.deadlines.length > 0 ? (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Plazos Vencidos por Mes
+								</Text>
+								<View style={styles.statsTable}>
+									<View style={[styles.tableRow, styles.tableHeader]}>
+										<Text style={styles.tableCell}>Mes</Text>
+										<Text style={styles.tableCell}>Cantidad</Text>
+									</View>
+									{statsData.trends.deadlines.slice(0, 6).map((item, index) => (
+										<View style={styles.tableRow} key={`dead-${index}`}>
+											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
+										</View>
+									))}
+								</View>
+							</View>
+						) : (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Plazos Vencidos por Mes
+								</Text>
+								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+							</View>
+						)}
+
 						{/* Mensaje si no hay tendencias en absoluto */}
 						{(!statsData?.trends?.tasks || statsData.trends.tasks.length === 0) &&
 						 (!statsData?.trends?.newFolders || statsData.trends.newFolders.length === 0) &&
-						 (!statsData?.trends?.closedFolders || statsData.trends.closedFolders.length === 0) && (
+						 (!statsData?.trends?.closedFolders || statsData.trends.closedFolders.length === 0) &&
+						 (!statsData?.trends?.movements || statsData.trends.movements.length === 0) &&
+						 (!statsData?.trends?.calculators || statsData.trends.calculators.length === 0) &&
+						 (!statsData?.trends?.deadlines || statsData.trends.deadlines.length === 0) && (
 							<Text style={{ fontSize: 10, color: '#999', textAlign: 'center', marginTop: 10 }}>
 								No hay datos de tendencias históricas disponibles en este momento
 							</Text>
@@ -456,8 +543,11 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 		},
 		trends: {
 			tasks: statsData?.dashboard?.trends?.tasks || statsData?.activity?.trends?.tasks || [],
-			newFolders: statsData?.dashboard?.trends?.newFolders || [],
-			closedFolders: statsData?.dashboard?.trends?.closedFolders || [],
+			newFolders: statsData?.dashboard?.trends?.newFolders || statsData?.activity?.trends?.newFolders || [],
+			closedFolders: statsData?.dashboard?.trends?.closedFolders || statsData?.activity?.trends?.closedFolders || [],
+			movements: statsData?.dashboard?.trends?.movements || statsData?.activity?.trends?.movements || [],
+			calculators: statsData?.dashboard?.trends?.calculators || statsData?.activity?.trends?.calculators || [],
+			deadlines: statsData?.dashboard?.trends?.deadlines || [],
 		},
 	};
 
@@ -470,6 +560,9 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 			tasksLength: reportData.trends?.tasks?.length,
 			newFoldersLength: reportData.trends?.newFolders?.length,
 			closedFoldersLength: reportData.trends?.closedFolders?.length,
+			movementsLength: reportData.trends?.movements?.length,
+			calculatorsLength: reportData.trends?.calculators?.length,
+			deadlinesLength: reportData.trends?.deadlines?.length,
 			rawData: statsData?.dashboard?.trends
 		});
 
@@ -532,7 +625,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 								• Próximos vencimientos y deadlines
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
-								• Tendencias históricas (tareas, carpetas nuevas y cerradas)
+								• Tendencias históricas completas (todas las métricas)
 							</Typography>
 						</Stack>
 					</Box>
