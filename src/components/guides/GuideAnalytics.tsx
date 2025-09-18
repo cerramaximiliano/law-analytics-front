@@ -505,12 +505,6 @@ const PlansLimitationsContent = () => {
 							<TableCell align="center">❌</TableCell>
 							<TableCell align="center">✅</TableCell>
 						</TableRow>
-						<TableRow>
-							<TableCell>API para integración</TableCell>
-							<TableCell align="center">❌</TableCell>
-							<TableCell align="center">❌</TableCell>
-							<TableCell align="center">✅</TableCell>
-						</TableRow>
 					</TableBody>
 				</Table>
 			</TableContainer>
@@ -682,8 +676,6 @@ const TroubleshootingContent = () => {
 				<Typography variant="body2">
 					• 📚 Documentación técnica de métricas
 					<br />• 💬 Soporte técnico: soporte@lawanalytics.app
-					<br />• 🎥 Video tutoriales disponibles
-					<br />• 📊 Plantillas de reportes descargables
 				</Typography>
 			</Alert>
 		</Stack>
