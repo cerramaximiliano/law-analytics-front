@@ -20,6 +20,7 @@ import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
 import { useSelector } from "react-redux";
 import { RootState } from "store";
+import { TrendItem } from "types/unified-stats";
 import logoBase64 from "./logoBase64";
 
 // Estilos para el PDF
@@ -156,8 +157,23 @@ interface ExportReportModalProps {
 	onClose: () => void;
 }
 
+interface ReportData {
+	folders: any;
+	financial: any;
+	tasks: any;
+	deadlines: any;
+	trends?: {
+		tasks?: TrendItem[];
+		newFolders?: TrendItem[];
+		closedFolders?: TrendItem[];
+		movements?: TrendItem[];
+		calculators?: TrendItem[];
+		deadlines?: TrendItem[];
+	};
+}
+
 // Componente del documento PDF
-const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: string }> = ({ userData, statsData, lastUpdated }) => {
+const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdated?: string | null }> = ({ userData, statsData, lastUpdated }) => {
 	const currentDate = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
 	const dataDate = lastUpdated ? format(new Date(lastUpdated), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : currentDate;
 
@@ -335,7 +351,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.tasks.slice(0, 6).map((item, index) => (
+									{statsData.trends.tasks.slice(0, 6).map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`task-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -363,7 +379,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.newFolders.slice(0, 6).map((item, index) => (
+									{statsData.trends.newFolders.slice(0, 6).map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`new-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -391,7 +407,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.closedFolders.slice(0, 6).map((item, index) => (
+									{statsData.trends.closedFolders.slice(0, 6).map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`closed-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -419,7 +435,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.movements.slice(0, 6).map((item, index) => (
+									{statsData.trends.movements.slice(0, 6).map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`mov-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -447,7 +463,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.calculators.slice(0, 6).map((item, index) => (
+									{statsData.trends.calculators.slice(0, 6).map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`calc-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -475,7 +491,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.deadlines.slice(0, 6).map((item, index) => (
+									{statsData.trends.deadlines.slice(0, 6).map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`dead-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -528,7 +544,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 	};
 
 	// Combinar datos de dashboard y otras secciones
-	const reportData = {
+	const reportData: ReportData = {
 		folders: {
 			active: statsData?.dashboard?.folders?.active || 0,
 			closed: statsData?.dashboard?.folders?.closed || 0,
@@ -553,7 +569,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 			next30Days: statsData?.folders?.upcomingDeadlines?.next30Days || statsData?.dashboard?.deadlines?.next30Days || 0,
 		},
 		trends: {
-			tasks: statsData?.dashboard?.trends?.tasks || statsData?.activity?.trends?.tasks || [],
+			tasks: statsData?.dashboard?.trends?.tasks || [],
 			newFolders: statsData?.dashboard?.trends?.newFolders || statsData?.activity?.trends?.newFolders || [],
 			closedFolders: statsData?.dashboard?.trends?.closedFolders || statsData?.activity?.trends?.closedFolders || [],
 			movements: statsData?.dashboard?.trends?.movements || statsData?.activity?.trends?.movements || [],
@@ -579,7 +595,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 
 		try {
 			// Generar el PDF como blob
-			const doc = <ReportDocument userData={userData} statsData={reportData} lastUpdated={lastUpdated} />;
+			const doc = <ReportDocument userData={userData} statsData={reportData} lastUpdated={lastUpdated || undefined} />;
 			const asPdf = pdf(doc);
 			const blob = await asPdf.toBlob();
 

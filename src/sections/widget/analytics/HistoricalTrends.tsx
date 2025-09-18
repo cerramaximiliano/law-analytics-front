@@ -28,7 +28,7 @@ const HistoricalTrends = () => {
 
 	// Obtener las tendencias
 	const trends = {
-		tasks: data?.dashboard?.trends?.tasks || data?.activity?.trends?.tasks || [],
+		tasks: data?.dashboard?.trends?.tasks || [],
 		newFolders: data?.dashboard?.trends?.newFolders || data?.activity?.trends?.newFolders || [],
 		closedFolders: data?.dashboard?.trends?.closedFolders || data?.activity?.trends?.closedFolders || [],
 		movements: data?.dashboard?.trends?.movements || data?.activity?.trends?.movements || [],
