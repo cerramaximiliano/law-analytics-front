@@ -157,10 +157,10 @@ const DashboardAnalytics = () => {
 				secondary={
 					<Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
 						{cacheInfo && (
-							<Tooltip title={`Datos generados: ${new Date(cacheInfo.generatedAt).toLocaleString()}. Próxima actualización: ${new Date(cacheInfo.nextUpdate).toLocaleString()}`}>
+							<Tooltip title={`Última actualización: ${new Date(cacheInfo.generatedAt).toLocaleString()}. Próxima actualización: ${new Date(cacheInfo.nextUpdate).toLocaleString()}`}>
 								<Chip
 									icon={<Clock size={14} />}
-									label={cacheInfo.message || `Hace ${Math.round(cacheInfo.hoursAgo)} horas`}
+									label={`Actualizado hace ${Math.round(cacheInfo.hoursAgo)} ${Math.round(cacheInfo.hoursAgo) === 1 ? 'hora' : 'horas'}`}
 									size="small"
 									variant="outlined"
 									color={cacheInfo.hoursAgo > 24 ? "warning" : "default"}
