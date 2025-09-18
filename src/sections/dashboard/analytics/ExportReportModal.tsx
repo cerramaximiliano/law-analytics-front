@@ -309,7 +309,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 				</View>
 
 				{/* Tendencia de Tareas */}
-				{statsData?.trends?.tasks && statsData.trends.tasks.length > 0 && (
+				{statsData?.trends?.tasks && Array.isArray(statsData.trends.tasks) && statsData.trends.tasks.length > 0 ? (
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>Tendencia de Tareas (Últimos Meses)</Text>
 						<View style={styles.statsTable}>
@@ -319,11 +319,16 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 							</View>
 							{statsData.trends.tasks.slice(0, 6).map((item, index) => (
 								<View style={styles.tableRow} key={index}>
-									<Text style={styles.tableCell}>{item.month}</Text>
-									<Text style={styles.tableCell}>{item.count}</Text>
+									<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+									<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
 								</View>
 							))}
 						</View>
+					</View>
+				) : (
+					<View style={styles.section}>
+						<Text style={styles.sectionTitle}>Tendencia de Tareas</Text>
+						<Text style={styles.metricLabel}>No hay datos de tendencias disponibles</Text>
 					</View>
 				)}
 
@@ -382,6 +387,14 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 
 	const handleDownloadPDF = async () => {
 		setIsGenerating(true);
+
+		// Debug: verificar datos de tendencias
+		console.log("📊 Datos de tendencias para el PDF:", {
+			trends: reportData.trends,
+			tasksLength: reportData.trends?.tasks?.length,
+			rawData: statsData?.dashboard?.trends
+		});
+
 		try {
 			// Generar el PDF como blob
 			const doc = <ReportDocument userData={userData} statsData={reportData} lastUpdated={lastUpdated} />;
