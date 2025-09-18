@@ -157,8 +157,9 @@ interface ExportReportModalProps {
 }
 
 // Componente del documento PDF
-const ReportDocument: React.FC<{ userData: any; statsData: any }> = ({ userData, statsData }) => {
+const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: string }> = ({ userData, statsData, lastUpdated }) => {
 	const currentDate = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
+	const dataDate = lastUpdated ? format(new Date(lastUpdated), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : currentDate;
 
 	// Formatear números con separadores de miles
 	const formatNumber = (num: number) => {
@@ -184,6 +185,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any }> = ({ userData,
 						<Text style={styles.title}>Reporte de Analíticas</Text>
 						<Text style={styles.subtitle}>Law Analytics - Sistema de Gestión Legal</Text>
 						<Text style={styles.dateText}>Generado el {currentDate}</Text>
+						<Text style={styles.dateText}>Datos actualizados al {dataDate}</Text>
 					</View>
 				</View>
 
@@ -211,11 +213,11 @@ const ReportDocument: React.FC<{ userData: any; statsData: any }> = ({ userData,
 					<Text style={styles.sectionTitle}>Métricas Principales</Text>
 					<View style={styles.metricsGrid}>
 						<View style={styles.metricBox}>
-							<Text style={styles.metricLabel}>Folders Activos</Text>
+							<Text style={styles.metricLabel}>Carpetas Activas</Text>
 							<Text style={styles.metricValue}>{statsData?.folders?.active || 0}</Text>
 						</View>
 						<View style={styles.metricBox}>
-							<Text style={styles.metricLabel}>Folders Cerrados</Text>
+							<Text style={styles.metricLabel}>Carpetas Cerradas</Text>
 							<Text style={styles.metricValue}>{statsData?.folders?.closed || 0}</Text>
 						</View>
 						<View style={styles.metricBox}>
@@ -289,11 +291,11 @@ const ReportDocument: React.FC<{ userData: any; statsData: any }> = ({ userData,
 					<View style={styles.statsTable}>
 						<View style={[styles.tableRow, styles.tableHeader]}>
 							<Text style={styles.tableCell}>Período</Text>
-							<Text style={styles.tableCell}>Cantidad de Folders</Text>
+							<Text style={styles.tableCell}>Cantidad</Text>
 						</View>
 						<View style={styles.tableRow}>
 							<Text style={styles.tableCell}>Próximos 7 días</Text>
-							<Text style={styles.tableCell}>{statsData?.deadlines?.nextWeek || 0}</Text>
+							<Text style={styles.tableCell}>{statsData?.deadlines?.next7Days || statsData?.deadlines?.nextWeek || 0}</Text>
 						</View>
 						<View style={styles.tableRow}>
 							<Text style={styles.tableCell}>Próximos 15 días</Text>
@@ -318,7 +320,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: any }> = ({ userData,
 const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) => {
 	const { user } = useAuth();
 	const { subscription } = useSubscription();
-	const { data: statsData } = useSelector((state: RootState) => state.unifiedStats);
+	const { data: statsData, lastUpdated } = useSelector((state: RootState) => state.unifiedStats);
 	const [isGenerating, setIsGenerating] = useState(false);
 
 	const userData = {
@@ -346,14 +348,19 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 			overdue: statsData?.dashboard?.tasks?.overdue || 0,
 			completionRate: statsData?.tasks?.completionRate || 0,
 		},
-		deadlines: statsData?.dashboard?.deadlines,
+		deadlines: {
+			next7Days: statsData?.folders?.upcomingDeadlines?.next7Days || statsData?.dashboard?.deadlines?.nextWeek || 0,
+			nextWeek: statsData?.dashboard?.deadlines?.nextWeek || 0,
+			next15Days: statsData?.folders?.upcomingDeadlines?.next15Days || statsData?.dashboard?.deadlines?.next15Days || 0,
+			next30Days: statsData?.folders?.upcomingDeadlines?.next30Days || statsData?.dashboard?.deadlines?.next30Days || 0,
+		},
 	};
 
 	const handleDownloadPDF = async () => {
 		setIsGenerating(true);
 		try {
 			// Generar el PDF como blob
-			const doc = <ReportDocument userData={userData} statsData={reportData} />;
+			const doc = <ReportDocument userData={userData} statsData={reportData} lastUpdated={lastUpdated} />;
 			const asPdf = pdf(doc);
 			const blob = await asPdf.toBlob();
 
@@ -398,7 +405,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 								• Información del usuario y plan actual
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
-								• Métricas principales (folders, tiempos de resolución)
+								• Métricas principales (carpetas, tiempos de resolución)
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
 								• Resumen financiero por estado
