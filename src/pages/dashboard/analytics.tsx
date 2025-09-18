@@ -34,6 +34,7 @@ import FoldersByMatter from "sections/widget/analytics/FoldersByMatter";
 import NotificationStatus from "sections/widget/analytics/NotificationStatus";
 import DeadlineProjections from "sections/widget/analytics/DeadlineProjections";
 import FolderClosingTrends from "sections/widget/analytics/FolderClosingTrends";
+import HistoricalTrends from "sections/widget/analytics/HistoricalTrends";
 
 // ==============================|| DASHBOARD - ANALYTICS ||============================== //
 
@@ -279,6 +280,11 @@ const DashboardAnalytics = () => {
 						</Grid>
 						<Grid item xs={12} lg={6}>
 							<FolderClosingTrends />
+						</Grid>
+
+						{/* Row 6 - Historical Trends */}
+						<Grid item xs={12}>
+							<HistoricalTrends />
 						</Grid>
 					</Grid>
 
