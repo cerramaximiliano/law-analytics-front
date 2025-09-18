@@ -14,6 +14,9 @@ const initialState: UnifiedStatsState = {
 	lastUpdated: null,
 	descriptions: null,
 	cacheInfo: null,
+	history: [],
+	historyLoading: false,
+	selectedHistoryId: null,
 };
 
 // Tiempo de caché en milisegundos (24 horas)
@@ -69,6 +72,25 @@ const slice = createSlice({
 			state.lastUpdated = null;
 			state.descriptions = null;
 			state.cacheInfo = null;
+			state.history = [];
+			state.historyLoading = false;
+			state.selectedHistoryId = null;
+		},
+
+		// HISTORY LOADING
+		startHistoryLoading(state) {
+			state.historyLoading = true;
+		},
+
+		// SET HISTORY
+		setHistorySuccess(state, action: PayloadAction<any[]>) {
+			state.historyLoading = false;
+			state.history = action.payload;
+		},
+
+		// SET SELECTED HISTORY
+		setSelectedHistory(state, action: PayloadAction<string | null>) {
+			state.selectedHistoryId = action.payload;
 		},
 	},
 });
@@ -77,7 +99,16 @@ const slice = createSlice({
 export default slice.reducer;
 
 // Actions
-export const { startLoading, hasError, setStatsSuccess, updatePartialData, resetStats } = slice.actions;
+export const {
+	startLoading,
+	hasError,
+	setStatsSuccess,
+	updatePartialData,
+	resetStats,
+	startHistoryLoading,
+	setHistorySuccess,
+	setSelectedHistory
+} = slice.actions;
 
 // ----------------------------------------------------------------------
 
@@ -205,5 +236,97 @@ export function updateStatsSections(userId: string, sections: string[]) {
 export function clearUnifiedStats() {
 	return () => {
 		dispatch(slice.actions.resetStats());
+	};
+}
+
+/**
+ * Obtiene el histórico de analíticas del usuario
+ * @param userId - ID del usuario
+ * @param limit - Cantidad máxima de documentos (default: 50)
+ */
+export function getAnalyticsHistory(userId: string, limit: number = 50) {
+	return async (dispatch: any) => {
+		dispatch(slice.actions.startHistoryLoading());
+
+		try {
+			const baseURL = import.meta.env.VITE_BASE_URL || "";
+			const url = `${baseURL}/api/stats/history/${userId}/list`;
+
+			console.log("📜 [UnifiedStats] Fetching analytics history:", { userId, limit });
+
+			const response = await axios.get(url, {
+				params: { limit },
+				withCredentials: true,
+			});
+
+			if (response.data.success && response.data.documents) {
+				dispatch(slice.actions.setHistorySuccess(response.data.documents));
+				console.log(`✅ [UnifiedStats] History loaded: ${response.data.count} documents`);
+			} else {
+				throw new Error("Formato de respuesta inválido");
+			}
+		} catch (error) {
+			let errorMessage = "Error al cargar el histórico";
+
+			if (axios.isAxiosError(error)) {
+				if (error.response?.data?.message) {
+					errorMessage = error.response.data.message;
+				}
+			}
+
+			dispatch(slice.actions.hasError(errorMessage));
+			console.error("Error en getAnalyticsHistory:", errorMessage);
+		}
+	};
+}
+
+/**
+ * Obtiene las estadísticas de una fecha específica del histórico
+ * @param userId - ID del usuario
+ * @param documentId - ID del documento histórico
+ */
+export function getHistoricalStats(userId: string, documentId: string) {
+	return async (dispatch: any) => {
+		dispatch(slice.actions.startLoading());
+		dispatch(slice.actions.setSelectedHistory(documentId));
+
+		try {
+			const baseURL = import.meta.env.VITE_BASE_URL || "";
+			const url = `${baseURL}/api/stats/history/${userId}/${documentId}`;
+
+			console.log("📊 [UnifiedStats] Fetching historical stats:", { userId, documentId });
+
+			const response = await axios.get<UnifiedStatsResponse>(url, {
+				withCredentials: true,
+			});
+
+			if (response.data.success && response.data.data) {
+				dispatch(
+					slice.actions.setStatsSuccess({
+						data: response.data.data,
+						userId: userId,
+						lastUpdated: response.data.lastUpdated,
+						descriptions: response.data.descriptions,
+						cacheInfo: response.data.cacheInfo,
+					}),
+				);
+				console.log("✅ [UnifiedStats] Historical stats loaded for:", documentId);
+			} else {
+				throw new Error("Formato de respuesta inválido");
+			}
+		} catch (error) {
+			let errorMessage = "Error al cargar las estadísticas históricas";
+
+			if (axios.isAxiosError(error)) {
+				if (error.response?.status === 404) {
+					errorMessage = "No se encontró el documento histórico";
+				} else if (error.response?.data?.message) {
+					errorMessage = error.response.data.message;
+				}
+			}
+
+			dispatch(slice.actions.hasError(errorMessage));
+			console.error("Error en getHistoricalStats:", errorMessage);
+		}
 	};
 }

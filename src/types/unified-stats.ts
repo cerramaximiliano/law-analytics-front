@@ -10,6 +10,21 @@ export interface CacheInfo {
 	message: string;
 }
 
+export interface AnalyticsHistoryItem {
+	id: string;
+	createdAt: string;
+	lastUpdated: string;
+	ageInDays: number;
+	isLatest: boolean;
+}
+
+export interface AnalyticsHistoryResponse {
+	success: boolean;
+	count: number;
+	hasMore: boolean;
+	documents: AnalyticsHistoryItem[];
+}
+
 export interface UnifiedStatsResponse {
 	success: boolean;
 	userId: string;
@@ -199,6 +214,9 @@ export interface UnifiedStatsState {
 	lastUpdated: string | null;
 	descriptions: UnifiedStatsDescriptions | null;
 	cacheInfo: CacheInfo | null;
+	history: AnalyticsHistoryItem[];
+	historyLoading: boolean;
+	selectedHistoryId: string | null;
 }
 
 // Tipos para las descripciones

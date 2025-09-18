@@ -17,6 +17,7 @@ import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import ExportReportModal from "sections/dashboard/analytics/ExportReportModal";
+import AnalyticsHistorySelector from "sections/dashboard/analytics/AnalyticsHistorySelector";
 
 // widgets
 import AverageResolutionTime from "sections/widget/analytics/AverageResolutionTime";
@@ -49,7 +50,9 @@ const DashboardAnalytics = () => {
 		isLoading: statsLoading,
 		error: statsError,
 		descriptions,
-		cacheInfo
+		cacheInfo,
+		selectedHistoryId,
+		history
 	} = useSelector((state: RootState) => state.unifiedStats);
 
 	// Estados para el control del modal
@@ -153,7 +156,19 @@ const DashboardAnalytics = () => {
 	return (
 		<Box>
 			<MainCard
-				title="Panel de Analíticas"
+				title={
+					<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+						<Typography variant="h3">Panel de Analíticas</Typography>
+						{selectedHistoryId && (
+							<Chip
+								label="Viendo histórico"
+								size="small"
+								color="info"
+								variant="filled"
+							/>
+						)}
+					</Box>
+				}
 				secondary={
 					<Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
 						{cacheInfo && (
@@ -167,6 +182,7 @@ const DashboardAnalytics = () => {
 								/>
 							</Tooltip>
 						)}
+						{user?.id && <AnalyticsHistorySelector userId={user.id} />}
 						{hasExportReports ? (
 							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => setExportModalOpen(true)}>
 								Exportar Reporte
