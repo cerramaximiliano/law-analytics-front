@@ -309,14 +309,12 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 				</View>
 
 				{/* Tendencias Históricas */}
-				{(statsData?.trends?.tasks?.length > 0 ||
-				  statsData?.trends?.newFolders?.length > 0 ||
-				  statsData?.trends?.closedFolders?.length > 0) && (
+				{statsData?.trends && (
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>Tendencias Históricas (Últimos 6 Meses)</Text>
 
 						{/* Tendencia de Tareas */}
-						{statsData?.trends?.tasks && Array.isArray(statsData.trends.tasks) && statsData.trends.tasks.length > 0 && (
+						{statsData?.trends?.tasks && Array.isArray(statsData.trends.tasks) && statsData.trends.tasks.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
 								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
 									Tareas Creadas por Mes
@@ -334,10 +332,17 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 									))}
 								</View>
 							</View>
+						) : (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Tareas Creadas por Mes
+								</Text>
+								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+							</View>
 						)}
 
 						{/* Tendencia de Carpetas Nuevas */}
-						{statsData?.trends?.newFolders && Array.isArray(statsData.trends.newFolders) && statsData.trends.newFolders.length > 0 && (
+						{statsData?.trends?.newFolders && Array.isArray(statsData.trends.newFolders) && statsData.trends.newFolders.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
 								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
 									Carpetas Nuevas por Mes
@@ -355,10 +360,17 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 									))}
 								</View>
 							</View>
+						) : (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Carpetas Nuevas por Mes
+								</Text>
+								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+							</View>
 						)}
 
 						{/* Tendencia de Carpetas Cerradas */}
-						{statsData?.trends?.closedFolders && Array.isArray(statsData.trends.closedFolders) && statsData.trends.closedFolders.length > 0 && (
+						{statsData?.trends?.closedFolders && Array.isArray(statsData.trends.closedFolders) && statsData.trends.closedFolders.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
 								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
 									Carpetas Cerradas por Mes
@@ -376,6 +388,22 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 									))}
 								</View>
 							</View>
+						) : (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Carpetas Cerradas por Mes
+								</Text>
+								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+							</View>
+						)}
+
+						{/* Mensaje si no hay tendencias en absoluto */}
+						{(!statsData?.trends?.tasks || statsData.trends.tasks.length === 0) &&
+						 (!statsData?.trends?.newFolders || statsData.trends.newFolders.length === 0) &&
+						 (!statsData?.trends?.closedFolders || statsData.trends.closedFolders.length === 0) && (
+							<Text style={{ fontSize: 10, color: '#999', textAlign: 'center', marginTop: 10 }}>
+								No hay datos de tendencias históricas disponibles en este momento
+							</Text>
 						)}
 					</View>
 				)}
