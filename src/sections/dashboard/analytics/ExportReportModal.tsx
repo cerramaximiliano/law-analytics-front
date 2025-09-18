@@ -308,27 +308,75 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 					</View>
 				</View>
 
-				{/* Tendencia de Tareas */}
-				{statsData?.trends?.tasks && Array.isArray(statsData.trends.tasks) && statsData.trends.tasks.length > 0 ? (
+				{/* Tendencias Históricas */}
+				{(statsData?.trends?.tasks?.length > 0 ||
+				  statsData?.trends?.newFolders?.length > 0 ||
+				  statsData?.trends?.closedFolders?.length > 0) && (
 					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Tendencia de Tareas (Últimos Meses)</Text>
-						<View style={styles.statsTable}>
-							<View style={[styles.tableRow, styles.tableHeader]}>
-								<Text style={styles.tableCell}>Mes</Text>
-								<Text style={styles.tableCell}>Cantidad de Tareas</Text>
-							</View>
-							{statsData.trends.tasks.slice(0, 6).map((item, index) => (
-								<View style={styles.tableRow} key={index}>
-									<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
-									<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
+						<Text style={styles.sectionTitle}>Tendencias Históricas (Últimos 6 Meses)</Text>
+
+						{/* Tendencia de Tareas */}
+						{statsData?.trends?.tasks && Array.isArray(statsData.trends.tasks) && statsData.trends.tasks.length > 0 && (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Tareas Creadas por Mes
+								</Text>
+								<View style={styles.statsTable}>
+									<View style={[styles.tableRow, styles.tableHeader]}>
+										<Text style={styles.tableCell}>Mes</Text>
+										<Text style={styles.tableCell}>Cantidad</Text>
+									</View>
+									{statsData.trends.tasks.slice(0, 6).map((item, index) => (
+										<View style={styles.tableRow} key={`task-${index}`}>
+											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
+										</View>
+									))}
 								</View>
-							))}
-						</View>
-					</View>
-				) : (
-					<View style={styles.section}>
-						<Text style={styles.sectionTitle}>Tendencia de Tareas</Text>
-						<Text style={styles.metricLabel}>No hay datos de tendencias disponibles</Text>
+							</View>
+						)}
+
+						{/* Tendencia de Carpetas Nuevas */}
+						{statsData?.trends?.newFolders && Array.isArray(statsData.trends.newFolders) && statsData.trends.newFolders.length > 0 && (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Carpetas Nuevas por Mes
+								</Text>
+								<View style={styles.statsTable}>
+									<View style={[styles.tableRow, styles.tableHeader]}>
+										<Text style={styles.tableCell}>Mes</Text>
+										<Text style={styles.tableCell}>Cantidad</Text>
+									</View>
+									{statsData.trends.newFolders.slice(0, 6).map((item, index) => (
+										<View style={styles.tableRow} key={`new-${index}`}>
+											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
+										</View>
+									))}
+								</View>
+							</View>
+						)}
+
+						{/* Tendencia de Carpetas Cerradas */}
+						{statsData?.trends?.closedFolders && Array.isArray(statsData.trends.closedFolders) && statsData.trends.closedFolders.length > 0 && (
+							<View style={{ marginBottom: 15 }}>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
+									Carpetas Cerradas por Mes
+								</Text>
+								<View style={styles.statsTable}>
+									<View style={[styles.tableRow, styles.tableHeader]}>
+										<Text style={styles.tableCell}>Mes</Text>
+										<Text style={styles.tableCell}>Cantidad</Text>
+									</View>
+									{statsData.trends.closedFolders.slice(0, 6).map((item, index) => (
+										<View style={styles.tableRow} key={`closed-${index}`}>
+											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
+										</View>
+									))}
+								</View>
+							</View>
+						)}
 					</View>
 				)}
 
@@ -392,6 +440,8 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 		console.log("📊 Datos de tendencias para el PDF:", {
 			trends: reportData.trends,
 			tasksLength: reportData.trends?.tasks?.length,
+			newFoldersLength: reportData.trends?.newFolders?.length,
+			closedFoldersLength: reportData.trends?.closedFolders?.length,
 			rawData: statsData?.dashboard?.trends
 		});
 
@@ -454,7 +504,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 								• Próximos vencimientos y deadlines
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
-								• Tendencia histórica de tareas (últimos meses)
+								• Tendencias históricas (tareas, carpetas nuevas y cerradas)
 							</Typography>
 						</Stack>
 					</Box>
