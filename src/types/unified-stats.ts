@@ -134,12 +134,16 @@ export interface FinancialStats {
 
 export interface ActivityStats {
 	metrics?: {
-		totalFolders: number;
-		totalTasks: number;
-		totalMovements: number;
-		lastActivityDate: string;
+		dailyAverage: number;
+		weeklyAverage: number;
+		monthlyAverage: number;
+		mostActiveDay: string;
 	};
 	trends?: {
+		newFolders?: TrendItem[];
+		closedFolders?: TrendItem[];
+		movements?: TrendItem[];
+		calculators?: TrendItem[];
 		foldersLastMonth?: number;
 		tasksLastMonth?: number;
 		revenueLastMonth?: number;
