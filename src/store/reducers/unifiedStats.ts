@@ -396,9 +396,9 @@ function transformAnalyticsToUnifiedStats(analytics: any): any {
 				},
 			},
 			upcomingDeadlines: {
-				next7Days: analytics.deadlineMetrics?.next7Days || 0,
-				next15Days: analytics.deadlineMetrics?.next15Days || 0,
-				next30Days: analytics.deadlineMetrics?.next30Days || 0,
+				next7Days: analytics.deadlineMetrics?.next7Days || analytics.upcomingDeadlines?.next7Days || 0,
+				next15Days: analytics.deadlineMetrics?.next15Days || analytics.upcomingDeadlines?.next15Days || 0,
+				next30Days: analytics.deadlineMetrics?.next30Days || analytics.upcomingDeadlines?.next30Days || 0,
 			},
 			byMatter: {
 				distribution: analytics.matterDistribution || {},

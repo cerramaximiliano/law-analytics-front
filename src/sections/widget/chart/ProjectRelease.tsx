@@ -21,9 +21,9 @@ const ProjectRelease = () => {
 	// Mapear los datos al formato esperado
 	const deadlinesData = upcomingDeadlines
 		? {
-				next7Days: upcomingDeadlines["7_days"] || 0,
-				next15Days: upcomingDeadlines["15_days"] || 0,
-				next30Days: upcomingDeadlines["30_days"] || 0,
+				next7Days: upcomingDeadlines.next7Days || 0,
+				next15Days: upcomingDeadlines.next15Days || 0,
+				next30Days: upcomingDeadlines.next30Days || 0,
 		  }
 		: null;
 

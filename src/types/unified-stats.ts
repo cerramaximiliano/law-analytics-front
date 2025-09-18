@@ -98,9 +98,9 @@ export interface FolderStats {
 		};
 	};
 	upcomingDeadlines?: {
-		"7_days": number;
-		"15_days": number;
-		"30_days": number;
+		next7Days: number;
+		next15Days: number;
+		next30Days: number;
 	};
 	byMatter?: {
 		distribution: { [key: string]: number };
