@@ -1392,3 +1392,256 @@ export const TasksContent = () => {
 		</Box>
 	);
 };
+
+// Contenido de Guía de Analíticas
+export const AnalyticsContent = () => {
+	const theme = useTheme();
+	const [activeStep, setActiveStep] = useState(0);
+
+	const handleNext = () => {
+		setActiveStep((prevStep) => prevStep + 1);
+	};
+
+	const handleBack = () => {
+		setActiveStep((prevStep) => prevStep - 1);
+	};
+
+	const steps = [
+		{
+			title: "Introducción al Panel de Analíticas",
+			content: (
+				<Stack spacing={3}>
+					<Typography>
+						El panel de analíticas te permite visualizar métricas clave sobre tu práctica legal, incluyendo datos sobre carpetas, tareas, vencimientos y aspectos financieros.
+					</Typography>
+					<Alert severity="info">
+						<AlertTitle>Lo que encontrarás:</AlertTitle>
+						<Stack spacing={1}>
+							<Typography>• Métricas de rendimiento y eficiencia</Typography>
+							<Typography>• Proyección de vencimientos y plazos</Typography>
+							<Typography>• Visualizaciones financieras</Typography>
+							<Typography>• Datos históricos comparativos</Typography>
+							<Typography>• Exportación de reportes en PDF</Typography>
+						</Stack>
+					</Alert>
+				</Stack>
+			),
+		},
+		{
+			title: "Acceso y Navegación",
+			content: (
+				<Stack spacing={3}>
+					<Typography>Para acceder al panel de analíticas:</Typography>
+					<Paper elevation={2} sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
+						<Stack spacing={2}>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+								<Typography>Ve al menú "Panel de Control" {">"} "Analíticas"</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.primary.main }} />
+								<Typography>O navega directamente a /dashboard/analytics</Typography>
+							</Box>
+						</Stack>
+					</Paper>
+					<Alert severity="warning">
+						<Typography>
+							Las analíticas avanzadas requieren un plan Standard o Premium. Con el plan gratuito verás una vista limitada.
+						</Typography>
+					</Alert>
+				</Stack>
+			),
+		},
+		{
+			title: "Métricas Principales",
+			content: (
+				<Stack spacing={3}>
+					<Typography fontWeight="bold">Las métricas te ayudan a entender el rendimiento:</Typography>
+					<Stack spacing={2}>
+						<Box>
+							<Typography fontWeight="bold">• Tiempo Promedio de Resolución</Typography>
+							<Typography variant="body2" color="textSecondary">
+								Días promedio para resolver casos. Ayuda a establecer expectativas realistas.
+							</Typography>
+						</Box>
+						<Box>
+							<Typography fontWeight="bold">• Tasa de Completado de Tareas</Typography>
+							<Typography variant="body2" color="textSecondary">
+								Porcentaje de tareas completadas. Indica productividad y gestión del tiempo.
+							</Typography>
+						</Box>
+						<Box>
+							<Typography fontWeight="bold">• Promedio por Carpeta</Typography>
+							<Typography variant="body2" color="textSecondary">
+								Monto económico promedio. Evalúa la rentabilidad de tu práctica.
+							</Typography>
+						</Box>
+					</Stack>
+					<Alert severity="info">
+						<Typography variant="body2">
+							💡 Pasa el cursor sobre el ícono ℹ️ junto a cada métrica para obtener más detalles.
+						</Typography>
+					</Alert>
+				</Stack>
+			),
+		},
+		{
+			title: "Proyección de Vencimientos",
+			content: (
+				<Stack spacing={3}>
+					<Typography>Los vencimientos se organizan por urgencia:</Typography>
+					<Stack spacing={2}>
+						<Paper elevation={1} sx={{ p: 2, borderLeft: `4px solid ${theme.palette.error.main}` }}>
+							<Typography fontWeight="bold" color="error">
+								🔴 Próximos 7 días - Urgencia Alta
+							</Typography>
+							<Typography variant="body2">Revisar diariamente y priorizar</Typography>
+						</Paper>
+						<Paper elevation={1} sx={{ p: 2, borderLeft: `4px solid ${theme.palette.warning.main}` }}>
+							<Typography fontWeight="bold" color="warning.dark">
+								🟡 Próximos 15 días - Urgencia Media
+							</Typography>
+							<Typography variant="body2">Planificar en tu agenda semanal</Typography>
+						</Paper>
+						<Paper elevation={1} sx={{ p: 2, borderLeft: `4px solid ${theme.palette.success.main}` }}>
+							<Typography fontWeight="bold" color="success">
+								🟢 Próximos 30 días - Urgencia Normal
+							</Typography>
+							<Typography variant="body2">Incluir en planificación mensual</Typography>
+						</Paper>
+					</Stack>
+					<Typography variant="body2">
+						Los datos provienen de eventos del calendario, movimientos judiciales y tareas programadas.
+					</Typography>
+				</Stack>
+			),
+		},
+		{
+			title: "Histórico de Analíticas",
+			content: (
+				<Stack spacing={3}>
+					<Typography>Accede a datos históricos para comparar tu rendimiento:</Typography>
+					<Paper elevation={2} sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.1) }}>
+						<Stack spacing={2}>
+							<Typography fontWeight="bold">Cómo acceder:</Typography>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Haz clic en "Ver Histórico" en la parte superior</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Selecciona una fecha del menú desplegable</Typography>
+							</Box>
+							<Box display="flex" alignItems="center">
+								<ArrowRight2 size={20} style={{ marginRight: "8px", color: theme.palette.info.main }} />
+								<Typography>Visualiza los datos de esa fecha específica</Typography>
+							</Box>
+						</Stack>
+					</Paper>
+					<Alert severity="success">
+						<Typography variant="body2">
+							Los datos históricos se mantienen indefinidamente y permiten análisis de tendencias.
+						</Typography>
+					</Alert>
+				</Stack>
+			),
+		},
+		{
+			title: "Exportación de Reportes",
+			content: (
+				<Stack spacing={3}>
+					<Typography fontWeight="bold">Genera reportes profesionales en PDF:</Typography>
+					<Stack spacing={2}>
+						<Typography>1. Haz clic en "Exportar Reporte"</Typography>
+						<Typography>2. Se abrirá un modal con vista previa</Typography>
+						<Typography>3. Haz clic en "Generar PDF"</Typography>
+						<Typography>4. El archivo se descargará automáticamente</Typography>
+					</Stack>
+					<Paper elevation={1} sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.1) }}>
+						<Typography fontWeight="bold" gutterBottom>
+							El reporte incluye:
+						</Typography>
+						<Typography variant="body2">
+							• Logo profesional y datos del usuario
+							<br />• Todas las métricas en formato tabla
+							<br />• Visualizaciones adaptadas para impresión
+						</Typography>
+					</Paper>
+					<Alert severity="warning">
+						<Typography variant="body2">
+							Esta función requiere plan Standard o Premium.
+						</Typography>
+					</Alert>
+				</Stack>
+			),
+		},
+		{
+			title: "Consejos y Mejores Prácticas",
+			content: (
+				<Stack spacing={3}>
+					<Typography fontWeight="bold">Para maximizar el valor de las analíticas:</Typography>
+					<Stack spacing={2}>
+						<Box>
+							<Typography>📊 Revisa diariamente la proyección de vencimientos</Typography>
+						</Box>
+						<Box>
+							<Typography>📈 Compara mensualmente tus métricas usando el histórico</Typography>
+						</Box>
+						<Box>
+							<Typography>📁 Exporta reportes al finalizar cada mes para archivo</Typography>
+						</Box>
+						<Box>
+							<Typography>ℹ️ Usa los tooltips para entender mejor cada métrica</Typography>
+						</Box>
+						<Box>
+							<Typography>📉 Monitorea tendencias más que valores absolutos</Typography>
+						</Box>
+					</Stack>
+					<Alert severity="info">
+						<AlertTitle>Indicadores de alerta:</AlertTitle>
+						<Typography variant="body2">
+							• Tasa de completado {"<"} 50%: Revisa tu gestión
+							<br />• Tiempo de resolución creciente: Analiza cuellos de botella
+							<br />• Muchos vencimientos próximos: Reorganiza prioridades
+						</Typography>
+					</Alert>
+				</Stack>
+			),
+		},
+	];
+
+	return (
+		<Box>
+			<Typography variant="h3" sx={{ mb: 3, color: theme.palette.info.main }}>
+				Guía del Panel de Analíticas
+			</Typography>
+
+			<Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
+				{steps.map((step, index) => (
+					<Step key={index}>
+						<StepLabel>{step.title}</StepLabel>
+					</Step>
+				))}
+			</Stepper>
+
+			<Box sx={{ bgcolor: "background.paper", borderRadius: 2, mb: 3, boxShadow: theme.shadows[4] }}>
+				{steps[activeStep] && <GuideStep title={steps[activeStep].title} content={steps[activeStep].content} />}
+			</Box>
+
+			<Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+				<Button variant="outlined" onClick={handleBack} disabled={activeStep === 0} startIcon={<ArrowLeft />}>
+					Anterior
+				</Button>
+				{activeStep === steps.length - 1 ? (
+					<Button variant="contained" color="primary" onClick={() => setActiveStep(0)} endIcon={<Next />}>
+						Volver al inicio
+					</Button>
+				) : (
+					<Button variant="contained" color="primary" onClick={handleNext} endIcon={<ArrowRight />}>
+						Siguiente
+					</Button>
+				)}
+			</Box>
+		</Box>
+	);
+};

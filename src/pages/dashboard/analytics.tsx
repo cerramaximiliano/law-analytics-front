@@ -11,6 +11,7 @@ import { Lock, Export, Crown, InfoCircle, Clock } from "iconsax-react";
 
 // project imports
 import MainCard from "components/MainCard";
+import IconButton from "components/@extended/IconButton";
 import { AppDispatch, RootState } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import useAuth from "hooks/useAuth";
@@ -18,6 +19,7 @@ import useSubscription from "hooks/useSubscription";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import ExportReportModal from "sections/dashboard/analytics/ExportReportModal";
 import AnalyticsHistorySelector from "sections/dashboard/analytics/AnalyticsHistorySelector";
+import { GuideAnalytics } from "components/guides";
 
 // widgets
 import AverageResolutionTime from "sections/widget/analytics/AverageResolutionTime";
@@ -62,6 +64,7 @@ const DashboardAnalytics = () => {
 	const [limitModalOpen, setLimitModalOpen] = useState(false);
 	const [hasModalBeenClosed, setHasModalBeenClosed] = useState(false);
 	const [exportModalOpen, setExportModalOpen] = useState(false);
+	const [guideOpen, setGuideOpen] = useState(false);
 
 	// Función para crear el objeto featureInfo
 	const createFeatureInfo = () => ({
@@ -202,6 +205,11 @@ const DashboardAnalytics = () => {
 								</span>
 							</Tooltip>
 						)}
+						<Tooltip title="Ver Guía">
+							<IconButton color="success" onClick={() => setGuideOpen(true)}>
+								<InfoCircle variant="Bulk" />
+							</IconButton>
+						</Tooltip>
 					</Box>
 				}
 			>
@@ -365,6 +373,9 @@ const DashboardAnalytics = () => {
 				open={exportModalOpen}
 				onClose={() => setExportModalOpen(false)}
 			/>
+
+			{/* Modal de guía */}
+			<GuideAnalytics open={guideOpen} onClose={() => setGuideOpen(false)} />
 		</Box>
 	);
 };

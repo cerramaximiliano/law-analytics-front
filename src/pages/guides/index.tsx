@@ -10,12 +10,12 @@ import { motion } from "framer-motion";
 
 // project-imports
 import MainCard from "components/MainCard";
-import { GuideLaboral, GuideIntereses, GuideFolders, GuideContacts, GuideCalendar, GuideBooking, GuideTasks } from "components/guides";
+import { GuideLaboral, GuideIntereses, GuideFolders, GuideContacts, GuideCalendar, GuideBooking, GuideTasks, GuideAnalytics } from "components/guides";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 
 // icons
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task } from "iconsax-react";
+import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21 } from "iconsax-react";
 
 // ==============================|| GUIDES PAGE - HEADER ||============================== //
 
@@ -40,6 +40,7 @@ const GuidesPage = () => {
 	const [calendar, setCalendar] = useState(false);
 	const [booking, setBooking] = useState(false);
 	const [tasks, setTasks] = useState(false);
+	const [analytics, setAnalytics] = useState(false);
 
 	const guideData = [
 		{
@@ -90,6 +91,13 @@ const GuidesPage = () => {
 			icon: Task,
 			color: "primary",
 			openModal: () => setTasks(true),
+		},
+		{
+			title: "Panel de Analíticas",
+			description: "Aprende a utilizar el panel de analíticas para visualizar métricas y reportes.",
+			icon: Chart21,
+			color: "info",
+			openModal: () => setAnalytics(true),
 		},
 	];
 
@@ -328,6 +336,7 @@ const GuidesPage = () => {
 			<GuideCalendar open={calendar} onClose={() => setCalendar(false)} />
 			<GuideBooking open={booking} onClose={() => setBooking(false)} />
 			<GuideTasks open={tasks} onClose={() => setTasks(false)} />
+			<GuideAnalytics open={analytics} onClose={() => setAnalytics(false)} />
 		</>
 	);
 };

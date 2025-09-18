@@ -13,6 +13,7 @@ import {
 	ContactsContent,
 	CalendarContent,
 	TasksContent,
+	AnalyticsContent,
 } from "components/guides/GuideContent";
 import { BookingContent } from "components/guides";
 import { useTheme } from "@mui/material/styles";
@@ -31,6 +32,7 @@ import {
 	Calendar,
 	CalendarTick,
 	Task,
+	Chart21,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES DE AYUDA ||============================== //
@@ -48,6 +50,7 @@ const GuidesSection = () => {
 	const calendarioCardRef = useRef<HTMLDivElement>(null);
 	const citasCardRef = useRef<HTMLDivElement>(null);
 	const tareasCardRef = useRef<HTMLDivElement>(null);
+	const analyticsCardRef = useRef<HTMLDivElement>(null);
 
 	// Create refs for expanded content
 	const laboralContentRef = useRef<HTMLDivElement>(null);
@@ -57,6 +60,7 @@ const GuidesSection = () => {
 	const calendarioContentRef = useRef<HTMLDivElement>(null);
 	const citasContentRef = useRef<HTMLDivElement>(null);
 	const tareasContentRef = useRef<HTMLDivElement>(null);
+	const analyticsContentRef = useRef<HTMLDivElement>(null);
 
 	const handleExpandGuide = (guideName: string) => {
 		if (expandedGuide === guideName) {
@@ -89,6 +93,9 @@ const GuidesSection = () => {
 						break;
 					case "tareas":
 						contentRef = tareasContentRef;
+						break;
+					case "analytics":
+						contentRef = analyticsContentRef;
 						break;
 					default:
 						break;
@@ -513,6 +520,60 @@ const GuidesSection = () => {
 						</CardActionArea>
 					</Card>
 				</Grid>
+
+				{/* Guía Analíticas */}
+				<Grid item xs={12} sm={6} md={4} lg={4}>
+					<Card
+						ref={analyticsCardRef}
+						sx={{
+							height: "100%",
+							display: "flex",
+							flexDirection: "column",
+							transition: "all 0.2s",
+							borderRadius: 2,
+							"&:hover": {
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)",
+							},
+						}}
+					>
+						<CardActionArea sx={{ height: "100%" }} onClick={() => handleExpandGuide("analytics")}>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
+									<Chart21
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.info.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
+								<Typography variant="h4" gutterBottom>
+									Panel de Analíticas
+								</Typography>
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
+									Aprende a utilizar el panel de analíticas para visualizar métricas y reportes.
+								</Typography>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
+									{expandedGuide === "analytics" ? "Cerrar guía" : "Ver guía"}
+								</Button>
+							</CardContent>
+						</CardActionArea>
+					</Card>
+				</Grid>
 			</Grid>
 
 			{/* Contenidos expandidos de las guías */}
@@ -612,6 +673,20 @@ const GuidesSection = () => {
 					}}
 				>
 					<TasksContent />
+				</Paper>
+			</Collapse>
+
+			<Collapse in={expandedGuide === "analytics"} timeout="auto" unmountOnExit ref={analyticsContentRef}>
+				<Paper
+					elevation={3}
+					sx={{
+						mt: 3,
+						mb: 2,
+						p: 2,
+						borderTop: `3px solid ${theme.palette.info.main}`,
+					}}
+				>
+					<AnalyticsContent />
 				</Paper>
 			</Collapse>
 		</Box>
