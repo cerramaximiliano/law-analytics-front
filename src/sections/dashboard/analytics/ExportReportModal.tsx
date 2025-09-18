@@ -308,6 +308,25 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 					</View>
 				</View>
 
+				{/* Tendencia de Tareas */}
+				{statsData?.trends?.tasks && statsData.trends.tasks.length > 0 && (
+					<View style={styles.section}>
+						<Text style={styles.sectionTitle}>Tendencia de Tareas (Últimos Meses)</Text>
+						<View style={styles.statsTable}>
+							<View style={[styles.tableRow, styles.tableHeader]}>
+								<Text style={styles.tableCell}>Mes</Text>
+								<Text style={styles.tableCell}>Cantidad de Tareas</Text>
+							</View>
+							{statsData.trends.tasks.slice(0, 6).map((item, index) => (
+								<View style={styles.tableRow} key={index}>
+									<Text style={styles.tableCell}>{item.month}</Text>
+									<Text style={styles.tableCell}>{item.count}</Text>
+								</View>
+							))}
+						</View>
+					</View>
+				)}
+
 				{/* Footer */}
 				<Text style={styles.footer}>
 					© {new Date().getFullYear()} Law Analytics - Todos los derechos reservados | Reporte generado automáticamente
@@ -353,6 +372,11 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 			nextWeek: statsData?.dashboard?.deadlines?.nextWeek || 0,
 			next15Days: statsData?.folders?.upcomingDeadlines?.next15Days || statsData?.dashboard?.deadlines?.next15Days || 0,
 			next30Days: statsData?.folders?.upcomingDeadlines?.next30Days || statsData?.dashboard?.deadlines?.next30Days || 0,
+		},
+		trends: {
+			tasks: statsData?.dashboard?.trends?.tasks || statsData?.activity?.trends?.tasks || [],
+			newFolders: statsData?.dashboard?.trends?.newFolders || [],
+			closedFolders: statsData?.dashboard?.trends?.closedFolders || [],
 		},
 	};
 
@@ -415,6 +439,9 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
 								• Próximos vencimientos y deadlines
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								• Tendencia histórica de tareas (últimos meses)
 							</Typography>
 						</Stack>
 					</Box>
