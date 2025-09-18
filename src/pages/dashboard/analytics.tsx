@@ -116,25 +116,31 @@ const DashboardAnalytics = () => {
 	// Estado para controlar si ya intentamos cargar los datos
 	const [hasTriedToLoad, setHasTriedToLoad] = useState(false);
 
+	// Usar el ID correcto del usuario
+	const userId = user?._id || user?.id;
+
 	useEffect(() => {
 		console.log("📊 [Analytics] useEffect triggered:", {
 			hasUser: !!user,
-			userId: user?.id,
+			userId: userId,
+			user_id: user?._id,
+			user_id_alt: user?.id,
 			userName: user?.name,
+			userObject: user,
 			statsLoading,
 			hasData: !!statsData,
 			hasTriedToLoad
 		});
 
-		if (user?.id && !hasTriedToLoad) {
-			console.log("📊 [Analytics] Fetching stats for user:", user.id);
+		if (userId && !hasTriedToLoad) {
+			console.log("📊 [Analytics] Fetching stats for user:", userId);
 			// Fetch all sections for analytics
-			dispatch(getUnifiedStats(user.id, "all", false));
+			dispatch(getUnifiedStats(userId, "all", false));
 			setHasTriedToLoad(true);
-		} else if (!user?.id) {
+		} else if (!userId) {
 			console.log("⚠️ [Analytics] No user ID available yet");
 		}
-	}, [dispatch, user?.id, hasTriedToLoad]);
+	}, [dispatch, userId, hasTriedToLoad]);
 
 	// Mostrar skeleton mientras se carga el usuario o los datos
 	if (!user || statsLoading) {
@@ -182,16 +188,18 @@ const DashboardAnalytics = () => {
 								/>
 							</Tooltip>
 						)}
-						{user?.id && <AnalyticsHistorySelector userId={user.id} />}
+						{userId && <AnalyticsHistorySelector userId={userId} />}
 						{hasExportReports ? (
 							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => setExportModalOpen(true)}>
 								Exportar Reporte
 							</Button>
 						) : (
 							<Tooltip title="Función disponible en planes superiores">
-								<Button variant="outlined" startIcon={<Lock size={16} />} onClick={() => navigate("/suscripciones/tables")} disabled>
-									Exportar Reporte
-								</Button>
+								<span>
+									<Button variant="outlined" startIcon={<Lock size={16} />} onClick={() => navigate("/suscripciones/tables")} disabled>
+										Exportar Reporte
+									</Button>
+								</span>
 							</Tooltip>
 						)}
 					</Box>
