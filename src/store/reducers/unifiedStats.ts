@@ -292,22 +292,31 @@ export function getHistoricalStats(userId: string, documentId: string) {
 
 		try {
 			const baseURL = import.meta.env.VITE_BASE_URL || "";
-			const url = `${baseURL}/api/stats/history/${userId}/${documentId}`;
+			const url = `${baseURL}/api/stats/history/${userId}/document/${documentId}`;
 
 			console.log("📊 [UnifiedStats] Fetching historical stats:", { userId, documentId });
 
-			const response = await axios.get<UnifiedStatsResponse>(url, {
+			const response = await axios.get(url, {
 				withCredentials: true,
 			});
 
-			if (response.data.success && response.data.data) {
+			if (response.data.success && response.data.analytics) {
+				// Transformar la estructura del documento histórico al formato esperado
+				const transformedData = transformAnalyticsToUnifiedStats(response.data.analytics);
+
 				dispatch(
 					slice.actions.setStatsSuccess({
-						data: response.data.data,
+						data: transformedData,
 						userId: userId,
-						lastUpdated: response.data.lastUpdated,
-						descriptions: response.data.descriptions,
-						cacheInfo: response.data.cacheInfo,
+						lastUpdated: response.data.documentInfo.lastUpdated,
+						descriptions: null, // Los históricos pueden no tener descripciones
+						cacheInfo: {
+							generatedAt: response.data.documentInfo.createdAt,
+							hoursAgo: response.data.documentInfo.hoursAgo,
+							isFromCache: true,
+							nextUpdate: "", // No aplica para históricos
+							message: `Datos históricos del ${new Date(response.data.documentInfo.createdAt).toLocaleDateString("es-AR")}`,
+						},
 					}),
 				);
 				console.log("✅ [UnifiedStats] Historical stats loaded for:", documentId);
@@ -328,5 +337,114 @@ export function getHistoricalStats(userId: string, documentId: string) {
 			dispatch(slice.actions.hasError(errorMessage));
 			console.error("Error en getHistoricalStats:", errorMessage);
 		}
+	};
+}
+
+/**
+ * Transforma los datos de analíticas históricas al formato UnifiedStatsData
+ */
+function transformAnalyticsToUnifiedStats(analytics: any): any {
+	// Mapear la estructura del documento histórico al formato esperado por la UI
+	return {
+		dashboard: {
+			folders: {
+				active: (analytics.folderStatusDistribution?.nueva || 0) +
+				        (analytics.folderStatusDistribution?.enProceso || 0) +
+				        (analytics.folderStatusDistribution?.pendiente || 0),
+				closed: analytics.folderStatusDistribution?.cerrada || 0,
+				total: (analytics.folderStatusDistribution?.nueva || 0) +
+				       (analytics.folderStatusDistribution?.enProceso || 0) +
+				       (analytics.folderStatusDistribution?.cerrada || 0) +
+				       (analytics.folderStatusDistribution?.pendiente || 0),
+			},
+			financial: {
+				activeAmount: analytics.financialMetrics?.totalActiveAmount || 0,
+			},
+			deadlines: {
+				nextWeek: analytics.deadlineMetrics?.next7Days || 0,
+				next15Days: analytics.deadlineMetrics?.next15Days || 0,
+				next30Days: analytics.deadlineMetrics?.next30Days || 0,
+			},
+			tasks: {
+				pending: analytics.taskMetrics?.pendingTasks || 0,
+				completed: analytics.taskMetrics?.completedTasks || 0,
+				overdue: analytics.taskMetrics?.overdueTasks || 0,
+			},
+			notifications: {
+				unread: analytics.notificationMetrics?.unreadCount || 0,
+			},
+			trends: {
+				newFolders: analytics.trends?.newFolders || [],
+				closedFolders: analytics.trends?.closedFolders || [],
+				movements: analytics.trends?.movements || [],
+				calculators: analytics.trends?.calculators || [],
+			},
+		},
+		folders: {
+			distribution: analytics.folderStatusDistribution || {
+				nueva: 0,
+				enProceso: 0,
+				cerrada: 0,
+				pendiente: 0,
+			},
+			resolutionTimes: {
+				overall: analytics.resolutionMetrics?.averageResolutionTime || 0,
+				byStatus: analytics.resolutionMetrics?.byStatus || {
+					nueva: 0,
+					enProceso: 0,
+					pendiente: 0,
+				},
+			},
+			upcomingDeadlines: {
+				next7Days: analytics.deadlineMetrics?.next7Days || 0,
+				next15Days: analytics.deadlineMetrics?.next15Days || 0,
+				next30Days: analytics.deadlineMetrics?.next30Days || 0,
+			},
+			byMatter: {
+				distribution: analytics.matterDistribution || {},
+				averageAmount: {},
+				resolutionTime: {},
+			},
+		},
+		tasks: {
+			metrics: {
+				completionRate: analytics.taskMetrics?.completionRate || 0,
+				pendingTasks: analytics.taskMetrics?.pendingTasks || 0,
+				completedTasks: analytics.taskMetrics?.completedTasks || 0,
+				overdueTasks: analytics.taskMetrics?.overdueTasks || 0,
+			},
+			completionRate: analytics.taskMetrics?.completionRate || 0,
+		},
+		financial: {
+			amountByStatus: analytics.financialMetrics?.amountByStatus || {},
+			calculatorsByType: analytics.financialMetrics?.calculatorsByType || {},
+			calculatorsAmountByType: analytics.financialMetrics?.calculatorsAmountByType || {},
+			totalActiveAmount: analytics.financialMetrics?.totalActiveAmount || 0,
+			averageAmountPerFolder: analytics.financialMetrics?.averageAmountPerFolder || 0,
+		},
+		activity: {
+			metrics: {
+				dailyAverage: analytics.activityMetrics?.dailyAverage || 0,
+				weeklyAverage: analytics.activityMetrics?.weeklyAverage || 0,
+				monthlyAverage: analytics.activityMetrics?.monthlyAverage || 0,
+				mostActiveDay: analytics.activityMetrics?.mostActiveDay || "N/A",
+			},
+			trends: {
+				newFolders: analytics.trends?.newFolders || [],
+				closedFolders: analytics.trends?.closedFolders || [],
+				movements: analytics.trends?.movements || [],
+				calculators: analytics.trends?.calculators || [],
+			},
+		},
+		notifications: {
+			unreadCount: analytics.notificationMetrics?.unreadCount || 0,
+			averageReadTime: analytics.notificationMetrics?.averageReadTime || 0,
+			responseRate: analytics.notificationMetrics?.responseRate || 0,
+		},
+		matters: {
+			distribution: analytics.matterDistribution || {},
+			averageAmount: {},
+			resolutionTime: {},
+		},
 	};
 }

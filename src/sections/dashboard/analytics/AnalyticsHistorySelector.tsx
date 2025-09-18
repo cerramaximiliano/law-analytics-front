@@ -15,7 +15,7 @@ import {
 import { Clock, Calendar, ArrowDown2, Refresh } from "iconsax-react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "store";
-import { getAnalyticsHistory, getHistoricalStats, getUnifiedStats } from "store/reducers/unifiedStats";
+import { getAnalyticsHistory, getHistoricalStats, getUnifiedStats, setSelectedHistory } from "store/reducers/unifiedStats";
 import { AnalyticsHistoryItem } from "types/unified-stats";
 
 interface AnalyticsHistorySelectorProps {
@@ -24,7 +24,7 @@ interface AnalyticsHistorySelectorProps {
 
 const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ userId }) => {
 	const dispatch = useDispatch<AppDispatch>();
-	const { history, historyLoading, selectedHistoryId } = useSelector((state: RootState) => state.unifiedStats);
+	const { history, historyLoading, selectedHistoryId, isLoading } = useSelector((state: RootState) => state.unifiedStats);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 
@@ -47,7 +47,8 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 
 	const handleSelectHistory = (item: AnalyticsHistoryItem) => {
 		if (item.isLatest) {
-			// Si es el más reciente, usar la función normal
+			// Si es el más reciente, limpiar la selección y cargar los datos actuales
+			dispatch(setSelectedHistory(null));
 			dispatch(getUnifiedStats(userId, "all", true));
 		} else {
 			// Si es histórico, usar la función para históricos
@@ -86,16 +87,18 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 		<>
 			<Button
 				variant="outlined"
-				startIcon={<Clock size={16} />}
+				startIcon={isLoading ? <CircularProgress size={14} /> : <Clock size={16} />}
 				endIcon={<ArrowDown2 size={14} />}
 				onClick={handleClick}
 				size="small"
+				disabled={isLoading}
 				sx={{
 					borderColor: selectedHistoryId ? "primary.main" : "divider",
 					backgroundColor: selectedHistoryId ? "primary.lighter" : "transparent",
 				}}
 			>
-				{selectedHistoryId && selectedItem
+				{isLoading ? "Cargando..." :
+				 selectedHistoryId && selectedItem
 					? getAgeLabel(selectedItem.ageInDays)
 					: "Ver Histórico"}
 			</Button>
