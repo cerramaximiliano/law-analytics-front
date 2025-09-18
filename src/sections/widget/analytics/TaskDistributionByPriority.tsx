@@ -1,14 +1,14 @@
 import React from "react";
-import { CardContent, Typography, Box, CircularProgress, Stack } from "@mui/material";
+import { CardContent, Typography, Box, CircularProgress, Stack, Tooltip, IconButton } from "@mui/material";
 import { useSelector } from "react-redux";
 import { useTheme } from "@mui/material/styles";
-import { TaskSquare } from "iconsax-react";
+import { TaskSquare, InfoCircle } from "iconsax-react";
 import { RootState } from "store";
 import MainCard from "components/MainCard";
 
 const TaskDistributionByPriority = () => {
 	const theme = useTheme();
-	const { data, isLoading } = useSelector((state: RootState) => state.unifiedStats);
+	const { data, isLoading, descriptions } = useSelector((state: RootState) => state.unifiedStats);
 
 	// Get task metrics from the API
 	const taskMetrics = data?.tasks?.metrics;
@@ -16,6 +16,7 @@ const TaskDistributionByPriority = () => {
 	const completedTasks = taskMetrics?.completedTasks || 0;
 	const overdueTasks = taskMetrics?.overdueTasks || 0;
 	const completionRate = taskMetrics?.completionRate || 0;
+	const description = descriptions?.tasks?.metrics?.pendingTasks;
 
 	const totalTasks = pendingTasks + completedTasks + overdueTasks;
 
@@ -24,13 +25,22 @@ const TaskDistributionByPriority = () => {
 			<CardContent>
 				<Stack spacing={2}>
 					<Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-						<Box>
-							<Typography variant="h6" color="textSecondary">
-								Estado de Tareas
-							</Typography>
-							<Typography variant="body2" color="textSecondary">
-								Total: {totalTasks}
-							</Typography>
+						<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							<Box>
+								<Typography variant="h6" color="textSecondary">
+									Estado de Tareas
+								</Typography>
+								<Typography variant="body2" color="textSecondary">
+									Total: {totalTasks}
+								</Typography>
+							</Box>
+							{description && (
+								<Tooltip title={description} arrow placement="top">
+									<IconButton size="small" sx={{ p: 0.5 }}>
+										<InfoCircle size={16} color="#8c8c8c" />
+									</IconButton>
+								</Tooltip>
+							)}
 						</Box>
 						<TaskSquare size={32} color={theme.palette.primary.main} />
 					</Box>

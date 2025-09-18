@@ -1,19 +1,20 @@
 import React from "react";
-import { Typography, Box, CircularProgress, Grid, Paper } from "@mui/material";
+import { Typography, Box, CircularProgress, Grid, Paper, Tooltip, IconButton } from "@mui/material";
 import { useSelector } from "react-redux";
 import { useTheme } from "@mui/material/styles";
 import { RootState } from "store";
 import MainCard from "components/MainCard";
 import { formatCurrency } from "utils/formatCurrency";
-import { WalletMoney, MoneyRecive, ClipboardTick } from "iconsax-react";
+import { WalletMoney, MoneyRecive, ClipboardTick, InfoCircle } from "iconsax-react";
 
 const AmountsByFolderStatus = () => {
 	const theme = useTheme();
-	const { data, isLoading } = useSelector((state: RootState) => state.unifiedStats);
+	const { data, isLoading, descriptions } = useSelector((state: RootState) => state.unifiedStats);
 
 	// Use the financial data that's actually available in the API
 	const totalActiveAmount = data?.financial?.totalActiveAmount || 0;
 	const averageAmountPerFolder = data?.financial?.averageAmountPerFolder || 0;
+	const description = descriptions?.financial?.totalActiveAmount;
 
 	// Get amounts by status from the amountByStatus object
 	const amountByStatus = data?.financial?.amountByStatus || {};
@@ -45,9 +46,16 @@ const AmountsByFolderStatus = () => {
 
 	return (
 		<MainCard>
-			<Typography variant="h4" sx={{ mb: 3 }}>
-				Resumen Financiero
-			</Typography>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+				<Typography variant="h4">Resumen Financiero</Typography>
+				{description && (
+					<Tooltip title={description} arrow placement="top">
+						<IconButton size="small" sx={{ p: 0.5 }}>
+							<InfoCircle size={16} color="#8c8c8c" />
+						</IconButton>
+					</Tooltip>
+				)}
+			</Box>
 			{isLoading ? (
 				<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
 					<CircularProgress />

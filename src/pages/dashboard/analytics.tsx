@@ -4,10 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 // mui
-import { Grid, Box, Alert, Button, useTheme, Tooltip, Paper, Stack, Typography, Skeleton } from "@mui/material";
+import { Grid, Box, Alert, Button, useTheme, Tooltip, Paper, Stack, Typography, Skeleton, Chip } from "@mui/material";
 
 // icons
-import { Lock, Export, Crown } from "iconsax-react";
+import { Lock, Export, Crown, InfoCircle, Clock } from "iconsax-react";
 
 // project imports
 import MainCard from "components/MainCard";
@@ -44,7 +44,13 @@ const DashboardAnalytics = () => {
 	const hasFeatureLocal = subscriptionData?.hasFeatureLocal || (() => false);
 
 	// Obtener el estado de las estadísticas
-	const { data: statsData, isLoading: statsLoading, error: statsError } = useSelector((state: RootState) => state.unifiedStats);
+	const {
+		data: statsData,
+		isLoading: statsLoading,
+		error: statsError,
+		descriptions,
+		cacheInfo
+	} = useSelector((state: RootState) => state.unifiedStats);
 
 	// Estados para el control del modal
 	const [hasAdvancedAnalytics, setHasAdvancedAnalytics] = useState(false);
@@ -150,6 +156,17 @@ const DashboardAnalytics = () => {
 				title="Panel de Analíticas"
 				secondary={
 					<Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+						{cacheInfo && (
+							<Tooltip title={`Datos generados: ${new Date(cacheInfo.generatedAt).toLocaleString()}. Próxima actualización: ${new Date(cacheInfo.nextUpdate).toLocaleString()}`}>
+								<Chip
+									icon={<Clock size={14} />}
+									label={cacheInfo.message || `Hace ${Math.round(cacheInfo.hoursAgo)} horas`}
+									size="small"
+									variant="outlined"
+									color={cacheInfo.hoursAgo > 24 ? "warning" : "default"}
+								/>
+							</Tooltip>
+						)}
 						{hasExportReports ? (
 							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => setExportModalOpen(true)}>
 								Exportar Reporte

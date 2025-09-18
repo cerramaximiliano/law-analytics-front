@@ -13,6 +13,7 @@ const initialState: UnifiedStatsState = {
 	data: null,
 	lastUpdated: null,
 	descriptions: null,
+	cacheInfo: null,
 };
 
 // Tiempo de caché en milisegundos (24 horas)
@@ -35,7 +36,7 @@ const slice = createSlice({
 		},
 
 		// SET STATS DATA
-		setStatsSuccess(state, action: PayloadAction<{ data: UnifiedStatsData; userId: string; lastUpdated?: string; descriptions?: any }>) {
+		setStatsSuccess(state, action: PayloadAction<{ data: UnifiedStatsData; userId: string; lastUpdated?: string; descriptions?: any; cacheInfo?: any }>) {
 			state.isLoading = false;
 			state.error = null;
 			state.data = action.payload.data;
@@ -44,6 +45,7 @@ const slice = createSlice({
 			state.isInitialized = true;
 			state.lastUpdated = action.payload.lastUpdated || null;
 			state.descriptions = action.payload.descriptions || null;
+			state.cacheInfo = action.payload.cacheInfo || null;
 		},
 
 		// UPDATE PARTIAL DATA
@@ -66,6 +68,7 @@ const slice = createSlice({
 			state.data = null;
 			state.lastUpdated = null;
 			state.descriptions = null;
+			state.cacheInfo = null;
 		},
 	},
 });
@@ -137,6 +140,7 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 						userId: userId,
 						lastUpdated: response.data.lastUpdated,
 						descriptions: response.data.descriptions,
+						cacheInfo: response.data.cacheInfo,
 					}),
 				);
 			} else {

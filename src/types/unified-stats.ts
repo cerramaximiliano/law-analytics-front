@@ -2,12 +2,21 @@
 // Tipos para la API unificada de estadísticas
 // ===============================
 
+export interface CacheInfo {
+	generatedAt: string;
+	hoursAgo: number;
+	isFromCache: boolean;
+	nextUpdate: string;
+	message: string;
+}
+
 export interface UnifiedStatsResponse {
 	success: boolean;
 	userId: string;
 	lastUpdated: string;
 	data: UnifiedStatsData;
 	descriptions?: UnifiedStatsDescriptions;
+	cacheInfo?: CacheInfo;
 }
 
 export interface UnifiedStatsData {
@@ -185,6 +194,7 @@ export interface UnifiedStatsState {
 	data: UnifiedStatsData | null;
 	lastUpdated: string | null;
 	descriptions: UnifiedStatsDescriptions | null;
+	cacheInfo: CacheInfo | null;
 }
 
 // Tipos para las descripciones

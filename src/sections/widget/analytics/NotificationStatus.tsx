@@ -1,15 +1,16 @@
 import React from "react";
-import { Typography, Box, CircularProgress, Stack, LinearProgress } from "@mui/material";
+import { Typography, Box, CircularProgress, Stack, LinearProgress, Tooltip, IconButton } from "@mui/material";
 import { useSelector } from "react-redux";
-import { Notification } from "iconsax-react";
+import { Notification, InfoCircle } from "iconsax-react";
 import { RootState } from "store";
 import MainCard from "components/MainCard";
 
 const NotificationStatus = () => {
-	const { data, isLoading } = useSelector((state: RootState) => state.unifiedStats);
+	const { data, isLoading, descriptions } = useSelector((state: RootState) => state.unifiedStats);
 	const unreadCount = data?.notifications?.unreadCount || 0;
 	const totalCount = data?.dashboard?.notifications?.total || 100; // Default to 100 if not available
 	const readCount = totalCount - unreadCount;
+	const description = descriptions?.notifications?.unreadCount;
 
 	const readPercentage = totalCount > 0 ? (readCount / totalCount) * 100 : 0;
 	const unreadPercentage = totalCount > 0 ? (unreadCount / totalCount) * 100 : 0;
@@ -17,7 +18,16 @@ const NotificationStatus = () => {
 	return (
 		<MainCard>
 			<Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-				<Typography variant="h4">Estado de Notificaciones</Typography>
+				<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+					<Typography variant="h4">Estado de Notificaciones</Typography>
+					{description && (
+						<Tooltip title={description} arrow placement="top">
+							<IconButton size="small" sx={{ p: 0.5 }}>
+								<InfoCircle size={16} color="#8c8c8c" />
+							</IconButton>
+						</Tooltip>
+					)}
+				</Box>
 				<Notification size={24} />
 			</Box>
 			{isLoading ? (
