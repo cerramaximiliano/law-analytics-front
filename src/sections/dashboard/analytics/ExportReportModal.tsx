@@ -313,6 +313,17 @@ const ReportDocument: React.FC<{ userData: any; statsData: any; lastUpdated?: st
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>Tendencias Históricas (Últimos 6 Meses)</Text>
 
+						{/* DEBUG: Mostrar qué datos están disponibles */}
+						<View style={{ backgroundColor: '#f0f0f0', padding: 10, marginBottom: 15 }}>
+							<Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 5 }}>DEBUG - Datos Disponibles:</Text>
+							<Text style={{ fontSize: 9 }}>• Tareas: {statsData?.trends?.tasks?.length || 0} registros</Text>
+							<Text style={{ fontSize: 9 }}>• Carpetas Nuevas: {statsData?.trends?.newFolders?.length || 0} registros</Text>
+							<Text style={{ fontSize: 9 }}>• Carpetas Cerradas: {statsData?.trends?.closedFolders?.length || 0} registros</Text>
+							<Text style={{ fontSize: 9 }}>• Movimientos: {statsData?.trends?.movements?.length || 0} registros</Text>
+							<Text style={{ fontSize: 9 }}>• Calculadoras: {statsData?.trends?.calculators?.length || 0} registros</Text>
+							<Text style={{ fontSize: 9 }}>• Plazos: {statsData?.trends?.deadlines?.length || 0} registros</Text>
+						</View>
+
 						{/* Tendencia de Tareas */}
 						{statsData?.trends?.tasks && Array.isArray(statsData.trends.tasks) && statsData.trends.tasks.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
