@@ -29,14 +29,23 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 	const open = Boolean(anchorEl);
 
 	useEffect(() => {
-		if (userId && history.length === 0) {
+		console.log("🔍 [HistorySelector] Component mounted/updated:", {
+			userId,
+			historyLength: history.length,
+			historyLoading,
+			selectedHistoryId
+		});
+		if (userId && history.length === 0 && !historyLoading) {
+			console.log("📋 [HistorySelector] Fetching history for user:", userId);
 			dispatch(getAnalyticsHistory(userId));
 		}
-	}, [dispatch, userId, history.length]);
+	}, [dispatch, userId, history.length, historyLoading]);
 
 	const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+		console.log("🖱️ [HistorySelector] Button clicked, opening menu");
 		setAnchorEl(event.currentTarget);
-		if (history.length === 0) {
+		if (history.length === 0 && !historyLoading) {
+			console.log("📋 [HistorySelector] Fetching history on click");
 			dispatch(getAnalyticsHistory(userId));
 		}
 	};
@@ -83,18 +92,31 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 
 	const selectedItem = history.find((item) => item.id === selectedHistoryId);
 
+	console.log("🎨 [HistorySelector] Rendering component with:", {
+		userId,
+		historyCount: history.length,
+		isLoading,
+		selectedHistoryId,
+		open
+	});
+
 	return (
 		<>
 			<Button
 				variant="outlined"
+				color="info"
 				startIcon={isLoading ? <CircularProgress size={14} /> : <Clock size={16} />}
 				endIcon={<ArrowDown2 size={14} />}
 				onClick={handleClick}
 				size="small"
 				disabled={isLoading}
 				sx={{
-					borderColor: selectedHistoryId ? "primary.main" : "divider",
-					backgroundColor: selectedHistoryId ? "primary.lighter" : "transparent",
+					borderColor: selectedHistoryId ? "info.main" : "info.light",
+					backgroundColor: selectedHistoryId ? "info.lighter" : "transparent",
+					"&:hover": {
+						borderColor: "info.main",
+						backgroundColor: "info.lighter",
+					}
 				}}
 			>
 				{isLoading ? "Cargando..." :
