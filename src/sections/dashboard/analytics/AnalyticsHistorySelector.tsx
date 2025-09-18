@@ -29,23 +29,14 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 	const open = Boolean(anchorEl);
 
 	useEffect(() => {
-		console.log("🔍 [HistorySelector] Component mounted/updated:", {
-			userId,
-			historyLength: history.length,
-			historyLoading,
-			selectedHistoryId
-		});
 		if (userId && history.length === 0 && !historyLoading) {
-			console.log("📋 [HistorySelector] Fetching history for user:", userId);
 			dispatch(getAnalyticsHistory(userId));
 		}
 	}, [dispatch, userId, history.length, historyLoading]);
 
 	const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-		console.log("🖱️ [HistorySelector] Button clicked, opening menu");
 		setAnchorEl(event.currentTarget);
 		if (history.length === 0 && !historyLoading) {
-			console.log("📋 [HistorySelector] Fetching history on click");
 			dispatch(getAnalyticsHistory(userId));
 		}
 	};
@@ -70,14 +61,23 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 		dispatch(getAnalyticsHistory(userId));
 	};
 
-	const formatDate = (dateString: string) => {
+	const formatDate = (dateString: string, short: boolean = false) => {
 		const date = new Date(dateString);
+		if (short) {
+			// Formato corto para la línea secundaria
+			return date.toLocaleDateString("es-AR", {
+				day: "2-digit",
+				month: "2-digit",
+				year: "2-digit",
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+		}
+		// Formato completo para la línea principal
 		return date.toLocaleDateString("es-AR", {
 			day: "2-digit",
 			month: "short",
 			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
 		});
 	};
 
@@ -91,14 +91,6 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 	};
 
 	const selectedItem = history.find((item) => item.id === selectedHistoryId);
-
-	console.log("🎨 [HistorySelector] Rendering component with:", {
-		userId,
-		historyCount: history.length,
-		isLoading,
-		selectedHistoryId,
-		open
-	});
 
 	return (
 		<>
@@ -131,8 +123,9 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 				onClose={handleClose}
 				PaperProps={{
 					sx: {
-						width: 320,
-						maxHeight: 400,
+						width: 400,
+						maxHeight: 450,
+						maxWidth: "90vw", // Responsive para móviles
 					},
 				}}
 			>
@@ -185,23 +178,37 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 							sx={{
 								py: 1.5,
 								px: 2,
+								minHeight: 72,
 							}}
 						>
-							<ListItemIcon>
+							<ListItemIcon sx={{ minWidth: 40 }}>
 								<Calendar size={20} color={item.isLatest ? "#52c41a" : "#8c8c8c"} />
 							</ListItemIcon>
 							<ListItemText
 								primary={
-									<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-										<Typography variant="body2">{formatDate(item.createdAt)}</Typography>
+									<Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+										<Typography variant="body1" fontWeight={500}>
+											{formatDate(item.createdAt)}
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											({getAgeLabel(item.ageInDays)})
+										</Typography>
 										{item.isLatest && (
-											<Chip label="Actual" size="small" color="success" sx={{ height: 20 }} />
+											<Chip label="Actual" size="small" color="success" sx={{ height: 18, fontSize: "0.75rem" }} />
 										)}
 									</Box>
 								}
 								secondary={
-									<Typography variant="caption" color="text.secondary">
-										{getAgeLabel(item.ageInDays)} • Actualizado: {formatDate(item.lastUpdated)}
+									<Typography
+										variant="caption"
+										color="text.secondary"
+										sx={{
+											display: "block",
+											mt: 0.5,
+											lineHeight: 1.4
+										}}
+									>
+										Actualizado: {formatDate(item.lastUpdated, true)}
 									</Typography>
 								}
 							/>
