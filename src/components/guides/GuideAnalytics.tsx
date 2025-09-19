@@ -48,6 +48,9 @@ import {
 	DollarSquare,
 	TaskSquare,
 	Notification,
+	TickCircle,
+	Warning2,
+	CloseCircle,
 } from "iconsax-react";
 
 // ==============================|| GUÍA ANALÍTICAS - ESTILOS ||============================== //
@@ -197,6 +200,145 @@ const MainMetricsContent = () => {
 					</Paper>
 				</Grid>
 			</Grid>
+		</Stack>
+	);
+};
+
+const DataQualityContent = () => {
+	const theme = useTheme();
+	return (
+		<Stack spacing={3}>
+			<Typography paragraph>
+				El indicador de Calidad de Datos evalúa la completitud y confiabilidad de la información en el sistema, permitiéndote entender qué tan precisas son las analíticas mostradas.
+			</Typography>
+
+			<Alert severity="info">
+				<AlertTitle>¿Cómo se calcula?</AlertTitle>
+				<Typography component="div">
+					El sistema comienza con 100% y aplica descuentos según los datos faltantes:
+					<ul style={{ marginTop: 8 }}>
+						<li><strong>-30%</strong> si no hay carpetas registradas</li>
+						<li><strong>-20%</strong> si no hay montos financieros</li>
+						<li><strong>-20%</strong> si no hay actividad reciente (últimos 30 días)</li>
+					</ul>
+				</Typography>
+			</Alert>
+
+			<TableContainer component={Paper}>
+				<Table>
+					<TableHead>
+						<TableRow sx={{ bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
+							<TableCell>Escenario</TableCell>
+							<TableCell align="center">Carpetas</TableCell>
+							<TableCell align="center">Montos</TableCell>
+							<TableCell align="center">Actividad</TableCell>
+							<TableCell align="center">Calidad</TableCell>
+						</TableRow>
+					</TableHead>
+					<TableBody>
+						<TableRow>
+							<TableCell><strong>Ideal</strong></TableCell>
+							<TableCell align="center">✅</TableCell>
+							<TableCell align="center">✅</TableCell>
+							<TableCell align="center">✅</TableCell>
+							<TableCell align="center">
+								<Chip label="100%" color="success" size="small" />
+							</TableCell>
+						</TableRow>
+						<TableRow>
+							<TableCell><strong>Usuario activo</strong></TableCell>
+							<TableCell align="center">✅</TableCell>
+							<TableCell align="center">✅</TableCell>
+							<TableCell align="center">❌</TableCell>
+							<TableCell align="center">
+								<Chip label="80%" color="primary" size="small" />
+							</TableCell>
+						</TableRow>
+						<TableRow>
+							<TableCell><strong>Datos parciales</strong></TableCell>
+							<TableCell align="center">✅</TableCell>
+							<TableCell align="center">❌</TableCell>
+							<TableCell align="center">❌</TableCell>
+							<TableCell align="center">
+								<Chip label="60%" color="warning" size="small" />
+							</TableCell>
+						</TableRow>
+						<TableRow>
+							<TableCell><strong>Mínimo</strong></TableCell>
+							<TableCell align="center">❌</TableCell>
+							<TableCell align="center">❌</TableCell>
+							<TableCell align="center">❌</TableCell>
+							<TableCell align="center">
+								<Chip label="30%" color="error" size="small" />
+							</TableCell>
+						</TableRow>
+					</TableBody>
+				</Table>
+			</TableContainer>
+
+			<Grid container spacing={2} sx={{ mt: 1 }}>
+				<Grid item xs={12} md={6}>
+					<Paper sx={{ p: 2, bgcolor: alpha(theme.palette.success.lighter, 0.1) }}>
+						<Box display="flex" alignItems="flex-start" mb={1}>
+							<TickCircle size={24} style={{ color: theme.palette.success.main, marginRight: "8px" }} />
+							<Typography variant="subtitle1" fontWeight="bold">
+								90-100%: Excelente
+							</Typography>
+						</Box>
+						<Typography variant="body2">
+							Datos completos y confiables. Las analíticas reflejan con precisión el estado de tu práctica legal.
+						</Typography>
+					</Paper>
+				</Grid>
+				<Grid item xs={12} md={6}>
+					<Paper sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.1) }}>
+						<Box display="flex" alignItems="flex-start" mb={1}>
+							<InfoCircle size={24} style={{ color: theme.palette.info.main, marginRight: "8px" }} />
+							<Typography variant="subtitle1" fontWeight="bold">
+								70-89%: Bueno
+							</Typography>
+						</Box>
+						<Typography variant="body2">
+							Datos mayormente completos. Las métricas son confiables aunque falta algún componente menor.
+						</Typography>
+					</Paper>
+				</Grid>
+				<Grid item xs={12} md={6}>
+					<Paper sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.1) }}>
+						<Box display="flex" alignItems="flex-start" mb={1}>
+							<Warning2 size={24} style={{ color: theme.palette.warning.main, marginRight: "8px" }} />
+							<Typography variant="subtitle1" fontWeight="bold">
+								50-69%: Parcial
+							</Typography>
+						</Box>
+						<Typography variant="body2">
+							Datos incompletos. El análisis es limitado y las tendencias pueden no ser representativas.
+						</Typography>
+					</Paper>
+				</Grid>
+				<Grid item xs={12} md={6}>
+					<Paper sx={{ p: 2, bgcolor: alpha(theme.palette.error.lighter, 0.1) }}>
+						<Box display="flex" alignItems="flex-start" mb={1}>
+							<CloseCircle size={24} style={{ color: theme.palette.error.main, marginRight: "8px" }} />
+							<Typography variant="subtitle1" fontWeight="bold">
+								0-49%: Insuficiente
+							</Typography>
+						</Box>
+						<Typography variant="body2">
+							Datos muy incompletos. Se requiere más información para generar análisis significativos.
+						</Typography>
+					</Paper>
+				</Grid>
+			</Grid>
+
+			<Alert severity="warning" sx={{ mt: 2 }}>
+				<AlertTitle>¿Cómo mejorar la calidad?</AlertTitle>
+				<Typography component="div">
+					• <strong>Registra todas tus carpetas</strong>: Mantén actualizada la información de casos<br />
+					• <strong>Agrega montos económicos</strong>: Incluye valores en tus carpetas activas<br />
+					• <strong>Mantén actividad regular</strong>: Registra movimientos, tareas y actualizaciones frecuentemente
+				</Typography>
+			</Alert>
 		</Stack>
 	);
 };
@@ -719,6 +861,10 @@ const GuideAnalytics: React.FC<GuideAnalyticsProps> = ({ open, onClose }) => {
 		{
 			title: "Métricas Principales",
 			content: <MainMetricsContent />,
+		},
+		{
+			title: "Calidad de Datos",
+			content: <DataQualityContent />,
 		},
 		{
 			title: "Proyección de Vencimientos",

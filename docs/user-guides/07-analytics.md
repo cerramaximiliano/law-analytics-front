@@ -63,7 +63,51 @@ El panel de analíticas es tu centro de comando para monitorear el rendimiento d
 
 ---
 
-## 4. Proyección de Vencimientos
+## 4. Indicador de Calidad de Datos
+
+### ¿Qué es la Calidad de Datos?
+
+El indicador de Calidad de Datos evalúa la completitud y confiabilidad de la información en el sistema, permitiéndote entender qué tan precisas son las analíticas mostradas.
+
+### Cálculo del indicador:
+
+El sistema comienza con **100%** y aplica descuentos según los datos faltantes:
+
+- **-30%** si no hay carpetas registradas
+- **-20%** si no hay montos financieros
+- **-20%** si no hay actividad reciente (últimos 30 días)
+
+### Interpretación del porcentaje:
+
+| Rango | Nivel | Descripción |
+|-------|-------|-------------|
+| **90-100%** | 🟢 Excelente | Datos completos y confiables. Las analíticas reflejan con precisión el estado de tu práctica legal. |
+| **70-89%** | 🔵 Bueno | Datos mayormente completos. Las métricas son confiables aunque falta algún componente menor. |
+| **50-69%** | 🟡 Parcial | Datos incompletos. El análisis es limitado y las tendencias pueden no ser representativas. |
+| **30-49%** | 🟠 Muy incompleto | Datos muy limitados. Se requiere más información para análisis útiles. |
+| **0-29%** | 🔴 Insuficiente | Datos insuficientes para generar análisis significativos. |
+
+### Ejemplos de escenarios:
+
+| Escenario | Carpetas | Montos | Actividad | Calidad |
+|-----------|----------|--------|-----------|---------|
+| **Ideal** | ✅ | ✅ | ✅ | 100% |
+| **Usuario activo** | ✅ 14 | ✅ $8M | ❌ 0 | 80% |
+| **Datos parciales** | ✅ 5 | ❌ $0 | ❌ 0 | 60% |
+| **Mínimo** | ❌ | ❌ | ❌ | 30% |
+
+### Cómo mejorar la calidad de datos:
+
+1. **Registra todas tus carpetas**: Mantén actualizada la información de todos tus casos activos
+2. **Agrega montos económicos**: Incluye valores monetarios en tus carpetas para análisis financiero
+3. **Mantén actividad regular**: Registra movimientos, tareas y actualizaciones frecuentemente
+4. **Completa información básica**: Asegúrate de que cada carpeta tenga los datos mínimos requeridos
+
+> **💡 Tip**: Una calidad de datos superior al 70% garantiza que las métricas y tendencias mostradas sean representativas de tu práctica legal real.
+
+---
+
+## 5. Proyección de Vencimientos
 
 ### Interpretación de los plazos:
 
@@ -82,16 +126,16 @@ El panel de analíticas es tu centro de comando para monitorear el rendimiento d
 
 ---
 
-## 5. Visualizaciones Financieras
+## 6. Visualizaciones Financieras
 
-### 5.1 Resumen Financiero
+### 6.1 Resumen Financiero
 
 Muestra tres métricas clave:
 - **Monto Activo Total**: Suma de todos los casos activos
 - **Promedio por Carpeta**: División del monto total entre carpetas activas
 - **Monto Pendiente**: Casos en estado pendiente de resolución
 
-### 5.2 Distribución por Estado
+### 6.2 Distribución por Estado
 
 Gráfico que muestra cómo se distribuyen los montos según el estado de las carpetas:
 - Nueva
@@ -101,7 +145,7 @@ Gráfico que muestra cómo se distribuyen los montos según el estado de las car
 
 ---
 
-## 6. Métricas de Actividad
+## 7. Métricas de Actividad
 
 ### Indicadores disponibles:
 
@@ -112,7 +156,7 @@ Gráfico que muestra cómo se distribuyen los montos según el estado de las car
 
 ---
 
-## 7. Información de Actualización de Datos
+## 8. Información de Actualización de Datos
 
 ### Chip de Estado de Caché
 
@@ -125,7 +169,7 @@ En la parte superior del panel verás un indicador que muestra:
 
 ---
 
-## 8. Histórico de Analíticas
+## 9. Histórico de Analíticas
 
 ### Acceso a datos históricos:
 
@@ -146,7 +190,7 @@ En la parte superior del panel verás un indicador que muestra:
 
 ---
 
-## 9. Exportación de Reportes
+## 10. Exportación de Reportes
 
 ### Proceso detallado:
 
@@ -182,7 +226,7 @@ En la parte superior del panel verás un indicador que muestra:
 
 ---
 
-## 10. Interpretación de Tendencias
+## 11. Interpretación de Tendencias
 
 ### Gráficos de evolución (últimos 6 meses):
 
@@ -200,7 +244,7 @@ En la parte superior del panel verás un indicador que muestra:
 
 ---
 
-## 11. Tooltips y Ayuda Contextual
+## 12. Tooltips y Ayuda Contextual
 
 ### Cómo obtener más información:
 
@@ -218,7 +262,7 @@ Los tooltips aparecen automáticamente al pasar el mouse y contienen informació
 
 ---
 
-## 12. Limitaciones por Plan
+## 13. Limitaciones por Plan
 
 ### Plan Gratuito:
 - ❌ Vista completa de analíticas (con overlay)
@@ -238,7 +282,7 @@ Los tooltips aparecen automáticamente al pasar el mouse y contienen informació
 
 ---
 
-## 13. Preguntas Frecuentes
+## 14. Preguntas Frecuentes
 
 ### ¿Con qué frecuencia se actualizan los datos?
 Los datos se procesan automáticamente cada 24 horas a las 5:00 AM hora del servidor.
@@ -259,7 +303,7 @@ Actualmente solo PDF está disponible mediante el modal de exportación. El PDF 
 
 ---
 
-## 14. Consejos y Mejores Prácticas
+## 15. Consejos y Mejores Prácticas
 
 ### Para maximizar el valor de las analíticas:
 
@@ -278,7 +322,7 @@ Actualmente solo PDF está disponible mediante el modal de exportación. El PDF 
 
 ---
 
-## 15. Solución de Problemas
+## 16. Solución de Problemas
 
 ### El panel no muestra datos:
 1. Verifica estar autenticado correctamente
