@@ -13,7 +13,6 @@ import RepeatCustomerRate from "sections/widget/chart/FoldersDataRate";
 import FinancialWidget from "sections/widget/chart/FinancialWidget";
 import ActiveFoldersWidget from "sections/widget/chart/ActiveFoldersWidget";
 
-import ProjectOverview from "sections/widget/chart/ProjectOverview";
 import ProjectRelease from "sections/widget/chart/ProjectRelease";
 import AssignUsers from "sections/widget/chart/TaskWidget";
 import StorageWidget from "sections/widget/chart/StorageWidget";
@@ -249,9 +248,6 @@ const DashboardDefault = () => {
 							<Grid container spacing={3}>
 								<Grid item xs={12}>
 									<RepeatCustomerRate />
-								</Grid>
-								<Grid item xs={12}>
-									<ProjectOverview />
 								</Grid>
 							</Grid>
 						</Grid>
