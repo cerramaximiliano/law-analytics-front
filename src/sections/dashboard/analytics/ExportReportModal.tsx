@@ -351,7 +351,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.tasks.slice(0, 6).map((item: TrendItem, index: number) => (
+									{[...statsData.trends.tasks].reverse().map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`task-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -379,7 +379,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.newFolders.slice(0, 6).map((item: TrendItem, index: number) => (
+									{[...statsData.trends.newFolders].reverse().map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`new-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -407,7 +407,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.closedFolders.slice(0, 6).map((item: TrendItem, index: number) => (
+									{[...statsData.trends.closedFolders].reverse().map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`closed-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -435,7 +435,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.movements.slice(0, 6).map((item: TrendItem, index: number) => (
+									{[...statsData.trends.movements].reverse().map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`mov-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -463,7 +463,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.calculators.slice(0, 6).map((item: TrendItem, index: number) => (
+									{[...statsData.trends.calculators].reverse().map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`calc-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
@@ -491,7 +491,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 										<Text style={styles.tableCell}>Mes</Text>
 										<Text style={styles.tableCell}>Cantidad</Text>
 									</View>
-									{statsData.trends.deadlines.slice(0, 6).map((item: TrendItem, index: number) => (
+									{[...statsData.trends.deadlines].reverse().map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`dead-${index}`}>
 											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
