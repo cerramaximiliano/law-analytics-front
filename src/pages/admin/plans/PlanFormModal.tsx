@@ -337,20 +337,15 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 						<Grid item xs={12}>
 							<Alert severity="warning" sx={{ mb: 2 }}>
 								<FormControlLabel
-									control={
-										<Switch
-											checked={updateSubscriptions}
-											onChange={(e) => setUpdateSubscriptions(e.target.checked)}
-										/>
-									}
+									control={<Switch checked={updateSubscriptions} onChange={(e) => setUpdateSubscriptions(e.target.checked)} />}
 									label={
 										<Box>
 											<Typography variant="subtitle2" fontWeight="bold">
 												Actualizar todas las suscripciones existentes
 											</Typography>
 											<Typography variant="body2" color="text.secondary">
-												Al activar esta opción, los cambios en los límites y características se aplicarán
-												a todas las suscripciones activas con este plan.
+												Al activar esta opción, los cambios en los límites y características se aplicarán a todas las suscripciones activas
+												con este plan.
 											</Typography>
 										</Box>
 									}

@@ -167,9 +167,7 @@ const HistoricalTrends = () => {
 								label={
 									<Stack direction="row" spacing={1} alignItems="center">
 										<Typography variant="body2">{chart.title}</Typography>
-										{chart.count > 0 && (
-											<Chip label={chart.count} size="small" color="default" />
-										)}
+										{chart.count > 0 && <Chip label={chart.count} size="small" color="default" />}
 									</Stack>
 								}
 								disabled={chart.count === 0}

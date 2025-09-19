@@ -5,6 +5,7 @@ import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import { CloudChange } from "iconsax-react";
 import { useSelector } from "store";
+import { cleanPlanDisplayName } from "utils/planPricingUtils";
 
 const StorageWidget = () => {
 	const theme = useTheme();
@@ -51,7 +52,7 @@ const StorageWidget = () => {
 							<Typography variant="subtitle1">Almacenamiento</Typography>
 							{userStats?.planInfo?.planName && (
 								<Typography variant="caption" color="text.secondary">
-									{userStats.planInfo.planName}
+									{cleanPlanDisplayName(userStats.planInfo.planName)}
 								</Typography>
 							)}
 						</Stack>

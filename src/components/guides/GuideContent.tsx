@@ -23,6 +23,8 @@ import {
 	Profile2User,
 	Calendar,
 	TaskSquare,
+	Cloud,
+	Archive,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES PARA CONTENIDOS DE GUÍAS ||============================== //
@@ -1412,7 +1414,8 @@ export const AnalyticsContent = () => {
 			content: (
 				<Stack spacing={3}>
 					<Typography>
-						El panel de analíticas te permite visualizar métricas clave sobre tu práctica legal, incluyendo datos sobre carpetas, tareas, vencimientos y aspectos financieros.
+						El panel de analíticas te permite visualizar métricas clave sobre tu práctica legal, incluyendo datos sobre carpetas, tareas,
+						vencimientos y aspectos financieros.
 					</Typography>
 					<Alert severity="info">
 						<AlertTitle>Lo que encontrarás:</AlertTitle>
@@ -1478,9 +1481,7 @@ export const AnalyticsContent = () => {
 						</Box>
 					</Stack>
 					<Alert severity="info">
-						<Typography variant="body2">
-							💡 Pasa el cursor sobre el ícono ℹ️ junto a cada métrica para obtener más detalles.
-						</Typography>
+						<Typography variant="body2">💡 Pasa el cursor sobre el ícono ℹ️ junto a cada métrica para obtener más detalles.</Typography>
 					</Alert>
 				</Stack>
 			),
@@ -1539,9 +1540,7 @@ export const AnalyticsContent = () => {
 						</Stack>
 					</Paper>
 					<Alert severity="success">
-						<Typography variant="body2">
-							Los datos históricos se mantienen indefinidamente y permiten análisis de tendencias.
-						</Typography>
+						<Typography variant="body2">Los datos históricos se mantienen indefinidamente y permiten análisis de tendencias.</Typography>
 					</Alert>
 				</Stack>
 			),
@@ -1568,9 +1567,7 @@ export const AnalyticsContent = () => {
 						</Typography>
 					</Paper>
 					<Alert severity="warning">
-						<Typography variant="body2">
-							Esta función requiere plan Standard o Premium.
-						</Typography>
+						<Typography variant="body2">Esta función requiere plan Standard o Premium.</Typography>
 					</Alert>
 				</Stack>
 			),

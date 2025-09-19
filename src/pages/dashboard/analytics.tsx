@@ -26,6 +26,7 @@ import AverageResolutionTime from "sections/widget/analytics/AverageResolutionTi
 import TaskCompletionRate from "sections/widget/analytics/TaskCompletionRate";
 import TaskDistributionByPriority from "sections/widget/analytics/TaskDistributionByPriority";
 import CalculatorTypeBreakdown from "sections/widget/analytics/CalculatorTypeBreakdown";
+import DataQuality from "sections/widget/analytics/DataQuality";
 import AmountsByFolderStatus from "sections/widget/analytics/AmountsByFolderStatus";
 import DailyWeeklyActivity from "sections/widget/analytics/DailyWeeklyActivity";
 import RecentActivityFeed from "sections/widget/analytics/RecentActivityFeed";
@@ -55,7 +56,7 @@ const DashboardAnalytics = () => {
 		descriptions,
 		cacheInfo,
 		selectedHistoryId,
-		history
+		history,
 	} = useSelector((state: RootState) => state.unifiedStats);
 
 	// Estados para el control del modal
@@ -133,7 +134,7 @@ const DashboardAnalytics = () => {
 			userObject: user,
 			statsLoading,
 			hasData: !!statsData,
-			hasTriedToLoad
+			hasTriedToLoad,
 		});
 
 		if (userId && !hasTriedToLoad) {
@@ -169,23 +170,20 @@ const DashboardAnalytics = () => {
 				title={
 					<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 						<Typography variant="h3">Panel de Analíticas</Typography>
-						{selectedHistoryId && (
-							<Chip
-								label="Viendo histórico"
-								size="small"
-								color="info"
-								variant="filled"
-							/>
-						)}
+						{selectedHistoryId && <Chip label="Viendo histórico" size="small" color="info" variant="filled" />}
 					</Box>
 				}
 				secondary={
 					<Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
 						{cacheInfo && (
-							<Tooltip title={`Última actualización: ${new Date(cacheInfo.generatedAt).toLocaleString()}. Próxima actualización: ${new Date(cacheInfo.nextUpdate).toLocaleString()}`}>
+							<Tooltip
+								title={`Última actualización: ${new Date(cacheInfo.generatedAt).toLocaleString()}. Próxima actualización: ${new Date(
+									cacheInfo.nextUpdate,
+								).toLocaleString()}`}
+							>
 								<Chip
 									icon={<Clock size={14} />}
-									label={`Actualizado hace ${Math.round(cacheInfo.hoursAgo)} ${Math.round(cacheInfo.hoursAgo) === 1 ? 'hora' : 'horas'}`}
+									label={`Actualizado hace ${Math.round(cacheInfo.hoursAgo)} ${Math.round(cacheInfo.hoursAgo) === 1 ? "hora" : "horas"}`}
 									size="small"
 									variant="outlined"
 									color={cacheInfo.hoursAgo > 24 ? "warning" : "default"}
@@ -241,17 +239,20 @@ const DashboardAnalytics = () => {
 							<AverageResolutionTime />
 						</Grid>
 						<Grid item xs={12} md={6} lg={3}>
+							<DataQuality />
+						</Grid>
+						<Grid item xs={12} md={6} lg={3}>
 							<TaskCompletionRate />
 						</Grid>
 						<Grid item xs={12} md={6} lg={3}>
 							<TaskDistributionByPriority />
 						</Grid>
+
+						{/* Row 2 - Calculator and Financial */}
 						<Grid item xs={12} md={6} lg={3}>
 							<CalculatorTypeBreakdown />
 						</Grid>
-
-						{/* Row 2 - Financial and Activity */}
-						<Grid item xs={12} lg={8}>
+						<Grid item xs={12} lg={5}>
 							<AmountsByFolderStatus />
 						</Grid>
 						<Grid item xs={12} lg={4}>
@@ -375,10 +376,7 @@ const DashboardAnalytics = () => {
 			/>
 
 			{/* Modal de exportación de reporte */}
-			<ExportReportModal
-				open={exportModalOpen}
-				onClose={() => setExportModalOpen(false)}
-			/>
+			<ExportReportModal open={exportModalOpen} onClose={() => setExportModalOpen(false)} />
 
 			{/* Modal de guía */}
 			<GuideAnalytics open={guideOpen} onClose={() => setGuideOpen(false)} />

@@ -108,14 +108,13 @@ interface UserViewProps {
 
 // Helper function to get the correct Stripe value based on environment
 const getStripeValue = (value: any): string => {
-	if (typeof value === 'string') {
+	if (typeof value === "string") {
 		return value;
 	}
 
-	if (typeof value === 'object' && value !== null) {
+	if (typeof value === "object" && value !== null) {
 		// Detectar si estamos en desarrollo o producción
-		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes('localhost') ||
-							  import.meta.env.MODE === 'development';
+		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes("localhost") || import.meta.env.MODE === "development";
 
 		if (isDevelopment && value.test) {
 			return value.test;
@@ -135,14 +134,13 @@ const getStripeValue = (value: any): string => {
 
 // Helper function to get Stripe value with environment indicator
 const getStripeValueWithIndicator = (value: any): { value: string; isTest?: boolean } => {
-	if (typeof value === 'string') {
+	if (typeof value === "string") {
 		return { value };
 	}
 
-	if (typeof value === 'object' && value !== null) {
+	if (typeof value === "object" && value !== null) {
 		// Detectar si estamos en desarrollo o producción
-		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes('localhost') ||
-							  import.meta.env.MODE === 'development';
+		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes("localhost") || import.meta.env.MODE === "development";
 
 		if (isDevelopment && value.test) {
 			return { value: value.test, isTest: true };
@@ -180,7 +178,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const [gracePeriodExpiresAt, setGracePeriodExpiresAt] = useState<Date | null>(null);
 	const [autoArchiveScheduled, setAutoArchiveScheduled] = useState(false);
 	const [savingGracePeriod, setSavingGracePeriod] = useState(false);
-	
+
 	// Estado para sincronización de suscripción
 	const [syncingSubscription, setSyncingSubscription] = useState(false);
 
@@ -352,10 +350,10 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		setSyncingSubscription(true);
 		try {
 			const response = await ApiService.repairUserSubscription(userId);
-			
+
 			if (response.success) {
 				enqueueSnackbar(response.message || "Suscripción sincronizada exitosamente", { variant: "success" });
-				
+
 				// Recargar los datos del usuario para mostrar la suscripción actualizada
 				dispatch(getUserById(userId) as any);
 			} else {
@@ -466,7 +464,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		if (!subscription) {
 			return (
 				<Stack spacing={3}>
-					<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+					<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
 						<Alert severity="info" sx={{ flex: 1, mr: 2 }}>
 							<Typography variant="body2">
 								<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
@@ -483,13 +481,13 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 									minWidth: 150,
 									borderColor: theme.palette.primary.main,
 									color: theme.palette.primary.main,
-									'&:hover': {
+									"&:hover": {
 										borderColor: theme.palette.primary.dark,
 										backgroundColor: theme.palette.action.hover,
 									},
 								}}
 							>
-								{syncingSubscription ? 'Sincronizando...' : 'Sincronizar'}
+								{syncingSubscription ? "Sincronizando..." : "Sincronizar"}
 							</Button>
 						</Tooltip>
 					</Box>
@@ -504,7 +502,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 						<Typography variant="body1" align="center">
 							El usuario no posee información sobre suscripción dentro de la colección de suscripciones.
 						</Typography>
-						<Typography variant="body2" align="center" sx={{ mt: 2, color: 'text.secondary' }}>
+						<Typography variant="body2" align="center" sx={{ mt: 2, color: "text.secondary" }}>
 							Usa el botón "Sincronizar" para intentar obtener la información desde Stripe.
 						</Typography>
 					</Paper>
@@ -514,7 +512,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 		return (
 			<Stack spacing={3}>
-				<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+				<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
 					<Alert severity="info" sx={{ flex: 1, mr: 2 }}>
 						<Typography variant="body2">
 							<strong>Nota:</strong> La información mostrada corresponde a los datos del usuario dentro de la colección de suscripciones.
@@ -531,13 +529,13 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 								minWidth: 150,
 								borderColor: theme.palette.primary.main,
 								color: theme.palette.primary.main,
-								'&:hover': {
+								"&:hover": {
 									borderColor: theme.palette.primary.dark,
 									backgroundColor: theme.palette.action.hover,
 								},
 							}}
 						>
-							{syncingSubscription ? 'Sincronizando...' : 'Sincronizar'}
+							{syncingSubscription ? "Sincronizando..." : "Sincronizar"}
 						</Button>
 					</Tooltip>
 				</Box>
@@ -563,7 +561,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="subtitle1">ID de Cliente Stripe</Typography>
-					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+					<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 						<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
 							{(() => {
 								const stripeData = getStripeValueWithIndicator(subscription.stripeCustomerId);
@@ -580,8 +578,8 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 										color={stripeData.isTest ? "warning" : "success"}
 										sx={{
 											height: 20,
-											fontSize: '0.7rem',
-											fontWeight: 'bold'
+											fontSize: "0.7rem",
+											fontWeight: "bold",
 										}}
 									/>
 								);
@@ -594,7 +592,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 				{subscription.stripeSubscriptionId && (
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
 						<Typography variant="subtitle1">ID de Suscripción Stripe</Typography>
-						<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+						<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 							<Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.875rem" }}>
 								{(() => {
 									const stripeData = getStripeValueWithIndicator(subscription.stripeSubscriptionId);
@@ -611,8 +609,8 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 											color={stripeData.isTest ? "warning" : "success"}
 											sx={{
 												height: 20,
-												fontSize: '0.7rem',
-												fontWeight: 'bold'
+												fontSize: "0.7rem",
+												fontWeight: "bold",
 											}}
 										/>
 									);

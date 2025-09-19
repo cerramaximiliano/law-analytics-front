@@ -44,14 +44,13 @@ import { fetchCurrentSubscription, updateSubscription, fetchPaymentHistory, sele
 
 // Helper function to get the correct Stripe value based on environment
 const getStripeValue = (value: any): string => {
-	if (typeof value === 'string') {
+	if (typeof value === "string") {
 		return value;
 	}
 
-	if (typeof value === 'object' && value !== null) {
+	if (typeof value === "object" && value !== null) {
 		// Detectar si estamos en desarrollo o producción
-		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes('localhost') ||
-							  import.meta.env.MODE === 'development';
+		const isDevelopment = import.meta.env.VITE_BASE_URL?.includes("localhost") || import.meta.env.MODE === "development";
 
 		if (isDevelopment && value.test) {
 			return value.test;
@@ -68,7 +67,6 @@ const getStripeValue = (value: any): string => {
 
 	return "No disponible";
 };
-
 
 const TabSubscription = () => {
 	const dispatch = useDispatch<AppDispatch>();
@@ -405,15 +403,12 @@ const TabSubscription = () => {
 		}
 
 		// Caso 2: Período de gracia por downgrade con fecha futura
-		if (subscription.downgradeGracePeriod?.expiresAt &&
-			new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
+		if (subscription.downgradeGracePeriod?.expiresAt && new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
 			return true;
 		}
 
 		// Caso 3: Período de gracia por cancelación
-		if (subscription.cancelAtPeriodEnd === true &&
-			subscription.currentPeriodEnd &&
-			new Date(subscription.currentPeriodEnd) > new Date()) {
+		if (subscription.cancelAtPeriodEnd === true && subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date()) {
 			return true;
 		}
 
@@ -436,8 +431,7 @@ const TabSubscription = () => {
 			gracePeriodType = "payment_failed";
 			// En este caso, mantenemos el mismo plan
 			targetPlan = subscription.plan;
-		} else if (subscription.downgradeGracePeriod?.expiresAt &&
-				   new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
+		} else if (subscription.downgradeGracePeriod?.expiresAt && new Date(subscription.downgradeGracePeriod.expiresAt) > new Date()) {
 			// Período de gracia por downgrade
 			gracePeriodType = "downgrade";
 			expiryDate = subscription.downgradeGracePeriod.expiresAt;
@@ -578,7 +572,9 @@ const TabSubscription = () => {
 														"& .MuiAlert-icon": { color: "warning.dark" },
 													}}
 												>
-													<Typography variant="body2">{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}</Typography>
+													<Typography variant="body2">
+														{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}
+													</Typography>
 												</Alert>
 											)}
 									</>
@@ -667,7 +663,7 @@ const TabSubscription = () => {
 														{(() => {
 															if (item.limit === undefined) return "No disponible";
 															if (item.limit === 999999) return "Ilimitado";
-															if (item.name === 'storage') return `${item.limit} MB`;
+															if (item.name === "storage") return `${item.limit} MB`;
 															return item.limit;
 														})()}
 													</Typography>
@@ -691,7 +687,7 @@ const TabSubscription = () => {
 															const limit = value.limit;
 															if (limit === undefined) return "No disponible";
 															if (limit === 999999) return "Ilimitado";
-															if (key === 'storage') return `${limit} MB`;
+															if (key === "storage") return `${limit} MB`;
 															return limit;
 														})()}
 													</Typography>
@@ -706,7 +702,7 @@ const TabSubscription = () => {
 											folders: "Carpetas",
 											calculators: "Cálculos",
 											contacts: "Contactos",
-											storage: "Almacenamiento"
+											storage: "Almacenamiento",
 										};
 										return (
 											<ListItem key={key} sx={{ px: 1, py: 1 }}>
@@ -721,7 +717,7 @@ const TabSubscription = () => {
 															{(() => {
 																if (value === undefined) return "No disponible";
 																if (value === 999999) return "Ilimitado";
-																if (key === 'storage') return `${value} MB`;
+																if (key === "storage") return `${value} MB`;
 																return value;
 															})()}
 														</Typography>
@@ -839,8 +835,7 @@ const TabSubscription = () => {
 												vinculateFolders: "Vincular carpetas",
 												booking: "Sistema de reservas",
 											};
-											const displayName = featureNames[key] ||
-												key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+											const displayName = featureNames[key] || key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
 
 											return (
 												<ListItem key={key} sx={{ px: 1, py: 1.25 }}>
@@ -923,282 +918,280 @@ const TabSubscription = () => {
 
 			{/* Sección de Período de Gracia */}
 			{subscription && isInGracePeriod() && (
-					<Grid item xs={12}>
-						<MainCard
-							title={getGracePeriodInfo()?.title || "Período de Gracia"}
+				<Grid item xs={12}>
+					<MainCard
+						title={getGracePeriodInfo()?.title || "Período de Gracia"}
+						sx={{
+							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
+							overflow: "hidden",
+							position: "relative",
+						}}
+					>
+						<Box
 							sx={{
-								boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-								overflow: "hidden",
-								position: "relative",
+								bgcolor: "background.neutral",
+								p: 2.5,
+								borderRadius: 2,
 							}}
 						>
-							<Box
-								sx={{
-									bgcolor: "background.neutral",
-									p: 2.5,
-									borderRadius: 2,
-								}}
-							>
-								<Grid container spacing={3}>
-									<Grid item xs={12}>
+							<Grid container spacing={3}>
+								<Grid item xs={12}>
+									{(() => {
+										const gracePeriodInfo = getGracePeriodInfo();
+										return gracePeriodInfo?.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past";
+									})() ? (
+										<Alert
+											severity="info"
+											variant="outlined"
+											sx={{
+												mb: 3,
+												borderRadius: 2,
+											}}
+										>
+											<Stack spacing={1}>
+												<Typography variant="subtitle1" fontWeight={600}>
+													Período de gracia finalizado
+												</Typography>
+												<Typography variant="body2">
+													El período de gracia finalizó el{" "}
+													{(() => {
+														const info = getGracePeriodInfo();
+														return info?.expiryDate ? formatDate(info.expiryDate) : "";
+													})()}
+													. El contenido que excedía los límites de tu{" "}
+													{getGracePeriodInfo()?.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha sido archivado
+													automáticamente.
+												</Typography>
+											</Stack>
+										</Alert>
+									) : (
+										<Alert
+											severity="warning"
+											variant="outlined"
+											sx={{
+												mb: 3,
+												borderRadius: 2,
+											}}
+										>
+											<Stack spacing={1}>
+												<Typography variant="subtitle1" fontWeight={600}>
+													{getGracePeriodInfo()?.willDowngradeToFreePlan
+														? `Tu plan ${getGracePeriodInfo()?.previousPlanName} será cambiado al Plan Gratuito el ${
+																getGracePeriodInfo()?.cancellationFormatted
+														  }`
+														: `Tu plan ha cambiado de ${getGracePeriodInfo()?.previousPlanName} a ${getGracePeriodInfo()?.currentPlanName}`}
+												</Typography>
+												<Typography variant="body2">Tienes un período de gracia para ajustar tus datos a los nuevos límites.</Typography>
+											</Stack>
+										</Alert>
+									)}
+								</Grid>
+
+								<Grid item xs={12}>
+									<Grid container spacing={4}>
+										<Grid item xs={12} sm={4}>
+											<Box
+												sx={{
+													bgcolor: "background.paper",
+													p: 2.5,
+													borderRadius: 2,
+													boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
+													height: "100%",
+												}}
+											>
+												<Stack spacing={1.5} alignItems="center" textAlign="center">
+													<Box
+														sx={{
+															width: 48,
+															height: 48,
+															borderRadius: "50%",
+															bgcolor: "primary.lighter",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															mb: 0.5,
+														}}
+													>
+														<Typography variant="h5" color="primary.dark">
+															P
+														</Typography>
+													</Box>
+													<Typography color="text.secondary" variant="body2" fontWeight={500}>
+														Plan anterior
+													</Typography>
+													<Typography variant="h5" color="text.primary">
+														{getGracePeriodInfo()?.previousPlanName}
+													</Typography>
+												</Stack>
+											</Box>
+										</Grid>
+
+										<Grid item xs={12} sm={4}>
+											<Box
+												sx={{
+													bgcolor: "background.paper",
+													p: 2.5,
+													borderRadius: 2,
+													boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
+													height: "100%",
+												}}
+											>
+												<Stack spacing={1.5} alignItems="center" textAlign="center">
+													<Box
+														sx={{
+															width: 48,
+															height: 48,
+															borderRadius: "50%",
+															bgcolor: "error.lighter",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															mb: 0.5,
+														}}
+													>
+														<Typography variant="h5" color="error.dark">
+															F
+														</Typography>
+													</Box>
+													<Typography color="text.secondary" variant="body2" fontWeight={500}>
+														Fecha límite
+													</Typography>
+													<Typography variant="h5" color="text.primary">
+														{getGracePeriodInfo()?.expiryFormatted}
+													</Typography>
+												</Stack>
+											</Box>
+										</Grid>
+
+										<Grid item xs={12} sm={4}>
+											<Box
+												sx={{
+													bgcolor: "background.paper",
+													p: 2.5,
+													borderRadius: 2,
+													boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
+													height: "100%",
+												}}
+											>
+												<Stack spacing={1.5} alignItems="center" textAlign="center">
+													<Box
+														sx={{
+															width: 48,
+															height: 48,
+															borderRadius: "50%",
+															bgcolor: getGracePeriodInfo()?.isExpiringSoon ? "error.lighter" : "warning.lighter",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															mb: 0.5,
+														}}
+													>
+														<Typography variant="h5" color={getGracePeriodInfo()?.isExpiringSoon ? "error.dark" : "warning.dark"}>
+															D
+														</Typography>
+													</Box>
+													<Typography color="text.secondary" variant="body2" fontWeight={500}>
+														Días restantes
+													</Typography>
+													<Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 0.5 }}>
+														<Typography variant="h5" color="text.primary">
+															{getGracePeriodInfo()?.daysRemaining} días
+														</Typography>
+														{getGracePeriodInfo()?.isExpiringSoon && <Chip label="¡Expira pronto!" color="error" size="small" />}
+													</Box>
+												</Stack>
+											</Box>
+										</Grid>
+									</Grid>
+								</Grid>
+
+								<Grid item xs={12}>
+									<Box
+										sx={{
+											bgcolor: "background.paper",
+											p: 2.5,
+											borderRadius: 2,
+											boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
+											mt: 1,
+										}}
+									>
 										{(() => {
 											const gracePeriodInfo = getGracePeriodInfo();
 											return gracePeriodInfo?.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past";
 										})() ? (
-											<Alert
-												severity="info"
-												variant="outlined"
-												sx={{
-													mb: 3,
-													borderRadius: 2,
-												}}
-											>
-												<Stack spacing={1}>
-													<Typography variant="subtitle1" fontWeight={600}>
-														Período de gracia finalizado
-													</Typography>
-													<Typography variant="body2">
-														El período de gracia finalizó el {(() => {
-															const info = getGracePeriodInfo();
-															return info?.expiryDate ? formatDate(info.expiryDate) : "";
-														})()}. El contenido que
-														excedía los límites de tu {getGracePeriodInfo()?.willDowngradeToFreePlan ? "plan gratuito" : "plan actual"} ha
-														sido archivado automáticamente.
-													</Typography>
-												</Stack>
-											</Alert>
+											<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
+												Archivado automático completado
+											</Typography>
 										) : (
-											<Alert
-												severity="warning"
-												variant="outlined"
+											<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
+												¿Qué ocurre después de esta fecha?
+											</Typography>
+										)}
+
+										<Typography variant="body1" paragraph sx={{ fontWeight: 500 }}>
+											El sistema archivará automáticamente los elementos que excedan los límites de tu{" "}
+											{getGracePeriodInfo()?.willDowngradeToFreePlan ? "nuevo plan gratuito" : "plan actual"}.
+										</Typography>
+
+										<Typography variant="body2" color="text.secondary" paragraph>
+											Para evitar pérdida de acceso a tus datos importantes, te recomendamos revisar y ajustar manualmente tu contenido
+											antes del vencimiento del período de gracia.
+										</Typography>
+
+										<Box sx={{ mt: 3, display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
+											<Button
+												variant="contained"
+												color="primary"
+												onClick={() => navigate("/apps/folders/list")}
+												size="large"
 												sx={{
-													mb: 3,
-													borderRadius: 2,
+													px: 3,
+													py: 1,
+													fontWeight: 600,
+													boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
+													minWidth: 200,
 												}}
 											>
-												<Stack spacing={1}>
-													<Typography variant="subtitle1" fontWeight={600}>
-														{getGracePeriodInfo()?.willDowngradeToFreePlan
-															? `Tu plan ${getGracePeriodInfo()?.previousPlanName} será cambiado al Plan Gratuito el ${
-																	getGracePeriodInfo()?.cancellationFormatted
-															  }`
-															: `Tu plan ha cambiado de ${getGracePeriodInfo()?.previousPlanName} a ${
-																	getGracePeriodInfo()?.currentPlanName
-															  }`}
-													</Typography>
-													<Typography variant="body2">Tienes un período de gracia para ajustar tus datos a los nuevos límites.</Typography>
-												</Stack>
-											</Alert>
-										)}
-									</Grid>
-
-									<Grid item xs={12}>
-										<Grid container spacing={4}>
-											<Grid item xs={12} sm={4}>
-												<Box
-													sx={{
-														bgcolor: "background.paper",
-														p: 2.5,
-														borderRadius: 2,
-														boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-														height: "100%",
-													}}
-												>
-													<Stack spacing={1.5} alignItems="center" textAlign="center">
-														<Box
-															sx={{
-																width: 48,
-																height: 48,
-																borderRadius: "50%",
-																bgcolor: "primary.lighter",
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-																mb: 0.5,
-															}}
-														>
-															<Typography variant="h5" color="primary.dark">
-																P
-															</Typography>
-														</Box>
-														<Typography color="text.secondary" variant="body2" fontWeight={500}>
-															Plan anterior
-														</Typography>
-														<Typography variant="h5" color="text.primary">
-															{getGracePeriodInfo()?.previousPlanName}
-														</Typography>
-													</Stack>
-												</Box>
-											</Grid>
-
-											<Grid item xs={12} sm={4}>
-												<Box
-													sx={{
-														bgcolor: "background.paper",
-														p: 2.5,
-														borderRadius: 2,
-														boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-														height: "100%",
-													}}
-												>
-													<Stack spacing={1.5} alignItems="center" textAlign="center">
-														<Box
-															sx={{
-																width: 48,
-																height: 48,
-																borderRadius: "50%",
-																bgcolor: "error.lighter",
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-																mb: 0.5,
-															}}
-														>
-															<Typography variant="h5" color="error.dark">
-																F
-															</Typography>
-														</Box>
-														<Typography color="text.secondary" variant="body2" fontWeight={500}>
-															Fecha límite
-														</Typography>
-														<Typography variant="h5" color="text.primary">
-															{getGracePeriodInfo()?.expiryFormatted}
-														</Typography>
-													</Stack>
-												</Box>
-											</Grid>
-
-											<Grid item xs={12} sm={4}>
-												<Box
-													sx={{
-														bgcolor: "background.paper",
-														p: 2.5,
-														borderRadius: 2,
-														boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-														height: "100%",
-													}}
-												>
-													<Stack spacing={1.5} alignItems="center" textAlign="center">
-														<Box
-															sx={{
-																width: 48,
-																height: 48,
-																borderRadius: "50%",
-																bgcolor: getGracePeriodInfo()?.isExpiringSoon ? "error.lighter" : "warning.lighter",
-																display: "flex",
-																alignItems: "center",
-																justifyContent: "center",
-																mb: 0.5,
-															}}
-														>
-															<Typography variant="h5" color={getGracePeriodInfo()?.isExpiringSoon ? "error.dark" : "warning.dark"}>
-																D
-															</Typography>
-														</Box>
-														<Typography color="text.secondary" variant="body2" fontWeight={500}>
-															Días restantes
-														</Typography>
-														<Box
-															sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 0.5 }}
-														>
-															<Typography variant="h5" color="text.primary">
-																{getGracePeriodInfo()?.daysRemaining} días
-															</Typography>
-															{getGracePeriodInfo()?.isExpiringSoon && <Chip label="¡Expira pronto!" color="error" size="small" />}
-														</Box>
-													</Stack>
-												</Box>
-											</Grid>
-										</Grid>
-									</Grid>
-
-									<Grid item xs={12}>
-										<Box
-											sx={{
-												bgcolor: "background.paper",
-												p: 2.5,
-												borderRadius: 2,
-												boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-												mt: 1,
-											}}
-										>
-											{(() => {
-											const gracePeriodInfo = getGracePeriodInfo();
-											return gracePeriodInfo?.expiryDate && getGracePeriodStatus(gracePeriodInfo.expiryDate) === "past";
-										})() ? (
-												<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
-													Archivado automático completado
-												</Typography>
-											) : (
-												<Typography variant="h6" gutterBottom color="text.primary" fontWeight={600}>
-													¿Qué ocurre después de esta fecha?
-												</Typography>
-											)}
-
-											<Typography variant="body1" paragraph sx={{ fontWeight: 500 }}>
-												El sistema archivará automáticamente los elementos que excedan los límites de tu{" "}
-												{getGracePeriodInfo()?.willDowngradeToFreePlan ? "nuevo plan gratuito" : "plan actual"}.
-											</Typography>
-
-											<Typography variant="body2" color="text.secondary" paragraph>
-												Para evitar pérdida de acceso a tus datos importantes, te recomendamos revisar y ajustar manualmente tu contenido
-												antes del vencimiento del período de gracia.
-											</Typography>
-
-											<Box sx={{ mt: 3, display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
-												<Button
-													variant="contained"
-													color="primary"
-													onClick={() => navigate("/apps/folders/list")}
-													size="large"
-													sx={{
-														px: 3,
-														py: 1,
-														fontWeight: 600,
-														boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
-														minWidth: 200,
-													}}
-												>
-													Gestionar Carpetas
-												</Button>
-												<Button
-													variant="contained"
-													color="primary"
-													onClick={() => navigate("/apps/calc/labor")}
-													size="large"
-													sx={{
-														px: 3,
-														py: 1,
-														fontWeight: 600,
-														boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
-														minWidth: 200,
-													}}
-												>
-													Gestionar Cálculos
-												</Button>
-												<Button
-													variant="contained"
-													color="primary"
-													onClick={() => navigate("/apps/customer/customer-list")}
-													size="large"
-													sx={{
-														px: 3,
-														py: 1,
-														fontWeight: 600,
-														boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
-														minWidth: 200,
-													}}
-												>
-													Gestionar Contactos
-												</Button>
-											</Box>
+												Gestionar Carpetas
+											</Button>
+											<Button
+												variant="contained"
+												color="primary"
+												onClick={() => navigate("/apps/calc/labor")}
+												size="large"
+												sx={{
+													px: 3,
+													py: 1,
+													fontWeight: 600,
+													boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
+													minWidth: 200,
+												}}
+											>
+												Gestionar Cálculos
+											</Button>
+											<Button
+												variant="contained"
+												color="primary"
+												onClick={() => navigate("/apps/customer/customer-list")}
+												size="large"
+												sx={{
+													px: 3,
+													py: 1,
+													fontWeight: 600,
+													boxShadow: "0 4px 10px 0 rgba(0,0,0,0.1)",
+													minWidth: 200,
+												}}
+											>
+												Gestionar Contactos
+											</Button>
 										</Box>
-									</Grid>
+									</Box>
 								</Grid>
-							</Box>
-						</MainCard>
-					</Grid>
-				)}
+							</Grid>
+						</Box>
+					</MainCard>
+				</Grid>
+			)}
 
 			{/* Comparación de límites cuando hay período de gracia */}
 			{subscription &&

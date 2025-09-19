@@ -173,7 +173,11 @@ interface ReportData {
 }
 
 // Componente del documento PDF
-const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdated?: string | null }> = ({ userData, statsData, lastUpdated }) => {
+const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdated?: string | null }> = ({
+	userData,
+	statsData,
+	lastUpdated,
+}) => {
 	const currentDate = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
 	const dataDate = lastUpdated ? format(new Date(lastUpdated), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : currentDate;
 
@@ -219,7 +223,13 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 					<View style={styles.userRow}>
 						<Text style={styles.userLabel}>Plan:</Text>
 						<Text style={styles.userData}>
-							{userData.plan === "free" ? "Gratuito" : userData.plan === "standard" ? "Estándar" : userData.plan === "premium" ? "Premium" : userData.plan}
+							{userData.plan === "free"
+								? "Gratuito"
+								: userData.plan === "standard"
+								? "Estándar"
+								: userData.plan === "premium"
+								? "Premium"
+								: userData.plan}
 						</Text>
 					</View>
 				</View>
@@ -238,9 +248,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 						</View>
 						<View style={styles.metricBox}>
 							<Text style={styles.metricLabel}>Tiempo Promedio Resolución</Text>
-							<Text style={styles.metricValue}>
-								{(statsData?.folders?.resolutionTimes?.overall || 0).toFixed(1)} días
-							</Text>
+							<Text style={styles.metricValue}>{(statsData?.folders?.resolutionTimes?.overall || 0).toFixed(1)} días</Text>
 						</View>
 						<View style={styles.metricBox}>
 							<Text style={styles.metricLabel}>Tasa de Completitud</Text>
@@ -329,23 +337,10 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 					<View style={styles.section}>
 						<Text style={styles.sectionTitle}>Tendencias Históricas (Últimos 6 Meses)</Text>
 
-						{/* DEBUG: Mostrar qué datos están disponibles */}
-						<View style={{ backgroundColor: '#f0f0f0', padding: 10, marginBottom: 15 }}>
-							<Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 5 }}>DEBUG - Datos Disponibles:</Text>
-							<Text style={{ fontSize: 9 }}>• Tareas: {statsData?.trends?.tasks?.length || 0} registros</Text>
-							<Text style={{ fontSize: 9 }}>• Carpetas Nuevas: {statsData?.trends?.newFolders?.length || 0} registros</Text>
-							<Text style={{ fontSize: 9 }}>• Carpetas Cerradas: {statsData?.trends?.closedFolders?.length || 0} registros</Text>
-							<Text style={{ fontSize: 9 }}>• Movimientos: {statsData?.trends?.movements?.length || 0} registros</Text>
-							<Text style={{ fontSize: 9 }}>• Calculadoras: {statsData?.trends?.calculators?.length || 0} registros</Text>
-							<Text style={{ fontSize: 9 }}>• Plazos: {statsData?.trends?.deadlines?.length || 0} registros</Text>
-						</View>
-
 						{/* Tendencia de Tareas */}
 						{statsData?.trends?.tasks && Array.isArray(statsData.trends.tasks) && statsData.trends.tasks.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Tareas Creadas por Mes
-								</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Tareas Creadas por Mes</Text>
 								<View style={styles.statsTable}>
 									<View style={[styles.tableRow, styles.tableHeader]}>
 										<Text style={styles.tableCell}>Mes</Text>
@@ -353,7 +348,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 									</View>
 									{statsData.trends.tasks.map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`task-${index}`}>
-											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.month || "N/A"}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
 										</View>
 									))}
@@ -361,19 +356,15 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 							</View>
 						) : (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Tareas Creadas por Mes
-								</Text>
-								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Tareas Creadas por Mes</Text>
+								<Text style={{ fontSize: 10, color: "#666" }}>No hay datos disponibles</Text>
 							</View>
 						)}
 
 						{/* Tendencia de Carpetas Nuevas */}
 						{statsData?.trends?.newFolders && Array.isArray(statsData.trends.newFolders) && statsData.trends.newFolders.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Carpetas Nuevas por Mes
-								</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Carpetas Nuevas por Mes</Text>
 								<View style={styles.statsTable}>
 									<View style={[styles.tableRow, styles.tableHeader]}>
 										<Text style={styles.tableCell}>Mes</Text>
@@ -381,7 +372,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 									</View>
 									{statsData.trends.newFolders.map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`new-${index}`}>
-											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.month || "N/A"}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
 										</View>
 									))}
@@ -389,19 +380,17 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 							</View>
 						) : (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Carpetas Nuevas por Mes
-								</Text>
-								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Carpetas Nuevas por Mes</Text>
+								<Text style={{ fontSize: 10, color: "#666" }}>No hay datos disponibles</Text>
 							</View>
 						)}
 
 						{/* Tendencia de Carpetas Cerradas */}
-						{statsData?.trends?.closedFolders && Array.isArray(statsData.trends.closedFolders) && statsData.trends.closedFolders.length > 0 ? (
+						{statsData?.trends?.closedFolders &&
+						Array.isArray(statsData.trends.closedFolders) &&
+						statsData.trends.closedFolders.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Carpetas Cerradas por Mes
-								</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Carpetas Cerradas por Mes</Text>
 								<View style={styles.statsTable}>
 									<View style={[styles.tableRow, styles.tableHeader]}>
 										<Text style={styles.tableCell}>Mes</Text>
@@ -409,7 +398,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 									</View>
 									{statsData.trends.closedFolders.map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`closed-${index}`}>
-											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.month || "N/A"}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
 										</View>
 									))}
@@ -417,19 +406,15 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 							</View>
 						) : (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Carpetas Cerradas por Mes
-								</Text>
-								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Carpetas Cerradas por Mes</Text>
+								<Text style={{ fontSize: 10, color: "#666" }}>No hay datos disponibles</Text>
 							</View>
 						)}
 
 						{/* Tendencia de Movimientos */}
 						{statsData?.trends?.movements && Array.isArray(statsData.trends.movements) && statsData.trends.movements.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Movimientos por Mes
-								</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Movimientos por Mes</Text>
 								<View style={styles.statsTable}>
 									<View style={[styles.tableRow, styles.tableHeader]}>
 										<Text style={styles.tableCell}>Mes</Text>
@@ -437,7 +422,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 									</View>
 									{statsData.trends.movements.map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`mov-${index}`}>
-											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.month || "N/A"}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
 										</View>
 									))}
@@ -445,19 +430,15 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 							</View>
 						) : (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Movimientos por Mes
-								</Text>
-								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Movimientos por Mes</Text>
+								<Text style={{ fontSize: 10, color: "#666" }}>No hay datos disponibles</Text>
 							</View>
 						)}
 
 						{/* Tendencia de Calculadoras */}
 						{statsData?.trends?.calculators && Array.isArray(statsData.trends.calculators) && statsData.trends.calculators.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Uso de Calculadoras por Mes
-								</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Uso de Calculadoras por Mes</Text>
 								<View style={styles.statsTable}>
 									<View style={[styles.tableRow, styles.tableHeader]}>
 										<Text style={styles.tableCell}>Mes</Text>
@@ -465,7 +446,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 									</View>
 									{statsData.trends.calculators.map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`calc-${index}`}>
-											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.month || "N/A"}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
 										</View>
 									))}
@@ -473,19 +454,15 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 							</View>
 						) : (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Uso de Calculadoras por Mes
-								</Text>
-								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Uso de Calculadoras por Mes</Text>
+								<Text style={{ fontSize: 10, color: "#666" }}>No hay datos disponibles</Text>
 							</View>
 						)}
 
 						{/* Tendencia de Plazos */}
 						{statsData?.trends?.deadlines && Array.isArray(statsData.trends.deadlines) && statsData.trends.deadlines.length > 0 ? (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Plazos Vencidos por Mes
-								</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Plazos Vencidos por Mes</Text>
 								<View style={styles.statsTable}>
 									<View style={[styles.tableRow, styles.tableHeader]}>
 										<Text style={styles.tableCell}>Mes</Text>
@@ -493,7 +470,7 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 									</View>
 									{statsData.trends.deadlines.map((item: TrendItem, index: number) => (
 										<View style={styles.tableRow} key={`dead-${index}`}>
-											<Text style={styles.tableCell}>{item.month || 'N/A'}</Text>
+											<Text style={styles.tableCell}>{item.month || "N/A"}</Text>
 											<Text style={styles.tableCell}>{item.count !== undefined ? item.count : 0}</Text>
 										</View>
 									))}
@@ -501,24 +478,22 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 							</View>
 						) : (
 							<View style={{ marginBottom: 15 }}>
-								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: 'bold', marginBottom: 8 }]}>
-									Plazos Vencidos por Mes
-								</Text>
-								<Text style={{ fontSize: 10, color: '#666' }}>No hay datos disponibles</Text>
+								<Text style={[styles.metricLabel, { fontSize: 12, fontWeight: "bold", marginBottom: 8 }]}>Plazos Vencidos por Mes</Text>
+								<Text style={{ fontSize: 10, color: "#666" }}>No hay datos disponibles</Text>
 							</View>
 						)}
 
 						{/* Mensaje si no hay tendencias en absoluto */}
 						{(!statsData?.trends?.tasks || statsData.trends.tasks.length === 0) &&
-						 (!statsData?.trends?.newFolders || statsData.trends.newFolders.length === 0) &&
-						 (!statsData?.trends?.closedFolders || statsData.trends.closedFolders.length === 0) &&
-						 (!statsData?.trends?.movements || statsData.trends.movements.length === 0) &&
-						 (!statsData?.trends?.calculators || statsData.trends.calculators.length === 0) &&
-						 (!statsData?.trends?.deadlines || statsData.trends.deadlines.length === 0) && (
-							<Text style={{ fontSize: 10, color: '#999', textAlign: 'center', marginTop: 10 }}>
-								No hay datos de tendencias históricas disponibles en este momento
-							</Text>
-						)}
+							(!statsData?.trends?.newFolders || statsData.trends.newFolders.length === 0) &&
+							(!statsData?.trends?.closedFolders || statsData.trends.closedFolders.length === 0) &&
+							(!statsData?.trends?.movements || statsData.trends.movements.length === 0) &&
+							(!statsData?.trends?.calculators || statsData.trends.calculators.length === 0) &&
+							(!statsData?.trends?.deadlines || statsData.trends.deadlines.length === 0) && (
+								<Text style={{ fontSize: 10, color: "#999", textAlign: "center", marginTop: 10 }}>
+									No hay datos de tendencias históricas disponibles en este momento
+								</Text>
+							)}
 					</View>
 				)}
 
@@ -590,7 +565,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 			movementsLength: reportData.trends?.movements?.length,
 			calculatorsLength: reportData.trends?.calculators?.length,
 			deadlinesLength: reportData.trends?.deadlines?.length,
-			rawData: statsData?.dashboard?.trends
+			rawData: statsData?.dashboard?.trends,
 		});
 
 		try {
@@ -688,7 +663,13 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 									Plan:
 								</Typography>
 								<Typography variant="body2">
-									{userData.plan === "free" ? "Gratuito" : userData.plan === "standard" ? "Estándar" : userData.plan === "premium" ? "Premium" : userData.plan}
+									{userData.plan === "free"
+										? "Gratuito"
+										: userData.plan === "standard"
+										? "Estándar"
+										: userData.plan === "premium"
+										? "Premium"
+										: userData.plan}
 								</Typography>
 							</Box>
 						</Stack>

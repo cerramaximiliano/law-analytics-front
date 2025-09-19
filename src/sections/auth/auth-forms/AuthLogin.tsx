@@ -61,8 +61,8 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 		<>
 			<Formik
 				initialValues={{
-					email: "",
-					password: "",
+					email: import.meta.env.MODE === "development" ? import.meta.env.VITE_DEV_EMAIL || "" : "",
+					password: import.meta.env.MODE === "development" ? import.meta.env.VITE_DEV_PASSWORD || "" : "",
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({

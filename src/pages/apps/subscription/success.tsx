@@ -32,6 +32,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { fetchUserStats } from "store/reducers/userStats";
 import { updateUser } from "store/reducers/auth";
 import ApiService from "store/reducers/ApiService";
+import { cleanPlanDisplayName } from "utils/planPricingUtils";
 
 // assets
 import { TickCircle, Star1, Flash, Crown, ArrowRight2 } from "iconsax-react";
@@ -70,11 +71,11 @@ const SubscriptionSuccess = () => {
 		const syncSubscription = async () => {
 			try {
 				const response = await ApiService.syncSubscription();
-				
+
 				if (response.success && response.user) {
 					// Actualizar usuario en Redux con la información sincronizada
 					dispatch(updateUser(response.user));
-					
+
 					// Si hay stats, actualizarlos también
 					if (response.userStats) {
 						// Actualizar los stats con la estructura correcta
@@ -84,11 +85,11 @@ const SubscriptionSuccess = () => {
 								totalFolders: response.userStats.totalFolders,
 								totalContacts: response.userStats.totalContacts,
 								totalCalculators: response.userStats.totalCalculators,
-								planInfo: response.userStats.planInfo
-							}
+								planInfo: response.userStats.planInfo,
+							},
 						});
 					}
-					
+
 					console.log("Suscripción sincronizada exitosamente");
 				}
 			} catch (error) {
@@ -215,7 +216,7 @@ const SubscriptionSuccess = () => {
 											</Typography>
 											{userStats?.planInfo?.planName && (
 												<Chip
-													label={userStats.planInfo.planName}
+													label={cleanPlanDisplayName(userStats.planInfo.planName)}
 													color="success"
 													sx={{ mt: 2, fontWeight: 600 }}
 													icon={<Crown size={16} />}

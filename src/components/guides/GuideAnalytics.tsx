@@ -181,7 +181,9 @@ const MainMetricsContent = () => {
 								Promedio por Carpeta
 							</Typography>
 						</Box>
-						<Typography variant="body2">Monto promedio económico por carpeta activa. Ayuda a evaluar la rentabilidad de tu práctica.</Typography>
+						<Typography variant="body2">
+							Monto promedio económico por carpeta activa. Ayuda a evaluar la rentabilidad de tu práctica.
+						</Typography>
 					</Paper>
 				</Grid>
 				<Grid item xs={12} md={6}>
@@ -209,7 +211,8 @@ const DataQualityContent = () => {
 	return (
 		<Stack spacing={3}>
 			<Typography paragraph>
-				El indicador de Calidad de Datos evalúa la completitud y confiabilidad de la información en el sistema, permitiéndote entender qué tan precisas son las analíticas mostradas.
+				El indicador de Calidad de Datos evalúa la completitud y confiabilidad de la información en el sistema, permitiéndote entender qué
+				tan precisas son las analíticas mostradas.
 			</Typography>
 
 			<Alert severity="info">
@@ -217,9 +220,15 @@ const DataQualityContent = () => {
 				<Typography component="div">
 					El sistema comienza con 100% y aplica descuentos según los datos faltantes:
 					<ul style={{ marginTop: 8 }}>
-						<li><strong>-30%</strong> si no hay carpetas registradas</li>
-						<li><strong>-20%</strong> si no hay montos financieros</li>
-						<li><strong>-20%</strong> si no hay actividad reciente (últimos 30 días)</li>
+						<li>
+							<strong>-30%</strong> si no hay carpetas registradas
+						</li>
+						<li>
+							<strong>-20%</strong> si no hay montos financieros
+						</li>
+						<li>
+							<strong>-20%</strong> si no hay actividad reciente (últimos 30 días)
+						</li>
 					</ul>
 				</Typography>
 			</Alert>
@@ -237,7 +246,9 @@ const DataQualityContent = () => {
 					</TableHead>
 					<TableBody>
 						<TableRow>
-							<TableCell><strong>Ideal</strong></TableCell>
+							<TableCell>
+								<strong>Ideal</strong>
+							</TableCell>
 							<TableCell align="center">✅</TableCell>
 							<TableCell align="center">✅</TableCell>
 							<TableCell align="center">✅</TableCell>
@@ -246,7 +257,9 @@ const DataQualityContent = () => {
 							</TableCell>
 						</TableRow>
 						<TableRow>
-							<TableCell><strong>Usuario activo</strong></TableCell>
+							<TableCell>
+								<strong>Usuario activo</strong>
+							</TableCell>
 							<TableCell align="center">✅</TableCell>
 							<TableCell align="center">✅</TableCell>
 							<TableCell align="center">❌</TableCell>
@@ -255,7 +268,9 @@ const DataQualityContent = () => {
 							</TableCell>
 						</TableRow>
 						<TableRow>
-							<TableCell><strong>Datos parciales</strong></TableCell>
+							<TableCell>
+								<strong>Datos parciales</strong>
+							</TableCell>
 							<TableCell align="center">✅</TableCell>
 							<TableCell align="center">❌</TableCell>
 							<TableCell align="center">❌</TableCell>
@@ -264,7 +279,9 @@ const DataQualityContent = () => {
 							</TableCell>
 						</TableRow>
 						<TableRow>
-							<TableCell><strong>Mínimo</strong></TableCell>
+							<TableCell>
+								<strong>Mínimo</strong>
+							</TableCell>
 							<TableCell align="center">❌</TableCell>
 							<TableCell align="center">❌</TableCell>
 							<TableCell align="center">❌</TableCell>
@@ -334,9 +351,9 @@ const DataQualityContent = () => {
 			<Alert severity="warning" sx={{ mt: 2 }}>
 				<AlertTitle>¿Cómo mejorar la calidad?</AlertTitle>
 				<Typography component="div">
-					• <strong>Registra todas tus carpetas</strong>: Mantén actualizada la información de casos<br />
-					• <strong>Agrega montos económicos</strong>: Incluye valores en tus carpetas activas<br />
-					• <strong>Mantén actividad regular</strong>: Registra movimientos, tareas y actualizaciones frecuentemente
+					• <strong>Registra todas tus carpetas</strong>: Mantén actualizada la información de casos
+					<br />• <strong>Agrega montos económicos</strong>: Incluye valores en tus carpetas activas
+					<br />• <strong>Mantén actividad regular</strong>: Registra movimientos, tareas y actualizaciones frecuentemente
 				</Typography>
 			</Alert>
 		</Stack>
@@ -504,7 +521,8 @@ const HistoricalDataContent = () => {
 
 			<Alert severity="success">
 				<Typography variant="body2">
-					Los datos históricos se mantienen indefinidamente. Cada actualización crea un documento histórico que se preserva para tu análisis.
+					Los datos históricos se mantienen indefinidamente. Cada actualización crea un documento histórico que se preserva para tu
+					análisis.
 				</Typography>
 			</Alert>
 		</Stack>
@@ -515,9 +533,7 @@ const ExportReportsContent = () => {
 	const theme = useTheme();
 	return (
 		<Stack spacing={3}>
-			<Typography paragraph>
-				La función de exportación te permite generar reportes profesionales en PDF con todas tus métricas:
-			</Typography>
+			<Typography paragraph>La función de exportación te permite generar reportes profesionales en PDF con todas tus métricas:</Typography>
 
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -594,7 +610,9 @@ const ExportReportsContent = () => {
 
 			<Alert severity="warning" sx={{ mt: 2 }}>
 				<AlertTitle>Nota importante</AlertTitle>
-				<Typography>La exportación de reportes requiere un plan Standard o Premium. Con el plan gratuito esta función no está disponible.</Typography>
+				<Typography>
+					La exportación de reportes requiere un plan Standard o Premium. Con el plan gratuito esta función no está disponible.
+				</Typography>
 			</Alert>
 		</Stack>
 	);
@@ -738,8 +756,8 @@ const TipsContent = () => {
 			<Alert severity="success" sx={{ mt: 2 }}>
 				<AlertTitle>Consejo profesional</AlertTitle>
 				<Typography>
-					Monitorea tendencias más que valores absolutos. Los patrones a lo largo del tiempo son más valiosos que los números individuales para
-					evaluar el rendimiento de tu práctica.
+					Monitorea tendencias más que valores absolutos. Los patrones a lo largo del tiempo son más valiosos que los números individuales
+					para evaluar el rendimiento de tu práctica.
 				</Typography>
 			</Alert>
 		</Stack>

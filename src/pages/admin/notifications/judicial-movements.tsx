@@ -53,18 +53,8 @@ const JudicialMovementsPage = () => {
 							variant="scrollable"
 							scrollButtons="auto"
 						>
-							<Tab
-								icon={<DocumentText size={20} />}
-								iconPosition="start"
-								label="Listado de Movimientos"
-								{...a11yProps(0)}
-							/>
-							<Tab
-								icon={<Setting2 size={20} />}
-								iconPosition="start"
-								label="Configuración"
-								{...a11yProps(1)}
-							/>
+							<Tab icon={<DocumentText size={20} />} iconPosition="start" label="Listado de Movimientos" {...a11yProps(0)} />
+							<Tab icon={<Setting2 size={20} />} iconPosition="start" label="Configuración" {...a11yProps(1)} />
 						</Tabs>
 					</Box>
 				</Grid>

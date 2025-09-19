@@ -39,10 +39,15 @@ const slice = createSlice({
 		},
 
 		// SET STATS DATA
-		setStatsSuccess(state, action: PayloadAction<{ data: UnifiedStatsData; userId: string; lastUpdated?: string; descriptions?: any; cacheInfo?: any }>) {
+		setStatsSuccess(
+			state,
+			action: PayloadAction<{ data: UnifiedStatsData; userId: string; dataQuality?: number; lastUpdated?: string; descriptions?: any; cacheInfo?: any }>,
+		) {
+			console.log("📊 [Redux] Setting dataQuality in state:", action.payload.dataQuality);
 			state.isLoading = false;
 			state.error = null;
 			state.data = action.payload.data;
+			state.dataQuality = action.payload.dataQuality || null;
 			state.lastFetchedUserId = action.payload.userId;
 			state.lastFetchTime = Date.now();
 			state.isInitialized = true;
@@ -69,6 +74,7 @@ const slice = createSlice({
 			state.isLoading = false;
 			state.error = null;
 			state.data = null;
+			state.dataQuality = null;
 			state.lastUpdated = null;
 			state.descriptions = null;
 			state.cacheInfo = null;
@@ -107,7 +113,7 @@ export const {
 	resetStats,
 	startHistoryLoading,
 	setHistorySuccess,
-	setSelectedHistory
+	setSelectedHistory,
 } = slice.actions;
 
 // ----------------------------------------------------------------------
@@ -146,7 +152,7 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 				baseURL,
 				fullURL: url,
 				userId,
-				sections
+				sections,
 			});
 
 			const response = await axios.get<UnifiedStatsResponse>(url, {
@@ -161,7 +167,11 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 				resolutionTime: response.data.data?.folders?.resolutionTimes?.overall,
 				activefolders: response.data.data?.dashboard?.folders?.active,
 				closedFolders: response.data.data?.dashboard?.folders?.closed,
-				lastUpdated: response.data.lastUpdated
+				dataQuality: response.data.dataQuality,
+				matters: response.data.data?.matters,
+				foldersbyMatter: response.data.data?.folders?.byMatter,
+				lastUpdated: response.data.lastUpdated,
+				fullData: response.data.data,
 			});
 
 			if (response.data.success && response.data.data) {
@@ -169,6 +179,7 @@ export function getUnifiedStats(userId: string, sections: string = "all", forceR
 					slice.actions.setStatsSuccess({
 						data: response.data.data,
 						userId: userId,
+						dataQuality: response.data.dataQuality,
 						lastUpdated: response.data.lastUpdated,
 						descriptions: response.data.descriptions,
 						cacheInfo: response.data.cacheInfo,
@@ -308,6 +319,7 @@ export function getHistoricalStats(userId: string, documentId: string) {
 					slice.actions.setStatsSuccess({
 						data: transformedData,
 						userId: userId,
+						dataQuality: response.data.analytics?.dataQuality || 0,
 						lastUpdated: response.data.documentInfo.lastUpdated,
 						descriptions: null, // Los históricos pueden no tener descripciones
 						cacheInfo: {
@@ -348,14 +360,16 @@ function transformAnalyticsToUnifiedStats(analytics: any): any {
 	return {
 		dashboard: {
 			folders: {
-				active: (analytics.folderStatusDistribution?.nueva || 0) +
-				        (analytics.folderStatusDistribution?.enProceso || 0) +
-				        (analytics.folderStatusDistribution?.pendiente || 0),
+				active:
+					(analytics.folderStatusDistribution?.nueva || 0) +
+					(analytics.folderStatusDistribution?.enProceso || 0) +
+					(analytics.folderStatusDistribution?.pendiente || 0),
 				closed: analytics.folderStatusDistribution?.cerrada || 0,
-				total: (analytics.folderStatusDistribution?.nueva || 0) +
-				       (analytics.folderStatusDistribution?.enProceso || 0) +
-				       (analytics.folderStatusDistribution?.cerrada || 0) +
-				       (analytics.folderStatusDistribution?.pendiente || 0),
+				total:
+					(analytics.folderStatusDistribution?.nueva || 0) +
+					(analytics.folderStatusDistribution?.enProceso || 0) +
+					(analytics.folderStatusDistribution?.cerrada || 0) +
+					(analytics.folderStatusDistribution?.pendiente || 0),
 			},
 			financial: {
 				activeAmount: analytics.financialMetrics?.totalActiveAmount || 0,
@@ -446,5 +460,6 @@ function transformAnalyticsToUnifiedStats(analytics: any): any {
 			averageAmount: {},
 			resolutionTime: {},
 		},
+		dataQuality: analytics.dataQuality || 0,
 	};
 }

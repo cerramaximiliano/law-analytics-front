@@ -18,6 +18,7 @@ import { Camera, Profile } from "iconsax-react";
 // types
 import { ThemeMode } from "types/config";
 import { updatePicture } from "store/reducers/auth";
+import { cleanPlanDisplayName } from "utils/planPricingUtils";
 
 // ==============================|| USER PROFILE - TABS ||============================== //
 
@@ -204,7 +205,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 								<Typography variant="h6">Almacenamiento</Typography>
 								{userStats?.planInfo?.planName && (
 									<Typography variant="caption" color="text.secondary">
-										{userStats.planInfo.planName}
+										{cleanPlanDisplayName(userStats.planInfo.planName)}
 									</Typography>
 								)}
 							</Stack>

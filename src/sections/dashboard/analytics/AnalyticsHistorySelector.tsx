@@ -108,13 +108,10 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 					"&:hover": {
 						borderColor: "info.main",
 						backgroundColor: "info.lighter",
-					}
+					},
 				}}
 			>
-				{isLoading ? "Cargando..." :
-				 selectedHistoryId && selectedItem
-					? getAgeLabel(selectedItem.ageInDays)
-					: "Ver Histórico"}
+				{isLoading ? "Cargando..." : selectedHistoryId && selectedItem ? getAgeLabel(selectedItem.ageInDays) : "Ver Histórico"}
 			</Button>
 
 			<Menu
@@ -193,9 +190,7 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 										<Typography variant="body2" color="text.secondary">
 											({getAgeLabel(item.ageInDays)})
 										</Typography>
-										{item.isLatest && (
-											<Chip label="Actual" size="small" color="success" sx={{ height: 18, fontSize: "0.75rem" }} />
-										)}
+										{item.isLatest && <Chip label="Actual" size="small" color="success" sx={{ height: 18, fontSize: "0.75rem" }} />}
 									</Box>
 								}
 								secondary={
@@ -205,7 +200,7 @@ const AnalyticsHistorySelector: React.FC<AnalyticsHistorySelectorProps> = ({ use
 										sx={{
 											display: "block",
 											mt: 0.5,
-											lineHeight: 1.4
+											lineHeight: 1.4,
 										}}
 									>
 										Actualizado: {formatDate(item.lastUpdated, true)}

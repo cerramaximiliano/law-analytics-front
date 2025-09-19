@@ -13,11 +13,13 @@ const DeadlineProjections = () => {
 	const dashboardDeadlines = data?.dashboard?.deadlines;
 
 	// Mapear los datos correctamente según la fuente
-	const deadlines = upcomingDeadlines ? {
-		nextWeek: upcomingDeadlines.next7Days || 0,
-		next15Days: upcomingDeadlines.next15Days || 0,
-		next30Days: upcomingDeadlines.next30Days || 0,
-	} : dashboardDeadlines || { nextWeek: 0, next15Days: 0, next30Days: 0 };
+	const deadlines = upcomingDeadlines
+		? {
+				nextWeek: upcomingDeadlines.next7Days || 0,
+				next15Days: upcomingDeadlines.next15Days || 0,
+				next30Days: upcomingDeadlines.next30Days || 0,
+		  }
+		: dashboardDeadlines || { nextWeek: 0, next15Days: 0, next30Days: 0 };
 
 	const description = descriptions?.folders?.upcomingDeadlines || descriptions?.dashboard?.deadlines?.nextWeek;
 
@@ -91,7 +93,7 @@ const DeadlineProjections = () => {
 												{item.count}
 											</Typography>
 											<Typography variant="caption" color="textSecondary">
-												{item.count === 1 ? 'vencimiento' : 'vencimientos'}
+												{item.count === 1 ? "vencimiento" : "vencimientos"}
 											</Typography>
 										</Stack>
 										<Box

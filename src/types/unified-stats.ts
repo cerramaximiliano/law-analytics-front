@@ -29,6 +29,7 @@ export interface UnifiedStatsResponse {
 	success: boolean;
 	userId: string;
 	lastUpdated: string;
+	dataQuality?: number;
 	data: UnifiedStatsData;
 	descriptions?: UnifiedStatsDescriptions;
 	cacheInfo?: CacheInfo;
@@ -211,6 +212,7 @@ export interface UnifiedStatsState {
 	isLoading: boolean;
 	error: string | null;
 	data: UnifiedStatsData | null;
+	dataQuality: number | null;
 	lastUpdated: string | null;
 	descriptions: UnifiedStatsDescriptions | null;
 	cacheInfo: CacheInfo | null;

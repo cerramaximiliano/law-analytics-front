@@ -62,10 +62,10 @@ const JudicialMovementsList = () => {
 	const [stats, setStats] = useState<JudicialMovementStats | null>(null);
 	const [expandedRow, setExpandedRow] = useState<string | null>(null);
 	const [showFilters, setShowFilters] = useState(false);
-	const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; movementId: string | null; movementInfo: any }>({ 
-		open: false, 
-		movementId: null, 
-		movementInfo: null 
+	const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; movementId: string | null; movementInfo: any }>({
+		open: false,
+		movementId: null,
+		movementInfo: null,
 	});
 	const [showRetentionInfo, setShowRetentionInfo] = useState(false);
 
@@ -124,14 +124,13 @@ const JudicialMovementsList = () => {
 		setPage(0);
 	};
 
-	const handleFilterChange = (field: keyof JudicialMovementFilters) => (
-		event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-	) => {
-		setFilters((prev) => ({
-			...prev,
-			[field]: event.target.value,
-		}));
-	};
+	const handleFilterChange =
+		(field: keyof JudicialMovementFilters) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+			setFilters((prev) => ({
+				...prev,
+				[field]: event.target.value,
+			}));
+		};
 
 	const handleApplyFilters = () => {
 		setPage(0);
@@ -184,10 +183,10 @@ const JudicialMovementsList = () => {
 			open: true,
 			movementId: movement._id,
 			movementInfo: {
-				expediente: `${movement.expediente?.number || '-'}/${movement.expediente?.year || '-'}`,
-				movimiento: movement.movimiento?.tipo || '-',
-				status: movement.notificationStatus
-			}
+				expediente: `${movement.expediente?.number || "-"}/${movement.expediente?.year || "-"}`,
+				movimiento: movement.movimiento?.tipo || "-",
+				status: movement.notificationStatus,
+			},
 		});
 	};
 
@@ -321,7 +320,7 @@ const JudicialMovementsList = () => {
 				>
 					{showRetentionInfo ? "Ocultar Información de Retención" : "Ver Información de Retención"}
 				</Button>
-				
+
 				<Collapse in={showRetentionInfo}>
 					<Paper sx={{ p: 3, backgroundColor: "action.hover" }}>
 						<Stack spacing={2}>
@@ -331,7 +330,7 @@ const JudicialMovementsList = () => {
 									Política de Retención de Movimientos Judiciales
 								</Typography>
 							</Stack>
-							
+
 							<Grid container spacing={2}>
 								<Grid item xs={12} md={6}>
 									<Box>
@@ -351,16 +350,14 @@ const JudicialMovementsList = () => {
 										</Stack>
 									</Box>
 								</Grid>
-								
+
 								<Grid item xs={12} md={6}>
 									<Box>
 										<Typography variant="subtitle2" gutterBottom fontWeight="bold">
 											Condiciones de Eliminación Automática
 										</Typography>
 										<Stack spacing={1}>
-											<Typography variant="body2">
-												Los movimientos se eliminan cuando:
-											</Typography>
+											<Typography variant="body2">Los movimientos se eliminan cuando:</Typography>
 											<Typography variant="body2" color="success.main">
 												✓ Estado = "Enviado" (sent)
 											</Typography>
@@ -370,7 +367,7 @@ const JudicialMovementsList = () => {
 										</Stack>
 									</Box>
 								</Grid>
-								
+
 								<Grid item xs={12}>
 									<Alert severity="info" icon={<InfoCircle />}>
 										<Typography variant="body2" paragraph>
@@ -381,21 +378,20 @@ const JudicialMovementsList = () => {
 												• Movimientos con estado <Chip label="Pendiente" size="small" color="warning" /> - Se conservan hasta ser procesados
 											</Typography>
 											<Typography variant="body2">
-												• Movimientos con estado <Chip label="Fallido" size="small" color="error" /> - Se conservan para reintentar o revisar
+												• Movimientos con estado <Chip label="Fallido" size="small" color="error" /> - Se conservan para reintentar o
+												revisar
 											</Typography>
-											<Typography variant="body2">
-												• Movimientos actualizados en los últimos 60 días (independiente del estado)
-											</Typography>
+											<Typography variant="body2">• Movimientos actualizados en los últimos 60 días (independiente del estado)</Typography>
 										</Stack>
 									</Alert>
 								</Grid>
-								
+
 								<Grid item xs={12}>
 									<Box sx={{ p: 2, backgroundColor: "background.paper", borderRadius: 1, border: 1, borderColor: "divider" }}>
 										<Typography variant="caption" color="text.secondary">
-											<strong>Nota para administradores:</strong> Para modificar el período de retención, establezca la variable de entorno 
-											JUDICIAL_MOVEMENT_RETENTION_DAYS con el número de días deseado (ej: 90 para 90 días). 
-											Los movimientos pendientes o fallidos se conservan indefinidamente hasta ser procesados exitosamente o eliminados manualmente.
+											<strong>Nota para administradores:</strong> Para modificar el período de retención, establezca la variable de entorno
+											JUDICIAL_MOVEMENT_RETENTION_DAYS con el número de días deseado (ej: 90 para 90 días). Los movimientos pendientes o
+											fallidos se conservan indefinidamente hasta ser procesados exitosamente o eliminados manualmente.
 										</Typography>
 									</Box>
 								</Grid>
@@ -407,12 +403,7 @@ const JudicialMovementsList = () => {
 
 			{/* Filters */}
 			<Box sx={{ mb: 2 }}>
-				<Button
-					startIcon={<FilterSearch />}
-					onClick={() => setShowFilters(!showFilters)}
-					variant="outlined"
-					sx={{ mb: 2 }}
-				>
+				<Button startIcon={<FilterSearch />} onClick={() => setShowFilters(!showFilters)} variant="outlined" sx={{ mb: 2 }}>
 					{showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
 				</Button>
 
@@ -457,13 +448,7 @@ const JudicialMovementsList = () => {
 								/>
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
-								<TextField
-									fullWidth
-									label="Fuero"
-									value={filters.fuero}
-									onChange={handleFilterChange("fuero")}
-									size="small"
-								/>
+								<TextField fullWidth label="Fuero" value={filters.fuero} onChange={handleFilterChange("fuero")} size="small" />
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
 								<TextField
@@ -475,28 +460,14 @@ const JudicialMovementsList = () => {
 								/>
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
-								<TextField
-									select
-									fullWidth
-									label="Ordenar por"
-									value={filters.sortBy}
-									onChange={handleFilterChange("sortBy")}
-									size="small"
-								>
+								<TextField select fullWidth label="Ordenar por" value={filters.sortBy} onChange={handleFilterChange("sortBy")} size="small">
 									<MenuItem value="createdAt">Fecha de Creación</MenuItem>
 									<MenuItem value="movementDate">Fecha del Movimiento</MenuItem>
 									<MenuItem value="notifyAt">Fecha de Notificación</MenuItem>
 								</TextField>
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
-								<TextField
-									select
-									fullWidth
-									label="Orden"
-									value={filters.sortOrder}
-									onChange={handleFilterChange("sortOrder")}
-									size="small"
-								>
+								<TextField select fullWidth label="Orden" value={filters.sortOrder} onChange={handleFilterChange("sortOrder")} size="small">
 									<MenuItem value="desc">Descendente</MenuItem>
 									<MenuItem value="asc">Ascendente</MenuItem>
 								</TextField>
@@ -545,10 +516,7 @@ const JudicialMovementsList = () => {
 								<React.Fragment key={movement._id}>
 									<TableRow hover>
 										<TableCell>
-											<IconButton
-												size="small"
-												onClick={() => setExpandedRow(expandedRow === movement._id ? null : movement._id)}
-											>
+											<IconButton size="small" onClick={() => setExpandedRow(expandedRow === movement._id ? null : movement._id)}>
 												{expandedRow === movement._id ? <ArrowUp2 /> : <ArrowDown2 />}
 											</IconButton>
 										</TableCell>
@@ -611,23 +579,13 @@ const JudicialMovementsList = () => {
 												)}
 												{movement.movimiento?.url && (
 													<Tooltip title="Ver en sistema judicial">
-														<IconButton
-															size="small"
-															component="a"
-															href={movement.movimiento.url}
-															target="_blank"
-															rel="noopener noreferrer"
-														>
+														<IconButton size="small" component="a" href={movement.movimiento.url} target="_blank" rel="noopener noreferrer">
 															<Eye size={18} />
 														</IconButton>
 													</Tooltip>
 												)}
 												<Tooltip title="Eliminar">
-													<IconButton
-														size="small"
-														color="error"
-														onClick={() => handleOpenDeleteDialog(movement)}
-													>
+													<IconButton size="small" color="error" onClick={() => handleOpenDeleteDialog(movement)}>
 														<Trash size={18} />
 													</IconButton>
 												</Tooltip>
@@ -667,8 +625,7 @@ const JudicialMovementsList = () => {
 																</Typography>
 																<Stack spacing={1}>
 																	<Typography variant="body2">
-																		<strong>Canales:</strong>{" "}
-																		{movement.notificationSettings.channels.join(", ")}
+																		<strong>Canales:</strong> {movement.notificationSettings.channels.join(", ")}
 																	</Typography>
 																	<Typography variant="body2">
 																		<strong>Creado:</strong> {formatDate(movement.createdAt)}
@@ -738,12 +695,7 @@ const JudicialMovementsList = () => {
 			</TableContainer>
 
 			{/* Dialog de confirmación para eliminar */}
-			<Dialog 
-				open={deleteDialog.open} 
-				onClose={handleCloseDeleteDialog}
-				maxWidth="sm"
-				fullWidth
-			>
+			<Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog} maxWidth="sm" fullWidth>
 				<DialogTitle>Confirmar Eliminación</DialogTitle>
 				<DialogContent>
 					<DialogContentText>
@@ -765,8 +717,8 @@ const JudicialMovementsList = () => {
 						)}
 						<Alert severity="warning">
 							<Typography variant="body2">
-								<strong>Advertencia:</strong> El movimiento eliminado no se podrá notificar si aún no ha sido notificado. 
-								Esta acción no se puede deshacer.
+								<strong>Advertencia:</strong> El movimiento eliminado no se podrá notificar si aún no ha sido notificado. Esta acción no se
+								puede deshacer.
 							</Typography>
 						</Alert>
 					</DialogContentText>
@@ -775,12 +727,7 @@ const JudicialMovementsList = () => {
 					<Button onClick={handleCloseDeleteDialog} color="primary">
 						Cancelar
 					</Button>
-					<Button 
-						onClick={handleConfirmDelete} 
-						color="error" 
-						variant="contained"
-						autoFocus
-					>
+					<Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
 						Eliminar
 					</Button>
 				</DialogActions>

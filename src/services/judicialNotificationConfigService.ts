@@ -82,7 +82,7 @@ class JudicialNotificationConfigService {
 			}
 		} catch (error: any) {
 			console.error("Error fetching judicial notification config:", error);
-			
+
 			// Handle different error scenarios with user-friendly messages
 			if (error.response) {
 				// Server responded with an error
@@ -99,7 +99,7 @@ class JudicialNotificationConfigService {
 				// Request was made but no response
 				throw new Error("No se pudo conectar con el servidor. Verifique su conexión a internet.");
 			}
-			
+
 			throw new Error("Error inesperado al cargar la configuración. Por favor, intente nuevamente.");
 		}
 	}
@@ -115,7 +115,7 @@ class JudicialNotificationConfigService {
 			}
 		} catch (error: any) {
 			console.error("Error updating judicial notification config:", error);
-			
+
 			// Handle different error scenarios with user-friendly messages
 			if (error.response) {
 				// Server responded with an error
@@ -136,7 +136,7 @@ class JudicialNotificationConfigService {
 				// Request was made but no response
 				throw new Error("No se pudo conectar con el servidor. Verifique su conexión y vuelva a intentar.");
 			}
-			
+
 			throw new Error("Error inesperado al guardar los cambios. Por favor, intente nuevamente.");
 		}
 	}
@@ -152,7 +152,7 @@ class JudicialNotificationConfigService {
 			}
 		} catch (error: any) {
 			console.error("Error toggling judicial notifications:", error);
-			
+
 			// Handle different error scenarios with user-friendly messages
 			if (error.response) {
 				// Server responded with an error
@@ -171,7 +171,7 @@ class JudicialNotificationConfigService {
 				// Request was made but no response
 				throw new Error("No se pudo conectar con el servidor. Verifique su conexión.");
 			}
-			
+
 			throw new Error("Error inesperado al cambiar el estado. Por favor, intente nuevamente.");
 		}
 	}
@@ -179,4 +179,3 @@ class JudicialNotificationConfigService {
 
 const judicialNotificationConfigService = new JudicialNotificationConfigService();
 export default judicialNotificationConfigService;
-

@@ -200,21 +200,21 @@ const JudicialMovementsConfig: React.FC = () => {
 				"filters",
 				"dataRetention",
 				"endpoints",
-				"status"
+				"status",
 			];
 
 			for (const section of sections) {
 				if (config[section as keyof typeof config] && originalConfig) {
 					const currentSection = config[section as keyof typeof config];
 					const originalSection = originalConfig[section as keyof typeof originalConfig];
-					
+
 					// Compare sections
 					if (JSON.stringify(currentSection) !== JSON.stringify(originalSection)) {
 						updates[section] = currentSection;
 					}
 				}
 			}
-			
+
 			// If no changes were detected, return
 			if (Object.keys(updates).length === 0) {
 				setHasChanges(false);
@@ -222,7 +222,7 @@ const JudicialMovementsConfig: React.FC = () => {
 			}
 
 			const updatedConfig = await judicialNotificationConfigService.updateConfig(updates);
-			
+
 			setOriginalConfig(updatedConfig);
 			setConfig(updatedConfig);
 			setHasChanges(false);
@@ -232,7 +232,7 @@ const JudicialMovementsConfig: React.FC = () => {
 			if (updates.notificationSchedule) {
 				const hour = updatedConfig.notificationSchedule.dailyNotificationHour;
 				const minute = updatedConfig.notificationSchedule.dailyNotificationMinute;
-				successMessage = `Horario actualizado: ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+				successMessage = `Horario actualizado: ${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 			} else if (updates.limits) {
 				successMessage = "Límites de notificaciones actualizados correctamente";
 			} else if (updates.filters) {
@@ -292,8 +292,8 @@ const JudicialMovementsConfig: React.FC = () => {
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: result.enabled 
-						? "Notificaciones de movimientos judiciales habilitadas correctamente" 
+					message: result.enabled
+						? "Notificaciones de movimientos judiciales habilitadas correctamente"
 						: "Notificaciones de movimientos judiciales deshabilitadas",
 					variant: "alert",
 					alert: {
@@ -739,7 +739,7 @@ const JudicialMovementsConfig: React.FC = () => {
 									onChange={(e) => handleFieldChange("dataRetention.judicialMovementRetentionDays", Number(e.target.value))}
 									fullWidth
 									InputProps={{
-										inputProps: { min: 7, max: 365 }
+										inputProps: { min: 7, max: 365 },
 									}}
 									helperText="Días para retener movimientos notificados (7-365)"
 								/>
@@ -752,7 +752,7 @@ const JudicialMovementsConfig: React.FC = () => {
 									onChange={(e) => handleFieldChange("dataRetention.notificationLogRetentionDays", Number(e.target.value))}
 									fullWidth
 									InputProps={{
-										inputProps: { min: 7, max: 180 }
+										inputProps: { min: 7, max: 180 },
 									}}
 									helperText="Días para retener logs (7-180)"
 								/>
@@ -765,7 +765,7 @@ const JudicialMovementsConfig: React.FC = () => {
 									onChange={(e) => handleFieldChange("dataRetention.alertRetentionDays", Number(e.target.value))}
 									fullWidth
 									InputProps={{
-										inputProps: { min: 7, max: 180 }
+										inputProps: { min: 7, max: 180 },
 									}}
 									helperText="Días para retener alertas (7-180)"
 								/>
@@ -778,7 +778,7 @@ const JudicialMovementsConfig: React.FC = () => {
 									onChange={(e) => handleFieldChange("dataRetention.cleanupHour", Number(e.target.value))}
 									fullWidth
 									InputProps={{
-										inputProps: { min: 0, max: 23 }
+										inputProps: { min: 0, max: 23 },
 									}}
 									helperText="Hora del día para ejecutar limpieza (0-23)"
 								/>
@@ -801,12 +801,11 @@ const JudicialMovementsConfig: React.FC = () => {
 									</Typography>
 									<Typography variant="body2" component="div">
 										• Los movimientos con estado <strong>"enviado"</strong> se eliminarán después del período configurado.
-										<br />
-										• Los movimientos con estado <strong>"pendiente"</strong> o <strong>"fallido"</strong> se conservan indefinidamente.
+										<br />• Los movimientos con estado <strong>"pendiente"</strong> o <strong>"fallido"</strong> se conservan
+										indefinidamente.
 										<br />
 										• La limpieza se ejecuta diariamente a la hora configurada.
-										<br />
-										• Los cambios en la configuración de retención se aplicarán en la próxima ejecución de limpieza.
+										<br />• Los cambios en la configuración de retención se aplicarán en la próxima ejecución de limpieza.
 									</Typography>
 								</Alert>
 							</Grid>
@@ -877,4 +876,3 @@ const JudicialMovementsConfig: React.FC = () => {
 };
 
 export default JudicialMovementsConfig;
-

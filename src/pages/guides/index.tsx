@@ -10,12 +10,22 @@ import { motion } from "framer-motion";
 
 // project-imports
 import MainCard from "components/MainCard";
-import { GuideLaboral, GuideIntereses, GuideFolders, GuideContacts, GuideCalendar, GuideBooking, GuideTasks, GuideAnalytics } from "components/guides";
+import {
+	GuideLaboral,
+	GuideIntereses,
+	GuideFolders,
+	GuideContacts,
+	GuideCalendar,
+	GuideBooking,
+	GuideTasks,
+	GuideAnalytics,
+	GuideLimits,
+} from "components/guides";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 
 // icons
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21 } from "iconsax-react";
+import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21, Cloud } from "iconsax-react";
 
 // ==============================|| GUIDES PAGE - HEADER ||============================== //
 
@@ -41,6 +51,7 @@ const GuidesPage = () => {
 	const [booking, setBooking] = useState(false);
 	const [tasks, setTasks] = useState(false);
 	const [analytics, setAnalytics] = useState(false);
+	const [limits, setLimits] = useState(false);
 
 	const guideData = [
 		{
@@ -98,6 +109,13 @@ const GuidesPage = () => {
 			icon: Chart21,
 			color: "info",
 			openModal: () => setAnalytics(true),
+		},
+		{
+			title: "Límites y Almacenamiento",
+			description: "Comprende los límites de tu plan y cómo optimizar tu uso de almacenamiento.",
+			icon: Cloud,
+			color: "secondary",
+			openModal: () => setLimits(true),
 		},
 	];
 
@@ -337,6 +355,7 @@ const GuidesPage = () => {
 			<GuideBooking open={booking} onClose={() => setBooking(false)} />
 			<GuideTasks open={tasks} onClose={() => setTasks(false)} />
 			<GuideAnalytics open={analytics} onClose={() => setAnalytics(false)} />
+			<GuideLimits open={limits} onClose={() => setLimits(false)} />
 		</>
 	);
 };

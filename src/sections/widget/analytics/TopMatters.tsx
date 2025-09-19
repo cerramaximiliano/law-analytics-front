@@ -6,8 +6,13 @@ import MainCard from "components/MainCard";
 
 const TopMatters = () => {
 	const { data, isLoading } = useSelector((state: RootState) => state.unifiedStats);
-	// Convert distribution object to array format for display
-	const distribution = data?.matters?.distribution || {};
+	// Try to get matters distribution from multiple possible locations
+	const distribution = data?.matters?.distribution || data?.folders?.byMatter?.distribution || {};
+
+	console.log("📊 [TopMatters] matters from data.matters:", data?.matters);
+	console.log("📊 [TopMatters] matters from folders.byMatter:", data?.folders?.byMatter);
+	console.log("📊 [TopMatters] final distribution:", distribution);
+
 	const topMatters = Object.entries(distribution)
 		.map(([matter, count]) => ({ matter, count }))
 		.sort((a, b) => b.count - a.count)

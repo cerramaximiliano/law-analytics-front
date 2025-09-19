@@ -177,7 +177,8 @@ const LinkingContent = () => {
 	return (
 		<Stack spacing={3}>
 			<Typography paragraph>
-				Si ya tienes carpetas creadas en el sistema, puedes vincularlas con el Poder Judicial de la Nación para sincronizar movimientos automáticamente:
+				Si ya tienes carpetas creadas en el sistema, puedes vincularlas con el Poder Judicial de la Nación para sincronizar movimientos
+				automáticamente:
 			</Typography>
 
 			<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -208,17 +209,23 @@ const LinkingContent = () => {
 					</Typography>
 				</Box>
 				<Box sx={{ p: 2 }}>
-					<Typography variant="body2" gutterBottom>Verás las siguientes opciones:</Typography>
+					<Typography variant="body2" gutterBottom>
+						Verás las siguientes opciones:
+					</Typography>
 					<Stack spacing={1.5} sx={{ mt: 1 }}>
 						<Box display="flex" alignItems="flex-start">
-							<Typography fontWeight="bold" sx={{ minWidth: "24px" }}>⚖️</Typography>
+							<Typography fontWeight="bold" sx={{ minWidth: "24px" }}>
+								⚖️
+							</Typography>
 							<Box>
 								<Typography fontWeight="bold">Poder Judicial de la Nación</Typography>
 								<Typography variant="body2">Vincule carpetas del fuero federal</Typography>
 							</Box>
 						</Box>
 						<Box display="flex" alignItems="flex-start">
-							<Typography fontWeight="bold" sx={{ minWidth: "24px" }}>🏛️</Typography>
+							<Typography fontWeight="bold" sx={{ minWidth: "24px" }}>
+								🏛️
+							</Typography>
 							<Box>
 								<Typography fontWeight="bold">Poder Judicial de Buenos Aires</Typography>
 								<Typography variant="body2">[Próximamente] - Vincule carpetas del fuero provincial</Typography>
@@ -235,23 +242,33 @@ const LinkingContent = () => {
 					</Typography>
 				</Box>
 				<Box sx={{ p: 2 }}>
-					<Typography variant="body2" gutterBottom>Al seleccionar "Poder Judicial de la Nación", deberás completar:</Typography>
+					<Typography variant="body2" gutterBottom>
+						Al seleccionar "Poder Judicial de la Nación", deberás completar:
+					</Typography>
 					<Stack spacing={1.5} sx={{ mt: 1 }}>
 						<Box display="flex" alignItems="center">
 							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography><strong>Jurisdicción:</strong> Tribunal específico del PJN (ej. "Cámara Civil")</Typography>
+							<Typography>
+								<strong>Jurisdicción:</strong> Tribunal específico del PJN (ej. "Cámara Civil")
+							</Typography>
 						</Box>
 						<Box display="flex" alignItems="center">
 							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography><strong>Número de Expediente:</strong> Identificador numérico del caso (ej. "12345")</Typography>
+							<Typography>
+								<strong>Número de Expediente:</strong> Identificador numérico del caso (ej. "12345")
+							</Typography>
 						</Box>
 						<Box display="flex" alignItems="center">
 							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography><strong>Año del Expediente:</strong> Año de inicio del expediente (ej. "2024")</Typography>
+							<Typography>
+								<strong>Año del Expediente:</strong> Año de inicio del expediente (ej. "2024")
+							</Typography>
 						</Box>
 						<Box display="flex" alignItems="center">
 							<ArrowRight2 size={18} style={{ minWidth: "24px", color: theme.palette.warning.main }} />
-							<Typography><strong>Sobrescribir datos:</strong> Actualiza información local con la del PJN (activado por defecto)</Typography>
+							<Typography>
+								<strong>Sobrescribir datos:</strong> Actualiza información local con la del PJN (activado por defecto)
+							</Typography>
 						</Box>
 					</Stack>
 				</Box>
@@ -266,7 +283,9 @@ const LinkingContent = () => {
 					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.warning.lighter, 0.1) }}>
 						<Box display="flex" alignItems="center" mb={1}>
 							<Typography sx={{ fontSize: "20px", mr: 1 }}>🟡</Typography>
-							<Typography variant="subtitle2" fontWeight="bold">Pendiente de verificación</Typography>
+							<Typography variant="subtitle2" fontWeight="bold">
+								Pendiente de verificación
+							</Typography>
 						</Box>
 						<Typography variant="body2">
 							El sistema está validando la información con el Poder Judicial. Puedes hacer clic en el botón 🔄 para verificar el estado.
@@ -277,7 +296,9 @@ const LinkingContent = () => {
 					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.success.lighter, 0.1) }}>
 						<Box display="flex" alignItems="center" mb={1}>
 							<Typography sx={{ fontSize: "20px", mr: 1 }}>✅</Typography>
-							<Typography variant="subtitle2" fontWeight="bold">Verificación exitosa</Typography>
+							<Typography variant="subtitle2" fontWeight="bold">
+								Verificación exitosa
+							</Typography>
 						</Box>
 						<Typography variant="body2">
 							El expediente fue encontrado y validado exitosamente. La sincronización automática está activa.
@@ -288,11 +309,11 @@ const LinkingContent = () => {
 					<Paper sx={{ p: 2, height: "100%", bgcolor: alpha(theme.palette.error.lighter, 0.1) }}>
 						<Box display="flex" alignItems="center" mb={1}>
 							<Typography sx={{ fontSize: "20px", mr: 1 }}>❌</Typography>
-							<Typography variant="subtitle2" fontWeight="bold">Verificación fallida</Typography>
+							<Typography variant="subtitle2" fontWeight="bold">
+								Verificación fallida
+							</Typography>
 						</Box>
-						<Typography variant="body2">
-							Los datos no coinciden con ningún expediente. Verifica el número y año del expediente.
-						</Typography>
+						<Typography variant="body2">Los datos no coinciden con ningún expediente. Verifica el número y año del expediente.</Typography>
 					</Paper>
 				</Grid>
 			</Grid>
@@ -300,11 +321,21 @@ const LinkingContent = () => {
 			<Alert severity="success" sx={{ mt: 3 }}>
 				<AlertTitle>🎯 Beneficios de la vinculación</AlertTitle>
 				<Stack spacing={1}>
-					<Typography>✅ <strong>Actualizaciones automáticas:</strong> No necesitas revisar manualmente el expediente</Typography>
-					<Typography>✅ <strong>Validación oficial:</strong> Confirma que el expediente existe en el sistema judicial</Typography>
-					<Typography>✅ <strong>Historial completo:</strong> Todos los movimientos procesales en un solo lugar</Typography>
-					<Typography>✅ <strong>Notificaciones:</strong> Alertas de movimientos importantes (si está habilitado)</Typography>
-					<Typography>✅ <strong>Documentos sincronizados:</strong> Acceso a documentos públicos del expediente</Typography>
+					<Typography>
+						✅ <strong>Actualizaciones automáticas:</strong> No necesitas revisar manualmente el expediente
+					</Typography>
+					<Typography>
+						✅ <strong>Validación oficial:</strong> Confirma que el expediente existe en el sistema judicial
+					</Typography>
+					<Typography>
+						✅ <strong>Historial completo:</strong> Todos los movimientos procesales en un solo lugar
+					</Typography>
+					<Typography>
+						✅ <strong>Notificaciones:</strong> Alertas de movimientos importantes (si está habilitado)
+					</Typography>
+					<Typography>
+						✅ <strong>Documentos sincronizados:</strong> Acceso a documentos públicos del expediente
+					</Typography>
 				</Stack>
 			</Alert>
 

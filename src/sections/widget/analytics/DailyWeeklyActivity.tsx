@@ -10,7 +10,8 @@ const DailyWeeklyActivity = () => {
 
 	// Get the actual data from the API response
 	const totalFolders = data?.dashboard?.folders?.total || 0;
-	const totalTasks = (data?.tasks?.metrics?.pendingTasks || 0) + (data?.tasks?.metrics?.completedTasks || 0) + (data?.tasks?.metrics?.overdueTasks || 0);
+	const totalTasks =
+		(data?.tasks?.metrics?.pendingTasks || 0) + (data?.tasks?.metrics?.completedTasks || 0) + (data?.tasks?.metrics?.overdueTasks || 0);
 
 	// Calculate total movements from trends (sum of all movements in the last 6 months)
 	const movementsTrend = data?.dashboard?.trends?.movements || [];

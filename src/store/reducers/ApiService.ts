@@ -628,11 +628,7 @@ class ApiService {
 		userStats?: any;
 	}> {
 		try {
-			const response = await axios.post(
-				`${API_BASE_URL}/api/subscriptions/sync`, 
-				{}, 
-				{ withCredentials: true }
-			);
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/sync`, {}, { withCredentials: true });
 			console.log("/api/subscriptions/sync", response.data);
 			return response.data;
 		} catch (error) {
@@ -651,10 +647,7 @@ class ApiService {
 		subscription?: any;
 	}> {
 		try {
-			const response = await axios.get(
-				`${API_BASE_URL}/api/repair/fix-user-subscription/${userId}`,
-				{ withCredentials: true }
-			);
+			const response = await axios.get(`${API_BASE_URL}/api/repair/fix-user-subscription/${userId}`, { withCredentials: true });
 			console.log(`/api/repair/fix-user-subscription/${userId}`, response.data);
 			return response.data;
 		} catch (error) {
