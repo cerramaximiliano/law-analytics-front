@@ -1358,7 +1358,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 											<Typography variant="h6" fontWeight="medium">
 												{key === "storageLimit" || key.toLowerCase() === "storage" || key === "Storage"
 													? `${value} MB`
-													: value || "Información no disponible"}
+													: String(value || "Información no disponible")}
 											</Typography>
 										</Stack>
 									</Grid>

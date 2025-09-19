@@ -168,6 +168,7 @@ export interface ActivityStats {
 }
 
 export interface NotificationStats {
+	totalCount: number;
 	unreadCount: number;
 	averageReadTime?: number;
 	responseRate?: number;

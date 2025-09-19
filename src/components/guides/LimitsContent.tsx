@@ -11,7 +11,7 @@ interface GuideStepProps {
 	image?: string;
 }
 
-const GuideStep: React.FC<GuideStepProps> = ({ title, content, _image }) => {
+const GuideStep: React.FC<GuideStepProps> = ({ title, content }) => {
 	return (
 		<Box sx={{ p: 3 }}>
 			<Typography variant="h4" gutterBottom color="primary">

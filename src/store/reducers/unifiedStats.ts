@@ -11,6 +11,7 @@ const initialState: UnifiedStatsState = {
 	isLoading: false,
 	error: null,
 	data: null,
+	dataQuality: null,
 	lastUpdated: null,
 	descriptions: null,
 	cacheInfo: null,
