@@ -656,6 +656,58 @@ class ApiService {
 	}
 
 	/**
+	 * Recalcula y sincroniza el almacenamiento de un usuario específico
+	 * @param userId - ID del usuario
+	 */
+	static async recalculateUserStorage(userId: string): Promise<{
+		success: boolean;
+		message: string;
+		data?: {
+			user: {
+				id: string;
+				email: string;
+				plan: string;
+			};
+			before: {
+				storage: number;
+				storageMB: number;
+			};
+			after: {
+				archived: {
+					folders: number;
+					contacts: number;
+					calculators: number;
+				};
+				active: {
+					folders: number;
+					contacts: number;
+					calculators: number;
+				};
+				storage: {
+					folders: number;
+					contacts: number;
+					calculators: number;
+					total: number;
+					totalMB: number;
+				};
+			};
+			changed: boolean;
+			difference: {
+				bytes: number;
+				mb: number;
+			};
+		};
+	}> {
+		try {
+			const response = await axios.post(`${API_BASE_URL}/api/admin/storage/recalculate/user/${userId}`, {}, { withCredentials: true });
+			console.log(`/api/admin/storage/recalculate/user/${userId}`, response.data);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
 	 * Cancela la suscripción actual del usuario
 	 * @param atPeriodEnd - Si es true, la suscripción se cancela al finalizar el período actual
 	 */

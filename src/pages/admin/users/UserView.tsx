@@ -54,6 +54,7 @@ import {
 	Save2,
 	CloseCircle,
 	RefreshCircle,
+	Setting2,
 } from "iconsax-react";
 
 // API and types
@@ -181,6 +182,9 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 	// Estado para sincronización de suscripción
 	const [syncingSubscription, setSyncingSubscription] = useState(false);
+
+	// Estado para sincronización de almacenamiento
+	const [syncingStorage, setSyncingStorage] = useState(false);
 
 	const { enqueueSnackbar } = useSnackbar();
 
@@ -365,6 +369,45 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 			enqueueSnackbar(errorMessage, { variant: "error" });
 		} finally {
 			setSyncingSubscription(false);
+		}
+	};
+
+	// Función para sincronizar el almacenamiento del usuario
+	const handleSyncStorage = async () => {
+		const userId = userData?.id || userData?._id;
+		if (!userId) {
+			enqueueSnackbar("No se pudo obtener el ID del usuario", { variant: "error" });
+			return;
+		}
+
+		setSyncingStorage(true);
+		try {
+			const response = await ApiService.recalculateUserStorage(userId);
+
+			if (response.success) {
+				// Mostrar mensaje con el cambio de almacenamiento
+				const beforeMB = response.data?.before?.storageMB || 0;
+				const afterMB = response.data?.after?.storage?.totalMB || 0;
+				const difference = response.data?.difference?.mb || 0;
+
+				let message = `Almacenamiento sincronizado para ${response.data?.user?.email || "el usuario"}`;
+				if (response.data?.changed) {
+					message += `. Antes: ${beforeMB.toFixed(2)} MB, Después: ${afterMB.toFixed(2)} MB (${difference > 0 ? "+" : ""}${difference.toFixed(2)} MB)`;
+				}
+
+				enqueueSnackbar(message, { variant: "success" });
+
+				// Recargar los datos del usuario para mostrar el almacenamiento actualizado
+				dispatch(getUserById(userId) as any);
+			} else {
+				enqueueSnackbar(response.message || "Error al sincronizar el almacenamiento", { variant: "error" });
+			}
+		} catch (error: any) {
+			console.error("Error syncing storage:", error);
+			const errorMessage = error?.response?.data?.message || error?.message || "Error al sincronizar el almacenamiento";
+			enqueueSnackbar(errorMessage, { variant: "error" });
+		} finally {
+			setSyncingStorage(false);
 		}
 	};
 
@@ -723,72 +766,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 					</>
 				)}
 
-				{subscription.limits && Object.keys(subscription.limits).length > 0 && (
-					<>
-						<Divider />
-						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-							Límites de Recursos
-						</Typography>
-						{Object.entries(subscription.limits).map(([key, value], index) => (
-							<Stack key={index} direction="row" justifyContent="space-between" alignItems="center">
-								<Typography variant="subtitle1">
-									{key === "maxFolders"
-										? "Carpetas máximas"
-										: key === "maxCalculators"
-										? "Calculadoras máximas"
-										: key === "maxContacts"
-										? "Contactos máximos"
-										: key === "storageLimit"
-										? "Límite de almacenamiento (MB)"
-										: key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
-								</Typography>
-								<Typography variant="body2" fontWeight="medium">
-									{value || "Información no disponible"}
-								</Typography>
-							</Stack>
-						))}
-					</>
-				)}
 
-				{subscription.features && (
-					<>
-						<Divider />
-						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-							Características del Plan
-						</Typography>
-						<Grid container spacing={2}>
-							{Object.entries(subscription.features).map(([featureName, enabled], index) => (
-								<Grid item xs={12} sm={6} key={index}>
-									<Stack direction="row" alignItems="center" spacing={1}>
-										<Chip
-											label={enabled ? "Activo" : "Inactivo"}
-											size="small"
-											color={enabled ? "success" : "default"}
-											sx={{ minWidth: 70 }}
-										/>
-										<Typography variant="body2">
-											{featureName === "advancedAnalytics"
-												? "Analíticas avanzadas"
-												: featureName === "exportReports"
-												? "Exportar reportes"
-												: featureName === "taskAutomation"
-												? "Automatización de tareas"
-												: featureName === "bulkOperations"
-												? "Operaciones masivas"
-												: featureName === "prioritySupport"
-												? "Soporte prioritario"
-												: featureName === "vinculateFolders"
-												? "Vincular carpetas"
-												: featureName === "booking"
-												? "Sistema de reservas"
-												: featureName.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
-										</Typography>
-									</Stack>
-								</Grid>
-							))}
-						</Grid>
-					</>
-				)}
 
 				{(subscription.pendingPlanChange || subscription.scheduledPlanChange || subscription.downgradeGracePeriod) && (
 					<>
@@ -1087,56 +1065,6 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 					</>
 				)}
 
-				{subscription.usageTracking && (
-					<>
-						<Divider />
-						<Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-							Seguimiento de Uso
-						</Typography>
-
-						<Grid container spacing={2}>
-							<Grid item xs={6}>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="subtitle2">Carpetas creadas</Typography>
-									<Typography variant="body2" fontWeight="medium">
-										{subscription.usageTracking.foldersCreated || 0}
-									</Typography>
-								</Stack>
-							</Grid>
-							<Grid item xs={6}>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="subtitle2">Cálculos creados</Typography>
-									<Typography variant="body2" fontWeight="medium">
-										{subscription.usageTracking.calculatorsCreated || 0}
-									</Typography>
-								</Stack>
-							</Grid>
-							<Grid item xs={6}>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="subtitle2">Contactos creados</Typography>
-									<Typography variant="body2" fontWeight="medium">
-										{subscription.usageTracking.contactsCreated || 0}
-									</Typography>
-								</Stack>
-							</Grid>
-							<Grid item xs={6}>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
-									<Typography variant="subtitle2">Almacenamiento (MB)</Typography>
-									<Typography variant="body2" fontWeight="medium">
-										{subscription.usageTracking.storageUsed || 0}
-									</Typography>
-								</Stack>
-							</Grid>
-						</Grid>
-
-						{subscription.usageTracking.lastActivityDate && (
-							<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
-								<Typography variant="subtitle1">Última actividad</Typography>
-								<Typography variant="body2">{new Date(subscription.usageTracking.lastActivityDate).toLocaleString()}</Typography>
-							</Stack>
-						)}
-					</>
-				)}
 
 				{subscription.invoiceSettings && (
 					<>
@@ -1361,6 +1289,250 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 				<Alert severity="info">
 					<Typography variant="body2">La información de preferencias no está disponible actualmente.</Typography>
 				</Alert>
+			</Stack>
+		);
+	};
+
+	// Renderizar límites de recursos
+	const renderResourceLimits = () => {
+		const subscription = userData?.subscription;
+
+		if (!subscription) {
+			return (
+				<Alert severity="info">
+					<Typography variant="body2">No hay información de límites disponible para este usuario.</Typography>
+				</Alert>
+			);
+		}
+
+		return (
+			<Stack spacing={3}>
+				{/* Límites de Recursos */}
+				{subscription.limits && Object.keys(subscription.limits).length > 0 && (
+					<>
+						<Typography variant="h6" sx={{ fontWeight: "bold" }}>
+							Límites del Plan
+						</Typography>
+						<Paper
+							elevation={0}
+							sx={{
+								p: 3,
+								backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+								borderRadius: 2,
+							}}
+						>
+							<Grid container spacing={2}>
+								{Object.entries(subscription.limits).map(([key, value], index) => (
+									<Grid item xs={12} sm={6} key={index}>
+										<Stack spacing={1}>
+											<Stack direction="row" alignItems="center" spacing={1}>
+												<Typography variant="subtitle2" color="textSecondary">
+													{key === "maxFolders"
+														? "Carpetas máximas"
+														: key === "maxCalculators"
+														? "Calculadoras máximas"
+														: key === "maxContacts"
+														? "Contactos máximos"
+														: key === "storageLimit" || key.toLowerCase() === "storage" || key === "Storage"
+														? "Almacenamiento"
+														: key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+												</Typography>
+												{(key === "storageLimit" || key.toLowerCase() === "storage" || key === "Storage") && (
+													<Tooltip title="Sincronizar el cálculo de almacenamiento del usuario">
+														<IconButton
+															size="small"
+															onClick={handleSyncStorage}
+															disabled={syncingStorage}
+															sx={{
+																color: theme.palette.primary.main,
+																"&:hover": {
+																	backgroundColor: theme.palette.action.hover,
+																},
+															}}
+														>
+															{syncingStorage ? <CircularProgress size={16} /> : <RefreshCircle size={16} />}
+														</IconButton>
+													</Tooltip>
+												)}
+											</Stack>
+											<Typography variant="h6" fontWeight="medium">
+												{key === "storageLimit" || key.toLowerCase() === "storage" || key === "Storage"
+													? `${value} MB`
+													: value || "Información no disponible"}
+											</Typography>
+										</Stack>
+									</Grid>
+								))}
+							</Grid>
+						</Paper>
+					</>
+				)}
+
+				{/* Seguimiento de Uso */}
+				{subscription.usageTracking && (
+					<>
+						<Typography variant="h6" sx={{ fontWeight: "bold" }}>
+							Uso Actual
+						</Typography>
+						<Paper
+							elevation={0}
+							sx={{
+								p: 3,
+								backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+								borderRadius: 2,
+							}}
+						>
+							<Grid container spacing={3}>
+								<Grid item xs={12} sm={6}>
+									<Stack spacing={1}>
+										<Typography variant="subtitle2" color="textSecondary">
+											Carpetas creadas
+										</Typography>
+										<Typography variant="h6" fontWeight="medium">
+											{subscription.usageTracking.foldersCreated || 0}
+											{subscription.limits?.maxFolders && (
+												<Typography component="span" variant="body2" color="textSecondary">
+													{" / "}{subscription.limits.maxFolders}
+												</Typography>
+											)}
+										</Typography>
+									</Stack>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<Stack spacing={1}>
+										<Typography variant="subtitle2" color="textSecondary">
+											Cálculos creados
+										</Typography>
+										<Typography variant="h6" fontWeight="medium">
+											{subscription.usageTracking.calculatorsCreated || 0}
+											{subscription.limits?.maxCalculators && (
+												<Typography component="span" variant="body2" color="textSecondary">
+													{" / "}{subscription.limits.maxCalculators}
+												</Typography>
+											)}
+										</Typography>
+									</Stack>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<Stack spacing={1}>
+										<Typography variant="subtitle2" color="textSecondary">
+											Contactos creados
+										</Typography>
+										<Typography variant="h6" fontWeight="medium">
+											{subscription.usageTracking.contactsCreated || 0}
+											{subscription.limits?.maxContacts && (
+												<Typography component="span" variant="body2" color="textSecondary">
+													{" / "}{subscription.limits.maxContacts}
+												</Typography>
+											)}
+										</Typography>
+									</Stack>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<Stack spacing={1}>
+										<Stack direction="row" alignItems="center" spacing={1}>
+											<Typography variant="subtitle2" color="textSecondary">
+												Almacenamiento usado
+											</Typography>
+											<Tooltip title="Sincronizar el cálculo de almacenamiento del usuario">
+												<IconButton
+													size="small"
+													onClick={handleSyncStorage}
+													disabled={syncingStorage}
+													sx={{
+														color: theme.palette.primary.main,
+														"&:hover": {
+															backgroundColor: theme.palette.action.hover,
+														},
+													}}
+												>
+													{syncingStorage ? <CircularProgress size={16} /> : <RefreshCircle size={16} />}
+												</IconButton>
+											</Tooltip>
+										</Stack>
+										<Typography variant="h6" fontWeight="medium">
+											{subscription.usageTracking.storageUsed || 0} MB
+											{subscription.limits?.storageLimit && (
+												<Typography component="span" variant="body2" color="textSecondary">
+													{" / "}{subscription.limits.storageLimit} MB
+												</Typography>
+											)}
+										</Typography>
+									</Stack>
+								</Grid>
+
+								{subscription.usageTracking.lastActivityDate && (
+									<Grid item xs={12}>
+										<Divider sx={{ my: 2 }} />
+										<Stack direction="row" justifyContent="space-between" alignItems="center">
+											<Typography variant="subtitle2" color="textSecondary">
+												Última actividad
+											</Typography>
+											<Typography variant="body2">
+												{new Date(subscription.usageTracking.lastActivityDate).toLocaleString()}
+											</Typography>
+										</Stack>
+									</Grid>
+								)}
+							</Grid>
+						</Paper>
+					</>
+				)}
+
+				{/* Características del Plan */}
+				{subscription.features && (
+					<>
+						<Typography variant="h6" sx={{ fontWeight: "bold" }}>
+							Características del Plan
+						</Typography>
+						<Paper
+							elevation={0}
+							sx={{
+								p: 3,
+								backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100",
+								borderRadius: 2,
+							}}
+						>
+							<Grid container spacing={2}>
+								{Object.entries(subscription.features).map(([featureName, enabled], index) => (
+									<Grid item xs={12} sm={6} key={index}>
+										<Stack direction="row" alignItems="center" spacing={1}>
+											<Chip
+												label={enabled ? "Activo" : "Inactivo"}
+												size="small"
+												color={enabled ? "success" : "default"}
+												sx={{ minWidth: 70 }}
+											/>
+											<Typography variant="body2">
+												{featureName === "advancedAnalytics"
+													? "Analíticas avanzadas"
+													: featureName === "exportReports"
+													? "Exportar reportes"
+													: featureName === "taskAutomation"
+													? "Automatización de tareas"
+													: featureName === "bulkOperations"
+													? "Operaciones masivas"
+													: featureName === "prioritySupport"
+													? "Soporte prioritario"
+													: featureName === "customIntegrations"
+													? "Integraciones personalizadas"
+													: featureName === "teamCollaboration"
+													? "Colaboración en equipo"
+													: featureName === "apiAccess"
+													? "Acceso API"
+													: featureName === "ssoIntegration"
+													? "Integración SSO"
+													: featureName === "auditLog"
+													? "Registro de auditoría"
+													: featureName.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+											</Typography>
+										</Stack>
+									</Grid>
+								))}
+							</Grid>
+						</Paper>
+					</>
+				)}
 			</Stack>
 		);
 	};
@@ -1983,11 +2155,18 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 									/>
 									<Tab icon={<Folder2 size={18} />} iconPosition="start" label="Resumen" id="user-tab-4" aria-controls="user-tabpanel-4" />
 									<Tab
+										icon={<Setting2 size={18} />}
+										iconPosition="start"
+										label="Límites de Recursos"
+										id="user-tab-5"
+										aria-controls="user-tabpanel-5"
+									/>
+									<Tab
 										icon={<CardPos size={18} />}
 										iconPosition="start"
 										label="Clientes de Stripe"
-										id="user-tab-5"
-										aria-controls="user-tabpanel-5"
+										id="user-tab-6"
+										aria-controls="user-tabpanel-6"
 									/>
 								</Tabs>
 							</Box>
@@ -2083,6 +2262,10 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 							</TabPanel>
 
 							<TabPanel value={tabValue} index={5}>
+								{renderResourceLimits()}
+							</TabPanel>
+
+							<TabPanel value={tabValue} index={6}>
 								{renderStripeHistory()}
 							</TabPanel>
 						</Box>
