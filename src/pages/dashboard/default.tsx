@@ -244,19 +244,17 @@ const DashboardDefault = () => {
 						</Grid>
 
 						{/* row 2 */}
-						<Grid item xs={12} md={8} lg={9}>
-							<Grid container spacing={3}>
-								<Grid item xs={12}>
-									<RepeatCustomerRate />
-								</Grid>
-							</Grid>
+						<Grid item xs={12} md={6} lg={6}>
+							<RepeatCustomerRate />
 						</Grid>
-						<Grid item xs={12} md={4} lg={3}>
+						<Grid item xs={12} md={6} lg={3}>
 							<Stack spacing={3}>
 								<StorageWidget />
-								<ProjectRelease />
 								<AssignUsers />
 							</Stack>
+						</Grid>
+						<Grid item xs={12} md={6} lg={3}>
+							<ProjectRelease />
 						</Grid>
 
 						{/* row 3 */}
