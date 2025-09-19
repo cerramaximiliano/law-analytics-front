@@ -38,11 +38,11 @@ const HistoricalTrends = () => {
 
 	// Función para preparar datos del gráfico
 	const prepareChartData = (trendData: any[]) => {
-		// Tomar todos los datos y revertir para mostrar de más antiguo a más reciente
-		const chronologicalData = [...trendData].reverse();
+		// Los datos vienen del API en orden más reciente a más antiguo
+		// No necesitamos revertir, solo usar los datos como vienen
 		return {
-			categories: chronologicalData.map((item) => item.month || ""),
-			data: chronologicalData.map((item) => item.count || 0),
+			categories: trendData.map((item) => item.month || ""),
+			data: trendData.map((item) => item.count || 0),
 		};
 	};
 
