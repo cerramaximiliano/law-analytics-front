@@ -264,6 +264,7 @@ export interface MovementQueryParams {
 	filter?: {
 		movement?: string;
 		dateRange?: string;
+		hasLink?: boolean; // Agregado para filtrar movimientos con documento
 	};
 }
 

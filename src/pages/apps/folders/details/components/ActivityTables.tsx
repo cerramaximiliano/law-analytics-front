@@ -21,6 +21,8 @@ import {
 	useMediaQuery,
 	Drawer,
 	Divider,
+	FormControlLabel,
+	Checkbox,
 } from "@mui/material";
 import { format, parseISO, parse, isValid } from "date-fns";
 import { es } from "date-fns/locale";
@@ -35,6 +37,8 @@ import {
 	Add,
 	Menu,
 	TickCircle,
+	DocumentText,
+	Gallery,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useParams } from "react-router";
@@ -60,6 +64,7 @@ import { toggleModal, selectEvent } from "store/reducers/calendar";
 import { deleteEvent } from "store/reducers/events";
 import ActivityFilters from "./filters/ActivityFilters";
 import { exportActivityData } from "./utils/exportUtils";
+import PDFViewer from "components/shared/PDFViewer";
 
 // Types
 interface ActivityTablesProps {
@@ -93,6 +98,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		hasExpiration: "",
 		allDay: "",
 		source: "",
+		onlyWithDocuments: true, // Inicialmente activado para mostrar solo movimientos con documento
 	});
 
 	// Modals states - Movements
@@ -116,6 +122,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const [viewNotificationDetails, setViewNotificationDetails] = useState<NotificationType | null>(null);
 	const [viewEventDetails, setViewEventDetails] = useState<any | null>(null);
 
+	// Estado para navegación secuencial de documentos
+	const [documentNavigationOpen, setDocumentNavigationOpen] = useState(false);
+
 	// Selectors
 	const movementsData = useSelector((state: any) => state.movements);
 	const notificationsData = useSelector((state: any) => state.notifications);
@@ -129,17 +138,19 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	useEffect(() => {
 		if (id) {
 			// Cargar movimientos con paginación inicial y ordenamiento por defecto
+			// Si el filtro de documentos está activo, incluirlo en la petición inicial
 			dispatch(
 				getMovementsByFolderId(id, {
 					page: 1,
 					limit: 10,
 					sort: "-time", // Ordenar por fecha descendente por defecto
+					filter: filters.onlyWithDocuments ? { hasLink: true } : undefined,
 				}),
 			);
 			dispatch(getNotificationsByFolderId(id));
 			dispatch(getEventsById(id));
 		}
-	}, [id]);
+	}, [id, filters.onlyWithDocuments]);
 
 	// Tab configuration
 	const tabs: TabConfig[] = [
@@ -706,6 +717,63 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										}}
 									/>
 								</Box>
+
+								{/* Controles específicos para movimientos */}
+								{activeTab === "movements" && (
+									<Stack spacing={2} sx={{ mt: 2 }}>
+										{/* Checkbox para filtrar solo movimientos con documento */}
+										<FormControlLabel
+											control={
+												<Checkbox
+													checked={filters.onlyWithDocuments}
+													onChange={(e) => {
+														setFilters({ ...filters, onlyWithDocuments: e.target.checked });
+														// Recargar movimientos con el nuevo filtro
+														if (id) {
+															dispatch(
+																getMovementsByFolderId(id, {
+																	page: 1,
+																	limit: 10,
+																	sort: "-time",
+																	filter: e.target.checked ? { hasLink: true } : undefined,
+																}),
+															);
+														}
+													}}
+													size="small"
+													color="primary"
+												/>
+											}
+											label={
+												<Stack direction="row" alignItems="center" spacing={1}>
+													<DocumentText size={18} />
+													<Typography variant="body2">Solo movimientos con documento</Typography>
+												</Stack>
+											}
+										/>
+
+										{/* Botón para navegación secuencial de documentos */}
+										<Button
+											variant="outlined"
+											size="small"
+											fullWidth
+											startIcon={<Gallery size={18} />}
+											onClick={() => setDocumentNavigationOpen(true)}
+											disabled={movementsData.totalWithLinks === 0}
+											sx={{
+												borderColor: theme.palette.primary.main,
+												color: theme.palette.primary.main,
+												"&:hover": {
+													bgcolor: alpha(theme.palette.primary.main, 0.1),
+													borderColor: theme.palette.primary.dark,
+												},
+											}}
+										>
+											Ver todos los documentos
+											{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+										</Button>
+									</Stack>
+								)}
 
 								{/* Filters Section (Collapsible) */}
 								<Collapse in={showFilters} timeout="auto" unmountOnExit>
@@ -1455,6 +1523,57 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					</Box>
 				</Dialog>
 			)}
+
+			{/* Modal para navegación de documentos */}
+			{documentNavigationOpen && (() => {
+				const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+				const firstMovement = movementsWithLinks[0];
+
+				return firstMovement ? (
+					<PDFViewer
+						open={documentNavigationOpen}
+						onClose={() => setDocumentNavigationOpen(false)}
+						url={firstMovement.link}
+						title={firstMovement.title || "Documento"}
+						movements={movementsWithLinks}
+						currentMovementId={firstMovement._id}
+						totalWithLinks={movementsData.totalWithLinks}
+						documentsBeforeThisPage={movementsData.documentsBeforeThisPage || 0}
+						documentsInThisPage={movementsData.documentsInThisPage}
+						hasNextPage={movementsData.pagination?.hasNext}
+						hasPreviousPage={movementsData.pagination?.hasPrev}
+						isLoadingMore={movementsData.isLoading}
+						onNavigate={(movement: Movement) => {
+							// La navegación se maneja internamente en el PDFViewer
+							console.log("Navigating to:", movement.title);
+						}}
+						onRequestNextPage={async () => {
+							if (id && movementsData.pagination?.hasNext) {
+								await dispatch(
+									getMovementsByFolderId(id, {
+										page: (movementsData.pagination.page || 1) + 1,
+										limit: 10,
+										sort: "-time",
+										filter: { hasLink: true }, // Siempre filtrar por documentos en navegación
+									}),
+								);
+							}
+						}}
+						onRequestPreviousPage={async () => {
+							if (id && movementsData.pagination?.hasPrev) {
+								await dispatch(
+									getMovementsByFolderId(id, {
+										page: (movementsData.pagination.page || 1) - 1,
+										limit: 10,
+										sort: "-time",
+										filter: { hasLink: true }, // Siempre filtrar por documentos en navegación
+									}),
+								);
+							}
+						}}
+					/>
+				) : null;
+			})()}
 		</MainCard>
 	);
 };
