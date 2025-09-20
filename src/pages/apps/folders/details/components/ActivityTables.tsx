@@ -966,6 +966,62 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									</Stack>
 								</Stack>
 
+								{/* Controles específicos para movimientos - Desktop */}
+								{activeTab === "movements" && (
+									<Stack direction="row" spacing={2} sx={{ mt: 2 }} alignItems="center">
+										{/* Checkbox para filtrar solo movimientos con documento */}
+										<FormControlLabel
+											control={
+												<Checkbox
+													checked={filters.onlyWithDocuments}
+													onChange={(e) => {
+														setFilters({ ...filters, onlyWithDocuments: e.target.checked });
+														// Recargar movimientos con el nuevo filtro
+														if (id) {
+															dispatch(
+																getMovementsByFolderId(id, {
+																	page: 1,
+																	limit: 10,
+																	sort: "-time",
+																	filter: e.target.checked ? { hasLink: true } : undefined,
+																}),
+															);
+														}
+													}}
+													size="small"
+													color="primary"
+												/>
+											}
+											label={
+												<Stack direction="row" alignItems="center" spacing={1}>
+													<DocumentText size={18} />
+													<Typography variant="body2">Solo movimientos con documento</Typography>
+												</Stack>
+											}
+										/>
+
+										{/* Botón para navegación secuencial de documentos */}
+										<Button
+											variant="outlined"
+											size="small"
+											startIcon={<Gallery size={18} />}
+											onClick={() => setDocumentNavigationOpen(true)}
+											disabled={movementsData.totalWithLinks === 0}
+											sx={{
+												borderColor: theme.palette.primary.main,
+												color: theme.palette.primary.main,
+												"&:hover": {
+													bgcolor: alpha(theme.palette.primary.main, 0.1),
+													borderColor: theme.palette.primary.dark,
+												},
+											}}
+										>
+											Ver todos los documentos
+											{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+										</Button>
+									</Stack>
+								)}
+
 								{/* Filters Section (Collapsible) */}
 								<Collapse in={showFilters} timeout="auto" unmountOnExit>
 									<Fade in={showFilters} timeout={350}>
