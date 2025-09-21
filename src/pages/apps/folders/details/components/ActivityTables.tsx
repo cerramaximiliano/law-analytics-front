@@ -124,6 +124,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	// Estado para navegación secuencial de documentos
 	const [documentNavigationOpen, setDocumentNavigationOpen] = useState(false);
+	const [currentDocumentMovement, setCurrentDocumentMovement] = useState<Movement | null>(null);
 
 	// Selectors
 	const movementsData = useSelector((state: any) => state.movements);
@@ -770,7 +771,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												size="small"
 												fullWidth
 												startIcon={<Gallery size={18} />}
-												onClick={() => setDocumentNavigationOpen(true)}
+												onClick={() => {
+													const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+													if (movementsWithLinks.length > 0) {
+														setCurrentDocumentMovement(movementsWithLinks[0]);
+														setDocumentNavigationOpen(true);
+													}
+												}}
 												disabled={movementsData.totalWithLinks === 0}
 												sx={{
 													bgcolor: theme.palette.primary.main,
@@ -1047,7 +1054,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													variant="contained"
 													size="small"
 													startIcon={<Gallery size={18} />}
-													onClick={() => setDocumentNavigationOpen(true)}
+													onClick={() => {
+													const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+													if (movementsWithLinks.length > 0) {
+														setCurrentDocumentMovement(movementsWithLinks[0]);
+														setDocumentNavigationOpen(true);
+													}
+												}}
 													disabled={movementsData.totalWithLinks === 0}
 													sx={{
 														bgcolor: theme.palette.primary.main,
@@ -1654,16 +1667,19 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			{/* Modal para navegación de documentos */}
 			{documentNavigationOpen && (() => {
 				const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-				const firstMovement = movementsWithLinks[0];
+				const movementToShow = currentDocumentMovement || movementsWithLinks[0];
 
-				return firstMovement ? (
+				return movementToShow ? (
 					<PDFViewer
 						open={documentNavigationOpen}
-						onClose={() => setDocumentNavigationOpen(false)}
-						url={firstMovement.link}
-						title={firstMovement.title || "Documento"}
+						onClose={() => {
+							setDocumentNavigationOpen(false);
+							setCurrentDocumentMovement(null);
+						}}
+						url={movementToShow.link}
+						title={movementToShow.title || "Documento"}
 						movements={movementsWithLinks}
-						currentMovementId={firstMovement._id}
+						currentMovementId={movementToShow._id}
 						totalWithLinks={movementsData.totalWithLinks}
 						documentsBeforeThisPage={movementsData.documentsBeforeThisPage || 0}
 						documentsInThisPage={movementsData.documentsInThisPage}
@@ -1671,8 +1687,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 						hasPreviousPage={movementsData.pagination?.hasPrev}
 						isLoadingMore={movementsData.isLoading}
 						onNavigate={(movement: Movement) => {
-							// La navegación se maneja internamente en el PDFViewer
-							console.log("Navigating to:", movement.title);
+							// Actualizar el movimiento actual para cambiar la URL
+							setCurrentDocumentMovement(movement);
 						}}
 						onRequestNextPage={async () => {
 							if (id && movementsData.pagination?.hasNext) {

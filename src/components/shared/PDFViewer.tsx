@@ -61,12 +61,24 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 	const movementsWithLinks = React.useMemo(() => movements.filter((m) => m.link), [movements]);
 
 	const currentIndex = React.useMemo(() => {
-		const index = movementsWithLinks.findIndex((m) => m._id === currentMovementId);
-		// Si no encuentra el movimiento actual, buscar por URL
-		if (index === -1 && url) {
-			return movementsWithLinks.findIndex((m) => m.link === url);
+		// Primero buscar por URL ya que es la fuente de verdad actual
+		if (url) {
+			const indexByUrl = movementsWithLinks.findIndex((m) => m.link === url);
+			if (indexByUrl !== -1) {
+				console.log("Found by URL:", indexByUrl, "URL:", url);
+				return indexByUrl;
+			}
 		}
-		return index;
+		// Si no encuentra por URL, buscar por ID
+		if (currentMovementId) {
+			const indexById = movementsWithLinks.findIndex((m) => m._id === currentMovementId);
+			if (indexById !== -1) {
+				console.log("Found by ID:", indexById, "ID:", currentMovementId);
+				return indexById;
+			}
+		}
+		console.log("Using default index 0");
+		return 0; // Default al primer elemento
 	}, [movementsWithLinks, currentMovementId, url]);
 
 	// Calcular la posición global del documento
@@ -84,8 +96,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 	const handlePrevious = () => {
 		if (currentIndex > 0 && onNavigate) {
 			// Navegar dentro de la página actual
-			setLoading(true);
-			setError(false);
+			// No establecer loading aquí, el useEffect lo manejará
 			onNavigate(movementsWithLinks[currentIndex - 1]);
 		} else if (currentIndex === 0 && documentsBeforeThisPage > 0 && onRequestPreviousPage) {
 			// Solicitar la página anterior
@@ -95,8 +106,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
 	const handleNext = () => {
 		if (currentIndex < movementsWithLinks.length - 1 && onNavigate) {
-			setLoading(true);
-			setError(false);
+			// No establecer loading aquí, el useEffect lo manejará
 			onNavigate(movementsWithLinks[currentIndex + 1]);
 		} else if (hasNextPage && currentIndex === movementsWithLinks.length - 1 && onRequestNextPage) {
 			// Solicitar siguiente página cuando llegamos al último
@@ -118,8 +128,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 		setLoadProgress(0);
 	};
 
+	// Rastrear la URL anterior para detectar cambios reales
+	const prevUrlRef = React.useRef<string>("");
+
 	React.useEffect(() => {
-		if (open && url) {
+		if (open && url && url !== prevUrlRef.current) {
+			prevUrlRef.current = url;
 			setLoading(true);
 			setError(false);
 			setLoadProgress(0);
