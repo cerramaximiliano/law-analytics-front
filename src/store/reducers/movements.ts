@@ -286,6 +286,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 			if (params.filter) {
 				if (params.filter.movement) queryParams["filter[movement]"] = params.filter.movement;
 				if (params.filter.dateRange) queryParams["filter[dateRange]"] = params.filter.dateRange;
+				if (params.filter.hasLink !== undefined) queryParams["filter[hasLink]"] = params.filter.hasLink;
 			}
 		}
 

@@ -669,19 +669,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 									{/* Action Buttons */}
 									<Stack direction="row" spacing={1}>
-										<Tooltip title="Filtros">
-											<IconButton
-												size="small"
-												onClick={() => setShowFilters(!showFilters)}
-												color={showFilters ? "primary" : "default"}
-												sx={{
-													transition: "all 0.3s ease",
-													transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
-												}}
-											>
-												<Filter />
-											</IconButton>
-										</Tooltip>
 										{activeTab !== "combined" && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
@@ -720,59 +707,87 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 								{/* Controles específicos para movimientos */}
 								{activeTab === "movements" && (
-									<Stack spacing={2} sx={{ mt: 2 }}>
-										{/* Checkbox para filtrar solo movimientos con documento */}
-										<FormControlLabel
-											control={
-												<Checkbox
-													checked={filters.onlyWithDocuments}
-													onChange={(e) => {
-														setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-														// Recargar movimientos con el nuevo filtro
-														if (id) {
-															dispatch(
-																getMovementsByFolderId(id, {
-																	page: 1,
-																	limit: 10,
-																	sort: "-time",
-																	filter: e.target.checked ? { hasLink: true } : undefined,
-																}),
-															);
-														}
-													}}
-													size="small"
-													color="primary"
-												/>
-											}
-											label={
-												<Stack direction="row" alignItems="center" spacing={1}>
-													<DocumentText size={18} />
-													<Typography variant="body2">Solo movimientos con documento</Typography>
-												</Stack>
-											}
-										/>
+									<Box
+										sx={{
+											mt: 2,
+											p: 1.5,
+											bgcolor: alpha(theme.palette.primary.main, 0.04),
+											borderRadius: 1,
+											border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+										}}
+									>
+										<Stack spacing={1.5}>
+											<Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+												OPCIONES DE VISUALIZACIÓN
+											</Typography>
 
-										{/* Botón para navegación secuencial de documentos */}
-										<Button
-											variant="outlined"
-											size="small"
-											fullWidth
-											startIcon={<Gallery size={18} />}
-											onClick={() => setDocumentNavigationOpen(true)}
-											disabled={movementsData.totalWithLinks === 0}
-											sx={{
-												borderColor: theme.palette.primary.main,
-												color: theme.palette.primary.main,
-												"&:hover": {
-													bgcolor: alpha(theme.palette.primary.main, 0.1),
-													borderColor: theme.palette.primary.dark,
-												},
-											}}
-										>
-											Ver todos los documentos
-											{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-										</Button>
-									</Stack>
+											{/* Checkbox para filtrar solo movimientos con documento */}
+											<FormControlLabel
+												control={
+													<Checkbox
+														checked={filters.onlyWithDocuments}
+														onChange={(e) => {
+															setFilters({ ...filters, onlyWithDocuments: e.target.checked });
+															// Recargar movimientos con el nuevo filtro
+															if (id) {
+																dispatch(
+																	getMovementsByFolderId(id, {
+																		page: 1,
+																		limit: 10,
+																		sort: "-time",
+																		filter: e.target.checked ? { hasLink: true } : undefined,
+																	}),
+																);
+															}
+														}}
+														size="small"
+														color="primary"
+													/>
+												}
+												label={
+													<Stack direction="row" alignItems="center" spacing={1}>
+														<DocumentText size={18} color={theme.palette.primary.main} />
+														<Typography variant="body2">
+															Solo movimientos con documento
+															{movementsData.totalWithLinks > 0 && (
+																<Chip
+																	size="small"
+																	label={movementsData.totalWithLinks}
+																	color="primary"
+																	sx={{ ml: 1, height: 20 }}
+																/>
+															)}
+														</Typography>
+													</Stack>
+												}
+											/>
+
+											<Divider sx={{ my: 1 }} />
+
+											{/* Botón para navegación secuencial de documentos */}
+											<Button
+												variant="contained"
+												size="small"
+												fullWidth
+												startIcon={<Gallery size={18} />}
+												onClick={() => setDocumentNavigationOpen(true)}
+												disabled={movementsData.totalWithLinks === 0}
+												sx={{
+													bgcolor: theme.palette.primary.main,
+													color: "white",
+													"&:hover": {
+														bgcolor: theme.palette.primary.dark,
+													},
+													"&:disabled": {
+														bgcolor: theme.palette.action.disabledBackground,
+													},
+												}}
+											>
+												Expediente digital
+												{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+											</Button>
+										</Stack>
+									</Box>
 								)}
 
 								{/* Filters Section (Collapsible) */}
@@ -930,19 +945,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 									{/* Action Buttons */}
 									<Stack direction="row" spacing={1}>
-										<Tooltip title="Filtros">
-											<IconButton
-												size="small"
-												onClick={() => setShowFilters(!showFilters)}
-												color={showFilters ? "primary" : "default"}
-												sx={{
-													transition: "all 0.3s ease",
-													transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
-												}}
-											>
-												<Filter />
-											</IconButton>
-										</Tooltip>
 										<Tooltip title="Exportar">
 											<IconButton size="small" onClick={handleExport}>
 												<ExportSquare />
@@ -967,78 +969,147 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								</Stack>
 
 								{/* Controles específicos para movimientos - Desktop */}
-								{activeTab === "movements" && (
-									<Stack direction="row" spacing={2} sx={{ mt: 2 }} alignItems="center">
-										{/* Checkbox para filtrar solo movimientos con documento */}
-										<FormControlLabel
-											control={
-												<Checkbox
-													checked={filters.onlyWithDocuments}
-													onChange={(e) => {
-														setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-														// Recargar movimientos con el nuevo filtro
-														if (id) {
-															dispatch(
-																getMovementsByFolderId(id, {
-																	page: 1,
-																	limit: 10,
-																	sort: "-time",
-																	filter: e.target.checked ? { hasLink: true } : undefined,
-																}),
-															);
-														}
-													}}
-													size="small"
-													color="primary"
+								{activeTab === "movements" ? (
+									<Box
+										sx={{
+											mt: 2,
+											p: 1.5,
+											bgcolor: alpha(theme.palette.primary.main, 0.04),
+											borderRadius: 1,
+											border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+										}}
+									>
+										<Stack spacing={1.5}>
+											<Stack direction="row" justifyContent="space-between" alignItems="center">
+												<Typography variant="caption" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
+													OPCIONES DE VISUALIZACIÓN
+												</Typography>
+												<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
+													<IconButton
+														size="small"
+														onClick={() => setShowFilters(!showFilters)}
+														color={showFilters ? "primary" : "default"}
+														sx={{
+															transition: "all 0.3s ease",
+															transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+														}}
+													>
+														<Filter size={18} />
+													</IconButton>
+												</Tooltip>
+											</Stack>
+
+											<Stack direction="row" spacing={3} alignItems="center">
+												{/* Checkbox para filtrar solo movimientos con documento */}
+												<FormControlLabel
+													control={
+														<Checkbox
+															checked={filters.onlyWithDocuments}
+															onChange={(e) => {
+																setFilters({ ...filters, onlyWithDocuments: e.target.checked });
+																if (id) {
+																	dispatch(
+																		getMovementsByFolderId(id, {
+																			page: 1,
+																			limit: 10,
+																			sort: "-time",
+																			filter: e.target.checked ? { hasLink: true } : undefined,
+																		}),
+																	);
+																}
+															}}
+															size="small"
+															color="primary"
+														/>
+													}
+													label={
+														<Stack direction="row" alignItems="center" spacing={1}>
+															<DocumentText size={18} color={theme.palette.primary.main} />
+															<Typography variant="body2">
+																Solo con documento
+																{movementsData.totalWithLinks > 0 && (
+																	<Chip
+																		size="small"
+																		label={movementsData.totalWithLinks}
+																		color="primary"
+																		sx={{ ml: 1, height: 20 }}
+																	/>
+																)}
+															</Typography>
+														</Stack>
+													}
 												/>
-											}
-											label={
-												<Stack direction="row" alignItems="center" spacing={1}>
-													<DocumentText size={18} />
-													<Typography variant="body2">Solo movimientos con documento</Typography>
-												</Stack>
-											}
-										/>
 
-										{/* Botón para navegación secuencial de documentos */}
-										<Button
-											variant="outlined"
-											size="small"
-											startIcon={<Gallery size={18} />}
-											onClick={() => setDocumentNavigationOpen(true)}
-											disabled={movementsData.totalWithLinks === 0}
-											sx={{
-												borderColor: theme.palette.primary.main,
-												color: theme.palette.primary.main,
-												"&:hover": {
-													bgcolor: alpha(theme.palette.primary.main, 0.1),
-													borderColor: theme.palette.primary.dark,
-												},
-											}}
-										>
-											Ver todos los documentos
-											{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
-										</Button>
-									</Stack>
-								)}
+												<Divider orientation="vertical" flexItem />
 
-								{/* Filters Section (Collapsible) */}
-								<Collapse in={showFilters} timeout="auto" unmountOnExit>
-									<Fade in={showFilters} timeout={350}>
-										<Box
-											sx={{
-												mt: 2,
-												p: 2,
-												bgcolor: theme.palette.grey[50],
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.divider}`,
-												transition: "all 0.3s ease-in-out",
-											}}
-										>
-											<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+												{/* Botón para navegación secuencial de documentos */}
+												<Button
+													variant="contained"
+													size="small"
+													startIcon={<Gallery size={18} />}
+													onClick={() => setDocumentNavigationOpen(true)}
+													disabled={movementsData.totalWithLinks === 0}
+													sx={{
+														bgcolor: theme.palette.primary.main,
+														color: "white",
+														"&:hover": {
+															bgcolor: theme.palette.primary.dark,
+														},
+														"&:disabled": {
+															bgcolor: theme.palette.action.disabledBackground,
+														},
+													}}
+												>
+													Expediente digital
+													{movementsData.totalWithLinks > 0 && ` (${movementsData.totalWithLinks})`}
+												</Button>
+											</Stack>
+
+											{/* Filtros avanzados - Collapsible */}
+											<Collapse in={showFilters} timeout="auto" unmountOnExit>
+												<Box sx={{ pt: 1.5 }}>
+													<Divider sx={{ mb: 1.5 }} />
+													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+												</Box>
+											</Collapse>
+										</Stack>
+									</Box>
+								) : (
+									/* Filtros para otras pestañas */
+									<>
+										<Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+											<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
+												<IconButton
+													size="small"
+													onClick={() => setShowFilters(!showFilters)}
+													color={showFilters ? "primary" : "default"}
+													sx={{
+														transition: "all 0.3s ease",
+														transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+													}}
+												>
+													<Filter />
+												</IconButton>
+											</Tooltip>
 										</Box>
-									</Fade>
-								</Collapse>
+										<Collapse in={showFilters} timeout="auto" unmountOnExit>
+											<Fade in={showFilters} timeout={350}>
+												<Box
+													sx={{
+														mt: 2,
+														p: 2,
+														bgcolor: theme.palette.grey[50],
+														borderRadius: 1,
+														border: `1px solid ${theme.palette.divider}`,
+														transition: "all 0.3s ease-in-out",
+													}}
+												>
+													<ActivityFilters activeTab={activeTab} filters={filters} onFiltersChange={setFilters} />
+												</Box>
+											</Fade>
+										</Collapse>
+									</>
+								)}
 							</Box>
 
 							{/* Table Content Area */}
