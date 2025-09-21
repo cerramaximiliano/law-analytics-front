@@ -631,7 +631,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 													</IconButton>
 												</Tooltip>
 												{movement.source !== "pjn" && (
-													<React.Fragment key={`actions-${movement._id}`}>
+													<>
 														<Tooltip title="Editar">
 															<IconButton
 																size="small"
@@ -656,7 +656,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																<Trash size={18} />
 															</IconButton>
 														</Tooltip>
-													</React.Fragment>
+													</>
 												)}
 											</Stack>
 										</TableCell>
