@@ -198,6 +198,231 @@ const AppUpdateWorker = () => {
 				</Typography>
 			</Alert>
 
+			{/* Guía de Funcionamiento */}
+			<Card variant="outlined" sx={{ backgroundColor: "background.default" }}>
+				<CardContent>
+					<Typography variant="h6" gutterBottom>
+						Guía de Funcionamiento del Worker de Actualización de Expedientes
+					</Typography>
+
+					{/* Descripción General */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							📋 Descripción General
+						</Typography>
+						<Typography variant="body2" paragraph>
+							El Worker de Actualización es un proceso automatizado que mantiene actualizados los expedientes judiciales verificando
+							periódicamente si existen nuevos movimientos o cambios en el sistema del Poder Judicial de la Nación.
+						</Typography>
+					</Box>
+
+					{/* Horario de Operación */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							⏰ Horario de Operación
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• Días laborables: Lunes a Viernes</Typography>
+							<Typography variant="body2">• Horario: 10:00 a 20:00 (hora Argentina)</Typography>
+							<Typography variant="body2">• Frecuencia de ejecución: Cada 2 minutos durante el horario activo</Typography>
+						</Box>
+					</Box>
+
+					{/* Ciclo de Actualización */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							🔄 Ciclo de Actualización
+						</Typography>
+						<Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 2 }}>
+							Frecuencia de Verificación por Expediente
+						</Typography>
+
+						<Box sx={{ mt: 2 }}>
+							<Typography variant="subtitle2" fontWeight="bold" color="success.main" gutterBottom>
+								✅ Actualización Exitosa
+							</Typography>
+							<Box sx={{ pl: 2 }}>
+								<Typography variant="body2">• Período de espera: 12 horas (configurable)</Typography>
+								<Typography variant="body2">
+									• Cuando un expediente se verifica exitosamente, independientemente de si se encontraron cambios o no, el sistema
+									esperará 12 horas antes de volver a verificarlo
+								</Typography>
+								<Typography variant="body2">• Esto aplica tanto si se encontraron nuevos movimientos como si no hubo cambios</Typography>
+							</Box>
+						</Box>
+
+						<Box sx={{ mt: 2 }}>
+							<Typography variant="subtitle2" fontWeight="bold" color="error.main" gutterBottom>
+								❌ Errores y Reintentos
+							</Typography>
+							<Typography variant="body2" paragraph>
+								Cuando ocurre un error, el expediente NO actualiza su marca de tiempo y se reintentará en el próximo ciclo (cada 2 minutos):
+							</Typography>
+							<Box sx={{ pl: 2 }}>
+								<Typography variant="body2">• Error de Captcha: Reintento automático cada 2 minutos</Typography>
+								<Typography variant="body2">• Expediente no encontrado: Reintento automático cada 2 minutos</Typography>
+								<Typography variant="body2">• Balance insuficiente: Reintento automático cada 2 minutos</Typography>
+								<Typography variant="body2">• Otros errores: Reintento automático cada 2 minutos</Typography>
+							</Box>
+						</Box>
+					</Box>
+
+					{/* Configuración */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							⚙️ Configuración
+						</Typography>
+						<Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 2 }}>
+							Parámetro Principal: last_update_threshold_hours
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• Valor por defecto: 12 horas</Typography>
+							<Typography variant="body2">• Ubicación: Colección MongoDB configuracion-app-update</Typography>
+							<Typography variant="body2">
+								• Función: Define el tiempo mínimo que debe transcurrir desde la última actualización exitosa antes de verificar nuevamente
+								un expediente
+							</Typography>
+							<Typography variant="body2">• Rango válido: Mínimo 1 hora</Typography>
+						</Box>
+
+						<Typography variant="subtitle2" fontWeight="bold" sx={{ mt: 2 }}>
+							Modos de Actualización
+						</Typography>
+						<Typography variant="body2" paragraph>
+							El worker puede configurarse para actualizar:
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• all: Todos los fueros</Typography>
+							<Typography variant="body2">• civil: Solo expedientes civiles</Typography>
+							<Typography variant="body2">• ss: Solo expedientes de Seguridad Social</Typography>
+							<Typography variant="body2">• trabajo: Solo expedientes laborales</Typography>
+						</Box>
+					</Box>
+
+					{/* Priorización de Expedientes */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							📊 Priorización de Expedientes
+						</Typography>
+						<Typography variant="body2" paragraph>
+							El sistema prioriza los expedientes en el siguiente orden:
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">1. Nunca actualizados: Expedientes sin lastUpdate</Typography>
+							<Typography variant="body2">2. Más antiguos: Expedientes con lastUpdate más antiguo que el threshold configurado</Typography>
+							<Typography variant="body2">3. Sin movimientos del día: Expedientes que no tienen movimientos registrados para el día actual</Typography>
+						</Box>
+					</Box>
+
+					{/* Sistema de Bloqueo */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							🔒 Sistema de Bloqueo
+						</Typography>
+						<Typography variant="body2" paragraph>
+							Para evitar procesamiento duplicado en entornos con múltiples workers:
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• Cada expediente se "bloquea" durante su procesamiento (5 minutos máximo)</Typography>
+							<Typography variant="body2">• Si el proceso falla, el bloqueo se libera automáticamente</Typography>
+							<Typography variant="body2">• Esto previene que múltiples workers procesen el mismo expediente simultáneamente</Typography>
+						</Box>
+					</Box>
+
+					{/* Información Actualizada */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							📈 Información Actualizada
+						</Typography>
+						<Typography variant="body2" paragraph>
+							Cuando se verifica un expediente, el sistema actualiza:
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• Movimientos judiciales: Nuevas actuaciones procesales</Typography>
+							<Typography variant="body2">• Carátula: Nombre del expediente</Typography>
+							<Typography variant="body2">• Objeto: Materia o tipo de proceso</Typography>
+							<Typography variant="body2">• Fecha del último movimiento</Typography>
+							<Typography variant="body2">• Contador de movimientos totales</Typography>
+						</Box>
+					</Box>
+
+					{/* Notificaciones */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							📧 Notificaciones
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• Se envían notificaciones automáticas cuando se detectan nuevos movimientos</Typography>
+							<Typography variant="body2">• Los usuarios asociados al expediente reciben alertas en tiempo real</Typography>
+						</Box>
+					</Box>
+
+					{/* Reportes Automáticos */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							📊 Reportes Automáticos
+						</Typography>
+						<Typography variant="body2" paragraph>
+							El sistema genera reportes en los siguientes horarios:
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• 10:00: Reporte inicial del día</Typography>
+							<Typography variant="body2">• 12:00, 14:00, 16:00, 18:00: Reportes de progreso</Typography>
+							<Typography variant="body2">• 20:00: Reporte final con resumen completo</Typography>
+						</Box>
+					</Box>
+
+					{/* Mantenimiento Automático */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							🧹 Mantenimiento Automático
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• Limpieza de historial: Domingos a las 3:00 AM</Typography>
+							<Typography variant="body2">• Se mantienen los últimos 100 registros de actualización por expediente</Typography>
+							<Typography variant="body2">• Registros de los últimos 7 días se conservan completos</Typography>
+						</Box>
+					</Box>
+
+					{/* Consideraciones Importantes */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							⚠️ Consideraciones Importantes
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">
+								1. Consumo de Captchas: Cada verificación consume un captcha del servicio configurado (2captcha o Capsolver)
+							</Typography>
+							<Typography variant="body2">2. Carga del sistema: El worker se pausa automáticamente si detecta alta carga de CPU</Typography>
+							<Typography variant="body2">3. Expedientes deshabilitados: Los expedientes con update: false no se verifican</Typography>
+							<Typography variant="body2">
+								4. Límites de procesamiento: Solo se procesa un expediente a la vez para evitar sobrecarga
+							</Typography>
+						</Box>
+					</Box>
+
+					{/* Estados del Expediente */}
+					<Box sx={{ mt: 3 }}>
+						<Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+							🔍 Estados del Expediente
+						</Typography>
+						<Box sx={{ pl: 2 }}>
+							<Typography variant="body2">• Pendiente: Esperando próxima verificación según threshold</Typography>
+							<Typography variant="body2">• En proceso: Siendo verificado actualmente (máximo 5 minutos)</Typography>
+							<Typography variant="body2">• Actualizado: Verificación exitosa, esperando próximo ciclo (12 horas)</Typography>
+							<Typography variant="body2">• Con errores: Reintentando cada 2 minutos hasta resolución</Typography>
+						</Box>
+					</Box>
+
+					<Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: "divider" }}>
+						<Typography variant="body2" color="text.secondary">
+							Esta configuración asegura un balance óptimo entre mantener la información actualizada y el uso eficiente de recursos del
+							sistema.
+						</Typography>
+					</Box>
+				</CardContent>
+			</Card>
+
 			{/* Información detallada del worker */}
 			<Card variant="outlined" sx={{ backgroundColor: "background.default" }}>
 				<CardContent sx={{ py: 2 }}>

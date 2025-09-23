@@ -69,7 +69,9 @@ interface JudicialNotificationConfig {
 }
 
 class JudicialNotificationConfigService {
-	private baseUrl = "/api/judicial-notification-config";
+	private baseUrl = process.env.NODE_ENV === 'production'
+		? `${import.meta.env.VITE_BASE_URL || ''}/api/judicial-notification-config`
+		: "/api/judicial-notification-config";
 
 	async getConfig(): Promise<JudicialNotificationConfig> {
 		try {
