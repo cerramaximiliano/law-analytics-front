@@ -73,6 +73,10 @@ class JudicialNotificationConfigService {
 
 	async getConfig(): Promise<JudicialNotificationConfig> {
 		try {
+			console.log("[JudicialNotificationConfig] Fetching config from:", this.endpoint);
+			console.log("[JudicialNotificationConfig] Environment:", process.env.NODE_ENV);
+			console.log("[JudicialNotificationConfig] Base URL:", import.meta.env.VITE_BASE_URL);
+
 			const response = await axios.get(this.endpoint);
 
 			if (response.data && response.data.success) {
@@ -82,6 +86,12 @@ class JudicialNotificationConfigService {
 			}
 		} catch (error: any) {
 			console.error("Error fetching judicial notification config:", error);
+			console.error("[JudicialNotificationConfig] Full error details:", {
+				message: error.message,
+				response: error.response,
+				request: error.request,
+				config: error.config
+			});
 
 			// Handle different error scenarios with user-friendly messages
 			if (error.response) {
