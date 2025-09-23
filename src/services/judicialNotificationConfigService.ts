@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import authTokenService from "../utils/authTokenService";
+import authTokenService from "./authTokenService";
 
 // Crear una instancia de axios configurada para el backend principal
 const apiAxios: AxiosInstance = axios.create({
