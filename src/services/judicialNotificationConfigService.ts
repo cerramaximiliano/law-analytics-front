@@ -1,29 +1,4 @@
-import axios, { AxiosInstance } from "axios";
-import authTokenService from "./authTokenService";
-
-// Crear una instancia de axios configurada para el backend principal
-const apiAxios: AxiosInstance = axios.create({
-	baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:5000",
-	timeout: 30000,
-	headers: {
-		"Content-Type": "application/json",
-	},
-	withCredentials: true,
-});
-
-// Interceptor para agregar el token de autenticación
-apiAxios.interceptors.request.use(
-	(config) => {
-		const token = authTokenService.getToken();
-		if (token) {
-			config.headers.Authorization = `Bearer ${token}`;
-		}
-		return config;
-	},
-	(error) => {
-		return Promise.reject(error);
-	}
-);
+import axios from "axios";
 
 interface JudicialNotificationConfig {
 	_id?: string;
@@ -98,7 +73,7 @@ class JudicialNotificationConfigService {
 
 	async getConfig(): Promise<JudicialNotificationConfig> {
 		try {
-			const response = await apiAxios.get(this.endpoint);
+			const response = await axios.get(this.endpoint);
 
 			if (response.data && response.data.success) {
 				return response.data.data;
@@ -131,7 +106,7 @@ class JudicialNotificationConfigService {
 
 	async updateConfig(updates: Partial<JudicialNotificationConfig>): Promise<JudicialNotificationConfig> {
 		try {
-			const response = await apiAxios.patch(this.endpoint, updates);
+			const response = await axios.patch(this.endpoint, updates);
 
 			if (response.data && response.data.success) {
 				return response.data.data;
@@ -168,7 +143,7 @@ class JudicialNotificationConfigService {
 
 	async toggleNotifications(): Promise<{ enabled: boolean; mode: string }> {
 		try {
-			const response = await apiAxios.post(`${this.endpoint}/toggle`);
+			const response = await axios.post(`${this.endpoint}/toggle`);
 
 			if (response.data && response.data.success) {
 				return response.data.data;

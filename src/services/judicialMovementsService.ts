@@ -1,29 +1,4 @@
-import axios, { AxiosInstance } from "axios";
-import authTokenService from "./authTokenService";
-
-// Crear una instancia de axios configurada para el backend principal
-const apiAxios: AxiosInstance = axios.create({
-	baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:5000",
-	timeout: 30000,
-	headers: {
-		"Content-Type": "application/json",
-	},
-	withCredentials: true,
-});
-
-// Interceptor para agregar el token de autenticación
-apiAxios.interceptors.request.use(
-	(config) => {
-		const token = authTokenService.getToken();
-		if (token) {
-			config.headers.Authorization = `Bearer ${token}`;
-		}
-		return config;
-	},
-	(error) => {
-		return Promise.reject(error);
-	}
-);
+import axios from "axios";
 
 export interface JudicialMovementFilters {
 	page?: number;
@@ -140,7 +115,7 @@ class JudicialMovementsService {
 			const queryString = params.toString();
 			const url = queryString ? `/api/judicial-movements/?${queryString}` : "/api/judicial-movements/";
 
-			const response = await apiAxios.get<JudicialMovementResponse>(url);
+			const response = await axios.get<JudicialMovementResponse>(url);
 			return response.data;
 		} catch (error: any) {
 			console.error("Error fetching judicial movements:", error);
@@ -150,7 +125,7 @@ class JudicialMovementsService {
 
 	async deleteMovement(id: string): Promise<{ success: boolean; message: string }> {
 		try {
-			const response = await apiAxios.delete(`/api/judicial-movements/${id}`);
+			const response = await axios.delete(`/api/judicial-movements/${id}`);
 			return response.data;
 		} catch (error: any) {
 			console.error("Error deleting judicial movement:", error);
@@ -160,7 +135,7 @@ class JudicialMovementsService {
 
 	async retryNotification(id: string): Promise<void> {
 		try {
-			await apiAxios.post(`/api/judicial-movements/${id}/retry`);
+			await axios.post(`/api/judicial-movements/${id}/retry`);
 		} catch (error: any) {
 			console.error("Error retrying notification:", error);
 			throw error;
