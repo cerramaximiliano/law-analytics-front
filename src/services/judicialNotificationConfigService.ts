@@ -69,37 +69,21 @@ interface JudicialNotificationConfig {
 }
 
 class JudicialNotificationConfigService {
-	private endpoint = "/api/judicial-notification-config";
+	private endpoint = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
+		? "https://api.lawanalytics.com.ar/api/judicial-notification-config"
+		: "/api/judicial-notification-config";
 
 	async getConfig(): Promise<JudicialNotificationConfig> {
 		try {
-			console.log("[JudicialNotificationConfig] Fetching config from:", this.endpoint);
-			console.log("[JudicialNotificationConfig] Environment:", process.env.NODE_ENV);
-			console.log("[JudicialNotificationConfig] Base URL:", import.meta.env.VITE_BASE_URL);
-			console.log("[JudicialNotificationConfig] Window location:", window.location.origin);
-			console.log("[JudicialNotificationConfig] Full URL will be:", window.location.origin + this.endpoint);
-
 			const response = await axios.get(this.endpoint);
-			console.log("[JudicialNotificationConfig] Response received:", {
-				status: response.status,
-				data: response.data,
-				headers: response.headers
-			});
 
 			if (response.data && response.data.success) {
 				return response.data.data;
 			} else {
-				console.error("[JudicialNotificationConfig] Response not successful:", response.data);
 				throw new Error(response.data?.message || "No se pudo cargar la configuración. Por favor, intente nuevamente.");
 			}
 		} catch (error: any) {
 			console.error("Error fetching judicial notification config:", error);
-			console.error("[JudicialNotificationConfig] Full error details:", {
-				message: error.message,
-				response: error.response,
-				request: error.request,
-				config: error.config
-			});
 
 			// Handle different error scenarios with user-friendly messages
 			if (error.response) {
@@ -124,7 +108,10 @@ class JudicialNotificationConfigService {
 
 	async updateConfig(updates: Partial<JudicialNotificationConfig>): Promise<JudicialNotificationConfig> {
 		try {
-			const response = await axios.patch(this.endpoint, updates);
+			const endpoint = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
+				? "https://api.lawanalytics.com.ar/api/judicial-notification-config"
+				: "/api/judicial-notification-config";
+			const response = await axios.patch(endpoint, updates);
 
 			if (response.data && response.data.success) {
 				return response.data.data;
@@ -161,7 +148,10 @@ class JudicialNotificationConfigService {
 
 	async toggleNotifications(): Promise<{ enabled: boolean; mode: string }> {
 		try {
-			const response = await axios.post(`${this.endpoint}/toggle`);
+			const endpoint = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
+				? "https://api.lawanalytics.com.ar/api/judicial-notification-config"
+				: "/api/judicial-notification-config";
+			const response = await axios.post(`${endpoint}/toggle`);
 
 			if (response.data && response.data.success) {
 				return response.data.data;

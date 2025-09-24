@@ -131,12 +131,9 @@ const JudicialMovementsConfig: React.FC = () => {
 	}, []);
 
 	const loadConfig = async () => {
-		console.log("[JudicialMovementsConfig] Component starting to load config...");
 		setLoading(true);
 		try {
-			console.log("[JudicialMovementsConfig] Calling judicialNotificationConfigService.getConfig()");
 			const data = await judicialNotificationConfigService.getConfig();
-			console.log("[JudicialMovementsConfig] Config loaded successfully:", data);
 			setConfig(data);
 			setOriginalConfig(data);
 			setHasChanges(false);

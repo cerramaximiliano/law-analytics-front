@@ -113,7 +113,10 @@ class JudicialMovementsService {
 			if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
 
 			const queryString = params.toString();
-			const url = queryString ? `/api/judicial-movements/?${queryString}` : "/api/judicial-movements/";
+			const baseUrl = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
+				? "https://api.lawanalytics.com.ar/api/judicial-movements"
+				: "/api/judicial-movements";
+			const url = queryString ? `${baseUrl}/?${queryString}` : `${baseUrl}/`;
 
 			const response = await axios.get<JudicialMovementResponse>(url);
 			return response.data;
@@ -125,7 +128,10 @@ class JudicialMovementsService {
 
 	async deleteMovement(id: string): Promise<{ success: boolean; message: string }> {
 		try {
-			const response = await axios.delete(`/api/judicial-movements/${id}`);
+			const baseUrl = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
+				? "https://api.lawanalytics.com.ar/api/judicial-movements"
+				: "/api/judicial-movements";
+			const response = await axios.delete(`${baseUrl}/${id}`);
 			return response.data;
 		} catch (error: any) {
 			console.error("Error deleting judicial movement:", error);
@@ -135,7 +141,10 @@ class JudicialMovementsService {
 
 	async retryNotification(id: string): Promise<void> {
 		try {
-			await axios.post(`/api/judicial-movements/${id}/retry`);
+			const baseUrl = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
+				? "https://api.lawanalytics.com.ar/api/judicial-movements"
+				: "/api/judicial-movements";
+			await axios.post(`${baseUrl}/${id}/retry`);
 		} catch (error: any) {
 			console.error("Error retrying notification:", error);
 			throw error;
