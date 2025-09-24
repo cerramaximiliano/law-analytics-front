@@ -76,12 +76,20 @@ class JudicialNotificationConfigService {
 			console.log("[JudicialNotificationConfig] Fetching config from:", this.endpoint);
 			console.log("[JudicialNotificationConfig] Environment:", process.env.NODE_ENV);
 			console.log("[JudicialNotificationConfig] Base URL:", import.meta.env.VITE_BASE_URL);
+			console.log("[JudicialNotificationConfig] Window location:", window.location.origin);
+			console.log("[JudicialNotificationConfig] Full URL will be:", window.location.origin + this.endpoint);
 
 			const response = await axios.get(this.endpoint);
+			console.log("[JudicialNotificationConfig] Response received:", {
+				status: response.status,
+				data: response.data,
+				headers: response.headers
+			});
 
 			if (response.data && response.data.success) {
 				return response.data.data;
 			} else {
+				console.error("[JudicialNotificationConfig] Response not successful:", response.data);
 				throw new Error(response.data?.message || "No se pudo cargar la configuración. Por favor, intente nuevamente.");
 			}
 		} catch (error: any) {
