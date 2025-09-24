@@ -23,8 +23,9 @@ import {
 	Skeleton,
 	Chip,
 	LinearProgress,
+	Collapse,
 } from "@mui/material";
-import { Edit2, TickCircle, CloseCircle, Refresh, Setting2 } from "iconsax-react";
+import { Edit2, TickCircle, CloseCircle, Refresh, Setting2, InfoCircle, ArrowDown2, ArrowUp2 } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import { WorkersService, WorkerConfig } from "api/workers";
 import AdvancedConfigModal from "./AdvancedConfigModal";
@@ -43,6 +44,7 @@ const AppUpdateWorker = () => {
 	const [editValues, setEditValues] = useState<Partial<WorkerConfig>>({});
 	const [advancedConfigOpen, setAdvancedConfigOpen] = useState(false);
 	const [selectedConfig, setSelectedConfig] = useState<WorkerConfig | null>(null);
+	const [guideExpanded, setGuideExpanded] = useState(false);
 
 	// Helper para obtener label del modo de actualización
 	const getUpdateModeLabel = (value: string) => {
@@ -198,12 +200,27 @@ const AppUpdateWorker = () => {
 				</Typography>
 			</Alert>
 
-			{/* Guía de Funcionamiento */}
+			{/* Guía de Funcionamiento - Colapsable */}
 			<Card variant="outlined" sx={{ backgroundColor: "background.default" }}>
-				<CardContent>
-					<Typography variant="h6" gutterBottom>
-						Guía de Funcionamiento del Worker de Actualización de Expedientes
-					</Typography>
+				<CardContent sx={{ pb: guideExpanded ? 2 : 1 }}>
+					<Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: guideExpanded ? 2 : 0 }}>
+						<Stack direction="row" spacing={1} alignItems="center">
+							<InfoCircle size={20} color="#1890ff" />
+							<Typography variant="h6">
+								Guía de Funcionamiento del Worker
+							</Typography>
+						</Stack>
+						<Button
+							size="small"
+							onClick={() => setGuideExpanded(!guideExpanded)}
+							endIcon={guideExpanded ? <ArrowUp2 size={16} /> : <ArrowDown2 size={16} />}
+							sx={{ minWidth: 'auto' }}
+						>
+							{guideExpanded ? 'Ocultar' : 'Ver guía'}
+						</Button>
+					</Stack>
+
+					<Collapse in={guideExpanded} timeout="auto" unmountOnExit>
 
 					{/* Descripción General */}
 					<Box sx={{ mt: 3 }}>
@@ -420,6 +437,7 @@ const AppUpdateWorker = () => {
 							sistema.
 						</Typography>
 					</Box>
+					</Collapse>
 				</CardContent>
 			</Card>
 
