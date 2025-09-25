@@ -4,7 +4,7 @@ import React from "react";
 import { FormattedMessage } from "react-intl";
 
 // assets
-import { MessageSquare, User, DocumentText, Monitor, Folder2, Notification } from "iconsax-react";
+import { MessageSquare, User, DocumentText, Monitor, Folder2, Notification, Setting3 } from "iconsax-react";
 
 // type
 import { NavItemType } from "types/menu";
@@ -83,11 +83,27 @@ const admin: NavItemType = {
 					url: "/admin/causas/folders",
 					breadcrumbs: true,
 				},
+			],
+		},
+		{
+			id: "workers",
+			title: <FormattedMessage id="workers" defaultMessage="Workers" />,
+			type: "collapse",
+			icon: Setting3,
+			breadcrumbs: true,
+			children: [
 				{
-					id: "causas-workers",
-					title: <FormattedMessage id="causas-workers" defaultMessage="Configuración de Workers" />,
+					id: "workers-pjn",
+					title: <FormattedMessage id="workers-pjn" defaultMessage="Workers PJN" />,
 					type: "item",
 					url: "/admin/causas/workers",
+					breadcrumbs: true,
+				},
+				{
+					id: "workers-mev",
+					title: <FormattedMessage id="workers-mev" defaultMessage="Workers MEV" />,
+					type: "item",
+					url: "/admin/workers/mev",
 					breadcrumbs: true,
 				},
 			],

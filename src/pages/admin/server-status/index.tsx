@@ -77,6 +77,13 @@ const ServerStatus = () => {
 			baseUrl: "https://subscriptions.lawanalytics.app",
 			status: "checking",
 		},
+		{
+			name: "API de Causas MEV",
+			url: "https://mev.lawanalytics.app/health",
+			ip: "15.229.93.121",
+			baseUrl: "https://mev.lawanalytics.app",
+			status: "checking",
+		},
 	]);
 
 	const checkServices = useCallback(async () => {
@@ -160,7 +167,7 @@ const ServerStatus = () => {
 					// Si es un error de red, podría ser CORS
 					if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
 						// Para servicios conocidos que sabemos que funcionan pero tienen CORS restrictivo
-						if (service.name === "Servidor de Suscripciones" || service.name === "API de Causas") {
+						if (service.name === "Servidor de Suscripciones" || service.name === "API de Causas" || service.name === "API de Causas MEV") {
 							console.log(`${service.name} - Posible CORS, verificando con método alternativo`);
 
 							// Intentar verificar a través de nuestro backend
