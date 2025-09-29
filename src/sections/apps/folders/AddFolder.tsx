@@ -135,8 +135,17 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		judicialPower: Yup.string().oneOf(["nacional", "buenosaires"], "Seleccione un poder judicial").required("Seleccione un poder judicial"),
 	});
 
-	const automaticEntrySchema = Yup.object().shape({
+	// Esquema para PJN
+	const automaticEntryPJNSchema = Yup.object().shape({
 		folderJuris: Yup.string().required("Seleccione una jurisdicción"),
+		expedientNumber: Yup.string().required("Ingrese el número de expediente"),
+		expedientYear: Yup.string().required("Ingrese el año del expediente"),
+	});
+
+	// Esquema para Buenos Aires
+	const automaticEntryBASchema = Yup.object().shape({
+		jurisdictionBA: Yup.string().required("Seleccione una jurisdicción"),
+		organismoBA: Yup.string().required("Seleccione un organismo"),
 		expedientNumber: Yup.string().required("Ingrese el número de expediente"),
 		expedientYear: Yup.string().required("Ingrese el año del expediente"),
 	});
@@ -195,7 +204,12 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					case 1:
 						return judicialPowerSchema;
 					case 2:
-						return automaticEntrySchema;
+						// Usar el esquema correcto según el poder judicial
+						if (values.judicialPower === "buenosaires") {
+							return automaticEntryBASchema;
+						} else {
+							return automaticEntryPJNSchema;
+						}
 					case 3:
 						return finalStepSchema;
 					default:
@@ -349,7 +363,26 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 		try {
 			if (mode === "add") {
-				results = await dispatch(addFolder({ ...values, userId }));
+				// Preparar los datos según el tipo de poder judicial
+				let folderDataToSend = { ...values, userId };
+
+				// Si es Poder Judicial de Buenos Aires (MEV), agregar campos específicos
+				if (values.judicialPower === "buenosaires") {
+					folderDataToSend = {
+						...folderDataToSend,
+						mev: true,
+						// navigationCode ya viene del formulario
+						// Opcionalmente podríamos limpiar campos no necesarios para MEV
+					};
+				} else if (values.judicialPower === "nacional") {
+					folderDataToSend = {
+						...folderDataToSend,
+						pjn: true,
+						// folderJuris se usa como pjnCode en el backend
+					};
+				}
+
+				results = await dispatch(addFolder(folderDataToSend));
 				message = "agregar";
 			}
 			if (mode === "edit") {

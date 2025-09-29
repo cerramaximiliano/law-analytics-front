@@ -143,7 +143,9 @@ const PlansComparisonContent = () => {
 
 	return (
 		<Stack spacing={3}>
-			<Typography paragraph>Compara los límites y características de cada plan para elegir el que mejor se adapte a tus necesidades:</Typography>
+			<Typography paragraph>
+				Compara los límites y características de cada plan para elegir el que mejor se adapte a tus necesidades:
+			</Typography>
 
 			<TableContainer component={Paper}>
 				<Table>
@@ -222,8 +224,8 @@ const PlansComparisonContent = () => {
 			<Alert severity="success">
 				<AlertTitle>💡 Consejo</AlertTitle>
 				<Typography>
-					Si recién comienzas, el Plan Free es perfecto para probar. Cuando tu práctica crezca, actualizar es instantáneo y mantienes toda tu
-					información.
+					Si recién comienzas, el Plan Free es perfecto para probar. Cuando tu práctica crezca, actualizar es instantáneo y mantienes toda
+					tu información.
 				</Typography>
 			</Alert>
 		</Stack>

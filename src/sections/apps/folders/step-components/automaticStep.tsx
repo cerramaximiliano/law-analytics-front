@@ -11,12 +11,15 @@ import {
 	FormControl,
 	SelectChangeEvent,
 	Collapse,
+	CircularProgress,
+	Box,
 } from "@mui/material";
 import { DocumentUpload } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
 import { useState, useEffect, useRef } from "react";
+import mevWorkersService, { NavigationCode } from "api/workersMev";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -167,6 +170,9 @@ interface FormValues {
 	pjn?: boolean;
 	initialDateFolder?: string;
 	judicialPower?: string;
+	jurisdictionBA?: string;
+	organismoBA?: string;
+	navigationCode?: string;
 }
 
 const AutomaticStep = () => {
@@ -179,9 +185,55 @@ const AutomaticStep = () => {
 	const [yearError, setYearError] = useState("");
 	const [jurisdictionError, setJurisdictionError] = useState("");
 	const [numberError, setNumberError] = useState("");
+	const [navigationCodes, setNavigationCodes] = useState<NavigationCode[]>([]);
+	const [loadingCodes, setLoadingCodes] = useState(false);
+	const [organismoError, setOrganismoError] = useState("");
 
 	// Referencia para detectar el botón de siguiente
 	const formSubmitAttempted = useRef<boolean>(false);
+
+	// Obtener jurisdicciones únicas de Buenos Aires
+	const jurisdictionsBA = React.useMemo(() => {
+		const uniqueJurisdictions = new Map();
+		navigationCodes.forEach((code) => {
+			if (!uniqueJurisdictions.has(code.jurisdiccion.codigo)) {
+				uniqueJurisdictions.set(code.jurisdiccion.codigo, code.jurisdiccion);
+			}
+		});
+		return Array.from(uniqueJurisdictions.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+	}, [navigationCodes]);
+
+	// Filtrar organismos de Buenos Aires basados en la jurisdicción seleccionada
+	const organismosBA = React.useMemo(() => {
+		if (!values.jurisdictionBA) return [];
+		return navigationCodes
+			.filter((code) => code.jurisdiccion.codigo === values.jurisdictionBA)
+			.sort((a, b) => a.organismo.nombre.localeCompare(b.organismo.nombre));
+	}, [values.jurisdictionBA, navigationCodes]);
+
+	// Cargar códigos de navegación cuando sea Buenos Aires
+	useEffect(() => {
+		if (values.judicialPower === "buenosaires") {
+			loadNavigationCodes();
+		}
+	}, [values.judicialPower]);
+
+	const loadNavigationCodes = async () => {
+		setLoadingCodes(true);
+		try {
+			const response = await mevWorkersService.getNavigationCodes();
+			if (response.success && response.data?.codes) {
+				const activeCodes = response.data.codes.filter((code) => code.activo);
+				setNavigationCodes(activeCodes);
+			} else {
+				setError("No se pudieron cargar los organismos judiciales");
+			}
+		} catch (err: any) {
+			setError(err.message || "Error al cargar los organismos judiciales");
+		} finally {
+			setLoadingCodes(false);
+		}
+	};
 
 	// Función para validar el año
 	const validateYear = (year: string | undefined) => {
@@ -225,7 +277,7 @@ const AutomaticStep = () => {
 		return true;
 	};
 
-	// Validar la jurisdicción
+	// Validar la jurisdicción de PJN
 	const validateJurisdiction = (jurisdiction: string | undefined) => {
 		if (!jurisdiction || jurisdiction === "") {
 			setJurisdictionError("Debe seleccionar una jurisdicción");
@@ -236,6 +288,38 @@ const AutomaticStep = () => {
 		// Si la jurisdicción es válida, aseguramos de limpiar errores
 		setJurisdictionError("");
 		setFieldError("folderJuris", ""); // Limpiamos el error en Formik
+		return true;
+	};
+
+	// Validar la jurisdicción de Buenos Aires
+	const validateJurisdictionBA = (jurisdiction: string | undefined) => {
+		console.log("validateJurisdictionBA llamado con:", jurisdiction);
+
+		if (!jurisdiction || jurisdiction === "") {
+			console.log("ERROR: jurisdicción BA vacía");
+			setJurisdictionError("Debe seleccionar una jurisdicción");
+			setFieldError("jurisdictionBA", "Debe seleccionar una jurisdicción");
+			return false;
+		}
+
+		// Si la jurisdicción es válida, aseguramos de limpiar errores
+		console.log("OK: jurisdicción BA válida:", jurisdiction);
+		setJurisdictionError("");
+		setFieldError("jurisdictionBA", ""); // Limpiamos el error en Formik
+		return true;
+	};
+
+	// Validar el organismo (para Buenos Aires)
+	const validateOrganismo = (organismo: string | undefined) => {
+		if (!organismo || organismo === "") {
+			setOrganismoError("Debe seleccionar un organismo");
+			setFieldError("organismoBA", "Debe seleccionar un organismo");
+			return false;
+		}
+
+		// Si el organismo es válido, aseguramos de limpiar errores
+		setOrganismoError("");
+		setFieldError("organismoBA", ""); // Limpiamos el error en Formik
 		return true;
 	};
 
@@ -257,6 +341,11 @@ const AutomaticStep = () => {
 
 	// Función para establecer los valores automáticamente
 	const setAutomaticValues = () => {
+		// Solo ejecutar para PJN
+		if (values.judicialPower !== "nacional") {
+			return;
+		}
+
 		// Validamos la jurisdicción primero
 		let jurisdictionValid = values.folderJuris ? validateJurisdiction(values.folderJuris) : false;
 
@@ -322,25 +411,137 @@ const AutomaticStep = () => {
 
 	// Efecto para monitorear cambios en los campos principales
 	useEffect(() => {
-		// Siempre validamos la jurisdicción al cambiar cualquier campo
-		const jurisdictionValid = values.folderJuris ? validateJurisdiction(values.folderJuris) : false;
+		console.log("=== useEffect principal ===");
+		console.log("judicialPower:", values.judicialPower);
+		console.log("jurisdictionBA:", values.jurisdictionBA);
+		console.log("organismoBA:", values.organismoBA);
+		console.log("jurisdictionError actual:", jurisdictionError);
 
-		// Solo validamos los otros campos si la jurisdicción es válida y han sido tocados
-		if (jurisdictionValid) {
-			if (touched.expedientNumber) {
-				validateExpedientNumber(values.expedientNumber);
+		if (values.judicialPower === "nacional") {
+			// Siempre validamos la jurisdicción al cambiar cualquier campo
+			const jurisdictionValid = values.folderJuris ? validateJurisdiction(values.folderJuris) : false;
+
+			// Solo validamos los otros campos si la jurisdicción es válida y han sido tocados
+			if (jurisdictionValid) {
+				if (touched.expedientNumber) {
+					validateExpedientNumber(values.expedientNumber);
+				}
+				if (touched.expedientYear) {
+					validateYear(values.expedientYear);
+				}
 			}
-			if (touched.expedientYear) {
-				validateYear(values.expedientYear);
+		} else if (values.judicialPower === "buenosaires") {
+			// Para Buenos Aires, validamos jurisdicción y organismo específicos
+			let jurisdictionValid = false;
+			let organismoValid = false;
+
+			console.log("Validando Buenos Aires - touched.jurisdictionBA:", touched.jurisdictionBA, "formSubmitAttempted:", formSubmitAttempted.current);
+
+			// Solo validar si el campo ha sido tocado o se intentó enviar el formulario
+			if (touched.jurisdictionBA || formSubmitAttempted.current) {
+				// Validar jurisdicción de Buenos Aires
+				if (!values.jurisdictionBA || values.jurisdictionBA === "") {
+					console.log("Setting jurisdiction error - BA empty");
+					setJurisdictionError("Debe seleccionar una jurisdicción");
+					setFieldError("jurisdictionBA", "Debe seleccionar una jurisdicción");
+					jurisdictionValid = false;
+				} else {
+					console.log("Clearing jurisdiction error - BA has value:", values.jurisdictionBA);
+					setJurisdictionError("");
+					setFieldError("jurisdictionBA", "");
+					jurisdictionValid = true;
+				}
+			} else {
+				// Si no ha sido tocado, no mostrar error pero verificar si tiene valor
+				if (values.jurisdictionBA && values.jurisdictionBA !== "") {
+					jurisdictionValid = true;
+					// Limpiar errores si hay valor
+					setJurisdictionError("");
+					setFieldError("jurisdictionBA", "");
+				}
+			}
+
+			// Solo validar organismo si el campo ha sido tocado o se intentó enviar
+			if (touched.organismoBA || formSubmitAttempted.current) {
+				if (!values.organismoBA || values.organismoBA === "") {
+					setOrganismoError("Debe seleccionar un organismo");
+					setFieldError("organismoBA", "Debe seleccionar un organismo");
+					organismoValid = false;
+				} else {
+					setOrganismoError("");
+					setFieldError("organismoBA", "");
+					organismoValid = true;
+				}
+			} else {
+				// Si no ha sido tocado, no mostrar error pero verificar si tiene valor
+				if (values.organismoBA && values.organismoBA !== "") {
+					organismoValid = true;
+					// Limpiar errores si hay valor
+					setOrganismoError("");
+					setFieldError("organismoBA", "");
+				}
+			}
+
+			if (jurisdictionValid && organismoValid) {
+				if (touched.expedientNumber) {
+					validateExpedientNumber(values.expedientNumber);
+				}
+				if (touched.expedientYear) {
+					validateYear(values.expedientYear);
+				}
+
+				// Si todos los campos están completos y válidos, establecer valores automáticos para Buenos Aires
+				if (values.expedientNumber && values.expedientYear) {
+					const yearValid = validateYear(values.expedientYear);
+					const numberValid = validateExpedientNumber(values.expedientNumber);
+
+					if (yearValid && numberValid) {
+						// Establecer valores automáticos para Buenos Aires
+						setFieldValue("source", "auto");
+						setFieldValue("mev", true);
+						setFieldValue("initialDateFolder", new Date().toLocaleDateString("es-AR"));
+
+						// Valores requeridos para la carpeta
+						if (!values.folderName || values.folderName === "") {
+							setFieldValue("folderName", "Pendiente");
+						}
+						if (!values.materia || values.materia === "") {
+							setFieldValue("materia", "No verificado");
+						}
+						if (!values.orderStatus || values.orderStatus === "") {
+							setFieldValue("orderStatus", "No verificado");
+						}
+						if (!values.status || values.status === "") {
+							setFieldValue("status", "Nueva");
+						}
+
+						// Descripción automática
+						const selectedJurisdiction = jurisdictionsBA.find((j) => j.codigo === values.jurisdictionBA);
+						const jurisdictionName = selectedJurisdiction ? selectedJurisdiction.nombre : "";
+						const selectedOrganismo = navigationCodes.find((c) => c._id === values.organismoBA);
+						const organismoName = selectedOrganismo ? selectedOrganismo.organismo.nombre : "";
+
+						if (!values.description || values.description === "") {
+							setFieldValue("description", `Expediente importado desde ${jurisdictionName} - ${organismoName} - Poder Judicial de Buenos Aires`);
+						}
+
+						setSuccess(true);
+						setError("");
+					}
+				}
 			}
 		}
 
 		setAutomaticValues();
 	}, [
 		values.folderJuris,
+		values.jurisdictionBA,
+		values.organismoBA,
 		values.expedientNumber,
 		values.expedientYear,
 		touched.folderJuris,
+		touched.jurisdictionBA,
+		touched.organismoBA,
 		touched.expedientNumber,
 		touched.expedientYear,
 		formSubmitAttempted.current,
@@ -384,19 +585,39 @@ const AutomaticStep = () => {
 				setYearError("");
 				setNumberError("");
 				setJurisdictionError("");
+				setOrganismoError("");
 
-				// Validamos todos los campos siempre al hacer clic en Siguiente
-				validateJurisdiction(values.folderJuris);
-				validateExpedientNumber(values.expedientNumber);
-				validateYear(values.expedientYear);
+				// Validamos según el poder judicial seleccionado
+				if (values.judicialPower === "nacional") {
+					// Validar campos de PJN
+					validateJurisdiction(values.folderJuris);
+					validateExpedientNumber(values.expedientNumber);
+					validateYear(values.expedientYear);
+				} else if (values.judicialPower === "buenosaires") {
+					// Validar campos de Buenos Aires
+					validateJurisdictionBA(values.jurisdictionBA);
+					validateOrganismo(values.organismoBA);
+					validateExpedientNumber(values.expedientNumber);
+					validateYear(values.expedientYear);
+				}
 
 				// Marcamos todos los campos como tocados para mostrar los errores
-				setTouched({
-					...touched,
-					folderJuris: true,
-					expedientNumber: true,
-					expedientYear: true,
-				});
+				const touchedFields = values.judicialPower === "buenosaires"
+					? {
+						...touched,
+						jurisdictionBA: true,
+						organismoBA: true,
+						expedientNumber: true,
+						expedientYear: true,
+					}
+					: {
+						...touched,
+						folderJuris: true,
+						expedientNumber: true,
+						expedientYear: true,
+					};
+
+				setTouched(touchedFields);
 			};
 
 			nextButton.addEventListener("click", handleNextClick);
@@ -442,6 +663,8 @@ const AutomaticStep = () => {
 						<Typography variant="h6" color="textPrimary">
 							{values.judicialPower === "nacional"
 								? "Importar causa desde Poder Judicial de la Nación"
+								: values.judicialPower === "buenosaires"
+								? "Importar causa desde Poder Judicial de Buenos Aires"
 								: "Importar causa desde Poder Judicial"}
 						</Typography>
 					</Stack>
@@ -484,89 +707,213 @@ const AutomaticStep = () => {
 						</Grid>
 					</Collapse>
 
-					<Grid container spacing={3}>
-						<Grid item xs={12}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="folderJuris">Jurisdicción</InputLabel>
-								<FormControl
-									fullWidth
-									style={{ maxHeight: "39.91px" }}
-									error={Boolean(jurisdictionError && (touched.folderJuris || formSubmitAttempted.current))}
-								>
-									<Select
-										id="folderJuris"
-										name="folderJuris"
-										value={values.folderJuris || ""}
-										onChange={handleJurisdictionChange}
-										displayEmpty
-										size="small"
-										renderValue={(selected) => {
-											if (!selected) {
-												return <em>Seleccione una jurisdicción</em>;
-											}
-											const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
-											return selectedJurisdiction ? selectedJurisdiction.nombre : "";
-										}}
-										sx={{
-											"& .MuiInputBase-root": { height: 39.91 },
-											"& .MuiInputBase-input": { fontSize: 12 },
-											"& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input.Mui-disabled": {
-												color: "text.disabled",
-											},
-										}}
-									>
-										<MenuItem value="" disabled>
-											<em>Seleccione una jurisdicción</em>
-										</MenuItem>
-										{jurisdicciones
-											.filter((j) => j.value !== "")
-											.map((jurisdiccion) => (
-												<MenuItem key={jurisdiccion.value} value={jurisdiccion.value}>
-													{jurisdiccion.nombre}
+					{loadingCodes ? (
+						<Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+							<CircularProgress />
+						</Box>
+					) : (
+						<Grid container spacing={3}>
+							{values.judicialPower === "nacional" ? (
+								<Grid item xs={12}>
+									<Stack spacing={1.25}>
+										<InputLabel htmlFor="folderJuris">Jurisdicción</InputLabel>
+										<FormControl
+											fullWidth
+											style={{ maxHeight: "39.91px" }}
+											error={Boolean(jurisdictionError && (touched.folderJuris || formSubmitAttempted.current))}
+										>
+											<Select
+												id="folderJuris"
+												name="folderJuris"
+												value={values.folderJuris || ""}
+												onChange={handleJurisdictionChange}
+												displayEmpty
+												size="small"
+												renderValue={(selected) => {
+													if (!selected) {
+														return <em>Seleccione una jurisdicción</em>;
+													}
+													const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
+													return selectedJurisdiction ? selectedJurisdiction.nombre : "";
+												}}
+												sx={{
+													"& .MuiInputBase-root": { height: 39.91 },
+													"& .MuiInputBase-input": { fontSize: 12 },
+													"& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input.Mui-disabled": {
+														color: "text.disabled",
+													},
+												}}
+											>
+												<MenuItem value="" disabled>
+													<em>Seleccione una jurisdicción</em>
 												</MenuItem>
-											))}
-									</Select>
-									{jurisdictionError && (touched.folderJuris || formSubmitAttempted.current) && (
-										<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
-											{jurisdictionError}
-										</Typography>
-									)}
-								</FormControl>
-							</Stack>
+												{jurisdicciones
+													.filter((j) => j.value !== "")
+													.map((jurisdiccion) => (
+														<MenuItem key={jurisdiccion.value} value={jurisdiccion.value}>
+															{jurisdiccion.nombre}
+														</MenuItem>
+													))}
+											</Select>
+											{jurisdictionError && (touched.folderJuris || formSubmitAttempted.current) && (
+												<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+													{jurisdictionError}
+												</Typography>
+											)}
+										</FormControl>
+									</Stack>
+								</Grid>
+							) : values.judicialPower === "buenosaires" ? (
+								<>
+									{/* Jurisdicción Buenos Aires */}
+									<Grid item xs={12}>
+										<Stack spacing={1.25}>
+											<InputLabel htmlFor="jurisdictionBA">Jurisdicción</InputLabel>
+											<FormControl
+												fullWidth
+												style={{ maxHeight: "39.91px" }}
+												error={Boolean(jurisdictionError && (touched.jurisdictionBA || formSubmitAttempted.current))}
+											>
+												<Select
+													id="jurisdictionBA"
+													name="jurisdictionBA"
+													value={values.jurisdictionBA || ""}
+													onChange={(e) => {
+														const value = e.target.value;
+														setFieldValue("jurisdictionBA", value);
+														setFieldValue("organismoBA", ""); // Reset organismo
+														setFieldValue("navigationCode", ""); // Reset navigationCode
+														setTouched({ ...touched, jurisdictionBA: true });
+														validateJurisdictionBA(value); // Usar la función correcta para Buenos Aires
+													}}
+													displayEmpty
+													size="small"
+													disabled={navigationCodes.length === 0}
+													renderValue={(selected) => {
+														if (!selected) {
+															return <em>Seleccione una jurisdicción</em>;
+														}
+														const selectedJurisdiction = jurisdictionsBA.find((j) => j.codigo === selected);
+														return selectedJurisdiction ? selectedJurisdiction.nombre : "";
+													}}
+													sx={{
+														"& .MuiInputBase-root": { height: 39.91 },
+														"& .MuiInputBase-input": { fontSize: 12 },
+													}}
+												>
+													<MenuItem value="" disabled>
+														<em>Seleccione una jurisdicción</em>
+													</MenuItem>
+													{jurisdictionsBA.map((jurisdiccion) => (
+														<MenuItem key={jurisdiccion.codigo} value={jurisdiccion.codigo}>
+															{jurisdiccion.nombre}
+														</MenuItem>
+													))}
+												</Select>
+												{jurisdictionError && (touched.jurisdictionBA || formSubmitAttempted.current) && (
+													<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+														{console.log("MOSTRANDO ERROR BA:", jurisdictionError, "touched:", touched.jurisdictionBA, "attempted:", formSubmitAttempted.current)}
+														{jurisdictionError}
+													</Typography>
+												)}
+											</FormControl>
+										</Stack>
+									</Grid>
+
+									{/* Organismo Buenos Aires */}
+									<Grid item xs={12}>
+										<Stack spacing={1.25}>
+											<InputLabel htmlFor="organismoBA">Organismo</InputLabel>
+											<FormControl
+												fullWidth
+												style={{ maxHeight: "39.91px" }}
+												error={Boolean(organismoError && (touched.organismoBA || formSubmitAttempted.current))}
+											>
+												<Select
+													id="organismoBA"
+													name="organismoBA"
+													value={values.organismoBA || ""}
+													onChange={(e) => {
+														const value = e.target.value;
+														setFieldValue("organismoBA", value);
+
+														// Encontrar y guardar el navigationCode
+														const selectedCode = navigationCodes.find((c) => c._id === value);
+														if (selectedCode) {
+															setFieldValue("navigationCode", selectedCode.code);
+														}
+
+														setTouched({ ...touched, organismoBA: true });
+														validateOrganismo(value);
+													}}
+													displayEmpty
+													size="small"
+													disabled={!values.jurisdictionBA}
+													renderValue={(selected) => {
+														if (!selected) {
+															return <em>{values.jurisdictionBA ? "Seleccione un organismo" : "Seleccione primero una jurisdicción"}</em>;
+														}
+														const selectedOrganismo = navigationCodes.find((c) => c._id === selected);
+														return selectedOrganismo ? selectedOrganismo.organismo.nombre : "";
+													}}
+													sx={{
+														"& .MuiInputBase-root": { height: 39.91 },
+														"& .MuiInputBase-input": { fontSize: 12 },
+													}}
+												>
+													<MenuItem value="" disabled>
+														<em>Seleccione un organismo</em>
+													</MenuItem>
+													{organismosBA.map((code) => (
+														<MenuItem key={code._id} value={code._id}>
+															{code.organismo.nombre}
+														</MenuItem>
+													))}
+												</Select>
+												{organismoError && (touched.organismoBA || formSubmitAttempted.current) && (
+													<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+														{organismoError}
+													</Typography>
+												)}
+											</FormControl>
+										</Stack>
+									</Grid>
+								</>
+							) : null}
+							<Grid item xs={12} sm={6}>
+								<Stack spacing={1.25}>
+									<InputLabel htmlFor="expedientNumber">Número de Expediente</InputLabel>
+									<InputField
+										fullWidth
+										sx={customInputStyles}
+										id="expedient-number"
+										placeholder="Ej. 123456"
+										name="expedientNumber"
+										type="number"
+										onChange={handleNumberChange}
+										error={Boolean(numberError && touched.expedientNumber)}
+										helperText={touched.expedientNumber ? numberError : ""}
+									/>
+								</Stack>
+							</Grid>
+							<Grid item xs={12} sm={6}>
+								<Stack spacing={1.25}>
+									<InputLabel htmlFor="expedientYear">Año</InputLabel>
+									<InputField
+										fullWidth
+										sx={customInputStyles}
+										id="expedient-year"
+										placeholder="Ej. 2023"
+										name="expedientYear"
+										type="number"
+										onChange={handleYearChange}
+										error={Boolean(yearError && touched.expedientYear)}
+										helperText={touched.expedientYear ? yearError : ""}
+									/>
+								</Stack>
+							</Grid>
 						</Grid>
-						<Grid item xs={12} sm={6}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="expedientNumber">Número de Expediente</InputLabel>
-								<InputField
-									fullWidth
-									sx={customInputStyles}
-									id="expedient-number"
-									placeholder="Ej. 123456"
-									name="expedientNumber"
-									type="number"
-									onChange={handleNumberChange}
-									error={Boolean(numberError && touched.expedientNumber)}
-									helperText={touched.expedientNumber ? numberError : ""}
-								/>
-							</Stack>
-						</Grid>
-						<Grid item xs={12} sm={6}>
-							<Stack spacing={1.25}>
-								<InputLabel htmlFor="expedientYear">Año</InputLabel>
-								<InputField
-									fullWidth
-									sx={customInputStyles}
-									id="expedient-year"
-									placeholder="Ej. 2023"
-									name="expedientYear"
-									type="number"
-									onChange={handleYearChange}
-									error={Boolean(yearError && touched.expedientYear)}
-									helperText={touched.expedientYear ? yearError : ""}
-								/>
-							</Stack>
-						</Grid>
-					</Grid>
+					)}
 				</Grid>
 			</Grid>
 		</DialogContent>

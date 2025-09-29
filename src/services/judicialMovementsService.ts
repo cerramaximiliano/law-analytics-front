@@ -113,9 +113,10 @@ class JudicialMovementsService {
 			if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
 
 			const queryString = params.toString();
-			const baseUrl = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
-				? "https://server.lawanalytics.app/api/judicial-movements"
-				: "/api/judicial-movements";
+			const baseUrl =
+				process.env.NODE_ENV === "production" && window.location.hostname === "lawanalytics.app"
+					? "https://server.lawanalytics.app/api/judicial-movements"
+					: "/api/judicial-movements";
 			const url = queryString ? `${baseUrl}/?${queryString}` : `${baseUrl}/`;
 
 			const response = await axios.get<JudicialMovementResponse>(url);
@@ -128,9 +129,10 @@ class JudicialMovementsService {
 
 	async deleteMovement(id: string): Promise<{ success: boolean; message: string }> {
 		try {
-			const baseUrl = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
-				? "https://server.lawanalytics.app/api/judicial-movements"
-				: "/api/judicial-movements";
+			const baseUrl =
+				process.env.NODE_ENV === "production" && window.location.hostname === "lawanalytics.app"
+					? "https://server.lawanalytics.app/api/judicial-movements"
+					: "/api/judicial-movements";
 			const response = await axios.delete(`${baseUrl}/${id}`);
 			return response.data;
 		} catch (error: any) {
@@ -141,9 +143,10 @@ class JudicialMovementsService {
 
 	async retryNotification(id: string): Promise<void> {
 		try {
-			const baseUrl = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
-				? "https://server.lawanalytics.app/api/judicial-movements"
-				: "/api/judicial-movements";
+			const baseUrl =
+				process.env.NODE_ENV === "production" && window.location.hostname === "lawanalytics.app"
+					? "https://server.lawanalytics.app/api/judicial-movements"
+					: "/api/judicial-movements";
 			await axios.post(`${baseUrl}/${id}/retry`);
 		} catch (error: any) {
 			console.error("Error retrying notification:", error);

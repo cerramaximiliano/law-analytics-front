@@ -27,8 +27,17 @@ import {
 	FormControl,
 	Tabs,
 	Tab,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	Collapse,
 } from "@mui/material";
-import { Edit2, TickCircle, CloseCircle, Refresh, Setting2 } from "iconsax-react";
+import { Edit2, TickCircle, CloseCircle, Refresh, Setting2, Calendar, ArrowDown2, ArrowUp2, InfoCircle } from "iconsax-react";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
 import MainCard from "components/MainCard";
 import MEVWorkersService, { MEVWorkerConfig, SystemConfig } from "api/workersMev";
@@ -81,6 +90,13 @@ const MEVWorkers = () => {
 	const [editValues, setEditValues] = useState<Partial<MEVWorkerConfig>>({});
 	const [editSystemValues, setEditSystemValues] = useState<Partial<SystemConfig>>({});
 	const [hasError, setHasError] = useState(false);
+	const [authError, setAuthError] = useState(false);
+	const [systemAuthError, setSystemAuthError] = useState(false);
+	const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+	const [passwordModalUserId, setPasswordModalUserId] = useState<string>("");
+	const [passwordChangeDate, setPasswordChangeDate] = useState<Dayjs | null>(dayjs());
+	const [instructionsOpen, setInstructionsOpen] = useState(false);
+	const [workerGuideOpen, setWorkerGuideOpen] = useState(false);
 
 	// Helper para obtener labels
 	const getVerificationModeLabel = (value: string) => {
@@ -99,6 +115,7 @@ const MEVWorkers = () => {
 	const fetchSystemConfigs = async () => {
 		try {
 			setLoadingSystem(true);
+			setSystemAuthError(false);
 			const response = await MEVWorkersService.getSystemConfigs();
 			console.log("System Configs Response:", response);
 			if (response.success && Array.isArray(response.data)) {
@@ -109,6 +126,10 @@ const MEVWorkers = () => {
 				setSystemConfigs([]);
 			}
 		} catch (error: any) {
+			// Detectar si es un error de autenticación
+			if (error.message?.includes("autenticación") || error.message?.includes("401")) {
+				setSystemAuthError(true);
+			}
 			enqueueSnackbar(error.message || "Error al cargar las configuraciones del sistema", {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -128,6 +149,7 @@ const MEVWorkers = () => {
 
 		try {
 			setLoading(true);
+			setAuthError(false);
 			const response = await MEVWorkersService.getVerificationConfigs();
 
 			if (response.success && Array.isArray(response.data)) {
@@ -142,6 +164,10 @@ const MEVWorkers = () => {
 			}
 		} catch (error: any) {
 			setHasError(true); // Marcar que hubo error para no reintentar
+			// Detectar si es un error de autenticación
+			if (error.message?.includes("autenticación") || error.message?.includes("401")) {
+				setAuthError(true);
+			}
 			enqueueSnackbar(error.message || "Error al cargar las configuraciones", {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
@@ -195,18 +221,18 @@ const MEVWorkers = () => {
 
 		let elapsed = "";
 		if (diffDays > 0) {
-			elapsed = `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+			elapsed = `hace ${diffDays} día${diffDays > 1 ? "s" : ""}`;
 		} else if (diffHours > 0) {
-			elapsed = `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+			elapsed = `hace ${diffHours} hora${diffHours > 1 ? "s" : ""}`;
 		} else if (diffMinutes > 0) {
-			elapsed = `hace ${diffMinutes} minuto${diffMinutes > 1 ? 's' : ''}`;
+			elapsed = `hace ${diffMinutes} minuto${diffMinutes > 1 ? "s" : ""}`;
 		} else {
-			elapsed = `hace ${diffSeconds} segundo${diffSeconds > 1 ? 's' : ''}`;
+			elapsed = `hace ${diffSeconds} segundo${diffSeconds > 1 ? "s" : ""}`;
 		}
 
 		return {
 			formatted: dateObj.toLocaleString("es-ES"),
-			elapsed
+			elapsed,
 		};
 	};
 
@@ -274,11 +300,6 @@ const MEVWorkers = () => {
 		setEditingSystemId(config._id);
 		setEditSystemValues({
 			value: config.value,
-			description: config.description,
-			metadata: {
-				...config.metadata,
-				lastModifiedReason: ''
-			}
 		});
 	};
 
@@ -290,8 +311,12 @@ const MEVWorkers = () => {
 	const handleSaveSystem = async () => {
 		if (!editingSystemId) return;
 
+		// Buscar la configuración actual para obtener userId y key
+		const currentConfig = systemConfigs.find((c) => c._id === editingSystemId);
+		if (!currentConfig) return;
+
 		try {
-			const response = await MEVWorkersService.updateSystemConfig(editingSystemId, editSystemValues);
+			const response = await MEVWorkersService.updateSystemConfig(currentConfig.userId, currentConfig.key, editSystemValues.value);
 			if (response.success) {
 				enqueueSnackbar("Configuración del sistema actualizada exitosamente", {
 					variant: "success",
@@ -308,19 +333,58 @@ const MEVWorkers = () => {
 		}
 	};
 
+	// Manejar actualización de fecha de contraseña
+	const handleOpenPasswordModal = (userId: string) => {
+		setPasswordModalUserId(userId);
+		setPasswordChangeDate(dayjs());
+		setPasswordModalOpen(true);
+	};
+
+	const handleClosePasswordModal = () => {
+		setPasswordModalOpen(false);
+		setPasswordModalUserId("");
+		setPasswordChangeDate(dayjs());
+	};
+
+	const handleUpdatePasswordDate = async () => {
+		if (!passwordChangeDate || !passwordModalUserId) return;
+
+		try {
+			const response = await MEVWorkersService.updatePasswordDate(passwordModalUserId, passwordChangeDate.toISOString());
+			if (response.success) {
+				enqueueSnackbar("Fecha de contraseña actualizada exitosamente", {
+					variant: "success",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+				});
+				await fetchSystemConfigs();
+				handleClosePasswordModal();
+			}
+		} catch (error: any) {
+			enqueueSnackbar(error.message || "Error al actualizar fecha de contraseña", {
+				variant: "error",
+				anchorOrigin: { vertical: "bottom", horizontal: "right" },
+			});
+		}
+	};
+
+	// Verificar si un campo es de contraseña
+	const isPasswordField = (key: string): boolean => {
+		return key === "password_last_change" || key === "password_expires_at";
+	};
+
 	// Formatear valor según tipo de dato
 	const formatSystemValue = (value: any, dataType: string): string => {
 		switch (dataType) {
-			case 'date':
-				return value ? new Date(value).toLocaleString('es-ES') : 'N/A';
-			case 'boolean':
-				return value ? 'Sí' : 'No';
-			case 'number':
-				return value?.toLocaleString() || '0';
-			case 'json':
-				return typeof value === 'object' ? JSON.stringify(value, null, 2) : value;
+			case "date":
+				return value ? new Date(value).toLocaleString("es-ES") : "N/A";
+			case "boolean":
+				return value ? "Sí" : "No";
+			case "number":
+				return value?.toLocaleString() || "0";
+			case "json":
+				return typeof value === "object" ? JSON.stringify(value, null, 2) : value;
 			default:
-				return value?.toString() || '';
+				return value?.toString() || "";
 		}
 	};
 
@@ -363,6 +427,249 @@ const MEVWorkers = () => {
 					la información en el sistema.
 				</Typography>
 			</Alert>
+
+			{/* Guía de Uso del Worker */}
+			<Card variant="outlined" sx={{ backgroundColor: "background.paper" }}>
+				<CardContent sx={{ pb: workerGuideOpen ? 2 : 1 }}>
+					<Box
+						display="flex"
+						justifyContent="space-between"
+						alignItems="center"
+						sx={{ cursor: "pointer" }}
+						onClick={() => setWorkerGuideOpen(!workerGuideOpen)}
+					>
+						<Stack direction="row" spacing={1} alignItems="center">
+							<InfoCircle size={20} color="#1976d2" />
+							<Typography variant="h6" color="primary">
+								Guía de Funcionamiento del Worker de Verificación
+							</Typography>
+						</Stack>
+						<IconButton size="small">{workerGuideOpen ? <ArrowUp2 size={20} /> : <ArrowDown2 size={20} />}</IconButton>
+					</Box>
+
+					<Collapse in={workerGuideOpen}>
+						<Stack spacing={2} sx={{ mt: 3 }}>
+							{/* Propósito del Worker */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🎯 Propósito del Worker
+								</Typography>
+								<Typography variant="body2" color="text.secondary" paragraph>
+									El Worker de Verificación MEV es un proceso automatizado que se ejecuta periódicamente para validar la existencia y el
+									estado actual de las causas judiciales en el sistema MEV (Mesa de Entradas Virtual). Su función principal es mantener
+									actualizada la base de datos con información verificada directamente desde la fuente oficial.
+								</Typography>
+							</Box>
+
+							{/* Criterios de Elegibilidad */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									📋 Criterios de Elegibilidad de Documentos
+								</Typography>
+								<Typography variant="body2" color="text.secondary" paragraph>
+									El worker procesa documentos que cumplen con los siguientes criterios:
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Source:</strong> "mev" - Solo documentos provenientes del sistema MEV
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Verified:</strong> false - Documentos que aún no han sido verificados
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>isValid:</strong> null - Documentos cuya validez no ha sido determinada
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Frecuencia:</strong> Verificación única por documento
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Resultado:</strong> Actualiza los campos "verified" e "isValid" tras la verificación
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Configuración de Parámetros */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									⚙️ Configuración de Parámetros
+								</Typography>
+								<Stack spacing={2}>
+									<Box>
+										<Typography variant="body2" color="text.secondary" fontWeight="bold">
+											Worker ID
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											Identificador único del worker. Útil para diferenciar múltiples instancias ejecutándose en paralelo.
+										</Typography>
+									</Box>
+									<Box>
+										<Typography variant="body2" color="text.secondary" fontWeight="bold">
+											Jurisdicción
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											Define el ámbito jurisdiccional: Nacional, Federal o Todas. Filtra las causas según su jurisdicción.
+										</Typography>
+									</Box>
+									<Box>
+										<Typography variant="body2" color="text.secondary" fontWeight="bold">
+											Tipo de Organismo
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											Especifica el tipo de organismo judicial: Juzgado, Tribunal, Cámara o Todos.
+										</Typography>
+									</Box>
+									<Box>
+										<Typography variant="body2" color="text.secondary" fontWeight="bold">
+											Modo de Verificación
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											Define qué tipos de causas verificar: Civil, Seguridad Social, Trabajo o Todas.
+										</Typography>
+									</Box>
+								</Stack>
+							</Box>
+
+							{/* Parámetros Técnicos */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🔧 Parámetros Técnicos
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Tamaño de Lote:</strong> Cantidad de documentos procesados simultáneamente (recomendado: 10-50)
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Delay entre búsquedas:</strong> Tiempo de espera en milisegundos entre verificaciones (evita sobrecarga)
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Reintentos máximos:</strong> Número de intentos ante fallos de verificación (recomendado: 3)
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Proceso de Verificación */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🔄 Proceso de Verificación
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										<strong>1. Selección:</strong> El worker identifica documentos elegibles según los criterios configurados
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>2. Agrupación:</strong> Agrupa los documentos en lotes según el "Tamaño de Lote" configurado
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>3. Verificación:</strong> Consulta el sistema MEV para validar cada causa
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>4. Actualización:</strong> Marca como verified=true y actualiza isValid según el resultado
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>5. Registro:</strong> Guarda estadísticas de verificación (válidos, inválidos, no encontrados)
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Estadísticas y Métricas */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									📊 Estadísticas y Métricas
+								</Typography>
+								<Typography variant="body2" color="text.secondary" paragraph>
+									El sistema rastrea las siguientes métricas:
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Documentos Verificados:</strong> Total de causas procesadas
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Documentos Válidos:</strong> Causas confirmadas como existentes en MEV
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Documentos Inválidos:</strong> Causas no encontradas o con errores
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Tasa de Éxito:</strong> Porcentaje de verificaciones exitosas
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>Última Verificación:</strong> Fecha y hora del último proceso ejecutado
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Mejores Prácticas */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									✅ Mejores Prácticas
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										• Configure el <strong>delay entre búsquedas</strong> de al menos 1000ms para evitar bloqueos
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• Use <strong>tamaños de lote pequeños</strong> (10-20) para mejor control y debugging
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• Active workers específicos por <strong>jurisdicción/tipo</strong> para distribuir la carga
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• Monitoree las <strong>estadísticas de errores</strong> regularmente
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• Configure <strong>múltiples workers</strong> con diferentes filtros para procesamiento paralelo
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Solución de Problemas */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🔍 Solución de Problemas Comunes
+								</Typography>
+								<Stack spacing={2}>
+									<Box>
+										<Typography variant="body2" color="error.main" fontWeight="bold">
+											Alta tasa de documentos inválidos
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											→ Verifique las credenciales MEV y la conectividad con el sistema
+										</Typography>
+									</Box>
+									<Box>
+										<Typography variant="body2" color="error.main" fontWeight="bold">
+											Worker detenido o sin progreso
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											→ Revise el tamaño de lote y aumente el delay entre búsquedas
+										</Typography>
+									</Box>
+									<Box>
+										<Typography variant="body2" color="error.main" fontWeight="bold">
+											Errores frecuentes de timeout
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											→ Reduzca el tamaño de lote y aumente el número de reintentos
+										</Typography>
+									</Box>
+								</Stack>
+							</Box>
+
+							{/* Nota importante */}
+							<Alert severity="warning" variant="filled">
+								<Typography variant="subtitle2" fontWeight="bold">
+									⚠️ Importante
+								</Typography>
+								<Typography variant="body2">
+									El Worker de Verificación realiza consultas directas al sistema MEV. Un mal uso o configuración incorrecta puede resultar
+									en bloqueos temporales. Siempre pruebe con configuraciones conservadoras antes de aumentar la velocidad o volumen de
+									procesamiento.
+								</Typography>
+							</Alert>
+						</Stack>
+					</Collapse>
+				</CardContent>
+			</Card>
 
 			{/* Información detallada del worker */}
 			<Card variant="outlined" sx={{ backgroundColor: "background.default" }}>
@@ -456,219 +763,253 @@ const MEVWorkers = () => {
 			</Card>
 
 			{/* Tabla de configuraciones */}
-			<TableContainer component={Paper} variant="outlined">
-				<Table>
-					<TableHead>
-						<TableRow>
-							<TableCell>Worker ID</TableCell>
-							<TableCell>Jurisdicción</TableCell>
-							<TableCell>Tipo Organismo</TableCell>
-							<TableCell>Modo Verificación</TableCell>
-							<TableCell align="center">Tamaño Lote</TableCell>
-							<TableCell align="center">Delay (ms)</TableCell>
-							<TableCell align="center">Reintentos</TableCell>
-							<TableCell align="center">Verificados</TableCell>
-							<TableCell align="center">Válidos</TableCell>
-							<TableCell align="center">Inválidos</TableCell>
-							<TableCell align="center">Estado</TableCell>
-							<TableCell align="center">Última Verificación</TableCell>
-							<TableCell align="center">Acciones</TableCell>
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{configs.map((config) => {
-							const isEditing = editingId === config._id;
-
-							return (
-								<TableRow key={config._id}>
-									<TableCell>
-										{isEditing ? (
-											<TextField
-												size="small"
-												value={editValues.worker_id || ""}
-												onChange={(e) => setEditValues({ ...editValues, worker_id: e.target.value })}
-												fullWidth
-											/>
-										) : (
-											<Typography variant="body2" fontWeight={500}>
-												{config.worker_id}
-											</Typography>
-										)}
-									</TableCell>
-									<TableCell>
-										{isEditing ? (
-											<FormControl size="small" fullWidth>
-												<Select
-													value={editValues.jurisdiccion || ""}
-													onChange={(e) => setEditValues({ ...editValues, jurisdiccion: e.target.value })}
-												>
-													{JURISDICCION_OPTIONS.map((option) => (
-														<MenuItem key={option.value} value={option.value}>
-															{option.label}
-														</MenuItem>
-													))}
-												</Select>
-											</FormControl>
-										) : (
-											<Typography variant="body2">{getJurisdiccionLabel(config.jurisdiccion)}</Typography>
-										)}
-									</TableCell>
-									<TableCell>
-										{isEditing ? (
-											<FormControl size="small" fullWidth>
-												<Select
-													value={editValues.tipo_organismo || ""}
-													onChange={(e) => setEditValues({ ...editValues, tipo_organismo: e.target.value })}
-												>
-													{TIPO_ORGANISMO_OPTIONS.map((option) => (
-														<MenuItem key={option.value} value={option.value}>
-															{option.label}
-														</MenuItem>
-													))}
-												</Select>
-											</FormControl>
-										) : (
-											<Typography variant="body2">{getTipoOrganismoLabel(config.tipo_organismo)}</Typography>
-										)}
-									</TableCell>
-									<TableCell>
-										{isEditing ? (
-											<FormControl size="small" fullWidth>
-												<Select
-													value={editValues.verification_mode || ""}
-													onChange={(e) => setEditValues({ ...editValues, verification_mode: e.target.value })}
-												>
-													{VERIFICATION_MODE_OPTIONS.map((option) => (
-														<MenuItem key={option.value} value={option.value}>
-															{option.label}
-														</MenuItem>
-													))}
-												</Select>
-											</FormControl>
-										) : (
-											<Typography variant="body2">{getVerificationModeLabel(config.verification_mode)}</Typography>
-										)}
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<TextField
-												size="small"
-												type="number"
-												value={editValues.batch_size || ""}
-												onChange={(e) => setEditValues({ ...editValues, batch_size: Number(e.target.value) })}
-												sx={{ width: 80 }}
-											/>
-										) : (
-											<Typography variant="body2">{config.batch_size}</Typography>
-										)}
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<TextField
-												size="small"
-												type="number"
-												value={editValues.delay_between_searches || ""}
-												onChange={(e) => setEditValues({ ...editValues, delay_between_searches: Number(e.target.value) })}
-												sx={{ width: 100 }}
-											/>
-										) : (
-											<Typography variant="body2">{config.delay_between_searches}</Typography>
-										)}
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<TextField
-												size="small"
-												type="number"
-												value={editValues.max_retries || ""}
-												onChange={(e) => setEditValues({ ...editValues, max_retries: Number(e.target.value) })}
-												sx={{ width: 80 }}
-											/>
-										) : (
-											<Typography variant="body2">{config.max_retries}</Typography>
-										)}
-									</TableCell>
-									<TableCell align="center">
-										<Typography variant="body2" fontWeight={500}>
-											{config.documents_verified?.toLocaleString() || 0}
+			{authError ? (
+				<Alert severity="error" icon={<InfoCircle size={24} />}>
+					<Typography variant="subtitle2" fontWeight="bold">
+						Error de Autenticación
+					</Typography>
+					<Typography variant="body2" sx={{ mt: 1 }}>
+						No se pudo cargar la configuración del Worker de Verificación debido a un problema de autenticación. Por favor, verifique sus
+						credenciales e intente nuevamente.
+					</Typography>
+					<Button
+						size="small"
+						variant="outlined"
+						sx={{ mt: 2 }}
+						onClick={() => {
+							setAuthError(false);
+							setHasError(false);
+							fetchConfigs();
+						}}
+					>
+						Reintentar
+					</Button>
+				</Alert>
+			) : (
+				<TableContainer component={Paper} variant="outlined">
+					<Table>
+						<TableHead>
+							<TableRow>
+								<TableCell>Worker ID</TableCell>
+								<TableCell>Jurisdicción</TableCell>
+								<TableCell>Tipo Organismo</TableCell>
+								<TableCell>Modo Verificación</TableCell>
+								<TableCell align="center">Tamaño Lote</TableCell>
+								<TableCell align="center">Delay (ms)</TableCell>
+								<TableCell align="center">Reintentos</TableCell>
+								<TableCell align="center">Verificados</TableCell>
+								<TableCell align="center">Válidos</TableCell>
+								<TableCell align="center">Inválidos</TableCell>
+								<TableCell align="center">Estado</TableCell>
+								<TableCell align="center">Última Verificación</TableCell>
+								<TableCell align="center">Acciones</TableCell>
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{configs.length === 0 ? (
+								<TableRow>
+									<TableCell colSpan={13} align="center">
+										<Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+											No hay configuraciones de Worker disponibles
 										</Typography>
-									</TableCell>
-									<TableCell align="center">
-										<Typography variant="body2" color="success.main" fontWeight={500}>
-											{config.documents_valid?.toLocaleString() || 0}
-										</Typography>
-									</TableCell>
-									<TableCell align="center">
-										<Typography variant="body2" color="error.main" fontWeight={500}>
-											{config.documents_invalid?.toLocaleString() || 0}
-										</Typography>
-									</TableCell>
-									<TableCell align="center">
-										<Switch
-											checked={isEditing ? editValues.enabled : config.enabled}
-											onChange={() => {
-												if (isEditing) {
-													setEditValues({ ...editValues, enabled: !editValues.enabled });
-												} else {
-													handleToggleEnabled(config);
-												}
-											}}
-											size="small"
-											color="primary"
-										/>
-									</TableCell>
-									<TableCell align="center">
-										{(() => {
-											const dateInfo = formatDateWithElapsed(config.last_check);
-											return (
-												<Stack spacing={0.5}>
-													<Typography variant="caption">{dateInfo.formatted}</Typography>
-													{dateInfo.elapsed && (
-														<Typography variant="caption" color="text.secondary">
-															({dateInfo.elapsed})
-														</Typography>
-													)}
-												</Stack>
-											);
-										})()}
-									</TableCell>
-									<TableCell align="center">
-										{isEditing ? (
-											<Stack direction="row" spacing={1} justifyContent="center">
-												<Tooltip title="Guardar">
-													<IconButton size="small" color="primary" onClick={handleSave}>
-														<TickCircle size={18} />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Cancelar">
-													<IconButton size="small" color="error" onClick={handleCancelEdit}>
-														<CloseCircle size={18} />
-													</IconButton>
-												</Tooltip>
-											</Stack>
-										) : (
-											<Stack direction="row" spacing={1} justifyContent="center">
-												<Tooltip title="Editar">
-													<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
-														<Edit2 size={18} />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Configuración Avanzada">
-													<span>
-														<IconButton size="small" color="secondary" disabled>
-															<Setting2 size={18} />
-														</IconButton>
-													</span>
-												</Tooltip>
-											</Stack>
-										)}
 									</TableCell>
 								</TableRow>
-							);
-						})}
-					</TableBody>
-				</Table>
-			</TableContainer>
+							) : (
+								configs.map((config) => {
+									const isEditing = editingId === config._id;
+
+									return (
+										<TableRow key={config._id}>
+											<TableCell>
+												{isEditing ? (
+													<TextField
+														size="small"
+														value={editValues.worker_id || ""}
+														onChange={(e) => setEditValues({ ...editValues, worker_id: e.target.value })}
+														fullWidth
+													/>
+												) : (
+													<Typography variant="body2" fontWeight={500}>
+														{config.worker_id}
+													</Typography>
+												)}
+											</TableCell>
+											<TableCell>
+												{isEditing ? (
+													<FormControl size="small" fullWidth>
+														<Select
+															value={editValues.jurisdiccion || ""}
+															onChange={(e) => setEditValues({ ...editValues, jurisdiccion: e.target.value })}
+														>
+															{JURISDICCION_OPTIONS.map((option) => (
+																<MenuItem key={option.value} value={option.value}>
+																	{option.label}
+																</MenuItem>
+															))}
+														</Select>
+													</FormControl>
+												) : (
+													<Typography variant="body2">{getJurisdiccionLabel(config.jurisdiccion)}</Typography>
+												)}
+											</TableCell>
+											<TableCell>
+												{isEditing ? (
+													<FormControl size="small" fullWidth>
+														<Select
+															value={editValues.tipo_organismo || ""}
+															onChange={(e) => setEditValues({ ...editValues, tipo_organismo: e.target.value })}
+														>
+															{TIPO_ORGANISMO_OPTIONS.map((option) => (
+																<MenuItem key={option.value} value={option.value}>
+																	{option.label}
+																</MenuItem>
+															))}
+														</Select>
+													</FormControl>
+												) : (
+													<Typography variant="body2">{getTipoOrganismoLabel(config.tipo_organismo)}</Typography>
+												)}
+											</TableCell>
+											<TableCell>
+												{isEditing ? (
+													<FormControl size="small" fullWidth>
+														<Select
+															value={editValues.verification_mode || ""}
+															onChange={(e) => setEditValues({ ...editValues, verification_mode: e.target.value })}
+														>
+															{VERIFICATION_MODE_OPTIONS.map((option) => (
+																<MenuItem key={option.value} value={option.value}>
+																	{option.label}
+																</MenuItem>
+															))}
+														</Select>
+													</FormControl>
+												) : (
+													<Typography variant="body2">{getVerificationModeLabel(config.verification_mode)}</Typography>
+												)}
+											</TableCell>
+											<TableCell align="center">
+												{isEditing ? (
+													<TextField
+														size="small"
+														type="number"
+														value={editValues.batch_size || ""}
+														onChange={(e) => setEditValues({ ...editValues, batch_size: Number(e.target.value) })}
+														sx={{ width: 80 }}
+													/>
+												) : (
+													<Typography variant="body2">{config.batch_size}</Typography>
+												)}
+											</TableCell>
+											<TableCell align="center">
+												{isEditing ? (
+													<TextField
+														size="small"
+														type="number"
+														value={editValues.delay_between_searches || ""}
+														onChange={(e) => setEditValues({ ...editValues, delay_between_searches: Number(e.target.value) })}
+														sx={{ width: 100 }}
+													/>
+												) : (
+													<Typography variant="body2">{config.delay_between_searches}</Typography>
+												)}
+											</TableCell>
+											<TableCell align="center">
+												{isEditing ? (
+													<TextField
+														size="small"
+														type="number"
+														value={editValues.max_retries || ""}
+														onChange={(e) => setEditValues({ ...editValues, max_retries: Number(e.target.value) })}
+														sx={{ width: 80 }}
+													/>
+												) : (
+													<Typography variant="body2">{config.max_retries}</Typography>
+												)}
+											</TableCell>
+											<TableCell align="center">
+												<Typography variant="body2" fontWeight={500}>
+													{config.documents_verified?.toLocaleString() || 0}
+												</Typography>
+											</TableCell>
+											<TableCell align="center">
+												<Typography variant="body2" color="success.main" fontWeight={500}>
+													{config.documents_valid?.toLocaleString() || 0}
+												</Typography>
+											</TableCell>
+											<TableCell align="center">
+												<Typography variant="body2" color="error.main" fontWeight={500}>
+													{config.documents_invalid?.toLocaleString() || 0}
+												</Typography>
+											</TableCell>
+											<TableCell align="center">
+												<Switch
+													checked={isEditing ? editValues.enabled : config.enabled}
+													onChange={() => {
+														if (isEditing) {
+															setEditValues({ ...editValues, enabled: !editValues.enabled });
+														} else {
+															handleToggleEnabled(config);
+														}
+													}}
+													size="small"
+													color="primary"
+												/>
+											</TableCell>
+											<TableCell align="center">
+												{(() => {
+													const dateInfo = formatDateWithElapsed(config.last_check);
+													return (
+														<Stack spacing={0.5}>
+															<Typography variant="caption">{dateInfo.formatted}</Typography>
+															{dateInfo.elapsed && (
+																<Typography variant="caption" color="text.secondary">
+																	({dateInfo.elapsed})
+																</Typography>
+															)}
+														</Stack>
+													);
+												})()}
+											</TableCell>
+											<TableCell align="center">
+												{isEditing ? (
+													<Stack direction="row" spacing={1} justifyContent="center">
+														<Tooltip title="Guardar">
+															<IconButton size="small" color="primary" onClick={handleSave}>
+																<TickCircle size={18} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Cancelar">
+															<IconButton size="small" color="error" onClick={handleCancelEdit}>
+																<CloseCircle size={18} />
+															</IconButton>
+														</Tooltip>
+													</Stack>
+												) : (
+													<Stack direction="row" spacing={1} justifyContent="center">
+														<Tooltip title="Editar">
+															<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
+																<Edit2 size={18} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Configuración Avanzada">
+															<span>
+																<IconButton size="small" color="secondary" disabled>
+																	<Setting2 size={18} />
+																</IconButton>
+															</span>
+														</Tooltip>
+													</Stack>
+												)}
+											</TableCell>
+										</TableRow>
+									);
+								})
+							)}
+						</TableBody>
+					</Table>
+				</TableContainer>
+			)}
 
 			{/* Estadísticas */}
 			<Grid container spacing={2}>
@@ -787,9 +1128,7 @@ const MEVWorkers = () => {
 											<Typography variant="caption" color="text.secondary">
 												Fecha Último Error
 											</Typography>
-											<Typography variant="body2">
-												{formatDate(configs[0].statistics.last_error_date)}
-											</Typography>
+											<Typography variant="body2">{formatDate(configs[0].statistics.last_error_date)}</Typography>
 										</Stack>
 									</Grid>
 								</>
@@ -805,7 +1144,10 @@ const MEVWorkers = () => {
 					<Typography variant="subtitle2">
 						Programación: <strong>{configs[0].schedule.cron_pattern}</strong> ({configs[0].schedule.timezone})
 						{configs[0].schedule.active_hours && (
-							<> - Activo de {configs[0].schedule.active_hours.start}:00 a {configs[0].schedule.active_hours.end}:00</>
+							<>
+								{" "}
+								- Activo de {configs[0].schedule.active_hours.start}:00 a {configs[0].schedule.active_hours.end}:00
+							</>
 						)}
 						{configs[0].schedule.skip_weekends && <> - Sin fines de semana</>}
 					</Typography>
@@ -835,6 +1177,144 @@ const MEVWorkers = () => {
 				</Typography>
 			</Alert>
 
+			{/* Instructivo de Uso */}
+			<Card variant="outlined" sx={{ backgroundColor: "background.paper" }}>
+				<CardContent sx={{ pb: instructionsOpen ? 2 : 1 }}>
+					<Box
+						display="flex"
+						justifyContent="space-between"
+						alignItems="center"
+						sx={{ cursor: "pointer" }}
+						onClick={() => setInstructionsOpen(!instructionsOpen)}
+					>
+						<Stack direction="row" spacing={1} alignItems="center">
+							<InfoCircle size={20} color="#1976d2" />
+							<Typography variant="h6" color="primary">
+								Instructivo de Uso - Configuración del Sistema MEV
+							</Typography>
+						</Stack>
+						<IconButton size="small">{instructionsOpen ? <ArrowUp2 size={20} /> : <ArrowDown2 size={20} />}</IconButton>
+					</Box>
+
+					<Collapse in={instructionsOpen}>
+						<Stack spacing={2} sx={{ mt: 3 }}>
+							{/* Información General */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🌐 Información General
+								</Typography>
+								<Typography variant="body2" color="text.secondary" paragraph>
+									Las configuraciones del sistema se aplican a <strong>cada usuario MEV</strong> que ha sido gestionado y creado a través
+									del portal MEV. Estos usuarios se configuran y actualizan mediante las
+									<strong> variables de entorno</strong> del sistema.
+								</Typography>
+							</Box>
+
+							{/* Cómo editar configuraciones */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									✏️ Cómo Editar Configuraciones
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										1. Haga clic en el ícono <Chip icon={<Edit2 size={14} />} label="Editar" size="small" /> junto a la configuración que
+										desea modificar
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										2. Modifique el valor según el tipo de dato (texto, número, booleano)
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										3. Haga clic en <Chip icon={<TickCircle size={14} />} label="Guardar" size="small" color="primary" /> para confirmar
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										4. O haga clic en <Chip icon={<CloseCircle size={14} />} label="Cancelar" size="small" color="error" /> para descartar
+										cambios
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Gestión de Contraseñas */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🔐 Gestión de Contraseñas
+								</Typography>
+								<Typography variant="body2" color="text.secondary" paragraph>
+									Los campos <strong>password_last_change</strong> y <strong>password_expires_at</strong> tienen un tratamiento especial:
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										• <strong>NO se pueden editar directamente</strong> para mantener la integridad del sistema
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• Use el botón <Chip icon={<Calendar size={14} />} label="Calendario" size="small" color="secondary" /> para actualizar
+										la fecha de cambio
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• Al actualizar la fecha de cambio, el sistema <strong>recalcula automáticamente</strong> la fecha de expiración
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• La expiración se calcula sumando los días configurados en <strong>password_expiry_days</strong>
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Cómo funciona el cambio de contraseña */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🔄 ¿Cómo funciona el cambio de contraseña?
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										<strong>1. Detección automática:</strong> El sistema MEV detecta cuando una contraseña está próxima a expirar
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>2. Notificación:</strong> Se envía una alerta cuando quedan pocos días para la expiración
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>3. Actualización manual:</strong> El administrador actualiza la contraseña en el sistema MEV
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>4. Registro en sistema:</strong> Use el botón de calendario para registrar la fecha del cambio
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										<strong>5. Reinicio del ciclo:</strong> El contador de expiración se reinicia automáticamente
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Categorías de Configuración */}
+							<Box>
+								<Typography variant="subtitle2" fontWeight="bold" color="text.primary" gutterBottom>
+									🏷️ Categorías de Configuración
+								</Typography>
+								<Stack spacing={1} sx={{ pl: 2 }}>
+									<Typography variant="body2" color="text.secondary">
+										• <Chip label="security" size="small" color="error" /> - Parámetros de seguridad y autenticación
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <Chip label="scraping" size="small" color="primary" /> - Configuración de extracción de datos
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										• <Chip label="notification" size="small" color="warning" /> - Alertas y notificaciones del sistema
+									</Typography>
+								</Stack>
+							</Box>
+
+							{/* Nota importante */}
+							<Alert severity="warning" variant="filled">
+								<Typography variant="subtitle2" fontWeight="bold">
+									⚠️ Importante
+								</Typography>
+								<Typography variant="body2">
+									Los cambios realizados en esta sección afectan directamente el comportamiento del sistema MEV. Asegúrese de comprender el
+									impacto de cada modificación antes de guardar los cambios.
+								</Typography>
+							</Alert>
+						</Stack>
+					</Collapse>
+				</CardContent>
+			</Card>
+
 			{loadingSystem ? (
 				<Grid container spacing={3}>
 					{[1, 2, 3].map((item) => (
@@ -843,6 +1323,27 @@ const MEVWorkers = () => {
 						</Grid>
 					))}
 				</Grid>
+			) : systemAuthError ? (
+				<Alert severity="error" icon={<InfoCircle size={24} />}>
+					<Typography variant="subtitle2" fontWeight="bold">
+						Error de Autenticación
+					</Typography>
+					<Typography variant="body2" sx={{ mt: 1 }}>
+						No se pudo cargar la configuración del sistema debido a un problema de autenticación. Por favor, verifique sus credenciales e
+						intente nuevamente.
+					</Typography>
+					<Button
+						size="small"
+						variant="outlined"
+						sx={{ mt: 2 }}
+						onClick={() => {
+							setSystemAuthError(false);
+							fetchSystemConfigs();
+						}}
+					>
+						Reintentar
+					</Button>
+				</Alert>
 			) : (
 				<TableContainer component={Paper} variant="outlined">
 					<Table>
@@ -872,34 +1373,34 @@ const MEVWorkers = () => {
 											</Typography>
 										</TableCell>
 										<TableCell>
-											<Typography variant="body2" fontWeight={500} sx={{ fontFamily: 'monospace' }}>
+											<Typography variant="body2" fontWeight={500} sx={{ fontFamily: "monospace" }}>
 												{config.key}
 											</Typography>
 										</TableCell>
 										<TableCell>
 											{isEditing ? (
-												config.dataType === 'boolean' ? (
+												config.dataType === "boolean" ? (
 													<Switch
 														checked={editSystemValues.value === true}
 														onChange={(e) => setEditSystemValues({ ...editSystemValues, value: e.target.checked })}
 														size="small"
 													/>
-												) : config.dataType === 'number' ? (
+												) : config.dataType === "number" ? (
 													<TextField
 														size="small"
 														type="number"
-														value={editSystemValues.value || ''}
+														value={editSystemValues.value || ""}
 														onChange={(e) => setEditSystemValues({ ...editSystemValues, value: Number(e.target.value) })}
 														fullWidth
 													/>
 												) : (
 													<TextField
 														size="small"
-														value={editSystemValues.value || ''}
+														value={editSystemValues.value || ""}
 														onChange={(e) => setEditSystemValues({ ...editSystemValues, value: e.target.value })}
 														fullWidth
-														multiline={config.dataType === 'json'}
-														rows={config.dataType === 'json' ? 3 : 1}
+														multiline={config.dataType === "json"}
+														rows={config.dataType === "json" ? 3 : 1}
 													/>
 												)
 											) : (
@@ -907,11 +1408,11 @@ const MEVWorkers = () => {
 													variant="body2"
 													sx={{
 														maxWidth: 200,
-														overflow: 'hidden',
-														textOverflow: 'ellipsis',
-														whiteSpace: config.dataType === 'json' ? 'pre-wrap' : 'nowrap',
-														fontFamily: config.dataType === 'json' ? 'monospace' : 'inherit',
-														fontSize: config.dataType === 'json' ? '0.75rem' : 'inherit'
+														overflow: "hidden",
+														textOverflow: "ellipsis",
+														whiteSpace: config.dataType === "json" ? "pre-wrap" : "nowrap",
+														fontFamily: config.dataType === "json" ? "monospace" : "inherit",
+														fontSize: config.dataType === "json" ? "0.75rem" : "inherit",
 													}}
 													title={formatSystemValue(config.value, config.dataType)}
 												>
@@ -925,10 +1426,13 @@ const MEVWorkers = () => {
 												size="small"
 												variant="outlined"
 												color={
-													config.dataType === 'boolean' ? 'success' :
-													config.dataType === 'number' ? 'info' :
-													config.dataType === 'date' ? 'warning' :
-													'default'
+													config.dataType === "boolean"
+														? "success"
+														: config.dataType === "number"
+														? "info"
+														: config.dataType === "date"
+														? "warning"
+														: "default"
 												}
 											/>
 										</TableCell>
@@ -937,28 +1441,20 @@ const MEVWorkers = () => {
 												label={config.category}
 												size="small"
 												color={
-													config.category === 'security' ? 'error' :
-													config.category === 'scraping' ? 'primary' :
-													config.category === 'notification' ? 'warning' :
-													'default'
+													config.category === "security"
+														? "error"
+														: config.category === "scraping"
+														? "primary"
+														: config.category === "notification"
+														? "warning"
+														: "default"
 												}
 											/>
 										</TableCell>
 										<TableCell>
-											{isEditing ? (
-												<TextField
-													size="small"
-													value={editSystemValues.description || ''}
-													onChange={(e) => setEditSystemValues({ ...editSystemValues, description: e.target.value })}
-													fullWidth
-													multiline
-													rows={2}
-												/>
-											) : (
-												<Typography variant="caption" sx={{ display: 'block', maxWidth: 250 }}>
-													{config.description}
-												</Typography>
-											)}
+											<Typography variant="caption" sx={{ display: "block", maxWidth: 250 }}>
+												{config.description}
+											</Typography>
 										</TableCell>
 										<TableCell align="center">
 											{config.isEncrypted ? (
@@ -983,40 +1479,24 @@ const MEVWorkers = () => {
 											</Stack>
 										</TableCell>
 										<TableCell align="center">
-											{isEditing ? (
+											{isPasswordField(config.key) ? (
+												<Tooltip title="Actualizar fecha de cambio de contraseña">
+													<IconButton size="small" color="secondary" onClick={() => handleOpenPasswordModal(config.userId)}>
+														<Calendar size={18} />
+													</IconButton>
+												</Tooltip>
+											) : isEditing ? (
 												<Stack direction="row" spacing={1} justifyContent="center">
-													{editingSystemId && (
-														<>
-															<TextField
-																size="small"
-																placeholder="Razón del cambio"
-																value={editSystemValues.metadata?.lastModifiedReason || ''}
-																onChange={(e) => setEditSystemValues({
-																	...editSystemValues,
-																	metadata: {
-																		...editSystemValues.metadata,
-																		lastModifiedReason: e.target.value
-																	}
-																})}
-																sx={{ width: 150, mb: 1 }}
-															/>
-															<Tooltip title="Guardar">
-																<IconButton
-																	size="small"
-																	color="primary"
-																	onClick={handleSaveSystem}
-																	disabled={!editSystemValues.metadata?.lastModifiedReason}
-																>
-																	<TickCircle size={18} />
-																</IconButton>
-															</Tooltip>
-															<Tooltip title="Cancelar">
-																<IconButton size="small" color="error" onClick={handleCancelEditSystem}>
-																	<CloseCircle size={18} />
-																</IconButton>
-															</Tooltip>
-														</>
-													)}
+													<Tooltip title="Guardar">
+														<IconButton size="small" color="primary" onClick={handleSaveSystem}>
+															<TickCircle size={18} />
+														</IconButton>
+													</Tooltip>
+													<Tooltip title="Cancelar">
+														<IconButton size="small" color="error" onClick={handleCancelEditSystem}>
+															<CloseCircle size={18} />
+														</IconButton>
+													</Tooltip>
 												</Stack>
 											) : (
 												<Tooltip title="Editar">
@@ -1046,22 +1526,62 @@ const MEVWorkers = () => {
 	);
 
 	return (
-		<MainCard title="Workers MEV">
-			<Box sx={{ width: "100%" }}>
-				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-					<Tabs value={activeTab} onChange={handleTabChange} aria-label="workers mev tabs">
-						<Tab label="Worker de Verificación" />
-						<Tab label="Configuración del Sistema" />
-					</Tabs>
+		<>
+			<MainCard title="Workers MEV">
+				<Box sx={{ width: "100%" }}>
+					<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+						<Tabs value={activeTab} onChange={handleTabChange} aria-label="workers mev tabs">
+							<Tab label="Worker de Verificación" />
+							<Tab label="Configuración del Sistema" />
+						</Tabs>
+					</Box>
+					<TabPanel value={activeTab} index={0}>
+						<VerificationWorkerContent />
+					</TabPanel>
+					<TabPanel value={activeTab} index={1}>
+						<SystemConfigContent />
+					</TabPanel>
 				</Box>
-				<TabPanel value={activeTab} index={0}>
-					<VerificationWorkerContent />
-				</TabPanel>
-				<TabPanel value={activeTab} index={1}>
-					<SystemConfigContent />
-				</TabPanel>
-			</Box>
-		</MainCard>
+			</MainCard>
+
+			{/* Modal para actualizar fecha de contraseña */}
+			<Dialog open={passwordModalOpen} onClose={handleClosePasswordModal} maxWidth="sm" fullWidth>
+				<DialogTitle>Actualizar Fecha de Cambio de Contraseña</DialogTitle>
+				<DialogContent>
+					<Stack spacing={3} sx={{ mt: 2 }}>
+						<Alert severity="info">
+							Al actualizar la fecha de cambio de contraseña, el sistema recalculará automáticamente la fecha de expiración basándose en los
+							días configurados para expiración.
+						</Alert>
+						<Typography variant="body2">
+							Usuario: <strong>{passwordModalUserId}</strong>
+						</Typography>
+						<LocalizationProvider dateAdapter={AdapterDayjs}>
+							<DateTimePicker
+								label="Fecha de cambio de contraseña"
+								value={passwordChangeDate}
+								onChange={(newValue) => setPasswordChangeDate(newValue)}
+								format="DD/MM/YYYY HH:mm"
+								slotProps={{
+									textField: {
+										fullWidth: true,
+										variant: "outlined",
+									},
+								}}
+							/>
+						</LocalizationProvider>
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleClosePasswordModal} color="secondary">
+						Cancelar
+					</Button>
+					<Button onClick={handleUpdatePasswordDate} variant="contained" color="primary" disabled={!passwordChangeDate}>
+						Actualizar
+					</Button>
+				</DialogActions>
+			</Dialog>
+		</>
 	);
 };
 

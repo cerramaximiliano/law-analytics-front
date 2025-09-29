@@ -9,7 +9,6 @@ import {
 	Stack,
 	Typography,
 	Alert,
-	IconButton,
 	InputLabel,
 	Grid,
 	MenuItem,
@@ -23,12 +22,11 @@ import {
 	ListItemText,
 	ListItemIcon,
 	alpha,
-	Chip,
 	Checkbox,
 	FormControlLabel,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
-import { Add, DocumentUpload, ArrowRight, Lock } from "iconsax-react";
+import { DocumentUpload, ArrowRight } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -40,6 +38,7 @@ interface LinkToJudicialPowerProps {
 	onCancelLink: () => void;
 	folderId: string;
 	folderName: string;
+	onSelectBuenosAires?: () => void;
 }
 
 // Lista de jurisdicciones del Poder Judicial de la Nación
@@ -75,7 +74,7 @@ const customInputStyles = {
 	},
 };
 
-const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: LinkToJudicialPowerProps) => {
+const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onSelectBuenosAires }: LinkToJudicialPowerProps) => {
 	const theme = useTheme();
 	const [selectedPower, setSelectedPower] = useState<"nacional" | "buenosaires" | null>(null);
 	const [expedientNumber, setExpedientNumber] = useState("");
@@ -306,14 +305,9 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 				// Vista de selección del poder judicial
 				<>
 					<DialogTitle sx={{ p: 3, pb: 2 }}>
-						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<DocumentUpload size={24} color={theme.palette.primary.main} />
-								<Typography variant="h5">Vincular con Poder Judicial</Typography>
-							</Stack>
-							<IconButton color="secondary" onClick={handleClose} sx={{ p: 0 }}>
-								<Add style={{ transform: "rotate(45deg)" }} />
-							</IconButton>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<DocumentUpload size={24} color={theme.palette.primary.main} />
+							<Typography variant="h5">Vincular con Poder Judicial</Typography>
 						</Stack>
 					</DialogTitle>
 
@@ -379,16 +373,21 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 							<Grid item xs={12}>
 								<ListItemButton
 									onClick={() => {
-										// No hacer nada, solo mostrar el candado y el chip
+										// Cerrar este modal y abrir el de Buenos Aires
+										if (onSelectBuenosAires) {
+											// Solo cerrar el modal, sin resetear estados internos
+											onCancelLink();
+											// Abrir el modal de Buenos Aires inmediatamente
+											onSelectBuenosAires();
+										}
 									}}
 									sx={{
 										border: 1,
 										borderColor: "divider",
 										borderRadius: 2,
 										p: 2,
-										cursor: "pointer",
 										"&:hover": {
-											backgroundColor: alpha(theme.palette.primary.main, 0.05),
+											backgroundColor: alpha(theme.palette.primary.main, 0.08),
 											borderColor: theme.palette.primary.main,
 										},
 									}}
@@ -417,18 +416,12 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 											/>
 										</Box>
 									</ListItemIcon>
-									<Box sx={{ flexGrow: 1 }}>
-										<Stack direction="row" alignItems="center" spacing={1}>
-											<Typography variant="body1" fontWeight={600}>
-												Poder Judicial de la Provincia de Buenos Aires
-											</Typography>
-											<Chip label="Próximamente" size="small" color="primary" variant="outlined" />
-										</Stack>
-										<Typography variant="body2" color="text.secondary">
-											Vincule causas del fuero provincial
-										</Typography>
-									</Box>
-									<Lock size={24} color={theme.palette.primary.main} />
+									<ListItemText
+										primary="Poder Judicial de la Provincia de Buenos Aires"
+										secondary="Vincule causas del fuero provincial"
+										primaryTypographyProps={{ fontWeight: 600 }}
+									/>
+									<ArrowRight size={24} color={theme.palette.text.secondary} />
 								</ListItemButton>
 							</Grid>
 						</Grid>
@@ -446,14 +439,9 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 				// Vista del formulario para Poder Judicial de la Nación
 				<>
 					<DialogTitle sx={{ p: 3, pb: 2 }}>
-						<Stack direction="row" justifyContent="space-between" alignItems="center">
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<DocumentUpload size={24} color={theme.palette.primary.main} />
-								<Typography variant="h5">Vincular con Poder Judicial de la Nación</Typography>
-							</Stack>
-							<IconButton color="secondary" onClick={handleClose} disabled={loading} sx={{ p: 0 }}>
-								<Add style={{ transform: "rotate(45deg)" }} />
-							</IconButton>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<DocumentUpload size={24} color={theme.palette.primary.main} />
+							<Typography variant="h5">Vincular con Poder Judicial de la Nación</Typography>
 						</Stack>
 					</DialogTitle>
 
@@ -628,6 +616,9 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName }: L
 					<DialogActions sx={{ p: 2.5 }}>
 						<Button onClick={() => setSelectedPower(null)} disabled={loading} color="inherit">
 							Atrás
+						</Button>
+						<Button onClick={handleClose} disabled={loading} color="inherit">
+							Cancelar
 						</Button>
 						<Button variant="contained" onClick={handleSubmit} disabled={loading}>
 							{loading ? "Vinculando..." : "Vincular Causa"}

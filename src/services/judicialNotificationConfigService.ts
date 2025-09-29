@@ -69,9 +69,10 @@ interface JudicialNotificationConfig {
 }
 
 class JudicialNotificationConfigService {
-	private endpoint = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
-		? "https://server.lawanalytics.app/api/judicial-notification-config"
-		: "/api/judicial-notification-config";
+	private endpoint =
+		process.env.NODE_ENV === "production" && window.location.hostname === "lawanalytics.app"
+			? "https://server.lawanalytics.app/api/judicial-notification-config"
+			: "/api/judicial-notification-config";
 
 	async getConfig(): Promise<JudicialNotificationConfig> {
 		try {
@@ -108,9 +109,10 @@ class JudicialNotificationConfigService {
 
 	async updateConfig(updates: Partial<JudicialNotificationConfig>): Promise<JudicialNotificationConfig> {
 		try {
-			const endpoint = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
-				? "https://server.lawanalytics.app/api/judicial-notification-config"
-				: "/api/judicial-notification-config";
+			const endpoint =
+				process.env.NODE_ENV === "production" && window.location.hostname === "lawanalytics.app"
+					? "https://server.lawanalytics.app/api/judicial-notification-config"
+					: "/api/judicial-notification-config";
 			const response = await axios.patch(endpoint, updates);
 
 			if (response.data && response.data.success) {
@@ -148,9 +150,10 @@ class JudicialNotificationConfigService {
 
 	async toggleNotifications(): Promise<{ enabled: boolean; mode: string }> {
 		try {
-			const endpoint = process.env.NODE_ENV === 'production' && window.location.hostname === 'lawanalytics.app'
-				? "https://server.lawanalytics.app/api/judicial-notification-config"
-				: "/api/judicial-notification-config";
+			const endpoint =
+				process.env.NODE_ENV === "production" && window.location.hostname === "lawanalytics.app"
+					? "https://server.lawanalytics.app/api/judicial-notification-config"
+					: "/api/judicial-notification-config";
 			const response = await axios.post(`${endpoint}/toggle`);
 
 			if (response.data && response.data.success) {

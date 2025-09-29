@@ -42,6 +42,7 @@ import FolderPreJudDataImproved from "./components/FolderPreJudDataImproved";
 import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
+import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
 import NavigationControls from "./components/NavigationControls";
 import InfoTabsVertical from "./components/InfoTabsVertical";
 
@@ -100,6 +101,7 @@ const Details = () => {
 	const [viewMode, setViewMode] = useState<"compact" | "detailed">("compact");
 	const isDetailedView = viewMode === "detailed";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
+	const [openLinkPJBA, setOpenLinkPJBA] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 	const [tabValue, setTabValue] = useState(0);
@@ -217,6 +219,24 @@ const Details = () => {
 		setOpenLinkJudicial(false);
 	}, []);
 
+	const handleOpenLinkPJBA = useCallback(() => {
+		// Verificar si el usuario tiene acceso a la característica de vincular carpetas
+		const { canAccess, featureInfo } = canVinculateFolders();
+
+		if (canAccess) {
+			// Si tiene acceso, mostrar el modal de vinculación de Buenos Aires
+			setOpenLinkPJBA(true);
+		} else {
+			// Si no tiene acceso, mostrar el modal de error de límite
+			setLimitErrorInfo(featureInfo);
+			setLimitErrorOpen(true);
+		}
+	}, []);
+
+	const handleCloseLinkPJBA = useCallback(() => {
+		setOpenLinkPJBA(false);
+	}, []);
+
 	const handleCloseLimitErrorModal = useCallback(() => {
 		setLimitErrorOpen(false);
 	}, []);
@@ -298,6 +318,72 @@ const Details = () => {
 										}}
 									>
 										Vinculado con PJN
+									</Typography>
+								</Box>
+								{/* Ícono de estado de verificación */}
+								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
+									<Tooltip
+										title={
+											folder?.causaVerified === false
+												? "Pendiente de verificación"
+												: folder.causaIsValid
+												? "Causa válida"
+												: "Causa inválida"
+										}
+									>
+										<Box
+											sx={{
+												position: "absolute",
+												bottom: -8,
+												right: -8,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												width: 20,
+												height: 20,
+												bgcolor: theme.palette.background.paper,
+												borderRadius: "50%",
+												boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+											}}
+										>
+											{folder?.causaVerified === false ? (
+												<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
+											) : folder.causaIsValid ? (
+												<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
+											) : (
+												<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
+											)}
+										</Box>
+									</Tooltip>
+								)}
+							</Box>
+						</Box>
+					) : folder?.mev ? (
+						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+							<Box sx={{ position: "relative", display: "inline-flex" }}>
+								<Box
+									sx={{
+										px: 2,
+										py: 0.75,
+										height: 36,
+										display: "flex",
+										alignItems: "center",
+										gap: 0.75,
+										bgcolor: alpha(theme.palette.success.main, 0.1),
+										border: `1px solid ${theme.palette.success.main}`,
+										borderRadius: 0.5,
+									}}
+								>
+									<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+									<Typography
+										variant="body2"
+										sx={{
+											fontWeight: 500,
+											color: theme.palette.success.dark,
+											fontSize: "0.8125rem",
+										}}
+									>
+										Vinculado con MEV
 									</Typography>
 								</Box>
 								{/* Ícono de estado de verificación */}
@@ -729,6 +815,21 @@ const Details = () => {
 					<LinkToJudicialPower
 						openLink={openLinkJudicial}
 						onCancelLink={handleCloseLinkJudicial}
+						folderId={id}
+						folderName={folder.folderName}
+						onSelectBuenosAires={handleOpenLinkPJBA}
+					/>
+				)}
+
+				{/* LinkToPJBuenosAires Modal */}
+				{id && folder && (
+					<LinkToPJBuenosAires
+						open={openLinkPJBA}
+						onCancel={handleCloseLinkPJBA}
+						onBack={() => {
+							setOpenLinkPJBA(false);
+							setOpenLinkJudicial(true);
+						}}
 						folderId={id}
 						folderName={folder.folderName}
 					/>

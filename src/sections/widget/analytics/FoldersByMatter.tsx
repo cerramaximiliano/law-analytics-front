@@ -28,11 +28,11 @@ const FoldersByMatter = () => {
 
 	console.log("📊 [FoldersByMatter] chartData:", chartData);
 
-	const categories = chartData.map(item => {
+	const categories = chartData.map((item) => {
 		// Truncate long names for better display
 		return item.matter.length > 30 ? item.matter.substring(0, 30) + "..." : item.matter;
 	});
-	const seriesData = chartData.map(item => item.count);
+	const seriesData = chartData.map((item) => item.count);
 
 	const series = [
 		{
@@ -53,9 +53,9 @@ const FoldersByMatter = () => {
 				borderRadius: 4,
 				horizontal: true,
 				distributed: true,
-				barHeight: '70%',
+				barHeight: "70%",
 				dataLabels: {
-					position: 'top',
+					position: "top",
 				},
 			},
 		},

@@ -5,6 +5,7 @@ import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper
 // project-imports
 import Transitions from "components/@extended/Transitions";
 import LinkToJudicialPower from "./LinkToJudicialPower";
+import LinkToPJBuenosAires from "./LinkToPJBuenosAires";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 
@@ -19,8 +20,10 @@ const FolderView = memo(({ data }: any) => {
 	const theme = useTheme();
 	const notAvailableMsg = "No disponible";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
+	const [openLinkPJBA, setOpenLinkPJBA] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+
 
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
@@ -74,6 +77,24 @@ const FolderView = memo(({ data }: any) => {
 		setOpenLinkJudicial(false);
 	};
 
+	const handleOpenLinkPJBA = () => {
+		// Verificar si el usuario tiene acceso a la característica de vincular carpetas
+		const { canAccess, featureInfo } = canVinculateFolders();
+
+		if (canAccess) {
+			// Si tiene acceso, mostrar el modal de vinculación de Buenos Aires
+			setOpenLinkPJBA(true);
+		} else {
+			// Si no tiene acceso, mostrar el modal de error de límite
+			setLimitErrorInfo(featureInfo);
+			setLimitErrorOpen(true);
+		}
+	};
+
+	const handleCancelLinkPJBA = () => {
+		setOpenLinkPJBA(false);
+	};
+
 	const handleCloseLimitErrorModal = () => {
 		setLimitErrorOpen(false);
 	};
@@ -114,6 +135,66 @@ const FolderView = memo(({ data }: any) => {
 											}}
 										>
 											Vinculado con PJN
+										</Typography>
+									</Box>
+									{/* Ícono de estado de verificación */}
+									{(data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
+										<Tooltip
+											title={
+												data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida"
+											}
+										>
+											<Box
+												sx={{
+													position: "absolute",
+													bottom: -8,
+													right: -8,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													width: 20,
+													height: 20,
+													bgcolor: theme.palette.background.paper,
+													borderRadius: "50%",
+													boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+												}}
+											>
+												{data.causaVerified === false ? (
+													<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
+												) : data.causaIsValid ? (
+													<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
+												) : (
+													<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
+												)}
+											</Box>
+										</Tooltip>
+									)}
+								</Box>
+							) : data.mev ? (
+								<Box sx={{ position: "relative", display: "inline-flex" }}>
+									<Box
+										sx={{
+											px: 2,
+											py: 0.75,
+											height: 36,
+											display: "flex",
+											alignItems: "center",
+											gap: 0.75,
+											bgcolor: alpha(theme.palette.success.main, 0.1),
+											border: `1px solid ${theme.palette.success.main}`,
+											borderRadius: 0.5,
+										}}
+									>
+										<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+										<Typography
+											variant="body2"
+											sx={{
+												fontWeight: 500,
+												color: theme.palette.success.dark,
+												fontSize: "0.8125rem",
+											}}
+										>
+											Vinculado con MEV
 										</Typography>
 									</Box>
 									{/* Ícono de estado de verificación */}
@@ -288,6 +369,18 @@ const FolderView = memo(({ data }: any) => {
 				<LinkToJudicialPower
 					openLink={openLinkJudicial}
 					onCancelLink={handleCancelLinkJudicial}
+					folderId={data._id}
+					folderName={data.folderName}
+					onSelectBuenosAires={handleOpenLinkPJBA}
+				/>
+
+				<LinkToPJBuenosAires
+					open={openLinkPJBA}
+					onCancel={handleCancelLinkPJBA}
+					onBack={() => {
+						setOpenLinkPJBA(false);
+						setOpenLinkJudicial(true);
+					}}
 					folderId={data._id}
 					folderName={data.folderName}
 				/>

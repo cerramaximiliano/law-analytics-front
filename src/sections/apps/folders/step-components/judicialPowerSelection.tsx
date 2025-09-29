@@ -1,8 +1,8 @@
 import React from "react";
-import { Grid, Stack, Alert, Typography, Box, Chip, ListItemButton, ListItemIcon, ListItemText, alpha } from "@mui/material";
+import { Grid, Alert, Typography, Box, ListItemButton, ListItemIcon, ListItemText, alpha } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useFormikContext } from "formik";
-import { ArrowRight, Lock } from "iconsax-react";
+import { ArrowRight } from "iconsax-react";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
 interface FormValues {
@@ -14,10 +14,7 @@ const JudicialPowerSelection = () => {
 	const { setFieldValue, values } = useFormikContext<FormValues>();
 
 	const handleSelectJudicialPower = (power: "nacional" | "buenosaires") => {
-		// Only allow selecting "nacional" since Buenos Aires is not available yet
-		if (power === "nacional") {
-			setFieldValue("judicialPower", power);
-		}
+		setFieldValue("judicialPower", power);
 	};
 
 	return (
@@ -86,12 +83,12 @@ const JudicialPowerSelection = () => {
 					onClick={() => handleSelectJudicialPower("buenosaires")}
 					sx={{
 						border: 1,
-						borderColor: "divider",
+						borderColor: values.judicialPower === "buenosaires" ? theme.palette.primary.main : theme.palette.divider,
 						borderRadius: 2,
 						p: 2,
-						cursor: "pointer",
+						backgroundColor: values.judicialPower === "buenosaires" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
 						"&:hover": {
-							backgroundColor: alpha(theme.palette.primary.main, 0.05),
+							backgroundColor: alpha(theme.palette.primary.main, 0.08),
 							borderColor: theme.palette.primary.main,
 						},
 					}}
@@ -120,18 +117,12 @@ const JudicialPowerSelection = () => {
 							/>
 						</Box>
 					</ListItemIcon>
-					<Box sx={{ flexGrow: 1 }}>
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<Typography variant="body1" fontWeight={600}>
-								Poder Judicial de la Provincia de Buenos Aires
-							</Typography>
-							<Chip label="Próximamente" size="small" color="primary" variant="outlined" />
-						</Stack>
-						<Typography variant="body2" color="text.secondary">
-							Vincule causas del fuero provincial
-						</Typography>
-					</Box>
-					<Lock size={24} color={theme.palette.primary.main} />
+					<ListItemText
+						primary="Poder Judicial de la Provincia de Buenos Aires"
+						secondary="Vincule causas del fuero provincial"
+						primaryTypographyProps={{ fontWeight: 600 }}
+					/>
+					<ArrowRight size={24} color={theme.palette.text.secondary} />
 				</ListItemButton>
 			</Grid>
 

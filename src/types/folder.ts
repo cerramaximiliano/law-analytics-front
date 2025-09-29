@@ -85,6 +85,7 @@ export type FolderData = {
 	error?: string | null;
 	source?: string; // Fuente de los datos (manual o auto)
 	pjn?: boolean; // Indica si los datos provienen del Poder Judicial de la Nación
+	mev?: boolean; // Indica si los datos provienen del MEV (Buenos Aires)
 	causaId?: string; // ID de la causa vinculada
 	causaType?: string; // Tipo de causa (CausasCivil, CausasTrabajo, CausasSegSocial)
 	causaVerified?: boolean; // Indica si la causa ha sido verificada

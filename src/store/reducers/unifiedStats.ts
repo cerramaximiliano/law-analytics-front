@@ -42,7 +42,14 @@ const slice = createSlice({
 		// SET STATS DATA
 		setStatsSuccess(
 			state,
-			action: PayloadAction<{ data: UnifiedStatsData; userId: string; dataQuality?: number; lastUpdated?: string; descriptions?: any; cacheInfo?: any }>,
+			action: PayloadAction<{
+				data: UnifiedStatsData;
+				userId: string;
+				dataQuality?: number;
+				lastUpdated?: string;
+				descriptions?: any;
+				cacheInfo?: any;
+			}>,
 		) {
 			console.log("📊 [Redux] Setting dataQuality in state:", action.payload.dataQuality);
 			state.isLoading = false;

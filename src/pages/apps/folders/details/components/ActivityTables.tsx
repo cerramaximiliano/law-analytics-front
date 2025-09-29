@@ -751,12 +751,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														<Typography variant="body2">
 															Solo movimientos con documento
 															{movementsData.totalWithLinks > 0 && (
-																<Chip
-																	size="small"
-																	label={movementsData.totalWithLinks}
-																	color="primary"
-																	sx={{ ml: 1, height: 20 }}
-																/>
+																<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
 															)}
 														</Typography>
 													</Stack>
@@ -1035,12 +1030,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 															<Typography variant="body2">
 																Solo con documento
 																{movementsData.totalWithLinks > 0 && (
-																	<Chip
-																		size="small"
-																		label={movementsData.totalWithLinks}
-																		color="primary"
-																		sx={{ ml: 1, height: 20 }}
-																	/>
+																	<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
 																)}
 															</Typography>
 														</Stack>
@@ -1055,12 +1045,12 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													size="small"
 													startIcon={<Gallery size={18} />}
 													onClick={() => {
-													const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-													if (movementsWithLinks.length > 0) {
-														setCurrentDocumentMovement(movementsWithLinks[0]);
-														setDocumentNavigationOpen(true);
-													}
-												}}
+														const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+														if (movementsWithLinks.length > 0) {
+															setCurrentDocumentMovement(movementsWithLinks[0]);
+															setDocumentNavigationOpen(true);
+														}
+													}}
 													disabled={movementsData.totalWithLinks === 0}
 													sx={{
 														bgcolor: theme.palette.primary.main,
@@ -1665,58 +1655,59 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			)}
 
 			{/* Modal para navegación de documentos */}
-			{documentNavigationOpen && (() => {
-				const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
-				const movementToShow = currentDocumentMovement || movementsWithLinks[0];
+			{documentNavigationOpen &&
+				(() => {
+					const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+					const movementToShow = currentDocumentMovement || movementsWithLinks[0];
 
-				return movementToShow ? (
-					<PDFViewer
-						open={documentNavigationOpen}
-						onClose={() => {
-							setDocumentNavigationOpen(false);
-							setCurrentDocumentMovement(null);
-						}}
-						url={movementToShow.link}
-						title={movementToShow.title || "Documento"}
-						movements={movementsWithLinks}
-						currentMovementId={movementToShow._id}
-						totalWithLinks={movementsData.totalWithLinks}
-						documentsBeforeThisPage={movementsData.documentsBeforeThisPage || 0}
-						documentsInThisPage={movementsData.documentsInThisPage}
-						hasNextPage={movementsData.pagination?.hasNext}
-						hasPreviousPage={movementsData.pagination?.hasPrev}
-						isLoadingMore={movementsData.isLoading}
-						onNavigate={(movement: Movement) => {
-							// Actualizar el movimiento actual para cambiar la URL
-							setCurrentDocumentMovement(movement);
-						}}
-						onRequestNextPage={async () => {
-							if (id && movementsData.pagination?.hasNext) {
-								await dispatch(
-									getMovementsByFolderId(id, {
-										page: (movementsData.pagination.page || 1) + 1,
-										limit: 10,
-										sort: "-time",
-										filter: { hasLink: true }, // Siempre filtrar por documentos en navegación
-									}),
-								);
-							}
-						}}
-						onRequestPreviousPage={async () => {
-							if (id && movementsData.pagination?.hasPrev) {
-								await dispatch(
-									getMovementsByFolderId(id, {
-										page: (movementsData.pagination.page || 1) - 1,
-										limit: 10,
-										sort: "-time",
-										filter: { hasLink: true }, // Siempre filtrar por documentos en navegación
-									}),
-								);
-							}
-						}}
-					/>
-				) : null;
-			})()}
+					return movementToShow ? (
+						<PDFViewer
+							open={documentNavigationOpen}
+							onClose={() => {
+								setDocumentNavigationOpen(false);
+								setCurrentDocumentMovement(null);
+							}}
+							url={movementToShow.link}
+							title={movementToShow.title || "Documento"}
+							movements={movementsWithLinks}
+							currentMovementId={movementToShow._id}
+							totalWithLinks={movementsData.totalWithLinks}
+							documentsBeforeThisPage={movementsData.documentsBeforeThisPage || 0}
+							documentsInThisPage={movementsData.documentsInThisPage}
+							hasNextPage={movementsData.pagination?.hasNext}
+							hasPreviousPage={movementsData.pagination?.hasPrev}
+							isLoadingMore={movementsData.isLoading}
+							onNavigate={(movement: Movement) => {
+								// Actualizar el movimiento actual para cambiar la URL
+								setCurrentDocumentMovement(movement);
+							}}
+							onRequestNextPage={async () => {
+								if (id && movementsData.pagination?.hasNext) {
+									await dispatch(
+										getMovementsByFolderId(id, {
+											page: (movementsData.pagination.page || 1) + 1,
+											limit: 10,
+											sort: "-time",
+											filter: { hasLink: true }, // Siempre filtrar por documentos en navegación
+										}),
+									);
+								}
+							}}
+							onRequestPreviousPage={async () => {
+								if (id && movementsData.pagination?.hasPrev) {
+									await dispatch(
+										getMovementsByFolderId(id, {
+											page: (movementsData.pagination.page || 1) - 1,
+											limit: 10,
+											sort: "-time",
+											filter: { hasLink: true }, // Siempre filtrar por documentos en navegación
+										}),
+									);
+								}
+							}}
+						/>
+					) : null;
+				})()}
 		</MainCard>
 	);
 };

@@ -392,7 +392,9 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 
 				let message = `Almacenamiento sincronizado para ${response.data?.user?.email || "el usuario"}`;
 				if (response.data?.changed) {
-					message += `. Antes: ${beforeMB.toFixed(2)} MB, Después: ${afterMB.toFixed(2)} MB (${difference > 0 ? "+" : ""}${difference.toFixed(2)} MB)`;
+					message += `. Antes: ${beforeMB.toFixed(2)} MB, Después: ${afterMB.toFixed(2)} MB (${
+						difference > 0 ? "+" : ""
+					}${difference.toFixed(2)} MB)`;
 				}
 
 				enqueueSnackbar(message, { variant: "success" });
@@ -766,8 +768,6 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 					</>
 				)}
 
-
-
 				{(subscription.pendingPlanChange || subscription.scheduledPlanChange || subscription.downgradeGracePeriod) && (
 					<>
 						<Divider />
@@ -1064,7 +1064,6 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 						</Paper>
 					</>
 				)}
-
 
 				{subscription.invoiceSettings && (
 					<>
@@ -1392,7 +1391,8 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 											{subscription.usageTracking.foldersCreated || 0}
 											{subscription.limits?.maxFolders && (
 												<Typography component="span" variant="body2" color="textSecondary">
-													{" / "}{subscription.limits.maxFolders}
+													{" / "}
+													{subscription.limits.maxFolders}
 												</Typography>
 											)}
 										</Typography>
@@ -1407,7 +1407,8 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 											{subscription.usageTracking.calculatorsCreated || 0}
 											{subscription.limits?.maxCalculators && (
 												<Typography component="span" variant="body2" color="textSecondary">
-													{" / "}{subscription.limits.maxCalculators}
+													{" / "}
+													{subscription.limits.maxCalculators}
 												</Typography>
 											)}
 										</Typography>
@@ -1422,7 +1423,8 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 											{subscription.usageTracking.contactsCreated || 0}
 											{subscription.limits?.maxContacts && (
 												<Typography component="span" variant="body2" color="textSecondary">
-													{" / "}{subscription.limits.maxContacts}
+													{" / "}
+													{subscription.limits.maxContacts}
 												</Typography>
 											)}
 										</Typography>
@@ -1454,7 +1456,8 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 											{subscription.usageTracking.storageUsed || 0} MB
 											{subscription.limits?.storageLimit && (
 												<Typography component="span" variant="body2" color="textSecondary">
-													{" / "}{subscription.limits.storageLimit} MB
+													{" / "}
+													{subscription.limits.storageLimit} MB
 												</Typography>
 											)}
 										</Typography>
@@ -1468,9 +1471,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 											<Typography variant="subtitle2" color="textSecondary">
 												Última actividad
 											</Typography>
-											<Typography variant="body2">
-												{new Date(subscription.usageTracking.lastActivityDate).toLocaleString()}
-											</Typography>
+											<Typography variant="body2">{new Date(subscription.usageTracking.lastActivityDate).toLocaleString()}</Typography>
 										</Stack>
 									</Grid>
 								)}
