@@ -692,12 +692,6 @@ const FoldersLayout = () => {
 
 					// Solo mostrar indicadores visuales si pjn === true o mev === true
 					const showStatusIndicators = folder.pjn === true || folder.mev === true;
-
-					// Log para debug
-					if (folder.causaVerified !== undefined || folder.pjn || folder.mev) {
-						console.log('[folders.tsx] Folder:', value, 'pjn:', folder.pjn, 'mev:', folder.mev, 'causaVerified:', folder.causaVerified, 'causaIsValid:', folder.causaIsValid, 'showStatusIndicators:', showStatusIndicators);
-					}
-
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return <span>{formatFolderName(value, 50)}</span>;

@@ -79,9 +79,9 @@ const ServerStatus = () => {
 		},
 		{
 			name: "API de Causas MEV",
-			url: "https://mev.lawanalytics.app/health",
+			url: `${import.meta.env.VITE_MEV_URL || "https://mev.lawanalytics.app"}/health`,
 			ip: "15.229.93.121",
-			baseUrl: "https://mev.lawanalytics.app",
+			baseUrl: import.meta.env.VITE_MEV_URL || "https://mev.lawanalytics.app",
 			status: "checking",
 		},
 	]);

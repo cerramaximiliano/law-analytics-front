@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Add, ArrowLeft2, ArrowRight2 } from "iconsax-react";
 import { Movement } from "types/movements";
+import axios from "axios";
 
 interface PDFViewerProps {
 	open: boolean;
@@ -56,6 +57,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 	const [error, setError] = React.useState(false);
 	const [loadProgress, setLoadProgress] = React.useState(0);
 	const [showProgress, setShowProgress] = React.useState(false);
+	const [blobUrl, setBlobUrl] = React.useState<string>("");
 
 	// Calcular índices y navegación
 	const movementsWithLinks = React.useMemo(() => movements.filter((m) => m.link), [movements]);
@@ -132,27 +134,81 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 	const prevUrlRef = React.useRef<string>("");
 
 	React.useEffect(() => {
-		if (open && url && url !== prevUrlRef.current) {
-			prevUrlRef.current = url;
-			setLoading(true);
-			setError(false);
-			setLoadProgress(0);
-			setShowProgress(true);
-
-			// Simulación de progreso de carga
-			const progressInterval = setInterval(() => {
-				setLoadProgress((prev) => {
-					if (prev >= 90) {
-						clearInterval(progressInterval);
-						return 90;
-					}
-					return prev + 10;
-				});
-			}, 200);
-
-			return () => clearInterval(progressInterval);
+		if (!open || !url || url === prevUrlRef.current) {
+			return;
 		}
+
+		prevUrlRef.current = url;
+		setLoading(true);
+		setError(false);
+		setLoadProgress(0);
+		setShowProgress(true);
+
+		let currentBlobUrl: string | null = null;
+
+		const fetchDocument = async () => {
+			try {
+				// Determinar si es una URL relativa (de nuestro servidor) o absoluta (externa)
+				const isRelativeUrl = url.startsWith("/api/") || url.startsWith("api/");
+
+				if (isRelativeUrl) {
+					// Para URLs relativas (MEV, PJN), usar axios para que las cookies se envíen correctamente
+					const baseURL = import.meta.env.VITE_BASE_URL || "";
+					const fullUrl = url.startsWith("/") ? `${baseURL}${url}` : `${baseURL}/${url}`;
+
+					const response = await axios.get(fullUrl, {
+						responseType: "blob",
+						withCredentials: true, // Enviar cookies auth_token y refresh_token
+						headers: {
+							Accept: "application/pdf",
+						},
+						onDownloadProgress: (progressEvent) => {
+							if (progressEvent.total) {
+								const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+								setLoadProgress(Math.min(progress, 90));
+							}
+						},
+					});
+
+					// Crear URL temporal del blob
+					const blob = new Blob([response.data], { type: "application/pdf" });
+					const objectUrl = URL.createObjectURL(blob);
+					currentBlobUrl = objectUrl;
+					setBlobUrl(objectUrl);
+					setLoadProgress(100);
+					setLoading(false);
+					setShowProgress(false);
+				} else {
+					// URLs externas se cargan directamente sin axios
+					setBlobUrl(url);
+					setLoadProgress(90); // El iframe manejará el resto
+				}
+			} catch (err) {
+				console.error("Error fetching document:", err);
+				setError(true);
+				setLoading(false);
+				setShowProgress(false);
+				setLoadProgress(0);
+			}
+		};
+
+		fetchDocument();
+
+		// Cleanup: revocar la URL del blob al cerrar o cambiar de documento
+		return () => {
+			if (currentBlobUrl && currentBlobUrl.startsWith("blob:")) {
+				URL.revokeObjectURL(currentBlobUrl);
+			}
+		};
 	}, [open, url]);
+
+	// Cleanup cuando se cierra el modal
+	React.useEffect(() => {
+		if (!open && blobUrl && blobUrl.startsWith("blob:")) {
+			URL.revokeObjectURL(blobUrl);
+			setBlobUrl("");
+		}
+	}, [open]);
 
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { height: "90vh" } }}>
@@ -270,15 +326,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 						</Typography>
 					</Box>
 				)}
-				{!error && !url && (
+				{!error && !blobUrl && !loading && (
 					<Box display="flex" justifyContent="center" alignItems="center" height="100%" flexDirection="column" gap={2}>
 						<Typography color="text.secondary">No hay documento disponible</Typography>
 					</Box>
 				)}
-				{!error && url && (
+				{!error && blobUrl && (
 					<iframe
-						key={url} // Forzar recreación del iframe cuando cambia la URL
-						src={url}
+						key={blobUrl} // Forzar recreación del iframe cuando cambia la URL del blob
+						src={blobUrl}
 						width="100%"
 						height="100%"
 						style={{ border: "none" }}

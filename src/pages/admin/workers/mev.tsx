@@ -33,7 +33,7 @@ import {
 	DialogActions,
 	Collapse,
 } from "@mui/material";
-import { Edit2, TickCircle, CloseCircle, Refresh, Setting2, Calendar, ArrowDown2, ArrowUp2, InfoCircle } from "iconsax-react";
+import { Edit2, TickCircle, CloseCircle, Refresh, Calendar, ArrowDown2, ArrowUp2, InfoCircle } from "iconsax-react";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -248,6 +248,10 @@ const MEVWorkers = () => {
 			batch_size: config.batch_size,
 			delay_between_searches: config.delay_between_searches,
 			max_retries: config.max_retries,
+			settings: {
+				...config.settings,
+				max_movimientos: config.settings?.max_movimientos,
+			},
 		});
 	};
 
@@ -786,229 +790,345 @@ const MEVWorkers = () => {
 					</Button>
 				</Alert>
 			) : (
-				<TableContainer component={Paper} variant="outlined">
-					<Table>
-						<TableHead>
-							<TableRow>
-								<TableCell>Worker ID</TableCell>
-								<TableCell>Jurisdicción</TableCell>
-								<TableCell>Tipo Organismo</TableCell>
-								<TableCell>Modo Verificación</TableCell>
-								<TableCell align="center">Tamaño Lote</TableCell>
-								<TableCell align="center">Delay (ms)</TableCell>
-								<TableCell align="center">Reintentos</TableCell>
-								<TableCell align="center">Verificados</TableCell>
-								<TableCell align="center">Válidos</TableCell>
-								<TableCell align="center">Inválidos</TableCell>
-								<TableCell align="center">Estado</TableCell>
-								<TableCell align="center">Última Verificación</TableCell>
-								<TableCell align="center">Acciones</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{configs.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={13} align="center">
-										<Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-											No hay configuraciones de Worker disponibles
-										</Typography>
-									</TableCell>
-								</TableRow>
-							) : (
-								configs.map((config) => {
-									const isEditing = editingId === config._id;
-
-									return (
-										<TableRow key={config._id}>
-											<TableCell>
-												{isEditing ? (
-													<TextField
-														size="small"
-														value={editValues.worker_id || ""}
-														onChange={(e) => setEditValues({ ...editValues, worker_id: e.target.value })}
-														fullWidth
-													/>
-												) : (
-													<Typography variant="body2" fontWeight={500}>
-														{config.worker_id}
-													</Typography>
-												)}
-											</TableCell>
-											<TableCell>
-												{isEditing ? (
-													<FormControl size="small" fullWidth>
-														<Select
-															value={editValues.jurisdiccion || ""}
-															onChange={(e) => setEditValues({ ...editValues, jurisdiccion: e.target.value })}
-														>
-															{JURISDICCION_OPTIONS.map((option) => (
-																<MenuItem key={option.value} value={option.value}>
-																	{option.label}
-																</MenuItem>
-															))}
-														</Select>
-													</FormControl>
-												) : (
-													<Typography variant="body2">{getJurisdiccionLabel(config.jurisdiccion)}</Typography>
-												)}
-											</TableCell>
-											<TableCell>
-												{isEditing ? (
-													<FormControl size="small" fullWidth>
-														<Select
-															value={editValues.tipo_organismo || ""}
-															onChange={(e) => setEditValues({ ...editValues, tipo_organismo: e.target.value })}
-														>
-															{TIPO_ORGANISMO_OPTIONS.map((option) => (
-																<MenuItem key={option.value} value={option.value}>
-																	{option.label}
-																</MenuItem>
-															))}
-														</Select>
-													</FormControl>
-												) : (
-													<Typography variant="body2">{getTipoOrganismoLabel(config.tipo_organismo)}</Typography>
-												)}
-											</TableCell>
-											<TableCell>
-												{isEditing ? (
-													<FormControl size="small" fullWidth>
-														<Select
-															value={editValues.verification_mode || ""}
-															onChange={(e) => setEditValues({ ...editValues, verification_mode: e.target.value })}
-														>
-															{VERIFICATION_MODE_OPTIONS.map((option) => (
-																<MenuItem key={option.value} value={option.value}>
-																	{option.label}
-																</MenuItem>
-															))}
-														</Select>
-													</FormControl>
-												) : (
-													<Typography variant="body2">{getVerificationModeLabel(config.verification_mode)}</Typography>
-												)}
-											</TableCell>
-											<TableCell align="center">
-												{isEditing ? (
-													<TextField
-														size="small"
-														type="number"
-														value={editValues.batch_size || ""}
-														onChange={(e) => setEditValues({ ...editValues, batch_size: Number(e.target.value) })}
-														sx={{ width: 80 }}
-													/>
-												) : (
-													<Typography variant="body2">{config.batch_size}</Typography>
-												)}
-											</TableCell>
-											<TableCell align="center">
-												{isEditing ? (
-													<TextField
-														size="small"
-														type="number"
-														value={editValues.delay_between_searches || ""}
-														onChange={(e) => setEditValues({ ...editValues, delay_between_searches: Number(e.target.value) })}
-														sx={{ width: 100 }}
-													/>
-												) : (
-													<Typography variant="body2">{config.delay_between_searches}</Typography>
-												)}
-											</TableCell>
-											<TableCell align="center">
-												{isEditing ? (
-													<TextField
-														size="small"
-														type="number"
-														value={editValues.max_retries || ""}
-														onChange={(e) => setEditValues({ ...editValues, max_retries: Number(e.target.value) })}
-														sx={{ width: 80 }}
-													/>
-												) : (
-													<Typography variant="body2">{config.max_retries}</Typography>
-												)}
-											</TableCell>
-											<TableCell align="center">
-												<Typography variant="body2" fontWeight={500}>
-													{config.documents_verified?.toLocaleString() || 0}
-												</Typography>
-											</TableCell>
-											<TableCell align="center">
-												<Typography variant="body2" color="success.main" fontWeight={500}>
-													{config.documents_valid?.toLocaleString() || 0}
-												</Typography>
-											</TableCell>
-											<TableCell align="center">
-												<Typography variant="body2" color="error.main" fontWeight={500}>
-													{config.documents_invalid?.toLocaleString() || 0}
-												</Typography>
-											</TableCell>
-											<TableCell align="center">
-												<Switch
-													checked={isEditing ? editValues.enabled : config.enabled}
-													onChange={() => {
-														if (isEditing) {
-															setEditValues({ ...editValues, enabled: !editValues.enabled });
-														} else {
-															handleToggleEnabled(config);
-														}
-													}}
-													size="small"
-													color="primary"
-												/>
-											</TableCell>
-											<TableCell align="center">
+				<>
+					{/* Tabla del Worker Principal (shared) */}
+					{(() => {
+						const sharedWorker = configs.find((c) => c.worker_id === "shared");
+						if (sharedWorker) {
+							return (
+								<>
+									<Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+										Worker Principal - Configuración Completa
+									</Typography>
+									<TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+										<Table>
+											<TableHead>
+												<TableRow>
+													<TableCell>Worker ID</TableCell>
+													<TableCell>Jurisdicción</TableCell>
+													<TableCell>Tipo Organismo</TableCell>
+													<TableCell>Modo Verificación</TableCell>
+													<TableCell align="center">Tamaño Lote</TableCell>
+													<TableCell align="center">Delay (ms)</TableCell>
+													<TableCell align="center">Reintentos</TableCell>
+													<TableCell align="center">Max Movimientos</TableCell>
+													<TableCell align="center">Verificados</TableCell>
+													<TableCell align="center">Válidos</TableCell>
+													<TableCell align="center">No Encontrados</TableCell>
+													<TableCell align="center">Estado</TableCell>
+													<TableCell align="center">Última Verificación</TableCell>
+													<TableCell align="center">Acciones</TableCell>
+												</TableRow>
+											</TableHead>
+											<TableBody>
 												{(() => {
-													const dateInfo = formatDateWithElapsed(config.last_check);
+													const config = sharedWorker;
+													const isEditing = editingId === config._id;
+
 													return (
-														<Stack spacing={0.5}>
-															<Typography variant="caption">{dateInfo.formatted}</Typography>
-															{dateInfo.elapsed && (
-																<Typography variant="caption" color="text.secondary">
-																	({dateInfo.elapsed})
+														<TableRow key={config._id}>
+															<TableCell>
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		value={editValues.worker_id || ""}
+																		onChange={(e) => setEditValues({ ...editValues, worker_id: e.target.value })}
+																		fullWidth
+																	/>
+																) : (
+																	<Chip label={config.worker_id} color="primary" variant="filled" size="small" />
+																)}
+															</TableCell>
+															<TableCell>
+																{isEditing ? (
+																	<FormControl size="small" fullWidth>
+																		<Select
+																			value={editValues.jurisdiccion || ""}
+																			onChange={(e) => setEditValues({ ...editValues, jurisdiccion: e.target.value })}
+																		>
+																			{JURISDICCION_OPTIONS.map((option) => (
+																				<MenuItem key={option.value} value={option.value}>
+																					{option.label}
+																				</MenuItem>
+																			))}
+																		</Select>
+																	</FormControl>
+																) : (
+																	<Typography variant="body2">{getJurisdiccionLabel(config.jurisdiccion)}</Typography>
+																)}
+															</TableCell>
+															<TableCell>
+																{isEditing ? (
+																	<FormControl size="small" fullWidth>
+																		<Select
+																			value={editValues.tipo_organismo || ""}
+																			onChange={(e) => setEditValues({ ...editValues, tipo_organismo: e.target.value })}
+																		>
+																			{TIPO_ORGANISMO_OPTIONS.map((option) => (
+																				<MenuItem key={option.value} value={option.value}>
+																					{option.label}
+																				</MenuItem>
+																			))}
+																		</Select>
+																	</FormControl>
+																) : (
+																	<Typography variant="body2">{getTipoOrganismoLabel(config.tipo_organismo)}</Typography>
+																)}
+															</TableCell>
+															<TableCell>
+																{isEditing ? (
+																	<FormControl size="small" fullWidth>
+																		<Select
+																			value={editValues.verification_mode || ""}
+																			onChange={(e) => setEditValues({ ...editValues, verification_mode: e.target.value })}
+																		>
+																			{VERIFICATION_MODE_OPTIONS.map((option) => (
+																				<MenuItem key={option.value} value={option.value}>
+																					{option.label}
+																				</MenuItem>
+																			))}
+																		</Select>
+																	</FormControl>
+																) : (
+																	<Typography variant="body2">{getVerificationModeLabel(config.verification_mode)}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.batch_size || ""}
+																		onChange={(e) => setEditValues({ ...editValues, batch_size: Number(e.target.value) })}
+																		sx={{ width: 80 }}
+																	/>
+																) : (
+																	<Typography variant="body2">{config.batch_size}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.delay_between_searches || ""}
+																		onChange={(e) => setEditValues({ ...editValues, delay_between_searches: Number(e.target.value) })}
+																		sx={{ width: 100 }}
+																	/>
+																) : (
+																	<Typography variant="body2">{config.delay_between_searches}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.max_retries || ""}
+																		onChange={(e) => setEditValues({ ...editValues, max_retries: Number(e.target.value) })}
+																		sx={{ width: 80 }}
+																	/>
+																) : (
+																	<Typography variant="body2">{config.max_retries}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.settings?.max_movimientos ?? ""}
+																		onChange={(e) =>
+																			setEditValues({
+																				...editValues,
+																				settings: {
+																					...editValues.settings,
+																					max_movimientos: Number(e.target.value),
+																				},
+																			})
+																		}
+																		sx={{ width: 90 }}
+																		placeholder="0 = Todos"
+																	/>
+																) : (
+																	<Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+																		<Typography variant="body2">{config.settings?.max_movimientos ?? 0}</Typography>
+																		{(config.settings?.max_movimientos === 0 || !config.settings?.max_movimientos) && (
+																			<Chip label="Todos" size="small" color="info" variant="outlined" />
+																		)}
+																	</Stack>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																<Typography variant="body2" fontWeight={500}>
+																	{config.documents_verified?.toLocaleString() || 0}
 																</Typography>
-															)}
-														</Stack>
+															</TableCell>
+															<TableCell align="center">
+																<Typography variant="body2" color="success.main" fontWeight={500}>
+																	{config.documents_valid?.toLocaleString() || 0}
+																</Typography>
+															</TableCell>
+															<TableCell align="center">
+																<Typography variant="body2" color="warning.main" fontWeight={500}>
+																	{config.documents_not_found?.toLocaleString() || 0}
+																</Typography>
+															</TableCell>
+															<TableCell align="center">
+																<Switch
+																	checked={isEditing ? editValues.enabled : config.enabled}
+																	onChange={() => {
+																		if (isEditing) {
+																			setEditValues({ ...editValues, enabled: !editValues.enabled });
+																		} else {
+																			handleToggleEnabled(config);
+																		}
+																	}}
+																	size="small"
+																	color="primary"
+																/>
+															</TableCell>
+															<TableCell align="center">
+																{(() => {
+																	const dateInfo = formatDateWithElapsed(config.last_check);
+																	return (
+																		<Stack spacing={0.5}>
+																			<Typography variant="caption">{dateInfo.formatted}</Typography>
+																			{dateInfo.elapsed && (
+																				<Typography variant="caption" color="text.secondary">
+																					({dateInfo.elapsed})
+																				</Typography>
+																			)}
+																		</Stack>
+																	);
+																})()}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<Stack direction="row" spacing={1} justifyContent="center">
+																		<Tooltip title="Guardar">
+																			<IconButton size="small" color="primary" onClick={handleSave}>
+																				<TickCircle size={18} />
+																			</IconButton>
+																		</Tooltip>
+																		<Tooltip title="Cancelar">
+																			<IconButton size="small" color="error" onClick={handleCancelEdit}>
+																				<CloseCircle size={18} />
+																			</IconButton>
+																		</Tooltip>
+																	</Stack>
+																) : (
+																	<Tooltip title="Editar">
+																		<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
+																			<Edit2 size={18} />
+																		</IconButton>
+																	</Tooltip>
+																)}
+															</TableCell>
+														</TableRow>
 													);
 												})()}
-											</TableCell>
-											<TableCell align="center">
-												{isEditing ? (
-													<Stack direction="row" spacing={1} justifyContent="center">
-														<Tooltip title="Guardar">
-															<IconButton size="small" color="primary" onClick={handleSave}>
-																<TickCircle size={18} />
-															</IconButton>
-														</Tooltip>
-														<Tooltip title="Cancelar">
-															<IconButton size="small" color="error" onClick={handleCancelEdit}>
-																<CloseCircle size={18} />
-															</IconButton>
-														</Tooltip>
-													</Stack>
-												) : (
-													<Stack direction="row" spacing={1} justifyContent="center">
-														<Tooltip title="Editar">
-															<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
-																<Edit2 size={18} />
-															</IconButton>
-														</Tooltip>
-														<Tooltip title="Configuración Avanzada">
-															<span>
-																<IconButton size="small" color="secondary" disabled>
-																	<Setting2 size={18} />
-																</IconButton>
-															</span>
-														</Tooltip>
-													</Stack>
-												)}
-											</TableCell>
-										</TableRow>
-									);
-								})
-							)}
-						</TableBody>
-					</Table>
-				</TableContainer>
+											</TableBody>
+										</Table>
+									</TableContainer>
+								</>
+							);
+						}
+						return null;
+					})()}
+
+					{/* Tabla de Workers Estadísticos */}
+					{(() => {
+						const statsWorkers = configs.filter((c) => c.worker_id !== "shared");
+						if (statsWorkers.length > 0) {
+							return (
+								<>
+									<Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+										Workers Estadísticos - Solo Lectura
+									</Typography>
+									<Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+										<Typography variant="body2">
+											Estos workers son utilizados únicamente con fines estadísticos. Solo se muestran métricas de verificación.
+										</Typography>
+									</Alert>
+									<TableContainer component={Paper} variant="outlined">
+										<Table>
+											<TableHead>
+												<TableRow>
+													<TableCell>Worker ID</TableCell>
+													<TableCell align="center">Verificados</TableCell>
+													<TableCell align="center">Válidos</TableCell>
+													<TableCell align="center">No Encontrados</TableCell>
+													<TableCell align="center">Estado</TableCell>
+													<TableCell align="center">Total Búsquedas</TableCell>
+													<TableCell align="center">Búsquedas Exitosas</TableCell>
+													<TableCell align="center">Última Verificación</TableCell>
+												</TableRow>
+											</TableHead>
+											<TableBody>
+												{statsWorkers.map((config) => (
+													<TableRow key={config._id}>
+														<TableCell>
+															<Typography variant="body2" fontWeight={500}>
+																{config.worker_id}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" fontWeight={500}>
+																{config.documents_verified?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" color="success.main" fontWeight={500}>
+																{config.documents_valid?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" color="warning.main" fontWeight={500}>
+																{config.documents_not_found?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Chip
+																label={config.enabled ? "Activo" : "Inactivo"}
+																color={config.enabled ? "success" : "default"}
+																size="small"
+															/>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2">{config.statistics?.total_searches?.toLocaleString() || 0}</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" color="success.main">
+																{config.statistics?.successful_searches?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															{(() => {
+																const dateInfo = formatDateWithElapsed(config.last_check);
+																return (
+																	<Stack spacing={0.5}>
+																		<Typography variant="caption">{dateInfo.formatted}</Typography>
+																		{dateInfo.elapsed && (
+																			<Typography variant="caption" color="text.secondary">
+																				({dateInfo.elapsed})
+																			</Typography>
+																		)}
+																	</Stack>
+																);
+															})()}
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									</TableContainer>
+								</>
+							);
+						}
+						return null;
+					})()}
+				</>
 			)}
 
 			{/* Estadísticas */}

@@ -37,7 +37,7 @@ mevAxios.interceptors.request.use(
 	},
 	(error) => {
 		return Promise.reject(error);
-	}
+	},
 );
 
 // Función para refrescar el token
@@ -57,7 +57,7 @@ const refreshToken = async () => {
 				headers: {
 					"Content-Type": "application/json",
 				},
-			}
+			},
 		);
 
 		if (response.data?.token) {
@@ -93,7 +93,7 @@ mevAxios.interceptors.response.use(
 				const mainRefreshResponse = await axios.post(
 					`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`,
 					{},
-					{ withCredentials: true }
+					{ withCredentials: true },
 				);
 
 				if (mainRefreshResponse.status === 200) {
@@ -146,7 +146,7 @@ mevAxios.interceptors.response.use(
 					const mainRefreshResponse = await axios.post(
 						`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`,
 						{},
-						{ withCredentials: true }
+						{ withCredentials: true },
 					);
 
 					if (mainRefreshResponse.status === 200) {
@@ -202,7 +202,7 @@ mevAxios.interceptors.response.use(
 		}
 
 		return Promise.reject(error);
-	}
+	},
 );
 
 export interface MEVWorkerConfig {
@@ -244,6 +244,8 @@ export interface MEVWorkerConfig {
 		use_stealth?: boolean;
 		viewport_width?: number;
 		viewport_height?: number;
+		max_movimientos?: number;
+		timeout_per_movimiento?: number;
 	};
 	notification?: {
 		email?: string;
