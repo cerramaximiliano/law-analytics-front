@@ -24,7 +24,6 @@ const FolderView = memo(({ data }: any) => {
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
 
-
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
 

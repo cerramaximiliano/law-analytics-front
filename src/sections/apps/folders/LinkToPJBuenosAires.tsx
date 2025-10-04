@@ -207,11 +207,12 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName }: L
 		console.log("validateJurisdiction called with:", jurisdictionValue, "type:", typeof jurisdictionValue);
 
 		// Verificar si realmente tiene un valor válido
-		const hasValue = jurisdictionValue !== undefined &&
-						jurisdictionValue !== null &&
-						jurisdictionValue !== "" &&
-						jurisdictionValue !== "undefined" &&
-						jurisdictionValue !== "null";
+		const hasValue =
+			jurisdictionValue !== undefined &&
+			jurisdictionValue !== null &&
+			jurisdictionValue !== "" &&
+			jurisdictionValue !== "undefined" &&
+			jurisdictionValue !== "null";
 
 		if (!hasValue) {
 			console.log("Jurisdiction validation failed - empty or invalid value");
@@ -229,11 +230,12 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName }: L
 		console.log("validateOrganismo called with:", organismoValue, "type:", typeof organismoValue);
 
 		// Verificar si realmente tiene un valor válido
-		const hasValue = organismoValue !== undefined &&
-						organismoValue !== null &&
-						organismoValue !== "" &&
-						organismoValue !== "undefined" &&
-						organismoValue !== "null";
+		const hasValue =
+			organismoValue !== undefined &&
+			organismoValue !== null &&
+			organismoValue !== "" &&
+			organismoValue !== "undefined" &&
+			organismoValue !== "null";
 
 		if (!hasValue) {
 			console.log("Organismo validation failed - empty or invalid value");

@@ -785,7 +785,9 @@ const FoldersLayout = () => {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<span>{formatFolderName(value, 50)}</span>
-								<Tooltip title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : "Causa vinculada"}>
+								<Tooltip
+									title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : "Causa vinculada"}
+								>
 									<Box
 										sx={{
 											display: "inline-flex",
