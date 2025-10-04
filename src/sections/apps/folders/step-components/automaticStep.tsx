@@ -435,7 +435,12 @@ const AutomaticStep = () => {
 			let jurisdictionValid = false;
 			let organismoValid = false;
 
-			console.log("Validando Buenos Aires - touched.jurisdictionBA:", touched.jurisdictionBA, "formSubmitAttempted:", formSubmitAttempted.current);
+			console.log(
+				"Validando Buenos Aires - touched.jurisdictionBA:",
+				touched.jurisdictionBA,
+				"formSubmitAttempted:",
+				formSubmitAttempted.current,
+			);
 
 			// Solo validar si el campo ha sido tocado o se intentó enviar el formulario
 			if (touched.jurisdictionBA || formSubmitAttempted.current) {
@@ -522,7 +527,10 @@ const AutomaticStep = () => {
 						const organismoName = selectedOrganismo ? selectedOrganismo.organismo.nombre : "";
 
 						if (!values.description || values.description === "") {
-							setFieldValue("description", `Expediente importado desde ${jurisdictionName} - ${organismoName} - Poder Judicial de Buenos Aires`);
+							setFieldValue(
+								"description",
+								`Expediente importado desde ${jurisdictionName} - ${organismoName} - Poder Judicial de Buenos Aires`,
+							);
 						}
 
 						setSuccess(true);
@@ -602,20 +610,21 @@ const AutomaticStep = () => {
 				}
 
 				// Marcamos todos los campos como tocados para mostrar los errores
-				const touchedFields = values.judicialPower === "buenosaires"
-					? {
-						...touched,
-						jurisdictionBA: true,
-						organismoBA: true,
-						expedientNumber: true,
-						expedientYear: true,
-					}
-					: {
-						...touched,
-						folderJuris: true,
-						expedientNumber: true,
-						expedientYear: true,
-					};
+				const touchedFields =
+					values.judicialPower === "buenosaires"
+						? {
+								...touched,
+								jurisdictionBA: true,
+								organismoBA: true,
+								expedientNumber: true,
+								expedientYear: true,
+						  }
+						: {
+								...touched,
+								folderJuris: true,
+								expedientNumber: true,
+								expedientYear: true,
+						  };
 
 				setTouched(touchedFields);
 			};
@@ -811,10 +820,19 @@ const AutomaticStep = () => {
 													))}
 												</Select>
 												{jurisdictionError && (touched.jurisdictionBA || formSubmitAttempted.current) && (
-													<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
-														{console.log("MOSTRANDO ERROR BA:", jurisdictionError, "touched:", touched.jurisdictionBA, "attempted:", formSubmitAttempted.current)}
-														{jurisdictionError}
-													</Typography>
+													<>
+														{console.log(
+															"MOSTRANDO ERROR BA:",
+															jurisdictionError,
+															"touched:",
+															touched.jurisdictionBA,
+															"attempted:",
+															formSubmitAttempted.current,
+														)}
+														<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+															{jurisdictionError}
+														</Typography>
+													</>
 												)}
 											</FormControl>
 										</Stack>

@@ -246,6 +246,7 @@ export interface MEVWorkerConfig {
 		viewport_height?: number;
 		max_movimientos?: number;
 		timeout_per_movimiento?: number;
+		update_frequency_hours?: number;
 	};
 	notification?: {
 		email?: string;

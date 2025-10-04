@@ -194,7 +194,7 @@ const MEVWorkers = () => {
 
 	// Cargar configuraciones del sistema cuando se cambie a esa tab
 	useEffect(() => {
-		if (activeTab === 1 && systemConfigs.length === 0) {
+		if (activeTab === 2 && systemConfigs.length === 0) {
 			fetchSystemConfigs();
 		}
 	}, [activeTab]);
@@ -251,6 +251,7 @@ const MEVWorkers = () => {
 			settings: {
 				...config.settings,
 				max_movimientos: config.settings?.max_movimientos,
+				update_frequency_hours: config.settings?.update_frequency_hours,
 			},
 		});
 	};
@@ -409,6 +410,11 @@ const MEVWorkers = () => {
 			</MainCard>
 		);
 	}
+
+	// Filtrar workers de verificación (excluir los de actualización)
+	const verificationConfigs = configs.filter((c) => c.verification_mode !== "update");
+	// Filtrar workers de actualización
+	const updateConfigs = configs.filter((c) => c.verification_mode === "update");
 
 	// Componente de Worker de Verificación
 	const VerificationWorkerContent = () => (
@@ -793,7 +799,7 @@ const MEVWorkers = () => {
 				<>
 					{/* Tabla del Worker Principal (shared) */}
 					{(() => {
-						const sharedWorker = configs.find((c) => c.worker_id === "shared");
+						const sharedWorker = verificationConfigs.find((c) => c.worker_id === "shared");
 						if (sharedWorker) {
 							return (
 								<>
@@ -1039,7 +1045,7 @@ const MEVWorkers = () => {
 
 					{/* Tabla de Workers Estadísticos */}
 					{(() => {
-						const statsWorkers = configs.filter((c) => c.worker_id !== "shared");
+						const statsWorkers = verificationConfigs.filter((c) => c.worker_id !== "shared");
 						if (statsWorkers.length > 0) {
 							return (
 								<>
@@ -1139,7 +1145,7 @@ const MEVWorkers = () => {
 							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
 								Total Workers
 							</Typography>
-							<Typography variant="h4">{configs.length}</Typography>
+							<Typography variant="h4">{verificationConfigs.length}</Typography>
 						</CardContent>
 					</Card>
 				</Grid>
@@ -1150,7 +1156,7 @@ const MEVWorkers = () => {
 								Workers Activos
 							</Typography>
 							<Typography variant="h4" color="success.main">
-								{configs.filter((c) => c.enabled).length}
+								{verificationConfigs.filter((c) => c.enabled).length}
 							</Typography>
 						</CardContent>
 					</Card>
@@ -1161,7 +1167,9 @@ const MEVWorkers = () => {
 							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
 								Total Verificados
 							</Typography>
-							<Typography variant="h4">{configs.reduce((acc, c) => acc + (c.documents_verified || 0), 0).toLocaleString()}</Typography>
+							<Typography variant="h4">
+								{verificationConfigs.reduce((acc, c) => acc + (c.documents_verified || 0), 0).toLocaleString()}
+							</Typography>
 						</CardContent>
 					</Card>
 				</Grid>
@@ -1173,8 +1181,8 @@ const MEVWorkers = () => {
 							</Typography>
 							<Typography variant="h4" color="info.main">
 								{(() => {
-									const total = configs.reduce((acc, c) => acc + (c.documents_verified || 0), 0);
-									const valid = configs.reduce((acc, c) => acc + (c.documents_valid || 0), 0);
+									const total = verificationConfigs.reduce((acc, c) => acc + (c.documents_verified || 0), 0);
+									const valid = verificationConfigs.reduce((acc, c) => acc + (c.documents_valid || 0), 0);
 									return total > 0 ? `${((valid / total) * 100).toFixed(1)}%` : "0%";
 								})()}
 							</Typography>
@@ -1184,7 +1192,7 @@ const MEVWorkers = () => {
 			</Grid>
 
 			{/* Información de estadísticas del worker */}
-			{configs.length > 0 && configs[0].statistics && (
+			{verificationConfigs.length > 0 && verificationConfigs[0].statistics && (
 				<Card variant="outlined">
 					<CardContent>
 						<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
@@ -1197,7 +1205,7 @@ const MEVWorkers = () => {
 										Total Búsquedas
 									</Typography>
 									<Typography variant="body2" fontWeight={500}>
-										{configs[0].statistics.total_searches?.toLocaleString() || 0}
+										{verificationConfigs[0].statistics.total_searches?.toLocaleString() || 0}
 									</Typography>
 								</Stack>
 							</Grid>
@@ -1207,7 +1215,7 @@ const MEVWorkers = () => {
 										Búsquedas Exitosas
 									</Typography>
 									<Typography variant="body2" fontWeight={500} color="success.main">
-										{configs[0].statistics.successful_searches?.toLocaleString() || 0}
+										{verificationConfigs[0].statistics.successful_searches?.toLocaleString() || 0}
 									</Typography>
 								</Stack>
 							</Grid>
@@ -1217,7 +1225,7 @@ const MEVWorkers = () => {
 										Búsquedas Fallidas
 									</Typography>
 									<Typography variant="body2" fontWeight={500} color="error.main">
-										{configs[0].statistics.failed_searches?.toLocaleString() || 0}
+										{verificationConfigs[0].statistics.failed_searches?.toLocaleString() || 0}
 									</Typography>
 								</Stack>
 							</Grid>
@@ -1227,11 +1235,11 @@ const MEVWorkers = () => {
 										Uptime (horas)
 									</Typography>
 									<Typography variant="body2" fontWeight={500}>
-										{configs[0].statistics.uptime_hours?.toLocaleString() || 0}
+										{verificationConfigs[0].statistics.uptime_hours?.toLocaleString() || 0}
 									</Typography>
 								</Stack>
 							</Grid>
-							{configs[0].statistics.last_error && (
+							{verificationConfigs[0].statistics.last_error && (
 								<>
 									<Grid item xs={12} sm={6}>
 										<Stack>
@@ -1239,7 +1247,7 @@ const MEVWorkers = () => {
 												Último Error
 											</Typography>
 											<Typography variant="body2" color="error.main">
-												{configs[0].statistics.last_error}
+												{verificationConfigs[0].statistics.last_error}
 											</Typography>
 										</Stack>
 									</Grid>
@@ -1248,7 +1256,7 @@ const MEVWorkers = () => {
 											<Typography variant="caption" color="text.secondary">
 												Fecha Último Error
 											</Typography>
-											<Typography variant="body2">{formatDate(configs[0].statistics.last_error_date)}</Typography>
+											<Typography variant="body2">{formatDate(verificationConfigs[0].statistics.last_error_date)}</Typography>
 										</Stack>
 									</Grid>
 								</>
@@ -1259,20 +1267,550 @@ const MEVWorkers = () => {
 			)}
 
 			{/* Información de configuración del worker */}
-			{configs.length > 0 && configs[0].schedule && (
+			{verificationConfigs.length > 0 && verificationConfigs[0].schedule && (
 				<Alert severity="info" variant="outlined">
 					<Typography variant="subtitle2">
-						Programación: <strong>{configs[0].schedule.cron_pattern}</strong> ({configs[0].schedule.timezone})
-						{configs[0].schedule.active_hours && (
+						Programación: <strong>{verificationConfigs[0].schedule.cron_pattern}</strong> ({verificationConfigs[0].schedule.timezone})
+						{verificationConfigs[0].schedule.active_hours && (
 							<>
 								{" "}
-								- Activo de {configs[0].schedule.active_hours.start}:00 a {configs[0].schedule.active_hours.end}:00
+								- Activo de {verificationConfigs[0].schedule.active_hours.start}:00 a {verificationConfigs[0].schedule.active_hours.end}:00
 							</>
 						)}
-						{configs[0].schedule.skip_weekends && <> - Sin fines de semana</>}
+						{verificationConfigs[0].schedule.skip_weekends && <> - Sin fines de semana</>}
 					</Typography>
 				</Alert>
 			)}
+		</Stack>
+	);
+
+	// Componente de Worker de Actualización
+	const UpdateWorkerContent = () => (
+		<Stack spacing={3}>
+			{/* Header con acciones */}
+			<Box display="flex" justifyContent="space-between" alignItems="center">
+				<Typography variant="h5">Configuración del Worker de Actualización MEV</Typography>
+				<Button variant="outlined" size="small" startIcon={<Refresh size={16} />} onClick={fetchConfigs}>
+					Actualizar
+				</Button>
+			</Box>
+
+			{/* Información del worker */}
+			<Alert severity="info" variant="outlined">
+				<Typography variant="subtitle2" fontWeight="bold">
+					Worker de Actualización de Causas MEV
+				</Typography>
+				<Typography variant="body2" sx={{ mt: 1 }}>
+					Este worker se encarga de actualizar periódicamente el estado de las causas judiciales MEV que ya han sido verificadas,
+					manteniendo la información actualizada en el sistema.
+				</Typography>
+			</Alert>
+
+			{/* Información detallada del worker */}
+			<Card variant="outlined" sx={{ backgroundColor: "background.default" }}>
+				<CardContent sx={{ py: 2 }}>
+					<Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+						Elegibilidad de Documentos - Worker de Actualización MEV
+					</Typography>
+					<Grid container spacing={1.5}>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Source:
+								</Typography>
+								<Typography variant="caption" fontWeight={500}>
+									"mev"
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Verified (req):
+								</Typography>
+								<Typography variant="caption" fontWeight={500}>
+									true
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									isValid (req):
+								</Typography>
+								<Typography variant="caption" fontWeight={500}>
+									true
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Función:
+								</Typography>
+								<Typography variant="caption" fontWeight={500} color="primary.main">
+									Actualización periódica
+								</Typography>
+							</Stack>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="text.secondary">
+									Frecuencia:
+								</Typography>
+								<Typography variant="caption" fontWeight={500} color="warning.main">
+									Periódica
+								</Typography>
+							</Stack>
+						</Grid>
+					</Grid>
+				</CardContent>
+			</Card>
+
+			{/* Tabla de configuraciones */}
+			{authError ? (
+				<Alert severity="error" icon={<InfoCircle size={24} />}>
+					<Typography variant="subtitle2" fontWeight="bold">
+						Error de Autenticación
+					</Typography>
+					<Typography variant="body2" sx={{ mt: 1 }}>
+						No se pudo cargar la configuración del Worker de Actualización debido a un problema de autenticación. Por favor, verifique sus
+						credenciales e intente nuevamente.
+					</Typography>
+					<Button
+						size="small"
+						variant="outlined"
+						sx={{ mt: 2 }}
+						onClick={() => {
+							setAuthError(false);
+							setHasError(false);
+							fetchConfigs();
+						}}
+					>
+						Reintentar
+					</Button>
+				</Alert>
+			) : (
+				<>
+					{/* Tabla del Worker Principal (shared_update) */}
+					{(() => {
+						const sharedUpdateWorker = updateConfigs.find((c) => c.worker_id === "shared_update");
+						if (sharedUpdateWorker) {
+							return (
+								<>
+									<Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+										Worker Principal - Configuración Completa
+									</Typography>
+									<TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+										<Table>
+											<TableHead>
+												<TableRow>
+													<TableCell>Worker ID</TableCell>
+													<TableCell>Jurisdicción</TableCell>
+													<TableCell>Tipo Organismo</TableCell>
+													<TableCell>Modo Verificación</TableCell>
+													<TableCell align="center">Tamaño Lote</TableCell>
+													<TableCell align="center">Delay (ms)</TableCell>
+													<TableCell align="center">Reintentos</TableCell>
+													<TableCell align="center">Max Movimientos</TableCell>
+													<TableCell align="center">Frecuencia (horas)</TableCell>
+													<TableCell align="center">Actualizados</TableCell>
+													<TableCell align="center">Válidos</TableCell>
+													<TableCell align="center">No Encontrados</TableCell>
+													<TableCell align="center">Estado</TableCell>
+													<TableCell align="center">Última Actualización</TableCell>
+													<TableCell align="center">Acciones</TableCell>
+												</TableRow>
+											</TableHead>
+											<TableBody>
+												{(() => {
+													const config = sharedUpdateWorker;
+													const isEditing = editingId === config._id;
+
+													return (
+														<TableRow key={config._id}>
+															<TableCell>
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		value={editValues.worker_id || ""}
+																		onChange={(e) => setEditValues({ ...editValues, worker_id: e.target.value })}
+																		fullWidth
+																	/>
+																) : (
+																	<Chip label={config.worker_id} color="secondary" variant="filled" size="small" />
+																)}
+															</TableCell>
+															<TableCell>
+																{isEditing ? (
+																	<FormControl size="small" fullWidth>
+																		<Select
+																			value={editValues.jurisdiccion || ""}
+																			onChange={(e) => setEditValues({ ...editValues, jurisdiccion: e.target.value })}
+																		>
+																			{JURISDICCION_OPTIONS.map((option) => (
+																				<MenuItem key={option.value} value={option.value}>
+																					{option.label}
+																				</MenuItem>
+																			))}
+																		</Select>
+																	</FormControl>
+																) : (
+																	<Typography variant="body2">{getJurisdiccionLabel(config.jurisdiccion)}</Typography>
+																)}
+															</TableCell>
+															<TableCell>
+																{isEditing ? (
+																	<FormControl size="small" fullWidth>
+																		<Select
+																			value={editValues.tipo_organismo || ""}
+																			onChange={(e) => setEditValues({ ...editValues, tipo_organismo: e.target.value })}
+																		>
+																			{TIPO_ORGANISMO_OPTIONS.map((option) => (
+																				<MenuItem key={option.value} value={option.value}>
+																					{option.label}
+																				</MenuItem>
+																			))}
+																		</Select>
+																	</FormControl>
+																) : (
+																	<Typography variant="body2">{getTipoOrganismoLabel(config.tipo_organismo)}</Typography>
+																)}
+															</TableCell>
+															<TableCell>
+																{isEditing ? (
+																	<FormControl size="small" fullWidth>
+																		<Select
+																			value={editValues.verification_mode || ""}
+																			onChange={(e) => setEditValues({ ...editValues, verification_mode: e.target.value })}
+																		>
+																			{VERIFICATION_MODE_OPTIONS.map((option) => (
+																				<MenuItem key={option.value} value={option.value}>
+																					{option.label}
+																				</MenuItem>
+																			))}
+																		</Select>
+																	</FormControl>
+																) : (
+																	<Typography variant="body2">{getVerificationModeLabel(config.verification_mode)}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.batch_size || ""}
+																		onChange={(e) => setEditValues({ ...editValues, batch_size: Number(e.target.value) })}
+																		sx={{ width: 80 }}
+																	/>
+																) : (
+																	<Typography variant="body2">{config.batch_size}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.delay_between_searches || ""}
+																		onChange={(e) => setEditValues({ ...editValues, delay_between_searches: Number(e.target.value) })}
+																		sx={{ width: 100 }}
+																	/>
+																) : (
+																	<Typography variant="body2">{config.delay_between_searches}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.max_retries || ""}
+																		onChange={(e) => setEditValues({ ...editValues, max_retries: Number(e.target.value) })}
+																		sx={{ width: 80 }}
+																	/>
+																) : (
+																	<Typography variant="body2">{config.max_retries}</Typography>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.settings?.max_movimientos ?? ""}
+																		onChange={(e) =>
+																			setEditValues({
+																				...editValues,
+																				settings: {
+																					...editValues.settings,
+																					max_movimientos: Number(e.target.value),
+																				},
+																			})
+																		}
+																		sx={{ width: 90 }}
+																		placeholder="0 = Todos"
+																	/>
+																) : (
+																	<Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+																		<Typography variant="body2">{config.settings?.max_movimientos ?? 0}</Typography>
+																		{(config.settings?.max_movimientos === 0 || !config.settings?.max_movimientos) && (
+																			<Chip label="Todos" size="small" color="info" variant="outlined" />
+																		)}
+																	</Stack>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<TextField
+																		size="small"
+																		type="number"
+																		value={editValues.settings?.update_frequency_hours ?? ""}
+																		onChange={(e) =>
+																			setEditValues({
+																				...editValues,
+																				settings: {
+																					...editValues.settings,
+																					update_frequency_hours: Number(e.target.value),
+																				},
+																			})
+																		}
+																		sx={{ width: 100 }}
+																		placeholder="Horas"
+																	/>
+																) : (
+																	<Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+																		<Typography variant="body2">{config.settings?.update_frequency_hours ?? 24}</Typography>
+																		<Chip label="horas" size="small" color="warning" variant="outlined" />
+																	</Stack>
+																)}
+															</TableCell>
+															<TableCell align="center">
+																<Typography variant="body2" fontWeight={500}>
+																	{config.documents_verified?.toLocaleString() || 0}
+																</Typography>
+															</TableCell>
+															<TableCell align="center">
+																<Typography variant="body2" color="success.main" fontWeight={500}>
+																	{config.documents_valid?.toLocaleString() || 0}
+																</Typography>
+															</TableCell>
+															<TableCell align="center">
+																<Typography variant="body2" color="warning.main" fontWeight={500}>
+																	{config.documents_not_found?.toLocaleString() || 0}
+																</Typography>
+															</TableCell>
+															<TableCell align="center">
+																<Switch
+																	checked={isEditing ? editValues.enabled : config.enabled}
+																	onChange={() => {
+																		if (isEditing) {
+																			setEditValues({ ...editValues, enabled: !editValues.enabled });
+																		} else {
+																			handleToggleEnabled(config);
+																		}
+																	}}
+																	size="small"
+																	color="primary"
+																/>
+															</TableCell>
+															<TableCell align="center">
+																{(() => {
+																	const dateInfo = formatDateWithElapsed(config.last_check);
+																	return (
+																		<Stack spacing={0.5}>
+																			<Typography variant="caption">{dateInfo.formatted}</Typography>
+																			{dateInfo.elapsed && (
+																				<Typography variant="caption" color="text.secondary">
+																					({dateInfo.elapsed})
+																				</Typography>
+																			)}
+																		</Stack>
+																	);
+																})()}
+															</TableCell>
+															<TableCell align="center">
+																{isEditing ? (
+																	<Stack direction="row" spacing={1} justifyContent="center">
+																		<Tooltip title="Guardar">
+																			<IconButton size="small" color="primary" onClick={handleSave}>
+																				<TickCircle size={18} />
+																			</IconButton>
+																		</Tooltip>
+																		<Tooltip title="Cancelar">
+																			<IconButton size="small" color="error" onClick={handleCancelEdit}>
+																				<CloseCircle size={18} />
+																			</IconButton>
+																		</Tooltip>
+																	</Stack>
+																) : (
+																	<Tooltip title="Editar">
+																		<IconButton size="small" color="primary" onClick={() => handleEdit(config)}>
+																			<Edit2 size={18} />
+																		</IconButton>
+																	</Tooltip>
+																)}
+															</TableCell>
+														</TableRow>
+													);
+												})()}
+											</TableBody>
+										</Table>
+									</TableContainer>
+								</>
+							);
+						}
+						return null;
+					})()}
+
+					{/* Tabla de Workers Estadísticos */}
+					{(() => {
+						const statsWorkers = updateConfigs.filter((c) => c.worker_id !== "shared_update");
+						if (statsWorkers.length > 0) {
+							return (
+								<>
+									<Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+										Workers Estadísticos - Solo Lectura
+									</Typography>
+									<Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+										<Typography variant="body2">
+											Estos workers son utilizados únicamente con fines estadísticos. Solo se muestran métricas de actualización.
+										</Typography>
+									</Alert>
+									<TableContainer component={Paper} variant="outlined">
+										<Table>
+											<TableHead>
+												<TableRow>
+													<TableCell>Worker ID</TableCell>
+													<TableCell align="center">Actualizados</TableCell>
+													<TableCell align="center">Válidos</TableCell>
+													<TableCell align="center">No Encontrados</TableCell>
+													<TableCell align="center">Estado</TableCell>
+													<TableCell align="center">Total Búsquedas</TableCell>
+													<TableCell align="center">Búsquedas Exitosas</TableCell>
+													<TableCell align="center">Última Actualización</TableCell>
+												</TableRow>
+											</TableHead>
+											<TableBody>
+												{statsWorkers.map((config) => (
+													<TableRow key={config._id}>
+														<TableCell>
+															<Typography variant="body2" fontWeight={500}>
+																{config.worker_id}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" fontWeight={500}>
+																{config.documents_verified?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" color="success.main" fontWeight={500}>
+																{config.documents_valid?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" color="warning.main" fontWeight={500}>
+																{config.documents_not_found?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Chip
+																label={config.enabled ? "Activo" : "Inactivo"}
+																color={config.enabled ? "success" : "default"}
+																size="small"
+															/>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2">{config.statistics?.total_searches?.toLocaleString() || 0}</Typography>
+														</TableCell>
+														<TableCell align="center">
+															<Typography variant="body2" color="success.main">
+																{config.statistics?.successful_searches?.toLocaleString() || 0}
+															</Typography>
+														</TableCell>
+														<TableCell align="center">
+															{(() => {
+																const dateInfo = formatDateWithElapsed(config.last_check);
+																return (
+																	<Stack spacing={0.5}>
+																		<Typography variant="caption">{dateInfo.formatted}</Typography>
+																		{dateInfo.elapsed && (
+																			<Typography variant="caption" color="text.secondary">
+																				({dateInfo.elapsed})
+																			</Typography>
+																		)}
+																	</Stack>
+																);
+															})()}
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									</TableContainer>
+								</>
+							);
+						}
+						return null;
+					})()}
+				</>
+			)}
+
+			{/* Estadísticas */}
+			<Grid container spacing={2}>
+				<Grid item xs={12} sm={6} md={3}>
+					<Card variant="outlined">
+						<CardContent>
+							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
+								Total Workers
+							</Typography>
+							<Typography variant="h4">{updateConfigs.length}</Typography>
+						</CardContent>
+					</Card>
+				</Grid>
+				<Grid item xs={12} sm={6} md={3}>
+					<Card variant="outlined">
+						<CardContent>
+							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
+								Workers Activos
+							</Typography>
+							<Typography variant="h4" color="success.main">
+								{updateConfigs.filter((c) => c.enabled).length}
+							</Typography>
+						</CardContent>
+					</Card>
+				</Grid>
+				<Grid item xs={12} sm={6} md={3}>
+					<Card variant="outlined">
+						<CardContent>
+							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
+								Total Actualizados
+							</Typography>
+							<Typography variant="h4">
+								{updateConfigs.reduce((acc, c) => acc + (c.documents_verified || 0), 0).toLocaleString()}
+							</Typography>
+						</CardContent>
+					</Card>
+				</Grid>
+				<Grid item xs={12} sm={6} md={3}>
+					<Card variant="outlined">
+						<CardContent>
+							<Typography variant="subtitle2" color="text.secondary" gutterBottom>
+								Tasa de Éxito
+							</Typography>
+							<Typography variant="h4" color="info.main">
+								{(() => {
+									const total = updateConfigs.reduce((acc, c) => acc + (c.documents_verified || 0), 0);
+									const valid = updateConfigs.reduce((acc, c) => acc + (c.documents_valid || 0), 0);
+									return total > 0 ? `${((valid / total) * 100).toFixed(1)}%` : "0%";
+								})()}
+							</Typography>
+						</CardContent>
+					</Card>
+				</Grid>
+			</Grid>
 		</Stack>
 	);
 
@@ -1652,6 +2190,7 @@ const MEVWorkers = () => {
 					<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 						<Tabs value={activeTab} onChange={handleTabChange} aria-label="workers mev tabs">
 							<Tab label="Worker de Verificación" />
+							<Tab label="Worker de Actualización" />
 							<Tab label="Configuración del Sistema" />
 						</Tabs>
 					</Box>
@@ -1659,6 +2198,9 @@ const MEVWorkers = () => {
 						<VerificationWorkerContent />
 					</TabPanel>
 					<TabPanel value={activeTab} index={1}>
+						<UpdateWorkerContent />
+					</TabPanel>
+					<TabPanel value={activeTab} index={2}>
 						<SystemConfigContent />
 					</TabPanel>
 				</Box>
