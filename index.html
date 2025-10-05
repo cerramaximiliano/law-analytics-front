@@ -42,6 +42,62 @@
 	<body font-feature-settings="salt">
 		<noscript>You need to enable JavaScript to run this app.</noscript>
 		<div id="root"></div>
+
+		<!-- Script de limpieza de Service Worker - DEBE ejecutarse ANTES que cualquier otro script -->
+		<script>
+			(function() {
+				if ('serviceWorker' in navigator) {
+					var needsReload = false;
+					var cleanupKey = 'sw_cleanup_v2'; // Cambiar versión si necesitas forzar otra limpieza
+
+					// Verificar si ya se hizo la limpieza
+					if (sessionStorage.getItem(cleanupKey)) {
+						console.log('Service Worker ya limpiado en esta sesión');
+						return;
+					}
+
+					// Des-registrar todos los Service Workers
+					navigator.serviceWorker.getRegistrations().then(function(registrations) {
+						if (registrations.length > 0) {
+							console.log('🧹 Limpiando ' + registrations.length + ' Service Worker(s)...');
+							needsReload = true;
+
+							return Promise.all(registrations.map(function(registration) {
+								return registration.unregister().then(function() {
+									console.log('✓ Service Worker des-registrado:', registration.scope);
+								});
+							}));
+						}
+					}).then(function() {
+						// Limpiar todos los caches
+						if ('caches' in window) {
+							return caches.keys().then(function(cacheNames) {
+								if (cacheNames.length > 0) {
+									console.log('🧹 Limpiando ' + cacheNames.length + ' cache(s):', cacheNames);
+									needsReload = true;
+
+									return Promise.all(cacheNames.map(function(cacheName) {
+										return caches.delete(cacheName).then(function() {
+											console.log('✓ Cache eliminado:', cacheName);
+										});
+									}));
+								}
+							});
+						}
+					}).then(function() {
+						// Si se limpiaron SW o caches, recargar UNA VEZ
+						if (needsReload) {
+							sessionStorage.setItem(cleanupKey, 'true');
+							console.log('🔄 Recargando página después de limpieza...');
+							window.location.reload();
+						}
+					}).catch(function(error) {
+						console.error('❌ Error limpiando Service Workers:', error);
+					});
+				}
+			})();
+		</script>
+
 		<script type="module" src="/src/index.tsx"></script>
 	</body>
 </html>
