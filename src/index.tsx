@@ -37,24 +37,46 @@ import { preloadCriticalRoutes } from "./utils/lazyRetry";
 const container = document.getElementById("root");
 const root = createRoot(container!);
 
-// Des-registrar cualquier Service Worker antiguo
+// Des-registrar cualquier Service Worker antiguo y limpiar caches
 if ("serviceWorker" in navigator) {
-	navigator.serviceWorker.getRegistrations().then((registrations) => {
-		registrations.forEach((registration) => {
-			registration.unregister().then(() => {
-				console.log("Service Worker des-registrado correctamente");
-			});
-		});
-	});
+	let swNeedsCleanup = false;
 
-	// Limpiar caches antiguos
-	if ("caches" in window) {
-		caches.keys().then((cacheNames) => {
-			cacheNames.forEach((cacheName) => {
-				caches.delete(cacheName);
+	navigator.serviceWorker.getRegistrations().then((registrations) => {
+		if (registrations.length > 0) {
+			swNeedsCleanup = true;
+			console.log("Limpiando Service Workers antiguos...");
+
+			const unregisterPromises = registrations.map((registration) => {
+				return registration.unregister().then(() => {
+					console.log("Service Worker des-registrado:", registration.scope);
+				});
 			});
-		});
-	}
+
+			return Promise.all(unregisterPromises);
+		}
+	}).then(() => {
+		// Limpiar caches antiguos
+		if ("caches" in window) {
+			return caches.keys().then((cacheNames) => {
+				if (cacheNames.length > 0) {
+					swNeedsCleanup = true;
+					console.log("Limpiando caches antiguos:", cacheNames);
+					return Promise.all(
+						cacheNames.map((cacheName) => caches.delete(cacheName))
+					);
+				}
+			});
+		}
+	}).then(() => {
+		// Si se limpiaron SW o caches, recargar la página una vez
+		if (swNeedsCleanup && !sessionStorage.getItem("sw_cleaned")) {
+			sessionStorage.setItem("sw_cleaned", "true");
+			console.log("Service Workers y caches limpiados. Recargando página...");
+			window.location.reload();
+		}
+	}).catch((error) => {
+		console.error("Error limpiando Service Workers:", error);
+	});
 }
 
 // Precargar rutas críticas en segundo plano
