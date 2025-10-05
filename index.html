@@ -2,6 +2,11 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<!-- Prevenir cache del HTML -->
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+
 		<link rel="icon" href="/favicon.ico" sizes="any" />
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-transparent-32x32.png" />
 		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-transparent-16x16.png" />
@@ -13,7 +18,8 @@
 			name="description"
 			content="Software Legal Inteligente para Abogados. Gestiona causas judiciales, calcula indemnizaciones laborales y optimiza tu estudio jurídico."
 		/>
-		<link rel="manifest" href="/manifest.json" />
+		<!-- Manifest comentado temporalmente hasta que se limpien los SW antiguos -->
+		<!-- <link rel="manifest" href="/manifest.json" /> -->
 		<meta name="keywords" content="software legal, gestión causas judiciales, calculadora laboral, abogados argentina, poder judicial" />
 		<meta name="author" content="Law Analytics" />
 		<link rel="apple-touch-icon" href="/logo192.png" />
@@ -43,56 +49,30 @@
 		<noscript>You need to enable JavaScript to run this app.</noscript>
 		<div id="root"></div>
 
-		<!-- Script de limpieza de Service Worker - DEBE ejecutarse ANTES que cualquier otro script -->
+		<!-- Script de detección y redirección a página de limpieza -->
 		<script>
 			(function() {
+				// Si ya pasó por la limpieza, continuar normal
+				if (sessionStorage.getItem('cleanup_done_v3')) {
+					console.log('✓ Limpieza completada previamente');
+					return;
+				}
+
+				// Verificar si hay Service Workers
 				if ('serviceWorker' in navigator) {
-					var needsReload = false;
-					var cleanupKey = 'sw_cleanup_v2'; // Cambiar versión si necesitas forzar otra limpieza
-
-					// Verificar si ya se hizo la limpieza
-					if (sessionStorage.getItem(cleanupKey)) {
-						console.log('Service Worker ya limpiado en esta sesión');
-						return;
-					}
-
-					// Des-registrar todos los Service Workers
 					navigator.serviceWorker.getRegistrations().then(function(registrations) {
 						if (registrations.length > 0) {
-							console.log('🧹 Limpiando ' + registrations.length + ' Service Worker(s)...');
-							needsReload = true;
-
-							return Promise.all(registrations.map(function(registration) {
-								return registration.unregister().then(function() {
-									console.log('✓ Service Worker des-registrado:', registration.scope);
-								});
-							}));
-						}
-					}).then(function() {
-						// Limpiar todos los caches
-						if ('caches' in window) {
-							return caches.keys().then(function(cacheNames) {
-								if (cacheNames.length > 0) {
-									console.log('🧹 Limpiando ' + cacheNames.length + ' cache(s):', cacheNames);
-									needsReload = true;
-
-									return Promise.all(cacheNames.map(function(cacheName) {
-										return caches.delete(cacheName).then(function() {
-											console.log('✓ Cache eliminado:', cacheName);
-										});
-									}));
-								}
-							});
-						}
-					}).then(function() {
-						// Si se limpiaron SW o caches, recargar UNA VEZ
-						if (needsReload) {
-							sessionStorage.setItem(cleanupKey, 'true');
-							console.log('🔄 Recargando página después de limpieza...');
-							window.location.reload();
+							console.log('⚠️ Service Workers detectados, redirigiendo a limpieza...');
+							// Guardar URL de retorno
+							sessionStorage.setItem('return_url', window.location.href);
+							// Redireccionar a página de limpieza
+							window.location.href = '/cleanup.html';
+						} else {
+							// No hay SW, marcar como limpio
+							sessionStorage.setItem('cleanup_done_v3', 'true');
 						}
 					}).catch(function(error) {
-						console.error('❌ Error limpiando Service Workers:', error);
+						console.error('Error detectando SW:', error);
 					});
 				}
 			})();
