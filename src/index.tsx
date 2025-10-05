@@ -37,7 +37,25 @@ import { preloadCriticalRoutes } from "./utils/lazyRetry";
 const container = document.getElementById("root");
 const root = createRoot(container!);
 
-// Inicializar el sistema de actualización del Service Worker
+// Des-registrar cualquier Service Worker antiguo
+if ("serviceWorker" in navigator) {
+	navigator.serviceWorker.getRegistrations().then((registrations) => {
+		registrations.forEach((registration) => {
+			registration.unregister().then(() => {
+				console.log("Service Worker des-registrado correctamente");
+			});
+		});
+	});
+
+	// Limpiar caches antiguos
+	if ("caches" in window) {
+		caches.keys().then((cacheNames) => {
+			cacheNames.forEach((cacheName) => {
+				caches.delete(cacheName);
+			});
+		});
+	}
+}
 
 // Precargar rutas críticas en segundo plano
 preloadCriticalRoutes();
