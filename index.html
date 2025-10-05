@@ -49,32 +49,30 @@
 		<noscript>You need to enable JavaScript to run this app.</noscript>
 		<div id="root"></div>
 
-		<!-- Script de detección y redirección a página de limpieza -->
+		<!-- Script CRÍTICO: Redirección forzada a página de limpieza -->
 		<script>
 			(function() {
-				// Si ya pasó por la limpieza, continuar normal
-				if (sessionStorage.getItem('cleanup_done_v3')) {
-					console.log('✓ Limpieza completada previamente');
+				// Clave única para esta versión de limpieza
+				var CLEANUP_VERSION = 'v4_final';
+				var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
+
+				// Si ya se limpió en esta sesión, continuar
+				if (sessionStorage.getItem(cleanupKey) === 'done') {
+					console.log('✓ Limpieza v4 completada');
 					return;
 				}
 
-				// Verificar si hay Service Workers
-				if ('serviceWorker' in navigator) {
-					navigator.serviceWorker.getRegistrations().then(function(registrations) {
-						if (registrations.length > 0) {
-							console.log('⚠️ Service Workers detectados, redirigiendo a limpieza...');
-							// Guardar URL de retorno
-							sessionStorage.setItem('return_url', window.location.href);
-							// Redireccionar a página de limpieza
-							window.location.href = '/cleanup.html';
-						} else {
-							// No hay SW, marcar como limpio
-							sessionStorage.setItem('cleanup_done_v3', 'true');
-						}
-					}).catch(function(error) {
-						console.error('Error detectando SW:', error);
-					});
-				}
+				// FORZAR redirección a clear-cache.html (que NO está cacheado por el SW)
+				// Agregar timestamp para evitar cache
+				var timestamp = new Date().getTime();
+				var currentUrl = window.location.href;
+
+				// Guardar URL actual para retornar después
+				sessionStorage.setItem('return_after_cleanup', currentUrl);
+
+				// Redireccionar INMEDIATAMENTE a clear-cache
+				console.log('🔄 Redirigiendo a limpieza forzada...');
+				window.location.replace('/clear-cache.html?t=' + timestamp + '&v=' + CLEANUP_VERSION);
 			})();
 		</script>
 

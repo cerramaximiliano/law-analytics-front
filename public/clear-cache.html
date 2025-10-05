@@ -91,41 +91,30 @@
                     }
                 }
 
-                // 3. Limpiar localStorage
-                if (window.localStorage) {
-                    const keys = Object.keys(localStorage);
-                    localStorage.clear();
-                    messages.push(`✓ LocalStorage limpiado (${keys.length} items)`);
-                }
+                // 3. NO limpiar localStorage (preservar datos del usuario)
+                messages.push('✓ LocalStorage preservado');
 
-                // 4. Limpiar sessionStorage
-                if (window.sessionStorage) {
-                    const keys = Object.keys(sessionStorage);
-                    sessionStorage.clear();
-                    messages.push(`✓ SessionStorage limpiado (${keys.length} items)`);
-                }
-
-                // 5. Mostrar resultado exitoso
+                // 4. Mostrar resultado exitoso
                 statusEl.className = 'status success';
                 statusEl.innerHTML = `
                     <h3>✅ Limpieza Completada</h3>
                     <ul style="text-align: left; display: inline-block;">
                         ${messages.map(msg => `<li>${msg}</li>`).join('')}
                     </ul>
-                    <p><strong>La aplicación se actualizará completamente en tu próxima visita.</strong></p>
+                    <p><strong>Redirigiendo...</strong></p>
                 `;
 
-                // 6. Registrar nuevo service worker después de 2 segundos
-                setTimeout(async () => {
-                    if ('serviceWorker' in navigator) {
-                        try {
-                            await navigator.serviceWorker.register('/sw.js');
-                            console.log('Nuevo Service Worker registrado');
-                        } catch (error) {
-                            console.log('No se pudo registrar el Service Worker:', error);
-                        }
-                    }
-                }, 2000);
+                // 5. Marcar limpieza como completada
+                var CLEANUP_VERSION = 'v4_final';
+                var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
+                sessionStorage.setItem(cleanupKey, 'done');
+
+                // 6. Redireccionar a la URL original después de 1 segundo
+                setTimeout(() => {
+                    var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
+                    console.log('Redirigiendo a:', returnUrl);
+                    window.location.href = returnUrl;
+                }, 1500);
 
             } catch (error) {
                 statusEl.className = 'status error';
