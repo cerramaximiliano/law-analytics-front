@@ -112,11 +112,14 @@
                 }
 
                 // 3. Marcar limpieza como completada (usar localStorage para persistir)
-                var CLEANUP_VERSION = 'v4_final';
+                var CLEANUP_VERSION = 'v5_fix';
                 var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
                 localStorage.setItem(cleanupKey, 'done');
 
-                // 4. Redireccionar a la URL original
+                // 4. Marcar que venimos de limpieza para evitar bucle
+                sessionStorage.setItem('from_cleanup', 'true');
+
+                // 5. Redireccionar a la URL original
                 setTimeout(() => {
                     var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
                     console.log('Redirigiendo a:', returnUrl);
@@ -125,7 +128,12 @@
 
             } catch (error) {
                 console.error('Error durante la limpieza:', error);
-                // En caso de error, redirigir de todas formas
+                // En caso de error, marcar como completado y redirigir
+                var CLEANUP_VERSION = 'v5_fix';
+                var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
+                localStorage.setItem(cleanupKey, 'done');
+                sessionStorage.setItem('from_cleanup', 'true');
+
                 setTimeout(() => {
                     window.location.href = sessionStorage.getItem('return_after_cleanup') || '/';
                 }, 1000);

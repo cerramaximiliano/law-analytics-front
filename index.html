@@ -53,12 +53,21 @@
 		<script>
 			(function() {
 				// Clave única para esta versión de limpieza
-				var CLEANUP_VERSION = 'v4_final';
+				var CLEANUP_VERSION = 'v5_fix';
 				var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
 
 				// Si ya se limpió, continuar (usar localStorage para persistir entre sesiones)
 				if (localStorage.getItem(cleanupKey) === 'done') {
-					console.log('✓ Limpieza v4 completada');
+					console.log('✓ Limpieza completada');
+					return;
+				}
+
+				// Evitar bucle infinito: verificar si venimos de clear-cache.html
+				var fromCleanup = sessionStorage.getItem('from_cleanup');
+				if (fromCleanup === 'true') {
+					console.log('⚠️ Bucle detectado, marcando como completado');
+					localStorage.setItem(cleanupKey, 'done');
+					sessionStorage.removeItem('from_cleanup');
 					return;
 				}
 
