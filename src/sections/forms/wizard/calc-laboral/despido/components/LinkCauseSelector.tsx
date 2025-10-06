@@ -13,12 +13,14 @@ import {
 	TextField,
 	Tooltip,
 	Typography,
-	Tabs,
-	Tab,
 	alpha,
 	useTheme,
+	Grid,
+	ListItemButton,
+	ListItemIcon,
+	ListItemText,
 } from "@mui/material";
-import { DocumentCloud, SearchNormal1, People, Edit2 } from "iconsax-react";
+import { DocumentCloud, SearchNormal1, People, Edit2, ArrowRight } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useSelector, dispatch } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
@@ -41,39 +43,9 @@ interface GetFoldersResponse {
 	error?: any;
 }
 
-interface TabPanelProps {
-	children?: React.ReactNode;
-	index: number;
-	value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-	const { children, value, index, ...other } = props;
-
-	return (
-		<div
-			role="tabpanel"
-			hidden={value !== index}
-			id={`method-tabpanel-${index}`}
-			aria-labelledby={`method-tab-${index}`}
-			{...other}
-			style={{ height: "100%" }}
-		>
-			{value === index && <Box sx={{ height: "100%" }}>{children}</Box>}
-		</div>
-	);
-}
-
-function a11yProps(index: number) {
-	return {
-		id: `method-tab-${index}`,
-		"aria-controls": `method-tabpanel-${index}`,
-	};
-}
-
 const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, requeridoField, onMethodChange }) => {
 	const theme = useTheme();
-	const [tabValue, setTabValue] = useState(0);
+	const [selectedMethod, setSelectedMethod] = useState<"manual" | "causa">("manual");
 	const [openModal, setOpenModal] = useState(false);
 	const [folders, setFolders] = useState<Folder[]>([]);
 	const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
@@ -91,9 +63,8 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 	}, [openModal, userId]);
 
 	// Manejar cambio de tab
-	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-		const method = newValue === 0 ? "manual" : "causa";
-		setTabValue(newValue);
+	const handleMethodClick = (method: "manual" | "causa") => {
+		setSelectedMethod(method);
 
 		// Notificar al componente padre sobre el cambio
 		if (method === "causa" && selectedFolder) {
@@ -181,6 +152,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 	// Manejar selección de carpeta
 	const handleSelectFolder = (folder: Folder) => {
 		setSelectedFolder(folder);
+		setSelectedMethod("causa");
 
 		// Notificar al componente padre sobre el cambio con los datos de folderId y folderName
 		onMethodChange("causa", folder, {
@@ -198,168 +170,120 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 		setOpenModal(true);
 	};
 
-	const boxHeight = 110; // Altura fija para los dos paneles, ligeramente reducida para mejor integración
-
 	return (
 		<>
-			<Box
-				sx={{
-					width: "100%",
-					mb: 3.5,
-				}}
-			>
-				<Tabs
-					value={tabValue}
-					onChange={handleTabChange}
-					variant="fullWidth"
-					sx={{
-						mb: 0.5,
-						borderBottom: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-						"& .MuiTabs-indicator": {
-							height: 3,
-						},
-					}}
-				>
-					<Tab
-						icon={<Edit2 size={20} />}
-						label="Ingreso Manual"
-						{...a11yProps(0)}
-						sx={{
-							py: 1.5,
-							fontWeight: tabValue === 0 ? 600 : 400,
-							"& .MuiTab-iconWrapper": {
-								marginRight: 1,
-							},
-						}}
-					/>
-					<Tab
-						icon={<DocumentCloud size={20} />}
-						label="Seleccionar Carpeta"
-						{...a11yProps(1)}
-						sx={{
-							py: 1.5,
-							fontWeight: tabValue === 1 ? 600 : 400,
-							"& .MuiTab-iconWrapper": {
-								marginRight: 1,
-							},
-						}}
-					/>
-				</Tabs>
+			<Box sx={{ width: "100%", mb: 3 }}>
+				<Typography variant="h6" color="textPrimary" sx={{ mb: 2 }}>
+					Método de ingreso
+				</Typography>
 
-				<TabPanel value={tabValue} index={0}>
-					<Box
-						sx={{
-							p: 2,
-							height: boxHeight,
-							display: "flex",
-							flexDirection: "column",
-							justifyContent: "center",
-							alignItems: "center",
-							bgcolor: alpha(theme.palette.primary.lighter, 0.15),
-						}}
-					>
-						<Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
-							<People size={32} color={theme.palette.text.secondary} />
-							<Typography variant="h6" color="textSecondary">
-								Ingreso manual de datos
-							</Typography>
-							<Typography variant="body2" color="textSecondary" align="center">
-								Los campos Reclamante y Reclamado deben completarse manualmente
-							</Typography>
-						</Stack>
-					</Box>
-				</TabPanel>
-
-				<TabPanel value={tabValue} index={1}>
-					{selectedFolder ? (
-						<Box
+				<Grid container spacing={2}>
+					{/* Opción Ingreso Manual */}
+					<Grid item xs={12}>
+						<ListItemButton
+							onClick={() => handleMethodClick("manual")}
 							sx={{
+								border: 1,
+								borderColor: selectedMethod === "manual" ? theme.palette.primary.main : theme.palette.divider,
+								borderRadius: 2,
 								p: 2,
-								height: boxHeight,
 								display: "flex",
-								flexDirection: "column",
-								justifyContent: "center",
-								borderRadius: 1,
-								bgcolor: alpha(theme.palette.background.default, 0.5),
+								alignItems: "center",
+								backgroundColor: selectedMethod === "manual" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+								"&:hover": {
+									backgroundColor: alpha(theme.palette.primary.main, 0.08),
+									borderColor: theme.palette.primary.main,
+								},
 							}}
 						>
-							<Stack spacing={2}>
-								<Stack direction="row" alignItems="center" spacing={2}>
-									<DocumentCloud size={24} color={theme.palette.primary.main} />
-									<Typography variant="h6" color="primary" sx={{ flex: 1 }}>
-										{selectedFolder.folderName}
-									</Typography>
+							<ListItemIcon sx={{ minWidth: 60 }}>
+								<Box
+									sx={{
+										p: 1.5,
+										borderRadius: 1,
+										bgcolor: selectedMethod === "manual" ? alpha(theme.palette.primary.main, 0.1) : theme.palette.background.default,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+									}}
+								>
+									<Edit2 size={24} color={selectedMethod === "manual" ? theme.palette.primary.main : theme.palette.text.secondary} />
+								</Box>
+							</ListItemIcon>
+							<ListItemText
+								primary="Ingreso Manual"
+								secondary="Complete manualmente los campos Reclamante y Reclamado"
+								primaryTypographyProps={{ fontWeight: 600 }}
+							/>
+							<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+								<ArrowRight size={24} color={theme.palette.text.secondary} />
+							</Box>
+						</ListItemButton>
+					</Grid>
+
+					{/* Opción Seleccionar Carpeta */}
+					<Grid item xs={12}>
+						<ListItemButton
+							onClick={() => handleMethodClick("causa")}
+							sx={{
+								border: 1,
+								borderColor: selectedMethod === "causa" ? theme.palette.primary.main : theme.palette.divider,
+								borderRadius: 2,
+								p: 2,
+								display: "flex",
+								alignItems: "center",
+								backgroundColor: selectedMethod === "causa" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+								"&:hover": {
+									backgroundColor: alpha(theme.palette.primary.main, 0.08),
+									borderColor: theme.palette.primary.main,
+								},
+							}}
+						>
+							<ListItemIcon sx={{ minWidth: 60 }}>
+								<Box
+									sx={{
+										p: 1.5,
+										borderRadius: 1,
+										bgcolor: selectedMethod === "causa" ? alpha(theme.palette.primary.main, 0.1) : theme.palette.background.default,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+									}}
+								>
+									<DocumentCloud
+										size={24}
+										color={selectedMethod === "causa" ? theme.palette.primary.main : theme.palette.text.secondary}
+									/>
+								</Box>
+							</ListItemIcon>
+							<ListItemText
+								primary={selectedFolder ? selectedFolder.folderName : "Seleccionar Carpeta"}
+								secondary={
+									selectedFolder
+										? `${selectedFolder.materia}${selectedFolder.description ? ` - ${selectedFolder.description}` : ""}`
+										: "Importar datos desde una carpeta existente"
+								}
+								primaryTypographyProps={{ fontWeight: 600 }}
+								secondaryTypographyProps={{
+									sx: {
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										whiteSpace: "nowrap",
+										maxWidth: "400px",
+									},
+								}}
+							/>
+							<Box sx={{ display: "flex", alignItems: "center", ml: "auto", gap: 1 }}>
+								{selectedFolder && (
 									<Button size="small" variant="outlined" color="primary" onClick={handleChangeFolder}>
 										Cambiar
 									</Button>
-								</Stack>
-
-								<Box
-									sx={{
-										p: 1.25,
-										borderRadius: 0.75,
-										bgcolor: theme.palette.background.paper,
-										border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
-										boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.04)}`,
-									}}
-								>
-									<Stack direction="row" spacing={1} alignItems="center">
-										<Typography variant="body2" sx={{ fontWeight: 500 }}>
-											Materia:
-										</Typography>
-										<Typography variant="body2" color="textSecondary">
-											{selectedFolder.materia}
-										</Typography>
-									</Stack>
-									{selectedFolder.description && (
-										<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-											<Typography variant="body2" sx={{ fontWeight: 500 }}>
-												Descripción:
-											</Typography>
-											<Tooltip title={selectedFolder.description}>
-												<Typography
-													variant="body2"
-													color="textSecondary"
-													sx={{
-														overflow: "hidden",
-														textOverflow: "ellipsis",
-														whiteSpace: "nowrap",
-														maxWidth: "250px",
-													}}
-												>
-													{selectedFolder.description}
-												</Typography>
-											</Tooltip>
-										</Stack>
-									)}
-								</Box>
-							</Stack>
-						</Box>
-					) : (
-						<Box
-							sx={{
-								p: 2,
-								height: boxHeight,
-								display: "flex",
-								flexDirection: "column",
-								justifyContent: "center",
-								alignItems: "center",
-								bgcolor: alpha(theme.palette.primary.lighter, 0.15),
-								borderRadius: 1,
-							}}
-						>
-							<Stack spacing={2} alignItems="center" sx={{ mt: 1 }}>
-								<DocumentCloud size={32} color={theme.palette.text.secondary} />
-								<Typography variant="h6" color="textSecondary">
-									No hay carpeta seleccionada
-								</Typography>
-								<Button variant="contained" color="primary" onClick={() => setOpenModal(true)} startIcon={<DocumentCloud />}>
-									Seleccionar Carpeta
-								</Button>
-							</Stack>
-						</Box>
-					)}
-				</TabPanel>
+								)}
+								<ArrowRight size={24} color={theme.palette.text.secondary} />
+							</Box>
+						</ListItemButton>
+					</Grid>
+				</Grid>
 			</Box>
 
 			{/* Modal de selección de carpeta */}
