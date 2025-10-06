@@ -106,6 +106,10 @@
         function quickCleanAndRedirect() {
             console.log('🧹 Limpieza rápida iniciada');
 
+            // IMPORTANTE: Leer returnUrl ANTES de limpiar sessionStorage
+            var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
+            console.log('📍 URL de retorno:', returnUrl);
+
             // Limpiar Service Workers
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -130,10 +134,10 @@
             sessionStorage.clear();
             localStorage.clear();
 
-            // Redirigir inmediatamente a home
+            // Redirigir a la URL original
             setTimeout(function() {
-                console.log('↩️ Redirigiendo a home...');
-                window.location.replace('/');
+                console.log('↩️ Redirigiendo a:', returnUrl);
+                window.location.replace(returnUrl);
             }, 800);
         }
 
