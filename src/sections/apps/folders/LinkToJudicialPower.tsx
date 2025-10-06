@@ -330,6 +330,8 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 										borderColor: "divider",
 										borderRadius: 2,
 										p: 2,
+										display: "flex",
+										alignItems: "center",
 										"&:hover": {
 											backgroundColor: alpha(theme.palette.primary.main, 0.08),
 											borderColor: theme.palette.primary.main,
@@ -365,7 +367,9 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 										secondary="Acceda a causas federales y nacionales"
 										primaryTypographyProps={{ fontWeight: 600 }}
 									/>
-									<ArrowRight size={24} color={theme.palette.text.secondary} />
+									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+										<ArrowRight size={24} color={theme.palette.text.secondary} />
+									</Box>
 								</ListItemButton>
 							</Grid>
 
@@ -386,6 +390,8 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 										borderColor: "divider",
 										borderRadius: 2,
 										p: 2,
+										display: "flex",
+										alignItems: "center",
 										"&:hover": {
 											backgroundColor: alpha(theme.palette.primary.main, 0.08),
 											borderColor: theme.palette.primary.main,
@@ -421,7 +427,9 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 										secondary="Vincule causas del fuero provincial"
 										primaryTypographyProps={{ fontWeight: 600 }}
 									/>
-									<ArrowRight size={24} color={theme.palette.text.secondary} />
+									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+										<ArrowRight size={24} color={theme.palette.text.secondary} />
+									</Box>
 								</ListItemButton>
 							</Grid>
 						</Grid>

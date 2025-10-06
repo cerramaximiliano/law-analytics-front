@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Expires" content="0">
+	<title>Iniciando Law Analytics...</title>
+	<style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			margin: 0;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+		}
+		.container {
+			text-align: center;
+			padding: 2rem;
+		}
+		.spinner {
+			border: 4px solid rgba(255, 255, 255, 0.3);
+			border-radius: 50%;
+			border-top: 4px solid white;
+			width: 50px;
+			height: 50px;
+			animation: spin 1s linear infinite;
+			margin: 2rem auto;
+		}
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+		.message {
+			font-size: 1.1rem;
+			margin-top: 1rem;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>⚡ Law Analytics</h1>
+		<div class="spinner"></div>
+		<p class="message" id="message">Preparando aplicación...</p>
+	</div>
+
+	<script>
+		(function() {
+			var message = document.getElementById('message');
+
+			// Verificar si ya se hizo limpieza
+			if (sessionStorage.getItem('sw_cleanup_v4_final') === 'done') {
+				message.textContent = 'Redirigiendo a la aplicación...';
+				setTimeout(function() {
+					window.location.href = '/';
+				}, 500);
+				return;
+			}
+
+			// Verificar si hay Service Workers
+			if (!('serviceWorker' in navigator)) {
+				message.textContent = 'Tu navegador está listo';
+				sessionStorage.setItem('sw_cleanup_v4_final', 'done');
+				setTimeout(function() {
+					window.location.href = '/';
+				}, 1000);
+				return;
+			}
+
+			message.textContent = 'Verificando Service Workers...';
+
+			navigator.serviceWorker.getRegistrations()
+				.then(function(registrations) {
+					if (registrations.length === 0) {
+						// No hay SW, marcar como limpio
+						message.textContent = 'Sistema actualizado';
+						sessionStorage.setItem('sw_cleanup_v4_final', 'done');
+						setTimeout(function() {
+							window.location.href = '/';
+						}, 1000);
+						return;
+					}
+
+					// Hay SW, redirigir a limpieza
+					message.textContent = 'Limpiando datos antiguos...';
+					setTimeout(function() {
+						window.location.href = '/clear-cache.html?from=start';
+					}, 500);
+				})
+				.catch(function(error) {
+					console.error('Error:', error);
+					message.textContent = 'Error: ' + error.message;
+				});
+		})();
+	</script>
+</body>
+</html>
