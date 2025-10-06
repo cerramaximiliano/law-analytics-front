@@ -49,39 +49,29 @@
 		<noscript>You need to enable JavaScript to run this app.</noscript>
 		<div id="root"></div>
 
-		<!-- Script CRÍTICO: Redirección forzada a página de limpieza -->
+		<!-- Script de limpieza de Service Worker (solo si existe) -->
 		<script>
 			(function() {
-				// Clave única para esta versión de limpieza
-				var CLEANUP_VERSION = 'v5_fix';
-				var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
-
-				// Si ya se limpió, continuar (usar localStorage para persistir entre sesiones)
-				if (localStorage.getItem(cleanupKey) === 'done') {
-					console.log('✓ Limpieza completada');
-					return;
+				// Limpieza silenciosa de Service Workers sin redirección
+				if ('serviceWorker' in navigator) {
+					navigator.serviceWorker.getRegistrations().then(function(registrations) {
+						for (let registration of registrations) {
+							registration.unregister();
+							console.log('✓ Service Worker desregistrado');
+						}
+					});
 				}
 
-				// Evitar bucle infinito: verificar si venimos de clear-cache.html
-				var fromCleanup = sessionStorage.getItem('from_cleanup');
-				if (fromCleanup === 'true') {
-					console.log('⚠️ Bucle detectado, marcando como completado');
-					localStorage.setItem(cleanupKey, 'done');
-					sessionStorage.removeItem('from_cleanup');
-					return;
+				// Limpiar cachés antiguos
+				if ('caches' in window) {
+					caches.keys().then(function(cacheNames) {
+						return Promise.all(
+							cacheNames.map(function(cacheName) {
+								return caches.delete(cacheName);
+							})
+						);
+					});
 				}
-
-				// FORZAR redirección a clear-cache.html (que NO está cacheado por el SW)
-				// Agregar timestamp para evitar cache
-				var timestamp = new Date().getTime();
-				var currentUrl = window.location.href;
-
-				// Guardar URL actual para retornar después
-				sessionStorage.setItem('return_after_cleanup', currentUrl);
-
-				// Redireccionar INMEDIATAMENTE a clear-cache
-				console.log('🔄 Redirigiendo a limpieza forzada...');
-				window.location.replace('/clear-cache.html?t=' + timestamp + '&v=' + CLEANUP_VERSION);
 			})();
 		</script>
 

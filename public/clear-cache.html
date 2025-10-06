@@ -91,6 +91,22 @@
     <script>
         const debugEl = document.getElementById('debug');
 
+        // Detectar si el usuario llegó aquí por error (URL antigua en caché)
+        // Si no hay returnUrl guardado, redirigir inmediatamente a home
+        var returnUrl = sessionStorage.getItem('return_after_cleanup');
+        if (!returnUrl) {
+            console.log('⚠️ Acceso directo a clear-cache, redirigiendo a home...');
+            // Limpiar cualquier SW/caché y redirigir
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                });
+            }
+            window.location.href = '/';
+        }
+
         async function clearAllCaches() {
             try {
                 // 1. Desregistrar todos los service workers
@@ -111,15 +127,7 @@
                     }
                 }
 
-                // 3. Marcar limpieza como completada (usar localStorage para persistir)
-                var CLEANUP_VERSION = 'v5_fix';
-                var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
-                localStorage.setItem(cleanupKey, 'done');
-
-                // 4. Marcar que venimos de limpieza para evitar bucle
-                sessionStorage.setItem('from_cleanup', 'true');
-
-                // 5. Redireccionar a la URL original
+                // 3. Redireccionar a la URL original
                 setTimeout(() => {
                     var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
                     console.log('Redirigiendo a:', returnUrl);
@@ -128,12 +136,7 @@
 
             } catch (error) {
                 console.error('Error durante la limpieza:', error);
-                // En caso de error, marcar como completado y redirigir
-                var CLEANUP_VERSION = 'v5_fix';
-                var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
-                localStorage.setItem(cleanupKey, 'done');
-                sessionStorage.setItem('from_cleanup', 'true');
-
+                // En caso de error, redirigir de todas formas
                 setTimeout(() => {
                     window.location.href = sessionStorage.getItem('return_after_cleanup') || '/';
                 }, 1000);
