@@ -104,11 +104,16 @@
                 localStorage.setItem('sw_cleanup_v4_final', 'done');
                 localStorage.setItem('sw_cleanup_v5_fix', 'done');
                 localStorage.setItem('sw_cleanup_done', 'done');
+
+                // Leer URL de retorno ANTES de limpiar sessionStorage
+                var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
+                console.log('📍 Redirigiendo a URL original después de bucle:', returnUrl);
+
                 sessionStorage.removeItem('cleanup_attempts');
                 sessionStorage.removeItem('return_after_cleanup');
 
-                // HARD RELOAD para forzar descarga del código nuevo
-                window.location.replace('/');
+                // HARD RELOAD para forzar descarga del código nuevo en la URL original
+                window.location.replace(returnUrl);
                 setTimeout(function() {
                     window.location.reload(true);
                 }, 100);
