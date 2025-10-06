@@ -95,6 +95,34 @@
         (function() {
             const debugEl = document.getElementById('debug');
 
+            // PROTECCIÓN DE EMERGENCIA: Si estamos aquí por más de 5 segundos, forzar salida
+            var emergencyTimeout = setTimeout(function() {
+                console.error('🚨 EMERGENCIA: Tiempo límite excedido, forzando salida');
+
+                // Marcar TODAS las versiones como completadas
+                localStorage.setItem('sw_cleanup_v4_final', 'done');
+                localStorage.setItem('sw_cleanup_v5_fix', 'done');
+                localStorage.setItem('sw_cleanup_done', 'done');
+
+                // Limpiar TODO
+                sessionStorage.clear();
+
+                // Desregistrar cualquier SW
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        registrations.forEach(function(registration) {
+                            registration.unregister();
+                        });
+                    });
+                }
+
+                // Forzar redirección a home con hard reload
+                window.location.replace('/');
+                setTimeout(function() {
+                    window.location.reload(true);
+                }, 200);
+            }, 5000);
+
             // Detectar si ya estamos en un bucle
             var cleanupAttempts = parseInt(sessionStorage.getItem('cleanup_attempts') || '0');
 
@@ -112,6 +140,9 @@
                 sessionStorage.removeItem('cleanup_attempts');
                 sessionStorage.removeItem('return_after_cleanup');
 
+                // Cancelar timeout de emergencia ya que estamos manejando el bucle
+                clearTimeout(emergencyTimeout);
+
                 // HARD RELOAD para forzar descarga del código nuevo en la URL original
                 window.location.replace(returnUrl);
                 setTimeout(function() {
@@ -122,13 +153,6 @@
 
             // Marcar que estamos intentando limpiar
             sessionStorage.setItem('cleanup_attempts', String(cleanupAttempts + 1));
-
-            // TIMEOUT DE SEGURIDAD: Si después de 3 segundos seguimos aquí, forzar redirección
-            setTimeout(function() {
-                console.warn('⏰ Timeout de seguridad - Forzando redirección');
-                localStorage.setItem('sw_cleanup_done', 'done');
-                window.location.replace('/');
-            }, 3000);
 
             // Función de limpieza rápida y redirección inmediata
             function quickCleanAndRedirect() {
@@ -165,6 +189,8 @@
                 // Redirigir a la URL original
                 setTimeout(function() {
                     console.log('↩️ Redirigiendo a:', returnUrl);
+                    // Cancelar timeout de emergencia antes de redirigir
+                    clearTimeout(emergencyTimeout);
                     window.location.replace(returnUrl);
                 }, 800);
             }
