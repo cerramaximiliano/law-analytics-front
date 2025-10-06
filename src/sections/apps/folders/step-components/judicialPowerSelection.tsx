@@ -37,6 +37,8 @@ const JudicialPowerSelection = () => {
 						borderColor: values.judicialPower === "nacional" ? theme.palette.primary.main : theme.palette.divider,
 						borderRadius: 2,
 						p: 2,
+						display: "flex",
+						alignItems: "center",
 						backgroundColor: values.judicialPower === "nacional" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
 						"&:hover": {
 							backgroundColor: alpha(theme.palette.primary.main, 0.08),
@@ -73,7 +75,9 @@ const JudicialPowerSelection = () => {
 						secondary="Acceda a causas federales y nacionales"
 						primaryTypographyProps={{ fontWeight: 600 }}
 					/>
-					<ArrowRight size={24} color={theme.palette.text.secondary} />
+					<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+						<ArrowRight size={24} color={theme.palette.text.secondary} />
+					</Box>
 				</ListItemButton>
 			</Grid>
 
@@ -86,6 +90,8 @@ const JudicialPowerSelection = () => {
 						borderColor: values.judicialPower === "buenosaires" ? theme.palette.primary.main : theme.palette.divider,
 						borderRadius: 2,
 						p: 2,
+						display: "flex",
+						alignItems: "center",
 						backgroundColor: values.judicialPower === "buenosaires" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
 						"&:hover": {
 							backgroundColor: alpha(theme.palette.primary.main, 0.08),
@@ -122,7 +128,9 @@ const JudicialPowerSelection = () => {
 						secondary="Vincule causas del fuero provincial"
 						primaryTypographyProps={{ fontWeight: 600 }}
 					/>
-					<ArrowRight size={24} color={theme.palette.text.secondary} />
+					<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+						<ArrowRight size={24} color={theme.palette.text.secondary} />
+					</Box>
 				</ListItemButton>
 			</Grid>
 
