@@ -94,11 +94,33 @@
     <script>
         const debugEl = document.getElementById('debug');
 
+        // Detectar si ya estamos en un bucle
+        var cleanupAttempts = parseInt(sessionStorage.getItem('cleanup_attempts') || '0');
+
+        if (cleanupAttempts > 0) {
+            // Ya intentamos limpiar antes, hay un bucle - marcar como completado y redirigir
+            console.error('🔴 BUCLE DETECTADO - Marcando limpieza como completada');
+            localStorage.setItem('sw_cleanup_v4_final', 'done');
+            localStorage.setItem('sw_cleanup_v5_fix', 'done');
+            localStorage.setItem('sw_cleanup_done', 'done');
+            sessionStorage.removeItem('cleanup_attempts');
+            sessionStorage.removeItem('return_after_cleanup');
+
+            // HARD RELOAD para forzar descarga del código nuevo
+            window.location.replace('/');
+            setTimeout(function() {
+                window.location.reload(true);
+            }, 100);
+            return;
+        }
+
+        // Marcar que estamos intentando limpiar
+        sessionStorage.setItem('cleanup_attempts', String(cleanupAttempts + 1));
+
         // TIMEOUT DE SEGURIDAD: Si después de 3 segundos seguimos aquí, forzar redirección
         setTimeout(function() {
-            console.warn('⏰ Timeout de seguridad - Forzando redirección a home');
-            sessionStorage.clear();
-            localStorage.clear();
+            console.warn('⏰ Timeout de seguridad - Forzando redirección');
+            localStorage.setItem('sw_cleanup_done', 'done');
             window.location.replace('/');
         }, 3000);
 
@@ -106,7 +128,7 @@
         function quickCleanAndRedirect() {
             console.log('🧹 Limpieza rápida iniciada');
 
-            // IMPORTANTE: Leer returnUrl ANTES de limpiar sessionStorage
+            // IMPORTANTE: Leer returnUrl ANTES de modificar sessionStorage
             var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
             console.log('📍 URL de retorno:', returnUrl);
 
@@ -130,9 +152,9 @@
                 });
             }
 
-            // Limpiar storages
-            sessionStorage.clear();
-            localStorage.clear();
+            // NO limpiar sessionStorage/localStorage todavía (necesitamos cleanup_attempts)
+            // Solo limpiar el return_after_cleanup después de usarlo
+            // sessionStorage.removeItem('return_after_cleanup');
 
             // Redirigir a la URL original
             setTimeout(function() {

@@ -52,6 +52,14 @@
 		<!-- Script de limpieza de Service Worker (solo si existe) -->
 		<script>
 			(function() {
+				// Verificar si ya se completó la limpieza
+				if (localStorage.getItem('sw_cleanup_done') === 'done' ||
+				    localStorage.getItem('sw_cleanup_v4_final') === 'done' ||
+				    localStorage.getItem('sw_cleanup_v5_fix') === 'done') {
+					console.log('✓ Limpieza ya completada, continuando...');
+					return;
+				}
+
 				// Limpieza silenciosa de Service Workers sin redirección
 				if ('serviceWorker' in navigator) {
 					navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -72,6 +80,9 @@
 						);
 					});
 				}
+
+				// Marcar como completado
+				localStorage.setItem('sw_cleanup_done', 'done');
 			})();
 		</script>
 
