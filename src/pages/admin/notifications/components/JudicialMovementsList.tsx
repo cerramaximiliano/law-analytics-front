@@ -91,22 +91,12 @@ const JudicialMovementsList = () => {
 				limit: rowsPerPage,
 			});
 
-			// 📊 LOG: Ver respuesta del servidor
-			console.log("📊 RESPONSE FROM SERVER - Judicial Movements:", response);
-			console.log("📊 Success:", response.success);
-			console.log("📊 Movements count:", response.data?.movements?.length);
-			console.log("📊 Movements data:", response.data?.movements);
-			console.log("📊 Pagination:", response.data?.pagination);
-			console.log("📊 Stats:", response.data?.stats);
-
 			if (response.success) {
 				setMovements(response.data.movements);
 				setTotalItems(response.data.pagination.totalItems);
 				setStats(response.data.stats);
 			}
 		} catch (error: any) {
-			console.error("❌ ERROR fetching movements:", error);
-			console.error("❌ Error response:", error.response);
 			dispatch(
 				openSnackbar({
 					open: true,
