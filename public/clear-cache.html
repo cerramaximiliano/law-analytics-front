@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Cargando - Law Analytics</title>
     <style>
         * {
@@ -91,6 +94,44 @@
     <script>
         const debugEl = document.getElementById('debug');
 
+        // SOLUCIÓN DE EMERGENCIA: Detectar bucle infinito
+        // Si llegamos aquí más de 1 vez en 10 segundos, hay un bucle
+        var loopKey = 'cleanup_loop_detect';
+        var lastVisit = sessionStorage.getItem(loopKey);
+        var now = Date.now();
+
+        if (lastVisit && (now - parseInt(lastVisit)) < 10000) {
+            console.error('🔴 BUCLE DETECTADO - Forzando recarga completa');
+            // Limpiar TODO y forzar hard reload
+            sessionStorage.clear();
+            localStorage.removeItem('sw_cleanup_v4_final');
+            localStorage.removeItem('sw_cleanup_v5_fix');
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (let registration of registrations) {
+                        registration.unregister().then(() => {
+                            // HARD RELOAD después de desregistrar SW
+                            window.location.replace('/');
+                            // Forzar recarga desde servidor (no caché)
+                            setTimeout(() => window.location.reload(true), 100);
+                        });
+                    }
+                    if (registrations.length === 0) {
+                        window.location.replace('/');
+                        setTimeout(() => window.location.reload(true), 100);
+                    }
+                });
+            } else {
+                window.location.replace('/');
+                setTimeout(() => window.location.reload(true), 100);
+            }
+            return; // No ejecutar clearAllCaches
+        }
+
+        // Marcar visita
+        sessionStorage.setItem(loopKey, now.toString());
+
         // Detectar si el usuario llegó aquí por error (URL antigua en caché)
         // Si no hay returnUrl guardado, redirigir inmediatamente a home
         var returnUrl = sessionStorage.getItem('return_after_cleanup');
@@ -102,9 +143,15 @@
                     for (let registration of registrations) {
                         registration.unregister();
                     }
+                    // Esperar a que se desregistre antes de redirigir
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
                 });
+            } else {
+                window.location.href = '/';
             }
-            window.location.href = '/';
+            return; // No ejecutar clearAllCaches
         }
 
         async function clearAllCaches() {
