@@ -3,67 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Limpiando Caché - Law Analytics</title>
+    <title>Cargando - Law Analytics</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #fff;
+            overflow: hidden;
         }
-        .container {
+
+        .loader-container {
             text-align: center;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
         }
-        h1 {
-            margin-bottom: 1rem;
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            animation: fadeIn 0.5s ease-in;
         }
-        .status {
-            margin: 1rem 0;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
-        .success {
-            background: rgba(52, 211, 153, 0.3);
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto;
+            border: 4px solid #f3f4f6;
+            border-top-color: #1677ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-        .error {
-            background: rgba(248, 113, 113, 0.3);
+
+        .loading-text {
+            margin-top: 1.5rem;
+            font-size: 16px;
+            color: #6b7280;
+            font-weight: 500;
         }
-        button {
-            padding: 0.75rem 2rem;
-            font-size: 1rem;
-            border: none;
-            border-radius: 5px;
-            background: white;
-            color: #667eea;
-            cursor: pointer;
-            margin-top: 1rem;
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        button:hover {
-            background: #f3f4f6;
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Ocultar elementos de debug */
+        #debug {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🧹 Limpiando Caché</h1>
-        <div id="status" class="status">
-            Iniciando limpieza de caché...
+    <div class="loader-container">
+        <div class="logo">
+            <img src="/logo192.png" alt="Law Analytics" />
         </div>
-        <button onclick="window.location.href='/'">Ir al Inicio</button>
+        <div class="spinner"></div>
+        <p class="loading-text">Cargando...</p>
     </div>
 
+    <!-- Debug info (oculto) -->
+    <div id="debug"></div>
+
     <script>
-        const statusEl = document.getElementById('status');
-        let messages = [];
+        const debugEl = document.getElementById('debug');
 
         async function clearAllCaches() {
             try {
@@ -72,10 +98,7 @@
                     const registrations = await navigator.serviceWorker.getRegistrations();
                     for (let registration of registrations) {
                         await registration.unregister();
-                        messages.push('✓ Service Worker desregistrado');
-                    }
-                    if (registrations.length === 0) {
-                        messages.push('✓ No había Service Workers activos');
+                        console.log('✓ Service Worker desregistrado');
                     }
                 }
 
@@ -84,51 +107,28 @@
                     const cacheNames = await caches.keys();
                     for (let cacheName of cacheNames) {
                         await caches.delete(cacheName);
-                        messages.push(`✓ Caché "${cacheName}" eliminado`);
-                    }
-                    if (cacheNames.length === 0) {
-                        messages.push('✓ No había cachés para limpiar');
+                        console.log(`✓ Caché "${cacheName}" eliminado`);
                     }
                 }
 
-                // 3. NO limpiar localStorage (preservar datos del usuario)
-                messages.push('✓ LocalStorage preservado');
-
-                // 4. Mostrar resultado exitoso
-                statusEl.className = 'status success';
-                statusEl.innerHTML = `
-                    <h3>✅ Limpieza Completada</h3>
-                    <ul style="text-align: left; display: inline-block;">
-                        ${messages.map(msg => `<li>${msg}</li>`).join('')}
-                    </ul>
-                    <p><strong>Redirigiendo...</strong></p>
-                `;
-
-                // 5. Marcar limpieza como completada
+                // 3. Marcar limpieza como completada (usar localStorage para persistir)
                 var CLEANUP_VERSION = 'v4_final';
                 var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
-                sessionStorage.setItem(cleanupKey, 'done');
+                localStorage.setItem(cleanupKey, 'done');
 
-                // 6. Redireccionar a la URL original después de 1 segundo
+                // 4. Redireccionar a la URL original
                 setTimeout(() => {
                     var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
                     console.log('Redirigiendo a:', returnUrl);
                     window.location.href = returnUrl;
-                }, 1500);
+                }, 800);
 
             } catch (error) {
-                statusEl.className = 'status error';
-                statusEl.innerHTML = `
-                    <h3>❌ Error durante la limpieza</h3>
-                    <p>${error.message}</p>
-                    <p>Por favor, intenta limpiar el caché manualmente:</p>
-                    <ol style="text-align: left; display: inline-block;">
-                        <li>Abre DevTools (F12)</li>
-                        <li>Ve a Application/Storage</li>
-                        <li>Click en "Clear site data"</li>
-                        <li>Recarga con Ctrl+Shift+R</li>
-                    </ol>
-                `;
+                console.error('Error durante la limpieza:', error);
+                // En caso de error, redirigir de todas formas
+                setTimeout(() => {
+                    window.location.href = sessionStorage.getItem('return_after_cleanup') || '/';
+                }, 1000);
             }
         }
 

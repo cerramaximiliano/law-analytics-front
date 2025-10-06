@@ -56,8 +56,8 @@
 				var CLEANUP_VERSION = 'v4_final';
 				var cleanupKey = 'sw_cleanup_' + CLEANUP_VERSION;
 
-				// Si ya se limpió en esta sesión, continuar
-				if (sessionStorage.getItem(cleanupKey) === 'done') {
+				// Si ya se limpió, continuar (usar localStorage para persistir entre sesiones)
+				if (localStorage.getItem(cleanupKey) === 'done') {
 					console.log('✓ Limpieza v4 completada');
 					return;
 				}

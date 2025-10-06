@@ -172,7 +172,7 @@ const ServerStatus = () => {
 
 							// Intentar verificar a través de nuestro backend
 							try {
-								const proxyUrl = `${process.env.REACT_APP_BASE_URL}/api/server-status/check-external`;
+								const proxyUrl = `${import.meta.env.VITE_API_URL}/api/server-status/check-external`;
 								const proxyResponse = await fetch(proxyUrl, {
 									method: "POST",
 									credentials: "include",

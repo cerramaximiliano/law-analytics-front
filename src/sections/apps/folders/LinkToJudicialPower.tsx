@@ -18,15 +18,15 @@ import {
 	Box,
 	Divider,
 	TextField,
-	ListItemButton,
-	ListItemText,
-	ListItemIcon,
 	alpha,
 	Checkbox,
 	FormControlLabel,
+	Card,
+	CardActionArea,
+	CardContent,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
-import { DocumentUpload, ArrowRight } from "iconsax-react";
+import { DocumentUpload } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -314,123 +314,121 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 					<Divider />
 
 					<DialogContent sx={{ p: 3 }}>
-						<Grid container spacing={3}>
+						<Grid container spacing={3} justifyContent="center">
 							<Grid item xs={12}>
-								<Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
-									Seleccione el poder judicial con el que desea vincular esta causa:
+								<Typography variant="h6" color="textPrimary" sx={{ mb: 2 }}>
+									Seleccione el poder judicial
+								</Typography>
+								<Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+									Elija el poder judicial con el que desea vincular esta causa
 								</Typography>
 							</Grid>
 
 							{/* Opción Poder Judicial de la Nación */}
-							<Grid item xs={12}>
-								<ListItemButton
-									onClick={() => setSelectedPower("nacional")}
+							<Grid item xs={12} sm={6}>
+								<Card
 									sx={{
-										border: 1,
-										borderColor: "divider",
 										borderRadius: 2,
-										p: 2,
-										display: "flex",
-										alignItems: "center",
-										"&:hover": {
-											backgroundColor: alpha(theme.palette.primary.main, 0.08),
-											borderColor: theme.palette.primary.main,
-										},
+										border: selectedPower === "nacional" ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+										backgroundColor: selectedPower === "nacional" ? theme.palette.primary.lighter : "inherit",
+										transition: "all 0.3s ease",
+										height: "100%",
 									}}
 								>
-									<ListItemIcon sx={{ minWidth: 80 }}>
-										<Box
-											sx={{
-												backgroundColor: "#222E43",
-												borderRadius: 1,
-												p: 1,
-												width: 60,
-												height: 60,
-												display: "flex",
-												justifyContent: "center",
-												alignItems: "center",
-											}}
-										>
-											<img
-												src="https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png"
-												alt="Poder Judicial de la Nación"
-												style={{
-													maxHeight: "100%",
-													maxWidth: "100%",
-													objectFit: "contain",
-												}}
-											/>
-										</Box>
-									</ListItemIcon>
-									<ListItemText
-										primary="Poder Judicial de la Nación"
-										secondary="Acceda a causas federales y nacionales"
-										primaryTypographyProps={{ fontWeight: 600 }}
-									/>
-									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-										<ArrowRight size={24} color={theme.palette.text.secondary} />
-									</Box>
-								</ListItemButton>
+									<CardActionArea onClick={() => setSelectedPower("nacional")} sx={{ p: 2, height: "100%" }}>
+										<CardContent sx={{ p: 0, height: "100%" }}>
+											<Stack spacing={2} alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
+												<Box
+													sx={{
+														backgroundColor: "#222E43",
+														borderRadius: 1,
+														p: 2,
+														width: 80,
+														height: 80,
+														display: "flex",
+														justifyContent: "center",
+														alignItems: "center",
+													}}
+												>
+													<img
+														src="https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png"
+														alt="Poder Judicial de la Nación"
+														style={{
+															maxHeight: "100%",
+															maxWidth: "100%",
+															objectFit: "contain",
+														}}
+													/>
+												</Box>
+												<Typography variant="h6" color={selectedPower === "nacional" ? "primary" : "textPrimary"} align="center">
+													Poder Judicial de la Nación
+												</Typography>
+												<Typography variant="body2" color="textSecondary" align="center">
+													Acceda a causas federales y nacionales
+												</Typography>
+											</Stack>
+										</CardContent>
+									</CardActionArea>
+								</Card>
 							</Grid>
 
 							{/* Opción Poder Judicial de Buenos Aires */}
-							<Grid item xs={12}>
-								<ListItemButton
-									onClick={() => {
-										// Cerrar este modal y abrir el de Buenos Aires
-										if (onSelectBuenosAires) {
-											// Solo cerrar el modal, sin resetear estados internos
-											onCancelLink();
-											// Abrir el modal de Buenos Aires inmediatamente
-											onSelectBuenosAires();
-										}
-									}}
+							<Grid item xs={12} sm={6}>
+								<Card
 									sx={{
-										border: 1,
-										borderColor: "divider",
 										borderRadius: 2,
-										p: 2,
-										display: "flex",
-										alignItems: "center",
-										"&:hover": {
-											backgroundColor: alpha(theme.palette.primary.main, 0.08),
-											borderColor: theme.palette.primary.main,
-										},
+										border: selectedPower === "buenosaires" ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+										backgroundColor: selectedPower === "buenosaires" ? theme.palette.primary.lighter : "inherit",
+										transition: "all 0.3s ease",
+										height: "100%",
 									}}
 								>
-									<ListItemIcon sx={{ minWidth: 80 }}>
-										<Box
-											sx={{
-												backgroundColor: "#f8f8f8",
-												borderRadius: 1,
-												p: 1,
-												width: 60,
-												height: 60,
-												display: "flex",
-												justifyContent: "center",
-												alignItems: "center",
-											}}
-										>
-											<img
-												src={logoPJBuenosAires}
-												alt="Poder Judicial de Buenos Aires"
-												style={{
-													maxHeight: "100%",
-													maxWidth: "100%",
-													objectFit: "contain",
-												}}
-											/>
-										</Box>
-									</ListItemIcon>
-									<ListItemText
-										primary="Poder Judicial de la Provincia de Buenos Aires"
-										secondary="Vincule causas del fuero provincial"
-										primaryTypographyProps={{ fontWeight: 600 }}
-									/>
-									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
-										<ArrowRight size={24} color={theme.palette.text.secondary} />
-									</Box>
-								</ListItemButton>
+									<CardActionArea
+										onClick={() => {
+											// Cerrar este modal y abrir el de Buenos Aires
+											if (onSelectBuenosAires) {
+												// Solo cerrar el modal, sin resetear estados internos
+												onCancelLink();
+												// Abrir el modal de Buenos Aires inmediatamente
+												onSelectBuenosAires();
+											}
+										}}
+										sx={{ p: 2, height: "100%" }}
+									>
+										<CardContent sx={{ p: 0, height: "100%" }}>
+											<Stack spacing={2} alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
+												<Box
+													sx={{
+														backgroundColor: "#f8f8f8",
+														borderRadius: 1,
+														p: 2,
+														width: 80,
+														height: 80,
+														display: "flex",
+														justifyContent: "center",
+														alignItems: "center",
+													}}
+												>
+													<img
+														src={logoPJBuenosAires}
+														alt="Poder Judicial de Buenos Aires"
+														style={{
+															maxHeight: "100%",
+															maxWidth: "100%",
+															objectFit: "contain",
+														}}
+													/>
+												</Box>
+												<Typography variant="h6" color={selectedPower === "buenosaires" ? "primary" : "textPrimary"} align="center">
+													Poder Judicial de la Provincia de Buenos Aires
+												</Typography>
+												<Typography variant="body2" color="textSecondary" align="center">
+													Vincule causas del fuero provincial
+												</Typography>
+											</Stack>
+										</CardContent>
+									</CardActionArea>
+								</Card>
 							</Grid>
 						</Grid>
 					</DialogContent>
