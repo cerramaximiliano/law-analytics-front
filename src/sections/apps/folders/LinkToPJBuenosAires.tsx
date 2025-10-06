@@ -23,7 +23,7 @@ import {
 	CircularProgress,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
-import { DocumentUpload } from "iconsax-react";
+import { DocumentUpload, ArrowLeft2 } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -477,16 +477,27 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName }: L
 			fullWidth
 			sx={{ "& .MuiDialog-paper": { p: 0 } }}
 		>
-			<DialogTitle sx={{ p: 3, pb: 2 }}>
-				<Stack direction="row" alignItems="center" spacing={1}>
-					<DocumentUpload size={24} color={theme.palette.primary.main} />
-					<Typography variant="h5">Vincular con Poder Judicial de Buenos Aires</Typography>
+			<DialogTitle
+				sx={{
+					p: 2.5,
+					bgcolor: theme.palette.background.paper,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Stack spacing={1}>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<DocumentUpload size={24} color={theme.palette.primary.main} />
+						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+							Vincular con Poder Judicial de Buenos Aires
+						</Typography>
+					</Stack>
+					<Typography variant="body2" color="textSecondary">
+						Complete los datos del expediente
+					</Typography>
 				</Stack>
 			</DialogTitle>
 
-			<Divider />
-
-			<DialogContent sx={{ p: 3 }}>
+			<DialogContent sx={{ p: 2.5 }}>
 				<Grid container spacing={3}>
 					{/* Logo del Poder Judicial de Buenos Aires */}
 					<Grid item xs={12}>
@@ -703,20 +714,31 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName }: L
 				</Grid>
 			</DialogContent>
 
-			<Divider />
-
-			<DialogActions sx={{ p: 2.5 }}>
-				{onBack && (
-					<Button onClick={handleBack} disabled={loading} color="inherit">
-						Atrás
-					</Button>
-				)}
-				<Button onClick={handleClose} disabled={loading} color="inherit">
-					Cancelar
-				</Button>
-				<Button variant="contained" onClick={handleSubmit} disabled={loading || loadingCodes || navigationCodes.length === 0}>
-					{loading ? "Vinculando..." : "Vincular Causa"}
-				</Button>
+			<DialogActions
+				sx={{
+					p: 2.5,
+					bgcolor: theme.palette.background.default,
+					borderTop: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Grid container justifyContent="space-between" alignItems="center">
+					<Grid item></Grid>
+					<Grid item>
+						<Stack direction="row" spacing={2} alignItems="center">
+							{onBack && (
+								<Button onClick={handleBack} disabled={loading} startIcon={<ArrowLeft2 size={18} />}>
+									Atrás
+								</Button>
+							)}
+							<Button onClick={handleClose} disabled={loading} color="error" sx={{ minWidth: 100 }}>
+								Cancelar
+							</Button>
+							<Button variant="contained" onClick={handleSubmit} disabled={loading || loadingCodes || navigationCodes.length === 0} sx={{ minWidth: 100 }}>
+								{loading ? "Vinculando..." : "Vincular"}
+							</Button>
+						</Stack>
+					</Grid>
+				</Grid>
 			</DialogActions>
 		</Dialog>
 	);

@@ -21,12 +21,12 @@ import {
 	alpha,
 	Checkbox,
 	FormControlLabel,
-	Card,
-	CardActionArea,
-	CardContent,
+	ListItemButton,
+	ListItemIcon,
+	ListItemText,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
-import { DocumentUpload } from "iconsax-react";
+import { DocumentUpload, ArrowLeft2, ArrowRight } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -304,19 +304,30 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 			{selectedPower === null ? (
 				// Vista de selección del poder judicial
 				<>
-					<DialogTitle sx={{ p: 3, pb: 2 }}>
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<DocumentUpload size={24} color={theme.palette.primary.main} />
-							<Typography variant="h5">Vincular con Poder Judicial</Typography>
+					<DialogTitle
+						sx={{
+							p: 2.5,
+							bgcolor: theme.palette.background.paper,
+							borderBottom: `1px solid ${theme.palette.divider}`,
+						}}
+					>
+						<Stack spacing={1}>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<DocumentUpload size={24} color={theme.palette.primary.main} />
+								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+									Vincular con Poder Judicial
+								</Typography>
+							</Stack>
+							<Typography variant="body2" color="textSecondary">
+								Seleccione el poder judicial
+							</Typography>
 						</Stack>
 					</DialogTitle>
 
-					<Divider />
-
-					<DialogContent sx={{ p: 3 }}>
-						<Grid container spacing={3} justifyContent="center">
+					<DialogContent sx={{ p: 2.5 }}>
+						<Grid container spacing={3}>
 							<Grid item xs={12}>
-								<Typography variant="h6" color="textPrimary" sx={{ mb: 2 }}>
+								<Typography variant="h6" color="textPrimary" sx={{ mb: 1 }}>
 									Seleccione el poder judicial
 								</Typography>
 								<Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
@@ -324,136 +335,162 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 								</Typography>
 							</Grid>
 
-							{/* Opción Poder Judicial de la Nación */}
-							<Grid item xs={12} sm={6}>
-								<Card
+							{/* Poder Judicial de la Nación */}
+							<Grid item xs={12}>
+								<ListItemButton
+									onClick={() => setSelectedPower("nacional")}
 									sx={{
+										border: 1,
+										borderColor: selectedPower === "nacional" ? theme.palette.primary.main : theme.palette.divider,
 										borderRadius: 2,
-										border: selectedPower === "nacional" ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
-										backgroundColor: selectedPower === "nacional" ? theme.palette.primary.lighter : "inherit",
-										transition: "all 0.3s ease",
-										height: "100%",
+										p: 2,
+										display: "flex",
+										alignItems: "center",
+										backgroundColor: selectedPower === "nacional" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+										"&:hover": {
+											backgroundColor: alpha(theme.palette.primary.main, 0.08),
+											borderColor: theme.palette.primary.main,
+										},
 									}}
 								>
-									<CardActionArea onClick={() => setSelectedPower("nacional")} sx={{ p: 2, height: "100%" }}>
-										<CardContent sx={{ p: 0, height: "100%" }}>
-											<Stack spacing={2} alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
-												<Box
-													sx={{
-														backgroundColor: "#222E43",
-														borderRadius: 1,
-														p: 2,
-														width: 80,
-														height: 80,
-														display: "flex",
-														justifyContent: "center",
-														alignItems: "center",
-													}}
-												>
-													<img
-														src="https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png"
-														alt="Poder Judicial de la Nación"
-														style={{
-															maxHeight: "100%",
-															maxWidth: "100%",
-															objectFit: "contain",
-														}}
-													/>
-												</Box>
-												<Typography variant="h6" color={selectedPower === "nacional" ? "primary" : "textPrimary"} align="center">
-													Poder Judicial de la Nación
-												</Typography>
-												<Typography variant="body2" color="textSecondary" align="center">
-													Acceda a causas federales y nacionales
-												</Typography>
-											</Stack>
-										</CardContent>
-									</CardActionArea>
-								</Card>
+									<ListItemIcon sx={{ minWidth: 80 }}>
+										<Box
+											sx={{
+												backgroundColor: "#222E43",
+												borderRadius: 1,
+												p: 1,
+												width: 60,
+												height: 60,
+												display: "flex",
+												justifyContent: "center",
+												alignItems: "center",
+											}}
+										>
+											<img
+												src="https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png"
+												alt="Poder Judicial de la Nación"
+												style={{
+													maxHeight: "100%",
+													maxWidth: "100%",
+													objectFit: "contain",
+												}}
+											/>
+										</Box>
+									</ListItemIcon>
+									<ListItemText
+										primary="Poder Judicial de la Nación"
+										secondary="Acceda a causas federales y nacionales"
+										primaryTypographyProps={{ fontWeight: 600 }}
+									/>
+									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+										<ArrowRight size={24} color={theme.palette.text.secondary} />
+									</Box>
+								</ListItemButton>
 							</Grid>
 
-							{/* Opción Poder Judicial de Buenos Aires */}
-							<Grid item xs={12} sm={6}>
-								<Card
+							{/* Poder Judicial de Buenos Aires */}
+							<Grid item xs={12}>
+								<ListItemButton
+									onClick={() => {
+										// Cerrar este modal y abrir el de Buenos Aires
+										if (onSelectBuenosAires) {
+											// Solo cerrar el modal, sin resetear estados internos
+											onCancelLink();
+											// Abrir el modal de Buenos Aires inmediatamente
+											onSelectBuenosAires();
+										}
+									}}
 									sx={{
+										border: 1,
+										borderColor: selectedPower === "buenosaires" ? theme.palette.primary.main : theme.palette.divider,
 										borderRadius: 2,
-										border: selectedPower === "buenosaires" ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
-										backgroundColor: selectedPower === "buenosaires" ? theme.palette.primary.lighter : "inherit",
-										transition: "all 0.3s ease",
-										height: "100%",
+										p: 2,
+										display: "flex",
+										alignItems: "center",
+										backgroundColor: selectedPower === "buenosaires" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+										"&:hover": {
+											backgroundColor: alpha(theme.palette.primary.main, 0.08),
+											borderColor: theme.palette.primary.main,
+										},
 									}}
 								>
-									<CardActionArea
-										onClick={() => {
-											// Cerrar este modal y abrir el de Buenos Aires
-											if (onSelectBuenosAires) {
-												// Solo cerrar el modal, sin resetear estados internos
-												onCancelLink();
-												// Abrir el modal de Buenos Aires inmediatamente
-												onSelectBuenosAires();
-											}
-										}}
-										sx={{ p: 2, height: "100%" }}
-									>
-										<CardContent sx={{ p: 0, height: "100%" }}>
-											<Stack spacing={2} alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
-												<Box
-													sx={{
-														backgroundColor: "#f8f8f8",
-														borderRadius: 1,
-														p: 2,
-														width: 80,
-														height: 80,
-														display: "flex",
-														justifyContent: "center",
-														alignItems: "center",
-													}}
-												>
-													<img
-														src={logoPJBuenosAires}
-														alt="Poder Judicial de Buenos Aires"
-														style={{
-															maxHeight: "100%",
-															maxWidth: "100%",
-															objectFit: "contain",
-														}}
-													/>
-												</Box>
-												<Typography variant="h6" color={selectedPower === "buenosaires" ? "primary" : "textPrimary"} align="center">
-													Poder Judicial de la Provincia de Buenos Aires
-												</Typography>
-												<Typography variant="body2" color="textSecondary" align="center">
-													Vincule causas del fuero provincial
-												</Typography>
-											</Stack>
-										</CardContent>
-									</CardActionArea>
-								</Card>
+									<ListItemIcon sx={{ minWidth: 80 }}>
+										<Box
+											sx={{
+												backgroundColor: "#f8f8f8",
+												borderRadius: 1,
+												p: 1,
+												width: 60,
+												height: 60,
+												display: "flex",
+												justifyContent: "center",
+												alignItems: "center",
+											}}
+										>
+											<img
+												src={logoPJBuenosAires}
+												alt="Poder Judicial de Buenos Aires"
+												style={{
+													maxHeight: "100%",
+													maxWidth: "100%",
+													objectFit: "contain",
+												}}
+											/>
+										</Box>
+									</ListItemIcon>
+									<ListItemText
+										primary="Poder Judicial de la Provincia de Buenos Aires"
+										secondary="Vincule causas del fuero provincial"
+										primaryTypographyProps={{ fontWeight: 600 }}
+									/>
+									<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+										<ArrowRight size={24} color={theme.palette.text.secondary} />
+									</Box>
+								</ListItemButton>
 							</Grid>
 						</Grid>
 					</DialogContent>
 
-					<Divider />
-
-					<DialogActions sx={{ p: 2.5 }}>
-						<Button onClick={handleClose} color="inherit">
-							Cancelar
-						</Button>
+					<DialogActions
+						sx={{
+							p: 2.5,
+							bgcolor: theme.palette.background.default,
+							borderTop: `1px solid ${theme.palette.divider}`,
+						}}
+					>
+						<Grid container justifyContent="flex-end">
+							<Grid item>
+								<Button onClick={handleClose} color="error" sx={{ minWidth: 100 }}>
+									Cancelar
+								</Button>
+							</Grid>
+						</Grid>
 					</DialogActions>
 				</>
 			) : (
 				// Vista del formulario para Poder Judicial de la Nación
 				<>
-					<DialogTitle sx={{ p: 3, pb: 2 }}>
-						<Stack direction="row" alignItems="center" spacing={1}>
-							<DocumentUpload size={24} color={theme.palette.primary.main} />
-							<Typography variant="h5">Vincular con Poder Judicial de la Nación</Typography>
+					<DialogTitle
+						sx={{
+							p: 2.5,
+							bgcolor: theme.palette.background.paper,
+							borderBottom: `1px solid ${theme.palette.divider}`,
+						}}
+					>
+						<Stack spacing={1}>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<DocumentUpload size={24} color={theme.palette.primary.main} />
+								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+									Vincular con Poder Judicial de la Nación
+								</Typography>
+							</Stack>
+							<Typography variant="body2" color="textSecondary">
+								Complete los datos del expediente
+							</Typography>
 						</Stack>
 					</DialogTitle>
 
-					<Divider />
-
-					<DialogContent sx={{ p: 3 }}>
+					<DialogContent sx={{ p: 2.5 }}>
 						<Grid container spacing={3}>
 							{/* Logo del Poder Judicial de la Nación */}
 							<Grid item xs={12}>
@@ -617,18 +654,34 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 						</Grid>
 					</DialogContent>
 
-					<Divider />
-
-					<DialogActions sx={{ p: 2.5 }}>
-						<Button onClick={() => setSelectedPower(null)} disabled={loading} color="inherit">
-							Atrás
-						</Button>
-						<Button onClick={handleClose} disabled={loading} color="inherit">
-							Cancelar
-						</Button>
-						<Button variant="contained" onClick={handleSubmit} disabled={loading}>
-							{loading ? "Vinculando..." : "Vincular Causa"}
-						</Button>
+					<DialogActions
+						sx={{
+							p: 2.5,
+							bgcolor: theme.palette.background.default,
+							borderTop: `1px solid ${theme.palette.divider}`,
+						}}
+					>
+						<Grid container justifyContent="space-between" alignItems="center">
+							<Grid item></Grid>
+							<Grid item>
+								<Stack direction="row" spacing={2} alignItems="center">
+									<Button onClick={() => setSelectedPower(null)} disabled={loading} startIcon={<ArrowLeft2 size={18} />}>
+										Atrás
+									</Button>
+									<Button onClick={handleClose} disabled={loading} color="error" sx={{ minWidth: 100 }}>
+										Cancelar
+									</Button>
+									<Button
+										variant="contained"
+										onClick={handleSubmit}
+										disabled={loading || !jurisdiction || !expedientNumber || !expedientYear || !!yearError || !!numberError || !!jurisdictionError}
+										sx={{ minWidth: 100 }}
+									>
+										{loading ? "Vinculando..." : "Vincular"}
+									</Button>
+								</Stack>
+							</Grid>
+						</Grid>
 					</DialogActions>
 				</>
 			)}
