@@ -14,7 +14,7 @@ export interface CombinedActivity {
 	time?: string;
 	dateExpiration?: string;
 	link?: string;
-	source?: "pjn" | "manual";
+	source?: "pjn" | "mev" | "manual";
 	completed?: boolean;
 
 	// Campos específicos de Notification

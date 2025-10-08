@@ -11,7 +11,7 @@ export type Movement = {
 	title: string;
 	description?: string;
 	link?: string;
-	source?: "pjn"; // Campo para identificar movimientos de PJN
+	source?: "pjn" | "mev"; // Campo para identificar movimientos sincronizados (PJN o MEV)
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 };
 
