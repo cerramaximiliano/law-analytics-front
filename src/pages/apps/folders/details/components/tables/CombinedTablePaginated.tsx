@@ -111,7 +111,12 @@ const formatDate = (dateString?: string) => {
 	try {
 		const date = parseISO(dateString);
 		if (isValid(date)) {
-			return format(date, "dd/MM/yyyy", { locale: es });
+			// Usar componentes de fecha UTC para evitar conversión de zona horaria
+			const year = date.getUTCFullYear();
+			const month = date.getUTCMonth();
+			const day = date.getUTCDate();
+			const normalized = new Date(year, month, day);
+			return format(normalized, "dd/MM/yyyy", { locale: es });
 		}
 		return "-";
 	} catch {

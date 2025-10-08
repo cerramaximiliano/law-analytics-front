@@ -251,7 +251,12 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			if (dateString.includes("T") || dateString.includes("-")) {
 				parsedDate = parseISO(dateString);
 				if (isValid(parsedDate)) {
-					return format(parsedDate, "dd/MM/yyyy", { locale: es });
+					// Usar componentes de fecha UTC para evitar conversión de zona horaria
+					const year = parsedDate.getUTCFullYear();
+					const month = parsedDate.getUTCMonth();
+					const day = parsedDate.getUTCDate();
+					const normalized = new Date(year, month, day);
+					return format(normalized, "dd/MM/yyyy", { locale: es });
 				}
 			}
 
@@ -370,7 +375,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					time: activity.date,
 					dateExpiration: activity.dateExpiration,
 					link: activity.link,
-					source: activity.source === "pjn" ? "pjn" : undefined,
+					source: activity.source === "pjn" ? "pjn" : activity.source === "mev" ? "mev" : undefined,
 					folderId: activity.folderId,
 					userId: activity.userId,
 					completed: activity.completed,
@@ -437,7 +442,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					time: activity.date,
 					dateExpiration: activity.dateExpiration,
 					link: activity.link,
-					source: activity.source === "pjn" ? "pjn" : undefined,
+					source: activity.source === "pjn" ? "pjn" : activity.source === "mev" ? "mev" : undefined,
 					folderId: activity.folderId,
 					userId: activity.userId,
 					completed: activity.completed,
@@ -1474,6 +1479,25 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										>
 											<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
 												Sincronizado desde Poder Judicial de la Nación (PJN)
+											</Typography>
+										</Box>
+									</Box>
+								)}
+								{viewMovementDetails.source === "mev" && (
+									<Box>
+										<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+											Origen
+										</Typography>
+										<Box
+											sx={{
+												p: 1.5,
+												bgcolor: theme.palette.info.lighter,
+												borderRadius: 1,
+												border: `1px solid ${theme.palette.info.light}`,
+											}}
+										>
+											<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
+												Sincronizado desde Poder Judicial de la provincia de Buenos Aires (MEV)
 											</Typography>
 										</Box>
 									</Box>

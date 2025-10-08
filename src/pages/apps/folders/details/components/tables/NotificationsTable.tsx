@@ -97,7 +97,9 @@ const parseDate = (dateString: string) => {
 		if (dateString.includes("T") || dateString.includes("-")) {
 			const parsedDate = parseISO(dateString);
 			if (isValid(parsedDate)) {
-				return parsedDate;
+				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
+				const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+				return normalized;
 			}
 		}
 
@@ -125,7 +127,12 @@ const formatDate = (dateString: string) => {
 		if (dateString.includes("T") || dateString.includes("-")) {
 			parsedDate = parseISO(dateString);
 			if (isValid(parsedDate)) {
-				return format(parsedDate, "dd/MM/yyyy", { locale: es });
+				// Usar componentes de fecha UTC para evitar conversión de zona horaria
+				const year = parsedDate.getUTCFullYear();
+				const month = parsedDate.getUTCMonth();
+				const day = parsedDate.getUTCDate();
+				const normalized = new Date(year, month, day);
+				return format(normalized, "dd/MM/yyyy", { locale: es });
 			}
 		}
 

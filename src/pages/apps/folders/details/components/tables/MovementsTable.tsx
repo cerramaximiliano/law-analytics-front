@@ -105,7 +105,9 @@ const parseDate = (dateString: string) => {
 		if (dateString.includes("T") || dateString.includes("-")) {
 			const parsedDate = parseISO(dateString);
 			if (isValid(parsedDate)) {
-				return parsedDate;
+				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
+				const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+				return normalized;
 			}
 		}
 
@@ -133,7 +135,12 @@ const formatDate = (dateString: string) => {
 		if (dateString.includes("T") || dateString.includes("-")) {
 			parsedDate = parseISO(dateString);
 			if (isValid(parsedDate)) {
-				return format(parsedDate, "dd/MM/yyyy", { locale: es });
+				// Usar componentes de fecha UTC para evitar conversión de zona horaria
+				const year = parsedDate.getUTCFullYear();
+				const month = parsedDate.getUTCMonth();
+				const day = parsedDate.getUTCDate();
+				const normalized = new Date(year, month, day);
+				return format(normalized, "dd/MM/yyyy", { locale: es });
 			}
 		}
 
@@ -463,9 +470,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 									</TableCell>
 									<TableCell>
 										<Stack direction="row" spacing={0.5}>
-											<Skeleton variant="circular" width={32} height={32} />
-											<Skeleton variant="circular" width={32} height={32} />
-											<Skeleton variant="circular" width={32} height={32} />
+											{[1, 2, 3].map((i) => (
+												<Skeleton key={`skeleton-action-${index}-${i}`} variant="circular" width={32} height={32} />
+											))}
 										</Stack>
 									</TableCell>
 								</TableRow>
@@ -511,6 +518,20 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														}}
 													>
 														Sincronizado • PJN
+													</Typography>
+												)}
+												{movement.source === "mev" && (
+													<Typography
+														variant="caption"
+														color="text.secondary"
+														sx={{
+															fontStyle: "italic",
+															fontSize: "0.7rem",
+															mt: 0.5,
+															display: "block",
+														}}
+													>
+														Sincronizado • MEV
 													</Typography>
 												)}
 											</Box>
@@ -604,21 +625,23 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 										</TableCell>
 										<TableCell>
 											<Stack direction="row" spacing={0.5}>
-												<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
-													<IconButton
-														size="small"
-														color={movement.completed ? "success" : "default"}
-														onClick={(e) => handleToggleComplete(movement._id!, e)}
-														sx={{
-															backgroundColor: movement.completed ? "success.lighter" : "transparent",
-															"&:hover": {
-																backgroundColor: movement.completed ? "success.light" : "action.hover",
-															},
-														}}
-													>
-														{movement.completed ? <TickCircle size={18} variant="Bold" /> : <TickCircle size={18} />}
-													</IconButton>
-												</Tooltip>
+												{movement.dateExpiration && (
+													<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
+														<IconButton
+															size="small"
+															color={movement.completed ? "success" : "default"}
+															onClick={(e) => handleToggleComplete(movement._id!, e)}
+															sx={{
+																backgroundColor: movement.completed ? "success.lighter" : "transparent",
+																"&:hover": {
+																	backgroundColor: movement.completed ? "success.light" : "action.hover",
+																},
+															}}
+														>
+															{movement.completed ? <TickCircle size={18} variant="Bold" /> : <TickCircle size={18} />}
+														</IconButton>
+													</Tooltip>
+												)}
 												<Tooltip title="Ver detalles">
 													<IconButton
 														size="small"
@@ -630,7 +653,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														<Eye size={18} />
 													</IconButton>
 												</Tooltip>
-												{movement.source !== "pjn" && (
+												{movement.source !== "pjn" && movement.source !== "mev" && (
 													<>
 														<Tooltip title="Editar">
 															<IconButton

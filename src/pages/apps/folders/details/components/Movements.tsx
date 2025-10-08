@@ -40,7 +40,7 @@ import SimpleBar from "components/third-party/SimpleBar";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { getMovementsByFolderId } from "store/reducers/movements";
 import { es } from "date-fns/locale";
-import { parse, format } from "date-fns";
+import { parse, format, parseISO, isValid } from "date-fns";
 import AlertMemberDelete from "../modals/alertMemberDelete";
 import { Movement } from "types/movements";
 import EmptyStateCard from "components/EmptyStateCard";
@@ -52,6 +52,16 @@ interface MovementsProps {
 
 const parseDate = (dateString: string) => {
 	try {
+		// Try to parse as ISO date first
+		if (dateString.includes("T") || dateString.includes("-")) {
+			const parsedDate = parseISO(dateString);
+			if (isValid(parsedDate)) {
+				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
+				const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+				return normalized;
+			}
+		}
+		// Try DD/MM/YYYY format
 		return parse(dateString, "dd/MM/yyyy", new Date());
 	} catch (error) {
 		return new Date(0);
@@ -60,6 +70,19 @@ const parseDate = (dateString: string) => {
 
 const formatDate = (dateString: string) => {
 	try {
+		// Try to parse as ISO date first
+		if (dateString.includes("T") || dateString.includes("-")) {
+			const parsedDate = parseISO(dateString);
+			if (isValid(parsedDate)) {
+				// Usar componentes de fecha UTC para evitar conversión de zona horaria
+				const year = parsedDate.getUTCFullYear();
+				const month = parsedDate.getUTCMonth();
+				const day = parsedDate.getUTCDate();
+				const normalized = new Date(year, month, day);
+				return format(normalized, "dd/MM/yyyy", { locale: es });
+			}
+		}
+		// Try DD/MM/YYYY format
 		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
 		return format(parsedDate, "dd/MM/yyyy", { locale: es });
 	} catch (error) {
@@ -340,11 +363,28 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 					{showAll ? "Mostrar menos" : `Ver todos (${movementsData.movements.length})`}
 				</Button>
 
-				<Tooltip title={selectedMovementId ? "Editar movimiento" : "Seleccione un movimiento para editar"}>
+				<Tooltip
+					title={
+						selectedMovementId
+							? (() => {
+									const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
+									return movement?.source === "mev" || movement?.source === "pjn"
+										? "No se puede editar movimientos sincronizados"
+										: "Editar movimiento";
+							  })()
+							: "Seleccione un movimiento para editar"
+					}
+				>
 					<span>
 						<IconButton
 							color="primary"
-							disabled={!selectedMovementId}
+							disabled={
+								!selectedMovementId ||
+								(() => {
+									const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
+									return movement?.source === "mev" || movement?.source === "pjn";
+								})()
+							}
 							size="medium"
 							onClick={() => {
 								const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
@@ -362,11 +402,28 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 					</span>
 				</Tooltip>
 
-				<Tooltip title={selectedMovementId ? "Eliminar movimiento" : "Seleccione un movimiento para eliminar"}>
+				<Tooltip
+					title={
+						selectedMovementId
+							? (() => {
+									const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
+									return movement?.source === "mev" || movement?.source === "pjn"
+										? "No se puede eliminar movimientos sincronizados"
+										: "Eliminar movimiento";
+							  })()
+							: "Seleccione un movimiento para eliminar"
+					}
+				>
 					<span>
 						<IconButton
 							color="error"
-							disabled={!selectedMovementId}
+							disabled={
+								!selectedMovementId ||
+								(() => {
+									const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
+									return movement?.source === "mev" || movement?.source === "pjn";
+								})()
+							}
 							size="medium"
 							onClick={(e) => {
 								e.stopPropagation();
