@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 // material-ui
 import { FormControl, MenuItem, OutlinedInput, OutlinedInputProps, Select, Slider, Stack, TextField, Tooltip } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 // third-party
 import { useAsyncDebounce, Row, TableState, MetaBase } from "react-table";
 import { matchSorter } from "match-sorter";
-import { format } from "date-fns";
+import dayjs from "./dayjs-config";
 
 // project-imports
 import IconButton from "components/@extended/IconButton";
@@ -65,14 +65,14 @@ export function DefaultColumnFilter({ column: { filterValue, Header, setFilter }
 export function DateColumnFilter({ column: { filterValue, Header, setFilter } }: any) {
 	return (
 		<FormControl sx={{ width: "100%" }}>
-			<LocalizationProvider dateAdapter={AdapterDateFns}>
+			<LocalizationProvider dateAdapter={AdapterDayjs}>
 				<DatePicker
-					format="dd/MM/yyyy"
-					value={filterValue && new Date(filterValue)}
+					format="DD/MM/YYYY"
+					value={filterValue ? dayjs(filterValue) : null}
 					onChange={(newValue) => {
 						let formatDateFn = undefined;
 						try {
-							formatDateFn = format(newValue, "M/d/yyyy");
+							formatDateFn = dayjs(newValue).format("M/D/YYYY");
 						} catch (error) {}
 						setFilter(formatDateFn || undefined);
 					}}

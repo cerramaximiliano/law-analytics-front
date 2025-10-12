@@ -3,8 +3,7 @@ import { Alert, Button, Box, Typography, IconButton, Collapse } from "@mui/mater
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Warning2, Add } from "iconsax-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { RootState } from "store";
 
 const DowngradeGracePeriodAlert: React.FC = () => {
@@ -19,16 +18,16 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 	}
 
 	// Check if the grace period has expired
-	const expirationDate = new Date(downgradeGracePeriod.expiresAt);
-	const now = new Date();
-	if (expirationDate < now) {
+	const expirationDate = dayjs(downgradeGracePeriod.expiresAt);
+	const now = dayjs();
+	if (expirationDate.isBefore(now)) {
 		return null;
 	}
 
 	const { previousPlan, targetPlan, autoArchiveScheduled } = downgradeGracePeriod;
 
 	// Format expiration date
-	const formattedExpirationDate = format(expirationDate, "d 'de' MMMM 'de' yyyy", { locale: es });
+	const formattedExpirationDate = expirationDate.format("D [de] MMMM [de] YYYY");
 
 	// Get plan display names
 	const getPlanName = (plan: string) => {

@@ -51,8 +51,7 @@ import {
 } from "iconsax-react";
 import { getUsers } from "store/reducers/users";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { es } from "date-fns/locale";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import notificationMonitoringService from "services/notificationMonitoringService";
 import { openSnackbar } from "store/reducers/snackbar";
 
@@ -388,7 +387,7 @@ const AlertManagement = () => {
 	};
 
 	return (
-		<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+		<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 			<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 				<Tabs value={activeTab} onChange={handleTabChange}>
 					<Tab icon={<Notification size={20} />} iconPosition="start" label="Alertas Personalizadas" />

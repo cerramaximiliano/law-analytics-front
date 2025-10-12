@@ -30,8 +30,8 @@ import {
 import { LoadingButton } from "@mui/lab";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { es } from "date-fns/locale";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import "dayjs/locale/es";
 import { InfoCircle } from "iconsax-react";
 
 // project imports
@@ -566,7 +566,7 @@ const CampaignFormModal = ({ open, onClose, onSuccess, campaign = null, mode }: 
 						</Grid>
 
 						{/* Date pickers wrapped in LocalizationProvider */}
-						<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+						<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 							{/* Start date */}
 							<Grid item xs={12} md={6}>
 								<FormControl fullWidth error={formik.touched.startDate && Boolean(formik.errors.startDate)}>

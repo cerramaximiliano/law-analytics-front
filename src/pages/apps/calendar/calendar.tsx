@@ -38,8 +38,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import timelinePlugin from "@fullcalendar/timeline";
 import esLocale from "@fullcalendar/core/locales/es";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 // project imports
 import { PopupTransition } from "components/@extended/Transitions";
 import CalendarStyled from "sections/apps/calendar/CalendarStyled";
@@ -1084,7 +1083,7 @@ const Calendar = () => {
 									whiteSpace: "nowrap",
 								}}
 							>
-								{format(date, matchDownSM ? "MMM yyyy" : "MMMM yyyy", { locale: es })}
+								{dayjs(date).format(matchDownSM ? "MMM YYYY" : "MMMM YYYY")}
 							</Typography>
 						</Stack>
 

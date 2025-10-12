@@ -20,8 +20,7 @@ import {
 	CardContent,
 	Grid,
 } from "@mui/material";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { fetchStripeCustomers } from "../../../store/reducers/stripe-subscriptions";
 import { StripeCustomer } from "../../../types/stripe-subscription";
 
@@ -273,7 +272,7 @@ const StripeSubscriptionsTable = () => {
 									</Typography>
 								</TableCell>
 								<TableCell>
-									<Typography variant="caption">{format(new Date(customer.created), "dd/MM/yyyy", { locale: es })}</Typography>
+									<Typography variant="caption">{dayjs(customer.created).format("DD/MM/YYYY")}</Typography>
 								</TableCell>
 								<TableCell align="center">
 									<Typography variant="body2">{customer.totalSubscriptions}</Typography>

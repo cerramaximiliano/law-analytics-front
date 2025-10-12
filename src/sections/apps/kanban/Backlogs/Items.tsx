@@ -6,7 +6,7 @@ import { Theme, useTheme } from "@mui/material/styles";
 import { Link, Menu, MenuItem, Stack, TableCell, TableRow, Typography } from "@mui/material";
 
 // third-party
-import { format } from "date-fns";
+import dayjs from "utils/dayjs-config";
 import { Draggable } from "@hello-pangea/dnd";
 
 // project-imports
@@ -182,7 +182,7 @@ const Items = ({ itemId, index }: Props) => {
 					<TableCell sx={{ width: 90, minWidth: 90 }}>{itemColumn ? itemColumn.title : "New"}</TableCell>
 					<TableCell sx={{ width: 140, minWidth: 140 }}>{itemProfile ? itemProfile.name : ""}</TableCell>
 					<TableCell sx={{ width: 85, minWidth: 85, textTransform: "capitalize" }}>{item.priority}</TableCell>
-					<TableCell sx={{ width: 120, minWidth: 120 }}>{item.dueDate ? format(new Date(item.dueDate), "d MMM yyyy") : ""}</TableCell>
+					<TableCell sx={{ width: 120, minWidth: 120 }}>{item.dueDate ? dayjs(item.dueDate).format("D MMM YYYY") : ""}</TableCell>
 				</TableRow>
 			)}
 		</Draggable>

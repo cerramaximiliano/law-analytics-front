@@ -3,8 +3,7 @@ import React from "react";
 import { Button, Grid, Stack, Typography, GridProps, ButtonGroup } from "@mui/material";
 
 // third-party
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 
 // project-imports
 import IconButton from "components/@extended/IconButton";
@@ -64,7 +63,7 @@ const CalendarToolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, o
 						<ArrowLeft2 />
 					</IconButton>
 					<Typography variant="body1" color="textPrimary">
-						{view === "listYear" ? format(date, "yyyy", { locale: es }) : format(date, "MMM yyyy", { locale: es })}
+						{view === "listYear" ? dayjs(date).format("YYYY") : dayjs(date).format("MMM YYYY")}
 					</Typography>
 					<IconButton onClick={onClickNext} size="small">
 						<ArrowRight2 />

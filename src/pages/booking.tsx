@@ -39,10 +39,9 @@ import {
 	InputAdornment,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-import { es } from "date-fns/locale";
-import { format } from "date-fns";
+import dayjs from "utils/dayjs-config";
 
 // project imports
 
@@ -906,7 +905,7 @@ const BookingPage = () => {
 										<Calendar1 size={22} style={{ marginRight: "8px", color: theme.palette.primary.dark }} />
 										Selecciona una fecha
 									</Typography>
-									<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+									<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 										<DateCalendar
 											value={selectedDate}
 											onChange={handleDateChange}
@@ -1318,7 +1317,7 @@ const BookingPage = () => {
 												Fecha:
 											</Typography>
 											<Typography variant="body1">
-												{selectedDate && format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+												{selectedDate && dayjs(selectedDate).format("dddd, D [de] MMMM [de] YYYY")}
 											</Typography>
 										</Box>
 
@@ -1371,7 +1370,7 @@ const BookingPage = () => {
 								</Typography>
 
 								<Typography variant="body1" paragraph>
-									Tu cita ha sido programada para el {selectedDate && format(selectedDate, "d 'de' MMMM 'de' yyyy", { locale: es })} a las{" "}
+									Tu cita ha sido programada para el {selectedDate && dayjs(selectedDate).format("D [de] MMMM [de] YYYY")} a las{" "}
 									{selectedTime} hrs.
 								</Typography>
 

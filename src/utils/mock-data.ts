@@ -1,5 +1,5 @@
 // third-party
-import { sub } from "date-fns";
+import dayjs from "./dayjs-config";
 import { Chance } from "chance";
 import lodash from "lodash";
 
@@ -38,11 +38,11 @@ function mockData(index: number) {
 	return {
 		id: (index: number) => `${chance.bb_pin()}${index}`,
 		contact: chance.phone(),
-		datetime: sub(new Date(), {
-			days: chance.integer({ min: 0, max: 30 }),
-			hours: chance.integer({ min: 0, max: 23 }),
-			minutes: chance.integer({ min: 0, max: 59 }),
-		}),
+		datetime: dayjs()
+			.subtract(chance.integer({ min: 0, max: 30 }), "days")
+			.subtract(chance.integer({ min: 0, max: 23 }), "hours")
+			.subtract(chance.integer({ min: 0, max: 59 }), "minutes")
+			.toDate(),
 		address: {
 			full: `${chance.address()}, ${chance.city()}, ${chance.country({
 				full: true,

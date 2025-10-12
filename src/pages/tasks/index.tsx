@@ -58,7 +58,7 @@ import { getTasksByUserId, deleteTask, getTaskDetail } from "store/reducers/task
 import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { TaskType } from "types/task";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import { CSVLink } from "react-csv";
 
 // ==============================|| REACT TABLE ||============================== //
@@ -257,7 +257,7 @@ function ReactTable({
 									<CSVLink
 										data={data || []}
 										headers={csvHeaders}
-										filename={`tasks-${moment().format("DD-MM-YYYY")}.csv`}
+										filename={`tasks-${dayjs().format("DD-MM-YYYY")}.csv`}
 										style={{
 											color: "inherit",
 											display: "flex",
@@ -514,9 +514,9 @@ const Tasks = () => {
 				Header: "Vencimiento",
 				accessor: "dueDate",
 				Cell: ({ value }: any) => {
-					const date = moment(value);
-					const isOverdue = date.isBefore(moment(), "day");
-					const isDueSoon = date.isAfter(moment()) && date.diff(moment(), "days") <= 3;
+					const date = dayjs(value);
+					const isOverdue = date.isBefore(dayjs(), "day");
+					const isDueSoon = date.isAfter(dayjs()) && date.diff(dayjs(), "days") <= 3;
 					return <Typography color={isOverdue ? "error" : isDueSoon ? "warning" : "textPrimary"}>{date.format("DD/MM/YYYY")}</Typography>;
 				},
 			},

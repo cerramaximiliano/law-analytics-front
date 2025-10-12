@@ -19,7 +19,7 @@ import {
 	Collapse,
 } from "@mui/material";
 import { dispatch, useSelector } from "store";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import {
 	useFilters,
 	useExpanded,
@@ -144,7 +144,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 
 		// Formatos por defecto según la clave
 		if (key === "fechaInicial" || key === "fechaFinal") {
-			const date = moment(value);
+			const date = dayjs(value);
 			if (date.isValid()) {
 				return date.format("DD/MM/YYYY");
 			}
@@ -742,7 +742,7 @@ const SavedIntereses = () => {
 				Header: "Fecha",
 				accessor: "date",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => (
-					<Typography noWrap>{row.original.date ? moment(row.original.date).format("DD/MM/YYYY") : "-"}</Typography>
+					<Typography noWrap>{row.original.date ? dayjs(row.original.date).format("DD/MM/YYYY") : "-"}</Typography>
 				),
 			},
 			{

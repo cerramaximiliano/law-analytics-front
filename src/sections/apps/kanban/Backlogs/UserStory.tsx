@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 
 // third-party
-import { format } from "date-fns";
+import dayjs from "utils/dayjs-config";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 
 // project-imports
@@ -226,7 +226,7 @@ const UserStory = ({ story, index }: Props) => {
 							<TableCell sx={{ width: 90, minWidth: 90 }}>{storyColumn ? storyColumn.title : ""}</TableCell>
 							<TableCell sx={{ width: 140, minWidth: 140 }}>{storyProfile ? storyProfile.name : ""}</TableCell>
 							<TableCell sx={{ width: 85, minWidth: 85, textTransform: "capitalize" }}>{story.priority}</TableCell>
-							<TableCell sx={{ width: 120, minWidth: 120 }}>{story.dueDate ? format(new Date(story.dueDate), "d MMM yyyy") : ""}</TableCell>
+							<TableCell sx={{ width: 120, minWidth: 120 }}>{story.dueDate ? dayjs(story.dueDate).format("D MMM YYYY") : ""}</TableCell>
 						</TableRow>
 
 						<Droppable droppableId={story.id} type="item">

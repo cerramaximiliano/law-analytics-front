@@ -66,7 +66,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 // types
 import { CalculatorType } from "types/calculator";
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 // Importamos el componente selector de guías
 import { GuideSelector } from "components/guides";
 // Importamos componentes para gestión de archivado
@@ -226,7 +226,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 						<Stack spacing={1.5}>
 							<Stack direction="row" justifyContent="space-between">
 								<Typography variant="subtitle2">Fecha:</Typography>
-								<Typography variant="body2">{moment(data.date).format("DD/MM/YYYY")}</Typography>
+								<Typography variant="body2">{dayjs(data.date).format("DD/MM/YYYY")}</Typography>
 							</Stack>
 							<Stack direction="row" justifyContent="space-between">
 								<Typography variant="subtitle2">Categoría:</Typography>
@@ -1003,7 +1003,7 @@ const AllCalculators = () => {
 				Header: "Fecha",
 				accessor: "date",
 				Cell: ({ value }) => {
-					return <Typography>{moment(value).format("DD/MM/YYYY")}</Typography>;
+					return <Typography>{dayjs(value).format("DD/MM/YYYY")}</Typography>;
 				},
 			},
 			{

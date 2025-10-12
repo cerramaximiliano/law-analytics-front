@@ -7,7 +7,7 @@ import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper
 // assets
 import { Calendar, FolderOpen, Profile, Clock, NoteText } from "iconsax-react";
 import { memo } from "react";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 // ==============================|| TASK - VIEW ||============================== //
 
@@ -103,8 +103,8 @@ const TaskView = memo(({ data }: any) => {
 							<InfoCard
 								icon={<Calendar size={18} />}
 								title="Vencimiento"
-								value={moment(data.dueDate).format("DD/MM/YYYY")}
-								color={moment(data.dueDate).isBefore(moment()) ? "error" : "textPrimary"}
+								value={dayjs(data.dueDate).format("DD/MM/YYYY")}
+								color={dayjs(data.dueDate).isBefore(dayjs()) ? "error" : "textPrimary"}
 							/>
 						</Grid>
 						<Grid item xs={6} sm={3}>
@@ -114,7 +114,7 @@ const TaskView = memo(({ data }: any) => {
 							<InfoCard icon={<Profile size={18} />} title="Responsable" value={data.responsible || data.owner || notAvailableMsg} />
 						</Grid>
 						<Grid item xs={6} sm={3}>
-							<InfoCard icon={<Clock size={18} />} title="Actualizado" value={moment(data.updatedAt).format("DD/MM/YYYY HH:mm")} />
+							<InfoCard icon={<Clock size={18} />} title="Actualizado" value={dayjs(data.updatedAt).format("DD/MM/YYYY HH:mm")} />
 						</Grid>
 					</Grid>
 
@@ -211,10 +211,10 @@ const TaskView = memo(({ data }: any) => {
 											Información temporal
 										</Typography>
 										<Stack spacing={0.5}>
-											<Typography variant="caption">Creado: {moment(data.createdAt).format("DD/MM/YYYY HH:mm")}</Typography>
+											<Typography variant="caption">Creado: {dayjs(data.createdAt).format("DD/MM/YYYY HH:mm")}</Typography>
 											{data.completedAt && (
 												<Typography variant="caption" color="success.main">
-													Completado: {moment(data.completedAt).format("DD/MM/YYYY HH:mm")}
+													Completado: {dayjs(data.completedAt).format("DD/MM/YYYY HH:mm")}
 												</Typography>
 											)}
 										</Stack>

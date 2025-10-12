@@ -17,7 +17,7 @@ import validationSchema from "./formModel/validationSchema";
 import { Formik, Form } from "formik";
 
 // third party
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import ResultsView from "./resultsView";
 
 import { WizardProps } from "types/wizards";
@@ -75,8 +75,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	const calcularIntereses = (montoBase: number, fechaInicial: string, fechaFinal: string, tasaId: string): number => {
 		if (!montoBase || !fechaInicial || !fechaFinal || !tasaId) return 0;
 
-		const fechaInicialMoment = moment(fechaInicial, "DD/MM/YYYY");
-		const fechaFinalMoment = moment(fechaFinal, "DD/MM/YYYY");
+		const fechaInicialMoment = dayjs(fechaInicial, "DD/MM/YYYY");
+		const fechaFinalMoment = dayjs(fechaFinal, "DD/MM/YYYY");
 
 		// Calcular días entre fechas
 		const diasTotales = fechaFinalMoment.diff(fechaInicialMoment, "days");
@@ -101,8 +101,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	const calcularPreaviso = (fechaIngreso: Date | null, fechaEgreso: Date | null, remuneracion: number) => {
 		if (!fechaIngreso || !fechaEgreso) return 0;
 
-		const inicio = moment(fechaIngreso);
-		const fin = moment(fechaEgreso);
+		const inicio = dayjs(fechaIngreso);
+		const fin = dayjs(fechaEgreso);
 
 		const periodoPrueba = 3; // 3 meses
 		const mesesTotal = fin.diff(inicio, "months");
@@ -124,7 +124,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	const calcularIntegracionMes = (fechaEgreso: Date | null, remuneracion: number) => {
 		if (!fechaEgreso) return 0;
 
-		const fin = moment(fechaEgreso);
+		const fin = dayjs(fechaEgreso);
 		const diasTotalesMes = fin.daysInMonth();
 		const diaEgreso = fin.date();
 		const diasRestantes = diasTotalesMes - diaEgreso;
@@ -134,13 +134,13 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	};
 	function calcularDiasTrabajados(fechaDespido: string) {
 		// Convertir la fecha de despido a un objeto Moment
-		const finPeriodo = moment(fechaDespido);
+		const finPeriodo = dayjs(fechaDespido);
 
 		// Determinar la fecha de inicio del período según el semestre
 		const inicioPeriodo =
 			finPeriodo.month() < 6 // Mes 0-5 = primer semestre
-				? moment(`${finPeriodo.year()}-01-01`) // 1 de enero del mismo año
-				: moment(`${finPeriodo.year()}-07-01`); // 1 de julio del mismo año
+				? dayjs(`${finPeriodo.year()}-01-01`) // 1 de enero del mismo año
+				: dayjs(`${finPeriodo.year()}-07-01`); // 1 de julio del mismo año
 
 		// Calcular la diferencia en días (incluyendo el día de despido)
 		const diasTrabajados = finPeriodo.diff(inicioPeriodo, "days") + 1;
@@ -175,8 +175,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 		}
 
 		// Convertir fechas a objetos Moment
-		const fechaInicioRelacionMoment = moment(fechaInicioRelacion, "DD/MM/YYYY");
-		const fechaFinMoment = moment(fechaFin, "DD/MM/YYYY");
+		const fechaInicioRelacionMoment = dayjs(fechaInicioRelacion, "DD/MM/YYYY");
+		const fechaFinMoment = dayjs(fechaFin, "DD/MM/YYYY");
 
 		// Validar fechas
 		if (!fechaInicioRelacionMoment.isValid() || !fechaFinMoment.isValid()) {
@@ -184,8 +184,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 		}
 
 		// Obtener el inicio del año calendario o la fecha de inicio de la relación, lo que sea más reciente
-		const inicioAnoCalendario = moment(`01-01-${fechaFinMoment.year()}`, "DD-MM-YYYY");
-		const inicioComputo = moment.max(fechaInicioRelacionMoment, inicioAnoCalendario);
+		const inicioAnoCalendario = dayjs(`01-01-${fechaFinMoment.year()}`, "DD-MM-YYYY");
+		const inicioComputo = fechaInicioRelacionMoment.isAfter(inicioAnoCalendario) ? fechaInicioRelacionMoment : inicioAnoCalendario;
 
 		// Calcular los días trabajados en el año calendario
 		const diasTrabajados = fechaFinMoment.diff(inicioComputo, "days") + 1;
@@ -225,8 +225,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 	}
 	function calcularMultaArt15Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
 		// Convertir las fechas a objetos Moment
-		const inicio = moment(fechaInicio, "DD/MM/YYYY");
-		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+		const inicio = dayjs(fechaInicio, "DD/MM/YYYY");
+		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
 
 		// Validar las fechas
 		if (!inicio.isValid() || !egreso.isValid()) {
@@ -246,8 +246,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 		return parseFloat(multa.toFixed(2));
 	}
 	function calcularMultaArt8Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
-		const inicio = moment(fechaInicio, "DD/MM/YYYY");
-		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+		const inicio = dayjs(fechaInicio, "DD/MM/YYYY");
+		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
 
 		if (!inicio.isValid() || !egreso.isValid()) {
 			throw new Error("Las fechas proporcionadas no son válidas.");
@@ -259,8 +259,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 		return parseFloat((totalRemuneraciones * 0.25).toFixed(2));
 	}
 	function calcularMultaArt9Ley24013(fechaInicio: string, fechaEgreso: string, mejorRemuneracion: number): number {
-		const inicio = moment(fechaInicio, "DD/MM/YYYY");
-		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+		const inicio = dayjs(fechaInicio, "DD/MM/YYYY");
+		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
 
 		if (!inicio.isValid() || !egreso.isValid()) {
 			throw new Error("Las fechas proporcionadas no son válidas.");
@@ -278,8 +278,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 		remuneracionConsignada: number,
 	): number {
 		// Convertir fechas a objetos Moment
-		const inicio = moment(fechaInicioNoRegistrada, "DD/MM/YYYY");
-		const egreso = moment(fechaEgreso, "DD/MM/YYYY");
+		const inicio = dayjs(fechaInicioNoRegistrada, "DD/MM/YYYY");
+		const egreso = dayjs(fechaEgreso, "DD/MM/YYYY");
 
 		// Validar fechas
 		if (!inicio.isValid() || !egreso.isValid()) {
@@ -311,8 +311,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 		const calcularPeriodos = (fechaIngreso: Date | null, fechaEgreso: Date | null, aplicarLey27742: boolean = false) => {
 			if (!fechaIngreso || !fechaEgreso) return 0;
 
-			const inicio = moment(fechaIngreso);
-			const fin = moment(fechaEgreso);
+			const inicio = dayjs(fechaIngreso);
+			const fin = dayjs(fechaEgreso);
 
 			// Calcular años y meses sin modificar los objetos originales
 			const años = fin.diff(inicio, "years");
@@ -399,7 +399,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 				resultado["SAC proporcional"] = (diasTrabajados / 365) * (remuneracionBase / 12);
 			}
 			if (values.liquidacion.includes("diasTrabajados")) {
-				const fin = moment(values.fechaEgreso);
+				const fin = dayjs(values.fechaEgreso);
 				const diasEnMes = fin.daysInMonth();
 				const diaDelMes = fin.date();
 				resultado["Días Trabajados"] = diaDelMes * (remuneracionBase / diasEnMes);

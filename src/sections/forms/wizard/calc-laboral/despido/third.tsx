@@ -4,7 +4,7 @@ import { Grid, InputLabel, Typography, Box, Switch, FormControlLabel, Paper, use
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
 import { useFormikContext } from "formik";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import { useSelector, dispatch } from "store";
 import { getInterestRates } from "store/reducers/interestRates";
 
@@ -89,7 +89,7 @@ export default function ThirdForm(props: ThirdFormProps) {
 			setFieldValue(fechaInicialIntereses.name, values[fechaEgreso.name]);
 
 			// Establecer la fecha final como la fecha actual
-			const hoy = moment().format("DD/MM/YYYY");
+			const hoy = dayjs().format("DD/MM/YYYY");
 			setFieldValue(fechaFinalIntereses.name, hoy);
 		}
 
@@ -207,8 +207,8 @@ export default function ThirdForm(props: ThirdFormProps) {
 									)}
 									{tasaSeleccionada && !errorTasas && (
 										<Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-											Rango válido: {moment(tasaSeleccionada.fechaInicio).format("DD/MM/YYYY")} -{" "}
-											{moment(tasaSeleccionada.fechaUltima).format("DD/MM/YYYY")}
+											Rango válido: {dayjs(tasaSeleccionada.fechaInicio).format("DD/MM/YYYY")} -{" "}
+											{dayjs(tasaSeleccionada.fechaUltima).format("DD/MM/YYYY")}
 										</Typography>
 									)}
 								</Grid>

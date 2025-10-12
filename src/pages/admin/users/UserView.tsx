@@ -26,9 +26,9 @@ import {
 	Tooltip,
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import esLocale from "date-fns/locale/es";
+
 
 // project imports
 import MainCard from "components/MainCard";
@@ -823,7 +823,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 												</Typography>
 
 												{isEditingGracePeriod ? (
-													<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={esLocale}>
+													<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 														<Stack spacing={2} sx={{ mt: 2 }}>
 															<DatePicker
 																label="Fecha de expiración"

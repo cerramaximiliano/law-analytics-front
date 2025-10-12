@@ -20,7 +20,7 @@ import {
 
 // third-party
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { format } from "date-fns";
+import dayjs from "utils/dayjs-config";
 
 // project-imports
 import Logo from "components/logo";
@@ -45,8 +45,8 @@ const InvoiceModal = ({ isOpen, setIsOpen, invoiceInfo, items, onAddNextInvoice 
 	let date;
 	let dueDate;
 	try {
-		date = format(new Date(invoiceInfo.date), "dd/mm/yyyy");
-		dueDate = format(new Date(invoiceInfo.due_date), "dd/MM/yyyy");
+		date = dayjs(invoiceInfo.date).format("DD/MM/YYYY");
+		dueDate = dayjs(invoiceInfo.due_date).format("DD/MM/YYYY");
 	} catch (error) {}
 
 	const subtotal = invoiceInfo?.invoice_detail?.reduce((prev: any, curr: any) => {

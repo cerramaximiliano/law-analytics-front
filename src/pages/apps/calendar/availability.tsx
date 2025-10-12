@@ -38,8 +38,7 @@ import {
 } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { es } from "date-fns/locale";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 // project imports
 import MainCard from "components/MainCard";
@@ -631,7 +630,7 @@ const Availability = () => {
 										</Tooltip>
 									</Stack>
 
-									<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+									<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 										<Grid container spacing={2}>
 											<Grid item xs={6}>
 												<TimePicker
@@ -1044,7 +1043,7 @@ const Availability = () => {
 				<DialogTitle>Agregar fecha bloqueada</DialogTitle>
 				<DialogContent>
 					<Stack spacing={3} sx={{ mt: 1, minWidth: "300px" }}>
-						<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+						<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 							<DatePicker
 								label="Fecha a bloquear"
 								value={newExcludedDate}

@@ -33,7 +33,7 @@ import { dispatch, useSelector } from "store";
 import { updateUserProfile } from "store/reducers/auth"; // Importamos la acción
 
 // assets
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 // styles & constant
 const ITEM_HEIGHT = 48;
@@ -73,12 +73,12 @@ const TabPersonal = () => {
 	const formatInitialDate = () => {
 		if (userData.user?.dob) {
 			// Extraer los componentes de la fecha en UTC
-			const utcDate = moment.utc(userData.user.dob);
+			const utcDate = dayjs.utc(userData.user.dob);
 			const year = utcDate.year();
 			const month = utcDate.month();
 			const day = utcDate.date();
 			// Crear una nueva fecha local con esos componentes exactos
-			const parsedDate = moment().year(year).month(month).date(day).hour(0).minute(0).second(0).millisecond(0).toDate();
+			const parsedDate = dayjs().year(year).month(month).date(day).hour(0).minute(0).second(0).millisecond(0).toDate();
 
 			return parsedDate;
 		}
@@ -111,7 +111,7 @@ const TabPersonal = () => {
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					setLoading(true);
 					try {
-						const formattedDate = moment(values.dob).format("YYYY-MM-DD");
+						const formattedDate = dayjs(values.dob).format("YYYY-MM-DD");
 						// Preparar datos para enviar al servidor
 						const updateData = {
 							firstName: values.firstName,

@@ -24,8 +24,7 @@ import {
 	FormControlLabel,
 	Checkbox,
 } from "@mui/material";
-import { format, parseISO, parse, isValid } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import {
 	TableDocument,
 	NotificationStatus,
@@ -245,25 +244,19 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		}
 
 		try {
-			let parsedDate: Date;
-
 			// Try to parse as ISO date first
 			if (dateString.includes("T") || dateString.includes("-")) {
-				parsedDate = parseISO(dateString);
-				if (isValid(parsedDate)) {
+				const parsed = dayjs.utc(dateString);
+				if (parsed.isValid()) {
 					// Usar componentes de fecha UTC para evitar conversión de zona horaria
-					const year = parsedDate.getUTCFullYear();
-					const month = parsedDate.getUTCMonth();
-					const day = parsedDate.getUTCDate();
-					const normalized = new Date(year, month, day);
-					return format(normalized, "dd/MM/yyyy", { locale: es });
+					return parsed.format("DD/MM/YYYY");
 				}
 			}
 
 			// Try to parse as DD/MM/YYYY format
-			parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
-			if (isValid(parsedDate)) {
-				return format(parsedDate, "dd/MM/yyyy", { locale: es });
+			const parsed = dayjs(dateString, "DD/MM/YYYY");
+			if (parsed.isValid()) {
+				return parsed.format("DD/MM/YYYY");
 			}
 
 			return "";
@@ -1650,7 +1643,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									Fecha de inicio
 								</Typography>
 								<Typography variant="body1">
-									{viewEventDetails.start ? format(parseISO(viewEventDetails.start), "dd/MM/yyyy HH:mm", { locale: es }) : "-"}
+									{viewEventDetails.start ? dayjs(viewEventDetails.start).format("DD/MM/YYYY HH:mm") : "-"}
 								</Typography>
 							</Box>
 							{viewEventDetails.end && (
@@ -1658,7 +1651,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									<Typography variant="subtitle2" color="textSecondary">
 										Fecha de fin
 									</Typography>
-									<Typography variant="body1">{format(parseISO(viewEventDetails.end), "dd/MM/yyyy HH:mm", { locale: es })}</Typography>
+									<Typography variant="body1">{dayjs(viewEventDetails.end).format("DD/MM/YYYY HH:mm")}</Typography>
 								</Box>
 							)}
 							{viewEventDetails.description && (

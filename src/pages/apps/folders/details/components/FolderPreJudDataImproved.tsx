@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Avatar, LinearProgress } from "@mui/material";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import { Edit2, User, Calendar, DollarCircle, HashtagSquare, DocumentText, TickCircle } from "iconsax-react";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
@@ -11,9 +11,6 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
-
-import "moment/locale/es";
-moment.locale("es");
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -118,7 +115,7 @@ const FolderPreJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader:
 
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
-		return moment(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
+		return dayjs(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
 	};
 
 	const defaultPreFolder = {
@@ -156,10 +153,10 @@ const FolderPreJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader:
 					preFolder: {
 						...values.preFolder,
 						initialDatePreFolder: values.preFolder.initialDatePreFolder
-							? moment(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: "",
 						finalDatePreFolder: values.preFolder.finalDatePreFolder
-							? moment(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: "",
 					},
 				};
@@ -219,7 +216,7 @@ const FolderPreJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader:
 	// Calculate duration
 	const duration =
 		folder?.preFolder?.initialDatePreFolder && folder?.preFolder?.finalDatePreFolder
-			? moment(folder.preFolder.finalDatePreFolder, "DD-MM-YYYY").diff(moment(folder.preFolder.initialDatePreFolder, "DD-MM-YYYY"), "days")
+			? dayjs(folder.preFolder.finalDatePreFolder, "DD-MM-YYYY").diff(dayjs(folder.preFolder.initialDatePreFolder, "DD-MM-YYYY"), "days")
 			: null;
 
 	return (
@@ -365,7 +362,7 @@ const FolderPreJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader:
 										value={values.preFolder.initialDatePreFolder}
 										helper={
 											values.preFolder.initialDatePreFolder
-												? moment(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")
+												? dayjs(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")
 												: undefined
 										}
 										isLoading={isLoader}

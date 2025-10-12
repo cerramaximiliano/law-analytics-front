@@ -26,11 +26,11 @@ import {
 	Typography,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 // third-party
 import { v4 as UIDV4 } from "uuid";
-import { format } from "date-fns";
+import dayjs from "utils/dayjs-config";
 import { FieldArray, Form, Formik } from "formik";
 import * as yup from "yup";
 
@@ -130,8 +130,8 @@ const Create = () => {
 			avatar: Number(list?.avatar),
 			discount: Number(values.discount),
 			tax: Number(values.tax),
-			date: format(new Date(values.date), "MM/dd/yyyy"),
-			due_date: format(new Date(values.due_date), "MM/dd/yyyy"),
+			date: dayjs(values.date).format("MM/DD/YYYY"),
+			due_date: dayjs(values.due_date).format("MM/DD/YYYY"),
 			quantity: Number(
 				values.invoice_detail?.reduce((sum: any, i: any) => {
 					return sum + i.qty;
@@ -254,7 +254,7 @@ const Create = () => {
 									<Stack spacing={1}>
 										<InputLabel>Date</InputLabel>
 										<FormControl sx={{ width: "100%" }} error={Boolean(touched.date && errors.date)}>
-											<LocalizationProvider dateAdapter={AdapterDateFns}>
+											<LocalizationProvider dateAdapter={AdapterDayjs}>
 												<DatePicker format="dd/MM/yyyy" value={values.date} onChange={(newValue) => setFieldValue("date", newValue)} />
 											</LocalizationProvider>
 										</FormControl>
@@ -265,7 +265,7 @@ const Create = () => {
 									<Stack spacing={1}>
 										<InputLabel>Due Date</InputLabel>
 										<FormControl sx={{ width: "100%" }} error={Boolean(touched.due_date && errors.due_date)}>
-											<LocalizationProvider dateAdapter={AdapterDateFns}>
+											<LocalizationProvider dateAdapter={AdapterDayjs}>
 												<DatePicker
 													format="dd/MM/yyyy"
 													value={values.due_date}

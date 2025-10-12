@@ -6,7 +6,7 @@ import { addCalculator } from "store/reducers/calculator";
 import { CalculatorType } from "types/calculator";
 import LinkCauseModal from "../components/linkCauseModal";
 import liquidacionFormModel from "./formModel/liquidacionFormModel";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import { enqueueSnackbar } from "notistack";
 
 // Tipos
@@ -226,8 +226,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 		if (inputValues.aplicarIntereses && inputValues.fechaInicialIntereses && inputValues.fechaFinalIntereses && inputValues.tasaIntereses) {
 			// Calcular intereses (simulado)
 			const montoBase = totalLiquidacion + otrasSumas;
-			const fechaInicial = moment(inputValues.fechaInicialIntereses, "DD/MM/YYYY");
-			const fechaFinal = moment(inputValues.fechaFinalIntereses, "DD/MM/YYYY");
+			const fechaInicial = dayjs(inputValues.fechaInicialIntereses, "DD/MM/YYYY");
+			const fechaFinal = dayjs(inputValues.fechaFinalIntereses, "DD/MM/YYYY");
 			const dias = fechaFinal.diff(fechaInicial, "days");
 			const tasaAnual = 0.15; // Tasa simulada del 15% anual
 			const intereses = (montoBase * tasaAnual * dias) / 365;
@@ -297,7 +297,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 
 			const calculatorData: Omit<CalculatorType, "_id" | "isLoader" | "error"> = {
 				userId,
-				date: moment().format("YYYY-MM-DD"),
+				date: dayjs().format("YYYY-MM-DD"),
 				type: "Calculado" as const,
 				classType: "laboral" as const,
 				subClassType: "liquidación final" as const,

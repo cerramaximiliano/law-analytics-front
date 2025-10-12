@@ -33,8 +33,7 @@ import {
 	Filter,
 } from "iconsax-react";
 import { visuallyHidden } from "@mui/utils";
-import { format, parseISO, isValid, parse } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { Movement } from "types/movements";
 import { NotificationType } from "types/notifications";
 
@@ -183,12 +182,12 @@ const parseDate = (dateString: string): Date | null => {
 
 	try {
 		// Try DD/MM/YYYY format first
-		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
-		if (isValid(parsedDate)) return parsedDate;
+		const parsed = dayjs(dateString, "DD/MM/YYYY");
+		if (parsed.isValid()) return parsed.toDate();
 
 		// Try ISO format
-		const isoDate = parseISO(dateString);
-		if (isValid(isoDate)) return isoDate;
+		const isoDate = dayjs(dateString);
+		if (isoDate.isValid()) return isoDate.toDate();
 
 		return null;
 	} catch {
@@ -202,20 +201,18 @@ const formatDate = (dateString: string) => {
 	}
 
 	try {
-		let parsedDate: Date;
-
 		// Try to parse as ISO date first
 		if (dateString.includes("T") || dateString.includes("-")) {
-			parsedDate = parseISO(dateString);
-			if (isValid(parsedDate)) {
-				return format(parsedDate, "dd/MM/yyyy", { locale: es });
+			const parsed = dayjs(dateString);
+			if (parsed.isValid()) {
+				return parsed.format("DD/MM/YYYY");
 			}
 		}
 
 		// Try to parse as DD/MM/YYYY format
-		parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
-		if (isValid(parsedDate)) {
-			return format(parsedDate, "dd/MM/yyyy", { locale: es });
+		const parsed = dayjs(dateString, "DD/MM/YYYY");
+		if (parsed.isValid()) {
+			return parsed.format("DD/MM/YYYY");
 		}
 
 		return "";
@@ -248,7 +245,7 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 				id: movement._id || "",
 				title: movement.title || "",
 				date,
-				dateString: date ? format(date, "dd/MM/yyyy", { locale: es }) : "",
+				dateString: date ? dayjs(date).format("DD/MM/YYYY") : "",
 				description: movement.description,
 				type: "movement",
 				subType: movement.movement || "",
@@ -265,7 +262,7 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 				id: notification._id || "",
 				title: notification.title || "",
 				date,
-				dateString: date ? format(date, "dd/MM/yyyy", { locale: es }) : "",
+				dateString: date ? dayjs(date).format("DD/MM/YYYY") : "",
 				description: notification.description,
 				type: "notification",
 				subType: notification.notification || "",
@@ -277,12 +274,12 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 
 		// Convert calendar events
 		events.forEach((event) => {
-			const date = typeof event.start === "string" ? parseISO(event.start) : event.start;
+			const date = dayjs(event.start).toDate();
 			unified.push({
 				id: event._id || "",
 				title: event.title || "",
 				date,
-				dateString: date && isValid(date) ? format(date, "dd/MM/yyyy", { locale: es }) : "",
+				dateString: date && dayjs(date).isValid() ? dayjs(date).format("DD/MM/YYYY") : "",
 				description: event.description,
 				type: "calendar",
 				subType: event.type || "General",

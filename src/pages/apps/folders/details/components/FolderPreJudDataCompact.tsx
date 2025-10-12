@@ -2,7 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip } from "@mui/material";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 // import data from "data/folder.json";
 import { Edit2, User, Calendar, DollarCircle, HashtagSquare } from "iconsax-react";
 import InputField from "components/UI/InputField";
@@ -14,9 +14,6 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
-
-import "moment/locale/es";
-moment.locale("es");
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -67,7 +64,7 @@ const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLo
 
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
-		return moment(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
+		return dayjs(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
 	};
 
 	const defaultPreFolder = {
@@ -105,10 +102,10 @@ const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLo
 					preFolder: {
 						...values.preFolder,
 						initialDatePreFolder: values.preFolder.initialDatePreFolder
-							? moment(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: "",
 						finalDatePreFolder: values.preFolder.finalDatePreFolder
-							? moment(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: "",
 					},
 				};

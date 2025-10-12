@@ -15,7 +15,7 @@ import { getFoldersByIds } from "store/reducers/folder";
 
 import { FolderData } from "types/folder";
 import { Contact } from "types/contact";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 interface ContactViewProps {
 	data: Contact;
@@ -186,7 +186,7 @@ const CustomerView: React.FC<ContactViewProps> = ({ data }) => {
 								<InfoCard icon={<Buildings2 size="20" />} label="Rol" value={data.role} />
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
-								<InfoCard icon={<Calendar size="20" />} label="Fecha de Registro" value={moment().format("DD/MM/YYYY")} />
+								<InfoCard icon={<Calendar size="20" />} label="Fecha de Registro" value={dayjs().format("DD/MM/YYYY")} />
 							</Grid>
 						</Grid>
 

@@ -22,7 +22,7 @@ import { useParams } from "react-router";
 import { getEventsById, deleteEvent, selectEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
 import { EventContentArg } from "@fullcalendar/core";
-import { parseISO, format } from "date-fns";
+import dayjs from "utils/dayjs-config";
 import EmptyStateCard from "components/EmptyStateCard";
 
 interface CalendarProps {
@@ -56,7 +56,7 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 
 			if (typeof date === "string") {
 				try {
-					parsedDate = parseISO(date); // Convierte cadenas a objetos Date
+					parsedDate = dayjs(date).toDate(); // Convierte cadenas a objetos Date
 				} catch {
 					return "Fecha inválida"; // Si parseISO falla
 				}
@@ -66,7 +66,7 @@ const Calendar: React.FC<CalendarProps> = ({ title, folderName }) => {
 				return "Fecha inválida"; // Cualquier otro caso
 			}
 
-			return format(parsedDate, "dd/MM/yyyy HH:mm:ss");
+			return dayjs(parsedDate).format("DD/MM/YYYY HH:mm:ss");
 		};
 		const handleToggleDetails = () => {
 			// Alternar el detalle del evento

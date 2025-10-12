@@ -43,8 +43,7 @@ import {
 	InfoCircle,
 	Clock,
 } from "iconsax-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import judicialMovementsService, {
 	JudicialMovement,
 	JudicialMovementFilters,
@@ -253,7 +252,7 @@ const JudicialMovementsList = () => {
 
 	const formatDate = (date: string) => {
 		if (!date) return "-";
-		return format(new Date(date), "dd/MM/yyyy HH:mm", { locale: es });
+		return dayjs(date).format("DD/MM/YYYY HH:mm");
 	};
 
 	return (

@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import SimpleBar from "components/third-party/SimpleBar";
 import { TaskSquare, Calendar, Folder } from "iconsax-react";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 // Redux
 import { useSelector, dispatch } from "store";
@@ -210,9 +210,9 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 							<RadioGroup value={selectedTaskId} onChange={(e) => setSelectedTaskId(e.target.value)}>
 								<Stack spacing={1}>
 									{availableTasks.map((task) => {
-										const taskDate = moment(task.dueDate || task.date);
-										const isOverdue = taskDate.isBefore(moment(), "day");
-										const isToday = taskDate.isSame(moment(), "day");
+										const taskDate = dayjs(task.dueDate || task.date);
+										const isOverdue = taskDate.isBefore(dayjs(), "day");
+										const isToday = taskDate.isSame(dayjs(), "day");
 
 										return (
 											<FormControlLabel

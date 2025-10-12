@@ -35,7 +35,7 @@ import { Archive, Warning2, Calculator, Coin, Chart2 } from "iconsax-react";
 
 // types
 import { CalculatorType } from "types/calculator";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 interface ArchivedCalculatorsModalProps {
 	open: boolean;
@@ -331,7 +331,7 @@ const ArchivedCalculatorsModal = ({ open, onClose, items, onUnarchive, loading }
 														/>
 													</TableCell>
 													<TableCell>
-														<Typography variant="body2">{moment(item.date).format("DD/MM/YYYY")}</Typography>
+														<Typography variant="body2">{dayjs(item.date).format("DD/MM/YYYY")}</Typography>
 													</TableCell>
 													<TableCell>
 														<Typography variant="body2" fontWeight={500}>

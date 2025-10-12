@@ -1,5 +1,4 @@
-import { format, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { Movement } from "types/movements";
 import { NotificationType } from "types/notifications";
 import { UnifiedActivity } from "../tables/CombinedTable";
@@ -67,11 +66,11 @@ export function exportNotifications(notifications: NotificationType[], filename:
 // Export calendar events
 export function exportEvents(events: any[], filename: string = "eventos.csv") {
 	const data = events.map((event) => ({
-		Fecha: event.start ? format(parseISO(event.start), "dd/MM/yyyy HH:mm", { locale: es }) : "",
+		Fecha: event.start ? dayjs(event.start).format("DD/MM/YYYY HH:mm") : "",
 		Título: event.title,
 		Tipo: event.type || "General",
 		Descripción: event.description || "",
-		"Fecha Fin": event.end ? format(parseISO(event.end), "dd/MM/yyyy HH:mm", { locale: es }) : "",
+		"Fecha Fin": event.end ? dayjs(event.end).format("DD/MM/YYYY HH:mm") : "",
 		"Todo el día": event.allDay ? "Sí" : "No",
 	}));
 
@@ -108,7 +107,7 @@ export function exportActivityData(
 	},
 	folderName?: string,
 ) {
-	const timestamp = format(new Date(), "yyyy-MM-dd_HH-mm");
+	const timestamp = dayjs().format("YYYY-MM-DD_HH-mm");
 	const prefix = folderName ? `${folderName.replace(/[^a-z0-9]/gi, "_")}_` : "";
 
 	switch (activeTab) {

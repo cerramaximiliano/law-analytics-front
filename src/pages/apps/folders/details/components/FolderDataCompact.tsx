@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, Divider, useMediaQuery } from "@mui/material";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { Edit2, Clock } from "iconsax-react";
 import InputField from "components/UI/InputField";
@@ -18,9 +18,6 @@ import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
-
-import "moment/locale/es";
-moment.locale("es");
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -70,8 +67,8 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+		finalDateFolder: folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 		folderJuris: folder?.folderJuris
 			? typeof folder.folderJuris === "string"
 				? { item: folder.folderJuris, label: "" }
@@ -126,10 +123,10 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 				const formattedValues = {
 					...values,
 					initialDateFolder: values.initialDateFolder
-						? moment(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? dayjs(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 						: values.initialDateFolder,
 					finalDateFolder: values.finalDateFolder
-						? moment(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? dayjs(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 						: values.finalDateFolder,
 				};
 
@@ -233,7 +230,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 												<Stack direction="row" spacing={0.5} alignItems="center">
 													<Clock size={12} />
 													<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-														{moment(folder.updatedAt).fromNow()}
+														{dayjs(folder.updatedAt).fromNow()}
 													</Typography>
 												</Stack>
 											)}
@@ -305,7 +302,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 									<Grid item xs={6} md={3}>
 										<CompactField
 											label="FECHA INICIO"
-											value={folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : null}
+											value={folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : null}
 											isLoading={isLoader}
 											isEditing={isEditing}
 											editComponent={<DateInputField customInputStyles={customInputStyles} name="initialDateFolder" />}
@@ -314,7 +311,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 									<Grid item xs={6} md={3}>
 										<CompactField
 											label="FECHA FIN"
-											value={folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : null}
+											value={folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : null}
 											isLoading={isLoader}
 											isEditing={isEditing}
 											editComponent={<DateInputField customInputStyles={customInputStyles} name="finalDateFolder" />}

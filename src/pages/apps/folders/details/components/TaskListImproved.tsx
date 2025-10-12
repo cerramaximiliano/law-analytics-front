@@ -22,7 +22,7 @@ import {
 import MainCard from "components/MainCard";
 import { Add, TaskSquare, Trash, TickCircle, CloseCircle, Calendar, Filter, Edit2 } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import { useParams } from "react-router";
 import ModalTasks from "../modals/MoldalTasks";
 import LinkTaskModal from "../modals/LinkTaskModal";
@@ -72,18 +72,18 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 		// Tasks by date
 		const overdue = tasks.filter((task) => {
 			if (task.checked) return false;
-			const taskDate = moment(task.dueDate || task.date);
-			return taskDate.isValid() && taskDate.isBefore(moment(), "day");
+			const taskDate = dayjs(task.dueDate || task.date);
+			return taskDate.isValid() && taskDate.isBefore(dayjs(), "day");
 		}).length;
 
 		const today = tasks.filter((task) => {
-			const taskDate = moment(task.dueDate || task.date);
-			return taskDate.isValid() && taskDate.isSame(moment(), "day");
+			const taskDate = dayjs(task.dueDate || task.date);
+			return taskDate.isValid() && taskDate.isSame(dayjs(), "day");
 		}).length;
 
 		const thisWeek = tasks.filter((task) => {
-			const taskDate = moment(task.dueDate || task.date);
-			return taskDate.isValid() && taskDate.isSame(moment(), "week");
+			const taskDate = dayjs(task.dueDate || task.date);
+			return taskDate.isValid() && taskDate.isSame(dayjs(), "week");
 		}).length;
 
 		return { completed, pending, total, percentage, overdue, today, thisWeek };
@@ -100,8 +100,8 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 				return a.checked ? 1 : -1;
 			}
 			// Then by date
-			const dateA = moment(a.dueDate || a.date);
-			const dateB = moment(b.dueDate || b.date);
+			const dateA = dayjs(a.dueDate || a.date);
+			const dateB = dayjs(b.dueDate || b.date);
 			return dateB.diff(dateA);
 		});
 
@@ -218,10 +218,10 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 	);
 
 	const TaskItem = ({ task, index }: { task: TaskType; index: number }) => {
-		const taskDate = moment(task.dueDate || task.date);
-		const isOverdue = !task.checked && taskDate.isBefore(moment(), "day");
-		const isToday = taskDate.isSame(moment(), "day");
-		const isTomorrow = taskDate.isSame(moment().add(1, "day"), "day");
+		const taskDate = dayjs(task.dueDate || task.date);
+		const isOverdue = !task.checked && taskDate.isBefore(dayjs(), "day");
+		const isToday = taskDate.isSame(dayjs(), "day");
+		const isTomorrow = taskDate.isSame(dayjs().add(1, "day"), "day");
 
 		return (
 			<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>

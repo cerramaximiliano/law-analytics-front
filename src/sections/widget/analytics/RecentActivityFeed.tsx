@@ -4,8 +4,7 @@ import { useSelector } from "react-redux";
 import { Activity, Clock, Calendar } from "iconsax-react";
 import { RootState } from "store";
 import MainCard from "components/MainCard";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { useTheme } from "@mui/material/styles";
 
 const RecentActivityFeed = () => {
@@ -76,7 +75,7 @@ const RecentActivityFeed = () => {
 					{lastUpdated && (
 						<Box sx={{ mt: 2, pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
 							<Typography variant="caption" color="textSecondary">
-								Última actualización: {format(new Date(lastUpdated), "dd/MM/yyyy HH:mm", { locale: es })}
+								Última actualización: {dayjs(lastUpdated).format("DD/MM/YYYY HH:mm")}
 							</Typography>
 						</Box>
 					)}

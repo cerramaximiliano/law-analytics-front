@@ -6,8 +6,7 @@ import { Theme } from "@mui/material/styles";
 import { useMediaQuery, Stack, Tooltip, Typography, GridProps } from "@mui/material";
 
 // third-party
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 
 // project-imports
 import IconButton from "components/@extended/IconButton";
@@ -81,7 +80,7 @@ const Toolbar = ({ date, view, onClickNext, onClickPrev, onClickToday, onChangeV
 			</Stack>
 
 			<Typography variant={matchDownSM ? "h6" : "h5"} color="textPrimary" sx={{ fontWeight: 600 }}>
-				{capitalizeFirstLetter(format(date, "MMMM yyyy", { locale: es }))}
+				{capitalizeFirstLetter(dayjs(date).format("MMMM YYYY"))}
 			</Typography>
 
 			{/* Botones de vista */}

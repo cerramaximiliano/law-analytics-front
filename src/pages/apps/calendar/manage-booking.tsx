@@ -25,8 +25,7 @@ import {
 	DialogContentText,
 	DialogTitle,
 } from "@mui/material";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 
 // assets
 import { Calendar1, Clock, CloseCircle, CalendarAdd } from "iconsax-react";
@@ -288,7 +287,7 @@ const ManageBookingPage = () => {
 													Fecha
 												</Typography>
 												<Typography variant="body1">
-													{format(new Date(booking.startTime), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+													{dayjs(booking.startTime).format("dddd, D [de] MMMM [de] YYYY")}
 												</Typography>
 											</Box>
 										</Box>
@@ -300,7 +299,7 @@ const ManageBookingPage = () => {
 													Hora
 												</Typography>
 												<Typography variant="body1">
-													{format(new Date(booking.startTime), "HH:mm")} - {format(new Date(booking.endTime), "HH:mm")}
+													{dayjs(booking.startTime).format("HH:mm")} - {dayjs(booking.endTime).format("HH:mm")}
 												</Typography>
 											</Box>
 										</Box>

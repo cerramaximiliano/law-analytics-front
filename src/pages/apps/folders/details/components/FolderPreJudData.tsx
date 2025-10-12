@@ -18,7 +18,7 @@ import {
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import IconButton from "components/@extended/IconButton";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { MenuBoard, Clock, Notepad } from "iconsax-react";
 import InputField from "components/UI/InputField";
@@ -30,9 +30,6 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
-
-import "moment/locale/es"; // Importa el idioma español
-moment.locale("es"); // Configura moment a español
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -64,7 +61,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 	// Formateo de fechas a DD/MM/YYYY
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
-		return moment(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
+		return dayjs(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
 	};
 
 	const defaultPreFolder = {
@@ -106,7 +103,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 		const newStatus = status[nextIndex];
 
 		if (newStatus === "Cerrada") {
-			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
+			folder.finalDateFolder = folder.finalDateFolder || dayjs().format("DD/MM/YYYY");
 		} else {
 			folder.finalDateFolder = "";
 		}
@@ -128,10 +125,10 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 					preFolder: {
 						...values.preFolder,
 						initialDatePreFolder: values.preFolder.initialDatePreFolder
-							? moment(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.preFolder.initialDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: values.preFolder.initialDatePreFolder,
 						finalDatePreFolder: values.preFolder.finalDatePreFolder
-							? moment(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.preFolder.finalDatePreFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: values.preFolder.finalDatePreFolder,
 					},
 				};
@@ -352,7 +349,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 											) : (
 												<Typography variant="body2">
 													{folder?.preFolder?.initialDatePreFolder
-														? moment(folder.preFolder?.initialDatePreFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
+														? dayjs(folder.preFolder?.initialDatePreFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
 														: "-"}
 												</Typography>
 											)}
@@ -373,7 +370,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 											) : (
 												<Typography variant="body2">
 													{folder?.preFolder?.finalDatePreFolder
-														? moment(folder.preFolder?.finalDatePreFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
+														? dayjs(folder.preFolder?.finalDatePreFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
 														: "-"}
 												</Typography>
 											)}
@@ -459,7 +456,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 										<>
 											<Typography sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
 												<Clock size={14} style={{ marginLeft: 8 }} />
-												{folder?.preFolder?.updatedAt ? moment(folder?.preFolder?.updatedAt).fromNow() : "Sin actualizaciones recientes"}
+												{folder?.preFolder?.updatedAt ? dayjs(folder?.preFolder?.updatedAt).fromNow() : "Sin actualizaciones recientes"}
 											</Typography>
 										</>
 									)}

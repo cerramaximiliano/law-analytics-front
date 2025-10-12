@@ -25,8 +25,7 @@ import {
 	Collapse,
 } from "@mui/material";
 import { Calendar, Timer1, DollarCircle, Notification, Refresh, ArrowDown2, ArrowUp2 } from "iconsax-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { RootState } from "store";
 import notificationMonitoringService from "services/notificationMonitoringService";
 import type { UpcomingEvent, UpcomingTask } from "types/notificationMonitoring";
@@ -73,7 +72,7 @@ const UpcomingNotifications = ({ onRefresh }: Props) => {
 			if (isNaN(dateObj.getTime())) {
 				return "Fecha no disponible";
 			}
-			return format(dateObj, "dd/MM/yyyy HH:mm", { locale: es });
+			return dayjs(dateObj).format("DD/MM/YYYY HH:mm");
 		} catch (error) {
 			return "Fecha no disponible";
 		}

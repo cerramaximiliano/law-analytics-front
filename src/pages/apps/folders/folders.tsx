@@ -63,7 +63,7 @@ import {
 import { dispatch, useSelector } from "store";
 import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders, getFolderById } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
@@ -845,18 +845,18 @@ const FoldersLayout = () => {
 					// Encontrar la fecha más antigua
 					let oldestDate = null;
 					try {
-						const momentDates = dates
+						const dayjsDates = dates
 							.map((date) => {
 								// Parsear sin zona horaria para evitar cambios
-								const parsed = moment.parseZone(date);
+								const parsed = dayjs(date);
 								return parsed.isValid() ? parsed : null;
 							})
-							.filter((date): date is moment.Moment => date !== null);
+							.filter((date): date is dayjs.Dayjs => date !== null);
 
-						if (momentDates.length > 0) {
+						if (dayjsDates.length > 0) {
 							// Ordenar por fecha ascendente (más antigua primero)
-							momentDates.sort((a, b) => a.valueOf() - b.valueOf());
-							oldestDate = momentDates[0];
+							dayjsDates.sort((a, b) => a.valueOf() - b.valueOf());
+							oldestDate = dayjsDates[0];
 						}
 					} catch (error) {
 						console.error("Error procesando fechas:", error);
@@ -885,7 +885,7 @@ const FoldersLayout = () => {
 						}
 						// Cualquier otro formato de fecha incluyendo ISO "2022-08-31T00:00:00.000+00:00"
 						else {
-							const parsedDate = moment(value);
+							const parsedDate = dayjs(value);
 							if (parsedDate.isValid()) {
 								formattedDate = parsedDate.format("DD/MM/YYYY");
 							} else {

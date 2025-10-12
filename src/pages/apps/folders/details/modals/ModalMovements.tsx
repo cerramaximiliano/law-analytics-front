@@ -22,7 +22,7 @@ import { dispatch, useSelector } from "store";
 import { addMovement, updateMovement } from "store/reducers/movements";
 import { Movement } from "types/movements";
 import { enqueueSnackbar } from "notistack";
-import { format, parseISO, isValid } from "date-fns";
+import dayjs from "utils/dayjs-config";
 // types
 import { MovementsModalType } from "types/movements";
 
@@ -51,9 +51,9 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 
 			// Si es formato ISO o incluye 'T' o '-'
 			if (dateString.includes("T") || dateString.includes("-")) {
-				parsedDate = parseISO(dateString);
-				if (isValid(parsedDate)) {
-					return format(parsedDate, "dd/MM/yyyy");
+				parsedDate = dayjs(dateString).toDate();
+				if (dayjs(parsedDate).isValid()) {
+					return dayjs(parsedDate).format("DD/MM/YYYY");
 				}
 			}
 

@@ -16,7 +16,7 @@ import {
 	LinearProgress,
 	useMediaQuery,
 } from "@mui/material";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { Edit2, Clock, TickCircle, Briefcase, DollarCircle, Calendar1, DocumentText } from "iconsax-react";
 import InputField from "components/UI/InputField";
@@ -29,9 +29,6 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
-
-import "moment/locale/es";
-moment.locale("es");
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -174,8 +171,8 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+		finalDateFolder: folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 	};
 	const [isEditing, setIsEditing] = useState(false);
 
@@ -187,10 +184,10 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 				const formattedValues = {
 					...values,
 					initialDateFolder: values.initialDateFolder
-						? moment(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? dayjs(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 						: values.initialDateFolder,
 					finalDateFolder: values.finalDateFolder
-						? moment(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? dayjs(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 						: values.finalDateFolder,
 				};
 
@@ -264,7 +261,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 	// Calculate duration if both dates exist
 	const duration =
 		folder?.initialDateFolder && folder?.finalDateFolder
-			? moment(folder.finalDateFolder, "DD-MM-YYYY").diff(moment(folder.initialDateFolder, "DD-MM-YYYY"), "days")
+			? dayjs(folder.finalDateFolder, "DD-MM-YYYY").diff(dayjs(folder.initialDateFolder, "DD-MM-YYYY"), "days")
 			: null;
 
 	return (
@@ -312,7 +309,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 															<Stack direction="row" spacing={0.5} alignItems="center">
 																<Clock size={14} />
 																<Typography variant="caption" color="text.secondary">
-																	Actualizado {moment(folder.updatedAt).fromNow()}
+																	Actualizado {dayjs(folder.updatedAt).fromNow()}
 																</Typography>
 															</Stack>
 														)}
@@ -436,7 +433,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								<Grid item xs={12} sm={6} md={3}>
 									<FieldCard
 										label="Fecha Inicio"
-										value={folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : null}
+										value={folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : null}
 										isLoading={isLoader}
 										icon={<Calendar1 size={16} />}
 										isEditing={isEditing}
@@ -446,7 +443,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 								<Grid item xs={12} sm={6} md={3}>
 									<FieldCard
 										label="Fecha Fin"
-										value={folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : null}
+										value={folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : null}
 										isLoading={isLoader}
 										icon={<Calendar1 size={16} />}
 										isEditing={isEditing}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { dispatch } from "store";
 import { Skeleton, Button, Grid, Stack, Typography, Zoom, Box, Paper, useTheme, alpha, Chip, Avatar, LinearProgress } from "@mui/material";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { Edit2, Calendar, DollarCircle, HashtagSquare, Judge, Building, DocumentText, TickCircle, ArrowRight2 } from "iconsax-react";
 import InputField from "components/UI/InputField";
@@ -16,9 +16,6 @@ import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
-
-import "moment/locale/es";
-moment.locale("es");
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -149,7 +146,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
-		return moment(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
+		return dayjs(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
 	};
 
 	const defaultJudFolder = {
@@ -228,10 +225,10 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 					judFolder: {
 						...values.judFolder,
 						initialDateJudFolder: values.judFolder.initialDateJudFolder
-							? moment(values.judFolder.initialDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.judFolder.initialDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: "",
 						finalDateJudFolder: values.judFolder.finalDateJudFolder
-							? moment(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: "",
 					},
 				};
@@ -317,7 +314,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 	// Calculate duration
 	const duration =
 		folder?.judFolder?.initialDateJudFolder && folder?.judFolder?.finalDateJudFolder
-			? moment(folder.judFolder.finalDateJudFolder, "DD-MM-YYYY").diff(moment(folder.judFolder.initialDateJudFolder, "DD-MM-YYYY"), "days")
+			? dayjs(folder.judFolder.finalDateJudFolder, "DD-MM-YYYY").diff(dayjs(folder.judFolder.initialDateJudFolder, "DD-MM-YYYY"), "days")
 			: null;
 
 	return (
@@ -548,7 +545,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 										value={values.judFolder.initialDateJudFolder}
 										helper={
 											values.judFolder.initialDateJudFolder
-												? moment(values.judFolder.initialDateJudFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")
+												? dayjs(values.judFolder.initialDateJudFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")
 												: undefined
 										}
 										isLoading={isLoader}
@@ -656,7 +653,7 @@ const FolderJudDataImproved = ({ folder, isLoader }: { folder: any; isLoader: bo
 															</Typography>
 															{values.judFolder.finalDateJudFolder && (
 																<Typography variant="caption" color="text.secondary">
-																	{moment(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")}
+																	{dayjs(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("dddd, D [de] MMMM [de] YYYY")}
 																</Typography>
 															)}
 														</>

@@ -23,8 +23,7 @@ import {
 	Button,
 } from "@mui/material";
 import { Refresh, Eye } from "iconsax-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import notificationMonitoringService from "services/notificationMonitoringService";
 
 const FailedNotifications = () => {
@@ -99,7 +98,7 @@ const FailedNotifications = () => {
 			if (isNaN(dateObj.getTime())) {
 				return "Fecha no disponible";
 			}
-			return format(dateObj, "dd/MM/yyyy HH:mm", { locale: es });
+			return dayjs(dateObj).format("DD/MM/YYYY HH:mm");
 		} catch {
 			return "Fecha no disponible";
 		}

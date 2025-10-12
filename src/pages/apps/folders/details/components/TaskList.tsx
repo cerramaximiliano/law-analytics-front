@@ -17,7 +17,7 @@ import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import { Add, Task, TaskSquare, Trash } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import { useParams } from "react-router";
 import ModalTasks from "../modals/MoldalTasks";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
@@ -73,8 +73,8 @@ const TaskList = ({ title, folderName }: TaskListProps) => {
 
 	const sortedTasks = tasks
 		? [...tasks].sort((a: TaskDataType, b: TaskDataType) => {
-				const dateA = moment(a.date, "DD/MM/YYYY");
-				const dateB = moment(b.date, "DD/MM/YYYY");
+				const dateA = dayjs(a.date, "DD/MM/YYYY");
+				const dateB = dayjs(b.date, "DD/MM/YYYY");
 				return dateB.diff(dateA);
 		  })
 		: [];
@@ -159,8 +159,8 @@ const TaskList = ({ title, folderName }: TaskListProps) => {
 	};
 	const currentMonthTasksCount = tasks
 		? tasks.filter((task: TaskDataType) => {
-				const taskDate = moment(task.date, "DD/MM/YYYY");
-				return taskDate.isSame(moment(), "month");
+				const taskDate = dayjs(task.date, "DD/MM/YYYY");
+				return taskDate.isSame(dayjs(), "month");
 		  }).length
 		: 0;
 

@@ -19,8 +19,7 @@ import {
 import { Edit, Trash, Eye, SmsNotification, Notification1, NotificationStatus, Clock } from "iconsax-react";
 import { NotificationType } from "types/notifications";
 import { visuallyHidden } from "@mui/utils";
-import { format, parse, parseISO, isValid } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 
 interface NotificationsTableProps {
 	notifications: NotificationType[];
@@ -95,18 +94,17 @@ const parseDate = (dateString: string) => {
 	try {
 		// Try to parse as ISO date first
 		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsedDate = parseISO(dateString);
-			if (isValid(parsedDate)) {
+			const parsed = dayjs(dateString);
+			if (parsed.isValid()) {
 				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
-				const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
-				return normalized;
+				return dayjs(parsed.format("YYYY-MM-DD")).toDate();
 			}
 		}
 
 		// Try to parse as DD/MM/YYYY format
-		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
-		if (isValid(parsedDate)) {
-			return parsedDate;
+		const parsed = dayjs(dateString, "DD/MM/YYYY");
+		if (parsed.isValid()) {
+			return parsed.toDate();
 		}
 
 		return new Date(0);
@@ -121,25 +119,19 @@ const formatDate = (dateString: string) => {
 	}
 
 	try {
-		let parsedDate: Date;
-
 		// Try to parse as ISO date first
 		if (dateString.includes("T") || dateString.includes("-")) {
-			parsedDate = parseISO(dateString);
-			if (isValid(parsedDate)) {
+			const parsed = dayjs.utc(dateString);
+			if (parsed.isValid()) {
 				// Usar componentes de fecha UTC para evitar conversión de zona horaria
-				const year = parsedDate.getUTCFullYear();
-				const month = parsedDate.getUTCMonth();
-				const day = parsedDate.getUTCDate();
-				const normalized = new Date(year, month, day);
-				return format(normalized, "dd/MM/yyyy", { locale: es });
+				return parsed.format("DD/MM/YYYY");
 			}
 		}
 
 		// Try to parse as DD/MM/YYYY format
-		parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
-		if (isValid(parsedDate)) {
-			return format(parsedDate, "dd/MM/yyyy", { locale: es });
+		const parsed = dayjs(dateString, "DD/MM/YYYY");
+		if (parsed.isValid()) {
+			return parsed.format("DD/MM/YYYY");
 		}
 
 		return "";

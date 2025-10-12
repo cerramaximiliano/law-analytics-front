@@ -1,8 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useSelector } from "store";
-import { formatDistance } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import useBankingDisplay from "hooks/useBankingDisplay";
 
 // material-ui
@@ -519,7 +518,7 @@ const TabAccount = () => {
 			if (isNaN(date.getTime())) {
 				return "Desconocido";
 			}
-			return formatDistance(date, new Date(), { addSuffix: true, locale: es });
+			return dayjs(date).fromNow();
 		} catch (err) {
 			return "Fecha desconocida";
 		}

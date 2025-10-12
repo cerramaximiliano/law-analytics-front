@@ -22,10 +22,9 @@ import {
 	Tab,
 } from "@mui/material";
 import { Notification, TaskSquare, CalendarRemove, TableDocument, Message, NotificationBing, TickCircle } from "iconsax-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import notificationMonitoringService from "services/notificationMonitoringService";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useSelector } from "store";
@@ -86,11 +85,11 @@ const NotificationHistory = () => {
 			}
 
 			if (alertsStartDate) {
-				params.startDate = format(alertsStartDate, "yyyy-MM-dd");
+				params.startDate = dayjs(alertsStartDate).format("YYYY-MM-DD");
 			}
 
 			if (alertsEndDate) {
-				params.endDate = format(alertsEndDate, "yyyy-MM-dd");
+				params.endDate = dayjs(alertsEndDate).format("YYYY-MM-DD");
 			}
 
 			const response = await notificationMonitoringService.getDeliveredAlerts(params);
@@ -127,11 +126,11 @@ const NotificationHistory = () => {
 			}
 
 			if (historyStartDate) {
-				params.startDate = format(historyStartDate, "yyyy-MM-dd");
+				params.startDate = dayjs(historyStartDate).format("YYYY-MM-DD");
 			}
 
 			if (historyEndDate) {
-				params.endDate = format(historyEndDate, "yyyy-MM-dd");
+				params.endDate = dayjs(historyEndDate).format("YYYY-MM-DD");
 			}
 
 			await notificationMonitoringService.getNotificationHistory(params);
@@ -259,7 +258,7 @@ const NotificationHistory = () => {
 			if (isNaN(dateObj.getTime())) {
 				return "Fecha no disponible";
 			}
-			return format(dateObj, "dd/MM/yyyy HH:mm", { locale: es });
+			return dayjs(dateObj).format("DD/MM/YYYY HH:mm");
 		} catch (error) {
 			return "Fecha no disponible";
 		}
@@ -352,7 +351,7 @@ const NotificationHistory = () => {
 			{/* Panel de Alertas Entregadas */}
 			{activeTab === 0 && (
 				<Box>
-					<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+					<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 						<Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
 							<TextField
 								select
@@ -513,7 +512,7 @@ const NotificationHistory = () => {
 			{/* Panel de Historial de Notificaciones */}
 			{activeTab === 1 && (
 				<Box>
-					<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+					<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 						<Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
 							<TextField
 								select

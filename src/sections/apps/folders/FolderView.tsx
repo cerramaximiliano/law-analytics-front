@@ -12,7 +12,7 @@ import useSubscription from "hooks/useSubscription";
 // assets
 import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare, TickCircle, CloseCircle, InfoCircle } from "iconsax-react";
 import { memo, useState } from "react";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 // ==============================|| FOLDER - VIEW ||============================== //
 
@@ -271,14 +271,14 @@ const FolderView = memo(({ data }: any) => {
 								<InfoCard
 									icon={<Calendar size="20" />}
 									label="Fecha de Inicio"
-									value={data.initialDateFolder ? moment(data.initialDateFolder).format("DD/MM/YYYY") : null}
+									value={data.initialDateFolder ? dayjs(data.initialDateFolder).format("DD/MM/YYYY") : null}
 								/>
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
 								<InfoCard
 									icon={<Clock size="20" />}
 									label="Fecha Final"
-									value={data.finalDateFolder ? moment(data.finalDateFolder).format("DD/MM/YYYY") : null}
+									value={data.finalDateFolder ? dayjs(data.finalDateFolder).format("DD/MM/YYYY") : null}
 								/>
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>

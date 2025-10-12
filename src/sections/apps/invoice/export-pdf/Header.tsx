@@ -4,7 +4,7 @@ import { useTheme } from "@mui/material/styles";
 
 // third-party
 import { Text, View, StyleSheet, Image } from "@react-pdf/renderer";
-import { format } from "date-fns";
+import dayjs from "utils/dayjs-config";
 
 // assets
 import Logo from "assets/images/logo.png";
@@ -110,11 +110,11 @@ const Header = ({ list }: Props) => {
 			<View>
 				<View style={[styles.row, { marginTop: 8 }]}>
 					<Text style={styles.title}>Date</Text>
-					<Text style={styles.caption}> {list?.date && format(new Date(list?.date as string), "dd/MM/yyyy")}</Text>
+					<Text style={styles.caption}> {list?.date && dayjs(list?.date as string).format("DD/MM/YYYY")}</Text>
 				</View>
 				<View style={[styles.row, { marginTop: 8 }]}>
 					<Text style={styles.title}>Due Date</Text>
-					<Text style={styles.caption}> {list?.due_date && format(new Date(list?.due_date as string), "dd/MM/yyyy")}</Text>
+					<Text style={styles.caption}> {list?.due_date && dayjs(list?.due_date as string).format("DD/MM/YYYY")}</Text>
 				</View>
 			</View>
 		</View>

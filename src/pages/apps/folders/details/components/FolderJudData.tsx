@@ -18,7 +18,7 @@ import {
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import IconButton from "components/@extended/IconButton";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { Clock, Notepad, Judge } from "iconsax-react";
 import InputField from "components/UI/InputField";
@@ -33,9 +33,6 @@ import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
-
-import "moment/locale/es"; // Importa el idioma español
-moment.locale("es"); // Configura moment a español
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -65,7 +62,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 	const { id } = useParams<{ id: string }>();
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
-		return moment(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
+		return dayjs(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
 	};
 	const defaultJudFolder = {
 		initialDateJudFolder: "",
@@ -107,7 +104,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 		const newStatus = status[nextIndex];
 
 		if (newStatus === "Cerrada") {
-			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
+			folder.finalDateFolder = folder.finalDateFolder || dayjs().format("DD/MM/YYYY");
 		} else {
 			folder.finalDateFolder = "";
 		}
@@ -162,10 +159,10 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 					judFolder: {
 						...values.judFolder,
 						initialDateJudFolder: values.judFolder.initialDateJudFolder
-							? moment(values.judFolder.initialDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.judFolder.initialDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: values.judFolder.initialDateJudFolder,
 						finalDateJudFolder: values.judFolder.finalDateJudFolder
-							? moment(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+							? dayjs(values.judFolder.finalDateJudFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 							: values.judFolder.finalDateJudFolder,
 					},
 				};
@@ -477,7 +474,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 											) : (
 												<Typography variant="body2">
 													{folder?.judFolder?.initialDateJudFolder
-														? moment(folder.judFolder?.initialDateJudFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
+														? dayjs(folder.judFolder?.initialDateJudFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
 														: "-"}
 												</Typography>
 											)}
@@ -498,7 +495,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 											) : (
 												<Typography variant="body2">
 													{folder?.judFolder?.finalDateJudFolder
-														? moment(folder.judFolder?.finalDateJudFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
+														? dayjs(folder.judFolder?.finalDateJudFolder, "DD-MM-YYYY").format("DD-MM-YYYY")
 														: "-"}
 												</Typography>
 											)}
@@ -583,7 +580,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 										<>
 											<Typography sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
 												<Clock size={14} style={{ marginLeft: 8 }} />
-												{folder?.judFolder?.updatedAt ? moment(folder.judFolder.updatedAt).fromNow() : "Sin actualizaciones recientes"}
+												{folder?.judFolder?.updatedAt ? dayjs(folder.judFolder.updatedAt).fromNow() : "Sin actualizaciones recientes"}
 											</Typography>
 										</>
 									)}

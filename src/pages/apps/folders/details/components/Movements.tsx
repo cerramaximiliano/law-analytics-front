@@ -39,8 +39,7 @@ import { useEffect, useState } from "react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { getMovementsByFolderId } from "store/reducers/movements";
-import { es } from "date-fns/locale";
-import { parse, format, parseISO, isValid } from "date-fns";
+import dayjs from "utils/dayjs-config";
 import AlertMemberDelete from "../modals/alertMemberDelete";
 import { Movement } from "types/movements";
 import EmptyStateCard from "components/EmptyStateCard";
@@ -54,15 +53,15 @@ const parseDate = (dateString: string) => {
 	try {
 		// Try to parse as ISO date first
 		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsedDate = parseISO(dateString);
-			if (isValid(parsedDate)) {
+			const parsedDate = dayjs(dateString);
+			if (parsedDate.isValid()) {
 				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
-				const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+				const normalized = new Date(parsedDate.year(), parsedDate.month(), parsedDate.date());
 				return normalized;
 			}
 		}
 		// Try DD/MM/YYYY format
-		return parse(dateString, "dd/MM/yyyy", new Date());
+		return dayjs(dateString, "DD/MM/YYYY").toDate();
 	} catch (error) {
 		return new Date(0);
 	}
@@ -72,19 +71,19 @@ const formatDate = (dateString: string) => {
 	try {
 		// Try to parse as ISO date first
 		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsedDate = parseISO(dateString);
-			if (isValid(parsedDate)) {
+			const parsedDate = dayjs(dateString);
+			if (parsedDate.isValid()) {
 				// Usar componentes de fecha UTC para evitar conversión de zona horaria
-				const year = parsedDate.getUTCFullYear();
-				const month = parsedDate.getUTCMonth();
-				const day = parsedDate.getUTCDate();
-				const normalized = new Date(year, month, day);
-				return format(normalized, "dd/MM/yyyy", { locale: es });
+				const year = parsedDate.year();
+				const month = parsedDate.month();
+				const day = parsedDate.date();
+				const normalized = dayjs().year(year).month(month).date(day);
+				return normalized.format("DD/MM/YYYY");
 			}
 		}
 		// Try DD/MM/YYYY format
-		const parsedDate = parse(dateString, "dd/MM/yyyy", new Date());
-		return format(parsedDate, "dd/MM/yyyy", { locale: es });
+		const parsedDate = dayjs(dateString, "DD/MM/YYYY");
+		return parsedDate.format("DD/MM/YYYY");
 	} catch (error) {
 		return dateString;
 	}

@@ -4,11 +4,10 @@ import { useSelector } from "react-redux";
 import { Grid, Card, CardContent, Typography, Box, CircularProgress, Alert, LinearProgress } from "@mui/material";
 import { Calendar, Timer1, DollarCircle, Notification } from "iconsax-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { RootState } from "store";
 import notificationMonitoringService from "services/notificationMonitoringService";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers";
 
@@ -36,11 +35,11 @@ const NotificationSummary = () => {
 			const params: any = {};
 
 			if (startDate) {
-				params.startDate = format(startDate, "yyyy-MM-dd");
+				params.startDate = dayjs(startDate).format("YYYY-MM-DD");
 			}
 
 			if (endDate) {
-				params.endDate = format(endDate, "yyyy-MM-dd");
+				params.endDate = dayjs(endDate).format("YYYY-MM-DD");
 			}
 
 			await notificationMonitoringService.getNotificationSummary(params);
@@ -135,7 +134,7 @@ const NotificationSummary = () => {
 	return (
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
-				<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+				<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 					<Box sx={{ display: "flex", gap: 2, mb: 3 }}>
 						<DatePicker
 							label="Fecha inicio"
@@ -171,7 +170,7 @@ const NotificationSummary = () => {
 								if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
 									return "Período no disponible";
 								}
-								return `${format(startDate, "dd/MM/yyyy", { locale: es })} - ${format(endDate, "dd/MM/yyyy", { locale: es })}`;
+								return `${dayjs(startDate).format("DD/MM/YYYY")} - ${dayjs(endDate).format("DD/MM/YYYY")}`;
 							} catch {
 								return "Período no disponible";
 							}

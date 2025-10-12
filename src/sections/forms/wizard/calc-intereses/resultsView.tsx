@@ -39,7 +39,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { getContactsByUserId } from "store/reducers/contacts";
 
 //third party
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import axios from "axios";
 
 // Tipos
@@ -182,7 +182,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 
 		// Formatos por defecto según la clave
 		if (key === "fechaInicial" || key === "fechaFinal") {
-			const date = moment(value);
+			const date = dayjs(value);
 			if (date.isValid()) {
 				return date.format("DD/MM/YYYY");
 			}
@@ -397,7 +397,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				if (item.desde && item.hasta) {
 					groups.calculos.push({
 						key: `periodo_${index}`,
-						value: `${moment(item.desde).format("DD/MM/YYYY")} - ${moment(item.hasta).format("DD/MM/YYYY")}`,
+						value: `${dayjs(item.desde).format("DD/MM/YYYY")} - ${dayjs(item.hasta).format("DD/MM/YYYY")}`,
 						customLabel: `Período ${index + 1}`, // Numeramos los períodos
 					});
 
@@ -647,7 +647,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			// Usamos Omit<CalculatorType, "_id" | "isLoader" | "error"> para asegurar compatibilidad con el tipo esperado
 			const calculatorData: Omit<CalculatorType, "_id" | "isLoader" | "error"> = {
 				userId,
-				date: moment().format("YYYY-MM-DD"),
+				date: dayjs().format("YYYY-MM-DD"),
 				type: "Calculado" as const, // Usar 'as const' para que sea literalmente "Calculado"
 				classType: "intereses" as const, // Usar 'as const' para que sea literalmente "intereses"
 				subClassType: values.tasa,
@@ -994,12 +994,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 							<TableBody>
 								<TableRow>
 									<TableCell>Inicial</TableCell>
-									<TableCell>{inicio.fecha ? moment(inicio.fecha).format("DD-MM-YYYY") : "N/A"}</TableCell>
+									<TableCell>{inicio.fecha ? dayjs(inicio.fecha).format("DD-MM-YYYY") : "N/A"}</TableCell>
 									<TableCell>{inicio[campo] !== undefined ? inicio[campo].toFixed(4) : "N/A"}</TableCell>
 								</TableRow>
 								<TableRow>
 									<TableCell>Final</TableCell>
-									<TableCell>{fin.fecha ? moment(fin.fecha).format("DD-MM-YYYY") : "N/A"}</TableCell>
+									<TableCell>{fin.fecha ? dayjs(fin.fecha).format("DD-MM-YYYY") : "N/A"}</TableCell>
 									<TableCell>{fin[campo] !== undefined ? fin[campo].toFixed(4) : "N/A"}</TableCell>
 								</TableRow>
 							</TableBody>
@@ -1033,7 +1033,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 							<TableBody>
 								{values.tasasResult.datos.map((item: any, index: number) => (
 									<TableRow key={index}>
-										<TableCell>{item.fecha ? moment(item.fecha).format("DD-MM-YYYY") : "N/A"}</TableCell>
+										<TableCell>{item.fecha ? dayjs(item.fecha).format("DD-MM-YYYY") : "N/A"}</TableCell>
 										<TableCell>{item[campo] !== undefined ? item[campo].toFixed(4) : "N/A"}</TableCell>
 									</TableRow>
 								))}

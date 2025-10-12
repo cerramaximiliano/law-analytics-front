@@ -33,7 +33,7 @@ import AlertFolderDelete from "./AlertFolderDelete";
 import { PropsAddFolder } from "types/folders";
 import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import folderData from "data/folder.json";
 
 const getInitialValues = (folder: FormikValues | null) => {
@@ -72,8 +72,8 @@ const getInitialValues = (folder: FormikValues | null) => {
 			folderJuris: updatedJuris || folder?.folderJuris || null,
 			entryMethod: "manual", // Si estamos editando, siempre usamos el método manual
 			// Formatear las fechas a DD/MM/YYYY ignorando la zona horaria
-			initialDateFolder: folder.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
-			finalDateFolder: folder.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+			initialDateFolder: folder.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+			finalDateFolder: folder.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 		});
 	}
 	return newFolder;

@@ -34,8 +34,7 @@ import {
 	Status,
 } from "iconsax-react";
 import { visuallyHidden } from "@mui/utils";
-import { format, parseISO, isValid } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import { useParams } from "react-router";
 import { useDispatch } from "store";
 import { getCombinedActivities } from "store/reducers/activities";
@@ -109,14 +108,10 @@ const getActivityIcon = (activity: CombinedActivity) => {
 const formatDate = (dateString?: string) => {
 	if (!dateString) return "-";
 	try {
-		const date = parseISO(dateString);
-		if (isValid(date)) {
+		const parsed = dayjs.utc(dateString);
+		if (parsed.isValid()) {
 			// Usar componentes de fecha UTC para evitar conversión de zona horaria
-			const year = date.getUTCFullYear();
-			const month = date.getUTCMonth();
-			const day = date.getUTCDate();
-			const normalized = new Date(year, month, day);
-			return format(normalized, "dd/MM/yyyy", { locale: es });
+			return parsed.format("DD/MM/YYYY");
 		}
 		return "-";
 	} catch {

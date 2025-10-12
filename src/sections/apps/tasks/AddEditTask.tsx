@@ -3,10 +3,9 @@ import React from "react";
 
 // material-ui
 import { Button, FormControl, Grid, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { es } from "date-fns/locale";
 
 // third-party
 import * as Yup from "yup";
@@ -89,7 +88,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 	return (
 		<FormikProvider value={formik}>
-			<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+			<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 				<Form autoComplete="off" noValidate onSubmit={handleSubmit}>
 					<Grid container spacing={3}>
 						<Grid item xs={12}>

@@ -20,7 +20,7 @@ import {
 	Collapse,
 } from "@mui/material";
 import { dispatch, useSelector } from "store";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import {
 	useFilters,
 	useExpanded,
@@ -731,7 +731,7 @@ const SavedLabor = () => {
 				Header: "Fecha",
 				accessor: "date",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => (
-					<Typography noWrap>{row.original.date ? moment(row.original.date).format("DD/MM/YYYY") : "-"}</Typography>
+					<Typography noWrap>{row.original.date ? dayjs(row.original.date).format("DD/MM/YYYY") : "-"}</Typography>
 				),
 			},
 			{

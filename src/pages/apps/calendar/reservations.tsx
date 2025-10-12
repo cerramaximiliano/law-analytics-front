@@ -35,8 +35,7 @@ import {
 import { Calendar, ClipboardTick, MoreSquare, Trash, User, Edit2, Link21, Clock, InfoCircle, Lock } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { LoadingButton } from "@mui/lab";
-import { format, isAfter, isToday } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import Loader from "components/Loader";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -294,10 +293,10 @@ const BookingCard: React.FC<{
 	};
 
 	// Verificar si ya pasó la fecha
-	const isPast = booking.startTime ? isAfter(new Date(), new Date(booking.startTime)) : false;
+	const isPast = booking.startTime ? dayjs().isAfter(dayjs(booking.startTime)) : false;
 
 	// Verificar si es hoy
-	const isBookingToday = booking.startTime ? isToday(new Date(booking.startTime)) : false;
+	const isBookingToday = booking.startTime ? dayjs(booking.startTime).isToday() : false;
 
 	const handleClick = (event: React.MouseEvent<HTMLElement>) => {
 		setAnchorEl(event.currentTarget);
@@ -425,12 +424,10 @@ const BookingCard: React.FC<{
 						<Calendar size={18} style={{ marginRight: 8, flexShrink: 0, marginTop: 2 }} />
 						<Box>
 							<Typography variant="body2" sx={{ fontWeight: 500 }}>
-								{format(new Date(booking.startTime), "EEEE, d 'de' MMMM 'de' yyyy", {
-									locale: es,
-								})}
+								{dayjs(booking.startTime).format("dddd, D [de] MMMM [de] YYYY")}
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
-								{format(new Date(booking.startTime), "h:mm a")} - {format(new Date(booking.endTime), "h:mm a")}
+								{dayjs(booking.startTime).format("h:mm a")} - {dayjs(booking.endTime).format("h:mm a")}
 							</Typography>
 						</Box>
 					</Box>
@@ -1307,7 +1304,7 @@ const BookingsManagement = () => {
 						{Array.isArray(filteredBookings)
 							? filteredBookings.map((booking) => {
 									// Verificar si ya pasó la fecha
-									const isPast = booking.startTime ? isAfter(new Date(), new Date(booking.startTime)) : false;
+									const isPast = booking.startTime ? dayjs().isAfter(dayjs(booking.startTime)) : false;
 
 									return (
 										<Grid item xs={12} sm={6} md={4} key={booking._id}>
@@ -1341,7 +1338,7 @@ const BookingsManagement = () => {
 														<Typography variant="h6" gutterBottom>
 															{booking.clientName}
 														</Typography>
-														<Typography variant="body2">{format(new Date(booking.startTime), "d/M/yyyy - HH:mm")}</Typography>
+														<Typography variant="body2">{dayjs(booking.startTime).format("D/M/YYYY - HH:mm")}</Typography>
 														<Typography variant="body2" color="text.secondary" gutterBottom>
 															{booking.clientEmail}
 														</Typography>

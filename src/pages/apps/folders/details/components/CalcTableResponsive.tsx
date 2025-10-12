@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import {
 	Skeleton,
 	CardContent,
@@ -193,7 +193,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onMenuOpen,
 									sx={{ fontWeight: 500 }}
 								/>
 								<Typography variant="caption" color="text.secondary">
-									{moment(row.date, "DD/MM/YYYY").fromNow()}
+									{dayjs(row.date, "DD/MM/YYYY").fromNow()}
 								</Typography>
 							</Stack>
 							<Typography variant="h6" fontWeight={600}>
@@ -265,7 +265,7 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 	const { id } = useParams();
 
 	const sortedData = useMemo(
-		() => selectedCalculators.slice().sort((a: any, b: any) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
+		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date, "DD/MM/YYYY").diff(dayjs(a.date, "DD/MM/YYYY"))),
 		[selectedCalculators],
 	);
 
@@ -583,7 +583,7 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 																	{row.date || "N/D"}
 																</Typography>
 																<Typography variant="caption" color="text.secondary">
-																	{moment(row.date, "DD/MM/YYYY").fromNow()}
+																	{dayjs(row.date, "DD/MM/YYYY").fromNow()}
 																</Typography>
 															</Stack>
 														</TableCell>

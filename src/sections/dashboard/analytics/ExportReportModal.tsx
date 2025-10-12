@@ -14,8 +14,7 @@ import {
 } from "@mui/material";
 import { DocumentDownload } from "iconsax-react";
 import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
 import { useSelector } from "react-redux";
@@ -178,8 +177,8 @@ const ReportDocument: React.FC<{ userData: any; statsData: ReportData; lastUpdat
 	statsData,
 	lastUpdated,
 }) => {
-	const currentDate = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
-	const dataDate = lastUpdated ? format(new Date(lastUpdated), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : currentDate;
+	const currentDate = dayjs().format("DD [de] MMMM [de] YYYY, HH:mm");
+	const dataDate = lastUpdated ? dayjs(lastUpdated).format("DD [de] MMMM [de] YYYY, HH:mm") : currentDate;
 
 	// Formatear números con separadores de miles
 	const formatNumber = (num: number) => {
@@ -578,7 +577,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement("a");
 			link.href = url;
-			link.download = `Reporte_Analytics_${format(new Date(), "yyyy-MM-dd")}.pdf`;
+			link.download = `Reporte_Analytics_${dayjs().format("YYYY-MM-DD")}.pdf`;
 			link.click();
 
 			// Limpiar
@@ -656,7 +655,7 @@ const ExportReportModal: React.FC<ExportReportModalProps> = ({ open, onClose }) 
 								<Typography variant="body2" color="text.secondary">
 									Fecha:
 								</Typography>
-								<Typography variant="body2">{format(new Date(), "dd/MM/yyyy HH:mm")}</Typography>
+								<Typography variant="body2">{dayjs().format("DD/MM/YYYY HH:mm")}</Typography>
 							</Box>
 							<Box sx={{ display: "flex", justifyContent: "space-between" }}>
 								<Typography variant="body2" color="text.secondary">

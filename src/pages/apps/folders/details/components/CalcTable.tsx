@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "react-router";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import {
 	Skeleton,
 	Button,
@@ -52,7 +52,7 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 	const { id } = useParams();
 
 	const sortedData = useMemo(
-		() => selectedCalculators.slice().sort((a: any, b: any) => moment(b.date, "DD/MM/YYYY").diff(moment(a.date, "DD/MM/YYYY"))),
+		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date, "DD/MM/YYYY").diff(dayjs(a.date, "DD/MM/YYYY"))),
 		[selectedCalculators],
 	);
 

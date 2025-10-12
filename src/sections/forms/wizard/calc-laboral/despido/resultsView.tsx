@@ -7,7 +7,7 @@ import { CalculatorType } from "types/calculator";
 import LinkCauseModal from "../components/linkCauseModal";
 import { useNavigate } from "react-router";
 import despidoFormModel from "./formModel/despidoFormModel";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import { enqueueSnackbar } from "notistack";
 
 // Tipos
@@ -335,7 +335,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			// Crear el objeto para enviar al servidor según el modelo
 			const calculatorData: Omit<CalculatorType, "_id" | "isLoader" | "error"> = {
 				userId,
-				date: moment().format("YYYY-MM-DD"),
+				date: dayjs().format("YYYY-MM-DD"),
 				type: "Calculado" as const,
 				classType: "laboral" as const,
 				subClassType: "despido" as const,

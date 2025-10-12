@@ -19,8 +19,7 @@ import {
 } from "@mui/material";
 import { Edit, Trash, Eye, Clock, CalendarTick, Calendar1 } from "iconsax-react";
 import { visuallyHidden } from "@mui/utils";
-import { format, parseISO, isValid } from "date-fns";
-import { es } from "date-fns/locale";
+import dayjs from "utils/dayjs-config";
 
 interface CalendarEvent {
 	_id: string;
@@ -80,16 +79,10 @@ const formatDateOnly = (date: string | Date | undefined | null): string => {
 	if (!date) return "-";
 
 	try {
-		let parsedDate: Date;
-		if (typeof date === "string") {
-			parsedDate = parseISO(date);
-		} else {
-			parsedDate = date;
-		}
+		const parsed = dayjs(date);
+		if (!parsed.isValid()) return "-";
 
-		if (!isValid(parsedDate)) return "-";
-
-		return format(parsedDate, "dd/MM/yyyy", { locale: es });
+		return parsed.format("DD/MM/YYYY");
 	} catch {
 		return "-";
 	}
@@ -99,10 +92,10 @@ const calculateDuration = (start: string | Date, end?: string | Date): string =>
 	if (!end) return "Todo el día";
 
 	try {
-		const startDate = typeof start === "string" ? parseISO(start) : start;
-		const endDate = typeof end === "string" ? parseISO(end) : end;
+		const startDate = dayjs(start).toDate();
+		const endDate = dayjs(end).toDate();
 
-		if (!isValid(startDate) || !isValid(endDate)) return "-";
+		if (!dayjs(startDate).isValid() || !dayjs(endDate).isValid()) return "-";
 
 		const diffMs = endDate.getTime() - startDate.getTime();
 		const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -172,8 +165,8 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 
 			// Special handling for dates
 			if (orderBy === "start" || orderBy === "end") {
-				aValue = aValue ? (typeof aValue === "string" ? parseISO(aValue) : aValue) : new Date(0);
-				bValue = bValue ? (typeof bValue === "string" ? parseISO(bValue) : bValue) : new Date(0);
+				aValue = aValue ? dayjs(aValue).toDate() : new Date(0);
+				bValue = bValue ? dayjs(bValue).toDate() : new Date(0);
 			}
 
 			if (order === "desc") {
@@ -244,7 +237,7 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 												</Typography>
 												{!event.allDay && (
 													<Typography variant="caption" color="textSecondary">
-														{format(typeof event.start === "string" ? parseISO(event.start) : event.start, "HH:mm")}
+														{dayjs(event.start).format("HH:mm")}
 													</Typography>
 												)}
 											</Box>

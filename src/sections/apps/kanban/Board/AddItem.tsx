@@ -5,7 +5,7 @@ import { ChangeEvent, KeyboardEvent, useState } from "react";
 import { Button, Grid, TextField, Stack, Tooltip, Box } from "@mui/material";
 
 // third-party
-import { sub } from "date-fns";
+import dayjs from "utils/dayjs-config";
 import { Chance } from "chance";
 
 // project-imports
@@ -51,7 +51,7 @@ const AddItem = ({ columnId }: Props) => {
 			const newItem: KanbanItem = {
 				id: `${chance.integer({ min: 1000, max: 9999 })}`,
 				title,
-				dueDate: sub(new Date(), { days: 0, hours: 1, minutes: 45 }),
+				dueDate: dayjs().subtract(1, 'hour').subtract(45, 'minute').toDate(),
 				image: false,
 				assign: "",
 				description: "",

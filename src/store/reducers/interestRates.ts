@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import { dispatch } from "store";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 
 // Tipos
 export interface InterestRate {
@@ -33,15 +33,15 @@ const initialState: InterestRatesState = {
 // Función helper para calcular el próximo tiempo de actualización (9 AM Argentina)
 const getNextUpdateTime = (): number => {
 	// Argentina está UTC-3
-	const now = moment();
-	const argentinaOffset = -3 * 60; // -3 horas en minutos
-	const nowArgentina = now.clone().utcOffset(argentinaOffset);
+	const now = dayjs();
+	const argentinaOffset = -180; // -3 horas en minutos
+	const nowArgentina = now.utcOffset(argentinaOffset) as any;
 
-	let nextUpdate = nowArgentina.clone().hour(9).minute(0).second(0).millisecond(0);
+	let nextUpdate = nowArgentina.set('hour', 9).set('minute', 0).set('second', 0).set('millisecond', 0);
 
 	// Si ya pasaron las 9 AM de hoy, configurar para mañana
 	if (nowArgentina.isAfter(nextUpdate)) {
-		nextUpdate.add(1, "day");
+		nextUpdate = nextUpdate.add(1, "day");
 	}
 
 	return nextUpdate.valueOf();
@@ -131,8 +131,8 @@ export function getInterestRates(userId: string, forceRefresh: boolean = false) 
 			const tasasConFechas: InterestRate[] = response.data.map((tasa: any) => ({
 				label: tasa.label,
 				value: tasa.value,
-				fechaInicio: moment.utc(tasa.fechaInicio).startOf("day").toDate(),
-				fechaUltima: moment.utc(tasa.fechaUltima).startOf("day").toDate(),
+				fechaInicio: dayjs.utc(tasa.fechaInicio).startOf("day").toDate(),
+				fechaUltima: dayjs.utc(tasa.fechaUltima).startOf("day").toDate(),
 			}));
 
 			dispatch(
@@ -165,20 +165,20 @@ export function getInterestRates(userId: string, forceRefresh: boolean = false) 
 				{
 					label: "Tasa Pasiva BCRA",
 					value: "tasaPasivaBCRA",
-					fechaInicio: new Date("2000-01-01"),
-					fechaUltima: new Date(),
+					fechaInicio: dayjs("2000-01-01").toDate(),
+					fechaUltima: dayjs().toDate(),
 				},
 				{
 					label: "Acta 2601",
 					value: "acta2601",
-					fechaInicio: new Date("2000-01-01"),
-					fechaUltima: new Date(),
+					fechaInicio: dayjs("2000-01-01").toDate(),
+					fechaUltima: dayjs().toDate(),
 				},
 				{
 					label: "Acta 2630",
 					value: "acta2630",
-					fechaInicio: new Date("2000-01-01"),
-					fechaUltima: new Date(),
+					fechaInicio: dayjs("2000-01-01").toDate(),
+					fechaUltima: dayjs().toDate(),
 				},
 			];
 

@@ -18,7 +18,7 @@ import {
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import IconButton from "components/@extended/IconButton";
-import moment from "moment";
+import dayjs from "utils/dayjs-config";
 import data from "data/folder.json";
 import { FolderCross, Folder, FolderOpen, Clock, Notepad } from "iconsax-react";
 import InputField from "components/UI/InputField";
@@ -32,9 +32,6 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
-
-import "moment/locale/es"; // Importa el idioma español
-moment.locale("es"); // Configura moment a español
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -65,8 +62,8 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 
 	const initialValues = {
 		...folder,
-		initialDateFolder: folder?.initialDateFolder ? moment.parseZone(folder.initialDateFolder).format("DD/MM/YYYY") : "",
-		finalDateFolder: folder?.finalDateFolder ? moment.parseZone(folder.finalDateFolder).format("DD/MM/YYYY") : "",
+		initialDateFolder: folder?.initialDateFolder ? dayjs(folder.initialDateFolder).format("DD/MM/YYYY") : "",
+		finalDateFolder: folder?.finalDateFolder ? dayjs(folder.finalDateFolder).format("DD/MM/YYYY") : "",
 		folderJuris: folder?.folderJuris
 			? typeof folder.folderJuris === "string"
 				? { item: folder.folderJuris, label: "" }
@@ -86,7 +83,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 		const newStatus = status[nextIndex];
 
 		if (newStatus === "Cerrada") {
-			folder.finalDateFolder = folder.finalDateFolder || moment().format("DD/MM/YYYY");
+			folder.finalDateFolder = folder.finalDateFolder || dayjs().format("DD/MM/YYYY");
 		} else {
 			folder.finalDateFolder = "";
 		}
@@ -106,10 +103,10 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 				const formattedValues = {
 					...values,
 					initialDateFolder: values.initialDateFolder
-						? moment(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? dayjs(values.initialDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 						: values.initialDateFolder,
 					finalDateFolder: values.finalDateFolder
-						? moment(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
+						? dayjs(values.finalDateFolder, "DD/MM/YYYY").format("YYYY-MM-DD")
 						: values.finalDateFolder,
 				};
 
@@ -364,7 +361,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 												<DateInputField customInputStyles={customInputStyles} name="initialDateFolder" />
 											) : (
 												<Typography variant="body2">
-													{folder?.initialDateFolder ? moment.parseZone(folder?.initialDateFolder).format("DD/MM/YYYY") : "-"}
+													{folder?.initialDateFolder ? dayjs(folder?.initialDateFolder).format("DD/MM/YYYY") : "-"}
 												</Typography>
 											)}
 										</>
@@ -384,7 +381,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 											) : (
 												type === "general" && (
 													<Typography variant="body2">
-														{folder?.finalDateFolder ? moment.parseZone(folder?.finalDateFolder).format("DD/MM/YYYY") : "-"}
+														{folder?.finalDateFolder ? dayjs(folder?.finalDateFolder).format("DD/MM/YYYY") : "-"}
 													</Typography>
 												)
 											)}
@@ -528,7 +525,7 @@ const FolderData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean
 										<>
 											<Typography sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
 												<Clock size={14} style={{ marginLeft: 8 }} />
-												{folder?.updatedAt ? moment(folder.updatedAt).fromNow() : "Sin actualizaciones recientes"}
+												{folder?.updatedAt ? dayjs(folder.updatedAt).fromNow() : "Sin actualizaciones recientes"}
 											</Typography>
 										</>
 									)}

@@ -1,9 +1,8 @@
 import React from "react";
 import { Stack, FormControl, InputLabel, Select, MenuItem, Typography, Button, Divider, SelectChangeEvent } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { es } from "date-fns/locale";
 import { RotateLeft } from "iconsax-react";
 
 interface ActivityFiltersProps {
@@ -125,7 +124,7 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({ activeTab, filters, o
 	);
 
 	return (
-		<LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+		<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 			<Stack spacing={2}>
 				<Typography variant="subtitle2" fontWeight={600}>
 					Filtros Avanzados
