@@ -5,9 +5,6 @@ import { Collapse, SvgIcon, SvgIconProps } from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import { treeItemClasses, TreeItem, TreeItemProps, TreeView } from "@mui/lab";
 
-// third-party
-import { useSpring, animated } from "react-spring";
-
 // project-imports
 import MainCard from "components/MainCard";
 
@@ -38,23 +35,9 @@ function CloseSquare(props: SvgIconProps) {
 	);
 }
 
-function TransitionComponent({ ...others }: TransitionProps) {
-	const style = useSpring({
-		from: {
-			opacity: 0,
-			transform: "translate3d(20px,0,0)",
-		},
-		to: {
-			opacity: others.in ? 1 : 0,
-			transform: `translate3d(${others.in ? 0 : 20}px,0,0)`,
-		},
-	});
-
-	return (
-		<animated.div style={style}>
-			<Collapse {...others} />
-		</animated.div>
-	);
+function TransitionComponent(props: TransitionProps) {
+	// Usar Collapse de MUI que ya tiene animaciones incorporadas
+	return <Collapse {...props} />;
 }
 
 const StyledTreeItem = styled((props: TreeItemProps) => <TreeItem {...props} TransitionComponent={TransitionComponent} />)(({ theme }) => ({

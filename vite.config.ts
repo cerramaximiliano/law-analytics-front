@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import tsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
 import path from "path";
+import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -14,6 +15,12 @@ export default defineConfig({
 			svgrOptions: {
 				icon: true,
 			},
+		}),
+		visualizer({
+			open: false,
+			filename: "bundle-stats.html",
+			gzipSize: true,
+			brotliSize: true,
 		}),
 	],
 	server: {
@@ -36,9 +43,52 @@ export default defineConfig({
 			output: {
 				// Usar hash de contenido para forzar actualización
 				entryFileNames: `assets/[name]-[hash].js`,
-				chunkFileNames: `assets/[name]-[hash].js`, 
+				chunkFileNames: `assets/[name]-[hash].js`,
 				assetFileNames: `assets/[name]-[hash].[ext]`,
-			}
+				// Manual chunking para optimizar el bundle
+				manualChunks: (id) => {
+					// React y ReactDOM en un chunk separado
+					if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
+						return "vendor-react";
+					}
+					// MUI en su propio chunk
+					if (id.includes("node_modules/@mui")) {
+						return "vendor-mui";
+					}
+					// Emotion (requerido por MUI) en su propio chunk
+					if (id.includes("node_modules/@emotion")) {
+						return "vendor-emotion";
+					}
+					// FullCalendar en su propio chunk
+					if (id.includes("node_modules/@fullcalendar")) {
+						return "vendor-calendar";
+					}
+					// React-PDF en su propio chunk (muy pesado)
+					if (id.includes("node_modules/@react-pdf") || id.includes("node_modules/pdfjs-dist")) {
+						return "vendor-pdf";
+					}
+					// ApexCharts/Recharts en su propio chunk
+					if (id.includes("node_modules/apexcharts") || id.includes("node_modules/recharts") || id.includes("node_modules/react-apexcharts")) {
+						return "vendor-charts";
+					}
+					// Chance y datos mock en su propio chunk
+					if (id.includes("node_modules/chance")) {
+						return "vendor-chance";
+					}
+					// Lodash en su propio chunk
+					if (id.includes("node_modules/lodash")) {
+						return "vendor-lodash";
+					}
+					// Draft.js y WYSIWYG editors
+					if (id.includes("node_modules/draft-js") || id.includes("node_modules/react-draft-wysiwyg") || id.includes("node_modules/react-quill")) {
+						return "vendor-editors";
+					}
+					// Otros vendors
+					if (id.includes("node_modules")) {
+						return "vendor-other";
+					}
+				},
+			},
 		},
 		// Limpiar directorio de build antes de cada compilación
 		emptyOutDir: true,
