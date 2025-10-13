@@ -177,7 +177,7 @@ const BookingPage = () => {
 	const formStartRef = useRef<HTMLDivElement>(null);
 
 	// Estado para fechas y horas
-	const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+	const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
 	const [availableTimes, setAvailableTimes] = useState<AvailableSlot[]>([]);
 	const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
@@ -498,8 +498,8 @@ const BookingPage = () => {
 		if (availableDates.length > 0) {
 			const firstAvailableDate = availableDates[0];
 
-			// Establecer la fecha seleccionada
-			setSelectedDate(firstAvailableDate.date);
+			// Establecer la fecha seleccionada (convertir a dayjs)
+			setSelectedDate(dayjs(firstAvailableDate.date));
 
 			// Establecer directamente los slots disponibles
 			setAvailableTimes(firstAvailableDate.availableSlots);
@@ -510,20 +510,20 @@ const BookingPage = () => {
 		// Si no encontramos ninguna fecha disponible, usar una fecha futura por defecto
 		const tomorrow = new Date(now);
 		tomorrow.setDate(tomorrow.getDate() + 1);
-		setSelectedDate(tomorrow);
+		setSelectedDate(dayjs(tomorrow));
 
 		// En este caso, calculamos los slots disponibles
 		calculateAvailableTimesForDate(tomorrow, settings.timeSlots, settings.duration, settings.bufferBefore, settings.bufferAfter);
 	};
 
-	const handleDateChange = (date: Date | null) => {
+	const handleDateChange = (date: dayjs.Dayjs | null) => {
 		if (!date || !availabilitySettings) return;
 
 		// Limpiar el horario seleccionado
 		setSelectedTime(null);
 
 		// Si la fecha seleccionada es la misma (puede ocurrir por un rerender), no hacer nada más
-		if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+		if (selectedDate && date.format("YYYY-MM-DD") === selectedDate.format("YYYY-MM-DD")) {
 			return;
 		}
 
@@ -532,7 +532,7 @@ const BookingPage = () => {
 
 		// Calcular los horarios disponibles para esta fecha
 		calculateAvailableTimesForDate(
-			date,
+			date.toDate(),
 			availabilitySettings.timeSlots,
 			availabilitySettings.duration,
 			availabilitySettings.bufferBefore,
@@ -686,7 +686,7 @@ const BookingPage = () => {
 			}
 			setFormData({
 				...formData,
-				date: selectedDate.toISOString().split("T")[0],
+				date: selectedDate.format("YYYY-MM-DD"),
 				time: selectedTime,
 			});
 			setError(null);
@@ -773,8 +773,7 @@ const BookingPage = () => {
 
 			// Construir fecha y hora de inicio
 			const [hours, minutes] = selectedTime.split(":").map(Number);
-			const startDate = new Date(selectedDate);
-			startDate.setHours(hours, minutes, 0, 0);
+			const startDate = selectedDate.clone().hour(hours).minute(minutes).second(0).millisecond(0).toDate();
 
 			// Preparar datos para enviar según el formato esperado por el servidor
 			const appointmentData = {
@@ -911,26 +910,25 @@ const BookingPage = () => {
 											onChange={handleDateChange}
 											disablePast
 											// Limitar fechas futuras según maxDaysInAdvance
-											maxDate={(() => {
-												const maxDate = new Date();
-												maxDate.setDate(maxDate.getDate() + (availabilitySettings?.maxDaysInAdvance || 60));
-												return maxDate;
-											})()}
+											maxDate={dayjs().add(availabilitySettings?.maxDaysInAdvance || 60, "day")}
 											// Deshabilitar fechas que no tienen disponibilidad o están excluidas
 											shouldDisableDate={(date) => {
 												if (!availabilitySettings?.timeSlots) return true;
 
+												// Convertir dayjs a Date para comparaciones
+												const dateObj = date.toDate();
+
 												// Verificar si la fecha está en el arreglo de fechas excluidas
 												if (
 													availabilitySettings.excludedDates?.some(
-														(excludedDate) => new Date(excludedDate.date).toDateString() === date.toDateString(),
+														(excludedDate) => new Date(excludedDate.date).toDateString() === dateObj.toDateString(),
 													)
 												) {
 													return true;
 												}
 
 												// Verificar disponibilidad para el día de la semana
-												const dayOfWeek = date.getDay();
+												const dayOfWeek = dateObj.getDay();
 												const daySlot = availabilitySettings.timeSlots.find((slot) => slot.day === dayOfWeek && slot.isActive);
 
 												if (!daySlot) return true;
@@ -945,7 +943,7 @@ const BookingPage = () => {
 												const [endHour, endMinute] = daySlot.endTime.split(":").map(Number);
 
 												// Crear fecha completa con hora de fin para este día
-												const slotEndTime = new Date(date);
+												const slotEndTime = new Date(dateObj);
 												slotEndTime.setHours(endHour, endMinute, 0, 0);
 
 												// Si toda la franja horaria está antes del tiempo mínimo de anticipación, deshabilitar fecha
@@ -958,7 +956,7 @@ const BookingPage = () => {
 													// Contar cuántas reservas hay para este día
 													const bookingsForThisDay = availabilitySettings.bookings.filter((booking) => {
 														const bookingDate = new Date(booking.startTime);
-														return bookingDate.toDateString() === date.toDateString();
+														return bookingDate.toDateString() === dateObj.toDateString();
 													});
 
 													// Crear array de slots ocupados para esta fecha
@@ -981,7 +979,7 @@ const BookingPage = () => {
 														const minute = time % 60;
 
 														// Crear fecha para este slot
-														const slotStartDate = new Date(date);
+														const slotStartDate = new Date(dateObj);
 														slotStartDate.setHours(hour, minute, 0, 0);
 
 														// Crear fecha para el final de este slot
@@ -1022,7 +1020,7 @@ const BookingPage = () => {
 														const minute = time % 60;
 
 														// Crear fecha para este slot
-														const slotStartDate = new Date(date);
+														const slotStartDate = new Date(dateObj);
 														slotStartDate.setHours(hour, minute, 0, 0);
 
 														// Verificar tiempo mínimo de anticipación
