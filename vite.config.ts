@@ -83,7 +83,101 @@ export default defineConfig({
 					if (id.includes("node_modules/draft-js") || id.includes("node_modules/react-draft-wysiwyg") || id.includes("node_modules/react-quill")) {
 						return "vendor-editors";
 					}
-					// Otros vendors
+
+					// ============ NUEVOS CHUNKS PARA DIVIDIR vendor-other ============
+
+					// Redux (state management) - 15MB en node_modules
+					if (
+						id.includes("node_modules/@reduxjs") ||
+						id.includes("node_modules/redux") ||
+						id.includes("node_modules/redux-persist") ||
+						id.includes("node_modules/reselect")
+					) {
+						return "vendor-redux";
+					}
+
+					// React Router (routing) - ~1.4MB en node_modules
+					if (
+						id.includes("node_modules/react-router") ||
+						id.includes("node_modules/react-router-dom") ||
+						id.includes("node_modules/history") ||
+						id.includes("node_modules/@remix-run")
+					) {
+						return "vendor-router";
+					}
+
+					// Forms (formik + yup) - ~1.3MB en node_modules
+					if (id.includes("node_modules/formik") || id.includes("node_modules/yup")) {
+						return "vendor-forms";
+					}
+
+					// Framer Motion (animations) - 3.4MB en node_modules
+					if (id.includes("node_modules/framer-motion")) {
+						return "vendor-animations";
+					}
+
+					// React Table + virtualization - ~1.1MB en node_modules
+					if (
+						id.includes("node_modules/react-table") ||
+						id.includes("node_modules/react-window") ||
+						id.includes("node_modules/react-virtualized-auto-sizer") ||
+						id.includes("node_modules/react-table-sticky")
+					) {
+						return "vendor-table";
+					}
+
+					// Drag and Drop libraries
+					if (
+						id.includes("node_modules/react-dnd") ||
+						id.includes("node_modules/@hello-pangea/dnd") ||
+						id.includes("node_modules/react-draggable")
+					) {
+						return "vendor-dnd";
+					}
+
+					// Internationalization
+					if (id.includes("node_modules/react-intl")) {
+						return "vendor-intl";
+					}
+
+					// Syntax Highlighter (9.1MB, usado solo 2 veces) - Candidato para lazy loading
+					if (id.includes("node_modules/react-syntax-highlighter")) {
+						return "vendor-syntax";
+					}
+
+					// Emoji Picker (3.2MB, usado solo 2 veces) - Candidato para lazy loading
+					if (id.includes("node_modules/emoji-picker-react")) {
+						return "vendor-emoji";
+					}
+
+					// Socket.io (1.6MB, usado solo 1 vez) - Candidato para lazy loading
+					if (id.includes("node_modules/socket.io-client")) {
+						return "vendor-socket";
+					}
+
+					// Core utilities (axios, immer, etc) - Usado extensivamente
+					if (
+						id.includes("node_modules/axios") ||
+						id.includes("node_modules/immer") ||
+						id.includes("node_modules/uuid") ||
+						id.includes("node_modules/dayjs") ||
+						id.includes("node_modules/js-cookie") ||
+						id.includes("node_modules/jwt-decode")
+					) {
+						return "vendor-utils";
+					}
+
+					// Simplebar (scrollbar)
+					if (id.includes("node_modules/simplebar")) {
+						return "vendor-simplebar";
+					}
+
+					// Notistack (notifications)
+					if (id.includes("node_modules/notistack")) {
+						return "vendor-notistack";
+					}
+
+					// Otros vendors (lo que quede)
 					if (id.includes("node_modules")) {
 						return "vendor-other";
 					}
