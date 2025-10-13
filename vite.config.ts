@@ -39,7 +39,21 @@ export default defineConfig({
 		outDir: "build",
 		sourcemap: false,
 		chunkSizeWarningLimit: 2000,
+		// Configuración de minificación y tree-shaking mejorada
+		minify: "terser",
+		terserOptions: {
+			compress: {
+				drop_console: true,
+				drop_debugger: true,
+				pure_funcs: ["console.log", "console.info", "console.debug", "console.trace"],
+			},
+		},
 		rollupOptions: {
+			// Mejorar tree-shaking
+			treeshake: {
+				moduleSideEffects: "no-external",
+				preset: "recommended",
+			},
 			output: {
 				// Usar hash de contenido para forzar actualización
 				entryFileNames: `assets/[name]-[hash].js`,
