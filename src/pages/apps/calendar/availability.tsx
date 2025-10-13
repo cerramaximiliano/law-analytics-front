@@ -49,6 +49,9 @@ import { openSnackbar } from "store/reducers/snackbar";
 // assets
 import { Calendar as CalendarIcon, Clock, InfoCircle, Save2, Link, Add, CloseCircle, Edit2 } from "iconsax-react";
 
+// third-party
+import dayjs from "utils/dayjs-config";
+
 // Tipos para la API de disponibilidad
 interface TimeSlot {
 	day: number;
@@ -58,7 +61,7 @@ interface TimeSlot {
 }
 
 interface ExcludedDate {
-	date: Date;
+	date: dayjs.Dayjs;
 	reason?: string;
 }
 
@@ -147,14 +150,11 @@ const Availability = () => {
 	const [availableDays, setAvailableDays] = useState<number[]>([1, 2, 3, 4, 5]); // Por defecto L-V
 
 	// Creación de fechas para los selectores de hora
-	const morningTime = new Date();
-	morningTime.setHours(9, 0, 0, 0);
+	const morningTime = dayjs().hour(9).minute(0).second(0);
+	const eveningTime = dayjs().hour(18).minute(0).second(0);
 
-	const eveningTime = new Date();
-	eveningTime.setHours(18, 0, 0, 0);
-
-	const [startTime, setStartTime] = useState<Date | null>(morningTime);
-	const [endTime, setEndTime] = useState<Date | null>(eveningTime);
+	const [startTime, setStartTime] = useState<dayjs.Dayjs | null>(morningTime);
+	const [endTime, setEndTime] = useState<dayjs.Dayjs | null>(eveningTime);
 	const [slotDuration, setSlotDuration] = useState<number>(30); // Duración por defecto: 30 minutos
 	const [bufferTime, setBufferTime] = useState<number>(10); // Tiempo de descanso: 10 minutos
 	const [autoAccept, setAutoAccept] = useState<boolean>(false);
@@ -183,7 +183,7 @@ const Availability = () => {
 	// Estados para diálogos
 	const [openExcludedDateDialog, setOpenExcludedDateDialog] = useState(false);
 	const [openCustomFieldDialog, setOpenCustomFieldDialog] = useState(false);
-	const [newExcludedDate, setNewExcludedDate] = useState<Date | null>(new Date());
+	const [newExcludedDate, setNewExcludedDate] = useState<dayjs.Dayjs | null>(dayjs());
 	const [excludedDateReason, setExcludedDateReason] = useState("");
 	const [newCustomField, setNewCustomField] = useState<CustomField>({
 		name: "",
@@ -208,18 +208,16 @@ const Availability = () => {
 		if (config.timeSlots && config.timeSlots.length > 0) {
 			const firstSlot = config.timeSlots[0];
 
-			// Crear objetos Date para los time pickers
+			// Crear objetos dayjs para los time pickers
 			if (firstSlot.startTime) {
-				const startDate = new Date();
 				const [startHours, startMinutes] = firstSlot.startTime.split(":").map(Number);
-				startDate.setHours(startHours, startMinutes, 0, 0);
+				const startDate = dayjs().hour(startHours).minute(startMinutes).second(0);
 				setStartTime(startDate);
 			}
 
 			if (firstSlot.endTime) {
-				const endDate = new Date();
 				const [endHours, endMinutes] = firstSlot.endTime.split(":").map(Number);
-				endDate.setHours(endHours, endMinutes, 0, 0);
+				const endDate = dayjs().hour(endHours).minute(endMinutes).second(0);
 				setEndTime(endDate);
 			}
 		}
@@ -350,16 +348,16 @@ const Availability = () => {
 	};
 
 	// Función auxiliar para formatear la hora
-	const formatTime = (date: Date | null): string => {
+	const formatTime = (date: dayjs.Dayjs | null): string => {
 		if (!date) return "09:00";
-		return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+		return date.format("HH:mm");
 	};
 
 	// Manejadores para fechas excluidas
 	const handleAddExcludedDate = () => {
 		if (newExcludedDate) {
 			setExcludedDates([...excludedDates, { date: newExcludedDate, reason: excludedDateReason }]);
-			setNewExcludedDate(new Date());
+			setNewExcludedDate(dayjs());
 			setExcludedDateReason("");
 			setOpenExcludedDateDialog(false);
 		}

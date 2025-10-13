@@ -1,6 +1,7 @@
 import React from "react";
 import { useState } from "react";
 
+import dayjs from "utils/dayjs-config";
 import "dayjs/locale/es";
 import { esES } from "@mui/x-date-pickers/locales";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -22,8 +23,8 @@ import { DateTimeField } from "@mui/x-date-pickers";
 // ==============================|| PLUGIN - MASK INPUT ||============================== //
 
 const MaskPage = () => {
-	const [date1, setDate1] = useState<Date | null>(null);
-	const [date2, setDate2] = useState<Date | null>(null);
+	const [date1, setDate1] = useState<dayjs.Dayjs | null>(null);
+	const [date2, setDate2] = useState<dayjs.Dayjs | null>(null);
 
 	const esLocale = esES.components.MuiLocalizationProvider.defaultProps.localeText;
 
@@ -38,10 +39,10 @@ const MaskPage = () => {
 									<InputLabel>Insert Date 1</InputLabel>
 									<DateTimeField
 										value={date1}
-										format="dd-MM-YYYY"
+										format="DD-MM-YYYY"
 										disableFuture={false}
 										onChange={(newValue) => setDate1(newValue)}
-										slotProps={{ textField: { fullWidth: true, placeholder: "dd/mm/aaaa" } }}
+										slotProps={{ textField: { fullWidth: true, placeholder: "DD/MM/AAAA" } }}
 									/>
 								</Stack>
 							</Grid>

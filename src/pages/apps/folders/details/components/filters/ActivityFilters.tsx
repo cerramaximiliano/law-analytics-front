@@ -4,6 +4,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { RotateLeft } from "iconsax-react";
+import dayjs from "utils/dayjs-config";
 
 interface ActivityFiltersProps {
 	activeTab: "movements" | "notifications" | "calendar" | "combined";
@@ -12,7 +13,7 @@ interface ActivityFiltersProps {
 }
 
 const ActivityFilters: React.FC<ActivityFiltersProps> = ({ activeTab, filters, onFiltersChange }) => {
-	const handleDateChange = (field: string) => (date: Date | null) => {
+	const handleDateChange = (field: string) => (date: dayjs.Dayjs | null) => {
 		onFiltersChange({
 			...filters,
 			[field]: date,
