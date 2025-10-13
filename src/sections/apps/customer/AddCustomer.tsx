@@ -15,7 +15,7 @@ import {
 	CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import _ from "lodash";
+import merge from "lodash/merge";
 import * as Yup from "yup";
 import { Formik, Form, FormikValues, FormikProps } from "formik";
 import AlertCustomerDelete from "./AlertCustomerDelete";
@@ -70,7 +70,7 @@ const getInitialValues = (customer: FormikValues | null) => {
 		company: "",
 		fiscal: "",
 	};
-	return customer ? _.merge({}, newCustomer, customer) : newCustomer;
+	return customer ? merge({}, newCustomer, customer) : newCustomer;
 };
 
 function getStepContent(step: number, values: any) {

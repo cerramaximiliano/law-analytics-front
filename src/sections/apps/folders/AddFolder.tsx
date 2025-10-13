@@ -17,7 +17,7 @@ import {
 	CircularProgress,
 	Backdrop,
 } from "@mui/material";
-import _ from "lodash";
+import merge from "lodash/merge";
 import * as Yup from "yup";
 import { Form, Formik, FormikValues } from "formik";
 import { Trash, ArrowRight2, ArrowLeft2, FolderAdd } from "iconsax-react";
@@ -64,7 +64,7 @@ const getInitialValues = (folder: FormikValues | null) => {
 			updatedJuris = folderData.jurisdicciones.find((juris: any) => juris.item === folder.folderJuris.item);
 		}
 
-		return _.merge({}, newFolder, {
+		return merge({}, newFolder, {
 			...folder,
 			folderJurisItem: folder?.folderJuris?.item ?? "",
 			folderJurisLabel: updatedJuris?.label ?? folder?.folderJuris?.label ?? "",
