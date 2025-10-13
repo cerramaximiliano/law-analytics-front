@@ -10,6 +10,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 // third-party
 import * as Yup from "yup";
 import { useFormik, Form, FormikProvider } from "formik";
+import dayjs from "utils/dayjs-config";
 
 // project imports
 import { dispatch, useSelector } from "store";
@@ -48,7 +49,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 		initialValues: {
 			name: task?.name || "",
 			description: task?.description || "",
-			dueDate: task?.dueDate ? new Date(task.dueDate) : new Date(),
+			dueDate: task?.dueDate ? dayjs(task.dueDate) : dayjs(),
 			priority: task?.priority || "media",
 			status: task?.status || "pendiente",
 			folderId: task?.folderId || "",
@@ -58,6 +59,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 			try {
 				const taskData = {
 					...values,
+					dueDate: dayjs(values.dueDate).toISOString(),
 					userId: user?._id,
 					checked: false,
 				};
@@ -127,8 +129,8 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 								<InputLabel htmlFor="task-dueDate">Fecha de vencimiento</InputLabel>
 								<DatePicker
 									value={values.dueDate}
-									onChange={(date) => setFieldValue("dueDate", date)}
-									format="dd/MM/yyyy"
+									onChange={(date) => setFieldValue("dueDate", date ? dayjs(date) : dayjs())}
+									format="DD/MM/YYYY"
 									slotProps={{
 										textField: {
 											fullWidth: true,
