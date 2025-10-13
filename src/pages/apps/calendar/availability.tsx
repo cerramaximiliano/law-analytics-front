@@ -710,7 +710,7 @@ const Availability = () => {
 												{excludedDates.map((item, index) => (
 													<Chip
 														key={index}
-														label={`${new Date(item.date).toLocaleDateString()} ${item.reason ? `- ${item.reason}` : ""}`}
+														label={`${item.date.toDate().toLocaleDateString()} ${item.reason ? `- ${item.reason}` : ""}`}
 														onDelete={() => handleRemoveExcludedDate(index)}
 														color="error"
 														variant="outlined"

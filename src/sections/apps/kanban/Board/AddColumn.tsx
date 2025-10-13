@@ -5,7 +5,7 @@ import { ChangeEvent, KeyboardEvent, useState } from "react";
 import { Button, Grid, TextField, Stack, useTheme, Tooltip, Box } from "@mui/material";
 
 // third-party
-import { Chance } from "chance";
+import chance from "utils/chance-wrapper";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -20,8 +20,6 @@ import { Add } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-
-const chance = new Chance();
 
 // ==============================|| KANBAN BOARD - ADD COLUMN ||============================== //
 

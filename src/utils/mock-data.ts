@@ -1,9 +1,7 @@
 // third-party
 import dayjs from "./dayjs-config";
-import { Chance } from "chance";
 import lodash from "lodash";
-
-const chance = new Chance();
+import chance from "./chance-wrapper";
 
 export const range = (len: number) => {
 	const arr = [];

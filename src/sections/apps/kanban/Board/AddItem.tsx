@@ -6,7 +6,7 @@ import { Button, Grid, TextField, Stack, Tooltip, Box } from "@mui/material";
 
 // third-party
 import dayjs from "utils/dayjs-config";
-import { Chance } from "chance";
+import chance from "utils/chance-wrapper";
 
 // project-imports
 import { openSnackbar } from "store/reducers/snackbar";
@@ -24,8 +24,6 @@ import { KanbanItem } from "types/kanban";
 interface Props {
 	columnId: string;
 }
-
-const chance = new Chance();
 
 // ==============================|| KANBAN BOARD - ADD ITEM ||============================== //
 

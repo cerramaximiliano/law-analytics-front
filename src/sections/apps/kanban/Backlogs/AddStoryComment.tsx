@@ -13,7 +13,7 @@ import { addStoryComment } from "store/reducers/kanban";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // third-party
-import { Chance } from "chance";
+import chance from "utils/chance-wrapper";
 
 // assets
 import { Android, Camera, DocumentUpload } from "iconsax-react";
@@ -24,8 +24,6 @@ import { KanbanComment } from "types/kanban";
 interface Props {
 	storyId: string;
 }
-
-const chance = new Chance();
 
 // ==============================|| KANBAN BACKLOGS - ADD STORY COMMENT ||============================== //
 
