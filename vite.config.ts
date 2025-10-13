@@ -178,6 +178,8 @@ export default defineConfig({
 					}
 
 					// Otros vendors (lo que quede)
+					// Nota: Bibliotecas como react-slick, react-dropzone, react-number-format
+					// ya están optimizadas por Vite al estar en rutas lazy-loaded específicas
 					if (id.includes("node_modules")) {
 						return "vendor-other";
 					}
