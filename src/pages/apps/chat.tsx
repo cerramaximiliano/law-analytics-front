@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useRef, useState, KeyboardEvent, MouseEvent } from "react";
+import { useEffect, useRef, useState, KeyboardEvent, MouseEvent, Suspense, lazy } from "react";
 
 // material-ui
 import { useTheme, styled, Theme } from "@mui/material/styles";
@@ -16,10 +16,14 @@ import {
 	TextField,
 	Typography,
 	useMediaQuery,
+	CircularProgress,
 } from "@mui/material";
 
 // third-party
-import EmojiPicker, { SkinTones, EmojiClickData } from "emoji-picker-react";
+import type { SkinTones, EmojiClickData } from "emoji-picker-react";
+
+// Lazy load emoji picker - solo se carga cuando el usuario hace clic en el botón de emoji
+const EmojiPicker = lazy(() => import("emoji-picker-react").then((module) => ({ default: module.default })));
 
 // project-imports
 import ChatDrawer from "sections/apps/chat/ChatDrawer";
@@ -380,7 +384,15 @@ const Chat = () => {
 													>
 														<ClickAwayListener onClickAway={handleCloseEmoji}>
 															<MainCard elevation={8} content={false}>
-																<EmojiPicker onEmojiClick={onEmojiClick} defaultSkinTone={SkinTones.DARK} autoFocusSearch={false} />
+																<Suspense
+																	fallback={
+																		<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 350, minWidth: 350 }}>
+																			<CircularProgress />
+																		</Box>
+																	}
+																>
+																	<EmojiPicker onEmojiClick={onEmojiClick} defaultSkinTone={"DARK" as any} autoFocusSearch={false} />
+																</Suspense>
 															</MainCard>
 														</ClickAwayListener>
 													</Popper>
