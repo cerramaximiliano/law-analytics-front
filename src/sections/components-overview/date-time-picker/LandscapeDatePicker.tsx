@@ -14,16 +14,16 @@ import MainCard from "components/MainCard";
 
 // ==============================|| DATE PICKER - LANDSCAPE ||============================== //
 
-const isWeekend = (date: Date) => {
-	const day = dayjs(date).day();
+const isWeekend = (date: dayjs.Dayjs) => {
+	const day = date.day();
 	return day === 0 || day === 6;
 };
 
 export default function LandscapeDatePicker() {
-	const [value, setValue] = useState<Date | null>(new Date());
+	const [value, setValue] = useState<dayjs.Dayjs | null>(dayjs());
 
 	const landscapDatepickerCodeString = `<LocalizationProvider dateAdapter={AdapterDayjs}>
-  <StaticDatePicker<Date>
+  <StaticDatePicker
     orientation="landscape"
     openTo="day"
     value={value}
@@ -38,7 +38,7 @@ export default function LandscapeDatePicker() {
 	return (
 		<MainCard title="Landscape" codeString={landscapDatepickerCodeString}>
 			<LocalizationProvider dateAdapter={AdapterDayjs}>
-				<StaticDatePicker<Date>
+				<StaticDatePicker
 					orientation="landscape"
 					openTo="day"
 					value={value}

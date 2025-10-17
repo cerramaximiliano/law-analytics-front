@@ -157,7 +157,7 @@ const Create = () => {
 					id: 120,
 					invoice_id: Date.now(),
 					status: "",
-					date: new Date(),
+					date: dayjs(),
 					due_date: null,
 					cashierInfo: {
 						name: "Belle J. Richter",
@@ -250,7 +250,7 @@ const Create = () => {
 										<InputLabel>Date</InputLabel>
 										<FormControl sx={{ width: "100%" }} error={Boolean(touched.date && errors.date)}>
 											<LocalizationProvider dateAdapter={AdapterDayjs}>
-												<DatePicker format="dd/MM/yyyy" value={values.date} onChange={(newValue) => setFieldValue("date", newValue)} />
+												<DatePicker format="DD/MM/YYYY" value={values.date} onChange={(newValue) => setFieldValue("date", newValue)} />
 											</LocalizationProvider>
 										</FormControl>
 									</Stack>
@@ -262,7 +262,7 @@ const Create = () => {
 										<FormControl sx={{ width: "100%" }} error={Boolean(touched.due_date && errors.due_date)}>
 											<LocalizationProvider dateAdapter={AdapterDayjs}>
 												<DatePicker
-													format="dd/MM/yyyy"
+													format="DD/MM/YYYY"
 													value={values.due_date}
 													onChange={(newValue) => setFieldValue("due_date", newValue)}
 												/>

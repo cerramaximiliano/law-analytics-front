@@ -39,15 +39,20 @@ export default defineConfig({
 		outDir: "build",
 		sourcemap: false,
 		chunkSizeWarningLimit: 2000,
-		// Configuración para detectar problemas temprano
+		// Configuración para detectar problemas temprano y mejorar tree-shaking
 		minify: "terser",
 		terserOptions: {
 			compress: {
-				drop_console: false, // Mantener console.error en producción
+				drop_console: false, // Mantener console.error en producción para debugging
 				drop_debugger: true,
 			},
 		},
 		rollupOptions: {
+			// Mejorar tree-shaking
+			treeshake: {
+				moduleSideEffects: "no-external",
+				preset: "recommended",
+			},
 			// Detectar errores de dependencias circulares
 			onwarn(warning, warn) {
 				// Ignorar warnings específicos conocidos

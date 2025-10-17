@@ -6,7 +6,7 @@ import { useTheme } from "@mui/material/styles";
 import { Box, Button, Grid, TextField } from "@mui/material";
 
 // third-party
-import { Chance } from "chance";
+import chance from "utils/chance-wrapper";
 
 // project-imports
 import { dispatch, useSelector } from "store";
@@ -23,8 +23,6 @@ import IconButton from "components/@extended/IconButton";
 interface Props {
 	itemId: string | false;
 }
-
-const chance = new Chance();
 
 // ==============================|| KANBAN BOARD - ADD ITEM COMMENT ||============================== //
 

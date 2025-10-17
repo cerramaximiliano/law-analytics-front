@@ -6,7 +6,7 @@ import { useTheme } from "@mui/material/styles";
 import { Divider, List, ListItemAvatar, ListItemButton, ListItemText, Stack, Typography } from "@mui/material";
 
 // third-party
-import { Chance } from "chance";
+import chance from "utils/chance-wrapper";
 
 // project-imports
 import UserAvatar from "./UserAvatar";
@@ -22,8 +22,6 @@ import { TickCircle } from "iconsax-react";
 // types
 import { KeyedObject } from "types/root";
 import { UserProfile } from "types/user-profile";
-
-const chance = new Chance();
 
 // ==============================|| CHAT - USER LIST ||============================== //
 

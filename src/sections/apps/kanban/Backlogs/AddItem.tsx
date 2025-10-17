@@ -26,7 +26,7 @@ import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 
 // third-party
 import * as yup from "yup";
-import { Chance } from "chance";
+import chance from "utils/chance-wrapper";
 import { useFormik } from "formik";
 
 // project-imports
@@ -52,8 +52,6 @@ interface Props {
 	handleDrawerOpen: () => void;
 	storyId: string;
 }
-
-const chance = new Chance();
 const validationSchema = yup.object({
 	title: yup.string().required("Task title is required"),
 	dueDate: yup.date().required("Due date is required").nullable(),

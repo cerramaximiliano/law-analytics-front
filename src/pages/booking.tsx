@@ -809,7 +809,7 @@ const BookingPage = () => {
 				if (selectedDate && availabilitySettings) {
 					// Recalcular los horarios disponibles para reflejar la nueva reserva
 					calculateAvailableTimesForDate(
-						selectedDate,
+						selectedDate.toDate(),
 						availabilitySettings.timeSlots,
 						availabilitySettings.duration,
 						availabilitySettings.bufferBefore,
