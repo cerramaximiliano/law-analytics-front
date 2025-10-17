@@ -176,14 +176,14 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 										<InputLabel htmlFor="name" sx={{ mb: 1 }}>
 											Nombre de la tarea *
 										</InputLabel>
-										<InputField id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} />
+										<InputField name="name" id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} fullWidth />
 									</div>
 
 									<div>
 										<InputLabel htmlFor="dueDate" sx={{ mb: 1 }}>
 											Fecha de vencimiento *
 										</InputLabel>
-										<DateInputField id="dueDate" placeholder="DD/MM/AAAA" disabled={isSubmitting} />
+										<DateInputField name="dueDate" id="dueDate" placeholder="DD/MM/AAAA" disabled={isSubmitting} />
 									</div>
 
 									<div>
@@ -191,11 +191,13 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 											Descripción (opcional)
 										</InputLabel>
 										<InputField
+											name="description"
 											id="description"
 											placeholder="Agrega una descripción de la tarea"
 											multiline
 											rows={4}
 											disabled={isSubmitting}
+											fullWidth
 										/>
 									</div>
 								</Stack>

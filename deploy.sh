@@ -2,12 +2,41 @@
 
 # Script único de deployment para Law Analytics
 # Sin Service Worker - Sin problemas de caché
+# Con verificaciones previas para prevenir errores en producción
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
+
+# Parámetros
+SKIP_CHECKS=false
+PREVIEW_MODE=false
+
+# Parsear argumentos
+for arg in "$@"; do
+    case $arg in
+        --skip-checks)
+            SKIP_CHECKS=true
+            shift
+            ;;
+        --preview)
+            PREVIEW_MODE=true
+            shift
+            ;;
+        --help)
+            echo "Uso: ./deploy.sh [opciones]"
+            echo ""
+            echo "Opciones:"
+            echo "  --skip-checks    Saltar verificaciones previas (NO RECOMENDADO)"
+            echo "  --preview        Solo build y preview local (sin deploy)"
+            echo "  --help           Mostrar esta ayuda"
+            exit 0
+            ;;
+    esac
+done
 
 echo "========================================="
 echo -e "${BLUE}🚀 LAW ANALYTICS - DEPLOYMENT${NC}"
@@ -26,6 +55,12 @@ if [ -d "/var/www/law-analytics-front" ] && [ "$PWD" == "/var/www/law-analytics-
     IS_SERVER=true
 fi
 
+# Modo preview solo para local
+if [ "$PREVIEW_MODE" = true ] && [ "$IS_SERVER" = true ]; then
+    echo -e "${RED}Error: --preview solo funciona en modo local${NC}"
+    exit 1
+fi
+
 # 1. Git pull si estamos en el servidor
 if [ "$IS_SERVER" = true ]; then
     echo -e "${YELLOW}1. Actualizando desde git...${NC}"
@@ -39,7 +74,54 @@ else
     echo -e "${BLUE}1. Modo local - saltando git pull${NC}"
 fi
 
-# 2. Generar versión única basada en timestamp
+# 2. VERIFICACIONES PREVIAS (Pre-flight checks)
+if [ "$SKIP_CHECKS" = false ]; then
+    echo ""
+    echo -e "${CYAN}=========================================${NC}"
+    echo -e "${CYAN}🔍 VERIFICACIONES PREVIAS${NC}"
+    echo -e "${CYAN}=========================================${NC}"
+
+    # 2.1 Type checking
+    echo -e "${YELLOW}2.1. Verificando tipos TypeScript...${NC}"
+    npm run type-check
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}✗ Errores de TypeScript encontrados${NC}"
+        echo -e "${YELLOW}Tip: Ejecuta 'npm run type-check' para ver los errores${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Types verificados${NC}"
+
+    # 2.2 Linting
+    echo -e "${YELLOW}2.2. Verificando código con ESLint...${NC}"
+    npm run lint > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo -e "${YELLOW}⚠ Warnings de ESLint encontrados (no crítico)${NC}"
+        # No fallar por warnings de lint
+    else
+        echo -e "${GREEN}✓ Lint OK${NC}"
+    fi
+
+    # 2.3 Verificar node_modules
+    echo -e "${YELLOW}2.3. Verificando dependencias...${NC}"
+    if [ ! -d "node_modules" ]; then
+        echo -e "${YELLOW}⚠ node_modules no encontrado, instalando dependencias...${NC}"
+        npm ci
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}✗ Error al instalar dependencias${NC}"
+            exit 1
+        fi
+    fi
+    echo -e "${GREEN}✓ Dependencias OK${NC}"
+
+    echo -e "${GREEN}=========================================${NC}"
+    echo -e "${GREEN}✅ VERIFICACIONES COMPLETADAS${NC}"
+    echo -e "${GREEN}=========================================${NC}"
+    echo ""
+else
+    echo -e "${YELLOW}⚠ Verificaciones previas saltadas (--skip-checks)${NC}"
+fi
+
+# 3. Generar versión única basada en timestamp
 TIMESTAMP=$(date +"%Y%m%d.%H%M%S")
 VERSION="${TIMESTAMP}"
 echo -e "${BLUE}2. Versión de deployment: ${VERSION}${NC}"

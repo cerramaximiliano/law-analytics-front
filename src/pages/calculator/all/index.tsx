@@ -773,24 +773,20 @@ const AllCalculators = () => {
 			setLoading(true);
 
 			if (userId) {
-				// Solo hacer fetch si no está inicializado o si el usuario cambió
-				const shouldFetch = !isInitialized || lastFetchedUserId !== userId;
+				// SIEMPRE forzar refresh en esta vista para obtener TODOS los cálculos
+				// Usamos forceRefresh=true para ignorar el caché
+				await dispatch(getCalculatorsByUserId(userId, true));
+				await dispatch(getArchivedCalculatorsByUserId(userId));
 
-				if (shouldFetch) {
-					await dispatch(getCalculatorsByUserId(userId));
-					await dispatch(getArchivedCalculatorsByUserId(userId));
-				}
-			}
-
-			const timer = setTimeout(() => {
+				// Esperar a que termine el dispatch antes de quitar loading
 				setLoading(false);
-			}, 1000);
-
-			return () => clearTimeout(timer);
+			} else {
+				setLoading(false);
+			}
 		};
 
 		fetchData();
-	}, [userId, isInitialized, lastFetchedUserId]);
+	}, [userId]);
 
 	// Handle delete multiple calculators
 	const handleDeleteSelectedCalculators = async () => {

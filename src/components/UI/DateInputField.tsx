@@ -47,7 +47,11 @@ export default function DateInputField(props: any) {
 						}
 					}}
 				/>
-				{touched && error && <FormHelperText error>{error}</FormHelperText>}
+				{touched && error && (
+					<FormHelperText error>
+						{typeof error === "string" ? error : (error as any)?.message || "Error de validación"}
+					</FormHelperText>
+				)}
 			</FormControl>
 		</LocalizationProvider>
 	);

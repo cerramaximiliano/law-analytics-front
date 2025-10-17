@@ -17,9 +17,11 @@ import {
 	Box,
 	alpha,
 	useTheme,
+	Divider,
 } from "@mui/material";
 import SimpleBar from "components/third-party/SimpleBar";
 import { TaskSquare, Calendar, Folder } from "iconsax-react";
+import { PopupTransition } from "components/@extended/Transitions";
 import dayjs from "utils/dayjs-config";
 
 // Redux
@@ -170,27 +172,42 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 		<Dialog
 			open={open}
 			onClose={handleClose}
+			TransitionComponent={PopupTransition}
+			keepMounted
 			maxWidth="sm"
 			fullWidth
+			aria-labelledby="link-task-modal-title"
 			PaperProps={{
+				elevation: 5,
 				sx: {
 					borderRadius: 2,
+					overflow: "hidden",
 				},
 			}}
 		>
-			<DialogTitle>
-				<Stack direction="row" alignItems="center" spacing={2}>
-					<TaskSquare size={24} color={theme.palette.primary.main} />
-					<Box>
-						<Typography variant="h5">Vincular Tarea Existente</Typography>
-						<Typography variant="caption" color="text.secondary">
-							Selecciona una tarea para vincular a "{folderName}"
+			<DialogTitle
+				id="link-task-modal-title"
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					p: 3,
+					borderBottom: `1px solid ${theme.palette.divider}`,
+				}}
+			>
+				<Stack spacing={1}>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<TaskSquare size={24} color={theme.palette.primary.main} variant="Bold" />
+						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+							Vincular Tarea Existente
 						</Typography>
-					</Box>
+					</Stack>
+					<Typography variant="body2" color="textSecondary">
+						Selecciona una tarea para vincular a "{folderName}"
+					</Typography>
 				</Stack>
 			</DialogTitle>
+			<Divider />
 
-			<DialogContent>
+			<DialogContent sx={{ p: 3 }}>
 				{isLoadingTasks ? (
 					<Stack spacing={2} sx={{ py: 2 }}>
 						{[1, 2, 3].map((index) => (
@@ -280,8 +297,9 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 				)}
 			</DialogContent>
 
-			<DialogActions sx={{ px: 3, pb: 3 }}>
-				<Button onClick={handleClose} color="secondary">
+			<Divider />
+			<DialogActions sx={{ px: 3, py: 2 }}>
+				<Button onClick={handleClose} color="error" disabled={isLinking}>
 					Cancelar
 				</Button>
 				<Button onClick={handleLinkTask} variant="contained" disabled={!selectedTaskId || isLinking} startIcon={<TaskSquare size={18} />}>

@@ -1,0 +1,106 @@
+name: Pre-Deploy Verification
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📚 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Type checking
+        run: npm run type-check
+
+      - name: 🧹 Lint
+        run: npm run lint
+
+      - name: 🏗️ Build
+        run: npm run build
+
+      - name: 📊 Analyze bundle size
+        run: npm run build:analyze
+
+      - name: 📈 Upload bundle stats
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-stats
+          path: bundle-stats.html
+
+      - name: ✅ Verify build output
+        run: |
+          if [ ! -d "build" ]; then
+            echo "❌ Build directory not found"
+            exit 1
+          fi
+
+          if [ ! -f "build/index.html" ]; then
+            echo "❌ index.html not found in build"
+            exit 1
+          fi
+
+          echo "✅ Build verification successful"
+
+      - name: 🚨 Check for critical errors in build
+        run: |
+          # Verificar que no haya chunks muy grandes
+          large_chunks=$(find build/assets -name "*.js" -size +1000k)
+          if [ ! -z "$large_chunks" ]; then
+            echo "⚠️ Warning: Found large chunks (>1MB):"
+            echo "$large_chunks"
+          fi
+
+          # Contar total de chunks
+          total_chunks=$(find build/assets -name "*.js" | wc -l)
+          echo "📦 Total chunks: $total_chunks"
+
+          # Verificar tamaño total del build
+          build_size=$(du -sh build | cut -f1)
+          echo "💾 Total build size: $build_size"
+
+  # Job de deploy automático - Solo se ejecuta en push a main (no en PRs)
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: verify-build  # Solo ejecutar si verify-build fue exitoso
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: 🔐 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 🚀 Deploy to server
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "cd ${{ secrets.SERVER_PATH }} && sudo ./deploy.sh"
+
+      - name: ✅ Verify deployment
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "📍 Server: ${{ secrets.SERVER_HOST }}"
+          echo "📁 Path: ${{ secrets.SERVER_PATH }}"
+          echo "⏰ Time: $(date)"
+
+      - name: 🧹 Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

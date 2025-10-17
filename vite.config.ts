@@ -39,7 +39,23 @@ export default defineConfig({
 		outDir: "build",
 		sourcemap: false,
 		chunkSizeWarningLimit: 2000,
+		// Configuración para detectar problemas temprano
+		minify: "terser",
+		terserOptions: {
+			compress: {
+				drop_console: false, // Mantener console.error en producción
+				drop_debugger: true,
+			},
+		},
 		rollupOptions: {
+			// Detectar errores de dependencias circulares
+			onwarn(warning, warn) {
+				// Ignorar warnings específicos conocidos
+				if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
+
+				// Mostrar otros warnings importantes
+				warn(warning);
+			},
 			output: {
 				// Usar hash de contenido para forzar actualización
 				entryFileNames: `assets/[name]-[hash].js`,
@@ -87,9 +103,11 @@ export default defineConfig({
 					// ============ NUEVOS CHUNKS PARA DIVIDIR vendor-other ============
 
 					// Redux (state management) - 15MB en node_modules
+					// IMPORTANTE: Incluir react-redux junto con Redux para evitar errores de dependencias
 					if (
 						id.includes("node_modules/@reduxjs") ||
 						id.includes("node_modules/redux") ||
+						id.includes("node_modules/react-redux") ||
 						id.includes("node_modules/redux-persist") ||
 						id.includes("node_modules/reselect")
 					) {

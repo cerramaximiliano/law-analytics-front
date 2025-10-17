@@ -121,13 +121,41 @@ const calculatorsReducer = (state = initialState, action: any) => {
 export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "error">) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
+
+		// 🔍 LOG: Data que se está enviando
+		console.log("🔵 [addCalculator] Enviando datos al backend:", {
+			url: `${import.meta.env.VITE_BASE_URL}/api/calculators`,
+			method: "POST",
+			data: data,
+		});
+
 		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/calculators`, data);
+
+		// 🔍 LOG: Respuesta exitosa del backend
+		console.log("✅ [addCalculator] Respuesta exitosa del backend:", {
+			status: response.status,
+			data: response.data,
+		});
+
 		dispatch({
 			type: ADD_CALCULATOR,
 			payload: response.data.calculator,
 		});
 		return { success: true, calculator: response.data.calculator };
 	} catch (error: unknown) {
+		// 🔍 LOG: Error del backend
+		if (error instanceof AxiosError) {
+			console.error("❌ [addCalculator] Error del backend:", {
+				status: error.response?.status,
+				statusText: error.response?.statusText,
+				data: error.response?.data,
+				headers: error.response?.headers,
+				message: error.message,
+			});
+		} else {
+			console.error("❌ [addCalculator] Error desconocido:", error);
+		}
+
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al crear el cálculo" : "Error al crear el cálculo";
 		dispatch({ type: SET_ERROR, payload: errorMessage });
@@ -148,7 +176,7 @@ export const getCalculatorsByUserId =
 
 			dispatch({ type: SET_LOADING });
 			// Campos optimizados para listas
-			const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+			const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 				params: { fields },
 			});
@@ -170,7 +198,7 @@ export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dis
 	try {
 		dispatch({ type: SET_LOADING });
 		// Campos optimizados para listas
-		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/group/${groupId}`, {
 			params: { fields },
 		});
@@ -240,7 +268,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 				dispatch({ type: SET_LOADING });
 
 				// Descargar TODOS los calculadores del usuario
-				const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+				const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
 				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 					params: { fields },
 				});
@@ -299,7 +327,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 		// Si no es por userId (groupId u otros casos), hacer petición específica al servidor
 		dispatch({ type: SET_LOADING });
 
-		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
 		const queryParams = new URLSearchParams({
 			...(folderId && { folderId }),
 			...(type && { type }),
@@ -452,7 +480,7 @@ export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatc
 	try {
 		dispatch({ type: SET_LOADING });
 		// Campos optimizados para listas
-		const fields = "_id,date,folderName,type,classType,subClassType,capital,interest,amount,variables,result";
+		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 			params: {
 				archived: true,

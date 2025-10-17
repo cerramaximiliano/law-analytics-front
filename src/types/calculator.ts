@@ -30,6 +30,7 @@ export type CalculatorType = {
 	user?: string;
 	interest?: number;
 	variables?: object;
+	description?: string;
 	isLoader?: boolean;
 	error?: string | null;
 };

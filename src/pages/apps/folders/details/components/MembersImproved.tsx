@@ -1,7 +1,6 @@
 import {
 	Stack,
 	Skeleton,
-	CardContent,
 	IconButton,
 	List,
 	ListItem,
@@ -12,23 +11,23 @@ import {
 	Box,
 	Paper,
 	useTheme,
-	useMediaQuery,
 	alpha,
 	Chip,
 	Menu,
 	MenuItem,
 	ListItemIcon,
 	Divider,
+	Button,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
+import SimpleBar from "components/third-party/SimpleBar";
 import { UserSquare, Trash, Link1, More, Profile, UserAdd } from "iconsax-react";
 import { PopupTransition } from "components/@extended/Transitions";
 import React, { useCallback, useState, useEffect } from "react";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import ModalMembers from "../modals/ModalMembers";
 import ContactProfileModal from "../modals/ContactProfileModal";
-import ResponsiveButton from "./ResponsiveButton";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { motion } from "framer-motion";
 
@@ -88,7 +87,6 @@ const getRoleIcon = (role: string) => {
 
 const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader, folderId }) => {
 	const theme = useTheme();
-	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	// Get selectedContacts from Redux store (contacts filtered by folder)
 	const selectedContacts = useSelector((state: any) => state.contacts.selectedContacts || []);
 	const [add, setAdd] = useState<boolean>(false);
@@ -268,7 +266,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 	};
 
 	const EmptyState = () => (
-		<Box sx={{ textAlign: "center", py: 6 }}>
+		<Box sx={{ textAlign: "center", py: 4 }}>
 			<motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
 				<Avatar
 					color="error"
@@ -285,10 +283,10 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 					<UserSquare variant="Bold" size={32} />
 				</Avatar>
 			</motion.div>
-			<Typography variant="h6" color="textPrimary" gutterBottom>
+			<Typography variant="subtitle1" color="textSecondary" gutterBottom>
 				No hay intervinientes registrados
 			</Typography>
-			<Typography variant="body2" color="textSecondary" sx={{ mb: 3, maxWidth: 320, mx: "auto" }}>
+			<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 320, mx: "auto" }}>
 				Agrega los contactos relacionados con este expediente como clientes, abogados, peritos y más
 			</Typography>
 		</Box>
@@ -375,7 +373,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				</MenuItem>
 			</Menu>
 
-			<CardContent>
+			<Box sx={{ p: 2.5 }}>
 				{isLoader ? (
 					<Stack spacing={2}>
 						{[1, 2, 3].map((index) => (
@@ -391,155 +389,154 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 							</Paper>
 						))}
 					</Stack>
-				) : (
+				) : selectedContacts.length === 0 ? (
 					<>
-						{selectedContacts.length === 0 ? (
-							<EmptyState />
-						) : (
-							<Stack spacing={1.5} ref={parent}>
-								{selectedContacts.map((member: Contact, index: number) => (
-									<motion.div
-										key={member._id}
-										initial={{ opacity: 0, y: 20 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{ delay: index * 0.05 }}
-									>
-										<Paper
-											elevation={0}
-											sx={{
-												p: 2,
-												border: `1px solid ${theme.palette.divider}`,
-												borderRadius: 2,
-												transition: "all 0.2s ease",
-												"&:hover": {
-													borderColor: theme.palette.primary.main,
-													bgcolor: alpha(theme.palette.primary.main, 0.02),
-													transform: "translateY(-2px)",
-													boxShadow: theme.shadows[2],
-												},
-											}}
-										>
-											<Stack direction="row" alignItems="center" spacing={2}>
-												<Avatar
-													alt={member.name}
-													src={member.avatar}
-													variant="rounded"
-													size="md"
-													color={getColorByRole(member.role)}
-													sx={{
-														width: 48,
-														height: 48,
-														fontSize: "1.5rem",
-													}}
-												>
-													{!member.avatar && getRoleIcon(member.role)}
-												</Avatar>
-												<Box flex={1} minWidth={0}>
-													<Typography variant="subtitle1" fontWeight={600} noWrap>
-														{`${member.name || ""} ${member.lastName || ""}`}
-													</Typography>
-													<Stack direction="row" spacing={1} alignItems="center">
-														<Chip
-															label={member.role}
-															size="small"
-															color={getColorByRole(member.role)}
-															sx={{
-																height: 24,
-																fontSize: "0.75rem",
-																fontWeight: 500,
-																...(getColorByRole(member.role) === "warning" && {
-																	color: "black",
-																	"& .MuiChip-label": {
-																		color: "black",
-																	},
-																}),
-															}}
-														/>
-														{member.email && (
-															<Typography variant="caption" color="text.secondary" noWrap>
-																{member.email}
-															</Typography>
-														)}
-													</Stack>
-												</Box>
-												<IconButton
-													size="small"
-													onClick={(e) => handleMenuOpen(e, member)}
-													sx={{
-														color: "text.secondary",
-														"&:hover": {
-															bgcolor: alpha(theme.palette.primary.main, 0.1),
-															color: "primary.main",
-														},
-													}}
-												>
-													<More size={18} />
-												</IconButton>
-											</Stack>
-										</Paper>
-									</motion.div>
-								))}
-							</Stack>
-						)}
-
-						{/* Action Buttons */}
-						<Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 1 : 2} mt={3}>
-							<ResponsiveButton
+						<EmptyState />
+						<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+							<Button
 								variant="contained"
-								fullWidth={!isMobile}
+								fullWidth
 								color="primary"
 								startIcon={<UserAdd size={18} />}
 								onClick={handleAdd}
 								disabled={isLoader}
-								mobileText="Nuevo"
-								desktopText="Nuevo Interviniente"
-								hideTextOnMobile={false}
 							>
 								Nuevo Interviniente
-							</ResponsiveButton>
-							<ResponsiveButton
+							</Button>
+							<Button
 								variant="outlined"
-								fullWidth={!isMobile}
+								fullWidth
 								color="primary"
 								startIcon={<Link1 size={18} />}
 								onClick={handleOpen}
 								disabled={isLoader}
-								mobileText="Vincular"
-								desktopText="Vincular Existente"
-								hideTextOnMobile={false}
 							>
 								Vincular Existente
-							</ResponsiveButton>
+							</Button>
 						</Stack>
 					</>
+				) : (
+					<Box sx={{ display: "flex", flexDirection: "column", height: "500px" }}>
+						<>
+							{/* Members List - Scrollable */}
+							<Box sx={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+								<SimpleBar style={{ height: "100%" }}>
+									<Stack spacing={1.5} ref={parent}>
+										{selectedContacts.map((member: Contact, index: number) => (
+											<motion.div
+												key={member._id}
+												initial={{ opacity: 0, y: 20 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ delay: index * 0.05 }}
+											>
+												<Paper
+													elevation={0}
+													sx={{
+														p: 2,
+														border: `1px solid ${theme.palette.divider}`,
+														borderRadius: 2,
+														transition: "all 0.2s ease",
+														"&:hover": {
+															borderColor: theme.palette.primary.main,
+															bgcolor: alpha(theme.palette.primary.main, 0.02),
+															transform: "translateY(-2px)",
+															boxShadow: theme.shadows[2],
+														},
+													}}
+												>
+													<Stack direction="row" alignItems="center" spacing={2}>
+														<Avatar
+															alt={member.name}
+															src={member.avatar}
+															variant="rounded"
+															size="md"
+															color={getColorByRole(member.role)}
+															sx={{
+																width: 48,
+																height: 48,
+																fontSize: "1.5rem",
+															}}
+														>
+															{!member.avatar && getRoleIcon(member.role)}
+														</Avatar>
+														<Box flex={1} minWidth={0}>
+															<Typography variant="subtitle1" fontWeight={600} noWrap>
+																{`${member.name || ""} ${member.lastName || ""}`}
+															</Typography>
+															<Stack direction="row" spacing={1} alignItems="center">
+																<Chip
+																	label={member.role}
+																	size="small"
+																	color={getColorByRole(member.role)}
+																	sx={{
+																		height: 24,
+																		fontSize: "0.75rem",
+																		fontWeight: 500,
+																		...(getColorByRole(member.role) === "warning" && {
+																			color: "black",
+																			"& .MuiChip-label": {
+																				color: "black",
+																			},
+																		}),
+																	}}
+																/>
+																{member.email && (
+																	<Typography variant="caption" color="text.secondary" noWrap>
+																		{member.email}
+																	</Typography>
+																)}
+															</Stack>
+														</Box>
+														<IconButton
+															size="small"
+															onClick={(e) => handleMenuOpen(e, member)}
+															sx={{
+																color: "text.secondary",
+																"&:hover": {
+																	bgcolor: alpha(theme.palette.primary.main, 0.1),
+																	color: "primary.main",
+																},
+															}}
+														>
+															<More size={18} />
+														</IconButton>
+													</Stack>
+												</Paper>
+											</motion.div>
+										))}
+									</Stack>
+								</SimpleBar>
+							</Box>
+							{/* Action Buttons - Fixed at bottom */}
+							<Stack direction="row" spacing={2} sx={{ mt: 2, flexShrink: 0 }}>
+								<Button
+									variant="contained"
+									fullWidth
+									color="primary"
+									startIcon={<UserAdd size={18} />}
+									onClick={handleAdd}
+									disabled={isLoader}
+								>
+									Nuevo Interviniente
+								</Button>
+								<Button
+									variant="outlined"
+									fullWidth
+									color="primary"
+									startIcon={<Link1 size={18} />}
+									onClick={handleOpen}
+									disabled={isLoader}
+								>
+									Vincular Existente
+								</Button>
+							</Stack>
+						</>
+					</Box>
 				)}
-			</CardContent>
+			</Box>
 
 			{/* Contact Profile Modal */}
 			<ContactProfileModal open={profileModalOpen} onClose={handleProfileModalClose} contact={selectedMember} />
-
-			{/* Add Customer Dialog */}
-			<Dialog
-				maxWidth="sm"
-				TransitionComponent={PopupTransition}
-				keepMounted
-				fullWidth
-				onClose={handleAdd}
-				open={add}
-				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
-				aria-describedby="alert-dialog-slide-description"
-			>
-				<AddCustomer onCancel={handleAdd} onAddMember={handlerAddress} open={add} mode="add" />
-			</Dialog>
-
-			{/* Link Members Modal */}
-			<ModalMembers
-				open={openModal}
-				setOpen={setOpenModal}
-				handlerAddress={handlerAddress}
-				folderId={folderId}
-				membersData={selectedContacts}
-			/>
 		</MainCard>
 	);
 };

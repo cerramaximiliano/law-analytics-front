@@ -20,18 +20,15 @@ import {
 	Paper,
 	useTheme,
 	alpha,
-	Menu,
-	MenuItem,
-	ListItemIcon,
 	Divider,
 	Card,
 	useMediaQuery,
 	Collapse,
+	Button,
 } from "@mui/material";
-import ResponsiveButton from "./ResponsiveButton";
 import MainCard from "components/MainCard";
 import SimpleBar from "components/third-party/SimpleBar";
-import { Calculator, TrendUp, TrendDown, More, Edit2, Trash, Eye, DocumentCopy, Add, ArrowDown2, ArrowUp2 } from "iconsax-react";
+import { Calculator, TrendUp, TrendDown, Trash, Add, ArrowDown2, ArrowUp2 } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
 import { dispatch, useSelector } from "store";
@@ -137,12 +134,11 @@ const CompactStatsCard: React.FC<CompactStatsCardProps> = ({ title, value, trend
 interface MobileCalcCardProps {
 	row: CalculatorType;
 	index: number;
-	onMenuOpen: (event: React.MouseEvent<HTMLElement>, row: CalculatorType) => void;
 	onDelete: (id: string) => void;
 	previousAmount?: number;
 }
 
-const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onMenuOpen, onDelete, previousAmount }) => {
+const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, previousAmount }) => {
 	const theme = useTheme();
 	const [expanded, setExpanded] = useState(false);
 
@@ -193,7 +189,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onMenuOpen,
 									sx={{ fontWeight: 500 }}
 								/>
 								<Typography variant="caption" color="text.secondary">
-									{dayjs(row.date, "DD/MM/YYYY").fromNow()}
+									{row.date ? dayjs(row.date).fromNow() : "N/D"}
 								</Typography>
 							</Stack>
 							<Typography variant="h6" fontWeight={600}>
@@ -204,17 +200,23 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onMenuOpen,
 							size="small"
 							onClick={(e) => {
 								e.stopPropagation();
-								onMenuOpen(e, row);
+								onDelete(row._id);
+							}}
+							sx={{
+								color: theme.palette.error.main,
+								"&:hover": {
+									bgcolor: alpha(theme.palette.error.main, 0.1),
+								},
 							}}
 						>
-							<More size={20} />
+							<Trash size={20} />
 						</IconButton>
 					</Stack>
 
 					{/* Additional Info */}
 					<Stack direction="row" justifyContent="space-between" alignItems="center">
 						<Typography variant="body2" color="text.secondary">
-							{row.date || "N/D"}
+							{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
 						</Typography>
 						{percentageChange !== null && (
 							<Stack direction="row" spacing={0.5} alignItems="center">
@@ -257,15 +259,12 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
-	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-	const [selectedRow, setSelectedRow] = useState<CalculatorType | null>(null);
-	const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
 
 	const sortedData = useMemo(
-		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date, "DD/MM/YYYY").diff(dayjs(a.date, "DD/MM/YYYY"))),
+		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date).diff(dayjs(a.date))),
 		[selectedCalculators],
 	);
 
@@ -283,18 +282,23 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 		return ((latest - previous) / previous) * 100;
 	}, [sortedData]);
 
-	// Calculate difference percentage
-	const differencePercentage = useMemo(() => {
-		if (!folderData?.monto || !latestOfferedAmount) return null;
-		return ((latestOfferedAmount / folderData.monto) * 100).toFixed(1);
-	}, [folderData?.monto, latestOfferedAmount]);
-
-	// Get first claimed calculation date
-	const firstClaimedDate = useMemo(() => {
+	// Get first claimed calculation data (date and amount)
+	const firstClaimedData = useMemo(() => {
 		const claimedCalcs = sortedData.filter((item: any) => item.type === "Reclamado");
 		if (claimedCalcs.length === 0) return null;
-		return claimedCalcs[claimedCalcs.length - 1]?.date;
+		const firstClaimed = claimedCalcs[claimedCalcs.length - 1];
+		return {
+			date: firstClaimed?.date,
+			amount: firstClaimed?.amount,
+		};
 	}, [sortedData]);
+
+	// Calculate difference percentage
+	const differencePercentage = useMemo(() => {
+		const claimedAmount = firstClaimedData?.amount ?? folderData?.monto;
+		if (!claimedAmount || !latestOfferedAmount) return null;
+		return ((latestOfferedAmount / claimedAmount) * 100).toFixed(1);
+	}, [firstClaimedData?.amount, folderData?.monto, latestOfferedAmount]);
 
 	useEffect(() => {
 		if (id) {
@@ -304,16 +308,6 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
 
-	const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, row: CalculatorType) => {
-		setAnchorEl(event.currentTarget);
-		setSelectedRow(row);
-	};
-
-	const handleMenuClose = () => {
-		setAnchorEl(null);
-		setSelectedRow(null);
-	};
-
 	const handleDelete = async (calcId: string) => {
 		try {
 			const result = await dispatch(deleteCalculator(calcId));
@@ -322,7 +316,6 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 					variant: "success",
 					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				});
-				handleMenuClose();
 			} else {
 				enqueueSnackbar(result.error || "Error al eliminar el cálculo", {
 					variant: "error",
@@ -370,7 +363,7 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 	const EmptyState = () => (
 		<Box
 			sx={{
-				py: 8,
+				py: 4,
 				display: "flex",
 				flexDirection: "column",
 				alignItems: "center",
@@ -378,22 +371,12 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 			}}
 		>
 			<Calculator size={48} color={theme.palette.text.secondary} style={{ opacity: 0.5 }} />
-			<Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+			<Typography variant="subtitle1" color="textSecondary" sx={{ mt: 2, mb: 1 }}>
 				No hay cálculos registrados
 			</Typography>
-			<Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+			<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 320, mx: "auto", textAlign: "center" }}>
 				Comienza agregando tu primer cálculo o registro
 			</Typography>
-			<ResponsiveButton
-				variant="contained"
-				startIcon={<Add />}
-				onClick={() => setOpenItemModal(true)}
-				size="small"
-				mobileText="Agregar"
-				desktopText="Agregar Cálculo"
-			>
-				Agregar Cálculo
-			</ResponsiveButton>
 		</Box>
 	);
 
@@ -406,83 +389,21 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 					p: isMobile ? 1.5 : 2.5,
 				},
 			}}
-			secondary={
-				!showEmptyState && (
-					<Stack direction="row" spacing={1}>
-						<ResponsiveButton
-							size="small"
-							variant="contained"
-							startIcon={<Add size={16} />}
-							onClick={() => setOpenItemModal(true)}
-							mobileText="Nuevo"
-							desktopText="Agregar"
-							sx={{
-								minWidth: isMobile ? "auto" : "120px",
-								px: isMobile ? 1 : 2,
-							}}
-						>
-							Agregar
-						</ResponsiveButton>
-						{!isMobile && (
-							<ResponsiveButton size="small" variant="outlined" onClick={() => setOpen(true)} desktopText="Ver Todo">
-								Ver Todo
-							</ResponsiveButton>
-						)}
-					</Stack>
-				)
-			}
 		>
 			{/* Modales */}
 			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} folderName={folderData?.folderName} />
 			<ModalCalcTable open={open} setOpen={setOpen} folderName={folderData?.folderName} folderId={id} />
 
-			{/* Actions Menu */}
-			<Menu
-				anchorEl={anchorEl}
-				open={Boolean(anchorEl)}
-				onClose={handleMenuClose}
-				transformOrigin={{ horizontal: "right", vertical: "top" }}
-				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-			>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<Eye size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Ver detalles</Typography>
-				</MenuItem>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<Edit2 size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Editar</Typography>
-				</MenuItem>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<DocumentCopy size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Duplicar</Typography>
-				</MenuItem>
-				<Divider />
-				<MenuItem onClick={() => selectedRow && handleDelete(selectedRow._id)}>
-					<ListItemIcon>
-						<Trash size={18} color={theme.palette.error.main} />
-					</ListItemIcon>
-					<Typography variant="body2" color="error">
-						Eliminar
-					</Typography>
-				</MenuItem>
-			</Menu>
-
-			<CardContent>
+			<Box sx={{ p: 2.5 }}>
 				{/* Compact Stats Cards */}
 				<Grid container spacing={isMobile ? 1.5 : 2} sx={{ mb: isMobile ? 2 : 3 }}>
 					<Grid item xs={12} sm={6}>
 						<CompactStatsCard
 							title="Monto Reclamado"
-							value={formatAmount(folderData?.monto || null)}
+							value={formatAmount(firstClaimedData?.amount ?? folderData?.monto ?? null)}
 							icon={<Calculator size={24} />}
 							color="primary"
-							subtitle={firstClaimedDate ? `Registrado el ${firstClaimedDate}` : "Monto inicial del reclamo"}
+							subtitle={firstClaimedData?.date ? `Registrado el ${dayjs(firstClaimedData.date).format("DD/MM/YYYY")}` : "Monto inicial del reclamo"}
 							trend={0}
 							isLoading={isLoader}
 						/>
@@ -502,7 +423,17 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 
 				{/* Content Area */}
 				{showEmptyState ? (
-					<EmptyState />
+					<>
+						<EmptyState />
+						<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+							<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
+								Nuevo Monto
+							</Button>
+							<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
+								Gestionar Cálculos
+							</Button>
+						</Stack>
+					</>
 				) : (
 					<>
 						{/* Mobile View - Cards */}
@@ -521,7 +452,6 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 											<MobileCalcCard
 												row={row}
 												index={index}
-												onMenuOpen={handleMenuOpen}
 												onDelete={handleDelete}
 												previousAmount={index < sortedData.length - 1 ? sortedData[index + 1].amount : undefined}
 											/>
@@ -576,14 +506,14 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 											</TableHead>
 											<TableBody>
 												{sortedData.map((row: CalculatorType, index: number) => (
-													<TableRow key={row._id} onMouseEnter={() => setHoveredRow(row._id)} onMouseLeave={() => setHoveredRow(null)}>
+													<TableRow key={row._id}>
 														<TableCell>
 															<Stack spacing={0.25}>
 																<Typography variant="body2" fontWeight={500}>
-																	{row.date || "N/D"}
+																	{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
 																</Typography>
 																<Typography variant="caption" color="text.secondary">
-																	{dayjs(row.date, "DD/MM/YYYY").fromNow()}
+																	{row.date ? dayjs(row.date).fromNow() : "N/D"}
 																</Typography>
 															</Stack>
 														</TableCell>
@@ -621,13 +551,18 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 														<TableCell align="right">
 															<IconButton
 																size="small"
-																onClick={(e) => handleMenuOpen(e, row)}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	handleDelete(row._id);
+																}}
 																sx={{
-																	opacity: hoveredRow === row._id ? 1 : 0,
-																	transition: "opacity 0.2s",
+																	color: theme.palette.error.main,
+																	"&:hover": {
+																		bgcolor: alpha(theme.palette.error.main, 0.1),
+																	},
 																}}
 															>
-																<More size={18} />
+																<Trash size={18} />
 															</IconButton>
 														</TableCell>
 													</TableRow>
@@ -638,9 +573,18 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 								</SimpleBar>
 							</Paper>
 						)}
+						{/* Action Buttons */}
+						<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+							<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
+								Nuevo Monto
+							</Button>
+							<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
+								Gestionar Cálculos
+							</Button>
+						</Stack>
 					</>
 				)}
-			</CardContent>
+			</Box>
 		</MainCard>
 	);
 };

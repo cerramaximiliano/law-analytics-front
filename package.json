@@ -101,6 +101,8 @@
 		"build:analyze": "vite build --mode production && rollup-plugin-visualizer",
 		"build-stage": "env-cmd -f .env.qa vite build",
 		"preview": "vite preview",
+		"build:test": "npm run build && npm run preview",
+		"build:check": "npm run type-check && npm run lint && npm run build && echo '✅ Build verificado correctamente'",
 		"test": "vitest",
 		"format": "prettier --write .",
 		"lint": "eslint --fix . --ext .js,.jsx,.ts,.tsx",

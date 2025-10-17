@@ -26,16 +26,11 @@ import {
 	Paper,
 	useTheme,
 	alpha,
-	Menu,
-	MenuItem,
-	ListItemIcon,
-	Divider,
-	Fade,
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import SimpleBar from "components/third-party/SimpleBar";
 import Avatar from "components/@extended/Avatar";
-import { Calculator, TrendUp, TrendDown, More, Edit2, Trash, Eye, ArrowRight2, DocumentCopy, Export } from "iconsax-react";
+import { Calculator, TrendUp, TrendDown, Trash, ArrowRight2, Export } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
 import { dispatch, useSelector } from "store";
@@ -140,21 +135,29 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 	const theme = useTheme();
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
-	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-	const [selectedRow, setSelectedRow] = useState<CalculatorType | null>(null);
-	const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
 
 	const sortedData = useMemo(
-		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date, "DD/MM/YYYY").diff(dayjs(a.date, "DD/MM/YYYY"))),
+		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date).diff(dayjs(a.date))),
 		[selectedCalculators],
 	);
 
 	const latestOfferedAmount = useMemo(() => {
 		const latestOffered = sortedData.find((item: any) => item.type === "Ofertado");
 		return latestOffered?.amount ?? null;
+	}, [sortedData]);
+
+	// Get first claimed calculation date and amount
+	const firstClaimedData = useMemo(() => {
+		const claimedCalcs = sortedData.filter((item: any) => item.type === "Reclamado");
+		if (claimedCalcs.length === 0) return null;
+		const firstClaimed = claimedCalcs[claimedCalcs.length - 1];
+		return {
+			date: firstClaimed?.date,
+			amount: firstClaimed?.amount,
+		};
 	}, [sortedData]);
 
 	// Calculate trends
@@ -168,16 +171,10 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 
 	// Calculate difference percentage
 	const differencePercentage = useMemo(() => {
-		if (!folderData?.monto || !latestOfferedAmount) return null;
-		return ((latestOfferedAmount / folderData.monto) * 100).toFixed(1);
-	}, [folderData?.monto, latestOfferedAmount]);
-
-	// Get first claimed calculation date
-	const firstClaimedDate = useMemo(() => {
-		const claimedCalcs = sortedData.filter((item: any) => item.type === "Reclamado");
-		if (claimedCalcs.length === 0) return null;
-		return claimedCalcs[claimedCalcs.length - 1]?.date;
-	}, [sortedData]);
+		const claimedAmount = firstClaimedData?.amount ?? folderData?.monto;
+		if (!claimedAmount || !latestOfferedAmount) return null;
+		return ((latestOfferedAmount / claimedAmount) * 100).toFixed(1);
+	}, [firstClaimedData?.amount, folderData?.monto, latestOfferedAmount]);
 
 	useEffect(() => {
 		if (id) {
@@ -186,16 +183,6 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 	}, [id]);
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
-
-	const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, row: CalculatorType) => {
-		setAnchorEl(event.currentTarget);
-		setSelectedRow(row);
-	};
-
-	const handleMenuClose = () => {
-		setAnchorEl(null);
-		setSelectedRow(null);
-	};
 
 	const EmptyState = () => (
 		<TableRow>
@@ -254,7 +241,6 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 				autoHideDuration: 3000,
 			});
 		}
-		handleMenuClose();
 	}, []);
 
 	const getTypeChip = (type: string) => {
@@ -318,53 +304,16 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 			<ModalCalcData open={openItemModal} setOpen={setOpenItemModal} folderId={id} folderName={folderData?.folderName} />
 			<ModalCalcTable open={open} setOpen={setOpen} folderName={folderData?.folderName} folderId={id} />
 
-			{/* Actions Menu */}
-			<Menu
-				anchorEl={anchorEl}
-				open={Boolean(anchorEl)}
-				onClose={handleMenuClose}
-				transformOrigin={{ horizontal: "right", vertical: "top" }}
-				anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-			>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<Eye size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Ver detalles</Typography>
-				</MenuItem>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<Edit2 size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Editar</Typography>
-				</MenuItem>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<DocumentCopy size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Duplicar</Typography>
-				</MenuItem>
-				<Divider />
-				<MenuItem onClick={() => selectedRow && handleDelete(selectedRow._id)}>
-					<ListItemIcon>
-						<Trash size={18} color={theme.palette.error.main} />
-					</ListItemIcon>
-					<Typography variant="body2" color="error">
-						Eliminar
-					</Typography>
-				</MenuItem>
-			</Menu>
-
 			<CardContent>
 				{/* Compact Stats Cards */}
 				<Grid container spacing={2} sx={{ mb: 3 }}>
 					<Grid item xs={12} md={6}>
 						<CompactStatsCard
 							title="Monto Reclamado"
-							value={formatAmount(folderData?.monto || null)}
+							value={formatAmount(firstClaimedData?.amount ?? folderData?.monto ?? null)}
 							icon={<Calculator size={24} />}
 							color="primary"
-							subtitle={firstClaimedDate ? `Registrado el ${firstClaimedDate}` : "Monto inicial del reclamo"}
+							subtitle={firstClaimedData?.date ? `Registrado el ${dayjs(firstClaimedData.date).format("DD/MM/YYYY")}` : "Monto inicial del reclamo"}
 							trend={0} // Show neutral trend to maintain consistent height
 							isLoading={isLoader}
 						/>
@@ -439,8 +388,6 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 													animate="visible"
 													exit="exit"
 													transition={{ delay: index * 0.05 }}
-													onMouseEnter={() => setHoveredRow(row._id)}
-													onMouseLeave={() => setHoveredRow(null)}
 													style={{ position: "relative" }}
 												>
 													<TableCell>
@@ -449,10 +396,10 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 															content={
 																<Stack spacing={0.25}>
 																	<Typography variant="body2" fontWeight={500}>
-																		{row.date || "N/D"}
+																		{row.date ? dayjs(row.date).format("DD/MM/YYYY") : "N/D"}
 																	</Typography>
 																	<Typography variant="caption" color="text.secondary">
-																		{dayjs(row.date, "DD/MM/YYYY").fromNow()}
+																		{row.date ? dayjs(row.date).fromNow() : "N/D"}
 																	</Typography>
 																</Stack>
 															}
@@ -462,7 +409,16 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 													<TableCell>
 														<LoadingContent
 															isLoader={isLoader}
-															content={getTypeChip(row.type || "N/D")}
+															content={
+																<Stack spacing={0.5}>
+																	{getTypeChip(row.type || "N/D")}
+																	{row.description && (
+																		<Typography variant="caption" color="text.secondary" sx={{ display: "block", maxWidth: 200 }}>
+																			{row.description.length > 50 ? `${row.description.substring(0, 50)}...` : row.description}
+																		</Typography>
+																	)}
+																</Stack>
+															}
 															skeleton={<Skeleton width={80} />}
 														/>
 													</TableCell>
@@ -512,18 +468,16 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 														<LoadingContent
 															isLoader={isLoader}
 															content={
-																<Fade in={hoveredRow === row._id} timeout={200}>
-																	<IconButton
-																		size="small"
-																		onClick={(e) => handleMenuOpen(e, row)}
-																		sx={{
-																			opacity: hoveredRow === row._id ? 1 : 0.3,
-																			transition: "opacity 0.2s ease",
-																		}}
-																	>
-																		<More size={18} />
-																	</IconButton>
-																</Fade>
+																<IconButton
+																	size="small"
+																	color="error"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleDelete(row._id);
+																	}}
+																>
+																	<Trash size={18} />
+																</IconButton>
 															}
 															skeleton={<Skeleton width={40} />}
 														/>
