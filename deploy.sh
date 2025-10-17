@@ -64,12 +64,17 @@ fi
 # 1. Git pull si estamos en el servidor
 if [ "$IS_SERVER" = true ]; then
     echo -e "${YELLOW}1. Actualizando desde git...${NC}"
-    git pull
+    git fetch origin
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Error al hacer git pull${NC}"
+        echo -e "${RED}Error al hacer git fetch${NC}"
         exit 1
     fi
-    echo -e "${GREEN}✓ Código actualizado${NC}"
+    git reset --hard origin/main
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error al sincronizar con origin/main${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ Código actualizado y sincronizado con origin/main${NC}"
 else
     echo -e "${BLUE}1. Modo local - saltando git pull${NC}"
 fi
