@@ -68,8 +68,15 @@ export default defineConfig({
 				assetFileNames: `assets/[name]-[hash].[ext]`,
 				// Manual chunking para optimizar el bundle
 				manualChunks: (id) => {
-					// React y ReactDOM en un chunk separado
-					if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
+					// React, ReactDOM y react-redux en un chunk separado
+					// IMPORTANTE: react-redux debe estar con React porque redux-persist
+					// (que usa react-redux) necesita React.PureComponent
+					if (
+						id.includes("node_modules/react/") ||
+						id.includes("node_modules/react-dom") ||
+						id.includes("node_modules/react-redux") ||
+						id.includes("node_modules/scheduler")
+					) {
 						return "vendor-react";
 					}
 					// MUI en su propio chunk
@@ -108,11 +115,9 @@ export default defineConfig({
 					// ============ NUEVOS CHUNKS PARA DIVIDIR vendor-other ============
 
 					// Redux (state management) - 15MB en node_modules
-					// IMPORTANTE: Incluir react-redux junto con Redux para evitar errores de dependencias
+					// IMPORTANTE: react-redux ahora está con React, no aquí
 					if (
 						id.includes("node_modules/@reduxjs") ||
-						id.includes("node_modules/redux") ||
-						id.includes("node_modules/react-redux") ||
 						id.includes("node_modules/redux-persist") ||
 						id.includes("node_modules/reselect")
 					) {
