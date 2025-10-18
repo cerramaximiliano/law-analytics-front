@@ -68,13 +68,14 @@ export default defineConfig({
 				assetFileNames: `assets/[name]-[hash].[ext]`,
 				// Manual chunking para optimizar el bundle
 				manualChunks: (id) => {
-					// React, ReactDOM y react-redux en un chunk separado
-					// IMPORTANTE: react-redux debe estar con React porque redux-persist
-					// (que usa react-redux) necesita React.PureComponent
+					// React, ReactDOM, react-redux y redux-persist en un chunk separado
+					// IMPORTANTE: redux-persist debe estar con React porque usa React.PureComponent
+					// y necesita que React esté completamente cargado antes de ejecutarse
 					if (
 						id.includes("node_modules/react/") ||
 						id.includes("node_modules/react-dom") ||
 						id.includes("node_modules/react-redux") ||
+						id.includes("node_modules/redux-persist") ||
 						id.includes("node_modules/scheduler")
 					) {
 						return "vendor-react";
@@ -115,10 +116,9 @@ export default defineConfig({
 					// ============ NUEVOS CHUNKS PARA DIVIDIR vendor-other ============
 
 					// Redux (state management) - 15MB en node_modules
-					// IMPORTANTE: react-redux ahora está con React, no aquí
+					// IMPORTANTE: react-redux y redux-persist ahora están con React, no aquí
 					if (
 						id.includes("node_modules/@reduxjs") ||
-						id.includes("node_modules/redux-persist") ||
 						id.includes("node_modules/reselect")
 					) {
 						return "vendor-redux";
