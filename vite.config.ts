@@ -68,16 +68,17 @@ export default defineConfig({
 				assetFileNames: `assets/[name]-[hash].[ext]`,
 				// Manual chunking para optimizar el bundle
 				manualChunks: (id) => {
-					// React, ReactDOM, react-redux y redux-persist en un chunk separado
-					// IMPORTANTE: redux-persist debe estar con React porque usa React.PureComponent
-					// y necesita que React esté completamente cargado antes de ejecutarse
+					// React y TODOS sus paquetes relacionados en un chunk separado
+					// IMPORTANTE: Todos estos paquetes dependen de React y deben cargarse juntos
 					// Nombre empieza con "0-" para que se cargue primero alfabéticamente
 					if (
 						id.includes("node_modules/react/") ||
 						id.includes("node_modules/react-dom") ||
 						id.includes("node_modules/react-redux") ||
 						id.includes("node_modules/redux-persist") ||
-						id.includes("node_modules/scheduler")
+						id.includes("node_modules/scheduler") ||
+						id.includes("node_modules/use-sync-external-store") ||
+						id.includes("node_modules/react-is")
 					) {
 						return "0-vendor-react";
 					}
