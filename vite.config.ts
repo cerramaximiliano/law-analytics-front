@@ -71,6 +71,7 @@ export default defineConfig({
 					// React, ReactDOM, react-redux y redux-persist en un chunk separado
 					// IMPORTANTE: redux-persist debe estar con React porque usa React.PureComponent
 					// y necesita que React esté completamente cargado antes de ejecutarse
+					// Nombre empieza con "0-" para que se cargue primero alfabéticamente
 					if (
 						id.includes("node_modules/react/") ||
 						id.includes("node_modules/react-dom") ||
@@ -78,7 +79,7 @@ export default defineConfig({
 						id.includes("node_modules/redux-persist") ||
 						id.includes("node_modules/scheduler")
 					) {
-						return "vendor-react";
+						return "0-vendor-react";
 					}
 					// MUI en su propio chunk
 					if (id.includes("node_modules/@mui")) {
