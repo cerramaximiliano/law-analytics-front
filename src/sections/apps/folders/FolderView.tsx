@@ -322,6 +322,15 @@ const FolderView = memo(({ data }: any) => {
 												<Typography variant="body2">{data.folderName || notAvailableMsg}</Typography>
 											</Stack>
 
+											{data.judFolder?.numberJudFolder && (
+												<Stack direction="row" spacing={1}>
+													<Typography variant="body2" color="textSecondary" sx={{ minWidth: 120 }}>
+														N° de Expediente:
+													</Typography>
+													<Typography variant="body2">{data.judFolder.numberJudFolder}</Typography>
+												</Stack>
+											)}
+
 											{data.judFolder?.courtNumber && (
 												<Stack direction="row" spacing={1}>
 													<Typography variant="body2" color="textSecondary" sx={{ minWidth: 120 }}>
