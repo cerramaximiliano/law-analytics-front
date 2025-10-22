@@ -28,6 +28,7 @@ import { useParams } from "react-router";
 import PDFViewer from "components/shared/PDFViewer";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PjnAccessAlert from "components/shared/PjnAccessAlert";
+import ScrollX from "components/ScrollX";
 
 interface MovementsTableProps {
 	movements: Movement[];
@@ -407,7 +408,8 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	return (
 		<Box>
 			<PjnAccessAlert pjnAccess={pjnAccess} />
-			<TableContainer>
+			<ScrollX>
+				<TableContainer>
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
 						<TableRow key="header-row">
@@ -682,6 +684,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					</TableBody>
 				</Table>
 			</TableContainer>
+			</ScrollX>
 			{/* Barra de paginación personalizada */}
 			<Box
 				sx={{

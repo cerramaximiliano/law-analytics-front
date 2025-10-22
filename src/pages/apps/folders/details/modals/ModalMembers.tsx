@@ -7,7 +7,6 @@ import {
 	Box,
 	Button,
 	Divider,
-	Dialog,
 	DialogActions,
 	DialogTitle,
 	DialogContent,
@@ -19,6 +18,7 @@ import {
 	Tooltip,
 	CircularProgress,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // third-party
 import { SearchNormal1, TickCircle, UserAdd } from "iconsax-react";
@@ -169,14 +169,12 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 	});
 
 	return (
-		<Dialog
+		<ResponsiveDialog
 			maxWidth="sm"
 			open={open}
 			onClose={closeAddressModal}
 			PaperProps={{
 				sx: {
-					width: "600px",
-					maxWidth: "600px",
 					p: 0,
 					borderRadius: 2,
 					boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
@@ -397,7 +395,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 					{isLoading ? "Vinculando..." : `Vincular (${selectedAddresses.length})`}
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

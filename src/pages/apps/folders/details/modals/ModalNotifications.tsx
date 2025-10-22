@@ -1,7 +1,6 @@
 import React from "react";
 import { dispatch, useSelector } from "store";
 import {
-	Dialog,
 	DialogTitle,
 	Divider,
 	Button,
@@ -14,6 +13,7 @@ import {
 	Typography,
 	InputLabel,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
@@ -152,14 +152,12 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 
 	return (
 		<>
-			<Dialog
+			<ResponsiveDialog
 				maxWidth="sm"
 				open={open}
 				scroll="paper"
 				PaperProps={{
 					sx: {
-						width: "600px",
-						maxWidth: "600px",
 						maxHeight: "90vh",
 						display: "flex",
 						flexDirection: "column",
@@ -476,7 +474,7 @@ const ModalNotifications: React.FC<ModalNotificationsProps> = ({
 						</Form>
 					)}
 				</Formik>
-			</Dialog>
+			</ResponsiveDialog>
 		</>
 	);
 };

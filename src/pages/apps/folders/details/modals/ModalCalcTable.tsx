@@ -5,7 +5,6 @@ import {
 	Box,
 	Button,
 	Divider,
-	Dialog,
 	DialogActions,
 	DialogTitle,
 	DialogContent,
@@ -19,6 +18,7 @@ import {
 	MenuItem,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { getCalculatorsByUserId } from "store/reducers/calculator";
 import { RootState, dispatch } from "store";
 import { Add } from "iconsax-react";
@@ -261,13 +261,12 @@ const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcM
 	};
 
 	return (
-		<Dialog
+		<ResponsiveDialog
+			maxWidth="sm"
 			open={open}
 			onClose={closeModal}
 			PaperProps={{
 				sx: {
-					width: "600px",
-					maxWidth: "600px",
 					p: 0,
 				},
 			}}
@@ -388,7 +387,7 @@ const ModalCalcTable = ({ open, setOpen, folderId = "", folderName = "" }: CalcM
 					Vincular ({selectedCalculators.length})
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 
