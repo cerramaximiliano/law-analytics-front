@@ -36,6 +36,7 @@ import {
 	FormGroup,
 	Chip,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -1037,7 +1038,7 @@ const Availability = () => {
 			)}
 
 			{/* Diálogo para agregar fecha excluida */}
-			<Dialog open={openExcludedDateDialog} onClose={() => setOpenExcludedDateDialog(false)}>
+			<ResponsiveDialog open={openExcludedDateDialog} onClose={() => setOpenExcludedDateDialog(false)}>
 				<DialogTitle>Agregar fecha bloqueada</DialogTitle>
 				<DialogContent>
 					<Stack spacing={3} sx={{ mt: 1, minWidth: "300px" }}>
@@ -1067,10 +1068,10 @@ const Availability = () => {
 						Agregar
 					</Button>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 
 			{/* Diálogo para agregar/editar campo personalizado */}
-			<Dialog open={openCustomFieldDialog} onClose={() => setOpenCustomFieldDialog(false)}>
+			<ResponsiveDialog open={openCustomFieldDialog} onClose={() => setOpenCustomFieldDialog(false)}>
 				<DialogTitle>{editingFieldIndex !== null ? "Editar campo personalizado" : "Agregar campo personalizado"}</DialogTitle>
 				<DialogContent>
 					<Stack spacing={3} sx={{ mt: 1, minWidth: "300px" }}>
@@ -1082,7 +1083,7 @@ const Availability = () => {
 							placeholder="Ej: Número de expediente, Asunto, etc."
 						/>
 
-						<FormControl fullWidth>
+						<FormControl>
 							<InputLabel>Tipo de campo</InputLabel>
 							<Select
 								value={newCustomField.type}
@@ -1159,7 +1160,7 @@ const Availability = () => {
 						{editingFieldIndex !== null ? "Actualizar" : "Agregar"}
 					</Button>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 
 			{/* Notificación de enlace copiado */}
 			<Snackbar

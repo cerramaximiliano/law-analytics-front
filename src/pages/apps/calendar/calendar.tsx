@@ -28,6 +28,7 @@ import {
 	Skeleton,
 	Card,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // third-party
 import FullCalendar from "@fullcalendar/react";
@@ -111,7 +112,7 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 	};
 
 	return (
-		<Dialog
+		<ResponsiveDialog
 			open={open}
 			onClose={onClose}
 			maxWidth="sm"
@@ -181,7 +182,7 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 					Vincular
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 
@@ -1181,7 +1182,7 @@ const Calendar = () => {
 			</CalendarStyled>
 
 			{/* Dialog manejado localmente */}
-			<Dialog
+			<ResponsiveDialog
 				maxWidth="md"
 				TransitionComponent={PopupTransition}
 				fullWidth
@@ -1200,7 +1201,7 @@ const Calendar = () => {
 				) : (
 					<AddEventForm event={isEditingEvent ? selectedEvent : null} range={selectedRange} onCancel={handleModalClose} userId={id} />
 				)}
-			</Dialog>
+			</ResponsiveDialog>
 
 			{/* Guía del Calendario */}
 			<GuideCalendar open={guideOpen} onClose={() => setGuideOpen(false)} />

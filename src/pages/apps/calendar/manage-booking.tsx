@@ -25,6 +25,7 @@ import {
 	DialogContentText,
 	DialogTitle,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import dayjs from "utils/dayjs-config";
 
 // assets
@@ -412,7 +413,7 @@ const ManageBookingPage = () => {
 			</Box>
 
 			{/* Diálogo de confirmación de cancelación */}
-			<Dialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)}>
+			<ResponsiveDialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)}>
 				<DialogTitle>¿Estás seguro que deseas cancelar esta reserva?</DialogTitle>
 				<DialogContent>
 					<DialogContentText>
@@ -431,7 +432,7 @@ const ManageBookingPage = () => {
 						Confirmar cancelación
 					</Button>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 		</Container>
 	);
 };

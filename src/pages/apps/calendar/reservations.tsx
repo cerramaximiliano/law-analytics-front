@@ -32,6 +32,7 @@ import {
 	Alert,
 	Tooltip,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { Calendar, ClipboardTick, MoreSquare, Trash, User, Edit2, Link21, Clock, InfoCircle, Lock } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { LoadingButton } from "@mui/lab";
@@ -1409,7 +1410,7 @@ const BookingsManagement = () => {
 			</MainCard>
 
 			{/* Diálogo de confirmación de eliminación */}
-			<Dialog
+			<ResponsiveDialog
 				open={deleteDialog}
 				onClose={() => {
 					if (!loadingAction) {
@@ -1440,10 +1441,10 @@ const BookingsManagement = () => {
 						Eliminar
 					</LoadingButton>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 
 			{/* Diálogo para rechazar reserva */}
-			<Dialog
+			<ResponsiveDialog
 				open={rejectDialog}
 				onClose={() => {
 					if (!loadingAction) {
@@ -1484,10 +1485,10 @@ const BookingsManagement = () => {
 						Rechazar
 					</LoadingButton>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 
 			{/* Diálogo para cancelar reserva */}
-			<Dialog
+			<ResponsiveDialog
 				open={cancelDialog}
 				onClose={() => {
 					if (!loadingAction) {
@@ -1528,10 +1529,10 @@ const BookingsManagement = () => {
 						Cancelar Reserva
 					</LoadingButton>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 
 			{/* Diálogo de confirmación de eliminación de disponibilidad */}
-			<Dialog
+			<ResponsiveDialog
 				open={deleteAvailabilityDialog}
 				onClose={() => {
 					if (!loadingAction) {
@@ -1569,7 +1570,7 @@ const BookingsManagement = () => {
 						Eliminar
 					</LoadingButton>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 
 			{/* Guía para reservas */}
 			<GuideBooking open={guideOpen} onClose={() => setGuideOpen(false)} />
