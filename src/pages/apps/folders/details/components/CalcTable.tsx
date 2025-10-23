@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import MainCard from "components/MainCard";
 import SimpleBar from "components/third-party/SimpleBar";
+import ScrollX from "components/ScrollX";
 import Avatar from "components/@extended/Avatar";
 import { Calculator } from "iconsax-react";
 import ModalCalcTable from "../modals/ModalCalcTable";
@@ -203,8 +204,9 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 					</Grid>
 				</Grid>
 				<SimpleBar sx={{ maxHeight: 250 }}>
-					<TableContainer>
-						<Table
+					<ScrollX>
+						<TableContainer>
+							<Table
 							size="small"
 							sx={{
 								"&.MuiTable-root": {
@@ -276,8 +278,9 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 									))
 								)}
 							</TableBody>
-						</Table>
-					</TableContainer>
+							</Table>
+						</TableContainer>
+					</ScrollX>
 				</SimpleBar>
 				{/* ... Stack de botones ... */}
 				<Stack direction="row" justifyContent={"right"} spacing={2} marginTop={2}>

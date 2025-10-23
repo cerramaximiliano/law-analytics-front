@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
 	Box,
 	Button,
-	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
@@ -20,6 +19,7 @@ import {
 	FormControlLabel,
 	Chip,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { DocumentCloud, SearchNormal1, Edit2 } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useSelector, dispatch } from "store";
@@ -267,13 +267,12 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 			</Box>
 
 			{/* Modal de selección de carpeta */}
-			<Dialog
+			<ResponsiveDialog
+				maxWidth="sm"
 				open={openModal}
 				onClose={() => setOpenModal(false)}
 				PaperProps={{
 					sx: {
-						width: "600px",
-						maxWidth: "600px",
 						p: 0,
 					},
 				}}
@@ -433,7 +432,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 						Cancelar
 					</Button>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 		</>
 	);
 };
