@@ -20,6 +20,7 @@ import { Edit, Trash, Eye, SmsNotification, Notification1, NotificationStatus, C
 import { NotificationType } from "types/notifications";
 import { visuallyHidden } from "@mui/utils";
 import dayjs from "utils/dayjs-config";
+import ScrollX from "components/ScrollX";
 
 interface NotificationsTableProps {
 	notifications: NotificationType[];
@@ -196,7 +197,8 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 
 	return (
 		<Box>
-			<TableContainer>
+			<ScrollX>
+				<TableContainer>
 				<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
 						<TableRow>
@@ -363,6 +365,7 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 					</TableBody>
 				</Table>
 			</TableContainer>
+			</ScrollX>
 			<TablePagination
 				rowsPerPageOptions={[5, 10, 25, 50]}
 				component="div"

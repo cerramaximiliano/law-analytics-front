@@ -3,7 +3,6 @@ import {
 	Box,
 	Button,
 	Divider,
-	Dialog,
 	DialogActions,
 	DialogTitle,
 	DialogContent,
@@ -15,6 +14,7 @@ import {
 	Tooltip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { Add, SearchNormal1, TickCircle } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { dispatch, useSelector } from "store";
@@ -186,12 +186,12 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 
 	if (showUnlinkDialog && currentFolder) {
 		return (
-			<Dialog
+			<ResponsiveDialog
+				maxWidth="xs"
 				open={open}
 				onClose={onClose}
 				PaperProps={{
 					sx: {
-						width: "450px",
 						p: 0,
 					},
 				}}
@@ -311,18 +311,17 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 						Desvincular Carpeta
 					</Button>
 				</DialogActions>
-			</Dialog>
+			</ResponsiveDialog>
 		);
 	}
 	// El modal principal (cuando no hay causa vinculada)
 	return (
-		<Dialog
+		<ResponsiveDialog
+			maxWidth="sm"
 			open={open}
 			onClose={onClose}
 			PaperProps={{
 				sx: {
-					width: "600px",
-					maxWidth: "600px",
 					p: 0,
 				},
 			}}
@@ -537,7 +536,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 					Vincular Carpeta
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 
