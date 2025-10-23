@@ -1,5 +1,6 @@
 import React from "react";
-import { Dialog, DialogTitle, Divider, Button, Grid, Stack, DialogContent, InputLabel, DialogActions } from "@mui/material";
+import { DialogTitle, Divider, Button, Grid, Stack, DialogContent, InputLabel, DialogActions } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import SelectField from "components/UI/SelectField";
@@ -92,7 +93,7 @@ const ModalPayment = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 				};
 
 				return (
-					<Dialog
+					<ResponsiveDialog
 						maxWidth="sm"
 						open={open}
 						onClose={handleClose}
@@ -185,7 +186,7 @@ const ModalPayment = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 								</Grid>
 							</DialogActions>
 						</Form>
-					</Dialog>
+					</ResponsiveDialog>
 				);
 			}}
 		</Formik>

@@ -20,6 +20,7 @@ import {
 import { Edit, Trash, Eye, Clock, CalendarTick, Calendar1 } from "iconsax-react";
 import { visuallyHidden } from "@mui/utils";
 import dayjs from "utils/dayjs-config";
+import ScrollX from "components/ScrollX";
 
 interface CalendarEvent {
 	_id: string;
@@ -184,8 +185,9 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 
 	return (
 		<Box>
-			<TableContainer>
-				<Table sx={{ minWidth: 750 }} size="medium">
+			<ScrollX>
+				<TableContainer>
+					<Table sx={{ minWidth: 750 }} size="medium">
 					<TableHead>
 						<TableRow>
 							{headCells.map((headCell) => (
@@ -324,8 +326,9 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 							</TableRow>
 						)}
 					</TableBody>
-				</Table>
-			</TableContainer>
+					</Table>
+				</TableContainer>
+			</ScrollX>
 			<TablePagination
 				rowsPerPageOptions={[5, 10, 25, 50]}
 				component="div"

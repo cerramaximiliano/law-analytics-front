@@ -1,6 +1,5 @@
 import React from "react";
 import {
-	Dialog,
 	DialogTitle,
 	Divider,
 	Button,
@@ -12,6 +11,7 @@ import {
 	Typography,
 	InputLabel,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import NumberField from "components/UI/NumberField";
@@ -126,13 +126,11 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 
 	return (
 		<>
-			<Dialog
+			<ResponsiveDialog
 				maxWidth="sm"
 				open={open}
 				PaperProps={{
 					sx: {
-						width: "600px",
-						maxWidth: "600px",
 						p: 0,
 						borderRadius: 2,
 						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
@@ -246,7 +244,7 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 						</Form>
 					)}
 				</Formik>
-			</Dialog>
+			</ResponsiveDialog>
 		</>
 	);
 };

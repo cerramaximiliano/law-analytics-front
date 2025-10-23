@@ -1,6 +1,5 @@
 import React from "react";
 import {
-	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogActions,
@@ -16,6 +15,7 @@ import {
 	Grid,
 	Paper,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { Call, Sms, Location, Building, Briefcase, User, DocumentText, Profile } from "iconsax-react";
 import { Contact } from "types/contact";
 
@@ -88,14 +88,12 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 	};
 
 	return (
-		<Dialog
+		<ResponsiveDialog
 			open={open}
 			onClose={onClose}
 			maxWidth="sm"
 			PaperProps={{
 				sx: {
-					width: "600px",
-					maxWidth: "600px",
 					p: 0,
 					borderRadius: 2,
 					boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
@@ -247,7 +245,7 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 					Cancelar
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 
