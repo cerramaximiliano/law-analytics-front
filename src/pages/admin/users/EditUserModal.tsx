@@ -6,7 +6,6 @@ import { dispatch } from "store/index";
 import {
 	Box,
 	Button,
-	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
@@ -18,6 +17,7 @@ import {
 	Select,
 	TextField,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // project imports
 import { User } from "types/user";
@@ -157,7 +157,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, open, onClose }) =>
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+		<ResponsiveDialog open={open} onClose={onClose} maxWidth="sm">
 			<DialogTitle>Editar Usuario</DialogTitle>
 			<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
@@ -263,7 +263,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, open, onClose }) =>
 					</form>
 				)}
 			</Formik>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

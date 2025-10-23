@@ -1,6 +1,5 @@
 import React from "react";
 import {
-	Dialog,
 	DialogTitle,
 	Divider,
 	Button,
@@ -12,6 +11,7 @@ import {
 	InputLabel,
 	CircularProgress,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
 import * as Yup from "yup";
@@ -131,7 +131,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 				};
 
 				return (
-					<Dialog
+					<ResponsiveDialog
 						open={open}
 						onClose={handleClose}
 						TransitionComponent={PopupTransition}
@@ -176,7 +176,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 										<InputLabel htmlFor="name" sx={{ mb: 1 }}>
 											Nombre de la tarea *
 										</InputLabel>
-										<InputField name="name" id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} fullWidth />
+										<InputField name="name" id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} />
 									</div>
 
 									<div>
@@ -218,7 +218,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 								</Button>
 							</DialogActions>
 						</Form>
-					</Dialog>
+					</ResponsiveDialog>
 				);
 			}}
 		</Formik>

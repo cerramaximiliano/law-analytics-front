@@ -1,6 +1,5 @@
 import React from "react";
 import {
-	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogActions,
@@ -19,6 +18,7 @@ import {
 	TableHead,
 	TableRow,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { CloseCircle } from "iconsax-react";
 import { Plan } from "store/reducers/ApiService";
 import { formatCurrency } from "utils/formatCurrency";
@@ -44,7 +44,7 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+		<ResponsiveDialog open={open} onClose={onClose} maxWidth="md" >
 			<DialogTitle>
 				<Box display="flex" justifyContent="space-between" alignItems="center">
 					<Typography variant="h4">Detalles del Plan: {plan.displayName}</Typography>
@@ -416,7 +416,7 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 					Cerrar
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

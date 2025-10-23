@@ -1,7 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import {
-	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogActions,
@@ -19,6 +18,7 @@ import {
 	IconButton,
 	Alert,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { CloseCircle, Add, Trash } from "iconsax-react";
 import { PlanPricingInfo, ResourceLimit, PlanFeature, Plan } from "store/reducers/ApiService";
 
@@ -150,7 +150,7 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+		<ResponsiveDialog open={open} onClose={onClose} maxWidth="md" >
 			<DialogTitle>
 				<Box display="flex" alignItems="center" justifyContent="space-between">
 					<Typography variant="h5">{plan ? "Editar Plan" : "Crear Nuevo Plan"}</Typography>
@@ -361,7 +361,7 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 					{loading ? "Guardando..." : plan ? "Actualizar" : "Crear"}
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

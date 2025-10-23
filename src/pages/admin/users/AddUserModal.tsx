@@ -6,7 +6,6 @@ import { dispatch } from "store/index";
 import {
 	Box,
 	Button,
-	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
@@ -18,6 +17,7 @@ import {
 	Select,
 	TextField,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // project imports
 import { DefaultRootStateProps } from "types/root";
@@ -112,7 +112,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, onClose }) => {
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+		<ResponsiveDialog open={open} onClose={onClose} maxWidth="sm">
 			<DialogTitle>Agregar Nuevo Usuario</DialogTitle>
 			<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
@@ -246,7 +246,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, onClose }) => {
 					</form>
 				)}
 			</Formik>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

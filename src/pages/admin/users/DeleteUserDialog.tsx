@@ -5,7 +5,6 @@ import { dispatch } from "store/index";
 // material-ui
 import {
 	Button,
-	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogContentText,
@@ -14,6 +13,7 @@ import {
 	Box,
 	CircularProgress,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // project imports
 import { User } from "types/user";
@@ -114,7 +114,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 	};
 
 	return (
-		<Dialog open={open} onClose={isDeleting ? undefined : onClose} maxWidth="sm" fullWidth disableEscapeKeyDown={isDeleting}>
+		<ResponsiveDialog open={open} onClose={isDeleting ? undefined : onClose} maxWidth="sm" disableEscapeKeyDown={isDeleting}>
 			<DialogTitle>Eliminar Usuario</DialogTitle>
 			<DialogContent>
 				<DialogContentText>
@@ -149,7 +149,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ user, open, onClose
 					{isDeleting ? "Eliminando..." : "Eliminar"}
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

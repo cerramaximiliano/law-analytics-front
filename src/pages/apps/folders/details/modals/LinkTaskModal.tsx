@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogActions,
@@ -19,6 +18,7 @@ import {
 	useTheme,
 	Divider,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import SimpleBar from "components/third-party/SimpleBar";
 import { TaskSquare, Calendar, Folder } from "iconsax-react";
 import { PopupTransition } from "components/@extended/Transitions";
@@ -169,7 +169,7 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 	};
 
 	return (
-		<Dialog
+		<ResponsiveDialog
 			open={open}
 			onClose={handleClose}
 			TransitionComponent={PopupTransition}
@@ -306,7 +306,7 @@ const LinkTaskModal: React.FC<LinkTaskModalProps> = ({ open, onClose, folderId, 
 					{isLinking ? "Vinculando..." : "Vincular Tarea"}
 				</Button>
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

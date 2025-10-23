@@ -5,7 +5,6 @@ import { dispatch } from "store/index";
 import {
 	Box,
 	Button,
-	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
@@ -22,6 +21,7 @@ import {
 	Tabs,
 	Tab,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // project imports
 import { User } from "types/user";
@@ -201,13 +201,12 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 	};
 
 	return (
-		<Dialog
+		<ResponsiveDialog
 			open={open}
 			onClose={onClose}
 			maxWidth="md"
-			fullWidth
-			sx={{
-				"& .MuiDialog-paper": {
+			PaperProps={{
+				sx: {
 					height: "80vh",
 					maxHeight: "700px",
 					display: "flex",
@@ -460,7 +459,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 					</form>
 				)}
 			</Formik>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

@@ -1,7 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import {
-	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogActions,
@@ -20,6 +19,7 @@ import {
 	Tabs,
 	Tab,
 } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { Eye, EyeSlash, Setting2, Shield, ChartCircle } from "iconsax-react";
 import { useSnackbar } from "notistack";
 import { WorkersService, WorkerConfig, WorkerType } from "api/workers";
@@ -198,7 +198,7 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+		<ResponsiveDialog open={open} onClose={onClose} maxWidth="sm" >
 			<DialogTitle>
 				<Stack direction="row" alignItems="center" spacing={1}>
 					<Setting2 size={24} />
@@ -411,7 +411,7 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 					</Button>
 				)}
 			</DialogActions>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 };
 

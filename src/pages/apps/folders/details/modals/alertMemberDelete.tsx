@@ -1,6 +1,7 @@
 import React from "react";
 // material-ui
-import { Button, Dialog, DialogContent, Stack, Typography, Zoom } from "@mui/material";
+import { Button, DialogContent, Stack, Typography, Zoom } from "@mui/material";
+import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // project-imports
 import Avatar from "components/@extended/Avatar";
@@ -54,7 +55,7 @@ export default function AlertMemberDelete({ title, open, handleClose, id }: Prop
 	};
 
 	return (
-		<Dialog
+		<ResponsiveDialog
 			open={open}
 			onClose={() => handleClose(false)}
 			keepMounted
@@ -87,7 +88,7 @@ export default function AlertMemberDelete({ title, open, handleClose, id }: Prop
 					</Stack>
 
 					<Stack direction="row" spacing={2} sx={{ width: 1 }}>
-						<Button fullWidth onClick={() => handleClose(false)} color="secondary" variant="outlined">
+						<Button onClick={() => handleClose(false)} color="secondary" variant="outlined">
 							Cancelar
 						</Button>
 						<Button
@@ -104,6 +105,6 @@ export default function AlertMemberDelete({ title, open, handleClose, id }: Prop
 					</Stack>
 				</Stack>
 			</DialogContent>
-		</Dialog>
+		</ResponsiveDialog>
 	);
 }
