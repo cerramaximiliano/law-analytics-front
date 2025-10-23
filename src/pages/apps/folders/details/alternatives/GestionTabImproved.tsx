@@ -14,11 +14,12 @@ import {
 	Stack,
 	alpha,
 } from "@mui/material";
-import { Calculator, People, TaskSquare, Menu } from "iconsax-react";
+import { Calculator, People, TaskSquare, Menu, DocumentText } from "iconsax-react";
 import MainCard from "components/MainCard";
 import CalcTableResponsive from "../components/CalcTableResponsive";
 import MembersImproved from "../components/MembersImproved";
 import TaskListImproved from "../components/TaskListImproved";
+import Notes from "../components/Notes";
 import { FolderData } from "types/folder";
 import { useSelector, dispatch } from "store";
 import { getCalculatorsByFolderId } from "store/reducers/calculator";
@@ -110,6 +111,13 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 			description: `${pendingTasks} pendientes de ${totalTasks}`,
 			color: theme.palette.warning.main,
 			badge: pendingTasks,
+		},
+		{
+			icon: <DocumentText size={20} />,
+			label: "Notas",
+			shortLabel: "Notas",
+			description: "0 notas",
+			color: theme.palette.info.main,
 		},
 	];
 
@@ -256,6 +264,9 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
 							</TabPanel>
+							<TabPanel value={value} index={3}>
+								<Notes title="" folderId={folder._id} />
+							</TabPanel>
 						</Box>
 					</Box>
 					<Drawer
@@ -291,6 +302,9 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							</TabPanel>
 							<TabPanel value={value} index={2}>
 								<TaskListImproved title="" folderName={folder.folderName} />
+							</TabPanel>
+							<TabPanel value={value} index={3}>
+								<Notes title="" folderId={folder._id} />
 							</TabPanel>
 						</Box>
 					</Box>
