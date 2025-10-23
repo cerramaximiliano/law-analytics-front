@@ -39,6 +39,7 @@ import {
 
 // project imports
 import MainCard from "components/MainCard";
+import ScrollX from "components/ScrollX";
 import TaskDetailRow from "sections/apps/tasks/TaskDetailRow";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
 import AlertTaskDelete from "sections/apps/tasks/AlertTaskDelete";
@@ -208,52 +209,55 @@ function ReactTable({
 		<>
 			<Stack gap={1} spacing={3}>
 				<TableRowSelection selected={Object.keys(selectedRowIds).length} />
-				<Stack
-					direction={matchDownSM ? "column" : "row"}
-					spacing={2}
-					justifyContent="space-between"
-					alignItems={matchDownSM ? "flex-start" : "flex-start"}
-					sx={{ p: 3, pb: 0 }}
-				>
-					{/* Lado izquierdo - Filtro y ordenamiento */}
-					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "300px" }}>
-						{/* Primera línea: Barra de búsqueda */}
-						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+				{/* Controles FUERA del ScrollX para que siempre estén visibles */}
+				<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
+					{/* Primera fila: buscador a la izquierda, botón principal a la derecha */}
+					<Stack
+						direction={matchDownSM ? "column" : "row"}
+						spacing={{ xs: 1.5, sm: 2 }}
+						justifyContent="space-between"
+						alignItems={matchDownSM ? "stretch" : "center"}
+					>
+						{/* Buscador (izquierda) */}
+						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
+							<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+						</Box>
 
-						{/* Segunda línea: Selector de ordenamiento */}
-						<SortingSelect
-							sortBy={sortBy[0]?.id || "name"}
-							setSortBy={(newSortBy: any) => {
-								setSortByState(newSortBy);
-								setSortBy(newSortBy);
-							}}
-							allColumns={allColumns}
-						/>
+						{/* Botón principal (derecha) */}
+						<Button
+							variant="contained"
+							size="small"
+							startIcon={<Add />}
+							onClick={handleAdd}
+							fullWidth={matchDownSM}
+						>
+							Nueva Tarea
+						</Button>
 					</Stack>
 
-					{/* Lado derecho - Botones de acción */}
-					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						{/* Primera línea: Nueva Tarea */}
-						<Stack
-							direction="row"
-							alignItems="center"
-							spacing={2}
-							sx={{ justifyContent: matchDownSM ? "flex-start" : "flex-end", width: "100%" }}
-						>
-							<Button variant="contained" startIcon={<Add />} onClick={handleAdd} size="small">
-								Nueva Tarea
-							</Button>
-						</Stack>
+					{/* Segunda fila: selector de ordenamiento a la izquierda, botones secundarios a la derecha */}
+					<Stack
+						direction={matchDownSM ? "column" : "row"}
+						spacing={{ xs: 1.5, sm: 2 }}
+						justifyContent="space-between"
+						alignItems={matchDownSM ? "stretch" : "center"}
+					>
+						{/* Selector de ordenamiento (izquierda) */}
+						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
+							<SortingSelect
+								sortBy={sortBy[0]?.id || "name"}
+								setSortBy={(newSortBy: any) => {
+									setSortByState(newSortBy);
+									setSortBy(newSortBy);
+								}}
+								allColumns={allColumns}
+							/>
+						</Box>
 
-						{/* Segunda línea: Exportar CSV y Ver Guía */}
-						<Stack
-							direction="row"
-							alignItems="center"
-							spacing={2}
-							sx={{ justifyContent: matchDownSM ? "flex-start" : "flex-end", width: "100%" }}
-						>
+						{/* Botones secundarios (derecha) */}
+						<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
 							<Tooltip title="Exportar a CSV">
-								<IconButton color="primary" size="medium" sx={{ position: "relative" }}>
+								<IconButton color="primary" size="medium">
 									<CSVLink
 										data={data || []}
 										headers={csvHeaders}
@@ -269,8 +273,6 @@ function ReactTable({
 									</CSVLink>
 								</IconButton>
 							</Tooltip>
-
-							{/* Botón para ver la guía */}
 							<Tooltip title="Ver Guía">
 								<IconButton color="success" onClick={handleOpenGuide}>
 									<InfoCircle variant="Bulk" />
@@ -279,7 +281,10 @@ function ReactTable({
 						</Stack>
 					</Stack>
 				</Stack>
-				<Table {...getTableProps()}>
+
+				{/* Tabla con ScrollX */}
+				<ScrollX>
+					<Table {...getTableProps()}>
 					<TableHead>
 						{headerGroups.map((headerGroup: HeaderGroup<TaskType>, i: number) => (
 							<TableRow
@@ -365,6 +370,7 @@ function ReactTable({
 						)}
 					</TableBody>
 				</Table>
+			</ScrollX>
 				<TablePagination gotoPage={handleGotoPage} rows={rows} setPageSize={handleSetPageSize} pageIndex={pageIndex} pageSize={pageSize} />
 			</Stack>
 		</>

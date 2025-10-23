@@ -246,126 +246,105 @@ function ReactTable({
 	return (
 		<>
 			<TableRowSelection selected={Object.keys(selectedRowIds).length} />
-			<Stack spacing={3}>
+			{/* Controles FUERA del ScrollX para que siempre estén visibles */}
+			<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
+				{/* Primera fila: buscador a la izquierda, botones principales a la derecha */}
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
-					spacing={2}
+					spacing={{ xs: 1.5, sm: 2 }}
 					justifyContent="space-between"
-					alignItems={matchDownSM ? "flex-start" : "flex-start"}
-					sx={{ p: 3, pb: 0 }}
+					alignItems={matchDownSM ? "stretch" : "center"}
 				>
-					{/* Lado izquierdo - Filtro y ordenamiento */}
-					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						{/* Primera línea: Barra de búsqueda */}
+					{/* Buscador (izquierda) */}
+					<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
 						<GlobalFilter preGlobalFilteredRows={preGlobalFilteredRows} globalFilter={globalFilter} setGlobalFilter={setGlobalFilter} />
+					</Box>
 
-						{/* Segunda línea: Selector de ordenamiento */}
-						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
-					</Stack>
-
-					{/* Lado derecho - Botones de acción */}
-					<Stack direction="column" spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						{/* Primera línea: Agregar Contacto, Ver Archivados, Archivar seleccionados */}
-						<Stack
-							direction={matchDownSM ? "column" : "row"}
-							alignItems="center"
-							spacing={2}
-							sx={{
-								width: "100%",
-								justifyContent: matchDownSM ? "flex-start" : "flex-end",
-							}}
+					{/* Botones principales (derecha) */}
+					<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+						<Button
+							variant="contained"
+							size="small"
+							startIcon={<UserAdd />}
+							onClick={handleAdd}
+							fullWidth={matchDownSM}
 						>
-							{/* Acción principal */}
-							<Button variant="contained" startIcon={<UserAdd />} onClick={handleAdd} size="small">
-								Agregar Contacto
-							</Button>
-
-							{/* Botón para ver elementos archivados */}
-							<Button
-								variant="outlined"
-								color="secondary"
-								startIcon={<Box1 />}
-								onClick={handleOpenArchivedModal}
-								size="small"
-								sx={{
-									borderWidth: "1px",
-								}}
-							>
-								Ver Archivados
-							</Button>
-
-							{/* Botón para archivar seleccionados */}
-							{handleArchiveSelected && (
-								<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona contactos para archivar" : ""} placement="top">
-									<span>
-										<Button
-											variant="outlined"
-											color="primary"
-											startIcon={<Archive />}
-											onClick={() => handleArchiveSelected(selectedFlatRows)}
-											size="small"
-											disabled={Object.keys(selectedRowIds).length === 0}
-											sx={{
-												borderWidth: "1px",
-												"&.Mui-disabled": {
-													borderColor: "rgba(0, 0, 0, 0.12)",
-													color: "text.disabled",
-												},
-											}}
-										>
-											Archivar{" "}
-											{Object.keys(selectedRowIds).length > 0
-												? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "contacto" : "contactos"}`
-												: "contactos"}
-										</Button>
-									</span>
-								</Tooltip>
-							)}
-						</Stack>
-
-						{/* Segunda línea: Exportación CSV y Ver Guía */}
-						<Stack
-							direction={matchDownSM ? "column" : "row"}
-							alignItems="center"
-							spacing={2}
-							sx={{
-								width: "100%",
-								justifyContent: matchDownSM ? "flex-start" : "flex-end",
-							}}
+							Agregar Contacto
+						</Button>
+						<Button
+							variant="outlined"
+							color="secondary"
+							size="small"
+							startIcon={<Box1 />}
+							onClick={handleOpenArchivedModal}
+							fullWidth={matchDownSM}
 						>
-							{/* Exportación CSV personalizada */}
-							<Tooltip title="Exportar a CSV">
-								<IconButton
-									color="primary"
-									size="medium"
-									sx={{
-										position: "relative",
-									}}
-								>
-									<CSVLink
-										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
-										filename={"contactos.csv"}
-										style={{
-											color: "inherit",
-											display: "flex",
-											alignItems: "center",
-											textDecoration: "none",
-										}}
+							Ver Archivados
+						</Button>
+						{handleArchiveSelected && (
+							<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona contactos para archivar" : ""} placement="top">
+								<span style={{ width: matchDownSM ? "100%" : "auto" }}>
+									<Button
+										variant="outlined"
+										color="primary"
+										size="small"
+										startIcon={<Archive />}
+										onClick={() => handleArchiveSelected(selectedFlatRows)}
+										disabled={Object.keys(selectedRowIds).length === 0}
+										fullWidth={matchDownSM}
 									>
-										<DocumentDownload variant="Bulk" size={22} />
-									</CSVLink>
-								</IconButton>
+										Archivar{" "}
+										{Object.keys(selectedRowIds).length > 0
+											? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "contacto" : "contactos"}`
+											: "contactos"}
+									</Button>
+								</span>
 							</Tooltip>
-
-							{/* Botón para ver la guía */}
-							<Tooltip title="Ver Guía">
-								<IconButton color="success" onClick={handleOpenGuide}>
-									<InfoCircle variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-						</Stack>
+						)}
 					</Stack>
 				</Stack>
+
+				{/* Segunda fila: selector de ordenamiento a la izquierda, botones secundarios a la derecha */}
+				<Stack
+					direction={matchDownSM ? "column" : "row"}
+					spacing={{ xs: 1.5, sm: 2 }}
+					justifyContent="space-between"
+					alignItems={matchDownSM ? "stretch" : "center"}
+				>
+					{/* Selector de ordenamiento (izquierda) */}
+					<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
+						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
+					</Box>
+
+					{/* Botones secundarios (derecha) */}
+					<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
+						<Tooltip title="Exportar a CSV">
+							<IconButton color="primary" size="medium">
+								<CSVLink
+									data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
+									filename={"contactos.csv"}
+									style={{
+										color: "inherit",
+										display: "flex",
+										alignItems: "center",
+										textDecoration: "none",
+									}}
+								>
+									<DocumentDownload variant="Bulk" size={22} />
+								</CSVLink>
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Ver Guía">
+							<IconButton color="success" onClick={handleOpenGuide}>
+								<InfoCircle variant="Bulk" />
+							</IconButton>
+						</Tooltip>
+					</Stack>
+				</Stack>
+			</Stack>
+
+			{/* Tabla con ScrollX */}
+			<ScrollX>
 				<Table {...getTableProps()}>
 					<TableHead>
 						{headerGroups.map((headerGroup: HeaderGroup<Contact>) => (
@@ -428,6 +407,7 @@ function ReactTable({
 						})}
 					</TableBody>
 				</Table>
+			</ScrollX>
 				{page.length > 0 && (
 					<Box sx={{ p: 2, py: 3 }}>
 						<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
@@ -462,7 +442,6 @@ function ReactTable({
 						</Typography>
 					</Box>
 				)}
-			</Stack>
 		</>
 	);
 }

@@ -491,17 +491,17 @@ function ReactTable({
 	return (
 		<>
 			<TableRowSelection selected={Object.keys(selectedRowIds).length} />
-			<Stack spacing={1}>
+			{/* Controles FUERA del ScrollX para que siempre estén visibles */}
+			<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
 				{/* Primera fila: buscador a la izquierda, botones a la derecha */}
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
-					spacing={2}
+					spacing={{ xs: 1.5, sm: 2 }}
 					justifyContent="space-between"
-					alignItems={matchDownSM ? "flex-start" : "center"}
-					sx={{ p: 3, pb: 0.5 }}
+					alignItems={matchDownSM ? "stretch" : "center"}
 				>
 					{/* Buscador (izquierda) */}
-					<Box width={matchDownSM ? "100%" : "280px"}>
+					<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
 						<CustomGlobalFilter
 							preGlobalFilteredRows={preGlobalFilteredRows}
 							globalFilter={globalFilter}
@@ -510,12 +510,19 @@ function ReactTable({
 					</Box>
 
 					{/* Botones de acción (derecha) */}
-					<Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
-						<Button color="secondary" size="small" variant="outlined" startIcon={<Archive />} onClick={() => onOpenArchivedModal()}>
+					<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+						<Button
+							color="secondary"
+							size="small"
+							variant="outlined"
+							startIcon={<Archive />}
+							onClick={() => onOpenArchivedModal()}
+							fullWidth={matchDownSM}
+						>
 							Archivados
 						</Button>
 						<Tooltip title={selectedCalculatorIds.length === 0 ? "Seleccione elementos para archivar" : ""}>
-							<span>
+							<span style={{ width: matchDownSM ? "100%" : "auto" }}>
 								<Button
 									color="primary"
 									size="small"
@@ -523,12 +530,20 @@ function ReactTable({
 									startIcon={<Archive />}
 									onClick={() => onArchiveCalculators(selectedCalculatorIds)}
 									disabled={selectedCalculatorIds.length === 0 || processingAction}
+									fullWidth={matchDownSM}
 								>
 									Archivar {selectedCalculatorIds.length > 0 ? `(${selectedCalculatorIds.length})` : ""}
 								</Button>
 							</span>
 						</Tooltip>
-						<Button color="primary" size="small" variant="contained" startIcon={<Add />} onClick={scrollToCalculators}>
+						<Button
+							color="primary"
+							size="small"
+							variant="contained"
+							startIcon={<Add />}
+							onClick={scrollToCalculators}
+							fullWidth={matchDownSM}
+						>
 							Nuevo cálculo
 						</Button>
 					</Stack>
@@ -537,18 +552,17 @@ function ReactTable({
 				{/* Segunda fila: selector de ordenamiento a la izquierda, botones de eliminar/exportar a la derecha */}
 				<Stack
 					direction={matchDownSM ? "column" : "row"}
-					spacing={2}
+					spacing={{ xs: 1.5, sm: 2 }}
 					justifyContent="space-between"
-					alignItems={matchDownSM ? "flex-start" : "center"}
-					sx={{ px: 3, pb: 1 }}
+					alignItems={matchDownSM ? "stretch" : "center"}
 				>
 					{/* Selector de ordenamiento (izquierda) */}
-					<Box width={matchDownSM ? "100%" : "280px"}>
+					<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
 						<CustomSortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns} />
 					</Box>
 
 					{/* Botones de eliminar y exportar (derecha) */}
-					<Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
+					<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
 						{/* Botón de eliminar */}
 						<Tooltip
 							title={
@@ -621,6 +635,10 @@ function ReactTable({
 						</Tooltip>
 					</Stack>
 				</Stack>
+			</Stack>
+
+			{/* Tabla con ScrollX */}
+			<ScrollX>
 				<Table {...getTableProps()}>
 					<TableHead>
 						{headerGroups.map((headerGroup: HeaderGroup<CalculatorType>) => (
@@ -726,7 +744,7 @@ function ReactTable({
 						)}
 					</TableBody>
 				</Table>
-			</Stack>
+			</ScrollX>
 		</>
 	);
 }
