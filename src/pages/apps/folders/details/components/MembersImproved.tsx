@@ -416,7 +416,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 						</Stack>
 					</>
 				) : (
-					<Box sx={{ display: "flex", flexDirection: "column", height: "500px" }}>
+					<Box sx={{ display: "flex", flexDirection: "column", height: { xs: "60vh", sm: "500px" } }}>
 						<>
 							{/* Members List - Scrollable */}
 							<Box sx={{ flex: 1, overflow: "hidden", minHeight: 0 }}>

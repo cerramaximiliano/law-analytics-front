@@ -1037,8 +1037,8 @@ const FoldersLayout = () => {
 						sx={{
 							"& .MuiDialog-paper": {
 								p: 0,
-								height: "80vh",
-								maxHeight: "80vh",
+								height: { xs: "90vh", sm: "85vh", md: "80vh" },
+								maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
 								display: "flex",
 								flexDirection: "column",
 								overflow: "hidden",

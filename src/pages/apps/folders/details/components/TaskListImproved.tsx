@@ -435,7 +435,7 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 					</>
 				) : (
 					// Tasks view - with fixed height and scroll
-					<Box sx={{ display: "flex", flexDirection: "column", height: "500px" }}>
+					<Box sx={{ display: "flex", flexDirection: "column", height: { xs: "60vh", sm: "500px" } }}>
 						<>
 							{/* Stats Overview - Fixed */}
 							<Stack spacing={2} sx={{ flexShrink: 0 }}>

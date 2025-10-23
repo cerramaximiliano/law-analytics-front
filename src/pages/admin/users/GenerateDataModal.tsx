@@ -207,8 +207,8 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 			maxWidth="md"
 			PaperProps={{
 				sx: {
-					height: "80vh",
-					maxHeight: "700px",
+					height: { xs: "90vh", sm: "85vh", md: "80vh" },
+					maxHeight: { xs: "90vh", sm: "700px" },
 					display: "flex",
 					flexDirection: "column",
 				},

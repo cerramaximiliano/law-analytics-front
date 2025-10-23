@@ -206,7 +206,7 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 				</Stack>
 			</DialogTitle>
 
-			<DialogContent dividers sx={{ height: "500px", display: "flex", flexDirection: "column" }}>
+			<DialogContent dividers sx={{ height: { xs: "60vh", sm: "500px" }, display: "flex", flexDirection: "column" }}>
 				<Stack spacing={2} sx={{ flex: 1 }}>
 					{/* Información del worker */}
 					<Alert severity="info" variant="outlined">
