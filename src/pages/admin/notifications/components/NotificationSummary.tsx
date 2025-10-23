@@ -132,7 +132,7 @@ const NotificationSummary = () => {
 	);
 
 	return (
-		<Grid container spacing={3}>
+		<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Grid item xs={12}>
 				<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 					<Box sx={{ display: "flex", gap: 2, mb: 3 }}>

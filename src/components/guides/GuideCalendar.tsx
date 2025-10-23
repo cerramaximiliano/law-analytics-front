@@ -66,7 +66,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 const IntroductionContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Esta guía te mostrará cómo utilizar el calendario para organizar tus eventos legales, gestionar recordatorios y vincular actividades
 				a tus causas.
@@ -92,7 +92,7 @@ const IntroductionContent = () => {
 const NavigationContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>El calendario ofrece múltiples vistas que puedes personalizar según tus necesidades:</Typography>
 			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
 				<Stack spacing={2}>
@@ -132,7 +132,7 @@ const NavigationContent = () => {
 const EventCreationContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para crear un nuevo evento en el calendario, puedes hacerlo de dos formas:</Typography>
 			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.2) }}>
 				<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
@@ -197,7 +197,7 @@ const EventCreationContent = () => {
 const EventFormContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>El formulario para crear o editar un evento contiene los siguientes campos:</Typography>
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -283,7 +283,7 @@ const EventFormContent = () => {
 const EventManagementContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Una vez creados los eventos, puedes gestionarlos de diversas formas:</Typography>
 
 			<Grid container spacing={2}>
@@ -375,7 +375,7 @@ const EventManagementContent = () => {
 const RemindersContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El sistema de calendario incluye un completo sistema de recordatorios para que nunca pierdas un evento importante:
 			</Typography>
@@ -440,7 +440,7 @@ const RemindersContent = () => {
 const CauseLinkingContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Una de las características más útiles del calendario es su integración con el sistema de causas:</Typography>
 
 			<Box sx={{ bgcolor: alpha(theme.palette.primary.lighter, 0.1), p: 2, borderRadius: "8px", mb: 3 }}>
@@ -502,7 +502,7 @@ const CauseLinkingContent = () => {
 const AppointmentConfigContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El sistema de calendario te permite configurar tu disponibilidad para que los clientes puedan programar citas directamente:
 			</Typography>
@@ -661,7 +661,7 @@ const AppointmentConfigContent = () => {
 const PracticalTipsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para aprovechar al máximo el calendario, te recomendamos seguir estas mejores prácticas:</Typography>
 
 			<Grid container spacing={2}>

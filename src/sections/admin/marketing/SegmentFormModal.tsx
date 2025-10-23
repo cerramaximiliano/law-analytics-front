@@ -815,7 +815,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 						<Grid item xs={12}>
 							<Skeleton variant="text" width={150} height={28} sx={{ mt: 1, mb: 1 }} />
 							<Divider sx={{ mb: 2 }} />
-							<Box sx={{ display: "flex", gap: 3 }}>
+							<Box sx={{ display: "flex", gap: { xs: 1.5, sm: 2, md: 3 } }}>
 								<Skeleton variant="rectangular" width={120} height={40} sx={{ borderRadius: 1 }} />
 								<Skeleton variant="rectangular" width={120} height={40} sx={{ borderRadius: 1 }} />
 							</Box>

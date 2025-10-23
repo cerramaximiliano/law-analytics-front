@@ -165,7 +165,7 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 						{error}
 					</Alert>
 				)}
-				<Grid container spacing={3} sx={{ mt: 1 }}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 1 }}>
 					<Grid item xs={12} sm={6}>
 						<TextField
 							fullWidth

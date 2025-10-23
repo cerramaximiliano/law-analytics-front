@@ -45,7 +45,7 @@ import {
 // ==============================|| CONTENIDOS DE LA GUÍA DE TAREAS ||============================== //
 
 const CreateTaskContent = () => (
-	<Stack spacing={3}>
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 		<Stack spacing={2}>
 			<Typography variant="body1">Para crear una nueva tarea:</Typography>
 
@@ -99,7 +99,7 @@ const CreateTaskContent = () => (
 const ViewManageTasksContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography variant="body1">
 				La vista principal de tareas te muestra todas tus actividades en una tabla organizada. Aquí puedes:
 			</Typography>
@@ -161,7 +161,7 @@ const ViewManageTasksContent = () => {
 };
 
 const PrioritiesAndStatusContent = () => (
-	<Stack spacing={3}>
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 		<Typography variant="body1">Entender el sistema de prioridades y estados te ayudará a gestionar mejor tus tareas:</Typography>
 
 		<Grid container spacing={2}>
@@ -228,7 +228,7 @@ const PrioritiesAndStatusContent = () => (
 );
 
 const ExportAndTipsContent = () => (
-	<Stack spacing={3}>
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 		<Typography variant="body1">Aprovecha al máximo la gestión de tareas con estas funcionalidades adicionales y consejos:</Typography>
 
 		<Paper sx={{ p: 2, bgcolor: "primary.lighter", borderLeft: 4, borderColor: "primary.main" }}>
@@ -322,7 +322,7 @@ const GuideTasks: React.FC<GuideTasksProps> = ({ open, onClose }) => {
 		{
 			title: "Introducción a Tareas",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography paragraph>
 						Esta guía te mostrará cómo utilizar el sistema de gestión de tareas para organizar tus actividades, establecer prioridades y
 						mantener un seguimiento efectivo de tus pendientes.

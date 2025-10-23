@@ -501,7 +501,7 @@ const CausasVerified = () => {
 				</Alert>
 			)}
 
-			<Grid container spacing={3} sx={{ mb: 3 }}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mb: 3 }}>
 				<Grid item xs={12} md={4}>
 					<Card>
 						<CardHeader title="Resumen de Causas" />

@@ -57,7 +57,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 const IntroductionContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Esta guía te mostrará cómo utilizar el sistema de gestión de carpetas para administrar eficientemente los expedientes legales,
 				realizar seguimiento de casos y organizar toda la información relacionada con tus asuntos jurídicos.
@@ -82,7 +82,7 @@ const IntroductionContent = () => {
 const CreationContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para crear una nueva carpeta en el sistema, sigue estos pasos:</Typography>
 			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
 				<Stack spacing={2}>
@@ -111,7 +111,7 @@ const CreationContent = () => {
 const ImportContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Ahora puedes importar carpetas directamente desde el Poder Judicial de la Nación de forma automática:
 			</Typography>
@@ -175,7 +175,7 @@ const ImportContent = () => {
 const LinkingContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Si ya tienes carpetas creadas en el sistema, puedes vincularlas con el Poder Judicial de la Nación para sincronizar movimientos
 				automáticamente:
@@ -355,7 +355,7 @@ const LinkingContent = () => {
 const FormFieldsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>El formulario para crear o editar una carpeta contiene los siguientes campos:</Typography>
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -453,7 +453,7 @@ const FormFieldsContent = () => {
 const ManagementContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Una vez creadas las carpetas, puedes gestionar tus expedientes de manera eficiente utilizando las siguientes funciones:
 			</Typography>
@@ -549,7 +549,7 @@ const ManagementContent = () => {
 const DetailedViewContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Al abrir una carpeta (haciendo clic en el icono de maximizar), accederás a la vista detallada que te permite gestionar todos los
 				aspectos relacionados con el expediente:
@@ -625,7 +625,7 @@ const DetailedViewContent = () => {
 const ArchivingContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El sistema te permite archivar carpetas finalizadas o inactivas para mantener tu espacio de trabajo organizado:
 			</Typography>
@@ -689,7 +689,7 @@ const ArchivingContent = () => {
 const PracticalTipsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Para sacar el máximo provecho del sistema de gestión de carpetas, te ofrecemos estos consejos prácticos:
 			</Typography>

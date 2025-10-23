@@ -103,9 +103,9 @@ const ModalPayment = ({ open, setOpen, handlerAddress, folderId }: AddressModalT
 						<Divider />
 						<Form autoComplete="off" noValidate>
 							<DialogContent sx={{ p: 2.5 }}>
-								<Grid container spacing={3} justifyContent="center">
+								<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} justifyContent="center">
 									<Grid item xs={12} md={8}>
-										<Grid container spacing={3}>
+										<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 											<Grid item xs={12}>
 												<Stack spacing={1.25}>
 													<InputLabel htmlFor="name">Categoría</InputLabel>

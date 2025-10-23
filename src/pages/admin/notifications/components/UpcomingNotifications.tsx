@@ -100,7 +100,7 @@ const UpcomingNotifications = ({ onRefresh }: Props) => {
 	const hasError = upcomingEvents.error || upcomingTasks.error || upcomingMovements.error || pendingAlerts.error;
 
 	return (
-		<Grid container spacing={3}>
+		<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Grid item xs={12}>
 				<Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center" }}>
 					<TextField

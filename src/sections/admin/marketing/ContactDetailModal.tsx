@@ -993,7 +993,7 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 
 																							{/* Compact Info Grid */}
 																							<Grid item xs={12}>
-																								<Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+																								<Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 1.5, sm: 2, md: 3 } }}>
 																									<Box>
 																										<Typography variant="caption" color="textSecondary">
 																											Última actividad

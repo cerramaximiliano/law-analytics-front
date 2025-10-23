@@ -66,7 +66,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 const IntroductionContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El panel de analíticas es tu centro de comando para monitorear el rendimiento de tu práctica legal. Aquí podrás visualizar métricas
 				en tiempo real sobre carpetas, tareas, vencimientos y aspectos financieros.
@@ -97,7 +97,7 @@ const IntroductionContent = () => {
 const AccessContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para acceder al panel de analíticas, tienes varias opciones:</Typography>
 			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
 				<Stack spacing={2}>
@@ -135,7 +135,7 @@ const AccessContent = () => {
 const MainMetricsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Las métricas principales te ayudan a entender el rendimiento de tu práctica:</Typography>
 
 			<Grid container spacing={2}>
@@ -209,7 +209,7 @@ const MainMetricsContent = () => {
 const DataQualityContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El indicador de Calidad de Datos evalúa la completitud y confiabilidad de la información en el sistema, permitiéndote entender qué
 				tan precisas son las analíticas mostradas.
@@ -363,7 +363,7 @@ const DataQualityContent = () => {
 const DeadlinesContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				La proyección de vencimientos te ayuda a anticiparte a plazos críticos y mantener el control de tu agenda:
 			</Typography>
@@ -451,7 +451,7 @@ const DeadlinesContent = () => {
 const HistoricalDataContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El sistema mantiene un registro histórico completo de tus analíticas, permitiéndote comparar el rendimiento a lo largo del tiempo:
 			</Typography>
@@ -532,7 +532,7 @@ const HistoricalDataContent = () => {
 const ExportReportsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>La función de exportación te permite generar reportes profesionales en PDF con todas tus métricas:</Typography>
 
 			<StyledPaper>
@@ -621,7 +621,7 @@ const ExportReportsContent = () => {
 const PlansLimitationsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Cada plan ofrece diferentes niveles de acceso a las funcionalidades de analíticas:</Typography>
 
 			<TableContainer component={Paper}>
@@ -683,7 +683,7 @@ const PlansLimitationsContent = () => {
 const TipsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para maximizar el valor de las analíticas, sigue estos consejos y mejores prácticas:</Typography>
 
 			<Grid container spacing={2}>
@@ -767,7 +767,7 @@ const TipsContent = () => {
 const TroubleshootingContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Si encuentras problemas al usar el panel de analíticas, aquí están las soluciones más comunes:</Typography>
 
 			<StyledPaper>

@@ -31,7 +31,7 @@ const PaginationWithJump: React.FC<PaginationWithJumpProps> = ({ page, totalPage
 	};
 
 	return (
-		<Stack direction="row" spacing={3} alignItems="center">
+		<Stack direction="row" spacing={{ xs: 1.5, sm: 2, md: 3 }} alignItems="center">
 			<CustomPagination page={page} totalPages={totalPages} onPageChange={onPageChange} disabled={disabled} />
 
 			{/* Salto directo a página */}

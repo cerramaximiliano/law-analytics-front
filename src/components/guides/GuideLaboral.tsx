@@ -57,7 +57,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 // ==============================|| CONTENIDOS DE LA GUÍA DE TAREAS ||============================== //
 
 const IntroductionContent = () => (
-	<Stack spacing={3}>
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 		<Typography variant="body1">
 			Esta guía te mostrará cómo utilizar las calculadoras laborales para generar, guardar y gestionar diferentes tipos de cálculos legales.
 		</Typography>
@@ -78,7 +78,7 @@ const IntroductionContent = () => (
 const AccessCalculatorContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para acceder a la calculadora laboral, sigue estos pasos:</Typography>
 			<Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
 				<Stack spacing={2}>
@@ -106,7 +106,7 @@ const AccessCalculatorContent = () => {
 const FormStepsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>El formulario de despido se completa en 3 pasos simples:</Typography>
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -180,7 +180,7 @@ const FormStepsContent = () => {
 };
 
 const FormulasContent = () => (
-	<Stack spacing={3}>
+	<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 		<Typography paragraph>La calculadora laboral utiliza las siguientes fórmulas principales para los cálculos:</Typography>
 
 		<Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
@@ -241,7 +241,7 @@ const FormulasContent = () => (
 const ManageCalculationsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Una vez generados los cálculos, estos se guardarán automáticamente y podrás acceder a ellos en cualquier momento:
 			</Typography>
@@ -292,7 +292,7 @@ const ManageCalculationsContent = () => {
 const TipsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para sacar el máximo provecho de la calculadora laboral, ten en cuenta estos consejos:</Typography>
 
 			<Grid container spacing={2}>

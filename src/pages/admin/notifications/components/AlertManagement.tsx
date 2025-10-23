@@ -398,7 +398,7 @@ const AlertManagement = () => {
 
 			{/* Custom Alerts Tab */}
 			<TabPanel value={activeTab} index={0}>
-				<Grid container spacing={3}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Grid item xs={12}>
 						<Card>
 							<CardContent>
@@ -603,7 +603,7 @@ const AlertManagement = () => {
 
 			{/* Bulk Alerts Tab */}
 			<TabPanel value={activeTab} index={1}>
-				<Grid container spacing={3}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Grid item xs={12}>
 						<Card>
 							<CardContent>
@@ -883,7 +883,7 @@ const AlertManagement = () => {
 
 			{/* Cleanup Tab */}
 			<TabPanel value={activeTab} index={2}>
-				<Grid container spacing={3}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Grid item xs={12} md={6}>
 						<Card>
 							<CardContent>

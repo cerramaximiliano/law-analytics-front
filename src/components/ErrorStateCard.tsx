@@ -71,7 +71,7 @@ const ErrorStateCard = ({ title, message, type = "general", onRetry, actions, sh
 
 	return (
 		<MainCard>
-			<Stack spacing={4} alignItems="center" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 3 } }}>
+			<Stack spacing={{ xs: 2, sm: 3, md: 4 }} alignItems="center" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 3 } }}>
 				{showIcon && <Box sx={{ opacity: 0.5 }}>{getIcon()}</Box>}
 
 				<Alert severity={getSeverity()} sx={{ width: "100%", maxWidth: { xs: 600, md: 800 } }}>

@@ -161,7 +161,7 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 							</DialogTitle>
 
 							<DialogContent sx={{ p: 3 }}>
-								<Stack spacing={3} sx={{ mt: 2 }}>
+								<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 2 }}>
 									<Stack spacing={1.25}>
 										<InputLabel htmlFor="type">Tipo</InputLabel>
 										<SelectField

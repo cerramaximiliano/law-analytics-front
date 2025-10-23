@@ -426,7 +426,7 @@ const JudicialMovementsConfig: React.FC = () => {
 						</IconButton>
 					</Stack>
 					<Collapse in={expandedSections.schedule}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12} md={4}>
 								<Stack direction="row" spacing={2}>
 									<TextField
@@ -500,7 +500,7 @@ const JudicialMovementsConfig: React.FC = () => {
 						</IconButton>
 					</Stack>
 					<Collapse in={expandedSections.limits}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12} md={4}>
 								<TextField
 									label="Máx. movimientos por lote"
@@ -549,7 +549,7 @@ const JudicialMovementsConfig: React.FC = () => {
 						</IconButton>
 					</Stack>
 					<Collapse in={expandedSections.retry}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12} md={3}>
 								<TextField
 									label="Máx. reintentos"
@@ -608,7 +608,7 @@ const JudicialMovementsConfig: React.FC = () => {
 						</IconButton>
 					</Stack>
 					<Collapse in={expandedSections.content}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12} md={6}>
 								<FormControlLabel
 									control={
@@ -670,7 +670,7 @@ const JudicialMovementsConfig: React.FC = () => {
 						</IconButton>
 					</Stack>
 					<Collapse in={expandedSections.filters}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12} md={4}>
 								<Autocomplete
 									multiple
@@ -730,7 +730,7 @@ const JudicialMovementsConfig: React.FC = () => {
 						</IconButton>
 					</Stack>
 					<Collapse in={expandedSections.dataRetention}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12} md={3}>
 								<TextField
 									label="Retención de movimientos (días)"
@@ -827,7 +827,7 @@ const JudicialMovementsConfig: React.FC = () => {
 						</IconButton>
 					</Stack>
 					<Collapse in={expandedSections.endpoints}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12} md={4}>
 								<TextField
 									label="URL del servicio de notificaciones"

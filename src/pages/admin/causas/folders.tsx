@@ -180,7 +180,7 @@ const CausasFolders = () => {
 			)}
 
 			{/* Summary Cards */}
-			<Grid container spacing={3} sx={{ mb: 3 }}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mb: 3 }}>
 				<Grid item xs={12} md={4}>
 					<Paper sx={{ p: 3, textAlign: "center", height: 180, display: "flex", flexDirection: "column", justifyContent: "center" }}>
 						<FolderOpen size={32} color="#1890ff" />

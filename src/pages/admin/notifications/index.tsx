@@ -186,7 +186,7 @@ const NotificationMonitoring = () => {
 
 	return (
 		<MainCard title="Monitoreo de Notificaciones">
-			<Grid container spacing={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				<Grid item xs={12}>
 					<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 						<Tabs
@@ -235,7 +235,7 @@ const NotificationMonitoring = () => {
 						<AlertManagement />
 					</TabPanel>
 					<TabPanel value={activeTab} index={5}>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							<Grid item xs={12}>
 								<Alert severity="warning" sx={{ mb: 3 }}>
 									<Typography variant="body2" fontWeight="bold" gutterBottom>

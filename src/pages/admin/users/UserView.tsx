@@ -508,7 +508,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 	const renderSubscriptionInfo = (subscription?: Subscription) => {
 		if (!subscription) {
 			return (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
 						<Alert severity="info" sx={{ flex: 1, mr: 2 }}>
 							<Typography variant="body2">
@@ -556,7 +556,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		}
 
 		return (
-			<Stack spacing={3}>
+			<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
 					<Alert severity="info" sx={{ flex: 1, mr: 2 }}>
 						<Typography variant="body2">
@@ -1305,7 +1305,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		}
 
 		return (
-			<Stack spacing={3}>
+			<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				{/* Límites de Recursos */}
 				{subscription.limits && Object.keys(subscription.limits).length > 0 && (
 					<>
@@ -1381,7 +1381,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 								borderRadius: 2,
 							}}
 						>
-							<Grid container spacing={3}>
+							<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1}>
 										<Typography variant="subtitle2" color="textSecondary">
@@ -1549,7 +1549,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		}
 
 		return (
-			<Grid container spacing={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				{/* Carpetas */}
 				<Grid item xs={12} md={6}>
 					<Paper
@@ -1799,7 +1799,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 		}
 
 		return (
-			<Stack spacing={3}>
+			<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				{/* Información del Cliente */}
 				<Paper elevation={0} sx={{ p: 3, backgroundColor: theme.palette.mode === "dark" ? "background.default" : "grey.100" }}>
 					<Typography variant="h6" sx={{ mb: 2 }}>
@@ -1855,7 +1855,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 					<Typography variant="h6" sx={{ mb: 2 }}>
 						Estadísticas
 					</Typography>
-					<Grid container spacing={3}>
+					<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 						<Grid item xs={6} md={3}>
 							<Stack spacing={1}>
 								<Typography variant="subtitle2" color="text.secondary">
@@ -2173,9 +2173,9 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 							</Box>
 
 							<TabPanel value={tabValue} index={0}>
-								<Grid container spacing={3}>
+								<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 									<Grid item xs={12} md={6}>
-										<Stack spacing={3}>
+										<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 											<Typography variant="h6">Información Personal</Typography>
 											<Stack spacing={2}>
 												<Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -2198,7 +2198,7 @@ const UserView: React.FC<UserViewProps> = ({ user, onClose }) => {
 										</Stack>
 									</Grid>
 									<Grid item xs={12} md={6}>
-										<Stack spacing={3}>
+										<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 											<Typography variant="h6">Información de Cuenta</Typography>
 											<Stack spacing={2}>
 												<Stack direction="row" justifyContent="space-between" alignItems="center">

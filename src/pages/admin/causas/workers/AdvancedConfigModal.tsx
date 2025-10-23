@@ -230,7 +230,7 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 					<Box sx={{ flex: 1, overflow: "auto", position: "relative" }}>
 						{/* Tab Panel: Servicios de Captcha */}
 						<Box sx={{ display: activeTab === 0 ? "block" : "none", pt: 2 }}>
-							<Stack spacing={3}>
+							<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 								{/* Proveedor por defecto */}
 								<Box>
 									<Typography variant="subtitle2" gutterBottom>
@@ -344,7 +344,7 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 
 						{/* Tab Panel: Rango de Búsqueda */}
 						<Box sx={{ display: activeTab === 1 && showRangeTab ? "block" : "none", pt: 2 }}>
-							<Stack spacing={3}>
+							<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 								<Alert severity="info" variant="outlined">
 									<Typography variant="body2">
 										El número actual ({config.number?.toLocaleString()}) ha superado el rango final ({config.range_end?.toLocaleString()}).

@@ -70,7 +70,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 const IntroductionContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Law Analytics utiliza un sistema dual de límites para garantizar el mejor rendimiento y experiencia. Comprende cómo funcionan estos
 				límites te ayudará a optimizar tu uso de la plataforma.
@@ -142,7 +142,7 @@ const PlansComparisonContent = () => {
 	];
 
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Compara los límites y características de cada plan para elegir el que mejor se adapte a tus necesidades:
 			</Typography>
@@ -235,12 +235,12 @@ const PlansComparisonContent = () => {
 const ActiveVsArchivedContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Entender la diferencia entre elementos activos y archivados es clave para optimizar tu uso de Law Analytics:
 			</Typography>
 
-			<Grid container spacing={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				<Grid item xs={12} md={6}>
 					<Paper sx={{ p: 3, height: "100%", bgcolor: alpha(theme.palette.success.main, 0.1) }}>
 						<Box display="flex" alignItems="center" mb={2}>
@@ -353,7 +353,7 @@ const StorageSystemContent = () => {
 	];
 
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El sistema de almacenamiento cuenta TODOS tus elementos (activos + archivados + archivos adjuntos). Aquí está el desglose:
 			</Typography>
@@ -447,7 +447,7 @@ const StorageSystemContent = () => {
 const GracePeriodContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El período de gracia es un tiempo adicional que te damos para ajustar tu uso cuando hay cambios en tu suscripción:
 			</Typography>
@@ -536,10 +536,10 @@ const GracePeriodContent = () => {
 const OptimizationTipsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Sigue estas estrategias para optimizar tu uso de límites y almacenamiento:</Typography>
 
-			<Grid container spacing={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				<Grid item xs={12} md={6}>
 					<Paper sx={{ p: 3, height: "100%" }}>
 						<Typography variant="h6" gutterBottom color="primary">

@@ -105,7 +105,7 @@ const WorkersConfig = () => {
 
 	return (
 		<MainCard>
-			<Stack spacing={3}>
+			<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				{/* Header */}
 				<Box>
 					<Typography variant="h3" gutterBottom>

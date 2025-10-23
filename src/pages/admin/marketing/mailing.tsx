@@ -723,7 +723,7 @@ const MailingCampaigns = () => {
 				/>
 			</MainCard>
 
-			<Grid container spacing={3} sx={{ mt: 2 }}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 2 }}>
 				<Grid item xs={12} md={6} lg={4}>
 					<Card>
 						<CardHeader title="Estadísticas de campañas" />

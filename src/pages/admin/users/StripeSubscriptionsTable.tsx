@@ -114,7 +114,7 @@ const StripeSubscriptionsTable = () => {
 	if (!loading && customers.length === 0) {
 		return (
 			<Box sx={{ py: 8 }}>
-				<Stack spacing={3} alignItems="center">
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }} alignItems="center">
 					<Box
 						sx={{
 							width: 100,
@@ -156,7 +156,7 @@ const StripeSubscriptionsTable = () => {
 			</Alert>
 
 			{/* Tarjetas de estadísticas */}
-			<Grid container spacing={3} mb={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} mb={3}>
 				<Grid item xs={12} sm={6} md={3}>
 					<Card>
 						<CardContent>

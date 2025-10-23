@@ -1089,7 +1089,7 @@ const EmailTemplates = () => {
 			</MainCard>
 
 			{/* Template Stats */}
-			<Grid container spacing={3} sx={{ mt: 2 }}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 2 }}>
 				<Grid item xs={12} md={6} lg={4}>
 					<Card>
 						<CardHeader title="Estadísticas de plantillas" />
@@ -1421,7 +1421,7 @@ const EmailTemplates = () => {
 						</DialogTitle>
 						<Divider />
 						<DialogContent sx={{ p: 3, flex: 1, overflow: "hidden" }}>
-							<Grid container spacing={3} sx={{ height: "100%" }}>
+							<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ height: "100%" }}>
 								{/* Basic information */}
 								<Grid item xs={12} md={6} sx={{ display: "flex", flexDirection: "column" }}>
 									<TextField
@@ -1709,7 +1709,7 @@ const EmailTemplates = () => {
 					<>
 						<DialogTitle>Enviar email usando plantilla: {templateToSend.name}</DialogTitle>
 						<DialogContent>
-							<Grid container spacing={3} sx={{ mt: 0.5 }}>
+							<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 0.5 }}>
 								<Grid item xs={12}>
 									<Typography variant="subtitle2" sx={{ mb: 1 }}>
 										Detalles de la plantilla
@@ -1805,7 +1805,7 @@ const EmailTemplates = () => {
 				<Divider />
 
 				<DialogContent sx={{ p: 3 }}>
-					<Grid container spacing={3}>
+					<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 						{/* Basic information */}
 						<Grid item xs={12} md={6}>
 							<TextField

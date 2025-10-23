@@ -90,7 +90,7 @@ const WidgetDataCard = ({ title, count, percentage, color, iconPrimary, children
 				<Grid item xs={12}>
 					<MainCard content={false} border={false} sx={{ bgcolor: "background.default" }}>
 						<Box sx={{ p: 3, pb: 1.25 }}>
-							<Grid container spacing={3}>
+							<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 								<Grid item xs={7}>
 									{children}
 								</Grid>

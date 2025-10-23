@@ -17,7 +17,7 @@ const EmptyStateCard = ({
 	iconColor = "error",
 }: EmptyStateCardProps) => (
 	<Paper elevation={0} sx={{ p: 4, textAlign: "center", bgcolor: "transparent" }}>
-		<Stack spacing={3} alignItems="center">
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }} alignItems="center">
 			<Avatar
 				color={iconColor}
 				variant="rounded"

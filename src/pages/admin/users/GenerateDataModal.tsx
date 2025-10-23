@@ -247,7 +247,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 								}}
 							>
 								{tabValue === 0 && (
-									<Grid container spacing={3}>
+									<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 										<Grid item xs={12}>
 											<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
 												Especifica la cantidad de cada tipo de dato a generar para este usuario.
@@ -318,7 +318,7 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 								)}
 
 								{tabValue === 1 && (
-									<Grid container spacing={3}>
+									<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 										<Grid item xs={12}>
 											<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
 												Selecciona una causa y especifica la cantidad de datos a generar para esa causa específica.

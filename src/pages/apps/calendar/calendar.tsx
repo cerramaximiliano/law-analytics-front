@@ -250,7 +250,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete }: EventDet
 					p: 3,
 					display: "flex",
 					flexDirection: "column",
-					gap: 3,
+					gap: { xs: 1.5, sm: 2, md: 3 },
 				}}
 			>
 				<Box sx={{ mb: 2 }}>

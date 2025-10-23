@@ -28,7 +28,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 
 const IntroductionContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El módulo de Contactos te permite organizar y gestionar todas las personas y organizaciones relacionadas con tus casos legales.
 			</Typography>
@@ -49,7 +49,7 @@ const IntroductionContent = () => {
 const CreationEditingContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para agregar un nuevo contacto a tu base de datos:</Typography>
 
 			<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
@@ -94,7 +94,7 @@ const CreationEditingContent = () => {
 const SearchOrganizationContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>El sistema de contactos ofrece potentes herramientas de búsqueda y organización:</Typography>
 
 			<Box sx={{ bgcolor: theme.palette.background.default, p: 2, borderRadius: "8px", mb: 2 }}>
@@ -135,7 +135,7 @@ const SearchOrganizationContent = () => {
 const LinkingContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Para aprovechar al máximo el sistema, vincula tus contactos con las carpetas de casos correspondientes:
 			</Typography>
@@ -186,7 +186,7 @@ const LinkingContent = () => {
 const ImportExportContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				El sistema permite importar y exportar contactos para facilitar la migración desde otros sistemas o compartir datos:
 			</Typography>

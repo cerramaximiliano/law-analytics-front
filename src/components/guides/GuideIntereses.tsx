@@ -40,7 +40,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 const IntroductionContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Esta guía te mostrará cómo utilizar la calculadora de intereses para generar, guardar y gestionar distintos tipos de cálculos con
 				diferentes tasas.
@@ -63,7 +63,7 @@ const IntroductionContent = () => {
 const FormContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Para comenzar con un cálculo de intereses, sigue estos pasos:</Typography>
 			<Paper variant="outlined" sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
 				<Stack spacing={2}>
@@ -89,7 +89,7 @@ const FormContent = () => {
 const RatesContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>La calculadora de intereses permite seleccionar entre diferentes tipos de tasas:</Typography>
 
 			<StyledPaper>
@@ -156,7 +156,7 @@ const RatesContent = () => {
 
 const MethodsContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				La calculadora de intereses utiliza dos métodos principales para calcular los intereses según el tipo de tasa seleccionada:
 			</Typography>
@@ -206,7 +206,7 @@ const MethodsContent = () => {
 const ResultsContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Después de realizar el cálculo, se mostrará una pantalla de resultados con la siguiente información:
 			</Typography>
@@ -270,7 +270,7 @@ const ResultsContent = () => {
 const ManagementContent = () => {
 	const theme = useTheme();
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>Una vez obtenidos los resultados, puedes realizar las siguientes acciones:</Typography>
 
 			<Box sx={{ bgcolor: alpha(theme.palette.primary.lighter, 0.1), p: 2, borderRadius: "8px" }}>

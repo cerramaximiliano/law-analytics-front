@@ -118,7 +118,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ open, onClose }) => {
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
 					<form noValidate onSubmit={handleSubmit}>
 						<DialogContent>
-							<Grid container spacing={3}>
+							<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 								<Grid item xs={12}>
 									<TextField
 										fullWidth

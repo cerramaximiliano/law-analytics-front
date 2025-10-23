@@ -252,7 +252,7 @@ const ServerStatus = () => {
 	};
 
 	return (
-		<Grid container spacing={3}>
+		<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Grid item xs={12}>
 				<MainCard
 					title="Estado del Servidor"
@@ -279,7 +279,7 @@ const ServerStatus = () => {
 						</Tooltip>
 					}
 				>
-					<Stack spacing={3}>
+					<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 						{services.map((service, index) => (
 							<Box key={index} sx={{ p: 2, border: 1, borderColor: "divider", borderRadius: 1 }}>
 								<Box display="flex" alignItems="center" mb={1}>

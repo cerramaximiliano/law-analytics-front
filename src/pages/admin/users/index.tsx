@@ -475,7 +475,7 @@ const UsersList = () => {
 								{!loading && !error && (!users || users.length === 0) && (
 									<TableRow key="empty-row">
 										<TableCell colSpan={headCells.length} align="center" sx={{ py: 8 }}>
-											<Stack spacing={3} alignItems="center">
+											<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }} alignItems="center">
 												<Box
 													sx={{
 														width: 100,

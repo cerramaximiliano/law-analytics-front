@@ -1412,7 +1412,7 @@ export const AnalyticsContent = () => {
 		{
 			title: "Introducción al Panel de Analíticas",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography>
 						El panel de analíticas te permite visualizar métricas clave sobre tu práctica legal, incluyendo datos sobre carpetas, tareas,
 						vencimientos y aspectos financieros.
@@ -1433,7 +1433,7 @@ export const AnalyticsContent = () => {
 		{
 			title: "Acceso y Navegación",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography>Para acceder al panel de analíticas:</Typography>
 					<Paper elevation={2} sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2) }}>
 						<Stack spacing={2}>
@@ -1458,7 +1458,7 @@ export const AnalyticsContent = () => {
 		{
 			title: "Métricas Principales",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography fontWeight="bold">Las métricas te ayudan a entender el rendimiento:</Typography>
 					<Stack spacing={2}>
 						<Box>
@@ -1489,7 +1489,7 @@ export const AnalyticsContent = () => {
 		{
 			title: "Proyección de Vencimientos",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography>Los vencimientos se organizan por urgencia:</Typography>
 					<Stack spacing={2}>
 						<Paper elevation={1} sx={{ p: 2, borderLeft: `4px solid ${theme.palette.error.main}` }}>
@@ -1520,7 +1520,7 @@ export const AnalyticsContent = () => {
 		{
 			title: "Histórico de Analíticas",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography>Accede a datos históricos para comparar tu rendimiento:</Typography>
 					<Paper elevation={2} sx={{ p: 2, bgcolor: alpha(theme.palette.info.lighter, 0.1) }}>
 						<Stack spacing={2}>
@@ -1548,7 +1548,7 @@ export const AnalyticsContent = () => {
 		{
 			title: "Exportación de Reportes",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography fontWeight="bold">Genera reportes profesionales en PDF:</Typography>
 					<Stack spacing={2}>
 						<Typography>1. Haz clic en "Exportar Reporte"</Typography>
@@ -1575,7 +1575,7 @@ export const AnalyticsContent = () => {
 		{
 			title: "Consejos y Mejores Prácticas",
 			content: (
-				<Stack spacing={3}>
+				<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Typography fontWeight="bold">Para maximizar el valor de las analíticas:</Typography>
 					<Stack spacing={2}>
 						<Box>

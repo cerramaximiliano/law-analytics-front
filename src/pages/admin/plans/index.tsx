@@ -348,7 +348,7 @@ const PlansManagement = () => {
 					</Collapse>
 				</Alert>
 
-				<Grid container spacing={3}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					{/* Summary Cards */}
 					<Grid item xs={12} sm={6} md={3}>
 						<Card>
@@ -479,7 +479,7 @@ const PlansManagement = () => {
 						<Typography variant="h5" sx={{ mb: 2 }}>
 							Detalles de Planes
 						</Typography>
-						<Grid container spacing={3}>
+						<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 							{plans.map((plan) => (
 								<Grid item xs={12} md={6} lg={4} key={plan.planId}>
 									<Card

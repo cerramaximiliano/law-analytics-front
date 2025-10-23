@@ -169,7 +169,7 @@ const AppUpdateWorker = () => {
 
 	if (loading) {
 		return (
-			<Grid container spacing={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				{[1, 2, 3, 4].map((item) => (
 					<Grid item xs={12} key={item}>
 						<Skeleton variant="rectangular" height={80} />
@@ -180,7 +180,7 @@ const AppUpdateWorker = () => {
 	}
 
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			{/* Header con acciones */}
 			<Box display="flex" justifyContent="space-between" alignItems="center">
 				<Typography variant="h5">Configuración del Worker de Actualización</Typography>

@@ -400,7 +400,7 @@ const MEVWorkers = () => {
 	if (loading) {
 		return (
 			<MainCard title="Workers MEV">
-				<Grid container spacing={3}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					{[1, 2, 3, 4].map((item) => (
 						<Grid item xs={12} key={item}>
 							<Skeleton variant="rectangular" height={80} />
@@ -418,7 +418,7 @@ const MEVWorkers = () => {
 
 	// Componente de Worker de Verificación
 	const VerificationWorkerContent = () => (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			{/* Header con acciones */}
 			<Box display="flex" justifyContent="space-between" alignItems="center">
 				<Typography variant="h5">Configuración del Worker de Verificación MEV</Typography>
@@ -1286,7 +1286,7 @@ const MEVWorkers = () => {
 
 	// Componente de Worker de Actualización
 	const UpdateWorkerContent = () => (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			{/* Header con acciones */}
 			<Box display="flex" justifyContent="space-between" alignItems="center">
 				<Typography variant="h5">Configuración del Worker de Actualización MEV</Typography>
@@ -1816,7 +1816,7 @@ const MEVWorkers = () => {
 
 	// Componente de Configuración del Sistema
 	const SystemConfigContent = () => (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			{/* Header con acciones */}
 			<Box display="flex" justifyContent="space-between" alignItems="center">
 				<Typography variant="h5">Configuración del Sistema MEV</Typography>
@@ -1974,7 +1974,7 @@ const MEVWorkers = () => {
 			</Card>
 
 			{loadingSystem ? (
-				<Grid container spacing={3}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					{[1, 2, 3].map((item) => (
 						<Grid item xs={12} key={item}>
 							<Skeleton variant="rectangular" height={60} />
@@ -2210,7 +2210,7 @@ const MEVWorkers = () => {
 			<Dialog open={passwordModalOpen} onClose={handleClosePasswordModal} maxWidth="sm" fullWidth>
 				<DialogTitle>Actualizar Fecha de Cambio de Contraseña</DialogTitle>
 				<DialogContent>
-					<Stack spacing={3} sx={{ mt: 2 }}>
+					<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 2 }}>
 						<Alert severity="info">
 							Al actualizar la fecha de cambio de contraseña, el sistema recalculará automáticamente la fecha de expiración basándose en los
 							días configurados para expiración.

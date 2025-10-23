@@ -171,7 +171,7 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 				<Divider sx={{ mb: 3 }} />
 
 				{/* Contact Information */}
-				<Grid container spacing={3}>
+				<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 					<Grid item xs={12} md={6}>
 						<Stack spacing={2.5}>
 							<InfoItem icon={<User size={18} />} label="Documento" value={contact.document} />

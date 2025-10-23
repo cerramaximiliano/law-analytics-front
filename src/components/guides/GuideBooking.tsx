@@ -72,7 +72,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 // Componentes de contenido para cada paso
 const IntroductionContent = () => {
 	return (
-		<Stack spacing={3}>
+		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
 				Esta guía te mostrará cómo utilizar el sistema de citas para configurar tu disponibilidad y permitir a tus clientes programar
 				consultas directamente.
@@ -785,7 +785,7 @@ const NotificationsRemindersContent = () => {
 				tu agenda de manera eficiente:
 			</Typography>
 
-			<Grid container spacing={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				<Grid item xs={12} md={6}>
 					<StyledPaper>
 						<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -1095,7 +1095,7 @@ const BestPracticesContent = () => {
 		<>
 			<Typography paragraph>Para aprovechar al máximo el sistema de citas, te recomendamos seguir estas mejores prácticas:</Typography>
 
-			<Grid container spacing={3}>
+			<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 				<Grid item xs={12} md={6}>
 					<StyledPaper>
 						<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
