@@ -273,7 +273,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 		dispatch({ type: SET_LOADING });
 
 		// Campos optimizados para listas y vistas
-		const fields = "_id,title,time,movement,description,dateExpiration,link,folderId,userId,source,completed";
+		const fields = "_id,title,time,movement,description,dateExpiration,link,source,completed,attachments";
 
 		// Construir parámetros de consulta
 		const queryParams: any = { fields };

@@ -13,6 +13,13 @@ export type Movement = {
 	link?: string;
 	source?: "pjn" | "mev"; // Campo para identificar movimientos sincronizados (PJN o MEV)
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
+	attachments?: Array<{
+		// Arreglo de adjuntos para movimientos de MEV
+		name: string;
+		url: string;
+		type?: string;
+		size?: number;
+	}>;
 };
 
 // Tipos para paginación
