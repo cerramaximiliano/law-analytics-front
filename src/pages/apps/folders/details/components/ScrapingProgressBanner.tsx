@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Alert, AlertTitle, Typography, LinearProgress, IconButton, Box, Fade } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import { Refresh, DocumentDownload } from "iconsax-react";
+import { Refresh, DocumentDownload, CloseCircle } from "iconsax-react";
 import { ScrapingProgress } from "types/movements";
 
 interface ScrapingProgressBannerProps {
@@ -145,7 +144,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 									},
 								}}
 							>
-								<CloseIcon sx={{ fontSize: 20 }} />
+								<CloseCircle size={20} variant="Linear" />
 							</IconButton>
 						)}
 					</Box>
