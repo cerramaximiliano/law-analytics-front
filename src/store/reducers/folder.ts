@@ -277,9 +277,15 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 			});
 			return { success: true };
 		}
-		return { success: false, message: response.data.message || "Error al eliminar carpeta" };
+		// Traducir mensaje del servidor si es necesario
+		const message = response.data.message === "Folder no encontrado" ? "Carpeta no encontrada" : response.data.message || "Error al eliminar carpeta";
+		return { success: false, message };
 	} catch (error) {
-		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al eliminar carpeta" : "Error desconocido";
+		let errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al eliminar carpeta" : "Error desconocido";
+		// Traducir mensaje del servidor si es necesario
+		if (errorMessage === "Folder no encontrado") {
+			errorMessage = "Carpeta no encontrada";
+		}
 		dispatch({
 			type: SET_FOLDER_ERROR,
 			payload: errorMessage,
