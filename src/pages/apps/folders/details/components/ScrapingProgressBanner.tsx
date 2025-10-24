@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Alert, AlertTitle, Typography, LinearProgress, IconButton, Box, Fade } from "@mui/material";
-import { Refresh, CloseCircle } from "iconsax-react";
+import { Refresh, Close, DocumentDownload } from "iconsax-react";
 import { ScrapingProgress } from "types/movements";
 
 interface ScrapingProgressBannerProps {
@@ -39,6 +39,19 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 					showProgress: false,
 					showRefresh: false,
 					showClose: true,
+					showIcon: false,
+				};
+
+			case "completing":
+				return {
+					severity: "info" as const,
+					title: "Descargando movimientos MEV",
+					message: `${totalProcessed} de ${totalExpected} (100%)`,
+					showProgress: true,
+					progressValue: 100,
+					showRefresh: true,
+					showClose: false,
+					showIcon: true,
 				};
 
 			case "in_progress":
@@ -50,6 +63,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 					progressValue: percentage,
 					showRefresh: true,
 					showClose: false,
+					showIcon: true,
 				};
 
 			case "partial":
@@ -61,6 +75,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 					progressValue: undefined, // Indeterminado
 					showRefresh: true,
 					showClose: false,
+					showIcon: true,
 				};
 
 			case "error":
@@ -72,6 +87,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 					progressValue: undefined, // Indeterminado
 					showRefresh: true,
 					showClose: false,
+					showIcon: true,
 				};
 
 			case "pending":
@@ -84,6 +100,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 					progressValue: undefined, // Indeterminado
 					showRefresh: false,
 					showClose: false,
+					showIcon: true,
 				};
 		}
 	};
@@ -127,13 +144,26 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 									},
 								}}
 							>
-								<CloseCircle size={20} />
+								<Close size={20} />
 							</IconButton>
 						)}
 					</Box>
 				}
 			>
-				<AlertTitle sx={{ mb: config.showProgress ? 1 : 0 }}>{config.title}</AlertTitle>
+				<AlertTitle sx={{ mb: config.showProgress ? 1 : 0 }}>
+					<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+						{config.showIcon && (
+							<DocumentDownload
+								size={20}
+								variant="Bold"
+								style={{
+									animation: "pulse 1.5s ease-in-out infinite",
+								}}
+							/>
+						)}
+						{config.title}
+					</Box>
+				</AlertTitle>
 				<Typography variant="body2" sx={{ mb: config.showProgress ? 1 : 0 }}>
 					{config.message}
 				</Typography>

@@ -9,6 +9,7 @@ interface StoredScrapingProgress {
 
 const STORAGE_KEY = "scrapingProgress";
 const STALE_TIME = 10 * 60 * 1000; // 10 minutos
+const COMPLETING_TRANSITION_TIME = 2000; // 2 segundos para mostrar 100%
 const COMPLETED_DISPLAY_TIME = 5000; // 5 segundos
 
 /**
@@ -19,6 +20,7 @@ export const useScrapingProgress = (serverProgress: ScrapingProgress | undefined
 	const [displayProgress, setDisplayProgress] = useState<ScrapingProgress | undefined>(serverProgress);
 	const [showCompleted, setShowCompleted] = useState(false);
 	const previousProgressRef = useRef<ScrapingProgress | undefined>();
+	const completingTimeoutRef = useRef<NodeJS.Timeout>();
 	const completedTimeoutRef = useRef<NodeJS.Timeout>();
 
 	// Cargar progreso guardado en el mount
@@ -72,7 +74,11 @@ export const useScrapingProgress = (serverProgress: ScrapingProgress | undefined
 			setDisplayProgress(serverProgress);
 			setShowCompleted(false);
 
-			// Limpiar timeout si existe
+			// Limpiar timeouts si existen
+			if (completingTimeoutRef.current) {
+				clearTimeout(completingTimeoutRef.current);
+				completingTimeoutRef.current = undefined;
+			}
 			if (completedTimeoutRef.current) {
 				clearTimeout(completedTimeoutRef.current);
 				completedTimeoutRef.current = undefined;
@@ -80,30 +86,43 @@ export const useScrapingProgress = (serverProgress: ScrapingProgress | undefined
 		}
 		// Caso 2: Transición - había progreso pero ahora no
 		else if (previousProgress && !previousProgress.isComplete && previousProgress.status !== "completed") {
-			// Mostrar estado "completed" artificial
-			const completedProgress: ScrapingProgress = {
-				status: "completed",
-				isComplete: true,
+			// Paso 1: Mostrar estado "completing" con 100%
+			const completingProgress: ScrapingProgress = {
+				status: "completing",
+				isComplete: false,
 				totalExpected: previousProgress.totalExpected,
 				totalProcessed: previousProgress.totalExpected, // Mostrar 100%
 			};
 
-			setDisplayProgress(completedProgress);
-			setShowCompleted(true);
+			setDisplayProgress(completingProgress);
+			setShowCompleted(false);
 
-			// Auto-ocultar después de 5 segundos
-			completedTimeoutRef.current = setTimeout(() => {
-				setDisplayProgress(undefined);
-				setShowCompleted(false);
-				previousProgressRef.current = undefined;
+			// Paso 2: Después de 2 segundos, cambiar a "completed"
+			completingTimeoutRef.current = setTimeout(() => {
+				const completedProgress: ScrapingProgress = {
+					status: "completed",
+					isComplete: true,
+					totalExpected: previousProgress.totalExpected,
+					totalProcessed: previousProgress.totalExpected,
+				};
 
-				// Limpiar localStorage
-				try {
-					localStorage.removeItem(STORAGE_KEY);
-				} catch (error) {
-					console.error("Error removing scraping progress from localStorage:", error);
-				}
-			}, COMPLETED_DISPLAY_TIME);
+				setDisplayProgress(completedProgress);
+				setShowCompleted(true);
+
+				// Paso 3: Auto-ocultar después de 5 segundos adicionales
+				completedTimeoutRef.current = setTimeout(() => {
+					setDisplayProgress(undefined);
+					setShowCompleted(false);
+					previousProgressRef.current = undefined;
+
+					// Limpiar localStorage
+					try {
+						localStorage.removeItem(STORAGE_KEY);
+					} catch (error) {
+						console.error("Error removing scraping progress from localStorage:", error);
+					}
+				}, COMPLETED_DISPLAY_TIME);
+			}, COMPLETING_TRANSITION_TIME);
 		}
 		// Caso 3: No hay progreso y no había antes → no mostrar nada
 		else if (!previousProgress) {
@@ -113,6 +132,9 @@ export const useScrapingProgress = (serverProgress: ScrapingProgress | undefined
 
 		// Cleanup
 		return () => {
+			if (completingTimeoutRef.current) {
+				clearTimeout(completingTimeoutRef.current);
+			}
 			if (completedTimeoutRef.current) {
 				clearTimeout(completedTimeoutRef.current);
 			}
