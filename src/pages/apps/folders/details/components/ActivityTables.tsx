@@ -64,6 +64,7 @@ import { deleteEvent } from "store/reducers/events";
 import ActivityFilters from "./filters/ActivityFilters";
 import { exportActivityData } from "./utils/exportUtils";
 import PDFViewer from "components/shared/PDFViewer";
+import ScrapingProgressBanner from "./ScrapingProgressBanner";
 
 // Types
 interface ActivityTablesProps {
@@ -130,6 +131,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const [pdfUrlFromDetails, setPdfUrlFromDetails] = useState<string>("");
 	const [pdfTitleFromDetails, setPdfTitleFromDetails] = useState<string>("");
 
+	// Estado para ScrapingProgressBanner
+	const [scrapingBannerClosed, setScrapingBannerClosed] = useState(false);
+
 	// Selectors
 	const movementsData = useSelector((state: any) => state.movements);
 	const notificationsData = useSelector((state: any) => state.notifications);
@@ -156,6 +160,43 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			dispatch(getEventsById(id));
 		}
 	}, [id, filters.onlyWithDocuments]);
+
+	// Polling para scrapingProgress cada 30 segundos
+	useEffect(() => {
+		const scrapingProgress = movementsData.scrapingProgress;
+
+		// Solo hacer polling si:
+		// 1. Hay scrapingProgress
+		// 2. No está completo
+		// 3. El estado no es "completed"
+		// 4. Hay un folderId
+		if (!scrapingProgress || scrapingProgress.isComplete || scrapingProgress.status === "completed" || !id) {
+			return;
+		}
+
+		// Configurar intervalo de 30 segundos
+		const pollInterval = setInterval(() => {
+			dispatch(
+				getMovementsByFolderId(id, {
+					page: 1,
+					limit: 10,
+					sort: "-time",
+					filter: filters.onlyWithDocuments ? { hasLink: true } : undefined,
+				}),
+			);
+		}, 30000); // 30 segundos
+
+		// Limpiar intervalo al desmontar o cuando cambian las dependencias
+		return () => clearInterval(pollInterval);
+	}, [id, movementsData.scrapingProgress?.isComplete, movementsData.scrapingProgress?.status, filters.onlyWithDocuments]);
+
+	// Resetear estado del banner cuando cambia scrapingProgress
+	useEffect(() => {
+		// Si scrapingProgress cambia (nuevo proceso), resetear el estado de cerrado
+		if (movementsData.scrapingProgress && !movementsData.scrapingProgress.isComplete) {
+			setScrapingBannerClosed(false);
+		}
+	}, [movementsData.scrapingProgress?.status]);
 
 	// Tab configuration
 	const tabs: TabConfig[] = [
@@ -298,6 +339,23 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const handleCloseDeleteModal = () => {
 		setOpenDeleteModal(false);
 		setMovementToDelete(null);
+	};
+
+	const handleRefreshMovements = () => {
+		if (id) {
+			dispatch(
+				getMovementsByFolderId(id, {
+					page: 1,
+					limit: 10,
+					sort: "-time",
+					filter: filters.onlyWithDocuments ? { hasLink: true } : undefined,
+				}),
+			);
+		}
+	};
+
+	const handleCloseBanner = () => {
+		setScrapingBannerClosed(true);
 	};
 
 	// Notification handlers
@@ -822,6 +880,18 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										<Skeleton variant="rectangular" height={400} />
 									</Stack>
 								) : (
+								<Box>
+									{/* Scraping Progress Banner - solo para movements */}
+									{activeTab === "movements" && movementsData.scrapingProgress && !scrapingBannerClosed && (
+										<Box sx={{ mb: 2 }}>
+											<ScrapingProgressBanner
+												scrapingProgress={movementsData.scrapingProgress}
+												onRefresh={handleRefreshMovements}
+												onClose={handleCloseBanner}
+											/>
+										</Box>
+									)}
+
 									<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
 										{activeTab === "movements" && (
 											<MovementsTable
@@ -872,11 +942,12 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											/>
 										)}
 									</Paper>
-								)}
-							</Box>
+								</Box>
+							)}
 						</Box>
+					</Box>
 
-						{/* Mobile Drawer */}
+					{/* Mobile Drawer */}
 						<Drawer
 							anchor="left"
 							open={mobileOpen}
@@ -1126,6 +1197,18 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										<Skeleton variant="rectangular" height={400} />
 									</Stack>
 								) : (
+								<Box>
+									{/* Scraping Progress Banner - solo para movements */}
+									{activeTab === "movements" && movementsData.scrapingProgress && !scrapingBannerClosed && (
+										<Box sx={{ mb: 2 }}>
+											<ScrapingProgressBanner
+												scrapingProgress={movementsData.scrapingProgress}
+												onRefresh={handleRefreshMovements}
+												onClose={handleCloseBanner}
+											/>
+										</Box>
+									)}
+
 									<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
 										{activeTab === "movements" && (
 											<MovementsTable
@@ -1176,12 +1259,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											/>
 										)}
 									</Paper>
-								)}
-							</Box>
+								</Box>
+							)}
 						</Box>
-					</>
-				)}
-			</Box>
+					</Box>
+				</>
+			)}
+		</Box>
 
 			{/* Modals */}
 			<ModalMovements
