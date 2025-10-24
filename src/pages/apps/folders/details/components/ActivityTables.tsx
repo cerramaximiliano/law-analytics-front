@@ -147,6 +147,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	// Hook personalizado para gestionar scrapingProgress con transición suave
 	const { scrapingProgress } = useScrapingProgress(movementsData.scrapingProgress, id);
 
+	// Detectar si es PJN o MEV basado en la presencia de pjnAccess
+	const scrapingSource: "mev" | "pjn" = movementsData.pjnAccess ? "pjn" : "mev";
+
 	// Load data on mount - con paginación inicial
 	useEffect(() => {
 		if (id) {
@@ -888,6 +891,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											<Box sx={{ mb: 2 }}>
 												<ScrapingProgressBanner
 													scrapingProgress={scrapingProgress}
+													source={scrapingSource}
 													onRefresh={handleRefreshMovements}
 													onClose={handleCloseBanner}
 												/>
@@ -1205,6 +1209,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											<Box sx={{ mb: 2 }}>
 												<ScrapingProgressBanner
 													scrapingProgress={scrapingProgress}
+													source={scrapingSource}
 													onRefresh={handleRefreshMovements}
 													onClose={handleCloseBanner}
 												/>

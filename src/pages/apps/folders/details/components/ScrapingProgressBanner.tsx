@@ -5,11 +5,12 @@ import { ScrapingProgress } from "types/movements";
 
 interface ScrapingProgressBannerProps {
 	scrapingProgress?: ScrapingProgress;
+	source?: "mev" | "pjn";
 	onRefresh: () => void;
 	onClose?: () => void;
 }
 
-const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapingProgress, onRefresh, onClose }) => {
+const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapingProgress, source = "mev", onRefresh, onClose }) => {
 	// Auto-close cuando está completado
 	useEffect(() => {
 		if (scrapingProgress?.isComplete && scrapingProgress.status === "completed" && onClose) {
@@ -28,6 +29,11 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 	// Calcular porcentaje
 	const percentage = totalExpected > 0 ? Math.round((totalProcessed / totalExpected) * 100) : 0;
 
+	// Obtener texto de la fuente
+	const getSourceText = () => {
+		return source === "pjn" ? "PJN" : "MEV";
+	};
+
 	// Determinar el tipo de alerta y mensaje según el estado
 	const getAlertConfig = () => {
 		switch (status) {
@@ -45,7 +51,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 			case "completing":
 				return {
 					severity: "info" as const,
-					title: "Descargando movimientos MEV",
+					title: `Descargando movimientos ${getSourceText()}`,
 					message: `${totalProcessed} de ${totalExpected} (100%)`,
 					showProgress: true,
 					progressValue: 100,
@@ -57,7 +63,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 			case "in_progress":
 				return {
 					severity: "info" as const,
-					title: "Descargando movimientos MEV",
+					title: `Descargando movimientos ${getSourceText()}`,
 					message: `${totalProcessed} de ${totalExpected} (${percentage}%)`,
 					showProgress: true,
 					progressValue: percentage,
@@ -95,7 +101,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 				return {
 					severity: "info" as const,
 					title: "Iniciando descarga",
-					message: "Iniciando descarga de movimientos MEV...",
+					message: `Iniciando descarga de movimientos ${getSourceText()}...`,
 					showProgress: true,
 					progressValue: undefined, // Indeterminado
 					showRefresh: false,
