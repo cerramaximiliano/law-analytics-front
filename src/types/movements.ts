@@ -41,6 +41,13 @@ export interface PjnAccess {
 	availableMovements?: number;
 }
 
+export interface ScrapingProgress {
+	status: string;
+	isComplete: boolean;
+	totalExpected: number;
+	totalProcessed: number;
+}
+
 export interface PaginatedMovementsResponse {
 	movements: Movement[];
 	pagination: PaginationInfo;
@@ -48,6 +55,7 @@ export interface PaginatedMovementsResponse {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	scrapingProgress?: ScrapingProgress;
 }
 
 export interface MovementState {
@@ -57,6 +65,7 @@ export interface MovementState {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	scrapingProgress?: ScrapingProgress;
 	isLoading: boolean;
 	error?: string;
 }

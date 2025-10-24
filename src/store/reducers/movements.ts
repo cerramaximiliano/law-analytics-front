@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Dispatch } from "redux";
-import { Movement, MovementState, PaginationInfo, PjnAccess } from "types/movements";
+import { Movement, MovementState, PaginationInfo, PjnAccess, ScrapingProgress } from "types/movements";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
 export const GET_MOVEMENTS = "movements/GET_MOVEMENTS";
@@ -18,6 +18,7 @@ const initialMovementState: MovementState = {
 	totalWithLinks: undefined,
 	documentsBeforeThisPage: undefined,
 	documentsInThisPage: undefined,
+	scrapingProgress: undefined,
 	isLoading: false,
 	error: undefined,
 };
@@ -45,6 +46,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				documentsBeforeThisPage: action.payload.documentsBeforeThisPage || undefined,
 				documentsInThisPage: action.payload.documentsInThisPage || undefined,
 				pjnAccess: action.payload.pjnAccess || undefined,
+				scrapingProgress: action.payload.scrapingProgress || undefined,
 				isLoading: false,
 			};
 		case UPDATE_MOVEMENT:
@@ -244,6 +246,7 @@ interface PaginatedSuccessResponse {
 		documentsBeforeThisPage?: number;
 		documentsInThisPage?: number;
 		pjnAccess?: PjnAccess;
+		scrapingProgress?: ScrapingProgress;
 	};
 }
 
@@ -311,6 +314,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 						documentsInThisPage: paginatedData.data.documentsInThisPage,
 						pjnAccess: paginatedData.data.pjnAccess,
+						scrapingProgress: paginatedData.data.scrapingProgress,
 					},
 				});
 
@@ -321,6 +325,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					totalWithLinks: paginatedData.data.totalWithLinks,
 					documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 					documentsInThisPage: paginatedData.data.documentsInThisPage,
+					scrapingProgress: paginatedData.data.scrapingProgress,
 				};
 			} else {
 				// Manejar respuesta no paginada (retrocompatibilidad)
