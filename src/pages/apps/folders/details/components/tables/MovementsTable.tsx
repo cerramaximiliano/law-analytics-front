@@ -17,8 +17,24 @@ import {
 	Skeleton,
 	useMediaQuery,
 	useTheme,
+	Popover,
+	Link,
+	Badge,
 } from "@mui/material";
-import { Edit, Trash, Eye, Link2, DocumentText, Judge, NotificationStatus, Status, Clock, TickCircle } from "iconsax-react";
+import {
+	Edit,
+	Trash,
+	Eye,
+	Link2,
+	DocumentText,
+	Judge,
+	NotificationStatus,
+	Status,
+	Clock,
+	TickCircle,
+	DocumentDownload,
+	Link1,
+} from "iconsax-react";
 import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import dayjs from "utils/dayjs-config";
 import { visuallyHidden } from "@mui/utils";
@@ -179,6 +195,10 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>("");
 	const [selectedMovementId, setSelectedMovementId] = useState<string>("");
 	const [isLoadingMoreForPdf, setIsLoadingMoreForPdf] = useState(false);
+
+	// Estados para el popover de attachments
+	const [attachmentsAnchor, setAttachmentsAnchor] = useState<HTMLElement | null>(null);
+	const [selectedAttachments, setSelectedAttachments] = useState<Movement["attachments"]>([]);
 
 	// Actualizar valores locales cuando cambien las props
 	useEffect(() => {
@@ -405,6 +425,21 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 		}
 	};
 
+	// Manejar la apertura del popover de attachments
+	const handleAttachmentsClick = (event: React.MouseEvent<HTMLElement>, attachments: Movement["attachments"]) => {
+		event.stopPropagation();
+		setAttachmentsAnchor(event.currentTarget);
+		setSelectedAttachments(attachments);
+	};
+
+	// Cerrar el popover
+	const handleCloseAttachments = () => {
+		setAttachmentsAnchor(null);
+		setSelectedAttachments([]);
+	};
+
+	const attachmentsPopoverOpen = Boolean(attachmentsAnchor);
+
 	return (
 		<Box>
 			<PjnAccessAlert pjnAccess={pjnAccess} />
@@ -500,34 +535,57 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 												>
 													{movement.title}
 												</Typography>
-												{movement.source === "pjn" && (
-													<Typography
-														variant="caption"
-														color="text.secondary"
-														sx={{
-															fontStyle: "italic",
-															fontSize: "0.7rem",
-															mt: 0.5,
-															display: "block",
-														}}
-													>
-														Sincronizado • PJN
-													</Typography>
-												)}
-												{movement.source === "mev" && (
-													<Typography
-														variant="caption"
-														color="text.secondary"
-														sx={{
-															fontStyle: "italic",
-															fontSize: "0.7rem",
-															mt: 0.5,
-															display: "block",
-														}}
-													>
-														Sincronizado • MEV
-													</Typography>
-												)}
+												<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+													{movement.source === "pjn" && (
+														<Typography
+															variant="caption"
+															color="text.secondary"
+															sx={{
+																fontStyle: "italic",
+																fontSize: "0.7rem",
+															}}
+														>
+															Sincronizado • PJN
+														</Typography>
+													)}
+													{movement.source === "mev" && (
+														<Typography
+															variant="caption"
+															color="text.secondary"
+															sx={{
+																fontStyle: "italic",
+																fontSize: "0.7rem",
+															}}
+														>
+															Sincronizado • MEV
+														</Typography>
+													)}
+													{movement.attachments && movement.attachments.length > 0 && (
+														<Tooltip title="Ver archivos adjuntos">
+															<Chip
+																icon={<DocumentDownload size={14} />}
+																label={movement.attachments.length}
+																size="small"
+																color="info"
+																variant="outlined"
+																onClick={(e) => handleAttachmentsClick(e, movement.attachments)}
+																sx={{
+																	height: 20,
+																	fontSize: "0.7rem",
+																	cursor: "pointer",
+																	"& .MuiChip-icon": {
+																		marginLeft: "4px",
+																		marginRight: "-2px",
+																	},
+																	"&:hover": {
+																		backgroundColor: theme.palette.info.lighter,
+																		borderColor: theme.palette.info.main,
+																	},
+																}}
+															/>
+														</Tooltip>
+													)}
+												</Stack>
 											</Box>
 										</TableCell>
 										<TableCell>
@@ -748,6 +806,88 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				documentsBeforeThisPage={documentsBeforeThisPage}
 				documentsInThisPage={documentsInThisPage}
 			/>
+
+			{/* Popover para mostrar archivos adjuntos */}
+			<Popover
+				open={attachmentsPopoverOpen}
+				anchorEl={attachmentsAnchor}
+				onClose={handleCloseAttachments}
+				anchorOrigin={{
+					vertical: "bottom",
+					horizontal: "left",
+				}}
+				transformOrigin={{
+					vertical: "top",
+					horizontal: "left",
+				}}
+				PaperProps={{
+					sx: {
+						maxWidth: 400,
+						maxHeight: 300,
+						overflow: "auto",
+					},
+				}}
+			>
+				<Box sx={{ p: 2 }}>
+					<Stack spacing={1}>
+						<Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+							Archivos adjuntos ({selectedAttachments?.length || 0})
+						</Typography>
+						{selectedAttachments && selectedAttachments.length > 0 ? (
+							selectedAttachments.map((attachment, index) => {
+								// Manejar tanto el caso de que sea un string como un objeto
+								const attachmentUrl = typeof attachment === "string" ? attachment : attachment.url;
+								const attachmentName = typeof attachment === "string" ? `Archivo ${index + 1}` : attachment.name || `Archivo ${index + 1}`;
+
+								return (
+									<Link
+										key={index}
+										href={attachmentUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										underline="none"
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: 1,
+											p: 1.5,
+											borderRadius: 1,
+											border: `1px solid ${theme.palette.divider}`,
+											transition: "all 0.2s ease",
+											"&:hover": {
+												backgroundColor: theme.palette.action.hover,
+												borderColor: theme.palette.primary.main,
+												transform: "translateX(4px)",
+											},
+										}}
+									>
+										<Link1 size={18} color={theme.palette.primary.main} />
+										<Typography
+											variant="body2"
+											color="text.primary"
+											sx={{
+												flex: 1,
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap",
+											}}
+										>
+											{attachmentName}
+										</Typography>
+										<Typography variant="caption" color="text.secondary">
+											#{index + 1}
+										</Typography>
+									</Link>
+								);
+							})
+						) : (
+							<Typography variant="body2" color="text.secondary">
+								No hay archivos adjuntos
+							</Typography>
+						)}
+					</Stack>
+				</Box>
+			</Popover>
 		</Box>
 	);
 };
