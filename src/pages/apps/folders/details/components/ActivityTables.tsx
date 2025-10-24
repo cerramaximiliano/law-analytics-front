@@ -125,6 +125,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const [documentNavigationOpen, setDocumentNavigationOpen] = useState(false);
 	const [currentDocumentMovement, setCurrentDocumentMovement] = useState<Movement | null>(null);
 
+	// Estado para PDFViewer desde modal de detalles
+	const [pdfViewerFromDetailsOpen, setPdfViewerFromDetailsOpen] = useState(false);
+	const [pdfUrlFromDetails, setPdfUrlFromDetails] = useState<string>("");
+	const [pdfTitleFromDetails, setPdfTitleFromDetails] = useState<string>("");
+
 	// Selectors
 	const movementsData = useSelector((state: any) => state.movements);
 	const notificationsData = useSelector((state: any) => state.notifications);
@@ -1221,6 +1226,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 							p: 0,
 							borderRadius: 2,
 							boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+							display: "flex",
+							flexDirection: "column",
+							maxHeight: { xs: "90vh", sm: "85vh" },
 						},
 					}}
 					sx={{
@@ -1229,48 +1237,54 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 						},
 					}}
 				>
-					<Box>
-						{/* Dialog Title */}
-						<Box
-							sx={{
-								bgcolor: theme.palette.primary.lighter,
-								p: 3,
-								borderBottom: `1px solid ${theme.palette.divider}`,
-							}}
-						>
-							<Stack direction="row" justifyContent="space-between" alignItems="center">
-								<Stack direction="row" alignItems="center" spacing={1}>
-									<TableDocument size={24} color={theme.palette.primary.main} />
-									<Typography
-										variant="h5"
-										sx={{
-											color: theme.palette.primary.main,
-											fontWeight: 600,
-										}}
-									>
-										Detalles del Movimiento
-									</Typography>
-								</Stack>
+					{/* Dialog Title - Fixed */}
+					<Box
+						sx={{
+							bgcolor: theme.palette.primary.lighter,
+							p: 3,
+							borderBottom: `1px solid ${theme.palette.divider}`,
+							flexShrink: 0,
+						}}
+					>
+						<Stack direction="row" justifyContent="space-between" alignItems="center">
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<TableDocument size={24} color={theme.palette.primary.main} />
 								<Typography
-									color="textSecondary"
-									variant="subtitle2"
+									variant="h5"
 									sx={{
-										maxWidth: "30%",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										whiteSpace: "nowrap",
+										color: theme.palette.primary.main,
+										fontWeight: 600,
 									}}
 								>
-									Carpeta: {folderName}
+									Detalles del Movimiento
 								</Typography>
 							</Stack>
-						</Box>
+							<Typography
+								color="textSecondary"
+								variant="subtitle2"
+								sx={{
+									maxWidth: "30%",
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+								}}
+							>
+								Carpeta: {folderName}
+							</Typography>
+						</Stack>
+					</Box>
 
-						<Divider />
+					<Divider />
 
-						{/* Dialog Content */}
-						<Box sx={{ p: 3 }}>
-							<Stack spacing={2.5}>
+					{/* Dialog Content - Scrollable */}
+					<Box
+						sx={{
+							p: 3,
+							overflowY: "auto",
+							flex: 1,
+						}}
+					>
+						<Stack spacing={2.5}>
 								{/* Título */}
 								<Box>
 									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
@@ -1448,7 +1462,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													cursor: "pointer",
 													wordBreak: "break-all",
 												}}
-												onClick={() => window.open(viewMovementDetails.link, "_blank")}
+												onClick={() => {
+													setPdfUrlFromDetails(viewMovementDetails.link || "");
+													setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
+													setPdfViewerFromDetailsOpen(true);
+												}}
 											>
 												Ver documento adjunto
 											</Typography>
@@ -1495,17 +1513,24 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										</Box>
 									</Box>
 								)}
-							</Stack>
-						</Box>
+						</Stack>
+					</Box>
 
-						<Divider />
+					<Divider />
 
-						{/* Dialog Actions */}
-						<Box sx={{ p: 2, display: "flex", justifyContent: "flex-end", bgcolor: theme.palette.grey[50] }}>
-							<Button onClick={() => setViewMovementDetails(null)} variant="contained" color="primary">
-								Cerrar
-							</Button>
-						</Box>
+					{/* Dialog Actions - Fixed */}
+					<Box
+						sx={{
+							p: 2,
+							display: "flex",
+							justifyContent: "flex-end",
+							bgcolor: theme.palette.grey[50],
+							flexShrink: 0,
+						}}
+					>
+						<Button onClick={() => setViewMovementDetails(null)} variant="contained" color="primary">
+							Cerrar
+						</Button>
 					</Box>
 				</Dialog>
 			)}
@@ -1725,6 +1750,18 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 						/>
 					) : null;
 				})()}
+
+			{/* PDFViewer desde modal de detalles */}
+			<PDFViewer
+				open={pdfViewerFromDetailsOpen}
+				onClose={() => {
+					setPdfViewerFromDetailsOpen(false);
+					setPdfUrlFromDetails("");
+					setPdfTitleFromDetails("");
+				}}
+				url={pdfUrlFromDetails}
+				title={pdfTitleFromDetails}
+			/>
 		</MainCard>
 	);
 };

@@ -198,15 +198,38 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 	};
 
 	return (
-		<ResponsiveDialog open={open} onClose={onClose} maxWidth="sm" >
-			<DialogTitle>
+		<ResponsiveDialog
+			open={open}
+			onClose={onClose}
+			maxWidth="sm"
+			PaperProps={{
+				sx: {
+					display: "flex",
+					flexDirection: "column",
+					maxHeight: { xs: "90vh", sm: "85vh" },
+				},
+			}}
+		>
+			<DialogTitle
+				sx={{
+					flexShrink: 0,
+				}}
+			>
 				<Stack direction="row" alignItems="center" spacing={1}>
 					<Setting2 size={24} />
 					<Typography variant="h6">Configuración Avanzada</Typography>
 				</Stack>
 			</DialogTitle>
 
-			<DialogContent dividers sx={{ height: { xs: "60vh", sm: "500px" }, display: "flex", flexDirection: "column" }}>
+			<DialogContent
+				dividers
+				sx={{
+					flex: 1,
+					overflowY: "auto",
+					display: "flex",
+					flexDirection: "column",
+				}}
+			>
 				<Stack spacing={2} sx={{ flex: 1 }}>
 					{/* Información del worker */}
 					<Alert severity="info" variant="outlined">
@@ -396,7 +419,11 @@ const AdvancedConfigModal = ({ open, onClose, config, onUpdate, workerType }: Ad
 				</Stack>
 			</DialogContent>
 
-			<DialogActions>
+			<DialogActions
+				sx={{
+					flexShrink: 0,
+				}}
+			>
 				<Button onClick={onClose} disabled={loading}>
 					Cancelar
 				</Button>

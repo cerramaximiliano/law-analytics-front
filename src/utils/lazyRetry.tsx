@@ -1,4 +1,6 @@
 import { lazy, ComponentType, LazyExoticComponent } from "react";
+import { Box, Button, Stack, Typography, Alert, AlertTitle } from "@mui/material";
+import { Refresh, Global } from "iconsax-react";
 
 // Sistema robusto de lazy loading con reintentos para móviles
 // Resuelve el problema de chunks que fallan después de actualizaciones
@@ -108,34 +110,34 @@ export function lazyRetry<T extends ComponentType<any>>(
 					};
 
 					return (
-						<div
-							style={{
-								padding: "20px",
-								textAlign: "center",
-								minHeight: "200px",
+						<Box
+							sx={{
+								py: { xs: 3, md: 5 },
+								px: { xs: 2, md: 3 },
+								minHeight: "300px",
 								display: "flex",
-								flexDirection: "column",
 								alignItems: "center",
 								justifyContent: "center",
 							}}
 						>
-							<h3 style={{ color: "#d32f2f" }}>Error al cargar la página</h3>
-							<p style={{ color: "#666", marginBottom: "20px" }}>No se pudo cargar el contenido solicitado</p>
-							<button
-								onClick={handleReload}
-								style={{
-									padding: "10px 20px",
-									background: "#1976d2",
-									color: "white",
-									border: "none",
-									borderRadius: "4px",
-									cursor: "pointer",
-									fontSize: "16px",
-								}}
-							>
-								Recargar página
-							</button>
-						</div>
+							<Stack spacing={{ xs: 2, sm: 3 }} alignItems="center" sx={{ maxWidth: { xs: 600, md: 800 }, width: "100%" }}>
+								<Box sx={{ opacity: 0.5 }}>
+									<Global size={48} color="#d32f2f" />
+								</Box>
+
+								<Alert severity="error" sx={{ width: "100%" }}>
+									<AlertTitle sx={{ fontSize: { xs: "1.1rem", md: "1.25rem" } }}>Error al cargar el contenido</AlertTitle>
+									<Typography variant="body2" sx={{ fontSize: { xs: "0.875rem", md: "1rem" } }}>
+										No pudimos cargar esta página. Puede deberse a un problema temporal de conexión o a que el contenido fue actualizado
+										recientemente. Por favor, intenta recargar la página.
+									</Typography>
+								</Alert>
+
+								<Button variant="contained" color="primary" startIcon={<Refresh />} onClick={handleReload} size="large">
+									Recargar página
+								</Button>
+							</Stack>
+						</Box>
 					);
 				}) as unknown as T;
 

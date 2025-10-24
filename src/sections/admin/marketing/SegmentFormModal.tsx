@@ -773,7 +773,11 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				},
 			}}
 		>
-			<DialogTitle>
+			<DialogTitle
+				sx={{
+					flexShrink: 0,
+				}}
+			>
 				<Grid container alignItems="center" justifyContent="space-between">
 					<Grid item>
 						<Typography variant="h5">{isEditMode ? "Editar Segmento" : "Crear Nuevo Segmento"}</Typography>
@@ -790,7 +794,7 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				dividers
 				sx={{
 					flex: 1,
-					overflow: "auto",
+					overflowY: "auto",
 					display: "flex",
 					flexDirection: "column",
 				}}
@@ -1241,7 +1245,13 @@ const SegmentFormModal: React.FC<SegmentFormModalProps> = ({ open, onClose, onSa
 				)}
 			</DialogContent>
 
-			<DialogActions sx={{ px: 3, py: 2 }}>
+			<DialogActions
+				sx={{
+					px: 3,
+					py: 2,
+					flexShrink: 0,
+				}}
+			>
 				<Button onClick={onClose} color="inherit" disabled={saving}>
 					Cancelar
 				</Button>

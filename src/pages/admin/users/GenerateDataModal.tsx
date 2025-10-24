@@ -217,8 +217,8 @@ const GenerateDataModal: React.FC<GenerateDataModalProps> = ({ user, open, onClo
 			<DialogTitle sx={{ flexShrink: 0 }}>Generar Datos para {user.name}</DialogTitle>
 			<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values, setFieldValue }) => (
-					<form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-						<DialogContent sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+					<form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+						<DialogContent sx={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
 							<Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3, flexShrink: 0 }}>
 								<Tabs value={tabValue} onChange={handleTabChange}>
 									<Tab label="Datos Generales" />

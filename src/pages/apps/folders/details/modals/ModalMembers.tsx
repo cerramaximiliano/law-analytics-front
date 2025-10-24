@@ -178,6 +178,9 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 					p: 0,
 					borderRadius: 2,
 					boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+					display: "flex",
+					flexDirection: "column",
+					maxHeight: { xs: "90vh", sm: "85vh" },
 				},
 			}}
 			sx={{
@@ -190,6 +193,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 					bgcolor: theme.palette.primary.lighter,
 					p: 3,
 					borderBottom: `1px solid ${theme.palette.divider}`,
+					flexShrink: 0,
 				}}
 			>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -210,11 +214,10 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 				sx={{
 					p: 0,
 					width: "100%",
-					overflow: "hidden",
+					overflowY: "auto",
 					display: "flex",
 					flexDirection: "column",
-					height: "calc(100vh - 300px)",
-					maxHeight: "600px",
+					flex: 1,
 				}}
 			>
 				<Box sx={{ p: 2.5, pb: 0 }}>
@@ -380,6 +383,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 					p: 2.5,
 					bgcolor: theme.palette.background.default,
 					borderTop: `1px solid ${theme.palette.divider}`,
+					flexShrink: 0,
 				}}
 			>
 				<Button color="error" onClick={closeAddressModal}>

@@ -324,7 +324,11 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 					},
 				}}
 			>
-				<DialogTitle>
+				<DialogTitle
+					sx={{
+						flexShrink: 0,
+					}}
+				>
 					<Grid container alignItems="center" justifyContent="space-between">
 						<Grid item>
 							<Typography variant="h5">Detalles del Contacto</Typography>
@@ -336,7 +340,7 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 					dividers
 					sx={{
 						flex: 1,
-						overflow: "hidden",
+						overflowY: "auto",
 						display: "flex",
 						flexDirection: "column",
 						p: 0,
@@ -1322,7 +1326,13 @@ const ContactDetailModal: React.FC<ContactDetailModalProps> = ({ open, onClose, 
 					)}
 				</DialogContent>
 
-				<DialogActions sx={{ px: 3, py: 2 }}>
+				<DialogActions
+					sx={{
+						px: 3,
+						py: 2,
+						flexShrink: 0,
+					}}
+				>
 					<Button
 						onClick={() => {
 							// Limpiar todos los estados al cerrar
