@@ -65,6 +65,7 @@ import ActivityFilters from "./filters/ActivityFilters";
 import { exportActivityData } from "./utils/exportUtils";
 import PDFViewer from "components/shared/PDFViewer";
 import ScrapingProgressBanner from "./ScrapingProgressBanner";
+import { useScrapingProgress } from "hooks/useScrapingProgress";
 
 // Types
 interface ActivityTablesProps {
@@ -143,6 +144,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 
+	// Hook personalizado para gestionar scrapingProgress con transición suave
+	const { scrapingProgress } = useScrapingProgress(movementsData.scrapingProgress, id);
+
 	// Load data on mount - con paginación inicial
 	useEffect(() => {
 		if (id) {
@@ -163,8 +167,6 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	// Polling para scrapingProgress cada 30 segundos
 	useEffect(() => {
-		const scrapingProgress = movementsData.scrapingProgress;
-
 		// Solo hacer polling si:
 		// 1. Hay scrapingProgress
 		// 2. No está completo
@@ -188,15 +190,15 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 		// Limpiar intervalo al desmontar o cuando cambian las dependencias
 		return () => clearInterval(pollInterval);
-	}, [id, movementsData.scrapingProgress?.isComplete, movementsData.scrapingProgress?.status, filters.onlyWithDocuments]);
+	}, [id, scrapingProgress?.isComplete, scrapingProgress?.status, filters.onlyWithDocuments]);
 
 	// Resetear estado del banner cuando cambia scrapingProgress
 	useEffect(() => {
 		// Si scrapingProgress cambia (nuevo proceso), resetear el estado de cerrado
-		if (movementsData.scrapingProgress && !movementsData.scrapingProgress.isComplete) {
+		if (scrapingProgress && !scrapingProgress.isComplete) {
 			setScrapingBannerClosed(false);
 		}
-	}, [movementsData.scrapingProgress?.status]);
+	}, [scrapingProgress?.status]);
 
 	// Tab configuration
 	const tabs: TabConfig[] = [
@@ -880,74 +882,74 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										<Skeleton variant="rectangular" height={400} />
 									</Stack>
 								) : (
-								<Box>
-									{/* Scraping Progress Banner - solo para movements */}
-									{activeTab === "movements" && movementsData.scrapingProgress && !scrapingBannerClosed && (
-										<Box sx={{ mb: 2 }}>
-											<ScrapingProgressBanner
-												scrapingProgress={movementsData.scrapingProgress}
-												onRefresh={handleRefreshMovements}
-												onClose={handleCloseBanner}
-											/>
-										</Box>
-									)}
+									<Box>
+										{/* Scraping Progress Banner - solo para movements */}
+										{activeTab === "movements" && scrapingProgress && !scrapingBannerClosed && (
+											<Box sx={{ mb: 2 }}>
+												<ScrapingProgressBanner
+													scrapingProgress={scrapingProgress}
+													onRefresh={handleRefreshMovements}
+													onClose={handleCloseBanner}
+												/>
+											</Box>
+										)}
 
-									<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
-										{activeTab === "movements" && (
-											<MovementsTable
-												movements={movementsData.movements}
-												searchQuery={searchQuery}
-												onEdit={handleEditMovement}
-												onDelete={handleDeleteMovement}
-												onView={handleViewMovement}
-												filters={filters}
-												pagination={movementsData.pagination}
-												isLoading={movementsData.isLoading}
-												totalWithLinks={movementsData.totalWithLinks}
-												documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
-												documentsInThisPage={movementsData.documentsInThisPage}
-												pjnAccess={movementsData.pjnAccess}
-											/>
-										)}
-										{activeTab === "notifications" && (
-											<NotificationsTable
-												notifications={notificationsData.notifications}
-												searchQuery={searchQuery}
-												onEdit={handleEditNotification}
-												onDelete={handleDeleteNotification}
-												onView={handleViewNotification}
-											/>
-										)}
-										{activeTab === "calendar" && (
-											<CalendarTable
-												events={eventsData.events}
-												searchQuery={searchQuery}
-												onEdit={handleEditEvent}
-												onDelete={handleDeleteEvent}
-												onView={handleViewEvent}
-											/>
-										)}
-										{activeTab === "combined" && (
-											<CombinedTablePaginated
-												activities={activitiesData.activities || []}
-												searchQuery={searchQuery}
-												onEdit={handleCombinedEdit}
-												onDelete={handleCombinedDelete}
-												onView={handleCombinedView}
-												filters={filters}
-												pagination={activitiesData.pagination}
-												isLoading={activitiesData.isLoading}
-												stats={activitiesData.stats}
-												pjnAccess={activitiesData.pjnAccess}
-											/>
-										)}
-									</Paper>
-								</Box>
-							)}
+										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
+											{activeTab === "movements" && (
+												<MovementsTable
+													movements={movementsData.movements}
+													searchQuery={searchQuery}
+													onEdit={handleEditMovement}
+													onDelete={handleDeleteMovement}
+													onView={handleViewMovement}
+													filters={filters}
+													pagination={movementsData.pagination}
+													isLoading={movementsData.isLoading}
+													totalWithLinks={movementsData.totalWithLinks}
+													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+													documentsInThisPage={movementsData.documentsInThisPage}
+													pjnAccess={movementsData.pjnAccess}
+												/>
+											)}
+											{activeTab === "notifications" && (
+												<NotificationsTable
+													notifications={notificationsData.notifications}
+													searchQuery={searchQuery}
+													onEdit={handleEditNotification}
+													onDelete={handleDeleteNotification}
+													onView={handleViewNotification}
+												/>
+											)}
+											{activeTab === "calendar" && (
+												<CalendarTable
+													events={eventsData.events}
+													searchQuery={searchQuery}
+													onEdit={handleEditEvent}
+													onDelete={handleDeleteEvent}
+													onView={handleViewEvent}
+												/>
+											)}
+											{activeTab === "combined" && (
+												<CombinedTablePaginated
+													activities={activitiesData.activities || []}
+													searchQuery={searchQuery}
+													onEdit={handleCombinedEdit}
+													onDelete={handleCombinedDelete}
+													onView={handleCombinedView}
+													filters={filters}
+													pagination={activitiesData.pagination}
+													isLoading={activitiesData.isLoading}
+													stats={activitiesData.stats}
+													pjnAccess={activitiesData.pjnAccess}
+												/>
+											)}
+										</Paper>
+									</Box>
+								)}
+							</Box>
 						</Box>
-					</Box>
 
-					{/* Mobile Drawer */}
+						{/* Mobile Drawer */}
 						<Drawer
 							anchor="left"
 							open={mobileOpen}
@@ -1197,75 +1199,75 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										<Skeleton variant="rectangular" height={400} />
 									</Stack>
 								) : (
-								<Box>
-									{/* Scraping Progress Banner - solo para movements */}
-									{activeTab === "movements" && movementsData.scrapingProgress && !scrapingBannerClosed && (
-										<Box sx={{ mb: 2 }}>
-											<ScrapingProgressBanner
-												scrapingProgress={movementsData.scrapingProgress}
-												onRefresh={handleRefreshMovements}
-												onClose={handleCloseBanner}
-											/>
-										</Box>
-									)}
+									<Box>
+										{/* Scraping Progress Banner - solo para movements */}
+										{activeTab === "movements" && scrapingProgress && !scrapingBannerClosed && (
+											<Box sx={{ mb: 2 }}>
+												<ScrapingProgressBanner
+													scrapingProgress={scrapingProgress}
+													onRefresh={handleRefreshMovements}
+													onClose={handleCloseBanner}
+												/>
+											</Box>
+										)}
 
-									<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
-										{activeTab === "movements" && (
-											<MovementsTable
-												movements={movementsData.movements}
-												searchQuery={searchQuery}
-												onEdit={handleEditMovement}
-												onDelete={handleDeleteMovement}
-												onView={handleViewMovement}
-												filters={filters}
-												pagination={movementsData.pagination}
-												isLoading={movementsData.isLoading}
-												totalWithLinks={movementsData.totalWithLinks}
-												documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
-												documentsInThisPage={movementsData.documentsInThisPage}
-												pjnAccess={movementsData.pjnAccess}
-											/>
-										)}
-										{activeTab === "notifications" && (
-											<NotificationsTable
-												notifications={notificationsData.notifications}
-												searchQuery={searchQuery}
-												onEdit={handleEditNotification}
-												onDelete={handleDeleteNotification}
-												onView={handleViewNotification}
-											/>
-										)}
-										{activeTab === "calendar" && (
-											<CalendarTable
-												events={eventsData.events}
-												searchQuery={searchQuery}
-												onEdit={handleEditEvent}
-												onDelete={handleDeleteEvent}
-												onView={handleViewEvent}
-											/>
-										)}
-										{activeTab === "combined" && (
-											<CombinedTablePaginated
-												activities={activitiesData.activities || []}
-												searchQuery={searchQuery}
-												onEdit={handleCombinedEdit}
-												onDelete={handleCombinedDelete}
-												onView={handleCombinedView}
-												filters={filters}
-												pagination={activitiesData.pagination}
-												isLoading={activitiesData.isLoading}
-												stats={activitiesData.stats}
-												pjnAccess={activitiesData.pjnAccess}
-											/>
-										)}
-									</Paper>
-								</Box>
-							)}
+										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
+											{activeTab === "movements" && (
+												<MovementsTable
+													movements={movementsData.movements}
+													searchQuery={searchQuery}
+													onEdit={handleEditMovement}
+													onDelete={handleDeleteMovement}
+													onView={handleViewMovement}
+													filters={filters}
+													pagination={movementsData.pagination}
+													isLoading={movementsData.isLoading}
+													totalWithLinks={movementsData.totalWithLinks}
+													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+													documentsInThisPage={movementsData.documentsInThisPage}
+													pjnAccess={movementsData.pjnAccess}
+												/>
+											)}
+											{activeTab === "notifications" && (
+												<NotificationsTable
+													notifications={notificationsData.notifications}
+													searchQuery={searchQuery}
+													onEdit={handleEditNotification}
+													onDelete={handleDeleteNotification}
+													onView={handleViewNotification}
+												/>
+											)}
+											{activeTab === "calendar" && (
+												<CalendarTable
+													events={eventsData.events}
+													searchQuery={searchQuery}
+													onEdit={handleEditEvent}
+													onDelete={handleDeleteEvent}
+													onView={handleViewEvent}
+												/>
+											)}
+											{activeTab === "combined" && (
+												<CombinedTablePaginated
+													activities={activitiesData.activities || []}
+													searchQuery={searchQuery}
+													onEdit={handleCombinedEdit}
+													onDelete={handleCombinedDelete}
+													onView={handleCombinedView}
+													filters={filters}
+													pagination={activitiesData.pagination}
+													isLoading={activitiesData.isLoading}
+													stats={activitiesData.stats}
+													pjnAccess={activitiesData.pjnAccess}
+												/>
+											)}
+										</Paper>
+									</Box>
+								)}
+							</Box>
 						</Box>
-					</Box>
-				</>
-			)}
-		</Box>
+					</>
+				)}
+			</Box>
 
 			{/* Modals */}
 			<ModalMovements
@@ -1369,61 +1371,83 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 						}}
 					>
 						<Stack spacing={2.5}>
-								{/* Título */}
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Título
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-										}}
-									>
-										<Typography variant="body1">{viewMovementDetails.title}</Typography>
-									</Box>
+							{/* Título */}
+							<Box>
+								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+									Título
+								</Typography>
+								<Box
+									sx={{
+										p: 1.5,
+										bgcolor: theme.palette.grey[50],
+										borderRadius: 1,
+										border: `1px solid ${theme.palette.divider}`,
+									}}
+								>
+									<Typography variant="body1">{viewMovementDetails.title}</Typography>
 								</Box>
+							</Box>
 
-								{/* Tipo de Movimiento */}
-								<Box>
-									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Tipo de Movimiento
-									</Typography>
-									<Box
-										sx={{
-											p: 1.5,
-											bgcolor: theme.palette.grey[50],
-											borderRadius: 1,
-											border: `1px solid ${theme.palette.divider}`,
-										}}
-									>
-										<Chip
-											label={viewMovementDetails.movement}
-											size="small"
-											variant="outlined"
-											color={
-												viewMovementDetails.movement === "Escrito-Actor"
-													? "success"
-													: viewMovementDetails.movement === "Escrito-Demandado"
-													? "error"
-													: viewMovementDetails.movement === "Despacho"
-													? "secondary"
-													: viewMovementDetails.movement === "Cédula" || viewMovementDetails.movement === "Oficio"
-													? "primary"
-													: viewMovementDetails.movement === "Evento"
-													? "warning"
-													: "default"
-											}
-										/>
-									</Box>
+							{/* Tipo de Movimiento */}
+							<Box>
+								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+									Tipo de Movimiento
+								</Typography>
+								<Box
+									sx={{
+										p: 1.5,
+										bgcolor: theme.palette.grey[50],
+										borderRadius: 1,
+										border: `1px solid ${theme.palette.divider}`,
+									}}
+								>
+									<Chip
+										label={viewMovementDetails.movement}
+										size="small"
+										variant="outlined"
+										color={
+											viewMovementDetails.movement === "Escrito-Actor"
+												? "success"
+												: viewMovementDetails.movement === "Escrito-Demandado"
+												? "error"
+												: viewMovementDetails.movement === "Despacho"
+												? "secondary"
+												: viewMovementDetails.movement === "Cédula" || viewMovementDetails.movement === "Oficio"
+												? "primary"
+												: viewMovementDetails.movement === "Evento"
+												? "warning"
+												: "default"
+										}
+									/>
 								</Box>
+							</Box>
 
-								{/* Fecha de Dictado */}
+							{/* Fecha de Dictado */}
+							<Box>
+								<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+									Fecha de Dictado
+								</Typography>
+								<Box
+									sx={{
+										p: 1.5,
+										bgcolor: theme.palette.grey[50],
+										borderRadius: 1,
+										border: `1px solid ${theme.palette.divider}`,
+										display: "flex",
+										alignItems: "center",
+										gap: 1,
+									}}
+								>
+									<Calendar size={16} color={theme.palette.text.secondary} />
+									<Typography variant="body1">{formatDate(viewMovementDetails.time)}</Typography>
+								</Box>
+							</Box>
+
+							{/* Fecha de Vencimiento */}
+							{viewMovementDetails.dateExpiration && (
 								<Box>
 									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-										Fecha de Dictado
+										Fecha de Vencimiento
 									</Typography>
 									<Box
 										sx={{
@@ -1437,166 +1461,144 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										}}
 									>
 										<Calendar size={16} color={theme.palette.text.secondary} />
-										<Typography variant="body1">{formatDate(viewMovementDetails.time)}</Typography>
+										<Typography variant="body1">{formatDate(viewMovementDetails.dateExpiration)}</Typography>
 									</Box>
 								</Box>
+							)}
 
-								{/* Fecha de Vencimiento */}
-								{viewMovementDetails.dateExpiration && (
-									<Box>
-										<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-											Fecha de Vencimiento
-										</Typography>
-										<Box
+							{/* Estado de Completitud */}
+							{viewMovementDetails.completed !== undefined && viewMovementDetails.completed !== null && (
+								<Box>
+									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+										Estado
+									</Typography>
+									<Box
+										sx={{
+											p: 1.5,
+											bgcolor: theme.palette.grey[50],
+											borderRadius: 1,
+											border: `1px solid ${theme.palette.divider}`,
+											display: "flex",
+											alignItems: "center",
+											gap: 1,
+										}}
+									>
+										<TickCircle
+											size={20}
+											variant={viewMovementDetails.completed ? "Bold" : "Linear"}
+											color={viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.secondary}
+										/>
+										<Typography
+											variant="body1"
 											sx={{
-												p: 1.5,
-												bgcolor: theme.palette.grey[50],
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.divider}`,
-												display: "flex",
-												alignItems: "center",
-												gap: 1,
+												color: viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.primary,
+												fontWeight: viewMovementDetails.completed ? 500 : 400,
 											}}
 										>
-											<Calendar size={16} color={theme.palette.text.secondary} />
-											<Typography variant="body1">{formatDate(viewMovementDetails.dateExpiration)}</Typography>
-										</Box>
+											{viewMovementDetails.completed ? "Completado" : "Pendiente"}
+										</Typography>
 									</Box>
-								)}
+								</Box>
+							)}
 
-								{/* Estado de Completitud */}
-								{viewMovementDetails.completed !== undefined && viewMovementDetails.completed !== null && (
-									<Box>
-										<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-											Estado
+							{/* Descripción */}
+							{viewMovementDetails.description && (
+								<Box>
+									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+										Descripción
+									</Typography>
+									<Box
+										sx={{
+											p: 1.5,
+											bgcolor: theme.palette.grey[50],
+											borderRadius: 1,
+											border: `1px solid ${theme.palette.divider}`,
+										}}
+									>
+										<Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+											{viewMovementDetails.description}
 										</Typography>
-										<Box
-											sx={{
-												p: 1.5,
-												bgcolor: theme.palette.grey[50],
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.divider}`,
-												display: "flex",
-												alignItems: "center",
-												gap: 1,
-											}}
-										>
-											<TickCircle
-												size={20}
-												variant={viewMovementDetails.completed ? "Bold" : "Linear"}
-												color={viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.secondary}
-											/>
-											<Typography
-												variant="body1"
-												sx={{
-													color: viewMovementDetails.completed ? theme.palette.success.main : theme.palette.text.primary,
-													fontWeight: viewMovementDetails.completed ? 500 : 400,
-												}}
-											>
-												{viewMovementDetails.completed ? "Completado" : "Pendiente"}
-											</Typography>
-										</Box>
 									</Box>
-								)}
+								</Box>
+							)}
 
-								{/* Descripción */}
-								{viewMovementDetails.description && (
-									<Box>
-										<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-											Descripción
-										</Typography>
-										<Box
+							{/* Link */}
+							{viewMovementDetails.link && (
+								<Box>
+									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+										Documento
+									</Typography>
+									<Box
+										sx={{
+											p: 1.5,
+											bgcolor: theme.palette.grey[50],
+											borderRadius: 1,
+											border: `1px solid ${theme.palette.divider}`,
+											display: "flex",
+											alignItems: "center",
+											gap: 1,
+										}}
+									>
+										<Link21 size={16} color={theme.palette.primary.main} />
+										<Typography
+											variant="body2"
 											sx={{
-												p: 1.5,
-												bgcolor: theme.palette.grey[50],
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.divider}`,
+												color: theme.palette.primary.main,
+												textDecoration: "underline",
+												cursor: "pointer",
+												wordBreak: "break-all",
+											}}
+											onClick={() => {
+												setPdfUrlFromDetails(viewMovementDetails.link || "");
+												setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
+												setPdfViewerFromDetailsOpen(true);
 											}}
 										>
-											<Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
-												{viewMovementDetails.description}
-											</Typography>
-										</Box>
+											Ver documento adjunto
+										</Typography>
 									</Box>
-								)}
+								</Box>
+							)}
 
-								{/* Link */}
-								{viewMovementDetails.link && (
-									<Box>
-										<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-											Documento
+							{/* Origen */}
+							{viewMovementDetails.source === "pjn" && (
+								<Box>
+									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+										Origen
+									</Typography>
+									<Box
+										sx={{
+											p: 1.5,
+											bgcolor: theme.palette.info.lighter,
+											borderRadius: 1,
+											border: `1px solid ${theme.palette.info.light}`,
+										}}
+									>
+										<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
+											Sincronizado desde Poder Judicial de la Nación (PJN)
 										</Typography>
-										<Box
-											sx={{
-												p: 1.5,
-												bgcolor: theme.palette.grey[50],
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.divider}`,
-												display: "flex",
-												alignItems: "center",
-												gap: 1,
-											}}
-										>
-											<Link21 size={16} color={theme.palette.primary.main} />
-											<Typography
-												variant="body2"
-												sx={{
-													color: theme.palette.primary.main,
-													textDecoration: "underline",
-													cursor: "pointer",
-													wordBreak: "break-all",
-												}}
-												onClick={() => {
-													setPdfUrlFromDetails(viewMovementDetails.link || "");
-													setPdfTitleFromDetails(viewMovementDetails.title || "Documento");
-													setPdfViewerFromDetailsOpen(true);
-												}}
-											>
-												Ver documento adjunto
-											</Typography>
-										</Box>
 									</Box>
-								)}
-
-								{/* Origen */}
-								{viewMovementDetails.source === "pjn" && (
-									<Box>
-										<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-											Origen
+								</Box>
+							)}
+							{viewMovementDetails.source === "mev" && (
+								<Box>
+									<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
+										Origen
+									</Typography>
+									<Box
+										sx={{
+											p: 1.5,
+											bgcolor: theme.palette.info.lighter,
+											borderRadius: 1,
+											border: `1px solid ${theme.palette.info.light}`,
+										}}
+									>
+										<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
+											Sincronizado desde Poder Judicial de la provincia de Buenos Aires (MEV)
 										</Typography>
-										<Box
-											sx={{
-												p: 1.5,
-												bgcolor: theme.palette.info.lighter,
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.info.light}`,
-											}}
-										>
-											<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
-												Sincronizado desde Poder Judicial de la Nación (PJN)
-											</Typography>
-										</Box>
 									</Box>
-								)}
-								{viewMovementDetails.source === "mev" && (
-									<Box>
-										<Typography variant="subtitle2" color="textSecondary" sx={{ mb: 0.5, fontSize: "0.875rem" }}>
-											Origen
-										</Typography>
-										<Box
-											sx={{
-												p: 1.5,
-												bgcolor: theme.palette.info.lighter,
-												borderRadius: 1,
-												border: `1px solid ${theme.palette.info.light}`,
-											}}
-										>
-											<Typography variant="body2" sx={{ fontStyle: "italic", color: theme.palette.info.dark }}>
-												Sincronizado desde Poder Judicial de la provincia de Buenos Aires (MEV)
-											</Typography>
-										</Box>
-									</Box>
-								)}
+								</Box>
+							)}
 						</Stack>
 					</Box>
 

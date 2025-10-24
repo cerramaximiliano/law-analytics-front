@@ -1,5 +1,5 @@
-import React, { useEffect, useCallback } from "react";
-import { Alert, AlertTitle, Typography, LinearProgress, IconButton, Box, useTheme, Fade } from "@mui/material";
+import React, { useEffect } from "react";
+import { Alert, AlertTitle, Typography, LinearProgress, IconButton, Box, Fade } from "@mui/material";
 import { Refresh, CloseCircle } from "iconsax-react";
 import { ScrapingProgress } from "types/movements";
 
@@ -10,8 +10,6 @@ interface ScrapingProgressBannerProps {
 }
 
 const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapingProgress, onRefresh, onClose }) => {
-	const theme = useTheme();
-
 	// Auto-close cuando está completado
 	useEffect(() => {
 		if (scrapingProgress?.isComplete && scrapingProgress.status === "completed" && onClose) {
@@ -25,7 +23,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 
 	if (!scrapingProgress) return null;
 
-	const { status, isComplete, totalExpected, totalProcessed } = scrapingProgress;
+	const { status, totalExpected, totalProcessed } = scrapingProgress;
 
 	// Calcular porcentaje
 	const percentage = totalExpected > 0 ? Math.round((totalProcessed / totalExpected) * 100) : 0;
