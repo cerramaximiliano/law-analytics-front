@@ -21,6 +21,7 @@ import alerts from "./alerts";
 import contacts from "./contacts";
 import events from "./events";
 import tasksReducer from "./tasks";
+import notesReducer from "./notes";
 import userStats from "./userStats";
 import users from "./users";
 import search from "./search";
@@ -59,6 +60,7 @@ const reducers = combineReducers({
 	contacts,
 	events,
 	tasksReducer,
+	notesReducer,
 	userStats,
 	users,
 	search,

@@ -58,6 +58,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	const { selectedCalculators } = useSelector((state: RootState) => state.calculator);
 	const { selectedContacts, contacts } = useSelector((state: RootState) => state.contacts);
 	const { selectedTasks } = useSelector((state: RootState) => state.tasksReducer);
+	const { selectedNotes } = useSelector((state: RootState) => state.notesReducer);
 	const userId = useSelector((state: RootState) => state.auth.user?._id);
 
 	// Fetch data when component mounts
@@ -116,7 +117,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 			icon: <DocumentText size={20} />,
 			label: "Notas",
 			shortLabel: "Notas",
-			description: "0 notas",
+			description: `${selectedNotes?.length || 0} notas`,
 			color: theme.palette.info.main,
 		},
 	];
