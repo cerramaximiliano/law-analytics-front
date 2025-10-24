@@ -22,9 +22,6 @@ import {
 // third-party
 import type { SkinTones, EmojiClickData } from "emoji-picker-react";
 
-// Lazy load emoji picker - solo se carga cuando el usuario hace clic en el botón de emoji
-const EmojiPicker = lazy(() => import("emoji-picker-react").then((module) => ({ default: module.default })));
-
 // project-imports
 import ChatDrawer from "sections/apps/chat/ChatDrawer";
 import ChatHistory from "sections/apps/chat/ChatHistory";
@@ -64,6 +61,9 @@ import {
 import { ThemeMode } from "types/config";
 import { History as HistoryProps } from "types/chat";
 import { UserProfile } from "types/user-profile";
+
+// Lazy load emoji picker - solo se carga cuando el usuario hace clic en el botón de emoji
+const EmojiPicker = lazy(() => import("emoji-picker-react").then((module) => ({ default: module.default })));
 
 const drawerWidth = 320;
 
