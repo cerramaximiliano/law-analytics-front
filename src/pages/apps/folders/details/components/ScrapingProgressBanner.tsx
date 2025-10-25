@@ -26,6 +26,9 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 
 	const { status, totalExpected, totalProcessed } = scrapingProgress;
 
+	// Detectar si el total es desconocido (caso PJN)
+	const isTotalUnknown = totalExpected === 0 && totalProcessed > 0;
+
 	// Calcular porcentaje
 	const percentage = totalExpected > 0 ? Math.round((totalProcessed / totalExpected) * 100) : 0;
 
@@ -52,9 +55,9 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 				return {
 					severity: "info" as const,
 					title: `Descargando movimientos ${getSourceText()}`,
-					message: `${totalProcessed} de ${totalExpected} (100%)`,
+					message: isTotalUnknown ? `${totalProcessed} movimientos obtenidos` : `${totalProcessed} de ${totalExpected} (100%)`,
 					showProgress: true,
-					progressValue: 100,
+					progressValue: isTotalUnknown ? undefined : 100,
 					showRefresh: true,
 					showClose: false,
 					showIcon: true,
@@ -64,9 +67,9 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 				return {
 					severity: "info" as const,
 					title: `Descargando movimientos ${getSourceText()}`,
-					message: `${totalProcessed} de ${totalExpected} (${percentage}%)`,
+					message: isTotalUnknown ? `${totalProcessed} movimientos obtenidos` : `${totalProcessed} de ${totalExpected} (${percentage}%)`,
 					showProgress: true,
-					progressValue: percentage,
+					progressValue: isTotalUnknown ? undefined : percentage,
 					showRefresh: true,
 					showClose: false,
 					showIcon: true,
@@ -76,7 +79,7 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 				return {
 					severity: "info" as const,
 					title: "Esperando respuesta del servidor",
-					message: `${totalProcessed} de ${totalExpected} obtenidos`,
+					message: isTotalUnknown ? `${totalProcessed} movimientos obtenidos` : `${totalProcessed} de ${totalExpected} obtenidos`,
 					showProgress: true,
 					progressValue: undefined, // Indeterminado
 					showRefresh: true,

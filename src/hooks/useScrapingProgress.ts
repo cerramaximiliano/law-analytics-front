@@ -91,7 +91,8 @@ export const useScrapingProgress = (serverProgress: ScrapingProgress | undefined
 				status: "completing",
 				isComplete: false,
 				totalExpected: previousProgress.totalExpected,
-				totalProcessed: previousProgress.totalExpected, // Mostrar 100%
+				// Si totalExpected es 0, mantener totalProcessed actual; si no, usar totalExpected para mostrar 100%
+				totalProcessed: previousProgress.totalExpected === 0 ? previousProgress.totalProcessed : previousProgress.totalExpected,
 			};
 
 			setDisplayProgress(completingProgress);
@@ -103,7 +104,8 @@ export const useScrapingProgress = (serverProgress: ScrapingProgress | undefined
 					status: "completed",
 					isComplete: true,
 					totalExpected: previousProgress.totalExpected,
-					totalProcessed: previousProgress.totalExpected,
+					// Si totalExpected es 0, mantener totalProcessed actual; si no, usar totalExpected
+					totalProcessed: previousProgress.totalExpected === 0 ? previousProgress.totalProcessed : previousProgress.totalExpected,
 				};
 
 				setDisplayProgress(completedProgress);
