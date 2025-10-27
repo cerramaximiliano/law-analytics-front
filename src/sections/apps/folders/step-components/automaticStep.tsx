@@ -79,11 +79,12 @@ const jurisdicciones = [
     {
       value: "9",
       nombre: "CCC - Camara Nacional de Apelaciones en lo Criminal y Correccional",
-    },
-    {
-      value: "10",
-      nombre: "COM - Camara Nacional de Apelaciones en lo Comercial",
-    },
+    }, */
+	{
+		value: "COM",
+		nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial",
+	},
+	/*
     {
       value: "11",
       nombre: "CPF - Camara Federal de Casación Penal",

@@ -59,6 +59,10 @@ const jurisdicciones = [
 		value: "7",
 		nombre: "CNT - Cámara Nacional de Apelaciones del Trabajo",
 	},
+	{
+		value: "COM",
+		nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial",
+	},
 ];
 
 const customInputStyles = {
@@ -674,7 +678,9 @@ const LinkToJudicialPower = ({ openLink, onCancelLink, folderId, folderName, onS
 									<Button
 										variant="contained"
 										onClick={handleSubmit}
-										disabled={loading || !jurisdiction || !expedientNumber || !expedientYear || !!yearError || !!numberError || !!jurisdictionError}
+										disabled={
+											loading || !jurisdiction || !expedientNumber || !expedientYear || !!yearError || !!numberError || !!jurisdictionError
+										}
 										sx={{ minWidth: 100 }}
 									>
 										{loading ? "Vinculando..." : "Vincular"}
