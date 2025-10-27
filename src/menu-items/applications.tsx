@@ -47,10 +47,16 @@ const applications: NavItemType = {
 		{
 			id: "folders",
 			title: <FormattedMessage id="carpetas" />,
-			type: "item",
+			type: "collapse",
 			icon: icons.folders,
-			url: "/apps/folders/list",
-			//children: [{ id: "details", title: <FormattedMessage id="details" />, type: "item", url: "/apps/folders/details" }],
+			children: [
+				{
+					id: "my-folders",
+					title: <FormattedMessage id="Mis Carpetas" />,
+					type: "item",
+					url: "/apps/folders/list",
+				},
+			],
 		},
 		{
 			id: "calculator",
