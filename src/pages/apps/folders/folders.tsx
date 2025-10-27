@@ -21,6 +21,10 @@ import {
 	Alert,
 	Typography,
 	Collapse,
+	Menu,
+	MenuItem,
+	ListItemIcon,
+	ListItemText,
 } from "@mui/material";
 
 import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
@@ -57,6 +61,7 @@ import {
 	TickCircle,
 	Refresh,
 	CloseCircle,
+	More,
 } from "iconsax-react";
 
 // types
@@ -81,6 +86,10 @@ interface ReactTableProps extends Props {
 	pendingCount?: number;
 	invalidCount?: number;
 	onScrollToPending?: () => void;
+	anchorEl: null | HTMLElement;
+	menuRowId: string | null;
+	handleMenuOpen: (event: MouseEvent<HTMLElement>, rowId: string) => void;
+	handleMenuClose: () => void;
 }
 
 function ReactTable({
@@ -100,6 +109,10 @@ function ReactTable({
 	pendingCount = 0,
 	invalidCount = 0,
 	onScrollToPending,
+	anchorEl,
+	menuRowId,
+	handleMenuOpen,
+	handleMenuClose,
 }: ReactTableProps) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
@@ -508,6 +521,8 @@ const FoldersLayout = () => {
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 	const [guideOpen, setGuideOpen] = useState(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+	const [menuRowId, setMenuRowId] = useState<string | null>(null);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -774,6 +789,18 @@ const FoldersLayout = () => {
 	// Función para manejar el toggle de filas expandidas
 	const handleToggleExpanded = useCallback((rowId: string) => {
 		setExpandedRowId((prev) => (prev === rowId ? null : rowId));
+	}, []);
+
+	// Handlers del menú overflow
+	const handleMenuOpen = useCallback((event: MouseEvent<HTMLElement>, rowId: string) => {
+		event.stopPropagation();
+		setAnchorEl(event.currentTarget);
+		setMenuRowId(rowId);
+	}, []);
+
+	const handleMenuClose = useCallback(() => {
+		setAnchorEl(null);
+		setMenuRowId(null);
 	}, []);
 
 	// Función para hacer scroll a la tabla de pendientes
@@ -1066,58 +1093,79 @@ const FoldersLayout = () => {
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
-					const collapseIcon =
-						expandedRowId === row.id ? (
-							<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} />
-						) : (
-							<Eye variant="Bulk" />
-						);
+					const isMenuOpen = menuRowId === row.id;
 
 					return (
-						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
-							<Tooltip title="Ver">
-								<IconButton
-									color="secondary"
-									onClick={(e) =>
-										handleRowAction(e, () => {
-											handleToggleExpanded(row.id);
-											row.toggleRowExpanded();
-										})
-									}
+						<>
+							<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
+								<Tooltip title="Abrir">
+									<IconButton color="success" onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}>
+										<Maximize variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title="Editar">
+									<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
+										<Edit variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title="Eliminar">
+									<IconButton
+										color="error"
+										onClick={(e) =>
+											handleRowAction(e, () => {
+												handleClose();
+												setFolderDeleteId(row.values.folderName);
+												setFolderId(row.values._id);
+											})
+										}
+									>
+										<Trash variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title="Más acciones">
+									<IconButton color="secondary" onClick={(e) => handleMenuOpen(e, row.id)}>
+										<More variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+
+							<Menu
+								anchorEl={anchorEl}
+								open={isMenuOpen}
+								onClose={handleMenuClose}
+								anchorOrigin={{
+									vertical: "bottom",
+									horizontal: "right",
+								}}
+								transformOrigin={{
+									vertical: "top",
+									horizontal: "right",
+								}}
+							>
+								<MenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										handleMenuClose();
+										handleToggleExpanded(row.id);
+										row.toggleRowExpanded();
+									}}
 								>
-									{collapseIcon}
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Editar">
-								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
-									<Edit variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Eliminar">
-								<IconButton
-									color="error"
-									onClick={(e) =>
-										handleRowAction(e, () => {
-											handleClose();
-											setFolderDeleteId(row.values.folderName);
-											setFolderId(row.values._id);
-										})
-									}
-								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Abrir">
-								<IconButton color="success" onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}>
-									<Maximize variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-						</Stack>
+									<ListItemIcon>
+										{expandedRowId === row.id ? (
+											<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} size={18} />
+										) : (
+											<Eye variant="Bulk" size={18} />
+										)}
+									</ListItemIcon>
+									<ListItemText>{expandedRowId === row.id ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
+								</MenuItem>
+							</Menu>
+						</>
 					);
 				},
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction, expandedRowId, handleToggleExpanded],
+		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction, expandedRowId, handleToggleExpanded, anchorEl, menuRowId, handleMenuOpen, handleMenuClose],
 	);
 
 	// Row sub component memoizado
@@ -1166,6 +1214,10 @@ const FoldersLayout = () => {
 							pendingCount={pendingCount}
 							invalidCount={invalidCount}
 							onScrollToPending={handleScrollToPending}
+							anchorEl={anchorEl}
+							menuRowId={menuRowId}
+							handleMenuOpen={handleMenuOpen}
+							handleMenuClose={handleMenuClose}
 						/>
 					</ScrollX>
 				</Box>
@@ -1215,6 +1267,10 @@ const FoldersLayout = () => {
 								hideControls={true}
 								simpleSkeleton={true}
 								initialPageSize={5}
+								anchorEl={anchorEl}
+								menuRowId={menuRowId}
+								handleMenuOpen={handleMenuOpen}
+								handleMenuClose={handleMenuClose}
 							/>
 						</ScrollX>
 					</Box>
