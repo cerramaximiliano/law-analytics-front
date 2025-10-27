@@ -81,7 +81,7 @@ const jurisdicciones = [
       nombre: "CCC - Camara Nacional de Apelaciones en lo Criminal y Correccional",
     }, */
 	{
-		value: "COM",
+		value: "10",
 		nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial",
 	},
 	/*

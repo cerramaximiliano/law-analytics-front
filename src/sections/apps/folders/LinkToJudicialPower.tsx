@@ -60,7 +60,7 @@ const jurisdicciones = [
 		nombre: "CNT - Cámara Nacional de Apelaciones del Trabajo",
 	},
 	{
-		value: "COM",
+		value: "10",
 		nombre: "COM - Cámara Nacional de Apelaciones en lo Comercial",
 	},
 ];
