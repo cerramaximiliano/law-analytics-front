@@ -75,6 +75,12 @@ import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 interface ReactTableProps extends Props {
 	expandedRowId?: string | null;
 	navigate: ReturnType<typeof useNavigate>;
+	hideControls?: boolean;
+	simpleSkeleton?: boolean;
+	initialPageSize?: number;
+	pendingCount?: number;
+	invalidCount?: number;
+	onScrollToPending?: () => void;
 }
 
 function ReactTable({
@@ -88,6 +94,12 @@ function ReactTable({
 	handleOpenGuide,
 	expandedRowId,
 	navigate,
+	hideControls = false,
+	simpleSkeleton = false,
+	initialPageSize = 10,
+	pendingCount = 0,
+	invalidCount = 0,
+	onScrollToPending,
 }: ReactTableProps) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
@@ -128,7 +140,7 @@ function ReactTable({
 			filterTypes,
 			initialState: {
 				pageIndex: 0,
-				pageSize: 10,
+				pageSize: initialPageSize,
 				hiddenColumns: defaultHiddenColumns,
 				sortBy: [sortBy],
 			},
@@ -151,6 +163,41 @@ function ReactTable({
 	}, [setHiddenColumns, defaultHiddenColumns]);
 
 	if (!isColumnsReady || isLoading) {
+		// Skeleton simplificado para tabla secundaria
+		if (simpleSkeleton) {
+			return (
+				<Table>
+					<TableHead>
+						<TableRow>
+							{Array(6)
+								.fill(0)
+								.map((_, index) => (
+									<TableCell key={index}>
+										<Skeleton width={100} height={24} />
+									</TableCell>
+								))}
+						</TableRow>
+					</TableHead>
+					<TableBody>
+						{Array(5)
+							.fill(0)
+							.map((_, rowIndex) => (
+								<TableRow key={rowIndex}>
+									{Array(6)
+										.fill(0)
+										.map((_, cellIndex) => (
+											<TableCell key={cellIndex}>
+												<Skeleton width={100} height={24} />
+											</TableCell>
+										))}
+								</TableRow>
+							))}
+					</TableBody>
+				</Table>
+			);
+		}
+
+		// Skeleton completo para tabla principal
 		return (
 			<>
 				<TableRowSelection selected={0} />
@@ -208,105 +255,139 @@ function ReactTable({
 		<>
 			<TableRowSelection selected={Object.keys(selectedRowIds).length} />
 			{/* Controles FUERA del ScrollX para que siempre estén visibles */}
-			<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
-				{/* Primera fila: buscador a la izquierda, botones principales a la derecha */}
-				<Stack
-					direction={matchDownSM ? "column" : "row"}
-					spacing={{ xs: 1.5, sm: 2 }}
-					justifyContent="space-between"
-					alignItems={matchDownSM ? "stretch" : "center"}
-				>
-					{/* Buscador (izquierda) */}
-					<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
-						<GlobalFilter
-							preGlobalFilteredRows={preGlobalFilteredRows as any}
-							globalFilter={globalFilter}
-							setGlobalFilter={setGlobalFilter}
-						/>
-					</Box>
+			{!hideControls && (
+				<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
+					{/* Primera fila: buscador a la izquierda, botones principales a la derecha */}
+					<Stack
+						direction={matchDownSM ? "column" : "row"}
+						spacing={{ xs: 1.5, sm: 2 }}
+						justifyContent="space-between"
+						alignItems={matchDownSM ? "stretch" : "center"}
+					>
+						{/* Buscador (izquierda) */}
+						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
+							<GlobalFilter
+								preGlobalFilteredRows={preGlobalFilteredRows as any}
+								globalFilter={globalFilter}
+								setGlobalFilter={setGlobalFilter}
+							/>
+						</Box>
 
-					{/* Botones principales (derecha) */}
-					<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						<Button
-							variant="contained"
-							size="small"
-							startIcon={<FolderAdd />}
-							onClick={handleAdd}
-							fullWidth={matchDownSM}
-						>
-							Agregar Carpeta
-						</Button>
-						<Button
-							variant="outlined"
-							color="secondary"
-							size="small"
-							startIcon={<Box1 />}
-							onClick={handleOpenArchivedModal}
-							fullWidth={matchDownSM}
-						>
-							Ver Archivados
-						</Button>
-						{handleArchiveSelected && (
-							<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
-								<span style={{ width: matchDownSM ? "100%" : "auto" }}>
-									<Button
-										variant="outlined"
-										color="primary"
-										size="small"
-										startIcon={<Archive />}
-										onClick={() => handleArchiveSelected(selectedFlatRows)}
-										disabled={Object.keys(selectedRowIds).length === 0}
-										fullWidth={matchDownSM}
+						{/* Botones principales (derecha) */}
+						<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
+							<Button variant="contained" size="small" startIcon={<FolderAdd />} onClick={handleAdd} fullWidth={matchDownSM}>
+								Agregar Carpeta
+							</Button>
+							<Button
+								variant="outlined"
+								color="secondary"
+								size="small"
+								startIcon={<Box1 />}
+								onClick={handleOpenArchivedModal}
+								fullWidth={matchDownSM}
+							>
+								Ver Archivados
+							</Button>
+							{handleArchiveSelected && (
+								<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
+									<span style={{ width: matchDownSM ? "100%" : "auto" }}>
+										<Button
+											variant="outlined"
+											color="primary"
+											size="small"
+											startIcon={<Archive />}
+											onClick={() => handleArchiveSelected(selectedFlatRows)}
+											disabled={Object.keys(selectedRowIds).length === 0}
+											fullWidth={matchDownSM}
+										>
+											Archivar{" "}
+											{Object.keys(selectedRowIds).length > 0
+												? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
+												: "causas"}
+										</Button>
+									</span>
+								</Tooltip>
+							)}
+						</Stack>
+					</Stack>
+
+					{/* Segunda fila: selector de ordenamiento a la izquierda, botones secundarios a la derecha */}
+					<Stack
+						direction={matchDownSM ? "column" : "row"}
+						spacing={{ xs: 1.5, sm: 2 }}
+						justifyContent="space-between"
+						alignItems={matchDownSM ? "stretch" : "center"}
+					>
+						{/* Selector de ordenamiento (izquierda) */}
+						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
+							<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
+						</Box>
+
+						{/* Botones secundarios (derecha) */}
+						<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
+							<Tooltip title="Exportar a CSV">
+								<IconButton color="primary" size="medium">
+									<CSVLink
+										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data}
+										filename={"causas.csv"}
+										style={{
+											color: "inherit",
+											display: "flex",
+											alignItems: "center",
+											textDecoration: "none",
+										}}
 									>
-										Archivar{" "}
-										{Object.keys(selectedRowIds).length > 0
-											? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
-											: "causas"}
-									</Button>
-								</span>
+										<DocumentDownload variant="Bulk" size={22} />
+									</CSVLink>
+								</IconButton>
 							</Tooltip>
-						)}
+							<Tooltip title="Ver Guía">
+								<IconButton color="success" onClick={handleOpenGuide}>
+									<InfoCircle variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+						</Stack>
 					</Stack>
-				</Stack>
 
-				{/* Segunda fila: selector de ordenamiento a la izquierda, botones secundarios a la derecha */}
-				<Stack
-					direction={matchDownSM ? "column" : "row"}
-					spacing={{ xs: 1.5, sm: 2 }}
-					justifyContent="space-between"
-					alignItems={matchDownSM ? "stretch" : "center"}
-				>
-					{/* Selector de ordenamiento (izquierda) */}
-					<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
-						<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
-					</Box>
-
-					{/* Botones secundarios (derecha) */}
-					<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
-						<Tooltip title="Exportar a CSV">
-							<IconButton color="primary" size="medium">
-								<CSVLink
-									data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data}
-									filename={"causas.csv"}
-									style={{
-										color: "inherit",
-										display: "flex",
-										alignItems: "center",
-										textDecoration: "none",
-									}}
-								>
-									<DocumentDownload variant="Bulk" size={22} />
-								</CSVLink>
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Ver Guía">
-							<IconButton color="success" onClick={handleOpenGuide}>
-								<InfoCircle variant="Bulk" />
-							</IconButton>
-						</Tooltip>
-					</Stack>
+					{/* Banner de alertas - movido después de los controles */}
+					{(pendingCount > 0 || invalidCount > 0) && onScrollToPending && (
+						<Alert
+							severity="warning"
+							icon={<InfoCircle variant="Bold" />}
+							onClick={onScrollToPending}
+							sx={{
+								cursor: "pointer",
+								"&:hover": {
+									backgroundColor: "warning.lighter",
+								},
+							}}
+						>
+							<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+								<Typography variant="body2" fontWeight={500}>
+									Tienes causas no sincronizadas:
+								</Typography>
+								{pendingCount > 0 && (
+									<Chip
+										label={`${pendingCount} Pendiente${pendingCount > 1 ? "s" : ""}`}
+										color="warning"
+										size="small"
+										sx={{
+											color: "text.primary",
+											fontWeight: 500,
+										}}
+									/>
+								)}
+								{invalidCount > 0 && (
+									<Chip label={`${invalidCount} Inválida${invalidCount > 1 ? "s" : ""}`} color="error" size="small" />
+								)}
+								<Typography variant="body2" color="text.secondary">
+									(Click para ver)
+								</Typography>
+							</Stack>
+						</Alert>
+					)}
 				</Stack>
-			</Stack>
+			)}
 
 			{/* Tabla con ScrollX */}
 			<ScrollX>
@@ -358,41 +439,41 @@ function ReactTable({
 					</TableBody>
 				</Table>
 			</ScrollX>
-				{page.length > 0 && (
-					<Box sx={{ p: 2, py: 3 }}>
-						<TablePagination gotoPage={gotoPage} rows={rows as any} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
-					</Box>
-				)}
+			{page.length > 0 && (
+				<Box sx={{ p: 2, py: 3 }}>
+					<TablePagination gotoPage={gotoPage} rows={rows as any} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
+				</Box>
+			)}
 
-				{page.length === 0 && (
-					<Box
-						sx={{
-							width: "100%",
-							py: 6,
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							justifyContent: "center",
+			{page.length === 0 && (
+				<Box
+					sx={{
+						width: "100%",
+						py: 6,
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+					}}
+				>
+					{/* Ícono de Iconsax */}
+					<FolderOpen
+						variant="Bulk"
+						size={64}
+						style={{
+							marginBottom: "16px",
+							color: theme.palette.primary.main,
+							opacity: 0.7,
 						}}
-					>
-						{/* Ícono de Iconsax */}
-						<FolderOpen
-							variant="Bulk"
-							size={64}
-							style={{
-								marginBottom: "16px",
-								color: theme.palette.primary.main,
-								opacity: 0.7,
-							}}
-						/>
-						<Typography variant="h5" gutterBottom align="center">
-							No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'.
-						</Typography>
-						<Typography variant="body2" color="textSecondary" align="center">
-							Las causas que guardes aparecerán aquí
-						</Typography>
-					</Box>
-				)}
+					/>
+					<Typography variant="h5" gutterBottom align="center">
+						No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'.
+					</Typography>
+					<Typography variant="body2" color="textSecondary" align="center">
+						Las causas que guardes aparecerán aquí
+					</Typography>
+				</Box>
+			)}
 		</>
 	);
 }
@@ -423,11 +504,53 @@ const FoldersLayout = () => {
 	// Referencias
 	const mountedRef = useRef(false);
 	const loadingRef = useRef(false);
+	const pendingTableRef = useRef<HTMLDivElement>(null);
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
 	const { folders, archivedFolders, isLoader } = useSelector((state) => state.folder);
 	const subscription = useSelector((state) => state.auth.subscription);
+
+	// Separar folders en categorías
+	const { pendingOrInvalidFolders, verifiedFolders, pendingCount, invalidCount } = useMemo(() => {
+		// Filtrar folders que necesitan verificación o son inválidos
+		// SOLO para carpetas de source "auto"
+		const pending = folders.filter(
+			(folder: any) =>
+				folder.source === "auto" &&
+				(
+					// Pendientes de verificación
+					folder.causaVerified === false ||
+					// Inválidos (verificados pero no válidos)
+					(folder.causaVerified === true && folder.causaIsValid === false)
+				),
+		);
+
+		// Contar pendientes e inválidas por separado
+		const pendingVerification = folders.filter(
+			(folder: any) => folder.source === "auto" && folder.causaVerified === false,
+		).length;
+
+		const invalid = folders.filter(
+			(folder: any) => folder.source === "auto" && folder.causaVerified === true && folder.causaIsValid === false,
+		).length;
+
+		// Folders verificados y válidos (incluye todos los que NO están en pending)
+		const verified = folders.filter(
+			(folder: any) =>
+				// Carpetas que NO son de source "auto" (siempre van a la tabla principal)
+				folder.source !== "auto" ||
+				// O carpetas de source "auto" que están verificadas y válidas
+				(folder.source === "auto" && folder.causaVerified === true && folder.causaIsValid === true),
+		);
+
+		return {
+			pendingOrInvalidFolders: pending,
+			verifiedFolders: verified,
+			pendingCount: pendingVerification,
+			invalidCount: invalid,
+		};
+	}, [folders]);
 
 	// Efecto para la carga inicial
 	useEffect(() => {
@@ -643,6 +766,13 @@ const FoldersLayout = () => {
 	// Función para manejar el toggle de filas expandidas
 	const handleToggleExpanded = useCallback((rowId: string) => {
 		setExpandedRowId((prev) => (prev === rowId ? null : rowId));
+	}, []);
+
+	// Función para hacer scroll a la tabla de pendientes
+	const handleScrollToPending = useCallback(() => {
+		if (pendingTableRef.current) {
+			pendingTableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+		}
 	}, []);
 
 	// Columnas memoizadas
@@ -991,20 +1121,77 @@ const FoldersLayout = () => {
 			<SEO path="/apps/folders" />
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
-				<ScrollX>
-					<ReactTable
-						columns={columns as any}
-						data={folders}
-						handleAdd={handleAddFolder}
-						handleArchiveSelected={handleArchiveSelected}
-						handleOpenGuide={handleOpenGuide}
-						handleOpenArchivedModal={handleOpenArchivedModal}
-						renderRowSubComponent={renderRowSubComponent}
-						isLoading={isLoader}
-						expandedRowId={expandedRowId}
-						navigate={navigate}
-					/>
-				</ScrollX>
+
+				{/* Tabla principal de causas verificadas */}
+				<Box>
+					<ScrollX>
+						<ReactTable
+							columns={columns as any}
+							data={verifiedFolders}
+							handleAdd={handleAddFolder}
+							handleArchiveSelected={handleArchiveSelected}
+							handleOpenGuide={handleOpenGuide}
+							handleOpenArchivedModal={handleOpenArchivedModal}
+							renderRowSubComponent={renderRowSubComponent}
+							isLoading={isLoader}
+							expandedRowId={expandedRowId}
+							navigate={navigate}
+							pendingCount={pendingCount}
+							invalidCount={invalidCount}
+							onScrollToPending={handleScrollToPending}
+						/>
+					</ScrollX>
+				</Box>
+
+				{/* Tabla secundaria: causas pendientes o inválidas */}
+				{pendingOrInvalidFolders.length > 0 && (
+					<Box
+						ref={pendingTableRef}
+						sx={{
+							mt: 4,
+							borderTop: 2,
+							borderColor: "divider",
+						}}
+					>
+						<Box
+							sx={{
+								px: 3,
+								pt: 3,
+								pb: 1,
+								bgcolor: "warning.lighter",
+								borderBottom: 2,
+								borderColor: "warning.main",
+							}}
+						>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<InfoCircle size={20} variant="Bold" color={theme.palette.warning.main} />
+								<Typography variant="h6" color="warning.dark">
+									Causas Pendientes de Verificación o Inválidas ({pendingOrInvalidFolders.length})
+								</Typography>
+							</Stack>
+							<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+								Estas causas importadas automáticamente requieren verificación o presentan problemas de validación
+							</Typography>
+						</Box>
+						<ScrollX>
+							<ReactTable
+								columns={columns as any}
+								data={pendingOrInvalidFolders}
+								handleAdd={handleAddFolder}
+								handleArchiveSelected={handleArchiveSelected}
+								handleOpenGuide={handleOpenGuide}
+								handleOpenArchivedModal={handleOpenArchivedModal}
+								renderRowSubComponent={renderRowSubComponent}
+								isLoading={isLoader}
+								expandedRowId={expandedRowId}
+								navigate={navigate}
+								hideControls={true}
+								simpleSkeleton={true}
+								initialPageSize={5}
+							/>
+						</ScrollX>
+					</Box>
+				)}
 				<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
 				{add && (
 					<Dialog
