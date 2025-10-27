@@ -104,4 +104,6 @@ export type FolderState = {
 	error?: string;
 	isInitialized: boolean;
 	lastFetchedUserId?: string;
+	sortBy?: string;
+	sortDesc?: boolean;
 };

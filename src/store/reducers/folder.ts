@@ -19,6 +19,7 @@ const GET_ARCHIVED_FOLDERS = "GET_ARCHIVED_FOLDERS";
 const GET_FOLDERS_BY_IDS = "GET_FOLDERS_BY_IDS";
 const RESET_FOLDERS_STATE = "RESET_FOLDERS_STATE";
 const SET_SELECTED_FOLDERS = "SET_SELECTED_FOLDERS";
+const SET_FOLDER_SORT = "SET_FOLDER_SORT";
 
 // Initial state
 const initialFolderState: FolderState = {
@@ -30,6 +31,8 @@ const initialFolderState: FolderState = {
 	error: undefined,
 	isInitialized: false,
 	lastFetchedUserId: undefined,
+	sortBy: "folderName",
+	sortDesc: false,
 };
 
 // Reducer
@@ -133,6 +136,12 @@ const folder = (state = initialFolderState, action: any) => {
 				...state,
 				selectedFolders: action.payload,
 				isLoader: false,
+			};
+		case SET_FOLDER_SORT:
+			return {
+				...state,
+				sortBy: action.payload.sortBy,
+				sortDesc: action.payload.sortDesc,
 			};
 		case "folders/SET_FOLDER_ERROR":
 			// Handle namespaced action for manual reset
@@ -680,5 +689,11 @@ export const linkFolderToPJBA =
 			return { success: false, message: errorMessage };
 		}
 	};
+
+// Action para guardar el ordenamiento seleccionado
+export const setFolderSort = (sortBy: string, sortDesc: boolean) => ({
+	type: SET_FOLDER_SORT,
+	payload: { sortBy, sortDesc },
+});
 
 export default folder;

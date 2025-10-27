@@ -61,7 +61,7 @@ import {
 
 // types
 import { dispatch, useSelector } from "store";
-import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders, getFolderById } from "store/reducers/folder";
+import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders, getFolderById, setFolderSort } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
 
@@ -128,7 +128,7 @@ function ReactTable({
 		page,
 		gotoPage,
 		setPageSize,
-		state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded },
+		state: { globalFilter, selectedRowIds, pageIndex, pageSize, expanded, sortBy: tableSortBy },
 		preGlobalFilteredRows,
 		setGlobalFilter,
 		setSortBy,
@@ -161,6 +161,14 @@ function ReactTable({
 			setIsColumnsReady(false);
 		};
 	}, [setHiddenColumns, defaultHiddenColumns]);
+
+	// Sincronizar sortBy con Redux cuando cambie
+	useEffect(() => {
+		if (tableSortBy && tableSortBy.length > 0) {
+			const { id, desc } = tableSortBy[0];
+			dispatch(setFolderSort(id, desc || false));
+		}
+	}, [tableSortBy]);
 
 	if (!isColumnsReady || isLoading) {
 		// Skeleton simplificado para tabla secundaria

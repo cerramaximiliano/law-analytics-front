@@ -13,6 +13,8 @@ interface NavigationControlsProps {
 interface StateType {
 	folder: {
 		folders: any[];
+		sortBy?: string;
+		sortDesc?: boolean;
 	};
 }
 
@@ -22,6 +24,8 @@ const NavigationControls = ({ currentFolderId, inline = false }: NavigationContr
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 	const folders = useSelector((state: StateType) => state.folder.folders);
+	const sortBy = useSelector((state: StateType) => state.folder.sortBy || "folderName");
+	const sortDesc = useSelector((state: StateType) => state.folder.sortDesc || false);
 
 	// Encontrar el índice del folder actual y calcular anterior/siguiente
 	const { prevFolder, nextFolder, currentIndex, totalFolders } = useMemo(() => {
@@ -29,14 +33,42 @@ const NavigationControls = ({ currentFolderId, inline = false }: NavigationContr
 			return { prevFolder: null, nextFolder: null, currentIndex: -1, totalFolders: 0 };
 		}
 
-		const index = folders.findIndex((f: any) => f._id === currentFolderId);
+		// Ordenar folders según el sortBy y sortDesc del estado
+		const sortedFolders = [...folders].sort((a: any, b: any) => {
+			let aValue = a[sortBy];
+			let bValue = b[sortBy];
+
+			// Manejo especial para campos anidados como folderJuris.label
+			if (sortBy.includes(".")) {
+				const keys = sortBy.split(".");
+				aValue = keys.reduce((obj, key) => obj?.[key], a);
+				bValue = keys.reduce((obj, key) => obj?.[key], b);
+			}
+
+			// Manejo de valores nulos o indefinidos
+			if (aValue == null) return 1;
+			if (bValue == null) return -1;
+
+			// Comparación según tipo
+			if (typeof aValue === "string" && typeof bValue === "string") {
+				const comparison = aValue.localeCompare(bValue);
+				return sortDesc ? -comparison : comparison;
+			}
+
+			// Para números y fechas
+			if (aValue < bValue) return sortDesc ? 1 : -1;
+			if (aValue > bValue) return sortDesc ? -1 : 1;
+			return 0;
+		});
+
+		const index = sortedFolders.findIndex((f: any) => f._id === currentFolderId);
 		return {
-			prevFolder: index > 0 ? folders[index - 1] : null,
-			nextFolder: index < folders.length - 1 ? folders[index + 1] : null,
+			prevFolder: index > 0 ? sortedFolders[index - 1] : null,
+			nextFolder: index < sortedFolders.length - 1 ? sortedFolders[index + 1] : null,
 			currentIndex: index,
-			totalFolders: folders.length,
+			totalFolders: sortedFolders.length,
 		};
-	}, [folders, currentFolderId]);
+	}, [folders, currentFolderId, sortBy, sortDesc]);
 
 	// Handlers de navegación
 	const handleGoToList = useCallback(() => {

@@ -58,6 +58,8 @@ export interface FolderState {
 	selectedFolders: Folder[];
 	isLoader: boolean; // Si hay un loader en curso
 	error?: string; // Posibles errores
+	sortBy?: string; // Campo por el cual se está ordenando
+	sortDesc?: boolean; // Si el ordenamiento es descendente
 }
 
 // Tipos de acción para los folders (para usar en el reducer)
