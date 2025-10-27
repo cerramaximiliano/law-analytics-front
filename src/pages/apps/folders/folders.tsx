@@ -111,8 +111,8 @@ function ReactTable({
 	const defaultHiddenColumns = useMemo(
 		() =>
 			matchDownSM
-				? ["_id", "email", "status", "description", "initialDateFolder", "finalDateFolder", "folderJuris.label", "folderFuero"]
-				: ["email", "_id", "description", "finalDateFolder"],
+				? ["_id", "email", "status", "description", "initialDateFolder", "finalDateFolder", "folderJuris.label", "folderFuero", "createdAt", "updatedAt"]
+				: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"],
 		[matchDownSM],
 	);
 
@@ -1032,6 +1032,24 @@ const FoldersLayout = () => {
 						default:
 							return <Chip color="default" label={value} size="small" variant="light" />;
 					}
+				},
+			},
+			{
+				Header: "Fecha de Creación",
+				accessor: "createdAt",
+				Cell: ({ value }: { value: any }) => {
+					if (!value) return null;
+					const parsedDate = dayjs(value);
+					return parsedDate.isValid() ? <span>{parsedDate.format("DD/MM/YYYY HH:mm")}</span> : null;
+				},
+			},
+			{
+				Header: "Última Actualización",
+				accessor: "updatedAt",
+				Cell: ({ value }: { value: any }) => {
+					if (!value) return null;
+					const parsedDate = dayjs(value);
+					return parsedDate.isValid() ? <span>{parsedDate.format("DD/MM/YYYY HH:mm")}</span> : null;
 				},
 			},
 			{

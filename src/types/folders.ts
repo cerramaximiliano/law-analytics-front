@@ -46,6 +46,8 @@ export interface Folder {
 	expedientYear?: string; // Año del expediente para ingreso automático
 	pjn?: boolean; // Indica si los datos provienen del Poder Judicial de la Nación
 	source?: string; // Fuente de los datos (manual o auto)
+	createdAt?: string; // Fecha de creación de la carpeta
+	updatedAt?: string; // Fecha de última actualización de la carpeta
 }
 // Tipos del estado de la carpeta
 export type FolderStatus = "Nueva" | "En Progreso" | "Cerrada" | "Pendiente"; // Diferentes estados de una carpeta

@@ -185,9 +185,9 @@ export const getFoldersByUserId =
 			}
 
 			dispatch({ type: SET_FOLDER_LOADING });
-			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
+			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación y timestamps
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,createdAt,updatedAt";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});
@@ -278,7 +278,8 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 			return { success: true };
 		}
 		// Traducir mensaje del servidor si es necesario
-		const message = response.data.message === "Folder no encontrado" ? "Carpeta no encontrada" : response.data.message || "Error al eliminar carpeta";
+		const message =
+			response.data.message === "Folder no encontrado" ? "Carpeta no encontrada" : response.data.message || "Error al eliminar carpeta";
 		return { success: false, message };
 	} catch (error) {
 		let errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al eliminar carpeta" : "Error desconocido";
