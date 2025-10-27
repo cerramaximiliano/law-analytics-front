@@ -374,7 +374,14 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 								<Grid item xs={12}>
 									<Stack spacing={2}>
 										<Button variant="contained" type="submit" fullWidth disabled={isSubmitting}>
-											{isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Iniciar Sesión"}
+											{isSubmitting ? (
+												<Stack direction="row" spacing={1} alignItems="center">
+													<CircularProgress size={20} color="inherit" />
+													<Typography>Iniciando sesión...</Typography>
+												</Stack>
+											) : (
+												"Iniciar Sesión"
+											)}
 										</Button>
 
 										<Divider>
@@ -383,14 +390,25 @@ export const UnauthorizedModal: FC<UnauthorizedModalProps> = ({ open, onClose, o
 											</Typography>
 										</Divider>
 
-										<Box sx={{ width: "100%" }}>
+										<Box sx={{ width: "100%", position: "relative" }}>
 											<CustomGoogleButton
 												onClick={() => googleLogin()}
 												disabled={isSubmitting}
-												text="Iniciar sesión con Google"
+												text={isSubmitting ? "Iniciando sesión..." : "Iniciar sesión con Google"}
 												fullWidth
 												customHeight="36.49px"
 											/>
+											{isSubmitting && (
+												<CircularProgress
+													size={20}
+													sx={{
+														position: "absolute",
+														top: "50%",
+														left: 16,
+														marginTop: "-10px",
+													}}
+												/>
+											)}
 										</Box>
 
 										<Button
