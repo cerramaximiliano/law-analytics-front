@@ -44,7 +44,7 @@ const PlanDetailModal: React.FC<PlanDetailModalProps> = ({ open, onClose, plan }
 	};
 
 	return (
-		<ResponsiveDialog open={open} onClose={onClose} maxWidth="md" >
+		<ResponsiveDialog open={open} onClose={onClose} maxWidth="md">
 			<DialogTitle>
 				<Box display="flex" justifyContent="space-between" alignItems="center">
 					<Typography variant="h4">Detalles del Plan: {plan.displayName}</Typography>

@@ -313,7 +313,9 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 							value={formatAmount(firstClaimedData?.amount ?? folderData?.monto ?? null)}
 							icon={<Calculator size={24} />}
 							color="primary"
-							subtitle={firstClaimedData?.date ? `Registrado el ${dayjs(firstClaimedData.date).format("DD/MM/YYYY")}` : "Monto inicial del reclamo"}
+							subtitle={
+								firstClaimedData?.date ? `Registrado el ${dayjs(firstClaimedData.date).format("DD/MM/YYYY")}` : "Monto inicial del reclamo"
+							}
 							trend={0} // Show neutral trend to maintain consistent height
 							isLoading={isLoader}
 						/>

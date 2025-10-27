@@ -224,13 +224,7 @@ function ReactTable({
 						</Box>
 
 						{/* Botón principal (derecha) */}
-						<Button
-							variant="contained"
-							size="small"
-							startIcon={<Add />}
-							onClick={handleAdd}
-							fullWidth={matchDownSM}
-						>
+						<Button variant="contained" size="small" startIcon={<Add />} onClick={handleAdd} fullWidth={matchDownSM}>
 							Nueva Tarea
 						</Button>
 					</Stack>
@@ -285,92 +279,92 @@ function ReactTable({
 				{/* Tabla con ScrollX */}
 				<ScrollX>
 					<Table {...getTableProps()}>
-					<TableHead>
-						{headerGroups.map((headerGroup: HeaderGroup<TaskType>, i: number) => (
-							<TableRow
-								key={`header-group-${i}`}
-								{...(headerGroup.getHeaderGroupProps() as any)}
-								sx={{ "& > th:first-of-type": { width: "58px" } }}
-							>
-								{headerGroup.headers.map((column: HeaderGroup<TaskType>, j: number) => (
-									<TableCell key={`header-${i}-${j}`} {...(column.getHeaderProps([{ className: column.className }]) as any)}>
-										<HeaderSort column={column as any} sort />
-									</TableCell>
-								))}
-							</TableRow>
-						))}
-					</TableHead>
-					<TableBody {...getTableBodyProps()}>
-						{isLoading && data.length === 0 ? (
-							[...Array(5)].map((_, index) => (
-								<TableRow key={index}>
-									{visibleColumns.map((column: Column) => (
-										<TableCell key={column.id}>
-											<Skeleton animation="wave" />
+						<TableHead>
+							{headerGroups.map((headerGroup: HeaderGroup<TaskType>, i: number) => (
+								<TableRow
+									key={`header-group-${i}`}
+									{...(headerGroup.getHeaderGroupProps() as any)}
+									sx={{ "& > th:first-of-type": { width: "58px" } }}
+								>
+									{headerGroup.headers.map((column: HeaderGroup<TaskType>, j: number) => (
+										<TableCell key={`header-${i}-${j}`} {...(column.getHeaderProps([{ className: column.className }]) as any)}>
+											<HeaderSort column={column as any} sort />
 										</TableCell>
 									))}
 								</TableRow>
-							))
-						) : page.length > 0 ? (
-							page.map((row: Row<TaskType>, i: number) => {
-								prepareRow(row);
-								return (
-									<Fragment key={i}>
-										<TableRow
-											{...row.getRowProps()}
-											sx={{ cursor: "pointer", bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit" }}
-										>
-											{row.cells.map((cell: Cell<TaskType>, k: number) => (
-												<TableCell key={`cell-${i}-${k}`} {...(cell.getCellProps([{ className: cell.column.className }]) as any)}>
-													{cell.render("Cell")}
-												</TableCell>
-											))}
-										</TableRow>
-										<TableRow>
-											<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={visibleColumns.length}>
-												<Collapse in={expandedTaskId === row.original._id} timeout={400} unmountOnExit>
-													{expandedTaskId === row.original._id && (
-														<Box sx={{ margin: 1 }}>
-															{taskDetailsLoading[row.original._id] ? (
-																<Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-																	<CircularProgress size={24} />
-																</Box>
-															) : (
-																<TaskDetailRow
-																	taskId={row.original._id}
-																	taskData={taskDetails[row.original._id]}
-																	colSpan={visibleColumns.length}
-																	folders={folders}
-																	onError={(message) => {
-																		console.log(message);
-																	}}
-																/>
-															)}
-														</Box>
-													)}
-												</Collapse>
+							))}
+						</TableHead>
+						<TableBody {...getTableBodyProps()}>
+							{isLoading && data.length === 0 ? (
+								[...Array(5)].map((_, index) => (
+									<TableRow key={index}>
+										{visibleColumns.map((column: Column) => (
+											<TableCell key={column.id}>
+												<Skeleton animation="wave" />
 											</TableCell>
-										</TableRow>
-									</Fragment>
-								);
-							})
-						) : (
-							<TableRow>
-								<TableCell sx={{ p: 2.5 }} colSpan={visibleColumns.length}>
-									<Stack>
-										<Typography variant="h5" align="center">
-											Sin tareas
-										</Typography>
-										<Typography variant="body2" color="textSecondary" align="center" sx={{ mt: 1 }}>
-											Comienza creando tu primera tarea
-										</Typography>
-									</Stack>
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
-			</ScrollX>
+										))}
+									</TableRow>
+								))
+							) : page.length > 0 ? (
+								page.map((row: Row<TaskType>, i: number) => {
+									prepareRow(row);
+									return (
+										<Fragment key={i}>
+											<TableRow
+												{...row.getRowProps()}
+												sx={{ cursor: "pointer", bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit" }}
+											>
+												{row.cells.map((cell: Cell<TaskType>, k: number) => (
+													<TableCell key={`cell-${i}-${k}`} {...(cell.getCellProps([{ className: cell.column.className }]) as any)}>
+														{cell.render("Cell")}
+													</TableCell>
+												))}
+											</TableRow>
+											<TableRow>
+												<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={visibleColumns.length}>
+													<Collapse in={expandedTaskId === row.original._id} timeout={400} unmountOnExit>
+														{expandedTaskId === row.original._id && (
+															<Box sx={{ margin: 1 }}>
+																{taskDetailsLoading[row.original._id] ? (
+																	<Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+																		<CircularProgress size={24} />
+																	</Box>
+																) : (
+																	<TaskDetailRow
+																		taskId={row.original._id}
+																		taskData={taskDetails[row.original._id]}
+																		colSpan={visibleColumns.length}
+																		folders={folders}
+																		onError={(message) => {
+																			console.log(message);
+																		}}
+																	/>
+																)}
+															</Box>
+														)}
+													</Collapse>
+												</TableCell>
+											</TableRow>
+										</Fragment>
+									);
+								})
+							) : (
+								<TableRow>
+									<TableCell sx={{ p: 2.5 }} colSpan={visibleColumns.length}>
+										<Stack>
+											<Typography variant="h5" align="center">
+												Sin tareas
+											</Typography>
+											<Typography variant="body2" color="textSecondary" align="center" sx={{ mt: 1 }}>
+												Comienza creando tu primera tarea
+											</Typography>
+										</Stack>
+									</TableCell>
+								</TableRow>
+							)}
+						</TableBody>
+					</Table>
+				</ScrollX>
 				<TablePagination gotoPage={handleGotoPage} rows={rows} setPageSize={handleSetPageSize} pageIndex={pageIndex} pageSize={pageSize} />
 			</Stack>
 		</>

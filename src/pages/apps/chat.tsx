@@ -386,7 +386,15 @@ const Chat = () => {
 															<MainCard elevation={8} content={false}>
 																<Suspense
 																	fallback={
-																		<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 350, minWidth: 350 }}>
+																		<Box
+																			sx={{
+																				display: "flex",
+																				justifyContent: "center",
+																				alignItems: "center",
+																				minHeight: 350,
+																				minWidth: 350,
+																			}}
+																		>
 																			<CircularProgress />
 																		</Box>
 																	}

@@ -262,13 +262,7 @@ function ReactTable({
 
 					{/* Botones principales (derecha) */}
 					<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						<Button
-							variant="contained"
-							size="small"
-							startIcon={<UserAdd />}
-							onClick={handleAdd}
-							fullWidth={matchDownSM}
-						>
+						<Button variant="contained" size="small" startIcon={<UserAdd />} onClick={handleAdd} fullWidth={matchDownSM}>
 							Agregar Contacto
 						</Button>
 						<Button
@@ -408,40 +402,40 @@ function ReactTable({
 					</TableBody>
 				</Table>
 			</ScrollX>
-				{page.length > 0 && (
-					<Box sx={{ p: 2, py: 3 }}>
-						<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
-					</Box>
-				)}
-				{page.length === 0 && (
-					<Box
-						sx={{
-							width: "100%",
-							py: 6,
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							justifyContent: "center",
+			{page.length > 0 && (
+				<Box sx={{ p: 2, py: 3 }}>
+					<TablePagination gotoPage={gotoPage} rows={rows} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
+				</Box>
+			)}
+			{page.length === 0 && (
+				<Box
+					sx={{
+						width: "100%",
+						py: 6,
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+					}}
+				>
+					{/* Ícono de Iconsax */}
+					<Profile2User
+						variant="Bulk"
+						size={64}
+						style={{
+							marginBottom: "16px",
+							color: theme.palette.primary.main,
+							opacity: 0.7,
 						}}
-					>
-						{/* Ícono de Iconsax */}
-						<Profile2User
-							variant="Bulk"
-							size={64}
-							style={{
-								marginBottom: "16px",
-								color: theme.palette.primary.main,
-								opacity: 0.7,
-							}}
-						/>
-						<Typography variant="h5" gutterBottom align="center">
-							No hay contactos creados. Puedes crear uno usando el botón 'Agregar Contacto'.
-						</Typography>
-						<Typography variant="body2" color="textSecondary" align="center">
-							Los contactos que guardes aparecerán aquí
-						</Typography>
-					</Box>
-				)}
+					/>
+					<Typography variant="h5" gutterBottom align="center">
+						No hay contactos creados. Puedes crear uno usando el botón 'Agregar Contacto'.
+					</Typography>
+					<Typography variant="body2" color="textSecondary" align="center">
+						Los contactos que guardes aparecerán aquí
+					</Typography>
+				</Box>
+			)}
 		</>
 	);
 }

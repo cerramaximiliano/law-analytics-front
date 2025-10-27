@@ -37,7 +37,7 @@ const getNextUpdateTime = (): number => {
 	const argentinaOffset = -180; // -3 horas en minutos
 	const nowArgentina = now.utcOffset(argentinaOffset) as any;
 
-	let nextUpdate = nowArgentina.set('hour', 9).set('minute', 0).set('second', 0).set('millisecond', 0);
+	let nextUpdate = nowArgentina.set("hour", 9).set("minute", 0).set("second", 0).set("millisecond", 0);
 
 	// Si ya pasaron las 9 AM de hoy, configurar para mañana
 	if (nowArgentina.isAfter(nextUpdate)) {

@@ -199,172 +199,172 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 		<Box>
 			<ScrollX>
 				<TableContainer>
-				<Table sx={{ minWidth: 750 }} size="medium">
-					<TableHead>
-						<TableRow>
-							{headCells.map((headCell) => (
-								<TableCell
-									key={headCell.id}
-									align={headCell.numeric ? "right" : "left"}
-									sortDirection={orderBy === headCell.id ? order : false}
-									sx={{ width: headCell.width }}
-								>
-									{headCell.id !== "actions" ? (
-										<TableSortLabel
-											active={orderBy === headCell.id}
-											direction={orderBy === headCell.id ? order : "asc"}
-											onClick={() => handleRequestSort(headCell.id as keyof NotificationType)}
-										>
-											{headCell.label}
-											{orderBy === headCell.id ? (
-												<Box component="span" sx={visuallyHidden}>
-													{order === "desc" ? "sorted descending" : "sorted ascending"}
-												</Box>
-											) : null}
-										</TableSortLabel>
-									) : (
-										headCell.label
-									)}
-								</TableCell>
-							))}
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{paginatedNotifications.map((notification) => {
-							return (
-								<TableRow hover tabIndex={-1} key={notification._id} sx={{ cursor: "pointer" }}>
-									<TableCell>{formatDate(notification.time || "")}</TableCell>
-									<TableCell>
-										<Typography variant="subtitle2" noWrap>
-											{notification.title}
-										</Typography>
-									</TableCell>
-									<TableCell>
-										<Stack direction="row" spacing={1} alignItems="center">
-											<Avatar
-												sx={{
-													width: 24,
-													height: 24,
-													bgcolor: `${getNotificationColor(notification.notification, notification.user)}.lighter`,
-													color: `${getNotificationColor(notification.notification, notification.user)}.main`,
-												}}
+					<Table sx={{ minWidth: 750 }} size="medium">
+						<TableHead>
+							<TableRow>
+								{headCells.map((headCell) => (
+									<TableCell
+										key={headCell.id}
+										align={headCell.numeric ? "right" : "left"}
+										sortDirection={orderBy === headCell.id ? order : false}
+										sx={{ width: headCell.width }}
+									>
+										{headCell.id !== "actions" ? (
+											<TableSortLabel
+												active={orderBy === headCell.id}
+												direction={orderBy === headCell.id ? order : "asc"}
+												onClick={() => handleRequestSort(headCell.id as keyof NotificationType)}
 											>
-												{getNotificationIcon(notification.notification)}
-											</Avatar>
-											<Typography variant="body2">{notification.notification}</Typography>
-										</Stack>
-									</TableCell>
-									<TableCell>
-										{notification.user && (
-											<Chip label={notification.user} color={getUserChipColor(notification.user)} size="small" variant="outlined" />
+												{headCell.label}
+												{orderBy === headCell.id ? (
+													<Box component="span" sx={visuallyHidden}>
+														{order === "desc" ? "sorted descending" : "sorted ascending"}
+													</Box>
+												) : null}
+											</TableSortLabel>
+										) : (
+											headCell.label
 										)}
 									</TableCell>
-									<TableCell>
-										<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
-											{notification.description || "-"}
+								))}
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{paginatedNotifications.map((notification) => {
+								return (
+									<TableRow hover tabIndex={-1} key={notification._id} sx={{ cursor: "pointer" }}>
+										<TableCell>{formatDate(notification.time || "")}</TableCell>
+										<TableCell>
+											<Typography variant="subtitle2" noWrap>
+												{notification.title}
+											</Typography>
+										</TableCell>
+										<TableCell>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Avatar
+													sx={{
+														width: 24,
+														height: 24,
+														bgcolor: `${getNotificationColor(notification.notification, notification.user)}.lighter`,
+														color: `${getNotificationColor(notification.notification, notification.user)}.main`,
+													}}
+												>
+													{getNotificationIcon(notification.notification)}
+												</Avatar>
+												<Typography variant="body2">{notification.notification}</Typography>
+											</Stack>
+										</TableCell>
+										<TableCell>
+											{notification.user && (
+												<Chip label={notification.user} color={getUserChipColor(notification.user)} size="small" variant="outlined" />
+											)}
+										</TableCell>
+										<TableCell>
+											<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
+												{notification.description || "-"}
+											</Typography>
+										</TableCell>
+										<TableCell>
+											{notification.dateExpiration
+												? (() => {
+														const expirationDate = parseDate(notification.dateExpiration);
+														const today = new Date();
+														today.setHours(0, 0, 0, 0);
+														const isExpired = expirationDate < today;
+														const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+														const isNearExpiration = daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
+
+														return (
+															<Stack direction="row" spacing={0.5} alignItems="center">
+																<Chip
+																	label={formatDate(notification.dateExpiration)}
+																	color={isExpired ? "error" : isNearExpiration ? "warning" : "success"}
+																	size="small"
+																	variant={isExpired ? "filled" : "outlined"}
+																	icon={
+																		isExpired ? (
+																			<Clock size={14} style={{ color: "inherit" }} />
+																		) : isNearExpiration ? (
+																			<Clock size={14} style={{ color: "inherit" }} />
+																		) : undefined
+																	}
+																	sx={{
+																		fontWeight: isExpired ? 600 : 500,
+																		"& .MuiChip-icon": {
+																			marginLeft: "4px",
+																			marginRight: "-2px",
+																		},
+																	}}
+																/>
+																{isExpired && (
+																	<Typography variant="caption" color="error" fontWeight={600}>
+																		Vencido
+																	</Typography>
+																)}
+																{isNearExpiration && !isExpired && (
+																	<Typography variant="caption" color="warning.main" fontWeight={500}>
+																		{daysUntilExpiration === 0 ? "Hoy" : `${daysUntilExpiration}d`}
+																	</Typography>
+																)}
+															</Stack>
+														);
+												  })()
+												: "-"}
+										</TableCell>
+										<TableCell>
+											<Stack direction="row" spacing={0.5}>
+												<Tooltip title="Ver detalles">
+													<IconButton
+														size="small"
+														onClick={(e) => {
+															e.stopPropagation();
+															onView(notification);
+														}}
+													>
+														<Eye size={18} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Editar">
+													<IconButton
+														size="small"
+														color="primary"
+														onClick={(e) => {
+															e.stopPropagation();
+															onEdit(notification);
+														}}
+													>
+														<Edit size={18} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Eliminar">
+													<IconButton
+														size="small"
+														color="error"
+														onClick={(e) => {
+															e.stopPropagation();
+															onDelete(notification._id!);
+														}}
+													>
+														<Trash size={18} />
+													</IconButton>
+												</Tooltip>
+											</Stack>
+										</TableCell>
+									</TableRow>
+								);
+							})}
+							{paginatedNotifications.length === 0 && (
+								<TableRow>
+									<TableCell colSpan={headCells.length} align="center">
+										<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
+											No se encontraron notificaciones
 										</Typography>
 									</TableCell>
-									<TableCell>
-										{notification.dateExpiration
-											? (() => {
-													const expirationDate = parseDate(notification.dateExpiration);
-													const today = new Date();
-													today.setHours(0, 0, 0, 0);
-													const isExpired = expirationDate < today;
-													const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-													const isNearExpiration = daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
-
-													return (
-														<Stack direction="row" spacing={0.5} alignItems="center">
-															<Chip
-																label={formatDate(notification.dateExpiration)}
-																color={isExpired ? "error" : isNearExpiration ? "warning" : "success"}
-																size="small"
-																variant={isExpired ? "filled" : "outlined"}
-																icon={
-																	isExpired ? (
-																		<Clock size={14} style={{ color: "inherit" }} />
-																	) : isNearExpiration ? (
-																		<Clock size={14} style={{ color: "inherit" }} />
-																	) : undefined
-																}
-																sx={{
-																	fontWeight: isExpired ? 600 : 500,
-																	"& .MuiChip-icon": {
-																		marginLeft: "4px",
-																		marginRight: "-2px",
-																	},
-																}}
-															/>
-															{isExpired && (
-																<Typography variant="caption" color="error" fontWeight={600}>
-																	Vencido
-																</Typography>
-															)}
-															{isNearExpiration && !isExpired && (
-																<Typography variant="caption" color="warning.main" fontWeight={500}>
-																	{daysUntilExpiration === 0 ? "Hoy" : `${daysUntilExpiration}d`}
-																</Typography>
-															)}
-														</Stack>
-													);
-											  })()
-											: "-"}
-									</TableCell>
-									<TableCell>
-										<Stack direction="row" spacing={0.5}>
-											<Tooltip title="Ver detalles">
-												<IconButton
-													size="small"
-													onClick={(e) => {
-														e.stopPropagation();
-														onView(notification);
-													}}
-												>
-													<Eye size={18} />
-												</IconButton>
-											</Tooltip>
-											<Tooltip title="Editar">
-												<IconButton
-													size="small"
-													color="primary"
-													onClick={(e) => {
-														e.stopPropagation();
-														onEdit(notification);
-													}}
-												>
-													<Edit size={18} />
-												</IconButton>
-											</Tooltip>
-											<Tooltip title="Eliminar">
-												<IconButton
-													size="small"
-													color="error"
-													onClick={(e) => {
-														e.stopPropagation();
-														onDelete(notification._id!);
-													}}
-												>
-													<Trash size={18} />
-												</IconButton>
-											</Tooltip>
-										</Stack>
-									</TableCell>
 								</TableRow>
-							);
-						})}
-						{paginatedNotifications.length === 0 && (
-							<TableRow>
-								<TableCell colSpan={headCells.length} align="center">
-									<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
-										No se encontraron notificaciones
-									</Typography>
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
-			</TableContainer>
+							)}
+						</TableBody>
+					</Table>
+				</TableContainer>
 			</ScrollX>
 			<TablePagination
 				rowsPerPageOptions={[5, 10, 25, 50]}

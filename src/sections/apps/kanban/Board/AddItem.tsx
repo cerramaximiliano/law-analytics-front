@@ -49,7 +49,7 @@ const AddItem = ({ columnId }: Props) => {
 			const newItem: KanbanItem = {
 				id: `${chance.integer({ min: 1000, max: 9999 })}`,
 				title,
-				dueDate: dayjs().subtract(1, 'hour').subtract(45, 'minute').toDate(),
+				dueDate: dayjs().subtract(1, "hour").subtract(45, "minute").toDate(),
 				image: false,
 				assign: "",
 				description: "",

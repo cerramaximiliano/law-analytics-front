@@ -403,14 +403,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 							>
 								Nuevo Interviniente
 							</Button>
-							<Button
-								variant="outlined"
-								fullWidth
-								color="primary"
-								startIcon={<Link1 size={18} />}
-								onClick={handleOpen}
-								disabled={isLoader}
-							>
+							<Button variant="outlined" fullWidth color="primary" startIcon={<Link1 size={18} />} onClick={handleOpen} disabled={isLoader}>
 								Vincular Existente
 							</Button>
 						</Stack>

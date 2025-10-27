@@ -9,6 +9,7 @@ import {
 	Chip,
 	FormControl,
 	Grid,
+	IconButton,
 	ListItemText,
 	MenuItem,
 	OutlinedInput,
@@ -438,46 +439,74 @@ interface SortingSelectProps {
 
 export const SortingSelect = ({ sortBy, setSortBy, allColumns }: SortingSelectProps) => {
 	const [sort, setSort] = useState<string>(sortBy);
+	const [isDescending, setIsDescending] = useState<boolean>(false);
 
 	const handleChange = (event: SelectChangeEvent<string>) => {
 		const {
 			target: { value },
 		} = event;
 		setSort(value);
-		setSortBy([{ id: value, desc: false }]);
+		setSortBy([{ id: value, desc: isDescending }]);
+	};
+
+	const toggleSortDirection = () => {
+		const newDesc = !isDescending;
+		setIsDescending(newDesc);
+		if (sort) {
+			setSortBy([{ id: sort, desc: newDesc }]);
+		}
 	};
 
 	return (
-		<FormControl sx={{ width: "100%" }}>
-			<Select
-				id="column-hiding"
-				displayEmpty
-				size="small"
-				value={sort}
-				onChange={handleChange}
-				style={{ maxHeight: "30.75px" }}
-				input={<OutlinedInput id="select-column-hiding" placeholder="Ordernar por" />}
-				renderValue={(selected) => {
-					const selectedColumn = allColumns.filter((column: ColumnInstance) => column.id === selected)[0];
-					if (!selected) {
-						return <Typography variant="subtitle1">Ordernar por</Typography>;
-					}
-					return (
-						<Typography variant="subtitle2">
-							Ordernar por ({typeof selectedColumn.Header === "string" ? selectedColumn.Header : selectedColumn?.title})
-						</Typography>
-					);
-				}}
-			>
-				{allColumns
-					.filter((column: ColumnInstance) => column.canSort)
-					.map((column: ColumnInstance) => (
-						<MenuItem key={column.id} value={column.id}>
-							<ListItemText primary={typeof column.Header === "string" ? column.Header : column?.title} />
-						</MenuItem>
-					))}
-			</Select>
-		</FormControl>
+		<Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%" }}>
+			<FormControl sx={{ flex: 1 }}>
+				<Select
+					id="column-hiding"
+					displayEmpty
+					size="small"
+					value={sort}
+					onChange={handleChange}
+					style={{ maxHeight: "30.75px" }}
+					input={<OutlinedInput id="select-column-hiding" placeholder="Ordernar por" />}
+					renderValue={(selected) => {
+						const selectedColumn = allColumns.filter((column: ColumnInstance) => column.id === selected)[0];
+						if (!selected) {
+							return <Typography variant="subtitle1">Ordernar por</Typography>;
+						}
+						return (
+							<Typography variant="subtitle2">
+								Ordernar por ({typeof selectedColumn.Header === "string" ? selectedColumn.Header : selectedColumn?.title})
+							</Typography>
+						);
+					}}
+				>
+					{allColumns
+						.filter((column: ColumnInstance) => column.canSort)
+						.map((column: ColumnInstance) => (
+							<MenuItem key={column.id} value={column.id}>
+								<ListItemText primary={typeof column.Header === "string" ? column.Header : column?.title} />
+							</MenuItem>
+						))}
+				</Select>
+			</FormControl>
+			<Tooltip title={isDescending ? "Orden descendente (Z-A, más reciente primero)" : "Orden ascendente (A-Z, más antiguo primero)"}>
+				<IconButton
+					onClick={toggleSortDirection}
+					disabled={!sort}
+					size="small"
+					color="primary"
+					sx={{
+						border: 1,
+						borderColor: "divider",
+						borderRadius: 1,
+						width: "30.75px",
+						height: "30.75px",
+					}}
+				>
+					{isDescending ? <ArrowDown2 size={18} /> : <ArrowUp2 size={18} />}
+				</IconButton>
+			</Tooltip>
+		</Stack>
 	);
 };
 

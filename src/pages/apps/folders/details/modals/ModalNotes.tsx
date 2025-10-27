@@ -145,7 +145,7 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omi
 										</Typography>
 									</Stack>
 									<Typography variant="body2" color="textSecondary">
-							{folderName ? `Agrega una nueva nota a la carpeta "${folderName}"` : "Agrega una nueva nota"}
+										{folderName ? `Agrega una nueva nota a la carpeta "${folderName}"` : "Agrega una nueva nota"}
 									</Typography>
 								</Stack>
 							</DialogTitle>
@@ -157,7 +157,14 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omi
 										<InputLabel htmlFor="title" sx={{ mb: 1 }}>
 											Título *
 										</InputLabel>
-										<InputField name="title" id="title" autoFocus placeholder="Ingresa el título de la nota" disabled={isSubmitting} fullWidth />
+										<InputField
+											name="title"
+											id="title"
+											autoFocus
+											placeholder="Ingresa el título de la nota"
+											disabled={isSubmitting}
+											fullWidth
+										/>
 									</div>
 
 									<div>

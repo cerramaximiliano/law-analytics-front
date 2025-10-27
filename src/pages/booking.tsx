@@ -1314,9 +1314,7 @@ const BookingPage = () => {
 											<Typography variant="subtitle2" color="textSecondary">
 												Fecha:
 											</Typography>
-											<Typography variant="body1">
-												{selectedDate && dayjs(selectedDate).format("dddd, D [de] MMMM [de] YYYY")}
-											</Typography>
+											<Typography variant="body1">{selectedDate && dayjs(selectedDate).format("dddd, D [de] MMMM [de] YYYY")}</Typography>
 										</Box>
 
 										<Box>

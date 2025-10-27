@@ -3,16 +3,7 @@ import { useSelector } from "react-redux";
 import { dispatch } from "store/index";
 
 // material-ui
-import {
-	Button,
-	DialogActions,
-	DialogContent,
-	DialogContentText,
-	DialogTitle,
-	Typography,
-	Box,
-	CircularProgress,
-} from "@mui/material";
+import { Button, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography, Box, CircularProgress } from "@mui/material";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 
 // project imports

@@ -207,77 +207,77 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 					<ScrollX>
 						<TableContainer>
 							<Table
-							size="small"
-							sx={{
-								"&.MuiTable-root": {
-									paddingLeft: "1px",
-									paddingRight: "1px",
-									borderCollapse: "separate",
-								},
-							}}
-						>
-							<TableHead>
-								<TableRow>
-									{["Fecha", "Tipo", "Parte", "Monto", ""].map((header, index) => (
-										<TableCell key={header} sx={{ p: 1 }} align={index >= 3 ? "right" : "left"}>
-											<LoadingContent isLoader={isLoader} content={header} skeleton={<Skeleton />} />
-										</TableCell>
-									))}
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{showEmptyState ? (
-									<EmptyState />
-								) : (
-									sortedData.map((row: CalculatorType, index: number) => (
-										<TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-											{Object.entries({
-												date: row.date || "N/D",
-												type: row.type || "N/D",
-												user: row.user || "N/D",
-												amount: row.amount || "N/D",
-											}).map(([key, value], cellIndex) => (
-												<>
-													<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
-														<LoadingContent
-															isLoader={isLoader}
-															content={
-																<Typography variant="body2">{cellIndex === 3 ? formatAmount(value as number) : String(value)}</Typography>
-															}
-															skeleton={<Skeleton width={60} />}
-														/>
-													</TableCell>
-												</>
-											))}
-											<TableCell align="right" sx={{ p: 1 }}>
-												<LoadingContent
-													isLoader={isLoader}
-													content={
-														<Tooltip title="Eliminar cálculo">
-															<IconButton
-																color="error"
-																size="small"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleDelete(row._id);
-																}}
-																sx={{
-																	"&:hover": {
-																		bgcolor: "error.lighter",
-																	},
-																}}
-															>
-																<Trash variant="Bulk" size={18} />
-															</IconButton>
-														</Tooltip>
-													}
-													skeleton={<Skeleton width={40} />}
-												/>
+								size="small"
+								sx={{
+									"&.MuiTable-root": {
+										paddingLeft: "1px",
+										paddingRight: "1px",
+										borderCollapse: "separate",
+									},
+								}}
+							>
+								<TableHead>
+									<TableRow>
+										{["Fecha", "Tipo", "Parte", "Monto", ""].map((header, index) => (
+											<TableCell key={header} sx={{ p: 1 }} align={index >= 3 ? "right" : "left"}>
+												<LoadingContent isLoader={isLoader} content={header} skeleton={<Skeleton />} />
 											</TableCell>
-										</TableRow>
-									))
-								)}
-							</TableBody>
+										))}
+									</TableRow>
+								</TableHead>
+								<TableBody>
+									{showEmptyState ? (
+										<EmptyState />
+									) : (
+										sortedData.map((row: CalculatorType, index: number) => (
+											<TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+												{Object.entries({
+													date: row.date || "N/D",
+													type: row.type || "N/D",
+													user: row.user || "N/D",
+													amount: row.amount || "N/D",
+												}).map(([key, value], cellIndex) => (
+													<>
+														<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
+															<LoadingContent
+																isLoader={isLoader}
+																content={
+																	<Typography variant="body2">{cellIndex === 3 ? formatAmount(value as number) : String(value)}</Typography>
+																}
+																skeleton={<Skeleton width={60} />}
+															/>
+														</TableCell>
+													</>
+												))}
+												<TableCell align="right" sx={{ p: 1 }}>
+													<LoadingContent
+														isLoader={isLoader}
+														content={
+															<Tooltip title="Eliminar cálculo">
+																<IconButton
+																	color="error"
+																	size="small"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleDelete(row._id);
+																	}}
+																	sx={{
+																		"&:hover": {
+																			bgcolor: "error.lighter",
+																		},
+																	}}
+																>
+																	<Trash variant="Bulk" size={18} />
+																</IconButton>
+															</Tooltip>
+														}
+														skeleton={<Skeleton width={40} />}
+													/>
+												</TableCell>
+											</TableRow>
+										))
+									)}
+								</TableBody>
 							</Table>
 						</TableContainer>
 					</ScrollX>

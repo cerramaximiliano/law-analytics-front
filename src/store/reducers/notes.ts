@@ -82,8 +82,7 @@ export const addNote = (data: NoteFormValues) => async (dispatch: Dispatch) => {
 		});
 		return { success: true, note };
 	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al crear la nota" : "Error al crear la nota";
+		const errorMessage = error instanceof AxiosError ? error.response?.data?.message || "Error al crear la nota" : "Error al crear la nota";
 		dispatch({ type: SET_ERROR, payload: errorMessage });
 		return { success: false, error: errorMessage };
 	}

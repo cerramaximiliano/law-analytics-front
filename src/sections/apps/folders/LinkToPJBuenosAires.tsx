@@ -733,7 +733,12 @@ const LinkToPJBuenosAires = ({ open, onCancel, onBack, folderId, folderName }: L
 							<Button onClick={handleClose} disabled={loading} color="error" sx={{ minWidth: 100 }}>
 								Cancelar
 							</Button>
-							<Button variant="contained" onClick={handleSubmit} disabled={loading || loadingCodes || navigationCodes.length === 0} sx={{ minWidth: 100 }}>
+							<Button
+								variant="contained"
+								onClick={handleSubmit}
+								disabled={loading || loadingCodes || navigationCodes.length === 0}
+								sx={{ minWidth: 100 }}
+							>
 								{loading ? "Vinculando..." : "Vincular"}
 							</Button>
 						</Stack>

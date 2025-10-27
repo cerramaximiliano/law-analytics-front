@@ -188,144 +188,144 @@ const CalendarTable: React.FC<CalendarTableProps> = ({ events, searchQuery, onEd
 			<ScrollX>
 				<TableContainer>
 					<Table sx={{ minWidth: 750 }} size="medium">
-					<TableHead>
-						<TableRow>
-							{headCells.map((headCell) => (
-								<TableCell
-									key={headCell.id}
-									align={headCell.numeric ? "right" : "left"}
-									sortDirection={orderBy === headCell.id ? order : false}
-									sx={{ width: headCell.width }}
-								>
-									{headCell.id !== "actions" ? (
-										<TableSortLabel
-											active={orderBy === headCell.id}
-											direction={orderBy === headCell.id ? order : "asc"}
-											onClick={() => handleRequestSort(headCell.id)}
-										>
-											{headCell.label}
-											{orderBy === headCell.id ? (
-												<Box component="span" sx={visuallyHidden}>
-													{order === "desc" ? "sorted descending" : "sorted ascending"}
-												</Box>
-											) : null}
-										</TableSortLabel>
-									) : (
-										headCell.label
-									)}
-								</TableCell>
-							))}
-						</TableRow>
-					</TableHead>
-					<TableBody>
-						{paginatedEvents.map((event) => {
-							return (
-								<TableRow hover tabIndex={-1} key={event._id} sx={{ cursor: "pointer" }}>
-									<TableCell>
-										<Stack direction="row" spacing={1} alignItems="center">
-											<Avatar
-												sx={{
-													width: 32,
-													height: 32,
-													bgcolor: `${getEventTypeColor(event.type)}.lighter`,
-													color: `${getEventTypeColor(event.type)}.main`,
-												}}
+						<TableHead>
+							<TableRow>
+								{headCells.map((headCell) => (
+									<TableCell
+										key={headCell.id}
+										align={headCell.numeric ? "right" : "left"}
+										sortDirection={orderBy === headCell.id ? order : false}
+										sx={{ width: headCell.width }}
+									>
+										{headCell.id !== "actions" ? (
+											<TableSortLabel
+												active={orderBy === headCell.id}
+												direction={orderBy === headCell.id ? order : "asc"}
+												onClick={() => handleRequestSort(headCell.id)}
 											>
-												{event.allDay ? <CalendarTick size={16} /> : <Clock size={16} />}
-											</Avatar>
-											<Box>
-												<Typography variant="body2" fontWeight={500}>
-													{formatDateOnly(event.start)}
-												</Typography>
-												{!event.allDay && (
-													<Typography variant="caption" color="textSecondary">
-														{dayjs(event.start).format("HH:mm")}
-													</Typography>
-												)}
-											</Box>
-										</Stack>
-									</TableCell>
-									<TableCell>
-										<Typography variant="subtitle2" noWrap sx={{ maxWidth: 250 }}>
-											{event.title}
-										</Typography>
-									</TableCell>
-									<TableCell>
-										{event.type && (
-											<Chip
-												icon={<Calendar1 size={14} />}
-												label={event.type}
-												color={getEventTypeColor(event.type)}
-												size="small"
-												variant="outlined"
-											/>
+												{headCell.label}
+												{orderBy === headCell.id ? (
+													<Box component="span" sx={visuallyHidden}>
+														{order === "desc" ? "sorted descending" : "sorted ascending"}
+													</Box>
+												) : null}
+											</TableSortLabel>
+										) : (
+											headCell.label
 										)}
 									</TableCell>
-									<TableCell>
-										<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
-											{event.description || "-"}
+								))}
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							{paginatedEvents.map((event) => {
+								return (
+									<TableRow hover tabIndex={-1} key={event._id} sx={{ cursor: "pointer" }}>
+										<TableCell>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Avatar
+													sx={{
+														width: 32,
+														height: 32,
+														bgcolor: `${getEventTypeColor(event.type)}.lighter`,
+														color: `${getEventTypeColor(event.type)}.main`,
+													}}
+												>
+													{event.allDay ? <CalendarTick size={16} /> : <Clock size={16} />}
+												</Avatar>
+												<Box>
+													<Typography variant="body2" fontWeight={500}>
+														{formatDateOnly(event.start)}
+													</Typography>
+													{!event.allDay && (
+														<Typography variant="caption" color="textSecondary">
+															{dayjs(event.start).format("HH:mm")}
+														</Typography>
+													)}
+												</Box>
+											</Stack>
+										</TableCell>
+										<TableCell>
+											<Typography variant="subtitle2" noWrap sx={{ maxWidth: 250 }}>
+												{event.title}
+											</Typography>
+										</TableCell>
+										<TableCell>
+											{event.type && (
+												<Chip
+													icon={<Calendar1 size={14} />}
+													label={event.type}
+													color={getEventTypeColor(event.type)}
+													size="small"
+													variant="outlined"
+												/>
+											)}
+										</TableCell>
+										<TableCell>
+											<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
+												{event.description || "-"}
+											</Typography>
+										</TableCell>
+										<TableCell>
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<Clock size={14} color={theme.palette.text.secondary} />
+												<Typography variant="body2" color="textSecondary">
+													{calculateDuration(event.start, event.end)}
+												</Typography>
+											</Stack>
+										</TableCell>
+										<TableCell>
+											<Stack direction="row" spacing={0.5}>
+												<Tooltip title="Ver detalles">
+													<IconButton
+														size="small"
+														onClick={(e) => {
+															e.stopPropagation();
+															onView(event);
+														}}
+													>
+														<Eye size={18} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Editar">
+													<IconButton
+														size="small"
+														color="primary"
+														onClick={(e) => {
+															e.stopPropagation();
+															onEdit(event);
+														}}
+													>
+														<Edit size={18} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Eliminar">
+													<IconButton
+														size="small"
+														color="error"
+														onClick={(e) => {
+															e.stopPropagation();
+															onDelete(event._id);
+														}}
+													>
+														<Trash size={18} />
+													</IconButton>
+												</Tooltip>
+											</Stack>
+										</TableCell>
+									</TableRow>
+								);
+							})}
+							{paginatedEvents.length === 0 && (
+								<TableRow>
+									<TableCell colSpan={headCells.length} align="center">
+										<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
+											No se encontraron eventos
 										</Typography>
 									</TableCell>
-									<TableCell>
-										<Stack direction="row" spacing={0.5} alignItems="center">
-											<Clock size={14} color={theme.palette.text.secondary} />
-											<Typography variant="body2" color="textSecondary">
-												{calculateDuration(event.start, event.end)}
-											</Typography>
-										</Stack>
-									</TableCell>
-									<TableCell>
-										<Stack direction="row" spacing={0.5}>
-											<Tooltip title="Ver detalles">
-												<IconButton
-													size="small"
-													onClick={(e) => {
-														e.stopPropagation();
-														onView(event);
-													}}
-												>
-													<Eye size={18} />
-												</IconButton>
-											</Tooltip>
-											<Tooltip title="Editar">
-												<IconButton
-													size="small"
-													color="primary"
-													onClick={(e) => {
-														e.stopPropagation();
-														onEdit(event);
-													}}
-												>
-													<Edit size={18} />
-												</IconButton>
-											</Tooltip>
-											<Tooltip title="Eliminar">
-												<IconButton
-													size="small"
-													color="error"
-													onClick={(e) => {
-														e.stopPropagation();
-														onDelete(event._id);
-													}}
-												>
-													<Trash size={18} />
-												</IconButton>
-											</Tooltip>
-										</Stack>
-									</TableCell>
 								</TableRow>
-							);
-						})}
-						{paginatedEvents.length === 0 && (
-							<TableRow>
-								<TableCell colSpan={headCells.length} align="center">
-									<Typography variant="subtitle1" color="textSecondary" sx={{ py: 3 }}>
-										No se encontraron eventos
-									</Typography>
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
+							)}
+						</TableBody>
 					</Table>
 				</TableContainer>
 			</ScrollX>

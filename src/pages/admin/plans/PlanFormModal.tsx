@@ -150,7 +150,7 @@ const PlanFormModal: React.FC<PlanFormModalProps> = ({ open, onClose, onSave, pl
 	};
 
 	return (
-		<ResponsiveDialog open={open} onClose={onClose} maxWidth="md" >
+		<ResponsiveDialog open={open} onClose={onClose} maxWidth="md">
 			<DialogTitle>
 				<Box display="flex" alignItems="center" justifyContent="space-between">
 					<Typography variant="h5">{plan ? "Editar Plan" : "Crear Nuevo Plan"}</Typography>
