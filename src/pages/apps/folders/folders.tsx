@@ -791,6 +791,7 @@ const FoldersLayout = () => {
 				Header: "Id",
 				accessor: "_id",
 				className: "cell-center" as any,
+				disableSortBy: true,
 			},
 			{
 				Header: "Carátula",
