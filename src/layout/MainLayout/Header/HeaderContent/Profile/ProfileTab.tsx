@@ -12,9 +12,10 @@ import { Card, Logout, Profile, TableDocument } from "iconsax-react";
 
 interface Props {
 	handleLogout: () => void;
+	handleClose?: () => void;
 }
 
-const ProfileTab = ({ handleLogout }: Props) => {
+const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const navigate = useNavigate();
 
@@ -24,6 +25,10 @@ const ProfileTab = ({ handleLogout }: Props) => {
 		// Si se proporciona una ruta, navegar a ella
 		if (path) {
 			navigate(path);
+			// Cerrar el modal después de navegar
+			if (handleClose) {
+				handleClose();
+			}
 		}
 	};
 
