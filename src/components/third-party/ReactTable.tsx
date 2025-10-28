@@ -188,9 +188,10 @@ export const TableRowSelection = ({ selected }: { selected: number }) => (
 				variant="light"
 				sx={{
 					position: "absolute",
-					right: -1,
-					top: -1,
-					borderRadius: "0 4px 0 4px",
+					right: 8,
+					top: 8,
+					borderRadius: "4px",
+					zIndex: 1,
 				}}
 			/>
 		)}
