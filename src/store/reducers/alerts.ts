@@ -8,6 +8,7 @@ import { Alert } from "types/alert";
 export const ALERTS_LOADING = "ALERTS_LOADING";
 export const ALERTS_ERROR = "ALERTS_ERROR";
 export const SET_ALERT_DATA = "SET_ALERT_DATA";
+export const APPEND_ALERT_DATA = "APPEND_ALERT_DATA";
 export const ADD_ALERT = "ADD_ALERT";
 export const ADD_MULTIPLE_ALERTS = "ADD_MULTIPLE_ALERTS";
 export const DELETE_ALERT = "DELETE_ALERT";
@@ -17,10 +18,26 @@ export const UPDATE_ALERT_READ_STATUS = "UPDATE_ALERT_READ_STATUS";
 export const MARK_ALL_ALERTS_READ = "MARK_ALL_ALERTS_READ";
 
 // types
+interface AlertsPagination {
+	total: number;
+	page: number;
+	limit: number;
+	pages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
+interface AlertsStats {
+	unread: number;
+	totalAlerts: number;
+}
+
 interface AlertsState {
 	alerts: Alert[];
 	isLoader: boolean;
 	error?: string;
+	pagination: AlertsPagination | null;
+	stats: AlertsStats | null;
 }
 
 export interface AlertActionProps {
@@ -33,6 +50,8 @@ export const initialState: AlertsState = {
 	alerts: [],
 	isLoader: false,
 	error: undefined,
+	pagination: null,
+	stats: null,
 };
 
 // ==============================|| ALERTS REDUCER ||============================== //
@@ -54,14 +73,27 @@ const alerts = (state = initialState, action: AlertActionProps) => {
 			return {
 				...state,
 				isLoader: false,
-				alerts: action.payload,
+				alerts: action.payload.alerts || action.payload,
+				pagination: action.payload.pagination || null,
+				stats: action.payload.stats || null,
+			};
+		case APPEND_ALERT_DATA:
+			return {
+				...state,
+				isLoader: false,
+				alerts: [...state.alerts, ...(action.payload.alerts || [])],
+				pagination: action.payload.pagination || state.pagination,
+				stats: action.payload.stats || state.stats,
 			};
 
 		case UPDATE_ALERT_READ_STATUS:
+			// Actualizar el estado de la alerta y decrementar el contador de no leídas
+			const wasUnread = state.alerts.find((alert) => alert._id === action.payload.alertId && !alert.read);
 			return {
 				...state,
 				isLoader: false,
 				alerts: state.alerts.map((alert) => (alert._id === action.payload.alertId ? { ...alert, read: true } : alert)),
+				stats: wasUnread && state.stats ? { ...state.stats, unread: Math.max(0, state.stats.unread - 1) } : state.stats,
 			};
 		case MARK_ALL_ALERTS_READ:
 			return {
@@ -122,10 +154,22 @@ const alerts = (state = initialState, action: AlertActionProps) => {
 				return state;
 			}
 		case DELETE_ALERT:
+			// Encontrar la alerta que se va a eliminar para actualizar stats
+			const deletedAlert = state.alerts.find((alert) => alert._id === action.payload.alertId);
+			const wasUnreadDeleted = deletedAlert && !deletedAlert.read;
 			return {
 				...state,
 				isLoader: false,
 				alerts: state.alerts.filter((alert) => alert._id !== action.payload.alertId),
+				stats:
+					state.stats
+						? {
+								...state.stats,
+								totalAlerts: Math.max(0, state.stats.totalAlerts - 1),
+								unread: wasUnreadDeleted ? Math.max(0, state.stats.unread - 1) : state.stats.unread,
+						  }
+						: null,
+				pagination: state.pagination ? { ...state.pagination, total: Math.max(0, state.pagination.total - 1) } : null,
 			};
 		default:
 			return state;
@@ -136,17 +180,38 @@ export default alerts;
 
 // ==============================|| ACTIONS ||============================== //
 
-// Acción para cargar las alertas
-export const fetchUserAlerts = (userId: string) => {
+// Acción para cargar las alertas con paginación
+export const fetchUserAlerts = (userId: string, page: number = 1, limit: number = 20, read?: boolean) => {
 	return async (dispatch: Dispatch) => {
 		dispatch({ type: ALERTS_LOADING });
 		try {
-			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/alert/useralerts/${userId}`);
+			// Construir los parámetros de la query
+			const params = new URLSearchParams({
+				page: page.toString(),
+				limit: limit.toString(),
+			});
+
+			// Agregar el parámetro read solo si está definido
+			if (read !== undefined) {
+				params.append("read", read.toString());
+			}
+
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/alert/useralerts/${userId}?${params.toString()}`);
+
 			if (response.data && response.data.success) {
-				dispatch({
-					type: SET_ALERT_DATA,
-					payload: response.data.alerts,
-				});
+				// Si es la primera página, reemplazar las alertas
+				if (page === 1) {
+					dispatch({
+						type: SET_ALERT_DATA,
+						payload: response.data.data,
+					});
+				} else {
+					// Si es una página posterior, agregar al final
+					dispatch({
+						type: APPEND_ALERT_DATA,
+						payload: response.data.data,
+					});
+				}
 			} else {
 				dispatch({
 					type: ALERTS_ERROR,
@@ -160,6 +225,11 @@ export const fetchUserAlerts = (userId: string) => {
 			});
 		}
 	};
+};
+
+// Acción para cargar más alertas (scroll infinito)
+export const loadMoreAlerts = (userId: string, currentPage: number, limit: number = 20, read?: boolean) => {
+	return fetchUserAlerts(userId, currentPage + 1, limit, read);
 };
 
 export const markAlertAsRead = (alertId: string) => {

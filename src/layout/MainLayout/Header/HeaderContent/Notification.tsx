@@ -5,6 +5,7 @@ import {
 	Badge,
 	Box,
 	ClickAwayListener,
+	CircularProgress,
 	Link,
 	List,
 	ListItemButton,
@@ -41,7 +42,7 @@ import {
 import Avatar from "components/@extended/Avatar";
 import { ThemeMode } from "types/config";
 import { dispatch, useSelector } from "store";
-import { markAlertAsRead, fetchUserAlerts, deleteAlert } from "store/reducers/alerts";
+import { markAlertAsRead, fetchUserAlerts, deleteAlert, loadMoreAlerts } from "store/reducers/alerts";
 import { Alert } from "types/alert";
 import { useNavigate } from "react-router-dom";
 
@@ -87,6 +88,9 @@ const NotificationPage = () => {
 
 	const userId = useSelector((state) => state.auth.user?._id || "");
 	const alertsData = useSelector((state) => state.alerts.alerts);
+	const pagination = useSelector((state) => state.alerts.pagination);
+	const stats = useSelector((state) => state.alerts.stats);
+	const isLoading = useSelector((state) => state.alerts.isLoader);
 
 	// Separar alertas leídas y no leídas
 	const unreadAlerts = alertsData.filter((alert: Alert) => !alert.read);
@@ -162,15 +166,30 @@ const NotificationPage = () => {
 		setShowAll(!showAll);
 	};
 
+	// Función para manejar el scroll infinito
+	const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+		const target = event.target as HTMLDivElement;
+		const scrollTop = target.scrollTop;
+		const scrollHeight = target.scrollHeight;
+		const clientHeight = target.clientHeight;
+
+		// Si estamos cerca del final (90%) y hay más páginas disponibles
+		if (scrollTop + clientHeight >= scrollHeight * 0.9 && pagination?.hasNext && !isLoading) {
+			dispatch(loadMoreAlerts(userId, pagination.page));
+		}
+	};
+
 	useEffect(() => {
-		setRead(unreadAlerts.length);
-	}, [unreadAlerts.length]);
+		// Usar stats.unread si está disponible, sino contar las alertas no leídas
+		setRead(stats?.unread ?? unreadAlerts.length);
+	}, [stats?.unread, unreadAlerts.length]);
 
 	useEffect(() => {
 		const fetchAlerts = async (userId: string) => {
 			if (!userId) return;
 			try {
-				dispatch(fetchUserAlerts(userId));
+				// Cargar la primera página con 20 alertas
+				dispatch(fetchUserAlerts(userId, 1, 20));
 			} catch (error) {}
 		};
 
@@ -394,7 +413,7 @@ const NotificationPage = () => {
 	const renderNotificationsList = () => (
 		<>
 			{showAll && sortedAlerts.length > 3 ? (
-				<SimpleBar style={{ maxHeight: 350 }}>
+				<SimpleBar style={{ maxHeight: 350 }} onScroll={handleScroll}>
 					<List component="nav" sx={listItemSxStyles}>
 						{visibleAlerts.map((notification: Alert) => (
 							<ListItemButton
@@ -492,6 +511,22 @@ const NotificationPage = () => {
 								</ListItemSecondaryAction>
 							</ListItemButton>
 						))}
+
+						{/* Indicador de carga cuando se están cargando más alertas */}
+						{isLoading && pagination && pagination.page > 1 && (
+							<Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+								<CircularProgress size={24} />
+							</Box>
+						)}
+
+						{/* Mensaje cuando no hay más alertas */}
+						{!isLoading && pagination && !pagination.hasNext && sortedAlerts.length > 3 && (
+							<Box sx={{ textAlign: "center", py: 2 }}>
+								<Typography variant="caption" color="textSecondary">
+									No hay más notificaciones
+								</Typography>
+							</Box>
+						)}
 					</List>
 				</SimpleBar>
 			) : (
