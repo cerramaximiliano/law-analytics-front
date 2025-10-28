@@ -30,6 +30,7 @@ export interface PaginationInfo {
 	pages: number;
 	hasNext: boolean;
 	hasPrev: boolean;
+	totalAvailable?: number; // Total de movimientos sin filtros
 }
 
 export interface PjnAccess {
