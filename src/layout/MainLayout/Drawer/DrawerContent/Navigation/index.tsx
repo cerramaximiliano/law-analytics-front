@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
-import { Box, Typography, useMediaQuery } from "@mui/material";
+import { Box, Typography, useMediaQuery, Skeleton, Stack } from "@mui/material";
 
 // project-imports
 import NavGroup from "./NavGroup";
@@ -32,6 +32,7 @@ const Navigation = () => {
 	const [selectedItems, setSelectedItems] = useState<string | undefined>("");
 	const [selectedLevel, setSelectedLevel] = useState<number>(0);
 	const [filteredMenuItems, setFilteredMenuItems] = useState<{ items: NavItemType[] }>({ items: [] });
+	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const { user } = useAuth();
 	const isAdmin = user?.role === "ADMIN_ROLE";
 
@@ -42,6 +43,7 @@ const Navigation = () => {
 
 	let getMenu = Menu();
 	const handlerMenuItem = () => {
+		setIsLoading(true);
 		// Clone the original menu items to avoid mutating the imported object
 		const menuItemsClone = {
 			items: isAdmin
@@ -56,6 +58,7 @@ const Navigation = () => {
 		}
 
 		setFilteredMenuItems(menuItemsClone);
+		setIsLoading(false);
 	};
 
 	const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
@@ -99,6 +102,25 @@ const Navigation = () => {
 				);
 		}
 	});
+
+	// Mostrar skeleton mientras carga
+	if (isLoading) {
+		return (
+			<Box
+				sx={{
+					pt: drawerOpen ? (isHorizontal ? 0 : 2) : 0,
+					px: 2,
+				}}
+			>
+				<Stack spacing={1.5}>
+					{[1, 2, 3, 4, 5, 6].map((item) => (
+						<Skeleton key={item} variant="rounded" height={36} animation="wave" />
+					))}
+				</Stack>
+			</Box>
+		);
+	}
+
 	return (
 		<Box
 			sx={{
