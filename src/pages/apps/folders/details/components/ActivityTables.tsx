@@ -895,8 +895,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														bgcolor: theme.palette.primary.dark,
 													},
 													"&.Mui-disabled": {
-														bgcolor: theme.palette.action.disabledBackground,
-														color: theme.palette.action.disabled,
+														bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
+														color: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
+														opacity: 1,
 													},
 												}}
 											>
@@ -1188,8 +1189,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 															bgcolor: theme.palette.primary.dark,
 														},
 														"&.Mui-disabled": {
-															bgcolor: theme.palette.action.disabledBackground,
-															color: theme.palette.action.disabled,
+															bgcolor: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
+															color: theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.3)" : "rgba(0, 0, 0, 0.26)",
+															opacity: 1,
 														},
 													}}
 												>
