@@ -1,6 +1,7 @@
 import React from "react";
 // material-ui
 import {
+	Alert,
 	Button,
 	Chip,
 	Divider,
@@ -23,19 +24,36 @@ import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 
 // assets
-import { More } from "iconsax-react";
+import { InfoCircle, More } from "iconsax-react";
 import { useSelector } from "store";
+import { useTheme } from "@mui/material/styles";
 
 import { avatarImage } from "utils/imageLoader";
 
 // ==============================|| ACCOUNT PROFILE - ROLE ||============================== //
 
 const TabRole = () => {
+	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
 	const users = auth.user?.users;
 
 	return (
 		<Grid container spacing={3}>
+			<Grid item xs={12}>
+				<Alert
+					severity="info"
+					icon={<InfoCircle variant="Bulk" size={24} color={theme.palette.info.main} />}
+					sx={{ mb: 3 }}
+				>
+					<Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+						Funcionalidad en desarrollo
+					</Typography>
+					<Typography variant="body2">
+						La gestión de cuentas grupales y la invitación de miembros estará disponible próximamente. Esta función permitirá colaborar
+						con otros usuarios en tu cuenta.
+					</Typography>
+				</Alert>
+			</Grid>
 			<Grid item xs={12}>
 				<MainCard title="Invitar Miembros a la Cuenta" content={false}>
 					<Stack spacing={2.5} sx={{ p: 2.5 }}>
@@ -59,9 +77,16 @@ const TabRole = () => {
 						>
 							<Stack spacing={1} sx={{ width: `calc(100% - 110px)` }}>
 								<InputLabel htmlFor="outlined-email">Correo Electrónico</InputLabel>
-								<TextField fullWidth id="outlined-email" variant="outlined" placeholder="Ingrese el correo del invitado" />
+								<TextField
+									fullWidth
+									id="outlined-email"
+									variant="outlined"
+									placeholder="Ingrese el correo del invitado"
+									disabled
+									helperText="Funcionalidad no disponible actualmente"
+								/>
 							</Stack>
-							<Button variant="contained" size="large">
+							<Button variant="contained" size="large" disabled>
 								Enviar
 							</Button>
 						</Stack>
