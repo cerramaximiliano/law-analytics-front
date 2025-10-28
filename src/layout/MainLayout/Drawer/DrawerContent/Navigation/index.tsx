@@ -112,9 +112,12 @@ const Navigation = () => {
 					px: 2,
 				}}
 			>
-				<Stack spacing={1.5}>
-					{[1, 2, 3, 4, 5, 6].map((item) => (
-						<Skeleton key={item} variant="rounded" height={36} animation="wave" />
+				<Stack spacing={1}>
+					{[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
+						<Stack key={item} direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.75 }}>
+							<Skeleton variant="circular" width={20} height={20} animation="wave" />
+							<Skeleton variant="rounded" height={20} sx={{ flex: 1 }} animation="wave" />
+						</Stack>
 					))}
 				</Stack>
 			</Box>
