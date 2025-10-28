@@ -646,35 +646,48 @@ const Pricing = () => {
 											}}
 											component="ul"
 										>
-											{/* Primero mostrar los recursos del plan actual */}
-											{plan.resourceLimits.map((resource, i) => (
-												<Fragment key={`resource-${i}`}>
-													<ListItem>
-														<ListItemText
-															primary={planFeatureValue(plan, resource.name)}
-															sx={{ textAlign: "center", fontWeight: "medium" }}
-														/>
-													</ListItem>
-												</Fragment>
-											))}
+											{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
+											{(() => {
+												// Mapear recursos a objetos con información común
+												const resourceItems = plan.resourceLimits.map((resource) => ({
+													type: "resource" as const,
+													enabled: true,
+													description: planFeatureValue(plan, resource.name) || "",
+													name: resource.name,
+												}));
 
-											{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
-											{[...plan.features]
-												.sort((a, b) => {
-													// Ordenar: enabled (true) primero, luego disabled (false)
-													if (a.enabled === b.enabled) return 0;
-													return a.enabled ? -1 : 1;
-												})
-												.map((feature, i) => (
-													<Fragment key={`feature-${i}`}>
-														<ListItem sx={!feature.enabled ? priceListDisable : {}}>
+												// Mapear características a objetos con información común
+												const featureItems = plan.features.map((feature) => ({
+													type: "feature" as const,
+													enabled: feature.enabled,
+													description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
+													name: feature.name,
+												}));
+
+												// Combinar ambos arreglos
+												const allItems = [...resourceItems, ...featureItems];
+
+												// Ordenar: primero por enabled (true primero), luego alfabéticamente por description
+												const sortedItems = allItems.sort((a, b) => {
+													// Primero ordenar por enabled (true antes que false)
+													if (a.enabled !== b.enabled) {
+														return a.enabled ? -1 : 1;
+													}
+													// Luego ordenar alfabéticamente por description
+													return a.description.localeCompare(b.description, "es", { sensitivity: "base" });
+												});
+
+												return sortedItems.map((item, i) => (
+													<Fragment key={`${item.type}-${i}`}>
+														<ListItem sx={!item.enabled ? priceListDisable : {}}>
 															<ListItemText
-																primary={feature.enabled ? feature.description : getDefaultFeatureText(feature.name)}
-																sx={{ textAlign: "center", fontWeight: feature.enabled ? "medium" : "normal" }}
+																primary={item.description}
+																sx={{ textAlign: "center", fontWeight: item.enabled ? "medium" : "normal" }}
 															/>
 														</ListItem>
 													</Fragment>
-												))}
+												));
+											})()}
 										</List>
 									</Grid>
 								</Grid>
