@@ -28,10 +28,10 @@ import { hayRangosFechas } from "./formModel/tasasFechasStore";
 const steps = ["Datos requeridos", "Resultados"];
 const { formId, formField } = interesesFormModel;
 
-function getStepContent(step: number, values: any, folder: any) {
+function getStepContent(step: number, values: any, folder: any, onFolderChange?: (folderId: string | null) => void) {
 	switch (step) {
 		case 0:
-			return <FirstForm formField={formField} folder={folder} />;
+			return <FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />;
 		case 1:
 			return <Review formField={formField} values={values} />;
 		default:
@@ -43,9 +43,10 @@ function getStepContent(step: number, values: any, folder: any) {
 
 interface CompensacionWizardProps {
 	folder?: any;
+	onFolderChange?: (folderId: string | null) => void;
 }
 
-const CompensacionWizard = ({ folder }: CompensacionWizardProps) => {
+const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const isLastStep = activeStep === steps.length - 1;
 	//const [tasasData, setTasasData] = useState(null);
@@ -186,7 +187,7 @@ const CompensacionWizard = ({ folder }: CompensacionWizardProps) => {
 					>
 						{({ isSubmitting, values }) => (
 							<Form id={formId}>
-								{getStepContent(activeStep, values, folder)}
+								{getStepContent(activeStep, values, folder, onFolderChange)}
 								<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
 									{activeStep !== 0 && (
 										<Button onClick={handleBack} sx={{ my: 3, ml: 1 }}>

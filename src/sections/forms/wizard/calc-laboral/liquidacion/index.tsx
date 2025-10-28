@@ -22,10 +22,18 @@ import { WizardProps } from "types/wizards";
 const steps = ["Datos requeridos", "Cálculos", "Intereses", "Resultados"];
 const { formId, formField } = liquidacionFormModel;
 
-function getStepContent(step: number, values: any, handleReset: () => void, folderId?: string, folderName?: string, folder?: any) {
+function getStepContent(
+	step: number,
+	values: any,
+	handleReset: () => void,
+	folderId?: string,
+	folderName?: string,
+	folder?: any,
+	onFolderChange?: (folderId: string | null) => void,
+) {
 	switch (step) {
 		case 0:
-			return <FirstForm formField={formField} folder={folder} />;
+			return <FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />;
 		case 1:
 			return <SecondForm formField={formField} />;
 		case 2:
@@ -39,7 +47,7 @@ function getStepContent(step: number, values: any, handleReset: () => void, fold
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 
-const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
+const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
@@ -76,7 +84,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 			<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
 				{({ isSubmitting, values, resetForm }) => (
 					<Form id={formId}>
-						{getStepContent(activeStep, values, createHandleReset(resetForm), folder?._id, folder?.folderName, folder)}
+						{getStepContent(activeStep, values, createHandleReset(resetForm), folder?._id, folder?.folderName, folder, onFolderChange)}
 						{!isLastStep && (
 							<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
 								{activeStep !== 0 && (

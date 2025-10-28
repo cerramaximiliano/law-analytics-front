@@ -4,4 +4,5 @@ export interface WizardProps {
 		folderName: string;
 		// ... otras propiedades del folder
 	} | null;
+	onFolderChange?: (folderId: string | null) => void;
 }

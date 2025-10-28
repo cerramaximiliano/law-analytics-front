@@ -47,12 +47,14 @@ interface TasaOpcion {
 interface FirstFormProps {
 	formField: FormField;
 	folder?: any;
+	onFolderChange?: (folderId: string | null) => void;
 }
 
 export default function FirstForm(props: FirstFormProps) {
 	const {
 		formField: { reclamante, reclamado, fechaInicial, fechaFinal, tasa, capital },
 		folder,
+		onFolderChange,
 	} = props;
 
 	const [tasaSeleccionada, setTasaSeleccionada] = useState<TasaOpcion | null>(null);
@@ -88,6 +90,11 @@ export default function FirstForm(props: FirstFormProps) {
 				setFieldValue("folderId", folderData.folderId);
 				setFieldValue("folderName", folderData.folderName);
 			}
+
+			// Actualizar la URL con el nuevo folderId
+			if (onFolderChange && folderData?.folderId) {
+				onFolderChange(folderData.folderId);
+			}
 		} else if (method === "manual") {
 			// Si se cambia a modo manual, limpiar los campos
 			setFieldValue(reclamante.name, "");
@@ -95,6 +102,11 @@ export default function FirstForm(props: FirstFormProps) {
 			// Limpiar los campos de vinculación de carpeta
 			setFieldValue("folderId", "");
 			setFieldValue("folderName", "");
+
+			// Limpiar la URL
+			if (onFolderChange) {
+				onFolderChange(null);
+			}
 		}
 	};
 

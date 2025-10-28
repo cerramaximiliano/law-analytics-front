@@ -43,7 +43,7 @@ function a11yProps(index: number) {
 
 export default function LaborTabs() {
 	const [value, setValue] = useState(0);
-	const [searchParams] = useSearchParams();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const { folders } = useSelector((state: any) => state.folder);
 	const { id } = useSelector((state: any) => state.auth?.user);
 	const [guideOpen, setGuideOpen] = useState(false);
@@ -51,6 +51,15 @@ export default function LaborTabs() {
 
 	const folderParam = searchParams.get("folder");
 	const currentFolder = folderParam ? folders.find((f: any) => f._id === folderParam) : null;
+
+	// Callback para actualizar la URL cuando se cambia la carpeta
+	const handleFolderChange = (newFolderId: string | null) => {
+		if (newFolderId) {
+			setSearchParams({ folder: newFolderId });
+		} else {
+			setSearchParams({});
+		}
+	};
 
 	useEffect(() => {
 		if (id && folderParam) {
@@ -151,11 +160,6 @@ export default function LaborTabs() {
 						<Tab label="Liquidación" icon={<Calculator />} iconPosition="start" {...a11yProps(1)} />
 						<Tab label="Guardados" icon={<DocumentCloud />} iconPosition="start" {...a11yProps(2)} />
 					</Tabs>
-					<Tooltip title="Ver Guía">
-						<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
-							<InfoCircle variant="Bulk" />
-						</IconButton>
-					</Tooltip>
 					{shouldShowFolderName && (
 						<Typography
 							variant="subtitle1"
@@ -172,12 +176,17 @@ export default function LaborTabs() {
 							{currentFolder.folderName}
 						</Typography>
 					)}
+					<Tooltip title="Ver Guía">
+						<IconButton color="success" onClick={() => setGuideOpen(true)} size="medium">
+							<InfoCircle variant="Bulk" />
+						</IconButton>
+					</Tooltip>
 				</Box>
 				<TabPanel value={value} index={0}>
-					<BasicWizard folder={currentFolder} />
+					<BasicWizard folder={currentFolder} onFolderChange={handleFolderChange} />
 				</TabPanel>
 				<TabPanel value={value} index={1}>
-					<LiquidacionWizard folder={currentFolder} />
+					<LiquidacionWizard folder={currentFolder} onFolderChange={handleFolderChange} />
 				</TabPanel>
 				<TabPanel value={value} index={2}>
 					<SavedLabor />

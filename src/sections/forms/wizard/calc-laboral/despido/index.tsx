@@ -26,10 +26,10 @@ import { WizardProps } from "types/wizards";
 const steps = ["Datos requeridos", "Cálculos opcionales", "Intereses", "Resultados"];
 const { formId, formField } = despidoFormModel;
 
-function getStepContent(step: number, values: any, folder: any) {
+function getStepContent(step: number, values: any, folder: any, onFolderChange?: (folderId: string | null) => void) {
 	switch (step) {
 		case 0:
-			return <FirstForm formField={formField} folder={folder} />;
+			return <FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />;
 		case 1:
 			return <SecondForm formField={formField} />;
 		case 2:
@@ -42,7 +42,7 @@ function getStepContent(step: number, values: any, folder: any) {
 }
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
-const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
+const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
@@ -505,7 +505,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 					<Formik initialValues={formInitialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
 						{({ isSubmitting, values }) => (
 							<Form id={formId}>
-								{getStepContent(activeStep, values, folder)}
+								{getStepContent(activeStep, values, folder, onFolderChange)}
 								<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
 									{activeStep !== 0 && (
 										<Button onClick={handleBack} sx={{ my: 3, ml: 1 }}>
