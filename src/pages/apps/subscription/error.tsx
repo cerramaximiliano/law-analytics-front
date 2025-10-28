@@ -43,25 +43,24 @@ const SubscriptionError = () => {
 				display: "flex",
 				alignItems: "center",
 				justifyContent: "center",
-				minHeight: "100vh",
-				py: 2,
+				minHeight: "calc(100vh - 180px)",
 			}}
 		>
-			<Container maxWidth="md">
+			<Container maxWidth="sm">
 				<MainCard>
-					<CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+					<CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
 						{/* Icono centrado */}
-						<Box sx={{ textAlign: "center", mb: { xs: 1.5, sm: 2 } }}>
+						<Box sx={{ textAlign: "center", mb: { xs: 1, sm: 1.5 } }}>
 							<CloseCircle size={matchDownSM ? 48 : 56} variant="Bulk" color={theme.palette.error.main} />
 						</Box>
 
 						{/* Título principal */}
-						<Typography variant={matchDownSM ? "h3" : "h2"} align="center" gutterBottom sx={{ mb: 1 }}>
+						<Typography variant={matchDownSM ? "h4" : "h3"} align="center" gutterBottom sx={{ mb: 0.5 }}>
 							Error en el proceso de pago
 						</Typography>
 
 						{/* Descripción */}
-						<Typography variant="body1" align="center" color="textSecondary" sx={{ mb: { xs: 2, sm: 3 } }}>
+						<Typography variant="body1" align="center" color="textSecondary" sx={{ mb: { xs: 1.5, sm: 2 } }}>
 							No pudimos procesar tu pago. No se ha realizado ningún cargo a tu tarjeta.
 						</Typography>
 
@@ -69,12 +68,12 @@ const SubscriptionError = () => {
 						<Card
 							variant="outlined"
 							sx={{
-								mb: { xs: 2, sm: 3 },
+								mb: { xs: 1.5, sm: 2 },
 								bgcolor: theme.palette.grey[50],
 								borderColor: theme.palette.grey[300],
 							}}
 						>
-							<CardContent sx={{ py: { xs: 1.5, sm: 2 }, px: { xs: 2, sm: 3 } }}>
+							<CardContent sx={{ py: { xs: 1, sm: 1.5 }, px: { xs: 1.5, sm: 2 } }}>
 								<Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
 									Posibles causas:
 								</Typography>
@@ -96,7 +95,7 @@ const SubscriptionError = () => {
 						</Card>
 
 						{/* Botones de acción */}
-						<Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="center" sx={{ mb: { xs: 1.5, sm: 2 } }}>
 							<Button
 								component={RouterLink}
 								to="/suscripciones/tables"
@@ -122,7 +121,7 @@ const SubscriptionError = () => {
 						</Stack>
 
 						{/* Link de soporte */}
-						<Box sx={{ textAlign: "center", mt: { xs: 2, sm: 2.5 } }}>
+						<Box sx={{ textAlign: "center" }}>
 							<Button
 								variant="text"
 								color="primary"
