@@ -846,7 +846,6 @@ const FoldersLayout = () => {
 					if (folder.causaVerified === false) {
 						return (
 							<Stack direction="row" alignItems="center" spacing={1}>
-								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
 								<Tooltip title="Actualizar estado de verificación">
 									<IconButton
 										size="small"
@@ -864,6 +863,7 @@ const FoldersLayout = () => {
 										<Refresh size={16} />
 									</IconButton>
 								</Tooltip>
+								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
 							</Stack>
 						);
 					}
@@ -872,7 +872,6 @@ const FoldersLayout = () => {
 					if (folder.causaVerified === true && folder.causaIsValid === false) {
 						return (
 							<Stack direction="row" alignItems="center" spacing={1}>
-								<Chip color="error" label="Causa inválida" size="small" variant="light" />
 								<Tooltip title="Causa inválida - No se pudo verificar en el Poder Judicial">
 									<Box
 										sx={{
@@ -886,6 +885,7 @@ const FoldersLayout = () => {
 										<CloseCircle size={16} variant="Bold" color="#EF4444" />
 									</Box>
 								</Tooltip>
+								<Chip color="error" label="Causa inválida" size="small" variant="light" />
 							</Stack>
 						);
 					}
@@ -894,7 +894,6 @@ const FoldersLayout = () => {
 					if (value === "Pendiente") {
 						return (
 							<Stack direction="row" alignItems="center" spacing={1}>
-								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
 								<Tooltip title="Actualizar estado de verificación">
 									<IconButton
 										size="small"
@@ -912,6 +911,7 @@ const FoldersLayout = () => {
 										<Refresh size={16} />
 									</IconButton>
 								</Tooltip>
+								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
 							</Stack>
 						);
 					}
