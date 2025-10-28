@@ -67,6 +67,7 @@ const DashboardAnalytics = () => {
 	const [hasModalBeenClosed, setHasModalBeenClosed] = useState(false);
 	const [exportModalOpen, setExportModalOpen] = useState(false);
 	const [guideOpen, setGuideOpen] = useState(false);
+	const [isCheckingFeatures, setIsCheckingFeatures] = useState(true);
 
 	// Función para crear el objeto featureInfo
 	const createFeatureInfo = () => ({
@@ -88,6 +89,10 @@ const DashboardAnalytics = () => {
 
 	// Verificar si el usuario tiene acceso a las características
 	useEffect(() => {
+		if (!subscription) return; // Esperar a que se cargue la suscripción
+
+		setIsCheckingFeatures(true);
+
 		// Verificar si tiene las características usando el hook
 		const hasAdvanced = hasFeatureLocal("advancedAnalytics");
 		const hasExport = hasFeatureLocal("exportReports");
@@ -107,6 +112,8 @@ const DashboardAnalytics = () => {
 				setLimitModalOpen(true);
 			}
 		}
+
+		setIsCheckingFeatures(false);
 	}, [subscription, hasModalBeenClosed]);
 
 	// Manejar cierre del modal
@@ -147,8 +154,8 @@ const DashboardAnalytics = () => {
 		}
 	}, [dispatch, userId, hasTriedToLoad]);
 
-	// Mostrar skeleton mientras se carga el usuario, los datos o la suscripción
-	if (!user || statsLoading || !subscription) {
+	// Mostrar skeleton mientras se carga el usuario, los datos, la suscripción o se verifican features
+	if (!user || statsLoading || !subscription || isCheckingFeatures) {
 		return (
 			<Box>
 				<MainCard title="Panel de Analíticas">
