@@ -16,6 +16,7 @@ import {
 	useTheme,
 	CircularProgress,
 	Backdrop,
+	Skeleton,
 } from "@mui/material";
 import merge from "lodash/merge";
 import * as Yup from "yup";
@@ -179,6 +180,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 	const [initialValues, setInitialValues] = useState(getInitialValues(folder));
 	const [values, setValues] = useState<any>(initialValues);
+	const [isLoadingData, setIsLoadingData] = useState(!isCreating && !folder); // Loading solo cuando editamos y no hay datos
 	const stepsEditing = ["Datos requeridos", "Datos opcionales"];
 	const stepsCreatingManual = ["Método de ingreso", "Datos requeridos", "Datos opcionales"];
 	const stepsCreatingAutomatic = ["Método de ingreso", "Selección poder judicial", "Importar datos", "Completar datos"];
@@ -259,6 +261,16 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			window.removeEventListener("planRestrictionError", handlePlanRestriction);
 		};
 	}, [onCancel]);
+
+	// Actualizar valores cuando los datos del folder cambien
+	useEffect(() => {
+		if (!isCreating && folder) {
+			const newInitialValues = getInitialValues(folder);
+			setInitialValues(newInitialValues);
+			setValues(newInitialValues);
+			setIsLoadingData(false);
+		}
+	}, [folder, isCreating]);
 
 	useEffect(() => {
 		// Cuando el modal se abre, resetear los estados relacionados con la verificación
@@ -516,9 +528,21 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 						{({ isSubmitting, values }) => (
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
 								<DialogContent sx={{ p: 2.5, overflow: "auto", flex: 1 }}>
-									<Box sx={{ minHeight: 400 }}>
-										{/* Steps Progress */}
-										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+									{isLoadingData ? (
+										<Box sx={{ minHeight: 400, p: 2 }}>
+											<Stack spacing={3}>
+												<Skeleton variant="rounded" height={40} animation="wave" />
+												<Skeleton variant="rounded" height={56} animation="wave" />
+												<Skeleton variant="rounded" height={56} animation="wave" />
+												<Skeleton variant="rounded" height={56} animation="wave" />
+												<Skeleton variant="rounded" height={56} animation="wave" />
+												<Skeleton variant="rounded" height={56} animation="wave" />
+											</Stack>
+										</Box>
+									) : (
+										<Box sx={{ minHeight: 400 }}>
+											{/* Steps Progress */}
+											<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
 											{steps.map((label, index) => (
 												<Box key={label} sx={{ position: "relative", width: "100%" }}>
 													<Box
@@ -546,6 +570,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 										{/* Form Content */}
 										<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
 									</Box>
+									)}
 								</DialogContent>
 
 								<DialogActions
