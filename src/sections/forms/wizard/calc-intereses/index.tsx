@@ -28,10 +28,10 @@ import { hayRangosFechas } from "./formModel/tasasFechasStore";
 const steps = ["Datos requeridos", "Resultados"];
 const { formId, formField } = interesesFormModel;
 
-function getStepContent(step: number, values: any) {
+function getStepContent(step: number, values: any, folder: any) {
 	switch (step) {
 		case 0:
-			return <FirstForm formField={formField} />;
+			return <FirstForm formField={formField} folder={folder} />;
 		case 1:
 			return <Review formField={formField} values={values} />;
 		default:
@@ -41,7 +41,11 @@ function getStepContent(step: number, values: any) {
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 
-const CompensacionWizard = () => {
+interface CompensacionWizardProps {
+	folder?: any;
+}
+
+const CompensacionWizard = ({ folder }: CompensacionWizardProps) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const isLastStep = activeStep === steps.length - 1;
 	//const [tasasData, setTasasData] = useState(null);
@@ -182,7 +186,7 @@ const CompensacionWizard = () => {
 					>
 						{({ isSubmitting, values }) => (
 							<Form id={formId}>
-								{getStepContent(activeStep, values)}
+								{getStepContent(activeStep, values, folder)}
 								<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
 									{activeStep !== 0 && (
 										<Button onClick={handleBack} sx={{ my: 3, ml: 1 }}>

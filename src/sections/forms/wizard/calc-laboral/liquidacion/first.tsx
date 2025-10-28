@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Checkbox, Grid, InputLabel, Typography } from "@mui/material";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
@@ -44,16 +44,18 @@ interface FormField {
 
 interface FirstFormProps {
 	formField: FormField;
+	folder?: any;
 }
 
 export default function FirstForm(props: FirstFormProps) {
 	const {
 		formField: { reclamado, reclamante, remuneracion, otrasSumas, fechaIngreso, fechaEgreso, dias, incluirSAC, folderId, folderName },
+		folder,
 	} = props;
 
 	const { setFieldValue } = useFormikContext();
-	const [inputMethod, setInputMethod] = useState<"manual" | "causa">("manual");
-	const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+	const [inputMethod, setInputMethod] = useState<"manual" | "causa">(folder ? "causa" : "manual");
+	const [selectedFolder, setSelectedFolder] = useState<Folder | null>(folder || null);
 
 	// Hooks para los checkboxes
 	const [incluirSACField] = useField(incluirSAC.name);
@@ -82,6 +84,16 @@ export default function FirstForm(props: FirstFormProps) {
 			setFieldValue(folderName.name, "");
 		}
 	};
+
+	// Inicializar el formulario cuando hay un folder desde la URL
+	useEffect(() => {
+		if (folder && inputMethod === "causa") {
+			handleMethodChange("causa", folder, {
+				folderId: folder._id,
+				folderName: folder.folderName,
+			});
+		}
+	}, [folder]);
 
 	return (
 		<>

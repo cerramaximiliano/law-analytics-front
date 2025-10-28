@@ -22,10 +22,10 @@ import { WizardProps } from "types/wizards";
 const steps = ["Datos requeridos", "Cálculos", "Intereses", "Resultados"];
 const { formId, formField } = liquidacionFormModel;
 
-function getStepContent(step: number, values: any, handleReset: () => void, folderId?: string, folderName?: string) {
+function getStepContent(step: number, values: any, handleReset: () => void, folderId?: string, folderName?: string, folder?: any) {
 	switch (step) {
 		case 0:
-			return <FirstForm formField={formField} />;
+			return <FirstForm formField={formField} folder={folder} />;
 		case 1:
 			return <SecondForm formField={formField} />;
 		case 2:
@@ -76,7 +76,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder }) => {
 			<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
 				{({ isSubmitting, values, resetForm }) => (
 					<Form id={formId}>
-						{getStepContent(activeStep, values, createHandleReset(resetForm), folder?._id, folder?.folderName)}
+						{getStepContent(activeStep, values, createHandleReset(resetForm), folder?._id, folder?.folderName, folder)}
 						{!isLastStep && (
 							<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
 								{activeStep !== 0 && (

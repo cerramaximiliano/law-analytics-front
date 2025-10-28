@@ -46,16 +46,18 @@ interface TasaOpcion {
 
 interface FirstFormProps {
 	formField: FormField;
+	folder?: any;
 }
 
 export default function FirstForm(props: FirstFormProps) {
 	const {
 		formField: { reclamante, reclamado, fechaInicial, fechaFinal, tasa, capital },
+		folder,
 	} = props;
 
 	const [tasaSeleccionada, setTasaSeleccionada] = useState<TasaOpcion | null>(null);
-	const [inputMethod, setInputMethod] = useState<"manual" | "causa">("manual");
-	const [selectedFolder, setSelectedFolder] = useState<any>(null);
+	const [inputMethod, setInputMethod] = useState<"manual" | "causa">(folder ? "causa" : "manual");
+	const [selectedFolder, setSelectedFolder] = useState<any>(folder || null);
 
 	// Obtener datos del store
 	const user = useSelector((state) => state.auth.user);
@@ -102,6 +104,16 @@ export default function FirstForm(props: FirstFormProps) {
 			dispatch(getInterestRates(userId));
 		}
 	}, [userId, isInitialized]);
+
+	// Inicializar el formulario cuando hay un folder desde la URL
+	useEffect(() => {
+		if (folder && inputMethod === "causa") {
+			handleMethodChange("causa", folder, {
+				folderId: folder._id,
+				folderName: folder.folderName,
+			});
+		}
+	}, [folder]);
 
 	// Actualizar el mapa global de rangos de fechas cuando se cargan las tasas
 	useEffect(() => {

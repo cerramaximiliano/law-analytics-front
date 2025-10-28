@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
 // material-ui
-import { Box, Tab, Tabs, IconButton, Tooltip, Skeleton, Stack, Grid } from "@mui/material";
+import { Box, Tab, Tabs, IconButton, Tooltip, Skeleton, Stack, Grid, Typography } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -11,6 +11,10 @@ import { Calculator, DocumentCloud, InfoCircle } from "iconsax-react";
 import InteresesWizard from "sections/forms/wizard/calc-intereses";
 import SavedIntereses from "./components/SavedIntereses";
 import { GuideIntereses } from "components/guides";
+import { useSearchParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { dispatch } from "store";
+import { getFoldersByUserId } from "store/reducers/folder";
 
 // ==============================|| TAB PANEL ||============================== //
 
@@ -41,8 +45,20 @@ function a11yProps(index: number) {
 
 export default function InteresesTabs() {
 	const [value, setValue] = useState(0);
+	const [searchParams] = useSearchParams();
+	const { folders } = useSelector((state: any) => state.folder);
+	const { id } = useSelector((state: any) => state.auth?.user);
 	const [guideOpen, setGuideOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
+
+	const folderParam = searchParams.get("folder");
+	const currentFolder = folderParam ? folders.find((f: any) => f._id === folderParam) : null;
+
+	useEffect(() => {
+		if (id && folderParam) {
+			dispatch(getFoldersByUserId(id));
+		}
+	}, [dispatch, id, folderParam]);
 
 	// Simular carga inicial liviana para mostrar skeleton
 	useEffect(() => {
@@ -55,6 +71,8 @@ export default function InteresesTabs() {
 	const handleChange = (event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 	};
+
+	const shouldShowFolderName = value !== 1 && folderParam && currentFolder?.folderName;
 
 	// Mostrar skeleton mientras se carga
 	if (isLoading) {
@@ -138,9 +156,25 @@ export default function InteresesTabs() {
 							<InfoCircle variant="Bulk" />
 						</IconButton>
 					</Tooltip>
+					{shouldShowFolderName && (
+						<Typography
+							variant="subtitle1"
+							sx={{
+								ml: 2,
+								mr: 2,
+								color: "text.secondary",
+								display: "flex",
+								alignItems: "center",
+								gap: 1,
+							}}
+						>
+							<DocumentCloud size={20} />
+							{currentFolder.folderName}
+						</Typography>
+					)}
 				</Box>
 				<TabPanel value={value} index={0}>
-					<InteresesWizard />
+					<InteresesWizard folder={currentFolder} />
 				</TabPanel>
 				<TabPanel value={value} index={1}>
 					<SavedIntereses />
