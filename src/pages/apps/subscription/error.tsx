@@ -38,109 +38,108 @@ const SubscriptionError = () => {
 	}, []);
 
 	return (
-		<Container maxWidth="lg">
-			<Grid
-				container
-				spacing={3}
-				alignItems="center"
-				justifyContent="center"
-				sx={{
-					minHeight: "calc(100vh - 200px)",
-					py: 3,
-				}}
-			>
-				<Grid item xs={12} md={8} lg={6}>
-					<MainCard>
-						<CardContent sx={{ p: { xs: 3, md: 5 } }}>
-							{/* Icono centrado */}
-							<Box sx={{ textAlign: "center", mb: 3 }}>
-								<CloseCircle size={64} variant="Bulk" color={theme.palette.error.main} />
-							</Box>
+		<Box
+			sx={{
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				minHeight: "100vh",
+				py: 2,
+			}}
+		>
+			<Container maxWidth="md">
+				<MainCard>
+					<CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+						{/* Icono centrado */}
+						<Box sx={{ textAlign: "center", mb: { xs: 1.5, sm: 2 } }}>
+							<CloseCircle size={matchDownSM ? 48 : 56} variant="Bulk" color={theme.palette.error.main} />
+						</Box>
 
-							{/* Título principal */}
-							<Typography variant="h2" align="center" gutterBottom sx={{ mb: 2 }}>
-								Error en el proceso de pago
-							</Typography>
+						{/* Título principal */}
+						<Typography variant={matchDownSM ? "h3" : "h2"} align="center" gutterBottom sx={{ mb: 1 }}>
+							Error en el proceso de pago
+						</Typography>
 
-							{/* Descripción */}
-							<Typography variant="body1" align="center" color="textSecondary" sx={{ mb: 4 }}>
-								No pudimos procesar tu pago. No se ha realizado ningún cargo a tu tarjeta.
-							</Typography>
+						{/* Descripción */}
+						<Typography variant="body1" align="center" color="textSecondary" sx={{ mb: { xs: 2, sm: 3 } }}>
+							No pudimos procesar tu pago. No se ha realizado ningún cargo a tu tarjeta.
+						</Typography>
 
-							{/* Información adicional */}
-							<Card
-								variant="outlined"
-								sx={{
-									mb: 4,
-									bgcolor: theme.palette.grey[50],
-									borderColor: theme.palette.grey[300],
-								}}
-							>
-								<CardContent>
-									<Typography variant="h5" gutterBottom>
-										Posibles causas:
-									</Typography>
-									<Typography variant="body2" color="textSecondary" paragraph>
+						{/* Información adicional */}
+						<Card
+							variant="outlined"
+							sx={{
+								mb: { xs: 2, sm: 3 },
+								bgcolor: theme.palette.grey[50],
+								borderColor: theme.palette.grey[300],
+							}}
+						>
+							<CardContent sx={{ py: { xs: 1.5, sm: 2 }, px: { xs: 2, sm: 3 } }}>
+								<Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+									Posibles causas:
+								</Typography>
+								<Stack spacing={0.5} sx={{ ml: 1 }}>
+									<Typography variant="body2" color="textSecondary">
 										• Información de pago incorrecta
 									</Typography>
-									<Typography variant="body2" color="textSecondary" paragraph>
+									<Typography variant="body2" color="textSecondary">
 										• Fondos insuficientes en la tarjeta
 									</Typography>
-									<Typography variant="body2" color="textSecondary" paragraph>
+									<Typography variant="body2" color="textSecondary">
 										• Límite de transacciones alcanzado
 									</Typography>
 									<Typography variant="body2" color="textSecondary">
 										• Problema temporal con el procesador de pagos
 									</Typography>
-								</CardContent>
-							</Card>
+								</Stack>
+							</CardContent>
+						</Card>
 
-							{/* Botones de acción */}
-							<Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
-								<Button
-									component={RouterLink}
-									to="/suscripciones/tables"
-									variant="contained"
-									color="primary"
-									size="large"
-									fullWidth={matchDownSM}
-									startIcon={<RefreshSquare size={20} />}
-								>
-									Intentar Nuevamente
-								</Button>
+						{/* Botones de acción */}
+						<Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
+							<Button
+								component={RouterLink}
+								to="/suscripciones/tables"
+								variant="contained"
+								color="primary"
+								size={matchDownSM ? "medium" : "large"}
+								fullWidth={matchDownSM}
+								startIcon={<RefreshSquare size={20} />}
+							>
+								Intentar Nuevamente
+							</Button>
 
-								<Button
-									onClick={() => navigate("/dashboard/default")}
-									variant="outlined"
-									color="secondary"
-									size="large"
-									fullWidth={matchDownSM}
-									startIcon={<ArrowLeft size={20} />}
-								>
-									Volver al Dashboard
-								</Button>
-							</Stack>
+							<Button
+								onClick={() => navigate("/dashboard/default")}
+								variant="outlined"
+								color="secondary"
+								size={matchDownSM ? "medium" : "large"}
+								fullWidth={matchDownSM}
+								startIcon={<ArrowLeft size={20} />}
+							>
+								Volver al Dashboard
+							</Button>
+						</Stack>
 
-							{/* Link de soporte */}
-							<Box sx={{ textAlign: "center", mt: 3 }}>
-								<Button
-									variant="text"
-									color="primary"
-									size="small"
-									startIcon={<MessageQuestion size={16} />}
-									onClick={() => setSupportModalOpen(true)}
-								>
-									¿Necesitas ayuda? Contactar soporte
-								</Button>
-							</Box>
-						</CardContent>
-					</MainCard>
-				</Grid>
-			</Grid>
+						{/* Link de soporte */}
+						<Box sx={{ textAlign: "center", mt: { xs: 2, sm: 2.5 } }}>
+							<Button
+								variant="text"
+								color="primary"
+								size="small"
+								startIcon={<MessageQuestion size={16} />}
+								onClick={() => setSupportModalOpen(true)}
+							>
+								¿Necesitas ayuda? Contactar soporte
+							</Button>
+						</Box>
+					</CardContent>
+				</MainCard>
+			</Container>
 
 			{/* Modal de soporte */}
 			<SupportModal open={supportModalOpen} onClose={() => setSupportModalOpen(false)} />
-		</Container>
+		</Box>
 	);
 };
 
