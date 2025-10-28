@@ -845,28 +845,25 @@ const FoldersLayout = () => {
 					// Si causaVerified es false, mostrar chip de pendiente con botón de actualización
 					if (folder.causaVerified === false) {
 						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<span>{formatFolderName(value, 50)}</span>
-								<Stack direction="row" alignItems="center" spacing={1}>
-									<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
-									<Tooltip title="Actualizar estado de verificación">
-										<IconButton
-											size="small"
-											onClick={async (e) => {
-												e.stopPropagation();
-												await dispatch(getFolderById(folder._id, true));
-											}}
-											sx={{
-												padding: 0.5,
-												"&:hover": {
-													backgroundColor: "warning.lighter",
-												},
-											}}
-										>
-											<Refresh size={16} />
-										</IconButton>
-									</Tooltip>
-								</Stack>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+								<Tooltip title="Actualizar estado de verificación">
+									<IconButton
+										size="small"
+										onClick={async (e) => {
+											e.stopPropagation();
+											await dispatch(getFolderById(folder._id, true));
+										}}
+										sx={{
+											padding: 0.5,
+											"&:hover": {
+												backgroundColor: "warning.lighter",
+											},
+										}}
+									>
+										<Refresh size={16} />
+									</IconButton>
+								</Tooltip>
 							</Stack>
 						);
 					}
@@ -874,24 +871,21 @@ const FoldersLayout = () => {
 					// Si causaVerified es true pero causaIsValid es false, mostrar chip de causa inválida
 					if (folder.causaVerified === true && folder.causaIsValid === false) {
 						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<span>{formatFolderName(value, 50)}</span>
-								<Stack direction="row" alignItems="center" spacing={1}>
-									<Chip color="error" label="Causa inválida" size="small" variant="light" />
-									<Tooltip title="Causa inválida - No se pudo verificar en el Poder Judicial">
-										<Box
-											sx={{
-												display: "inline-flex",
-												alignItems: "center",
-												justifyContent: "center",
-												width: 18,
-												height: 18,
-											}}
-										>
-											<CloseCircle size={16} variant="Bold" color="#EF4444" />
-										</Box>
-									</Tooltip>
-								</Stack>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Chip color="error" label="Causa inválida" size="small" variant="light" />
+								<Tooltip title="Causa inválida - No se pudo verificar en el Poder Judicial">
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											width: 18,
+											height: 18,
+										}}
+									>
+										<CloseCircle size={16} variant="Bold" color="#EF4444" />
+									</Box>
+								</Tooltip>
 							</Stack>
 						);
 					}
@@ -899,28 +893,25 @@ const FoldersLayout = () => {
 					// Mantener compatibilidad con el valor "Pendiente" anterior
 					if (value === "Pendiente") {
 						return (
-							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<span>{formatFolderName(value, 50)}</span>
-								<Stack direction="row" alignItems="center" spacing={1}>
-									<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
-									<Tooltip title="Actualizar estado de verificación">
-										<IconButton
-											size="small"
-											onClick={async (e) => {
-												e.stopPropagation();
-												await dispatch(getFolderById(folder._id, true));
-											}}
-											sx={{
-												padding: 0.5,
-												"&:hover": {
-													backgroundColor: "warning.lighter",
-												},
-											}}
-										>
-											<Refresh size={16} />
-										</IconButton>
-									</Tooltip>
-								</Stack>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+								<Tooltip title="Actualizar estado de verificación">
+									<IconButton
+										size="small"
+										onClick={async (e) => {
+											e.stopPropagation();
+											await dispatch(getFolderById(folder._id, true));
+										}}
+										sx={{
+											padding: 0.5,
+											"&:hover": {
+												backgroundColor: "warning.lighter",
+											},
+										}}
+									>
+										<Refresh size={16} />
+									</IconButton>
+								</Tooltip>
 							</Stack>
 						);
 					}
