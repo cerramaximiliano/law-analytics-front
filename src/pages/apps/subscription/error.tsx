@@ -38,15 +38,15 @@ const SubscriptionError = () => {
 	}, []);
 
 	return (
-		<Container>
+		<Container maxWidth="lg">
 			<Grid
 				container
 				spacing={3}
 				alignItems="center"
 				justifyContent="center"
 				sx={{
-					minHeight: "calc(100vh - 240px)",
-					mt: { xs: 4, md: 8 },
+					minHeight: "calc(100vh - 200px)",
+					py: 3,
 				}}
 			>
 				<Grid item xs={12} md={8} lg={6}>
