@@ -31,13 +31,13 @@ import {
 	useTheme,
 	Alert,
 	Tooltip,
+	Skeleton,
 } from "@mui/material";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { Calendar, ClipboardTick, MoreSquare, Trash, User, Edit2, Link21, Clock, InfoCircle, Lock } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { LoadingButton } from "@mui/lab";
 import dayjs from "utils/dayjs-config";
-import Loader from "components/Loader";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { GuideBooking } from "components/guides";
@@ -1080,7 +1080,121 @@ const BookingsManagement = () => {
 		}
 	};
 
-	if (loading) return <Loader />;
+	// Mostrar skeleton mientras se carga
+	if (loading) {
+		return (
+			<MainCard
+				title={isSpecificAvailability && availability ? `Reservas - ${availability.title}` : "Configuración de Citas"}
+				secondary={
+					<Stack direction="row" spacing={2} alignItems="center">
+						<Skeleton variant="rounded" width={120} height={36} />
+						<Skeleton variant="rounded" width={180} height={36} />
+					</Stack>
+				}
+			>
+				{/* Skeleton para sección de disponibilidades */}
+				{!isSpecificAvailability && (
+					<Box sx={{ mb: 4 }}>
+						<Skeleton variant="text" width="30%" height={32} sx={{ mb: 2 }} />
+						<Grid container spacing={3}>
+							{[1, 2, 3].map((item) => (
+								<Grid item xs={12} sm={6} md={4} key={item}>
+									<Card variant="outlined" sx={{ height: "100%" }}>
+										<CardContent>
+											<Skeleton variant="text" width="60%" height={28} sx={{ mb: 2 }} />
+											<Stack spacing={2}>
+												<Box sx={{ display: "flex", alignItems: "flex-start" }}>
+													<Skeleton variant="circular" width={18} height={18} sx={{ mr: 1, mt: 0.5 }} />
+													<Box sx={{ flex: 1 }}>
+														<Skeleton variant="text" width="40%" height={20} />
+														<Skeleton variant="text" width="80%" height={20} />
+													</Box>
+												</Box>
+												<Box sx={{ display: "flex", alignItems: "flex-start" }}>
+													<Skeleton variant="circular" width={18} height={18} sx={{ mr: 1, mt: 0.5 }} />
+													<Box sx={{ flex: 1 }}>
+														<Skeleton variant="text" width="40%" height={20} />
+														<Skeleton variant="text" width="90%" height={20} />
+													</Box>
+												</Box>
+												<Box sx={{ display: "flex", alignItems: "flex-start" }}>
+													<Skeleton variant="circular" width={18} height={18} sx={{ mr: 1, mt: 0.5 }} />
+													<Box sx={{ flex: 1 }}>
+														<Skeleton variant="text" width="30%" height={20} />
+														<Skeleton variant="rounded" width={120} height={32} />
+													</Box>
+												</Box>
+											</Stack>
+											<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
+												<Skeleton variant="circular" width={32} height={32} />
+												<Skeleton variant="circular" width={32} height={32} />
+											</Box>
+										</CardContent>
+									</Card>
+								</Grid>
+							))}
+						</Grid>
+					</Box>
+				)}
+
+				{/* Skeleton para sección de reservas */}
+				<Skeleton variant="text" width="30%" height={32} sx={{ mb: 2 }} />
+
+				{/* Tabs skeleton */}
+				<Paper sx={{ mb: 3 }}>
+					<Stack direction="row" spacing={2} sx={{ borderBottom: 1, borderColor: "divider", p: 2 }}>
+						<Skeleton variant="rounded" width={100} height={32} />
+						<Skeleton variant="rounded" width={100} height={32} />
+						<Skeleton variant="rounded" width={100} height={32} />
+					</Stack>
+					<Box sx={{ p: 2, display: "flex", alignItems: "center" }}>
+						<Skeleton variant="text" width={120} height={24} sx={{ mr: 2 }} />
+						<Skeleton variant="rounded" width={200} height={40} />
+					</Box>
+				</Paper>
+
+				{/* Cards skeleton */}
+				<Grid container spacing={3}>
+					{[1, 2, 3, 4, 5, 6].map((item) => (
+						<Grid item xs={12} sm={6} md={4} key={item}>
+							<Card variant="outlined" sx={{ height: "100%" }}>
+								<CardContent>
+									<Skeleton variant="text" width="70%" height={28} sx={{ mb: 2 }} />
+									<Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+										<Skeleton variant="rounded" width={80} height={24} />
+										<Skeleton variant="rounded" width={60} height={24} />
+									</Stack>
+									<Stack spacing={1.5}>
+										<Box sx={{ display: "flex" }}>
+											<Skeleton variant="circular" width={18} height={18} sx={{ mr: 1, mt: 0.5 }} />
+											<Box sx={{ flex: 1 }}>
+												<Skeleton variant="text" width="90%" height={20} />
+												<Skeleton variant="text" width="60%" height={20} />
+											</Box>
+										</Box>
+										<Box sx={{ display: "flex" }}>
+											<Skeleton variant="circular" width={18} height={18} sx={{ mr: 1, mt: 0.5 }} />
+											<Box sx={{ flex: 1 }}>
+												<Skeleton variant="text" width="70%" height={20} />
+												<Skeleton variant="text" width="85%" height={20} />
+											</Box>
+										</Box>
+									</Stack>
+								</CardContent>
+								<Box sx={{ p: 2, pt: 0, display: "flex", justifyContent: "space-between" }}>
+									<Stack direction="row" spacing={1}>
+										<Skeleton variant="rounded" width={90} height={32} />
+										<Skeleton variant="rounded" width={90} height={32} />
+									</Stack>
+									<Skeleton variant="rounded" width={80} height={32} />
+								</Box>
+							</Card>
+						</Grid>
+					))}
+				</Grid>
+			</MainCard>
+		);
+	}
 
 	// Solo mostramos la alerta si estamos intentando ver una disponibilidad específica
 	// pero no se encontró
