@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, SyntheticEvent } from "react";
+import { useState, SyntheticEvent, useEffect } from "react";
 import { useLocation, Link, Outlet } from "react-router-dom";
 
 // material-ui
@@ -21,17 +21,22 @@ const AccountProfile = () => {
 		case "/apps/profiles/account/my-account":
 			selectedTab = 0;
 			break;
-		case "/apps/profiles/account/role":
+		case "/apps/profiles/account/settings":
 			selectedTab = 1;
 			break;
-		/* 		case "/apps/profiles/account/settings":
-					selectedTab = 2;
-					break; */
+		case "/apps/profiles/account/role":
+			selectedTab = 2;
+			break;
 		default:
 			selectedTab = 0;
 	}
 
 	const [value, setValue] = useState(selectedTab);
+
+	// Actualizar el tab seleccionado cuando cambia la ruta
+	useEffect(() => {
+		setValue(selectedTab);
+	}, [selectedTab]);
 
 	const handleChange = (event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
