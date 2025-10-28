@@ -887,15 +887,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														setDocumentNavigationOpen(true);
 													}
 												}}
-												disabled={movementsData.totalWithLinks === 0}
+												disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
 												sx={{
 													bgcolor: theme.palette.primary.main,
 													color: "white",
 													"&:hover": {
 														bgcolor: theme.palette.primary.dark,
 													},
-													"&:disabled": {
+													"&.Mui-disabled": {
 														bgcolor: theme.palette.action.disabledBackground,
+														color: theme.palette.action.disabled,
 													},
 												}}
 											>
@@ -1179,15 +1180,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 															setDocumentNavigationOpen(true);
 														}
 													}}
-													disabled={movementsData.totalWithLinks === 0}
+													disabled={!movementsData.totalWithLinks || movementsData.totalWithLinks === 0}
 													sx={{
 														bgcolor: theme.palette.primary.main,
 														color: "white",
 														"&:hover": {
 															bgcolor: theme.palette.primary.dark,
 														},
-														"&:disabled": {
+														"&.Mui-disabled": {
 															bgcolor: theme.palette.action.disabledBackground,
+															color: theme.palette.action.disabled,
 														},
 													}}
 												>
