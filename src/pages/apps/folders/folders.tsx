@@ -1093,79 +1093,43 @@ const FoldersLayout = () => {
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
-					const isMenuOpen = menuRowId === row.id;
-
 					return (
-						<>
-							<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
-								<Tooltip title="Abrir">
-									<IconButton color="success" onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}>
-										<Maximize variant="Bulk" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Editar">
-									<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
-										<Edit variant="Bulk" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Eliminar">
-									<IconButton
-										color="error"
-										onClick={(e) =>
-											handleRowAction(e, () => {
-												handleClose();
-												setFolderDeleteId(row.values.folderName);
-												setFolderId(row.values._id);
-											})
-										}
-									>
-										<Trash variant="Bulk" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Más acciones">
-									<IconButton color="secondary" onClick={(e) => handleMenuOpen(e, row.id)}>
-										<More variant="Bulk" />
-									</IconButton>
-								</Tooltip>
-							</Stack>
-
-							<Menu
-								anchorEl={anchorEl}
-								open={isMenuOpen}
-								onClose={handleMenuClose}
-								anchorOrigin={{
-									vertical: "bottom",
-									horizontal: "left",
-								}}
-								transformOrigin={{
-									vertical: "top",
-									horizontal: "left",
-								}}
-							>
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										handleMenuClose();
-										handleToggleExpanded(row.id);
-										row.toggleRowExpanded();
-									}}
+						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
+							<Tooltip title="Abrir">
+								<IconButton color="success" onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}>
+									<Maximize variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Editar">
+								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
+									<Edit variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Eliminar">
+								<IconButton
+									color="error"
+									onClick={(e) =>
+										handleRowAction(e, () => {
+											handleClose();
+											setFolderDeleteId(row.values.folderName);
+											setFolderId(row.values._id);
+										})
+									}
 								>
-									<ListItemIcon>
-										{expandedRowId === row.id ? (
-											<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} size={18} />
-										) : (
-											<Eye variant="Bulk" size={18} />
-										)}
-									</ListItemIcon>
-									<ListItemText>{expandedRowId === row.id ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
-								</MenuItem>
-							</Menu>
-						</>
+									<Trash variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Más acciones">
+								<IconButton color="secondary" onClick={(e) => handleMenuOpen(e, row.id)}>
+									<More variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+						</Stack>
 					);
 				},
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction, expandedRowId, handleToggleExpanded, anchorEl, menuRowId, handleMenuOpen, handleMenuClose],
+		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction, handleMenuOpen],
 	);
 
 	// Row sub component memoizado
@@ -1275,6 +1239,48 @@ const FoldersLayout = () => {
 						</ScrollX>
 					</Box>
 				)}
+
+				{/* Menu de acciones (compartido por todas las filas) */}
+				<Menu
+					anchorEl={anchorEl}
+					open={Boolean(anchorEl && menuRowId)}
+					onClose={handleMenuClose}
+					anchorOrigin={{
+						vertical: "bottom",
+						horizontal: "center",
+					}}
+					transformOrigin={{
+						vertical: "top",
+						horizontal: "center",
+					}}
+					slotProps={{
+						paper: {
+							sx: {
+								minWidth: 180,
+							},
+						},
+					}}
+				>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							handleMenuClose();
+							if (menuRowId) {
+								handleToggleExpanded(menuRowId);
+							}
+						}}
+					>
+						<ListItemIcon>
+							{expandedRowId === menuRowId ? (
+								<Add style={{ color: theme.palette.error.main, transform: "rotate(45deg)" }} size={18} />
+							) : (
+								<Eye variant="Bulk" size={18} />
+							)}
+						</ListItemIcon>
+						<ListItemText>{expandedRowId === menuRowId ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
+					</MenuItem>
+				</Menu>
+
 				<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
 				{add && (
 					<Dialog
