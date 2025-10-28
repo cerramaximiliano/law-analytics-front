@@ -18,6 +18,7 @@ import {
 	SelectChangeEvent,
 	Stack,
 	TextField,
+	Skeleton,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -68,6 +69,34 @@ const TabPersonal = () => {
 	const inputRef = useInputRef();
 
 	const userData = useSelector((state) => state.auth);
+
+	// Mostrar skeleton mientras se carga el usuario
+	if (!userData.user) {
+		return (
+			<MainCard content={false} title="Información Personal" sx={{ "& .MuiInputLabel-root": { fontSize: "0.875rem" } }}>
+				<CardHeader title="Detalles del Perfil" />
+				<Divider />
+				<Box sx={{ p: 2.5 }}>
+					<Grid container spacing={3}>
+						{[1, 2, 3, 4, 5, 6].map((item) => (
+							<Grid item xs={12} sm={6} key={item}>
+								<Stack spacing={1}>
+									<Skeleton variant="text" width="30%" height={20} />
+									<Skeleton variant="rounded" height={40} />
+								</Stack>
+							</Grid>
+						))}
+						<Grid item xs={12}>
+							<Stack direction="row" justifyContent="flex-end" spacing={2}>
+								<Skeleton variant="rounded" width={100} height={36} />
+								<Skeleton variant="rounded" width={100} height={36} />
+							</Stack>
+						</Grid>
+					</Grid>
+				</Box>
+			</MainCard>
+		);
+	}
 
 	// Formatear fecha para inicialización
 	const formatInitialDate = () => {

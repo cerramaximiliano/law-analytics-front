@@ -1,6 +1,20 @@
 import React from "react";
-import { useState, useRef } from "react";
-import { Grid, Box, Typography, Card, CardContent, CardActionArea, Button, Collapse, Divider, Paper, Chip } from "@mui/material";
+import { useState, useRef, useEffect } from "react";
+import {
+	Grid,
+	Box,
+	Typography,
+	Card,
+	CardContent,
+	CardActionArea,
+	Button,
+	Collapse,
+	Divider,
+	Paper,
+	Chip,
+	Skeleton,
+	Stack,
+} from "@mui/material";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -1119,6 +1133,7 @@ const ResourcesSection = () => {
 // Componente principal de la página de Ayuda
 const HelpPage = () => {
 	const theme = useTheme();
+	const [isLoading, setIsLoading] = useState(true);
 
 	// Secciones disponibles
 	const sections = [
@@ -1130,6 +1145,15 @@ const HelpPage = () => {
 	// Estado para sección activa (inicialmente muestra todas)
 	const [activeSection, setActiveSection] = useState<string | null>(null);
 
+	// Simular carga inicial para mostrar skeleton
+	useEffect(() => {
+		// Pequeño delay para simular renderizado de contenido
+		const timer = setTimeout(() => {
+			setIsLoading(false);
+		}, 300);
+		return () => clearTimeout(timer);
+	}, []);
+
 	const handleSectionClick = (sectionId: string) => {
 		setActiveSection(activeSection === sectionId ? null : sectionId);
 	};
@@ -1138,6 +1162,74 @@ const HelpPage = () => {
 	const showGuides = activeSection === null || activeSection === "guides";
 	const showFAQ = activeSection === null || activeSection === "faq";
 	const showResources = activeSection === null || activeSection === "resources";
+
+	// Mostrar skeleton mientras se carga el contenido
+	if (isLoading) {
+		return (
+			<MainCard title="Centro de Ayuda">
+				<Grid container spacing={4}>
+					{/* Menú lateral skeleton */}
+					<Grid item xs={12} md={3}>
+						<Paper sx={{ p: 2, mb: { xs: 3, md: 0 } }}>
+							<Skeleton variant="text" width="60%" height={32} sx={{ mb: 2 }} />
+							<Stack spacing={1}>
+								{[1, 2, 3, 4].map((item) => (
+									<Stack key={item} direction="row" alignItems="center" spacing={1.5} sx={{ py: 1 }}>
+										<Skeleton variant="circular" width={20} height={20} />
+										<Skeleton variant="rounded" height={20} sx={{ flex: 1 }} />
+									</Stack>
+								))}
+							</Stack>
+						</Paper>
+					</Grid>
+
+					{/* Contenido principal skeleton */}
+					<Grid item xs={12} md={9}>
+						{/* Guías skeleton */}
+						<Box sx={{ mb: 6 }}>
+							<Skeleton variant="text" width="30%" height={36} sx={{ mb: 2 }} />
+							<Skeleton variant="text" width="80%" height={20} sx={{ mb: 3 }} />
+							<Grid container spacing={4}>
+								{[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
+									<Grid item xs={12} sm={6} md={4} key={item}>
+										<Card sx={{ height: 280 }}>
+											<CardContent sx={{ textAlign: "center", height: "100%" }}>
+												<Skeleton variant="circular" width={62} height={62} sx={{ mx: "auto", mb: 3 }} />
+												<Skeleton variant="text" width="70%" height={28} sx={{ mx: "auto", mb: 2 }} />
+												<Skeleton variant="text" width="100%" height={20} sx={{ mb: 1 }} />
+												<Skeleton variant="text" width="90%" height={20} sx={{ mb: 2 }} />
+												<Skeleton variant="rounded" width={120} height={32} sx={{ mx: "auto", mt: 3 }} />
+											</CardContent>
+										</Card>
+									</Grid>
+								))}
+							</Grid>
+						</Box>
+
+						{/* FAQs skeleton */}
+						<Box sx={{ mb: 6 }}>
+							<Skeleton variant="text" width="35%" height={36} sx={{ mb: 2 }} />
+							<Skeleton variant="text" width="75%" height={20} sx={{ mb: 3 }} />
+							<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
+								{[1, 2, 3, 4, 5, 6].map((item) => (
+									<Skeleton key={item} variant="rounded" width={100} height={32} />
+								))}
+							</Box>
+							<Stack spacing={2}>
+								{[1, 2, 3, 4, 5].map((item) => (
+									<Card key={item}>
+										<CardContent>
+											<Skeleton variant="text" width="85%" height={24} />
+										</CardContent>
+									</Card>
+								))}
+							</Stack>
+						</Box>
+					</Grid>
+				</Grid>
+			</MainCard>
+		);
+	}
 
 	return (
 		<MainCard title="Centro de Ayuda">

@@ -16,6 +16,7 @@ import {
 	Stack,
 	TextField,
 	Typography,
+	Skeleton,
 } from "@mui/material";
 
 // third-party
@@ -84,6 +85,51 @@ const TabPersonal = () => {
 			setAvatar(URL.createObjectURL(selectedImage));
 		}
 	}, [selectedImage]);
+
+	// Mostrar skeleton mientras se carga el usuario
+	if (!user) {
+		return (
+			<Grid container spacing={3}>
+				<Grid item xs={12} sm={6}>
+					<MainCard title="Información Personal">
+						<Grid container spacing={3}>
+							<Grid item xs={12}>
+								<Stack spacing={2.5} alignItems="center">
+									<Skeleton variant="circular" width={124} height={124} />
+									<Stack spacing={0.5} alignItems="center">
+										<Skeleton variant="text" width={120} height={24} />
+										<Skeleton variant="text" width={80} height={20} />
+									</Stack>
+								</Stack>
+							</Grid>
+							{[1, 2, 3].map((item) => (
+								<Grid item xs={12} key={item}>
+									<Stack spacing={1}>
+										<Skeleton variant="text" width="30%" height={20} />
+										<Skeleton variant="rounded" height={40} />
+									</Stack>
+								</Grid>
+							))}
+						</Grid>
+					</MainCard>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<MainCard title="Redes Sociales">
+						<Grid container spacing={3}>
+							{[1, 2, 3].map((item) => (
+								<Grid item xs={12} key={item}>
+									<Stack spacing={1}>
+										<Skeleton variant="text" width="30%" height={20} />
+										<Skeleton variant="rounded" height={40} />
+									</Stack>
+								</Grid>
+							))}
+						</Grid>
+					</MainCard>
+				</Grid>
+			</Grid>
+		);
+	}
 
 	return (
 		<Grid container spacing={3}>
