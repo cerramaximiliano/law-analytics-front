@@ -4,7 +4,7 @@ import BasicWizard from "sections/forms/wizard/calc-laboral/despido";
 import LiquidacionWizard from "sections/forms/wizard/calc-laboral/liquidacion";
 
 // material-ui
-import { Box, Tab, Tabs, Typography, Tooltip, IconButton } from "@mui/material";
+import { Box, Tab, Tabs, Typography, Tooltip, IconButton, Skeleton, Stack, Grid } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -47,6 +47,7 @@ export default function LaborTabs() {
 	const { folders } = useSelector((state: any) => state.folder);
 	const { id } = useSelector((state: any) => state.auth?.user);
 	const [guideOpen, setGuideOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 
 	const folderParam = searchParams.get("folder");
 	const currentFolder = folderParam ? folders.find((f: any) => f._id === folderParam) : null;
@@ -57,11 +58,75 @@ export default function LaborTabs() {
 		}
 	}, [dispatch, id, folderParam]);
 
+	// Simular carga inicial liviana para mostrar skeleton
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsLoading(false);
+		}, 150);
+		return () => clearTimeout(timer);
+	}, []);
+
 	const handleChange = (event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 	};
 
 	const shouldShowFolderName = value !== 2 && folderParam && currentFolder?.folderName;
+
+	// Mostrar skeleton mientras se carga
+	if (isLoading) {
+		return (
+			<MainCard>
+				<Box sx={{ width: "100%" }}>
+					<Box
+						sx={{
+							borderBottom: 1,
+							borderColor: "divider",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+						}}
+					>
+						<Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+							<Skeleton variant="rounded" width={140} height={42} />
+							<Skeleton variant="rounded" width={140} height={42} />
+							<Skeleton variant="rounded" width={140} height={42} />
+						</Stack>
+					</Box>
+					<Box sx={{ pt: 2 }}>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={2}>
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+								</Stack>
+							</Grid>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={2}>
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+								</Stack>
+							</Grid>
+							<Grid item xs={12}>
+								<Stack direction="row" spacing={2} justifyContent="flex-end">
+									<Skeleton variant="rounded" width={100} height={36} />
+									<Skeleton variant="rounded" width={100} height={36} />
+								</Stack>
+							</Grid>
+						</Grid>
+					</Box>
+				</Box>
+			</MainCard>
+		);
+	}
+
 	return (
 		<MainCard>
 			<Box sx={{ width: "100%" }}>

@@ -1,7 +1,7 @@
 import React from "react";
-import { useState, ReactNode, SyntheticEvent } from "react";
+import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
 // material-ui
-import { Box, Tab, Tabs, IconButton, Tooltip } from "@mui/material";
+import { Box, Tab, Tabs, IconButton, Tooltip, Skeleton, Stack, Grid } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -42,10 +42,73 @@ function a11yProps(index: number) {
 export default function InteresesTabs() {
 	const [value, setValue] = useState(0);
 	const [guideOpen, setGuideOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
+
+	// Simular carga inicial liviana para mostrar skeleton
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsLoading(false);
+		}, 150);
+		return () => clearTimeout(timer);
+	}, []);
 
 	const handleChange = (event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 	};
+
+	// Mostrar skeleton mientras se carga
+	if (isLoading) {
+		return (
+			<MainCard>
+				<Box sx={{ width: "100%" }}>
+					<Box
+						sx={{
+							borderBottom: 1,
+							borderColor: "divider",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+						}}
+					>
+						<Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+							<Skeleton variant="rounded" width={160} height={42} />
+							<Skeleton variant="rounded" width={140} height={42} />
+						</Stack>
+					</Box>
+					<Box sx={{ pt: 2 }}>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={2}>
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+								</Stack>
+							</Grid>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={2}>
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+									<Skeleton variant="text" width="40%" height={24} />
+									<Skeleton variant="rounded" height={56} />
+								</Stack>
+							</Grid>
+							<Grid item xs={12}>
+								<Stack direction="row" spacing={2} justifyContent="flex-end">
+									<Skeleton variant="rounded" width={100} height={36} />
+									<Skeleton variant="rounded" width={100} height={36} />
+								</Stack>
+							</Grid>
+						</Grid>
+					</Box>
+				</Box>
+			</MainCard>
+		);
+	}
 
 	return (
 		<MainCard>
