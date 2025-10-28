@@ -19,6 +19,7 @@ import {
 	InputAdornment,
 	Autocomplete,
 	GlobalStyles,
+	CircularProgress,
 } from "@mui/material";
 import logo from "assets/images/large_logo_transparent.png";
 import {
@@ -70,6 +71,7 @@ interface CalculationDetailsViewProps {
 	showSaveButton?: boolean;
 	onSaveClick?: () => void;
 	isSaved?: boolean;
+	isSaving?: boolean;
 }
 
 // Iconos para cada sección
@@ -97,6 +99,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	showSaveButton = false,
 	onSaveClick,
 	isSaved = false,
+	isSaving = false,
 }) => {
 	const theme = useTheme();
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -104,6 +107,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	const [emailList, setEmailList] = useState<string[]>([]);
 	const [copyToMe, setCopyToMe] = useState(false);
 	const [customMessage, setCustomMessage] = useState("");
+	const [isSendingEmail, setIsSendingEmail] = useState(false);
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 	const [updateModalOpen, setUpdateModalOpen] = useState(false);
 	const [interestRate, setInterestRate] = useState("");
@@ -155,6 +159,8 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	};
 
 	const handleEmailSend = async () => {
+		if (isSendingEmail) return;
+
 		try {
 			const textBody = generatePlainText();
 			const htmlBody = generateHtmlContent();
@@ -173,6 +179,8 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 				);
 				return;
 			}
+
+			setIsSendingEmail(true);
 
 			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/send-email`, {
 				to: allEmails,
@@ -206,6 +214,8 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					close: true,
 				}),
 			);
+		} finally {
+			setIsSendingEmail(false);
 		}
 	};
 
@@ -389,11 +399,11 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 				</Tooltip>
 			)}
 			{showSaveButton && onSaveClick && (
-				<Tooltip title={isSaved ? "El cálculo ya fue guardado" : "Guardar cálculo"}>
+				<Tooltip title={isSaved ? "El cálculo ya fue guardado" : isSaving ? "Guardando..." : "Guardar cálculo"}>
 					<span>
 						<IconButton
 							onClick={onSaveClick}
-							disabled={isSaved}
+							disabled={isSaved || isSaving}
 							size="small"
 							sx={{
 								border: "1px solid",
@@ -409,7 +419,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 								},
 							}}
 						>
-							<Save2 size={18} />
+							{isSaving ? <CircularProgress size={18} /> : <Save2 size={18} />}
 						</IconButton>
 					</span>
 				</Tooltip>
@@ -827,11 +837,12 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 							setCopyToMe(false);
 							setCustomMessage("");
 						}}
+						disabled={isSendingEmail}
 					>
 						Cancelar
 					</Button>
-					<Button onClick={handleEmailSend} variant="contained">
-						Enviar
+					<Button onClick={handleEmailSend} variant="contained" disabled={isSendingEmail} startIcon={isSendingEmail ? <CircularProgress size={20} /> : undefined}>
+						{isSendingEmail ? "Enviando..." : "Enviar"}
 					</Button>
 				</DialogActions>
 			</Dialog>

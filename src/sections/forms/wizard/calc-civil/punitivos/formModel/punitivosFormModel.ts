@@ -16,6 +16,8 @@ interface FormModel {
 		nivelPrecaucion: FormField;
 		porcentajeMin: FormField;
 		probOcurrencia: FormField;
+		folderId: FormField;
+		folderName: FormField;
 	};
 }
 
@@ -69,6 +71,16 @@ const punitivosFormModel: FormModel = {
 			label: "Nombre del reclamado*",
 			requiredErrorMsg: "Campo requerido",
 			type: "reclamo",
+		},
+		folderId: {
+			name: "folderId",
+			label: "ID de la carpeta vinculada",
+			type: "folder",
+		},
+		folderName: {
+			name: "folderName",
+			label: "Nombre de la carpeta vinculada",
+			type: "folder",
 		},
 	},
 };

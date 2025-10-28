@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Button, Stack, Zoom } from "@mui/material";
+import { Button, Stack, Zoom, CircularProgress } from "@mui/material";
 import { CalculationDetailsView } from "../../../../../components/calculator/CalculationDetailsView";
 import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";
@@ -27,6 +27,7 @@ interface ResultsViewProps {
 const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, folderName }) => {
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 	const [isSaved, setIsSaved] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [savedCalculationId] = useState<string | null>(null);
 	const { formField } = liquidacionFormModel;
 
@@ -276,8 +277,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	}, [capitalBase, interesesMonto]);
 
 	const handleSaveCalculation = async () => {
-		if (isSaved) return;
+		if (isSaved || isSaving) return;
 
+		setIsSaving(true);
 		try {
 			const userId = userFromRedux?._id;
 			const userName = userFromRedux?.name || userFromRedux?.email || "Usuario";
@@ -339,6 +341,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				TransitionComponent: Zoom,
 				autoHideDuration: 5000,
 			});
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
@@ -444,6 +448,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				showSaveButton={true}
 				onSaveClick={handleSaveCalculation}
 				isSaved={isSaved}
+				isSaving={isSaving}
 			/>
 
 			<Stack direction="row" justifyContent="flex-end" className="no-print" sx={{ mt: 2 }}>

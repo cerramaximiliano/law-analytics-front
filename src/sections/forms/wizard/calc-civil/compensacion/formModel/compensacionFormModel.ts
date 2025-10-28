@@ -30,6 +30,8 @@ interface FormModel {
 		valorCanon: FormField;
 		cantidadHijos: FormField;
 		cantidadOtrosFamiliares: FormField;
+		folderId: FormField;
+		folderName: FormField;
 	};
 }
 
@@ -165,6 +167,16 @@ const compensacionFormModel: FormModel = {
 			label: "Cantidad de otros familiares del reclamante que viven en inmueble familiar",
 			requiredErrorMsg: "Campo requerido",
 			type: "vivienda",
+		},
+		folderId: {
+			name: "folderId",
+			label: "ID de la carpeta vinculada",
+			type: "folder",
+		},
+		folderName: {
+			name: "folderName",
+			label: "Nombre de la carpeta vinculada",
+			type: "folder",
 		},
 	},
 };

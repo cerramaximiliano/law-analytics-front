@@ -26,6 +26,7 @@ import {
 	Autocomplete,
 	useTheme,
 	GlobalStyles,
+	CircularProgress,
 } from "@mui/material";
 import logo from "assets/images/large_logo_transparent.png";
 import { Copy, Sms, Printer, Save2, SearchNormal1, UserAdd, Information, Calculator, StatusUp } from "iconsax-react";
@@ -128,6 +129,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	const [copyToMe, setCopyToMe] = useState(false);
 	const [customMessage, setCustomMessage] = useState("");
 	const [isSaved, setIsSaved] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [showTasasModal, setShowTasasModal] = useState(false);
 	const [contactsLoaded, setContactsLoaded] = useState(false);
 
@@ -612,8 +614,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	};
 
 	const handleSaveCalculation = async () => {
-		if (isSaved) return;
+		if (isSaved || isSaving) return;
 
+		setIsSaving(true);
 		try {
 			// Verificar si tenemos userId
 			const userId = currentUser?.id || userFromRedux?._id;
@@ -703,6 +706,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				TransitionComponent: Zoom,
 				autoHideDuration: 5000,
 			});
+		} finally {
+			setIsSaving(false);
 		}
 	};
 	const renderActionButtons = () => (
@@ -758,11 +763,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					<Printer size={18} />
 				</IconButton>
 			</Tooltip>
-			<Tooltip title={isSaved ? "El cálculo ya fue guardado" : "Guardar cálculo"}>
+			<Tooltip title={isSaved ? "El cálculo ya fue guardado" : isSaving ? "Guardando..." : "Guardar cálculo"}>
 				<span>
 					<IconButton
 						onClick={handleSaveCalculation}
-						disabled={isSaved}
+						disabled={isSaved || isSaving}
 						size="small"
 						sx={{
 							border: "1px solid",
@@ -778,7 +783,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 							},
 						}}
 					>
-						<Save2 size={18} />
+						{isSaving ? <CircularProgress size={18} /> : <Save2 size={18} />}
 					</IconButton>
 				</span>
 			</Tooltip>

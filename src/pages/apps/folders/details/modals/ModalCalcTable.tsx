@@ -36,7 +36,7 @@ const NoCalculatorsFound = () => {
 
 	const calculatorTypes = [
 		{ name: "Cálculo Laboral", path: `/apps/calc/labor?folder=${id}` },
-		{ name: "Cálculo Civil", path: `/apps/calc/civil?folder=${id}` },
+		// { name: "Cálculo Civil", path: `/apps/calc/civil?folder=${id}` }, // Oculto temporalmente
 		{ name: "Cálculo de Intereses", path: `/apps/calc/intereses?folder=${id}` },
 	];
 

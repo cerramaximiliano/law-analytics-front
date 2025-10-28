@@ -14,14 +14,17 @@ import initialValues from "./formModel/formInitialValues";
 import validationSchema from "./formModel/validationSchema";
 import { Formik, Form } from "formik";
 
+//types
+import { WizardProps } from "types/wizards";
+
 // step options
 const steps = ["Datos requeridos", "Resultados"];
 const { formId, formField } = despidoFormModel;
 
-function getStepContent(step: number, values: any) {
+function getStepContent(step: number, values: any, folder?: any, onFolderChange?: (folderId: string | null) => void) {
 	switch (step) {
 		case 0:
-			return <FirstForm formField={formField} />;
+			return <FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />;
 		case 1:
 			return <Review formField={formField} values={values} />;
 		default:
@@ -31,7 +34,7 @@ function getStepContent(step: number, values: any) {
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 
-const PunitivosWizard = () => {
+const PunitivosWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 	const [activeStep, setActiveStep] = useState(0);
 	const currentValidationSchema = validationSchema[activeStep];
 	const isLastStep = activeStep === steps.length - 1;
@@ -90,7 +93,7 @@ const PunitivosWizard = () => {
 					<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
 						{({ isSubmitting, values }) => (
 							<Form id={formId}>
-								{getStepContent(activeStep, values)}
+								{getStepContent(activeStep, values, folder, onFolderChange)}
 								<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
 									{activeStep !== 0 && (
 										<Button onClick={handleBack} sx={{ my: 3, ml: 1 }}>

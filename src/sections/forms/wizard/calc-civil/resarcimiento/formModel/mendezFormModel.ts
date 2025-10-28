@@ -15,6 +15,8 @@ interface FormModel {
 		tasaInteres: FormField;
 		edadDesde: FormField;
 		edadHasta: FormField;
+		folderId: FormField;
+		folderName: FormField;
 	};
 }
 
@@ -62,6 +64,16 @@ const compensacionFormModel: FormModel = {
 			label: "Edad hasta la cual se computan los ingresos*",
 			requiredErrorMsg: "Campo requerido",
 			type: "reclamo",
+		},
+		folderId: {
+			name: "folderId",
+			label: "ID de la carpeta vinculada",
+			type: "folder",
+		},
+		folderName: {
+			name: "folderName",
+			label: "Nombre de la carpeta vinculada",
+			type: "folder",
 		},
 	},
 };

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Divider, Zoom } from "@mui/material";
+import { Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Divider, Zoom, CircularProgress } from "@mui/material";
 import { CalculationDetailsView } from "../../../../../components/calculator/CalculationDetailsView";
 import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";
@@ -29,6 +29,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 	const [infoModalOpen, setInfoModalOpen] = useState(false);
 	const [isSaved, setIsSaved] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	// These state variables are used by CalculationDetailsView internally
 	const [savedCalculationId] = useState<string | null>(null);
 	const navigate = useNavigate();
@@ -311,8 +312,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	}, [capitalBase, interesesMonto]);
 
 	const handleSaveCalculation = async () => {
-		if (isSaved) return;
+		if (isSaved || isSaving) return;
 
+		setIsSaving(true);
 		try {
 			// Verificar si tenemos userId
 			const userId = userFromRedux?._id;
@@ -381,6 +383,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				TransitionComponent: Zoom,
 				autoHideDuration: 5000,
 			});
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
@@ -631,6 +635,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				showSaveButton={true}
 				onSaveClick={handleSaveCalculation}
 				isSaved={isSaved}
+				isSaving={isSaving}
 			/>
 
 			<Stack direction="row" justifyContent="flex-end" className="no-print" sx={{ mt: 2 }}>
