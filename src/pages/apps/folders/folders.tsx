@@ -66,7 +66,14 @@ import {
 
 // types
 import { dispatch, useSelector } from "store";
-import { getFoldersByUserId, archiveFolders, getArchivedFoldersByUserId, unarchiveFolders, getFolderById, setFolderSort } from "store/reducers/folder";
+import {
+	getFoldersByUserId,
+	archiveFolders,
+	getArchivedFoldersByUserId,
+	unarchiveFolders,
+	getFolderById,
+	setFolderSort,
+} from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
 
@@ -124,7 +131,18 @@ function ReactTable({
 	const defaultHiddenColumns = useMemo(
 		() =>
 			matchDownSM
-				? ["_id", "email", "status", "description", "initialDateFolder", "finalDateFolder", "folderJuris.label", "folderFuero", "createdAt", "updatedAt"]
+				? [
+						"_id",
+						"email",
+						"status",
+						"description",
+						"initialDateFolder",
+						"finalDateFolder",
+						"folderJuris.label",
+						"folderFuero",
+						"createdAt",
+						"updatedAt",
+				  ]
 				: ["email", "_id", "description", "finalDateFolder", "createdAt", "updatedAt"],
 		[matchDownSM],
 	);
@@ -398,9 +416,7 @@ function ReactTable({
 										}}
 									/>
 								)}
-								{invalidCount > 0 && (
-									<Chip label={`${invalidCount} Inválida${invalidCount > 1 ? "s" : ""}`} color="error" size="small" />
-								)}
+								{invalidCount > 0 && <Chip label={`${invalidCount} Inválida${invalidCount > 1 ? "s" : ""}`} color="error" size="small" />}
 								<Typography variant="body2" color="text.secondary">
 									(Click para ver)
 								</Typography>
@@ -541,18 +557,14 @@ const FoldersLayout = () => {
 		const pending = folders.filter(
 			(folder: any) =>
 				folder.source === "auto" &&
-				(
-					// Pendientes de verificación
-					folder.causaVerified === false ||
+				// Pendientes de verificación
+				(folder.causaVerified === false ||
 					// Inválidos (verificados pero no válidos)
-					(folder.causaVerified === true && folder.causaIsValid === false)
-				),
+					(folder.causaVerified === true && folder.causaIsValid === false)),
 		);
 
 		// Contar pendientes e inválidas por separado
-		const pendingVerification = folders.filter(
-			(folder: any) => folder.source === "auto" && folder.causaVerified === false,
-		).length;
+		const pendingVerification = folders.filter((folder: any) => folder.source === "auto" && folder.causaVerified === false).length;
 
 		const invalid = folders.filter(
 			(folder: any) => folder.source === "auto" && folder.causaVerified === true && folder.causaIsValid === false,

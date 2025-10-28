@@ -543,33 +543,33 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 										<Box sx={{ minHeight: 400 }}>
 											{/* Steps Progress */}
 											<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-											{steps.map((label, index) => (
-												<Box key={label} sx={{ position: "relative", width: "100%" }}>
-													<Box
-														sx={{
-															height: 4,
-															bgcolor: index <= activeStep ? "primary.main" : "divider",
-															borderRadius: 1,
-															transition: "all 0.3s ease",
-														}}
-													/>
-													<Typography
-														variant="caption"
-														sx={{
-															position: "absolute",
-															top: 8,
-															color: index <= activeStep ? "primary.main" : "text.secondary",
-														}}
-													>
-														{label}
-													</Typography>
-												</Box>
-											))}
-										</Stack>
+												{steps.map((label, index) => (
+													<Box key={label} sx={{ position: "relative", width: "100%" }}>
+														<Box
+															sx={{
+																height: 4,
+																bgcolor: index <= activeStep ? "primary.main" : "divider",
+																borderRadius: 1,
+																transition: "all 0.3s ease",
+															}}
+														/>
+														<Typography
+															variant="caption"
+															sx={{
+																position: "absolute",
+																top: 8,
+																color: index <= activeStep ? "primary.main" : "text.secondary",
+															}}
+														>
+															{label}
+														</Typography>
+													</Box>
+												))}
+											</Stack>
 
-										{/* Form Content */}
-										<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
-									</Box>
+											{/* Form Content */}
+											<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+										</Box>
 									)}
 								</DialogContent>
 

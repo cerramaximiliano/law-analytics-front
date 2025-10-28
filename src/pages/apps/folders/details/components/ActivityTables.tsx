@@ -1132,42 +1132,42 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 											</Stack>
 
 											<Stack direction="row" spacing={3} alignItems="center">
-													{/* Checkbox para filtrar solo movimientos con documento */}
-													<FormControlLabel
-														control={
-															<Checkbox
-																checked={filters.onlyWithDocuments}
-																onChange={(e) => {
-																	setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-																	if (id) {
-																		dispatch(
-																			getMovementsByFolderId(id, {
-																				page: 1,
-																				limit: 10,
-																				sort: "-time",
-																				filter: e.target.checked ? { hasLink: true } : undefined,
-																			}),
-																		);
-																	}
-																}}
-																size="small"
-																color="primary"
-															/>
-														}
-														label={
-															<Stack direction="row" alignItems="center" spacing={1}>
-																<DocumentText size={18} color={theme.palette.primary.main} />
-																<Typography variant="body2">
-																	Solo con documento
-																	{movementsData.totalWithLinks > 0 && (
-																		<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
-																	)}
-																</Typography>
-															</Stack>
-														}
-													/>
+												{/* Checkbox para filtrar solo movimientos con documento */}
+												<FormControlLabel
+													control={
+														<Checkbox
+															checked={filters.onlyWithDocuments}
+															onChange={(e) => {
+																setFilters({ ...filters, onlyWithDocuments: e.target.checked });
+																if (id) {
+																	dispatch(
+																		getMovementsByFolderId(id, {
+																			page: 1,
+																			limit: 10,
+																			sort: "-time",
+																			filter: e.target.checked ? { hasLink: true } : undefined,
+																		}),
+																	);
+																}
+															}}
+															size="small"
+															color="primary"
+														/>
+													}
+													label={
+														<Stack direction="row" alignItems="center" spacing={1}>
+															<DocumentText size={18} color={theme.palette.primary.main} />
+															<Typography variant="body2">
+																Solo con documento
+																{movementsData.totalWithLinks > 0 && (
+																	<Chip size="small" label={movementsData.totalWithLinks} color="primary" sx={{ ml: 1, height: 20 }} />
+																)}
+															</Typography>
+														</Stack>
+													}
+												/>
 
-													<Divider orientation="vertical" flexItem />
+												<Divider orientation="vertical" flexItem />
 
 												{/* Botón para navegación secuencial de documentos */}
 												<Button
