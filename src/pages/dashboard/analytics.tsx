@@ -147,8 +147,8 @@ const DashboardAnalytics = () => {
 		}
 	}, [dispatch, userId, hasTriedToLoad]);
 
-	// Mostrar skeleton mientras se carga el usuario o los datos
-	if (!user || statsLoading) {
+	// Mostrar skeleton mientras se carga el usuario, los datos o la suscripción
+	if (!user || statsLoading || !subscription) {
 		return (
 			<Box>
 				<MainCard title="Panel de Analíticas">
