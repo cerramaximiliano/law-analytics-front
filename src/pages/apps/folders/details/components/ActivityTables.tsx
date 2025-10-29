@@ -827,8 +827,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 											{/* Alerta informativa cuando hay más movimientos disponibles */}
 											{filters.onlyWithDocuments &&
-												movementsData.pagination?.totalAvailable &&
-												movementsData.pagination.totalAvailable > (movementsData.pagination?.total || 0) && (
+												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
 													<Alert
 														severity="info"
 														sx={{
@@ -1202,8 +1201,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 											{/* Alerta informativa cuando hay más movimientos disponibles */}
 											{filters.onlyWithDocuments &&
-												movementsData.pagination?.totalAvailable &&
-												movementsData.pagination.totalAvailable > (movementsData.pagination?.total || 0) && (
+												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
 													<Alert
 														severity="info"
 														sx={{

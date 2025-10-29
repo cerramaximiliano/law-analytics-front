@@ -232,6 +232,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
+						hasLink: localFilters.onlyWithDocuments ? true : undefined,
 					},
 				}),
 			);
@@ -255,6 +256,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
+						hasLink: localFilters.onlyWithDocuments ? true : undefined,
 					},
 				}),
 			);
@@ -285,6 +287,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
+						hasLink: localFilters.onlyWithDocuments ? true : undefined,
 					},
 				}),
 			);
@@ -308,6 +311,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 							filters.startDate && filters.endDate
 								? `${dayjs(filters.startDate).format("YYYY-MM-DD")},${dayjs(filters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
+						hasLink: filters.onlyWithDocuments ? true : undefined,
 					},
 				}),
 			);
@@ -361,6 +365,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
+						hasLink: localFilters.onlyWithDocuments ? true : undefined,
 					},
 				}),
 			);
@@ -399,6 +404,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
 								: undefined,
+						hasLink: localFilters.onlyWithDocuments ? true : undefined,
 					},
 				}),
 			);
