@@ -415,21 +415,25 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					onAddFolder(values);
 				}, 500);
 			} else {
-				enqueueSnackbar(`Error al ${message} la carpeta`, {
+				// Usar el mensaje específico del servidor si está disponible
+				const errorMessage = results?.message || `Error al ${message} la carpeta`;
+				enqueueSnackbar(errorMessage, {
 					variant: "error",
 					anchorOrigin: { vertical: "bottom", horizontal: "right" },
 					TransitionComponent: Zoom,
-					autoHideDuration: 3000,
+					autoHideDuration: 4000,
 				});
 				setIsProcessing(false);
 			}
 		} catch (error) {
 			setIsProcessing(false);
-			enqueueSnackbar(`Error al ${message} la carpeta`, {
+			// Si hay un mensaje de error en el objeto error, mostrarlo
+			const errorMessage = error instanceof Error && error.message ? error.message : `Error al ${message} la carpeta`;
+			enqueueSnackbar(errorMessage, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				TransitionComponent: Zoom,
-				autoHideDuration: 3000,
+				autoHideDuration: 4000,
 			});
 		}
 

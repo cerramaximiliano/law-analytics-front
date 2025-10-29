@@ -172,7 +172,19 @@ export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) 
 		}
 		return { success: false, message: response.data.message || "Error al crear folder" };
 	} catch (error) {
-		const errorMessage = axios.isAxiosError(error) ? error.response?.data?.message || "Error al crear folder" : "Error desconocido";
+		let errorMessage = "Error al crear folder";
+
+		if (axios.isAxiosError(error)) {
+			// Si el servidor devuelve un mensaje específico, usarlo
+			if (error.response?.data?.message) {
+				errorMessage = error.response.data.message;
+			}
+			// Para errores 409 (Conflict), el mensaje ya viene formateado del servidor
+			// Ejemplo: "Ya existe una carpeta PJN con el expediente 123/2024"
+		} else {
+			errorMessage = "Error desconocido";
+		}
+
 		dispatch({
 			type: SET_FOLDER_ERROR,
 			payload: errorMessage,
