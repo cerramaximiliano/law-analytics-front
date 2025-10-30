@@ -335,6 +335,8 @@ const AutomaticStep = () => {
 				return "Seguridad Social";
 			case "7":
 				return "Laboral";
+			case "10":
+				return "Comercial";
 			default:
 				return "Civil"; // Valor por defecto para otras jurisdicciones
 		}
