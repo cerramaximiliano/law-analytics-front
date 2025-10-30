@@ -93,6 +93,7 @@ export type FolderData = {
 	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, failed)
 	causaLastSyncDate?: string; // Fecha de última sincronización
+	lastMovementDate?: string; // Fecha del último movimiento
 };
 
 export type FolderState = {

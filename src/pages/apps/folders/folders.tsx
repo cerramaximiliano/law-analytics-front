@@ -137,6 +137,7 @@ function ReactTable({
 						"status",
 						"description",
 						"initialDateFolder",
+						"lastMovementDate",
 						"finalDateFolder",
 						"folderJuris.label",
 						"folderFuero",
@@ -1016,6 +1017,25 @@ const FoldersLayout = () => {
 					}
 
 					return <span>-</span>;
+				},
+			},
+			{
+				Header: "Último Movimiento",
+				accessor: "lastMovementDate",
+				Cell: ({ value }: { value: any }) => {
+					if (!value) return <span>-</span>;
+
+					// Formatear la fecha de formato ISO a DD/MM/YYYY
+					try {
+						const parsedDate = dayjs(value);
+						if (parsedDate.isValid()) {
+							return <span>{parsedDate.format("DD/MM/YYYY")}</span>;
+						} else {
+							return <span>-</span>;
+						}
+					} catch (error) {
+						return <span>-</span>;
+					}
 				},
 			},
 			{
