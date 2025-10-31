@@ -117,18 +117,22 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 		<>
 			<ResponsiveDialog
 				maxWidth="sm"
+				fullWidth
 				open={open}
 				PaperProps={{
 					sx: {
 						p: 0,
 						borderRadius: 2,
 						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+						display: "flex",
+						flexDirection: "column",
+						maxHeight: "90vh",
 					},
 				}}
 			>
 				<Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} enableReinitialize>
 					{({ isSubmitting, resetForm }) => (
-						<Form autoComplete="off" noValidate>
+						<>
 							<DialogTitle
 								sx={{
 									bgcolor: theme.palette.primary.lighter,
@@ -136,23 +140,26 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 									borderBottom: `1px solid ${theme.palette.divider}`,
 								}}
 							>
-								<Stack direction="row" justifyContent="space-between" alignItems="center">
+								<Stack spacing={1}>
 									<Stack direction="row" alignItems="center" spacing={1}>
-										<Moneys size={24} color={theme.palette.primary.main} />
-										<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
+										<Moneys size={24} color={theme.palette.primary.main} variant="Bold" />
+										<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
 											Agregar Montos de Reclamo y Ofrecimientos
 										</Typography>
 									</Stack>
-									<Typography color="textSecondary" variant="subtitle2">
-										Carpeta: {folderName?.length > 15 ? `${folderName.slice(0, 15)}...` : folderName}
+									<Typography variant="body2" color="textSecondary">
+										Agrega montos de reclamo y ofrecimientos a la carpeta "{folderName}"
 									</Typography>
 								</Stack>
 							</DialogTitle>
 
-							<DialogContent sx={{ p: 3 }}>
-								<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }} sx={{ mt: 2 }}>
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="type">Tipo</InputLabel>
+							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+								<DialogContent dividers sx={{ p: 2, overflowY: "auto" }}>
+									<Stack spacing={2}>
+									<Stack spacing={1}>
+										<InputLabel htmlFor="type" sx={{ fontSize: 13 }}>
+											Tipo
+										</InputLabel>
 										<SelectField
 											label="Seleccione un tipo"
 											data={["Reclamado", "Ofertado"]}
@@ -161,8 +168,10 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 											style={{ maxHeight: "39.91px" }}
 										/>
 									</Stack>
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="user">Parte</InputLabel>
+									<Stack spacing={1}>
+										<InputLabel htmlFor="user" sx={{ fontSize: 13 }}>
+											Parte
+										</InputLabel>
 										<SelectField
 											label="Seleccione una parte"
 											data={["Actora", "Demandada"]}
@@ -172,8 +181,10 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 										/>
 									</Stack>
 
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="amount">Monto</InputLabel>
+									<Stack spacing={1}>
+										<InputLabel htmlFor="amount" sx={{ fontSize: 13 }}>
+											Monto
+										</InputLabel>
 										<NumberField
 											thousandSeparator={","}
 											allowNegative={false}
@@ -188,13 +199,17 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 										/>
 									</Stack>
 
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="date">Fecha</InputLabel>
+									<Stack spacing={1}>
+										<InputLabel htmlFor="date" sx={{ fontSize: 13 }}>
+											Fecha
+										</InputLabel>
 										<DateInputField name="date" id="date" label="Fecha" customInputStyles={customInputStyles} />
 									</Stack>
 
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="description">Descripción</InputLabel>
+									<Stack spacing={1}>
+										<InputLabel htmlFor="description" sx={{ fontSize: 13 }}>
+											Descripción
+										</InputLabel>
 										<InputField
 											fullWidth
 											multiline
@@ -205,32 +220,31 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 											sx={customTextareaStyles}
 										/>
 									</Stack>
-								</Stack>
-							</DialogContent>
+									</Stack>
+								</DialogContent>
 
-							<Divider />
-
-							<DialogActions
-								sx={{
-									p: 2.5,
-									bgcolor: theme.palette.background.default,
-									borderTop: `1px solid ${theme.palette.divider}`,
-								}}
-							>
-								<Button
-									color="error"
-									onClick={() => {
-										setOpen(false);
-										resetForm();
+								<DialogActions
+									sx={{
+										p: 2,
+										bgcolor: theme.palette.background.default,
+										borderTop: `1px solid ${theme.palette.divider}`,
 									}}
 								>
-									Cancelar
-								</Button>
-								<Button type="submit" variant="contained" disabled={isSubmitting}>
-									Guardar
-								</Button>
-							</DialogActions>
-						</Form>
+									<Button
+										color="error"
+										onClick={() => {
+											setOpen(false);
+											resetForm();
+										}}
+									>
+										Cancelar
+									</Button>
+									<Button type="submit" variant="contained" disabled={isSubmitting}>
+										Guardar
+									</Button>
+								</DialogActions>
+							</Form>
+						</>
 					)}
 				</Formik>
 			</ResponsiveDialog>
