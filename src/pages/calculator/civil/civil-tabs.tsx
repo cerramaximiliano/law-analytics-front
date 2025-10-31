@@ -2,7 +2,7 @@ import React from "react";
 import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
 
 // material-ui
-import { Box, Tab, Tabs, Typography, Alert, Tooltip, IconButton } from "@mui/material";
+import { Box, Tab, Tabs, Typography, Alert, Tooltip, IconButton, Divider, Stack } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -31,7 +31,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`simple-tabpanel-${index}`} aria-labelledby={`simple-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+			{value === index && <Box sx={{ pt: 4 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -120,16 +120,60 @@ export default function CivilTabs() {
 				)}
 
 				<TabPanel value={value} index={0}>
+					<Stack spacing={3}>
+					<Box>
+						<Typography variant="h4" sx={{ mb: 1 }}>
+							Daños Punitivos
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Calcula daños punitivos según la conducta del responsable y el contexto del daño causado
+						</Typography>
+					</Box>
+					<Divider />
 					<PunitivosWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+				</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={1}>
+					<Stack spacing={3}>
+					<Box>
+						<Typography variant="h4" sx={{ mb: 1 }}>
+							Compensación Económica
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Determina la compensación económica en casos de divorcio o cese de convivencia
+						</Typography>
+					</Box>
+					<Divider />
 					<CompensacionWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+				</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={2}>
+					<Stack spacing={3}>
+					<Box>
+						<Typography variant="h4" sx={{ mb: 1 }}>
+							Daños y Perjuicios 'Vuoto'
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Calcula resarcimiento de daños y perjuicios según el método Vuoto
+						</Typography>
+					</Box>
+					<Divider />
 					<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+				</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={3}>
+					<Stack spacing={3}>
+					<Box>
+						<Typography variant="h4" sx={{ mb: 1 }}>
+							Daños y Perjuicios 'Mendez'
+						</Typography>
+						<Typography variant="body2" color="text.secondary">
+							Calcula resarcimiento de daños y perjuicios según el método Mendez
+						</Typography>
+					</Box>
+					<Divider />
 					<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+				</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={4}>
 					<SavedCivil />

@@ -2,10 +2,9 @@ import React from "react";
 import { useState } from "react";
 
 // material-ui
-import { Button, Step, Stepper, StepLabel, Stack, Typography } from "@mui/material";
+import { Button, Stack, Box, Typography } from "@mui/material";
 
 // project-imports
-import MainCard from "components/MainCard";
 import AnimateButton from "components/@extended/AnimateButton";
 import FirstForm from "./first";
 import SecondForm from "./second";
@@ -67,14 +66,33 @@ const CompensacionWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) =
 	}
 
 	return (
-		<MainCard title="Liquidación por Compensación Económica">
-			<Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
-				{steps.map((label) => (
-					<Step key={label}>
-						<StepLabel>{label}</StepLabel>
-					</Step>
+		<Box sx={{ width: "100%" }}>
+			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
+				{steps.map((label, index) => (
+					<Box key={label} sx={{ position: "relative", width: "100%" }}>
+						<Box
+							sx={{
+								height: 3,
+								bgcolor: index <= activeStep ? "primary.main" : "divider",
+								borderRadius: 1,
+								transition: "all 0.3s ease",
+							}}
+						/>
+						<Typography
+							variant="caption"
+							sx={{
+								position: "absolute",
+								top: 6,
+								fontSize: 11,
+								color: index <= activeStep ? "primary.main" : "text.secondary",
+								transition: "color 0.3s ease",
+							}}
+						>
+							{label}
+						</Typography>
+					</Box>
 				))}
-			</Stepper>
+			</Stack>
 			<>
 				{activeStep === steps.length ? (
 					<>
@@ -115,7 +133,7 @@ const CompensacionWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) =
 					</Formik>
 				)}
 			</>
-		</MainCard>
+		</Box>
 	);
 };
 
