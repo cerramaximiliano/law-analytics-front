@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
 // material-ui
-import { Box, Tab, Tabs, IconButton, Tooltip, Skeleton, Stack, Grid, Typography } from "@mui/material";
+import { Box, Tab, Tabs, IconButton, Tooltip, Skeleton, Stack, Grid, Typography, Divider } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -29,7 +29,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`simple-tabpanel-${index}`} aria-labelledby={`simple-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+			{value === index && <Box sx={{ pt: 4 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -183,7 +183,18 @@ export default function InteresesTabs() {
 					</Tooltip>
 				</Box>
 				<TabPanel value={value} index={0}>
-					<InteresesWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					<Stack spacing={3}>
+						<Box>
+							<Typography variant="h4" sx={{ mb: 1 }}>
+								Liquidación de Intereses
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Calcula intereses sobre capital aplicando tasas BCRA, Acta 2601 o Acta 2630
+							</Typography>
+						</Box>
+						<Divider />
+						<InteresesWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={1}>
 					<SavedIntereses />
