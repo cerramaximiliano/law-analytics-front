@@ -10,6 +10,7 @@ import {
 	Typography,
 	InputLabel,
 	CircularProgress,
+	Grid,
 } from "@mui/material";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
@@ -171,36 +172,39 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 							<Divider />
 
 							<DialogContent sx={{ p: 3 }}>
-								<Stack spacing={2.5}>
-									<div>
-										<InputLabel htmlFor="name" sx={{ mb: 1 }}>
-											Nombre de la tarea *
-										</InputLabel>
-										<InputField name="name" id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} />
-									</div>
+								<Grid container spacing={2.5}>
+									{/* Nombre de la tarea - Media columna */}
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="name">Nombre de la tarea *</InputLabel>
+											<InputField name="name" id="name" autoFocus placeholder="Ingresa el nombre de la tarea" disabled={isSubmitting} />
+										</Stack>
+									</Grid>
 
-									<div>
-										<InputLabel htmlFor="dueDate" sx={{ mb: 1 }}>
-											Fecha de vencimiento *
-										</InputLabel>
-										<DateInputField name="dueDate" id="dueDate" placeholder="DD/MM/AAAA" disabled={isSubmitting} />
-									</div>
+									{/* Fecha de vencimiento - Media columna */}
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="dueDate">Fecha de vencimiento *</InputLabel>
+											<DateInputField name="dueDate" id="dueDate" placeholder="DD/MM/AAAA" disabled={isSubmitting} />
+										</Stack>
+									</Grid>
 
-									<div>
-										<InputLabel htmlFor="description" sx={{ mb: 1 }}>
-											Descripción (opcional)
-										</InputLabel>
-										<InputField
-											name="description"
-											id="description"
-											placeholder="Agrega una descripción de la tarea"
-											multiline
-											rows={4}
-											disabled={isSubmitting}
-											fullWidth
-										/>
-									</div>
-								</Stack>
+									{/* Descripción - Ancho completo */}
+									<Grid item xs={12}>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="description">Descripción (opcional)</InputLabel>
+											<InputField
+												name="description"
+												id="description"
+												placeholder="Agrega una descripción de la tarea"
+												multiline
+												rows={4}
+												disabled={isSubmitting}
+												fullWidth
+											/>
+										</Stack>
+									</Grid>
+								</Grid>
 							</DialogContent>
 
 							<Divider />
