@@ -60,24 +60,28 @@ const tasksReducer = (state = initialState, action: any) => {
 			return {
 				...state,
 				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
+				selectedTasks: state.selectedTasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
 				isLoader: false,
 			};
 		case DELETE_TASK:
 			return {
 				...state,
 				tasks: state.tasks.filter((task) => task._id !== action.payload),
+				selectedTasks: state.selectedTasks.filter((task) => task._id !== action.payload),
 				isLoader: false,
 			};
 		case ADD_COMMENT:
 			return {
 				...state,
 				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
+				selectedTasks: state.selectedTasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
 				isLoader: false,
 			};
 		case UPDATE_SUBTASK:
 			return {
 				...state,
 				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
+				selectedTasks: state.selectedTasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
 				isLoader: false,
 			};
 		case SET_UPCOMING_TASKS:
@@ -90,6 +94,7 @@ const tasksReducer = (state = initialState, action: any) => {
 			return {
 				...state,
 				tasks: state.tasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
+				selectedTasks: state.selectedTasks.map((task) => (task._id === action.payload._id ? action.payload : task)),
 				isLoader: false,
 			};
 		case SET_TASK_DETAIL:
