@@ -298,7 +298,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 				</DialogTitle>
 				<Divider />
 
-				<DialogContent sx={{ p: 2.5, width: "100%" }}>
+				<DialogContent sx={{ p: 2.5, width: "100%", overflow: "hidden" }}>
 					<FormControl sx={{ width: "100%", mb: 2.5 }}>
 						<TextField
 							autoFocus
