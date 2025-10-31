@@ -46,6 +46,7 @@ import SelectCalculatorTypeModal from "sections/apps/folders/SelectCalculatorTyp
 import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
 import ModalCalcData from "pages/apps/folders/details/modals/ModalCalcData";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
+import ModalMovements from "pages/apps/folders/details/modals/ModalMovements";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
@@ -81,7 +82,7 @@ import {
 } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
-import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User } from "iconsax-react";
+import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument } from "iconsax-react";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
@@ -553,6 +554,7 @@ const FoldersLayout = () => {
 	const [calcDataModalOpen, setCalcDataModalOpen] = useState(false);
 	const [noteModalOpen, setNoteModalOpen] = useState(false);
 	const [contactModalOpen, setContactModalOpen] = useState(false);
+	const [movementModalOpen, setMovementModalOpen] = useState(false);
 	const [selectedFolderForModal, setSelectedFolderForModal] = useState<{ id: string; name: string }>({ id: "", name: "" });
 
 	// Referencias
@@ -881,6 +883,13 @@ const FoldersLayout = () => {
 
 	const handleCloseContactModal = useCallback(() => {
 		setContactModalOpen(false);
+	}, []);
+
+	// Handlers para el modal de movimientos
+	const handleOpenMovementModal = useCallback((folderId: string, folderName: string) => {
+		setSelectedFolderForModal({ id: folderId, name: folderName });
+		setMovementModalOpen(true);
+		handleMenuClose();
 	}, []);
 
 	// Columnas memoizadas
@@ -1418,6 +1427,19 @@ const FoldersLayout = () => {
 						onClick={(e) => {
 							e.stopPropagation();
 							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+								handleOpenMovementModal(menuFolderData._id, menuFolderData.folderName);
+							}
+						}}
+					>
+						<ListItemIcon>
+							<TableDocument variant="Bulk" size={18} />
+						</ListItemIcon>
+						<ListItemText>Crear Movimiento</ListItemText>
+					</MenuItem>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
 								handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
 							}
 						}}
@@ -1533,6 +1555,16 @@ const FoldersLayout = () => {
 						/>
 					</Dialog>
 				)}
+
+				{/* Modal de creación de movimientos */}
+				<ModalMovements
+					open={movementModalOpen}
+					setOpen={setMovementModalOpen}
+					folderId={selectedFolderForModal.id}
+					folderName={selectedFolderForModal.name}
+					editMode={false}
+					movementData={null}
+				/>
 
 				{/* Modal de límite de recursos */}
 				<LimitErrorModal

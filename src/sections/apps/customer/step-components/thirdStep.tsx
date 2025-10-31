@@ -20,18 +20,18 @@ const customInputStyles = {
 
 const ThirdStep = () => {
 	return (
-		<Grid container spacing={3} justifyContent="center">
+		<Grid container spacing={2} justifyContent="center">
 			<Grid item xs={12} md={8}>
-				<Grid container spacing={3}>
+				<Grid container spacing={2}>
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="nationality">Nacionalidad</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="nationality" name="nationality" placeholder="Ingrese una Nacionalidad" />
 							</Stack>
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="document">Documento</InputLabel>
 								<PatternField
 									fullWidth
@@ -46,7 +46,7 @@ const ThirdStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="status">Estado Civil</InputLabel>
 								<SelectField
 									label="Seleccione el estado civil"
@@ -58,7 +58,7 @@ const ThirdStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="cuit">CUIT o CUIL</InputLabel>
 								<PatternField
 									fullWidth
@@ -73,14 +73,14 @@ const ThirdStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="activity">Profesión/Oficio</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="activity" name="activity" placeholder="Ingrese una profesión" />
 							</Stack>
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="company">Empresa</InputLabel>
 								<InputField
 									fullWidth
@@ -93,7 +93,7 @@ const ThirdStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="fiscal">Condición Fiscal</InputLabel>
 								<SelectField
 									label="Seleccione la condición fiscal"

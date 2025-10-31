@@ -19,11 +19,11 @@ const customInputStyles = {
 
 const FirstStep = () => {
 	return (
-		<Grid container spacing={3} justifyContent="center">
+		<Grid container spacing={2} justifyContent="center">
 			<Grid item xs={12} md={8}>
-				<Grid container spacing={3}>
+				<Grid container spacing={2}>
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="name" required>
 									Nombre
 								</InputLabel>
@@ -32,7 +32,7 @@ const FirstStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="lastName" required>
 									Apellido
 								</InputLabel>
@@ -41,7 +41,7 @@ const FirstStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="role" required>
 									Categoría
 								</InputLabel>
@@ -56,7 +56,7 @@ const FirstStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={1.25}>
+							<Stack spacing={1}>
 								<InputLabel htmlFor="type" required>
 									Tipos
 								</InputLabel>
