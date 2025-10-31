@@ -187,12 +187,16 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 		<>
 			<ResponsiveDialog
 				maxWidth="sm"
+				fullWidth
 				open={open}
 				PaperProps={{
 					sx: {
 						p: 0,
 						borderRadius: 2,
 						boxShadow: `0 2px 10px -2px ${theme.palette.divider}`,
+						display: "flex",
+						flexDirection: "column",
+						maxHeight: "90vh",
 					},
 				}}
 				sx={{
@@ -203,15 +207,14 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 			>
 				<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize={true}>
 					{({ isSubmitting, resetForm }) => (
-						<Form autoComplete="off" noValidate>
-							<>
-								<DialogTitle
-									sx={{
-										bgcolor: theme.palette.primary.lighter,
-										p: 3,
-										borderBottom: `1px solid ${theme.palette.divider}`,
-									}}
-								>
+						<>
+							<DialogTitle
+								sx={{
+									bgcolor: theme.palette.primary.lighter,
+									p: 3,
+									borderBottom: `1px solid ${theme.palette.divider}`,
+								}}
+							>
 									<Stack direction="row" justifyContent="space-between" alignItems="center">
 										<Stack direction="row" alignItems="center" spacing={1}>
 											<TableDocument size={24} color={theme.palette.primary.main} />
@@ -240,16 +243,17 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 									</Stack>
 								</DialogTitle>
 
-								<Divider />
-
-								<DialogContent
-									sx={{
-										p: 3,
-										display: "flex",
-										flexDirection: "column",
-										gap: 2, // Reducido de 3 a 2 para disminuir el espaciado general, como en ModalNotifications
-									}}
-								>
+								<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+									<DialogContent
+										dividers
+										sx={{
+											p: 3,
+											overflowY: "auto",
+											display: "flex",
+											flexDirection: "column",
+											gap: 2,
+										}}
+									>
 									{/* Título */}
 									<Stack spacing={1}>
 										<InputLabel htmlFor="title">Título del Movimiento</InputLabel>
@@ -364,32 +368,30 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 											}}
 										/>
 									</Stack>
-								</DialogContent>
+									</DialogContent>
 
-								<Divider />
-
-								<DialogActions
-									sx={{
-										p: 2.5,
-										bgcolor: theme.palette.background.default,
-										borderTop: `1px solid ${theme.palette.divider}`,
-									}}
-								>
-									<Button
-										color="error"
-										onClick={() => {
-											setOpen(false);
-											resetForm();
+									<DialogActions
+										sx={{
+											p: 2.5,
+											bgcolor: theme.palette.background.default,
+											borderTop: `1px solid ${theme.palette.divider}`,
 										}}
 									>
-										Cancelar
-									</Button>
-									<Button type="submit" variant="contained" disabled={isSubmitting}>
-										Guardar
-									</Button>
-								</DialogActions>
-							</>
-						</Form>
+										<Button
+											color="error"
+											onClick={() => {
+												setOpen(false);
+												resetForm();
+											}}
+										>
+											Cancelar
+										</Button>
+										<Button type="submit" variant="contained" disabled={isSubmitting}>
+											Guardar
+										</Button>
+									</DialogActions>
+								</Form>
+						</>
 					)}
 				</Formik>
 			</ResponsiveDialog>
