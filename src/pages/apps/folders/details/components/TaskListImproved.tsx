@@ -435,15 +435,16 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 					</>
 				) : (
 					// Tasks view - with fixed height and scroll
-					<Box sx={{ display: "flex", flexDirection: "column", height: { xs: "60vh", sm: "500px" } }}>
+					<Box sx={{ display: "flex", flexDirection: "column", maxWidth: "100%", overflow: "hidden" }}>
 						<>
 							{/* Stats Overview - Fixed */}
-							<Stack spacing={2} sx={{ flexShrink: 0 }}>
-								<Stack direction="row" spacing={2}>
+							<Stack spacing={2} sx={{ flexShrink: 0, mb: 2 }}>
+								<Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }}>
 									<Paper
 										elevation={0}
 										sx={{
-											flex: 1,
+											flex: "1 1 auto",
+											minWidth: "140px",
 											p: 2,
 											bgcolor: alpha(theme.palette.success.main, 0.08),
 											border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
@@ -465,7 +466,8 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 									<Paper
 										elevation={0}
 										sx={{
-											flex: 1,
+											flex: "1 1 auto",
+											minWidth: "140px",
 											p: 2,
 											bgcolor: alpha(theme.palette.warning.main, 0.08),
 											border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
@@ -488,7 +490,8 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 										<Paper
 											elevation={0}
 											sx={{
-												flex: 1,
+												flex: "1 1 auto",
+												minWidth: "140px",
 												p: 2,
 												bgcolor: alpha(theme.palette.error.main, 0.08),
 												border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
@@ -552,8 +555,8 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 							</Stack>
 
 							{/* Tasks List - Scrollable */}
-							<Box sx={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
-								<SimpleBar style={{ height: "100%" }}>
+							<Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
+								<SimpleBar style={{ maxHeight: "400px" }}>
 									<Box ref={parent}>
 										<AnimatePresence>
 											{displayTasks.map((task, index) => (
