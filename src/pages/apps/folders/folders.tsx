@@ -42,6 +42,11 @@ import SEO from "components/SEO/SEO";
 import AddFolder from "sections/apps/folders/AddFolder";
 import FolderView from "sections/apps/folders/FolderView";
 import AlertFolderDelete from "sections/apps/folders/AlertFolderDelete";
+import SelectCalculatorTypeModal from "sections/apps/folders/SelectCalculatorTypeModal";
+import ModalTasks from "pages/apps/folders/details/modals/MoldalTasks";
+import ModalCalcData from "pages/apps/folders/details/modals/ModalCalcData";
+import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
+import AddCustomer from "sections/apps/customer/AddCustomer";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
@@ -76,6 +81,7 @@ import {
 } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
+import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User } from "iconsax-react";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
@@ -95,7 +101,7 @@ interface ReactTableProps extends Props {
 	onScrollToPending?: () => void;
 	anchorEl: null | HTMLElement;
 	menuRowId: string | null;
-	handleMenuOpen: (event: MouseEvent<HTMLElement>, rowId: string) => void;
+	handleMenuOpen: (event: MouseEvent<HTMLElement>, rowId: string, folderData?: any) => void;
 	handleMenuClose: () => void;
 }
 
@@ -540,6 +546,14 @@ const FoldersLayout = () => {
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [menuRowId, setMenuRowId] = useState<string | null>(null);
+	const [menuFolderData, setMenuFolderData] = useState<any>(null);
+	const [calculatorModalOpen, setCalculatorModalOpen] = useState(false);
+	const [selectedFolderIdForCalculator, setSelectedFolderIdForCalculator] = useState<string>("");
+	const [taskModalOpen, setTaskModalOpen] = useState(false);
+	const [calcDataModalOpen, setCalcDataModalOpen] = useState(false);
+	const [noteModalOpen, setNoteModalOpen] = useState(false);
+	const [contactModalOpen, setContactModalOpen] = useState(false);
+	const [selectedFolderForModal, setSelectedFolderForModal] = useState<{ id: string; name: string }>({ id: "", name: "" });
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -805,15 +819,17 @@ const FoldersLayout = () => {
 	}, []);
 
 	// Handlers del menú overflow
-	const handleMenuOpen = useCallback((event: MouseEvent<HTMLElement>, rowId: string) => {
+	const handleMenuOpen = useCallback((event: MouseEvent<HTMLElement>, rowId: string, folderData?: any) => {
 		event.stopPropagation();
 		setAnchorEl(event.currentTarget);
 		setMenuRowId(rowId);
+		setMenuFolderData(folderData || null);
 	}, []);
 
 	const handleMenuClose = useCallback(() => {
 		setAnchorEl(null);
 		setMenuRowId(null);
+		setMenuFolderData(null);
 	}, []);
 
 	// Función para hacer scroll a la tabla de pendientes
@@ -821,6 +837,50 @@ const FoldersLayout = () => {
 		if (pendingTableRef.current) {
 			pendingTableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
 		}
+	}, []);
+
+	// Handlers para el modal de selección de calculadora
+	const handleOpenCalculatorModal = useCallback((folderId: string) => {
+		setSelectedFolderIdForCalculator(folderId);
+		setCalculatorModalOpen(true);
+		handleMenuClose();
+	}, []);
+
+	const handleCloseCalculatorModal = useCallback(() => {
+		setCalculatorModalOpen(false);
+		setSelectedFolderIdForCalculator("");
+	}, []);
+
+	// Handlers para el modal de tareas
+	const handleOpenTaskModal = useCallback((folderId: string, folderName: string) => {
+		setSelectedFolderForModal({ id: folderId, name: folderName });
+		setTaskModalOpen(true);
+		handleMenuClose();
+	}, []);
+
+	// Handlers para el modal de montos de reclamo/ofrecimiento
+	const handleOpenCalcDataModal = useCallback((folderId: string, folderName: string) => {
+		setSelectedFolderForModal({ id: folderId, name: folderName });
+		setCalcDataModalOpen(true);
+		handleMenuClose();
+	}, []);
+
+	// Handlers para el modal de notas
+	const handleOpenNoteModal = useCallback((folderId: string, folderName: string) => {
+		setSelectedFolderForModal({ id: folderId, name: folderName });
+		setNoteModalOpen(true);
+		handleMenuClose();
+	}, []);
+
+	// Handlers para el modal de contactos
+	const handleOpenContactModal = useCallback((folderId: string, folderName: string) => {
+		setSelectedFolderForModal({ id: folderId, name: folderName });
+		setContactModalOpen(true);
+		handleMenuClose();
+	}, []);
+
+	const handleCloseContactModal = useCallback(() => {
+		setContactModalOpen(false);
 	}, []);
 
 	// Columnas memoizadas
@@ -1143,7 +1203,7 @@ const FoldersLayout = () => {
 								</IconButton>
 							</Tooltip>
 							<Tooltip title="Más acciones">
-								<IconButton color="secondary" onClick={(e) => handleMenuOpen(e, row.id)}>
+								<IconButton color="secondary" onClick={(e) => handleMenuOpen(e, row.id, row.original)}>
 									<More variant="Bulk" />
 								</IconButton>
 							</Tooltip>
@@ -1302,6 +1362,71 @@ const FoldersLayout = () => {
 						</ListItemIcon>
 						<ListItemText>{expandedRowId === menuRowId ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
 					</MenuItem>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (menuFolderData && menuFolderData._id) {
+								handleOpenCalculatorModal(menuFolderData._id);
+							}
+						}}
+					>
+						<ListItemIcon>
+							<CalculatorIcon variant="Bulk" size={18} />
+						</ListItemIcon>
+						<ListItemText>Crear Cálculo</ListItemText>
+					</MenuItem>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+								handleOpenTaskModal(menuFolderData._id, menuFolderData.folderName);
+							}
+						}}
+					>
+						<ListItemIcon>
+							<TaskSquare variant="Bulk" size={18} />
+						</ListItemIcon>
+						<ListItemText>Crear Tarea</ListItemText>
+					</MenuItem>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+								handleOpenNoteModal(menuFolderData._id, menuFolderData.folderName);
+							}
+						}}
+					>
+						<ListItemIcon>
+							<DocumentText variant="Bulk" size={18} />
+						</ListItemIcon>
+						<ListItemText>Crear Nota</ListItemText>
+					</MenuItem>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+								handleOpenContactModal(menuFolderData._id, menuFolderData.folderName);
+							}
+						}}
+					>
+						<ListItemIcon>
+							<Profile2User variant="Bulk" size={18} />
+						</ListItemIcon>
+						<ListItemText>Crear Contacto</ListItemText>
+					</MenuItem>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+								handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
+							}
+						}}
+					>
+						<ListItemIcon>
+							<Moneys variant="Bulk" size={18} />
+						</ListItemIcon>
+						<ListItemText>Crear Oferta/Reclamo</ListItemText>
+					</MenuItem>
 				</Menu>
 
 				<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />
@@ -1342,6 +1467,72 @@ const FoldersLayout = () => {
 
 				{/* Guía de causas */}
 				<GuideFolders open={guideOpen} onClose={() => setGuideOpen(false)} />
+
+				{/* Modal de selección de tipo de calculadora */}
+				<SelectCalculatorTypeModal
+					open={calculatorModalOpen}
+					onClose={handleCloseCalculatorModal}
+					folderId={selectedFolderIdForCalculator}
+				/>
+
+				{/* Modal de creación de tareas */}
+				<ModalTasks
+					open={taskModalOpen}
+					setOpen={setTaskModalOpen}
+					folderId={selectedFolderForModal.id}
+					folderName={selectedFolderForModal.name}
+					handlerAddress={undefined}
+				/>
+
+				{/* Modal de agregar montos de reclamo/ofrecimiento */}
+				<ModalCalcData
+					open={calcDataModalOpen}
+					setOpen={setCalcDataModalOpen}
+					folderId={selectedFolderForModal.id}
+					folderName={selectedFolderForModal.name}
+					handlerAddress={undefined}
+				/>
+
+				{/* Modal de creación de notas */}
+				<ModalNotes
+					open={noteModalOpen}
+					setOpen={setNoteModalOpen}
+					folderId={selectedFolderForModal.id}
+					folderName={selectedFolderForModal.name}
+					handlerAddress={undefined}
+				/>
+
+				{/* Modal de creación de contactos */}
+				{contactModalOpen && (
+					<Dialog
+						maxWidth="sm"
+						TransitionComponent={PopupTransition}
+						keepMounted
+						fullWidth
+						open={contactModalOpen}
+						sx={{
+							"& .MuiDialog-paper": {
+								p: 0,
+								height: { xs: "90vh", sm: "85vh", md: "80vh" },
+								maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+								display: "flex",
+								flexDirection: "column",
+								overflow: "hidden",
+							},
+						}}
+					>
+						<AddCustomer
+							open={contactModalOpen}
+							customer={null}
+							mode="add"
+							onCancel={handleCloseContactModal}
+							onAddMember={() => {
+								// Callback cuando se agrega un contacto exitosamente
+								handleCloseContactModal();
+							}}
+						/>
+					</Dialog>
+				)}
 
 				{/* Modal de límite de recursos */}
 				<LimitErrorModal
