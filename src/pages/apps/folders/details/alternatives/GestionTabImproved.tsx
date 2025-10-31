@@ -131,7 +131,7 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 				height: "100%",
 			}}
 		>
-			<Box sx={{ p: 2.5 }}>
+			<Box sx={{ p: 2 }}>
 				<Typography variant="h5" sx={{ fontWeight: 600 }}>
 					Gestión
 				</Typography>
@@ -140,10 +140,10 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 				</Typography>
 			</Box>
 			<Divider />
-			<Box sx={{ flex: 1, overflow: "auto" }}>
+			<Box sx={{ flex: 1 }}>
 				<Tabs
 					orientation="vertical"
-					variant="scrollable"
+					variant="standard"
 					value={value}
 					onChange={handleChange}
 					sx={{
@@ -154,12 +154,12 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 							transition: "all 0.3s ease",
 						},
 						"& .MuiTab-root": {
-							minHeight: 88,
+							minHeight: 72,
 							justifyContent: "flex-start",
 							textAlign: "left",
 							alignItems: "flex-start",
-							px: 2.5,
-							py: 2,
+							px: 2,
+							py: 1.5,
 							borderRadius: 0,
 							textTransform: "none",
 							transition: "all 0.2s ease",
@@ -201,19 +201,19 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 				</Tabs>
 			</Box>
 			<Divider />
-			<Box sx={{ p: 2 }}>
+			<Box sx={{ p: 1.5 }}>
 				<Paper
 					sx={{
-						p: 2,
+						p: 1.5,
 						bgcolor: alpha(theme.palette.primary.main, 0.04),
 						border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
 						borderRadius: 2,
 					}}
 				>
-					<Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+					<Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
 						Estado General
 					</Typography>
-					<Stack spacing={0.5}>
+					<Stack spacing={0.25}>
 						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
 							<Typography variant="body2" color="text.secondary">
 								Completitud:
