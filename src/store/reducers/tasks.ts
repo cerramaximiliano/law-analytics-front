@@ -36,12 +36,17 @@ const tasksReducer = (state = initialState, action: any) => {
 			return { ...state, isLoader: true, error: null };
 		case SET_ERROR:
 			return { ...state, isLoader: false, error: action.payload };
-		case ADD_TASK:
+		case ADD_TASK: {
+			// Si selectedTasks tiene tareas del mismo folder, agregar la nueva tarea
+			const shouldAddToSelected = state.selectedTasks.length > 0 && state.selectedTasks[0]?.folderId === action.payload.folderId;
+
 			return {
 				...state,
 				tasks: [...state.tasks, action.payload],
+				selectedTasks: shouldAddToSelected ? [...state.selectedTasks, action.payload] : state.selectedTasks,
 				isLoader: false,
 			};
+		}
 		case SET_TASKS:
 			return {
 				...state,
