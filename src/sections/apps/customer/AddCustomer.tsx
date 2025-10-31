@@ -468,7 +468,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 					<DialogTitle
 						sx={{
 							bgcolor: theme.palette.primary.lighter,
-							p: 3,
+							p: 2,
 							borderBottom: `1px solid ${theme.palette.divider}`,
 							flexShrink: 0,
 						}}
@@ -505,19 +505,19 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
 								<DialogContent
 									sx={{
-										p: 2.5,
+										p: 2,
 										flex: 1,
 										overflow: "auto",
 									}}
 								>
 									<Box>
 										{/* Progress Steps */}
-										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+										<Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
 											{steps.map((label, index) => (
 												<Box key={label} sx={{ position: "relative", width: "100%" }}>
 													<Box
 														sx={{
-															height: 4,
+															height: 3,
 															bgcolor: index <= activeStep ? "primary.main" : "divider",
 															borderRadius: 1,
 															transition: "all 0.3s ease",
@@ -527,7 +527,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 														variant="caption"
 														sx={{
 															position: "absolute",
-															top: 8,
+															top: 6,
+															fontSize: 11,
 															color: index <= activeStep ? "primary.main" : "text.secondary",
 														}}
 													>
@@ -538,7 +539,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 										</Stack>
 
 										{/* Form Content */}
-										<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+										<Box sx={{ py: 1 }}>{getStepContent(activeStep, values)}</Box>
 									</Box>
 								</DialogContent>
 
@@ -546,7 +547,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 
 								<DialogActions
 									sx={{
-										p: 2.5,
+										p: 2,
 										flexShrink: 0,
 										borderTop: `1px solid ${theme.palette.divider}`,
 									}}
