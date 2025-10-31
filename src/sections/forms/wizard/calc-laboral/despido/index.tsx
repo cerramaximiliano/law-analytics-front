@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Button, Stack, Box, Typography } from "@mui/material";
 
 // project-imports
-import MainCard from "components/MainCard";
 import AnimateButton from "components/@extended/AnimateButton";
 import FirstForm from "./first";
 import SecondForm from "./second";
@@ -477,9 +476,9 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 	}
 
 	return (
-		<MainCard title="Liquidación por Despido con Causa">
+		<Box sx={{ width: "100%" }}>
 			{/* Progress Steps */}
-			<Stack direction="row" spacing={1.5} sx={{ pt: 3, pb: 3 }}>
+			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
 				{steps.map((label, index) => (
 					<Box key={label} sx={{ position: "relative", width: "100%" }}>
 						<Box
@@ -497,6 +496,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 								top: 6,
 								fontSize: 11,
 								color: index <= activeStep ? "primary.main" : "text.secondary",
+								transition: "color 0.3s ease",
 							}}
 						>
 							{label}
@@ -504,45 +504,43 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 					</Box>
 				))}
 			</Stack>
-			<>
-				{activeStep === steps.length ? (
-					<ResultsView
-						values={formResults || {}}
-						onReset={() => {
-							setActiveStep(0);
-							setFormResults(null);
-							setFormInitialValues({
-								...initialValues,
-								folderId: folder?._id || "",
-								folderName: folder?.folderName || "",
-							});
-						}}
-						folderId={formResults?.folderId}
-						folderName={formResults?.folderName}
-					/>
-				) : (
-					<Formik initialValues={formInitialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
-						{({ isSubmitting, values }) => (
-							<Form id={formId}>
-								{getStepContent(activeStep, values, folder, onFolderChange)}
-								<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
-									{activeStep !== 0 && (
-										<Button onClick={handleBack} sx={{ my: 3, ml: 1 }}>
-											Atrás
-										</Button>
-									)}
-									<AnimateButton>
-										<Button disabled={isSubmitting} variant="contained" type="submit" sx={{ my: 3, ml: 1 }}>
-											{isLastStep ? "Calcular" : "Siguiente"}
-										</Button>
-									</AnimateButton>
-								</Stack>
-							</Form>
-						)}
-					</Formik>
-				)}
-			</>
-		</MainCard>
+			{activeStep === steps.length ? (
+				<ResultsView
+					values={formResults || {}}
+					onReset={() => {
+						setActiveStep(0);
+						setFormResults(null);
+						setFormInitialValues({
+							...initialValues,
+							folderId: folder?._id || "",
+							folderName: folder?.folderName || "",
+						});
+					}}
+					folderId={formResults?.folderId}
+					folderName={formResults?.folderName}
+				/>
+			) : (
+				<Formik initialValues={formInitialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit}>
+					{({ isSubmitting, values }) => (
+						<Form id={formId}>
+							{getStepContent(activeStep, values, folder, onFolderChange)}
+							<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
+								{activeStep !== 0 && (
+									<Button onClick={handleBack} sx={{ my: 3, ml: 1 }}>
+										Atrás
+									</Button>
+								)}
+								<AnimateButton>
+									<Button disabled={isSubmitting} variant="contained" type="submit" sx={{ my: 3, ml: 1 }}>
+										{isLastStep ? "Calcular" : "Siguiente"}
+									</Button>
+								</AnimateButton>
+							</Stack>
+						</Form>
+					)}
+				</Formik>
+			)}
+		</Box>
 	);
 };
 

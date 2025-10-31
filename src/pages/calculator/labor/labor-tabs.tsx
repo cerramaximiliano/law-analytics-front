@@ -4,7 +4,7 @@ import BasicWizard from "sections/forms/wizard/calc-laboral/despido";
 import LiquidacionWizard from "sections/forms/wizard/calc-laboral/liquidacion";
 
 // material-ui
-import { Box, Tab, Tabs, Typography, Tooltip, IconButton, Skeleton, Stack, Grid } from "@mui/material";
+import { Box, Tab, Tabs, Typography, Tooltip, IconButton, Skeleton, Stack, Grid, Divider } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -29,7 +29,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`simple-tabpanel-${index}`} aria-labelledby={`simple-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+			{value === index && <Box sx={{ pt: 4 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -183,10 +183,32 @@ export default function LaborTabs() {
 					</Tooltip>
 				</Box>
 				<TabPanel value={value} index={0}>
-					<BasicWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					<Stack spacing={3}>
+						<Box>
+							<Typography variant="h4" sx={{ mb: 1 }}>
+								Liquidación por Despido sin Causa
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Calcula indemnizaciones, preaviso, vacaciones, SAC y multas laborales
+							</Typography>
+						</Box>
+						<Divider />
+						<BasicWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={1}>
-					<LiquidacionWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					<Stack spacing={3}>
+						<Box>
+							<Typography variant="h4" sx={{ mb: 1 }}>
+								Liquidación Final
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Calcula conceptos de liquidación final al término de la relación laboral
+							</Typography>
+						</Box>
+						<Divider />
+						<LiquidacionWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={2}>
 					<SavedLabor />

@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Button, Stack, Box, Typography } from "@mui/material";
 
 // project-imports
-import MainCard from "components/MainCard";
 import AnimateButton from "components/@extended/AnimateButton";
 import FirstForm from "./first";
 import SecondForm from "./second";
@@ -73,8 +72,8 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 	}
 
 	return (
-		<MainCard title="Liquidación Final">
-			<Stack direction="row" spacing={1.5} sx={{ pt: 3, pb: 3 }}>
+		<Box sx={{ width: "100%" }}>
+			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
 				{steps.map((label, index) => (
 					<Box key={label} sx={{ position: "relative", width: "100%" }}>
 						<Box
@@ -121,7 +120,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 					</Form>
 				)}
 			</Formik>
-		</MainCard>
+		</Box>
 	);
 };
 
