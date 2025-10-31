@@ -20,9 +20,9 @@ const customInputStyles = {
 const FirstStep = () => {
 	return (
 		<DialogContent sx={{ p: 0 }}>
-			<Grid container spacing={2} justifyContent="center">
+			<Grid container spacing={1.5} justifyContent="center">
 				<Grid item xs={12} md={8}>
-					<Grid container spacing={2}>
+					<Grid container spacing={1.5}>
 						<Grid item xs={12}>
 							<Stack spacing={0.75}>
 								<InputLabel htmlFor="name" required sx={{ fontSize: 13 }}>
