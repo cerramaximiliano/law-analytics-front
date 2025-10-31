@@ -2,7 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 
 // material-ui
-import { Button, Step, Stepper, StepLabel, Stack, Zoom } from "@mui/material";
+import { Button, Stack, Box, Typography, Zoom } from "@mui/material";
 //import LoadingButton from "components/@extended/LoadingButton";
 
 // project-imports
@@ -161,13 +161,32 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 
 	return (
 		<MainCard title="Liquidación de Intereses">
-			<Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
-				{steps.map((label) => (
-					<Step key={label}>
-						<StepLabel>{label}</StepLabel>
-					</Step>
+			<Stack direction="row" spacing={1.5} sx={{ pt: 3, pb: 3 }}>
+				{steps.map((label, index) => (
+					<Box key={label} sx={{ position: "relative", width: "100%" }}>
+						<Box
+							sx={{
+								height: 3,
+								bgcolor: index <= activeStep ? "primary.main" : "divider",
+								borderRadius: 1,
+								transition: "all 0.3s ease",
+							}}
+						/>
+						<Typography
+							variant="caption"
+							sx={{
+								position: "absolute",
+								top: 6,
+								fontSize: 11,
+								color: index <= activeStep ? "primary.main" : "text.secondary",
+								transition: "color 0.3s ease",
+							}}
+						>
+							{label}
+						</Typography>
+					</Box>
 				))}
-			</Stepper>
+			</Stack>
 			<>
 				{activeStep === steps.length ? (
 					<ResultsView
