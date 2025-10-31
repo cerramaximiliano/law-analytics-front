@@ -1,5 +1,5 @@
 import React from "react";
-import { DialogTitle, Divider, Button, Stack, DialogContent, Typography, DialogActions, Zoom, useTheme, InputLabel } from "@mui/material";
+import { DialogTitle, Divider, Button, Stack, DialogContent, Typography, DialogActions, Zoom, useTheme, InputLabel, Grid } from "@mui/material";
 import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import InputField from "components/UI/InputField";
 import DateInputField from "components/UI/DateInputField";
@@ -249,125 +249,136 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 										sx={{
 											p: 3,
 											overflowY: "auto",
-											display: "flex",
-											flexDirection: "column",
-											gap: 2,
 										}}
 									>
-									{/* Título */}
-									<Stack spacing={1}>
-										<InputLabel htmlFor="title">Título del Movimiento</InputLabel>
-										<InputField
-											fullWidth
-											placeholder="Título del Movimiento"
-											id="title"
-											name="title"
-											InputProps={{
-												startAdornment: <TableDocument size={16} style={{ marginRight: 8 }} />,
-											}}
-											sx={customInputStyles}
-										/>
-									</Stack>
+										<Grid container spacing={2}>
+											{/* Título - Ancho completo */}
+											<Grid item xs={12}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="title">Título del Movimiento</InputLabel>
+													<InputField
+														fullWidth
+														placeholder="Título del Movimiento"
+														id="title"
+														name="title"
+														InputProps={{
+															startAdornment: <TableDocument size={16} style={{ marginRight: 8 }} />,
+														}}
+														sx={customInputStyles}
+													/>
+												</Stack>
+											</Grid>
 
-									{/* Tipo de movimiento */}
-									<Stack spacing={1}>
-										<InputLabel htmlFor="movement">Tipo</InputLabel>
-										<SelectField
-											required={true}
-											label="Seleccione tipo de Movimiento"
-											data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
-											name="movement"
-											sx={{
-												"& .MuiInputBase-root": {
-													height: "39.91px",
-													fontSize: 12,
-												},
-												"& .MuiSelect-select": {
-													fontSize: 12,
-												},
-												"& .MuiInputLabel-root": {
-													fontSize: 12,
-												},
-											}}
-										/>
-									</Stack>
+											{/* Tipo de movimiento - Ancho completo */}
+											<Grid item xs={12}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="movement">Tipo</InputLabel>
+													<SelectField
+														required={true}
+														label="Seleccione tipo de Movimiento"
+														data={["Evento", "Despacho", "Cédula", "Oficio", "Escrito-Actor", "Escrito-Demandado"]}
+														name="movement"
+														sx={{
+															"& .MuiInputBase-root": {
+																height: "39.91px",
+																fontSize: 12,
+															},
+															"& .MuiSelect-select": {
+																fontSize: 12,
+															},
+															"& .MuiInputLabel-root": {
+																fontSize: 12,
+															},
+														}}
+													/>
+												</Stack>
+											</Grid>
 
-									{/* Fecha */}
-									<Stack spacing={1}>
-										<InputLabel htmlFor="time">Fecha de Dictado</InputLabel>
-										<DateInputField
-											name="time"
-											customInputStyles={{
-												"& .MuiInputBase-root": {
-													height: 39.91,
-												},
-												"& .MuiInputBase-input": {
-													fontSize: 12,
-												},
-												"& input::placeholder": {
-													color: "#000000",
-													opacity: 0.6,
-												},
-											}}
-										/>
-									</Stack>
+											{/* Fecha de Dictado - Media columna */}
+											<Grid item xs={12} sm={6}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="time">Fecha de Dictado</InputLabel>
+													<DateInputField
+														name="time"
+														customInputStyles={{
+															"& .MuiInputBase-root": {
+																height: 39.91,
+															},
+															"& .MuiInputBase-input": {
+																fontSize: 12,
+															},
+															"& input::placeholder": {
+																color: "#000000",
+																opacity: 0.6,
+															},
+														}}
+													/>
+												</Stack>
+											</Grid>
 
-									{/* Vencimiento */}
-									<Stack spacing={1}>
-										<InputLabel htmlFor="dateExpiration">Fecha de Vencimiento</InputLabel>
-										<DateInputField
-											name="dateExpiration"
-											customInputStyles={{
-												"& .MuiInputBase-root": {
-													height: 39.91,
-												},
-												"& .MuiInputBase-input": {
-													fontSize: 12,
-												},
-												"& input::placeholder": {
-													color: "#000000",
-													opacity: 0.6,
-												},
-											}}
-										/>
-									</Stack>
+											{/* Fecha de Vencimiento - Media columna */}
+											<Grid item xs={12} sm={6}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="dateExpiration">Fecha de Vencimiento</InputLabel>
+													<DateInputField
+														name="dateExpiration"
+														customInputStyles={{
+															"& .MuiInputBase-root": {
+																height: 39.91,
+															},
+															"& .MuiInputBase-input": {
+																fontSize: 12,
+															},
+															"& input::placeholder": {
+																color: "#000000",
+																opacity: 0.6,
+															},
+														}}
+													/>
+												</Stack>
+											</Grid>
 
-									{/* Link */}
-									<Stack spacing={1}>
-										<InputLabel htmlFor="link">Link</InputLabel>
-										<InputField
-											fullWidth
-											placeholder="Añada un link"
-											id="link"
-											name="link"
-											InputProps={{
-												startAdornment: <Link1 size={16} style={{ marginRight: 8 }} />,
-											}}
-											sx={customInputStyles}
-										/>
-									</Stack>
+											{/* Link - Ancho completo */}
+											<Grid item xs={12}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="link">Link</InputLabel>
+													<InputField
+														fullWidth
+														placeholder="Añada un link"
+														id="link"
+														name="link"
+														InputProps={{
+															startAdornment: <Link1 size={16} style={{ marginRight: 8 }} />,
+														}}
+														sx={customInputStyles}
+													/>
+												</Stack>
+											</Grid>
 
-									{/* Descripción */}
-									<Stack spacing={1}>
-										<InputLabel htmlFor="description">Descripción</InputLabel>
-										<InputField
-											fullWidth
-											id="description"
-											multiline
-											rows={2}
-											placeholder="Ingrese una descripción"
-											name="description"
-											sx={{
-												"& .MuiInputBase-input": {
-													fontSize: 12,
-												},
-												"& textarea::placeholder": {
-													color: "#000000",
-													opacity: 0.6,
-												},
-											}}
-										/>
-									</Stack>
+											{/* Descripción - Ancho completo */}
+											<Grid item xs={12}>
+												<Stack spacing={1}>
+													<InputLabel htmlFor="description">Descripción</InputLabel>
+													<InputField
+														fullWidth
+														id="description"
+														multiline
+														rows={2}
+														placeholder="Ingrese una descripción"
+														name="description"
+														sx={{
+															"& .MuiInputBase-input": {
+																fontSize: 12,
+															},
+															"& textarea::placeholder": {
+																color: "#000000",
+																opacity: 0.6,
+															},
+														}}
+													/>
+												</Stack>
+											</Grid>
+										</Grid>
 									</DialogContent>
 
 									<DialogActions
