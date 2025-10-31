@@ -252,8 +252,8 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 										}}
 									>
 										<Grid container spacing={2}>
-											{/* Título - Ancho completo */}
-											<Grid item xs={12}>
+											{/* Título - Media columna */}
+											<Grid item xs={12} sm={6}>
 												<Stack spacing={1}>
 													<InputLabel htmlFor="title">Título del Movimiento</InputLabel>
 													<InputField
@@ -269,8 +269,8 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 												</Stack>
 											</Grid>
 
-											{/* Tipo de movimiento - Ancho completo */}
-											<Grid item xs={12}>
+											{/* Tipo de movimiento - Media columna */}
+											<Grid item xs={12} sm={6}>
 												<Stack spacing={1}>
 													<InputLabel htmlFor="movement">Tipo</InputLabel>
 													<SelectField
