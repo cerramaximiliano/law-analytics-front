@@ -1,5 +1,5 @@
 import React from "react";
-import { Grid, Stack, InputLabel, DialogContent } from "@mui/material";
+import { Grid, Stack, InputLabel } from "@mui/material";
 import data from "data/folder.json";
 import InputField from "components/UI/InputField";
 import SelectField from "components/UI/SelectField";
@@ -19,10 +19,9 @@ const customInputStyles = {
 
 const FirstStep = () => {
 	return (
-		<DialogContent sx={{ p: 2.5 }}>
-			<Grid container spacing={3} justifyContent="center">
-				<Grid item xs={12} md={8}>
-					<Grid container spacing={3}>
+		<Grid container spacing={3} justifyContent="center">
+			<Grid item xs={12} md={8}>
+				<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Stack spacing={1.25}>
 								<InputLabel htmlFor="name" required>
@@ -70,10 +69,9 @@ const FirstStep = () => {
 								></SelectField>
 							</Stack>
 						</Grid>
-					</Grid>
 				</Grid>
 			</Grid>
-		</DialogContent>
+		</Grid>
 	);
 };
 export default FirstStep;
