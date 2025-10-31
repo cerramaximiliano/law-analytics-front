@@ -510,12 +510,12 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					<DialogTitle
 						sx={{
 							bgcolor: theme.palette.primary.lighter,
-							p: 3,
+							p: 2,
 							borderBottom: `1px solid ${theme.palette.divider}`,
 							flexShrink: 0,
 						}}
 					>
-						<Stack spacing={1}>
+						<Stack spacing={0.5}>
 							<Stack direction="row" alignItems="center" spacing={1}>
 								<FolderAdd size={24} color={theme.palette.primary.main} />
 								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
@@ -531,10 +531,10 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 					<Formik initialValues={initialValues} validationSchema={currentValidationSchema} onSubmit={_handleSubmit} enableReinitialize>
 						{({ isSubmitting, values }) => (
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-								<DialogContent sx={{ p: 2.5, overflow: "auto", flex: 1 }}>
+								<DialogContent sx={{ p: 2, overflow: "auto", flex: 1 }}>
 									{isLoadingData ? (
-										<Box sx={{ minHeight: 400, p: 2 }}>
-											<Stack spacing={3}>
+										<Box sx={{ p: 2 }}>
+											<Stack spacing={2}>
 												<Skeleton variant="rounded" height={40} animation="wave" />
 												<Skeleton variant="rounded" height={56} animation="wave" />
 												<Skeleton variant="rounded" height={56} animation="wave" />
@@ -544,9 +544,9 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 											</Stack>
 										</Box>
 									) : (
-										<Box sx={{ minHeight: 400 }}>
+										<Box>
 											{/* Steps Progress */}
-											<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+											<Stack direction="row" spacing={2} sx={{ mb: 2 }}>
 												{steps.map((label, index) => (
 													<Box key={label} sx={{ position: "relative", width: "100%" }}>
 														<Box
@@ -572,14 +572,14 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 											</Stack>
 
 											{/* Form Content */}
-											<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+											<Box sx={{ py: 1 }}>{getStepContent(activeStep, values)}</Box>
 										</Box>
 									)}
 								</DialogContent>
 
 								<DialogActions
 									sx={{
-										p: 2.5,
+										p: 2,
 										bgcolor: theme.palette.background.default,
 										borderTop: `1px solid ${theme.palette.divider}`,
 										flexShrink: 0,
