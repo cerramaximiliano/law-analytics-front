@@ -19,13 +19,13 @@ const customInputStyles = {
 
 const FirstStep = () => {
 	return (
-		<DialogContent sx={{ p: 0 }}>
-			<Grid container spacing={1.5} justifyContent="center">
+		<DialogContent sx={{ p: 2.5 }}>
+			<Grid container spacing={3} justifyContent="center">
 				<Grid item xs={12} md={8}>
-					<Grid container spacing={1.5}>
+					<Grid container spacing={3}>
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="name" required sx={{ fontSize: 13 }}>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="name" required>
 									Nombre
 								</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="name" name="name" placeholder="Ingrese un nombre" required />
@@ -33,8 +33,8 @@ const FirstStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="lastName" required sx={{ fontSize: 13 }}>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="lastName" required>
 									Apellido
 								</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="lastName" placeholder="Ingrese un apellido" name="lastName" required />
@@ -42,8 +42,8 @@ const FirstStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="role" required sx={{ fontSize: 13 }}>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="role" required>
 									Categoría
 								</InputLabel>
 								<SelectField
@@ -57,8 +57,8 @@ const FirstStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="type" required sx={{ fontSize: 13 }}>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="type" required>
 									Tipos
 								</InputLabel>
 								<SelectField

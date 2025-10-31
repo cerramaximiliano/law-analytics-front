@@ -468,7 +468,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 					<DialogTitle
 						sx={{
 							bgcolor: theme.palette.primary.lighter,
-							p: 2,
+							p: 3,
 							borderBottom: `1px solid ${theme.palette.divider}`,
 							flexShrink: 0,
 						}}
@@ -505,47 +505,48 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
 								<DialogContent
 									sx={{
-										p: 1.5,
+										p: 2.5,
 										flex: 1,
 										overflow: "auto",
 									}}
 								>
-									{/* Progress Steps */}
-									<Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-										{steps.map((label, index) => (
-											<Box key={label} sx={{ position: "relative", width: "100%" }}>
-												<Box
-													sx={{
-														height: 2,
-														bgcolor: index <= activeStep ? "primary.main" : "divider",
-														borderRadius: 1,
-														transition: "all 0.3s ease",
-													}}
-												/>
-												<Typography
-													variant="caption"
-													sx={{
-														position: "absolute",
-														top: 4,
-														fontSize: 10,
-														color: index <= activeStep ? "primary.main" : "text.secondary",
-													}}
-												>
-													{label}
-												</Typography>
-											</Box>
-										))}
-									</Stack>
+									<Box>
+										{/* Progress Steps */}
+										<Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+											{steps.map((label, index) => (
+												<Box key={label} sx={{ position: "relative", width: "100%" }}>
+													<Box
+														sx={{
+															height: 4,
+															bgcolor: index <= activeStep ? "primary.main" : "divider",
+															borderRadius: 1,
+															transition: "all 0.3s ease",
+														}}
+													/>
+													<Typography
+														variant="caption"
+														sx={{
+															position: "absolute",
+															top: 8,
+															color: index <= activeStep ? "primary.main" : "text.secondary",
+														}}
+													>
+														{label}
+													</Typography>
+												</Box>
+											))}
+										</Stack>
 
-									{/* Form Content */}
-									{getStepContent(activeStep, values)}
+										{/* Form Content */}
+										<Box sx={{ py: 2 }}>{getStepContent(activeStep, values)}</Box>
+									</Box>
 								</DialogContent>
 
 								<Divider />
 
 								<DialogActions
 									sx={{
-										p: 1.5,
+										p: 2.5,
 										flexShrink: 0,
 										borderTop: `1px solid ${theme.palette.divider}`,
 									}}

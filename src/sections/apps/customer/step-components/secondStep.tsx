@@ -19,22 +19,20 @@ const customInputStyles = {
 
 const SecondStep = () => {
 	return (
-		<DialogContent sx={{ p: 0 }}>
-			<Grid container spacing={1.5} justifyContent="center">
+		<DialogContent sx={{ p: 2.5 }}>
+			<Grid container spacing={3} justifyContent="center">
 				<Grid item xs={12} md={8}>
-					<Grid container spacing={1.5}>
+					<Grid container spacing={3}>
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="address" sx={{ fontSize: 13 }}>
-									Domicilio
-								</InputLabel>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="address">Domicilio</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="address" name="address" placeholder="Ingrese un domicilio" />
 							</Stack>
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="state" required sx={{ fontSize: 13 }}>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="state" required>
 									Provincia
 								</InputLabel>
 								<SelectField
@@ -48,8 +46,8 @@ const SecondStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="city" required sx={{ fontSize: 13 }}>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="city" required>
 									Localidad
 								</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="city" name="city" placeholder="Ingrese una localidad" required />
@@ -57,26 +55,20 @@ const SecondStep = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="zipCode" sx={{ fontSize: 13 }}>
-									Código Postal
-								</InputLabel>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="zipCode">Código Postal</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="zipCode" name="zipCode" placeholder="Ingrese un Código Postal" />
 							</Stack>
 						</Grid>
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="email" sx={{ fontSize: 13 }}>
-									Email
-								</InputLabel>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="email">Email</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="email" name="email" placeholder="Ingrese un Email" />
 							</Stack>
 						</Grid>
 						<Grid item xs={12}>
-							<Stack spacing={0.75}>
-								<InputLabel htmlFor="phone" sx={{ fontSize: 13 }}>
-									Teléfono
-								</InputLabel>
+							<Stack spacing={1.25}>
+								<InputLabel htmlFor="phone">Teléfono</InputLabel>
 								<InputField fullWidth sx={customInputStyles} id="phone" name="phone" placeholder="Ingrese un Teléfono" />
 							</Stack>
 						</Grid>
