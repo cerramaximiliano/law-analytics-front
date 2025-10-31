@@ -48,6 +48,7 @@ import ModalCalcData from "pages/apps/folders/details/modals/ModalCalcData";
 import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalMovements from "pages/apps/folders/details/modals/ModalMovements";
 import AddCustomer from "sections/apps/customer/AddCustomer";
+import AddEventFrom from "sections/apps/calendar/AddEventForm";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
@@ -82,7 +83,7 @@ import {
 } from "store/reducers/folder";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
-import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument } from "iconsax-react";
+import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument, Calendar } from "iconsax-react";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
@@ -555,6 +556,7 @@ const FoldersLayout = () => {
 	const [noteModalOpen, setNoteModalOpen] = useState(false);
 	const [contactModalOpen, setContactModalOpen] = useState(false);
 	const [movementModalOpen, setMovementModalOpen] = useState(false);
+	const [eventModalOpen, setEventModalOpen] = useState(false);
 	const [selectedFolderForModal, setSelectedFolderForModal] = useState<{ id: string; name: string }>({ id: "", name: "" });
 
 	// Referencias
@@ -890,6 +892,17 @@ const FoldersLayout = () => {
 		setSelectedFolderForModal({ id: folderId, name: folderName });
 		setMovementModalOpen(true);
 		handleMenuClose();
+	}, []);
+
+	// Handlers para el modal de eventos
+	const handleOpenEventModal = useCallback((folderId: string, folderName: string) => {
+		setSelectedFolderForModal({ id: folderId, name: folderName });
+		setEventModalOpen(true);
+		handleMenuClose();
+	}, []);
+
+	const handleCloseEventModal = useCallback(() => {
+		setEventModalOpen(false);
 	}, []);
 
 	// Columnas memoizadas
@@ -1440,6 +1453,19 @@ const FoldersLayout = () => {
 						onClick={(e) => {
 							e.stopPropagation();
 							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+								handleOpenEventModal(menuFolderData._id, menuFolderData.folderName);
+							}
+						}}
+					>
+						<ListItemIcon>
+							<Calendar variant="Bulk" size={18} />
+						</ListItemIcon>
+						<ListItemText>Crear Evento</ListItemText>
+					</MenuItem>
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
 								handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
 							}
 						}}
@@ -1565,6 +1591,32 @@ const FoldersLayout = () => {
 					editMode={false}
 					movementData={null}
 				/>
+
+				{/* Modal de creación de eventos */}
+				{eventModalOpen && (
+					<Dialog
+						maxWidth="sm"
+						TransitionComponent={PopupTransition}
+						keepMounted
+						fullWidth
+						open={eventModalOpen}
+						onClose={handleCloseEventModal}
+						sx={{
+							"& .MuiDialog-paper": {
+								p: 0,
+							},
+						}}
+					>
+						<AddEventFrom
+							event={null}
+							range={null}
+							onCancel={handleCloseEventModal}
+							userId={user?._id}
+							folderId={selectedFolderForModal.id}
+							folderName={selectedFolderForModal.name}
+						/>
+					</Dialog>
+				)}
 
 				{/* Modal de límite de recursos */}
 				<LimitErrorModal
