@@ -189,7 +189,7 @@ export default function InteresesTabs() {
 								Liquidación de Intereses
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
-								Calcula intereses sobre capital aplicando tasas BCRA, Acta 2601 o Acta 2630
+								Calcula intereses sobre capital aplicando tasas BCRA, Acta 2601, Acta 2630, entre otras
 							</Typography>
 						</Box>
 						<Divider />
