@@ -172,8 +172,8 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 
 	return (
 		<>
-			<Box sx={{ width: "100%", mb: 2 }}>
-				<Typography variant="subtitle1" color="textPrimary" sx={{ mb: 1.5, fontWeight: 600 }}>
+			<Box sx={{ width: "100%", mb: 1.5 }}>
+				<Typography variant="subtitle2" color="textPrimary" sx={{ mb: 0.75, fontWeight: 600 }}>
 					Método de ingreso
 				</Typography>
 
@@ -182,80 +182,89 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 						border: 1,
 						borderColor: theme.palette.divider,
 						borderRadius: 1,
-						p: 1.5,
+						p: 1,
 						bgcolor: theme.palette.background.paper,
 					}}
 				>
 					<RadioGroup value={selectedMethod} onChange={(e) => handleMethodClick(e.target.value as "manual" | "causa")}>
-						<Stack spacing={1}>
-							{/* Opción Manual */}
-							<FormControlLabel
-								value="manual"
-								control={<Radio size="small" />}
-								label={
-									<Stack direction="row" spacing={1} alignItems="center">
-										<Edit2 size={18} color={theme.palette.text.secondary} />
-										<Typography variant="body2">Ingreso Manual</Typography>
-									</Stack>
-								}
+						<Stack spacing={0.75}>
+							{/* Opciones horizontales */}
+							<Stack direction="row" spacing={1.5} alignItems="center">
+								{/* Opción Manual */}
+								<FormControlLabel
+									value="manual"
+									control={<Radio size="small" />}
+									label={
+										<Stack direction="row" spacing={0.5} alignItems="center">
+											<Edit2 size={16} color={theme.palette.text.secondary} />
+											<Typography variant="body2">Ingreso Manual</Typography>
+										</Stack>
+									}
+									sx={{ m: 0 }}
 							/>
 
 							{/* Opción Carpeta */}
-							<FormControlLabel
-								value="causa"
-								control={<Radio size="small" />}
-								label={
-									<Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
-										<DocumentCloud size={18} color={theme.palette.text.secondary} />
-										<Typography variant="body2">Seleccionar Carpeta</Typography>
-										{!selectedFolder && selectedMethod === "causa" && (
-											<Button size="small" variant="text" onClick={handleChangeFolder} sx={{ ml: "auto", textTransform: "none" }}>
-												Elegir
-											</Button>
-										)}
-									</Stack>
-								}
-								sx={{ flex: 1 }}
-							/>
+								<FormControlLabel
+									value="causa"
+									control={<Radio size="small" />}
+									label={
+										<Stack direction="row" spacing={0.5} alignItems="center">
+											<DocumentCloud size={16} color={theme.palette.text.secondary} />
+											<Typography variant="body2">Seleccionar Carpeta</Typography>
+										</Stack>
+									}
+									sx={{ m: 0 }}
+								/>
+
+								{/* Botón Elegir */}
+								{!selectedFolder && selectedMethod === "causa" && (
+									<Button
+										size="small"
+										variant="outlined"
+										onClick={handleChangeFolder}
+										sx={{ ml: "auto", textTransform: "none", py: 0.25, px: 1.5 }}
+									>
+										Elegir
+									</Button>
+								)}
+							</Stack>
 
 							{/* Info de carpeta seleccionada */}
 							{selectedFolder && selectedMethod === "causa" && (
 								<Box
 									sx={{
-										ml: 4,
-										pl: 2,
-										py: 1,
+										pl: 1.5,
+										pr: 1,
+										py: 0.75,
 										borderLeft: `2px solid ${theme.palette.primary.main}`,
 										bgcolor: alpha(theme.palette.primary.main, 0.04),
 										borderRadius: "0 4px 4px 0",
 									}}
 								>
 									<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-										<Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+										<Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
 											<Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.primary.main }}>
 												{selectedFolder.folderName}
 											</Typography>
-											<Stack direction="row" spacing={1} alignItems="center">
-												<Chip label={selectedFolder.materia} size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
-												{selectedFolder.description && (
-													<Tooltip title={selectedFolder.description}>
-														<Typography
-															variant="caption"
-															color="textSecondary"
-															sx={{
-																overflow: "hidden",
-																textOverflow: "ellipsis",
-																whiteSpace: "nowrap",
-																maxWidth: "200px",
-															}}
-														>
-															{selectedFolder.description}
-														</Typography>
-													</Tooltip>
-												)}
-											</Stack>
+											<Chip label={selectedFolder.materia} size="small" sx={{ height: 18, fontSize: "0.65rem" }} />
+											{selectedFolder.description && (
+												<Tooltip title={selectedFolder.description}>
+													<Typography
+														variant="caption"
+														color="textSecondary"
+														sx={{
+															overflow: "hidden",
+															textOverflow: "ellipsis",
+															whiteSpace: "nowrap",
+															maxWidth: "150px",
+														}}
+													>
+														{selectedFolder.description}
+													</Typography>
+												</Tooltip>
+											)}
 										</Stack>
-										<Button size="small" variant="outlined" onClick={handleChangeFolder} sx={{ ml: 1, flexShrink: 0 }}>
+										<Button size="small" variant="outlined" onClick={handleChangeFolder} sx={{ flexShrink: 0, py: 0.25, px: 1 }}>
 											Cambiar
 										</Button>
 									</Stack>
