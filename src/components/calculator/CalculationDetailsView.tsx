@@ -841,7 +841,12 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					>
 						Cancelar
 					</Button>
-					<Button onClick={handleEmailSend} variant="contained" disabled={isSendingEmail} startIcon={isSendingEmail ? <CircularProgress size={20} /> : undefined}>
+					<Button
+						onClick={handleEmailSend}
+						variant="contained"
+						disabled={isSendingEmail}
+						startIcon={isSendingEmail ? <CircularProgress size={20} /> : undefined}
+					>
 						{isSendingEmail ? "Enviando..." : "Enviar"}
 					</Button>
 				</DialogActions>

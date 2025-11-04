@@ -156,70 +156,70 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
 								<DialogContent dividers sx={{ p: 2, overflowY: "auto" }}>
 									<Stack spacing={2}>
-									<Stack spacing={1}>
-										<InputLabel htmlFor="type" sx={{ fontSize: 13 }}>
-											Tipo
-										</InputLabel>
-										<SelectField
-											label="Seleccione un tipo"
-											data={["Reclamado", "Ofertado"]}
-											id="type"
-											name="type"
-											style={{ maxHeight: "39.91px" }}
-										/>
-									</Stack>
-									<Stack spacing={1}>
-										<InputLabel htmlFor="user" sx={{ fontSize: 13 }}>
-											Parte
-										</InputLabel>
-										<SelectField
-											label="Seleccione una parte"
-											data={["Actora", "Demandada"]}
-											id="user"
-											name="user"
-											style={{ maxHeight: "39.91px" }}
-										/>
-									</Stack>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="type" sx={{ fontSize: 13 }}>
+												Tipo
+											</InputLabel>
+											<SelectField
+												label="Seleccione un tipo"
+												data={["Reclamado", "Ofertado"]}
+												id="type"
+												name="type"
+												style={{ maxHeight: "39.91px" }}
+											/>
+										</Stack>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="user" sx={{ fontSize: 13 }}>
+												Parte
+											</InputLabel>
+											<SelectField
+												label="Seleccione una parte"
+												data={["Actora", "Demandada"]}
+												id="user"
+												name="user"
+												style={{ maxHeight: "39.91px" }}
+											/>
+										</Stack>
 
-									<Stack spacing={1}>
-										<InputLabel htmlFor="amount" sx={{ fontSize: 13 }}>
-											Monto
-										</InputLabel>
-										<NumberField
-											thousandSeparator={","}
-											allowNegative={false}
-											allowLeadingZeros={false}
-											sx={customInputStyles}
-											decimalScale={2}
-											fullWidth
-											placeholder="00.00"
-											name="amount"
-											id="amount"
-											InputProps={{ startAdornment: "$" }}
-										/>
-									</Stack>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="amount" sx={{ fontSize: 13 }}>
+												Monto
+											</InputLabel>
+											<NumberField
+												thousandSeparator={","}
+												allowNegative={false}
+												allowLeadingZeros={false}
+												sx={customInputStyles}
+												decimalScale={2}
+												fullWidth
+												placeholder="00.00"
+												name="amount"
+												id="amount"
+												InputProps={{ startAdornment: "$" }}
+											/>
+										</Stack>
 
-									<Stack spacing={1}>
-										<InputLabel htmlFor="date" sx={{ fontSize: 13 }}>
-											Fecha
-										</InputLabel>
-										<DateInputField name="date" id="date" label="Fecha" customInputStyles={customInputStyles} />
-									</Stack>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="date" sx={{ fontSize: 13 }}>
+												Fecha
+											</InputLabel>
+											<DateInputField name="date" id="date" label="Fecha" customInputStyles={customInputStyles} />
+										</Stack>
 
-									<Stack spacing={1}>
-										<InputLabel htmlFor="description" sx={{ fontSize: 13 }}>
-											Descripción
-										</InputLabel>
-										<InputField
-											fullWidth
-											multiline
-											rows={2}
-											placeholder="Ingrese una descripción"
-											name="description"
-											id="description"
-											sx={customTextareaStyles}
-										/>
-									</Stack>
+										<Stack spacing={1}>
+											<InputLabel htmlFor="description" sx={{ fontSize: 13 }}>
+												Descripción
+											</InputLabel>
+											<InputField
+												fullWidth
+												multiline
+												rows={2}
+												placeholder="Ingrese una descripción"
+												name="description"
+												id="description"
+												sx={customTextareaStyles}
+											/>
+										</Stack>
 									</Stack>
 								</DialogContent>
 

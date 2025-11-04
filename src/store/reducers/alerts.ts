@@ -161,14 +161,13 @@ const alerts = (state = initialState, action: AlertActionProps) => {
 				...state,
 				isLoader: false,
 				alerts: state.alerts.filter((alert) => alert._id !== action.payload.alertId),
-				stats:
-					state.stats
-						? {
-								...state.stats,
-								totalAlerts: Math.max(0, state.stats.totalAlerts - 1),
-								unread: wasUnreadDeleted ? Math.max(0, state.stats.unread - 1) : state.stats.unread,
-						  }
-						: null,
+				stats: state.stats
+					? {
+							...state.stats,
+							totalAlerts: Math.max(0, state.stats.totalAlerts - 1),
+							unread: wasUnreadDeleted ? Math.max(0, state.stats.unread - 1) : state.stats.unread,
+					  }
+					: null,
 				pagination: state.pagination ? { ...state.pagination, total: Math.max(0, state.pagination.total - 1) } : null,
 			};
 		default:

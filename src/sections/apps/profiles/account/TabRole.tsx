@@ -40,17 +40,13 @@ const TabRole = () => {
 	return (
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
-				<Alert
-					severity="info"
-					icon={<InfoCircle variant="Bulk" size={24} color={theme.palette.info.main} />}
-					sx={{ mb: 3 }}
-				>
+				<Alert severity="info" icon={<InfoCircle variant="Bulk" size={24} color={theme.palette.info.main} />} sx={{ mb: 3 }}>
 					<Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
 						Funcionalidad en desarrollo
 					</Typography>
 					<Typography variant="body2">
-						La gestión de cuentas grupales y la invitación de miembros estará disponible próximamente. Esta función permitirá colaborar
-						con otros usuarios en tu cuenta.
+						La gestión de cuentas grupales y la invitación de miembros estará disponible próximamente. Esta función permitirá colaborar con
+						otros usuarios en tu cuenta.
 					</Typography>
 				</Alert>
 			</Grid>

@@ -1,5 +1,17 @@
 import React, { useState, useMemo } from "react";
-import { Button, Stack, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, Divider, Zoom, CircularProgress } from "@mui/material";
+import {
+	Button,
+	Stack,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	Typography,
+	Box,
+	Divider,
+	Zoom,
+	CircularProgress,
+} from "@mui/material";
 import { CalculationDetailsView } from "../../../../../components/calculator/CalculationDetailsView";
 import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";

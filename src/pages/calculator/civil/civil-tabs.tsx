@@ -87,7 +87,14 @@ export default function CivilTabs() {
 						justifyContent: "space-between",
 					}}
 				>
-					<Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons="auto" aria-label="basic tabs example" sx={{ flex: 1 }}>
+					<Tabs
+						value={value}
+						onChange={handleChange}
+						variant="scrollable"
+						scrollButtons="auto"
+						aria-label="basic tabs example"
+						sx={{ flex: 1 }}
+					>
 						<Tab label="Daños Punitivos" icon={<Calculator />} iconPosition="start" {...a11yProps(0)} />
 						<Tab label="Compensación Económica" icon={<Calculator />} iconPosition="start" {...a11yProps(1)} />
 						<Tab label="Daños y Perjuicios 'Vuoto'" icon={<Calculator />} iconPosition="start" {...a11yProps(2)} />
@@ -121,59 +128,59 @@ export default function CivilTabs() {
 
 				<TabPanel value={value} index={0}>
 					<Stack spacing={3}>
-					<Box>
-						<Typography variant="h4" sx={{ mb: 1 }}>
-							Daños Punitivos
-						</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Calcula daños punitivos según la conducta del responsable y el contexto del daño causado
-						</Typography>
-					</Box>
-					<Divider />
-					<PunitivosWizard folder={currentFolder} onFolderChange={handleFolderChange} />
-				</Stack>
+						<Box>
+							<Typography variant="h4" sx={{ mb: 1 }}>
+								Daños Punitivos
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Calcula daños punitivos según la conducta del responsable y el contexto del daño causado
+							</Typography>
+						</Box>
+						<Divider />
+						<PunitivosWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={1}>
 					<Stack spacing={3}>
-					<Box>
-						<Typography variant="h4" sx={{ mb: 1 }}>
-							Compensación Económica
-						</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Determina la compensación económica en casos de divorcio o cese de convivencia
-						</Typography>
-					</Box>
-					<Divider />
-					<CompensacionWizard folder={currentFolder} onFolderChange={handleFolderChange} />
-				</Stack>
+						<Box>
+							<Typography variant="h4" sx={{ mb: 1 }}>
+								Compensación Económica
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Determina la compensación económica en casos de divorcio o cese de convivencia
+							</Typography>
+						</Box>
+						<Divider />
+						<CompensacionWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={2}>
 					<Stack spacing={3}>
-					<Box>
-						<Typography variant="h4" sx={{ mb: 1 }}>
-							Daños y Perjuicios 'Vuoto'
-						</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Calcula resarcimiento de daños y perjuicios según el método Vuoto
-						</Typography>
-					</Box>
-					<Divider />
-					<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
-				</Stack>
+						<Box>
+							<Typography variant="h4" sx={{ mb: 1 }}>
+								Daños y Perjuicios 'Vuoto'
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Calcula resarcimiento de daños y perjuicios según el método Vuoto
+							</Typography>
+						</Box>
+						<Divider />
+						<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={3}>
 					<Stack spacing={3}>
-					<Box>
-						<Typography variant="h4" sx={{ mb: 1 }}>
-							Daños y Perjuicios 'Mendez'
-						</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Calcula resarcimiento de daños y perjuicios según el método Mendez
-						</Typography>
-					</Box>
-					<Divider />
-					<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
-				</Stack>
+						<Box>
+							<Typography variant="h4" sx={{ mb: 1 }}>
+								Daños y Perjuicios 'Mendez'
+							</Typography>
+							<Typography variant="body2" color="text.secondary">
+								Calcula resarcimiento de daños y perjuicios según el método Mendez
+							</Typography>
+						</Box>
+						<Divider />
+						<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={4}>
 					<SavedCivil />

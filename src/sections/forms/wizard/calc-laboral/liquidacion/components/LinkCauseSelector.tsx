@@ -201,9 +201,9 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 										</Stack>
 									}
 									sx={{ m: 0 }}
-							/>
+								/>
 
-							{/* Opción Carpeta */}
+								{/* Opción Carpeta */}
 								<FormControlLabel
 									value="causa"
 									control={<Radio size="small" />}
