@@ -23,7 +23,7 @@ import {
 	CircularProgress,
 } from "@mui/material";
 import MainCard from "components/MainCard";
-import { DocumentText, Add, Trash } from "iconsax-react";
+import { DocumentText, Add, Trash, Edit2 } from "iconsax-react";
 import { motion } from "framer-motion";
 import ModalNotes from "../modals/ModalNotes";
 import { useSelector, dispatch } from "store";
@@ -45,6 +45,7 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 	const [openModal, setOpenModal] = useState(false);
 	const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 	const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+	const [noteToEdit, setNoteToEdit] = useState<Note | null>(null);
 	const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
 	const [isDeleting, setIsDeleting] = useState(false);
 	const { selectedNotes } = useSelector((state: RootState) => state.notesReducer);
@@ -55,6 +56,11 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 			dispatch(getNotesByFolderId(folderId));
 		}
 	}, [folderId]);
+
+	const handleEditClick = (note: Note) => {
+		setNoteToEdit(note);
+		setOpenModal(true);
+	};
 
 	const handleDeleteClick = (note: Note) => {
 		setNoteToDelete(note);
@@ -106,6 +112,7 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 
 	const handleModalClose = () => {
 		setOpenModal(false);
+		setNoteToEdit(null);
 	};
 
 	const toggleNoteExpansion = (noteId: string) => {
@@ -189,9 +196,17 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 				},
 			}}
 		>
-			<Box sx={{ p: 2.5 }}>
-				{selectedNotes && selectedNotes.length > 0 ? (
-					<>
+			<Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+				{/* Área con scroll */}
+				<Box
+					sx={{
+						flex: 1,
+						overflowY: "auto",
+						p: 2.5,
+						pb: 0,
+					}}
+				>
+					{selectedNotes && selectedNotes.length > 0 ? (
 						<List>
 							{selectedNotes.map((note: Note) => {
 								const needsTruncation = shouldTruncate(note.content || "");
@@ -243,11 +258,24 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 													)}
 												</Typography>
 											</Box>
-											<Tooltip title="Eliminar">
-												<IconButton size="small" aria-label="delete" onClick={() => handleDeleteClick(note)} color="error" sx={{ mt: 0.5 }}>
-													<Trash variant="Bulk" />
-												</IconButton>
-											</Tooltip>
+											<Stack direction="row" spacing={0.5}>
+												<Tooltip title="Editar">
+													<IconButton size="small" aria-label="edit" onClick={() => handleEditClick(note)} color="primary" sx={{ mt: 0.5 }}>
+														<Edit2 variant="Bulk" />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Eliminar">
+													<IconButton
+														size="small"
+														aria-label="delete"
+														onClick={() => handleDeleteClick(note)}
+														color="error"
+														sx={{ mt: 0.5 }}
+													>
+														<Trash variant="Bulk" />
+													</IconButton>
+												</Tooltip>
+											</Stack>
 										</Box>
 										{needsTruncation && (
 											<Box sx={{ width: "100%", pl: 7, mt: 0.5 }}>
@@ -272,26 +300,28 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 								);
 							})}
 						</List>
-						<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-							<Button variant="contained" fullWidth startIcon={<Add size={18} />} onClick={() => setOpenModal(true)}>
-								Nueva Nota
-							</Button>
-						</Stack>
-					</>
-				) : (
-					<>
+					) : (
 						<EmptyState />
-						<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-							<Button variant="contained" fullWidth startIcon={<Add size={18} />} onClick={() => setOpenModal(true)}>
-								Nueva Nota
-							</Button>
-						</Stack>
-					</>
-				)}
+					)}
+				</Box>
+
+				{/* Botón fijo en la parte inferior */}
+				<Box
+					sx={{
+						p: 2.5,
+						pt: 2,
+						borderTop: `1px solid ${theme.palette.divider}`,
+						bgcolor: "background.paper",
+					}}
+				>
+					<Button variant="contained" fullWidth startIcon={<Add size={18} />} onClick={() => setOpenModal(true)}>
+						Nueva Nota
+					</Button>
+				</Box>
 			</Box>
 
-			{/* Modal para crear notas */}
-			<ModalNotes open={openModal} setOpen={handleModalClose} folderId={folderId} folderName={folderName} />
+			{/* Modal para crear/editar notas */}
+			<ModalNotes open={openModal} setOpen={handleModalClose} folderId={folderId} folderName={folderName} note={noteToEdit} />
 
 			{/* Diálogo de confirmación de eliminación */}
 			<Dialog

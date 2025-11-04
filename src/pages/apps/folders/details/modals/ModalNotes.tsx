@@ -6,7 +6,7 @@ import * as Yup from "yup";
 import { Formik, Form } from "formik";
 import { useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
-import { addNote } from "store/reducers/notes";
+import { addNote, updateNote } from "store/reducers/notes";
 import { dispatch } from "store";
 
 // icons
@@ -18,9 +18,10 @@ import { PopupTransition } from "components/@extended/Transitions";
 // types
 import { NoteModalType, NoteFormValues } from "types/note";
 
-const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omit<NoteModalType, "note">) => {
+const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName, note }: NoteModalType) => {
 	const theme = useTheme();
 	const userId = useSelector((state: any) => state.auth?.user?._id);
+	const isEditMode = Boolean(note);
 
 	function closeNoteModal() {
 		setOpen(false);
@@ -32,21 +33,29 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omi
 	});
 
 	const initialValues: NoteFormValues = {
-		title: "",
-		content: "",
+		title: note?.title || "",
+		content: note?.content || "",
 		userId,
 		folderId,
 	};
 
 	async function _submitForm(values: NoteFormValues, actions: any) {
 		try {
-			const result = await dispatch(addNote(values));
+			let result;
+
+			if (isEditMode && note) {
+				// Actualizar nota existente
+				result = await dispatch(updateNote(note._id, values));
+			} else {
+				// Crear nueva nota
+				result = await dispatch(addNote(values));
+			}
 
 			if (result.success) {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Nota creada exitosamente.",
+						message: isEditMode ? "Nota actualizada exitosamente." : "Nota creada exitosamente.",
 						variant: "alert",
 						alert: {
 							color: "success",
@@ -65,7 +74,7 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omi
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Error al crear la nota.",
+						message: isEditMode ? "Error al actualizar la nota." : "Error al crear la nota.",
 						variant: "alert",
 						alert: {
 							color: "error",
@@ -81,7 +90,7 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omi
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al crear la nota.",
+					message: isEditMode ? "Error al actualizar la nota." : "Error al crear la nota.",
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -141,11 +150,15 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omi
 									<Stack direction="row" alignItems="center" spacing={1}>
 										<DocumentText size={24} color={theme.palette.primary.main} variant="Bold" />
 										<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-											Nueva Nota
+											{isEditMode ? "Editar Nota" : "Nueva Nota"}
 										</Typography>
 									</Stack>
 									<Typography variant="body2" color="textSecondary">
-										{folderName ? `Agrega una nueva nota a la carpeta "${folderName}"` : "Agrega una nueva nota"}
+										{isEditMode
+											? "Modifica el contenido de la nota"
+											: folderName
+											? `Agrega una nueva nota a la carpeta "${folderName}"`
+											: "Agrega una nueva nota"}
 									</Typography>
 								</Stack>
 							</DialogTitle>
@@ -191,7 +204,7 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName }: Omi
 									Cancelar
 								</Button>
 								<Button type="submit" variant="contained" disabled={isSubmitting}>
-									{isSubmitting ? "Guardando..." : "Crear Nota"}
+									{isSubmitting ? "Guardando..." : isEditMode ? "Actualizar Nota" : "Crear Nota"}
 								</Button>
 							</DialogActions>
 						</Form>
