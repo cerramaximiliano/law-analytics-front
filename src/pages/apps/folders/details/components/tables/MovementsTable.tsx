@@ -19,7 +19,6 @@ import {
 	useTheme,
 	Popover,
 	Link,
-	Badge,
 } from "@mui/material";
 import {
 	Edit,
@@ -165,6 +164,20 @@ const formatDate = (dateString: string) => {
 	}
 };
 
+// Helper para construir el filtro de movimiento
+// Nota: Todos los tipos (tanto generales como PJN) usan el campo 'movement' en el backend
+const buildMovementFilter = (type: string) => {
+	if (!type) return {};
+
+	// Todos los tipos usan 'movement', no 'tipo'
+	const filter = { movement: type };
+
+	// Debug: verificar qué se está enviando
+	console.log("🔍 Filter Debug:", { type, filter });
+
+	return filter;
+};
+
 const MovementsTable: React.FC<MovementsTableProps> = ({
 	movements,
 	searchQuery,
@@ -227,7 +240,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					search: localSearchQuery,
 					sort: sortParam,
 					filter: {
-						movement: localFilters.type,
+						...buildMovementFilter(localFilters.type),
 						dateRange:
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
@@ -251,7 +264,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					search: localSearchQuery,
 					sort: sortParam,
 					filter: {
-						movement: localFilters.type,
+						...buildMovementFilter(localFilters.type),
 						dateRange:
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
@@ -282,7 +295,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					search: localSearchQuery,
 					sort: sortParam,
 					filter: {
-						movement: localFilters.type,
+						...buildMovementFilter(localFilters.type),
 						dateRange:
 							localFilters.startDate && localFilters.endDate
 								? `${dayjs(localFilters.startDate).format("YYYY-MM-DD")},${dayjs(localFilters.endDate).format("YYYY-MM-DD")}`
@@ -306,7 +319,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 					search: searchQuery,
 					sort: sortParam,
 					filter: {
-						movement: filters.type,
+						...buildMovementFilter(filters.type),
 						dateRange:
 							filters.startDate && filters.endDate
 								? `${dayjs(filters.startDate).format("YYYY-MM-DD")},${dayjs(filters.endDate).format("YYYY-MM-DD")}`

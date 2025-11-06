@@ -265,7 +265,7 @@ export interface MovementQueryParams {
 	search?: string;
 	sort?: string; // Agregado para ordenamiento
 	filter?: {
-		movement?: string;
+		movement?: string; // Tipo de movimiento (incluye tanto tipos generales como tipos PJN)
 		dateRange?: string;
 		hasLink?: boolean; // Agregado para filtrar movimientos con documento
 	};
@@ -295,6 +295,9 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 
 		// Determinar el tipo de respuesta basado en si se usa paginación
 		const isPaginated = params?.page !== undefined || params?.limit !== undefined;
+
+		// Debug: ver qué parámetros se están enviando
+		console.log("📡 Request to backend:", { folderId, queryParams });
 
 		const response = await axios.get<MovementsResponse | PaginatedMovementsResponse>(
 			`${import.meta.env.VITE_BASE_URL}/api/movements/folder/${folderId}`,
