@@ -307,29 +307,9 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 		}
 	};
 
-	// Efecto para recargar datos cuando cambien los filtros o búsqueda
-	useEffect(() => {
-		if (id && (searchQuery !== localSearchQuery || JSON.stringify(filters) !== JSON.stringify(localFilters))) {
-			setPage(0); // Reset a primera página
-			const sortParam = order === "desc" ? `-${orderBy}` : orderBy;
-			dispatch(
-				getMovementsByFolderId(id, {
-					page: 1,
-					limit: rowsPerPage,
-					search: searchQuery,
-					sort: sortParam,
-					filter: {
-						...buildMovementFilter(filters.type),
-						dateRange:
-							filters.startDate && filters.endDate
-								? `${dayjs(filters.startDate).format("YYYY-MM-DD")},${dayjs(filters.endDate).format("YYYY-MM-DD")}`
-								: undefined,
-						hasLink: filters.onlyWithDocuments ? true : undefined,
-					},
-				}),
-			);
-		}
-	}, [id, searchQuery, filters, rowsPerPage, order, orderBy]);
+	// NOTA: No hacemos dispatch aquí cuando cambian los filtros porque ActivityTables
+	// ya hace el dispatch. Solo sincronizamos el estado local.
+	// Los dispatches para paginación, ordenamiento y rowsPerPage están en sus handlers respectivos.
 
 	// Sincronizar página con paginación del servidor
 	useEffect(() => {

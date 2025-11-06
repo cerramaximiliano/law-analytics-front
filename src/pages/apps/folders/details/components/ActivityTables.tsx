@@ -24,6 +24,7 @@ import {
 	FormControlLabel,
 	Checkbox,
 	Alert,
+	Badge,
 } from "@mui/material";
 import dayjs from "utils/dayjs-config";
 import {
@@ -552,6 +553,41 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		(activeTab === "calendar" && eventsData.isLoader) ||
 		(activeTab === "combined" && activitiesData.isLoading);
 
+	// Función para verificar si hay filtros avanzados activos
+	const hasActiveFilters = () => {
+		return !!(
+			filters.startDate ||
+			filters.endDate ||
+			filters.type ||
+			filters.status ||
+			filters.user ||
+			filters.hasExpiration ||
+			filters.allDay ||
+			filters.source
+		);
+	};
+
+	// Función para construir el objeto de filtros basado en el estado actual de filters
+	const buildFilterObject = (includeDocumentFilter: boolean) => {
+		const filterObj: any = {};
+
+		// Agregar filtro de documento si está activo
+		if (includeDocumentFilter) {
+			filterObj.hasLink = true;
+		}
+
+		// Agregar filtro de tipo de movimiento si existe
+		if (filters.type) {
+			filterObj.movement = filters.type;
+		}
+
+		// Agregar otros filtros según estén disponibles
+		// (pueden agregarse más filtros en el futuro)
+
+		// Si no hay ningún filtro, retornar undefined en lugar de objeto vacío
+		return Object.keys(filterObj).length > 0 ? filterObj : undefined;
+	};
+
 	// Sidebar content
 	const sidebarContent = (
 		<Box
@@ -796,14 +832,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														checked={filters.onlyWithDocuments}
 														onChange={(e) => {
 															setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-															// Recargar movimientos con el nuevo filtro
+															// Recargar movimientos manteniendo los filtros avanzados activos
 															if (id) {
 																dispatch(
 																	getMovementsByFolderId(id, {
 																		page: 1,
 																		limit: 10,
 																		sort: "-time",
-																		filter: e.target.checked ? { hasLink: true } : undefined,
+																		filter: buildFilterObject(e.target.checked),
 																	}),
 																);
 															}
@@ -859,7 +895,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 																				page: 1,
 																				limit: 10,
 																				sort: "-time",
-																				filter: undefined,
+																				filter: buildFilterObject(false),
 																			}),
 																		);
 																	}
@@ -1116,17 +1152,29 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													OPCIONES DE VISUALIZACIÓN
 												</Typography>
 												<Tooltip title={showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}>
-													<IconButton
-														size="small"
-														onClick={() => setShowFilters(!showFilters)}
-														color={showFilters ? "primary" : "default"}
+													<Badge
+														color="primary"
+														variant="dot"
+														invisible={!hasActiveFilters()}
 														sx={{
-															transition: "all 0.3s ease",
-															transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+															"& .MuiBadge-dot": {
+																right: 2,
+																top: 2,
+															},
 														}}
 													>
-														<Filter size={18} />
-													</IconButton>
+														<IconButton
+															size="small"
+															onClick={() => setShowFilters(!showFilters)}
+															color={showFilters ? "primary" : hasActiveFilters() ? "primary" : "default"}
+															sx={{
+																transition: "all 0.3s ease",
+																transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+															}}
+														>
+															<Filter size={18} />
+														</IconButton>
+													</Badge>
 												</Tooltip>
 											</Stack>
 
@@ -1138,13 +1186,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 															checked={filters.onlyWithDocuments}
 															onChange={(e) => {
 																setFilters({ ...filters, onlyWithDocuments: e.target.checked });
+																// Recargar movimientos manteniendo los filtros avanzados activos
 																if (id) {
 																	dispatch(
 																		getMovementsByFolderId(id, {
 																			page: 1,
 																			limit: 10,
 																			sort: "-time",
-																			filter: e.target.checked ? { hasLink: true } : undefined,
+																			filter: buildFilterObject(e.target.checked),
 																		}),
 																	);
 																}
@@ -1232,7 +1281,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 																				page: 1,
 																				limit: 10,
 																				sort: "-time",
-																				filter: undefined,
+																				filter: buildFilterObject(false),
 																			}),
 																		);
 																	}
@@ -1258,17 +1307,29 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									<>
 										<Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
 											<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
-												<IconButton
-													size="small"
-													onClick={() => setShowFilters(!showFilters)}
-													color={showFilters ? "primary" : "default"}
+												<Badge
+													color="primary"
+													variant="dot"
+													invisible={!hasActiveFilters()}
 													sx={{
-														transition: "all 0.3s ease",
-														transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+														"& .MuiBadge-dot": {
+															right: 2,
+															top: 2,
+														},
 													}}
 												>
-													<Filter />
-												</IconButton>
+													<IconButton
+														size="small"
+														onClick={() => setShowFilters(!showFilters)}
+														color={showFilters ? "primary" : hasActiveFilters() ? "primary" : "default"}
+														sx={{
+															transition: "all 0.3s ease",
+															transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+														}}
+													>
+														<Filter />
+													</IconButton>
+												</Badge>
 											</Tooltip>
 										</Box>
 										<Collapse in={showFilters} timeout="auto" unmountOnExit>
