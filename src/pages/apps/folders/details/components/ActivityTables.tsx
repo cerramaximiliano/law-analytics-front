@@ -152,23 +152,24 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	// Detectar si es PJN o MEV basado en la presencia de pjnAccess
 	const scrapingSource: "mev" | "pjn" = movementsData.pjnAccess ? "pjn" : "mev";
 
-	// Load data on mount - con paginación inicial
+	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
-		if (id) {
-			// Cargar movimientos con paginación inicial y ordenamiento por defecto
-			// Si el filtro de documentos está activo, incluirlo en la petición inicial
+		if (id && activeTab === "movements") {
+			// Cargar movimientos con todos los filtros aplicados
 			dispatch(
 				getMovementsByFolderId(id, {
 					page: 1,
 					limit: 10,
 					sort: "-time", // Ordenar por fecha descendente por defecto
-					filter: filters.onlyWithDocuments ? { hasLink: true } : undefined,
+					filter: buildFilterObject(filters.onlyWithDocuments),
 				}),
 			);
+		}
+		if (id && activeTab !== "movements") {
 			dispatch(getNotificationsByFolderId(id));
 			dispatch(getEventsById(id));
 		}
-	}, [id, filters.onlyWithDocuments]);
+	}, [id, activeTab, filters.onlyWithDocuments, filters.type]);
 
 	// Polling para scrapingProgress cada 30 segundos
 	useEffect(() => {
@@ -188,7 +189,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					page: 1,
 					limit: 10,
 					sort: "-time",
-					filter: filters.onlyWithDocuments ? { hasLink: true } : undefined,
+					filter: buildFilterObject(filters.onlyWithDocuments),
 				}),
 			);
 		}, 30000); // 30 segundos
@@ -355,7 +356,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					page: 1,
 					limit: 10,
 					sort: "-time",
-					filter: filters.onlyWithDocuments ? { hasLink: true } : undefined,
+					filter: buildFilterObject(filters.onlyWithDocuments),
 				}),
 			);
 		}
@@ -831,18 +832,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													<Checkbox
 														checked={filters.onlyWithDocuments}
 														onChange={(e) => {
+															// Solo actualizar el estado, el useEffect se encargará del dispatch
 															setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-															// Recargar movimientos manteniendo los filtros avanzados activos
-															if (id) {
-																dispatch(
-																	getMovementsByFolderId(id, {
-																		page: 1,
-																		limit: 10,
-																		sort: "-time",
-																		filter: buildFilterObject(e.target.checked),
-																	}),
-																);
-															}
 														}}
 														size="small"
 														color="primary"
@@ -888,17 +879,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 																	fontWeight: 600,
 																}}
 																onClick={() => {
+																	// Solo actualizar el estado, el useEffect se encargará del dispatch
 																	setFilters({ ...filters, onlyWithDocuments: false });
-																	if (id) {
-																		dispatch(
-																			getMovementsByFolderId(id, {
-																				page: 1,
-																				limit: 10,
-																				sort: "-time",
-																				filter: buildFilterObject(false),
-																			}),
-																		);
-																	}
 																}}
 															>
 																Ver todos
@@ -1185,18 +1167,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														<Checkbox
 															checked={filters.onlyWithDocuments}
 															onChange={(e) => {
+																// Solo actualizar el estado, el useEffect se encargará del dispatch
 																setFilters({ ...filters, onlyWithDocuments: e.target.checked });
-																// Recargar movimientos manteniendo los filtros avanzados activos
-																if (id) {
-																	dispatch(
-																		getMovementsByFolderId(id, {
-																			page: 1,
-																			limit: 10,
-																			sort: "-time",
-																			filter: buildFilterObject(e.target.checked),
-																		}),
-																	);
-																}
 															}}
 															size="small"
 															color="primary"
@@ -1274,17 +1246,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 																	fontWeight: 600,
 																}}
 																onClick={() => {
+																	// Solo actualizar el estado, el useEffect se encargará del dispatch
 																	setFilters({ ...filters, onlyWithDocuments: false });
-																	if (id) {
-																		dispatch(
-																			getMovementsByFolderId(id, {
-																				page: 1,
-																				limit: 10,
-																				sort: "-time",
-																				filter: buildFilterObject(false),
-																			}),
-																		);
-																	}
 																}}
 															>
 																Ver todos
