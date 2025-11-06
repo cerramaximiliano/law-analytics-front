@@ -1,203 +1,205 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Cargando - Law Analytics</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+		<title>Cargando - Law Analytics</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #fff;
-            overflow: hidden;
-        }
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 100vh;
+				background: #fff;
+				overflow: hidden;
+			}
 
-        .loader-container {
-            text-align: center;
-        }
+			.loader-container {
+				text-align: center;
+			}
 
-        .logo {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
-            animation: fadeIn 0.5s ease-in;
-        }
+			.logo {
+				width: 120px;
+				height: 120px;
+				margin: 0 auto 2rem;
+				animation: fadeIn 0.5s ease-in;
+			}
 
-        .logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
+			.logo img {
+				width: 100%;
+				height: 100%;
+				object-fit: contain;
+			}
 
-        .spinner {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto;
-            border: 4px solid #f3f4f6;
-            border-top-color: #1677ff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
+			.spinner {
+				width: 48px;
+				height: 48px;
+				margin: 0 auto;
+				border: 4px solid #f3f4f6;
+				border-top-color: #1677ff;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+			}
 
-        .loading-text {
-            margin-top: 1.5rem;
-            font-size: 16px;
-            color: #6b7280;
-            font-weight: 500;
-        }
+			.loading-text {
+				margin-top: 1.5rem;
+				font-size: 16px;
+				color: #6b7280;
+				font-weight: 500;
+			}
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+					transform: translateY(-10px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
 
-        /* Ocultar elementos de debug */
-        #debug {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="loader-container">
-        <div class="logo">
-            <img src="/logo192.png" alt="Law Analytics" />
-        </div>
-        <div class="spinner"></div>
-        <p class="loading-text">Cargando...</p>
-    </div>
+			/* Ocultar elementos de debug */
+			#debug {
+				display: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="loader-container">
+			<div class="logo">
+				<img src="/logo192.png" alt="Law Analytics" />
+			</div>
+			<div class="spinner"></div>
+			<p class="loading-text">Cargando...</p>
+		</div>
 
-    <!-- Debug info (oculto) -->
-    <div id="debug"></div>
+		<!-- Debug info (oculto) -->
+		<div id="debug"></div>
 
-    <script>
-        (function() {
-            const debugEl = document.getElementById('debug');
+		<script>
+			(function () {
+				const debugEl = document.getElementById("debug");
 
-            // PROTECCIÓN DE EMERGENCIA: Si estamos aquí por más de 5 segundos, forzar salida
-            var emergencyTimeout = setTimeout(function() {
-                console.error('🚨 EMERGENCIA: Tiempo límite excedido, forzando salida');
+				// PROTECCIÓN DE EMERGENCIA: Si estamos aquí por más de 5 segundos, forzar salida
+				var emergencyTimeout = setTimeout(function () {
+					console.error("🚨 EMERGENCIA: Tiempo límite excedido, forzando salida");
 
-                // Marcar TODAS las versiones como completadas
-                localStorage.setItem('sw_cleanup_v4_final', 'done');
-                localStorage.setItem('sw_cleanup_v5_fix', 'done');
-                localStorage.setItem('sw_cleanup_done', 'done');
+					// Marcar TODAS las versiones como completadas
+					localStorage.setItem("sw_cleanup_v4_final", "done");
+					localStorage.setItem("sw_cleanup_v5_fix", "done");
+					localStorage.setItem("sw_cleanup_done", "done");
 
-                // Limpiar TODO
-                sessionStorage.clear();
+					// Limpiar TODO
+					sessionStorage.clear();
 
-                // Desregistrar cualquier SW
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                        registrations.forEach(function(registration) {
-                            registration.unregister();
-                        });
-                    });
-                }
+					// Desregistrar cualquier SW
+					if ("serviceWorker" in navigator) {
+						navigator.serviceWorker.getRegistrations().then(function (registrations) {
+							registrations.forEach(function (registration) {
+								registration.unregister();
+							});
+						});
+					}
 
-                // Forzar redirección a home con hard reload
-                window.location.replace('/');
-                setTimeout(function() {
-                    window.location.reload(true);
-                }, 200);
-            }, 5000);
+					// Forzar redirección a home con hard reload
+					window.location.replace("/");
+					setTimeout(function () {
+						window.location.reload(true);
+					}, 200);
+				}, 5000);
 
-            // Detectar si ya estamos en un bucle
-            var cleanupAttempts = parseInt(sessionStorage.getItem('cleanup_attempts') || '0');
+				// Detectar si ya estamos en un bucle
+				var cleanupAttempts = parseInt(sessionStorage.getItem("cleanup_attempts") || "0");
 
-            if (cleanupAttempts > 0) {
-                // Ya intentamos limpiar antes, hay un bucle - marcar como completado y redirigir
-                console.error('🔴 BUCLE DETECTADO - Marcando limpieza como completada');
-                localStorage.setItem('sw_cleanup_v4_final', 'done');
-                localStorage.setItem('sw_cleanup_v5_fix', 'done');
-                localStorage.setItem('sw_cleanup_done', 'done');
+				if (cleanupAttempts > 0) {
+					// Ya intentamos limpiar antes, hay un bucle - marcar como completado y redirigir
+					console.error("🔴 BUCLE DETECTADO - Marcando limpieza como completada");
+					localStorage.setItem("sw_cleanup_v4_final", "done");
+					localStorage.setItem("sw_cleanup_v5_fix", "done");
+					localStorage.setItem("sw_cleanup_done", "done");
 
-                // Leer URL de retorno ANTES de limpiar sessionStorage
-                var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
-                console.log('📍 Redirigiendo a URL original después de bucle:', returnUrl);
+					// Leer URL de retorno ANTES de limpiar sessionStorage
+					var returnUrl = sessionStorage.getItem("return_after_cleanup") || "/";
+					console.log("📍 Redirigiendo a URL original después de bucle:", returnUrl);
 
-                sessionStorage.removeItem('cleanup_attempts');
-                sessionStorage.removeItem('return_after_cleanup');
+					sessionStorage.removeItem("cleanup_attempts");
+					sessionStorage.removeItem("return_after_cleanup");
 
-                // Cancelar timeout de emergencia ya que estamos manejando el bucle
-                clearTimeout(emergencyTimeout);
+					// Cancelar timeout de emergencia ya que estamos manejando el bucle
+					clearTimeout(emergencyTimeout);
 
-                // HARD RELOAD para forzar descarga del código nuevo en la URL original
-                window.location.replace(returnUrl);
-                setTimeout(function() {
-                    window.location.reload(true);
-                }, 100);
-                return;
-            }
+					// HARD RELOAD para forzar descarga del código nuevo en la URL original
+					window.location.replace(returnUrl);
+					setTimeout(function () {
+						window.location.reload(true);
+					}, 100);
+					return;
+				}
 
-            // Marcar que estamos intentando limpiar
-            sessionStorage.setItem('cleanup_attempts', String(cleanupAttempts + 1));
+				// Marcar que estamos intentando limpiar
+				sessionStorage.setItem("cleanup_attempts", String(cleanupAttempts + 1));
 
-            // Función de limpieza rápida y redirección inmediata
-            function quickCleanAndRedirect() {
-                console.log('🧹 Limpieza rápida iniciada');
+				// Función de limpieza rápida y redirección inmediata
+				function quickCleanAndRedirect() {
+					console.log("🧹 Limpieza rápida iniciada");
 
-                // IMPORTANTE: Leer returnUrl ANTES de modificar sessionStorage
-                var returnUrl = sessionStorage.getItem('return_after_cleanup') || '/';
-                console.log('📍 URL de retorno:', returnUrl);
+					// IMPORTANTE: Leer returnUrl ANTES de modificar sessionStorage
+					var returnUrl = sessionStorage.getItem("return_after_cleanup") || "/";
+					console.log("📍 URL de retorno:", returnUrl);
 
-                // Limpiar Service Workers
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                        for (let registration of registrations) {
-                            registration.unregister();
-                            console.log('✓ Service Worker desregistrado');
-                        }
-                    });
-                }
+					// Limpiar Service Workers
+					if ("serviceWorker" in navigator) {
+						navigator.serviceWorker.getRegistrations().then(function (registrations) {
+							for (let registration of registrations) {
+								registration.unregister();
+								console.log("✓ Service Worker desregistrado");
+							}
+						});
+					}
 
-                // Limpiar cachés
-                if ('caches' in window) {
-                    caches.keys().then(function(cacheNames) {
-                        cacheNames.forEach(function(cacheName) {
-                            caches.delete(cacheName);
-                            console.log('✓ Caché eliminado:', cacheName);
-                        });
-                    });
-                }
+					// Limpiar cachés
+					if ("caches" in window) {
+						caches.keys().then(function (cacheNames) {
+							cacheNames.forEach(function (cacheName) {
+								caches.delete(cacheName);
+								console.log("✓ Caché eliminado:", cacheName);
+							});
+						});
+					}
 
-                // NO limpiar sessionStorage/localStorage todavía (necesitamos cleanup_attempts)
-                // Solo limpiar el return_after_cleanup después de usarlo
-                // sessionStorage.removeItem('return_after_cleanup');
+					// NO limpiar sessionStorage/localStorage todavía (necesitamos cleanup_attempts)
+					// Solo limpiar el return_after_cleanup después de usarlo
+					// sessionStorage.removeItem('return_after_cleanup');
 
-                // Redirigir a la URL original
-                setTimeout(function() {
-                    console.log('↩️ Redirigiendo a:', returnUrl);
-                    // Cancelar timeout de emergencia antes de redirigir
-                    clearTimeout(emergencyTimeout);
-                    window.location.replace(returnUrl);
-                }, 800);
-            }
+					// Redirigir a la URL original
+					setTimeout(function () {
+						console.log("↩️ Redirigiendo a:", returnUrl);
+						// Cancelar timeout de emergencia antes de redirigir
+						clearTimeout(emergencyTimeout);
+						window.location.replace(returnUrl);
+					}, 800);
+				}
 
-            // Ejecutar limpieza inmediatamente
-            quickCleanAndRedirect();
-        })();
-    </script>
-</body>
+				// Ejecutar limpieza inmediatamente
+				quickCleanAndRedirect();
+			})();
+		</script>
+	</body>
 </html>

@@ -3,6 +3,7 @@
 ## Available Build Scripts
 
 ### Development
+
 ```bash
 npm run dev          # Start development server
 npm run start        # Alias for dev
@@ -11,46 +12,57 @@ npm run start        # Alias for dev
 ### Production Builds
 
 #### Standard Build (with TypeScript checking)
+
 ```bash
 npm run build        # TypeScript check + Vite build
 ```
+
 - Runs TypeScript compiler with optimized tsconfig.build.json
 - Then builds with Vite
 - **Build time**: ~2-3 minutes
 
 #### Fast Build (no TypeScript checking)
+
 ```bash
 npm run build:fast   # Vite build only
 ```
+
 - Skips TypeScript checking
 - Fastest build option
 - **Build time**: ~30-60 seconds
 - ⚠️ Use only when you're confident there are no type errors
 
 #### Optimized Production Build
+
 ```bash
 npm run build:prod   # Full optimization with image compression
 ```
+
 - Enables image optimization with vite-plugin-imagemin
 - Produces smallest bundle size
 - **Build time**: ~3-5 minutes
 - Use for final production deployments
 
 #### Staging Build
+
 ```bash
 npm run build-stage  # Build with .env.qa configuration
 ```
+
 - Uses staging environment variables
 - No TypeScript checking for faster builds
 
 #### Build Analysis
+
 ```bash
 npm run build:analyze # Build and analyze bundle size
 ```
+
 - Creates visualization of bundle chunks
 - Helps identify large dependencies
 
 ### Type Checking
+
 ```bash
 npm run type-check        # Check types without building
 npm run type-check:watch  # Watch mode for type checking
@@ -70,6 +82,7 @@ The `vite.config.ts` has been optimized with:
 ### 2. TypeScript Optimizations
 
 Created `tsconfig.build.json` with:
+
 - `skipLibCheck: true` - Skip checking .d.ts files
 - `incremental: true` - Use incremental compilation
 - Excludes test files and unnecessary directories
@@ -77,12 +90,12 @@ Created `tsconfig.build.json` with:
 
 ### 3. When to Use Each Build
 
-| Scenario | Command | Build Time | Use Case |
-|----------|---------|------------|----------|
-| Local development | `npm run dev` | Instant | Development with HMR |
-| Quick deployment test | `npm run build:fast` | 30-60s | Testing deployment quickly |
-| CI/CD pipeline | `npm run build` | 2-3min | Automated deployments with type safety |
-| Final production | `npm run build:prod` | 3-5min | Production with all optimizations |
+| Scenario              | Command              | Build Time | Use Case                               |
+| --------------------- | -------------------- | ---------- | -------------------------------------- |
+| Local development     | `npm run dev`        | Instant    | Development with HMR                   |
+| Quick deployment test | `npm run build:fast` | 30-60s     | Testing deployment quickly             |
+| CI/CD pipeline        | `npm run build`      | 2-3min     | Automated deployments with type safety |
+| Final production      | `npm run build:prod` | 3-5min     | Production with all optimizations      |
 
 ### 4. Environment Variables
 
@@ -114,10 +127,10 @@ For CI/CD pipelines:
 # Example GitHub Actions
 - name: Type Check
   run: npm run type-check
-  
+
 - name: Build
   run: npm run build:fast
-  
+
 # Or in parallel
 - name: Build and Type Check
   run: |
@@ -144,7 +157,6 @@ Current optimizations in place:
    - mui: Material-UI components
    - charts: ApexCharts and Recharts
    - pdf: PDF renderer (lazy loaded)
-   
 2. **Tree Shaking**: Vite automatically removes unused code
 
 3. **Dynamic Imports**: Heavy components are loaded on demand

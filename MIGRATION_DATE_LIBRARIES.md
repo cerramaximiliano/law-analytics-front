@@ -11,6 +11,7 @@
 ## 🎯 Objetivo
 
 Consolidar las tres librerías de fechas (date-fns, moment, dayjs) en una sola (dayjs) para:
+
 - Reducir tamaño del bundle (~1.6MB estimado)
 - Reducir node_modules (~75MB estimado)
 - Simplificar mantenimiento
@@ -22,31 +23,31 @@ Consolidar las tres librerías de fechas (date-fns, moment, dayjs) en una sola (
 
 ### date-fns → dayjs
 
-| date-fns | dayjs | Notas |
-|----------|-------|-------|
-| `format(date, 'DD/MM/YYYY')` | `dayjs(date).format('DD/MM/YYYY')` | |
-| `parseISO('2024-01-01')` | `dayjs('2024-01-01')` | dayjs parsea ISO automáticamente |
-| `parse(str, 'DD/MM/YYYY', new Date())` | `dayjs(str, 'DD/MM/YYYY')` | |
-| `isValid(date)` | `dayjs(date).isValid()` | Método, no función |
-| `isAfter(date1, date2)` | `dayjs(date1).isAfter(date2)` | |
-| `isToday(date)` | `dayjs(date).isToday()` | Requiere plugin `isToday` |
-| `sub(date, {days: 7})` | `dayjs(date).subtract(7, 'days')` | |
-| `formatDistance(date, now, {locale: es})` | `dayjs(date).locale('es').fromNow()` | Requiere plugin `relativeTime` |
-| `isWeekend(date)` | `[0,6].includes(dayjs(date).day())` | Custom logic |
-| `import { es } from 'date-fns/locale'` | `import 'dayjs/locale/es'` | Configurado globalmente |
+| date-fns                                  | dayjs                                | Notas                            |
+| ----------------------------------------- | ------------------------------------ | -------------------------------- |
+| `format(date, 'DD/MM/YYYY')`              | `dayjs(date).format('DD/MM/YYYY')`   |                                  |
+| `parseISO('2024-01-01')`                  | `dayjs('2024-01-01')`                | dayjs parsea ISO automáticamente |
+| `parse(str, 'DD/MM/YYYY', new Date())`    | `dayjs(str, 'DD/MM/YYYY')`           |                                  |
+| `isValid(date)`                           | `dayjs(date).isValid()`              | Método, no función               |
+| `isAfter(date1, date2)`                   | `dayjs(date1).isAfter(date2)`        |                                  |
+| `isToday(date)`                           | `dayjs(date).isToday()`              | Requiere plugin `isToday`        |
+| `sub(date, {days: 7})`                    | `dayjs(date).subtract(7, 'days')`    |                                  |
+| `formatDistance(date, now, {locale: es})` | `dayjs(date).locale('es').fromNow()` | Requiere plugin `relativeTime`   |
+| `isWeekend(date)`                         | `[0,6].includes(dayjs(date).day())`  | Custom logic                     |
+| `import { es } from 'date-fns/locale'`    | `import 'dayjs/locale/es'`           | Configurado globalmente          |
 
 ### moment → dayjs
 
-| moment | dayjs | Notas |
-|--------|-------|-------|
-| `moment()` | `dayjs()` | ✅ API casi idéntica |
-| `moment(date).format('DD/MM/YYYY')` | `dayjs(date).format('DD/MM/YYYY')` | ✅ Igual |
-| `moment(date).add(7, 'days')` | `dayjs(date).add(7, 'days')` | ✅ Igual |
-| `moment(date).subtract(7, 'days')` | `dayjs(date).subtract(7, 'days')` | ✅ Igual |
-| `moment(date).diff(date2)` | `dayjs(date).diff(date2)` | ✅ Igual |
-| `moment(date).isBefore(date2)` | `dayjs(date).isBefore(date2)` | ✅ Igual |
-| `moment().clone()` | `dayjs()` | dayjs es inmutable por defecto |
-| `moment.utc()` | `dayjs.utc()` | ✅ Igual |
+| moment                              | dayjs                              | Notas                          |
+| ----------------------------------- | ---------------------------------- | ------------------------------ |
+| `moment()`                          | `dayjs()`                          | ✅ API casi idéntica           |
+| `moment(date).format('DD/MM/YYYY')` | `dayjs(date).format('DD/MM/YYYY')` | ✅ Igual                       |
+| `moment(date).add(7, 'days')`       | `dayjs(date).add(7, 'days')`       | ✅ Igual                       |
+| `moment(date).subtract(7, 'days')`  | `dayjs(date).subtract(7, 'days')`  | ✅ Igual                       |
+| `moment(date).diff(date2)`          | `dayjs(date).diff(date2)`          | ✅ Igual                       |
+| `moment(date).isBefore(date2)`      | `dayjs(date).isBefore(date2)`      | ✅ Igual                       |
+| `moment().clone()`                  | `dayjs()`                          | dayjs es inmutable por defecto |
+| `moment.utc()`                      | `dayjs.utc()`                      | ✅ Igual                       |
 
 ---
 
@@ -84,8 +85,10 @@ export default dayjs;
 ### FASE 1: Utilidades (2 archivos)
 
 #### 1. `/src/utils/react-table.tsx`
+
 **Fecha**: 2025-10-08
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ✅ `import dayjs from "./dayjs-config"`
 - ❌ `import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"`
@@ -98,8 +101,10 @@ export default dayjs;
 **Líneas modificadas**: 7, 12, 68, 70, 71, 75
 
 #### 2. `/src/utils/mock-data.ts`
+
 **Fecha**: 2025-10-08
 **Cambios**:
+
 - ❌ `import { sub } from "date-fns"`
 - ✅ `import dayjs from "./dayjs-config"`
 - ❌ `sub(new Date(), {days: ..., hours: ..., minutes: ...})`
@@ -112,8 +117,10 @@ export default dayjs;
 ### FASE 2: Componentes UI compartidos (1 archivo)
 
 #### 3. `/src/components/DowngradeGracePeriodAlert.tsx`
+
 **Fecha**: 2025-10-08
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -131,9 +138,11 @@ export default dayjs;
 ### FASE 3: Redux/Store CRÍTICO (1 archivo)
 
 #### 4. `/src/store/reducers/interestRates.ts` 🔴
+
 **Fecha**: 2025-10-08
 **Tipo**: CRÍTICO - Afecta estado global
 **Cambios**:
+
 - ❌ `import moment from "moment"`
 - ✅ `import dayjs from "utils/dayjs-config"`
 - ❌ `moment()`
@@ -154,8 +163,10 @@ export default dayjs;
 ### FASE 4: Secciones de calendario (4 archivos)
 
 #### 5. `/src/sections/apps/calendar/Toolbar.tsx`
+
 **Fecha**: 2025-10-08
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -165,8 +176,10 @@ export default dayjs;
 **Líneas modificadas**: 9-10, 84
 
 #### 6. `/src/pages/apps/calendar/calendar.tsx`
+
 **Fecha**: 2025-10-08
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -176,8 +189,10 @@ export default dayjs;
 **Líneas modificadas**: 41-42, 1087
 
 #### 7. `/src/pages/apps/calendar/manage-booking.tsx`
+
 **Fecha**: 2025-10-08
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -189,8 +204,10 @@ export default dayjs;
 **Líneas modificadas**: 28-29, 291, 303
 
 #### 8. `/src/pages/booking.tsx`
+
 **Fecha**: 2025-10-08
 **Cambios**:
+
 - ❌ `import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"`
 - ✅ `import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"`
 - ❌ `import { es } from "date-fns/locale"`
@@ -206,8 +223,10 @@ export default dayjs;
 **Líneas modificadas**: 42, 44-45, 909, 1321, 1374
 
 #### 9. `/src/pages/admin/notifications/components/JudicialMovementsList.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -217,8 +236,10 @@ export default dayjs;
 **Líneas modificadas**: 5-6, 109
 
 #### 10. `/src/pages/admin/notifications/components/UpcomingNotifications.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -228,8 +249,10 @@ export default dayjs;
 **Líneas modificadas**: 5-6, 62
 
 #### 11. `/src/pages/admin/notifications/components/NotificationSummary.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"`
 - ✅ `import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"`
 - ❌ `import { format } from "date-fns"`
@@ -245,8 +268,10 @@ export default dayjs;
 **Líneas modificadas**: 9, 12-13, 122, 155-156
 
 #### 12. `/src/pages/admin/notifications/components/NotificationHistory.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"`
 - ✅ `import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"`
 - ❌ `import { format } from "date-fns"`
@@ -260,8 +285,10 @@ export default dayjs;
 **Líneas modificadas**: 8, 11-12, 133, 138, 183 (múltiples LocalizationProvider)
 
 #### 13. `/src/pages/admin/notifications/components/FailedNotifications.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -271,8 +298,10 @@ export default dayjs;
 **Líneas modificadas**: 5-6, 76, 81
 
 #### 14. `/src/pages/admin/notifications/components/AlertManagement.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"`
 - ✅ `import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"`
 - ❌ `import { es } from "date-fns/locale"`
@@ -283,8 +312,10 @@ export default dayjs;
 **Líneas modificadas**: 44, 46, 426
 
 #### 15. `/src/pages/apps/calendar/availability.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"`
 - ✅ `import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"`
 - ❌ `import { es } from "date-fns/locale"`
@@ -295,8 +326,10 @@ export default dayjs;
 **Líneas modificadas**: 69, 71, 293, 350 (múltiples LocalizationProvider)
 
 #### 16. `/src/pages/apps/folders/details/components/Calendar.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parseISO } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -308,8 +341,10 @@ export default dayjs;
 **Líneas modificadas**: 25-26, 59, 69
 
 #### 17. `/src/pages/apps/folders/details/components/CalendarToolbar.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -321,8 +356,10 @@ export default dayjs;
 **Líneas modificadas**: 6-7, 66
 
 #### 18. `/src/pages/apps/folders/details/components/utils/exportUtils.ts`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parseISO } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -334,8 +371,10 @@ export default dayjs;
 **Líneas modificadas**: 1-2, 69, 73, 110
 
 #### 19. `/src/pages/apps/folders/details/modals/ModalMovements.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { parseISO, isValid, format } from "date-fns"`
 - ✅ `import dayjs from "utils/dayjs-config"`
 - ❌ `parsedDate = parseISO(dateString)`
@@ -348,8 +387,10 @@ export default dayjs;
 **Líneas modificadas**: 25, 54-56
 
 #### 20. `/src/pages/apps/folders/details/components/ActivityTables.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parseISO, parse, isValid } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -363,8 +404,10 @@ export default dayjs;
 **Líneas modificadas**: 27-28, 241-266 (función formatDate completa), 1646, 1654
 
 #### 21. `/src/pages/apps/folders/details/components/tables/NotificationsTable.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parse, parseISO, isValid } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -376,8 +419,10 @@ export default dayjs;
 **Líneas modificadas**: 22-23, 94-116 (función parseDate completa), 118-149 (función formatDate completa)
 
 #### 22. `/src/pages/apps/folders/details/components/tables/MovementsTable.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parse, parseISO, isValid } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -395,8 +440,10 @@ export default dayjs;
 **Líneas modificadas**: 23-24, 102-124 (parseDate), 126-157 (formatDate), múltiples líneas de filtros de fecha (replace_all)
 
 #### 23. `/src/pages/apps/folders/details/components/tables/CalendarTable.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parseISO, isValid } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -412,8 +459,10 @@ export default dayjs;
 **Líneas modificadas**: 22-23, 79-96 (formatDateOnly), 95-98 (calculateDuration), 168-169 (ordenamiento), 247
 
 #### 24. `/src/pages/apps/folders/details/components/tables/CombinedTablePaginated.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parseISO, isValid } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -423,8 +472,10 @@ export default dayjs;
 **Líneas modificadas**: 37-38, 109-125 (función formatDate completa)
 
 #### 25. `/src/pages/apps/folders/details/components/tables/CombinedTable.tsx`
+
 **Fecha**: 2025-10-09
 **Cambios**:
+
 - ❌ `import { format, parseISO, isValid, parse } from "date-fns"`
 - ❌ `import { es } from "date-fns/locale"`
 - ✅ `import dayjs from "utils/dayjs-config"`
@@ -444,13 +495,16 @@ export default dayjs;
 ---
 
 ### FASE 8: Componentes de carpetas (moment) (15 archivos)
+
 **Fecha**: 2025-10-09
 **Archivos migrados**:
-- 9 archivos FolderData* (FolderData.tsx, FolderDataImproved.tsx, FolderDataCompact.tsx, FolderJudData.tsx, FolderPreJudData.tsx, FolderPreJudDataImproved.tsx, FolderPreJudDataCompact.tsx, FolderJudDataImproved.tsx, FolderJudDataCompact.tsx)
-- 4 archivos CalcTable* (CalcTable.tsx, CalcTableCompact.tsx, CalcTableResponsive.tsx, CalcTableEnhanced.tsx)
-- 2 archivos TaskList* (TaskList.tsx, TaskListImproved.tsx)
+
+- 9 archivos FolderData\* (FolderData.tsx, FolderDataImproved.tsx, FolderDataCompact.tsx, FolderJudData.tsx, FolderPreJudData.tsx, FolderPreJudDataImproved.tsx, FolderPreJudDataCompact.tsx, FolderJudDataImproved.tsx, FolderJudDataCompact.tsx)
+- 4 archivos CalcTable\* (CalcTable.tsx, CalcTableCompact.tsx, CalcTableResponsive.tsx, CalcTableEnhanced.tsx)
+- 2 archivos TaskList\* (TaskList.tsx, TaskListImproved.tsx)
 
 **Patrón de migración**:
+
 - ❌ `import moment from "moment"` + `import "moment/locale/es"; moment.locale("es");`
 - ✅ `import dayjs from "utils/dayjs-config"`
 - ❌ `moment.parseZone()` → ✅ `dayjs()`
@@ -459,11 +513,14 @@ export default dayjs;
 ---
 
 ### FASE 9: Vistas de clientes (5 archivos)
+
 **Fecha**: 2025-10-09
 **Archivos migrados**:
+
 - CustomerView.tsx, CustomerViewSimple.tsx, CustomerViewSimple2.tsx, CustomerViewRobust.tsx, CustomerViewFixed.tsx
 
 **Patrón de migración**:
+
 - ❌ `import moment from "moment"`
 - ✅ `import dayjs from "utils/dayjs-config"`
 - ❌ `moment()` → ✅ `dayjs()` (replace_all)
@@ -471,8 +528,10 @@ export default dayjs;
 ---
 
 ### FASE 10: Calculadoras (9 archivos)
+
 **Fecha**: 2025-10-09
 **Archivos migrados**:
+
 1. `/src/pages/calculator/intereses/components/SavedIntereses.tsx`
 2. `/src/sections/forms/wizard/calc-intereses/resultsView.tsx`
 3. `/src/pages/calculator/all/index.tsx`
@@ -484,6 +543,7 @@ export default dayjs;
 9. `/src/sections/forms/wizard/calc-laboral/despido/third.tsx`
 
 **Patrón de migración**:
+
 - ❌ `import moment from "moment"`
 - ✅ `import dayjs from "utils/dayjs-config"`
 - ❌ `moment()` → ✅ `dayjs()` (replace_all)
@@ -496,6 +556,7 @@ export default dayjs;
 ## 📝 Archivos Pendientes de Migración
 
 ### FASE 11: Resto de apps (8 archivos)
+
 - `/src/pages/tasks/index.tsx`
 - `/src/sections/apps/tasks/TaskView.tsx`
 - `/src/pages/apps/invoice/edit.tsx`
@@ -506,6 +567,7 @@ export default dayjs;
 - `/src/sections/apps/profiles/user/TabPersonal.tsx`
 
 ### FASE 12: Componentes demo/showcase (8 archivos)
+
 - `/src/sections/apps/kanban/Backlogs/Items.tsx`
 - `/src/sections/apps/kanban/Backlogs/UserStory.tsx`
 - `/src/sections/apps/kanban/Board/AddItem.tsx`
@@ -533,6 +595,7 @@ npm install moment@^2.30.1
 ```
 
 ### Archivos a restaurar manualmente:
+
 1. Eliminar `/src/utils/dayjs-config.ts`
 2. Revertir imports en cada archivo migrado (ver lista arriba)
 
@@ -545,6 +608,7 @@ npm install moment@^2.30.1
 **Archivos pendientes**: 0 (0%)
 
 **Fases completadas**: 12/12
+
 - ✅ FASE 1: Utilidades (2/2)
 - ✅ FASE 2: Componentes UI compartidos (1/1)
 - ✅ FASE 3: Redux/Store CRÍTICO (1/1)
@@ -573,6 +637,7 @@ npm install moment@^2.30.1
 ## 🧪 Testing
 
 Después de cada fase, verificar:
+
 - [ ] Compilación sin errores: `npm run build`
 - [ ] Formateo de fechas correcto en UI
 - [ ] Funcionalidad de calendarios/pickers
@@ -588,6 +653,7 @@ Después de cada fase, verificar:
 ### Pasos finales recomendados:
 
 1. **Ejecutar el build para verificar que no hay errores:**
+
    ```bash
    npm run build
    ```

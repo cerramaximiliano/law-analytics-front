@@ -1,21 +1,25 @@
 # Documentación del Modelo UserAnalytics
 
 ## Descripción General
+
 El modelo `UserAnalytics` almacena métricas y estadísticas calculadas para cada usuario del sistema. Se genera diariamente a las 5:00 AM mediante un cron job y ahora crea un nuevo documento histórico en cada ejecución.
 
 ## Estructura de Propiedades
 
 ### 1. **folderStatusDistribution**
+
 Distribución de carpetas por estado actual.
 
 **Fuente de datos:** Colección `folders`
 
 **Cálculo:**
+
 - Agrupa todas las carpetas del usuario por estado
 - Cuenta la cantidad de carpetas en cada estado
 - Normaliza los estados (convierte a minúsculas, mapea variantes)
 
 **Estructura:**
+
 ```javascript
 folderStatusDistribution: {
     nueva: 5,        // Carpetas con estado "NUEVA"
@@ -28,16 +32,19 @@ folderStatusDistribution: {
 ---
 
 ### 2. **averageResolutionTimes**
+
 Tiempos promedio de resolución de carpetas en días.
 
 **Fuente de datos:** Colección `folders`
 
 **Cálculo:**
+
 - Para carpetas cerradas: diferencia entre `finalDateFolder` y `initialDateFolder`
 - Para carpetas abiertas: diferencia entre fecha actual y `initialDateFolder`
 - Calcula promedios generales y por estado
 
 **Estructura:**
+
 ```javascript
 averageResolutionTimes: {
     overall: 45,              // Promedio general en días
@@ -52,16 +59,19 @@ averageResolutionTimes: {
 ---
 
 ### 3. **upcomingDeadlines**
+
 Plazos y vencimientos próximos del usuario.
 
 **Fuente de datos:** Colecciones `events` y `movements`
 
 **Cálculo:**
+
 - **Events:** Cuenta eventos donde `end` está entre hoy y la fecha límite
 - **Movements:** Cuenta movimientos con `expirationDate` en el rango
 - Suma ambos conteos para cada período
 
 **Estructura:**
+
 ```javascript
 upcomingDeadlines: {
     next7Days: 5,    // Eventos + Movimientos que vencen en 7 días
@@ -73,16 +83,19 @@ upcomingDeadlines: {
 ---
 
 ### 4. **activityMetrics**
+
 Métricas de actividad basadas en movimientos del usuario.
 
 **Fuente de datos:** Colección `movements` (últimos 30 días)
 
 **Cálculo:**
+
 - Cuenta movimientos de los últimos 30 días
 - Calcula promedios diario, semanal y mensual
 - Determina el día de la semana con más actividad
 
 **Estructura:**
+
 ```javascript
 activityMetrics: {
     dailyAverage: 3,          // Promedio de movimientos por día
@@ -95,16 +108,19 @@ activityMetrics: {
 ---
 
 ### 5. **financialMetrics**
+
 Métricas financieras de carpetas y calculadoras.
 
 **Fuente de datos:** Colecciones `folders` y `calculators`
 
 **Cálculo:**
+
 - **Folders:** Suma montos por estado, calcula promedios
 - **Calculators:** Agrupa por tipo, cuenta y suma montos
 - Total activo excluye carpetas cerradas
 
 **Estructura:**
+
 ```javascript
 financialMetrics: {
     totalActiveAmount: 150000,        // Suma de montos (excluye cerradas)
@@ -131,15 +147,18 @@ financialMetrics: {
 ---
 
 ### 6. **matterDistribution**
+
 Distribución de carpetas por materia.
 
 **Fuente de datos:** Colección `folders`
 
 **Cálculo:**
+
 - Agrupa carpetas por campo `materia`
 - Cuenta cantidad de carpetas por cada materia
 
 **Estructura:**
+
 ```javascript
 matterDistribution: Map {
     "Accidente de trabajo": 15,
@@ -152,15 +171,18 @@ matterDistribution: Map {
 ---
 
 ### 7. **averageAmountByMatter**
+
 Monto promedio por materia.
 
 **Fuente de datos:** Colección `folders`
 
 **Cálculo:**
+
 - Suma montos totales por materia
 - Divide entre cantidad de carpetas de esa materia
 
 **Estructura:**
+
 ```javascript
 averageAmountByMatter: Map {
     "Accidente de trabajo": 75000,
@@ -173,16 +195,19 @@ averageAmountByMatter: Map {
 ---
 
 ### 8. **resolutionTimeByMatter**
+
 Tiempo promedio de resolución por materia en días.
 
 **Fuente de datos:** Colección `folders`
 
 **Cálculo:**
+
 - Para carpetas con `initialDateFolder` y `finalDateFolder`
 - Calcula diferencia en días
 - Promedia por materia
 
 **Estructura:**
+
 ```javascript
 resolutionTimeByMatter: Map {
     "Accidente de trabajo": 90,    // días promedio
@@ -195,17 +220,20 @@ resolutionTimeByMatter: Map {
 ---
 
 ### 9. **taskMetrics**
+
 Métricas de tareas del usuario.
 
 **Fuente de datos:** Colección `tasks`
 
 **Cálculo:**
+
 - Cuenta tareas por estado (`checked` o `status`)
 - Identifica tareas vencidas comparando `dueDate` con fecha actual
 - Calcula tasas de completitud
 - Analiza subtareas, archivos adjuntos y comentarios
 
 **Estructura:**
+
 ```javascript
 taskMetrics: {
     completionRate: 75,              // Porcentaje de tareas completadas
@@ -241,16 +269,19 @@ taskMetrics: {
 ---
 
 ### 10. **notificationMetrics**
+
 Métricas de notificaciones y alertas.
 
 **Fuente de datos:** Colección `alets` (alerts)
 
 **Cálculo:**
+
 - Cuenta alertas no leídas (`isRead = false`)
 - Calcula tiempo promedio entre creación y lectura
 - Determina tasa de respuesta
 
 **Estructura:**
+
 ```javascript
 notificationMetrics: {
     unreadCount: 8,           // Alertas sin leer
@@ -262,16 +293,19 @@ notificationMetrics: {
 ---
 
 ### 11. **trendData**
+
 Tendencias temporales de los últimos 6 meses.
 
 **Fuente de datos:** Colecciones `folders`, `movements`, `calculators`
 
 **Cálculo:**
+
 - Filtra registros de los últimos 6 meses
 - Agrupa por mes (formato YYYY-MM)
 - Cuenta elementos por mes para cada categoría
 
 **Estructura:**
+
 ```javascript
 trendData: {
     newFolders: [
@@ -299,21 +333,25 @@ trendData: {
 ### 12. **Metadatos**
 
 **lastUpdated**
+
 - Tipo: Date
 - Descripción: Fecha y hora de la última actualización
 - Valor: Se actualiza automáticamente en cada generación
 
 **dataQuality**
+
 - Tipo: Number (0-100)
 - Descripción: Porcentaje de calidad/completitud de los datos
 - Cálculo: Basado en la presencia de datos en las métricas principales
 
 **analyticsVersion**
+
 - Tipo: String
 - Descripción: Versión del sistema de analytics
 - Valor actual: "1.0"
 
 **timestamps**
+
 - createdAt: Fecha de creación del documento
 - updatedAt: Fecha de última modificación
 

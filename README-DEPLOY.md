@@ -5,6 +5,7 @@
 Solo existe **UN ÚNICO SCRIPT** para deployment: `deploy.sh`
 
 Este script maneja TODO automáticamente:
+
 - ✅ Actualización de código (git pull)
 - ✅ Versionado automático
 - ✅ Build optimizado con Vite
@@ -54,6 +55,7 @@ cd /var/www/law-analytics-front
 ## 🔄 Características Actuales
 
 ### ✅ Lo que funciona:
+
 - **Sin Service Workers**: Eliminados completamente para evitar problemas de caché
 - **Soporte completo para móviles**: Con polyfills de `regenerator-runtime`
 - **Actualizaciones instantáneas**: Sin cachés persistentes
@@ -61,6 +63,7 @@ cd /var/www/law-analytics-front
 - **Build optimizado**: Chunks separados para mejor performance
 
 ### 📱 Compatibilidad Móvil
+
 - **Android**: Chrome, Firefox, navegador Samsung
 - **iOS**: Safari, Chrome
 - **Navegadores antiguos**: Soporte con polyfills
@@ -70,6 +73,7 @@ cd /var/www/law-analytics-front
 ## 🛠️ Solución de Problemas
 
 ### Si el build falla con error de permisos:
+
 ```bash
 # Limpiar caché de TypeScript
 rm -rf node_modules/.cache
@@ -77,6 +81,7 @@ npm run build
 ```
 
 ### Si el build falla completamente:
+
 ```bash
 # Reinstalar dependencias
 rm -rf node_modules package-lock.json
@@ -85,12 +90,14 @@ npm install
 ```
 
 ### Si nginx no recarga:
+
 ```bash
 sudo nginx -t  # Verificar configuración
 sudo systemctl reload nginx  # Recargar manualmente
 ```
 
 ### Para verificar la versión desplegada:
+
 ```bash
 curl https://lawanalytics.app/version.json
 ```
@@ -100,11 +107,13 @@ curl https://lawanalytics.app/version.json
 ## 🔧 Configuración Técnica
 
 ### Dependencias Críticas:
+
 - `regenerator-runtime`: Polyfill para async/await en móviles
 - `vite`: Build tool (reemplaza a Create React App)
 - `typescript`: Sin modo incremental para evitar problemas de permisos
 
 ### Estructura de Build:
+
 ```
 build/
 ├── index.html (sin caché)
@@ -117,6 +126,7 @@ build/
 ```
 
 ### Headers de Caché:
+
 - **HTML**: `no-cache, no-store, must-revalidate`
 - **JS/CSS/Imágenes**: `public, immutable` con expires de 1 año
 - **API**: Sin caché
@@ -126,19 +136,18 @@ build/
 ## 📱 Cambios Recientes (2025)
 
 ### Problemas Resueltos:
+
 1. **Error "regeneratorRuntime is not defined" en móviles**
    - Solución: Agregado `regenerator-runtime` en polyfills.ts
-   
 2. **Aplicación mostraba versiones viejas en móviles**
    - Solución: Eliminación completa de Service Workers
-   
 3. **"Failed to fetch dynamically imported module"**
    - Solución: Sistema de lazy loading con reintentos (`lazyRetry`)
-   
 4. **Permisos de node_modules/.cache**
    - Solución: Desactivado modo incremental en tsconfig.build.json
 
 ### Archivos Eliminados:
+
 - Todos los Service Workers (`sw.js`, `sw-new.js`, `service-worker.js`)
 - Archivos de debug (`debug.html`, `test.html`, `error-check.html`)
 - Scripts obsoletos (`remove-sw.sh`, `deploy-optimized.sh`, etc.)
@@ -149,12 +158,14 @@ build/
 ## ⚠️ IMPORTANTE
 
 ### NO hacer:
+
 - ❌ NO agregar Service Workers nuevamente
 - ❌ NO crear scripts de deployment alternativos
 - ❌ NO modificar la configuración de caché sin testing en móviles
 - ❌ NO usar modo incremental de TypeScript (causa problemas de permisos)
 
 ### SÍ hacer:
+
 - ✅ Siempre probar en móviles después de cambios importantes
 - ✅ Usar el script `deploy.sh` para todos los deployments
 - ✅ Mantener `regenerator-runtime` para compatibilidad
@@ -198,5 +209,5 @@ Para verificar que todo funciona:
 
 ---
 
-*Última actualización: Septiembre 2025*
-*Sin Service Workers - Sin problemas de caché - 100% compatible con móviles*
+_Última actualización: Septiembre 2025_
+_Sin Service Workers - Sin problemas de caché - 100% compatible con móviles_

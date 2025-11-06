@@ -1,6 +1,7 @@
 # 🚀 Configuración de Deploy Automático
 
 ## Objetivo
+
 Configurar GitHub Actions para que después de hacer `git push` a `main`, se ejecute automáticamente el deploy en el servidor de producción.
 
 ## Flujo del Deploy Automático
@@ -23,6 +24,7 @@ ssh-keygen -t ed25519 -C "github-actions@law-analytics" -f ~/.ssh/github_actions
 ```
 
 Esto creará dos archivos:
+
 - `~/.ssh/github_actions_law_analytics` (clave privada) ← Para GitHub
 - `~/.ssh/github_actions_law_analytics.pub` (clave pública) ← Para el servidor
 
@@ -87,6 +89,7 @@ cd /var/www/law-analytics-front
 ```
 
 Este script interactivo:
+
 - ✅ Detecta automáticamente tu usuario y ruta
 - ✅ Te da opciones de configuración (deploy.sh completo o comandos específicos)
 - ✅ Valida la sintaxis antes de aplicar cambios
@@ -111,6 +114,7 @@ TU_USUARIO ALL=(ALL) NOPASSWD: /var/www/law-analytics-front/deploy.sh
 ```
 
 Ejemplo:
+
 ```
 cerramaximiliano ALL=(ALL) NOPASSWD: /var/www/law-analytics-front/deploy.sh
 ```
@@ -126,6 +130,7 @@ sudo visudo -f /etc/sudoers.d/github-deploy
 ```
 
 Agrega:
+
 ```
 TU_USUARIO ALL=(ALL) NOPASSWD: /usr/sbin/nginx
 TU_USUARIO ALL=(ALL) NOPASSWD: /bin/systemctl reload nginx
@@ -156,6 +161,7 @@ cat ~/.ssh/github_actions_law_analytics
 ```
 
 Copia **TODO el contenido**, incluyendo:
+
 ```
 -----BEGIN OPENSSH PRIVATE KEY-----
 ...
@@ -170,12 +176,12 @@ Copia **TODO el contenido**, incluyendo:
 4. Click en **New repository secret**
 5. Agrega los siguientes secrets:
 
-| Name | Value |
-|------|-------|
-| `SSH_PRIVATE_KEY` | El contenido completo de la clave privada |
-| `SERVER_HOST` | La IP o dominio de tu servidor (ej: `192.168.1.100` o `servidor.ejemplo.com`) |
-| `SERVER_USER` | El usuario SSH del servidor (ej: `cerramaximiliano`) |
-| `SERVER_PATH` | La ruta del proyecto (ej: `/var/www/law-analytics-front`) |
+| Name              | Value                                                                         |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `SSH_PRIVATE_KEY` | El contenido completo de la clave privada                                     |
+| `SERVER_HOST`     | La IP o dominio de tu servidor (ej: `192.168.1.100` o `servidor.ejemplo.com`) |
+| `SERVER_USER`     | El usuario SSH del servidor (ej: `cerramaximiliano`)                          |
+| `SERVER_PATH`     | La ruta del proyecto (ej: `/var/www/law-analytics-front`)                     |
 
 ---
 
@@ -183,8 +189,8 @@ Copia **TODO el contenido**, incluyendo:
 
 Si tu servidor SSH usa un puerto diferente al 22:
 
-| Name | Value |
-|------|-------|
+| Name          | Value                   |
+| ------------- | ----------------------- |
 | `SERVER_PORT` | Puerto SSH (ej: `2222`) |
 
 ---
@@ -196,6 +202,7 @@ El workflow `.github/workflows/pre-deploy-check.yml` ha sido actualizado para in
 Ahora el flujo será:
 
 1. **Check Phase** (en GitHub Actions):
+
    - Type checking
    - Lint
    - Build
@@ -220,6 +227,7 @@ Ahora el flujo será:
 ## 🧪 Probar el Deploy Automático
 
 1. Hacer un cambio pequeño en el código:
+
    ```bash
    echo "# Test deploy automático" >> README.md
    git add README.md
@@ -228,6 +236,7 @@ Ahora el flujo será:
    ```
 
 2. Ver el progreso en GitHub:
+
    - Ve a tu repositorio en GitHub
    - Click en **Actions** (arriba)
    - Verás el workflow ejecutándose en tiempo real
@@ -244,6 +253,7 @@ Ahora el flujo será:
 ### Error: "Permission denied (publickey)"
 
 **Solución**: Verifica que:
+
 1. La clave pública está en `~/.ssh/authorized_keys` del servidor
 2. Los permisos son correctos: `chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
 3. El secret `SSH_PRIVATE_KEY` tiene el contenido completo de la clave privada
@@ -267,6 +277,7 @@ sudo -n /var/www/law-analytics-front/deploy.sh --help
 ```
 
 Si sigue pidiendo contraseña, revisa que:
+
 1. El usuario en sudoers coincide exactamente con `$USER`
 2. La ruta del script es absoluta y correcta
 3. No hay otros archivos en `/etc/sudoers.d/` que sobrescriban la configuración
@@ -278,6 +289,7 @@ Si sigue pidiendo contraseña, revisa que:
 ### El deploy no se ejecuta
 
 **Solución**: Verifica que:
+
 1. El push fue a la rama `main` o `master`
 2. Todos los checks previos pasaron
 3. Los secrets están configurados correctamente en GitHub

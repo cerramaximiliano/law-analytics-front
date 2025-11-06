@@ -141,37 +141,43 @@ Al seleccionar "Poder Judicial de la Nación", verás:
 
 ### 📋 Campos del formulario:
 
-| **Campo** | **Descripción** | **Requerido** | **Ejemplo** |
-|-----------|----------------|---------------|-------------|
-| **Jurisdicción** | Tribunal específico del PJN | Sí | "Cámara Civil" |
-| **Número de Expediente** | Identificador numérico del caso | Sí | "12345" |
-| **Año del Expediente** | Año de inicio del expediente | Sí | "2024" |
-| **Sobrescribir datos** | Actualiza información local con la del PJN | No | Activado por defecto |
+| **Campo**                | **Descripción**                            | **Requerido** | **Ejemplo**          |
+| ------------------------ | ------------------------------------------ | ------------- | -------------------- |
+| **Jurisdicción**         | Tribunal específico del PJN                | Sí            | "Cámara Civil"       |
+| **Número de Expediente** | Identificador numérico del caso            | Sí            | "12345"              |
+| **Año del Expediente**   | Año de inicio del expediente               | Sí            | "2024"               |
+| **Sobrescribir datos**   | Actualiza información local con la del PJN | No            | Activado por defecto |
 
 ### 📊 Estados post-vinculación:
 
 Una vez completada la vinculación, tu causa mostrará diferentes estados visuales:
 
 #### Estado 1: Vinculación iniciada
+
 ```
 Carátula: [Nombre del Expediente] 🟡 Pendiente de verificación [🔄]
 ```
+
 - El sistema está validando la información con el Poder Judicial
 - Puedes hacer clic en el botón de actualización (🔄) para verificar el estado
 
 #### Estado 2: Verificación exitosa
+
 ```
 Carátula: [Nombre del Expediente] ✅
 ```
+
 - **Indicador**: Ícono de tilde verde
 - **Tooltip**: "Causa vinculada a PJN"
 - El expediente fue encontrado y validado exitosamente
 - La sincronización automática está activa
 
 #### Estado 3: Verificación fallida
+
 ```
 Carátula: [Nombre del Expediente] ❌ Causa inválida
 ```
+
 - **Indicador**: Ícono de cruz roja con chip rojo
 - **Tooltip**: "Causa inválida - No se pudo verificar en el Poder Judicial"
 - Los datos no coinciden con ningún expediente en el sistema judicial
@@ -190,13 +196,13 @@ Una vez vinculada exitosamente, la causa recibirá actualizaciones automáticas:
 
 Al vincular, el sistema envía automáticamente:
 
-| **Dato** | **Valor** | **Descripción** |
-|----------|-----------|-----------------|
-| `pjn` | `true` | Marca la causa como vinculada al PJN |
-| `pjnCode` | Código de jurisdicción | Identifica el tribunal específico |
-| `number` | Número de expediente | Para localizar el caso |
-| `year` | Año | Para identificación única |
-| `overwrite` | `true/false` | Si sobrescribir datos locales |
+| **Dato**    | **Valor**              | **Descripción**                      |
+| ----------- | ---------------------- | ------------------------------------ |
+| `pjn`       | `true`                 | Marca la causa como vinculada al PJN |
+| `pjnCode`   | Código de jurisdicción | Identifica el tribunal específico    |
+| `number`    | Número de expediente   | Para localizar el caso               |
+| `year`      | Año                    | Para identificación única            |
+| `overwrite` | `true/false`           | Si sobrescribir datos locales        |
 
 ### ⚡ Actualización manual del estado:
 

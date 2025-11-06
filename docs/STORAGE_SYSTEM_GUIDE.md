@@ -1,6 +1,7 @@
 # Sistema de Storage y Límites de Recursos
 
 ## Índice
+
 1. [Visión General](#visión-general)
 2. [Límites por Plan](#límites-por-plan)
 3. [Cálculo de Storage](#cálculo-de-storage)
@@ -14,6 +15,7 @@
 ## Visión General
 
 El sistema de storage gestiona dos tipos de límites:
+
 - **Límites de cantidad**: Para elementos activos (no archivados)
 - **Límites de almacenamiento**: Para el total de datos (activos + archivados)
 
@@ -33,6 +35,7 @@ El sistema de storage gestiona dos tipos de límites:
 ## Límites por Plan
 
 ### Plan FREE
+
 ```javascript
 {
   folders: 5,          // Carpetas activas
@@ -43,6 +46,7 @@ El sistema de storage gestiona dos tipos de límites:
 ```
 
 ### Plan STANDARD
+
 ```javascript
 {
   folders: 50,         // Carpetas activas
@@ -53,6 +57,7 @@ El sistema de storage gestiona dos tipos de límites:
 ```
 
 ### Plan PREMIUM
+
 ```javascript
 {
   folders: 500,        // Carpetas activas
@@ -66,12 +71,12 @@ El sistema de storage gestiona dos tipos de límites:
 
 ### Tamaños Estimados por Tipo
 
-| Tipo de Documento | Tamaño Estimado | Descripción |
-|-------------------|-----------------|-------------|
-| Contacto | 2 KB | Datos básicos del contacto |
-| Carpeta | 10 KB | Carpeta con múltiples campos |
-| Calculadora | 5 KB | Fórmulas y configuraciones |
-| Archivo | Tamaño real | PDFs, imágenes, documentos |
+| Tipo de Documento | Tamaño Estimado | Descripción                  |
+| ----------------- | --------------- | ---------------------------- |
+| Contacto          | 2 KB            | Datos básicos del contacto   |
+| Carpeta           | 10 KB           | Carpeta con múltiples campos |
+| Calculadora       | 5 KB            | Fórmulas y configuraciones   |
+| Archivo           | Tamaño real     | PDFs, imágenes, documentos   |
 
 ### Fórmula de Cálculo
 
@@ -82,6 +87,7 @@ Storage Total = (Contactos × 2KB) + (Carpetas × 10KB) + (Calculadoras × 5KB) 
 ### Ejemplo de Cálculo
 
 Usuario con:
+
 - 20 contactos = 20 × 2KB = 40KB
 - 10 carpetas = 10 × 10KB = 100KB
 - 5 calculadoras = 5 × 5KB = 25KB
@@ -112,11 +118,7 @@ graph TD
 
 ```javascript
 // Uso en rutas
-router.post("/folders",
-  authMiddleware,
-  checkResourceLimits('folders'),
-  createFolder
-);
+router.post("/folders", authMiddleware, checkResourceLimits("folders"), createFolder);
 ```
 
 ### Verificación para Elementos Archivados
@@ -144,15 +146,15 @@ Un período temporal donde se permiten operaciones aunque se excedan los límite
 
 ```javascript
 if (!isWithinLimit && hasGracePeriod) {
-  // Permitir operación
-  // Agregar advertencia en respuesta
-  response.gracePeriodWarning = {
-    inGracePeriod: true,
-    expiresAt: "2025-12-31T23:59:59Z",
-    daysRemaining: 7,
-    currentCount: 55,
-    limit: 50
-  }
+	// Permitir operación
+	// Agregar advertencia en respuesta
+	response.gracePeriodWarning = {
+		inGracePeriod: true,
+		expiresAt: "2025-12-31T23:59:59Z",
+		daysRemaining: 7,
+		currentCount: 55,
+		limit: 50,
+	};
 }
 ```
 
@@ -166,31 +168,32 @@ Authorization: Bearer {token}
 ```
 
 **Respuesta**:
+
 ```json
 {
-  "success": true,
-  "data": {
-    "storage": {
-      "total": 52428800,
-      "contacts": 20480,
-      "folders": 102400,
-      "calculators": 25600,
-      "files": 1024000,
-      "fileCount": 2,
-      "limit": 524288000,
-      "limitMB": 500,
-      "usedPercentage": 10
-    },
-    "planInfo": {
-      "planId": "standard",
-      "limits": {
-        "folders": 50,
-        "contacts": 100,
-        "calculators": 20,
-        "storage": 500
-      }
-    }
-  }
+	"success": true,
+	"data": {
+		"storage": {
+			"total": 52428800,
+			"contacts": 20480,
+			"folders": 102400,
+			"calculators": 25600,
+			"files": 1024000,
+			"fileCount": 2,
+			"limit": 524288000,
+			"limitMB": 500,
+			"usedPercentage": 10
+		},
+		"planInfo": {
+			"planId": "standard",
+			"limits": {
+				"folders": 50,
+				"contacts": 100,
+				"calculators": 20,
+				"storage": 500
+			}
+		}
+	}
 }
 ```
 
@@ -202,13 +205,14 @@ Authorization: Bearer {token}
 ```
 
 **Respuesta**:
+
 ```json
 {
-  "isWithinLimit": true,
-  "currentCount": 45,
-  "limit": 50,
-  "plan": "standard",
-  "percentageUsed": 90
+	"isWithinLimit": true,
+	"currentCount": 45,
+	"limit": 50,
+	"plan": "standard",
+	"percentageUsed": 90
 }
 ```
 
@@ -228,6 +232,7 @@ Content-Type: application/json
 **Respuestas Posibles**:
 
 ✅ **Éxito** (201):
+
 ```json
 {
   "success": true,
@@ -236,19 +241,21 @@ Content-Type: application/json
 ```
 
 ❌ **Límite Excedido** (403):
+
 ```json
 {
-  "success": false,
-  "message": "Has alcanzado el límite de carpetas para tu plan actual (standard)",
-  "limitInfo": {
-    "currentCount": 50,
-    "limit": 50,
-    "plan": "standard"
-  }
+	"success": false,
+	"message": "Has alcanzado el límite de carpetas para tu plan actual (standard)",
+	"limitInfo": {
+		"currentCount": 50,
+		"limit": 50,
+		"plan": "standard"
+	}
 }
 ```
 
 ⚠️ **Período de Gracia** (201):
+
 ```json
 {
   "success": true,
@@ -268,8 +275,8 @@ Al crear/eliminar recursos:
 
 ```javascript
 // services/storageService.js
-updateStorageUsage(userId, 'folder', 1, document);  // Agregar
-updateStorageUsage(userId, 'folder', -1, document); // Eliminar
+updateStorageUsage(userId, "folder", 1, document); // Agregar
+updateStorageUsage(userId, "folder", -1, document); // Eliminar
 ```
 
 ### Recálculo Manual
@@ -305,7 +312,7 @@ node scripts/recalculateAllUsersStorage.js 6850300d153bccaac42b37db
 // Verificar uso antes de operaciones masivas
 const storageInfo = await storageService.getUserStorageInfo(userId);
 if (storageInfo.usedMB > limitMB * 0.8) {
-  // Advertir al usuario: 80% del límite usado
+	// Advertir al usuario: 80% del límite usado
 }
 ```
 
@@ -313,12 +320,12 @@ if (storageInfo.usedMB > limitMB * 0.8) {
 
 ```javascript
 try {
-  await createFolder(data);
+	await createFolder(data);
 } catch (error) {
-  if (error.status === 403) {
-    // Sugerir upgrade de plan
-    showUpgradeDialog();
-  }
+	if (error.status === 403) {
+		// Sugerir upgrade de plan
+		showUpgradeDialog();
+	}
 }
 ```
 
@@ -333,6 +340,7 @@ try {
 ### Problema: "Storage usado no coincide con realidad"
 
 **Solución**:
+
 ```bash
 # Recalcular storage del usuario
 node scripts/recalculateUserStorage.js {userId}
@@ -341,6 +349,7 @@ node scripts/recalculateUserStorage.js {userId}
 ### Problema: "Usuario no puede crear recursos aunque tiene espacio"
 
 **Verificar**:
+
 1. Límite de elementos activos vs archivados
 2. Estado de la suscripción
 3. Período de gracia expirado
@@ -348,14 +357,15 @@ node scripts/recalculateUserStorage.js {userId}
 ```javascript
 // Debug en consola
 const subscription = await Subscription.findOne({ user: userId });
-console.log('Plan:', subscription.plan);
-console.log('Status:', subscription.status);
-console.log('Grace Period:', subscription.downgradeGracePeriod);
+console.log("Plan:", subscription.plan);
+console.log("Status:", subscription.status);
+console.log("Grace Period:", subscription.downgradeGracePeriod);
 ```
 
 ### Problema: "Límites no se actualizan después de cambio de plan"
 
 **Solución**:
+
 ```javascript
 // Sincronizar con PlanConfig
 await subscription.syncWithPlanConfig();
@@ -382,16 +392,16 @@ grep "gracePeriod" logs/app.log | tail -20
 ```javascript
 // En MongoDB o mediante API
 db.planconfigs.updateOne(
-  { planId: "standard" },
-  {
-    $set: {
-      "resourceLimits.$[elem].limit": 2048
-    }
-  },
-  {
-    arrayFilters: [{ "elem.name": "storage" }]
-  }
-)
+	{ planId: "standard" },
+	{
+		$set: {
+			"resourceLimits.$[elem].limit": 2048,
+		},
+	},
+	{
+		arrayFilters: [{ "elem.name": "storage" }],
+	},
+);
 ```
 
 ### Aplicar Cambios a Suscripciones Existentes
@@ -439,9 +449,9 @@ if (cached) return cached;
 ```javascript
 // scripts/migrateStorageSizes.js
 const NEW_SIZES = {
-  contact: 3072,  // Nuevo tamaño
-  folder: 15360,
-  calculator: 7168
+	contact: 3072, // Nuevo tamaño
+	folder: 15360,
+	calculator: 7168,
 };
 
 // Recalcular para todos los usuarios
@@ -454,13 +464,13 @@ await recalculateAllUsersStorage(NEW_SIZES);
 
 ```javascript
 // Evento cuando se alcanza 80% del límite
-EventEmitter.on('storage.warning', (userId, percentage) => {
-  sendNotification(userId, `Has usado ${percentage}% de tu almacenamiento`);
+EventEmitter.on("storage.warning", (userId, percentage) => {
+	sendNotification(userId, `Has usado ${percentage}% de tu almacenamiento`);
 });
 
 // Evento cuando se excede el límite
-EventEmitter.on('storage.exceeded', (userId) => {
-  sendUpgradeEmail(userId);
+EventEmitter.on("storage.exceeded", (userId) => {
+	sendUpgradeEmail(userId);
 });
 ```
 
@@ -474,5 +484,5 @@ EventEmitter.on('storage.exceeded', (userId) => {
 
 ---
 
-*Última actualización: Diciembre 2024*
-*Versión: 1.0.0*
+_Última actualización: Diciembre 2024_
+_Versión: 1.0.0_

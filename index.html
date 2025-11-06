@@ -56,38 +56,40 @@
 
 		<!-- Script de limpieza de Service Worker (solo si existe) -->
 		<script>
-			(function() {
+			(function () {
 				// Verificar si ya se completó la limpieza
-				if (localStorage.getItem('sw_cleanup_done') === 'done' ||
-				    localStorage.getItem('sw_cleanup_v4_final') === 'done' ||
-				    localStorage.getItem('sw_cleanup_v5_fix') === 'done') {
-					console.log('✓ Limpieza ya completada, continuando...');
+				if (
+					localStorage.getItem("sw_cleanup_done") === "done" ||
+					localStorage.getItem("sw_cleanup_v4_final") === "done" ||
+					localStorage.getItem("sw_cleanup_v5_fix") === "done"
+				) {
+					console.log("✓ Limpieza ya completada, continuando...");
 					return;
 				}
 
 				// Limpieza silenciosa de Service Workers sin redirección
-				if ('serviceWorker' in navigator) {
-					navigator.serviceWorker.getRegistrations().then(function(registrations) {
+				if ("serviceWorker" in navigator) {
+					navigator.serviceWorker.getRegistrations().then(function (registrations) {
 						for (let registration of registrations) {
 							registration.unregister();
-							console.log('✓ Service Worker desregistrado');
+							console.log("✓ Service Worker desregistrado");
 						}
 					});
 				}
 
 				// Limpiar cachés antiguos
-				if ('caches' in window) {
-					caches.keys().then(function(cacheNames) {
+				if ("caches" in window) {
+					caches.keys().then(function (cacheNames) {
 						return Promise.all(
-							cacheNames.map(function(cacheName) {
+							cacheNames.map(function (cacheName) {
 								return caches.delete(cacheName);
-							})
+							}),
 						);
 					});
 				}
 
 				// Marcar como completado
-				localStorage.setItem('sw_cleanup_done', 'done');
+				localStorage.setItem("sw_cleanup_done", "done");
 			})();
 		</script>
 

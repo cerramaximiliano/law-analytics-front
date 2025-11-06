@@ -86,7 +86,11 @@ export default defineConfig({
 						return "vendor-pdf";
 					}
 					// ApexCharts/Recharts en su propio chunk (muy grande)
-					if (id.includes("node_modules/apexcharts") || id.includes("node_modules/recharts") || id.includes("node_modules/react-apexcharts")) {
+					if (
+						id.includes("node_modules/apexcharts") ||
+						id.includes("node_modules/recharts") ||
+						id.includes("node_modules/react-apexcharts")
+					) {
 						return "vendor-charts";
 					}
 					// Emoji Picker (lazy loaded)

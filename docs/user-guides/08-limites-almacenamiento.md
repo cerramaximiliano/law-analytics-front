@@ -1,6 +1,7 @@
 # Guía de Límites y Almacenamiento de Law Analytics
 
 ## Índice
+
 1. [Introducción](#introducción)
 2. [Planes y Límites](#planes-y-límites)
 3. [Elementos Activos vs Archivados](#elementos-activos-vs-archivados)
@@ -21,6 +22,7 @@ Law Analytics utiliza un sistema de límites dual para garantizar el mejor rendi
 ### ¿Por qué existen estos límites?
 
 Los límites nos permiten:
+
 - ✅ Mantener la aplicación rápida y fluida
 - ✅ Ofrecer diferentes planes según tus necesidades
 - ✅ Garantizar respaldos seguros de tu información
@@ -32,15 +34,15 @@ Los límites nos permiten:
 
 ### 📋 Comparación de Planes
 
-| Característica | Plan Free | Plan Standard | Plan Premium |
-|---------------|-----------|---------------|--------------|
-| **Carpetas Activas** | 5 | 50 | 500 |
-| **Calculadoras Activas** | 3 | 20 | 200 |
-| **Contactos Activos** | 10 | 100 | 1,000 |
-| **Almacenamiento Total** | 50 MB | 1 GB | 5 GB |
-| **Analíticas Avanzadas** | ❌ | ✅ | ✅ |
-| **Exportación de Reportes** | ❌ | ✅ | ✅ |
-| **Soporte** | Email | Email Prioritario | Chat y Email |
+| Característica              | Plan Free | Plan Standard     | Plan Premium |
+| --------------------------- | --------- | ----------------- | ------------ |
+| **Carpetas Activas**        | 5         | 50                | 500          |
+| **Calculadoras Activas**    | 3         | 20                | 200          |
+| **Contactos Activos**       | 10        | 100               | 1,000        |
+| **Almacenamiento Total**    | 50 MB     | 1 GB              | 5 GB         |
+| **Analíticas Avanzadas**    | ❌        | ✅                | ✅           |
+| **Exportación de Reportes** | ❌        | ✅                | ✅           |
+| **Soporte**                 | Email     | Email Prioritario | Chat y Email |
 
 ### 🎯 ¿Qué plan es para ti?
 
@@ -99,13 +101,13 @@ Resultado: ¡Puedes crear 2 carpetas nuevas!
 
 El almacenamiento total incluye **TODOS** tus datos (activos + archivados):
 
-| Tipo de Elemento | Tamaño Aproximado | Equivalencia |
-|-----------------|-------------------|--------------|
-| **Contacto** | 2 KB | ~500 contactos = 1 MB |
-| **Carpeta** | 10 KB | ~100 carpetas = 1 MB |
-| **Calculadora** | 5 KB | ~200 calculadoras = 1 MB |
-| **Archivo PDF** | Variable | Según tamaño real del archivo |
-| **Imagen** | Variable | Según tamaño real de la imagen |
+| Tipo de Elemento | Tamaño Aproximado | Equivalencia                   |
+| ---------------- | ----------------- | ------------------------------ |
+| **Contacto**     | 2 KB              | ~500 contactos = 1 MB          |
+| **Carpeta**      | 10 KB             | ~100 carpetas = 1 MB           |
+| **Calculadora**  | 5 KB              | ~200 calculadoras = 1 MB       |
+| **Archivo PDF**  | Variable          | Según tamaño real del archivo  |
+| **Imagen**       | Variable          | Según tamaño real de la imagen |
 
 ### 🧮 Ejemplo de Cálculo
 
@@ -137,11 +139,13 @@ El sistema te mostrará tu uso de almacenamiento con colores:
 ### ⏰ ¿Qué es el Período de Gracia?
 
 Es un tiempo adicional que te damos cuando:
+
 - Cambias a un plan inferior (downgrade)
 - Hay un problema temporal con tu pago
 - Tu suscripción está por vencer
 
 Durante este período:
+
 - ✅ Puedes seguir trabajando normalmente
 - ⚠️ Recibirás avisos para ajustar tu uso
 - 📅 Típicamente dura entre 7 y 30 días
@@ -170,21 +174,23 @@ Día 31 (Gracia Expirada):
 ### ❓ ¿Puedo recuperar elementos archivados?
 
 **Sí**, puedes desarchivar elementos en cualquier momento, pero:
+
 - Necesitas tener espacio disponible en tu límite de activos
 - El elemento volverá a contar para tu límite de cantidad
 
 ### ❓ ¿Qué pasa si elimino en lugar de archivar?
 
-| Acción | Efecto en Límite de Cantidad | Efecto en Almacenamiento |
-|--------|------------------------------|-------------------------|
-| **Archivar** | ✅ Libera espacio | ❌ Mantiene el uso |
-| **Eliminar** | ✅ Libera espacio | ✅ Libera espacio |
+| Acción       | Efecto en Límite de Cantidad | Efecto en Almacenamiento |
+| ------------ | ---------------------------- | ------------------------ |
+| **Archivar** | ✅ Libera espacio            | ❌ Mantiene el uso       |
+| **Eliminar** | ✅ Libera espacio            | ✅ Libera espacio        |
 
 ⚠️ **Importante**: Los elementos eliminados no se pueden recuperar.
 
 ### ❓ ¿Cómo sé cuánto espacio me queda?
 
 Puedes ver tu uso actual en:
+
 - Dashboard principal (widget de almacenamiento)
 - Configuración de cuenta
 - Al intentar crear nuevos elementos
@@ -204,11 +210,13 @@ Sí, todos los archivos adjuntos (PDFs, imágenes, documentos) cuentan para tu l
 ### 🎯 Mejores Prácticas
 
 1. **Archiva Regularmente**
+
    - Casos cerrados hace más de 6 meses
    - Contactos inactivos
    - Calculadoras de casos finalizados
 
 2. **Gestiona Archivos Inteligentemente**
+
    - Comprime PDFs grandes antes de subirlos
    - Elimina duplicados
    - Usa enlaces externos para archivos muy grandes
@@ -220,16 +228,17 @@ Sí, todos los archivos adjuntos (PDFs, imágenes, documentos) cuentan para tu l
 
 ### 📊 Estrategia de Archivado Sugerida
 
-| Tiempo desde Última Actividad | Acción Recomendada |
-|-------------------------------|-------------------|
-| Más de 12 meses | Archivar automáticamente |
-| 6-12 meses | Revisar y archivar selectivamente |
-| 3-6 meses | Mantener activo si es relevante |
-| Menos de 3 meses | Mantener siempre activo |
+| Tiempo desde Última Actividad | Acción Recomendada                |
+| ----------------------------- | --------------------------------- |
+| Más de 12 meses               | Archivar automáticamente          |
+| 6-12 meses                    | Revisar y archivar selectivamente |
+| 3-6 meses                     | Mantener activo si es relevante   |
+| Menos de 3 meses              | Mantener siempre activo           |
 
 ### 🔔 Configuración de Alertas
 
 Recomendamos configurar alertas cuando:
+
 - Alcances el 80% de tu límite de cantidad
 - Uses más del 70% de tu almacenamiento
 - Te queden 7 días de período de gracia
@@ -241,6 +250,7 @@ Recomendamos configurar alertas cuando:
 ### 🚀 Si alcanzas tu límite de elementos activos:
 
 1. **Opción A**: Archiva elementos antiguos
+
    - Ve a la lista de carpetas/contactos
    - Filtra por "Más antiguos"
    - Selecciona y archiva masivamente
@@ -253,6 +263,7 @@ Recomendamos configurar alertas cuando:
 ### 💾 Si te quedas sin almacenamiento:
 
 1. **Libera espacio**:
+
    - Elimina archivos duplicados
    - Comprime documentos grandes
    - Elimina elementos que ya no necesitas
@@ -282,6 +293,7 @@ Recomendamos configurar alertas cuando:
 ## Resumen de Límites por Plan
 
 ### Plan Free
+
 ```
 Elementos Activos:
 ├── 5 Carpetas
@@ -293,6 +305,7 @@ Ideal para: Comenzar y probar el sistema
 ```
 
 ### Plan Standard
+
 ```
 Elementos Activos:
 ├── 50 Carpetas
@@ -304,6 +317,7 @@ Ideal para: Despachos pequeños y medianos
 ```
 
 ### Plan Premium
+
 ```
 Elementos Activos:
 ├── 500 Carpetas
@@ -316,7 +330,7 @@ Ideal para: Firmas grandes y estudios jurídicos
 
 ---
 
-*Última actualización: Diciembre 2024*
-*Versión: 1.0.0*
+_Última actualización: Diciembre 2024_
+_Versión: 1.0.0_
 
 💡 **Tip Final**: Mantén tu espacio organizado archivando regularmente. Un workspace limpio es un workspace productivo.

@@ -5,6 +5,7 @@
 ---
 
 ### POST 1: Pain Point + Solución + Datos
+
 **Objetivo:** Awareness + Conversión
 **Formato:** Texto + Imagen
 
@@ -36,6 +37,7 @@ Tu práctica merece trabajar con inteligencia, no con esfuerzo repetitivo.
 ---
 
 ### POST 2: Caso de Éxito / Testimonial
+
 **Objetivo:** Prueba social + Credibilidad
 **Formato:** Texto + Foto del profesional (si disponible)
 
@@ -70,6 +72,7 @@ El Dr. Fernández no es el único. Más de [X] abogados ya automatizaron su prá
 ---
 
 ### POST 3: Educativo / Value-First
+
 **Objetivo:** Educar + Posicionar como experto
 **Formato:** Carousel o Documento LinkedIn
 
@@ -113,6 +116,7 @@ La tecnología no reemplaza al abogado. Potencia su trabajo.
 ---
 
 ### POST 4: Feature Highlight + Urgencia
+
 **Objetivo:** Conversión directa
 **Formato:** Texto + Video demo (si disponible) o GIF
 
@@ -148,6 +152,7 @@ Sin tarjeta. Sin compromiso. Solo resultados.
 ---
 
 ### POST 5: Thought Leadership
+
 **Objetivo:** Posicionamiento + Engagement
 **Formato:** Texto provocador
 
@@ -192,10 +197,12 @@ Los estudios que adopten tecnología HOY tendrán ventaja competitiva MAÑANA.
 ---
 
 ### POST 1: Carousel Educativo (8 slides)
+
 **Objetivo:** Educar + Engagement
 **Formato:** Carousel con diseño minimalista
 
 **Slide 1:**
+
 ```
 3 HORAS DIARIAS
 PERDIDAS ❌
@@ -204,6 +211,7 @@ PERDIDAS ❌
 ```
 
 **Slide 2:**
+
 ```
 El problema:
 Consultas manuales de expedientes
@@ -214,6 +222,7 @@ Consultas manuales de expedientes
 ```
 
 **Slide 3:**
+
 ```
 La solución:
 SINCRONIZACIÓN
@@ -224,6 +233,7 @@ de la Nación
 ```
 
 **Slide 4:**
+
 ```
 Cómo funciona:
 
@@ -234,6 +244,7 @@ Cómo funciona:
 ```
 
 **Slide 5:**
+
 ```
 RESULTADOS REALES:
 
@@ -245,6 +256,7 @@ Plazos perdidos
 ```
 
 **Slide 6:**
+
 ```
 100% 📊
 Expedientes actualizados
@@ -254,6 +266,7 @@ Sin esfuerzo.
 ```
 
 **Slide 7:**
+
 ```
 BONUS:
 ✓ Calculadoras especializadas
@@ -263,6 +276,7 @@ BONUS:
 ```
 
 **Slide 8:**
+
 ```
 PROBALO GRATIS
 
@@ -273,6 +287,7 @@ o buscá: lawanalytics.app
 ```
 
 **Caption:**
+
 ```
 ¿Cuánto tiempo perdés consultando expedientes manualmente? 🤔
 
@@ -293,10 +308,12 @@ Swipe para ver cómo abogados como vos están recuperando ese tiempo ⏰✨
 ---
 
 ### POST 2: Reel Corto (30 segundos)
+
 **Objetivo:** Viral + Awareness
 **Formato:** Video rápido con texto en pantalla
 
 **Guion:**
+
 ```
 [0-3s] Texto: "POV: Sos abogado en 2025 y seguís haciendo esto..."
 Visual: Persona frente a computadora consultando expedientes manualmente, frustrada
@@ -322,6 +339,7 @@ CTA: "Probá 30 días gratis 👆"
 ```
 
 **Caption:**
+
 ```
 Año 2025 y seguimos consultando expedientes como en 1995 😅
 
@@ -339,6 +357,7 @@ Comentá 👇
 ---
 
 ### POST 3: Post Simple + Impactante
+
 **Objetivo:** Engagement + Shares
 **Formato:** Imagen con quote o estadística
 
@@ -357,6 +376,7 @@ Law||Analytics
 ```
 
 **Caption:**
+
 ```
 15 horas = 780 horas al año
 780 horas = 32 DÍAS COMPLETOS
@@ -382,10 +402,12 @@ PD: La sincronización automática con el Poder Judicial ya existe. Y es más ac
 ---
 
 ### POST 4: Before/After
+
 **Objetivo:** Mostrar transformación
 **Formato:** Imagen dividida o carousel de 2 slides
 
 **Slide 1 (ANTES):**
+
 ```
 ANTES DE LAW||ANALYTICS:
 
@@ -397,6 +419,7 @@ ANTES DE LAW||ANALYTICS:
 ```
 
 **Slide 2 (DESPUÉS):**
+
 ```
 DESPUÉS DE LAW||ANALYTICS:
 
@@ -408,6 +431,7 @@ DESPUÉS DE LAW||ANALYTICS:
 ```
 
 **Caption:**
+
 ```
 El día que dejé de consultar expedientes manualmente fue el día que recuperé mi vida 🙏
 
@@ -428,10 +452,12 @@ POTENCIA su trabajo. 💪
 ---
 
 ### POST 5: Story Series (4 stories)
+
 **Objetivo:** Educar de forma rápida
 **Formato:** Instagram Stories con interacción
 
 **Story 1:**
+
 ```
 [Fondo: Gradiente azul]
 [Texto grande]: "Quick question 🤔"
@@ -444,6 +470,7 @@ C) 10+ horas 😰
 ```
 
 **Story 2:**
+
 ```
 [Fondo: Screenshot de dashboard]
 [Texto]: "Plot twist:"
@@ -454,6 +481,7 @@ C) 10+ horas 😰
 ```
 
 **Story 3:**
+
 ```
 [Fondo: Testimonio]
 "La sincronización diaria
@@ -468,6 +496,7 @@ transformó mi práctica"
 ```
 
 **Story 4:**
+
 ```
 [Fondo: CTA claro]
 PROBALO GRATIS
@@ -490,6 +519,7 @@ lawanalytics.app
 ---
 
 ### POST 1: Educativo Largo + Valor
+
 **Objetivo:** Posicionar como experto + Tráfico
 **Formato:** Texto largo + Imagen destacada
 
@@ -580,6 +610,7 @@ Sin tarjeta. Sin compromiso.
 ---
 
 ### POST 2: Pregunta para Engagement
+
 **Objetivo:** Interacción + Awareness
 **Formato:** Texto + Imagen de pregunta
 
@@ -608,6 +639,7 @@ PD: Si tu respuesta fue "e", tengo algo que mostrarte 👀
 ---
 
 ### POST 3: Video Testimonial (Si disponible)
+
 **Objetivo:** Prueba social + Conversión
 **Formato:** Video de 60-90 segundos
 
@@ -641,6 +673,7 @@ En este video vas a descubrir:
 ---
 
 ### POST 4: Oferta Limitada (Para conversión)
+
 **Objetivo:** Urgencia + Conversión
 **Formato:** Imagen llamativa + Texto urgente
 
@@ -691,6 +724,7 @@ Preguntas en los comentarios 👇
 ---
 
 ### POST 5: Evento/Webinar
+
 **Objetivo:** Leads + Educación
 **Formato:** Imagen de evento + Texto
 
@@ -752,6 +786,7 @@ BONUS: Los primeros 50 inscriptos reciben:
 ---
 
 ### TWEET 1: Pain Point Directo
+
 ```
 Consultar expedientes manualmente en 2025 es como usar internet dial-up.
 
@@ -768,6 +803,7 @@ La sincronización automática con el PJN ya existe.
 ---
 
 ### TWEET 2: Estadística Impactante
+
 ```
 15 horas semanales.
 
@@ -782,6 +818,7 @@ Eso es lo que pierde un abogado litigante consultando expedientes manualmente.
 ```
 
 **Thread continuación:**
+
 ```
 1/ El problema: El Poder Judicial no te notifica proactivamente.
 
@@ -814,6 +851,7 @@ Probalo gratis: lawanalytics.app
 ---
 
 ### TWEET 3: Comparación Humorística
+
 ```
 Abogado en 2005:
 - Papel
@@ -839,6 +877,7 @@ Es hora de automatizar: lawanalytics.app
 ---
 
 ### TWEET 4: Feature Specific
+
 ```
 Nueva calculadora de Daños Punitivos 🚀
 
@@ -857,6 +896,7 @@ Probala gratis 30 días (sin tarjeta): lawanalytics.app
 ---
 
 ### TWEET 5: Pregunta para Engagement
+
 ```
 Quick poll para abogados 👇
 
@@ -873,6 +913,7 @@ Quick poll para abogados 👇
 ---
 
 ### TWEET 6: Testimonial Short
+
 ```
 "Ya no pierdo tiempo consultando expedientes. Todo se actualiza automáticamente cada 24 horas."
 
@@ -888,6 +929,7 @@ Esto es posible para cualquier abogado litigante.
 ---
 
 ### TWEET 7: Urgencia/Oferta
+
 ```
 ⚡ THREAD: 50% OFF por 48hs
 
@@ -897,6 +939,7 @@ Si sos abogado litigante y todavía consultás expedientes manualmente, esto es 
 ```
 
 **Thread continuación:**
+
 ```
 1/ El Plan STANDARD de Law||Analytics normalmente sale ~$24,000/mes.
 
@@ -949,6 +992,7 @@ Leo todo.
 ---
 
 ### TWEET 8: Consejo Rápido
+
 ```
 Pro tip para abogados:
 
@@ -964,6 +1008,7 @@ Law||Analytics hace esto automáticamente: lawanalytics.app
 ---
 
 ### TWEET 9: Meme/Humor (Con valor)
+
 ```
 Cosas que ya están automatizadas en 2025:
 
@@ -985,6 +1030,7 @@ Solución: lawanalytics.app
 ---
 
 ### TWEET 10: Call-out a segmento específico
+
 ```
 Pregunta para abogados laboralistas:
 
@@ -1004,21 +1050,25 @@ Probá 30 días gratis: lawanalytics.app
 ## 📊 MÉTRICAS SUGERIDAS POR TIPO DE POST
 
 ### LinkedIn
+
 - **Educativos**: CTR esperado 2-4% | Comentarios 15-30
 - **Testimoniales**: Engagement rate 3-5% | Shares 5-10
 - **Features**: CTR 1.5-3% | Clicks directos 20-50
 
 ### Instagram
+
 - **Carousels**: Saves 5-8% | Reach 150-300% de followers
 - **Reels**: Reach 500-1000% de followers | Shares 3-5%
 - **Posts simples**: Engagement 3-5% | Comentarios 20-50
 
 ### Facebook
+
 - **Posts largos**: Reach orgánico 10-15% | Comments 30-60
 - **Videos**: View rate 50-70% | Shares 10-20
 - **Ofertas**: CTR 3-6% | Conversiones 1-2%
 
 ### Twitter/X
+
 - **Threads**: Impresiones 5-10K | Engagement 2-4%
 - **Tweets cortos**: RT 10-30 | Likes 50-150
 - **Polls**: Participación 5-10% de impresiones
@@ -1028,36 +1078,42 @@ Probá 30 días gratis: lawanalytics.app
 ## 🎯 CALENDARIO SUGERIDO (Semana tipo)
 
 ### Lunes
+
 - LinkedIn: Post educativo (value-first)
 - Instagram: Carousel de tips
 - Facebook: Post largo educativo
 - Twitter: Thread de problema-solución
 
 ### Martes
+
 - LinkedIn: Caso de éxito / Testimonial
 - Instagram: Reel corto (trending)
 - Facebook: Pregunta para engagement
 - Twitter: Estadística impactante
 
 ### Miércoles
+
 - LinkedIn: Feature highlight
 - Instagram: Post simple con quote
 - Facebook: Artículo/guía completa
 - Twitter: Comparación humorística
 
 ### Jueves
+
 - LinkedIn: Thought leadership / Opinión
 - Instagram: Before/After
 - Facebook: Video testimonial
 - Twitter: Feature specific
 
 ### Viernes
+
 - LinkedIn: Recap semanal / Tips
 - Instagram: Stories interactivas
 - Facebook: Post de comunidad
 - Twitter: Poll + engagement
 
 ### Sábado/Domingo
+
 - Instagram: Contenido lifestyle/humanizado
 - Twitter: Tweets casuales, respuestas
 - (LinkedIn y Facebook descansan fines de semana)
@@ -1069,6 +1125,7 @@ Probá 30 días gratis: lawanalytics.app
 1. **Personalización**: Todos estos posts son templates. Ajustá el tono a tu voz de marca.
 
 2. **Testing**: Probá diferentes horarios. Data general:
+
    - LinkedIn: Lun-Vie 8-10am y 5-6pm
    - Instagram: Todos los días 11am-1pm y 7-9pm
    - Facebook: Mié-Dom 1-4pm

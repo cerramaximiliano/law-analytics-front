@@ -16,6 +16,7 @@
 ## ✅ Pruebas Funcionales (en Preview)
 
 ### Rutas críticas a probar:
+
 - [ ] `/` - Home
 - [ ] `/login` - Login funcional
 - [ ] `/apps/folders` - Lista de expedientes
@@ -25,6 +26,7 @@
 - [ ] `/apps/chat` - Chat (si usa Socket.io)
 
 ### Features críticas:
+
 - [ ] Redux funciona (ver estado en DevTools)
 - [ ] Autenticación funciona
 - [ ] Modal de cálculos se abre
@@ -49,17 +51,20 @@
 ## 🚨 Errores Comunes a Verificar
 
 ### En la consola del navegador:
+
 - [ ] No hay `Cannot read properties of undefined`
 - [ ] No hay `X is not a function`
 - [ ] No hay `Module not found` o errores de import
 - [ ] No hay errores 404 de assets
 
 ### En Redux DevTools:
+
 - [ ] Estado inicial se carga correctamente
 - [ ] Actions se disparan sin errores
 - [ ] Reducers actualizan el estado correctamente
 
 ### En Network tab:
+
 - [ ] Todos los chunks se cargan exitosamente
 - [ ] No hay errores 403/401 inesperados
 - [ ] API calls funcionan correctamente
@@ -97,6 +102,7 @@ npm run build:analyze
 Si algo falla en producción:
 
 1. **Reproducir localmente**:
+
    ```bash
    npm run build
    npm run preview
@@ -107,6 +113,7 @@ Si algo falla en producción:
 3. **Verificar chunks cargados** en Network tab
 
 4. **Revisar configuración de Vite** (`vite.config.ts`):
+
    - Manual chunks correctamente configurados
    - Dependencias relacionadas en el mismo chunk
 
@@ -114,6 +121,6 @@ Si algo falla en producción:
    ```typescript
    // vite.config.ts
    build: {
-     sourcemap: true  // Solo para debugging
+   	sourcemap: true; // Solo para debugging
    }
    ```

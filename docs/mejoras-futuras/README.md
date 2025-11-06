@@ -11,6 +11,7 @@ Esta carpeta contiene documentación sobre mejoras y funcionalidades propuestas 
 ## Propósito
 
 Los documentos en esta carpeta sirven como:
+
 - Registro de ideas y propuestas de mejora
 - Referencia técnica para futuras implementaciones
 - Planificación de roadmap del producto
@@ -19,6 +20,7 @@ Los documentos en esta carpeta sirven como:
 ## Cómo contribuir
 
 Al proponer una nueva mejora, incluir:
+
 1. Descripción detallada de la funcionalidad
 2. Casos de uso
 3. Opciones de implementación con pros/contras

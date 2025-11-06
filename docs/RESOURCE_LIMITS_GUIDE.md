@@ -1,6 +1,7 @@
 # Guía de Límites de Recursos: Folders, Calculators y Contacts
 
 ## Índice
+
 1. [Conceptos Fundamentales](#conceptos-fundamentales)
 2. [Límites por Plan](#límites-por-plan)
 3. [Reglas de Aplicación](#reglas-de-aplicación)
@@ -21,43 +22,47 @@ El sistema maneja **DOS tipos de límites diferentes**:
 
 ### ¿Qué cuenta para cada límite?
 
-| Recurso | Límite de Cantidad | Límite de Storage |
-|---------|-------------------|-------------------|
-| Folder activo | ✅ SÍ cuenta | ✅ SÍ cuenta (10KB) |
-| Folder archivado | ❌ NO cuenta | ✅ SÍ cuenta (10KB) |
-| Calculator activo | ✅ SÍ cuenta | ✅ SÍ cuenta (5KB) |
-| Calculator archivado | ❌ NO cuenta | ✅ SÍ cuenta (5KB) |
-| Contact activo | ✅ SÍ cuenta | ✅ SÍ cuenta (2KB) |
-| Contact archivado | ❌ NO cuenta | ✅ SÍ cuenta (2KB) |
+| Recurso              | Límite de Cantidad | Límite de Storage   |
+| -------------------- | ------------------ | ------------------- |
+| Folder activo        | ✅ SÍ cuenta       | ✅ SÍ cuenta (10KB) |
+| Folder archivado     | ❌ NO cuenta       | ✅ SÍ cuenta (10KB) |
+| Calculator activo    | ✅ SÍ cuenta       | ✅ SÍ cuenta (5KB)  |
+| Calculator archivado | ❌ NO cuenta       | ✅ SÍ cuenta (5KB)  |
+| Contact activo       | ✅ SÍ cuenta       | ✅ SÍ cuenta (2KB)  |
+| Contact archivado    | ❌ NO cuenta       | ✅ SÍ cuenta (2KB)  |
 
 ## Límites por Plan
 
 ### Plan FREE
-| Recurso | Límite Activos | Storage Total |
-|---------|---------------|---------------|
-| **Folders** | 5 carpetas activas | 50 MB total |
-| **Calculators** | 3 calculadoras activas | (compartido) |
-| **Contacts** | 10 contactos activos | (compartido) |
+
+| Recurso         | Límite Activos         | Storage Total |
+| --------------- | ---------------------- | ------------- |
+| **Folders**     | 5 carpetas activas     | 50 MB total   |
+| **Calculators** | 3 calculadoras activas | (compartido)  |
+| **Contacts**    | 10 contactos activos   | (compartido)  |
 
 ### Plan STANDARD
-| Recurso | Límite Activos | Storage Total |
-|---------|---------------|---------------|
-| **Folders** | 50 carpetas activas | 1,024 MB (1GB) |
-| **Calculators** | 20 calculadoras activas | (compartido) |
-| **Contacts** | 100 contactos activos | (compartido) |
+
+| Recurso         | Límite Activos          | Storage Total  |
+| --------------- | ----------------------- | -------------- |
+| **Folders**     | 50 carpetas activas     | 1,024 MB (1GB) |
+| **Calculators** | 20 calculadoras activas | (compartido)   |
+| **Contacts**    | 100 contactos activos   | (compartido)   |
 
 ### Plan PREMIUM
-| Recurso | Límite Activos | Storage Total |
-|---------|---------------|---------------|
-| **Folders** | 500 carpetas activas | 10,240 MB (10GB) |
-| **Calculators** | 200 calculadoras activas | (compartido) |
-| **Contacts** | 1,000 contactos activos | (compartido) |
+
+| Recurso         | Límite Activos           | Storage Total    |
+| --------------- | ------------------------ | ---------------- |
+| **Folders**     | 500 carpetas activas     | 10,240 MB (10GB) |
+| **Calculators** | 200 calculadoras activas | (compartido)     |
+| **Contacts**    | 1,000 contactos activos  | (compartido)     |
 
 ## Reglas de Aplicación
 
 ### 🟢 CUÁNDO SÍ SE PUEDE GUARDAR
 
 #### 1. Elemento ACTIVO (archived: false)
+
 ```javascript
 ✅ SE PUEDE si:
 - Cantidad de elementos activos < Límite del plan
@@ -70,6 +75,7 @@ Ejemplo Plan Standard:
 ```
 
 #### 2. Elemento ARCHIVADO (archived: true)
+
 ```javascript
 ✅ SE PUEDE si:
 - Storage total usado + tamaño nuevo < Límite storage del plan
@@ -83,6 +89,7 @@ Ejemplo Plan Standard (1GB storage):
 ### 🔴 CUÁNDO NO SE PUEDE GUARDAR
 
 #### 1. Elemento ACTIVO - Límite excedido
+
 ```javascript
 ❌ NO SE PUEDE si:
 - Cantidad de elementos activos >= Límite del plan
@@ -96,6 +103,7 @@ Ejemplo Plan Free:
 ```
 
 #### 2. Elemento ARCHIVADO - Sin storage
+
 ```javascript
 ❌ NO SE PUEDE si:
 - Storage total usado + tamaño nuevo > Límite storage
@@ -127,6 +135,7 @@ Pero si tienes 49.995MB:
 ```
 
 **Verificación al crear:**
+
 1. ¿Cuántos elementos activos tengo?
 2. ¿Es menor al límite del plan?
 3. Sí → Crear / No → Verificar período de gracia
@@ -146,6 +155,7 @@ Pero si tienes 49.995MB:
 ```
 
 **Verificación al crear:**
+
 1. ¿Cuánto storage tengo usado?
 2. ¿Hay espacio para 10KB/5KB/2KB más?
 3. Sí → Crear / No → Bloquear
@@ -177,6 +187,7 @@ Un período temporal donde **SE IGNORAN los límites de cantidad** pero se manti
 Se activa en 3 escenarios:
 
 1. **Downgrade de Plan**
+
    ```
    Premium (500 folders) → Standard (50 folders)
    Si tienes 100 folders activos:
@@ -186,6 +197,7 @@ Se activa en 3 escenarios:
    ```
 
 2. **Fallo de Pago**
+
    ```
    Tarjeta rechazada → Plan se mantiene temporalmente
    - 7-14 días de gracia típicamente
@@ -323,19 +335,17 @@ Authorization: Bearer {token}
 ```
 
 **Respuesta:**
+
 ```json
 {
-  "isWithinLimit": false,
-  "currentCount": 50,
-  "limit": 50,
-  "plan": "standard",
-  "percentageUsed": 100,
-  "canArchive": true,
-  "storageAvailable": true,
-  "suggestions": [
-    "Archive old folders to free up active slots",
-    "Upgrade to Premium for 500 active folders"
-  ]
+	"isWithinLimit": false,
+	"currentCount": 50,
+	"limit": 50,
+	"plan": "standard",
+	"percentageUsed": 100,
+	"canArchive": true,
+	"storageAvailable": true,
+	"suggestions": ["Archive old folders to free up active slots", "Upgrade to Premium for 500 active folders"]
 }
 ```
 
@@ -357,10 +367,11 @@ Authorization: Bearer {token}
 
 ```javascript
 // routes/folderRoutes.js
-router.post("/",
-  authMiddleware,
-  checkResourceLimits('folders'), // ← Verifica automáticamente
-  createFolder
+router.post(
+	"/",
+	authMiddleware,
+	checkResourceLimits("folders"), // ← Verifica automáticamente
+	createFolder,
 );
 ```
 
@@ -391,12 +402,14 @@ checkResourceLimits('folders') {
 ### ¿Por qué puedo tener más elementos que mi límite?
 
 **R:** Probablemente tienes elementos archivados o estás en período de gracia.
+
 - Archivados no cuentan para límite de cantidad
 - Período de gracia permite exceder temporalmente
 
 ### ¿Qué pasa si archivo todos mis folders?
 
 **R:** Puedes crear nuevos hasta el límite del plan.
+
 ```
 Ejemplo: Plan Free (5 folders)
 - Archives 5 folders → 0 activos
@@ -407,6 +420,7 @@ Ejemplo: Plan Free (5 folders)
 ### ¿Puedo desarchivar si estoy en el límite?
 
 **R:** NO, desarchivar cuenta como crear un elemento activo.
+
 ```javascript
 // Situación: 50/50 folders activos (límite)
 PUT /api/folders/123 { archived: false }
@@ -418,6 +432,7 @@ Resultado: ❌ ERROR 403 "Límite alcanzado"
 ### ¿Los elementos archivados tienen algún límite?
 
 **R:** SÍ, el límite de STORAGE total del plan.
+
 ```
 Plan Free: 50MB total
 - Puedes tener 5,000 folders archivados si usas < 50MB
@@ -437,10 +452,10 @@ Plan Free: 50MB total
 
 **R:** Pierdes el histórico pero liberas ambos límites.
 
-| Acción | Límite Cantidad | Storage |
-|--------|----------------|---------|
-| Archivar | ✅ Libera | ❌ Mantiene |
-| Eliminar | ✅ Libera | ✅ Libera |
+| Acción   | Límite Cantidad | Storage     |
+| -------- | --------------- | ----------- |
+| Archivar | ✅ Libera       | ❌ Mantiene |
+| Eliminar | ✅ Libera       | ✅ Libera   |
 
 ### ¿Cómo sé cuánto me queda disponible?
 
@@ -451,6 +466,7 @@ GET /api/user-stats/user
 ```
 
 Te mostrará:
+
 - Elementos activos actuales vs límite
 - Storage usado vs disponible
 - Días restantes de período de gracia (si aplica)
@@ -466,17 +482,17 @@ const cutoffDate = new Date();
 cutoffDate.setMonth(cutoffDate.getMonth() - MONTHS_TO_ARCHIVE);
 
 await Folder.updateMany(
-  {
-    userId: userId,
-    archived: false,
-    updatedAt: { $lt: cutoffDate }
-  },
-  {
-    $set: {
-      archived: true,
-      archivedAt: new Date()
-    }
-  }
+	{
+		userId: userId,
+		archived: false,
+		updatedAt: { $lt: cutoffDate },
+	},
+	{
+		$set: {
+			archived: true,
+			archivedAt: new Date(),
+		},
+	},
 );
 ```
 
@@ -488,11 +504,11 @@ const stats = await UserStats.findOne({ userId });
 const subscription = await Subscription.findOne({ user: userId });
 const planConfig = await PlanConfig.findOne({ planId: subscription.plan });
 
-console.log('Límites actuales:');
-planConfig.resourceLimits.forEach(limit => {
-  const current = stats.counts[limit.name] || 0;
-  const percentage = (current / limit.limit) * 100;
-  console.log(`${limit.name}: ${current}/${limit.limit} (${percentage.toFixed(1)}%)`);
+console.log("Límites actuales:");
+planConfig.resourceLimits.forEach((limit) => {
+	const current = stats.counts[limit.name] || 0;
+	const percentage = (current / limit.limit) * 100;
+	console.log(`${limit.name}: ${current}/${limit.limit} (${percentage.toFixed(1)}%)`);
 });
 ```
 
@@ -507,5 +523,5 @@ planConfig.resourceLimits.forEach(limit => {
 
 ---
 
-*Última actualización: Diciembre 2024*
-*Versión: 1.0.0*
+_Última actualización: Diciembre 2024_
+_Versión: 1.0.0_
