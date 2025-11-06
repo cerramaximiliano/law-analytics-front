@@ -1573,6 +1573,7 @@ const FoldersLayout = () => {
 							open={contactModalOpen}
 							customer={null}
 							mode="add"
+							folderId={selectedFolderForModal.id}
 							onCancel={handleCloseContactModal}
 							onAddMember={() => {
 								// Callback cuando se agrega un contacto exitosamente

@@ -93,9 +93,10 @@ export interface Props {
 	open: boolean;
 	type?: string;
 	mode: "add" | "edit"; // Asegúrate de incluir `mode`
+	folderId?: string; // ID de la carpeta desde la cual se está creando el contacto
 }
 
-const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => {
+const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: Props) => {
 	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
 	const isCreating = mode === "add";
@@ -359,6 +360,11 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode }: Props) => 
 			if (mode === "add") {
 				const newContactData = { ...cleanedValues, userId };
 				delete newContactData._id;
+
+				// Si se está creando desde una carpeta específica, agregar el folderId al array folderIds
+				if (folderId) {
+					newContactData.folderIds = [folderId];
+				}
 
 				results = await dispatch(addContact(newContactData));
 				message = "agregar";

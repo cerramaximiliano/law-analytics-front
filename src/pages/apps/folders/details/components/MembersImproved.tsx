@@ -330,7 +330,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			>
-				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" />
+				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" folderId={folderId} />
 			</Dialog>
 			<ModalMembers
 				open={openModal}

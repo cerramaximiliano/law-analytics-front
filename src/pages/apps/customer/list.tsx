@@ -192,7 +192,6 @@ function ReactTable({
 	if (!isColumnsReady || isLoading) {
 		return (
 			<>
-				<TableRowSelection selected={0} />
 				<Stack spacing={3}>
 					<Box
 						sx={{
@@ -245,7 +244,6 @@ function ReactTable({
 
 	return (
 		<>
-			<TableRowSelection selected={Object.keys(selectedRowIds).length} />
 			{/* Controles FUERA del ScrollX para que siempre estén visibles */}
 			<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
 				{/* Primera fila: buscador a la izquierda, botones principales a la derecha */}

@@ -3,6 +3,7 @@ import { Grid, Stack, TableCell, TableRow, Typography, CircularProgress, Box, Pa
 
 // third-party
 import { PatternFormat } from "react-number-format";
+import { useNavigate } from "react-router-dom";
 
 // project-imports
 import Transitions from "components/@extended/Transitions";
@@ -22,6 +23,7 @@ interface ContactViewProps {
 }
 
 const CustomerViewSimple2: React.FC<ContactViewProps> = ({ data }) => {
+	const navigate = useNavigate();
 	const [folders, setFolders] = useState<FolderData[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -194,8 +196,26 @@ const CustomerViewSimple2: React.FC<ContactViewProps> = ({ data }) => {
 										) : folders.length > 0 ? (
 											<Stack spacing={1}>
 												{folders.map((folder) => (
-													<Box key={folder._id} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-														<Typography variant="body2">• {folder.folderName}</Typography>
+													<Box
+														key={folder._id}
+														onClick={() => navigate(`/apps/folders/details/${folder._id}`)}
+														sx={{
+															display: "flex",
+															alignItems: "center",
+															gap: 1,
+															p: 1,
+															borderRadius: 1,
+															cursor: "pointer",
+															transition: "all 0.2s ease",
+															"&:hover": {
+																bgcolor: "action.hover",
+																transform: "translateX(4px)",
+															},
+														}}
+													>
+														<Typography variant="body2" sx={{ flex: 1 }}>
+															• {folder.folderName}
+														</Typography>
 														<Chip size="small" label={folder.status} color="primary" variant="outlined" />
 													</Box>
 												))}
