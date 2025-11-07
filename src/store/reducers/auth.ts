@@ -560,17 +560,27 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 			withCredentials: true,
 		});
 
+		console.log("📄 Payment History Response:", response.data);
+
 		if (response.data && response.data.success) {
 			const payments = response.data.data?.payments || response.data.payments || [];
 			const customer = response.data.data?.customer || response.data.customer || null;
+
+			console.log("💳 Payments found:", payments.length, payments);
+			console.log("👤 Customer:", customer);
 
 			// Actualizar el estado con el historial de pagos
 			dispatch(updatePaymentHistory(payments, customer));
 			return { payments, customer };
 		} else {
+			console.error("❌ Payment history request failed:", response.data);
 			throw new Error(response.data?.message || "Error al obtener el historial de pagos");
 		}
 	} catch (error: any) {
+		console.error("❌ Error fetching payment history:", error);
+		console.error("Response status:", error.response?.status);
+		console.error("Response data:", error.response?.data);
+
 		// Si hay error, actualizar con null
 		dispatch(updatePaymentHistory(null, null));
 
