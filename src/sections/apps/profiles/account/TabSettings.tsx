@@ -587,9 +587,27 @@ const TabSubscription = () => {
 											}}
 										>
 											<Typography variant="body2" color="warning.dark" sx={{ fontWeight: 500 }}>
-												{subscription && new Date(subscription.currentPeriodEnd) < new Date()
-													? `Tu suscripción terminó el ${formatDate(subscription.currentPeriodEnd)}`
-													: `Tu suscripción terminará el ${subscription && formatDate(subscription.currentPeriodEnd)}`}
+												{(() => {
+													if (!subscription) return "";
+
+													const endDate = new Date(subscription.currentPeriodEnd);
+													const today = new Date();
+
+													// Normalizar fechas para comparar solo día/mes/año
+													endDate.setHours(0, 0, 0, 0);
+													today.setHours(0, 0, 0, 0);
+
+													if (endDate.getTime() < today.getTime()) {
+														// Fecha pasada
+														return `Tu suscripción terminó el ${formatDate(subscription.currentPeriodEnd)}`;
+													} else if (endDate.getTime() === today.getTime()) {
+														// Fecha hoy
+														return `Tu suscripción termina hoy ${formatDate(subscription.currentPeriodEnd)}`;
+													} else {
+														// Fecha futura
+														return `Tu suscripción terminará el ${formatDate(subscription.currentPeriodEnd)}`;
+													}
+												})()}
 											</Typography>
 										</Box>
 
