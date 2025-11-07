@@ -399,7 +399,14 @@ export const fetchCurrentSubscription = () => async (dispatch: any, getState: ()
 			withCredentials: true,
 		});
 
+		console.log("🔔 Subscription Response:", response.data);
+
 		if (response.data && response.data.success && response.data.subscription) {
+			console.log("📅 currentPeriodEnd:", response.data.subscription.currentPeriodEnd);
+			console.log("📅 currentPeriodStart:", response.data.subscription.currentPeriodStart);
+			console.log("❌ cancelAtPeriodEnd:", response.data.subscription.cancelAtPeriodEnd);
+			console.log("📋 Full subscription object:", response.data.subscription);
+
 			// Actualizar el estado con la suscripción
 			dispatch(updateSubscription(response.data.subscription));
 			return response.data.subscription;
