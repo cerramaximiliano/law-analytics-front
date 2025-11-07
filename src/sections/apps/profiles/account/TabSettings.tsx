@@ -219,6 +219,40 @@ const TabSubscription = () => {
 		}
 	};
 
+	// Función para obtener los límites de un plan específico
+	const getPlanLimits = (planId: string) => {
+		switch (planId) {
+			case "free":
+				return {
+					folders: 5,
+					calculators: 3,
+					contacts: 10,
+					storage: 50, // MB
+				};
+			case "standard":
+				return {
+					folders: 50,
+					calculators: 20,
+					contacts: 100,
+					storage: 1024, // 1 GB
+				};
+			case "premium":
+				return {
+					folders: 999999, // Ilimitadas
+					calculators: 999999, // Ilimitadas
+					contacts: 999999, // Ilimitados
+					storage: 10240, // 10 GB
+				};
+			default:
+				return {
+					folders: 0,
+					calculators: 0,
+					contacts: 0,
+					storage: 0,
+				};
+		}
+	};
+
 	// Formatear cantidad monetaria
 	const formatAmount = (amount: number, currency: string) => {
 		const formatter = new Intl.NumberFormat("es-ES", {
@@ -1330,9 +1364,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const folders = subscription?.limits?.folders || subscription?.limits?.maxFolders;
-														if (folders === undefined) return "No disponible";
-														return folders === 999999 ? "Ilimitadas" : folders;
+														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+														const limits = getPlanLimits(targetPlan);
+														return limits.folders === 999999 ? "Ilimitadas" : limits.folders;
 													})()}
 												</TableCell>
 											</TableRow>
@@ -1376,9 +1410,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const calculators = subscription?.limits?.calculators || subscription?.limits?.maxCalculators;
-														if (calculators === undefined) return "No disponible";
-														return calculators === 999999 ? "Ilimitados" : calculators;
+														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+														const limits = getPlanLimits(targetPlan);
+														return limits.calculators === 999999 ? "Ilimitados" : limits.calculators;
 													})()}
 												</TableCell>
 											</TableRow>
@@ -1422,9 +1456,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const contacts = subscription?.limits?.contacts || subscription?.limits?.maxContacts;
-														if (contacts === undefined) return "No disponible";
-														return contacts === 999999 ? "Ilimitados" : contacts;
+														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+														const limits = getPlanLimits(targetPlan);
+														return limits.contacts === 999999 ? "Ilimitados" : limits.contacts;
 													})()}
 												</TableCell>
 											</TableRow>
@@ -1462,9 +1496,9 @@ const TabSubscription = () => {
 													}}
 												>
 													{(() => {
-														const storage = subscription?.limits?.storage || subscription?.limits?.storageLimit;
-														if (storage === undefined) return "No disponible";
-														return storage >= 1024 ? `${storage / 1024} GB` : `${storage} MB`;
+														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+														const limits = getPlanLimits(targetPlan);
+														return limits.storage >= 1024 ? `${limits.storage / 1024} GB` : `${limits.storage} MB`;
 													})()}
 												</TableCell>
 											</TableRow>
