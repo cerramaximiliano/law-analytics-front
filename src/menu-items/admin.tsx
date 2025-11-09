@@ -4,7 +4,7 @@ import React from "react";
 import { FormattedMessage } from "react-intl";
 
 // assets
-import { MessageSquare, User, DocumentText, Monitor, Folder2, Notification, Setting3 } from "iconsax-react";
+import { MessageSquare, User, DocumentText, Folder2, Notification, Setting3 } from "iconsax-react";
 
 // type
 import { NavItemType } from "types/menu";
@@ -107,14 +107,6 @@ const admin: NavItemType = {
 					breadcrumbs: true,
 				},
 			],
-		},
-		{
-			id: "server-status",
-			title: <FormattedMessage id="server-status" defaultMessage="Estado del Servidor" />,
-			type: "item",
-			url: "/admin/server-status",
-			icon: Monitor,
-			breadcrumbs: true,
 		},
 		{
 			id: "notifications",

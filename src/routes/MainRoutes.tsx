@@ -84,7 +84,6 @@ const AdminTemplatesPage = Loadable(lazyRetry(() => import("pages/admin/marketin
 const AdminContactsPage = Loadable(lazyRetry(() => import("pages/admin/marketing/contacts")));
 const AdminPlansPage = Loadable(lazyRetry(() => import("pages/admin/plans")));
 const AdminUsersPage = Loadable(lazyRetry(() => import("pages/admin/users")));
-const AdminServerStatusPage = Loadable(lazyRetry(() => import("pages/admin/server-status")));
 const AdminCausasVerifiedPage = Loadable(lazyRetry(() => import("pages/admin/causas/verified")));
 const AdminCausasFoldersPage = Loadable(lazyRetry(() => import("pages/admin/causas/folders")));
 const AdminCausasWorkersPage = Loadable(lazyRetry(() => import("pages/admin/causas/workers")));
@@ -355,10 +354,6 @@ const MainRoutes = {
 						{
 							path: "users",
 							element: <AdminUsersPage />,
-						},
-						{
-							path: "server-status",
-							element: <AdminServerStatusPage />,
 						},
 						{
 							path: "causas",
