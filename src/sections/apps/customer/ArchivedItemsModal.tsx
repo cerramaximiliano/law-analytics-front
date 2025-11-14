@@ -181,47 +181,51 @@ const ArchivedItemsModal = ({
 			</DialogTitle>
 			<Divider />
 
-			<DialogContent sx={{ p: 2.5 }}>
-				<Box sx={{ minHeight: 400 }}>
-					{/* Notification alert */}
+			<DialogContent sx={{ p: 2.5, height: 650, display: "flex", flexDirection: "column" }}>
+				{/* Notification alert */}
+				<Alert
+					severity="info"
+					icon={<Warning2 variant="Bulk" />}
+					sx={{
+						mb: 3,
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+						bgcolor: alpha(theme.palette.info.main, 0.1),
+						flexShrink: 0,
+					}}
+				>
+					<AlertTitle>{itemType === "contacts" ? "Selección de contactos" : "Selección de causas"}</AlertTitle>
+					Selecciona {itemType === "contacts" ? "los contactos" : "las causas"} que deseas desarchivar marcando las casillas
+					correspondientes.
+				</Alert>
+
+				{error && (
 					<Alert
-						severity="info"
-						icon={<Warning2 variant="Bulk" />}
+						severity="error"
 						sx={{
-							mb: 3,
+							mb: 2,
 							borderRadius: 1.5,
-							border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-							bgcolor: alpha(theme.palette.info.main, 0.1),
+							border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+							bgcolor: alpha(theme.palette.error.main, 0.1),
+							"& .MuiAlert-icon": {
+								alignItems: "center",
+							},
+							flexShrink: 0,
 						}}
 					>
-						<AlertTitle>{itemType === "contacts" ? "Selección de contactos" : "Selección de causas"}</AlertTitle>
-						Selecciona {itemType === "contacts" ? "los contactos" : "las causas"} que deseas desarchivar marcando las casillas
-						correspondientes.
+						{error}
 					</Alert>
+				)}
 
-					{error && (
-						<Alert
-							severity="error"
-							sx={{
-								mb: 2,
-								borderRadius: 1.5,
-								border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
-								bgcolor: alpha(theme.palette.error.main, 0.1),
-								"& .MuiAlert-icon": {
-									alignItems: "center",
-								},
-							}}
-						>
-							{error}
-						</Alert>
-					)}
-
+				<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 					{loading ? (
-						<Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
+						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }}>
 							<CircularProgress />
 						</Stack>
 					) : items.length === 0 ? (
-						<EmptyResults message={`No hay ${itemType === "contacts" ? "contactos" : "causas"} archivados`} />
+						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }}>
+							<EmptyResults message={`No hay ${itemType === "contacts" ? "contactos" : "causas"} archivados`} />
+						</Stack>
 					) : (
 						<Paper
 							sx={{
@@ -229,10 +233,13 @@ const ArchivedItemsModal = ({
 								overflow: "hidden",
 								borderRadius: 2,
 								boxShadow: theme.shadows[2],
+								flex: 1,
+								display: "flex",
+								flexDirection: "column",
 							}}
 						>
-							<TableContainer sx={{ maxHeight: 400 }}>
-								<Table>
+							<TableContainer sx={{ flex: 1, overflow: "auto" }}>
+								<Table stickyHeader>
 									<TableHead>
 										<TableRow>
 											<TableCell
@@ -359,7 +366,7 @@ const ArchivedItemsModal = ({
 
 				{/* Pagination controls */}
 				{pagination && pagination.totalPages > 1 && (
-					<Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+					<Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
 						<Stack direction="row" spacing={2} alignItems="center">
 							<Typography variant="body2" color="textSecondary">
 								Mostrando {items.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0} -{" "}
