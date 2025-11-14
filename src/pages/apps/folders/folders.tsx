@@ -34,7 +34,7 @@ import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
 import { PopupTransition } from "components/@extended/Transitions";
-import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination, TableRowSelection } from "components/third-party/ReactTable";
+import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
 import { formatFolderName } from "utils/formatFolderName";
 import SEO from "components/SEO/SEO";
@@ -545,6 +545,8 @@ const FoldersLayout = () => {
 	const [archivedModalOpen, setArchivedModalOpen] = useState(false);
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 	const [guideOpen, setGuideOpen] = useState(false);
+	const [archivedPage, setArchivedPage] = useState(1);
+	const [archivedPageSize, setArchivedPageSize] = useState(10);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [menuRowId, setMenuRowId] = useState<string | null>(null);
@@ -566,7 +568,7 @@ const FoldersLayout = () => {
 
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
-	const { folders, archivedFolders, isLoader } = useSelector((state) => state.folder);
+	const { folders, archivedFolders, archivedPagination, isLoader } = useSelector((state) => state.folder);
 	const subscription = useSelector((state) => state.auth.subscription);
 
 	// Separar folders en categorías
@@ -767,7 +769,7 @@ const FoldersLayout = () => {
 
 		try {
 			loadingRef.current = true;
-			await dispatch(getArchivedFoldersByUserId(user._id));
+			await dispatch(getArchivedFoldersByUserId(user._id, archivedPage, archivedPageSize));
 			setArchivedModalOpen(true);
 		} catch (error) {
 			setSnackbarMessage("Error al obtener causas archivadas");
@@ -776,11 +778,51 @@ const FoldersLayout = () => {
 		} finally {
 			loadingRef.current = false;
 		}
-	}, [user?._id]);
+	}, [user?._id, archivedPage, archivedPageSize]);
 
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
+		setArchivedPage(1); // Resetear a página 1 al cerrar
 	}, []);
+
+	const handleArchivedPageChange = useCallback(
+		async (page: number) => {
+			if (!user?._id || loadingRef.current) return;
+
+			try {
+				loadingRef.current = true;
+				setArchivedPage(page);
+				await dispatch(getArchivedFoldersByUserId(user._id, page, archivedPageSize));
+			} catch (error) {
+				setSnackbarMessage("Error al cambiar de página");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			} finally {
+				loadingRef.current = false;
+			}
+		},
+		[user?._id, archivedPageSize],
+	);
+
+	const handleArchivedPageSizeChange = useCallback(
+		async (pageSize: number) => {
+			if (!user?._id || loadingRef.current) return;
+
+			try {
+				loadingRef.current = true;
+				setArchivedPageSize(pageSize);
+				setArchivedPage(1); // Resetear a página 1 cuando cambia el tamaño
+				await dispatch(getArchivedFoldersByUserId(user._id, 1, pageSize));
+			} catch (error) {
+				setSnackbarMessage("Error al cambiar tamaño de página");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			} finally {
+				loadingRef.current = false;
+			}
+		},
+		[user?._id],
+	);
 
 	const handleOpenGuide = useCallback(() => {
 		setGuideOpen(true);
@@ -1511,6 +1553,9 @@ const FoldersLayout = () => {
 					onUnarchive={handleUnarchiveSelected}
 					loading={loadingUnarchive}
 					itemType="folders"
+					pagination={archivedPagination}
+					onPageChange={handleArchivedPageChange}
+					onPageSizeChange={handleArchivedPageSizeChange}
 				/>
 
 				{/* Guía de causas */}

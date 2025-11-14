@@ -96,9 +96,17 @@ export type FolderData = {
 	lastMovementDate?: string; // Fecha del último movimiento
 };
 
+export type PaginationInfo = {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+};
+
 export type FolderState = {
 	folders: FolderData[];
 	archivedFolders: FolderData[];
+	archivedPagination: PaginationInfo;
 	selectedFolders: FolderData[];
 	folder: FolderData | null;
 	isLoader: boolean;

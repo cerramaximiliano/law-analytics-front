@@ -27,6 +27,10 @@ import {
 	useTheme,
 	alpha,
 	Grid,
+	Pagination,
+	Select,
+	MenuItem,
+	FormControl,
 } from "@mui/material";
 
 // project-imports
@@ -35,6 +39,13 @@ import EmptyResults from "./EmptyResults";
 import { Archive, Warning2 } from "iconsax-react"; // Assuming you're using iconsax-react for icons
 
 // types
+interface PaginationInfo {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+}
+
 interface ArchivedItemsModalProps {
 	open: boolean;
 	onClose: () => void;
@@ -43,11 +54,25 @@ interface ArchivedItemsModalProps {
 	onUnarchive: (selectedIds: string[]) => void;
 	loading: boolean;
 	itemType: "folders" | "contacts";
+	pagination?: PaginationInfo;
+	onPageChange?: (page: number) => void;
+	onPageSizeChange?: (pageSize: number) => void;
 }
 
 // ==============================|| ARCHIVED ITEMS MODAL ||============================== //
 
-const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading, itemType }: ArchivedItemsModalProps) => {
+const ArchivedItemsModal = ({
+	open,
+	onClose,
+	title,
+	items,
+	onUnarchive,
+	loading,
+	itemType,
+	pagination,
+	onPageChange,
+	onPageSizeChange,
+}: ArchivedItemsModalProps) => {
 	const [selected, setSelected] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const theme = useTheme();
@@ -331,6 +356,39 @@ const ArchivedItemsModal = ({ open, onClose, title, items, onUnarchive, loading,
 						</Paper>
 					)}
 				</Box>
+
+				{/* Pagination controls */}
+				{pagination && pagination.totalPages > 1 && (
+					<Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+						<Stack direction="row" spacing={2} alignItems="center">
+							<Typography variant="body2" color="textSecondary">
+								Mostrando {items.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0} -{" "}
+								{Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}
+							</Typography>
+							{onPageSizeChange && (
+								<FormControl size="small" sx={{ minWidth: 120 }}>
+									<Select value={pagination.limit} onChange={(e) => onPageSizeChange(Number(e.target.value))} disabled={loading}>
+										<MenuItem value={5}>5 por página</MenuItem>
+										<MenuItem value={10}>10 por página</MenuItem>
+										<MenuItem value={25}>25 por página</MenuItem>
+										<MenuItem value={50}>50 por página</MenuItem>
+									</Select>
+								</FormControl>
+							)}
+						</Stack>
+						{onPageChange && (
+							<Pagination
+								count={pagination.totalPages}
+								page={pagination.page}
+								onChange={(_event, page) => onPageChange(page)}
+								color="primary"
+								disabled={loading}
+								showFirstButton
+								showLastButton
+							/>
+						)}
+					</Box>
+				)}
 			</DialogContent>
 
 			<Divider />

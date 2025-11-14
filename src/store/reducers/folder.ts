@@ -25,6 +25,12 @@ const SET_FOLDER_SORT = "SET_FOLDER_SORT";
 const initialFolderState: FolderState = {
 	folders: [],
 	archivedFolders: [],
+	archivedPagination: {
+		total: 0,
+		page: 1,
+		limit: 10,
+		totalPages: 0,
+	},
 	selectedFolders: [],
 	folder: null,
 	isLoader: false,
@@ -64,7 +70,8 @@ const folder = (state = initialFolderState, action: any) => {
 		case GET_ARCHIVED_FOLDERS:
 			return {
 				...state,
-				archivedFolders: action.payload,
+				archivedFolders: action.payload.folders,
+				archivedPagination: action.payload.pagination,
 				isLoader: false,
 			};
 		case GET_FOLDER_BY_ID:
@@ -369,31 +376,45 @@ export const archiveFolders = (userId: string, folderIds: string[]) => async (di
 	}
 };
 
-export const getArchivedFoldersByUserId = (userId: string) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_FOLDER_LOADING });
-		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
-		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
-			params: {
-				archived: true,
-				fields,
-			},
-		});
-		if (response.data.success) {
-			dispatch({
-				type: GET_ARCHIVED_FOLDERS,
-				payload: response.data.folders,
+export const getArchivedFoldersByUserId =
+	(userId: string, page: number = 1, limit: number = 10) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
+			const fields =
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
+				params: {
+					archived: true,
+					fields,
+					page,
+					limit,
+				},
 			});
+			if (response.data.success) {
+				dispatch({
+					type: GET_ARCHIVED_FOLDERS,
+					payload: {
+						folders: response.data.folders,
+						pagination: response.data.pagination,
+					},
+				});
+				return {
+					success: true,
+					folders: response.data.folders,
+					pagination: response.data.pagination,
+				};
+			}
+			return { success: false };
+		} catch (error) {
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders archivados" : "Error desconocido",
+			});
+			return { success: false };
 		}
-	} catch (error) {
-		dispatch({
-			type: SET_FOLDER_ERROR,
-			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders archivados" : "Error desconocido",
-		});
-	}
-};
+	};
 
 export const unarchiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
 	try {
