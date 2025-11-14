@@ -39,6 +39,7 @@ import InvoiceView from "./InvoiceView";
 import { useNavigate } from "react-router";
 import { RootState } from "store";
 import { fetchCurrentSubscription, updateSubscription, fetchPaymentHistory, selectPaymentHistory } from "store/reducers/auth";
+import dayjs from "utils/dayjs-config";
 
 // ==============================|| ACCOUNT PROFILE - SUBSCRIPTION ||============================== //
 
@@ -415,12 +416,26 @@ const TabSubscription = () => {
 		const status = getGracePeriodStatus(expiryDate);
 		const formattedDate = formatDate(expiryDate);
 
+		// Verificar si el archivado automático ya fue procesado
+		const processedAt = subscription?.downgradeGracePeriod?.processedAt;
+		const autoArchiveScheduled = subscription?.downgradeGracePeriod?.autoArchiveScheduled;
+
 		switch (status) {
 			case "future":
 				return `Después de la cancelación, tendrás hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
 			case "today":
+				// Si ya se procesó el archivado automático
+				if (processedAt && !autoArchiveScheduled) {
+					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
+					return `El archivado automático del contenido que excedía los límites del plan gratuito se realizó el ${processedDate}.`;
+				}
 				return `Hoy es el último día para archivar el contenido que exceda los límites del plan gratuito. El sistema archivará automáticamente el contenido excedente al finalizar el día.`;
 			case "past":
+				// Si ya se procesó el archivado automático y tenemos la fecha
+				if (processedAt) {
+					const processedDate = dayjs(processedAt).format("D [de] MMMM [de] YYYY [a las] HH:mm");
+					return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito fue archivado automáticamente el ${processedDate}.`;
+				}
 				return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito ha sido archivado automáticamente.`;
 			default:
 				return `Después de la cancelación, tendrás hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;

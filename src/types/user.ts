@@ -138,6 +138,7 @@ export interface Subscription {
 		previousPlan: string;
 		targetPlan: string;
 		expiresAt: Date;
+		processedAt?: Date;
 		originalLimits?: {
 			maxFolders: number;
 			maxCalculators: number;
