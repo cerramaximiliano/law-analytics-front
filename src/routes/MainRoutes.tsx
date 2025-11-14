@@ -79,9 +79,6 @@ const SubscriptionError = Loadable(lazyRetry(() => import("pages/apps/subscripti
 const HelpPage = Loadable(lazyRetry(() => import("pages/help")));
 
 // admin pages
-const AdminMailingPage = Loadable(lazyRetry(() => import("pages/admin/marketing/mailing")));
-const AdminTemplatesPage = Loadable(lazyRetry(() => import("pages/admin/marketing/templates")));
-const AdminContactsPage = Loadable(lazyRetry(() => import("pages/admin/marketing/contacts")));
 const AdminPlansPage = Loadable(lazyRetry(() => import("pages/admin/plans")));
 const AdminUsersPage = Loadable(lazyRetry(() => import("pages/admin/users")));
 const AdminCausasVerifiedPage = Loadable(lazyRetry(() => import("pages/admin/causas/verified")));
@@ -330,23 +327,6 @@ const MainRoutes = {
 					path: "admin",
 					element: <AdminRoleGuard />,
 					children: [
-						{
-							path: "marketing",
-							children: [
-								{
-									path: "mailing",
-									element: <AdminMailingPage />,
-								},
-								{
-									path: "templates",
-									element: <AdminTemplatesPage />,
-								},
-								{
-									path: "contacts",
-									element: <AdminContactsPage />,
-								},
-							],
-						},
 						{
 							path: "plans",
 							element: <AdminPlansPage />,
