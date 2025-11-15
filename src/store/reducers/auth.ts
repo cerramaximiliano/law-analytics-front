@@ -386,30 +386,39 @@ export const updateSubscription = (subscription: Subscription | null) => (dispat
 };
 
 // Acción para obtener la suscripción actual desde la API
-export const fetchCurrentSubscription = () => async (dispatch: any, getState: () => RootState) => {
+export const fetchCurrentSubscription = (forceRefresh = false) => async (dispatch: any, getState: () => RootState) => {
 	try {
 		// Verificar si ya tenemos la suscripción en el estado
 		const { subscription } = getState().auth;
-		if (subscription) {
+		if (subscription && !forceRefresh) {
+			console.log("📦 Usando suscripción del caché:", subscription);
 			return subscription;
 		}
 
-		// Si no existe, hacer la llamada a la API
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscription/current`, {
+		console.log("🌐 Haciendo petición al servidor para obtener suscripción...");
+		// Si no existe o se fuerza refresh, hacer la llamada a la API
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/current`, {
 			withCredentials: true,
 		});
 
 		console.log("🔔 Subscription Response:", response.data);
 
 		if (response.data && response.data.success && response.data.subscription) {
-			console.log("📅 currentPeriodEnd:", response.data.subscription.currentPeriodEnd);
-			console.log("📅 currentPeriodStart:", response.data.subscription.currentPeriodStart);
-			console.log("❌ cancelAtPeriodEnd:", response.data.subscription.cancelAtPeriodEnd);
-			console.log("📋 Full subscription object:", response.data.subscription);
+			const sub = response.data.subscription;
+			console.log("📅 currentPeriodEnd:", sub.currentPeriodEnd);
+			console.log("📅 currentPeriodStart:", sub.currentPeriodStart);
+			console.log("❌ cancelAtPeriodEnd:", sub.cancelAtPeriodEnd);
+			console.log("📊 limits:", sub.limits);
+			console.log("📊 limitsWithDescriptions:", sub.limitsWithDescriptions);
+			console.log("📊 limitDetails:", sub.limitDetails);
+			console.log("✨ features:", sub.features);
+			console.log("✨ featuresWithDescriptions:", sub.featuresWithDescriptions);
+			console.log("✨ featureDetails:", sub.featureDetails);
+			console.log("📋 Full subscription object:", sub);
 
 			// Actualizar el estado con la suscripción
-			dispatch(updateSubscription(response.data.subscription));
-			return response.data.subscription;
+			dispatch(updateSubscription(sub));
+			return sub;
 		} else {
 			throw new Error(response.data?.message || "Error al obtener la suscripción");
 		}
@@ -578,7 +587,14 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 			throw new Error(response.data?.message || "Error al obtener el historial de pagos");
 		}
 	} catch (error: any) {
-		// Si hay error, actualizar con null
+		// Si es un error 500 relacionado con suscripción no encontrada, tratarlo como sin facturas
+		if (error.response?.status === 500) {
+			// Para suscripciones free sin facturas, simplemente retornar array vacío sin mostrar error
+			dispatch(updatePaymentHistory([], null));
+			return { payments: [], customer: null };
+		}
+
+		// Si hay otro tipo de error, actualizar con null
 		dispatch(updatePaymentHistory(null, null));
 
 		// No mostrar error si es 401 (usuario no autenticado)

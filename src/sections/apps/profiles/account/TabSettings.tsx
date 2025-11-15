@@ -39,6 +39,7 @@ import InvoiceView from "./InvoiceView";
 import { useNavigate } from "react-router";
 import { RootState } from "store";
 import { fetchCurrentSubscription, updateSubscription, fetchPaymentHistory, selectPaymentHistory } from "store/reducers/auth";
+import { openSnackbar } from "store/reducers/snackbar";
 import dayjs from "utils/dayjs-config";
 
 // ==============================|| ACCOUNT PROFILE - SUBSCRIPTION ||============================== //
@@ -94,20 +95,32 @@ const TabSubscription = () => {
 	// Estado para mostrar la factura personalizada
 	const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 	const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+
+	// Estado para métodos de pago
+	const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+	const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<any>(null);
+	const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(false);
+	const [paymentMethodsError, setPaymentMethodsError] = useState<string | null>(null);
+	const [changingPaymentMethod, setChangingPaymentMethod] = useState(false);
+	const [openingBillingPortal, setOpeningBillingPortal] = useState(false);
+
 	// Función para cargar los datos de la suscripción
-	const fetchSubscription = async () => {
+	const fetchSubscription = async (forceRefresh = true) => {
 		try {
 			setLoading(true);
 			setError(null);
 
-			// Usar la acción de Redux para obtener la suscripción
-			const subscriptionData = await dispatch(fetchCurrentSubscription() as any);
+			console.log("🔄 Iniciando carga de suscripción...");
+			// Usar la acción de Redux para obtener la suscripción (forzar refresh por defecto)
+			const subscriptionData = await dispatch(fetchCurrentSubscription(forceRefresh) as any);
+			console.log("✅ Suscripción cargada:", subscriptionData);
 
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscriptionData && subscriptionData.pendingPlanChange) {
 				setNextPlan(getStripeValue(subscriptionData.pendingPlanChange.planId));
 			}
 		} catch (err: any) {
+			console.error("❌ Error al cargar suscripción:", err);
 			// Solo mostrar error si no es 401 (usuario no autenticado)
 			if (err.response?.status !== 401) {
 				setError("Error al cargar los datos de suscripción");
@@ -128,7 +141,8 @@ const TabSubscription = () => {
 		} catch (err: any) {
 			// Error handling is done in the Redux action
 			// Just update local error state if needed
-			if (err.response?.status !== 401) {
+			// No mostrar error para 401 (no autenticado) ni 500 (suscripción no encontrada - caso free)
+			if (err.response?.status !== 401 && err.response?.status !== 500) {
 				setPaymentsError(err.message || "Error al cargar el historial de pagos");
 			}
 		} finally {
@@ -136,11 +150,142 @@ const TabSubscription = () => {
 		}
 	};
 
+	// Función para cargar los métodos de pago
+	const loadPaymentMethods = async () => {
+		try {
+			setPaymentMethodsLoading(true);
+			setPaymentMethodsError(null);
+
+			const response = await ApiService.getPaymentMethods();
+
+			if (response.success) {
+				setPaymentMethods(response.paymentMethods || []);
+				setDefaultPaymentMethod(response.defaultPaymentMethod || null);
+			} else {
+				setPaymentMethodsError(response.message || "Error al cargar métodos de pago");
+			}
+		} catch (err: any) {
+			// Solo mostrar error si no es 401 (no autenticado) ni 500 (sin métodos de pago)
+			if (err.response?.status !== 401 && err.response?.status !== 500) {
+				setPaymentMethodsError(err.message || "Error al cargar los métodos de pago");
+			}
+		} finally {
+			setPaymentMethodsLoading(false);
+		}
+	};
+
+	// Función para actualizar el método de pago predeterminado
+	const handleChangePaymentMethod = async (paymentMethodId: string) => {
+		try {
+			setChangingPaymentMethod(true);
+
+			const response = await ApiService.updatePaymentMethod(paymentMethodId);
+
+			if (response.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Método de pago actualizado correctamente",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: false,
+					}),
+				);
+
+				// Recargar los métodos de pago
+				await loadPaymentMethods();
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Error al actualizar el método de pago",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: false,
+					}),
+				);
+			}
+		} catch (err: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: err.message || "Error al actualizar el método de pago",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: false,
+				}),
+			);
+		} finally {
+			setChangingPaymentMethod(false);
+		}
+	};
+
+	// Función para abrir el Stripe Billing Portal
+	const handleOpenBillingPortal = async () => {
+		try {
+			setOpeningBillingPortal(true);
+
+			// Obtener la URL actual para redirigir de vuelta después
+			const returnUrl = window.location.href;
+
+			const response = await ApiService.createBillingPortalSession(returnUrl);
+
+			if (response.success && response.url) {
+				// Redirigir al portal de Stripe
+				window.location.href = response.url;
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: response.message || "Error al abrir el portal de facturación",
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: false,
+					}),
+				);
+			}
+		} catch (err: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: err.message || "Error al abrir el portal de facturación",
+					variant: "alert",
+					alert: {
+						color: "error",
+					},
+					close: false,
+				}),
+			);
+		} finally {
+			setOpeningBillingPortal(false);
+		}
+	};
+
+	// Cargar suscripción al montar el componente (siempre forzar refresh)
 	useEffect(() => {
-		// Si no hay suscripción en el estado, cargarla
-		if (!subscription) {
-			fetchSubscription();
-		} else {
+		console.log("🔄 Componente montado, forzando recarga de suscripción...");
+		fetchSubscription();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []); // Solo al montar
+
+	useEffect(() => {
+		if (subscription) {
+			// ADVERTENCIA: Si la suscripción no tiene limits o features, significa que fue reseteada en el servidor
+			if (!subscription.limits || !subscription.features) {
+				console.warn("⚠️ ADVERTENCIA: La suscripción no tiene todos los campos necesarios.");
+				console.warn("⚠️ Esto puede ocurrir si la suscripción fue reseteada en el servidor.");
+				console.warn("⚠️ El servidor debe incluir limits, features, limitDetails y featuresWithDescriptions.");
+				console.warn("⚠️ Objeto de suscripción recibido:", subscription);
+			}
+
 			// Log temporal para ver todas las características
 			console.log("=== TODAS LAS CARACTERÍSTICAS DE LA SUSCRIPCIÓN ===");
 			console.log("Plan:", subscription.plan);
@@ -150,12 +295,20 @@ const TabSubscription = () => {
 			console.log("Calculators:", subscription.limits?.calculators);
 			console.log("Contacts:", subscription.limits?.contacts);
 			console.log("Storage:", subscription.limits?.storage);
+			console.log("\n--- LÍMITES CON DESCRIPCIONES (subscription.limitsWithDescriptions) ---");
+			console.log("limitsWithDescriptions:", subscription.limitsWithDescriptions);
+			console.log("\n--- DETALLES DE LÍMITES (subscription.limitDetails) ---");
+			console.log("limitDetails:", subscription.limitDetails);
 			console.log("\n--- CARACTERÍSTICAS (subscription.features) ---");
 			if (subscription.features) {
 				Object.entries(subscription.features).forEach(([key, value]) => {
 					console.log(`${key}:`, value);
 				});
 			}
+			console.log("\n--- CARACTERÍSTICAS CON DESCRIPCIONES (subscription.featuresWithDescriptions) ---");
+			console.log("featuresWithDescriptions:", subscription.featuresWithDescriptions);
+			console.log("\n--- DETALLES DE CARACTERÍSTICAS (subscription.featureDetails) ---");
+			console.log("featureDetails:", subscription.featureDetails);
 			console.log("\n--- OBJETO COMPLETO ---");
 			console.log(subscription);
 
@@ -170,6 +323,13 @@ const TabSubscription = () => {
 	useEffect(() => {
 		if (subscription && !payments.length) {
 			loadPaymentHistory();
+		}
+	}, [subscription]);
+
+	// Cargar métodos de pago cuando se carga la suscripción (solo para planes de pago)
+	useEffect(() => {
+		if (subscription && subscription.plan !== "free") {
+			loadPaymentMethods();
 		}
 	}, [subscription]);
 
@@ -1539,6 +1699,285 @@ const TabSubscription = () => {
 						</MainCard>
 					</Grid>
 				)}
+
+			{/* Sección de Métodos de Pago */}
+			{subscription && subscription.plan !== "free" && (
+				<Grid item xs={12}>
+					<MainCard
+						title={
+							<Stack direction="row" alignItems="center" spacing={2}>
+								<Typography variant="h5" fontWeight={600}>
+									Métodos de pago
+								</Typography>
+								{paymentMethods.length > 0 && (
+									<Chip
+										label={`${paymentMethods.length} ${paymentMethods.length === 1 ? "método" : "métodos"}`}
+										size="small"
+										color="primary"
+										variant="outlined"
+										sx={{ fontWeight: 500, borderRadius: 1 }}
+									/>
+								)}
+							</Stack>
+						}
+						sx={{
+							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
+							overflow: "hidden",
+						}}
+					>
+						<>
+							{paymentMethodsLoading ? (
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 5 }}>
+									<CircularProgress size={30} thickness={3} />
+								</Box>
+							) : paymentMethodsError ? (
+								<Alert
+									severity="error"
+									variant="filled"
+									sx={{
+										mt: 2,
+										borderRadius: 2,
+										boxShadow: "0 4px 12px 0 rgba(0,0,0,0.06)",
+									}}
+								>
+									<Typography variant="body2">{paymentMethodsError}</Typography>
+								</Alert>
+							) : paymentMethods.length === 0 ? (
+								<Box
+									sx={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "center",
+										justifyContent: "center",
+										py: 5,
+										bgcolor: "background.neutral",
+										borderRadius: 2,
+									}}
+								>
+									<Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+										No se encontraron métodos de pago para esta cuenta.
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Los métodos de pago se agregan automáticamente al suscribirte a un plan.
+									</Typography>
+								</Box>
+							) : (
+								<>
+									<Box sx={{ overflowX: "auto" }}>
+										<TableContainer
+											sx={{
+												borderRadius: 2,
+												boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
+												"& .MuiTable-root": {
+													borderCollapse: "separate",
+													borderSpacing: "0",
+												},
+												"& .MuiTableHead-root": {
+													backgroundColor: "background.neutral",
+												},
+												"& .MuiTableRow-root:last-child .MuiTableCell-root": {
+													borderBottom: "none",
+												},
+											}}
+										>
+											<Table>
+												<TableHead>
+													<TableRow>
+														<TableCell
+															sx={{
+																fontWeight: 600,
+																fontSize: "0.875rem",
+																py: 2,
+																borderTopLeftRadius: 8,
+																borderBottom: "2px solid",
+																borderColor: "divider",
+															}}
+														>
+															Tipo de tarjeta
+														</TableCell>
+														<TableCell
+															sx={{
+																fontWeight: 600,
+																fontSize: "0.875rem",
+																py: 2,
+																borderBottom: "2px solid",
+																borderColor: "divider",
+															}}
+														>
+															Número
+														</TableCell>
+														<TableCell
+															sx={{
+																fontWeight: 600,
+																fontSize: "0.875rem",
+																py: 2,
+																borderBottom: "2px solid",
+																borderColor: "divider",
+															}}
+														>
+															Vencimiento
+														</TableCell>
+														<TableCell
+															sx={{
+																fontWeight: 600,
+																fontSize: "0.875rem",
+																py: 2,
+																borderBottom: "2px solid",
+																borderColor: "divider",
+															}}
+														>
+															Estado
+														</TableCell>
+														<TableCell
+															align="center"
+															sx={{
+																fontWeight: 600,
+																fontSize: "0.875rem",
+																py: 2,
+																borderTopRightRadius: 8,
+																borderBottom: "2px solid",
+																borderColor: "divider",
+															}}
+														>
+															Acciones
+														</TableCell>
+													</TableRow>
+												</TableHead>
+												<TableBody>
+													{paymentMethods.map((method) => {
+														const isDefault = defaultPaymentMethod?.id === method.id;
+														return (
+															<TableRow key={method.id} hover>
+																<TableCell
+																	sx={{
+																		borderBottom: "1px solid",
+																		borderColor: "divider",
+																		py: 2,
+																		fontWeight: 500,
+																	}}
+																>
+																	{method.card?.brand ? method.card.brand.charAt(0).toUpperCase() + method.card.brand.slice(1) : "Tarjeta"}
+																</TableCell>
+																<TableCell
+																	sx={{
+																		borderBottom: "1px solid",
+																		borderColor: "divider",
+																		py: 2,
+																	}}
+																>
+																	•••• {method.card?.last4 || "****"}
+																</TableCell>
+																<TableCell
+																	sx={{
+																		borderBottom: "1px solid",
+																		borderColor: "divider",
+																		py: 2,
+																	}}
+																>
+																	{method.card?.exp_month && method.card?.exp_year
+																		? `${String(method.card.exp_month).padStart(2, "0")}/${method.card.exp_year}`
+																		: "No disponible"}
+																</TableCell>
+																<TableCell
+																	sx={{
+																		borderBottom: "1px solid",
+																		borderColor: "divider",
+																		py: 2,
+																	}}
+																>
+																	{isDefault ? (
+																		<Chip label="Predeterminado" color="success" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+																	) : (
+																		<Chip label="Disponible" color="default" size="small" sx={{ fontWeight: 600, borderRadius: 1 }} />
+																	)}
+																</TableCell>
+																<TableCell
+																	align="center"
+																	sx={{
+																		borderBottom: "1px solid",
+																		borderColor: "divider",
+																		py: 2,
+																	}}
+																>
+																	{!isDefault && (
+																		<Button
+																			size="small"
+																			variant="outlined"
+																			color="primary"
+																			onClick={() => handleChangePaymentMethod(method.id)}
+																			disabled={changingPaymentMethod}
+																			sx={{
+																				borderRadius: 1.5,
+																				px: 2,
+																				py: 0.75,
+																				minWidth: 0,
+																				fontWeight: 600,
+																			}}
+																		>
+																			{changingPaymentMethod ? <CircularProgress size={16} /> : "Establecer como predeterminado"}
+																		</Button>
+																	)}
+																</TableCell>
+															</TableRow>
+														);
+													})}
+												</TableBody>
+											</Table>
+										</TableContainer>
+									</Box>
+
+									<Alert
+										severity="info"
+										variant="outlined"
+										sx={{
+											mt: 3,
+											borderRadius: 2,
+											borderWidth: 1.5,
+										}}
+									>
+										<Typography variant="body2">
+											<strong>Nota:</strong> El método de pago predeterminado se utilizará para los cargos automáticos de tu suscripción.
+										</Typography>
+									</Alert>
+								</>
+							)}
+
+							{/* Botón para gestionar métodos de pago */}
+							<Box
+								sx={{
+									mt: 3,
+									display: "flex",
+									justifyContent: "center",
+									alignItems: "center",
+									flexDirection: "column",
+									gap: 2,
+								}}
+							>
+								<Button
+									variant="contained"
+									color="primary"
+									onClick={handleOpenBillingPortal}
+									disabled={openingBillingPortal}
+									startIcon={openingBillingPortal ? <CircularProgress size={20} color="inherit" /> : null}
+									sx={{
+										borderRadius: 2,
+										px: 4,
+										py: 1.25,
+										fontWeight: 600,
+										boxShadow: "0 4px 12px 0 rgba(0,0,0,0.1)",
+										minWidth: 250,
+									}}
+								>
+									{openingBillingPortal ? "Abriendo portal..." : "Gestionar métodos de pago"}
+								</Button>
+								<Typography variant="caption" color="text.secondary" sx={{ textAlign: "center", maxWidth: 400 }}>
+									Se abrirá el portal seguro de Stripe donde podrás agregar, eliminar o actualizar tus métodos de pago.
+								</Typography>
+							</Box>
+						</>
+					</MainCard>
+				</Grid>
+			)}
 
 			<Grid item xs={12}>
 				<MainCard

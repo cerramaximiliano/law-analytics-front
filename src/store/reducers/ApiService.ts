@@ -754,6 +754,57 @@ class ApiService {
 	// and stored in Redux auth state. Use the fetchPaymentHistory action from auth reducer instead.
 
 	/**
+	 * Obtiene los métodos de pago del usuario
+	 * @returns {Promise<Object>} Lista de métodos de pago
+	 */
+	static async getPaymentMethods(): Promise<any> {
+		try {
+			const response = await axios.get(`${API_BASE_URL}/api/subscriptions/payment-methods`, {
+				withCredentials: true,
+			});
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Actualiza el método de pago predeterminado
+	 * @param {string} paymentMethodId - ID del método de pago a establecer como predeterminado
+	 * @returns {Promise<Object>} Resultado de la operación
+	 */
+	static async updatePaymentMethod(paymentMethodId: string): Promise<any> {
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/subscriptions/payment-methods`,
+				{ paymentMethodId },
+				{ withCredentials: true },
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Crea una sesión del Stripe Billing Portal
+	 * @param {string} returnUrl - URL a la que redirigir después de salir del portal
+	 * @returns {Promise<Object>} Resultado con la URL del portal
+	 */
+	static async createBillingPortalSession(returnUrl: string): Promise<any> {
+		try {
+			const response = await axios.post(
+				`${API_BASE_URL}/api/subscriptions/billing-portal`,
+				{ returnUrl },
+				{ withCredentials: true },
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
 	 * Cancela un downgrade programado
 	 * @returns {Promise<Object>} Resultado de la operación
 	 */
