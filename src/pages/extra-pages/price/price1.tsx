@@ -36,7 +36,7 @@ import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/Api
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import TabLegalDocuments from "./TabPanel";
-import { getPlanPricing, formatPrice, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
+import { getPlanPricing, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
 
 // ==============================|| PRICING ||============================== //
 
@@ -787,28 +787,36 @@ const Pricing = () => {
 													<Stack spacing={0} textAlign="center">
 														<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
 														<Typography>{plan.description}</Typography>
-														{/* Mostrar mensaje de cancelación para plan Free */}
-														{plan.planId === "free" && isAlreadyCanceled && currentSubscription?.currentPeriodEnd && (
-															<Typography variant="caption" color="error.main" sx={{ mt: 0.5, fontWeight: 600 }}>
-																Tu plan volverá a Free el{" "}
-																{new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR", {
-																	day: "2-digit",
-																	month: "2-digit",
-																	year: "numeric",
-																})}
-															</Typography>
-														)}
-														{/* Mostrar mensaje de cancelación para plan actual */}
-														{isCurrentPlan && isAlreadyCanceled && currentSubscription?.currentPeriodEnd && (
-															<Typography variant="caption" color="success.main" sx={{ mt: 0.5, fontWeight: 600 }}>
-																Cancelado. Activo hasta el{" "}
-																{new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR", {
-																	day: "2-digit",
-																	month: "2-digit",
-																	year: "numeric",
-																})}
-															</Typography>
-														)}
+														{/* Mostrar mensaje de cancelación para plan Free SOLO si el plan actual es un plan de pago cancelado */}
+														{plan.planId === "free" &&
+															isAlreadyCanceled &&
+															currentPlanId !== "free" &&
+															(currentPlanId === "standard" || currentPlanId === "premium") &&
+															currentSubscription?.currentPeriodEnd && (
+																<Typography variant="caption" color="error.main" sx={{ mt: 0.5, fontWeight: 600 }}>
+																	Tu plan volverá a Free el{" "}
+																	{new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR", {
+																		day: "2-digit",
+																		month: "2-digit",
+																		year: "numeric",
+																	})}
+																</Typography>
+															)}
+														{/* Mostrar mensaje de cancelación SOLO para el plan de pago actual que está cancelado (no para Free) */}
+														{isCurrentPlan &&
+															isAlreadyCanceled &&
+															currentPlanId !== "free" &&
+															(currentPlanId === "standard" || currentPlanId === "premium") &&
+															currentSubscription?.currentPeriodEnd && (
+																<Typography variant="caption" color="success.main" sx={{ mt: 0.5, fontWeight: 600 }}>
+																	Cancelado. Activo hasta el{" "}
+																	{new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR", {
+																		day: "2-digit",
+																		month: "2-digit",
+																		year: "numeric",
+																	})}
+																</Typography>
+															)}
 													</Stack>
 												</Grid>
 
@@ -825,12 +833,10 @@ const Pricing = () => {
 												<Grid item xs={12}>
 													<Button
 														color={
-															isCurrentPlan && isAlreadyCanceled
+															isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free"
 																? "success"
 																: isDowngradeToFree
 																? "error"
-																: plan.planId === "free" && isAlreadyCanceled
-																? "warning"
 																: getButtonColor(plan.planId, isCurrentPlan)
 														}
 														variant={isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined"}
@@ -839,13 +845,17 @@ const Pricing = () => {
 															!plan.isActive ||
 															loadingPlanId !== null ||
 															reactivating ||
-															(plan.planId === "free" && isAlreadyCanceled) ||
-															(isCurrentPlan && !isAlreadyCanceled)
+															(isCurrentPlan && !isAlreadyCanceled) ||
+															// Deshabilitar botón en card Free si hay un plan de pago cancelado (volverá automáticamente a Free)
+															(plan.planId === "free" &&
+																isAlreadyCanceled &&
+																currentPlanId !== "free" &&
+																(currentPlanId === "standard" || currentPlanId === "premium"))
 														}
 														onClick={() => {
 															if (plan.isActive && !loadingPlanId && !reactivating) {
-																if (isCurrentPlan && isAlreadyCanceled) {
-																	// Si es el plan actual cancelado, reactivar
+																// Solo permitir reactivar si es plan de pago (no free) y está cancelado
+																if (isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free") {
 																	handleReactivateSubscription();
 																} else if (isDowngradeToFree) {
 																	// Si es downgrade a free, abrir diálogo de confirmación
@@ -868,14 +878,12 @@ const Pricing = () => {
 															? "No disponible"
 															: reactivating
 															? "Reactivando..."
-															: isCurrentPlan && isAlreadyCanceled
+															: isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free"
 															? "Reactivar Suscripción"
 															: isCurrentPlan
 															? "Plan Actual"
 															: loadingPlanId === plan.planId
 															? "Procesando..."
-															: plan.planId === "free" && isAlreadyCanceled
-															? "Cancelación Programada"
 															: isDowngradeToFree
 															? "Cancelar Suscripción"
 															: "Suscribirme"}
