@@ -35,8 +35,37 @@ import ApiService from "store/reducers/ApiService";
 import { cleanPlanDisplayName } from "utils/planPricingUtils";
 
 // assets
-import { TickCircle, Star1, Flash, Crown, ArrowRight2 } from "iconsax-react";
+import {
+	TickCircle,
+	Star1,
+	Flash,
+	Crown,
+	ArrowRight2,
+	Chart,
+	DocumentDownload,
+	MessageQuestion,
+	ArrowsVertical,
+	Link,
+	Calendar,
+} from "iconsax-react";
 import target from "assets/images/analytics/target.svg";
+
+// Helper para mapear iconos
+const getIconComponent = (iconName: string) => {
+	const iconMap: { [key: string]: any } = {
+		Chart: Chart,
+		DocumentDownload: DocumentDownload,
+		MessageQuestion: MessageQuestion,
+		ArrowsVertical: ArrowsVertical,
+		Link: Link,
+		Calendar: Calendar,
+		Crown: Crown,
+		Flash: Flash,
+		Star1: Star1,
+		TickCircle: TickCircle,
+	};
+	return iconMap[iconName] || TickCircle;
+};
 
 // ==============================|| SUBSCRIPTION SUCCESS ||============================== //
 
@@ -49,9 +78,16 @@ const SubscriptionSuccess = () => {
 	const [showContent, setShowContent] = useState(false);
 	const [showFeatures, setShowFeatures] = useState(false);
 	const [redirectCountdown, setRedirectCountdown] = useState(10);
+	const [planDetails, setPlanDetails] = useState<any>(null);
+	const [loadingPlanDetails, setLoadingPlanDetails] = useState(true);
 
 	const user = useSelector((state) => state.auth.user);
 	const userStats = useSelector((state) => state.userStats.data);
+
+	// Obtener parámetros de URL
+	const searchParams = new URLSearchParams(window.location.search);
+	const planId = searchParams.get("plan");
+	const sessionId = searchParams.get("session_id");
 
 	useEffect(() => {
 		// Mostrar notificación de éxito
@@ -66,6 +102,28 @@ const SubscriptionSuccess = () => {
 				close: false,
 			}),
 		);
+
+		// Función para cargar detalles del plan
+		const loadPlanDetails = async () => {
+			if (planId) {
+				try {
+					console.log(`Cargando detalles del plan: ${planId}`);
+					const response = await ApiService.getPlanDetails(planId);
+
+					if (response.success && response.plan) {
+						console.log("Detalles del plan cargados:", response.plan);
+						setPlanDetails(response.plan);
+					}
+				} catch (error) {
+					console.error("Error al cargar detalles del plan:", error);
+					// Continuar sin detalles del plan
+				} finally {
+					setLoadingPlanDetails(false);
+				}
+			} else {
+				setLoadingPlanDetails(false);
+			}
+		};
 
 		// Sincronizar suscripción como fallback (en caso de que el webhook falle)
 		const syncSubscription = async () => {
@@ -98,8 +156,8 @@ const SubscriptionSuccess = () => {
 			}
 		};
 
-		// Ejecutar sincronización
-		syncSubscription();
+		// Ejecutar sincronización y carga de detalles del plan en paralelo
+		Promise.all([syncSubscription(), loadPlanDetails()]);
 
 		// Actualizar stats del usuario (puede obtener datos adicionales)
 		dispatch(fetchUserStats());
@@ -121,15 +179,27 @@ const SubscriptionSuccess = () => {
 		}, 1000);
 
 		return () => clearInterval(timer);
-	}, [navigate]);
+	}, [navigate, planId]);
 
-	// Características del plan (podrías personalizarlas según el plan adquirido)
-	const planFeatures = [
-		{ icon: <Crown />, text: "Acceso completo a todas las funciones premium" },
-		{ icon: <Flash />, text: "Sin límites en carpetas y contactos" },
-		{ icon: <Star1 />, text: "Soporte prioritario 24/7" },
-		{ icon: <TickCircle />, text: "Almacenamiento ampliado" },
-	];
+	// Características del plan - usar datos dinámicos o fallback
+	const planFeatures = React.useMemo(() => {
+		if (planDetails && planDetails.features && planDetails.features.length > 0) {
+			// Usar características del plan desde la API
+			return planDetails.features.map((feature: any) => {
+				const IconComponent = getIconComponent(feature.icon);
+				return {
+					icon: <IconComponent />,
+					text: feature.name,
+				};
+			});
+		}
+
+		// Fallback: características genéricas mientras carga
+		return [
+			{ icon: <Crown />, text: "Cargando características del plan..." },
+			{ icon: <Flash />, text: "Un momento por favor" },
+		];
+	}, [planDetails]);
 
 	return (
 		<Container fixed>
@@ -214,9 +284,9 @@ const SubscriptionSuccess = () => {
 											<Typography variant="body1" color="success.dark" sx={{ mt: 1 }}>
 												{user?.firstName} {user?.lastName}
 											</Typography>
-											{userStats?.planInfo?.planName && (
+											{(planDetails?.name || userStats?.planInfo?.planName) && (
 												<Chip
-													label={cleanPlanDisplayName(userStats.planInfo.planName)}
+													label={planDetails?.name || cleanPlanDisplayName(userStats.planInfo.planName)}
 													color="success"
 													sx={{ mt: 2, fontWeight: 600 }}
 													icon={<Crown size={16} />}

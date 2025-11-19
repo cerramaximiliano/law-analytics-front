@@ -801,6 +801,20 @@ class ApiService {
 	}
 
 	/**
+	 * Obtiene los detalles de un plan específico
+	 * @param {string} planId - ID del plan (standard, premium, free)
+	 * @returns {Promise<Object>} Detalles del plan incluyendo features, limits y pricing
+	 */
+	static async getPlanDetails(planId: string): Promise<any> {
+		try {
+			const response = await axios.get(`${API_BASE_URL}/api/subscriptions/plan-details/${planId}`, { withCredentials: true });
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
 	 * Cancela un downgrade programado
 	 * @returns {Promise<Object>} Resultado de la operación
 	 */
