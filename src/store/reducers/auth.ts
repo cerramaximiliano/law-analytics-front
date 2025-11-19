@@ -386,64 +386,66 @@ export const updateSubscription = (subscription: Subscription | null) => (dispat
 };
 
 // Acción para obtener la suscripción actual desde la API
-export const fetchCurrentSubscription = (forceRefresh = false) => async (dispatch: any, getState: () => RootState) => {
-	try {
-		// Verificar si ya tenemos la suscripción en el estado
-		const { subscription } = getState().auth;
-		if (subscription && !forceRefresh) {
-			console.log("📦 Usando suscripción del caché:", subscription);
-			return subscription;
+export const fetchCurrentSubscription =
+	(forceRefresh = false) =>
+	async (dispatch: any, getState: () => RootState) => {
+		try {
+			// Verificar si ya tenemos la suscripción en el estado
+			const { subscription } = getState().auth;
+			if (subscription && !forceRefresh) {
+				console.log("📦 Usando suscripción del caché:", subscription);
+				return subscription;
+			}
+
+			console.log("🌐 Haciendo petición al servidor para obtener suscripción...");
+			// Si no existe o se fuerza refresh, hacer la llamada a la API
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/current`, {
+				withCredentials: true,
+			});
+
+			console.log("🔔 Subscription Response:", response.data);
+
+			if (response.data && response.data.success && response.data.subscription) {
+				const sub = response.data.subscription;
+				console.log("📅 currentPeriodEnd:", sub.currentPeriodEnd);
+				console.log("📅 currentPeriodStart:", sub.currentPeriodStart);
+				console.log("❌ cancelAtPeriodEnd:", sub.cancelAtPeriodEnd);
+				console.log("📊 limits:", sub.limits);
+				console.log("📊 limitsWithDescriptions:", sub.limitsWithDescriptions);
+				console.log("📊 limitDetails:", sub.limitDetails);
+				console.log("✨ features:", sub.features);
+				console.log("✨ featuresWithDescriptions:", sub.featuresWithDescriptions);
+				console.log("✨ featureDetails:", sub.featureDetails);
+				console.log("📋 Full subscription object:", sub);
+
+				// Actualizar el estado con la suscripción
+				dispatch(updateSubscription(sub));
+				return sub;
+			} else {
+				throw new Error(response.data?.message || "Error al obtener la suscripción");
+			}
+		} catch (error: any) {
+			// Si hay error, actualizar con null
+			dispatch(updateSubscription(null));
+
+			// No mostrar error si es 401 (usuario no autenticado)
+			if (error.response?.status !== 401) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: extractErrorMessage(error),
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: false,
+					}),
+				);
+			}
+
+			throw error;
 		}
-
-		console.log("🌐 Haciendo petición al servidor para obtener suscripción...");
-		// Si no existe o se fuerza refresh, hacer la llamada a la API
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/current`, {
-			withCredentials: true,
-		});
-
-		console.log("🔔 Subscription Response:", response.data);
-
-		if (response.data && response.data.success && response.data.subscription) {
-			const sub = response.data.subscription;
-			console.log("📅 currentPeriodEnd:", sub.currentPeriodEnd);
-			console.log("📅 currentPeriodStart:", sub.currentPeriodStart);
-			console.log("❌ cancelAtPeriodEnd:", sub.cancelAtPeriodEnd);
-			console.log("📊 limits:", sub.limits);
-			console.log("📊 limitsWithDescriptions:", sub.limitsWithDescriptions);
-			console.log("📊 limitDetails:", sub.limitDetails);
-			console.log("✨ features:", sub.features);
-			console.log("✨ featuresWithDescriptions:", sub.featuresWithDescriptions);
-			console.log("✨ featureDetails:", sub.featureDetails);
-			console.log("📋 Full subscription object:", sub);
-
-			// Actualizar el estado con la suscripción
-			dispatch(updateSubscription(sub));
-			return sub;
-		} else {
-			throw new Error(response.data?.message || "Error al obtener la suscripción");
-		}
-	} catch (error: any) {
-		// Si hay error, actualizar con null
-		dispatch(updateSubscription(null));
-
-		// No mostrar error si es 401 (usuario no autenticado)
-		if (error.response?.status !== 401) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: extractErrorMessage(error),
-					variant: "alert",
-					alert: {
-						color: "error",
-					},
-					close: false,
-				}),
-			);
-		}
-
-		throw error;
-	}
-};
+	};
 
 // Selector para obtener la suscripción del estado
 export const selectSubscription = (state: RootState) => state.auth.subscription;

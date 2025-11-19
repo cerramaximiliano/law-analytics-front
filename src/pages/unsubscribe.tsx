@@ -77,7 +77,7 @@ const UnsubscribePage = () => {
 	};
 
 	return (
-		<Container maxWidth="md" sx={{ mt: 5, mb: 5 }}>
+		<Container maxWidth="md" sx={{ pt: 12, pb: 5, minHeight: "100vh" }}>
 			<Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
 				<LogoMain />
 			</Box>

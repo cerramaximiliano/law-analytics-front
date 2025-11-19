@@ -82,8 +82,8 @@ const DowngradeGracePeriodAlert: React.FC = () => {
 			>
 				<Box>
 					<Typography variant="body2" component="span">
-						<strong>Período de gracia:</strong> Cambio del plan {getPlanName(previousPlan)} al plan {getPlanName(targetPlan)}. Debes
-						archivar los recursos que excedan los límites. Expira el <strong>{formattedExpirationDate}</strong>.
+						<strong>Período de gracia:</strong> Tu plan ha cambiado del plan {getPlanName(previousPlan)} al plan {getPlanName(targetPlan)}.
+						Debes archivar los recursos que excedan los límites antes del <strong>{formattedExpirationDate}</strong>.
 						{autoArchiveScheduled && (
 							<>
 								{" "}

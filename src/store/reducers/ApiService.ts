@@ -793,11 +793,7 @@ class ApiService {
 	 */
 	static async createBillingPortalSession(returnUrl: string): Promise<any> {
 		try {
-			const response = await axios.post(
-				`${API_BASE_URL}/api/subscriptions/billing-portal`,
-				{ returnUrl },
-				{ withCredentials: true },
-			);
+			const response = await axios.post(`${API_BASE_URL}/api/subscriptions/billing-portal`, { returnUrl }, { withCredentials: true });
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
