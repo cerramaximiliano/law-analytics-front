@@ -44,7 +44,7 @@ import {
 	Chart,
 	DocumentDownload,
 	MessageQuestion,
-	ArrowsVertical,
+	ArrowSwapVertical,
 	Link as LinkIcon,
 	Calendar,
 } from "iconsax-react";
@@ -56,7 +56,7 @@ const getIconComponent = (iconName: string) => {
 		Chart: Chart,
 		DocumentDownload: DocumentDownload,
 		MessageQuestion: MessageQuestion,
-		ArrowsVertical: ArrowsVertical,
+		ArrowsVertical: ArrowSwapVertical,
 		Link: LinkIcon,
 		Calendar: Calendar,
 		Crown: Crown,
@@ -286,7 +286,7 @@ const SubscriptionSuccess = () => {
 											</Typography>
 											{(planDetails?.name || userStats?.planInfo?.planName) && (
 												<Chip
-													label={planDetails?.name || cleanPlanDisplayName(userStats.planInfo.planName)}
+													label={planDetails?.name || cleanPlanDisplayName(userStats?.planInfo?.planName || "")}
 													color="success"
 													sx={{ mt: 2, fontWeight: 600 }}
 													icon={<Crown size={16} />}
@@ -342,7 +342,7 @@ const SubscriptionSuccess = () => {
 													Lo que incluye tu plan:
 												</Typography>
 												<List sx={{ p: 0 }}>
-													{planFeatures.map((feature, index) => (
+													{planFeatures.map((feature: any, index: number) => (
 														<Zoom
 															in={showFeatures}
 															timeout={1500 + index * 200}
