@@ -45,7 +45,7 @@ import {
 	DocumentDownload,
 	MessageQuestion,
 	ArrowsVertical,
-	Link,
+	Link as LinkIcon,
 	Calendar,
 } from "iconsax-react";
 import target from "assets/images/analytics/target.svg";
@@ -57,7 +57,7 @@ const getIconComponent = (iconName: string) => {
 		DocumentDownload: DocumentDownload,
 		MessageQuestion: MessageQuestion,
 		ArrowsVertical: ArrowsVertical,
-		Link: Link,
+		Link: LinkIcon,
 		Calendar: Calendar,
 		Crown: Crown,
 		Flash: Flash,
