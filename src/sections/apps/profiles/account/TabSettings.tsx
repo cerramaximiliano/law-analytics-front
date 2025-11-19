@@ -103,6 +103,7 @@ const TabSubscription = () => {
 	const [paymentMethodsError, setPaymentMethodsError] = useState<string | null>(null);
 	const [changingPaymentMethod, setChangingPaymentMethod] = useState(false);
 	const [openingBillingPortal, setOpeningBillingPortal] = useState(false);
+	const [showAllPaymentMethods, setShowAllPaymentMethods] = useState(false);
 
 	// Función para cargar los datos de la suscripción
 	const fetchSubscription = async (forceRefresh = true) => {
@@ -357,7 +358,7 @@ const TabSubscription = () => {
 			case "canceled":
 				return <Chip label="Cancelada" color="error" size="small" />;
 			case "past_due":
-				return <Chip label="Pago pendiente" color="warning" size="small" />;
+				return <Chip label="Pago pendiente" color="warning" size="small" sx={{ color: "text.primary" }} />;
 			case "trialing":
 				return <Chip label="Período de prueba" color="info" size="small" />;
 			case "incomplete":
@@ -430,7 +431,7 @@ const TabSubscription = () => {
 			case "paid":
 				return <Chip label="Pagada" color="success" size="small" />;
 			case "open":
-				return <Chip label="Pendiente" color="warning" size="small" />;
+				return <Chip label="Pendiente" color="warning" size="small" sx={{ color: "text.primary" }} />;
 			case "uncollectible":
 				return <Chip label="Incobrable" color="error" size="small" />;
 			case "void":
@@ -582,7 +583,7 @@ const TabSubscription = () => {
 
 		switch (status) {
 			case "future":
-				return `Después de la cancelación, tendrás hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+				return `Tras el cambio de plan, tienes hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
 			case "today":
 				// Si ya se procesó el archivado automático
 				if (processedAt && !autoArchiveScheduled) {
@@ -598,7 +599,7 @@ const TabSubscription = () => {
 				}
 				return `El período de gracia finalizó el ${formattedDate}. El contenido que excedía los límites del plan gratuito ha sido archivado automáticamente.`;
 			default:
-				return `Después de la cancelación, tendrás hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
+				return `Tras el cambio de plan, tienes hasta el ${formattedDate} para archivar el contenido que exceda los límites del plan gratuito.`;
 		}
 	};
 
@@ -622,6 +623,30 @@ const TabSubscription = () => {
 		}
 
 		return false;
+	};
+
+	// Función para verificar si hay un downgrade activo y relevante
+	const isDowngradeGracePeriodActive = () => {
+		if (!subscription || !subscription.downgradeGracePeriod) return false;
+
+		const { downgradeGracePeriod } = subscription;
+
+		// Verificar que el período de gracia no ha expirado
+		if (downgradeGracePeriod.expiresAt && new Date(downgradeGracePeriod.expiresAt) <= new Date()) {
+			return false;
+		}
+
+		// Verificar que hay un previousPlan definido
+		if (!downgradeGracePeriod.previousPlan) return false;
+
+		// Verificar que el plan actual coincide con el previousPlan del downgrade
+		// Si el plan actual es diferente, significa que hubo otro cambio de plan y el downgradeGracePeriod ya no es relevante
+		if (subscription.plan !== downgradeGracePeriod.previousPlan && subscription.plan !== "free") {
+			return false;
+		}
+
+		// Si llegamos aquí, hay un downgrade activo y relevante
+		return true;
 	};
 
 	// Función para obtener toda la información del período de gracia
@@ -761,31 +786,29 @@ const TabSubscription = () => {
 												borderRadius: 1.5,
 											}}
 										>
-											<Typography variant="body2" color="warning.dark" sx={{ fontWeight: 500 }}>
+											<Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
 												{subscription && new Date(subscription.currentPeriodEnd) < new Date()
 													? `Tu suscripción terminó el ${formatDate(subscription.currentPeriodEnd)}`
 													: `Tu suscripción terminará el ${subscription && formatDate(subscription.currentPeriodEnd)}`}
 											</Typography>
 										</Box>
 
-										{subscription &&
-											subscription.downgradeGracePeriod &&
-											(subscription.plan !== "free" || subscription.downgradeGracePeriod.previousPlan) && (
-												<Alert
-													severity="warning"
-													variant="outlined"
-													sx={{
-														mt: 1,
-														borderWidth: 1.5,
-														borderRadius: 1.5,
-														"& .MuiAlert-icon": { color: "warning.dark" },
-													}}
-												>
-													<Typography variant="body2">
-														{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}
-													</Typography>
-												</Alert>
-											)}
+										{subscription && isDowngradeGracePeriodActive() && (
+											<Alert
+												severity="warning"
+												variant="outlined"
+												sx={{
+													mt: 1,
+													borderWidth: 1.5,
+													borderRadius: 1.5,
+													"& .MuiAlert-icon": { color: "warning.dark" },
+												}}
+											>
+												<Typography variant="body2">
+													{getGracePeriodMessage(subscription.downgradeGracePeriod?.expiresAt || subscription.currentPeriodEnd)}
+												</Typography>
+											</Alert>
+										)}
 									</>
 								)}
 
@@ -1185,12 +1208,15 @@ const TabSubscription = () => {
 											<Stack spacing={1}>
 												<Typography variant="subtitle1" fontWeight={600}>
 													{getGracePeriodInfo()?.willDowngradeToFreePlan
-														? `Tu plan ${getGracePeriodInfo()?.previousPlanName} será cambiado al Plan Gratuito el ${
+														? `Tu plan ${getGracePeriodInfo()?.previousPlanName} ha cambiado al Plan Gratuito el ${
 																getGracePeriodInfo()?.cancellationFormatted
 														  }`
 														: `Tu plan ha cambiado de ${getGracePeriodInfo()?.previousPlanName} a ${getGracePeriodInfo()?.currentPlanName}`}
 												</Typography>
-												<Typography variant="body2">Tienes un período de gracia para ajustar tus datos a los nuevos límites.</Typography>
+												<Typography variant="body2">
+													Tienes hasta el {getGracePeriodInfo()?.expiryFormatted} para ajustar tus datos a los nuevos límites antes de que
+													se archive automáticamente el contenido excedente.
+												</Typography>
 											</Stack>
 										</Alert>
 									)}
@@ -1295,7 +1321,7 @@ const TabSubscription = () => {
 															mb: 0.5,
 														}}
 													>
-														<Typography variant="h5" color={getGracePeriodInfo()?.isExpiringSoon ? "error.dark" : "warning.dark"}>
+														<Typography variant="h5" color={getGracePeriodInfo()?.isExpiringSoon ? "error.dark" : "text.primary"}>
 															D
 														</Typography>
 													</Box>
@@ -1403,302 +1429,300 @@ const TabSubscription = () => {
 			)}
 
 			{/* Comparación de límites cuando hay período de gracia */}
-			{subscription &&
-				subscription.downgradeGracePeriod &&
-				(subscription.plan !== "free" || subscription.downgradeGracePeriod.previousPlan) && (
-					<Grid item xs={12}>
-						<MainCard
-							title={
-								<Stack direction="row" alignItems="center" spacing={1}>
-									<Typography variant="h5" fontWeight={600}>
-										Comparación de Límites
-									</Typography>
-									<Chip label="Importante" size="small" color="primary" sx={{ fontWeight: 600, borderRadius: 1 }} />
-								</Stack>
-							}
-							sx={{
-								boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-								overflow: "hidden",
-							}}
-						>
-							<Stack spacing={2}>
-								<Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-									Revisa los cambios en los límites de tu cuenta para evitar la pérdida de acceso a tus recursos.
+			{subscription && isDowngradeGracePeriodActive() && (
+				<Grid item xs={12}>
+					<MainCard
+						title={
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Typography variant="h5" fontWeight={600}>
+									Comparación de Límites
 								</Typography>
-
-								<TableContainer
-									sx={{
-										borderRadius: 2,
-										boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
-										"& .MuiTable-root": {
-											borderCollapse: "separate",
-											borderSpacing: "0",
-										},
-										"& .MuiTableHead-root": {
-											backgroundColor: "background.neutral",
-										},
-										"& .MuiTableRow-root:last-child .MuiTableCell-root": {
-											borderBottom: "none",
-										},
-									}}
-								>
-									<Table>
-										<TableHead>
-											<TableRow>
-												<TableCell
-													sx={{
-														fontWeight: 600,
-														fontSize: "0.875rem",
-														py: 2,
-														borderTopLeftRadius: 8,
-														borderBottom: "2px solid",
-														borderColor: "divider",
-													}}
-												>
-													Recurso
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														fontSize: "0.875rem",
-														py: 2,
-														borderBottom: "2px solid",
-														borderColor: "divider",
-													}}
-												>
-													<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-														<Typography variant="subtitle2" color="primary.main" sx={{ mb: 0.5 }}>
-															{getGracePeriodInfo()?.previousPlanName}
-														</Typography>
-														<Typography variant="caption" color="text.secondary">
-															Plan Anterior
-														</Typography>
-													</Box>
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														fontSize: "0.875rem",
-														py: 2,
-														borderTopRightRadius: 8,
-														borderBottom: "2px solid",
-														borderColor: "divider",
-													}}
-												>
-													<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-														<Typography variant="subtitle2" color="warning.main" sx={{ mb: 0.5 }}>
-															{getGracePeriodInfo()?.targetPlanName}
-														</Typography>
-														<Typography variant="caption" color="text.secondary">
-															Nuevo Plan
-														</Typography>
-													</Box>
-												</TableCell>
-											</TableRow>
-										</TableHead>
-										<TableBody>
-											<TableRow hover>
-												<TableCell
-													sx={{
-														fontWeight: 500,
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													Carpetas
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "primary.main",
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-														? "Ilimitadas"
-														: subscription &&
-														  subscription.downgradeGracePeriod &&
-														  subscription.downgradeGracePeriod.previousPlan === "standard"
-														? "50"
-														: "5"}
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "text.primary",
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													{(() => {
-														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-														const limits = getPlanLimits(targetPlan);
-														return limits.folders === 999999 ? "Ilimitadas" : limits.folders;
-													})()}
-												</TableCell>
-											</TableRow>
-											<TableRow hover>
-												<TableCell
-													sx={{
-														fontWeight: 500,
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													Calculadoras
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "primary.main",
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-														? "Ilimitadas"
-														: subscription &&
-														  subscription.downgradeGracePeriod &&
-														  subscription.downgradeGracePeriod.previousPlan === "standard"
-														? "20"
-														: "3"}
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "text.primary",
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													{(() => {
-														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-														const limits = getPlanLimits(targetPlan);
-														return limits.calculators === 999999 ? "Ilimitados" : limits.calculators;
-													})()}
-												</TableCell>
-											</TableRow>
-											<TableRow hover>
-												<TableCell
-													sx={{
-														fontWeight: 500,
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													Contactos
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "primary.main",
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-														? "Ilimitados"
-														: subscription &&
-														  subscription.downgradeGracePeriod &&
-														  subscription.downgradeGracePeriod.previousPlan === "standard"
-														? "100"
-														: "10"}
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "text.primary",
-														borderBottom: "1px solid",
-														borderColor: "divider",
-														py: 2,
-													}}
-												>
-													{(() => {
-														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-														const limits = getPlanLimits(targetPlan);
-														return limits.contacts === 999999 ? "Ilimitados" : limits.contacts;
-													})()}
-												</TableCell>
-											</TableRow>
-											<TableRow hover>
-												<TableCell
-													sx={{
-														fontWeight: 500,
-														py: 2,
-													}}
-												>
-													Almacenamiento
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "primary.main",
-														py: 2,
-													}}
-												>
-													{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
-														? "10 GB"
-														: subscription &&
-														  subscription.downgradeGracePeriod &&
-														  subscription.downgradeGracePeriod.previousPlan === "standard"
-														? "1 GB"
-														: "50 MB"}
-												</TableCell>
-												<TableCell
-													align="center"
-													sx={{
-														fontWeight: 600,
-														color: "text.primary",
-														py: 2,
-													}}
-												>
-													{(() => {
-														const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
-														const limits = getPlanLimits(targetPlan);
-														return limits.storage >= 1024 ? `${limits.storage / 1024} GB` : `${limits.storage} MB`;
-													})()}
-												</TableCell>
-											</TableRow>
-										</TableBody>
-									</Table>
-								</TableContainer>
-
-								<Alert
-									severity="info"
-									variant="outlined"
-									sx={{
-										mt: 2,
-										borderRadius: 2,
-										borderWidth: 1.5,
-									}}
-								>
-									<Typography variant="body2">
-										<strong>Recomendación:</strong> Para evitar la pérdida automática de datos, ajusta manualmente tus recursos a los nuevos
-										límites antes de que finalice el período de gracia.
-									</Typography>
-								</Alert>
+								<Chip label="Importante" size="small" color="primary" sx={{ fontWeight: 600, borderRadius: 1 }} />
 							</Stack>
-						</MainCard>
-					</Grid>
-				)}
+						}
+						sx={{
+							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
+							overflow: "hidden",
+						}}
+					>
+						<Stack spacing={2}>
+							<Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+								Revisa los cambios en los límites de tu cuenta para evitar la pérdida de acceso a tus recursos.
+							</Typography>
+
+							<TableContainer
+								sx={{
+									borderRadius: 2,
+									boxShadow: "0 2px 12px 0 rgba(0,0,0,0.04)",
+									"& .MuiTable-root": {
+										borderCollapse: "separate",
+										borderSpacing: "0",
+									},
+									"& .MuiTableHead-root": {
+										backgroundColor: "background.neutral",
+									},
+									"& .MuiTableRow-root:last-child .MuiTableCell-root": {
+										borderBottom: "none",
+									},
+								}}
+							>
+								<Table>
+									<TableHead>
+										<TableRow>
+											<TableCell
+												sx={{
+													fontWeight: 600,
+													fontSize: "0.875rem",
+													py: 2,
+													borderTopLeftRadius: 8,
+													borderBottom: "2px solid",
+													borderColor: "divider",
+												}}
+											>
+												Recurso
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													fontSize: "0.875rem",
+													py: 2,
+													borderBottom: "2px solid",
+													borderColor: "divider",
+												}}
+											>
+												<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+													<Typography variant="subtitle2" color="primary.main" sx={{ mb: 0.5 }}>
+														{getGracePeriodInfo()?.previousPlanName}
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														Plan Anterior
+													</Typography>
+												</Box>
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													fontSize: "0.875rem",
+													py: 2,
+													borderTopRightRadius: 8,
+													borderBottom: "2px solid",
+													borderColor: "divider",
+												}}
+											>
+												<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+													<Typography variant="subtitle2" color="warning.dark" sx={{ mb: 0.5 }}>
+														{getGracePeriodInfo()?.targetPlanName}
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														Nuevo Plan
+													</Typography>
+												</Box>
+											</TableCell>
+										</TableRow>
+									</TableHead>
+									<TableBody>
+										<TableRow hover>
+											<TableCell
+												sx={{
+													fontWeight: 500,
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												Carpetas
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "primary.main",
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
+													? "Ilimitadas"
+													: subscription &&
+													  subscription.downgradeGracePeriod &&
+													  subscription.downgradeGracePeriod.previousPlan === "standard"
+													? "50"
+													: "5"}
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "text.primary",
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												{(() => {
+													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+													const limits = getPlanLimits(targetPlan);
+													return limits.folders === 999999 ? "Ilimitadas" : limits.folders;
+												})()}
+											</TableCell>
+										</TableRow>
+										<TableRow hover>
+											<TableCell
+												sx={{
+													fontWeight: 500,
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												Calculadoras
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "primary.main",
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
+													? "Ilimitadas"
+													: subscription &&
+													  subscription.downgradeGracePeriod &&
+													  subscription.downgradeGracePeriod.previousPlan === "standard"
+													? "20"
+													: "3"}
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "text.primary",
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												{(() => {
+													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+													const limits = getPlanLimits(targetPlan);
+													return limits.calculators === 999999 ? "Ilimitados" : limits.calculators;
+												})()}
+											</TableCell>
+										</TableRow>
+										<TableRow hover>
+											<TableCell
+												sx={{
+													fontWeight: 500,
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												Contactos
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "primary.main",
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
+													? "Ilimitados"
+													: subscription &&
+													  subscription.downgradeGracePeriod &&
+													  subscription.downgradeGracePeriod.previousPlan === "standard"
+													? "100"
+													: "10"}
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "text.primary",
+													borderBottom: "1px solid",
+													borderColor: "divider",
+													py: 2,
+												}}
+											>
+												{(() => {
+													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+													const limits = getPlanLimits(targetPlan);
+													return limits.contacts === 999999 ? "Ilimitados" : limits.contacts;
+												})()}
+											</TableCell>
+										</TableRow>
+										<TableRow hover>
+											<TableCell
+												sx={{
+													fontWeight: 500,
+													py: 2,
+												}}
+											>
+												Almacenamiento
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "primary.main",
+													py: 2,
+												}}
+											>
+												{subscription && subscription.downgradeGracePeriod && subscription.downgradeGracePeriod.previousPlan === "premium"
+													? "10 GB"
+													: subscription &&
+													  subscription.downgradeGracePeriod &&
+													  subscription.downgradeGracePeriod.previousPlan === "standard"
+													? "1 GB"
+													: "50 MB"}
+											</TableCell>
+											<TableCell
+												align="center"
+												sx={{
+													fontWeight: 600,
+													color: "text.primary",
+													py: 2,
+												}}
+											>
+												{(() => {
+													const targetPlan = subscription?.downgradeGracePeriod?.targetPlan || "free";
+													const limits = getPlanLimits(targetPlan);
+													return limits.storage >= 1024 ? `${limits.storage / 1024} GB` : `${limits.storage} MB`;
+												})()}
+											</TableCell>
+										</TableRow>
+									</TableBody>
+								</Table>
+							</TableContainer>
+
+							<Alert
+								severity="info"
+								variant="outlined"
+								sx={{
+									mt: 2,
+									borderRadius: 2,
+									borderWidth: 1.5,
+								}}
+							>
+								<Typography variant="body2">
+									<strong>Recomendación:</strong> Para evitar la pérdida automática de datos, ajusta manualmente tus recursos a los nuevos
+									límites antes de que finalice el período de gracia.
+								</Typography>
+							</Alert>
+						</Stack>
+					</MainCard>
+				</Grid>
+			)}
 
 			{/* Sección de Métodos de Pago */}
 			{subscription && subscription.plan !== "free" && (
@@ -1844,7 +1868,7 @@ const TabSubscription = () => {
 													</TableRow>
 												</TableHead>
 												<TableBody>
-													{paymentMethods.map((method) => {
+													{paymentMethods.slice(0, showAllPaymentMethods ? paymentMethods.length : 5).map((method) => {
 														const isDefault = defaultPaymentMethod?.id === method.id;
 														return (
 															<TableRow key={method.id} hover>
@@ -1925,6 +1949,23 @@ const TabSubscription = () => {
 											</Table>
 										</TableContainer>
 									</Box>
+
+									{paymentMethods.length > 5 && (
+										<Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+											<Button
+												variant="outlined"
+												color="primary"
+												onClick={() => setShowAllPaymentMethods(!showAllPaymentMethods)}
+												sx={{
+													borderRadius: 2,
+													px: 3,
+													fontWeight: 500,
+												}}
+											>
+												{showAllPaymentMethods ? "Ver menos métodos" : "Ver todos"}
+											</Button>
+										</Box>
+									)}
 
 									<Alert
 										severity="info"

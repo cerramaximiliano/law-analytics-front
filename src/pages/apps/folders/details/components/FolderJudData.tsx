@@ -215,19 +215,22 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 		materia: Yup.string().max(255).required("La materia es requerida"),
 		orderStatus: Yup.string().required("La parte es requerida"),
 		status: Yup.string().required("El estado es requerido"),
-		descriptionJudFolder: Yup.string().max(500),
-		initialDateJudFolder: Yup.string().matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-			message: "El formato de fecha debe ser DD/MM/AAAA",
-		}),
-		finalDateJudFolder: Yup.string().when("status", {
-			is: (status: any) => status === "Cerrada",
-			then: () =>
-				Yup.string()
-					.required("Con el estado finalizado debe completar la fecha")
-					.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-						message: "El formato de fecha debe ser DD/MM/AAAA",
-					}),
-			otherwise: () => Yup.string(),
+		judFolder: Yup.object().shape({
+			statusJudFolder: Yup.string(),
+			descriptionJudFolder: Yup.string().max(500),
+			initialDateJudFolder: Yup.string().matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
+				message: "El formato de fecha debe ser DD/MM/AAAA",
+			}),
+			finalDateJudFolder: Yup.string().when("$status", {
+				is: (status: any) => status === "Cerrada",
+				then: () =>
+					Yup.string()
+						.required("Con el estado finalizado debe completar la fecha")
+						.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
+							message: "El formato de fecha debe ser DD/MM/AAAA",
+						}),
+				otherwise: () => Yup.string(),
+			}),
 		}),
 	});
 
@@ -513,7 +516,16 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 									) : (
 										<>
 											<Typography variant="subtitle1">Estado</Typography>
-											<Typography variant="body2">{type === "general" && statusFolder}</Typography>
+											{isEditing ? (
+												<SelectField
+													label="Seleccione un estado"
+													data={data.statusJudicial}
+													name="judFolder.statusJudFolder"
+													style={{ maxHeight: "39.91px" }}
+												/>
+											) : (
+												<Typography variant="body2">{folder?.judFolder?.statusJudFolder || "-"}</Typography>
+											)}
 										</>
 									)}
 								</Grid>
