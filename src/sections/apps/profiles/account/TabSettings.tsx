@@ -1868,7 +1868,7 @@ const TabSubscription = () => {
 													</TableRow>
 												</TableHead>
 												<TableBody>
-													{paymentMethods.slice(0, showAllPaymentMethods ? paymentMethods.length : 5).map((method) => {
+													{paymentMethods.slice(0, showAllPaymentMethods ? paymentMethods.length : 3).map((method) => {
 														const isDefault = defaultPaymentMethod?.id === method.id;
 														return (
 															<TableRow key={method.id} hover>
