@@ -2155,7 +2155,7 @@ const TabSubscription = () => {
 																fontWeight: 500,
 															}}
 														>
-															{payment.receiptNumber}
+															{payment.invoiceNumber || payment.receiptNumber || payment.invoiceId || "N/A"}
 														</TableCell>
 														<TableCell
 															sx={{
