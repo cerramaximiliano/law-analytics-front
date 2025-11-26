@@ -322,19 +322,20 @@ const NavCollapse = ({ menu, level, parentId, setSelectedItems, selectedItems, s
 										</Typography>
 									)
 								}
+								sx={{ flex: 1 }}
 							/>
 						)}
 						{(drawerOpen || (!drawerOpen && level !== 1)) &&
 							(miniMenuOpened || open ? (
 								<>
 									{miniMenuOpened ? (
-										<ArrowRight2 size={12} color={textColor} style={{ marginLeft: 1 }} />
+										<ArrowRight2 size={12} color={textColor} style={{ marginLeft: "auto" }} />
 									) : (
-										<ArrowUp2 size={12} color={textColor} style={{ marginLeft: 1 }} />
+										<ArrowUp2 size={12} color={textColor} style={{ marginLeft: "auto" }} />
 									)}
 								</>
 							) : (
-								<ArrowDown2 size={12} color={textColor} style={{ marginLeft: 1 }} />
+								<ArrowDown2 size={12} color={textColor} style={{ marginLeft: "auto" }} />
 							))}
 
 						{!drawerOpen && (
