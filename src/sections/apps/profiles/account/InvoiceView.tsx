@@ -30,10 +30,11 @@ interface InvoiceProps {
 	open: boolean;
 	onClose: () => void;
 	payment: Payment | null;
+	userEmail?: string;
 }
 
 // Componente para mostrar la factura
-const InvoiceView = ({ open, onClose, payment }: InvoiceProps) => {
+const InvoiceView = ({ open, onClose, payment, userEmail }: InvoiceProps) => {
 	const theme = useTheme();
 	const invoiceRef = useRef(null);
 
@@ -149,10 +150,25 @@ const InvoiceView = ({ open, onClose, payment }: InvoiceProps) => {
 													variant="body2"
 													align="right"
 													sx={{
-														color: payment.status === "paid" ? "success.main" : payment.status === "open" ? "warning.main" : "error.main",
+														color:
+															payment.status === "paid" || payment.status === "succeeded"
+																? "success.main"
+																: payment.status === "open" || payment.status === "pending"
+																? "warning.main"
+																: "error.main",
 													}}
 												>
-													{payment.status === "paid" ? "Pagada" : payment.status === "open" ? "Pendiente" : "Cancelada"}
+													{payment.status === "paid"
+														? "Pagada"
+														: payment.status === "succeeded"
+														? "Completado"
+														: payment.status === "open" || payment.status === "pending"
+														? "Pendiente"
+														: payment.status === "refunded"
+														? "Reembolsado"
+														: payment.status === "failed"
+														? "Fallido"
+														: "Cancelada"}
 												</Typography>
 											</Grid>
 										</Grid>
@@ -169,7 +185,7 @@ const InvoiceView = ({ open, onClose, payment }: InvoiceProps) => {
 							<Grid container spacing={2}>
 								<Grid item xs={12} sm={6}>
 									<Typography variant="subtitle2">Email:</Typography>
-									<Typography variant="body2">{payment.receiptEmail || "No disponible"}</Typography>
+									<Typography variant="body2">{payment.receiptEmail || userEmail || "No disponible"}</Typography>
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Typography variant="subtitle2">ID de Cliente:</Typography>

@@ -78,6 +78,8 @@ const TabSubscription = () => {
 	const subscription = useSelector((state: RootState) => state.auth.subscription);
 	// Obtener el historial de pagos del estado Redux
 	const payments = useSelector(selectPaymentHistory) || [];
+	// Obtener el email del usuario para las facturas
+	const userEmail = useSelector((state: RootState) => state.auth.user?.email || state.auth.email || "");
 
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -387,17 +389,36 @@ const TabSubscription = () => {
 		return formatter.format(amount);
 	};
 
-	// Obtener estado de factura
+	// Obtener estado de factura/pago
 	const getPaymentStatusChip = (status: string) => {
 		switch (status) {
+			// Estados de facturas (Invoice)
 			case "paid":
 				return <Chip label="Pagada" color="success" size="small" />;
 			case "open":
 				return <Chip label="Pendiente" color="warning" size="small" sx={{ color: "text.primary" }} />;
+			case "draft":
+				return <Chip label="Borrador" color="default" size="small" />;
 			case "uncollectible":
 				return <Chip label="Incobrable" color="error" size="small" />;
 			case "void":
 				return <Chip label="Anulada" color="default" size="small" />;
+			// Estados de pagos/charges (Charge)
+			case "succeeded":
+				return <Chip label="Completado" color="success" size="small" />;
+			case "pending":
+				return <Chip label="Pendiente" color="warning" size="small" sx={{ color: "text.primary" }} />;
+			case "failed":
+				return <Chip label="Fallido" color="error" size="small" />;
+			case "refunded":
+				return <Chip label="Reembolsado" color="info" size="small" />;
+			case "partially_refunded":
+				return <Chip label="Reembolso parcial" color="info" size="small" />;
+			case "disputed":
+				return <Chip label="Disputado" color="warning" size="small" sx={{ color: "text.primary" }} />;
+			case "canceled":
+			case "cancelled":
+				return <Chip label="Cancelado" color="default" size="small" />;
 			default:
 				return <Chip label={status} color="default" size="small" />;
 		}
@@ -2346,7 +2367,7 @@ const TabSubscription = () => {
 			</Dialog>
 
 			{/* Diálogo de factura personalizada */}
-			<InvoiceView open={invoiceDialogOpen} onClose={handleCloseInvoiceDialog} payment={selectedPayment} />
+			<InvoiceView open={invoiceDialogOpen} onClose={handleCloseInvoiceDialog} payment={selectedPayment} userEmail={userEmail} />
 
 			{/* Snackbar para mensajes de éxito */}
 			<Snackbar
