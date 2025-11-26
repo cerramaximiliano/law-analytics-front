@@ -10,7 +10,6 @@ export function getCurrentEnvironment(): "development" | "production" {
 
 	// Si la variable está definida, usarla directamente
 	if (envVariable === "production" || envVariable === "development") {
-		console.log("🔧 Environment from VITE_ENVIRONMENT:", envVariable);
 		return envVariable;
 	}
 
@@ -22,40 +21,27 @@ export function getCurrentEnvironment(): "development" | "production" {
 	const isLocalhost =
 		(baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) && (currentUrl === "localhost" || currentUrl === "127.0.0.1");
 
-	const detectedEnv = isLocalhost ? "development" : "production";
-
-	// Log para debug
-	console.log("🔧 Environment detection:", {
-		VITE_ENVIRONMENT: envVariable || "not defined",
-		baseUrl,
-		currentUrl,
-		isLocalhost,
-		detectedEnvironment: detectedEnv,
-	});
-
 	// Por defecto, asumimos producción si no es claramente localhost
-	return detectedEnv;
+	return isLocalhost ? "development" : "production";
 }
 
 /**
  * Obtiene la configuración de precios de un plan según el entorno actual
- * Si existe información en environments para el entorno actual, la usa
- * De lo contrario, recurre a pricingInfo (legacy)
+ * Si hasEnvironments es true, el backend ya devolvió pricingInfo con los valores del entorno correcto
+ * De lo contrario, recurre a valores hardcodeados para desarrollo
  */
 export function getPlanPricing(plan: Plan): PlanPricingInfo {
+	// Si el backend indica que tiene environments configurados, usar pricingInfo directamente
+	// El backend ya resuelve los precios según el entorno
+	if (plan.hasEnvironments) {
+		return plan.pricingInfo;
+	}
+
+	// Si existe configuración de environments para el entorno actual (legacy)
 	const environment = getCurrentEnvironment();
-
-	console.log(`🔍 getPlanPricing for ${plan.planId} in ${environment}:`, {
-		hasEnvironments: !!plan.environments,
-		environmentConfig: plan.environments?.[environment],
-		pricingInfo: plan.pricingInfo,
-	});
-
-	// Si existe configuración de environments para el entorno actual
 	if (plan.environments && plan.environments[environment]) {
 		const envConfig = plan.environments[environment];
 		if (envConfig) {
-			console.log(`✅ Using environment config for ${plan.planId}:`, envConfig);
 			return {
 				basePrice: envConfig.basePrice ?? plan.pricingInfo.basePrice,
 				currency: envConfig.currency ?? plan.pricingInfo.currency,
@@ -65,12 +51,10 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 		}
 	}
 
-	// Solución temporal: Si estamos en desarrollo y no hay configuración de environments,
-	// usar valores predefinidos para desarrollo
-	// IMPORTANTE: Solo aplicar estos valores si realmente estamos en desarrollo local
+	// Fallback para desarrollo local sin configuración de environments
 	if (
 		environment === "development" &&
-		!plan.environments &&
+		!plan.hasEnvironments &&
 		(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
 	) {
 		const developmentPrices: Record<string, number> = {
@@ -80,7 +64,6 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 		};
 
 		if (developmentPrices[plan.planId] !== undefined) {
-			console.log(`⚠️ Using hardcoded development prices for ${plan.planId}`);
 			return {
 				basePrice: developmentPrices[plan.planId],
 				currency: "USD",
@@ -90,8 +73,7 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 		}
 	}
 
-	// Fallback a pricingInfo (legacy)
-	console.log(`📌 Using fallback pricingInfo for ${plan.planId}:`, plan.pricingInfo);
+	// Fallback final a pricingInfo
 	return plan.pricingInfo;
 }
 

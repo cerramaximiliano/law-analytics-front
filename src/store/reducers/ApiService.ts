@@ -102,12 +102,14 @@ export interface Plan {
 	isDefault: boolean;
 	resourceLimits: ResourceLimit[];
 	features: PlanFeature[];
-	// Información de entornos con los datos de Stripe
+	// Indica si el backend tiene configuración de environments (el pricingInfo ya viene resuelto)
+	hasEnvironments?: boolean;
+	// Información de entornos con los datos de Stripe (legacy, el backend ahora resuelve esto)
 	environments?: {
 		development?: EnvironmentConfig;
 		production?: EnvironmentConfig;
 	};
-	// Campos legacy para compatibilidad
+	// Información de precios (el backend ya la resuelve según el entorno si hasEnvironments es true)
 	pricingInfo: PlanPricingInfo;
 	createdAt?: {
 		$date: string;
