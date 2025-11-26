@@ -4,7 +4,7 @@ import React from "react";
 import { FormattedMessage } from "react-intl";
 
 // assets
-import { User, Folder2, Notification, Setting3 } from "iconsax-react";
+import { Folder2, Notification, Setting3 } from "iconsax-react";
 
 // type
 import { NavItemType } from "types/menu";
@@ -16,14 +16,6 @@ const admin: NavItemType = {
 	title: <FormattedMessage id="admin" defaultMessage="Administración" />,
 	type: "group",
 	children: [
-		{
-			id: "users",
-			title: <FormattedMessage id="users" defaultMessage="Usuarios" />,
-			type: "item",
-			url: "/admin/users",
-			icon: User,
-			breadcrumbs: false,
-		},
 		{
 			id: "causas",
 			title: <FormattedMessage id="causas" defaultMessage="Carpetas" />,
