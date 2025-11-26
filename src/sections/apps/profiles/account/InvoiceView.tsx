@@ -63,7 +63,7 @@ const InvoiceView = ({ open, onClose, payment, userEmail }: InvoiceProps) => {
 	// Para imprimir la factura
 	const handlePrint = useReactToPrint({
 		content: () => invoiceRef.current,
-		documentTitle: payment ? `Factura_${payment.receiptNumber}` : "Factura",
+		documentTitle: payment ? `Factura_${payment.invoiceNumber || payment.receiptNumber || payment.id}` : "Factura",
 	});
 
 	// Para descargar la factura como PDF (usará la funcionalidad de impresión del navegador)
@@ -131,7 +131,7 @@ const InvoiceView = ({ open, onClose, payment, userEmail }: InvoiceProps) => {
 											</Grid>
 											<Grid item xs={6}>
 												<Typography variant="body2" align="right">
-													{payment.receiptNumber}
+													{payment.invoiceNumber || payment.receiptNumber || payment.invoiceId || "N/A"}
 												</Typography>
 											</Grid>
 											<Grid item xs={6}>

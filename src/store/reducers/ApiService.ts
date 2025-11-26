@@ -206,11 +206,14 @@ export interface Payment {
 	status: string;
 	createdAt: Date;
 	paidAt: Date | null;
+	invoiceId?: string;
+	invoiceNumber?: string;
 	invoiceUrl: string;
 	pdfUrl: string;
 	description: string;
 	receiptEmail: string;
-	receiptNumber: string;
+	receiptNumber?: string;
+	receiptUrl?: string;
 	period: {
 		start: Date | null;
 		end: Date | null;
@@ -219,7 +222,10 @@ export interface Payment {
 		id: string;
 		plan: string;
 	};
-	items: PaymentItem[];
+	items?: PaymentItem[];
+	type?: string;
+	paid?: boolean;
+	refunded?: boolean;
 }
 
 export interface PaymentHistoryResponse {
