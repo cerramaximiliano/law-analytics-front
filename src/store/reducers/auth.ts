@@ -393,30 +393,16 @@ export const fetchCurrentSubscription =
 			// Verificar si ya tenemos la suscripción en el estado
 			const { subscription } = getState().auth;
 			if (subscription && !forceRefresh) {
-				console.log("📦 Usando suscripción del caché:", subscription);
 				return subscription;
 			}
 
-			console.log("🌐 Haciendo petición al servidor para obtener suscripción...");
 			// Si no existe o se fuerza refresh, hacer la llamada a la API
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/current`, {
 				withCredentials: true,
 			});
 
-			console.log("🔔 Subscription Response:", response.data);
-
 			if (response.data && response.data.success && response.data.subscription) {
 				const sub = response.data.subscription;
-				console.log("📅 currentPeriodEnd:", sub.currentPeriodEnd);
-				console.log("📅 currentPeriodStart:", sub.currentPeriodStart);
-				console.log("❌ cancelAtPeriodEnd:", sub.cancelAtPeriodEnd);
-				console.log("📊 limits:", sub.limits);
-				console.log("📊 limitsWithDescriptions:", sub.limitsWithDescriptions);
-				console.log("📊 limitDetails:", sub.limitDetails);
-				console.log("✨ features:", sub.features);
-				console.log("✨ featuresWithDescriptions:", sub.featuresWithDescriptions);
-				console.log("✨ featureDetails:", sub.featureDetails);
-				console.log("📋 Full subscription object:", sub);
 
 				// Actualizar el estado con la suscripción
 				dispatch(updateSubscription(sub));
@@ -570,6 +556,7 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 		// Verificar si ya tenemos el historial de pagos en el estado
 		const { paymentHistory } = getState().auth;
 		if (paymentHistory && paymentHistory.length > 0) {
+			console.log("📋 [fetchPaymentHistory] Usando cache, payments:", paymentHistory);
 			return { payments: paymentHistory, customer: getState().auth.customer };
 		}
 
@@ -577,6 +564,8 @@ export const fetchPaymentHistory = () => async (dispatch: any, getState: () => R
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/payments`, {
 			withCredentials: true,
 		});
+
+		console.log("📋 [fetchPaymentHistory] Respuesta de /api/subscriptions/payments:", response.data);
 
 		if (response.data && response.data.success) {
 			const payments = response.data.data?.payments || response.data.payments || [];

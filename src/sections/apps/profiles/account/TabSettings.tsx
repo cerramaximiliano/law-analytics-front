@@ -111,17 +111,14 @@ const TabSubscription = () => {
 			setLoading(true);
 			setError(null);
 
-			console.log("🔄 Iniciando carga de suscripción...");
 			// Usar la acción de Redux para obtener la suscripción (forzar refresh por defecto)
 			const subscriptionData = await dispatch(fetchCurrentSubscription(forceRefresh) as any);
-			console.log("✅ Suscripción cargada:", subscriptionData);
 
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscriptionData && subscriptionData.pendingPlanChange) {
 				setNextPlan(getStripeValue(subscriptionData.pendingPlanChange.planId));
 			}
 		} catch (err: any) {
-			console.error("❌ Error al cargar suscripción:", err);
 			// Solo mostrar error si no es 401 (usuario no autenticado)
 			if (err.response?.status !== 401) {
 				setError("Error al cargar los datos de suscripción");
@@ -272,47 +269,12 @@ const TabSubscription = () => {
 
 	// Cargar suscripción al montar el componente (siempre forzar refresh)
 	useEffect(() => {
-		console.log("🔄 Componente montado, forzando recarga de suscripción...");
 		fetchSubscription();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []); // Solo al montar
 
 	useEffect(() => {
 		if (subscription) {
-			// ADVERTENCIA: Si la suscripción no tiene limits o features, significa que fue reseteada en el servidor
-			if (!subscription.limits || !subscription.features) {
-				console.warn("⚠️ ADVERTENCIA: La suscripción no tiene todos los campos necesarios.");
-				console.warn("⚠️ Esto puede ocurrir si la suscripción fue reseteada en el servidor.");
-				console.warn("⚠️ El servidor debe incluir limits, features, limitDetails y featuresWithDescriptions.");
-				console.warn("⚠️ Objeto de suscripción recibido:", subscription);
-			}
-
-			// Log temporal para ver todas las características
-			console.log("=== TODAS LAS CARACTERÍSTICAS DE LA SUSCRIPCIÓN ===");
-			console.log("Plan:", subscription.plan);
-			console.log("Status:", subscription.status);
-			console.log("\n--- LÍMITES (subscription.limits) ---");
-			console.log("Folders:", subscription.limits?.folders);
-			console.log("Calculators:", subscription.limits?.calculators);
-			console.log("Contacts:", subscription.limits?.contacts);
-			console.log("Storage:", subscription.limits?.storage);
-			console.log("\n--- LÍMITES CON DESCRIPCIONES (subscription.limitsWithDescriptions) ---");
-			console.log("limitsWithDescriptions:", subscription.limitsWithDescriptions);
-			console.log("\n--- DETALLES DE LÍMITES (subscription.limitDetails) ---");
-			console.log("limitDetails:", subscription.limitDetails);
-			console.log("\n--- CARACTERÍSTICAS (subscription.features) ---");
-			if (subscription.features) {
-				Object.entries(subscription.features).forEach(([key, value]) => {
-					console.log(`${key}:`, value);
-				});
-			}
-			console.log("\n--- CARACTERÍSTICAS CON DESCRIPCIONES (subscription.featuresWithDescriptions) ---");
-			console.log("featuresWithDescriptions:", subscription.featuresWithDescriptions);
-			console.log("\n--- DETALLES DE CARACTERÍSTICAS (subscription.featureDetails) ---");
-			console.log("featureDetails:", subscription.featureDetails);
-			console.log("\n--- OBJETO COMPLETO ---");
-			console.log(subscription);
-
 			// Si hay un cambio de plan pendiente, guardarlo
 			if (subscription.pendingPlanChange) {
 				setNextPlan(getStripeValue(subscription.pendingPlanChange.planId));
