@@ -60,6 +60,74 @@ const InvoiceView = ({ open, onClose, payment, userEmail }: InvoiceProps) => {
 		return formatter.format(amount);
 	};
 
+	// Traducir descripciones de Stripe al español
+	const translateDescription = (description: string | null | undefined): string => {
+		if (!description) return "";
+
+		// Mapa de traducciones para descripciones comunes de Stripe
+		const translations: Record<string, string> = {
+			// Suscripciones
+			"Subscription creation": "Creación de suscripción",
+			"Subscription update": "Actualización de suscripción",
+			"Subscription renewal": "Renovación de suscripción",
+			"Subscription cancellation": "Cancelación de suscripción",
+			"Subscription reactivation": "Reactivación de suscripción",
+			// Pagos
+			Payment: "Pago",
+			"Payment for invoice": "Pago de factura",
+			"Invoice payment": "Pago de factura",
+			Charge: "Cargo",
+			Refund: "Reembolso",
+			"Partial refund": "Reembolso parcial",
+			// Planes - con patrones
+			"Plan change": "Cambio de plan",
+			Upgrade: "Mejora de plan",
+			Downgrade: "Reducción de plan",
+			// Pruebas
+			"Trial period": "Período de prueba",
+			"Trial ended": "Prueba finalizada",
+			// Otros
+			"Proration adjustment": "Ajuste de prorrateo",
+			"Unused time": "Tiempo no utilizado",
+			"Remaining time": "Tiempo restante",
+			Credit: "Crédito",
+			Debit: "Débito",
+			"One-time payment": "Pago único",
+		};
+
+		// Buscar traducción exacta
+		if (translations[description]) {
+			return translations[description];
+		}
+
+		// Buscar coincidencias parciales (case insensitive)
+		const lowerDesc = description.toLowerCase();
+		for (const [key, value] of Object.entries(translations)) {
+			if (lowerDesc.includes(key.toLowerCase())) {
+				return description.replace(new RegExp(key, "gi"), value);
+			}
+		}
+
+		// Traducciones con patrones dinámicos
+		const patterns: Array<{ regex: RegExp; replacement: string }> = [
+			{ regex: /^Subscription to (.+)$/i, replacement: "Suscripción a $1" },
+			{ regex: /^Invoice (.+)$/i, replacement: "Factura $1" },
+			{ regex: /^Payment for (.+)$/i, replacement: "Pago por $1" },
+			{ regex: /^Charge for (.+)$/i, replacement: "Cargo por $1" },
+			{ regex: /^(.+) subscription$/i, replacement: "Suscripción $1" },
+			{ regex: /^(.+) plan$/i, replacement: "Plan $1" },
+		];
+
+		for (const pattern of patterns) {
+			if (pattern.regex.test(description)) {
+				return description.replace(pattern.regex, pattern.replacement);
+			}
+		}
+
+		// Si no hay traducción, devolver la descripción original
+		return description;
+	};
+
 	// Para imprimir la factura
 	const handlePrint = useReactToPrint({
 		content: () => invoiceRef.current,
@@ -221,7 +289,7 @@ const InvoiceView = ({ open, onClose, payment, userEmail }: InvoiceProps) => {
 									{payment.items &&
 										payment.items.map((item: PaymentItem, index: number) => (
 											<TableRow key={index}>
-												<TableCell>{item.description}</TableCell>
+												<TableCell>{translateDescription(item.description)}</TableCell>
 												<TableCell align="right">
 													{formatDate(item.period?.start)} - {formatDate(item.period?.end)}
 												</TableCell>
@@ -230,7 +298,9 @@ const InvoiceView = ({ open, onClose, payment, userEmail }: InvoiceProps) => {
 										))}
 									{!payment.items || payment.items.length === 0 ? (
 										<TableRow>
-											<TableCell>{payment.description || `Suscripción plan ${payment.subscription?.plan || "estándar"}`}</TableCell>
+											<TableCell>
+												{translateDescription(payment.description) || `Suscripción plan ${payment.subscription?.plan || "estándar"}`}
+											</TableCell>
 											<TableCell align="right">
 												{formatDate(payment.period?.start)} - {formatDate(payment.period?.end)}
 											</TableCell>
