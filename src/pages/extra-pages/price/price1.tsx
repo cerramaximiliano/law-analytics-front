@@ -73,6 +73,25 @@ const Pricing = () => {
 	// Estado para manejar la reactivación de suscripción
 	const [reactivating, setReactivating] = useState(false);
 
+	// Función helper para actualizar el estado de la suscripción sin recargar la página
+	const updateSubscriptionState = (newPlanId: string, subscriptionData?: { cancelAtPeriodEnd?: boolean; currentPeriodEnd?: string }) => {
+		// Actualizar el plan actual
+		setCurrentPlanId(newPlanId);
+
+		// Actualizar los datos de la suscripción
+		setCurrentSubscription((prev) => ({
+			plan: newPlanId,
+			cancelAtPeriodEnd: subscriptionData?.cancelAtPeriodEnd ?? prev?.cancelAtPeriodEnd ?? false,
+			currentPeriodEnd: subscriptionData?.currentPeriodEnd ?? prev?.currentPeriodEnd,
+		}));
+
+		console.log("📋 Suscripción actualizada:", {
+			plan: newPlanId,
+			cancelAtPeriodEnd: subscriptionData?.cancelAtPeriodEnd,
+			currentPeriodEnd: subscriptionData?.currentPeriodEnd,
+		});
+	};
+
 	// Obtener los planes al cargar el componente
 	useEffect(() => {
 		const fetchPlans = async () => {
@@ -231,19 +250,26 @@ const Pricing = () => {
 					setOptionsDialogOpen(true);
 				}
 			} else if (response.success) {
-				// Respuesta exitosa pero sin URL ni sessionId
-
+				// Respuesta exitosa sin URL ni sessionId - puede ser un cambio de plan con prorrateo
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: response.message || "Operación completada, pero no se pudo iniciar el proceso de pago.",
+						message: response.message || "Plan actualizado exitosamente.",
 						variant: "alert",
 						alert: {
-							color: "warning",
+							color: "success",
 						},
 						close: false,
 					}),
 				);
+
+				// Actualizar el estado con los datos de la respuesta (si están disponibles)
+				if (response.newPlan) {
+					updateSubscriptionState(response.newPlan, {
+						cancelAtPeriodEnd: response.subscription?.cancelAtPeriodEnd ?? false,
+						currentPeriodEnd: response.subscription?.currentPeriodEnd,
+					});
+				}
 			} else {
 				// Respuesta no exitosa
 
@@ -284,7 +310,7 @@ const Pricing = () => {
 			setCancelLoading(true);
 
 			// Llamar al servicio de API para cancelar la suscripción
-			const response = await ApiService.cancelSubscription(true);
+			const response = (await ApiService.cancelSubscription(true)) as any;
 
 			if (response.success) {
 				// Cerrar el diálogo
@@ -303,10 +329,14 @@ const Pricing = () => {
 					}),
 				);
 
-				// Recargar después de 2 segundos para reflejar los cambios
-				setTimeout(() => {
-					window.location.reload();
-				}, 2000);
+				// Actualizar el estado para reflejar la cancelación programada
+				// El plan sigue siendo el mismo, pero ahora está marcado para cancelarse
+				if (currentPlanId) {
+					updateSubscriptionState(currentPlanId, {
+						cancelAtPeriodEnd: true,
+						currentPeriodEnd: response.currentPeriodEnd,
+					});
+				}
 			} else {
 				// Cerrar el diálogo
 				setCancelDialogOpen(false);
@@ -344,10 +374,8 @@ const Pricing = () => {
 					}),
 				);
 
-				// Recargar para actualizar la vista
-				setTimeout(() => {
-					window.location.reload();
-				}, 2000);
+				// Actualizar el estado a plan gratuito
+				updateSubscriptionState("free", { cancelAtPeriodEnd: false });
 			} else {
 				dispatch(
 					openSnackbar({
@@ -388,10 +416,13 @@ const Pricing = () => {
 					}),
 				);
 
-				// Recargar después de 1.5 segundos para reflejar los cambios
-				setTimeout(() => {
-					window.location.reload();
-				}, 1500);
+				// Actualizar el estado para quitar la marca de cancelación
+				if (currentPlanId) {
+					updateSubscriptionState(currentPlanId, {
+						cancelAtPeriodEnd: false,
+						currentPeriodEnd: response.currentPeriodEnd,
+					});
+				}
 			} else {
 				// Mostrar error
 				dispatch(
@@ -483,10 +514,26 @@ const Pricing = () => {
 					}),
 				);
 
-				// Actualizar la página para reflejar los cambios
-				setTimeout(() => {
-					window.location.reload();
-				}, 1500);
+				// Actualizar el estado según la opción seleccionada
+				if (selectedOption === "cancel_downgrade" && currentPlanId) {
+					// Reactivar suscripción - quitar marca de cancelación
+					updateSubscriptionState(currentPlanId, {
+						cancelAtPeriodEnd: false,
+						currentPeriodEnd: response.currentPeriodEnd,
+					});
+				} else if (selectedOption === "immediate_change" && response.newPlan) {
+					// Cambio inmediato - actualizar al nuevo plan
+					updateSubscriptionState(response.newPlan, {
+						cancelAtPeriodEnd: response.subscription?.cancelAtPeriodEnd ?? false,
+						currentPeriodEnd: response.subscription?.currentPeriodEnd,
+					});
+				} else if (selectedOption === "change_after_current" && currentPlanId) {
+					// Cambio programado - el plan actual sigue igual pero está programado para cambiar
+					updateSubscriptionState(currentPlanId, {
+						cancelAtPeriodEnd: true,
+						currentPeriodEnd: response.currentPeriodEnd,
+					});
+				}
 			} else {
 				throw new Error(response.message || "Error al procesar la solicitud");
 			}
