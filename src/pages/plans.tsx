@@ -78,7 +78,7 @@ const Plans = () => {
 							displayName: plan.displayName,
 							pricingInfo: plan.pricingInfo,
 							environments: plan.environments,
-							hasEnvironments: !!plan.environments,
+							hasEnvironments: plan.hasEnvironments,
 						});
 					});
 

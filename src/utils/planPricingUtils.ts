@@ -31,9 +31,16 @@ export function getCurrentEnvironment(): "development" | "production" {
  * De lo contrario, recurre a valores hardcodeados para desarrollo
  */
 export function getPlanPricing(plan: Plan): PlanPricingInfo {
+	// Debug: verificar el valor de hasEnvironments
+	console.log(`🔍 getPlanPricing for ${plan.planId}:`, {
+		hasEnvironments: plan.hasEnvironments,
+		pricingInfo: plan.pricingInfo,
+	});
+
 	// Si el backend indica que tiene environments configurados, usar pricingInfo directamente
 	// El backend ya resuelve los precios según el entorno
 	if (plan.hasEnvironments) {
+		console.log(`✅ Using server pricingInfo for ${plan.planId} (hasEnvironments=true)`);
 		return plan.pricingInfo;
 	}
 
@@ -57,6 +64,7 @@ export function getPlanPricing(plan: Plan): PlanPricingInfo {
 		!plan.hasEnvironments &&
 		(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
 	) {
+		console.log(`⚠️ Using hardcoded development prices for ${plan.planId} (hasEnvironments=${plan.hasEnvironments})`);
 		const developmentPrices: Record<string, number> = {
 			free: 0,
 			standard: 1.99,
