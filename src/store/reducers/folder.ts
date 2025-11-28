@@ -3,6 +3,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
 import { FolderData, FolderState } from "types/folder";
+import { incrementUserStat } from "./userStats";
 
 // Action types
 const SET_FOLDER_LOADING = "SET_FOLDER_LOADING";
@@ -175,6 +176,8 @@ export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) 
 				type: ADD_FOLDER,
 				payload: response.data.folder,
 			});
+			// Incrementar contador de folders en userStats
+			dispatch(incrementUserStat("folders", 1));
 			return { success: true, folder: response.data.folder };
 		}
 		return { success: false, message: response.data.message || "Error al crear folder" };
@@ -303,6 +306,8 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 				type: DELETE_FOLDER,
 				payload: folderId,
 			});
+			// Decrementar contador de folders en userStats
+			dispatch(incrementUserStat("folders", -1));
 			return { success: true };
 		}
 		// Traducir mensaje del servidor si es necesario

@@ -143,6 +143,17 @@ const userStatsReducer = (state = initialState, action: UserStatsActionTypes): U
 export default userStatsReducer;
 
 // Acciones
+
+/**
+ * Incrementa o decrementa un contador de estadísticas del usuario localmente
+ * @param counterType - Tipo de contador: 'folders', 'contacts', 'calculators', etc.
+ * @param value - Valor a incrementar (positivo) o decrementar (negativo)
+ */
+export const incrementUserStat = (counterType: string, value: number = 1) => ({
+	type: INCREMENT_USER_STAT,
+	payload: { counterType, value },
+});
+
 export const fetchUserStats = () => async (dispatch: Dispatch) => {
 	dispatch({ type: FETCH_USER_STATS_REQUEST });
 

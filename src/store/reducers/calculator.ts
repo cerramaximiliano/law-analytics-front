@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import { Dispatch } from "redux";
 
 import { CalculatorType, CalculatorState, FilterParams } from "types/calculator";
+import { incrementUserStat } from "./userStats";
 
 const SET_LOADING = "calculators/SET_LOADING";
 const SET_ERROR = "calculators/SET_ERROR";
@@ -141,6 +142,8 @@ export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "e
 			type: ADD_CALCULATOR,
 			payload: response.data.calculator,
 		});
+		// Incrementar contador de calculators en userStats
+		dispatch(incrementUserStat("calculators", 1));
 		return { success: true, calculator: response.data.calculator };
 	} catch (error: unknown) {
 		// 🔍 LOG: Error del backend
@@ -378,6 +381,8 @@ export const deleteCalculator = (id: string) => async (dispatch: Dispatch) => {
 			type: DELETE_CALCULATOR,
 			payload: id,
 		});
+		// Decrementar contador de calculators en userStats
+		dispatch(incrementUserStat("calculators", -1));
 		return { success: true };
 	} catch (error: unknown) {
 		const errorMessage =

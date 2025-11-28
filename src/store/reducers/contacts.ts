@@ -2,6 +2,7 @@ import axios from "axios";
 import { Dispatch } from "redux";
 // Types for the actions and state
 import { Contact, ContactState, Action } from "types/contact";
+import { incrementUserStat } from "./userStats";
 // action types
 const ADD_CONTACT = "ADD_CONTACT";
 const GET_CONTACTS_BY_USER = "GET_CONTACTS_BY_USER";
@@ -147,6 +148,8 @@ export const addContact = (contactData: Contact) => async (dispatch: Dispatch) =
 				type: ADD_CONTACT,
 				payload: response.data.contact,
 			});
+			// Incrementar contador de contacts en userStats
+			dispatch(incrementUserStat("contacts", 1));
 			return { success: true, contact: response.data.contact };
 		} else {
 			return { success: false };
@@ -388,6 +391,8 @@ export const deleteContact = (contactId: string) => async (dispatch: Dispatch) =
 				type: DELETE_CONTACT,
 				payload: contactId,
 			});
+			// Decrementar contador de contacts en userStats
+			dispatch(incrementUserStat("contacts", -1));
 			return { success: true };
 		}
 		return { success: false, error: "Error desconocido al eliminar contacto" };
