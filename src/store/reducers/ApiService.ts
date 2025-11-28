@@ -756,11 +756,15 @@ class ApiService {
 	/**
 	 * Inicia el proceso de suscripción a un plan
 	 * @param planId - ID del plan al que se quiere suscribir
+	 * @param successUrl - URL de redirección en caso de éxito
+	 * @param cancelUrl - URL de redirección en caso de cancelación
+	 * @param discountCode - Código de descuento opcional
 	 */
 	static async subscribeToPlan(
 		planId: string,
 		successUrl: string,
 		cancelUrl: string,
+		discountCode?: string,
 	): Promise<ApiResponse<{ sessionId?: string; url?: string }>> {
 		try {
 			const response = await axios.post<ApiResponse<{ sessionId?: string; url?: string }>>(
@@ -769,6 +773,7 @@ class ApiService {
 					planId,
 					successUrl,
 					cancelUrl,
+					...(discountCode && { discountCode }),
 				},
 				{ withCredentials: true },
 			);

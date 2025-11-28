@@ -142,7 +142,7 @@ const Pricing = () => {
 		fetchPlans();
 	}, []);
 
-	const handleSubscribe = async (planId: string) => {
+	const handleSubscribe = async (planId: string, discountCode?: string) => {
 		try {
 			setLoadingPlanId(planId); // Activar loading para este plan
 
@@ -160,7 +160,7 @@ const Pricing = () => {
 			}
 
 			// Asegúrate de que la respuesta se reciba como cualquier tipo para acceder a sus propiedades
-			const response = (await ApiService.subscribeToPlan(planId, successUrl, errorUrl)) as any;
+			const response = (await ApiService.subscribeToPlan(planId, successUrl, errorUrl, discountCode)) as any;
 
 			// Si devuelve opciones, mostrar el diálogo
 			if (response.success && response.options && response.options.length > 0) {
@@ -968,7 +968,12 @@ const Pricing = () => {
 																	setCancelDialogOpen(true);
 																} else {
 																	// Si es suscripción normal, usar flujo normal
-																	handleSubscribe(plan.planId);
+																	// Obtener el código de descuento si existe
+																	const discountCode =
+																		plan.activeDiscounts && plan.activeDiscounts.length > 0
+																			? plan.activeDiscounts[0].code
+																			: undefined;
+																	handleSubscribe(plan.planId, discountCode);
 																}
 															}
 														}}
