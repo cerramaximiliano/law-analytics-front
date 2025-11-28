@@ -28,7 +28,6 @@ import search from "./search";
 import unifiedStats from "./unifiedStats";
 import interestRates from "./interestRates";
 import stripeSubscriptions from "./stripe-subscriptions";
-import causas from "./causas";
 import activities from "./activities";
 import notificationMonitoring from "./notificationMonitoring";
 import googleCalendar from "./googleCalendar";
@@ -67,7 +66,6 @@ const reducers = combineReducers({
 	unifiedStats,
 	interestRates,
 	stripeSubscriptions,
-	causas,
 	activities,
 	notificationMonitoring,
 	googleCalendar,

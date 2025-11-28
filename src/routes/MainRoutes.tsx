@@ -1,5 +1,4 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
 
 // project-imports
 import MainLayout from "layout/MainLayout";
@@ -79,12 +78,8 @@ const SubscriptionError = Loadable(lazyRetry(() => import("pages/apps/subscripti
 const HelpPage = Loadable(lazyRetry(() => import("pages/help")));
 
 // admin pages
-const AdminCausasVerifiedPage = Loadable(lazyRetry(() => import("pages/admin/causas/verified")));
-const AdminCausasFoldersPage = Loadable(lazyRetry(() => import("pages/admin/causas/folders")));
-const AdminCausasWorkersPage = Loadable(lazyRetry(() => import("pages/admin/causas/workers")));
 const AdminNotificationsPage = Loadable(lazyRetry(() => import("pages/admin/notifications")));
 const AdminJudicialMovementsPage = Loadable(lazyRetry(() => import("pages/admin/notifications/judicial-movements")));
-const AdminWorkersMevPage = Loadable(lazyRetry(() => import("pages/admin/workers/mev")));
 
 // render - tasks
 const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
@@ -325,36 +320,6 @@ const MainRoutes = {
 					path: "admin",
 					element: <AdminRoleGuard />,
 					children: [
-						{
-							path: "causas",
-							children: [
-								{
-									path: "",
-									element: <Navigate to="verified" replace />,
-								},
-								{
-									path: "verified",
-									element: <AdminCausasVerifiedPage />,
-								},
-								{
-									path: "folders",
-									element: <AdminCausasFoldersPage />,
-								},
-								{
-									path: "workers",
-									element: <AdminCausasWorkersPage />,
-								},
-							],
-						},
-						{
-							path: "workers",
-							children: [
-								{
-									path: "mev",
-									element: <AdminWorkersMevPage />,
-								},
-							],
-						},
 						{
 							path: "notifications",
 							children: [
