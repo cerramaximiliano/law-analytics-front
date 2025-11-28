@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from "react";
-import { Box, Tabs, Tab, useTheme, Skeleton, Typography, Stack, IconButton } from "@mui/material";
-import { CloseCircle, DocumentText } from "iconsax-react";
+import { Box, Tabs, Tab, useTheme, Skeleton, Typography, Stack, Button } from "@mui/material";
+import { DocumentText } from "iconsax-react";
 import LegalDocumentViewer, { LegalDocumentType } from "./LegalDocumentViewer";
 
 interface TabPanelProps {
@@ -54,16 +54,9 @@ const TabLegalDocuments = ({ onClose }: TabLegalDocumentsProps) => {
 				}}
 			>
 				{/* Título */}
-				<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ p: 2, pb: 1 }}>
-					<Stack direction="row" spacing={1} alignItems="center">
-						<DocumentText size={24} color={theme.palette.primary.main} />
-						<Typography variant="h5">Documentos legales de suscripción</Typography>
-					</Stack>
-					{onClose && (
-						<IconButton onClick={onClose} size="small" color="error">
-							<CloseCircle />
-						</IconButton>
-					)}
+				<Stack direction="row" spacing={1} alignItems="center" sx={{ p: 2, pb: 1 }}>
+					<DocumentText size={24} color={theme.palette.primary.main} />
+					<Typography variant="h5">Documentos legales de suscripción</Typography>
 				</Stack>
 
 				{/* Tabs */}
@@ -113,6 +106,25 @@ const TabLegalDocuments = ({ onClose }: TabLegalDocumentsProps) => {
 					</>
 				)}
 			</Box>
+
+			{/* Footer con botón Cerrar */}
+			{onClose && (
+				<Box
+					sx={{
+						p: 2,
+						borderTop: 1,
+						borderColor: "divider",
+						bgcolor: theme.palette.background.default,
+						flexShrink: 0,
+					}}
+				>
+					<Stack direction="row" justifyContent="flex-end">
+						<Button variant="outlined" color="error" onClick={onClose}>
+							Cerrar
+						</Button>
+					</Stack>
+				</Box>
+			)}
 		</Box>
 	);
 };
