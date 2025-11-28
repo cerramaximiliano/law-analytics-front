@@ -547,7 +547,6 @@ class ApiService {
 			const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
 				withCredentials: true,
 			});
-			console.log("📋 GET /api/plan-configs/public response:", response.data);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
@@ -767,14 +766,16 @@ class ApiService {
 		discountCode?: string,
 	): Promise<ApiResponse<{ sessionId?: string; url?: string }>> {
 		try {
+			const requestBody = {
+				planId,
+				successUrl,
+				cancelUrl,
+				...(discountCode && { discountCode }),
+			};
+			console.log("🎫 POST /api/subscriptions/checkout - Request body:", requestBody);
 			const response = await axios.post<ApiResponse<{ sessionId?: string; url?: string }>>(
 				`${API_BASE_URL}/api/subscriptions/checkout`,
-				{
-					planId,
-					successUrl,
-					cancelUrl,
-					...(discountCode && { discountCode }),
-				},
+				requestBody,
 				{ withCredentials: true },
 			);
 			return response.data;
