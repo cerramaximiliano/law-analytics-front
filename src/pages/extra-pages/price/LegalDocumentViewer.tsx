@@ -200,11 +200,20 @@ const LegalDocumentViewer = ({ documentType, planId, title }: LegalDocumentViewe
 								Límites de recursos:
 							</Typography>
 							<List dense disablePadding>
-								{Object.entries(document.planDetails.resourceLimits).map(([key, value], index) => (
-									<ListItem key={index} disableGutters>
-										<ListItemText primary={key} secondary={`${value.limit} ${value.description ? `- ${value.description}` : ""}`} />
-									</ListItem>
-								))}
+								{Object.entries(document.planDetails.resourceLimits).map(([key, value], index) => {
+									const resourceLabels: Record<string, string> = {
+										folders: "Carpetas",
+										calculators: "Cálculos",
+										contacts: "Contactos",
+										storage: "Almacenamiento",
+									};
+									const label = resourceLabels[key] || key;
+									return (
+										<ListItem key={index} disableGutters>
+											<ListItemText primary={label} secondary={`${value.limit} ${value.description ? `- ${value.description}` : ""}`} />
+										</ListItem>
+									);
+								})}
 							</List>
 						</>
 					)}
