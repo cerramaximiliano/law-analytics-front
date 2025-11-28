@@ -144,18 +144,26 @@ const LegalDocumentViewer = ({ documentType, planId, title }: LegalDocumentViewe
 							Información de contacto:
 						</Typography>
 						<List dense disablePadding>
-							<ListItem disableGutters>
-								<ListItemText primary={document.companyDetails.name} secondary={document.companyDetails.address} />
-							</ListItem>
-							<ListItem disableGutters>
-								<ListItemText primary="Email" secondary={document.companyDetails.email} />
-							</ListItem>
-							<ListItem disableGutters>
-								<ListItemText primary="Teléfono" secondary={document.companyDetails.phone} />
-							</ListItem>
-							<ListItem disableGutters>
-								<ListItemText primary="Registro" secondary={document.companyDetails.registrationNumber} />
-							</ListItem>
+							{(document.companyDetails.name || document.companyDetails.address) && (
+								<ListItem disableGutters>
+									<ListItemText primary={document.companyDetails.name} secondary={document.companyDetails.address} />
+								</ListItem>
+							)}
+							{document.companyDetails.email && (
+								<ListItem disableGutters>
+									<ListItemText primary="Email" secondary={document.companyDetails.email} />
+								</ListItem>
+							)}
+							{document.companyDetails.phone && (
+								<ListItem disableGutters>
+									<ListItemText primary="Teléfono" secondary={document.companyDetails.phone} />
+								</ListItem>
+							)}
+							{document.companyDetails.registrationNumber && (
+								<ListItem disableGutters>
+									<ListItemText primary="Registro" secondary={document.companyDetails.registrationNumber} />
+								</ListItem>
+							)}
 						</List>
 					</Paper>
 
