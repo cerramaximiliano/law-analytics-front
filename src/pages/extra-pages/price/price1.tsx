@@ -28,7 +28,7 @@ import {
 } from "@mui/material";
 
 // icons
-import { Lock } from "iconsax-react";
+import { Lock, DiscountShape } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -869,12 +869,71 @@ const Pricing = () => {
 
 												<Grid item xs={12}>
 													<Stack spacing={0} alignItems="center">
-														<Typography variant="h2" sx={price}>
-															${displayPrice}
-														</Typography>
-														<Typography variant="h6" color="textSecondary">
-															{getBillingPeriodText(pricing.billingPeriod)}
-														</Typography>
+														{plan.activeDiscounts && plan.activeDiscounts.length > 0 ? (
+															<>
+																<Stack direction="row" spacing={1.5} alignItems="baseline">
+																	<Typography
+																		variant="h4"
+																		sx={{
+																			textDecoration: "line-through",
+																			color: "text.secondary",
+																			fontWeight: 500,
+																			opacity: 0.8,
+																		}}
+																	>
+																		${plan.activeDiscounts[0].originalPrice}
+																	</Typography>
+																	<Typography variant="h2" sx={{ ...price, color: "success.main" }}>
+																		${plan.activeDiscounts[0].finalPrice}
+																	</Typography>
+																</Stack>
+																<Typography variant="h6" color="textSecondary">
+																	{getBillingPeriodText(pricing.billingPeriod)}
+																</Typography>
+																<Box
+																	sx={{
+																		mt: 1.5,
+																		p: 1,
+																		bgcolor: "success.lighter",
+																		borderRadius: 1,
+																		border: "1px solid",
+																		borderColor: "success.light",
+																		textAlign: "center",
+																	}}
+																>
+																	<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
+																		<DiscountShape size={14} color="var(--mui-palette-success-main)" />
+																		<Chip
+																			label={plan.activeDiscounts[0].badge}
+																			size="small"
+																			color="success"
+																			sx={{ fontWeight: 700, fontSize: "0.7rem" }}
+																		/>
+																	</Stack>
+																	<Typography
+																		variant="caption"
+																		color="success.dark"
+																		sx={{ display: "block", mt: 0.5, fontWeight: 600 }}
+																	>
+																		{plan.activeDiscounts[0].promotionalMessage}
+																	</Typography>
+																	{plan.activeDiscounts[0].durationInMonths && (
+																		<Typography variant="caption" color="success.dark" sx={{ display: "block" }}>
+																			Válido por {plan.activeDiscounts[0].durationInMonths} meses
+																		</Typography>
+																	)}
+																</Box>
+															</>
+														) : (
+															<>
+																<Typography variant="h2" sx={price}>
+																	${displayPrice}
+																</Typography>
+																<Typography variant="h6" color="textSecondary">
+																	{getBillingPeriodText(pricing.billingPeriod)}
+																</Typography>
+															</>
+														)}
 													</Stack>
 												</Grid>
 												<Grid item xs={12}>

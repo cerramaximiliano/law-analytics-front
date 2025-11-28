@@ -91,6 +91,24 @@ export interface PlanFeature {
 	description: string;
 }
 
+export interface ActiveDiscount {
+	code: string;
+	name: string;
+	discountType: "percentage" | "fixed";
+	discountValue: number;
+	validUntil: string;
+	badge: string;
+	promotionalMessage: string;
+	applicablePlans: string[];
+	applicableBillingPeriods: string[];
+	duration: "once" | "repeating" | "forever";
+	durationInMonths?: number;
+	originalPrice: number;
+	discountAmount: number;
+	finalPrice: number;
+	discountPercentage: number;
+}
+
 export interface Plan {
 	_id?: {
 		$oid: string;
@@ -131,6 +149,7 @@ export interface Plan {
 		oldValue: any;
 		newValue: any;
 	}>;
+	activeDiscounts?: ActiveDiscount[];
 }
 
 export interface PlanResourceLimits {
@@ -528,6 +547,7 @@ class ApiService {
 			const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
 				withCredentials: true,
 			});
+			console.log("📋 GET /api/plan-configs/public response:", response.data);
 			return response.data;
 		} catch (error) {
 			throw this.handleAxiosError(error);
