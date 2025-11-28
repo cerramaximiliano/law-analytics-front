@@ -766,16 +766,14 @@ class ApiService {
 		discountCode?: string,
 	): Promise<ApiResponse<{ sessionId?: string; url?: string }>> {
 		try {
-			const requestBody = {
-				planId,
-				successUrl,
-				cancelUrl,
-				...(discountCode && { discountCode }),
-			};
-			console.log("🎫 POST /api/subscriptions/checkout - Request body:", requestBody);
 			const response = await axios.post<ApiResponse<{ sessionId?: string; url?: string }>>(
 				`${API_BASE_URL}/api/subscriptions/checkout`,
-				requestBody,
+				{
+					planId,
+					successUrl,
+					cancelUrl,
+					...(discountCode && { discountCode }),
+				},
 				{ withCredentials: true },
 			);
 			return response.data;
