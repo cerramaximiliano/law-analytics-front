@@ -119,7 +119,7 @@ const TabLegalDocuments = ({ onClose }: TabLegalDocumentsProps) => {
 					}}
 				>
 					<Stack direction="row" justifyContent="flex-end">
-						<Button variant="outlined" color="error" onClick={onClose}>
+						<Button color="error" onClick={onClose} sx={{ minWidth: 100 }}>
 							Cerrar
 						</Button>
 					</Stack>
