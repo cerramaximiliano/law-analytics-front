@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from "react";
-import { Box, Tabs, Tab, useTheme, Skeleton } from "@mui/material";
-import MainCard from "components/MainCard";
+import { Box, Tabs, Tab, useTheme, Skeleton, Typography, Stack, IconButton } from "@mui/material";
+import { CloseCircle, DocumentText } from "iconsax-react";
 import LegalDocumentViewer, { LegalDocumentType } from "./LegalDocumentViewer";
 
 interface TabPanelProps {
@@ -13,7 +13,7 @@ interface TabPanelProps {
 function TabPanel({ children, value, index, ...other }: TabPanelProps) {
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`legal-tabpanel-${index}`} aria-labelledby={`legal-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+			{value === index && <Box>{children}</Box>}
 		</div>
 	);
 }
@@ -25,29 +25,48 @@ function a11yProps(index: number) {
 	};
 }
 
-const TabLegalDocuments = () => {
+interface TabLegalDocumentsProps {
+	onClose?: () => void;
+}
+
+const TabLegalDocuments = ({ onClose }: TabLegalDocumentsProps) => {
 	const [tabValue, setTabValue] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const theme = useTheme();
 
-	// Establecemos una altura mínima para el contenedor de documentos
-	const minDocumentHeight = 600; // Ajusta este valor según la altura mínima que necesites
-
-	const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-		// Activamos el estado de carga cuando cambiamos de pestaña
+	const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
 		setIsLoading(true);
 		setTabValue(newValue);
-
-		// Simulamos un tiempo de carga y luego desactivamos el estado de carga
-		// Esto debería sincronizarse con la carga real del documento
 		setTimeout(() => {
 			setIsLoading(false);
-		}, 800); // Ajusta este tiempo según la duración típica de carga de tus documentos
+		}, 800);
 	};
 
 	return (
-		<MainCard title="Documentos legales de suscripción">
-			<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+		<Box sx={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+			{/* Header fijo con título y tabs */}
+			<Box
+				sx={{
+					bgcolor: theme.palette.primary.lighter,
+					borderBottom: 1,
+					borderColor: "divider",
+					flexShrink: 0,
+				}}
+			>
+				{/* Título */}
+				<Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ p: 2, pb: 1 }}>
+					<Stack direction="row" spacing={1} alignItems="center">
+						<DocumentText size={24} color={theme.palette.primary.main} />
+						<Typography variant="h5">Documentos legales de suscripción</Typography>
+					</Stack>
+					{onClose && (
+						<IconButton onClick={onClose} size="small" color="error">
+							<CloseCircle />
+						</IconButton>
+					)}
+				</Stack>
+
+				{/* Tabs */}
 				<Tabs
 					value={tabValue}
 					onChange={handleChange}
@@ -56,6 +75,7 @@ const TabLegalDocuments = () => {
 					scrollButtons="auto"
 					allowScrollButtonsMobile
 					sx={{
+						px: 2,
 						"& .MuiTabs-indicator": {
 							backgroundColor: theme.palette.primary.main,
 						},
@@ -70,13 +90,12 @@ const TabLegalDocuments = () => {
 				</Tabs>
 			</Box>
 
-			{/* Contenedor con altura mínima fija */}
-			<Box sx={{ minHeight: minDocumentHeight }}>
+			{/* Contenido con scroll */}
+			<Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
 				{isLoading ? (
-					// Skeleton que ocupa el mismo espacio que el documento cargado
 					<Box sx={{ py: 3 }}>
 						<Skeleton variant="rectangular" height={40} width="60%" sx={{ mb: 2 }} />
-						<Skeleton variant="rectangular" height={minDocumentHeight - 100} width="100%" />
+						<Skeleton variant="rectangular" height={400} width="100%" />
 					</Box>
 				) : (
 					<>
@@ -94,7 +113,7 @@ const TabLegalDocuments = () => {
 					</>
 				)}
 			</Box>
-		</MainCard>
+		</Box>
 	);
 };
 

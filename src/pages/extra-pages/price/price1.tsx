@@ -1063,15 +1063,19 @@ const Pricing = () => {
 			</Grid>
 
 			{/* Diálogo para mostrar los documentos legales */}
-			<Dialog open={legalDocsDialogOpen} onClose={handleCloseLegalDocs} maxWidth="lg" fullWidth>
-				<DialogContent sx={{ p: 0 }}>
-					<TabLegalDocuments />
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={handleCloseLegalDocs} color="error">
-						Cerrar
-					</Button>
-				</DialogActions>
+			<Dialog
+				open={legalDocsDialogOpen}
+				onClose={handleCloseLegalDocs}
+				maxWidth="lg"
+				fullWidth
+				sx={{
+					"& .MuiDialog-paper": {
+						height: "80vh",
+						maxHeight: "80vh",
+					},
+				}}
+			>
+				<TabLegalDocuments onClose={handleCloseLegalDocs} />
 			</Dialog>
 
 			{/* Diálogo para mostrar las opciones de downgrade */}
