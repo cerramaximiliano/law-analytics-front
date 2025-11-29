@@ -120,11 +120,14 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 
 					// Almacenar información temporal en sessionStorage (no sensible)
 					secureStorage.setSessionData("reset_email", emailToUse);
-					// NUNCA almacenar el código OTP - debe validarse directamente con el backend
+					secureStorage.setSessionData("reset_code", otp);
 					secureStorage.setSessionData("reset_verified", true);
 
-					// Navegar a la página de reseteo de contraseña
-					navigate("/auth/reset-password", { replace: true });
+					// Navegar a la página de reseteo de contraseña con los datos necesarios
+					navigate("/auth/reset-password", {
+						state: { email: emailToUse, code: otp, verified: true },
+						replace: true,
+					});
 
 					if (onVerificationSuccess) onVerificationSuccess();
 				} else {

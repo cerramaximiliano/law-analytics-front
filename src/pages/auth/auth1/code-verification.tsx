@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { RootState, useSelector } from "store";
 // material-ui
-import { Grid, Stack, Typography } from "@mui/material";
+import { Grid } from "@mui/material";
 
 // project-imports
 import AuthWrapper from "sections/auth/AuthWrapper";
@@ -64,15 +64,6 @@ const CodeVerification = () => {
 	return (
 		<AuthWrapper>
 			<Grid container spacing={3}>
-				<Grid item xs={12}>
-					<Stack spacing={1}>
-						<Typography variant="h3">Ingrese el Código de Verificación</Typography>
-						<Typography color="secondary">Te lo enviamos a tu correo.</Typography>
-					</Stack>
-				</Grid>
-				<Grid item xs={12}>
-					<Typography>Enviamos un código a tu correo.</Typography>
-				</Grid>
 				<Grid item xs={12}>
 					<AuthCodeVerification
 						mode={mode as "register" | "reset"}

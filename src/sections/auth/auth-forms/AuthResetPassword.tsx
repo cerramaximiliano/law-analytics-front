@@ -61,7 +61,7 @@ const AuthResetPassword = () => {
 
 	// Obtener datos de sessionStorage
 	const storedEmail = secureStorage.getSessionData<string>("reset_email");
-	const storedCode = null; // NO almacenamos el código por seguridad
+	const storedCode = secureStorage.getSessionData<string>("reset_code");
 	const storedVerified = secureStorage.getSessionData<boolean>("reset_verified") === true;
 
 	// Usar datos de location.state o localStorage
@@ -132,6 +132,10 @@ const AuthResetPassword = () => {
 
 	return (
 		<>
+			<Stack sx={{ mb: { xs: -0.5, sm: 0.5 } }} spacing={1}>
+				<Typography variant="h3">Reseteo de Password</Typography>
+				<Typography color="secondary">Ingrese un nuevo Password</Typography>
+			</Stack>
 			<Formik
 				initialValues={{
 					password: "",

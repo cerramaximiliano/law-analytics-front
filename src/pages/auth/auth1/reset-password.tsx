@@ -1,6 +1,6 @@
 import React from "react";
 // material-ui
-import { Grid, Stack, Typography } from "@mui/material";
+import { Grid } from "@mui/material";
 
 // project-imports
 import AuthWrapper from "sections/auth/AuthWrapper";
@@ -11,12 +11,6 @@ import AuthResetPassword from "sections/auth/auth-forms/AuthResetPassword";
 const ResetPassword = () => (
 	<AuthWrapper>
 		<Grid container spacing={3}>
-			<Grid item xs={12}>
-				<Stack sx={{ mb: { xs: -0.5, sm: 0.5 } }} spacing={1}>
-					<Typography variant="h3">Reseteo de Password</Typography>
-					<Typography color="secondary">Ingrese un nuevo Password</Typography>
-				</Stack>
-			</Grid>
 			<Grid item xs={12}>
 				<AuthResetPassword />
 			</Grid>
