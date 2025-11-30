@@ -169,7 +169,7 @@ const TabPersonal = () => {
 					}
 				}}
 			>
-				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, setFieldValue, touched, values }) => (
+				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, setFieldValue, touched, values, resetForm }) => (
 					<form noValidate onSubmit={handleSubmit}>
 						<Box sx={{ p: 2.5 }}>
 							<Grid container spacing={3}>
@@ -234,35 +234,22 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="dob-month">Fecha de Nacimiento</InputLabel>
+										<InputLabel htmlFor="dob-date">Fecha de Nacimiento</InputLabel>
 										<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
 											<Select
 												fullWidth
-												value={values.dob ? values.dob.getMonth().toString() : ""}
-												name="dob-month"
-												onChange={(e: SelectChangeEvent<string>) => handleChangeMonth(e, values.dob || new Date(), setFieldValue)}
-											>
-												<MenuItem value="0">Enero</MenuItem>
-												<MenuItem value="1">Febrero</MenuItem>
-												<MenuItem value="2">Marzo</MenuItem>
-												<MenuItem value="3">Abril</MenuItem>
-												<MenuItem value="4">Mayo</MenuItem>
-												<MenuItem value="5">Junio</MenuItem>
-												<MenuItem value="6">Julio</MenuItem>
-												<MenuItem value="7">Agosto</MenuItem>
-												<MenuItem value="8">Septiembre</MenuItem>
-												<MenuItem value="9">Octubre</MenuItem>
-												<MenuItem value="10">Noviembre</MenuItem>
-												<MenuItem value="11">Diciembre</MenuItem>
-											</Select>
-
-											<Select
-												fullWidth
+												displayEmpty
 												value={values.dob ? values.dob.getDate().toString() : ""}
 												name="dob-date"
 												onBlur={handleBlur}
 												onChange={(e: SelectChangeEvent<string>) => handleChangeDay(e, values.dob || new Date(), setFieldValue)}
 												MenuProps={MenuProps}
+												renderValue={(selected) => {
+													if (!selected) {
+														return <span style={{ color: "#aaa" }}>DD</span>;
+													}
+													return selected;
+												}}
 											>
 												{[
 													1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
@@ -283,6 +270,34 @@ const TabPersonal = () => {
 												))}
 											</Select>
 
+											<Select
+												fullWidth
+												displayEmpty
+												value={values.dob ? values.dob.getMonth().toString() : ""}
+												name="dob-month"
+												onChange={(e: SelectChangeEvent<string>) => handleChangeMonth(e, values.dob || new Date(), setFieldValue)}
+												renderValue={(selected) => {
+													if (selected === "") {
+														return <span style={{ color: "#aaa" }}>Mes</span>;
+													}
+													const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+													return months[parseInt(selected, 10)];
+												}}
+											>
+												<MenuItem value="0">Enero</MenuItem>
+												<MenuItem value="1">Febrero</MenuItem>
+												<MenuItem value="2">Marzo</MenuItem>
+												<MenuItem value="3">Abril</MenuItem>
+												<MenuItem value="4">Mayo</MenuItem>
+												<MenuItem value="5">Junio</MenuItem>
+												<MenuItem value="6">Julio</MenuItem>
+												<MenuItem value="7">Agosto</MenuItem>
+												<MenuItem value="8">Septiembre</MenuItem>
+												<MenuItem value="9">Octubre</MenuItem>
+												<MenuItem value="10">Noviembre</MenuItem>
+												<MenuItem value="11">Diciembre</MenuItem>
+											</Select>
+
 											<LocalizationProvider dateAdapter={AdapterDateFns}>
 												<DatePicker
 													views={["year"]}
@@ -292,6 +307,11 @@ const TabPersonal = () => {
 														setFieldValue("dob", newValue);
 													}}
 													sx={{ width: 1 }}
+													slotProps={{
+														textField: {
+															placeholder: "AAAA",
+														},
+													}}
 												/>
 											</LocalizationProvider>
 										</Stack>
@@ -486,9 +506,15 @@ const TabPersonal = () => {
 								</Box>
 							)}
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-								<Button color="error">Cancelar</Button>
+								<Button color="error" onClick={() => resetForm()}>
+									Cancelar
+								</Button>
 								<Button
-									disabled={isSubmitting || loading || Object.keys(errors).length !== 0}
+									disabled={
+										isSubmitting ||
+										loading ||
+										Object.keys(errors).filter((key) => key !== "submit").length !== 0
+									}
 									type="submit"
 									variant="contained"
 									startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}

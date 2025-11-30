@@ -241,7 +241,7 @@ export const updateUserProfile = (profileData: any) => async (dispatch: Dispatch
 		// Si la actualización fue exitosa
 		if (response.data && response.data.success) {
 			// Obtener los datos actualizados del usuario
-			const userData = response.data.data;
+			const userData = response.data.user;
 
 			// Verificar si hay un puntaje de completitud en la respuesta
 			// Si no existe, calcularlo manualmente basado en los campos completados
