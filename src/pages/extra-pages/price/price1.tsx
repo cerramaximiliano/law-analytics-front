@@ -766,7 +766,7 @@ const Pricing = () => {
 							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
 								Cobro Anual
 							</Typography>
-							<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
+							<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} disabled />
 							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
 								Cobro Mensual
 							</Typography>

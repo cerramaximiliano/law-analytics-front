@@ -69,6 +69,7 @@ import {
 	Refresh,
 	CloseCircle,
 	More,
+	SearchStatus1,
 } from "iconsax-react";
 
 // types
@@ -318,6 +319,7 @@ function ReactTable({
 								preGlobalFilteredRows={preGlobalFilteredRows as any}
 								globalFilter={globalFilter}
 								setGlobalFilter={setGlobalFilter}
+								disabled={data.length === 0}
 							/>
 						</Box>
 
@@ -502,22 +504,43 @@ function ReactTable({
 						justifyContent: "center",
 					}}
 				>
-					{/* Ícono de Iconsax */}
-					<FolderOpen
-						variant="Bulk"
-						size={64}
-						style={{
-							marginBottom: "16px",
-							color: theme.palette.primary.main,
-							opacity: 0.7,
-						}}
-					/>
-					<Typography variant="h5" gutterBottom align="center">
-						No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'.
-					</Typography>
-					<Typography variant="body2" color="textSecondary" align="center">
-						Las causas que guardes aparecerán aquí
-					</Typography>
+					{data.length === 0 ? (
+						<>
+							<FolderOpen
+								variant="Bulk"
+								size={64}
+								style={{
+									marginBottom: "16px",
+									color: theme.palette.primary.main,
+									opacity: 0.7,
+								}}
+							/>
+							<Typography variant="h5" gutterBottom align="center">
+								No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'.
+							</Typography>
+							<Typography variant="body2" color="textSecondary" align="center">
+								Las causas que guardes aparecerán aquí
+							</Typography>
+						</>
+					) : (
+						<>
+							<SearchStatus1
+								variant="Bulk"
+								size={64}
+								style={{
+									marginBottom: "16px",
+									color: theme.palette.warning.main,
+									opacity: 0.7,
+								}}
+							/>
+							<Typography variant="h5" gutterBottom align="center">
+								No se encontraron causas para esta búsqueda
+							</Typography>
+							<Typography variant="body2" color="textSecondary" align="center">
+								Intenta con otros términos de búsqueda
+							</Typography>
+						</>
+					)}
 				</Box>
 			)}
 		</>
