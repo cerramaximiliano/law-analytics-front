@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 
 // assets
-import { Card, Logout, Notification, Profile, TableDocument } from "iconsax-react";
+import { Card, Logout, Profile, Setting2, TableDocument } from "iconsax-react";
 
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
@@ -59,9 +59,9 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 4, "/apps/profiles/user/settings")}
 			>
 				<ListItemIcon>
-					<Notification variant="Bulk" size={18} />
+					<Setting2 variant="Bulk" size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Notificaciones" />
+				<ListItemText primary="Configuración" />
 			</ListItemButton>
 
 			<ListItemButton
