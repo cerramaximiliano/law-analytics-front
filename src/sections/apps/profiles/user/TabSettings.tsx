@@ -66,6 +66,7 @@ const TabSettings = () => {
 			enabled: true,
 			calendar: true,
 			expiration: true,
+			taskExpiration: true,
 			inactivity: true,
 		},
 		system: {
@@ -83,10 +84,10 @@ const TabSettings = () => {
 	// en lugar de depender solo de la verificación de los valores individuales
 	const [channelsEnabled, setChannelsEnabled] = useState<boolean>(preferences.channels?.email || preferences.channels?.browser || false);
 	const [userOptionsEnabled, setUserOptionsEnabled] = useState<boolean>(
-		preferences.user.calendar || preferences.user.expiration || preferences.user.inactivity || false,
+		preferences.user?.calendar || preferences.user?.expiration || (preferences.user?.taskExpiration ?? false) || preferences.user?.inactivity || false,
 	);
 	const [systemOptionsEnabled, setSystemOptionsEnabled] = useState<boolean>(
-		preferences.system.alerts || preferences.system.news || preferences.system.userActivity || false,
+		preferences.system?.alerts || preferences.system?.news || preferences.system?.userActivity || false,
 	);
 
 	useEffect(() => {
@@ -97,11 +98,11 @@ const TabSettings = () => {
 		setChannelsEnabled(isAnyChannelEnabled);
 
 		// Usuario
-		const isAnyUserOptionEnabled = preferences.user.calendar || preferences.user.expiration || preferences.user.inactivity || false;
+		const isAnyUserOptionEnabled = preferences.user?.calendar || preferences.user?.expiration || (preferences.user?.taskExpiration ?? false) || preferences.user?.inactivity || false;
 		setUserOptionsEnabled(isAnyUserOptionEnabled);
 
 		// Sistema
-		const isAnySystemOptionEnabled = preferences.system.alerts || preferences.system.news || preferences.system.userActivity || false;
+		const isAnySystemOptionEnabled = preferences.system?.alerts || preferences.system?.news || preferences.system?.userActivity || false;
 		setSystemOptionsEnabled(isAnySystemOptionEnabled);
 
 		// Actualizar el array de checked para reflejar los estados
@@ -138,16 +139,50 @@ const TabSettings = () => {
 	}, [
 		preferences.channels?.email,
 		preferences.channels?.browser,
-		preferences.user.calendar,
-		preferences.user.expiration,
-		preferences.user.inactivity,
-		preferences.system.alerts,
-		preferences.system.news,
-		preferences.system.userActivity,
+		preferences.user?.calendar,
+		preferences.user?.expiration,
+		preferences.user?.taskExpiration,
+		preferences.user?.inactivity,
+		preferences.system?.alerts,
+		preferences.system?.news,
+		preferences.system?.userActivity,
 	]);
 
 	const handleAccordionChange = (panel: string) => (event: SyntheticEvent, isExpanded: boolean) => {
 		setExpanded(isExpanded ? panel : null);
+	};
+
+	// Función para normalizar las preferencias y asegurar que todos los campos existan
+	// El servidor puede devolver datos en dos formatos:
+	// 1. Directo: { user: { taskExpiration: false } } (desde GET /preferences)
+	// 2. Anidado: { notifications: { user: { taskExpiration: false } } } (desde PUT /preferences que devuelve preferences completas)
+	const normalizePreferences = (data: any): NotificationPreferences => {
+		// Detectar si los datos vienen anidados en notifications
+		const notifications = data?.notifications || data;
+
+		return {
+			enabled: notifications?.enabled ?? true,
+			channels: {
+				email: notifications?.channels?.email ?? true,
+				browser: notifications?.channels?.browser ?? true,
+				mobile: notifications?.channels?.mobile ?? false,
+			},
+			user: {
+				enabled: notifications?.user?.enabled ?? true,
+				calendar: notifications?.user?.calendar ?? true,
+				expiration: notifications?.user?.expiration ?? true,
+				taskExpiration: notifications?.user?.taskExpiration ?? true,
+				inactivity: notifications?.user?.inactivity ?? true,
+			},
+			system: {
+				enabled: notifications?.system?.enabled ?? true,
+				alerts: notifications?.system?.alerts ?? true,
+				news: notifications?.system?.news ?? true,
+				userActivity: notifications?.system?.userActivity ?? true,
+			},
+			otherCommunications: notifications?.otherCommunications,
+			loginAlerts: notifications?.loginAlerts,
+		};
 	};
 
 	// Cargar las preferencias del usuario al montar el componente
@@ -158,19 +193,18 @@ const TabSettings = () => {
 				const response = await ApiService.getNotificationPreferences();
 
 				if (response.success) {
-					// Asegurarse de que response.data es de tipo NotificationPreferences
-					if (response.data) {
-						setPreferences(response.data);
-					}
+					// Normalizar los datos del servidor para asegurar que todos los campos existan
+					const normalizedData = normalizePreferences(response.data);
+					setPreferences(normalizedData);
 
 					// Convertir las preferencias a los estados de UI
 					const newChecked: string[] = [];
 
 					// Comprobar las opciones principales
-					if (response.data?.enabled) newChecked.push("oc");
-					if (response.data?.user.enabled) newChecked.push("sen");
-					if (response.data?.system.enabled) newChecked.push("usn");
-					if (response.data?.loginAlerts) newChecked.push("lc");
+					if (normalizedData.enabled) newChecked.push("oc");
+					if (normalizedData.user.enabled) newChecked.push("sen");
+					if (normalizedData.system.enabled) newChecked.push("usn");
+					if (normalizedData.loginAlerts) newChecked.push("lc");
 
 					setChecked(newChecked);
 				}
@@ -200,15 +234,16 @@ const TabSettings = () => {
 				},
 				user: {
 					enabled: checked.includes("sen"),
-					calendar: preferences.user.calendar,
-					expiration: preferences.user.expiration,
-					inactivity: preferences.user.inactivity,
+					calendar: preferences.user?.calendar ?? false,
+					expiration: preferences.user?.expiration ?? false,
+					taskExpiration: preferences.user?.taskExpiration ?? false,
+					inactivity: preferences.user?.inactivity ?? false,
 				},
 				system: {
 					enabled: checked.includes("usn"),
-					alerts: preferences.system.alerts,
-					news: preferences.system.news,
-					userActivity: preferences.system.userActivity,
+					alerts: preferences.system?.alerts ?? false,
+					news: preferences.system?.news ?? false,
+					userActivity: preferences.system?.userActivity ?? false,
 				},
 				loginAlerts: checked.includes("lc"),
 			};
@@ -216,7 +251,8 @@ const TabSettings = () => {
 			const response = await ApiService.updateNotificationPreferences(updatedPreferences);
 
 			if (response.success && response.data) {
-				setPreferences(response.data);
+				// Normalizar los datos de la respuesta para asegurar que todos los campos existan
+				setPreferences(normalizePreferences(response.data));
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -263,6 +299,7 @@ const TabSettings = () => {
 						// Al activar el switch principal, activamos todas las opciones hijas
 						calendar: true,
 						expiration: true,
+						taskExpiration: true,
 						inactivity: true,
 					},
 				}));
@@ -302,6 +339,7 @@ const TabSettings = () => {
 						// Al desactivar el switch principal, desactivamos todas las opciones hijas
 						calendar: false,
 						expiration: false,
+						taskExpiration: false,
 						inactivity: false,
 					},
 				}));
@@ -335,15 +373,16 @@ const TabSettings = () => {
 
 	const handleUserOptionToggle = (option: keyof NotificationPreferences["user"]) => () => {
 		setPreferences((prev) => {
-			const newValue = !prev.user[option];
+			const currentUser = prev.user ?? { enabled: false, calendar: false, expiration: false, taskExpiration: false, inactivity: false };
+			const newValue = !currentUser[option];
 			// Si se activa una opción, asegurarse que el padre también esté activado
 			const updatedUser = {
-				...prev.user,
+				...currentUser,
 				[option]: newValue,
 			};
 
 			// Si alguna opción está activa, el switch principal también debe estarlo
-			const anyOptionActive = updatedUser.calendar || updatedUser.expiration || updatedUser.inactivity;
+			const anyOptionActive = updatedUser.calendar || updatedUser.expiration || (updatedUser.taskExpiration ?? false) || updatedUser.inactivity;
 			if (anyOptionActive && !updatedUser.enabled) {
 				updatedUser.enabled = true;
 				// Actualizar el checked para reflejar que el grupo está activo
@@ -370,10 +409,11 @@ const TabSettings = () => {
 
 	const handleSystemOptionToggle = (option: keyof NotificationPreferences["system"]) => () => {
 		setPreferences((prev) => {
-			const newValue = !prev.system[option];
+			const currentSystem = prev.system ?? { enabled: false, alerts: false, news: false, userActivity: false };
+			const newValue = !currentSystem[option];
 			// Si se activa una opción, asegurarse que el padre también esté activado
 			const updatedSystem = {
-				...prev.system,
+				...currentSystem,
 				[option]: newValue,
 			};
 
@@ -564,7 +604,7 @@ const TabSettings = () => {
 										edge="end"
 										size="small"
 										onChange={handleUserOptionToggle("calendar")}
-										checked={preferences.user.calendar}
+										checked={preferences.user?.calendar ?? false}
 										disabled={!userOptionsEnabled}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-calendar",
@@ -574,17 +614,34 @@ const TabSettings = () => {
 								<ListItem sx={{ pl: { xs: 0, sm: 7 }, py: 0.5 }}>
 									<ListItemText
 										id="switch-list-label-email-expiration"
-										primary={<Typography variant="body2">Notificar vencimientos</Typography>}
+										primary={<Typography variant="body2">Notificar vencimientos de movimientos</Typography>}
 										sx={{ my: 0 }}
 									/>
 									<Switch
 										edge="end"
 										size="small"
 										onChange={handleUserOptionToggle("expiration")}
-										checked={preferences.user.expiration}
+										checked={preferences.user?.expiration ?? false}
 										disabled={!userOptionsEnabled}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-expiration",
+										}}
+									/>
+								</ListItem>
+								<ListItem sx={{ pl: { xs: 0, sm: 7 }, py: 0.5 }}>
+									<ListItemText
+										id="switch-list-label-email-task-expiration"
+										primary={<Typography variant="body2">Notificar vencimientos de tareas</Typography>}
+										sx={{ my: 0 }}
+									/>
+									<Switch
+										edge="end"
+										size="small"
+										onChange={handleUserOptionToggle("taskExpiration")}
+										checked={preferences.user?.taskExpiration ?? false}
+										disabled={!userOptionsEnabled}
+										inputProps={{
+											"aria-labelledby": "switch-list-label-email-task-expiration",
 										}}
 									/>
 								</ListItem>
@@ -598,7 +655,7 @@ const TabSettings = () => {
 										edge="end"
 										size="small"
 										onChange={handleUserOptionToggle("inactivity")}
-										checked={preferences.user.inactivity}
+										checked={preferences.user?.inactivity ?? false}
 										disabled={!userOptionsEnabled}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-inactivity",
@@ -646,7 +703,7 @@ const TabSettings = () => {
 										edge="end"
 										size="small"
 										onChange={handleSystemOptionToggle("alerts")}
-										checked={preferences.system.alerts}
+										checked={preferences.system?.alerts ?? false}
 										disabled={!systemOptionsEnabled}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-system-alerts",
@@ -663,7 +720,7 @@ const TabSettings = () => {
 										edge="end"
 										size="small"
 										onChange={handleSystemOptionToggle("news")}
-										checked={preferences.system.news}
+										checked={preferences.system?.news ?? false}
 										disabled={!systemOptionsEnabled}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-system-news",
@@ -680,7 +737,7 @@ const TabSettings = () => {
 										edge="end"
 										size="small"
 										onChange={handleSystemOptionToggle("userActivity")}
-										checked={preferences.system.userActivity}
+										checked={preferences.system?.userActivity ?? false}
 										disabled={!systemOptionsEnabled}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-system-user-activity",

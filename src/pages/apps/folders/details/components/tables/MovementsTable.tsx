@@ -661,6 +661,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 															color="primary"
 															onClick={(e) => {
 																e.stopPropagation();
+																console.log("Documento URL:", movement.link);
 																setSelectedPdfUrl(movement.link || "");
 																setSelectedPdfTitle(movement.title || "Documento");
 																setSelectedMovementId(movement._id || "");

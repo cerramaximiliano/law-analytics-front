@@ -41,6 +41,7 @@ export interface NotificationPreferences {
 		enabled: boolean;
 		calendar: boolean;
 		expiration: boolean;
+		taskExpiration: boolean;
 		inactivity: boolean;
 	};
 	system: {

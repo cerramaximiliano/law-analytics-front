@@ -12,7 +12,7 @@ import {
 	LinearProgress,
 	Fade,
 } from "@mui/material";
-import { Add, ArrowLeft2, ArrowRight2 } from "iconsax-react";
+import { Add, ArrowLeft2, ArrowRight2, DocumentText, Warning2 } from "iconsax-react";
 import { Movement } from "types/movements";
 import axios from "axios";
 
@@ -179,9 +179,41 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 					setLoading(false);
 					setShowProgress(false);
 				} else {
-					// URLs externas se cargan directamente sin axios
-					setBlobUrl(url);
-					setLoadProgress(90); // El iframe manejará el resto
+					// URLs externas: verificar que sea un PDF válido antes de mostrar
+					try {
+						// Hacer una petición HEAD para verificar el content-type
+						const headResponse = await fetch(url, { method: "HEAD" });
+
+						if (!headResponse.ok) {
+							console.error("Document URL returned error status:", headResponse.status);
+							setError(true);
+							setLoading(false);
+							setShowProgress(false);
+							setLoadProgress(0);
+							return;
+						}
+
+						const contentType = headResponse.headers.get("content-type") || "";
+						const isPdf = contentType.includes("application/pdf") || contentType.includes("application/octet-stream");
+
+						if (!isPdf) {
+							console.error("URL does not contain a PDF. Content-Type:", contentType);
+							setError(true);
+							setLoading(false);
+							setShowProgress(false);
+							setLoadProgress(0);
+							return;
+						}
+
+						// Es un PDF válido, cargar en el iframe
+						setBlobUrl(url);
+						setLoadProgress(90);
+					} catch (headErr) {
+						// Si HEAD falla (CORS), intentar cargar directamente
+						console.warn("HEAD request failed (possibly CORS), trying to load directly:", headErr);
+						setBlobUrl(url);
+						setLoadProgress(90);
+					}
 				}
 			} catch (err) {
 				console.error("Error fetching document:", err);
@@ -319,16 +351,68 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 					</Box>
 				)}
 				{error && (
-					<Box display="flex" justifyContent="center" alignItems="center" height="100%" flexDirection="column" gap={2}>
-						<Typography color="error">Error al cargar el documento</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Verifique que la URL sea válida y que el documento esté disponible
+					<Box
+						display="flex"
+						justifyContent="center"
+						alignItems="center"
+						height="100%"
+						flexDirection="column"
+						gap={2}
+						sx={{ px: 3, textAlign: "center" }}
+					>
+						<Box
+							sx={{
+								width: 80,
+								height: 80,
+								borderRadius: "50%",
+								backgroundColor: "error.lighter",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							<Warning2 size={40} color="var(--mui-palette-error-main)" variant="Bold" />
+						</Box>
+						<Typography variant="h4" color="error.main" fontWeight={600}>
+							Documento no disponible
 						</Typography>
+						<Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400 }}>
+							No se pudo acceder al documento en este momento.
+						</Typography>
+						<Button variant="outlined" color="inherit" onClick={onClose} sx={{ mt: 1 }}>
+							Cerrar
+						</Button>
 					</Box>
 				)}
 				{!error && !blobUrl && !loading && (
-					<Box display="flex" justifyContent="center" alignItems="center" height="100%" flexDirection="column" gap={2}>
-						<Typography color="text.secondary">No hay documento disponible</Typography>
+					<Box
+						display="flex"
+						justifyContent="center"
+						alignItems="center"
+						height="100%"
+						flexDirection="column"
+						gap={2}
+						sx={{ px: 3, textAlign: "center" }}
+					>
+						<Box
+							sx={{
+								width: 80,
+								height: 80,
+								borderRadius: "50%",
+								backgroundColor: "grey.100",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							<DocumentText size={40} color="var(--mui-palette-text-secondary)" variant="Bulk" />
+						</Box>
+						<Typography variant="h4" color="text.secondary" fontWeight={600}>
+							Sin documento
+						</Typography>
+						<Typography variant="body1" color="text.secondary">
+							Este movimiento no tiene un documento asociado.
+						</Typography>
 					</Box>
 				)}
 				{!error && blobUrl && (
