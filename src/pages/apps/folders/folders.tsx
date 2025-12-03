@@ -1172,9 +1172,9 @@ const FoldersLayout = () => {
 				Cell: ({ value }: { value: any }) => {
 					if (!value) return <span>-</span>;
 
-					// Formatear la fecha de formato ISO a DD/MM/YYYY
+					// Formatear la fecha de formato ISO a DD/MM/YYYY (conservar UTC)
 					try {
-						const parsedDate = dayjs(value);
+						const parsedDate = dayjs.utc(value);
 						if (parsedDate.isValid()) {
 							return <span>{parsedDate.format("DD/MM/YYYY")}</span>;
 						} else {
