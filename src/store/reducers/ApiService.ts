@@ -30,6 +30,18 @@ export interface UserPreferences {
 	notifications: NotificationPreferences;
 }
 
+export interface NotificationSettings {
+	notifyOnceOnly: boolean;
+	daysInAdvance: number;
+}
+
+export interface InactivitySettings {
+	daysInAdvance: number;
+	caducityDays: number;
+	prescriptionDays: number;
+	notifyOnceOnly: boolean;
+}
+
 export interface NotificationPreferences {
 	enabled: boolean;
 	channels?: {
@@ -40,9 +52,13 @@ export interface NotificationPreferences {
 	user: {
 		enabled: boolean;
 		calendar: boolean;
+		calendarSettings?: NotificationSettings;
 		expiration: boolean;
+		expirationSettings?: NotificationSettings;
 		taskExpiration: boolean;
+		taskExpirationSettings?: NotificationSettings;
 		inactivity: boolean;
+		inactivitySettings?: InactivitySettings;
 	};
 	system: {
 		enabled: boolean;

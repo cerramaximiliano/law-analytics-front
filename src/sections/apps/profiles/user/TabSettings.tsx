@@ -18,11 +18,15 @@ import {
 	Accordion,
 	AccordionSummary,
 	AccordionDetails,
+	TextField,
+	Checkbox,
+	FormControlLabel,
+	Collapse,
 } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
-import ApiService, { NotificationPreferences } from "store/reducers/ApiService";
+import ApiService, { NotificationPreferences, NotificationSettings, InactivitySettings } from "store/reducers/ApiService";
 
 // assets
 import { Sms } from "iconsax-react";
@@ -54,6 +58,20 @@ const TabSettings = () => {
 	// Estado para los elementos principales
 	const [checked, setChecked] = useState<string[]>([]);
 
+	// Valores por defecto para settings de notificación
+	const defaultSettings: NotificationSettings = {
+		notifyOnceOnly: true,
+		daysInAdvance: 5,
+	};
+
+	// Valores por defecto para settings de inactividad
+	const defaultInactivitySettings: InactivitySettings = {
+		daysInAdvance: 5,
+		caducityDays: 180,
+		prescriptionDays: 730,
+		notifyOnceOnly: true,
+	};
+
 	// Estado para las preferencias de notificaciones del servidor
 	const [preferences, setPreferences] = useState<NotificationPreferences>({
 		enabled: true,
@@ -65,9 +83,13 @@ const TabSettings = () => {
 		user: {
 			enabled: true,
 			calendar: true,
+			calendarSettings: { ...defaultSettings },
 			expiration: true,
+			expirationSettings: { ...defaultSettings },
 			taskExpiration: true,
+			taskExpirationSettings: { ...defaultSettings },
 			inactivity: true,
+			inactivitySettings: { ...defaultInactivitySettings },
 		},
 		system: {
 			enabled: true,
@@ -152,6 +174,20 @@ const TabSettings = () => {
 		setExpanded(isExpanded ? panel : null);
 	};
 
+	// Función para normalizar settings de notificación
+	const normalizeSettings = (settings: any): NotificationSettings => ({
+		notifyOnceOnly: settings?.notifyOnceOnly ?? true,
+		daysInAdvance: settings?.daysInAdvance ?? 5,
+	});
+
+	// Función para normalizar settings de inactividad
+	const normalizeInactivitySettings = (settings: any): InactivitySettings => ({
+		daysInAdvance: settings?.daysInAdvance ?? 5,
+		caducityDays: settings?.caducityDays ?? 180,
+		prescriptionDays: settings?.prescriptionDays ?? 730,
+		notifyOnceOnly: settings?.notifyOnceOnly ?? true,
+	});
+
 	// Función para normalizar las preferencias y asegurar que todos los campos existan
 	// El servidor puede devolver datos en dos formatos:
 	// 1. Directo: { user: { taskExpiration: false } } (desde GET /preferences)
@@ -170,9 +206,13 @@ const TabSettings = () => {
 			user: {
 				enabled: notifications?.user?.enabled ?? true,
 				calendar: notifications?.user?.calendar ?? true,
+				calendarSettings: normalizeSettings(notifications?.user?.calendarSettings),
 				expiration: notifications?.user?.expiration ?? true,
+				expirationSettings: normalizeSettings(notifications?.user?.expirationSettings),
 				taskExpiration: notifications?.user?.taskExpiration ?? true,
+				taskExpirationSettings: normalizeSettings(notifications?.user?.taskExpirationSettings),
 				inactivity: notifications?.user?.inactivity ?? true,
+				inactivitySettings: normalizeInactivitySettings(notifications?.user?.inactivitySettings),
 			},
 			system: {
 				enabled: notifications?.system?.enabled ?? true,
@@ -235,9 +275,13 @@ const TabSettings = () => {
 				user: {
 					enabled: checked.includes("sen"),
 					calendar: preferences.user?.calendar ?? false,
+					calendarSettings: preferences.user?.calendarSettings ?? defaultSettings,
 					expiration: preferences.user?.expiration ?? false,
+					expirationSettings: preferences.user?.expirationSettings ?? defaultSettings,
 					taskExpiration: preferences.user?.taskExpiration ?? false,
+					taskExpirationSettings: preferences.user?.taskExpirationSettings ?? defaultSettings,
 					inactivity: preferences.user?.inactivity ?? false,
+					inactivitySettings: preferences.user?.inactivitySettings ?? defaultInactivitySettings,
 				},
 				system: {
 					enabled: checked.includes("usn"),
@@ -405,6 +449,112 @@ const TabSettings = () => {
 				user: updatedUser,
 			};
 		});
+	};
+
+	// Handler para cambiar la configuración de días de anticipación
+	const handleDaysInAdvanceChange =
+		(settingsKey: "calendarSettings" | "expirationSettings" | "taskExpirationSettings") =>
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			const value = parseInt(event.target.value, 10);
+			if (isNaN(value) || value < 1 || value > 30) return;
+
+			setPreferences((prev) => ({
+				...prev,
+				user: {
+					...prev.user,
+					[settingsKey]: {
+						...prev.user[settingsKey],
+						daysInAdvance: value,
+					},
+				},
+			}));
+		};
+
+	// Handler para cambiar la configuración de notificar solo una vez
+	const handleNotifyOnceOnlyChange =
+		(settingsKey: "calendarSettings" | "expirationSettings" | "taskExpirationSettings") =>
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			setPreferences((prev) => ({
+				...prev,
+				user: {
+					...prev.user,
+					[settingsKey]: {
+						...prev.user[settingsKey],
+						notifyOnceOnly: event.target.checked,
+					},
+				},
+			}));
+		};
+
+	// Handler para cambiar días de anticipación de inactividad
+	const handleInactivityDaysInAdvanceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const value = parseInt(event.target.value, 10);
+		if (isNaN(value) || value < 1 || value > 30) return;
+
+		setPreferences((prev) => ({
+			...prev,
+			user: {
+				...prev.user,
+				inactivitySettings: {
+					...prev.user.inactivitySettings!,
+					daysInAdvance: value,
+				},
+			},
+		}));
+	};
+
+	// Handler para cambiar los días de caducidad (inactividad)
+	const handleCaducityDaysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const value = parseInt(event.target.value, 10);
+		if (isNaN(value) || value < 1 || value > 365) return;
+
+		setPreferences((prev) => ({
+			...prev,
+			user: {
+				...prev.user,
+				inactivitySettings: {
+					...prev.user.inactivitySettings!,
+					caducityDays: value,
+				},
+			},
+		}));
+	};
+
+	// Handler para cambiar los meses de prescripción (se guarda en días en el backend)
+	const handlePrescriptionMonthsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const months = parseInt(event.target.value, 10);
+		if (isNaN(months) || months < 1 || months > 120) return;
+
+		// Convertir meses a días (aproximado: 30.44 días por mes)
+		const days = Math.round(months * 30.44);
+
+		setPreferences((prev) => ({
+			...prev,
+			user: {
+				...prev.user,
+				inactivitySettings: {
+					...prev.user.inactivitySettings!,
+					prescriptionDays: days,
+				},
+			},
+		}));
+	};
+
+	// Función auxiliar para convertir días a meses (para mostrar en UI)
+	const daysToMonths = (days: number): number => Math.round(days / 30.44);
+
+	// Handler para cambiar notificar solo una vez en inactividad
+	const handleInactivityNotifyOnceOnlyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setPreferences((prev) => ({
+			...prev,
+			user: {
+				...prev.user,
+				inactivitySettings: {
+					...prev.user.inactivitySettings!,
+					notifyOnceOnly: event.target.checked,
+				},
+			},
+		}));
 	};
 
 	const handleSystemOptionToggle = (option: keyof NotificationPreferences["system"]) => () => {
@@ -594,6 +744,7 @@ const TabSettings = () => {
 						</AccordionSummary>
 						<AccordionDetails>
 							<List component="div" disablePadding>
+								{/* Notificar eventos del calendario */}
 								<ListItem sx={{ pl: { xs: 0, sm: 7 }, py: 0.5 }}>
 									<ListItemText
 										id="switch-list-label-email-calendar"
@@ -611,6 +762,40 @@ const TabSettings = () => {
 										}}
 									/>
 								</ListItem>
+								<Collapse in={preferences.user?.calendar ?? false} timeout="auto" unmountOnExit>
+									<Box sx={{ pl: { xs: 2, sm: 9 }, pr: 2, py: 1, bgcolor: "action.hover", borderRadius: 1, mx: { xs: 0, sm: 7 }, mb: 1 }}>
+										<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Typography variant="caption" color="text.secondary">
+													Días de anticipación:
+												</Typography>
+												<TextField
+													type="number"
+													size="small"
+													value={preferences.user?.calendarSettings?.daysInAdvance ?? 5}
+													onChange={handleDaysInAdvanceChange("calendarSettings")}
+													inputProps={{ min: 1, max: 30 }}
+													sx={{ width: 70 }}
+												/>
+												<Typography variant="caption" color="text.secondary">
+													antes del vencimiento
+												</Typography>
+											</Stack>
+											<FormControlLabel
+												control={
+													<Checkbox
+														size="small"
+														checked={preferences.user?.calendarSettings?.notifyOnceOnly ?? true}
+														onChange={handleNotifyOnceOnlyChange("calendarSettings")}
+													/>
+												}
+												label={<Typography variant="caption">Notificar solo una vez</Typography>}
+											/>
+										</Stack>
+									</Box>
+								</Collapse>
+
+								{/* Notificar vencimientos de movimientos */}
 								<ListItem sx={{ pl: { xs: 0, sm: 7 }, py: 0.5 }}>
 									<ListItemText
 										id="switch-list-label-email-expiration"
@@ -628,6 +813,40 @@ const TabSettings = () => {
 										}}
 									/>
 								</ListItem>
+								<Collapse in={preferences.user?.expiration ?? false} timeout="auto" unmountOnExit>
+									<Box sx={{ pl: { xs: 2, sm: 9 }, pr: 2, py: 1, bgcolor: "action.hover", borderRadius: 1, mx: { xs: 0, sm: 7 }, mb: 1 }}>
+										<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Typography variant="caption" color="text.secondary">
+													Días de anticipación:
+												</Typography>
+												<TextField
+													type="number"
+													size="small"
+													value={preferences.user?.expirationSettings?.daysInAdvance ?? 5}
+													onChange={handleDaysInAdvanceChange("expirationSettings")}
+													inputProps={{ min: 1, max: 30 }}
+													sx={{ width: 70 }}
+												/>
+												<Typography variant="caption" color="text.secondary">
+													antes del vencimiento
+												</Typography>
+											</Stack>
+											<FormControlLabel
+												control={
+													<Checkbox
+														size="small"
+														checked={preferences.user?.expirationSettings?.notifyOnceOnly ?? true}
+														onChange={handleNotifyOnceOnlyChange("expirationSettings")}
+													/>
+												}
+												label={<Typography variant="caption">Notificar solo una vez</Typography>}
+											/>
+										</Stack>
+									</Box>
+								</Collapse>
+
+								{/* Notificar vencimientos de tareas */}
 								<ListItem sx={{ pl: { xs: 0, sm: 7 }, py: 0.5 }}>
 									<ListItemText
 										id="switch-list-label-email-task-expiration"
@@ -645,6 +864,40 @@ const TabSettings = () => {
 										}}
 									/>
 								</ListItem>
+								<Collapse in={preferences.user?.taskExpiration ?? false} timeout="auto" unmountOnExit>
+									<Box sx={{ pl: { xs: 2, sm: 9 }, pr: 2, py: 1, bgcolor: "action.hover", borderRadius: 1, mx: { xs: 0, sm: 7 }, mb: 1 }}>
+										<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Typography variant="caption" color="text.secondary">
+													Días de anticipación:
+												</Typography>
+												<TextField
+													type="number"
+													size="small"
+													value={preferences.user?.taskExpirationSettings?.daysInAdvance ?? 5}
+													onChange={handleDaysInAdvanceChange("taskExpirationSettings")}
+													inputProps={{ min: 1, max: 30 }}
+													sx={{ width: 70 }}
+												/>
+												<Typography variant="caption" color="text.secondary">
+													antes del vencimiento
+												</Typography>
+											</Stack>
+											<FormControlLabel
+												control={
+													<Checkbox
+														size="small"
+														checked={preferences.user?.taskExpirationSettings?.notifyOnceOnly ?? true}
+														onChange={handleNotifyOnceOnlyChange("taskExpirationSettings")}
+													/>
+												}
+												label={<Typography variant="caption">Notificar solo una vez</Typography>}
+											/>
+										</Stack>
+									</Box>
+								</Collapse>
+
+								{/* Notificar inactividad de causas */}
 								<ListItem sx={{ pl: { xs: 0, sm: 7 }, py: 0.5 }}>
 									<ListItemText
 										id="switch-list-label-email-inactivity"
@@ -662,6 +915,68 @@ const TabSettings = () => {
 										}}
 									/>
 								</ListItem>
+								<Collapse in={preferences.user?.inactivity ?? false} timeout="auto" unmountOnExit>
+									<Box sx={{ pl: { xs: 2, sm: 9 }, pr: 2, py: 1, bgcolor: "action.hover", borderRadius: 1, mx: { xs: 0, sm: 7 }, mb: 1 }}>
+										<Stack spacing={1.5}>
+											{/* Días de anticipación */}
+											<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+												<Typography variant="caption" color="text.secondary">
+													Días de anticipación:
+												</Typography>
+												<TextField
+													type="number"
+													size="small"
+													value={preferences.user?.inactivitySettings?.daysInAdvance ?? 5}
+													onChange={handleInactivityDaysInAdvanceChange}
+													inputProps={{ min: 1, max: 30 }}
+													sx={{ width: 70 }}
+												/>
+												<Typography variant="caption" color="text.secondary">
+													antes del vencimiento
+												</Typography>
+											</Stack>
+											{/* Alertas de caducidad y prescripción */}
+											<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+												<Stack direction="row" spacing={1} alignItems="center">
+													<Typography variant="caption" color="text.secondary">
+														Alerta de caducidad (días):
+													</Typography>
+													<TextField
+														type="number"
+														size="small"
+														value={preferences.user?.inactivitySettings?.caducityDays ?? 180}
+														onChange={handleCaducityDaysChange}
+														inputProps={{ min: 1, max: 365 }}
+														sx={{ width: 80 }}
+													/>
+												</Stack>
+												<Stack direction="row" spacing={1} alignItems="center">
+													<Typography variant="caption" color="text.secondary">
+														Alerta de prescripción (meses):
+													</Typography>
+													<TextField
+														type="number"
+														size="small"
+														value={daysToMonths(preferences.user?.inactivitySettings?.prescriptionDays ?? 730)}
+														onChange={handlePrescriptionMonthsChange}
+														inputProps={{ min: 1, max: 120 }}
+														sx={{ width: 70 }}
+													/>
+												</Stack>
+											</Stack>
+											<FormControlLabel
+												control={
+													<Checkbox
+														size="small"
+														checked={preferences.user?.inactivitySettings?.notifyOnceOnly ?? true}
+														onChange={handleInactivityNotifyOnceOnlyChange}
+													/>
+												}
+												label={<Typography variant="caption">Notificar solo una vez</Typography>}
+											/>
+										</Stack>
+									</Box>
+								</Collapse>
 							</List>
 						</AccordionDetails>
 					</Accordion>
