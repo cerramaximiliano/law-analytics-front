@@ -2,7 +2,7 @@ import axios from "axios";
 import { Dispatch } from "redux";
 // Types for the actions and state
 import { Contact, ContactState, Action } from "types/contact";
-import { incrementUserStat } from "./userStats";
+import { incrementUserStat, updateUserStorage } from "./userStats";
 // action types
 const ADD_CONTACT = "ADD_CONTACT";
 const GET_CONTACTS_BY_USER = "GET_CONTACTS_BY_USER";
@@ -559,6 +559,10 @@ export const archiveContacts = (userId: string, contactIds: string[]) => async (
 				type: ARCHIVE_CONTACTS,
 				payload: contactIds,
 			});
+			// Decrementar contador de contacts en userStats (archivados no cuentan como activos)
+			dispatch(incrementUserStat("contacts", -contactIds.length));
+			// Incrementar storage (los contactos archivados sí cuentan en el storage)
+			dispatch(updateUserStorage("contact", contactIds.length));
 			return { success: true, message: "Contactos archivados exitosamente" };
 		} else {
 			return { success: false, message: response.data.message || "No se pudieron archivar los contactos." };
@@ -622,6 +626,10 @@ export const unarchiveContacts = (userId: string, contactIds: string[]) => async
 					type: UNARCHIVE_CONTACTS,
 					payload: unarchivedIds,
 				});
+				// Incrementar contador de contacts en userStats
+				dispatch(incrementUserStat("contacts", unarchivedIds.length));
+				// Decrementar storage (los contactos desarchivados ya no cuentan en el storage)
+				dispatch(updateUserStorage("contact", -unarchivedIds.length));
 
 				return {
 					success: true,

@@ -766,7 +766,12 @@ const Pricing = () => {
 							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
 								Cobro Anual
 							</Typography>
-							<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} disabled />
+							<Switch
+								checked={timePeriod}
+								onChange={() => setTimePeriod(!timePeriod)}
+								inputProps={{ "aria-label": "container" }}
+								disabled
+							/>
 							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
 								Cobro Mensual
 							</Typography>
@@ -910,11 +915,7 @@ const Pricing = () => {
 																			sx={{ fontWeight: 700, fontSize: "0.7rem" }}
 																		/>
 																	</Stack>
-																	<Typography
-																		variant="caption"
-																		color="success.dark"
-																		sx={{ display: "block", mt: 0.5, fontWeight: 600 }}
-																	>
+																	<Typography variant="caption" color="success.dark" sx={{ display: "block", mt: 0.5, fontWeight: 600 }}>
 																		{plan.activeDiscounts[0].promotionalMessage}
 																	</Typography>
 																	{plan.activeDiscounts[0].durationInMonths && (
@@ -970,9 +971,7 @@ const Pricing = () => {
 																	// Si es suscripción normal, usar flujo normal
 																	// Obtener el código de descuento si existe
 																	const discountCode =
-																		plan.activeDiscounts && plan.activeDiscounts.length > 0
-																			? plan.activeDiscounts[0].code
-																			: undefined;
+																		plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
 																	handleSubscribe(plan.planId, discountCode);
 																}
 															}

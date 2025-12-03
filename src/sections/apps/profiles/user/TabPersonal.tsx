@@ -280,7 +280,20 @@ const TabPersonal = () => {
 													if (selected === "") {
 														return <span style={{ color: "#aaa" }}>Mes</span>;
 													}
-													const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+													const months = [
+														"Enero",
+														"Febrero",
+														"Marzo",
+														"Abril",
+														"Mayo",
+														"Junio",
+														"Julio",
+														"Agosto",
+														"Septiembre",
+														"Octubre",
+														"Noviembre",
+														"Diciembre",
+													];
 													return months[parseInt(selected, 10)];
 												}}
 											>
@@ -510,11 +523,7 @@ const TabPersonal = () => {
 									Cancelar
 								</Button>
 								<Button
-									disabled={
-										isSubmitting ||
-										loading ||
-										Object.keys(errors).filter((key) => key !== "submit").length !== 0
-									}
+									disabled={isSubmitting || loading || Object.keys(errors).filter((key) => key !== "submit").length !== 0}
 									type="submit"
 									variant="contained"
 									startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}

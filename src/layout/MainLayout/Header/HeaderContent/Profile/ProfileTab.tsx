@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { List, ListItemButton, ListItemIcon, ListItemText } from "@mui/material";
 
 // assets
-import { Card, Logout, Profile, TableDocument } from "iconsax-react";
+import { Card, Logout, Notification, Profile, TableDocument } from "iconsax-react";
 
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
@@ -41,7 +41,7 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 				<ListItemIcon>
 					<Profile variant="Bulk" size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Ver Perfil" />
+				<ListItemText primary="Perfil" />
 			</ListItemButton>
 
 			<ListItemButton
@@ -51,12 +51,22 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 				<ListItemIcon>
 					<TableDocument variant="Bulk" size={18} />
 				</ListItemIcon>
-				<ListItemText primary="Ver Cuenta" />
+				<ListItemText primary="Cuenta" />
 			</ListItemButton>
 
 			<ListItemButton
 				selected={selectedIndex === 4}
-				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 4, "/apps/profiles/account/settings")}
+				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 4, "/apps/profiles/user/settings")}
+			>
+				<ListItemIcon>
+					<Notification variant="Bulk" size={18} />
+				</ListItemIcon>
+				<ListItemText primary="Notificaciones" />
+			</ListItemButton>
+
+			<ListItemButton
+				selected={selectedIndex === 5}
+				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 5, "/apps/profiles/account/settings")}
 			>
 				<ListItemIcon>
 					<Card variant="Bulk" size={18} />
@@ -64,7 +74,7 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 				<ListItemText primary="Suscripción" />
 			</ListItemButton>
 
-			<ListItemButton selected={selectedIndex === 2} onClick={handleLogout}>
+			<ListItemButton selected={selectedIndex === 6} onClick={handleLogout}>
 				<ListItemIcon>
 					<Logout variant="Bulk" size={18} />
 				</ListItemIcon>

@@ -3,7 +3,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
 import { FolderData, FolderState } from "types/folder";
-import { incrementUserStat } from "./userStats";
+import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./userStats";
 
 // Action types
 const SET_FOLDER_LOADING = "SET_FOLDER_LOADING";
@@ -351,7 +351,7 @@ export const updateFolderById = (folderId: string, updatedData: Partial<FolderDa
 	}
 };
 
-export const archiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
+export const archiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch, getState: () => any) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
@@ -360,10 +360,39 @@ export const archiveFolders = (userId: string, folderIds: string[]) => async (di
 		});
 
 		if (response.data.success) {
+			// Obtener los datos de los folders desde el state para determinar cuáles están vinculados
+			const state = getState();
+			const allFolders: FolderData[] = state.folder.folders || [];
+			const foldersToArchive = allFolders.filter((f) => folderIds.includes(f._id));
+
+			// Contar folders vinculados vs no vinculados
+			let linkedCount = 0;
+			let basicCount = 0;
+			foldersToArchive.forEach((folder) => {
+				if (isFolderLinkedToCausa(folder)) {
+					linkedCount++;
+				} else {
+					basicCount++;
+				}
+			});
+
+			// Si no encontramos algunos folders en el state, asumirlos como básicos
+			const notFoundCount = folderIds.length - foldersToArchive.length;
+			basicCount += notFoundCount;
+
 			dispatch({
 				type: ARCHIVE_FOLDERS,
 				payload: folderIds,
 			});
+			// Decrementar contador de folders en userStats (archivadas no cuentan como activas)
+			dispatch(incrementUserStat("folders", -folderIds.length));
+			// Incrementar storage según el tipo de folder (vinculados pesan más)
+			if (linkedCount > 0) {
+				dispatch(updateUserStorage("folderLinked", linkedCount));
+			}
+			if (basicCount > 0) {
+				dispatch(updateUserStorage("folder", basicCount));
+			}
 			return { success: true, message: "Causas archivadas exitosamente" };
 		} else {
 			return { success: false, message: response.data.message || "No se pudieron archivar las causas." };
@@ -421,7 +450,7 @@ export const getArchivedFoldersByUserId =
 		}
 	};
 
-export const unarchiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch) => {
+export const unarchiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch, getState: () => any) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
 		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
@@ -434,11 +463,40 @@ export const unarchiveFolders = (userId: string, folderIds: string[]) => async (
 			const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
 
 			if (unarchivedIds.length > 0) {
+				// Obtener los datos de los folders archivados desde el state para determinar cuáles están vinculados
+				const state = getState();
+				const archivedFolders: FolderData[] = state.folder.archivedFolders || [];
+				const foldersToUnarchive = archivedFolders.filter((f) => unarchivedIds.includes(f._id));
+
+				// Contar folders vinculados vs no vinculados
+				let linkedCount = 0;
+				let basicCount = 0;
+				foldersToUnarchive.forEach((folder) => {
+					if (isFolderLinkedToCausa(folder)) {
+						linkedCount++;
+					} else {
+						basicCount++;
+					}
+				});
+
+				// Si no encontramos algunos folders en el state, asumirlos como básicos
+				const notFoundCount = unarchivedIds.length - foldersToUnarchive.length;
+				basicCount += notFoundCount;
+
 				// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedFolders
 				dispatch({
 					type: UNARCHIVE_FOLDERS,
 					payload: unarchivedIds,
 				});
+				// Incrementar contador de folders en userStats
+				dispatch(incrementUserStat("folders", unarchivedIds.length));
+				// Decrementar storage según el tipo de folder (vinculados pesan más)
+				if (linkedCount > 0) {
+					dispatch(updateUserStorage("folderLinked", -linkedCount));
+				}
+				if (basicCount > 0) {
+					dispatch(updateUserStorage("folder", -basicCount));
+				}
 
 				return {
 					success: true,

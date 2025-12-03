@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { Dispatch } from "redux";
 
 import { CalculatorType, CalculatorState, FilterParams } from "types/calculator";
-import { incrementUserStat } from "./userStats";
+import { incrementUserStat, updateUserStorage } from "./userStats";
 
 const SET_LOADING = "calculators/SET_LOADING";
 const SET_ERROR = "calculators/SET_ERROR";
@@ -405,6 +405,10 @@ export const archiveCalculators = (userId: string, calculatorIds: string[]) => a
 				type: ARCHIVE_CALCULATORS,
 				payload: calculatorIds,
 			});
+			// Decrementar contador de calculators en userStats (archivados no cuentan como activos)
+			dispatch(incrementUserStat("calculators", -calculatorIds.length));
+			// Incrementar storage (los cálculos archivados sí cuentan en el storage)
+			dispatch(updateUserStorage("calculator", calculatorIds.length));
 			return { success: true, message: "Cálculos archivados exitosamente" };
 		} else {
 			return { success: false, message: response.data.message || "No se pudieron archivar los cálculos." };
@@ -440,6 +444,10 @@ export const unarchiveCalculators = (userId: string, calculatorIds: string[]) =>
 					type: UNARCHIVE_CALCULATORS,
 					payload: unarchivedIds,
 				});
+				// Incrementar contador de calculators en userStats
+				dispatch(incrementUserStat("calculators", unarchivedIds.length));
+				// Decrementar storage (los cálculos desarchivados ya no cuentan en el storage)
+				dispatch(updateUserStorage("calculator", -unarchivedIds.length));
 
 				return {
 					success: true,
