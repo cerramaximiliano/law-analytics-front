@@ -918,22 +918,34 @@ const TabSettings = () => {
 								<Collapse in={preferences.user?.inactivity ?? false} timeout="auto" unmountOnExit>
 									<Box sx={{ pl: { xs: 2, sm: 9 }, pr: 2, py: 1, bgcolor: "action.hover", borderRadius: 1, mx: { xs: 0, sm: 7 }, mb: 1 }}>
 										<Stack spacing={1.5}>
-											{/* Días de anticipación */}
-											<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-												<Typography variant="caption" color="text.secondary">
-													Días de anticipación:
-												</Typography>
-												<TextField
-													type="number"
-													size="small"
-													value={preferences.user?.inactivitySettings?.daysInAdvance ?? 5}
-													onChange={handleInactivityDaysInAdvanceChange}
-													inputProps={{ min: 1, max: 30 }}
-													sx={{ width: 70 }}
+											{/* Días de anticipación y Notificar solo una vez en la misma línea */}
+											<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+												<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+													<Typography variant="caption" color="text.secondary">
+														Días de anticipación:
+													</Typography>
+													<TextField
+														type="number"
+														size="small"
+														value={preferences.user?.inactivitySettings?.daysInAdvance ?? 5}
+														onChange={handleInactivityDaysInAdvanceChange}
+														inputProps={{ min: 1, max: 30 }}
+														sx={{ width: 70 }}
+													/>
+													<Typography variant="caption" color="text.secondary">
+														antes del vencimiento
+													</Typography>
+												</Stack>
+												<FormControlLabel
+													control={
+														<Checkbox
+															size="small"
+															checked={preferences.user?.inactivitySettings?.notifyOnceOnly ?? true}
+															onChange={handleInactivityNotifyOnceOnlyChange}
+														/>
+													}
+													label={<Typography variant="caption">Notificar solo una vez</Typography>}
 												/>
-												<Typography variant="caption" color="text.secondary">
-													antes del vencimiento
-												</Typography>
 											</Stack>
 											{/* Alertas de caducidad y prescripción */}
 											<Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
@@ -964,16 +976,6 @@ const TabSettings = () => {
 													/>
 												</Stack>
 											</Stack>
-											<FormControlLabel
-												control={
-													<Checkbox
-														size="small"
-														checked={preferences.user?.inactivitySettings?.notifyOnceOnly ?? true}
-														onChange={handleInactivityNotifyOnceOnlyChange}
-													/>
-												}
-												label={<Typography variant="caption">Notificar solo una vez</Typography>}
-											/>
 										</Stack>
 									</Box>
 								</Collapse>
