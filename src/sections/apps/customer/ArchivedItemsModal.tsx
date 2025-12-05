@@ -272,10 +272,8 @@ const ArchivedItemsModal = ({
 													key={column.id}
 													style={{ minWidth: column.minWidth }}
 													sx={{
-														fontWeight: 600,
 														py: 2,
 														backgroundColor: theme.palette.background.default,
-														color: theme.palette.text.secondary,
 														borderBottom: `1px solid ${theme.palette.divider}`,
 														position: "sticky !important",
 														top: 0,
