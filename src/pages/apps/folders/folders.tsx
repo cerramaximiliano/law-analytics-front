@@ -98,6 +98,7 @@ interface ReactTableProps extends Props {
 	navigate: ReturnType<typeof useNavigate>;
 	hideControls?: boolean;
 	simpleSkeleton?: boolean;
+	skeletonRowCount?: number;
 	initialPageSize?: number;
 	pendingCount?: number;
 	invalidCount?: number;
@@ -121,6 +122,7 @@ function ReactTable({
 	navigate,
 	hideControls = false,
 	simpleSkeleton = false,
+	skeletonRowCount = 5,
 	initialPageSize = 10,
 	pendingCount = 0,
 	invalidCount = 0,
@@ -214,6 +216,7 @@ function ReactTable({
 	if (!isColumnsReady || isLoading) {
 		// Skeleton simplificado para tabla secundaria
 		if (simpleSkeleton) {
+			const rowCount = Math.max(1, skeletonRowCount);
 			return (
 				<Table>
 					<TableHead>
@@ -228,7 +231,7 @@ function ReactTable({
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{Array(5)
+						{Array(rowCount)
 							.fill(0)
 							.map((_, rowIndex) => (
 								<TableRow key={rowIndex}>
@@ -1012,7 +1015,23 @@ const FoldersLayout = () => {
 										size="small"
 										onClick={async (e) => {
 											e.stopPropagation();
-											await dispatch(getFolderById(folder._id, true));
+											const result = await dispatch(getFolderById(folder._id, true));
+
+											if (result.success && result.folder) {
+												if (result.folder.causaVerified && result.folder.causaIsValid) {
+													setSnackbarMessage("La carpeta fue sincronizada correctamente");
+													setSnackbarSeverity("success");
+													setSnackbarOpen(true);
+												} else if (result.folder.causaVerified && !result.folder.causaIsValid) {
+													setSnackbarMessage("La carpeta no existe o no es pública");
+													setSnackbarSeverity("error");
+													setSnackbarOpen(true);
+												}
+											} else if (!result.success) {
+												setSnackbarMessage(result.message || "Error al verificar la carpeta. Intente nuevamente");
+												setSnackbarSeverity("error");
+												setSnackbarOpen(true);
+											}
 										}}
 										sx={{
 											padding: 0.5,
@@ -1060,7 +1079,23 @@ const FoldersLayout = () => {
 										size="small"
 										onClick={async (e) => {
 											e.stopPropagation();
-											await dispatch(getFolderById(folder._id, true));
+											const result = await dispatch(getFolderById(folder._id, true));
+
+											if (result.success && result.folder) {
+												if (result.folder.causaVerified && result.folder.causaIsValid) {
+													setSnackbarMessage("La carpeta fue sincronizada correctamente");
+													setSnackbarSeverity("success");
+													setSnackbarOpen(true);
+												} else if (result.folder.causaVerified && !result.folder.causaIsValid) {
+													setSnackbarMessage("La carpeta no existe o no es pública");
+													setSnackbarSeverity("error");
+													setSnackbarOpen(true);
+												}
+											} else if (!result.success) {
+												setSnackbarMessage(result.message || "Error al verificar la carpeta. Intente nuevamente");
+												setSnackbarSeverity("error");
+												setSnackbarOpen(true);
+											}
 										}}
 										sx={{
 											padding: 0.5,
@@ -1400,6 +1435,7 @@ const FoldersLayout = () => {
 								navigate={navigate}
 								hideControls={true}
 								simpleSkeleton={true}
+								skeletonRowCount={pendingOrInvalidFolders.length}
 								initialPageSize={5}
 								anchorEl={anchorEl}
 								menuRowId={menuRowId}
