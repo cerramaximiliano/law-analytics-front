@@ -106,7 +106,11 @@ const TabSettings = () => {
 	// en lugar de depender solo de la verificación de los valores individuales
 	const [channelsEnabled, setChannelsEnabled] = useState<boolean>(preferences.channels?.email || preferences.channels?.browser || false);
 	const [userOptionsEnabled, setUserOptionsEnabled] = useState<boolean>(
-		preferences.user?.calendar || preferences.user?.expiration || (preferences.user?.taskExpiration ?? false) || preferences.user?.inactivity || false,
+		preferences.user?.calendar ||
+			preferences.user?.expiration ||
+			(preferences.user?.taskExpiration ?? false) ||
+			preferences.user?.inactivity ||
+			false,
 	);
 	const [systemOptionsEnabled, setSystemOptionsEnabled] = useState<boolean>(
 		preferences.system?.alerts || preferences.system?.news || preferences.system?.userActivity || false,
@@ -120,7 +124,12 @@ const TabSettings = () => {
 		setChannelsEnabled(isAnyChannelEnabled);
 
 		// Usuario
-		const isAnyUserOptionEnabled = preferences.user?.calendar || preferences.user?.expiration || (preferences.user?.taskExpiration ?? false) || preferences.user?.inactivity || false;
+		const isAnyUserOptionEnabled =
+			preferences.user?.calendar ||
+			preferences.user?.expiration ||
+			(preferences.user?.taskExpiration ?? false) ||
+			preferences.user?.inactivity ||
+			false;
 		setUserOptionsEnabled(isAnyUserOptionEnabled);
 
 		// Sistema
@@ -426,7 +435,8 @@ const TabSettings = () => {
 			};
 
 			// Si alguna opción está activa, el switch principal también debe estarlo
-			const anyOptionActive = updatedUser.calendar || updatedUser.expiration || (updatedUser.taskExpiration ?? false) || updatedUser.inactivity;
+			const anyOptionActive =
+				updatedUser.calendar || updatedUser.expiration || (updatedUser.taskExpiration ?? false) || updatedUser.inactivity;
 			if (anyOptionActive && !updatedUser.enabled) {
 				updatedUser.enabled = true;
 				// Actualizar el checked para reflejar que el grupo está activo
@@ -453,8 +463,7 @@ const TabSettings = () => {
 
 	// Handler para cambiar la configuración de días de anticipación
 	const handleDaysInAdvanceChange =
-		(settingsKey: "calendarSettings" | "expirationSettings" | "taskExpirationSettings") =>
-		(event: React.ChangeEvent<HTMLInputElement>) => {
+		(settingsKey: "calendarSettings" | "expirationSettings" | "taskExpirationSettings") => (event: React.ChangeEvent<HTMLInputElement>) => {
 			const value = parseInt(event.target.value, 10);
 			if (isNaN(value) || value < 1 || value > 30) return;
 
@@ -472,8 +481,7 @@ const TabSettings = () => {
 
 	// Handler para cambiar la configuración de notificar solo una vez
 	const handleNotifyOnceOnlyChange =
-		(settingsKey: "calendarSettings" | "expirationSettings" | "taskExpirationSettings") =>
-		(event: React.ChangeEvent<HTMLInputElement>) => {
+		(settingsKey: "calendarSettings" | "expirationSettings" | "taskExpirationSettings") => (event: React.ChangeEvent<HTMLInputElement>) => {
 			setPreferences((prev) => ({
 				...prev,
 				user: {
