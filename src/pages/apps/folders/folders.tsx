@@ -225,7 +225,7 @@ function ReactTable({
 								.fill(0)
 								.map((_, index) => (
 									<TableCell key={index}>
-										<Skeleton width={100} height={24} />
+										<Skeleton variant="rounded" width={100} height={28} />
 									</TableCell>
 								))}
 						</TableRow>
@@ -234,12 +234,12 @@ function ReactTable({
 						{Array(rowCount)
 							.fill(0)
 							.map((_, rowIndex) => (
-								<TableRow key={rowIndex}>
+								<TableRow key={rowIndex} sx={{ height: 60 }}>
 									{Array(6)
 										.fill(0)
 										.map((_, cellIndex) => (
 											<TableCell key={cellIndex}>
-												<Skeleton width={100} height={24} />
+												<Skeleton variant="rounded" width="80%" height={32} />
 											</TableCell>
 										))}
 								</TableRow>
@@ -250,26 +250,45 @@ function ReactTable({
 		}
 
 		// Skeleton completo para tabla principal
+		const mainRowCount = Math.max(1, Math.min(skeletonRowCount, 10));
 		return (
 			<>
 				{/* <TableRowSelection selected={0} /> */}
 				<Stack spacing={3}>
-					<Box
-						sx={{
-							p: 3,
-							pb: 0,
-							display: "flex",
-							flexDirection: "column",
-							gap: 2,
-						}}
-					>
-						<Skeleton width={200} height={40} />
-						<Stack direction={matchDownSM ? "column" : "row"} alignItems="center" spacing={2}>
-							<Skeleton width={120} height={40} />
-							<Skeleton width={150} height={40} />
-							<Skeleton width={100} height={40} />
+					{/* Skeleton de controles superiores */}
+					<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
+						{/* Primera fila: buscador + botones */}
+						<Stack
+							direction={matchDownSM ? "column" : "row"}
+							spacing={{ xs: 1.5, sm: 2 }}
+							justifyContent="space-between"
+							alignItems={matchDownSM ? "stretch" : "center"}
+						>
+							{/* Buscador */}
+							<Skeleton variant="rounded" width={280} height={40} />
+							{/* Botones principales */}
+							<Stack direction={matchDownSM ? "column" : "row"} spacing={1}>
+								<Skeleton variant="rounded" width={145} height={32} />
+								<Skeleton variant="rounded" width={130} height={32} />
+								<Skeleton variant="rounded" width={140} height={32} />
+							</Stack>
 						</Stack>
-					</Box>
+						{/* Segunda fila: selector + iconos */}
+						<Stack
+							direction={matchDownSM ? "column" : "row"}
+							spacing={{ xs: 1.5, sm: 2 }}
+							justifyContent="space-between"
+							alignItems={matchDownSM ? "stretch" : "center"}
+						>
+							{/* Selector de ordenamiento */}
+							<Skeleton variant="rounded" width={280} height={40} />
+							{/* Iconos */}
+							<Stack direction="row" spacing={1}>
+								<Skeleton variant="circular" width={36} height={36} />
+								<Skeleton variant="circular" width={36} height={36} />
+							</Stack>
+						</Stack>
+					</Stack>
 					<Table>
 						<TableHead>
 							<TableRow>
@@ -277,21 +296,21 @@ function ReactTable({
 									.fill(0)
 									.map((_, index) => (
 										<TableCell key={index}>
-											<Skeleton width={100} height={24} />
+											<Skeleton variant="rounded" width={100} height={28} />
 										</TableCell>
 									))}
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{Array(5)
+							{Array(mainRowCount)
 								.fill(0)
 								.map((_, rowIndex) => (
-									<TableRow key={rowIndex}>
+									<TableRow key={rowIndex} sx={{ height: 60 }}>
 										{Array(6)
 											.fill(0)
 											.map((_, cellIndex) => (
 												<TableCell key={cellIndex}>
-													<Skeleton width={100} height={24} />
+													<Skeleton variant="rounded" width="80%" height={32} />
 												</TableCell>
 											))}
 									</TableRow>
@@ -1380,6 +1399,7 @@ const FoldersLayout = () => {
 							isLoading={isLoader}
 							expandedRowId={expandedRowId}
 							navigate={navigate}
+							skeletonRowCount={verifiedFolders.length}
 							pendingCount={pendingCount}
 							invalidCount={invalidCount}
 							onScrollToPending={handleScrollToPending}
