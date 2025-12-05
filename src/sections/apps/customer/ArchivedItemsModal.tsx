@@ -238,15 +238,18 @@ const ArchivedItemsModal = ({
 								flexDirection: "column",
 							}}
 						>
-							<TableContainer sx={{ flex: 1, overflow: "auto" }}>
-								<Table stickyHeader>
+							<TableContainer sx={{ maxHeight: 400 }}>
+								<Table stickyHeader aria-label="sticky table">
 									<TableHead>
 										<TableRow>
 											<TableCell
 												padding="checkbox"
 												sx={{
-													bgcolor: alpha(theme.palette.primary.main, 0.08),
+													backgroundColor: theme.palette.background.default,
 													borderBottom: `1px solid ${theme.palette.divider}`,
+													position: "sticky !important",
+													top: 0,
+													zIndex: 2,
 												}}
 											>
 												<Checkbox
@@ -271,9 +274,12 @@ const ArchivedItemsModal = ({
 													sx={{
 														fontWeight: 600,
 														py: 2,
-														bgcolor: alpha(theme.palette.primary.main, 0.08),
+														backgroundColor: theme.palette.background.default,
 														color: theme.palette.text.secondary,
 														borderBottom: `1px solid ${theme.palette.divider}`,
+														position: "sticky !important",
+														top: 0,
+														zIndex: 2,
 													}}
 												>
 													{column.label}

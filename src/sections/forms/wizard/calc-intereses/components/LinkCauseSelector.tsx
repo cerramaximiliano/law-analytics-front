@@ -324,13 +324,13 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 
 					<SimpleBar
 						sx={{
-							maxHeight: "420px",
+							height: "420px",
 							width: "100%",
 							overflowX: "hidden",
 							overflowY: "auto",
 						}}
 					>
-						<Stack spacing={1.5}>
+						<Stack spacing={1.5} sx={{ p: 0.5 }}>
 							{!isLoading && filteredFolders.length > 0 ? (
 								filteredFolders.map((folder) => (
 									<Box
@@ -414,6 +414,10 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 										bgcolor: theme.palette.background.paper,
 										borderRadius: 1,
 										border: `1px dashed ${theme.palette.divider}`,
+										minHeight: "400px",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
 									}}
 								>
 									{isLoading ? (
@@ -428,18 +432,7 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 				</DialogContent>
 
 				<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
-					<Button
-						color="error"
-						onClick={() => setOpenModal(false)}
-						sx={{
-							color: theme.palette.text.secondary,
-							"&:hover": {
-								bgcolor: theme.palette.action.hover,
-							},
-						}}
-					>
-						Cancelar
-					</Button>
+					<Button onClick={() => setOpenModal(false)}>Cancelar</Button>
 				</DialogActions>
 			</ResponsiveDialog>
 		</>

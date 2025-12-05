@@ -417,13 +417,13 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 
 				<SimpleBar
 					sx={{
-						maxHeight: "420px",
+						height: "420px",
 						width: "100%",
 						overflowX: "hidden",
 						overflowY: "auto",
 					}}
 				>
-					<Stack spacing={1.5}>
+					<Stack spacing={1.5} sx={{ p: 0.5 }}>
 						{filteredFolders.length > 0 ? (
 							filteredFolders.map((folder) => {
 								const isSelected = selectedFolder?._id === folder._id;
@@ -517,6 +517,10 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 									bgcolor: theme.palette.background.paper,
 									borderRadius: 2,
 									border: `1px dashed ${theme.palette.divider}`,
+									minHeight: "400px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
 								}}
 							>
 								<Typography color="textSecondary">No se encontraron carpetas</Typography>
@@ -529,9 +533,7 @@ const LinkCauseModal: React.FC<LinkCauseModalProps> = ({ open, onClose, calculat
 			<Divider />
 
 			<DialogActions sx={{ p: 2.5, bgcolor: theme.palette.background.default }}>
-				<Button onClick={onClose} color="error">
-					Cancelar
-				</Button>
+				<Button onClick={onClose}>Cancelar</Button>
 				<Button onClick={handleLink} color="primary" variant="contained" disabled={!selectedFolder}>
 					Vincular Carpeta
 				</Button>
