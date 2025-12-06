@@ -17,6 +17,11 @@ import {
 	Button,
 	Box,
 	Collapse,
+	Menu,
+	MenuItem,
+	ListItemIcon,
+	ListItemText,
+	CircularProgress,
 } from "@mui/material";
 import { dispatch, useSelector } from "store";
 import dayjs from "utils/dayjs-config";
@@ -46,11 +51,12 @@ import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
 
 // assets
-import { Add, Eye, Trash, DocumentDownload } from "iconsax-react";
+import { Add, Eye, Trash, DocumentDownload, Refresh, Copy, Sms, Printer, Link21, More } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
-import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
+import { getCalculatorsByFilter, clearSelectedCalculators, updateCalculator } from "store/reducers/calculator";
+import { openSnackbar } from "store/reducers/snackbar";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
 
 // ==============================|| REACT TABLE ||============================== //
@@ -65,6 +71,26 @@ interface CalculatorData {
 	amount: number;
 	interest?: number;
 	variables?: Record<string, any>;
+	keepUpdated?: boolean;
+	originalData?: {
+		amount?: number;
+		capital?: number;
+		interest?: number;
+		endDate?: string | Date;
+		createdAt?: string | Date;
+	};
+	lastUpdate?: {
+		amount?: number;
+		interest?: number;
+		updatedAt?: string | Date;
+		updatedToDate?: string | Date;
+		segments?: Array<{
+			startDate?: string | Date;
+			endDate?: string | Date;
+			interest?: number;
+			isExtension?: boolean;
+		}>;
+	};
 }
 
 // Update Props interface
@@ -100,7 +126,36 @@ interface CalculationDetailsProps {
 		variables?: Record<string, any>;
 		subClassType?: string;
 		type?: string;
+		interest?: number;
+		capital?: number;
+		keepUpdated?: boolean;
+		originalData?: {
+			amount?: number;
+			capital?: number;
+			interest?: number;
+			endDate?: string | Date;
+			createdAt?: string | Date;
+		};
+		lastUpdate?: {
+			amount?: number;
+			interest?: number;
+			updatedAt?: string | Date;
+			updatedToDate?: string | Date;
+			segments?: Array<{
+				startDate?: string | Date;
+				endDate?: string | Date;
+				interest?: number;
+				isExtension?: boolean;
+			}>;
+		};
 	};
+	onKeepUpdatedChange?: (calculatorId: string, keepUpdated: boolean) => void;
+	isKeepUpdatedLoading?: boolean;
+	// Props para control externo
+	openEmailModal?: boolean;
+	onEmailModalClose?: () => void;
+	triggerPrint?: boolean;
+	onPrintComplete?: () => void;
 }
 
 const CustomGlobalFilter = GlobalFilter as any;
@@ -111,7 +166,22 @@ const CustomHeaderSort = HeaderSort as any;
 
 const CustomSortingSelect = SortingSelect as any;
 
-const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
+const CalculationDetails: React.FC<CalculationDetailsProps> = ({
+	data,
+	onKeepUpdatedChange,
+	isKeepUpdatedLoading,
+	openEmailModal,
+	onEmailModalClose,
+	triggerPrint,
+	onPrintComplete,
+}) => {
+	// Handler para el cambio de keepUpdated
+	const handleKeepUpdatedChange = (keepUpdated: boolean) => {
+		if (onKeepUpdatedChange) {
+			onKeepUpdatedChange(data._id, keepUpdated);
+		}
+	};
+
 	// Función para obtener etiquetas personalizadas o claves directamente
 	const getLabelForKey = (key: string, customLabel?: string): string => {
 		if (customLabel) {
@@ -182,180 +252,234 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			}
 		});
 
+		// Incluir tramos de intereses si keepUpdated está activo
+		if (data.keepUpdated && data.lastUpdate?.segments && data.lastUpdate.segments.length > 0) {
+			const formatDate = (date: string | Date | undefined) => {
+				if (!date) return "-";
+				const d = new Date(date);
+				return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+			};
+			const formatCurrency = (value: number | undefined) => {
+				if (value === undefined || value === null) return "-";
+				return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
+			};
+
+			text += "INTERESES\n";
+			data.lastUpdate.segments.forEach((segment) => {
+				text += `Intereses (${formatDate(segment.startDate)} - ${formatDate(segment.endDate)}): ${formatCurrency(segment.interest)}\n`;
+			});
+			text += "\n";
+		}
+
+		// Usar el monto actualizado si está disponible
+		const finalAmount = data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount;
 		text += `TOTAL: ${new Intl.NumberFormat("es-AR", {
 			style: "currency",
 			currency: "ARS",
-		}).format(data.amount)}`;
+		}).format(finalAmount)}`;
 
 		return text;
 	};
 
 	const generateHtmlContent = () => {
-		let html = `
-		  <!DOCTYPE html>
-		  <html lang="es">
-		  <head>
-			<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>Liquidación de Intereses</title>
+		const styles = `
 			<style>
-			  body {
-				font-family: Arial, sans-serif;
-				line-height: 1.6;
-				color: #333;
-				max-width: 800px;
-				margin: 0 auto;
-				padding: 20px;
-			  }
-			  .container {
-				font-family: Arial, sans-serif;
-				max-width: 800px;
-				margin: 0 auto;
-				padding: 20px;
-			  }
-			  .header {
-				text-align: center;
-				margin-bottom: 24px;
-			  }
-			  .header h1, .header h2 {
-				color: #333;
-				margin: 0;
-			  }
-			  .card {
-				border: 1px solid #ddd;
-				border-radius: 8px;
-				margin-bottom: 16px;
-				box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-				overflow: hidden;
-				break-inside: avoid;
-				page-break-inside: avoid;
-			  }
-			  .card-header {
-				background-color: #f5f5f5;
-				padding: 12px 16px;
-				font-weight: bold;
-				border-bottom: 1px solid #ddd;
-				border-radius: 8px 8px 0 0;
-				color: #333;
-			  }
-			  .card-content {
-				padding: 16px;
-			  }
-			  .item-row, .row {
-				display: flex;
-				justify-content: space-between;
-				padding: 8px 0;
-				border-bottom: 1px solid #eee;
-			  }
-			  .item-row:last-child, .row:last-child {
-				border-bottom: none;
-			  }
-			  .label {
-				color: #666;
-			  }
-			  .value {
-				font-weight: 500;
-				color: #333;
-			  }
-			  .total-card {
-				background-color: #1976d2;
-				color: white;
-				padding: 16px;
-				border-radius: 8px;
-				margin-top: 16px;
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-			  }
-			  .total-content {
-				display: flex;
-				justify-content: space-between;
-				padding: 16px;
-				font-size: 1.2em;
-				font-weight: bold;
-			  }
-			  .total-label {
-				font-size: 18px;
-				font-weight: bold;
-			  }
-			  .total-value {
-				font-size: 18px;
-				font-weight: bold;
-			  }
-			  .footer {
-				margin-top: 24px;
-				text-align: center;
-				font-size: 12px;
-				color: #666;
-			  }
-			  .message-card {
-				border: 1px solid #ddd;
-				border-radius: 8px;
-				margin-bottom: 16px;
-				padding: 16px;
-				background-color: #f9f9f9;
-				line-height: 1.5;
-			  }
+				body {
+					font-family: Arial, sans-serif;
+					line-height: 1.6;
+					color: #333;
+					max-width: 800px;
+					margin: 0 auto;
+					padding: 20px;
+				}
+				.container { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+				.header { text-align: center; margin-bottom: 24px; }
+				.header h1, .header h2 { color: #333; margin: 0; }
+				.card {
+					border: 1px solid #ddd;
+					border-radius: 8px;
+					margin-bottom: 16px;
+					break-inside: avoid;
+					page-break-inside: avoid;
+					box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+					overflow: hidden;
+				}
+				.card-header {
+					background-color: #f5f5f5;
+					padding: 12px 16px;
+					border-bottom: 1px solid #ddd;
+					border-radius: 8px 8px 0 0;
+					font-weight: bold;
+					color: #333;
+				}
+				.card-content { padding: 16px; }
+				.data-table { width: 100%; border-collapse: collapse; }
+				.data-table td { padding: 8px 0; border-bottom: 1px solid #eee; }
+				.data-table tr:last-child td { border-bottom: none; }
+				.label { color: #666; text-align: left; width: 40%; }
+				.value { font-weight: 500; color: #333; text-align: right; width: 60%; }
+				.total-card {
+					background-color: #1976d2;
+					color: white;
+					padding: 16px;
+					border-radius: 8px;
+					margin-top: 16px;
+				}
+				.total-table { width: 100%; }
+				.total-table td { padding: 0; }
+				.total-label {
+					font-size: 18px;
+					font-weight: bold;
+					text-align: left;
+				}
+				.total-value {
+					font-size: 18px;
+					font-weight: bold;
+					text-align: right;
+				}
+				.footer {
+					margin-top: 24px;
+					text-align: center;
+					font-size: 12px;
+					color: #666;
+				}
 			</style>
-		  </head>
-		  <body>
-			<div class="container">
-				<div class="header">
-					<h1>Liquidación de Intereses</h1>
-				</div>
 		`;
+
+		const renderCard = (title: string, items: ResultItem[], showSubtotal = false) => {
+			if (!items.length) return "";
+
+			const formatCurrency = (value: number) =>
+				new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
+
+			const rows = items
+				.map(
+					(item) => `
+				<tr>
+					<td class="label">${getLabelForKey(item.key, item.customLabel)}:</td>
+					<td class="value">${formatValue(item.key, item.value, item.formatType)}</td>
+				</tr>`,
+				)
+				.join("");
+
+			// Calcular subtotal si es necesario
+			let subtotalHtml = "";
+			if (showSubtotal) {
+				const subtotal = items.reduce((sum, item) => {
+					const numValue = typeof item.value === "number" ? item.value : 0;
+					return sum + numValue;
+				}, 0);
+
+				if (subtotal > 0) {
+					subtotalHtml = `
+				<tr style="background: #f5f5f5;">
+					<td class="label" style="font-weight: bold; border-top: 2px solid #ddd; padding-top: 12px;">Subtotal:</td>
+					<td class="value" style="font-weight: bold; color: #1976d2; border-top: 2px solid #ddd; padding-top: 12px;">${formatCurrency(subtotal)}</td>
+				</tr>`;
+				}
+			}
+
+			return `
+				<div class="card">
+					<div class="card-header">${title}</div>
+					<div class="card-content">
+						<table class="data-table">
+							${rows}
+							${subtotalHtml}
+						</table>
+					</div>
+				</div>`;
+		};
 
 		const groupedData = data?.variables?.calculationResult || groupResults(data?.variables);
 
 		// Generar secciones de tarjetas para cada grupo
+		let cardsHtml = "";
 		Object.entries(groupedData as Record<string, ResultItem[]>).forEach(([group, items]) => {
 			if (items && items.length) {
 				const title = getGroupTitle(group);
-				html += `
-			  <div class="card">
-				<div class="card-header">${title.toUpperCase()}</div>
-				<div class="card-content">
-			`;
-
-				items.forEach((item: ResultItem) => {
-					const label = getLabelForKey(item.key, item.customLabel);
-					const value = formatValue(item.key, item.value, item.formatType);
-					html += `
-				<div class="item-row">
-				  <span class="label">${label}:</span>
-				  <span class="value">${value}</span>
-				</div>
-			  `;
-				});
-
-				html += `
-				</div>
-			  </div>
-			`;
+				cardsHtml += renderCard(title.toUpperCase(), items);
 			}
 		});
 
-		// Agregar la tarjeta de total
+		// Generar sección de tramos de intereses si keepUpdated está activo
+		let keepUpdatedHtml = "";
+		if (data.keepUpdated && data.lastUpdate?.segments && data.lastUpdate.segments.length > 0) {
+			const formatDate = (date: string | Date | undefined) => {
+				if (!date) return "-";
+				const d = new Date(date);
+				return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+			};
+			const formatCurrency = (value: number | undefined) => {
+				if (value === undefined || value === null) return "-";
+				return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
+			};
+
+			const segmentsHtml = data.lastUpdate.segments
+				.map((segment) => {
+					const valueStyle = segment.isExtension ? "color: #1976d2; font-weight: 500;" : "";
+					return `
+				<tr>
+					<td class="label">Intereses (${formatDate(segment.startDate)} - ${formatDate(segment.endDate)}):</td>
+					<td class="value" style="${valueStyle}">${formatCurrency(segment.interest)}</td>
+				</tr>`;
+				})
+				.join("");
+
+			const totalInterest = data.lastUpdate.segments.reduce((sum, seg) => sum + (seg.interest || 0), 0);
+
+			keepUpdatedHtml = `
+			<div class="card">
+				<div class="card-header">INTERESES</div>
+				<div class="card-content">
+					<table class="data-table">
+						${segmentsHtml}
+						<tr style="background: #f5f5f5;">
+							<td class="label" style="font-weight: bold; border-top: 2px solid #ddd; padding-top: 12px;">Subtotal:</td>
+							<td class="value" style="font-weight: bold; color: #1976d2; border-top: 2px solid #ddd; padding-top: 12px;">${formatCurrency(totalInterest)}</td>
+						</tr>
+					</table>
+				</div>
+			</div>`;
+		}
+
+		// Usar el monto actualizado si está disponible
+		const finalAmount = data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount;
 		const totalFormatted = new Intl.NumberFormat("es-AR", {
 			style: "currency",
 			currency: "ARS",
-		}).format(data.amount);
+		}).format(finalAmount);
 
-		html += `
-			<div class="total-card">
-			  <span class="total-label">CAPITAL ACTUALIZADO</span>
-			  <span class="total-value">${totalFormatted}</span>
-			</div>
-
-			<div class="footer">
-			  <p>Este documento fue generado automáticamente por Law||Analytics.</p>
-			</div>
-			</div>
-		  </body>
-		  </html>
+		return `
+			<!DOCTYPE html>
+			<html>
+				<head>
+					<meta charset="utf-8">
+					<meta name="viewport" content="width=device-width, initial-scale=1.0">
+					${styles}
+				</head>
+				<body>
+					<div class="container">
+						<div class="header">
+							<h1>Liquidación de Intereses</h1>
+						</div>
+						${cardsHtml}
+						${keepUpdatedHtml}
+						<div class="total-card">
+							<table class="total-table">
+								<tr>
+									<td class="total-label">CAPITAL ACTUALIZADO</td>
+									<td class="total-value">${totalFormatted}</td>
+								</tr>
+							</table>
+						</div>
+						<div class="footer">
+							<p>Este documento fue generado automáticamente por Law||Analytics.</p>
+						</div>
+					</div>
+				</body>
+			</html>
 		`;
-
-		return html;
 	};
 
 	// Función para obtener el título del grupo
@@ -379,7 +503,30 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 
 		// Si ya tenemos un resultado precalculado
 		if (variables.calculationResult) {
-			return variables.calculationResult as GroupedResults;
+			const result = { ...variables.calculationResult } as GroupedResults;
+
+			// Mover folderName, reclamante y reclamado de intereses a detalles si están en el grupo incorrecto
+			if (result.intereses && result.intereses.length > 0) {
+				const keysToMove = ["folderName", "reclamante", "reclamado"];
+				const itemsToMove: ResultItem[] = [];
+				result.intereses = result.intereses.filter((item) => {
+					if (keysToMove.includes(item.key)) {
+						itemsToMove.push(item);
+						return false;
+					}
+					return true;
+				});
+
+				if (itemsToMove.length > 0) {
+					if (!result.detalles) {
+						result.detalles = [];
+					}
+					// Agregar al inicio de detalles
+					result.detalles = [...itemsToMove, ...result.detalles];
+				}
+			}
+
+			return result;
 		}
 
 		// De lo contrario, intentamos agrupar los datos
@@ -460,6 +607,13 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			generatePlainText={generatePlainText}
 			customTitle="Liquidación de Intereses - Law||Analytics"
 			hideInterestButton={true}
+			isSaved={true}
+			onKeepUpdatedChange={handleKeepUpdatedChange}
+			isKeepUpdatedLoading={isKeepUpdatedLoading}
+			openEmailModal={openEmailModal}
+			onEmailModalClose={onEmailModalClose}
+			triggerPrint={triggerPrint}
+			onPrintComplete={onPrintComplete}
 		/>
 	);
 };
@@ -678,8 +832,15 @@ const SavedIntereses = () => {
 	const [calculatorIdToDelete, setCalculatorIdToDelete] = useState<string>("");
 	const [add, setAdd] = useState<boolean>(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	const [keepUpdatedLoading, setKeepUpdatedLoading] = useState<string | null>(null);
 	const isMountedRef = useRef(false);
 	const isFirstRenderRef = useRef(true);
+
+	// Estados para el menú de acciones
+	const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
+	const [selectedRowData, setSelectedRowData] = useState<CalculatorData | null>(null);
+	const [triggerEmailForRow, setTriggerEmailForRow] = useState<string | null>(null);
+	const [triggerPrintForRow, setTriggerPrintForRow] = useState<string | null>(null);
 
 	useEffect(() => {
 		// Marcar como montado
@@ -725,6 +886,202 @@ const SavedIntereses = () => {
 	const handleToggleExpanded = useCallback((rowId: string) => {
 		setExpandedRowId((prev) => (prev === rowId ? null : rowId));
 	}, []);
+
+	// Handler para cambiar keepUpdated
+	const handleKeepUpdatedChange = useCallback(async (calculatorId: string, keepUpdated: boolean) => {
+		setKeepUpdatedLoading(calculatorId);
+		try {
+			const result = await dispatch(updateCalculator(calculatorId, { keepUpdated }) as any);
+			if (result.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: keepUpdated
+							? "Actualización automática de intereses activada"
+							: "Actualización automática de intereses desactivada",
+						variant: "alert",
+						alert: { color: "success" },
+						close: true,
+					}),
+				);
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: result.error || "Error al actualizar la configuración",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+			}
+		} catch (error) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al actualizar la configuración",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		} finally {
+			setKeepUpdatedLoading(null);
+		}
+	}, []);
+
+	// Funciones para el menú de acciones
+	const handleOpenActionMenu = (event: MouseEvent<HTMLButtonElement>, rowData: CalculatorData) => {
+		event.stopPropagation();
+		setActionMenuAnchor(event.currentTarget);
+		setSelectedRowData(rowData);
+	};
+
+	const handleCloseActionMenu = () => {
+		setActionMenuAnchor(null);
+		setSelectedRowData(null);
+	};
+
+	// Generar texto plano para copiar
+	const generatePlainTextForRow = (data: CalculatorData) => {
+		let text = "LIQUIDACIÓN DE INTERESES\n\n";
+		const groupedData = data?.variables?.calculationResult || groupResultsForRow(data?.variables);
+
+		Object.entries(groupedData as Record<string, ResultItem[]>).forEach(([group, items]) => {
+			if (items && items.length) {
+				text += `${getGroupTitleStatic(group).toUpperCase()}\n`;
+				items.forEach((item: ResultItem) => {
+					text += `${item.customLabel || item.key}: ${formatValueStatic(item.key, item.value, item.formatType)}\n`;
+				});
+				text += "\n";
+			}
+		});
+
+		// Incluir tramos de intereses si keepUpdated está activo
+		if (data.keepUpdated && data.lastUpdate?.segments && data.lastUpdate.segments.length > 0) {
+			const formatDate = (date: string | Date | undefined) => {
+				if (!date) return "-";
+				const d = new Date(date);
+				return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+			};
+			const formatCurrency = (value: number | undefined) => {
+				if (value === undefined || value === null) return "-";
+				return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
+			};
+
+			text += "INTERESES\n";
+			data.lastUpdate.segments.forEach((segment) => {
+				text += `Intereses (${formatDate(segment.startDate)} - ${formatDate(segment.endDate)}): ${formatCurrency(segment.interest)}\n`;
+			});
+			text += "\n";
+		}
+
+		const finalAmount = data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount;
+		text += `CAPITAL ACTUALIZADO: ${new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(finalAmount)}`;
+
+		return text;
+	};
+
+	// Función para agrupar resultados (versión estática)
+	const groupResultsForRow = (variables: Record<string, any> | undefined): GroupedResults => {
+		const groups: GroupedResults = {
+			detalles: [],
+			calculos: [],
+			intereses: [],
+		};
+
+		if (!variables) return groups;
+
+		if (variables.tasa) groups.detalles.push({ key: "tasa", value: variables.tasa, customLabel: "Tipo de Tasa" });
+		if (variables.fechaInicial) groups.detalles.push({ key: "fechaInicial", value: variables.fechaInicial, customLabel: "Fecha Inicial" });
+		if (variables.fechaFinal) groups.detalles.push({ key: "fechaFinal", value: variables.fechaFinal, customLabel: "Fecha Final" });
+		if (variables.capital) groups.detalles.push({ key: "capital", value: variables.capital, customLabel: "Capital" });
+
+		return groups;
+	};
+
+	const getGroupTitleStatic = (groupKey: string): string => {
+		const titles: Record<string, string> = {
+			detalles: "Detalles del Cálculo",
+			calculos: "Metodología de Cálculo",
+			intereses: "Resultados",
+		};
+		return titles[groupKey] || groupKey;
+	};
+
+	const formatValueStatic = (key: string, value: number | string, formatType?: string): string => {
+		if (formatType === "percentage") {
+			const numValue = Number(value);
+			if (!isNaN(numValue)) return `${(numValue * 100).toFixed(2)}%`;
+		}
+		if (key === "fechaInicial" || key === "fechaFinal") {
+			const date = dayjs(value);
+			if (date.isValid()) return date.format("DD/MM/YYYY");
+		}
+		if (typeof value === "number" || !isNaN(Number(value))) {
+			const numValue = Number(value);
+			if (!isNaN(numValue)) {
+				return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(numValue);
+			}
+		}
+		return String(value);
+	};
+
+	const handleCopyToClipboard = async () => {
+		if (!selectedRowData) return;
+		try {
+			await navigator.clipboard.writeText(generatePlainTextForRow(selectedRowData));
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Cálculo copiado correctamente",
+					variant: "alert",
+					alert: { color: "success" },
+					close: true,
+				}),
+			);
+		} catch (err) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al copiar",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		}
+		handleCloseActionMenu();
+	};
+
+	const handleEmailAction = () => {
+		if (!selectedRowData) return;
+		const rowId = selectedRowData._id;
+		setExpandedRowId(rowId);
+		handleCloseActionMenu();
+		// Pequeño delay para que se renderice el componente expandido
+		setTimeout(() => {
+			setTriggerEmailForRow(rowId);
+		}, 100);
+	};
+
+	const handlePrintAction = () => {
+		if (!selectedRowData) return;
+		const rowId = selectedRowData._id;
+		setExpandedRowId(rowId);
+		handleCloseActionMenu();
+		// Pequeño delay para que se renderice el componente expandido
+		setTimeout(() => {
+			setTriggerPrintForRow(rowId);
+		}, 100);
+	};
+
+	const handleLinkAction = () => {
+		if (!selectedRowData) return;
+		setSelectedCalculationId(selectedRowData._id);
+		setLinkModalOpen(true);
+		handleCloseActionMenu();
+	};
 
 	const columns = useMemo(
 		() => [
@@ -885,12 +1242,21 @@ const SavedIntereses = () => {
 				accessor: "total",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
 					return (
-						<Typography>
-							{new Intl.NumberFormat("es-AR", {
-								style: "currency",
-								currency: "ARS",
-							}).format(row.original.amount)}
-						</Typography>
+						<Stack direction="row" alignItems="center" spacing={0.5}>
+							<Typography>
+								{new Intl.NumberFormat("es-AR", {
+									style: "currency",
+									currency: "ARS",
+								}).format(row.original.amount)}
+							</Typography>
+							{row.original.keepUpdated && (
+								<Tooltip title="Intereses actualizados automáticamente">
+									<Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+										<Refresh size={16} style={{ color: theme.palette.primary.main }} />
+									</Box>
+								</Tooltip>
+							)}
+						</Stack>
 					);
 				},
 			},
@@ -920,7 +1286,7 @@ const SavedIntereses = () => {
 								title="Ver"
 							>
 								<IconButton
-									color="secondary"
+									color="success"
 									onClick={(e: MouseEvent<HTMLButtonElement>) => {
 										e.stopPropagation();
 										if (handleToggleExpanded) {
@@ -929,6 +1295,56 @@ const SavedIntereses = () => {
 									}}
 								>
 									{collapseIcon}
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								componentsProps={{
+									tooltip: {
+										sx: {
+											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
+											opacity: 0.9,
+										},
+									},
+								}}
+								title="Imprimir"
+							>
+								<IconButton
+									color="primary"
+									onClick={(e: MouseEvent<HTMLButtonElement>) => {
+										e.stopPropagation();
+										setSelectedRowData(row.original);
+										setExpandedRowId(row.original._id);
+										setTimeout(() => {
+											setTriggerPrintForRow(row.original._id);
+										}, 100);
+									}}
+								>
+									<Printer variant="Bulk" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								componentsProps={{
+									tooltip: {
+										sx: {
+											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
+											opacity: 0.9,
+										},
+									},
+								}}
+								title="Enviar por email"
+							>
+								<IconButton
+									color="info"
+									onClick={(e: MouseEvent<HTMLButtonElement>) => {
+										e.stopPropagation();
+										setSelectedRowData(row.original);
+										setExpandedRowId(row.original._id);
+										setTimeout(() => {
+											setTriggerEmailForRow(row.original._id);
+										}, 100);
+									}}
+								>
+									<Sms variant="Bulk" />
 								</IconButton>
 							</Tooltip>
 							<Tooltip
@@ -953,23 +1369,73 @@ const SavedIntereses = () => {
 									<Trash variant="Bulk" />
 								</IconButton>
 							</Tooltip>
+							{!row.original.folderId && (
+								<Tooltip
+									componentsProps={{
+										tooltip: {
+											sx: {
+												backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
+												opacity: 0.9,
+											},
+										},
+									}}
+									title="Vincular a Carpeta"
+								>
+									<IconButton
+										color="warning"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											setSelectedCalculationId(row.original._id);
+											setLinkModalOpen(true);
+										}}
+									>
+										<Link21 variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
+							<Tooltip
+								componentsProps={{
+									tooltip: {
+										sx: {
+											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
+											opacity: 0.9,
+										},
+									},
+								}}
+								title="Más acciones"
+							>
+								<IconButton
+									color="secondary"
+									onClick={(e: MouseEvent<HTMLButtonElement>) => handleOpenActionMenu(e, row.original)}
+								>
+									<More variant="Bulk" />
+								</IconButton>
+							</Tooltip>
 						</Stack>
 					);
 				},
 			},
 		],
-		[theme, mode, expandedRowId, handleToggleExpanded],
+		[theme, mode, expandedRowId, handleToggleExpanded, keepUpdatedLoading, handleKeepUpdatedChange],
 	) as Column<CalculatorData>[];
 
 	const renderRowSubComponent = useCallback(
 		({ row }: { row: Row<CalculatorData> }) => (
 			<Stack direction="row" justifyContent="flex-end" sx={{ width: "100%" }}>
 				<Box sx={{ width: "100%" }}>
-					<CalculationDetails data={row.original} />
+					<CalculationDetails
+						data={row.original}
+						onKeepUpdatedChange={handleKeepUpdatedChange}
+						isKeepUpdatedLoading={keepUpdatedLoading === row.original._id}
+						openEmailModal={triggerEmailForRow === row.original._id}
+						onEmailModalClose={() => setTriggerEmailForRow(null)}
+						triggerPrint={triggerPrintForRow === row.original._id}
+						onPrintComplete={() => setTriggerPrintForRow(null)}
+					/>
 				</Box>
 			</Stack>
 		),
-		[],
+		[handleKeepUpdatedChange, keepUpdatedLoading, triggerEmailForRow, triggerPrintForRow],
 	);
 
 	return (
@@ -998,6 +1464,45 @@ const SavedIntereses = () => {
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			></Dialog>
+
+			{/* Menú de acciones */}
+			<Menu
+				anchorEl={actionMenuAnchor}
+				open={Boolean(actionMenuAnchor)}
+				onClose={handleCloseActionMenu}
+				onClick={(e) => e.stopPropagation()}
+				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+				transformOrigin={{ vertical: "top", horizontal: "right" }}
+			>
+				<MenuItem onClick={handleCopyToClipboard}>
+					<ListItemIcon>
+						<Copy size={18} />
+					</ListItemIcon>
+					<ListItemText>Copiar al portapapeles</ListItemText>
+				</MenuItem>
+				{selectedRowData && selectedRowData.type === "Calculado" && (selectedRowData.interest ?? 0) > 0 && (
+					<MenuItem
+						onClick={() => {
+							if (selectedRowData) {
+								handleKeepUpdatedChange(selectedRowData._id, !selectedRowData.keepUpdated);
+								handleCloseActionMenu();
+							}
+						}}
+						disabled={keepUpdatedLoading === selectedRowData?._id}
+					>
+						<ListItemIcon>
+							{keepUpdatedLoading === selectedRowData?._id ? (
+								<CircularProgress size={18} />
+							) : (
+								<Refresh size={18} />
+							)}
+						</ListItemIcon>
+						<ListItemText>
+							{selectedRowData?.keepUpdated ? "Desactivar actualización automática" : "Activar actualización automática"}
+						</ListItemText>
+					</MenuItem>
+				)}
+			</Menu>
 		</MainCard>
 	);
 };
