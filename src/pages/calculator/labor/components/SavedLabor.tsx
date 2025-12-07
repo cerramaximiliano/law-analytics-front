@@ -1214,7 +1214,26 @@ const SavedLabor = () => {
 				Header: "Intereses",
 				accessor: "interest",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
-					const interestAmount = row.original.variables?.datosIntereses?.montoIntereses;
+					// Si keepUpdated está activo y hay lastUpdate, usar esos intereses
+					if (row.original.keepUpdated && row.original.lastUpdate?.interest) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<Typography fontWeight="500" color="success.main">
+									{new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+									}).format(row.original.lastUpdate.interest)}
+								</Typography>
+								<Tooltip title="Intereses actualizados automáticamente">
+									<Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+										<Refresh size={16} style={{ color: theme.palette.primary.main }} />
+									</Box>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
+					const interestAmount = row.original.interest || row.original.variables?.datosIntereses?.montoIntereses;
 
 					if (!interestAmount && interestAmount !== 0) {
 						return (
@@ -1235,21 +1254,50 @@ const SavedLabor = () => {
 					}
 
 					return (
-						<Stack direction="row" alignItems="center" spacing={0.5}>
-							<Typography fontWeight="500" color="success.main">
-								{new Intl.NumberFormat("es-AR", {
-									style: "currency",
-									currency: "ARS",
-								}).format(interestAmount)}
-							</Typography>
-							{row.original.keepUpdated && (
-								<Tooltip title="Intereses actualizados automáticamente">
+						<Typography fontWeight="500" color="success.main">
+							{new Intl.NumberFormat("es-AR", {
+								style: "currency",
+								currency: "ARS",
+							}).format(interestAmount)}
+						</Typography>
+					);
+				},
+			},
+			{
+				Header: "Total",
+				accessor: "total",
+				Cell: ({ row }: { row: Row<CalculatorData> }) => {
+					// Si keepUpdated está activo y hay lastUpdate, usar ese amount
+					if (row.original.keepUpdated && row.original.lastUpdate?.amount) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<Typography fontWeight="600">
+									{new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+									}).format(row.original.lastUpdate.amount)}
+								</Typography>
+								<Tooltip title="Total actualizado automáticamente">
 									<Box component="span" sx={{ display: "flex", alignItems: "center" }}>
 										<Refresh size={16} style={{ color: theme.palette.primary.main }} />
 									</Box>
 								</Tooltip>
-							)}
-						</Stack>
+							</Stack>
+						);
+					}
+
+					// Calcular total = capital + intereses
+					const capital = row.original.capital || row.original.amount;
+					const interest = row.original.interest || row.original.variables?.datosIntereses?.montoIntereses || 0;
+					const total = row.original.amount || capital + interest;
+
+					return (
+						<Typography fontWeight="600">
+							{new Intl.NumberFormat("es-AR", {
+								style: "currency",
+								currency: "ARS",
+							}).format(total)}
+						</Typography>
 					);
 				},
 			},

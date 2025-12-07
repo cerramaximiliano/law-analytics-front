@@ -1191,6 +1191,25 @@ const SavedIntereses = () => {
 				Header: "Intereses",
 				accessor: "interest",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
+					// Si keepUpdated está activo y hay lastUpdate, usar esos intereses
+					if (row.original.keepUpdated && row.original.lastUpdate?.interest) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<Typography fontWeight="500" color="success.main">
+									{new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+									}).format(row.original.lastUpdate.interest)}
+								</Typography>
+								<Tooltip title="Intereses actualizados automáticamente">
+									<Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+										<Refresh size={16} style={{ color: theme.palette.primary.main }} />
+									</Box>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
 					if (!row.original.interest) {
 						// Si no hay interés registrado, buscamos en variables
 						let interes = 0;
@@ -1205,7 +1224,7 @@ const SavedIntereses = () => {
 
 						if (interes > 0) {
 							return (
-								<Typography>
+								<Typography fontWeight="500" color="success.main">
 									{new Intl.NumberFormat("es-AR", {
 										style: "currency",
 										currency: "ARS",
@@ -1228,7 +1247,7 @@ const SavedIntereses = () => {
 					}
 
 					return (
-						<Typography>
+						<Typography fontWeight="500" color="success.main">
 							{new Intl.NumberFormat("es-AR", {
 								style: "currency",
 								currency: "ARS",
@@ -1241,22 +1260,32 @@ const SavedIntereses = () => {
 				Header: "Total",
 				accessor: "total",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
-					return (
-						<Stack direction="row" alignItems="center" spacing={0.5}>
-							<Typography>
-								{new Intl.NumberFormat("es-AR", {
-									style: "currency",
-									currency: "ARS",
-								}).format(row.original.amount)}
-							</Typography>
-							{row.original.keepUpdated && (
-								<Tooltip title="Intereses actualizados automáticamente">
+					// Si keepUpdated está activo y hay lastUpdate, usar ese amount
+					if (row.original.keepUpdated && row.original.lastUpdate?.amount) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<Typography fontWeight="600">
+									{new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+									}).format(row.original.lastUpdate.amount)}
+								</Typography>
+								<Tooltip title="Total actualizado automáticamente">
 									<Box component="span" sx={{ display: "flex", alignItems: "center" }}>
 										<Refresh size={16} style={{ color: theme.palette.primary.main }} />
 									</Box>
 								</Tooltip>
-							)}
-						</Stack>
+							</Stack>
+						);
+					}
+
+					return (
+						<Typography fontWeight="600">
+							{new Intl.NumberFormat("es-AR", {
+								style: "currency",
+								currency: "ARS",
+							}).format(row.original.amount)}
+						</Typography>
 					);
 				},
 			},
