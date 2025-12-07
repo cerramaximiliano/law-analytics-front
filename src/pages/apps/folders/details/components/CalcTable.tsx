@@ -229,13 +229,19 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 									{showEmptyState ? (
 										<EmptyState />
 									) : (
-										sortedData.map((row: CalculatorType, index: number) => (
+										sortedData.map((row: CalculatorType, index: number) => {
+											// Determinar el monto a mostrar: usar lastUpdate.amount si keepUpdated está activo
+											const displayAmount = row.keepUpdated && row.lastUpdate?.amount
+												? row.lastUpdate.amount
+												: row.amount;
+
+											return (
 											<TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
 												{Object.entries({
 													date: row.date || "N/D",
 													type: row.type || "N/D",
 													user: row.user || "N/D",
-													amount: row.amount || "N/D",
+													amount: displayAmount || "N/D",
 												}).map(([key, value], cellIndex) => (
 													<>
 														<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
@@ -275,7 +281,8 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 													/>
 												</TableCell>
 											</TableRow>
-										))
+											);
+										})
 									)}
 								</TableBody>
 							</Table>
