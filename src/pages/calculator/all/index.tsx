@@ -32,7 +32,7 @@ import { useTheme } from "@mui/material/styles";
 // project imports
 import MainCard from "components/MainCard";
 import { useNavigate } from "react-router-dom";
-import { Calculator, Chart2, Coin, Warning2, Eye, Trash, Add, DocumentText, Archive, DocumentDownload } from "iconsax-react";
+import { Calculator, Chart2, Coin, Warning2, Eye, Trash, Add, DocumentText, Archive, DocumentDownload, Refresh } from "iconsax-react";
 import { Checkbox } from "@mui/material";
 import ScrollX from "components/ScrollX";
 
@@ -1128,6 +1128,25 @@ const AllCalculators = () => {
 				Header: "Intereses",
 				accessor: "interest",
 				Cell: ({ row }: { row: Row<CalculatorType> }) => {
+					// Si keepUpdated está activo y hay lastUpdate, usar esos intereses
+					if (row.original.keepUpdated && row.original.lastUpdate?.interest) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<Typography fontWeight="500" color="success.main">
+									{new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+									}).format(row.original.lastUpdate.interest)}
+								</Typography>
+								<Tooltip title="Intereses actualizados automáticamente">
+									<Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+										<Refresh size={16} style={{ color: theme.palette.primary.main }} />
+									</Box>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
 					const hasInterest = row.original.interest !== undefined && row.original.interest !== null && row.original.interest > 0;
 
 					if (!hasInterest) {
@@ -1154,6 +1173,40 @@ const AllCalculators = () => {
 								style: "currency",
 								currency: "ARS",
 							}).format(row.original.interest || 0)}
+						</Typography>
+					);
+				},
+			},
+			{
+				Header: "Total",
+				id: "total",
+				Cell: ({ row }: { row: Row<CalculatorType> }) => {
+					// Si keepUpdated está activo y hay lastUpdate, usar ese amount
+					if (row.original.keepUpdated && row.original.lastUpdate?.amount) {
+						return (
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<Typography fontWeight="600">
+									{new Intl.NumberFormat("es-AR", {
+										style: "currency",
+										currency: "ARS",
+									}).format(row.original.lastUpdate.amount)}
+								</Typography>
+								<Tooltip title="Total actualizado automáticamente">
+									<Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+										<Refresh size={16} style={{ color: theme.palette.primary.main }} />
+									</Box>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
+					// Usar amount que ya es el total (capital + intereses)
+					return (
+						<Typography fontWeight="600">
+							{new Intl.NumberFormat("es-AR", {
+								style: "currency",
+								currency: "ARS",
+							}).format(row.original.amount)}
 						</Typography>
 					);
 				},
