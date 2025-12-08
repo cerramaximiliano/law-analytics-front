@@ -15,6 +15,40 @@ export type CalcAmounts = {
 	description?: string;
 };
 
+// Tipo para segmentos de interés (soporta múltiples tramos)
+export type InterestSegment = {
+	id?: string;
+	startDate?: string | Date;
+	endDate?: string | Date;
+	rate?: string;
+	rateName?: string;
+	capital?: number;
+	interest?: number;
+	coefficient?: number;
+	isExtension?: boolean;
+	isCalculated?: boolean;
+};
+
+// Datos originales del cálculo (guardados al activar keepUpdated)
+export type OriginalData = {
+	amount?: number;
+	capital?: number;
+	interest?: number;
+	endDate?: string | Date;
+	createdAt?: string | Date;
+	segments?: InterestSegment[];
+	capitalizeInterest?: boolean;
+};
+
+// Datos de última actualización automática
+export type LastUpdate = {
+	amount?: number;
+	interest?: number;
+	updatedAt?: string | Date;
+	updatedToDate?: string | Date;
+	segments?: InterestSegment[];
+};
+
 export type CalculatorType = {
 	userId?: string;
 	groupId?: string;
@@ -33,6 +67,10 @@ export type CalculatorType = {
 	description?: string;
 	isLoader?: boolean;
 	error?: string | null;
+	// Campos para keepUpdated
+	keepUpdated?: boolean;
+	originalData?: OriginalData;
+	lastUpdate?: LastUpdate;
 };
 
 export interface CalculatorState {

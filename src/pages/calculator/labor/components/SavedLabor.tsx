@@ -1520,7 +1520,11 @@ const SavedLabor = () => {
 					</ListItemIcon>
 					<ListItemText>Copiar al portapapeles</ListItemText>
 				</MenuItem>
-				{selectedRowData && selectedRowData.type === "Calculado" && (selectedRowData.interest ?? 0) > 0 && (
+				{selectedRowData &&
+				selectedRowData.type === "Calculado" &&
+				((selectedRowData.interest ?? 0) > 0 ||
+					(selectedRowData.variables?.interesTotal ?? 0) > 0 ||
+					(selectedRowData.variables?.calculatedInterest ?? 0) > 0) && (
 					<MenuItem
 						onClick={() => {
 							if (selectedRowData) {

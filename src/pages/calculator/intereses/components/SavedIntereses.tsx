@@ -1143,23 +1143,41 @@ const SavedIntereses = () => {
 				Header: "Tipo de Tasa",
 				accessor: "subClassType",
 				Cell: ({ row }: { row: Row<CalculatorData> }) => {
-					// Función para obtener un nombre legible de la tasa
+					// Mapeo de identificadores de tasa a nombres legibles
+					const tasasMapping: Record<string, string> = {
+						tasaPasivaBNA: "Tasa Pasiva BNA",
+						tasaPasivaBCRA: "Tasa Pasiva BCRA",
+						tasaActivaBNA: "Tasa Activa BNA",
+						tasaActivaTnaBNA: "Tasa Activa TNA BNA",
+						cer: "CER",
+						icl: "ICL BCRA",
+						tasaActivaCNAT2601: "Tasa Activa BNA - Acta 2601",
+						tasaActivaCNAT2658: "Tasa Activa BNA - Acta 2658",
+						tasaActivaCNAT2764: "Tasa Activa BNA - Acta 2764",
+					};
+
+					// Función para obtener un nombre legible de la tasa (soporta múltiples tasas separadas por coma)
 					const getTasaLabel = (tasaValue: string): string => {
-						const tasasMapping: Record<string, string> = {
-							tasaPasivaBNA: "Tasa Pasiva BNA",
-							tasaPasivaBCRA: "Tasa Pasiva BCRA",
-							tasaActivaBNA: "Tasa Activa BNA",
-							tasaActivaTnaBNA: "Tasa Activa TNA BNA",
-							cer: "CER",
-							icl: "ICL BCRA",
-							tasaActivaCNAT2601: "Tasa Activa BNA - Acta 2601",
-							tasaActivaCNAT2658: "Tasa Activa BNA - Acta 2658",
-							tasaActivaCNAT2764: "Tasa Activa BNA - Acta 2764",
-						};
+						if (!tasaValue) return "";
+						// Si contiene coma, son múltiples tasas
+						if (tasaValue.includes(",")) {
+							const tasas = tasaValue.split(",").map((t) => t.trim());
+							const labels = tasas.map((t) => tasasMapping[t] || t);
+							return labels.join(" / ");
+						}
 						return tasasMapping[tasaValue] || tasaValue;
 					};
 
-					return <Typography noWrap>{getTasaLabel(row.original.subClassType)}</Typography>;
+					const label = getTasaLabel(row.original.subClassType);
+					const isMultiple = row.original.subClassType?.includes(",");
+
+					return (
+						<Tooltip title={label} arrow>
+							<Typography noWrap sx={{ maxWidth: isMultiple ? 180 : "auto" }}>
+								{label}
+							</Typography>
+						</Tooltip>
+					);
 				},
 			},
 			{
@@ -1509,7 +1527,11 @@ const SavedIntereses = () => {
 					</ListItemIcon>
 					<ListItemText>Copiar al portapapeles</ListItemText>
 				</MenuItem>
-				{selectedRowData && selectedRowData.type === "Calculado" && (selectedRowData.interest ?? 0) > 0 && (
+				{selectedRowData &&
+				selectedRowData.type === "Calculado" &&
+				((selectedRowData.interest ?? 0) > 0 ||
+					(selectedRowData.variables?.interesTotal ?? 0) > 0 ||
+					(selectedRowData.variables?.calculatedInterest ?? 0) > 0) && (
 					<MenuItem
 						onClick={() => {
 							if (selectedRowData) {

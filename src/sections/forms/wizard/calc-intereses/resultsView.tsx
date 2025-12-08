@@ -1,14 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
 	Typography,
 	Stack,
-	IconButton,
-	Tooltip,
 	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogActions,
-	TextField,
 	Button,
 	Zoom,
 	Table,
@@ -19,25 +16,14 @@ import {
 	TableRow,
 	Paper,
 	Box,
-	Chip,
 	Divider,
-	Checkbox,
-	InputAdornment,
-	Autocomplete,
-	useTheme,
-	GlobalStyles,
 	CircularProgress,
 } from "@mui/material";
-import logo from "assets/images/large_logo_transparent.png";
-import { Copy, Sms, Printer, Save2, SearchNormal1, UserAdd, Information, Calculator, StatusUp } from "iconsax-react";
-import styled from "@emotion/styled";
-import { useReactToPrint } from "react-to-print";
 import { enqueueSnackbar } from "notistack";
 import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";
 import { CalculatorType } from "types/calculator";
-import { openSnackbar } from "store/reducers/snackbar";
-import { getContactsByUserId } from "store/reducers/contacts";
+import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
 
 //third party
 import dayjs from "utils/dayjs-config";
@@ -73,78 +59,73 @@ interface ResultsViewProps {
 	groupId?: string; // ID del grupo si el cálculo pertenece a un grupo
 }
 
-const PrintContainer = styled("div")`
-	@media print {
-		@page {
-			size: auto;
-			margin: 20mm;
-		}
-
-		& .no-print {
-			display: none !important;
-		}
-
-		& .MuiCard-root {
-			break-inside: avoid;
-			page-break-inside: avoid;
-			margin-bottom: 16px;
-			border: 1px solid #ddd;
-		}
-
-		& .total-card {
-			break-inside: avoid;
-			page-break-inside: avoid;
-			background-color: #f5f5f5 !important;
-			color: #000 !important;
-		}
-
-		& .MuiTypography-root {
-			color: #000 !important;
-		}
-	}
-`;
 
 // Función para formatear el nombre del tipo de índice
 const formatTipoIndice = (tipoIndice: string): string => {
 	const tiposIndiceMap: Record<string, string> = {
 		interesDiario: "Interés diario",
 		indexado: "Indexado",
+		multipleSegments: "Múltiples tramos",
 	};
 
 	return tiposIndiceMap[tipoIndice] || tipoIndice;
 };
 
-// Iconos para cada sección
-const SectionIcons: Record<string, React.ElementType> = {
-	detalles: Information,
-	calculos: Calculator,
-	intereses: StatusUp,
-};
+// Tipo para los segmentos de intereses
+interface InterestSegment {
+	id: string;
+	startDate: string;
+	endDate: string;
+	rate: string;
+	rateName?: string;
+	capital: number;
+	interest: number;
+	coefficient: number;
+	isExtension?: boolean;
+}
+
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, onSave, currentUser, folderId, folderName, groupId }) => {
-	const theme = useTheme();
-	const [emailModalOpen, setEmailModalOpen] = useState(false);
-	const [email, setEmail] = useState("");
-	const [emailList, setEmailList] = useState<string[]>([]);
-	const [copyToMe, setCopyToMe] = useState(false);
-	const [customMessage, setCustomMessage] = useState("");
 	const [isSaved, setIsSaved] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [showTasasModal, setShowTasasModal] = useState(false);
-	const [contactsLoaded, setContactsLoaded] = useState(false);
 
-	const printRef = useRef<HTMLDivElement>(null);
+	// Estados para cargar datos de tasas en el modal
+	const [tasasDataLoaded, setTasasDataLoaded] = useState(false);
+	const [tasasDataLoading, setTasasDataLoading] = useState(false);
+	const [segmentsTasasData, setSegmentsTasasData] = useState<Record<string, any>>({});
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
-	const { contacts, isLoader: contactsLoading } = useSelector((state: RootState) => state.contacts);
 
-	// Cargar contactos cuando se abre el modal de email
+	// Cargar datos de tasas cuando se abre el modal
 	useEffect(() => {
-		if (emailModalOpen && !contactsLoaded && userFromRedux?._id) {
-			dispatch(getContactsByUserId(userFromRedux._id));
-			setContactsLoaded(true);
-		}
-	}, [emailModalOpen, contactsLoaded, userFromRedux?._id]);
+		const loadTasasData = async () => {
+			const segments: InterestSegment[] = values.segments || [];
+			if (showTasasModal && segments.length > 0 && !tasasDataLoaded && !tasasDataLoading) {
+				setTasasDataLoading(true);
+				try {
+					const baseURL = process.env.REACT_APP_BASE_URL || "";
+					const dataBySegment: Record<string, any> = {};
+
+					// Cargar datos para cada segmento
+					for (const segment of segments) {
+						const url = `${baseURL}/api/tasas/consulta?fechaDesde=${segment.startDate}&fechaHasta=${segment.endDate}&campo=${segment.rate}&calcular=true&completo=true`;
+						const response = await axios.get(url, { withCredentials: true });
+						dataBySegment[segment.id] = response.data;
+					}
+
+					setSegmentsTasasData(dataBySegment);
+					setTasasDataLoaded(true);
+				} catch (error) {
+					console.error("Error al cargar datos de tasas:", error);
+				} finally {
+					setTasasDataLoading(false);
+				}
+			}
+		};
+
+		loadTasasData();
+	}, [showTasasModal, values.segments, tasasDataLoaded, tasasDataLoading]);
 
 	// Función mejorada para obtener etiquetas, ahora puede usar etiquetas personalizadas
 	const getLabelForKey = (key: string, customLabel?: string): string => {
@@ -232,9 +213,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			calculos: [],
 		};
 
-		// Agregar información de carpeta o reclamante/reclamado al inicio de los resultados
+		// Agregar información de carpeta o reclamante/reclamado a la sección detalles
 		if (inputValues.folderName) {
-			groups.intereses.unshift({
+			groups.detalles.unshift({
 				key: "folderName",
 				value: inputValues.folderName,
 				customLabel: "Nombre de carpeta",
@@ -242,14 +223,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		} else {
 			// Solo mostrar reclamante y reclamado si no hay carpeta
 			if (inputValues.reclamante) {
-				groups.intereses.unshift({
+				groups.detalles.unshift({
 					key: "reclamante",
 					value: inputValues.reclamante,
 					customLabel: "Nombre del reclamante",
 				});
 			}
 			if (inputValues.reclamado) {
-				groups.intereses.unshift({
+				groups.detalles.unshift({
 					key: "reclamado",
 					value: inputValues.reclamado,
 					customLabel: "Nombre del reclamado",
@@ -257,13 +238,114 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			}
 		}
 
-		// Agregar datos básicos del caso
+		// Verificar si hay múltiples tramos
+		const segments: InterestSegment[] = inputValues.segments || [];
+		const hasMultipleSegments = segments.length > 0;
+
+		if (hasMultipleSegments) {
+			// Modo con múltiples tramos
+			if (inputValues.fechaInicial) {
+				groups.detalles.push({
+					key: "fechaInicial",
+					value: inputValues.fechaInicial,
+					customLabel: "Fecha Inicial",
+				});
+			}
+			if (inputValues.fechaFinal) {
+				groups.detalles.push({
+					key: "fechaFinal",
+					value: inputValues.fechaFinal,
+					customLabel: "Fecha Final",
+				});
+			}
+
+			// Mostrar cantidad de tramos
+			groups.detalles.push({
+				key: "cantidadTramos",
+				value: `${segments.length} tramo${segments.length > 1 ? "s" : ""}`,
+				customLabel: "Tramos de Intereses",
+			});
+
+			// Mostrar si hay capitalización
+			if (inputValues.capitalizeInterest) {
+				groups.detalles.push({
+					key: "capitalizeInterest",
+					value: "Sí",
+					customLabel: "Capitalización de Intereses",
+				});
+			}
+
+			// Movemos el capital a la sección detalles
+			if (inputValues.capital) {
+				groups.detalles.push({
+					key: "capitalBase",
+					value: inputValues.capital,
+					customLabel: "Capital Inicial",
+				});
+			}
+
+			// Agregar detalles de cada tramo a la sección cálculos
+			segments.forEach((segment: InterestSegment, index: number) => {
+				groups.calculos.push({
+					key: `tramoHeader_${index}`,
+					value: `${segment.startDate} - ${segment.endDate}`,
+					customLabel: `Tramo ${index + 1}`,
+				});
+				groups.calculos.push({
+					key: `tramoTasa_${index}`,
+					value: segment.rateName || segment.rate,
+					customLabel: `  Tasa Aplicada`,
+				});
+				groups.calculos.push({
+					key: `tramoCapital_${index}`,
+					value: segment.capital,
+					customLabel: `  Capital del Tramo`,
+				});
+				groups.calculos.push({
+					key: `tramoCoef_${index}`,
+					value: segment.coefficient,
+					customLabel: `  Coeficiente`,
+					formatType: "percentage",
+				});
+				groups.calculos.push({
+					key: `tramoInteres_${index}`,
+					value: segment.interest,
+					customLabel: `  Interés Generado`,
+				});
+			});
+
+			// Agregar resultados finales
+			const capitalBase = typeof inputValues.capital === "number" ? inputValues.capital : parseFloat(inputValues.capital || "0");
+			const interesTotal = inputValues.interesTotal || segments.reduce((sum: number, seg: InterestSegment) => sum + seg.interest, 0);
+			const capitalActualizado = inputValues.capitalActualizado || capitalBase + interesTotal;
+
+			groups.intereses.push({
+				key: "capitalBaseResult",
+				value: capitalBase,
+				customLabel: "Capital Inicial",
+			});
+
+			groups.intereses.push({
+				key: "interesCalculado",
+				value: interesTotal,
+				customLabel: "Total de Intereses",
+			});
+
+			groups.intereses.push({
+				key: "capitalActualizado",
+				value: capitalActualizado,
+				customLabel: "Capital Actualizado",
+			});
+
+			return groups;
+		}
+
+		// Modo sin múltiples tramos (comportamiento original)
 		if (inputValues.tasa) {
 			groups.detalles.push({
 				key: "tasa",
-				// Utilizar getTasaLabel para mostrar el nombre legible de la tasa
 				value: getTasaLabel(inputValues.tasa),
-				customLabel: "Tipo de Tasa", // Etiqueta personalizada para la tasa
+				customLabel: "Tipo de Tasa",
 			});
 		}
 		if (inputValues.fechaInicial) {
@@ -444,9 +526,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		return groups;
 	};
 
-	const groupedResults = React.useMemo(() => groupResults(values), [values]);
+	const groupedResults = useMemo(() => groupResults(values), [values]);
 
-	const total = React.useMemo(() => {
+	const total = useMemo(() => {
 		// Obtener el capital actualizado (última entrada en el grupo de intereses)
 		if (groupedResults.intereses.length > 0) {
 			const capitalActualizado = groupedResults.intereses[groupedResults.intereses.length - 1];
@@ -455,7 +537,18 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		return 0;
 	}, [groupedResults]);
 
-	const generatePlainText = () => {
+	// Función para mostrar los títulos de las secciones en español
+	const getGroupTitle = useCallback((groupKey: string): string => {
+		const titles: Record<string, string> = {
+			detalles: "Detalles del Cálculo",
+			capital: "Capital",
+			calculos: "Metodología de Cálculo",
+			intereses: "Resultados",
+		};
+		return titles[groupKey] || groupKey;
+	}, []);
+
+	const generatePlainText = useCallback(() => {
 		let text = "LIQUIDACIÓN DE INTERESES\n\n";
 		Object.entries(groupedResults).forEach(([group, items]: [string, ResultItem[]]) => {
 			if (items.length) {
@@ -468,72 +561,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		});
 		text += `TOTAL: ${formatValue("total", total)}`;
 		return text;
-	};
+	}, [groupedResults, total, getGroupTitle, getLabelForKey, formatValue]);
 
-	const handleCopyToClipboard = async () => {
-		try {
-			await navigator.clipboard.writeText(generatePlainText());
-			enqueueSnackbar("Liquidación copiada correctamente", {
-				variant: "success",
-				anchorOrigin: {
-					vertical: "bottom",
-					horizontal: "right",
-				},
-				TransitionComponent: Zoom,
-				autoHideDuration: 3000,
-			});
-		} catch (err) {
-			enqueueSnackbar("Ha ocurrido un error al copiar. Intente más tarde.", {
-				variant: "error",
-				anchorOrigin: {
-					vertical: "bottom",
-					horizontal: "right",
-				},
-				TransitionComponent: Zoom,
-				autoHideDuration: 5000,
-			});
-		}
-	};
-
-	const handlePrint = useReactToPrint({
-		content: () => printRef.current,
-	});
-
-	const handleAddEmail = () => {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-		if (email && emailRegex.test(email) && !emailList.includes(email)) {
-			setEmailList([...emailList, email]);
-			setEmail("");
-		} else if (email && !emailRegex.test(email)) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Por favor ingrese un email válido",
-					variant: "alert",
-					alert: { color: "warning" },
-					close: true,
-				}),
-			);
-		} else if (email && emailList.includes(email)) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Este email ya fue agregado a la lista",
-					variant: "alert",
-					alert: { color: "info" },
-					close: true,
-				}),
-			);
-			setEmail("");
-		}
-	};
-
-	const handleRemoveEmail = (emailToRemove: string) => {
-		setEmailList(emailList.filter((e) => e !== emailToRemove));
-	};
-
-	const generateHtmlContent = () => {
+	const generateHtmlContent = useCallback(() => {
 		let html = "<h2>LIQUIDACIÓN DE INTERESES</h2>";
 		Object.entries(groupedResults).forEach(([group, items]: [string, ResultItem[]]) => {
 			if (items.length) {
@@ -550,68 +580,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		});
 		html += `<h3>TOTAL: ${formatValue("total", total)}</h3>`;
 
-		if (customMessage) {
-			html = `<p>${customMessage.replace(/\n/g, "<br>")}</p><br><hr><br>` + html;
-		}
-
 		return html;
-	};
-
-	const handleEmailSend = async () => {
-		try {
-			const textBody = generatePlainText();
-			const htmlBody = generateHtmlContent();
-			const subject = "Liquidación de Intereses";
-			const allEmails = [...emailList];
-
-			if (allEmails.length === 0) {
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: "Debe agregar al menos un email a la lista de destinatarios",
-						variant: "alert",
-						alert: { color: "warning" },
-						close: true,
-					}),
-				);
-				return;
-			}
-
-			await axios.post(`${process.env.REACT_APP_BASE_URL || "http://localhost:5000"}/api/email/send-email`, {
-				to: allEmails,
-				subject,
-				textBody,
-				htmlBody,
-				copyToMe: copyToMe,
-			});
-
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: `Cálculo enviado correctamente.`,
-					variant: "alert",
-					alert: { color: "success" },
-					close: true,
-				}),
-			);
-
-			setEmailModalOpen(false);
-			setEmail("");
-			setEmailList([]);
-			setCopyToMe(false);
-			setCustomMessage("");
-		} catch (error) {
-			dispatch(
-				openSnackbar({
-					open: true,
-					message: "Ha ocurrido un error. Intente más tarde.",
-					variant: "alert",
-					alert: { color: "error" },
-					close: true,
-				}),
-			);
-		}
-	};
+	}, [groupedResults, total, getLabelForKey, formatValue, getGroupTitle]);
 
 	const handleSaveCalculation = async () => {
 		if (isSaved || isSaving) return;
@@ -639,22 +609,32 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			// Obtener los intereses calculados
 			let interesValor = 0;
 			if (groupedResults.intereses && groupedResults.intereses.length > 1) {
-				// Buscar el item con customLabel "Intereses"
-				const interesItem = groupedResults.intereses.find((item) => item.customLabel === "Intereses");
+				// Buscar el item con customLabel "Intereses" o "Total de Intereses" (para múltiples tramos)
+				const interesItem = groupedResults.intereses.find(
+					(item) => item.customLabel === "Intereses" || item.customLabel === "Total de Intereses",
+				);
 				if (interesItem && typeof interesItem.value === "number") {
 					interesValor = interesItem.value;
 				}
 			}
+
+			// Verificar si hay múltiples tramos
+			const segments: InterestSegment[] = values.segments || [];
+			const hasMultipleSegments = segments.length > 0;
+
+			// Obtener capital base
+			const capitalBase = typeof values.capital === "number" ? values.capital : parseFloat(values.capital || "0");
 
 			// Crear el objeto para enviar al servidor según el modelo
 			// Usamos Omit<CalculatorType, "_id" | "isLoader" | "error"> para asegurar compatibilidad con el tipo esperado
 			const calculatorData: Omit<CalculatorType, "_id" | "isLoader" | "error"> = {
 				userId,
 				date: dayjs().format("YYYY-MM-DD"),
-				type: "Calculado" as const, // Usar 'as const' para que sea literalmente "Calculado"
-				classType: "intereses" as const, // Usar 'as const' para que sea literalmente "intereses"
-				subClassType: values.tasa,
+				type: "Calculado" as const,
+				classType: "intereses" as const,
+				subClassType: hasMultipleSegments ? segments.map((s) => s.rate).join(",") : values.tasa,
 				amount: total,
+				capital: capitalBase,
 				interest: interesValor,
 				user: userName,
 				// Añadir las propiedades opcionales
@@ -664,6 +644,22 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				variables: {
 					// Guardamos todas las variables necesarias para recrear el cálculo
 					...values,
+					// Incluir tramos si existen
+					...(hasMultipleSegments
+						? {
+								segments: segments.map((seg) => ({
+									startDate: seg.startDate,
+									endDate: seg.endDate,
+									rate: seg.rate,
+									rateName: seg.rateName,
+									capital: seg.capital,
+									interest: seg.interest,
+									coefficient: seg.coefficient,
+									isExtension: seg.isExtension || false,
+								})),
+								capitalizeInterest: values.capitalizeInterest || false,
+							}
+						: {}),
 					// Aseguramos que el resultado esté incluido para poder renderizarlo sin recalcular
 					calculationResult: {
 						detalles: groupedResults.detalles,
@@ -710,248 +706,197 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			setIsSaving(false);
 		}
 	};
-	const renderActionButtons = () => (
-		<Stack direction="row" spacing={1} sx={{ mb: 2 }} justifyContent="center" className="no-print">
-			<Tooltip title="Copiar al portapapeles">
-				<IconButton
-					onClick={handleCopyToClipboard}
-					size="small"
-					sx={{
-						border: "1px solid",
-						borderColor: "divider",
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "action.hover",
-							borderColor: "primary.main",
-						},
-					}}
-				>
-					<Copy size={18} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Enviar por email">
-				<IconButton
-					onClick={() => setEmailModalOpen(true)}
-					size="small"
-					sx={{
-						border: "1px solid",
-						borderColor: "divider",
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "action.hover",
-							borderColor: "primary.main",
-						},
-					}}
-				>
-					<Sms size={18} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Imprimir">
-				<IconButton
-					onClick={handlePrint}
-					size="small"
-					sx={{
-						border: "1px solid",
-						borderColor: "divider",
-						bgcolor: "background.paper",
-						"&:hover": {
-							bgcolor: "action.hover",
-							borderColor: "primary.main",
-						},
-					}}
-				>
-					<Printer size={18} />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title={isSaved ? "El cálculo ya fue guardado" : isSaving ? "Guardando..." : "Guardar cálculo"}>
-				<span>
-					<IconButton
-						onClick={handleSaveCalculation}
-						disabled={isSaved || isSaving}
-						size="small"
-						sx={{
-							border: "1px solid",
-							borderColor: "divider",
-							bgcolor: "background.paper",
-							"&:hover": {
-								bgcolor: "action.hover",
-								borderColor: "primary.main",
-							},
-							"&:disabled": {
-								bgcolor: "action.disabledBackground",
-								borderColor: "divider",
-							},
-						}}
-					>
-						{isSaving ? <CircularProgress size={18} /> : <Save2 size={18} />}
-					</IconButton>
-				</span>
-			</Tooltip>
-		</Stack>
-	);
 
-	const renderSection = (title: string, items: ResultItem[], sectionKey: string): React.ReactNode => {
-		if (!items || !items.length) return null;
+	// Crear el objeto de datos para CalculationDetailsView
+	const calculationData = useMemo(() => {
+		const segments: InterestSegment[] = values.segments || [];
+		const hasMultipleSegments = segments.length > 0;
+		const capitalBase = typeof values.capital === "number" ? values.capital : parseFloat(values.capital || "0");
 
-		const Icon = SectionIcons[sectionKey] || Information;
+		// Obtener el valor de interés
+		let interesValor = 0;
+		if (groupedResults.intereses && groupedResults.intereses.length > 1) {
+			const interesItem = groupedResults.intereses.find(
+				(item) => item.customLabel === "Intereses" || item.customLabel === "Total de Intereses",
+			);
+			if (interesItem && typeof interesItem.value === "number") {
+				interesValor = interesItem.value;
+			}
+		}
 
-		return (
-			<Paper
-				elevation={0}
-				sx={{
-					mb: 1.5,
-					overflow: "hidden",
-					borderRadius: 2,
-					border: `1px solid ${theme.palette.divider}`,
-					bgcolor: "background.paper",
-					boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-				}}
-			>
-				<Box
-					sx={{
-						display: "flex",
-						alignItems: "center",
-						px: 2,
-						py: 1.5,
-						borderBottom: `1px solid ${theme.palette.divider}`,
-						bgcolor: theme.palette.mode === "dark" ? "grey.900" : "grey.50",
-					}}
-				>
-					<Icon
-						size={18}
-						style={{
-							marginRight: theme.spacing(1),
-							color: theme.palette.primary.main,
-						}}
-					/>
-					<Typography variant="body1" fontWeight={600}>
-						{title}
-					</Typography>
-				</Box>
-				<Box sx={{ px: 2, py: 1.5 }}>
-					{items.map(({ key, value, customLabel, formatType }, itemIndex) => (
-						<Box
-							key={key}
-							sx={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								py: 0.75,
-								"&:not(:last-child)": {
-									borderBottom: `1px solid ${theme.palette.divider}`,
-								},
-							}}
-						>
-							<Typography variant="body2" color="text.secondary">
-								{getLabelForKey(key, customLabel)}:
-							</Typography>
-							<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
-								{formatValue(key, value, formatType)}
-							</Typography>
-						</Box>
-					))}
-				</Box>
-			</Paper>
-		);
-	};
-
-	// Función para mostrar los títulos de las secciones en español
-	const getGroupTitle = (groupKey: string): string => {
-		const titles: Record<string, string> = {
-			detalles: "Detalles del Cálculo",
-			capital: "Capital",
-			calculos: "Metodología de Cálculo",
-			intereses: "Resultados",
+		return {
+			_id: "temp-calculation",
+			amount: total,
+			capital: capitalBase,
+			interest: interesValor,
+			type: "Calculado" as const,
+			subClassType: hasMultipleSegments ? segments.map((s) => s.rate).join(",") : values.tasa,
+			variables: {
+				...values,
+				// Incluir tramos si existen
+				...(hasMultipleSegments
+					? {
+							segments: segments.map((seg) => ({
+								startDate: seg.startDate,
+								endDate: seg.endDate,
+								rate: seg.rate,
+								rateName: seg.rateName,
+								capital: seg.capital,
+								interest: seg.interest,
+								coefficient: seg.coefficient,
+								isExtension: seg.isExtension || false,
+							})),
+							capitalizeInterest: values.capitalizeInterest || false,
+						}
+					: {}),
+				calculationResult: {
+					detalles: groupedResults.detalles,
+					calculos: groupedResults.calculos,
+					intereses: groupedResults.intereses,
+				},
+			},
+			keepUpdated: false,
 		};
-		return titles[groupKey] || groupKey;
-	};
+	}, [values, total, groupedResults]);
 
-	const PrintableContent = React.forwardRef<HTMLDivElement>((_, ref) => (
-		<Box sx={{ p: 2, maxWidth: 800, mx: "auto" }}>
-			<Box
-				ref={ref}
-				sx={{
-					bgcolor: theme.palette.mode === "dark" ? "grey.900" : "#f8f8f8",
-					borderRadius: 2,
-					p: 2,
-					border: `1px solid ${theme.palette.divider}`,
-					boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
-					"&:hover": {
-						bgcolor: theme.palette.mode === "dark" ? "grey.900" : "#f8f8f8",
-					},
-					"@media print": {
-						bgcolor: "white !important",
-						border: "none !important",
-						boxShadow: "none !important",
-						p: 0,
-					},
-				}}
-			>
-				<Stack spacing={1}>
-					{/* Logo para impresión */}
-					<Box className="print-logo" sx={{ textAlign: "center", mb: 3 }}>
-						<img src={logo} alt="Law Analytics" style={{ maxWidth: "150px", height: "auto" }} />
-					</Box>
-
-					{/* Título */}
-					<Typography variant="h4" gutterBottom sx={{ mb: 3, textAlign: "center" }}>
-						Liquidación de Intereses
-					</Typography>
-
-					{/* Renderizar las secciones disponibles */}
-					{Object.entries(groupedResults).map(([key, items]) => renderSection(getGroupTitle(key), items as ResultItem[], key))}
-
-					{/* Card del total con diseño minimalista */}
-					<Paper
-						elevation={0}
-						sx={{
-							mt: 1.5,
-							overflow: "hidden",
-							borderRadius: 2,
-							border: `1px solid ${theme.palette.divider}`,
-							bgcolor: "background.paper",
-							boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-						}}
-					>
-						<Box
-							sx={{
-								display: "flex",
-								alignItems: "center",
-								px: 2,
-								py: 1.5,
-								borderBottom: `1px solid ${theme.palette.divider}`,
-								bgcolor: theme.palette.mode === "dark" ? "grey.900" : "grey.50",
-							}}
-						>
-							<Typography variant="body1" fontWeight={600}>
-								Capital Actualizado
-							</Typography>
-						</Box>
-						<Box sx={{ px: 2, py: 1.5 }}>
-							<Box
-								sx={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-									py: 0.75,
-								}}
-							>
-								<Typography variant="body2" color="text.secondary">
-									Capital actualizado:
-								</Typography>
-								<Typography variant="body2" fontWeight={700} sx={{ ml: 2, color: "primary.main" }}>
-									{formatValue("total", total)}
-								</Typography>
-							</Box>
-						</Box>
-					</Paper>
-				</Stack>
-			</Box>
-		</Box>
-	));
+	// Función para agrupar resultados pasada al componente
+	const groupResultsForView = useCallback(
+		(variables: Record<string, any> | undefined): Record<string, ResultItem[]> => {
+			if (!variables) return groupedResults as unknown as Record<string, ResultItem[]>;
+			// Usar los resultados ya agrupados que tenemos
+			if (variables.calculationResult) {
+				return variables.calculationResult as Record<string, ResultItem[]>;
+			}
+			return groupedResults as unknown as Record<string, ResultItem[]>;
+		},
+		[groupedResults],
+	);
 
 	// Renderizar tabla de tasas
 	const renderTasasTable = () => {
+		// Verificar si hay múltiples tramos
+		const segments: InterestSegment[] = values.segments || [];
+		const hasMultipleSegments = segments.length > 0;
+
+		// Caso: Múltiples tramos
+		if (hasMultipleSegments) {
+			// Mostrar loading mientras se cargan los datos
+			if (tasasDataLoading) {
+				return (
+					<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+						<CircularProgress size={24} sx={{ mr: 2 }} />
+						<Typography>Cargando datos de tasas...</Typography>
+					</Box>
+				);
+			}
+
+			return (
+				<>
+					<Typography variant="subtitle1" gutterBottom>
+						Detalle de Tasas por Tramo {values.capitalizeInterest && "(con capitalización)"}
+					</Typography>
+
+					{segments.map((segment: InterestSegment, index: number) => {
+						const tasaData = segmentsTasasData[segment.id];
+						const tipoIndice = tasaData?.configTasa?.tipoIndice;
+						const isIndexado = tipoIndice === "indexado";
+
+						return (
+							<Box key={segment.id || index} sx={{ mb: 3 }}>
+								<Typography variant="subtitle2" sx={{ mb: 1, fontWeight: "bold", color: "primary.main" }}>
+									Tramo {index + 1}: {segment.rateName || segment.rate}
+								</Typography>
+								<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+									Período: {segment.startDate} - {segment.endDate} | Capital:{" "}
+									{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.capital)} | Coeficiente:{" "}
+									{(segment.coefficient * 100).toFixed(4)}% | Interés:{" "}
+									{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest)}
+								</Typography>
+
+								{tasaData ? (
+									<TableContainer component={Paper} sx={{ mt: 1 }}>
+										<Table size="small">
+											<TableHead>
+												<TableRow>
+													{isIndexado ? (
+														<>
+															<TableCell>Período</TableCell>
+															<TableCell>Fecha</TableCell>
+															<TableCell align="right">Valor</TableCell>
+														</>
+													) : (
+														<>
+															<TableCell>Fecha</TableCell>
+															<TableCell align="right">Valor Diario</TableCell>
+														</>
+													)}
+												</TableRow>
+											</TableHead>
+											<TableBody>
+												{isIndexado ? (
+													<>
+														<TableRow>
+															<TableCell>Inicial</TableCell>
+															<TableCell>
+																{tasaData.datos?.inicio?.fecha
+																	? dayjs(tasaData.datos.inicio.fecha).format("DD/MM/YYYY")
+																	: "N/A"}
+															</TableCell>
+															<TableCell align="right">
+																{tasaData.datos?.inicio?.[segment.rate]?.toFixed(6) || "N/A"}
+															</TableCell>
+														</TableRow>
+														<TableRow>
+															<TableCell>Final</TableCell>
+															<TableCell>
+																{tasaData.datos?.fin?.fecha
+																	? dayjs(tasaData.datos.fin.fecha).format("DD/MM/YYYY")
+																	: "N/A"}
+															</TableCell>
+															<TableCell align="right">
+																{tasaData.datos?.fin?.[segment.rate]?.toFixed(6) || "N/A"}
+															</TableCell>
+														</TableRow>
+													</>
+												) : Array.isArray(tasaData.datos) ? (
+													tasaData.datos.slice(0, 10).map((item: any, idx: number) => (
+														<TableRow key={idx}>
+															<TableCell>{item.fecha ? dayjs(item.fecha).format("DD/MM/YYYY") : "N/A"}</TableCell>
+															<TableCell align="right">
+																{item[segment.rate] !== undefined ? item[segment.rate].toFixed(4) : "N/A"}
+															</TableCell>
+														</TableRow>
+													))
+												) : (
+													<TableRow>
+														<TableCell colSpan={2}>Sin datos disponibles</TableCell>
+													</TableRow>
+												)}
+												{!isIndexado && Array.isArray(tasaData.datos) && tasaData.datos.length > 10 && (
+													<TableRow>
+														<TableCell colSpan={2} sx={{ textAlign: "center", fontStyle: "italic" }}>
+															... y {tasaData.datos.length - 10} registros más
+														</TableCell>
+													</TableRow>
+												)}
+											</TableBody>
+										</Table>
+									</TableContainer>
+								) : (
+									<Typography variant="body2" color="text.secondary">
+										Datos de tasa no disponibles
+									</Typography>
+								)}
+
+								{index < segments.length - 1 && <Divider sx={{ my: 2 }} />}
+							</Box>
+						);
+					})}
+				</>
+			);
+		}
+
+		// Caso: Sin múltiples tramos (comportamiento original)
 		if (!values.tasasResult || !values.tasasResult.datos) {
 			return <Typography>No hay datos disponibles</Typography>;
 		}
@@ -1051,68 +996,25 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	};
 
 	return (
-		<PrintContainer>
-			<GlobalStyles
-				styles={{
-					"@media print": {
-						"@page": {
-							margin: "2cm",
-							size: "A4",
-						},
-						body: {
-							margin: "0",
-							padding: "0",
-							backgroundColor: "white",
-						},
-						".no-print": {
-							display: "none !important",
-						},
-						".MuiPaper-root": {
-							boxShadow: "none !important",
-							border: "1px solid #ddd !important",
-							pageBreakInside: "avoid",
-							marginBottom: "10px !important",
-						},
-						".MuiBox-root": {
-							pageBreakInside: "avoid",
-						},
-						".MuiTypography-root": {
-							fontSize: "12px !important",
-							pageBreakInside: "avoid",
-						},
-						".MuiTypography-h6": {
-							fontSize: "14px !important",
-							fontWeight: "bold !important",
-						},
-						".MuiTypography-body1": {
-							fontSize: "12px !important",
-						},
-						".MuiTypography-body2": {
-							fontSize: "11px !important",
-						},
-						".MuiStack-root": {
-							spacing: "8px !important",
-						},
-						"td, th": {
-							padding: "4px 8px !important",
-						},
-						".print-logo": {
-							display: "block !important",
-							width: "150px !important",
-							height: "auto !important",
-							marginBottom: "20px !important",
-						},
-					},
-					".print-logo": {
-						display: "none",
-					},
-				}}
+		<>
+			{/* Usar CalculationDetailsView para el renderizado */}
+			<CalculationDetailsView
+				data={calculationData}
+				getLabelForKey={getLabelForKey}
+				formatValue={formatValue}
+				groupResults={groupResultsForView}
+				generatePlainText={generatePlainText}
+				generateHtmlContent={generateHtmlContent}
+				customTitle="Liquidación de Intereses"
+				hideInterestButton={true}
+				showSaveButton={!isSaved}
+				onSaveClick={handleSaveCalculation}
+				isSaved={isSaved}
+				isSaving={isSaving}
 			/>
-			{renderActionButtons()}
 
-			<PrintableContent ref={printRef} />
-
-			<Stack direction="row" justifyContent="flex-end" spacing={2} className="no-print" sx={{ mt: 3 }}>
+			{/* Botones adicionales específicos de resultsView */}
+			<Stack direction="row" justifyContent="flex-end" spacing={2} className="no-print" sx={{ mt: 3, px: 2 }}>
 				<Button variant="contained" color="info" onClick={() => setShowTasasModal(true)}>
 					Ver Tasas
 				</Button>
@@ -1120,148 +1022,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					Nueva Liquidación
 				</Button>
 			</Stack>
-
-			{/* Modal para enviar email */}
-			<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)} maxWidth="md" fullWidth>
-				<DialogTitle>Enviar por Email</DialogTitle>
-				<DialogContent>
-					<Stack spacing={2} sx={{ mt: 1 }}>
-						<Stack direction="row" spacing={1}>
-							<TextField
-								autoFocus
-								margin="dense"
-								label="Dirección de Email"
-								type="email"
-								fullWidth
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault();
-										handleAddEmail();
-									}
-								}}
-								placeholder="Escribe un email y haz clic en Agregar"
-								size="small"
-							/>
-							<Button variant="contained" onClick={handleAddEmail} color="primary" disabled={!email.trim()} size="small">
-								Agregar
-							</Button>
-						</Stack>
-						<Typography variant="caption" color="textSecondary">
-							* Debes agregar cada email a la lista de destinatarios antes de enviar.
-						</Typography>
-
-						{emailList.length > 0 && (
-							<Box sx={{ mt: 2 }}>
-								<Typography variant="subtitle2" gutterBottom>
-									Destinatarios:
-								</Typography>
-								<Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-									{emailList.map((emailItem) => (
-										<Chip key={emailItem} label={emailItem} onDelete={() => handleRemoveEmail(emailItem)} size="small" sx={{ m: 0.5 }} />
-									))}
-								</Box>
-							</Box>
-						)}
-
-						<Divider sx={{ my: 2 }}>
-							<Typography variant="caption" color="textSecondary">
-								o seleccionar de mis contactos
-							</Typography>
-						</Divider>
-
-						{contactsLoading ? (
-							<Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
-								<Typography>Cargando contactos...</Typography>
-							</Box>
-						) : contacts && contacts.length > 0 ? (
-							<Autocomplete
-								size="small"
-								options={contacts.filter((contact: any) => contact.email)}
-								getOptionLabel={(option: any) => `${option.name} ${option.lastName} (${option.email})`}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										label="Buscar contacto"
-										variant="outlined"
-										size="small"
-										InputProps={{
-											...params.InputProps,
-											startAdornment: (
-												<InputAdornment position="start">
-													<SearchNormal1 size={16} />
-												</InputAdornment>
-											),
-										}}
-									/>
-								)}
-								renderOption={(props, option: any) => (
-									<li {...props}>
-										<Stack direction="row" spacing={1} alignItems="center" width="100%">
-											<UserAdd size={16} />
-											<Stack direction="column" sx={{ overflow: "hidden" }}>
-												<Typography variant="body2" noWrap>
-													{option.name} {option.lastName}
-												</Typography>
-												<Typography variant="caption" color="textSecondary" noWrap>
-													{option.email}
-												</Typography>
-											</Stack>
-										</Stack>
-									</li>
-								)}
-								onChange={(_, newValue) => {
-									if (newValue && newValue.email && !emailList.includes(newValue.email)) {
-										setEmailList([...emailList, newValue.email]);
-									}
-								}}
-								sx={{ mt: 1 }}
-							/>
-						) : null}
-
-						<Box sx={{ mt: 2 }}>
-							<Typography variant="subtitle2" gutterBottom>
-								Mensaje (opcional):
-							</Typography>
-							<TextField
-								multiline
-								fullWidth
-								rows={4}
-								placeholder="Escriba un mensaje personalizado que se incluirá en el correo (opcional)"
-								value={customMessage}
-								onChange={(e) => setCustomMessage(e.target.value)}
-								variant="outlined"
-								size="small"
-							/>
-						</Box>
-
-						<Box sx={{ mt: 1, display: "flex", alignItems: "center" }}>
-							<Checkbox size="small" checked={copyToMe} onChange={(e) => setCopyToMe(e.target.checked)} id="copy-to-me" />
-							<Typography component="label" htmlFor="copy-to-me" variant="body2" sx={{ cursor: "pointer" }}>
-								Enviarme una copia
-							</Typography>
-						</Box>
-					</Stack>
-				</DialogContent>
-				<DialogActions>
-					<Button
-						color="error"
-						onClick={() => {
-							setEmailModalOpen(false);
-							setEmail("");
-							setEmailList([]);
-							setCopyToMe(false);
-							setCustomMessage("");
-						}}
-					>
-						Cancelar
-					</Button>
-					<Button onClick={handleEmailSend} variant="contained">
-						Enviar
-					</Button>
-				</DialogActions>
-			</Dialog>
 
 			{/* Modal para ver tabla de tasas */}
 			<Dialog open={showTasasModal} onClose={() => setShowTasasModal(false)} maxWidth="md" fullWidth>
@@ -1271,7 +1031,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					<Button onClick={() => setShowTasasModal(false)}>Cerrar</Button>
 				</DialogActions>
 			</Dialog>
-		</PrintContainer>
+		</>
 	);
 };
 

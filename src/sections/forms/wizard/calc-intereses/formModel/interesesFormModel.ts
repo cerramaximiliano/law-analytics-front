@@ -16,6 +16,8 @@ interface FormModel {
 		fechaFinal: FormField;
 		folderId: FormField;
 		folderName: FormField;
+		segments: FormField;
+		capitalizeInterest: FormField;
 	};
 }
 
@@ -66,6 +68,17 @@ const compensacionFormModel: FormModel = {
 		folderName: {
 			name: "folderName",
 			label: "Nombre de carpeta",
+			type: "reclamo",
+		},
+		segments: {
+			name: "segments",
+			label: "Tramos de intereses",
+			requiredErrorMsg: "Debe agregar al menos un tramo",
+			type: "reclamo",
+		},
+		capitalizeInterest: {
+			name: "capitalizeInterest",
+			label: "Capitalizar intereses",
 			type: "reclamo",
 		},
 	},

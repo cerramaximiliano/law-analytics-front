@@ -25,6 +25,32 @@ import { WizardProps } from "types/wizards";
 const steps = ["Datos requeridos", "Cálculos opcionales", "Intereses", "Resultados"];
 const { formId, formField } = despidoFormModel;
 
+// Función helper para calcular el monto base para intereses (sumando indemnización y liquidación)
+function calculateBaseAmount(values: any): number {
+	const remuneracionBase = parseFloat(values.remuneracion) || 0;
+	const remuneracionCalculada = values.incluirSAC ? remuneracionBase + remuneracionBase / 12 : remuneracionBase;
+
+	// Calcular períodos
+	const fechaIngreso = values.fechaIngreso ? dayjs(values.fechaIngreso) : null;
+	const fechaEgreso = values.fechaEgreso ? dayjs(values.fechaEgreso) : null;
+
+	let periodos = 0;
+	if (fechaIngreso && fechaEgreso) {
+		const años = fechaEgreso.diff(fechaIngreso, "years");
+		const mesesRestantes = fechaEgreso.clone().subtract(años, "years").diff(fechaIngreso, "months");
+
+		if (values.aplicarLey27742) {
+			const totalMeses = fechaEgreso.diff(fechaIngreso, "months");
+			periodos = totalMeses < 6 ? 0 : años >= 1 ? años : 1;
+		} else {
+			periodos = mesesRestantes > 3 ? años + 1 : años;
+		}
+	}
+
+	const indemnizacion = periodos * remuneracionCalculada;
+	return indemnizacion;
+}
+
 function getStepContent(step: number, values: any, folder: any, onFolderChange?: (folderId: string | null) => void) {
 	switch (step) {
 		case 0:
@@ -32,7 +58,9 @@ function getStepContent(step: number, values: any, folder: any, onFolderChange?:
 		case 1:
 			return <SecondForm formField={formField} />;
 		case 2:
-			return <ThirdForm formField={formField} />;
+			// Calcular el monto base para pasar al paso de intereses
+			const calculatedAmount = calculateBaseAmount(values);
+			return <ThirdForm formField={formField} calculatedAmount={calculatedAmount} />;
 		case 3:
 			return <Review formField={formField} values={values} />;
 		default:
@@ -441,22 +469,54 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		}
 
 		// Agregar cálculo de intereses si corresponde
-		if (values.aplicarIntereses && values.fechaInicialIntereses && values.fechaFinalIntereses && values.tasaIntereses) {
-			// Calcular intereses sobre el monto total
-			const montoIntereses = calcularIntereses(
-				indemnizacion,
-				values.fechaInicialIntereses,
-				values.fechaFinalIntereses,
-				values.tasaIntereses,
-			);
+		if (values.aplicarIntereses) {
+			const segments = values.segmentsIntereses || [];
 
-			resultado.datosIntereses = {
-				fechaInicialIntereses: values.fechaInicialIntereses,
-				fechaFinalIntereses: values.fechaFinalIntereses,
-				tasaIntereses: values.tasaIntereses,
-				montoIntereses: montoIntereses,
-				montoTotalConIntereses: indemnizacion + montoIntereses,
-			};
+			if (segments.length > 0) {
+				// Usar los segmentos calculados por InterestSegmentsManager
+				const totalIntereses = segments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+				const capitalBase = indemnizacion;
+
+				// Si hay capitalización, el monto final es diferente
+				const montoTotalConIntereses = values.capitalizeInterest
+					? (segments[segments.length - 1]?.capital || capitalBase) + (segments[segments.length - 1]?.interest || 0)
+					: capitalBase + totalIntereses;
+
+				resultado.datosIntereses = {
+					fechaInicialIntereses: segments[0]?.startDate || values.fechaInicialIntereses,
+					fechaFinalIntereses: segments[segments.length - 1]?.endDate || values.fechaFinalIntereses,
+					tasaIntereses: segments.map((s: any) => s.rate).join(","),
+					segments: segments.map((seg: any) => ({
+						startDate: seg.startDate,
+						endDate: seg.endDate,
+						rate: seg.rate,
+						rateName: seg.rateName,
+						capital: seg.capital,
+						interest: seg.interest,
+						coefficient: seg.coefficient,
+						isExtension: seg.isExtension || false,
+					})),
+					capitalizeInterest: values.capitalizeInterest || false,
+					montoIntereses: totalIntereses,
+					montoTotalConIntereses: montoTotalConIntereses,
+				};
+			} else if (values.fechaInicialIntereses && values.fechaFinalIntereses && values.tasaIntereses) {
+				// Fallback al método anterior para compatibilidad
+				const montoIntereses = calcularIntereses(
+					indemnizacion,
+					values.fechaInicialIntereses,
+					values.fechaFinalIntereses,
+					values.tasaIntereses,
+				);
+
+				resultado.datosIntereses = {
+					fechaInicialIntereses: values.fechaInicialIntereses,
+					fechaFinalIntereses: values.fechaFinalIntereses,
+					tasaIntereses: values.tasaIntereses,
+					montoIntereses: montoIntereses,
+					montoTotalConIntereses: indemnizacion + montoIntereses,
+				};
+			}
 		}
 
 		//alert(JSON.stringify(resultado, null, 2));

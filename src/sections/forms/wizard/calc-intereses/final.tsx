@@ -9,6 +9,43 @@ interface Props {
 	formField: any;
 }
 
+// Campos que no deben mostrarse o que son objetos/arrays
+const HIDDEN_FIELDS = [
+	"folderId",
+	"segments",
+	"capitalizeInterest",
+	"calculatedInterest",
+	"calculatedAmount",
+	"tasasResult",
+	"interesTotal",
+	"capitalActualizado",
+];
+
+// Función para formatear valores complejos
+const formatValue = (field: string, value: any): string => {
+	if (value === null || value === undefined) return "";
+
+	// Si es un array o objeto, no mostrarlo directamente
+	if (typeof value === "object") {
+		return "";
+	}
+
+	// Si es un número, formatearlo como moneda si es un campo de dinero
+	if (typeof value === "number") {
+		if (field.toLowerCase().includes("capital") || field.toLowerCase().includes("monto") || field.toLowerCase().includes("interes")) {
+			return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
+		}
+		return value.toString();
+	}
+
+	// Si es booleano
+	if (typeof value === "boolean") {
+		return value ? "Sí" : "No";
+	}
+
+	return String(value);
+};
+
 const FinalStep: React.FC<Props> = (props) => {
 	const { values, formField } = props;
 
@@ -22,24 +59,31 @@ const FinalStep: React.FC<Props> = (props) => {
 			orderedFields.push("folderName");
 		}
 
-		// Agregar el resto de los campos, excepto folderId
+		// Agregar el resto de los campos, excepto los ocultos
 		Object.keys(values).forEach((field) => {
-			// No mostrar el folderId
-			if (field !== "folderId" && field !== "folderName") {
-				// Si hay folderName, no mostrar reclamante ni reclamado
-				if (values.folderName && (field === "reclamante" || field === "reclamado")) {
-					return;
-				}
+			// No mostrar campos ocultos
+			if (HIDDEN_FIELDS.includes(field) || field === "folderName") {
+				return;
+			}
 
-				// Solo agregar reclamante y reclamado si tienen valores
-				if ((field === "reclamante" || field === "reclamado") && (!values[field] || values[field] === "CAUSA_VINCULADA")) {
-					return;
-				}
+			// Si hay folderName, no mostrar reclamante ni reclamado
+			if (values.folderName && (field === "reclamante" || field === "reclamado")) {
+				return;
+			}
 
-				// Agregar el resto de los campos si tienen valor
-				if (values[field]) {
-					orderedFields.push(field);
-				}
+			// Solo agregar reclamante y reclamado si tienen valores válidos
+			if ((field === "reclamante" || field === "reclamado") && (!values[field] || String(values[field]).includes("__CAUSA_VINCULADA__"))) {
+				return;
+			}
+
+			// No mostrar objetos o arrays
+			if (typeof values[field] === "object" && values[field] !== null) {
+				return;
+			}
+
+			// Agregar el resto de los campos si tienen valor
+			if (values[field] !== "" && values[field] !== null && values[field] !== undefined) {
+				orderedFields.push(field);
 			}
 		});
 
@@ -61,7 +105,7 @@ const FinalStep: React.FC<Props> = (props) => {
 					{orderedFields.map((field, index) => (
 						<List key={index}>
 							<ListItem key={index} sx={{ py: 1, px: 0 }}>
-								<ListItemText primary={formField[field]?.label} secondary={values[field]} />
+								<ListItemText primary={formField[field]?.label || field} secondary={formatValue(field, values[field])} />
 							</ListItem>
 						</List>
 					))}

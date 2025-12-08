@@ -179,7 +179,7 @@ export const getCalculatorsByUserId =
 
 			dispatch({ type: SET_LOADING });
 			// Campos optimizados para listas
-			const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
+			const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 				params: { fields },
 			});
@@ -201,7 +201,7 @@ export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dis
 	try {
 		dispatch({ type: SET_LOADING });
 		// Campos optimizados para listas
-		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
+		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/group/${groupId}`, {
 			params: { fields },
 		});
@@ -271,7 +271,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 				dispatch({ type: SET_LOADING });
 
 				// Descargar TODOS los calculadores del usuario
-				const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
+				const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
 				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 					params: { fields },
 				});
@@ -330,7 +330,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 		// Si no es por userId (groupId u otros casos), hacer petición específica al servidor
 		dispatch({ type: SET_LOADING });
 
-		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
+		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
 		const queryParams = new URLSearchParams({
 			...(folderId && { folderId }),
 			...(type && { type }),
@@ -493,7 +493,7 @@ export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatc
 	try {
 		dispatch({ type: SET_LOADING });
 		// Campos optimizados para listas
-		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user";
+		const fields = "_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
 			params: {
 				archived: true,

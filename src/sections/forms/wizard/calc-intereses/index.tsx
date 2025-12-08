@@ -3,40 +3,24 @@ import { useState, useEffect } from "react";
 
 // material-ui
 import { Button, Stack, Box, Typography, Zoom } from "@mui/material";
-//import LoadingButton from "components/@extended/LoadingButton";
 
 // project-imports
 import AnimateButton from "components/@extended/AnimateButton";
 import FirstForm from "./first";
-import Review from "./final";
 import ResultsView from "./resultsView";
 
 import interesesFormModel from "./formModel/interesesFormModel";
 
 import initialValues from "./formModel/formInitialValues";
-//import validationSchema from "./formModel/validationSchema";
 import { Formik, Form } from "formik";
-//import { Copy, Printer, Send } from "iconsax-react";
-//import { CopyToClipboard } from "react-copy-to-clipboard";
 import { enqueueSnackbar } from "notistack";
 import axios from "axios";
 import esquemaInicial, { crearEsquemaValidacion } from "./formModel/validationSchema";
 import { hayRangosFechas } from "./formModel/tasasFechasStore";
 
-// step options
-const steps = ["Datos requeridos", "Resultados"];
+// step options - Solo un paso, luego resultados
+const steps = ["Datos requeridos"];
 const { formId, formField } = interesesFormModel;
-
-function getStepContent(step: number, values: any, folder: any, onFolderChange?: (folderId: string | null) => void) {
-	switch (step) {
-		case 0:
-			return <FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />;
-		case 1:
-			return <Review formField={formField} values={values} />;
-		default:
-			throw new Error("Unknown step");
-	}
-}
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
 
@@ -46,20 +30,15 @@ interface CompensacionWizardProps {
 }
 
 const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps) => {
-	const [activeStep, setActiveStep] = useState(0);
-	const isLastStep = activeStep === steps.length - 1;
-	//const [tasasData, setTasasData] = useState(null);
+	const [showResults, setShowResults] = useState(false);
 	const [validationSchema, setValidationSchema] = useState(esquemaInicial);
-	const currentValidationSchema = validationSchema[activeStep];
+	const currentValidationSchema = validationSchema[0]; // Solo hay un paso
 	const [hayRangos, setHayRangos] = useState(false);
 
 	const [calculationResult, setCalculationResult] = useState<any>(null);
 
-	const handleBack = () => {
-		setActiveStep(activeStep - 1);
-	};
 	const handleReset = () => {
-		setActiveStep(0);
+		setShowResults(false);
 		setCalculationResult(null);
 	};
 
@@ -95,44 +74,81 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 
 	async function _submitForm(values: any, actions: any) {
 		try {
-			const fechaDesde = values.fechaInicial;
-			const fechaHasta = values.fechaFinal;
-			const campo = values.tasa;
-			const calcular = true;
+			const segments = values.segments || [];
 
-			const url = `${process.env.REACT_APP_BASE_URL}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&calcular=${calcular}`;
+			// Si hay tramos calculados por el InterestSegmentsManager
+			if (segments.length > 0) {
+				// Los tramos ya están calculados, solo necesitamos preparar el resultado
+				const interesTotal = segments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+				const capitalBase = parseFloat(values.capital || 0);
 
-			const response = await axios.get(url, {
-				withCredentials: true,
-			});
+				// Si hay capitalización, el monto final es el capital del último tramo + su interés
+				// Si no hay capitalización, es el capital original + todos los intereses
+				const capitalActualizado = values.capitalizeInterest
+					? (segments[segments.length - 1]?.capital || capitalBase) + (segments[segments.length - 1]?.interest || 0)
+					: capitalBase + interesTotal;
 
-			const tasasResult = response.data;
+				await _sleep(500);
 
-			//setTasasData(tasasResult);
+				const finalResult = {
+					...values,
+					segments,
+					interesTotal,
+					capitalActualizado,
+					folderId: values.folderId,
+					folderName: values.folderName,
+					capitalizeInterest: values.capitalizeInterest || false,
+					// Para compatibilidad con la vista de resultados existente
+					tasasResult: {
+						resultado: interesTotal / capitalBase,
+						detalleCalculo: {
+							tipoIndice: "multipleSegments",
+							formula: "Suma de intereses por tramos",
+							cantidadTramos: segments.length,
+						},
+					},
+				};
 
-			let interesTotal = 0;
-			if (Array.isArray(tasasResult)) {
-				interesTotal = tasasResult.reduce((sum, item) => {
-					return sum + (typeof item.interes === "number" ? item.interes : 0);
-				}, 0);
+				setCalculationResult(finalResult);
+				actions.setSubmitting(false);
+				setShowResults(true);
+			} else {
+				// Fallback al método anterior para compatibilidad
+				const fechaDesde = values.fechaInicial;
+				const fechaHasta = values.fechaFinal;
+				const campo = values.tasa;
+				const calcular = true;
+
+				const url = `${process.env.REACT_APP_BASE_URL}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&calcular=${calcular}`;
+
+				const response = await axios.get(url, {
+					withCredentials: true,
+				});
+
+				const tasasResult = response.data;
+
+				let interesTotal = 0;
+				if (Array.isArray(tasasResult)) {
+					interesTotal = tasasResult.reduce((sum, item) => {
+						return sum + (typeof item.interes === "number" ? item.interes : 0);
+					}, 0);
+				}
+
+				await _sleep(1000);
+
+				const finalResult = {
+					...values,
+					tasasResult,
+					interesTotal,
+					capitalActualizado: parseFloat(values.capital || 0) + interesTotal,
+					folderId: values.folderId,
+					folderName: values.folderName,
+				};
+
+				setCalculationResult(finalResult);
+				actions.setSubmitting(false);
+				setShowResults(true);
 			}
-
-			await _sleep(1000);
-
-			const finalResult = {
-				...values,
-				tasasResult,
-				interesTotal,
-				capitalActualizado: parseFloat(values.capital || 0) + interesTotal,
-				folderId: values.folderId,
-				folderName: values.folderName,
-			};
-
-			setCalculationResult(finalResult);
-			actions.setSubmitting(false);
-
-			actions.setSubmitting(false);
-			setActiveStep(activeStep + 1);
 		} catch (error) {
 			enqueueSnackbar("Error al consultar tasas. Por favor intente nuevamente.", {
 				variant: "error",
@@ -149,44 +165,39 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 	}
 
 	function _handleSubmit(values: any, actions: any) {
-		if (isLastStep) {
-			_submitForm(values, actions);
-		} else {
-			setActiveStep(activeStep + 1);
-			actions.setTouched({});
-			actions.setSubmitting(false);
-		}
+		// Siempre ejecutar el cálculo y mostrar resultados
+		_submitForm(values, actions);
 	}
 
 	return (
 		<Box sx={{ width: "100%" }}>
+			{/* Barra de progreso simplificada */}
 			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
-				{steps.map((label, index) => (
-					<Box key={label} sx={{ position: "relative", width: "100%" }}>
-						<Box
-							sx={{
-								height: 3,
-								bgcolor: index <= activeStep ? "primary.main" : "divider",
-								borderRadius: 1,
-								transition: "all 0.3s ease",
-							}}
-						/>
-						<Typography
-							variant="caption"
-							sx={{
-								position: "absolute",
-								top: 6,
-								fontSize: 11,
-								color: index <= activeStep ? "primary.main" : "text.secondary",
-								transition: "color 0.3s ease",
-							}}
-						>
-							{label}
-						</Typography>
-					</Box>
-				))}
+				<Box sx={{ position: "relative", width: "100%" }}>
+					<Box
+						sx={{
+							height: 3,
+							bgcolor: showResults ? "success.main" : "primary.main",
+							borderRadius: 1,
+							transition: "all 0.3s ease",
+						}}
+					/>
+					<Typography
+						variant="caption"
+						sx={{
+							position: "absolute",
+							top: 6,
+							fontSize: 11,
+							color: showResults ? "success.main" : "primary.main",
+							transition: "color 0.3s ease",
+						}}
+					>
+						{showResults ? "Resultados" : "Datos requeridos"}
+					</Typography>
+				</Box>
 			</Stack>
-			{activeStep === steps.length ? (
+
+			{showResults ? (
 				<ResultsView
 					values={calculationResult}
 					formField={formField}
@@ -204,16 +215,11 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 				>
 					{({ isSubmitting, values }) => (
 						<Form id={formId}>
-							{getStepContent(activeStep, values, folder, onFolderChange)}
-							<Stack direction="row" justifyContent={activeStep !== 0 ? "space-between" : "flex-end"}>
-								{activeStep !== 0 && (
-									<Button onClick={handleBack} sx={{ my: 3, ml: 1 }}>
-										Atrás
-									</Button>
-								)}
+							<FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />
+							<Stack direction="row" justifyContent="flex-end">
 								<AnimateButton>
 									<Button disabled={isSubmitting} variant="contained" type="submit" sx={{ my: 3, ml: 1 }}>
-										{isLastStep ? "Calcular" : "Siguiente"}
+										Calcular
 									</Button>
 								</AnimateButton>
 							</Stack>

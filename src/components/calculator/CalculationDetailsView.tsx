@@ -20,6 +20,7 @@ import {
 	Autocomplete,
 	GlobalStyles,
 	CircularProgress,
+	alpha,
 } from "@mui/material";
 import logo from "assets/images/large_logo_transparent.png";
 import {
@@ -35,6 +36,7 @@ import {
 	SearchNormal1,
 	UserAdd,
 	Save2,
+	Refresh,
 } from "iconsax-react";
 import { useReactToPrint } from "react-to-print";
 import { dispatch, useSelector } from "store";
@@ -58,6 +60,32 @@ interface CalculationDetailsViewProps {
 		variables?: Record<string, any>;
 		subClassType?: string;
 		type?: string;
+		interest?: number;
+		capital?: number;
+		keepUpdated?: boolean;
+		originalData?: {
+			amount?: number;
+			capital?: number;
+			interest?: number;
+			endDate?: string | Date;
+			createdAt?: string | Date;
+		};
+		lastUpdate?: {
+			amount?: number;
+			interest?: number;
+			updatedAt?: string | Date;
+			updatedToDate?: string | Date;
+			segments?: Array<{
+				startDate?: string | Date;
+				endDate?: string | Date;
+				rate?: string;
+				rateName?: string;
+				capital?: number;
+				interest?: number;
+				coefficient?: number;
+				isExtension?: boolean;
+			}>;
+		};
 	};
 	getLabelForKey: (key: string, customLabel?: string) => string;
 	formatValue: (key: string, value: number | string, formatType?: string) => string;
@@ -72,6 +100,13 @@ interface CalculationDetailsViewProps {
 	onSaveClick?: () => void;
 	isSaved?: boolean;
 	isSaving?: boolean;
+	onKeepUpdatedChange?: (keepUpdated: boolean) => void;
+	isKeepUpdatedLoading?: boolean;
+	// Props para control externo
+	openEmailModal?: boolean;
+	onEmailModalClose?: () => void;
+	triggerPrint?: boolean;
+	onPrintComplete?: () => void;
 }
 
 // Iconos para cada sección
@@ -100,6 +135,12 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	onSaveClick,
 	isSaved = false,
 	isSaving = false,
+	onKeepUpdatedChange,
+	isKeepUpdatedLoading = false,
+	openEmailModal,
+	onEmailModalClose,
+	triggerPrint,
+	onPrintComplete,
 }) => {
 	const theme = useTheme();
 	const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -123,6 +164,21 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 			setContactsLoaded(true);
 		}
 	}, [emailModalOpen, contactsLoaded, user?._id]);
+
+	// Control externo del modal de email
+	useEffect(() => {
+		if (openEmailModal) {
+			setEmailModalOpen(true);
+		}
+	}, [openEmailModal]);
+
+	// Control externo de impresión
+	useEffect(() => {
+		if (triggerPrint && printRef.current) {
+			handlePrint();
+			onPrintComplete?.();
+		}
+	}, [triggerPrint]);
 
 	const handleAddEmail = () => {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -200,6 +256,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 				}),
 			);
 			setEmailModalOpen(false);
+			onEmailModalClose?.();
 			setEmail("");
 			setEmailList([]);
 			setCopyToMe(false);
@@ -288,6 +345,16 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 			multas: "Multas",
 		};
 		return titles[groupKey] || groupKey;
+	};
+
+	// Verificar si el cálculo es elegible para keepUpdated
+	const isEligibleForKeepUpdated = () => {
+		// Verificar intereses en el campo principal o en variables (para cálculos guardados antes del fix)
+		const hasInterest =
+			(data.interest ?? 0) > 0 ||
+			(data.variables?.interesTotal ?? 0) > 0 ||
+			(data.variables?.calculatedInterest ?? 0) > 0;
+		return data.type === "Calculado" && hasInterest;
 	};
 
 	const renderActionButtons = () => (
@@ -424,21 +491,110 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					</span>
 				</Tooltip>
 			)}
+			{/* Toggle keepUpdated - solo visible cuando el cálculo está guardado y es elegible */}
+			{isSaved && isEligibleForKeepUpdated() && onKeepUpdatedChange && (
+				<Tooltip
+					title={
+						data.keepUpdated
+							? "Desactivar actualización automática de intereses"
+							: "Mantener intereses actualizados a la fecha actual"
+					}
+				>
+					<IconButton
+						onClick={() => onKeepUpdatedChange(!data.keepUpdated)}
+						disabled={isKeepUpdatedLoading}
+						size="small"
+						sx={{
+							border: "1px solid",
+							borderColor: data.keepUpdated ? "primary.main" : "divider",
+							bgcolor: data.keepUpdated ? alpha(theme.palette.primary.main, 0.08) : "background.paper",
+							color: data.keepUpdated ? "primary.main" : "text.secondary",
+							"&:hover": {
+								bgcolor: data.keepUpdated ? alpha(theme.palette.primary.main, 0.15) : "action.hover",
+								borderColor: "primary.main",
+							},
+							"&:disabled": {
+								bgcolor: "action.disabledBackground",
+								borderColor: "divider",
+							},
+						}}
+					>
+						{isKeepUpdatedLoading ? <CircularProgress size={18} /> : <Refresh size={18} />}
+					</IconButton>
+				</Tooltip>
+			)}
 		</Stack>
 	);
+
+	// Helper para formatear fechas en secciones
+	const formatDateShort = (date: string | Date | undefined) => {
+		if (!date) return "-";
+		const d = new Date(date);
+		return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+	};
 
 	const renderSection = (title: string, items: ResultItem[], sectionKey: string, index: number) => {
 		if (!items || !items.length) return null;
 
-		// Filtrar items para ocultar montoTotalConIntereses y capitalActualizado en la sección de intereses
+		// Verificar si hay segmentos guardados (múltiples tramos)
+		const savedSegments = data.variables?.segments || [];
+		const hasSavedSegments = savedSegments.length > 0;
+
+		// Filtrar items para ocultar campos en la sección de intereses
+		const hasSegments = data.keepUpdated && data.lastUpdate?.segments && data.lastUpdate.segments.length > 0;
+
+		// Verificar si mostrar tramos en la sección de cálculos
+		const showSegmentsInCalculos = sectionKey === "calculos" && hasSavedSegments;
+
 		const visibleItems = items.filter((item) => {
-			if (sectionKey === "intereses" && (item.key === "montoTotalConIntereses" || item.key === "capitalActualizado")) {
-				return false;
+			// Si hay segmentos guardados, ocultar los items que muestran detalles de tramos individuales
+			// porque los mostraremos de una forma más estructurada
+			if (hasSavedSegments && sectionKey === "calculos") {
+				const keyLower = item.key.toLowerCase();
+				// Ocultar items que son parte de los tramos individuales (tramoHeader, tramoTasa, etc.)
+				if (keyLower.startsWith("tramo")) {
+					return false;
+				}
+			}
+
+			if (sectionKey === "intereses") {
+				// Siempre ocultar estos campos
+				if (item.key === "montoTotalConIntereses" || item.key === "capitalActualizado") {
+					return false;
+				}
+				// Si hay segments, ocultar campos redundantes (se mostrará solo los tramos)
+				if (hasSegments) {
+					const keyLower = item.key.toLowerCase();
+					// Ocultar capital (puede ser "capital", "capitalBase", "capitalBaseResult")
+					if (keyLower.includes("capital") && !keyLower.includes("actualizado")) {
+						return false;
+					}
+					// Ocultar fechas de intereses (ya aparecen en los títulos de los tramos)
+					if (keyLower.includes("fecha") && keyLower.includes("interes")) {
+						return false;
+					}
+					// Ocultar tasa de intereses (se muestra en Datos del Reclamo o Detalles)
+					if (keyLower === "tasaintereses" || keyLower === "tasa") {
+						return false;
+					}
+					// Ocultar campos que sean montos de intereses
+					if (
+						keyLower === "intereses" ||
+						keyLower === "interest" ||
+						keyLower === "montointereses" ||
+						(keyLower.includes("interes") &&
+							!keyLower.includes("fecha") &&
+							!keyLower.includes("tasa") &&
+							typeof item.value === "number")
+					) {
+						return false;
+					}
+				}
 			}
 			return true;
 		});
 
-		if (!visibleItems.length) return null;
+		if (!visibleItems.length && !hasSegments && !showSegmentsInCalculos) return null;
 
 		const Icon = SectionIcons[sectionKey] || Information;
 
@@ -476,7 +632,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					</Typography>
 				</Box>
 				<Box sx={{ px: 2, py: 1.5 }}>
-					{visibleItems.map(({ key, value, customLabel, formatType }, itemIndex) => (
+					{visibleItems.map(({ key, value, customLabel, formatType }) => (
 						<Box
 							key={key}
 							sx={{
@@ -498,12 +654,161 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						</Box>
 					))}
 
+					{/* Mostrar tramos guardados en la sección de cálculos */}
+					{showSegmentsInCalculos && (
+						<>
+							{savedSegments.map((segment: any, segIndex: number) => (
+								<Box key={`saved-segment-${segIndex}`} sx={{ mb: 1.5, mt: segIndex === 0 ? 0 : 1 }}>
+									<Box
+										sx={{
+											display: "flex",
+											justifyContent: "space-between",
+											alignItems: "center",
+											py: 0.5,
+											bgcolor: theme.palette.mode === "dark" ? "grey.800" : "grey.100",
+											px: 1,
+											borderRadius: 1,
+											mb: 0.5,
+										}}
+									>
+										<Typography variant="body2" fontWeight={600}>
+											Tramo {segIndex + 1}: {segment.startDate} - {segment.endDate}
+										</Typography>
+										{segment.isExtension && (
+											<Chip label="Extensión" size="small" color="info" sx={{ height: 20, fontSize: "0.7rem" }} />
+										)}
+									</Box>
+									<Box sx={{ pl: 1 }}>
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
+											<Typography variant="caption" color="text.secondary">
+												Tasa:
+											</Typography>
+											<Typography variant="caption" fontWeight={500}>
+												{segment.rateName || segment.rate}
+											</Typography>
+										</Box>
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
+											<Typography variant="caption" color="text.secondary">
+												Capital del tramo:
+											</Typography>
+											<Typography variant="caption" fontWeight={500}>
+												{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.capital || 0)}
+											</Typography>
+										</Box>
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
+											<Typography variant="caption" color="text.secondary">
+												Coeficiente:
+											</Typography>
+											<Typography variant="caption" fontWeight={500}>
+												{((segment.coefficient || 0) * 100).toFixed(4)}%
+											</Typography>
+										</Box>
+										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
+											<Typography variant="caption" color="text.secondary">
+												Interés generado:
+											</Typography>
+											<Typography variant="caption" fontWeight={500} color="success.main">
+												{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest || 0)}
+											</Typography>
+										</Box>
+									</Box>
+								</Box>
+							))}
+							{/* Mostrar si hay capitalización */}
+							{data.variables?.capitalizeInterest && (
+								<Box
+									sx={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										py: 0.5,
+										mt: 1,
+										bgcolor: alpha(theme.palette.info.main, 0.1),
+										px: 1,
+										borderRadius: 1,
+									}}
+								>
+									<Typography variant="caption" color="info.main">
+										Capitalización de intereses activada
+									</Typography>
+								</Box>
+							)}
+						</>
+					)}
+
+					{/* Mostrar tramos de intereses si es la sección de intereses */}
+					{sectionKey === "intereses" && (hasSegments || hasSavedSegments) && (
+						<>
+							{/* Si hay keepUpdated con lastUpdate.segments, mostrar todos los tramos de lastUpdate */}
+							{hasSegments &&
+								data.lastUpdate!.segments!.map((segment, segIndex) => (
+									<Box
+										key={`segment-${segIndex}`}
+										sx={{
+											display: "flex",
+											justifyContent: "space-between",
+											alignItems: "center",
+											py: 0.75,
+											borderBottom: `1px solid ${theme.palette.divider}`,
+										}}
+									>
+										<Box>
+											<Typography variant="body2" color="text.secondary">
+												{segment.isExtension ? "Actualización automática" : `Tramo ${segIndex + 1}`} ({formatDateShort(segment.startDate)} - {formatDateShort(segment.endDate)}):
+											</Typography>
+											{segment.rateName && (
+												<Typography variant="caption" color="text.disabled">
+													{segment.rateName}
+												</Typography>
+											)}
+										</Box>
+										<Typography
+											variant="body2"
+											fontWeight={500}
+											sx={{ ml: 2, color: segment.isExtension ? "primary.main" : "text.primary" }}
+										>
+											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest || 0)}
+										</Typography>
+									</Box>
+								))}
+							{/* Si no hay keepUpdated pero hay segmentos guardados, mostrar los originales */}
+							{!hasSegments &&
+								hasSavedSegments &&
+								savedSegments.map((segment: any, segIndex: number) => (
+									<Box
+										key={`saved-segment-${segIndex}`}
+										sx={{
+											display: "flex",
+											justifyContent: "space-between",
+											alignItems: "center",
+											py: 0.75,
+											borderBottom: `1px solid ${theme.palette.divider}`,
+										}}
+									>
+										<Box>
+											<Typography variant="body2" color="text.secondary">
+												Tramo {segIndex + 1} ({segment.startDate} - {segment.endDate}):
+											</Typography>
+											{segment.rateName && (
+												<Typography variant="caption" color="text.disabled">
+													{segment.rateName}
+												</Typography>
+											)}
+										</Box>
+										<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
+											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest || 0)}
+										</Typography>
+									</Box>
+								))}
+						</>
+					)}
+
 					{/* Calcular y mostrar subtotal para secciones monetarias */}
 					{(() => {
 						const sectionsWithSubtotal = ["indemnizacion", "liquidacion", "multas", "intereses", "otrasSumas"];
 						if (!sectionsWithSubtotal.includes(sectionKey)) return null;
 
-						const subtotal = visibleItems.reduce((sum, item) => {
+						let subtotal = visibleItems.reduce((sum, item) => {
 							// No sumar campos no monetarios
 							if (
 								item.key === "Periodos" ||
@@ -517,6 +822,19 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 							const numValue = typeof item.value === "number" ? item.value : parseFloat(item.value);
 							return sum + (isNaN(numValue) ? 0 : numValue);
 						}, 0);
+
+						// Si es sección de intereses con segments de lastUpdate, sumar los intereses de los tramos
+						if (sectionKey === "intereses" && hasSegments) {
+							subtotal = data.lastUpdate!.segments!.reduce((sum, seg) => sum + (seg.interest || 0), 0);
+						} else if (sectionKey === "intereses" && hasSavedSegments) {
+							// Si hay segmentos guardados pero no hay keepUpdated
+							subtotal = savedSegments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+						}
+
+						// Si es sección de cálculos con segmentos guardados, calcular el subtotal de los intereses
+						if (sectionKey === "calculos" && hasSavedSegments) {
+							subtotal = savedSegments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+						}
 
 						if (subtotal <= 0) return null;
 
@@ -550,6 +868,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 			</Paper>
 		);
 	};
+
 
 	const groupedData = groupResults(data?.variables);
 
@@ -688,7 +1007,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 											{new Intl.NumberFormat("es-AR", {
 												style: "currency",
 												currency: "ARS",
-											}).format(data.amount)}
+											}).format(data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount)}
 										</Typography>
 									</Box>
 								</Box>
@@ -699,7 +1018,15 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 			</Box>
 
 			{/* Modales */}
-			<Dialog open={emailModalOpen} onClose={() => setEmailModalOpen(false)} maxWidth="md" fullWidth>
+			<Dialog
+				open={emailModalOpen}
+				onClose={() => {
+					setEmailModalOpen(false);
+					onEmailModalClose?.();
+				}}
+				maxWidth="md"
+				fullWidth
+			>
 				<DialogTitle>Enviar por Email</DialogTitle>
 				<DialogContent>
 					<Stack spacing={2} sx={{ mt: 1 }}>
@@ -832,6 +1159,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						color="error"
 						onClick={() => {
 							setEmailModalOpen(false);
+							onEmailModalClose?.();
 							setEmail("");
 							setEmailList([]);
 							setCopyToMe(false);
