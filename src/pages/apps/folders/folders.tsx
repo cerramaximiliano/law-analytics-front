@@ -1230,7 +1230,48 @@ const FoldersLayout = () => {
 					try {
 						const parsedDate = dayjs.utc(value);
 						if (parsedDate.isValid()) {
-							return <span>{parsedDate.format("DD/MM/YYYY")}</span>;
+							const formattedDate = parsedDate.format("DD/MM/YYYY");
+							const isToday = parsedDate.format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
+
+							if (isToday) {
+								return (
+									<Stack direction="row" alignItems="center" spacing={0.5}>
+										<Box
+											sx={{
+												width: 8,
+												height: 8,
+												borderRadius: "50%",
+												bgcolor: "success.main",
+												animation: "pulse 2s infinite",
+												"@keyframes pulse": {
+													"0%": {
+														boxShadow: "0 0 0 0 rgba(34, 197, 94, 0.7)",
+													},
+													"70%": {
+														boxShadow: "0 0 0 6px rgba(34, 197, 94, 0)",
+													},
+													"100%": {
+														boxShadow: "0 0 0 0 rgba(34, 197, 94, 0)",
+													},
+												},
+											}}
+										/>
+										<Tooltip title="Movimiento de hoy">
+											<Typography
+												variant="body2"
+												sx={{
+													fontWeight: 600,
+													color: "success.main",
+												}}
+											>
+												{formattedDate}
+											</Typography>
+										</Tooltip>
+									</Stack>
+								);
+							}
+
+							return <span>{formattedDate}</span>;
 						} else {
 							return <span>-</span>;
 						}
