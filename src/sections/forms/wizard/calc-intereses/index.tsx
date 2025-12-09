@@ -18,8 +18,8 @@ import axios from "axios";
 import esquemaInicial, { crearEsquemaValidacion } from "./formModel/validationSchema";
 import { hayRangosFechas } from "./formModel/tasasFechasStore";
 
-// step options - Solo un paso, luego resultados
-const steps = ["Datos requeridos"];
+// step options
+const steps = ["Datos requeridos", "Resultados"];
 const { formId, formField } = interesesFormModel;
 
 // ==============================|| FORMS WIZARD - BASIC ||============================== //
@@ -169,32 +169,37 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 		_submitForm(values, actions);
 	}
 
+	// Determinar el step actual
+	const activeStep = showResults ? 1 : 0;
+
 	return (
 		<Box sx={{ width: "100%" }}>
-			{/* Barra de progreso simplificada */}
+			{/* Progress Steps */}
 			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
-				<Box sx={{ position: "relative", width: "100%" }}>
-					<Box
-						sx={{
-							height: 3,
-							bgcolor: showResults ? "success.main" : "primary.main",
-							borderRadius: 1,
-							transition: "all 0.3s ease",
-						}}
-					/>
-					<Typography
-						variant="caption"
-						sx={{
-							position: "absolute",
-							top: 6,
-							fontSize: 11,
-							color: showResults ? "success.main" : "primary.main",
-							transition: "color 0.3s ease",
-						}}
-					>
-						{showResults ? "Resultados" : "Datos requeridos"}
-					</Typography>
-				</Box>
+				{steps.map((label, index) => (
+					<Box key={label} sx={{ position: "relative", width: "100%" }}>
+						<Box
+							sx={{
+								height: 3,
+								bgcolor: index <= activeStep ? "primary.main" : "divider",
+								borderRadius: 1,
+								transition: "all 0.3s ease",
+							}}
+						/>
+						<Typography
+							variant="caption"
+							sx={{
+								position: "absolute",
+								top: 6,
+								fontSize: 11,
+								color: index <= activeStep ? "primary.main" : "text.secondary",
+								transition: "color 0.3s ease",
+							}}
+						>
+							{label}
+						</Typography>
+					</Box>
+				))}
 			</Stack>
 
 			{showResults ? (
@@ -213,18 +218,21 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 					validateOnChange={true}
 					validateOnBlur={true}
 				>
-					{({ isSubmitting, values }) => (
-						<Form id={formId}>
-							<FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />
-							<Stack direction="row" justifyContent="flex-end">
-								<AnimateButton>
-									<Button disabled={isSubmitting} variant="contained" type="submit" sx={{ my: 3, ml: 1 }}>
-										Calcular
-									</Button>
-								</AnimateButton>
-							</Stack>
-						</Form>
-					)}
+					{({ isSubmitting, values }) => {
+						const hasSegments = Array.isArray(values.segments) && values.segments.length > 0;
+						return (
+							<Form id={formId}>
+								<FirstForm formField={formField} folder={folder} onFolderChange={onFolderChange} />
+								<Stack direction="row" justifyContent="flex-end">
+									<AnimateButton>
+										<Button disabled={isSubmitting} variant="contained" type="submit" sx={{ my: 3, ml: 1 }}>
+											{hasSegments ? "Ver Resultados" : "Calcular"}
+										</Button>
+									</AnimateButton>
+								</Stack>
+							</Form>
+						);
+					}}
 				</Formik>
 			)}
 		</Box>

@@ -218,8 +218,8 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 		if (isSendingEmail) return;
 
 		try {
-			const textBody = generatePlainText();
-			const htmlBody = generateHtmlContent();
+			let textBody = generatePlainText();
+			let htmlBody = generateHtmlContent();
 			const subject = customTitle || "Cálculo - Law||Analytics";
 			const allEmails = [...emailList];
 
@@ -234,6 +234,17 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					}),
 				);
 				return;
+			}
+
+			// Agregar mensaje personalizado si existe
+			if (customMessage && customMessage.trim()) {
+				textBody = `Mensaje del remitente:\n"${customMessage}"\n\n${"─".repeat(40)}\n\n${textBody}`;
+				htmlBody = `<div style="margin-bottom: 24px; padding: 16px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #1976d2;">
+					<div style="font-size: 12px; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Mensaje del remitente</div>
+					<p style="margin: 0; white-space: pre-wrap; color: #333; font-style: italic;">"${customMessage.replace(/\n/g, "<br>")}"</p>
+				</div>
+				<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;"/>
+				${htmlBody}`;
 			}
 
 			setIsSendingEmail(true);

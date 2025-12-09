@@ -549,39 +549,171 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	}, []);
 
 	const generatePlainText = useCallback(() => {
-		let text = "LIQUIDACIÓN DE INTERESES\n\n";
-		Object.entries(groupedResults).forEach(([group, items]: [string, ResultItem[]]) => {
-			if (items.length) {
-				text += `${getGroupTitle(group).toUpperCase()}\n`;
-				items.forEach((item: ResultItem) => {
-					text += `${getLabelForKey(item.key, item.customLabel)}: ${formatValue(item.key, item.value, item.formatType)}\n`;
-				});
-				text += "\n";
+		const segments: InterestSegment[] = values.segments || [];
+		const hasMultipleSegments = segments.length > 0;
+		const capitalBase = typeof values.capital === "number" ? values.capital : parseFloat(values.capital || "0");
+
+		let text = "LIQUIDACIÓN DE INTERESES\n";
+		text += "═".repeat(50) + "\n\n";
+
+		// Sección Detalles
+		text += "DETALLES DEL CÁLCULO\n";
+		text += "-".repeat(30) + "\n";
+		if (groupedResults.detalles.length) {
+			groupedResults.detalles.forEach((item: ResultItem) => {
+				text += `${getLabelForKey(item.key, item.customLabel)}: ${formatValue(item.key, item.value, item.formatType)}\n`;
+			});
+		}
+		text += "\n";
+
+		// Sección Metodología de Cálculo
+		text += "METODOLOGÍA DE CÁLCULO\n";
+		text += "-".repeat(30) + "\n";
+		if (hasMultipleSegments) {
+			segments.forEach((segment, index) => {
+				text += `\nTramo ${index + 1}: ${segment.startDate} - ${segment.endDate}\n`;
+				text += `  Tasa: ${segment.rateName || getTasaLabel(segment.rate)}\n`;
+				text += `  Capital del tramo: ${formatValue("capital", segment.capital)}\n`;
+				text += `  Coeficiente: ${((segment.coefficient || 0) * 100).toFixed(4)}%\n`;
+				text += `  Interés generado: ${formatValue("interest", segment.interest)}\n`;
+			});
+			if (values.capitalizeInterest) {
+				text += "\n  ℹ Capitalización de intereses activada\n";
 			}
-		});
-		text += `TOTAL: ${formatValue("total", total)}`;
+		} else if (groupedResults.calculos.length) {
+			groupedResults.calculos.forEach((item: ResultItem) => {
+				text += `${getLabelForKey(item.key, item.customLabel)}: ${formatValue(item.key, item.value, item.formatType)}\n`;
+			});
+		}
+		text += "\n";
+
+		// Sección Intereses
+		text += "INTERESES\n";
+		text += "-".repeat(30) + "\n";
+		text += `Capital Inicial: ${formatValue("capital", capitalBase)}\n`;
+
+		if (hasMultipleSegments) {
+			const totalIntereses = segments.reduce((sum, seg) => sum + (seg.interest || 0), 0);
+			text += `Total de Intereses: ${formatValue("interest", totalIntereses)}\n\n`;
+			segments.forEach((segment, index) => {
+				text += `Tramo ${index + 1} (${segment.startDate} - ${segment.endDate}):\n`;
+				text += `  ${segment.rateName || getTasaLabel(segment.rate)}: ${formatValue("interest", segment.interest)}\n`;
+			});
+			text += `\nSubtotal: ${formatValue("interest", totalIntereses)}\n`;
+		} else {
+			groupedResults.intereses.forEach((item: ResultItem) => {
+				if (item.key !== "capital") {
+					text += `${getLabelForKey(item.key, item.customLabel)}: ${formatValue(item.key, item.value, item.formatType)}\n`;
+				}
+			});
+		}
+		text += "\n";
+
+		// Capital Actualizado
+		text += "CAPITAL ACTUALIZADO\n";
+		text += "-".repeat(30) + "\n";
+		text += `Capital actualizado: ${formatValue("total", total)}\n`;
+
 		return text;
-	}, [groupedResults, total, getGroupTitle, getLabelForKey, formatValue]);
+	}, [values, groupedResults, total, getGroupTitle, getLabelForKey, formatValue, getTasaLabel]);
 
 	const generateHtmlContent = useCallback(() => {
-		let html = "<h2>LIQUIDACIÓN DE INTERESES</h2>";
-		Object.entries(groupedResults).forEach(([group, items]: [string, ResultItem[]]) => {
-			if (items.length) {
-				html += `<h3>${getGroupTitle(group).toUpperCase()}</h3>`;
-				html += "<table style='width: 100%; border-collapse: collapse;'>";
-				items.forEach((item: ResultItem) => {
-					html += `<tr>
-						<td style='padding: 8px; border-bottom: 1px solid #ddd;'>${getLabelForKey(item.key, item.customLabel)}:</td>
-						<td style='padding: 8px; border-bottom: 1px solid #ddd; text-align: right;'>${formatValue(item.key, item.value, item.formatType)}</td>
-					</tr>`;
-				});
-				html += "</table><br/>";
-			}
-		});
-		html += `<h3>TOTAL: ${formatValue("total", total)}</h3>`;
+		const segments: InterestSegment[] = values.segments || [];
+		const hasMultipleSegments = segments.length > 0;
+		const capitalBase = typeof values.capital === "number" ? values.capital : parseFloat(values.capital || "0");
 
+		// Helper para crear filas de tabla con label a la izquierda y valor a la derecha
+		const createRow = (label: string, value: string, isSubtotal = false, valueColor = "#333") => {
+			const bgColor = isSubtotal ? "#f5f5f5" : "transparent";
+			const fontWeight = isSubtotal ? "600" : "500";
+			return `<tr style="background: ${bgColor};">
+				<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; color: #666; text-align: left;">${label}</td>
+				<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-weight: ${fontWeight}; color: ${valueColor}; text-align: right;">${value}</td>
+			</tr>`;
+		};
+
+		let html = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">`;
+		html += `<h2 style="text-align: center; color: #1976d2; margin-bottom: 24px;">Liquidación de Intereses</h2>`;
+
+		// Sección Detalles
+		if (groupedResults.detalles.length) {
+			html += `<div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">`;
+			html += `<div style="background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #333;">Detalles del Cálculo</div>`;
+			html += `<table style="width: 100%; border-collapse: collapse;">`;
+			groupedResults.detalles.forEach((item: ResultItem) => {
+				html += createRow(`${getLabelForKey(item.key, item.customLabel)}:`, formatValue(item.key, item.value, item.formatType));
+			});
+			html += `</table></div>`;
+		}
+
+		// Sección Metodología de Cálculo
+		html += `<div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">`;
+		html += `<div style="background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #333;">Metodología de Cálculo</div>`;
+		html += `<div style="padding: 12px 16px;">`;
+		if (hasMultipleSegments) {
+			segments.forEach((segment, index) => {
+				html += `<div style="background: #fafafa; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #1976d2; overflow: hidden;">`;
+				html += `<div style="font-weight: 600; color: #1976d2; padding: 12px 12px 8px;">Tramo ${index + 1}: ${segment.startDate} - ${segment.endDate}</div>`;
+				html += `<table style="width: 100%; border-collapse: collapse;">`;
+				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Tasa:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${segment.rateName || getTasaLabel(segment.rate)}</td></tr>`;
+				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Capital del tramo:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${formatValue("capital", segment.capital)}</td></tr>`;
+				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Coeficiente:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${((segment.coefficient || 0) * 100).toFixed(4)}%</td></tr>`;
+				html += `<tr><td style="padding: 6px 12px 12px; color: #666; text-align: left;">Interés generado:</td><td style="padding: 6px 12px 12px; font-weight: 500; color: #2e7d32; text-align: right;">${formatValue("interest", segment.interest)}</td></tr>`;
+				html += `</table></div>`;
+			});
+			if (values.capitalizeInterest) {
+				html += `<div style="background: #e3f2fd; padding: 8px 12px; border-radius: 4px; color: #1565c0; font-size: 13px;">ℹ Capitalización de intereses activada</div>`;
+			}
+		} else if (groupedResults.calculos.length) {
+			html += `<table style="width: 100%; border-collapse: collapse;">`;
+			groupedResults.calculos.forEach((item: ResultItem) => {
+				html += createRow(`${getLabelForKey(item.key, item.customLabel)}:`, formatValue(item.key, item.value, item.formatType));
+			});
+			html += `</table>`;
+		}
+		html += `</div></div>`;
+
+		// Sección Intereses
+		html += `<div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">`;
+		html += `<div style="background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #333;">Intereses</div>`;
+		html += `<table style="width: 100%; border-collapse: collapse;">`;
+		html += createRow("Capital Inicial:", formatValue("capital", capitalBase));
+
+		if (hasMultipleSegments) {
+			const totalIntereses = segments.reduce((sum, seg) => sum + (seg.interest || 0), 0);
+			html += createRow("Total de Intereses:", formatValue("interest", totalIntereses));
+			segments.forEach((segment, index) => {
+				html += `<tr>
+					<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; color: #666; text-align: left;">
+						Tramo ${index + 1} (${segment.startDate} - ${segment.endDate}):<br/>
+						<span style="font-size: 12px; color: #888;">${segment.rateName || getTasaLabel(segment.rate)}</span>
+					</td>
+					<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 500; text-align: right; vertical-align: top;">${formatValue("interest", segment.interest)}</td>
+				</tr>`;
+			});
+			html += createRow("Subtotal:", formatValue("interest", totalIntereses), true, "#1976d2");
+		} else {
+			groupedResults.intereses.forEach((item: ResultItem) => {
+				if (item.key !== "capital") {
+					html += createRow(`${getLabelForKey(item.key, item.customLabel)}:`, formatValue(item.key, item.value, item.formatType));
+				}
+			});
+		}
+		html += `</table></div>`;
+
+		// Capital Actualizado
+		html += `<div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">`;
+		html += `<div style="background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #333;">Capital Actualizado</div>`;
+		html += `<table style="width: 100%; border-collapse: collapse;">`;
+		html += `<tr>
+			<td style="padding: 12px 16px; color: #666; text-align: left;">Capital actualizado:</td>
+			<td style="padding: 12px 16px; font-weight: 700; color: #1976d2; font-size: 16px; text-align: right;">${formatValue("total", total)}</td>
+		</tr>`;
+		html += `</table></div>`;
+
+		html += `</div>`;
 		return html;
-	}, [groupedResults, total, getLabelForKey, formatValue, getGroupTitle]);
+	}, [values, groupedResults, total, getLabelForKey, formatValue, getTasaLabel]);
 
 	const handleSaveCalculation = async () => {
 		if (isSaved || isSaving) return;
@@ -1026,7 +1158,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			{/* Modal para ver tabla de tasas */}
 			<Dialog open={showTasasModal} onClose={() => setShowTasasModal(false)} maxWidth="md" fullWidth>
 				<DialogTitle>Detalle de Tasas</DialogTitle>
-				<DialogContent>{renderTasasTable()}</DialogContent>
+				<DialogContent sx={{ minHeight: 300 }}>{renderTasasTable()}</DialogContent>
 				<DialogActions>
 					<Button onClick={() => setShowTasasModal(false)}>Cerrar</Button>
 				</DialogActions>
