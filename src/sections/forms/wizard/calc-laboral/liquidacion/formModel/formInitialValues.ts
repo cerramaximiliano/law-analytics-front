@@ -15,6 +15,8 @@ const {
 		fechaInicialIntereses,
 		fechaFinalIntereses,
 		tasaIntereses,
+		segmentsIntereses,
+		capitalizeInterest,
 		folderId,
 		folderName,
 	},
@@ -34,6 +36,8 @@ const initialValues = {
 	[fechaInicialIntereses.name]: "",
 	[fechaFinalIntereses.name]: "",
 	[tasaIntereses.name]: "",
+	[segmentsIntereses.name]: [],
+	[capitalizeInterest.name]: false,
 	[folderId.name]: "",
 	[folderName.name]: "",
 };

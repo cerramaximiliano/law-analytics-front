@@ -38,7 +38,15 @@ interface ThirdFormProps {
 
 export default function ThirdForm(props: ThirdFormProps) {
 	const {
-		formField: { aplicarIntereses, fechaInicialIntereses, fechaFinalIntereses, tasaIntereses, fechaEgreso, segmentsIntereses, capitalizeInterest },
+		formField: {
+			aplicarIntereses,
+			fechaInicialIntereses,
+			fechaFinalIntereses,
+			tasaIntereses,
+			fechaEgreso,
+			segmentsIntereses,
+			capitalizeInterest,
+		},
 		calculatedAmount = 0,
 	} = props;
 

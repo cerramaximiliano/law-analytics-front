@@ -48,6 +48,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	const { formField } = despidoFormModel;
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
+	const interestRates = useSelector((state: RootState) => state.interestRates.rates);
 
 	// No longer used but keeping for potential future use
 	// const isLinkedToFolder = useMemo(() => {
@@ -74,6 +75,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			return liquidacionLabels[key];
 		}
 
+		// Manejo especial para período de prueba
+		if (key === "periodoPruebaLeyenda") {
+			return "Aviso";
+		}
+
 		// Manejo especial para los campos de intereses
 		const interesesLabels: { [key: string]: string } = {
 			fechaInicialIntereses: "Fecha inicial de intereses",
@@ -81,10 +87,23 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			tasaIntereses: "Tasa de interés aplicada",
 			montoIntereses: "Monto de intereses",
 			montoTotalConIntereses: "Monto total con intereses",
+			capitalizeInterest: "Capitalización de intereses",
 		};
 
 		if (interesesLabels[key]) {
 			return interesesLabels[key];
+		}
+
+		// Manejo especial para tramos de intereses dinámicos
+		if (key.startsWith("tramoHeader_")) {
+			const index = parseInt(key.replace("tramoHeader_", ""), 10);
+			return `Tramo ${index + 1}`;
+		}
+		if (key.startsWith("tramoTasa_")) {
+			return `  Tasa aplicada`;
+		}
+		if (key.startsWith("tramoInteres_")) {
+			return `  Interés generado`;
 		}
 
 		const field = formField[key as keyof typeof formField];
@@ -92,20 +111,49 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	};
 
 	const formatValue = (key: string, value: number | string): string => {
+		// Para leyenda de período de prueba, devolver tal cual
+		if (key === "periodoPruebaLeyenda") {
+			return String(value);
+		}
+
 		// Para campos de fechas (incluyendo los de intereses)
 		if (key === "fechaIngreso" || key === "fechaEgreso" || key === "fechaInicialIntereses" || key === "fechaFinalIntereses") {
 			const date = typeof value === "string" ? value : value.toString();
 			return date;
 		}
 
-		// Para la tasa de intereses (mostrar un nombre más amigable)
-		if (key === "tasaIntereses") {
+		// Para la tasa de intereses (obtener el label desde el store de Redux)
+		// También aplica para tramoTasa_ que contiene el label ya procesado
+		if (key === "tasaIntereses" || key.startsWith("tramoTasa_")) {
+			const rateValue = String(value);
+
+			// Si ya es un label legible (no es un código), devolverlo tal cual
+			if (rateValue.includes(" ") || rateValue.includes("Interés Simple")) {
+				return rateValue;
+			}
+
+			// Si hay múltiples tasas separadas por coma, procesar cada una
+			if (rateValue.includes(",")) {
+				const rates = rateValue.split(",").map((r) => r.trim());
+				const labels = rates.map((rv) => {
+					const rate = interestRates.find((r) => r.value === rv);
+					return rate ? rate.label : rv;
+				});
+				return labels.join(", ");
+			}
+
+			// Buscar la tasa en el store de interestRates
+			const rate = interestRates.find((r) => r.value === rateValue);
+			if (rate) {
+				return rate.label;
+			}
+			// Fallback para tasas conocidas que no estén en el store
 			const tasasLabels: { [key: string]: string } = {
 				tasaPasivaBCRA: "Tasa Pasiva BCRA",
 				acta2601: "Acta 2601",
 				acta2630: "Acta 2630",
 			};
-			return tasasLabels[String(value)] || String(value);
+			return tasasLabels[rateValue] || rateValue;
 		}
 
 		// Para Períodos y otros valores numéricos
@@ -174,14 +222,43 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			const orderMap: Record<string, number> = {
 				fechaInicialIntereses: 0,
 				fechaFinalIntereses: 1,
-				tasaIntereses: 2,
-				montoIntereses: 3,
-				montoTotalConIntereses: 4,
+				tasaIntereses: 2, // Solo se usa en modo sin tramos
+				capitalizeInterest: 3,
+				montoIntereses: 1000, // Después de todos los tramos
+				montoTotalConIntereses: 1001,
 			};
 
 			return [...items].sort((a, b) => {
-				const orderA = orderMap[a.key] !== undefined ? orderMap[a.key] : 999;
-				const orderB = orderMap[b.key] !== undefined ? orderMap[b.key] : 999;
+				let orderA = orderMap[a.key];
+				let orderB = orderMap[b.key];
+
+				// Manejar tramos dinámicos - cada tramo tiene 3 elementos: header, tasa, interes
+				// tramoHeader_0 = 10, tramoTasa_0 = 11, tramoInteres_0 = 12
+				// tramoHeader_1 = 13, tramoTasa_1 = 14, tramoInteres_1 = 15, etc.
+				if (a.key.startsWith("tramoHeader_")) {
+					const index = parseInt(a.key.replace("tramoHeader_", ""), 10);
+					orderA = 10 + index * 3;
+				} else if (a.key.startsWith("tramoTasa_")) {
+					const index = parseInt(a.key.replace("tramoTasa_", ""), 10);
+					orderA = 11 + index * 3;
+				} else if (a.key.startsWith("tramoInteres_")) {
+					const index = parseInt(a.key.replace("tramoInteres_", ""), 10);
+					orderA = 12 + index * 3;
+				}
+
+				if (b.key.startsWith("tramoHeader_")) {
+					const index = parseInt(b.key.replace("tramoHeader_", ""), 10);
+					orderB = 10 + index * 3;
+				} else if (b.key.startsWith("tramoTasa_")) {
+					const index = parseInt(b.key.replace("tramoTasa_", ""), 10);
+					orderB = 11 + index * 3;
+				} else if (b.key.startsWith("tramoInteres_")) {
+					const index = parseInt(b.key.replace("tramoInteres_", ""), 10);
+					orderB = 12 + index * 3;
+				}
+
+				orderA = orderA !== undefined ? orderA : 999;
+				orderB = orderB !== undefined ? orderB : 999;
 				return orderA - orderB;
 			});
 		}
@@ -211,23 +288,73 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 		// Agregar datos de intereses si existen
 		if (inputValues.datosIntereses) {
 			const intereses = inputValues.datosIntereses;
-			// Agregar campos de intereses a la sección "intereses" (solo los datos solicitados)
-			groups.intereses.push({
-				key: "fechaInicialIntereses",
-				value: intereses.fechaInicialIntereses,
-			});
-			groups.intereses.push({
-				key: "fechaFinalIntereses",
-				value: intereses.fechaFinalIntereses,
-			});
-			groups.intereses.push({
-				key: "tasaIntereses",
-				value: intereses.tasaIntereses,
-			});
-			groups.intereses.push({
-				key: "montoIntereses",
-				value: intereses.montoIntereses,
-			});
+
+			// Verificar si hay múltiples tramos
+			if (intereses.segments && Array.isArray(intereses.segments) && intereses.segments.length > 0) {
+				// Modo con múltiples tramos - mostrar información detallada de cada tramo
+				groups.intereses.push({
+					key: "fechaInicialIntereses",
+					value: intereses.fechaInicialIntereses,
+				});
+				groups.intereses.push({
+					key: "fechaFinalIntereses",
+					value: intereses.fechaFinalIntereses,
+				});
+
+				if (intereses.capitalizeInterest) {
+					groups.intereses.push({
+						key: "capitalizeInterest",
+						value: "Sí",
+					});
+				}
+
+				// Mostrar detalle de cada tramo con su tasa
+				intereses.segments.forEach((seg: any, index: number) => {
+					const tasaLabel = seg.rateName || interestRates.find((r) => r.value === seg.rate)?.label || seg.rate;
+
+					// Header del tramo con período
+					groups.intereses.push({
+						key: `tramoHeader_${index}`,
+						value: `${seg.startDate} - ${seg.endDate}`,
+					});
+
+					// Tasa del tramo
+					groups.intereses.push({
+						key: `tramoTasa_${index}`,
+						value: tasaLabel,
+					});
+
+					// Interés del tramo
+					groups.intereses.push({
+						key: `tramoInteres_${index}`,
+						value: seg.interest,
+					});
+				});
+
+				groups.intereses.push({
+					key: "montoIntereses",
+					value: intereses.montoIntereses,
+				});
+			} else {
+				// Modo sin múltiples tramos (comportamiento original)
+				groups.intereses.push({
+					key: "fechaInicialIntereses",
+					value: intereses.fechaInicialIntereses,
+				});
+				groups.intereses.push({
+					key: "fechaFinalIntereses",
+					value: intereses.fechaFinalIntereses,
+				});
+				groups.intereses.push({
+					key: "tasaIntereses",
+					value: intereses.tasaIntereses,
+				});
+				groups.intereses.push({
+					key: "montoIntereses",
+					value: intereses.montoIntereses,
+				});
+			}
+
 			// Agregar el montoTotalConIntereses como campo oculto para el cálculo del total
 			groups.intereses.push({
 				key: "montoTotalConIntereses",
@@ -247,9 +374,27 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			});
 		}
 
+		// Siempre agregar la sección de indemnización (incluso cuando es 0)
+		const periodos = inputValues.Periodos ?? 0;
+		const indemnizacion = inputValues.Indemnizacion ?? 0;
+		const esPeriodoPrueba = inputValues.esPeriodoPrueba === true;
+
+		groups.indemnizacion.push({ key: "Periodos", value: periodos });
+		groups.indemnizacion.push({ key: "Indemnizacion", value: indemnizacion });
+
+		// Agregar leyenda si es período de prueba
+		if (esPeriodoPrueba) {
+			groups.indemnizacion.push({
+				key: "periodoPruebaLeyenda",
+				value: "El trabajador se encuentra en período de prueba, no corresponde indemnización por antigüedad.",
+			});
+		}
+
 		Object.entries(inputValues).forEach(([key, value]) => {
 			// Omitir el objeto datosIntereses ya que lo procesamos por separado
 			if (key === "datosIntereses") return;
+			// Omitir Periodos e Indemnizacion ya que los agregamos arriba
+			if (key === "Periodos" || key === "Indemnizacion" || key === "esPeriodoPrueba") return;
 			if (value == null || value === "" || value === false) return;
 			if (typeof value === "object" || typeof value === "boolean") return;
 			if (!shouldShowValue(value)) return;
@@ -269,8 +414,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			} else if (key === "otrasSumas") {
 				// Otras Sumas Adeudadas va en su propia sección para ser incluida en el total
 				groups.otrasSumas.push(item);
-			} else if (key === "Indemnizacion" || key === "Periodos") {
-				groups.indemnizacion.push(item);
 			} else if (
 				key.includes("Preaviso") ||
 				key.includes("SAC") ||
@@ -459,161 +602,158 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 	};
 
 	const generateHtmlContent = () => {
-		const styles = `
-			<style>
-				.container { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-				.header { text-align: center; margin-bottom: 24px; }
-				.header h2 { color: #333; margin: 0; }
-				.card { 
-				border: 1px solid #ddd; 
-				border-radius: 8px; 
-				margin-bottom: 16px; 
-				break-inside: avoid;
-				page-break-inside: avoid;
-				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-				}
-				.card-header { 
-				background-color: #f5f5f5; 
-				padding: 12px 16px; 
-				border-bottom: 1px solid #ddd;
-				border-radius: 8px 8px 0 0;
-				font-weight: bold;
-				color: #333;
-				}
-				.card-content { padding: 16px; }
-				.row { 
-				display: flex; 
-				justify-content: space-between; 
-				padding: 8px 0;
-				border-bottom: 1px solid #eee;
-				}
-				.row:last-child { border-bottom: none; }
-				.label { color: #666; }
-				.value { font-weight: 500; color: #333; }
-				.total-card {
-				background-color: #1976d2;
-				color: white;
-				margin-top: 24px;
-				}
-				.total-content {
-				display: flex;
-				justify-content: space-between;
-				padding: 16px;
-				font-size: 1.2em;
-				font-weight: bold;
-				}
-			</style>
-			`;
+		// Helper para crear filas de tabla con label a la izquierda y valor a la derecha
+		const createRow = (label: string, value: string, isSubtotal = false, valueColor = "#333") => {
+			const bgColor = isSubtotal ? "#f5f5f5" : "transparent";
+			const fontWeight = isSubtotal ? "600" : "500";
+			return `<tr style="background: ${bgColor};">
+				<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; color: #666; text-align: left;">${label}</td>
+				<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-weight: ${fontWeight}; color: ${valueColor}; text-align: right;">${value}</td>
+			</tr>`;
+		};
 
-		const renderCard = (title: string, items: ResultItem[]) => {
+		// Helper para renderizar un tramo de intereses
+		const renderTramo = (header: ResultItem, tasa: ResultItem | undefined, interes: ResultItem | undefined) => {
+			return `
+				<div style="margin: 8px 0; background: #f9f9f9; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden;">
+					<div style="background: #f0f0f0; padding: 8px 12px; border-bottom: 1px solid #e8e8e8; font-weight: 600; font-size: 13px; display: flex; justify-content: space-between;">
+						<span>${getLabelForKey(header.key)}</span>
+						<span style="color: #666; font-weight: 500;">${formatValue(header.key, header.value)}</span>
+					</div>
+					<div style="padding: 8px 12px;">
+						${tasa ? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;"><span style="color: #666;">${getLabelForKey(tasa.key)}:</span><span style="font-weight: 500;">${formatValue(tasa.key, tasa.value)}</span></div>` : ""}
+						${interes ? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;"><span style="color: #666;">${getLabelForKey(interes.key)}:</span><span style="font-weight: 500; color: #2e7d32;">${formatValue(interes.key, interes.value)}</span></div>` : ""}
+					</div>
+				</div>
+			`;
+		};
+
+		// Helper para renderizar una sección/card
+		const renderSection = (title: string, items: ResultItem[], showSubtotal = false) => {
 			if (!items.length) return "";
 
-			const rows = items
-				.filter(({ key }) => {
-					// Ocultar montoTotalConIntereses en la sección de intereses
-					if (title === "Intereses" && key === "montoTotalConIntereses") {
-						return false;
-					}
-					return true;
-				})
-				.map(
-					({ key, value }) => `
-				<div class="row">
-				<span class="label">${getLabelForKey(key)}:</span>
-				<span class="value">${formatValue(key, value)}</span>
-				</div>
-			`,
-				)
+			// Filtrar items ocultos
+			const filteredItems = items.filter(({ key }) => {
+				if (title === "Intereses" && key === "montoTotalConIntereses") return false;
+				return true;
+			});
+
+			if (!filteredItems.length) return "";
+
+			// Separar tramos de items regulares
+			const tramosMap = new Map<number, { header?: ResultItem; tasa?: ResultItem; interes?: ResultItem }>();
+			const regularItems: ResultItem[] = [];
+
+			filteredItems.forEach((item) => {
+				const headerMatch = item.key.match(/^tramoHeader_(\d+)$/);
+				const tasaMatch = item.key.match(/^tramoTasa_(\d+)$/);
+				const interesMatch = item.key.match(/^tramoInteres_(\d+)$/);
+
+				if (headerMatch) {
+					const idx = parseInt(headerMatch[1], 10);
+					if (!tramosMap.has(idx)) tramosMap.set(idx, {});
+					tramosMap.get(idx)!.header = item;
+				} else if (tasaMatch) {
+					const idx = parseInt(tasaMatch[1], 10);
+					if (!tramosMap.has(idx)) tramosMap.set(idx, {});
+					tramosMap.get(idx)!.tasa = item;
+				} else if (interesMatch) {
+					const idx = parseInt(interesMatch[1], 10);
+					if (!tramosMap.has(idx)) tramosMap.set(idx, {});
+					tramosMap.get(idx)!.interes = item;
+				} else {
+					regularItems.push(item);
+				}
+			});
+
+			const tramos = Array.from(tramosMap.entries()).sort((a, b) => a[0] - b[0]);
+			const hasTramos = tramos.length > 0;
+
+			// Renderizar items regulares (excluyendo montoIntereses si hay tramos)
+			let rowsHtml = regularItems
+				.filter((item) => !hasTramos || item.key !== "montoIntereses")
+				.map(({ key, value }) => createRow(`${getLabelForKey(key)}:`, formatValue(key, value)))
 				.join("");
 
-			// Calcular subtotal para secciones monetarias
-			let subtotalRow = "";
-			const sectionsWithSubtotal = ["Indemnización", "Liquidación Final", "Multas", "Intereses", "Otros Rubros"];
-			if (sectionsWithSubtotal.includes(title)) {
-				const filteredItems = items.filter(({ key }) => {
-					// Ocultar montoTotalConIntereses en la sección de intereses
-					if (title === "Intereses" && key === "montoTotalConIntereses") {
-						return false;
+			// Renderizar tramos
+			if (hasTramos) {
+				rowsHtml += `<tr><td colspan="2" style="padding: 8px 16px;">`;
+				tramos.forEach(([_, tramo]) => {
+					if (tramo.header) {
+						rowsHtml += renderTramo(tramo.header, tramo.tasa, tramo.interes);
 					}
-					return true;
 				});
+				rowsHtml += `</td></tr>`;
 
+				// Agregar montoIntereses al final
+				const montoInteresesItem = regularItems.find((item) => item.key === "montoIntereses");
+				if (montoInteresesItem) {
+					rowsHtml += createRow(`${getLabelForKey(montoInteresesItem.key)}:`, formatValue(montoInteresesItem.key, montoInteresesItem.value));
+				}
+			}
+
+			// Calcular y agregar subtotal si corresponde
+			if (showSubtotal) {
 				const subtotal = filteredItems.reduce((sum, item) => {
-					// No sumar campos no monetarios
+					// No sumar campos no monetarios ni tramos individuales
 					if (
 						item.key === "Periodos" ||
 						item.key === "Días Vacaciones" ||
 						item.key === "fechaInicialIntereses" ||
 						item.key === "fechaFinalIntereses" ||
-						item.key === "tasaIntereses"
+						item.key === "tasaIntereses" ||
+						item.key === "capitalizeInterest" ||
+						item.key.startsWith("tramoHeader_") ||
+						item.key.startsWith("tramoTasa_") ||
+						item.key.startsWith("tramoInteres_")
 					) {
 						return sum;
 					}
-					const numValue = typeof item.value === "number" ? item.value : parseFloat(item.value);
+					const numValue = typeof item.value === "number" ? item.value : parseFloat(String(item.value));
 					return sum + (isNaN(numValue) ? 0 : numValue);
 				}, 0);
 
 				if (subtotal > 0) {
-					subtotalRow = `
-					<div class="row" style="border-top: 2px solid #ddd; background-color: #f8f8f8; font-weight: bold;">
-					<span class="label">Subtotal:</span>
-					<span class="value">${formatValue("subtotal", subtotal)}</span>
-					</div>
-					`;
+					rowsHtml += createRow("Subtotal:", formatValue("subtotal", subtotal), true, "#1976d2");
 				}
 			}
 
 			return `
-				<div class="card">
-				<div class="card-header">${title}</div>
-				<div class="card-content">
-					${rows}
-					${subtotalRow}
-				</div>
+				<div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+					<div style="background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #333;">${title}</div>
+					<table style="width: 100%; border-collapse: collapse;">
+						${rowsHtml}
+					</table>
 				</div>
 			`;
 		};
 
-		const groupSections = [
-			{ title: "Datos del Reclamo", data: groupedResults.reclamo },
-			{ title: "Indemnización", data: groupedResults.indemnizacion },
-			{ title: "Liquidación Final", data: groupedResults.liquidacion },
-			{ title: "Otros Rubros", data: groupedResults.otrasSumas },
-			{ title: "Multas", data: groupedResults.multas },
-			{ title: "Intereses", data: groupedResults.intereses },
-		];
+		let html = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">`;
+		html += `<h2 style="text-align: center; color: #1976d2; margin-bottom: 24px;">Liquidación por Despido</h2>`;
 
-		const cardsHtml = groupSections
-			.map((section) => renderCard(section.title, section.data))
-			.filter((card) => card !== "")
-			.join("");
+		// Renderizar cada sección
+		html += renderSection("Datos del Reclamo", groupedResults.reclamo, false);
+		html += renderSection("Indemnización", groupedResults.indemnizacion, true);
+		html += renderSection("Liquidación Final", groupedResults.liquidacion, true);
+		html += renderSection("Otros Rubros", groupedResults.otrasSumas, true);
+		html += renderSection("Multas", groupedResults.multas, true);
+		html += renderSection("Intereses", groupedResults.intereses, true);
 
-		return `
-			<!DOCTYPE html>
-			<html>
-				<head>
-				<meta charset="utf-8">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				${styles}
-				</head>
-				<body>
-				<div class="container">
-					<div class="header">
-					<h2>Resultados de la Liquidación</h2>
-					</div>
+		// Total final
+		html += `
+			<div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+				<div style="background: #1976d2; padding: 12px 16px; font-weight: 600; color: white;">Total a Pagar</div>
+				<table style="width: 100%; border-collapse: collapse;">
+					<tr>
+						<td style="padding: 12px 16px; color: #666; text-align: left;">Total:</td>
+						<td style="padding: 12px 16px; font-weight: 700; color: #1976d2; font-size: 16px; text-align: right;">${formatValue("total", total)}</td>
+					</tr>
+				</table>
+			</div>
+		`;
 
-					${cardsHtml}
-
-					<div class="card total-card">
-					<div class="total-content">
-						<span>TOTAL</span>
-						<span>${formatValue("total", total)}</span>
-					</div>
-					</div>
-				</div>
-				</body>
-			</html>
-			`;
+		html += `</div>`;
+		return html;
 	};
 
 	const handleReset = () => {

@@ -26,6 +26,8 @@ interface FormModel {
 		fechaInicialIntereses: FormField;
 		fechaFinalIntereses: FormField;
 		tasaIntereses: FormField;
+		segmentsIntereses: FormField;
+		capitalizeInterest: FormField;
 
 		// Campos de datos vinculados
 		folderId: FormField;
@@ -113,6 +115,16 @@ const liquidacionFormModel: FormModel = {
 			name: "tasaIntereses",
 			label: "Tasa de intereses",
 			requiredErrorMsg: "La tasa de intereses es requerida",
+			type: "intereses",
+		},
+		segmentsIntereses: {
+			name: "segmentsIntereses",
+			label: "Tramos de intereses",
+			type: "intereses",
+		},
+		capitalizeInterest: {
+			name: "capitalizeInterest",
+			label: "Capitalizar intereses",
 			type: "intereses",
 		},
 

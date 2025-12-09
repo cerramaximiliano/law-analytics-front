@@ -336,19 +336,14 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 		const renderCard = (title: string, items: ResultItem[], showSubtotal = false) => {
 			if (!items.length) return "";
 
-			const formatCurrency = (value: number) =>
-				new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
+			const formatCurrency = (value: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
 
 			const rows = items
 				.map(
 					({ key, value }) => `
 				<tr>
 					<td class="label">${getLabelForKey(key) || key}:</td>
-					<td class="value">${
-						typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones"
-							? formatCurrency(value)
-							: value
-					}</td>
+					<td class="value">${typeof value === "number" && key !== "Periodos" && key !== "Días Vacaciones" ? formatCurrency(value) : value}</td>
 				</tr>`,
 				)
 				.join("");
@@ -430,7 +425,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 						${segmentsHtml}
 						<tr style="background: #f5f5f5;">
 							<td class="label" style="font-weight: bold; border-top: 2px solid #ddd; padding-top: 12px;">Subtotal:</td>
-							<td class="value" style="font-weight: bold; color: #1976d2; border-top: 2px solid #ddd; padding-top: 12px;">${formatCurrency(totalInterest)}</td>
+							<td class="value" style="font-weight: bold; color: #1976d2; border-top: 2px solid #ddd; padding-top: 12px;">${formatCurrency(
+								totalInterest,
+							)}</td>
 						</tr>
 					</table>
 				</div>
@@ -460,9 +457,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 	                            <tr>
 	                                <td class="total-label">TOTAL</td>
 	                                <td class="total-value">${new Intl.NumberFormat("es-AR", {
-														style: "currency",
-														currency: "ARS",
-													}).format(finalAmount)}</td>
+																		style: "currency",
+																		currency: "ARS",
+																	}).format(finalAmount)}</td>
 	                            </tr>
 	                        </table>
 	                    </div>
@@ -918,9 +915,7 @@ const SavedLabor = () => {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: keepUpdated
-							? "Actualización automática de intereses activada"
-							: "Actualización automática de intereses desactivada",
+						message: keepUpdated ? "Actualización automática de intereses activada" : "Actualización automática de intereses desactivada",
 						variant: "alert",
 						alert: { color: "success" },
 						close: true,
@@ -1026,8 +1021,7 @@ const SavedLabor = () => {
 			if (result.reclamo) groups.reclamo = result.reclamo.filter((item: ResultItem) => item.value != null && item.value !== "");
 			if (result.indemnizacion)
 				groups.indemnizacion = result.indemnizacion.filter((item: ResultItem) => item.value != null && item.value !== "");
-			if (result.liquidacion)
-				groups.liquidacion = result.liquidacion.filter((item: ResultItem) => item.value != null && item.value !== "");
+			if (result.liquidacion) groups.liquidacion = result.liquidacion.filter((item: ResultItem) => item.value != null && item.value !== "");
 			if (result.multas) groups.multas = result.multas.filter((item: ResultItem) => item.value != null && item.value !== "");
 			if (result.intereses) groups.intereses = result.intereses.filter((item: ResultItem) => item.value != null && item.value !== "");
 		}
@@ -1444,10 +1438,7 @@ const SavedLabor = () => {
 								}}
 								title="Más acciones"
 							>
-								<IconButton
-									color="secondary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => handleOpenActionMenu(e, row.original)}
-								>
+								<IconButton color="secondary" onClick={(e: MouseEvent<HTMLButtonElement>) => handleOpenActionMenu(e, row.original)}>
 									<More variant="Bulk" />
 								</IconButton>
 							</Tooltip>
@@ -1521,31 +1512,27 @@ const SavedLabor = () => {
 					<ListItemText>Copiar al portapapeles</ListItemText>
 				</MenuItem>
 				{selectedRowData &&
-				selectedRowData.type === "Calculado" &&
-				((selectedRowData.interest ?? 0) > 0 ||
-					(selectedRowData.variables?.interesTotal ?? 0) > 0 ||
-					(selectedRowData.variables?.calculatedInterest ?? 0) > 0) && (
-					<MenuItem
-						onClick={() => {
-							if (selectedRowData) {
-								handleKeepUpdatedChange(selectedRowData._id, !selectedRowData.keepUpdated);
-								handleCloseActionMenu();
-							}
-						}}
-						disabled={keepUpdatedLoading === selectedRowData?._id}
-					>
-						<ListItemIcon>
-							{keepUpdatedLoading === selectedRowData?._id ? (
-								<CircularProgress size={18} />
-							) : (
-								<Refresh size={18} />
-							)}
-						</ListItemIcon>
-						<ListItemText>
-							{selectedRowData?.keepUpdated ? "Desactivar actualización automática" : "Activar actualización automática"}
-						</ListItemText>
-					</MenuItem>
-				)}
+					selectedRowData.type === "Calculado" &&
+					((selectedRowData.interest ?? 0) > 0 ||
+						(selectedRowData.variables?.interesTotal ?? 0) > 0 ||
+						(selectedRowData.variables?.calculatedInterest ?? 0) > 0) && (
+						<MenuItem
+							onClick={() => {
+								if (selectedRowData) {
+									handleKeepUpdatedChange(selectedRowData._id, !selectedRowData.keepUpdated);
+									handleCloseActionMenu();
+								}
+							}}
+							disabled={keepUpdatedLoading === selectedRowData?._id}
+						>
+							<ListItemIcon>
+								{keepUpdatedLoading === selectedRowData?._id ? <CircularProgress size={18} /> : <Refresh size={18} />}
+							</ListItemIcon>
+							<ListItemText>
+								{selectedRowData?.keepUpdated ? "Desactivar actualización automática" : "Activar actualización automática"}
+							</ListItemText>
+						</MenuItem>
+					)}
 			</Menu>
 		</MainCard>
 	);

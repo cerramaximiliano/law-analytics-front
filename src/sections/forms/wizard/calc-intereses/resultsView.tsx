@@ -59,7 +59,6 @@ interface ResultsViewProps {
 	groupId?: string; // ID del grupo si el cálculo pertenece a un grupo
 }
 
-
 // Función para formatear el nombre del tipo de índice
 const formatTipoIndice = (tipoIndice: string): string => {
 	const tiposIndiceMap: Record<string, string> = {
@@ -88,7 +87,6 @@ interface InterestSegment {
 	ratePeriod?: "daily" | "monthly" | "annual";
 	capitalizationFrequency?: "none" | "monthly" | "quarterly" | "semiannual" | "annual";
 }
-
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, onSave, currentUser, folderId, folderName, groupId }) => {
 	const [isSaved, setIsSaved] = useState(false);
@@ -669,12 +667,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		if (hasMultipleSegments) {
 			segments.forEach((segment, index) => {
 				html += `<div style="background: #fafafa; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #1976d2; overflow: hidden;">`;
-				html += `<div style="font-weight: 600; color: #1976d2; padding: 12px 12px 8px;">Tramo ${index + 1}: ${segment.startDate} - ${segment.endDate}</div>`;
+				html += `<div style="font-weight: 600; color: #1976d2; padding: 12px 12px 8px;">Tramo ${index + 1}: ${segment.startDate} - ${
+					segment.endDate
+				}</div>`;
 				html += `<table style="width: 100%; border-collapse: collapse;">`;
-				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Tasa:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${segment.rateName || getTasaLabel(segment.rate)}</td></tr>`;
-				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Capital del tramo:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${formatValue("capital", segment.capital)}</td></tr>`;
-				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Coeficiente:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${((segment.coefficient || 0) * 100).toFixed(4)}%</td></tr>`;
-				html += `<tr><td style="padding: 6px 12px 12px; color: #666; text-align: left;">Interés generado:</td><td style="padding: 6px 12px 12px; font-weight: 500; color: #2e7d32; text-align: right;">${formatValue("interest", segment.interest)}</td></tr>`;
+				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Tasa:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${
+					segment.rateName || getTasaLabel(segment.rate)
+				}</td></tr>`;
+				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Capital del tramo:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${formatValue(
+					"capital",
+					segment.capital,
+				)}</td></tr>`;
+				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Coeficiente:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${(
+					(segment.coefficient || 0) * 100
+				).toFixed(4)}%</td></tr>`;
+				html += `<tr><td style="padding: 6px 12px 12px; color: #666; text-align: left;">Interés generado:</td><td style="padding: 6px 12px 12px; font-weight: 500; color: #2e7d32; text-align: right;">${formatValue(
+					"interest",
+					segment.interest,
+				)}</td></tr>`;
 				html += `</table></div>`;
 			});
 			if (values.capitalizeInterest) {
@@ -704,7 +714,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 						Tramo ${index + 1} (${segment.startDate} - ${segment.endDate}):<br/>
 						<span style="font-size: 12px; color: #888;">${segment.rateName || getTasaLabel(segment.rate)}</span>
 					</td>
-					<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 500; text-align: right; vertical-align: top;">${formatValue("interest", segment.interest)}</td>
+					<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 500; text-align: right; vertical-align: top;">${formatValue(
+						"interest",
+						segment.interest,
+					)}</td>
 				</tr>`;
 			});
 			html += createRow("Subtotal:", formatValue("interest", totalIntereses), true, "#1976d2");
@@ -811,7 +824,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 									capitalizationFrequency: seg.capitalizationFrequency,
 								})),
 								capitalizeInterest: values.capitalizeInterest || false,
-							}
+						  }
 						: {}),
 					// Aseguramos que el resultado esté incluido para poder renderizarlo sin recalcular
 					calculationResult: {
@@ -905,7 +918,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 								capitalizationFrequency: seg.capitalizationFrequency,
 							})),
 							capitalizeInterest: values.capitalizeInterest || false,
-						}
+					  }
 					: {}),
 				calculationResult: {
 					detalles: groupedResults.detalles,
@@ -1051,24 +1064,16 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 														<TableRow>
 															<TableCell>Inicial</TableCell>
 															<TableCell>
-																{tasaData.datos?.inicio?.fecha
-																	? dayjs(tasaData.datos.inicio.fecha).format("DD/MM/YYYY")
-																	: "N/A"}
+																{tasaData.datos?.inicio?.fecha ? dayjs(tasaData.datos.inicio.fecha).format("DD/MM/YYYY") : "N/A"}
 															</TableCell>
-															<TableCell align="right">
-																{tasaData.datos?.inicio?.[segment.rate]?.toFixed(6) || "N/A"}
-															</TableCell>
+															<TableCell align="right">{tasaData.datos?.inicio?.[segment.rate]?.toFixed(6) || "N/A"}</TableCell>
 														</TableRow>
 														<TableRow>
 															<TableCell>Final</TableCell>
 															<TableCell>
-																{tasaData.datos?.fin?.fecha
-																	? dayjs(tasaData.datos.fin.fecha).format("DD/MM/YYYY")
-																	: "N/A"}
+																{tasaData.datos?.fin?.fecha ? dayjs(tasaData.datos.fin.fecha).format("DD/MM/YYYY") : "N/A"}
 															</TableCell>
-															<TableCell align="right">
-																{tasaData.datos?.fin?.[segment.rate]?.toFixed(6) || "N/A"}
-															</TableCell>
+															<TableCell align="right">{tasaData.datos?.fin?.[segment.rate]?.toFixed(6) || "N/A"}</TableCell>
 														</TableRow>
 													</>
 												) : Array.isArray(tasaData.datos) ? (

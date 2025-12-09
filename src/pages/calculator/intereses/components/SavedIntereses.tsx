@@ -349,8 +349,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 		const renderCard = (title: string, items: ResultItem[], showSubtotal = false) => {
 			if (!items.length) return "";
 
-			const formatCurrency = (value: number) =>
-				new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
+			const formatCurrency = (value: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value);
 
 			const rows = items
 				.map(
@@ -436,7 +435,9 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 						${segmentsHtml}
 						<tr style="background: #f5f5f5;">
 							<td class="label" style="font-weight: bold; border-top: 2px solid #ddd; padding-top: 12px;">Subtotal:</td>
-							<td class="value" style="font-weight: bold; color: #1976d2; border-top: 2px solid #ddd; padding-top: 12px;">${formatCurrency(totalInterest)}</td>
+							<td class="value" style="font-weight: bold; color: #1976d2; border-top: 2px solid #ddd; padding-top: 12px;">${formatCurrency(
+								totalInterest,
+							)}</td>
 						</tr>
 					</table>
 				</div>
@@ -896,9 +897,7 @@ const SavedIntereses = () => {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: keepUpdated
-							? "Actualización automática de intereses activada"
-							: "Actualización automática de intereses desactivada",
+						message: keepUpdated ? "Actualización automática de intereses activada" : "Actualización automática de intereses desactivada",
 						variant: "alert",
 						alert: { color: "success" },
 						close: true,
@@ -1451,10 +1450,7 @@ const SavedIntereses = () => {
 								}}
 								title="Más acciones"
 							>
-								<IconButton
-									color="secondary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => handleOpenActionMenu(e, row.original)}
-								>
+								<IconButton color="secondary" onClick={(e: MouseEvent<HTMLButtonElement>) => handleOpenActionMenu(e, row.original)}>
 									<More variant="Bulk" />
 								</IconButton>
 							</Tooltip>
@@ -1528,31 +1524,27 @@ const SavedIntereses = () => {
 					<ListItemText>Copiar al portapapeles</ListItemText>
 				</MenuItem>
 				{selectedRowData &&
-				selectedRowData.type === "Calculado" &&
-				((selectedRowData.interest ?? 0) > 0 ||
-					(selectedRowData.variables?.interesTotal ?? 0) > 0 ||
-					(selectedRowData.variables?.calculatedInterest ?? 0) > 0) && (
-					<MenuItem
-						onClick={() => {
-							if (selectedRowData) {
-								handleKeepUpdatedChange(selectedRowData._id, !selectedRowData.keepUpdated);
-								handleCloseActionMenu();
-							}
-						}}
-						disabled={keepUpdatedLoading === selectedRowData?._id}
-					>
-						<ListItemIcon>
-							{keepUpdatedLoading === selectedRowData?._id ? (
-								<CircularProgress size={18} />
-							) : (
-								<Refresh size={18} />
-							)}
-						</ListItemIcon>
-						<ListItemText>
-							{selectedRowData?.keepUpdated ? "Desactivar actualización automática" : "Activar actualización automática"}
-						</ListItemText>
-					</MenuItem>
-				)}
+					selectedRowData.type === "Calculado" &&
+					((selectedRowData.interest ?? 0) > 0 ||
+						(selectedRowData.variables?.interesTotal ?? 0) > 0 ||
+						(selectedRowData.variables?.calculatedInterest ?? 0) > 0) && (
+						<MenuItem
+							onClick={() => {
+								if (selectedRowData) {
+									handleKeepUpdatedChange(selectedRowData._id, !selectedRowData.keepUpdated);
+									handleCloseActionMenu();
+								}
+							}}
+							disabled={keepUpdatedLoading === selectedRowData?._id}
+						>
+							<ListItemIcon>
+								{keepUpdatedLoading === selectedRowData?._id ? <CircularProgress size={18} /> : <Refresh size={18} />}
+							</ListItemIcon>
+							<ListItemText>
+								{selectedRowData?.keepUpdated ? "Desactivar actualización automática" : "Activar actualización automática"}
+							</ListItemText>
+						</MenuItem>
+					)}
 			</Menu>
 		</MainCard>
 	);

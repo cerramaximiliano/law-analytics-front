@@ -243,9 +243,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 		if (onTotalChange && segments.length > 0) {
 			const totalInterest = segments.reduce((sum, seg) => sum + (seg.interest || 0), 0);
 			const lastSegment = segments[segments.length - 1];
-			const finalAmount = capitalizeInterest
-				? (lastSegment?.capital || capital) + (lastSegment?.interest || 0)
-				: capital + totalInterest;
+			const finalAmount = capitalizeInterest ? (lastSegment?.capital || capital) + (lastSegment?.interest || 0) : capital + totalInterest;
 
 			onTotalChange({ interest: totalInterest, amount: finalAmount });
 		}
@@ -939,9 +937,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 										<>
 											<TableCell>
 												{index + 1}
-												{segment.isExtension && (
-													<Chip label="Extensión" size="small" color="info" sx={{ ml: 1 }} />
-												)}
+												{segment.isExtension && <Chip label="Extensión" size="small" color="info" sx={{ ml: 1 }} />}
 											</TableCell>
 											<TableCell>{segment.startDate}</TableCell>
 											<TableCell>{segment.endDate}</TableCell>

@@ -362,9 +362,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 	const isEligibleForKeepUpdated = () => {
 		// Verificar intereses en el campo principal o en variables (para cálculos guardados antes del fix)
 		const hasInterest =
-			(data.interest ?? 0) > 0 ||
-			(data.variables?.interesTotal ?? 0) > 0 ||
-			(data.variables?.calculatedInterest ?? 0) > 0;
+			(data.interest ?? 0) > 0 || (data.variables?.interesTotal ?? 0) > 0 || (data.variables?.calculatedInterest ?? 0) > 0;
 		return data.type === "Calculado" && hasInterest;
 	};
 
@@ -506,9 +504,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 			{isSaved && isEligibleForKeepUpdated() && onKeepUpdatedChange && (
 				<Tooltip
 					title={
-						data.keepUpdated
-							? "Desactivar actualización automática de intereses"
-							: "Mantener intereses actualizados a la fecha actual"
+						data.keepUpdated ? "Desactivar actualización automática de intereses" : "Mantener intereses actualizados a la fecha actual"
 					}
 				>
 					<IconButton
@@ -593,10 +589,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						keyLower === "intereses" ||
 						keyLower === "interest" ||
 						keyLower === "montointereses" ||
-						(keyLower.includes("interes") &&
-							!keyLower.includes("fecha") &&
-							!keyLower.includes("tasa") &&
-							typeof item.value === "number")
+						(keyLower.includes("interes") && !keyLower.includes("fecha") && !keyLower.includes("tasa") && typeof item.value === "number")
 					) {
 						return false;
 					}
@@ -643,27 +636,195 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 					</Typography>
 				</Box>
 				<Box sx={{ px: 2, py: 1.5 }}>
-					{visibleItems.map(({ key, value, customLabel, formatType }) => (
-						<Box
-							key={key}
-							sx={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								py: 0.75,
-								"&:not(:last-child)": {
-									borderBottom: `1px solid ${theme.palette.divider}`,
-								},
-							}}
-						>
-							<Typography variant="body2" color="text.secondary">
-								{getLabelForKey(key, customLabel)}:
-							</Typography>
-							<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
-								{formatValue(key, value, formatType)}
-							</Typography>
-						</Box>
-					))}
+					{(() => {
+						// Agrupar items por tramos si hay tramoHeader_
+						const tramosMap = new Map<number, { header?: ResultItem; tasa?: ResultItem; interes?: ResultItem }>();
+						const regularItems: ResultItem[] = [];
+
+						visibleItems.forEach((item) => {
+							const headerMatch = item.key.match(/^tramoHeader_(\d+)$/);
+							const tasaMatch = item.key.match(/^tramoTasa_(\d+)$/);
+							const interesMatch = item.key.match(/^tramoInteres_(\d+)$/);
+
+							if (headerMatch) {
+								const idx = parseInt(headerMatch[1], 10);
+								if (!tramosMap.has(idx)) tramosMap.set(idx, {});
+								tramosMap.get(idx)!.header = item;
+							} else if (tasaMatch) {
+								const idx = parseInt(tasaMatch[1], 10);
+								if (!tramosMap.has(idx)) tramosMap.set(idx, {});
+								tramosMap.get(idx)!.tasa = item;
+							} else if (interesMatch) {
+								const idx = parseInt(interesMatch[1], 10);
+								if (!tramosMap.has(idx)) tramosMap.set(idx, {});
+								tramosMap.get(idx)!.interes = item;
+							} else {
+								regularItems.push(item);
+							}
+						});
+
+						const tramos = Array.from(tramosMap.entries()).sort((a, b) => a[0] - b[0]);
+						const hasTramos = tramos.length > 0;
+
+						return (
+							<>
+								{/* Renderizar items regulares primero (excluyendo montoIntereses si hay tramos) */}
+								{regularItems
+									.filter((item) => !hasTramos || item.key !== "montoIntereses")
+									.map(({ key, value, customLabel, formatType }) => {
+										// Estilo especial para leyenda de período de prueba
+										if (key === "periodoPruebaLeyenda") {
+											return (
+												<Box
+													key={key}
+													sx={{
+														mt: 1,
+														p: 1.5,
+														bgcolor: alpha(theme.palette.warning.main, 0.1),
+														borderRadius: 1,
+														border: `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+														display: "flex",
+														alignItems: "flex-start",
+														gap: 1,
+													}}
+												>
+													<Warning2
+														size={18}
+														color={theme.palette.warning.main}
+														variant="Bold"
+														style={{ flexShrink: 0, marginTop: 2 }}
+													/>
+													<Typography variant="body2" color="text.primary">
+														{formatValue(key, value, formatType)}
+													</Typography>
+												</Box>
+											);
+										}
+
+										return (
+											<Box
+												key={key}
+												sx={{
+													display: "flex",
+													justifyContent: "space-between",
+													alignItems: "center",
+													py: 0.75,
+													"&:not(:last-child)": {
+														borderBottom: `1px solid ${theme.palette.divider}`,
+													},
+												}}
+											>
+												<Typography variant="body2" color="text.secondary">
+													{getLabelForKey(key, customLabel)}:
+												</Typography>
+												<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
+													{formatValue(key, value, formatType)}
+												</Typography>
+											</Box>
+										);
+									})}
+
+								{/* Renderizar tramos agrupados con estilo visual */}
+								{tramos.map(([idx, tramo]) => (
+									<Box
+										key={`tramo-group-${idx}`}
+										sx={{
+											mb: 1.5,
+											mt: idx === 0 ? 1 : 0,
+											bgcolor: theme.palette.mode === "dark" ? "grey.800" : "grey.50",
+											borderRadius: 1,
+											border: `1px solid ${theme.palette.divider}`,
+											overflow: "hidden",
+										}}
+									>
+										{/* Header del tramo */}
+										{tramo.header && (
+											<Box
+												sx={{
+													display: "flex",
+													justifyContent: "space-between",
+													alignItems: "center",
+													py: 0.75,
+													px: 1.5,
+													bgcolor: theme.palette.mode === "dark" ? "grey.700" : "grey.100",
+													borderBottom: `1px solid ${theme.palette.divider}`,
+												}}
+											>
+												<Typography variant="body2" fontWeight={600}>
+													{getLabelForKey(tramo.header.key, tramo.header.customLabel)}
+												</Typography>
+												<Typography variant="body2" fontWeight={500} color="text.secondary">
+													{formatValue(tramo.header.key, tramo.header.value, tramo.header.formatType)}
+												</Typography>
+											</Box>
+										)}
+										{/* Detalles del tramo */}
+										<Box sx={{ px: 1.5, py: 0.75 }}>
+											{tramo.tasa && (
+												<Box
+													sx={{
+														display: "flex",
+														justifyContent: "space-between",
+														alignItems: "center",
+														py: 0.5,
+													}}
+												>
+													<Typography variant="caption" color="text.secondary">
+														{getLabelForKey(tramo.tasa.key, tramo.tasa.customLabel)}:
+													</Typography>
+													<Typography variant="caption" fontWeight={500}>
+														{formatValue(tramo.tasa.key, tramo.tasa.value, tramo.tasa.formatType)}
+													</Typography>
+												</Box>
+											)}
+											{tramo.interes && (
+												<Box
+													sx={{
+														display: "flex",
+														justifyContent: "space-between",
+														alignItems: "center",
+														py: 0.5,
+													}}
+												>
+													<Typography variant="caption" color="text.secondary">
+														{getLabelForKey(tramo.interes.key, tramo.interes.customLabel)}:
+													</Typography>
+													<Typography variant="caption" fontWeight={500} color="success.main">
+														{formatValue(tramo.interes.key, tramo.interes.value, tramo.interes.formatType)}
+													</Typography>
+												</Box>
+											)}
+										</Box>
+									</Box>
+								))}
+
+								{/* Renderizar montoIntereses al final si hay tramos */}
+								{hasTramos &&
+									regularItems
+										.filter((item) => item.key === "montoIntereses")
+										.map(({ key, value, customLabel, formatType }) => (
+											<Box
+												key={key}
+												sx={{
+													display: "flex",
+													justifyContent: "space-between",
+													alignItems: "center",
+													py: 0.75,
+													mt: 1,
+													borderTop: `1px solid ${theme.palette.divider}`,
+												}}
+											>
+												<Typography variant="body2" color="text.secondary">
+													{getLabelForKey(key, customLabel)}:
+												</Typography>
+												<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
+													{formatValue(key, value, formatType)}
+												</Typography>
+											</Box>
+										))}
+							</>
+						);
+					})()}
 
 					{/* Mostrar tramos guardados en la sección de cálculos */}
 					{showSegmentsInCalculos && (
@@ -685,9 +846,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 										<Typography variant="body2" fontWeight={600}>
 											Tramo {segIndex + 1}: {segment.startDate} - {segment.endDate}
 										</Typography>
-										{segment.isExtension && (
-											<Chip label="Extensión" size="small" color="info" sx={{ height: 20, fontSize: "0.7rem" }} />
-										)}
+										{segment.isExtension && <Chip label="Extensión" size="small" color="info" sx={{ height: 20, fontSize: "0.7rem" }} />}
 									</Box>
 									<Box sx={{ pl: 1 }}>
 										<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.25 }}>
@@ -765,7 +924,8 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 									>
 										<Box>
 											<Typography variant="body2" color="text.secondary">
-												{segment.isExtension ? "Actualización automática" : `Tramo ${segIndex + 1}`} ({formatDateShort(segment.startDate)} - {formatDateShort(segment.endDate)}):
+												{segment.isExtension ? "Actualización automática" : `Tramo ${segIndex + 1}`} ({formatDateShort(segment.startDate)} -{" "}
+												{formatDateShort(segment.endDate)}):
 											</Typography>
 											{segment.rateName && (
 												<Typography variant="caption" color="text.disabled">
@@ -819,6 +979,9 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 						const sectionsWithSubtotal = ["indemnizacion", "liquidacion", "multas", "intereses", "otrasSumas"];
 						if (!sectionsWithSubtotal.includes(sectionKey)) return null;
 
+						// Verificar si hay tramos dinámicos (tramoInteres_X)
+						const hasDynamicTramos = visibleItems.some((item) => item.key.startsWith("tramoInteres_"));
+
 						let subtotal = visibleItems.reduce((sum, item) => {
 							// No sumar campos no monetarios
 							if (
@@ -826,11 +989,19 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 								item.key === "Días Vacaciones" ||
 								item.key === "fechaInicialIntereses" ||
 								item.key === "fechaFinalIntereses" ||
-								item.key === "tasaIntereses"
+								item.key === "tasaIntereses" ||
+								item.key === "capitalizeInterest" ||
+								item.key === "periodoPruebaLeyenda" ||
+								item.key.startsWith("tramoHeader_") ||
+								item.key.startsWith("tramoTasa_")
 							) {
 								return sum;
 							}
-							const numValue = typeof item.value === "number" ? item.value : parseFloat(item.value);
+							// Si hay tramos dinámicos, no sumar los tramoInteres_ individuales (solo sumar montoIntereses)
+							if (hasDynamicTramos && item.key.startsWith("tramoInteres_")) {
+								return sum;
+							}
+							const numValue = typeof item.value === "number" ? item.value : parseFloat(String(item.value));
 							return sum + (isNaN(numValue) ? 0 : numValue);
 						}, 0);
 
@@ -879,7 +1050,6 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 			</Paper>
 		);
 	};
-
 
 	const groupedData = groupResults(data?.variables);
 

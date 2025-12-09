@@ -3,18 +3,7 @@ import liquidacionFormModel from "./liquidacionFormModel";
 import moment from "moment";
 
 const {
-	formField: {
-		reclamante,
-		reclamado,
-		fechaIngreso,
-		fechaEgreso,
-		remuneracion,
-		liquidacion,
-		aplicarIntereses,
-		fechaInicialIntereses,
-		fechaFinalIntereses,
-		tasaIntereses,
-	},
+	formField: { reclamante, reclamado, fechaIngreso, fechaEgreso, remuneracion, liquidacion, aplicarIntereses, segmentsIntereses },
 } = liquidacionFormModel;
 
 const schema = [
@@ -67,35 +56,16 @@ const schema = [
 	// Step 3: Intereses
 	Yup.object().shape({
 		[aplicarIntereses.name]: Yup.boolean(),
-		[fechaInicialIntereses.name]: Yup.string().when(aplicarIntereses.name, {
+		[segmentsIntereses.name]: Yup.array().when(aplicarIntereses.name, {
 			is: true,
-			then: (schema) =>
-				schema
-					.required("La fecha inicial de intereses es requerida")
-					.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-						message: "El formato de fecha debe ser DD/MM/AAAA",
+			then: () =>
+				Yup.array()
+					.min(1, "Debe agregar al menos un tramo de intereses")
+					.test("valid-segments", "Todos los tramos deben tener tasas válidas", function (segments) {
+						if (!segments || segments.length === 0) return false;
+						return segments.every((seg) => seg.rate && seg.startDate && seg.endDate);
 					}),
-			otherwise: (schema) => schema,
-		}),
-		[fechaFinalIntereses.name]: Yup.string().when(aplicarIntereses.name, {
-			is: true,
-			then: (schema) =>
-				schema
-					.required("La fecha final de intereses es requerida")
-					.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-						message: "El formato de fecha debe ser DD/MM/AAAA",
-					})
-					.test("is-after-initial", "La fecha final debe ser posterior a la fecha inicial", function (value) {
-						const fechaInicialValue = this.parent[fechaInicialIntereses.name];
-						if (!fechaInicialValue || !value) return true;
-						return moment(value, "DD/MM/YYYY").isAfter(moment(fechaInicialValue, "DD/MM/YYYY"));
-					}),
-			otherwise: (schema) => schema,
-		}),
-		[tasaIntereses.name]: Yup.string().when(aplicarIntereses.name, {
-			is: true,
-			then: (schema) => schema.required("La tasa de intereses es requerida"),
-			otherwise: (schema) => schema,
+			otherwise: () => Yup.array().notRequired(),
 		}),
 	}),
 

@@ -9,7 +9,6 @@ import AnimateButton from "components/@extended/AnimateButton";
 import FirstForm from "./first";
 import SecondForm from "./second";
 import ThirdForm from "./third";
-import Review from "./final";
 import despidoFormModel from "./formModel/despidoFormModel";
 import initialValues from "./formModel/formInitialValues";
 import validationSchema from "./formModel/validationSchema";
@@ -21,21 +20,21 @@ import ResultsView from "./resultsView";
 
 import { WizardProps } from "types/wizards";
 
-// step options
-const steps = ["Datos requeridos", "Cálculos opcionales", "Intereses", "Resultados"];
+// step options - Eliminado el paso "Resultados" (resumen) para ir directo a los resultados calculados
+const steps = ["Datos requeridos", "Cálculos opcionales", "Intereses"];
 const { formId, formField } = despidoFormModel;
 
-// Función helper para calcular el monto base para intereses (sumando indemnización y liquidación)
+// Función helper para calcular el monto base para intereses (sumando indemnización + liquidación + multas + otras sumas)
 function calculateBaseAmount(values: any): number {
 	const remuneracionBase = parseFloat(values.remuneracion) || 0;
 	const remuneracionCalculada = values.incluirSAC ? remuneracionBase + remuneracionBase / 12 : remuneracionBase;
 
-	// Calcular períodos
-	const fechaIngreso = values.fechaIngreso ? dayjs(values.fechaIngreso) : null;
-	const fechaEgreso = values.fechaEgreso ? dayjs(values.fechaEgreso) : null;
+	// Calcular períodos - las fechas vienen como strings en formato DD/MM/YYYY
+	const fechaIngreso = values.fechaIngreso ? dayjs(values.fechaIngreso, "DD/MM/YYYY") : null;
+	const fechaEgreso = values.fechaEgreso ? dayjs(values.fechaEgreso, "DD/MM/YYYY") : null;
 
 	let periodos = 0;
-	if (fechaIngreso && fechaEgreso) {
+	if (fechaIngreso && fechaEgreso && fechaIngreso.isValid() && fechaEgreso.isValid()) {
 		const años = fechaEgreso.diff(fechaIngreso, "years");
 		const mesesRestantes = fechaEgreso.clone().subtract(años, "years").diff(fechaIngreso, "months");
 
@@ -47,8 +46,99 @@ function calculateBaseAmount(values: any): number {
 		}
 	}
 
+	let total = 0;
+
+	// 1. Indemnización por antigüedad
 	const indemnizacion = periodos * remuneracionCalculada;
-	return indemnizacion;
+	total += indemnizacion;
+
+	// 2. Liquidación final (si está habilitada)
+	if (values.isLiquidacion && Array.isArray(values.liquidacion)) {
+		// Preaviso
+		if (values.liquidacion.includes("preaviso") && fechaIngreso && fechaEgreso) {
+			const mesesTotal = fechaEgreso.diff(fechaIngreso, "months");
+			const añosTotal = fechaEgreso.diff(fechaIngreso, "years");
+			if (mesesTotal < 3) {
+				total += (remuneracionCalculada / 30) * 15;
+			} else if (mesesTotal >= 3 && añosTotal < 5) {
+				total += remuneracionCalculada;
+			} else {
+				total += remuneracionCalculada * 2;
+			}
+		}
+		// Integración mes
+		if (values.liquidacion.includes("integracionMes") && fechaEgreso) {
+			const diasTotalesMes = fechaEgreso.daysInMonth();
+			const diaEgreso = fechaEgreso.date();
+			const diasRestantes = diasTotalesMes - diaEgreso;
+			total += diasRestantes * (remuneracionBase / diasTotalesMes);
+		}
+		// SAC s/ Preaviso (solo si hay preaviso)
+		if (values.liquidacion.includes("sacPreaviso") && values.liquidacion.includes("preaviso")) {
+			const mesesTotal = fechaEgreso?.diff(fechaIngreso, "months") || 0;
+			const añosTotal = fechaEgreso?.diff(fechaIngreso, "years") || 0;
+			let preaviso = 0;
+			if (mesesTotal < 3) {
+				preaviso = (remuneracionCalculada / 30) * 15;
+			} else if (mesesTotal >= 3 && añosTotal < 5) {
+				preaviso = remuneracionCalculada;
+			} else {
+				preaviso = remuneracionCalculada * 2;
+			}
+			total += preaviso / 12;
+		}
+		// SAC proporcional
+		if (values.liquidacion.includes("sacProp") && fechaEgreso) {
+			const finPeriodo = fechaEgreso;
+			const inicioPeriodo =
+				finPeriodo.month() < 6 ? dayjs(`${finPeriodo.year()}-01-01`) : dayjs(`${finPeriodo.year()}-07-01`);
+			const diasTrabajados = finPeriodo.diff(inicioPeriodo, "days") + 1;
+			total += (diasTrabajados / 365) * (remuneracionBase / 12);
+		}
+		// Días trabajados
+		if (values.liquidacion.includes("diasTrabajados") && fechaEgreso) {
+			const diasEnMes = fechaEgreso.daysInMonth();
+			const diaDelMes = fechaEgreso.date();
+			total += diaDelMes * (remuneracionBase / diasEnMes);
+		}
+		// Vacaciones
+		if (values.liquidacion.includes("vacaciones") && fechaIngreso && fechaEgreso) {
+			const antiguedad = periodos;
+			let diasVacaciones = 14;
+			if (antiguedad >= 5 && antiguedad <= 9) diasVacaciones = 21;
+			else if (antiguedad >= 10 && antiguedad <= 19) diasVacaciones = 28;
+			else if (antiguedad >= 20) diasVacaciones = 35;
+
+			const inicioAnoCalendario = dayjs(`01-01-${fechaEgreso.year()}`, "DD-MM-YYYY");
+			const inicioComputo = fechaIngreso.isAfter(inicioAnoCalendario) ? fechaIngreso : inicioAnoCalendario;
+			const diasTrabajadosEnAno = fechaEgreso.diff(inicioComputo, "days") + 1;
+			const diasVacacionesProporcionales = (diasTrabajadosEnAno / 365) * diasVacaciones;
+			total += (remuneracionBase / 25) * diasVacacionesProporcionales;
+		}
+	}
+
+	// 3. Multas (si están habilitadas)
+	if (values.isMultas && Array.isArray(values.multas)) {
+		if (values.multas.includes("multaArt1")) {
+			total += indemnizacion * 0.5;
+		}
+		if (values.multas.includes("multaArt2")) {
+			total += indemnizacion;
+		}
+		if (values.multas.includes("multaArt80")) {
+			total += remuneracionBase * 3;
+		}
+		if (values.multas.includes("multaArt15") && fechaIngreso && fechaEgreso) {
+			const mesesTrabajados = fechaEgreso.diff(fechaIngreso, "months", true);
+			total += mesesTrabajados * remuneracionBase * 0.25;
+		}
+	}
+
+	// 4. Otras sumas adeudadas
+	const otrasSumas = parseFloat(values.otrasSumas) || 0;
+	total += otrasSumas;
+
+	return total;
 }
 
 function getStepContent(step: number, values: any, folder: any, onFolderChange?: (folderId: string | null) => void) {
@@ -61,8 +151,6 @@ function getStepContent(step: number, values: any, folder: any, onFolderChange?:
 			// Calcular el monto base para pasar al paso de intereses
 			const calculatedAmount = calculateBaseAmount(values);
 			return <ThirdForm formField={formField} calculatedAmount={calculatedAmount} />;
-		case 3:
-			return <Review formField={formField} values={values} />;
 		default:
 			throw new Error("Unknown step");
 	}
@@ -125,11 +213,13 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		return Math.round(interesTotal * 100) / 100;
 	};
 
-	const calcularPreaviso = (fechaIngreso: Date | null, fechaEgreso: Date | null, remuneracion: number) => {
+	const calcularPreaviso = (fechaIngreso: string | null, fechaEgreso: string | null, remuneracion: number) => {
 		if (!fechaIngreso || !fechaEgreso) return 0;
 
-		const inicio = dayjs(fechaIngreso);
-		const fin = dayjs(fechaEgreso);
+		const inicio = dayjs(fechaIngreso, "DD/MM/YYYY");
+		const fin = dayjs(fechaEgreso, "DD/MM/YYYY");
+
+		if (!inicio.isValid() || !fin.isValid()) return 0;
 
 		const periodoPrueba = 3; // 3 meses
 		const mesesTotal = fin.diff(inicio, "months");
@@ -148,10 +238,12 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		// Escenario 3: 5 años o más
 		return remuneracion * 2;
 	};
-	const calcularIntegracionMes = (fechaEgreso: Date | null, remuneracion: number) => {
+	const calcularIntegracionMes = (fechaEgreso: string | null, remuneracion: number) => {
 		if (!fechaEgreso) return 0;
 
-		const fin = dayjs(fechaEgreso);
+		const fin = dayjs(fechaEgreso, "DD/MM/YYYY");
+		if (!fin.isValid()) return 0;
+
 		const diasTotalesMes = fin.daysInMonth();
 		const diaEgreso = fin.date();
 		const diasRestantes = diasTotalesMes - diaEgreso;
@@ -160,8 +252,10 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 		return diasRestantes * valorDiario;
 	};
 	function calcularDiasTrabajados(fechaDespido: string) {
-		// Convertir la fecha de despido a un objeto Moment
-		const finPeriodo = dayjs(fechaDespido);
+		// Convertir la fecha de despido a un objeto dayjs con formato DD/MM/YYYY
+		const finPeriodo = dayjs(fechaDespido, "DD/MM/YYYY");
+
+		if (!finPeriodo.isValid()) return 0;
 
 		// Determinar la fecha de inicio del período según el semestre
 		const inicioPeriodo =
@@ -335,11 +429,13 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 	}
 	async function _submitForm(values: any, actions: any) {
 		await _sleep(1000);
-		const calcularPeriodos = (fechaIngreso: Date | null, fechaEgreso: Date | null, aplicarLey27742: boolean = false) => {
+		const calcularPeriodos = (fechaIngreso: string | null, fechaEgreso: string | null, aplicarLey27742: boolean = false) => {
 			if (!fechaIngreso || !fechaEgreso) return 0;
 
-			const inicio = dayjs(fechaIngreso);
-			const fin = dayjs(fechaEgreso);
+			const inicio = dayjs(fechaIngreso, "DD/MM/YYYY");
+			const fin = dayjs(fechaEgreso, "DD/MM/YYYY");
+
+			if (!inicio.isValid() || !fin.isValid()) return 0;
 
 			// Calcular años y meses sin modificar los objetos originales
 			const años = fin.diff(inicio, "years");
@@ -394,11 +490,18 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 			return;
 		}
 
-		const resultado = {
+		// Verificar si está en período de prueba (menos de 3 meses o 6 meses con Ley 27.742)
+		const fechaIngresoDate = dayjs(values.fechaIngreso, "DD/MM/YYYY");
+		const fechaEgresoDate = dayjs(values.fechaEgreso, "DD/MM/YYYY");
+		const mesesTrabajados = fechaEgresoDate.diff(fechaIngresoDate, "months");
+		const esPeriodoPrueba = values.aplicarLey27742 ? mesesTrabajados < 6 : mesesTrabajados < 3;
+
+		const resultado: Record<string, any> = {
 			folderId: values.folderId,
 			...values,
 			Periodos: periodos,
 			Indemnizacion: indemnizacion,
+			esPeriodoPrueba: esPeriodoPrueba,
 		};
 
 		// Si se aplicó tope, agregar la remuneración tope calculada
@@ -426,10 +529,12 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				resultado["SAC proporcional"] = (diasTrabajados / 365) * (remuneracionBase / 12);
 			}
 			if (values.liquidacion.includes("diasTrabajados")) {
-				const fin = dayjs(values.fechaEgreso);
-				const diasEnMes = fin.daysInMonth();
-				const diaDelMes = fin.date();
-				resultado["Días Trabajados"] = diaDelMes * (remuneracionBase / diasEnMes);
+				const fin = dayjs(values.fechaEgreso, "DD/MM/YYYY");
+				if (fin.isValid()) {
+					const diasEnMes = fin.daysInMonth();
+					const diaDelMes = fin.date();
+					resultado["Días Trabajados"] = diaDelMes * (remuneracionBase / diasEnMes);
+				}
 			}
 			if (values.liquidacion.includes("vacaciones")) {
 				// Para vacaciones usamos siempre el cálculo tradicional de antigüedad (no afectado por Ley 27.742)

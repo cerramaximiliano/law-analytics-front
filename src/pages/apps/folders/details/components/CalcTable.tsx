@@ -231,56 +231,56 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 									) : (
 										sortedData.map((row: CalculatorType, index: number) => {
 											// Determinar el monto a mostrar: usar lastUpdate.amount si keepUpdated está activo
-											const displayAmount = row.keepUpdated && row.lastUpdate?.amount
-												? row.lastUpdate.amount
-												: row.amount;
+											const displayAmount = row.keepUpdated && row.lastUpdate?.amount ? row.lastUpdate.amount : row.amount;
 
 											return (
-											<TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-												{Object.entries({
-													date: row.date || "N/D",
-													type: row.type || "N/D",
-													user: row.user || "N/D",
-													amount: displayAmount || "N/D",
-												}).map(([key, value], cellIndex) => (
-													<>
-														<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
-															<LoadingContent
-																isLoader={isLoader}
-																content={
-																	<Typography variant="body2">{cellIndex === 3 ? formatAmount(value as number) : String(value)}</Typography>
-																}
-																skeleton={<Skeleton width={60} />}
-															/>
-														</TableCell>
-													</>
-												))}
-												<TableCell align="right" sx={{ p: 1 }}>
-													<LoadingContent
-														isLoader={isLoader}
-														content={
-															<Tooltip title="Eliminar cálculo">
-																<IconButton
-																	color="error"
-																	size="small"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		handleDelete(row._id);
-																	}}
-																	sx={{
-																		"&:hover": {
-																			bgcolor: "error.lighter",
-																		},
-																	}}
-																>
-																	<Trash variant="Bulk" size={18} />
-																</IconButton>
-															</Tooltip>
-														}
-														skeleton={<Skeleton width={40} />}
-													/>
-												</TableCell>
-											</TableRow>
+												<TableRow key={index} hover sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+													{Object.entries({
+														date: row.date || "N/D",
+														type: row.type || "N/D",
+														user: row.user || "N/D",
+														amount: displayAmount || "N/D",
+													}).map(([key, value], cellIndex) => (
+														<>
+															<TableCell key={`${index}-${key}`} sx={{ p: 1 }} align={cellIndex === 3 ? "right" : "left"}>
+																<LoadingContent
+																	isLoader={isLoader}
+																	content={
+																		<Typography variant="body2">
+																			{cellIndex === 3 ? formatAmount(value as number) : String(value)}
+																		</Typography>
+																	}
+																	skeleton={<Skeleton width={60} />}
+																/>
+															</TableCell>
+														</>
+													))}
+													<TableCell align="right" sx={{ p: 1 }}>
+														<LoadingContent
+															isLoader={isLoader}
+															content={
+																<Tooltip title="Eliminar cálculo">
+																	<IconButton
+																		color="error"
+																		size="small"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleDelete(row._id);
+																		}}
+																		sx={{
+																			"&:hover": {
+																				bgcolor: "error.lighter",
+																			},
+																		}}
+																	>
+																		<Trash variant="Bulk" size={18} />
+																	</IconButton>
+																</Tooltip>
+															}
+															skeleton={<Skeleton width={40} />}
+														/>
+													</TableCell>
+												</TableRow>
 											);
 										})
 									)}

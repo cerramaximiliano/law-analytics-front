@@ -151,72 +151,25 @@ const schema = [
 	}),
 
 	// Paso 3: Validación para intereses
+	// Ahora usa segmentsIntereses para manejar los tramos, por lo que la validación es más flexible
 	Yup.object().shape({
 		[aplicarIntereses.name]: Yup.boolean(),
-		[fechaInicialIntereses.name]: Yup.string().when(aplicarIntereses.name, {
+		// Cuando aplicarIntereses está activo, se requiere al menos un tramo de intereses O los campos legacy
+		segmentsIntereses: Yup.array().when(aplicarIntereses.name, {
 			is: true,
-			then: () => {
-				return (
-					Yup.string()
-						.required("La fecha inicial de intereses es requerida")
-						.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-							message: "El formato de fecha debe ser DD/MM/AAAA",
-						})
-						.test("is-before", "La fecha inicial debe ser anterior a la fecha final", function (value) {
-							const fechaFinalValue = this.parent[fechaFinalIntereses.name];
-							if (!value || !fechaFinalValue) return true;
-							const check = moment(value, "DD/MM/YYYY").isBefore(moment(fechaFinalValue, "DD/MM/YYYY"));
-							return check;
-						})
-						// Comprobar que la fecha inicial no sea anterior a la fecha de egreso
-						.test("not-before-egreso", "La fecha inicial no puede ser anterior a la fecha de egreso", function (value) {
-							if (!value) return true;
-
-							// Acceder a fechaEgreso directamente como propiedad del this.parent
-							const fechaEgresoValue = this.parent.fechaEgreso;
-							if (!fechaEgresoValue) return true;
-
-							// La fecha inicial de intereses debe ser igual o posterior a la fecha de egreso
-							const fechaInicial = moment(value, "DD/MM/YYYY");
-							const fechaEgreso = moment(fechaEgresoValue, "DD/MM/YYYY");
-
-							return !fechaInicial.isBefore(fechaEgreso, "day");
-						})
-				);
-			},
-			otherwise: () => Yup.string().notRequired(),
+			then: () =>
+				Yup.array()
+					.min(1, "Debe agregar al menos un tramo de intereses")
+					.test("valid-segments", "Todos los tramos deben tener tasas válidas", function (segments) {
+						if (!segments || segments.length === 0) return false;
+						return segments.every((seg) => seg.rate && seg.startDate && seg.endDate);
+					}),
+			otherwise: () => Yup.array().notRequired(),
 		}),
-		[fechaFinalIntereses.name]: Yup.string().when(aplicarIntereses.name, {
-			is: true,
-			then: () => {
-				return (
-					Yup.string()
-						.required("La fecha final de intereses es requerida")
-						.matches(/^(0[1-9]|[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2]|[1-9])\/\d{4}$/, {
-							message: "El formato de fecha debe ser DD/MM/AAAA",
-						})
-						.test("is-after", "La fecha final debe ser posterior a la fecha inicial", function (value) {
-							const fechaInicialValue = this.parent[fechaInicialIntereses.name];
-							if (!value || !fechaInicialValue) return true;
-							const check = moment(value, "DD/MM/YYYY").isAfter(moment(fechaInicialValue, "DD/MM/YYYY"));
-							return check;
-						})
-						// La fecha final no puede ser posterior a hoy
-						.test("not-after-today", "La fecha final no puede ser posterior a hoy", function (value) {
-							if (!value) return true;
-							const today = moment().startOf("day");
-							const fechaFinal = moment(value, "DD/MM/YYYY");
-							return !fechaFinal.isAfter(today, "day");
-						})
-				);
-			},
-			otherwise: () => Yup.string().notRequired(),
-		}),
-		[tasaIntereses.name]: Yup.string().when(aplicarIntereses.name, {
-			is: true,
-			then: () => Yup.string().required("Debe seleccionar una tasa de interés"),
-			otherwise: () => Yup.string().notRequired(),
-		}),
+		// Estos campos se mantienen como opcionales ya que se setean automáticamente desde los segmentos
+		[fechaInicialIntereses.name]: Yup.string().notRequired(),
+		[fechaFinalIntereses.name]: Yup.string().notRequired(),
+		[tasaIntereses.name]: Yup.string().notRequired(),
 	}),
 ];
 
