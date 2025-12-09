@@ -117,3 +117,6 @@ src/templates/
 # Claude AI files
 .claude/
 
+# Build analysis
+bundle-stats.html
+
