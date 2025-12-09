@@ -580,7 +580,29 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 			if (segments.length > 0) {
 				// Usar los segmentos calculados por InterestSegmentsManager
 				const totalIntereses = segments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
-				const capitalBase = indemnizacion;
+
+				// Calcular el capital base sumando todos los rubros (indemnización + liquidación + multas + otras sumas)
+				let capitalBase = indemnizacion;
+
+				// Sumar liquidación
+				if (resultado.Preaviso) capitalBase += resultado.Preaviso;
+				if (resultado["Integración Mes"]) capitalBase += resultado["Integración Mes"];
+				if (resultado["SAC s/ Preaviso"]) capitalBase += resultado["SAC s/ Preaviso"];
+				if (resultado["SAC proporcional"]) capitalBase += resultado["SAC proporcional"];
+				if (resultado["Días Trabajados"]) capitalBase += resultado["Días Trabajados"];
+				if (resultado["Monto Vacaciones"]) capitalBase += resultado["Monto Vacaciones"];
+
+				// Sumar multas
+				if (resultado["Multa Art. 1º Ley 25.323"]) capitalBase += resultado["Multa Art. 1º Ley 25.323"];
+				if (resultado["Multa Art. 2º Ley 25.323"]) capitalBase += resultado["Multa Art. 2º Ley 25.323"];
+				if (resultado["Multa Art. 80 LCT"]) capitalBase += resultado["Multa Art. 80 LCT"];
+				if (resultado["Multa Art. 15 Ley 24.013"]) capitalBase += resultado["Multa Art. 15 Ley 24.013"];
+				if (resultado["Multa Art. 8 Ley 24.013"]) capitalBase += resultado["Multa Art. 8 Ley 24.013"];
+				if (resultado["Multa Art. 9 Ley 24.013"]) capitalBase += resultado["Multa Art. 9 Ley 24.013"];
+				if (resultado["Multa Art. 10 Ley 24.013"]) capitalBase += resultado["Multa Art. 10 Ley 24.013"];
+
+				// Sumar otras sumas
+				if (values.otrasSumas) capitalBase += parseFloat(values.otrasSumas) || 0;
 
 				// Si hay capitalización, el monto final es diferente
 				const montoTotalConIntereses = values.capitalizeInterest
@@ -607,8 +629,31 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				};
 			} else if (values.fechaInicialIntereses && values.fechaFinalIntereses && values.tasaIntereses) {
 				// Fallback al método anterior para compatibilidad
+				// Calcular el capital base sumando todos los rubros
+				let capitalBaseFallback = indemnizacion;
+
+				// Sumar liquidación
+				if (resultado.Preaviso) capitalBaseFallback += resultado.Preaviso;
+				if (resultado["Integración Mes"]) capitalBaseFallback += resultado["Integración Mes"];
+				if (resultado["SAC s/ Preaviso"]) capitalBaseFallback += resultado["SAC s/ Preaviso"];
+				if (resultado["SAC proporcional"]) capitalBaseFallback += resultado["SAC proporcional"];
+				if (resultado["Días Trabajados"]) capitalBaseFallback += resultado["Días Trabajados"];
+				if (resultado["Monto Vacaciones"]) capitalBaseFallback += resultado["Monto Vacaciones"];
+
+				// Sumar multas
+				if (resultado["Multa Art. 1º Ley 25.323"]) capitalBaseFallback += resultado["Multa Art. 1º Ley 25.323"];
+				if (resultado["Multa Art. 2º Ley 25.323"]) capitalBaseFallback += resultado["Multa Art. 2º Ley 25.323"];
+				if (resultado["Multa Art. 80 LCT"]) capitalBaseFallback += resultado["Multa Art. 80 LCT"];
+				if (resultado["Multa Art. 15 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 15 Ley 24.013"];
+				if (resultado["Multa Art. 8 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 8 Ley 24.013"];
+				if (resultado["Multa Art. 9 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 9 Ley 24.013"];
+				if (resultado["Multa Art. 10 Ley 24.013"]) capitalBaseFallback += resultado["Multa Art. 10 Ley 24.013"];
+
+				// Sumar otras sumas
+				if (values.otrasSumas) capitalBaseFallback += parseFloat(values.otrasSumas) || 0;
+
 				const montoIntereses = calcularIntereses(
-					indemnizacion,
+					capitalBaseFallback,
 					values.fechaInicialIntereses,
 					values.fechaFinalIntereses,
 					values.tasaIntereses,
@@ -619,7 +664,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 					fechaFinalIntereses: values.fechaFinalIntereses,
 					tasaIntereses: values.tasaIntereses,
 					montoIntereses: montoIntereses,
-					montoTotalConIntereses: indemnizacion + montoIntereses,
+					montoTotalConIntereses: capitalBaseFallback + montoIntereses,
 				};
 			}
 		}
