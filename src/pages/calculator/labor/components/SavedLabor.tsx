@@ -189,6 +189,22 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 	};
 
 	const getLabelForKey = (key: string): string => {
+		// Manejar claves de tramos de intereses dinámicos
+		const tramoHeaderMatch = key.match(/^tramoHeader_(\d+)$/);
+		if (tramoHeaderMatch) {
+			return `Tramo ${parseInt(tramoHeaderMatch[1], 10) + 1}`;
+		}
+
+		const tramoTasaMatch = key.match(/^tramoTasa_(\d+)$/);
+		if (tramoTasaMatch) {
+			return "Tasa aplicada";
+		}
+
+		const tramoInteresMatch = key.match(/^tramoInteres_(\d+)$/);
+		if (tramoInteresMatch) {
+			return "Interés generado";
+		}
+
 		// Etiquetas personalizadas
 		const customLabels: Record<string, string> = {
 			caratula: "Carátula",
@@ -197,6 +213,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({
 			fechaInicialIntereses: "Fecha inicial de intereses",
 			fechaFinalIntereses: "Fecha final de intereses",
 			tasaIntereses: "Tasa de interés",
+			capitalizeInterest: "Capitalizar intereses",
 		};
 
 		if (customLabels[key]) {
@@ -1032,6 +1049,23 @@ const SavedLabor = () => {
 	// Función estática para obtener labels
 	const getLabelForKeyStatic = (key: string): string => {
 		const { formField } = despidoFormModel;
+
+		// Manejar claves de tramos de intereses dinámicos
+		const tramoHeaderMatch = key.match(/^tramoHeader_(\d+)$/);
+		if (tramoHeaderMatch) {
+			return `Tramo ${parseInt(tramoHeaderMatch[1], 10) + 1}`;
+		}
+
+		const tramoTasaMatch = key.match(/^tramoTasa_(\d+)$/);
+		if (tramoTasaMatch) {
+			return "Tasa aplicada";
+		}
+
+		const tramoInteresMatch = key.match(/^tramoInteres_(\d+)$/);
+		if (tramoInteresMatch) {
+			return "Interés generado";
+		}
+
 		const customLabels: Record<string, string> = {
 			caratula: "Carátula",
 			montoIntereses: "Monto de intereses",
@@ -1039,6 +1073,7 @@ const SavedLabor = () => {
 			fechaInicialIntereses: "Fecha inicial de intereses",
 			fechaFinalIntereses: "Fecha final de intereses",
 			tasaIntereses: "Tasa de interés",
+			capitalizeInterest: "Capitalizar intereses",
 		};
 		if (customLabels[key]) return customLabels[key];
 		const field = formField[key as keyof typeof formField];
