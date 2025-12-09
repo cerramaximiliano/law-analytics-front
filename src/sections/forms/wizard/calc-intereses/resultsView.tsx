@@ -82,6 +82,11 @@ interface InterestSegment {
 	interest: number;
 	coefficient: number;
 	isExtension?: boolean;
+	// Campos para interés simple
+	interestType?: "indexed" | "simple";
+	simpleRate?: number;
+	ratePeriod?: "daily" | "monthly" | "annual";
+	capitalizationFrequency?: "none" | "monthly" | "quarterly" | "semiannual" | "annual";
 }
 
 
@@ -107,11 +112,22 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					const baseURL = process.env.REACT_APP_BASE_URL || "";
 					const dataBySegment: Record<string, any> = {};
 
-					// Cargar datos para cada segmento
+					// Cargar datos solo para segmentos que NO son de interés simple
 					for (const segment of segments) {
-						const url = `${baseURL}/api/tasas/consulta?fechaDesde=${segment.startDate}&fechaHasta=${segment.endDate}&campo=${segment.rate}&calcular=true&completo=true`;
-						const response = await axios.get(url, { withCredentials: true });
-						dataBySegment[segment.id] = response.data;
+						// Si es interés simple, no necesitamos cargar datos de la API
+						if (segment.interestType === "simple" || segment.rate === "simple") {
+							dataBySegment[segment.id] = { isSimpleInterest: true };
+							continue;
+						}
+
+						try {
+							const url = `${baseURL}/api/tasas/consulta?fechaDesde=${segment.startDate}&fechaHasta=${segment.endDate}&campo=${segment.rate}&calcular=true&completo=true`;
+							const response = await axios.get(url, { withCredentials: true });
+							dataBySegment[segment.id] = response.data;
+						} catch (segmentError) {
+							console.error(`Error al cargar datos para segmento ${segment.id}:`, segmentError);
+							dataBySegment[segment.id] = null;
+						}
 					}
 
 					setSegmentsTasasData(dataBySegment);
@@ -788,6 +804,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 									interest: seg.interest,
 									coefficient: seg.coefficient,
 									isExtension: seg.isExtension || false,
+									// Campos para interés simple
+									interestType: seg.interestType,
+									simpleRate: seg.simpleRate,
+									ratePeriod: seg.ratePeriod,
+									capitalizationFrequency: seg.capitalizationFrequency,
 								})),
 								capitalizeInterest: values.capitalizeInterest || false,
 							}
@@ -877,6 +898,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 								interest: seg.interest,
 								coefficient: seg.coefficient,
 								isExtension: seg.isExtension || false,
+								// Campos para interés simple
+								interestType: seg.interestType,
+								simpleRate: seg.simpleRate,
+								ratePeriod: seg.ratePeriod,
+								capitalizationFrequency: seg.capitalizationFrequency,
 							})),
 							capitalizeInterest: values.capitalizeInterest || false,
 						}
@@ -930,8 +956,31 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 
 					{segments.map((segment: InterestSegment, index: number) => {
 						const tasaData = segmentsTasasData[segment.id];
+						const isSimpleInterest = segment.interestType === "simple" || segment.rate === "simple" || tasaData?.isSimpleInterest;
 						const tipoIndice = tasaData?.configTasa?.tipoIndice;
 						const isIndexado = tipoIndice === "indexado";
+
+						// Helper para obtener el nombre del período
+						const getPeriodLabel = (period?: string) => {
+							const labels: Record<string, string> = {
+								daily: "Diario",
+								monthly: "Mensual",
+								annual: "Anual",
+							};
+							return labels[period || ""] || period || "";
+						};
+
+						// Helper para obtener el nombre de la capitalización
+						const getCapitalizationLabel = (cap?: string) => {
+							const labels: Record<string, string> = {
+								none: "Sin capitalización",
+								monthly: "Mensual",
+								quarterly: "Trimestral",
+								semiannual: "Semestral",
+								annual: "Anual",
+							};
+							return labels[cap || ""] || cap || "";
+						};
 
 						return (
 							<Box key={segment.id || index} sx={{ mb: 3 }}>
@@ -945,7 +994,39 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 									{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest)}
 								</Typography>
 
-								{tasaData ? (
+								{isSimpleInterest ? (
+									// Mostrar información de la tasa simple (solo configuración, sin resultados)
+									<TableContainer component={Paper} sx={{ mt: 1 }}>
+										<Table size="small">
+											<TableHead>
+												<TableRow>
+													<TableCell>Parámetro</TableCell>
+													<TableCell align="right">Valor</TableCell>
+												</TableRow>
+											</TableHead>
+											<TableBody>
+												<TableRow>
+													<TableCell>Tipo de Interés</TableCell>
+													<TableCell align="right">Interés Simple</TableCell>
+												</TableRow>
+												<TableRow>
+													<TableCell>Tasa</TableCell>
+													<TableCell align="right">{segment.simpleRate || "-"}%</TableCell>
+												</TableRow>
+												<TableRow>
+													<TableCell>Período de la Tasa</TableCell>
+													<TableCell align="right">{getPeriodLabel(segment.ratePeriod)}</TableCell>
+												</TableRow>
+												{segment.capitalizationFrequency && segment.capitalizationFrequency !== "none" && (
+													<TableRow>
+														<TableCell>Capitalización</TableCell>
+														<TableCell align="right">{getCapitalizationLabel(segment.capitalizationFrequency)}</TableCell>
+													</TableRow>
+												)}
+											</TableBody>
+										</Table>
+									</TableContainer>
+								) : tasaData ? (
 									<TableContainer component={Paper} sx={{ mt: 1 }}>
 										<Table size="small">
 											<TableHead>

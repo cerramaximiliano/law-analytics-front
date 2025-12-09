@@ -10,6 +10,7 @@ import {
 	FormControlLabel,
 	Grid,
 	IconButton,
+	InputAdornment,
 	MenuItem,
 	Stack,
 	Table,
@@ -19,6 +20,8 @@ import {
 	TableHead,
 	TableRow,
 	TextField,
+	ToggleButton,
+	ToggleButtonGroup,
 	Tooltip,
 	Typography,
 	Alert,
@@ -33,6 +36,10 @@ import axios from "axios";
 import "dayjs/locale/es";
 
 // Types
+export type InterestType = "indexed" | "simple";
+export type RatePeriod = "daily" | "monthly" | "annual";
+export type CapitalizationFrequency = "none" | "monthly" | "quarterly" | "semiannual" | "annual";
+
 export interface InterestSegment {
 	id: string;
 	startDate: string;
@@ -44,6 +51,11 @@ export interface InterestSegment {
 	coefficient: number;
 	isExtension?: boolean;
 	isCalculated?: boolean;
+	// Campos para interés simple
+	interestType?: InterestType;
+	simpleRate?: number;
+	ratePeriod?: RatePeriod;
+	capitalizationFrequency?: CapitalizationFrequency;
 }
 
 export interface InterestRate {
@@ -66,6 +78,113 @@ interface InterestSegmentsManagerProps {
 }
 
 const MAX_SEGMENTS = 10;
+
+// Opciones de período para interés simple
+const RATE_PERIODS: { value: RatePeriod; label: string; daysPerPeriod: number }[] = [
+	{ value: "daily", label: "Diario", daysPerPeriod: 1 },
+	{ value: "monthly", label: "Mensual", daysPerPeriod: 30 },
+	{ value: "annual", label: "Anual", daysPerPeriod: 365 },
+];
+
+// Opciones de capitalización para interés simple
+const CAPITALIZATION_OPTIONS: { value: CapitalizationFrequency; label: string; months: number }[] = [
+	{ value: "none", label: "Sin capitalización", months: 0 },
+	{ value: "monthly", label: "Mensual", months: 1 },
+	{ value: "quarterly", label: "Trimestral", months: 3 },
+	{ value: "semiannual", label: "Semestral", months: 6 },
+	{ value: "annual", label: "Anual", months: 12 },
+];
+
+// Helper para obtener días por período
+const getDaysPerPeriod = (period: RatePeriod): number => {
+	return RATE_PERIODS.find((p) => p.value === period)?.daysPerPeriod || 365;
+};
+
+// Helper para calcular días entre fechas
+const calculateDaysBetween = (startDate: string, endDate: string): number => {
+	const start = dayjs(startDate, "DD/MM/YYYY");
+	const end = dayjs(endDate, "DD/MM/YYYY");
+	return end.diff(start, "day"); // Diferencia exacta de días
+};
+
+// Helper para calcular interés simple con capitalización opcional
+const calculateSimpleInterest = (
+	capital: number,
+	rate: number,
+	ratePeriod: RatePeriod,
+	startDate: string,
+	endDate: string,
+	capitalizationFrequency: CapitalizationFrequency = "none",
+): { interest: number; coefficient: number; details?: any } => {
+	const start = dayjs(startDate, "DD/MM/YYYY");
+	const end = dayjs(endDate, "DD/MM/YYYY");
+	const daysPerPeriod = getDaysPerPeriod(ratePeriod);
+	const rateDecimal = rate / 100;
+
+	// Sin capitalización: cálculo simple
+	if (capitalizationFrequency === "none") {
+		const days = end.diff(start, "day");
+		const coefficient = (rateDecimal * days) / daysPerPeriod;
+		const interest = Math.round(capital * coefficient);
+		return { interest, coefficient };
+	}
+
+	// Con capitalización: calcular por períodos
+	const capOption = CAPITALIZATION_OPTIONS.find((c) => c.value === capitalizationFrequency);
+	const monthsPerPeriod = capOption?.months || 12;
+
+	let currentDate = start.clone();
+	let accumulatedCapital = capital;
+	let totalInterest = 0;
+	const periods: any[] = [];
+
+	while (currentDate.isBefore(end)) {
+		// Calcular fecha fin del período de capitalización
+		let periodEnd = currentDate.add(monthsPerPeriod, "month");
+
+		// Si el período excede la fecha final, usar la fecha final
+		if (periodEnd.isAfter(end)) {
+			periodEnd = end;
+		}
+
+		// Calcular días del período
+		const periodDays = periodEnd.diff(currentDate, "day");
+
+		// Calcular interés del período
+		const periodCoefficient = (rateDecimal * periodDays) / daysPerPeriod;
+		const periodInterest = Math.round(accumulatedCapital * periodCoefficient);
+
+		periods.push({
+			start: currentDate.format("DD/MM/YYYY"),
+			end: periodEnd.format("DD/MM/YYYY"),
+			days: periodDays,
+			capital: accumulatedCapital,
+			interest: periodInterest,
+			coefficient: periodCoefficient,
+		});
+
+		totalInterest += periodInterest;
+
+		// Capitalizar: agregar interés al capital para el siguiente período
+		accumulatedCapital += periodInterest;
+
+		// Mover al siguiente período
+		currentDate = periodEnd;
+	}
+
+	// Coeficiente total efectivo
+	const totalCoefficient = totalInterest / capital;
+
+	return {
+		interest: totalInterest,
+		coefficient: totalCoefficient,
+		details: {
+			periods,
+			finalCapital: accumulatedCapital,
+			capitalizationFrequency,
+		},
+	};
+};
 
 // Helper para generar ID único
 const generateId = () => `segment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -113,7 +232,11 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 	const [isCalculating, setIsCalculating] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isAddingNew, setIsAddingNew] = useState(false);
-	const [newSegment, setNewSegment] = useState<Partial<InterestSegment>>({});
+	const [newSegment, setNewSegment] = useState<Partial<InterestSegment>>({
+		interestType: "indexed",
+		ratePeriod: "annual",
+		capitalizationFrequency: "none",
+	});
 
 	// Calcular totales cuando cambian los segmentos o la capitalización
 	useEffect(() => {
@@ -212,6 +335,10 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			startDate: defaultStartDate,
 			endDate: "",
 			rate: "",
+			interestType: "indexed",
+			simpleRate: undefined,
+			ratePeriod: "annual",
+			capitalizationFrequency: "none",
 		});
 		setIsAddingNew(true);
 		setError(null);
@@ -219,19 +346,37 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 
 	// Guardar nuevo segmento
 	const handleSaveNewSegment = async () => {
-		if (!newSegment.startDate || !newSegment.endDate || !newSegment.rate) {
-			setError("Debe completar todos los campos");
+		const isSimpleInterest = newSegment.interestType === "simple";
+
+		// Validar campos según el tipo de interés
+		if (!newSegment.startDate || !newSegment.endDate) {
+			setError("Debe completar las fechas");
 			return;
 		}
 
-		// Validar fechas dentro del rango de la tasa
-		if (!isDateInRateRange(newSegment.startDate, newSegment.rate, availableRates)) {
-			setError("La fecha inicial está fuera del rango disponible para la tasa seleccionada");
-			return;
-		}
-		if (!isDateInRateRange(newSegment.endDate, newSegment.rate, availableRates)) {
-			setError("La fecha final está fuera del rango disponible para la tasa seleccionada");
-			return;
+		if (isSimpleInterest) {
+			if (newSegment.simpleRate === undefined || newSegment.simpleRate <= 0) {
+				setError("Debe ingresar una tasa de interés válida");
+				return;
+			}
+			if (!newSegment.ratePeriod) {
+				setError("Debe seleccionar el período de la tasa");
+				return;
+			}
+		} else {
+			if (!newSegment.rate) {
+				setError("Debe seleccionar una tasa de interés");
+				return;
+			}
+			// Validar fechas dentro del rango de la tasa
+			if (!isDateInRateRange(newSegment.startDate, newSegment.rate, availableRates)) {
+				setError("La fecha inicial está fuera del rango disponible para la tasa seleccionada");
+				return;
+			}
+			if (!isDateInRateRange(newSegment.endDate, newSegment.rate, availableRates)) {
+				setError("La fecha final está fuera del rango disponible para la tasa seleccionada");
+				return;
+			}
 		}
 
 		// Validar que fecha final sea mayor que inicial
@@ -263,25 +408,51 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 		setError(null);
 
 		const segmentCapital = getCapitalForSegment(segments.length);
-		const result = await calculateSegmentInterest(newSegment, segmentCapital);
+		let result: { interest: number; coefficient: number } | null = null;
+
+		if (isSimpleInterest) {
+			// Calcular interés simple localmente
+			result = calculateSimpleInterest(
+				segmentCapital,
+				newSegment.simpleRate!,
+				newSegment.ratePeriod!,
+				newSegment.startDate,
+				newSegment.endDate,
+				newSegment.capitalizationFrequency || "none",
+			);
+		} else {
+			// Calcular interés indexado mediante API
+			result = await calculateSegmentInterest(newSegment, segmentCapital);
+		}
 
 		if (result) {
+			const ratePeriodLabel = RATE_PERIODS.find((p) => p.value === newSegment.ratePeriod)?.label || "";
+			const capLabel = CAPITALIZATION_OPTIONS.find((c) => c.value === newSegment.capitalizationFrequency)?.label || "";
+			const rateNameParts = [`Interés Simple ${newSegment.simpleRate}% ${ratePeriodLabel}`];
+			if (newSegment.capitalizationFrequency && newSegment.capitalizationFrequency !== "none") {
+				rateNameParts.push(`(Cap. ${capLabel})`);
+			}
+
 			const newSegmentComplete: InterestSegment = {
 				id: generateId(),
 				startDate: newSegment.startDate,
 				endDate: newSegment.endDate,
-				rate: newSegment.rate,
-				rateName: getRateName(newSegment.rate, availableRates),
+				rate: isSimpleInterest ? "simple" : newSegment.rate!,
+				rateName: isSimpleInterest ? rateNameParts.join(" ") : getRateName(newSegment.rate!, availableRates),
 				capital: segmentCapital,
 				interest: result.interest,
 				coefficient: result.coefficient,
 				isCalculated: true,
 				isExtension: false,
+				interestType: newSegment.interestType,
+				simpleRate: isSimpleInterest ? newSegment.simpleRate : undefined,
+				ratePeriod: isSimpleInterest ? newSegment.ratePeriod : undefined,
+				capitalizationFrequency: isSimpleInterest ? newSegment.capitalizationFrequency : undefined,
 			};
 
 			onSegmentsChange([...segments, newSegmentComplete]);
 			setIsAddingNew(false);
-			setNewSegment({});
+			setNewSegment({ interestType: "indexed", ratePeriod: "annual", capitalizationFrequency: "none" });
 		}
 
 		setIsCalculating(null);
@@ -290,7 +461,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 	// Cancelar agregar nuevo
 	const handleCancelNew = () => {
 		setIsAddingNew(false);
-		setNewSegment({});
+		setNewSegment({ interestType: "indexed", ratePeriod: "annual", capitalizationFrequency: "none" });
 		setError(null);
 	};
 
@@ -305,19 +476,36 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 	const handleSaveEdit = async () => {
 		if (!editingSegment || !editingSegmentId) return;
 
-		if (!editingSegment.startDate || !editingSegment.endDate || !editingSegment.rate) {
-			setError("Debe completar todos los campos");
+		const isSimpleInterest = editingSegment.interestType === "simple";
+
+		if (!editingSegment.startDate || !editingSegment.endDate) {
+			setError("Debe completar las fechas");
 			return;
 		}
 
-		// Validar fechas
-		if (!isDateInRateRange(editingSegment.startDate, editingSegment.rate, availableRates)) {
-			setError("La fecha inicial está fuera del rango disponible para la tasa seleccionada");
-			return;
-		}
-		if (!isDateInRateRange(editingSegment.endDate, editingSegment.rate, availableRates)) {
-			setError("La fecha final está fuera del rango disponible para la tasa seleccionada");
-			return;
+		if (isSimpleInterest) {
+			if (editingSegment.simpleRate === undefined || editingSegment.simpleRate <= 0) {
+				setError("Debe ingresar una tasa de interés válida");
+				return;
+			}
+			if (!editingSegment.ratePeriod) {
+				setError("Debe seleccionar el período de la tasa");
+				return;
+			}
+		} else {
+			if (!editingSegment.rate) {
+				setError("Debe seleccionar una tasa de interés");
+				return;
+			}
+			// Validar fechas
+			if (!isDateInRateRange(editingSegment.startDate, editingSegment.rate, availableRates)) {
+				setError("La fecha inicial está fuera del rango disponible para la tasa seleccionada");
+				return;
+			}
+			if (!isDateInRateRange(editingSegment.endDate, editingSegment.rate, availableRates)) {
+				setError("La fecha final está fuera del rango disponible para la tasa seleccionada");
+				return;
+			}
 		}
 
 		if (dayjs(editingSegment.endDate, "DD/MM/YYYY").isBefore(dayjs(editingSegment.startDate, "DD/MM/YYYY"))) {
@@ -354,21 +542,47 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 		setIsCalculating(editingSegmentId);
 		setError(null);
 		const segmentCapital = getCapitalForSegment(segmentIndex);
-		const result = await calculateSegmentInterest(editingSegment, segmentCapital);
+		let result: { interest: number; coefficient: number } | null = null;
+
+		if (isSimpleInterest) {
+			// Calcular interés simple localmente
+			result = calculateSimpleInterest(
+				segmentCapital,
+				editingSegment.simpleRate!,
+				editingSegment.ratePeriod!,
+				editingSegment.startDate,
+				editingSegment.endDate,
+				editingSegment.capitalizationFrequency || "none",
+			);
+		} else {
+			// Calcular interés indexado mediante API
+			result = await calculateSegmentInterest(editingSegment, segmentCapital);
+		}
 
 		if (result) {
+			const ratePeriodLabel = RATE_PERIODS.find((p) => p.value === editingSegment.ratePeriod)?.label || "";
+			const capLabel = CAPITALIZATION_OPTIONS.find((c) => c.value === editingSegment.capitalizationFrequency)?.label || "";
+			const rateNameParts = [`Interés Simple ${editingSegment.simpleRate}% ${ratePeriodLabel}`];
+			if (editingSegment.capitalizationFrequency && editingSegment.capitalizationFrequency !== "none") {
+				rateNameParts.push(`(Cap. ${capLabel})`);
+			}
+
 			const updatedSegments = segments.map((seg) => {
 				if (seg.id === editingSegmentId) {
 					return {
 						...seg,
 						startDate: editingSegment.startDate!,
 						endDate: editingSegment.endDate!,
-						rate: editingSegment.rate!,
-						rateName: getRateName(editingSegment.rate!, availableRates),
+						rate: isSimpleInterest ? "simple" : editingSegment.rate!,
+						rateName: isSimpleInterest ? rateNameParts.join(" ") : getRateName(editingSegment.rate!, availableRates),
 						capital: segmentCapital,
-						interest: result.interest,
-						coefficient: result.coefficient,
+						interest: result!.interest,
+						coefficient: result!.coefficient,
 						isCalculated: true,
+						interestType: editingSegment.interestType,
+						simpleRate: isSimpleInterest ? editingSegment.simpleRate : undefined,
+						ratePeriod: isSimpleInterest ? editingSegment.ratePeriod : undefined,
+						capitalizationFrequency: isSimpleInterest ? editingSegment.capitalizationFrequency : undefined,
 					};
 				}
 				return seg;
@@ -401,7 +615,23 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				newCapital += updatedSegments[j].interest || 0;
 			}
 
-			const result = await calculateSegmentInterest(segment, newCapital);
+			let result: { interest: number; coefficient: number } | null = null;
+
+			if (segment.interestType === "simple" && segment.simpleRate && segment.ratePeriod) {
+				// Recalcular interés simple
+				result = calculateSimpleInterest(
+					newCapital,
+					segment.simpleRate,
+					segment.ratePeriod,
+					segment.startDate,
+					segment.endDate,
+					segment.capitalizationFrequency || "none",
+				);
+			} else {
+				// Recalcular interés indexado
+				result = await calculateSegmentInterest(segment, newCapital);
+			}
+
 			if (result) {
 				updatedSegments[i] = {
 					...segment,
@@ -454,7 +684,24 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				}
 
 				if (updatedSegments[i].capital !== segmentCapital) {
-					const result = await calculateSegmentInterest(updatedSegments[i], segmentCapital);
+					const segment = updatedSegments[i];
+					let result: { interest: number; coefficient: number } | null = null;
+
+					if (segment.interestType === "simple" && segment.simpleRate && segment.ratePeriod) {
+						// Recalcular interés simple
+						result = calculateSimpleInterest(
+							segmentCapital,
+							segment.simpleRate,
+							segment.ratePeriod,
+							segment.startDate,
+							segment.endDate,
+							segment.capitalizationFrequency || "none",
+						);
+					} else {
+						// Recalcular interés indexado
+						result = await calculateSegmentInterest(segment, segmentCapital);
+					}
+
 					if (result) {
 						updatedSegments[i] = {
 							...updatedSegments[i],
@@ -527,7 +774,32 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 									{editingSegmentId === segment.id ? (
 										// Modo edición
 										<>
-											<TableCell>{index + 1}</TableCell>
+											<TableCell>
+												<Stack spacing={0.5}>
+													<Typography variant="caption">{index + 1}</Typography>
+													<ToggleButtonGroup
+														value={editingSegment?.interestType || "indexed"}
+														exclusive
+														onChange={(_e, value) => {
+															if (value !== null) {
+																setEditingSegment({
+																	...editingSegment,
+																	interestType: value as InterestType,
+																	rate: value === "simple" ? "simple" : editingSegment?.rate,
+																});
+															}
+														}}
+														size="small"
+													>
+														<ToggleButton value="indexed" sx={{ py: 0.25, px: 0.5, fontSize: 10 }}>
+															Index
+														</ToggleButton>
+														<ToggleButton value="simple" sx={{ py: 0.25, px: 0.5, fontSize: 10 }}>
+															Simple
+														</ToggleButton>
+													</ToggleButtonGroup>
+												</Stack>
+											</TableCell>
 											<TableCell>
 												<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 													<DatePicker
@@ -563,24 +835,84 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 												</LocalizationProvider>
 											</TableCell>
 											<TableCell>
-												<TextField
-													select
-													size="small"
-													value={editingSegment?.rate || ""}
-													onChange={(e) =>
-														setEditingSegment({
-															...editingSegment,
-															rate: e.target.value,
-														})
-													}
-													sx={{ minWidth: 180 }}
-												>
-													{availableRates.map((rate) => (
-														<MenuItem key={rate.value} value={rate.value}>
-															{rate.label}
-														</MenuItem>
-													))}
-												</TextField>
+												{editingSegment?.interestType === "simple" ? (
+													<Stack direction="row" spacing={1} flexWrap="wrap">
+														<TextField
+															label="Tasa"
+															size="small"
+															type="number"
+															value={editingSegment?.simpleRate ?? ""}
+															onChange={(e) =>
+																setEditingSegment({
+																	...editingSegment,
+																	simpleRate: e.target.value ? parseFloat(e.target.value) : undefined,
+																})
+															}
+															InputProps={{
+																endAdornment: <InputAdornment position="end">%</InputAdornment>,
+															}}
+															inputProps={{ min: 0, step: 0.01 }}
+															sx={{ width: 80 }}
+														/>
+														<TextField
+															select
+															label="Período"
+															size="small"
+															value={editingSegment?.ratePeriod || "annual"}
+															onChange={(e) =>
+																setEditingSegment({
+																	...editingSegment,
+																	ratePeriod: e.target.value as RatePeriod,
+																})
+															}
+															sx={{ width: 90 }}
+														>
+															{RATE_PERIODS.map((period) => (
+																<MenuItem key={period.value} value={period.value}>
+																	{period.label}
+																</MenuItem>
+															))}
+														</TextField>
+														<TextField
+															select
+															label="Capitaliz."
+															size="small"
+															value={editingSegment?.capitalizationFrequency || "none"}
+															onChange={(e) =>
+																setEditingSegment({
+																	...editingSegment,
+																	capitalizationFrequency: e.target.value as CapitalizationFrequency,
+																})
+															}
+															sx={{ width: 110 }}
+														>
+															{CAPITALIZATION_OPTIONS.map((cap) => (
+																<MenuItem key={cap.value} value={cap.value}>
+																	{cap.label}
+																</MenuItem>
+															))}
+														</TextField>
+													</Stack>
+												) : (
+													<TextField
+														select
+														size="small"
+														value={editingSegment?.rate || ""}
+														onChange={(e) =>
+															setEditingSegment({
+																...editingSegment,
+																rate: e.target.value,
+															})
+														}
+														sx={{ minWidth: 180 }}
+													>
+														{availableRates.map((rate) => (
+															<MenuItem key={rate.value} value={rate.value}>
+																{rate.label}
+															</MenuItem>
+														))}
+													</TextField>
+												)}
 											</TableCell>
 											<TableCell align="right">-</TableCell>
 											<TableCell align="right">-</TableCell>
@@ -685,11 +1017,34 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			{/* Formulario para agregar nuevo tramo */}
 			<Collapse in={isAddingNew}>
 				<Card sx={{ mb: 2, p: 2, bgcolor: "background.default" }}>
-					<Typography variant="subtitle2" gutterBottom>
-						Nuevo Tramo
-					</Typography>
-					<Grid container spacing={2} alignItems="center">
-						<Grid item xs={12} sm={3}>
+					<Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+						<Typography variant="subtitle2">Nuevo Tramo</Typography>
+						<ToggleButtonGroup
+							value={newSegment.interestType || "indexed"}
+							exclusive
+							onChange={(_e, value) => {
+								if (value !== null) {
+									setNewSegment({
+										...newSegment,
+										interestType: value as InterestType,
+										rate: value === "simple" ? "" : newSegment.rate,
+										simpleRate: value === "indexed" ? undefined : newSegment.simpleRate,
+									});
+								}
+							}}
+							size="small"
+						>
+							<ToggleButton value="indexed" sx={{ px: 2 }}>
+								Tasa Indexada
+							</ToggleButton>
+							<ToggleButton value="simple" sx={{ px: 2 }}>
+								Interés Simple
+							</ToggleButton>
+						</ToggleButtonGroup>
+					</Stack>
+
+					<Grid container spacing={1} alignItems="center">
+						<Grid item xs={6} sm={2}>
 							<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 								<DatePicker
 									label="Fecha Inicio"
@@ -707,7 +1062,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								/>
 							</LocalizationProvider>
 						</Grid>
-						<Grid item xs={12} sm={3}>
+						<Grid item xs={6} sm={2}>
 							<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
 								<DatePicker
 									label="Fecha Fin"
@@ -725,29 +1080,97 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								/>
 							</LocalizationProvider>
 						</Grid>
-						<Grid item xs={12} sm={4}>
-							<TextField
-								select
-								label="Tasa de Interés"
-								size="small"
-								fullWidth
-								value={newSegment.rate || ""}
-								onChange={(e) =>
-									setNewSegment({
-										...newSegment,
-										rate: e.target.value,
-									})
-								}
-							>
-								{availableRates.map((rate) => (
-									<MenuItem key={rate.value} value={rate.value}>
-										{rate.label}
-									</MenuItem>
-								))}
-							</TextField>
-						</Grid>
-						<Grid item xs={12} sm={2}>
-							<Stack direction="row" spacing={1}>
+
+						{newSegment.interestType === "simple" ? (
+							<>
+								<Grid item xs={4} sm={1.5}>
+									<TextField
+										label="Tasa"
+										size="small"
+										fullWidth
+										type="number"
+										value={newSegment.simpleRate ?? ""}
+										onChange={(e) =>
+											setNewSegment({
+												...newSegment,
+												simpleRate: e.target.value ? parseFloat(e.target.value) : undefined,
+											})
+										}
+										InputProps={{
+											endAdornment: <InputAdornment position="end">%</InputAdornment>,
+										}}
+										inputProps={{ min: 0, step: 0.01 }}
+									/>
+								</Grid>
+								<Grid item xs={4} sm={1.5}>
+									<TextField
+										select
+										label="Período"
+										size="small"
+										fullWidth
+										value={newSegment.ratePeriod || "annual"}
+										onChange={(e) =>
+											setNewSegment({
+												...newSegment,
+												ratePeriod: e.target.value as RatePeriod,
+											})
+										}
+									>
+										{RATE_PERIODS.map((period) => (
+											<MenuItem key={period.value} value={period.value}>
+												{period.label}
+											</MenuItem>
+										))}
+									</TextField>
+								</Grid>
+								<Grid item xs={4} sm={2}>
+									<TextField
+										select
+										label="Capitalización"
+										size="small"
+										fullWidth
+										value={newSegment.capitalizationFrequency || "none"}
+										onChange={(e) =>
+											setNewSegment({
+												...newSegment,
+												capitalizationFrequency: e.target.value as CapitalizationFrequency,
+											})
+										}
+									>
+										{CAPITALIZATION_OPTIONS.map((cap) => (
+											<MenuItem key={cap.value} value={cap.value}>
+												{cap.label}
+											</MenuItem>
+										))}
+									</TextField>
+								</Grid>
+							</>
+						) : (
+							<Grid item xs={12} sm={5}>
+								<TextField
+									select
+									label="Tasa de Interés"
+									size="small"
+									fullWidth
+									value={newSegment.rate || ""}
+									onChange={(e) =>
+										setNewSegment({
+											...newSegment,
+											rate: e.target.value,
+										})
+									}
+								>
+									{availableRates.map((rate) => (
+										<MenuItem key={rate.value} value={rate.value}>
+											{rate.label}
+										</MenuItem>
+									))}
+								</TextField>
+							</Grid>
+						)}
+
+						<Grid item xs={12} sm={3}>
+							<Stack direction="row" spacing={1} justifyContent="flex-end">
 								{isCalculating === "new" ? (
 									<CircularProgress size={24} />
 								) : (
@@ -763,10 +1186,16 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 							</Stack>
 						</Grid>
 					</Grid>
-					{newSegment.rate && (
+
+					{/* Mostrar información adicional del capital */}
+					{(newSegment.rate || newSegment.interestType === "simple") && (
 						<Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
 							Capital para este tramo: {formatCurrency(getCapitalForSegment(segments.length))}
 							{capitalizeInterest && segments.length > 0 && " (capitalizado)"}
+							{newSegment.interestType === "simple" &&
+								newSegment.startDate &&
+								newSegment.endDate &&
+								` | Días: ${calculateDaysBetween(newSegment.startDate, newSegment.endDate)}`}
 						</Typography>
 					)}
 				</Card>
