@@ -603,9 +603,6 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 			const segments = values.segmentsIntereses || [];
 
 			if (segments.length > 0) {
-				// Usar los segmentos calculados por InterestSegmentsManager
-				const totalIntereses = segments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
-
 				// Calcular el capital base sumando todos los rubros (indemnización + liquidación + multas + otras sumas)
 				let capitalBase = indemnizacion;
 
@@ -629,16 +626,49 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				// Sumar otras sumas
 				if (values.otrasSumas) capitalBase += parseFloat(values.otrasSumas) || 0;
 
+				// Verificar si el capital de los segmentos coincide con el capital calculado real
+				// Si el usuario modificó rubros después de configurar intereses, los segmentos pueden estar desactualizados
+				const capitalSegmentos = segments[0]?.capital || 0;
+				const diferenciaCapital = Math.abs(capitalBase - capitalSegmentos);
+
+				// Recalcular segmentos si hay diferencia significativa (más de $1)
+				let segmentosAjustados = segments;
+				let totalIntereses: number;
+
+				if (diferenciaCapital > 1) {
+					// Ajustar proporcionalmente cada segmento con el nuevo capital
+					let capitalAcumulado = capitalBase;
+					segmentosAjustados = segments.map((seg: any, index: number) => {
+						const nuevoCapital = values.capitalizeInterest && index > 0 ? capitalAcumulado : capitalBase;
+						const nuevoInteres = Math.round(nuevoCapital * seg.coefficient);
+
+						if (values.capitalizeInterest) {
+							capitalAcumulado = nuevoCapital + nuevoInteres;
+						}
+
+						return {
+							...seg,
+							capital: nuevoCapital,
+							interest: nuevoInteres,
+						};
+					});
+
+					totalIntereses = segmentosAjustados.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+				} else {
+					totalIntereses = segments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+				}
+
 				// Si hay capitalización, el monto final es diferente
 				const montoTotalConIntereses = values.capitalizeInterest
-					? (segments[segments.length - 1]?.capital || capitalBase) + (segments[segments.length - 1]?.interest || 0)
+					? (segmentosAjustados[segmentosAjustados.length - 1]?.capital || capitalBase) +
+						(segmentosAjustados[segmentosAjustados.length - 1]?.interest || 0)
 					: capitalBase + totalIntereses;
 
 				resultado.datosIntereses = {
-					fechaInicialIntereses: segments[0]?.startDate || values.fechaInicialIntereses,
-					fechaFinalIntereses: segments[segments.length - 1]?.endDate || values.fechaFinalIntereses,
-					tasaIntereses: segments.map((s: any) => s.rate).join(","),
-					segments: segments.map((seg: any) => ({
+					fechaInicialIntereses: segmentosAjustados[0]?.startDate || values.fechaInicialIntereses,
+					fechaFinalIntereses: segmentosAjustados[segmentosAjustados.length - 1]?.endDate || values.fechaFinalIntereses,
+					tasaIntereses: segmentosAjustados.map((s: any) => s.rate).join(","),
+					segments: segmentosAjustados.map((seg: any) => ({
 						startDate: seg.startDate,
 						endDate: seg.endDate,
 						rate: seg.rate,
@@ -651,6 +681,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 					capitalizeInterest: values.capitalizeInterest || false,
 					montoIntereses: totalIntereses,
 					montoTotalConIntereses: montoTotalConIntereses,
+					capitalAjustado: diferenciaCapital > 1, // Flag para indicar si hubo ajuste
 				};
 			} else if (values.fechaInicialIntereses && values.fechaFinalIntereses && values.tasaIntereses) {
 				// Fallback al método anterior para compatibilidad

@@ -312,14 +312,40 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 
 			// Verificar si hay múltiples tramos
 			if (segments.length > 0) {
+				// Verificar si el capital de los segmentos coincide con el montoBase calculado
+				// Si el usuario modificó rubros después de configurar intereses, los segmentos pueden estar desactualizados
+				const capitalSegmentos = segments[0]?.capital || 0;
+				const diferenciaCapital = Math.abs(montoBase - capitalSegmentos);
+
+				// Ajustar segmentos si hay diferencia significativa (más de $1)
+				let segmentosAjustados = segments;
+				if (diferenciaCapital > 1) {
+					// Recalcular proporcionalmente cada segmento con el nuevo capital
+					let capitalAcumulado = montoBase;
+					segmentosAjustados = segments.map((seg: any, index: number) => {
+						const nuevoCapital = inputValues.capitalizeInterest && index > 0 ? capitalAcumulado : montoBase;
+						const nuevoInteres = Math.round(nuevoCapital * seg.coefficient);
+
+						if (inputValues.capitalizeInterest) {
+							capitalAcumulado = nuevoCapital + nuevoInteres;
+						}
+
+						return {
+							...seg,
+							capital: nuevoCapital,
+							interest: nuevoInteres,
+						};
+					});
+				}
+
 				// Modo con múltiples tramos - mostrar información detallada de cada tramo
 				groups.intereses.push({
 					key: "fechaInicialIntereses",
-					value: segments[0]?.startDate || inputValues.fechaInicialIntereses,
+					value: segmentosAjustados[0]?.startDate || inputValues.fechaInicialIntereses,
 				});
 				groups.intereses.push({
 					key: "fechaFinalIntereses",
-					value: segments[segments.length - 1]?.endDate || inputValues.fechaFinalIntereses,
+					value: segmentosAjustados[segmentosAjustados.length - 1]?.endDate || inputValues.fechaFinalIntereses,
 				});
 
 				if (inputValues.capitalizeInterest) {
@@ -329,8 +355,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 					});
 				}
 
-				// Mostrar detalle de cada tramo con su tasa
-				segments.forEach((seg: any, index: number) => {
+				// Mostrar detalle de cada tramo con su tasa (usando segmentos ajustados)
+				segmentosAjustados.forEach((seg: any, index: number) => {
 					const tasaLabel = seg.rateName || interestRates.find((r) => r.value === seg.rate)?.label || seg.rate;
 
 					// Header del tramo con período
@@ -345,19 +371,20 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 						value: tasaLabel,
 					});
 
-					// Interés del tramo
+					// Interés del tramo (usando el valor ajustado)
 					groups.intereses.push({
 						key: `tramoInteres_${index}`,
 						value: seg.interest || 0,
 					});
 				});
 
-				// Calcular total de intereses
-				const totalIntereses = segments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+				// Calcular total de intereses (usando segmentos ajustados)
+				const totalIntereses = segmentosAjustados.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
 
 				// Si hay capitalización, el monto final es diferente
 				const montoTotalConIntereses = inputValues.capitalizeInterest
-					? (segments[segments.length - 1]?.capital || montoBase) + (segments[segments.length - 1]?.interest || 0)
+					? (segmentosAjustados[segmentosAjustados.length - 1]?.capital || montoBase) +
+						(segmentosAjustados[segmentosAjustados.length - 1]?.interest || 0)
 					: montoBase + totalIntereses;
 
 				groups.intereses.push({
