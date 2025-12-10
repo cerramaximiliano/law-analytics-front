@@ -296,33 +296,52 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 									}).format(data.capital !== undefined ? data.capital : data.amount - (data.interest || 0))}
 								</Typography>
 							</Stack>
-							{data.interest !== undefined && (
-								<Stack direction="row" justifyContent="space-between">
-									<Typography variant="subtitle2">Intereses:</Typography>
-									<Typography variant="body2">
-										{new Intl.NumberFormat("es-AR", {
-											style: "currency",
-											currency: "ARS",
-										}).format(data.interest)}
-									</Typography>
-								</Stack>
-							)}
-							{data.interest !== undefined && (
-								<>
-									<Divider />
+							{/* Mostrar intereses: usar lastUpdate si keepUpdated está activo, o el interest normal */}
+							{(() => {
+								const interestValue =
+									data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
+								const hasInterest = interestValue !== undefined && interestValue !== null && interestValue > 0;
+
+								if (!hasInterest) return null;
+
+								return (
 									<Stack direction="row" justifyContent="space-between">
-										<Typography variant="subtitle1" fontWeight="bold">
-											Total:
-										</Typography>
-										<Typography variant="body1" fontWeight="bold" color="primary.main">
+										<Typography variant="subtitle2">Intereses:</Typography>
+										<Typography variant="body2">
 											{new Intl.NumberFormat("es-AR", {
 												style: "currency",
 												currency: "ARS",
-											}).format(data.amount)}
+											}).format(interestValue)}
 										</Typography>
 									</Stack>
-								</>
-							)}
+								);
+							})()}
+							{/* Mostrar total si hay intereses */}
+							{(() => {
+								const interestValue =
+									data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
+								const totalValue = data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount;
+								const hasInterest = interestValue !== undefined && interestValue !== null && interestValue > 0;
+
+								if (!hasInterest) return null;
+
+								return (
+									<>
+										<Divider />
+										<Stack direction="row" justifyContent="space-between">
+											<Typography variant="subtitle1" fontWeight="bold">
+												Total:
+											</Typography>
+											<Typography variant="body1" fontWeight="bold" color="primary.main">
+												{new Intl.NumberFormat("es-AR", {
+													style: "currency",
+													currency: "ARS",
+												}).format(totalValue)}
+											</Typography>
+										</Stack>
+									</>
+								);
+							})()}
 						</Stack>
 					</MainCard>
 				</Grid>
