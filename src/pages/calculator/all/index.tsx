@@ -185,6 +185,29 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 		}
 	};
 
+	// Mapping de tasas conocidas como fallback
+	const tasasMapping: Record<string, string> = {
+		tasaPasivaBNA: "Tasa Pasiva Banco Nación",
+		tasaPasivaBCRA: "Tasa Pasiva BCRA",
+		tasaActivaBNA: "Tasa Activa Banco Nación",
+		tasaActivaTnaBNA: "Tasa Activa TNA Banco Nación",
+		cer: "CER",
+		icl: "ICL BCRA",
+		tasaActivaCNAT2601: "Tasa Activa Banco Nación - Acta 2601",
+		tasaActivaCNAT2658: "Tasa Activa Banco Nación - Acta 2658",
+		tasaActivaCNAT2764: "Tasa Activa Banco Nación - Acta 2764",
+	};
+
+	const getTasaLabel = (tasaValue: string): string => {
+		// Primero buscar en el store de Redux
+		const rate = interestRates.find((r: any) => r.value === tasaValue);
+		if (rate) {
+			return rate.label;
+		}
+		// Fallback al mapping de tasas conocidas
+		return tasasMapping[tasaValue] || tasaValue;
+	};
+
 	const getSubClassTypeTitle = (subClassType?: string, classType?: string) => {
 		// Para cálculos laborales
 		switch (subClassType) {
@@ -200,18 +223,12 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 			// Si hay múltiples tasas separadas por coma
 			if (subClassType.includes(",")) {
 				const tasaValues = subClassType.split(",").map((t) => t.trim());
-				const labels = tasaValues.map((value) => {
-					const rate = interestRates.find((r: any) => r.value === value);
-					return rate ? rate.label : value;
-				});
+				const labels = tasaValues.map((value) => getTasaLabel(value));
 				return labels.join(", ");
 			}
 
 			// Una sola tasa
-			const rate = interestRates.find((r: any) => r.value === subClassType);
-			if (rate) {
-				return rate.label;
-			}
+			return getTasaLabel(subClassType);
 		}
 
 		return subClassType || "No especificado";
