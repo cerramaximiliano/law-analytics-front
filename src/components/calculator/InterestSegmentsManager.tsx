@@ -238,6 +238,71 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 		capitalizationFrequency: "none",
 	});
 
+	// Track previous capital to detect changes
+	const [prevCapital, setPrevCapital] = useState<number>(capital);
+
+	// Recalcular todos los segmentos cuando el capital cambia significativamente
+	useEffect(() => {
+		// Solo recalcular si hay segmentos y el capital cambió significativamente (más de $1)
+		if (segments.length > 0 && Math.abs(capital - prevCapital) > 1) {
+			setPrevCapital(capital);
+
+			// Recalcular todos los segmentos con el nuevo capital
+			const recalculateAllSegments = async () => {
+				const updatedSegments = [...segments];
+				let hasChanges = false;
+
+				for (let i = 0; i < updatedSegments.length; i++) {
+					let segmentCapital = capital;
+
+					// Si hay capitalización, calcular capital acumulado
+					if (capitalizeInterest && i > 0) {
+						for (let j = 0; j < i; j++) {
+							segmentCapital += updatedSegments[j].interest || 0;
+						}
+					}
+
+					// Solo recalcular si el capital del segmento cambió
+					if (Math.abs(updatedSegments[i].capital - segmentCapital) > 1) {
+						const segment = updatedSegments[i];
+						let result: { interest: number; coefficient: number } | null = null;
+
+						if (segment.interestType === "simple" && segment.simpleRate && segment.ratePeriod) {
+							// Recalcular interés simple localmente
+							result = calculateSimpleInterest(
+								segmentCapital,
+								segment.simpleRate,
+								segment.ratePeriod,
+								segment.startDate,
+								segment.endDate,
+								segment.capitalizationFrequency || "none",
+							);
+						} else {
+							// Recalcular interés indexado mediante API
+							result = await calculateSegmentInterest(segment, segmentCapital);
+						}
+
+						if (result) {
+							updatedSegments[i] = {
+								...segment,
+								capital: segmentCapital,
+								interest: result.interest,
+								coefficient: result.coefficient,
+							};
+							hasChanges = true;
+						}
+					}
+				}
+
+				if (hasChanges) {
+					onSegmentsChange(updatedSegments);
+				}
+			};
+
+			recalculateAllSegments();
+		}
+	}, [capital]); // Solo depender de capital para evitar loops
+
 	// Calcular totales cuando cambian los segmentos o la capitalización
 	useEffect(() => {
 		if (onTotalChange && segments.length > 0) {
