@@ -417,7 +417,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 			} else if (
 				key.includes("Preaviso") ||
 				key.includes("SAC") ||
-				key.includes("Integracion") ||
+				key.includes("Integración") ||
 				key.includes("Vacaciones") ||
 				key.includes("Días Trabajados")
 			) {
