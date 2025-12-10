@@ -157,6 +157,7 @@ interface CalculationDetailsProps {
 
 const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 	const theme = useTheme();
+	const interestRates = useSelector((state: any) => state.interestRates?.rates || []);
 
 	const getTypeTitle = (type: string) => {
 		switch (type) {
@@ -184,17 +185,36 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 		}
 	};
 
-	const getSubClassTypeTitle = (subClassType?: string) => {
+	const getSubClassTypeTitle = (subClassType?: string, classType?: string) => {
+		// Para cálculos laborales
 		switch (subClassType) {
 			case "despido":
 				return "Despido";
 			case "liquidación final":
 				return "Liquidación Final";
-			case "intereses":
-				return "Intereses";
-			default:
-				return subClassType || "No especificado";
 		}
+
+		// Para cálculos de intereses, el subClassType contiene el value de la tasa
+		// Necesitamos convertirlo al label
+		if (classType === "intereses" && subClassType) {
+			// Si hay múltiples tasas separadas por coma
+			if (subClassType.includes(",")) {
+				const tasaValues = subClassType.split(",").map((t) => t.trim());
+				const labels = tasaValues.map((value) => {
+					const rate = interestRates.find((r: any) => r.value === value);
+					return rate ? rate.label : value;
+				});
+				return labels.join(", ");
+			}
+
+			// Una sola tasa
+			const rate = interestRates.find((r: any) => r.value === subClassType);
+			if (rate) {
+				return rate.label;
+			}
+		}
+
+		return subClassType || "No especificado";
 	};
 
 	const getTypeChipColor = (type: string) => {
@@ -234,7 +254,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 							</Stack>
 							<Stack direction="row" justifyContent="space-between">
 								<Typography variant="subtitle2">Subcategoría:</Typography>
-								<Typography variant="body2">{getSubClassTypeTitle(data.subClassType)}</Typography>
+								<Typography variant="body2">{getSubClassTypeTitle(data.subClassType, data.classType)}</Typography>
 							</Stack>
 						</Stack>
 					</MainCard>
