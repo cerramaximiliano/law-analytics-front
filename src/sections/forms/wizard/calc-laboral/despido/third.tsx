@@ -57,7 +57,7 @@ export default function ThirdForm(props: ThirdFormProps) {
 	const userId = user?._id;
 	const { rates: tasasOpciones, isLoading: cargandoTasas, isInitialized } = useSelector((state) => state.interestRates);
 
-	const { values, setFieldValue, setFieldError, setFieldTouched, validateForm } = useFormikContext<any>();
+	const { values, setFieldValue, setFieldError, setFieldTouched, validateForm, errors, touched } = useFormikContext<any>();
 
 	// Manejar el cambio de aplicar intereses
 	const handleAplicarInteresesChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,6 +168,15 @@ export default function ThirdForm(props: ThirdFormProps) {
 
 			{isInterestSectionEnabled && (
 				<Box sx={{ mt: 3 }}>
+					{/* Mostrar error de validación cuando se intenta avanzar sin tramos */}
+					{errors[segmentsIntereses.name] && touched[segmentsIntereses.name] && (
+						<Alert severity="error" sx={{ mb: 2 }}>
+							{typeof errors[segmentsIntereses.name] === "string"
+								? String(errors[segmentsIntereses.name])
+								: "Debe agregar al menos un tramo"}
+						</Alert>
+					)}
+
 					{calculatedAmount <= 0 && (
 						<Alert severity="warning" sx={{ mb: 2 }}>
 							El monto calculado en los pasos anteriores es $0 o no está disponible. Los intereses se calcularán sobre este monto.

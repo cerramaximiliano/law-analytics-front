@@ -60,7 +60,7 @@ const schema = [
 			is: true,
 			then: () =>
 				Yup.array()
-					.min(1, "Debe agregar al menos un tramo de intereses")
+					.min(1, "Debe agregar al menos un tramo")
 					.test("valid-segments", "Todos los tramos deben tener tasas válidas", function (segments) {
 						if (!segments || segments.length === 0) return false;
 						return segments.every((seg) => seg.rate && seg.startDate && seg.endDate);
