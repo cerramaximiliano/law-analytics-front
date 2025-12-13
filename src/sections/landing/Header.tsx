@@ -28,8 +28,8 @@ const HeaderPage = () => {
 				overflow: "hidden",
 				minHeight: "100vh",
 				bgcolor: theme.palette.background.default, // Fondo consistente con otros componentes
-				pt: { xs: 10, sm: 12, md: 16, lg: 14, xl: 12 }, // Padding ajustado para dejar espacio al header
-				pb: { xs: 4, sm: 6, md: 8, lg: 10, xl: 12 }, // Padding bottom reducido y progresivo
+				pt: { xs: 9, sm: 11, md: 16, lg: 14, xl: 12 }, // Padding ajustado para dejar espacio al header
+				pb: { xs: 2, sm: 4, md: 8, lg: 10, xl: 12 }, // Padding bottom reducido y progresivo
 				display: "flex",
 				flexDirection: "column",
 			}}
@@ -43,7 +43,7 @@ const HeaderPage = () => {
 						<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
 							<Grid
 								container
-								spacing={{ xs: 1.25, sm: 1.75, md: 2.5, lg: 3 }}
+								spacing={{ xs: 1, sm: 1.5, md: 2.5, lg: 3 }}
 								sx={{ textAlign: "center", maxWidth: { md: 500 } }}
 							>
 								<Grid item xs={12}>
@@ -162,8 +162,8 @@ const HeaderPage = () => {
 											sx={{
 												display: "flex",
 												justifyContent: "center",
-												mt: 1.5,
-												mb: 2,
+												mt: 1,
+												mb: 1.5,
 											}}
 										>
 											<Box
@@ -174,7 +174,7 @@ const HeaderPage = () => {
 													width: "90%",
 													maxWidth: 320,
 													height: "auto",
-													maxHeight: 200,
+													maxHeight: 180,
 													objectFit: "cover",
 													objectPosition: "top left",
 													borderRadius: "12px",
@@ -216,7 +216,7 @@ const HeaderPage = () => {
 										</Typography>
 									</motion.div>
 								</Grid>
-								<Grid item xs={12} sx={{ mt: { xs: 1, md: 1.5 } }}>
+								<Grid item xs={12} sx={{ mt: { xs: 0.5, md: 1.5 } }}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 30 }}
 										animate={{ opacity: 1, translateY: 0 }}
@@ -227,7 +227,7 @@ const HeaderPage = () => {
 											delay: 0.6,
 										}}
 									>
-										<Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }} justifyContent="center">
+										<Grid container spacing={{ xs: 1.5, sm: 2.5, md: 3 }} justifyContent="center">
 											<Grid
 												item
 												sx={{
@@ -350,7 +350,7 @@ const HeaderPage = () => {
 						</Grid>
 
 						{/* Sección de integraciones - ocupa todo el ancho */}
-						<Grid item xs={12} sx={{ mt: { xs: 4, md: 5 } }}>
+						<Grid item xs={12} sx={{ mt: { xs: 2, sm: 3, md: 5 } }}>
 							<motion.div
 								initial={{ opacity: 0, translateY: 30 }}
 								animate={{ opacity: 1, translateY: 0 }}
