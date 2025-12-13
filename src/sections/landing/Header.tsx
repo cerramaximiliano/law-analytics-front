@@ -39,7 +39,11 @@ const HeaderPage = () => {
 					<Grid container alignItems="center" justifyContent="center" spacing={{ xs: 2, md: 4 }}>
 						{/* Columna izquierda - Contenido textual */}
 						<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-							<Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5, lg: 3 }} sx={{ textAlign: "center", maxWidth: { md: 500 } }}>
+							<Grid
+								container
+								spacing={{ xs: 1.5, sm: 2, md: 2.5, lg: 3 }}
+								sx={{ textAlign: "center", maxWidth: { md: 500 }, transform: { md: "translateY(-30px)" } }}
+							>
 								<Grid item xs={12}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 50 }}
@@ -62,7 +66,7 @@ const HeaderPage = () => {
 											<Box
 												component="span"
 												sx={{
-													background: "linear-gradient(90deg, rgb(37, 161, 244), rgb(249, 31, 169), rgb(37, 161, 244)) 0 0 / 400% 100%",
+													background: "linear-gradient(90deg, #3A7BFF, #8A5CFF, #3A7BFF) 0 0 / 400% 100%",
 													color: "transparent",
 													WebkitBackgroundClip: "text",
 													backgroundClip: "text",
@@ -97,6 +101,7 @@ const HeaderPage = () => {
 												fontSize: { xs: "0.875rem", sm: "0.9rem", md: "1rem", lg: "1.0625rem", xl: "1.125rem" },
 												fontWeight: 400,
 												lineHeight: 1.3,
+												mb: { xs: 0, md: 1.5 },
 											}}
 										>
 											Ahorrá horas de trabajo con expedientes, cálculos, agenda y clientes en un solo lugar.
@@ -166,9 +171,10 @@ const HeaderPage = () => {
 										<Typography
 											variant="body2"
 											sx={{
-												mt: 1.5,
-												fontSize: "0.875rem",
-												color: theme.palette.text.secondary,
+												mt: 1,
+												fontSize: "0.8125rem",
+												color: "#6E6E6E",
+												letterSpacing: "0.02em",
 											}}
 										>
 											No requiere tarjeta. Registrate en 1 minuto.
@@ -198,7 +204,7 @@ const HeaderPage = () => {
 										</Typography>
 									</motion.div>
 								</Grid>
-								<Grid item xs={12}>
+								<Grid item xs={12} sx={{ mt: { xs: 1, md: 1.5 } }}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 30 }}
 										animate={{ opacity: 1, translateY: 0 }}
@@ -278,7 +284,7 @@ const HeaderPage = () => {
 									sx={{
 										position: "relative",
 										width: "100%",
-										transform: "scale(1.08) translateY(-15px)",
+										transform: "scale(1.08) translateY(-35px)",
 										transformOrigin: "center center",
 									}}
 								>
@@ -294,7 +300,7 @@ const HeaderPage = () => {
 											width: "90%",
 											height: "auto",
 											borderRadius: "12px",
-											opacity: 0.45,
+											opacity: 0.25,
 											filter: "blur(2px)",
 											boxShadow: theme.shadows[10],
 											zIndex: 0,
