@@ -13,6 +13,8 @@ import PageBackground from "components/PageBackground";
 
 // assets
 import dashboardImage from "assets/images/dashboard.png";
+import logoPJNacion from "assets/images/logos/logo_pj_nacion.png";
+import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
 // ==============================|| LANDING - HeaderPage ||============================== //
 
@@ -26,7 +28,7 @@ const HeaderPage = () => {
 				overflow: "hidden",
 				minHeight: "100vh",
 				bgcolor: theme.palette.background.default, // Fondo consistente con otros componentes
-				pt: { xs: 8, sm: 9, md: 10, lg: 8, xl: 6 }, // Padding ajustado para todas las resoluciones
+				pt: { xs: 10, sm: 12, md: 16, lg: 14, xl: 12 }, // Padding ajustado para dejar espacio al header
 				pb: { xs: 4, sm: 6, md: 8, lg: 10, xl: 12 }, // Padding bottom reducido y progresivo
 				display: "flex",
 				flexDirection: "column",
@@ -41,8 +43,8 @@ const HeaderPage = () => {
 						<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
 							<Grid
 								container
-								spacing={{ xs: 1.5, sm: 2, md: 2.5, lg: 3 }}
-								sx={{ textAlign: "center", maxWidth: { md: 500 }, transform: { md: "translateY(-30px)" } }}
+								spacing={{ xs: 1.25, sm: 1.75, md: 2.5, lg: 3 }}
+								sx={{ textAlign: "center", maxWidth: { md: 500 } }}
 							>
 								<Grid item xs={12}>
 									<motion.div
@@ -109,45 +111,7 @@ const HeaderPage = () => {
 									</motion.div>
 								</Grid>
 
-								{/* Mockup mobile - solo visible en xs y sm */}
-								<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
-									<motion.div
-										initial={{ opacity: 0, translateY: 30 }}
-										animate={{ opacity: 1, translateY: 0 }}
-										transition={{
-											type: "spring",
-											stiffness: 150,
-											damping: 30,
-											delay: 0.3,
-										}}
-									>
-										<Box
-											sx={{
-												display: "flex",
-												justifyContent: "center",
-												mt: 2,
-												mb: 3.5,
-											}}
-										>
-											<Box
-												component="img"
-												src={dashboardImage}
-												alt="Law Analytics Dashboard"
-												sx={{
-													width: "90%",
-													maxWidth: 320,
-													height: "auto",
-													maxHeight: 220,
-													objectFit: "cover",
-													objectPosition: "top left",
-													borderRadius: "12px",
-													boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-												}}
-											/>
-										</Box>
-									</motion.div>
-								</Grid>
-
+								{/* CTA - Botón y microtexto */}
 								<Grid item xs={12}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 30 }}
@@ -156,7 +120,7 @@ const HeaderPage = () => {
 											type: "spring",
 											stiffness: 150,
 											damping: 30,
-											delay: 0.4,
+											delay: 0.3,
 										}}
 									>
 										<Grid container spacing={{ xs: 1, sm: 1.5, md: 2 }} justifyContent="center">
@@ -171,7 +135,7 @@ const HeaderPage = () => {
 										<Typography
 											variant="body2"
 											sx={{
-												mt: 1,
+												mt: 0.75,
 												fontSize: "0.8125rem",
 												color: "#6E6E6E",
 												letterSpacing: "0.02em",
@@ -179,6 +143,45 @@ const HeaderPage = () => {
 										>
 											No requiere tarjeta. Registrate en 1 minuto.
 										</Typography>
+									</motion.div>
+								</Grid>
+
+								{/* Mockup mobile - solo visible en xs y sm */}
+								<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+									<motion.div
+										initial={{ opacity: 0, translateY: 30 }}
+										animate={{ opacity: 1, translateY: 0 }}
+										transition={{
+											type: "spring",
+											stiffness: 150,
+											damping: 30,
+											delay: 0.4,
+										}}
+									>
+										<Box
+											sx={{
+												display: "flex",
+												justifyContent: "center",
+												mt: 1.5,
+												mb: 2,
+											}}
+										>
+											<Box
+												component="img"
+												src={dashboardImage}
+												alt="Law Analytics Dashboard"
+												sx={{
+													width: "90%",
+													maxWidth: 320,
+													height: "auto",
+													maxHeight: 200,
+													objectFit: "cover",
+													objectPosition: "top left",
+													borderRadius: "12px",
+													boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+												}}
+											/>
+										</Box>
 									</motion.div>
 								</Grid>
 								<Grid item xs={12}>
@@ -284,7 +287,7 @@ const HeaderPage = () => {
 									sx={{
 										position: "relative",
 										width: "100%",
-										transform: "scale(1.08) translateY(-35px)",
+										transform: "scale(1.08)",
 										transformOrigin: "center center",
 									}}
 								>
@@ -333,6 +336,148 @@ const HeaderPage = () => {
 											zIndex: 2,
 										}}
 									/>
+								</Box>
+							</motion.div>
+						</Grid>
+
+						{/* Sección de integraciones - ocupa todo el ancho */}
+						<Grid item xs={12} sx={{ mt: { xs: 4, md: 5 } }}>
+							<motion.div
+								initial={{ opacity: 0, translateY: 30 }}
+								animate={{ opacity: 1, translateY: 0 }}
+								transition={{
+									type: "spring",
+									stiffness: 150,
+									damping: 30,
+									delay: 0.7,
+								}}
+							>
+								<Box sx={{ textAlign: "center" }}>
+									<Typography
+										variant="body2"
+										sx={{
+											color: theme.palette.text.secondary,
+											fontSize: "0.75rem",
+											textTransform: "uppercase",
+											letterSpacing: "0.1em",
+											mb: 2,
+										}}
+									>
+										Integrado con
+									</Typography>
+									<Grid container spacing={4} justifyContent="center">
+										<Grid item xs={6} sm="auto">
+											<Box
+												sx={{
+													display: "flex",
+													flexDirection: "column",
+													alignItems: "center",
+													gap: 1,
+												}}
+											>
+												<Box
+													sx={{
+														width: 56,
+														height: 56,
+														borderRadius: 2,
+														bgcolor: "#232D4F",
+														boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														p: 0.75,
+													}}
+												>
+													<Box
+														component="img"
+														src={logoPJNacion}
+														alt="Poder Judicial de la Nación"
+														sx={{
+															width: "100%",
+															height: "100%",
+															objectFit: "contain",
+														}}
+													/>
+												</Box>
+												<Typography
+													variant="caption"
+													sx={{
+														color: theme.palette.text.primary,
+														fontWeight: 500,
+														fontSize: "0.8rem",
+														textAlign: "center",
+														lineHeight: 1.3,
+													}}
+												>
+													Poder Judicial
+													<br />
+													de la Nación
+												</Typography>
+											</Box>
+										</Grid>
+										<Grid item xs={6} sm="auto">
+											<Box
+												sx={{
+													display: "flex",
+													flexDirection: "column",
+													alignItems: "center",
+													gap: 1,
+												}}
+											>
+												<Box
+													sx={{
+														width: 56,
+														height: 56,
+														borderRadius: 2,
+														bgcolor: "#ffffff",
+														border: "1px solid rgba(0, 0, 0, 0.15)",
+														boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														p: 0.75,
+													}}
+												>
+													<Box
+														component="img"
+														src={logoPJBuenosAires}
+														alt="Poder Judicial de la Provincia de Buenos Aires"
+														sx={{
+															width: "100%",
+															height: "100%",
+															objectFit: "contain",
+														}}
+													/>
+												</Box>
+												<Typography
+													variant="caption"
+													sx={{
+														color: theme.palette.text.primary,
+														fontWeight: 500,
+														fontSize: "0.8rem",
+														textAlign: "center",
+														lineHeight: 1.3,
+													}}
+												>
+													Poder Judicial de la
+													<br />
+													Prov. de Buenos Aires
+												</Typography>
+											</Box>
+										</Grid>
+									</Grid>
+									<Typography
+										variant="body2"
+										sx={{
+											mt: 2.5,
+											color: "#6E6E6E",
+											fontSize: "0.875rem",
+											maxWidth: 400,
+											mx: "auto",
+										}}
+									>
+										Consulta expedientes, estados y movimientos en tiempo real desde un solo lugar.
+									</Typography>
 								</Box>
 							</motion.div>
 						</Grid>
