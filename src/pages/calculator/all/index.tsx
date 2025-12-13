@@ -298,8 +298,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 							</Stack>
 							{/* Mostrar intereses: usar lastUpdate si keepUpdated está activo, o el interest normal */}
 							{(() => {
-								const interestValue =
-									data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
+								const interestValue = data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
 								const hasInterest = interestValue !== undefined && interestValue !== null && interestValue > 0;
 
 								if (!hasInterest) return null;
@@ -318,8 +317,7 @@ const CalculationDetails: React.FC<CalculationDetailsProps> = ({ data }) => {
 							})()}
 							{/* Mostrar total si hay intereses */}
 							{(() => {
-								const interestValue =
-									data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
+								const interestValue = data.keepUpdated && data.lastUpdate?.interest ? data.lastUpdate.interest : data.interest;
 								const totalValue = data.keepUpdated && data.lastUpdate?.amount ? data.lastUpdate.amount : data.amount;
 								const hasInterest = interestValue !== undefined && interestValue !== null && interestValue > 0;
 

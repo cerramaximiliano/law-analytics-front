@@ -384,7 +384,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				// Si hay capitalización, el monto final es diferente
 				const montoTotalConIntereses = inputValues.capitalizeInterest
 					? (segmentosAjustados[segmentosAjustados.length - 1]?.capital || montoBase) +
-						(segmentosAjustados[segmentosAjustados.length - 1]?.interest || 0)
+					  (segmentosAjustados[segmentosAjustados.length - 1]?.interest || 0)
 					: montoBase + totalIntereses;
 
 				groups.intereses.push({

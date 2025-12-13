@@ -661,7 +661,7 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				// Si hay capitalización, el monto final es diferente
 				const montoTotalConIntereses = values.capitalizeInterest
 					? (segmentosAjustados[segmentosAjustados.length - 1]?.capital || capitalBase) +
-						(segmentosAjustados[segmentosAjustados.length - 1]?.interest || 0)
+					  (segmentosAjustados[segmentosAjustados.length - 1]?.interest || 0)
 					: capitalBase + totalIntereses;
 
 				resultado.datosIntereses = {

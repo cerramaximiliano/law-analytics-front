@@ -688,12 +688,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 														gap: 1,
 													}}
 												>
-													<Warning2
-														size={18}
-														color={theme.palette.warning.main}
-														variant="Bold"
-														style={{ flexShrink: 0, marginTop: 2 }}
-													/>
+													<Warning2 size={18} color={theme.palette.warning.main} variant="Bold" style={{ flexShrink: 0, marginTop: 2 }} />
 													<Typography variant="body2" color="text.primary">
 														{formatValue(key, value, formatType)}
 													</Typography>

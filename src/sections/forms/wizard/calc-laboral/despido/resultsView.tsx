@@ -621,8 +621,20 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 						<span style="color: #666; font-weight: 500;">${formatValue(header.key, header.value)}</span>
 					</div>
 					<div style="padding: 8px 12px;">
-						${tasa ? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;"><span style="color: #666;">${getLabelForKey(tasa.key)}:</span><span style="font-weight: 500;">${formatValue(tasa.key, tasa.value)}</span></div>` : ""}
-						${interes ? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;"><span style="color: #666;">${getLabelForKey(interes.key)}:</span><span style="font-weight: 500; color: #2e7d32;">${formatValue(interes.key, interes.value)}</span></div>` : ""}
+						${
+							tasa
+								? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;"><span style="color: #666;">${getLabelForKey(
+										tasa.key,
+								  )}:</span><span style="font-weight: 500;">${formatValue(tasa.key, tasa.value)}</span></div>`
+								: ""
+						}
+						${
+							interes
+								? `<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;"><span style="color: #666;">${getLabelForKey(
+										interes.key,
+								  )}:</span><span style="font-weight: 500; color: #2e7d32;">${formatValue(interes.key, interes.value)}</span></div>`
+								: ""
+						}
 					</div>
 				</div>
 			`;
@@ -688,7 +700,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				// Agregar montoIntereses al final
 				const montoInteresesItem = regularItems.find((item) => item.key === "montoIntereses");
 				if (montoInteresesItem) {
-					rowsHtml += createRow(`${getLabelForKey(montoInteresesItem.key)}:`, formatValue(montoInteresesItem.key, montoInteresesItem.value));
+					rowsHtml += createRow(
+						`${getLabelForKey(montoInteresesItem.key)}:`,
+						formatValue(montoInteresesItem.key, montoInteresesItem.value),
+					);
 				}
 			}
 
