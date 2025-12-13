@@ -195,7 +195,16 @@ const HeaderPage = () => {
 											delay: 0.5,
 										}}
 									>
-										<Typography variant="caption" sx={{ mt: 2, display: "block", color: theme.palette.text.secondary }}>
+										<Typography
+											variant="caption"
+											sx={{
+												mt: { xs: 1, md: 2 },
+												mb: { xs: 0.5, md: 0 },
+												display: "block",
+												color: theme.palette.text.secondary,
+												fontSize: { xs: "0.65rem", sm: "0.75rem" },
+											}}
+										>
 											Al continuar, acepta nuestros{" "}
 											<Link component={RouterLink} to="/terms" underline="hover" sx={{ color: theme.palette.primary.main }}>
 												Términos y Condiciones
