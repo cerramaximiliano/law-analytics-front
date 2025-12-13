@@ -1,10 +1,8 @@
-import React from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import { Box, Button, Container, Grid, Rating, Typography, Link } from "@mui/material";
-import { PaletteColor } from "@mui/material/styles";
 
 // third party
 import { motion } from "framer-motion";
@@ -13,30 +11,13 @@ import { motion } from "framer-motion";
 import AnimateButton from "components/@extended/AnimateButton";
 import PageBackground from "components/PageBackground";
 
-// icons
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick } from "iconsax-react";
+// assets
+import dashboardImage from "assets/images/dashboard.png";
 
 // ==============================|| LANDING - HeaderPage ||============================== //
 
-// Define las propiedades de las tecnologías/herramientas
-interface Technology {
-	icon: React.ElementType;
-	color: "primary" | "secondary" | "info" | "success" | "warning" | "error";
-	delay: number;
-}
-
 const HeaderPage = () => {
 	const theme = useTheme();
-
-	// Lista de tecnologías/herramientas con sus respectivos colores
-	const technologies: Technology[] = [
-		{ icon: FolderOpen, color: "warning", delay: 0.8 },
-		{ icon: ProfileCircle, color: "secondary", delay: 0.9 },
-		{ icon: Calendar, color: "info", delay: 1.0 },
-		{ icon: CalendarTick, color: "error", delay: 1.1 },
-		{ icon: Calculator, color: "primary", delay: 1.2 },
-		{ icon: Coin, color: "success", delay: 1.3 },
-	];
 
 	return (
 		<Box
@@ -55,9 +36,10 @@ const HeaderPage = () => {
 			<Container sx={{ flex: 1, display: "flex", flexDirection: "column", px: { xs: 2, sm: 3 } }}>
 				{/* Contenido principal centrado verticalmente */}
 				<Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
-					<Grid container alignItems="center" justifyContent="center" spacing={2}>
-						<Grid item xs={12} md={9}>
-							<Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5, lg: 3 }} sx={{ textAlign: "center" }}>
+					<Grid container alignItems="center" justifyContent="center" spacing={{ xs: 2, md: 4 }}>
+						{/* Columna izquierda - Contenido textual */}
+						<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+							<Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5, lg: 3 }} sx={{ textAlign: "center", maxWidth: { md: 500 } }}>
 								<Grid item xs={12}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 50 }}
@@ -71,12 +53,12 @@ const HeaderPage = () => {
 										<Typography
 											variant="h1"
 											sx={{
-												fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2.25rem", lg: "2.75rem", xl: "3.4375rem" },
+												fontSize: { xs: "1.35rem", sm: "1.65rem", md: "2.25rem", lg: "2.75rem", xl: "3.4375rem" },
 												fontWeight: 700,
 												lineHeight: 1.1,
 											}}
 										>
-											<span>Explore las</span>
+											<span>Automatizá tu </span>
 											<Box
 												component="span"
 												sx={{
@@ -92,38 +74,75 @@ const HeaderPage = () => {
 													},
 												}}
 											>
-												<span> Herramientas Legales </span>
+												Estudio Jurídico
 											</Box>
-											<span> más Potentes del Mercado</span>
 										</Typography>
 									</motion.div>
 								</Grid>
-								<Grid container justifyContent="center" item xs={12}>
-									<Grid item xs={12} sm={10} md={8}>
-										<motion.div
-											initial={{ opacity: 0, translateY: 30 }}
-											animate={{ opacity: 1, translateY: 0 }}
-											transition={{
-												type: "spring",
-												stiffness: 150,
-												damping: 30,
-												delay: 0.2,
+								<Grid item xs={12}>
+									<motion.div
+										initial={{ opacity: 0, translateY: 30 }}
+										animate={{ opacity: 1, translateY: 0 }}
+										transition={{
+											type: "spring",
+											stiffness: 150,
+											damping: 30,
+											delay: 0.2,
+										}}
+									>
+										<Typography
+											variant="h6"
+											component="div"
+											sx={{
+												fontSize: { xs: "0.875rem", sm: "0.9rem", md: "1rem", lg: "1.0625rem", xl: "1.125rem" },
+												fontWeight: 400,
+												lineHeight: 1.3,
 											}}
 										>
-											<Typography
-												variant="h6"
-												component="div"
-												sx={{
-													fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.9rem", lg: "0.95rem", xl: "1rem" },
-													fontWeight: 400,
-													lineHeight: 1.3,
-												}}
-											>
-												Law||Analytics es una de las herramientas legales más potentes del mercado legal hoy disponible.
-											</Typography>
-										</motion.div>
-									</Grid>
+											Ahorrá horas de trabajo con expedientes, cálculos, agenda y clientes en un solo lugar.
+										</Typography>
+									</motion.div>
 								</Grid>
+
+								{/* Mockup mobile - solo visible en xs y sm */}
+								<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+									<motion.div
+										initial={{ opacity: 0, translateY: 30 }}
+										animate={{ opacity: 1, translateY: 0 }}
+										transition={{
+											type: "spring",
+											stiffness: 150,
+											damping: 30,
+											delay: 0.3,
+										}}
+									>
+										<Box
+											sx={{
+												display: "flex",
+												justifyContent: "center",
+												mt: 2,
+												mb: 3.5,
+											}}
+										>
+											<Box
+												component="img"
+												src={dashboardImage}
+												alt="Law Analytics Dashboard"
+												sx={{
+													width: "90%",
+													maxWidth: 320,
+													height: "auto",
+													maxHeight: 220,
+													objectFit: "cover",
+													objectPosition: "top left",
+													borderRadius: "12px",
+													boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+												}}
+											/>
+										</Box>
+									</motion.div>
+								</Grid>
+
 								<Grid item xs={12}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 30 }}
@@ -139,11 +158,21 @@ const HeaderPage = () => {
 											<Grid item>
 												<AnimateButton>
 													<Button component={RouterLink} to="/register" size="large" color="primary" variant="contained">
-														Registrarse Gratis
+														Probar Gratis
 													</Button>
 												</AnimateButton>
 											</Grid>
 										</Grid>
+										<Typography
+											variant="body2"
+											sx={{
+												mt: 1.5,
+												fontSize: "0.875rem",
+												color: theme.palette.text.secondary,
+											}}
+										>
+											No requiere tarjeta. Registrate en 1 minuto.
+										</Typography>
 									</motion.div>
 								</Grid>
 								<Grid item xs={12}>
@@ -232,66 +261,75 @@ const HeaderPage = () => {
 								</Grid>
 							</Grid>
 						</Grid>
-					</Grid>
-				</Box>
 
-				{/* Sección de iconos en la parte inferior, dentro del mismo container */}
-				<Box sx={{ mt: "auto", mb: 0, py: { xs: 0.5, sm: 1, md: 1.5, lg: 2 } }}>
-					<Grid
-						container
-						spacing={2}
-						justifyContent="center"
-						sx={{
-							maxWidth: 900,
-							mx: "auto",
-						}}
-					>
-						{technologies.map((tech, index) => (
-							<Grid item key={index} xs={4} sm={2} sx={{ textAlign: "center" }}>
-								<motion.div
-									initial={{ opacity: 0, translateY: 20 }}
-									animate={{ opacity: 1, translateY: 0 }}
-									transition={{
-										type: "spring",
-										stiffness: 150,
-										damping: 30,
-										delay: 0.6 + index * 0.1, // Secuencia de aparición más pronunciada
+						{/* Columna derecha - Imagen del dashboard */}
+						<Grid item xs={12} md={6} sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", overflow: "visible" }}>
+							<motion.div
+								initial={{ opacity: 0, translateX: 50 }}
+								animate={{ opacity: 1, translateX: 0 }}
+								transition={{
+									type: "spring",
+									stiffness: 150,
+									damping: 30,
+									delay: 0.3,
+								}}
+							>
+								<Box
+									sx={{
+										position: "relative",
+										width: "100%",
+										transform: "scale(1.08) translateY(-15px)",
+										transformOrigin: "center center",
 									}}
 								>
+									{/* Imagen de fondo (segunda capa - efecto profundidad) */}
+									<Box
+										component="img"
+										src={dashboardImage}
+										alt=""
+										sx={{
+											position: "absolute",
+											top: -20,
+											right: -25,
+											width: "90%",
+											height: "auto",
+											borderRadius: "12px",
+											opacity: 0.45,
+											filter: "blur(2px)",
+											boxShadow: theme.shadows[10],
+											zIndex: 0,
+										}}
+									/>
+									{/* Imagen principal */}
+									<Box
+										component="img"
+										src={dashboardImage}
+										alt="Law Analytics Dashboard"
+										sx={{
+											width: "100%",
+											height: "auto",
+											borderRadius: "12px",
+											boxShadow: theme.shadows[20],
+											position: "relative",
+											zIndex: 1,
+										}}
+									/>
+									{/* Fade inferior */}
 									<Box
 										sx={{
-											display: "flex",
-											justifyContent: "center",
-											alignItems: "center",
-											flexDirection: "column",
-											p: 1,
+											position: "absolute",
+											bottom: 0,
+											left: 0,
+											right: 0,
+											height: 80,
+											background: `linear-gradient(to bottom, transparent, ${theme.palette.background.default})`,
+											borderRadius: "0 0 12px 12px",
+											zIndex: 2,
 										}}
-									>
-										<Box
-											sx={{
-												p: { xs: 0.75, sm: 1, md: 1.25, lg: 1.5 },
-												borderRadius: "50%",
-												bgcolor: alpha((theme.palette[tech.color] as PaletteColor).main, 0.12),
-												display: "flex",
-												justifyContent: "center",
-												alignItems: "center",
-												mb: { xs: 0, sm: 0.5, md: 1 },
-												width: { xs: 40, sm: 48, md: 56, lg: 64 },
-												height: { xs: 40, sm: 48, md: 56, lg: 64 },
-											}}
-										>
-											<tech.icon
-												size={24}
-												variant="Bulk"
-												style={{
-													color: (theme.palette[tech.color] as PaletteColor).main,
-												}}
-											/>
-										</Box>
-									</Box>
-								</motion.div>
-							</Grid>
-						))}
+									/>
+								</Box>
+							</motion.div>
+						</Grid>
 					</Grid>
 				</Box>
 			</Container>
