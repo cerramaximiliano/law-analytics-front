@@ -12,6 +12,7 @@ import { dispatch, RootState } from "store";
 import { useNavigate } from "react-router-dom";
 import useAuth from "hooks/useAuth";
 import { openSnackbar } from "store/reducers/snackbar";
+import { pushGTMEvent, GTMEvents } from "utils/gtm";
 
 // Define el tipo para el modo
 type VerificationMode = "register" | "reset";
@@ -160,6 +161,11 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 						setIsLoggedIn(true);
 						setNeedsVerification(false);
 					}
+
+					// Track registration complete event in GTM
+					pushGTMEvent(GTMEvents.REGISTER_COMPLETE, {
+						method: "email",
+					});
 
 					navigate("/dashboard/default");
 					if (onVerificationSuccess) onVerificationSuccess();
