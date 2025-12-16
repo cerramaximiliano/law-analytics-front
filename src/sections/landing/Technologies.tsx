@@ -11,6 +11,8 @@ import { FolderOpen, Profile2User, Calendar, Calculator, Chart, TaskSquare, Cale
 // project-imports
 import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
+import { useLandingAnalytics } from "hooks/useLandingAnalytics";
+import { FeatureNames } from "utils/gtm";
 
 interface TechnologyItem {
 	iconComponent: React.ElementType;
@@ -19,6 +21,7 @@ interface TechnologyItem {
 	cta: string;
 	colorKey: "primary" | "secondary" | "error" | "warning" | "info" | "success";
 	mobileOrder: number;
+	featureKey: string;
 }
 
 const TechnologiesList: TechnologyItem[] = [
@@ -28,7 +31,8 @@ const TechnologiesList: TechnologyItem[] = [
 		description: "Centralizá causas, movimientos, clientes y estados en un solo panel.",
 		cta: "Organizar mis expedientes",
 		colorKey: "warning",
-		mobileOrder: 1, // Expedientes
+		mobileOrder: 1,
+		featureKey: FeatureNames.CARPETAS,
 	},
 	{
 		iconComponent: Profile2User,
@@ -36,7 +40,8 @@ const TechnologiesList: TechnologyItem[] = [
 		description: "Datos, causas, historial y seguimiento en un solo lugar.",
 		cta: "Centralizar clientes",
 		colorKey: "secondary",
-		mobileOrder: 6, // Clientes (después del texto intermedio)
+		mobileOrder: 6,
+		featureKey: FeatureNames.CONTACTOS,
 	},
 	{
 		iconComponent: Calendar,
@@ -44,7 +49,8 @@ const TechnologiesList: TechnologyItem[] = [
 		description: "Agenda integrada, alertas automáticas y sincronización con Google Calendar.",
 		cta: "Controlar vencimientos",
 		colorKey: "info",
-		mobileOrder: 2, // Vencimientos
+		mobileOrder: 2,
+		featureKey: FeatureNames.CALENDARIO,
 	},
 	{
 		iconComponent: Calculator,
@@ -52,7 +58,8 @@ const TechnologiesList: TechnologyItem[] = [
 		description: "Despidos, SAC, intereses y topes legales siempre actualizados.",
 		cta: "Calcular ahora",
 		colorKey: "primary",
-		mobileOrder: 3, // Cálculos
+		mobileOrder: 3,
+		featureKey: FeatureNames.CALCULOS,
 	},
 	{
 		iconComponent: Chart,
@@ -60,7 +67,8 @@ const TechnologiesList: TechnologyItem[] = [
 		description: "Cálculo automático con tasas BCRA, actas y criterios judiciales.",
 		cta: "Actualizar montos",
 		colorKey: "success",
-		mobileOrder: 4, // Intereses (espacio para Integración en posición 4 si se agrega)
+		mobileOrder: 4,
+		featureKey: FeatureNames.INTERESES,
 	},
 	{
 		iconComponent: TaskSquare,
@@ -68,7 +76,8 @@ const TechnologiesList: TechnologyItem[] = [
 		description: "Tareas, prioridades, responsables y plazos bien claros.",
 		cta: "Gestionar tareas",
 		colorKey: "error",
-		mobileOrder: 7, // Tareas (después de Clientes)
+		mobileOrder: 7,
+		featureKey: FeatureNames.TAREAS,
 	},
 ];
 
@@ -85,6 +94,7 @@ const FeaturedCard = {
 
 const TechnologiesPage = () => {
 	const theme = useTheme();
+	const { trackCitasCTA, trackPruebaPagarCTA, trackFeature } = useLandingAnalytics();
 
 	return (
 		<Container>
@@ -141,6 +151,7 @@ const TechnologiesPage = () => {
 							>
 								<FadeInWhenVisible>
 									<MainCard
+										onClick={() => trackFeature(tech.featureKey)}
 										sx={{
 											height: "100%",
 											transition: "all 0.3s ease",
@@ -321,6 +332,7 @@ const TechnologiesPage = () => {
 											component={RouterLink}
 											to="/register"
 											className="cta-link"
+											onClick={trackCitasCTA}
 											sx={{
 												display: "flex",
 												alignItems: "center",
@@ -365,6 +377,7 @@ const TechnologiesPage = () => {
 								variant="contained"
 								color="primary"
 								size="large"
+								onClick={trackPruebaPagarCTA}
 								sx={{
 									px: 4,
 									py: 1.5,

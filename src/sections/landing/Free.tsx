@@ -6,6 +6,7 @@ import { Box, Button, Container, Grid, Typography } from "@mui/material";
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
+import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 // assets
 import { ExportSquare } from "iconsax-react";
 
@@ -13,6 +14,8 @@ import { ExportSquare } from "iconsax-react";
 
 const FreePage = () => {
 	const theme = useTheme();
+	const { trackPruebaPagarCTA } = useLandingAnalytics();
+
 	return (
 		<Container>
 			<Grid container spacing={3} alignItems="center" justifyContent="center" sx={{ mt: { md: 10, xs: 2.5 }, mb: { md: 10, xs: 2.5 } }}>
@@ -42,7 +45,15 @@ const FreePage = () => {
 					<FadeInWhenVisible>
 						<Grid container spacing={2} justifyContent="end" alignItems="center">
 							<Grid item>
-								<Button variant="contained" color="primary" size="large" startIcon={<ExportSquare />} component={RouterLink} to="/register">
+								<Button
+									variant="contained"
+									color="primary"
+									size="large"
+									startIcon={<ExportSquare />}
+									component={RouterLink}
+									to="/register"
+									onClick={trackPruebaPagarCTA}
+								>
 									Registrarse Gratis
 								</Button>
 							</Grid>

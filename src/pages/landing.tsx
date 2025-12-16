@@ -9,6 +9,8 @@ import Testimonial from "sections/landing/Testimonial";
 //import Partner from "sections/landing/Partner";
 import ContactUs from "sections/landing/ContactUs";
 import SEO from "components/SEO/SEO";
+import SectionTracker from "components/analytics/SectionTracker";
+import { LandingSections } from "utils/gtm";
 
 // ==============================|| SAMPLE PAGE ||============================== //
 
@@ -16,14 +18,26 @@ const Landing = () => {
 	return (
 		<>
 			<SEO path="/" />
-			<Hero />
-			<Technologies />
-			<Combo />
+			<SectionTracker sectionName={LandingSections.HERO}>
+				<Hero />
+			</SectionTracker>
+			<SectionTracker sectionName={LandingSections.HERRAMIENTAS}>
+				<Technologies />
+			</SectionTracker>
+			<SectionTracker sectionName={LandingSections.INTEGRACIONES}>
+				<Combo />
+			</SectionTracker>
 			{/* <Apps /> */}
-			<Free />
-			<Testimonial />
+			<SectionTracker sectionName={LandingSections.PRUEBA_PAGAR}>
+				<Free />
+			</SectionTracker>
+			<SectionTracker sectionName={LandingSections.TESTIMONIOS}>
+				<Testimonial />
+			</SectionTracker>
 			{/* <Partner /> */}
-			<ContactUs />
+			<SectionTracker sectionName={LandingSections.CONTACTO}>
+				<ContactUs />
+			</SectionTracker>
 		</>
 	);
 };

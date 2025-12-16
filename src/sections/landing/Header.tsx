@@ -1,7 +1,7 @@
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
-import { alpha, useTheme } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import { Box, Button, Container, Grid, Rating, Typography, Link } from "@mui/material";
 
 // third party
@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 // project imports
 import AnimateButton from "components/@extended/AnimateButton";
 import PageBackground from "components/PageBackground";
+import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 
 // assets
 import dashboardImage from "assets/images/dashboard.png";
@@ -20,6 +21,7 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
 const HeaderPage = () => {
 	const theme = useTheme();
+	const { trackHeroCTA } = useLandingAnalytics();
 
 	return (
 		<Box
@@ -126,7 +128,14 @@ const HeaderPage = () => {
 										<Grid container spacing={{ xs: 1, sm: 1.5, md: 2 }} justifyContent="center">
 											<Grid item>
 												<AnimateButton>
-													<Button component={RouterLink} to="/register" size="large" color="primary" variant="contained">
+													<Button
+														component={RouterLink}
+														to="/register"
+														size="large"
+														color="primary"
+														variant="contained"
+														onClick={trackHeroCTA}
+													>
 														Probar Gratis
 													</Button>
 												</AnimateButton>
