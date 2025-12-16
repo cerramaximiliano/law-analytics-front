@@ -36,7 +36,7 @@ const FreePage = () => {
 								</Typography>
 							</Grid>
 							<Grid item xs={12}>
-								<Typography>Accede a miles de informes y datos gratuitos que usamos en nuestras aplicaciones.</Typography>
+								<Typography>Accede a múltiples recursos gratuitos.</Typography>
 							</Grid>
 						</Grid>
 					</FadeInWhenVisible>
