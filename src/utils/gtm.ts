@@ -32,6 +32,10 @@ export const GTMEvents = {
 	CTA_CLICK_PRUEBA_PAGAR: "cta_click_prueba_pagar",
 	FEATURE_INTEREST: "feature_interest",
 	HIGH_SCROLL_NO_CTA: "high_scroll_no_cta",
+	// Feature modal events
+	FEATURE_MODAL_OPEN: "feature_modal_open",
+	FEATURE_MODAL_CLOSE: "feature_modal_close",
+	FEATURE_MODAL_CTA_CLICK: "feature_modal_cta_click",
 } as const;
 
 // Landing page section names for scroll tracking
@@ -105,4 +109,31 @@ export const getUTMSource = (): string | null => {
 	if (typeof window === "undefined") return null;
 	const params = new URLSearchParams(window.location.search);
 	return params.get("utm_source");
+};
+
+/**
+ * Track feature modal open
+ */
+export const trackFeatureModalOpen = (featureName: string): void => {
+	pushGTMEvent(GTMEvents.FEATURE_MODAL_OPEN, {
+		feature: featureName,
+	});
+};
+
+/**
+ * Track feature modal close
+ */
+export const trackFeatureModalClose = (featureName: string): void => {
+	pushGTMEvent(GTMEvents.FEATURE_MODAL_CLOSE, {
+		feature: featureName,
+	});
+};
+
+/**
+ * Track feature modal CTA click
+ */
+export const trackFeatureModalCTAClick = (featureName: string): void => {
+	pushGTMEvent(GTMEvents.FEATURE_MODAL_CTA_CLICK, {
+		feature: featureName,
+	});
 };

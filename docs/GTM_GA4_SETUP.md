@@ -36,6 +36,26 @@ Se dispara cuando un usuario de Instagram hace scroll hasta "herramientas" pero 
 |--------|-----------|-------|
 | `high_scroll_no_cta` | `source` | `instagram` |
 
+### 5. Eventos de Feature Modal (Próximos a implementar)
+Se disparan cuando el usuario interactúa con los modals de detalle de herramientas.
+
+| Evento | Parámetro | Cuándo se dispara |
+|--------|-----------|-------------------|
+| `feature_modal_open` | `feature` | Al abrir el modal de una herramienta |
+| `feature_modal_close` | `feature` | Al cerrar el modal |
+| `feature_modal_cta_click` | `feature` | Al hacer click en el CTA del modal |
+
+> Ver documento completo: [FEATURE_MODALS_IMPLEMENTATION.md](./FEATURE_MODALS_IMPLEMENTATION.md)
+
+---
+
+## Documentos Relacionados
+
+| Documento | Contenido |
+|-----------|-----------|
+| [GA4_FUNNELS.md](./GA4_FUNNELS.md) | Todos los funnels de análisis configurados y recomendados |
+| [FEATURE_MODALS_IMPLEMENTATION.md](./FEATURE_MODALS_IMPLEMENTATION.md) | Implementación de modals de features con eventos |
+
 ---
 
 ## PARTE 1: Configuración en Google Tag Manager
@@ -232,6 +252,19 @@ Los eventos personalizados pueden tardar hasta 48 horas en aparecer. Para verifi
 > ⚠️ **IMPORTANTE**: Este paso requiere que los eventos ya se hayan disparado al menos una vez.
 > Esperar 24-48 horas después de publicar GTM y tener tráfico en la landing.
 
+### ¿Qué mide este funnel?
+
+Este funnel mide el **journey del usuario** en la landing page:
+
+| Paso | Qué mide | Insight |
+|------|----------|---------|
+| Visita Landing | Usuarios que llegan a la página | Tráfico total |
+| Ve Herramientas | Usuarios que scrollean y ven las cards | Interés inicial - ¿el hero enganchó? |
+| Ve Prueba Pagar | Usuarios que llegan al CTA final | Engagement profundo - ¿las herramientas convencen? |
+| Click CTA | Usuarios que hacen click en registrarse | Conversión - ¿el CTA es efectivo? |
+
+**Objetivo:** Identificar en qué punto del journey se pierden los usuarios para optimizar esa sección.
+
 ### Paso 1: Crear Nueva Exploración
 
 1. En GA4, en el menú izquierdo click en **Explorar**
@@ -256,35 +289,30 @@ Los eventos personalizados pueden tardar hasta 48 horas en aparecer. Para verifi
 4. Selecciona: Evento → `page_view`
 5. (Opcional) Agregar parámetro: `page_location` contiene tu URL
 
-#### Paso 2 - Ve Hero
+#### Paso 2 - Ve Herramientas
 1. Click en **Agregar paso**
-2. Nombre: `Ve Hero`
+2. Nombre: `Ve Herramientas`
 3. Condición: Evento → `scroll_section`
 4. Click en **Agregar parámetro**
 5. Parámetro: `section_name`
 6. Operador: `es exactamente`
-7. Valor: `hero`
+7. Valor: `herramientas`
 
-#### Paso 3 - Ve Herramientas
-1. Click en **Agregar paso**
-2. Nombre: `Ve Herramientas`
-3. Condición: Evento → `scroll_section`
-4. Agregar parámetro:
-   - `section_name` es exactamente `herramientas`
-
-#### Paso 4 - Ve Prueba/Pagar
+#### Paso 3 - Ve Prueba/Pagar
 1. Click en **Agregar paso**
 2. Nombre: `Ve Prueba Pagar`
 3. Condición: Evento → `scroll_section`
 4. Agregar parámetro:
    - `section_name` es exactamente `prueba_pagar`
 
-#### Paso 5 - Click CTA
+#### Paso 4 - Click CTA
 1. Click en **Agregar paso**
 2. Nombre: `Click CTA Registro`
 3. Condición: Evento → `cta_click_prueba_pagar`
 
 5. Click en **Aplicar**
+
+> **Nota:** No incluimos un paso para "hero" porque el hero ya está visible al cargar la página. El `page_view` ya indica que el usuario vio el hero. Solo trackeamos scroll a secciones que requieren desplazamiento.
 
 ### Paso 4: Agregar Desglose
 
@@ -362,20 +390,31 @@ En la columna "Configuración":
 ## Cómo Interpretar el Funnel
 
 ```
-Visita Landing  →  Ve Hero  →  Ve Herramientas  →  Ve Prueba Pagar  →  Click CTA
-    1000           950 (95%)     700 (74%)          400 (57%)          50 (12%)
+Visita Landing  →  Ve Herramientas  →  Ve Prueba Pagar  →  Click CTA
+    1000              700 (70%)           400 (57%)         50 (12%)
 ```
 
 ### Qué significa cada drop-off:
 
-| Caída | Posible problema | Acción sugerida |
-|-------|------------------|-----------------|
-| Hero → Herramientas alta | El hero no engancha | Mejorar propuesta de valor |
-| Herramientas → Prueba/Pagar alta | Las cards no convencen | Revisar copy de beneficios |
-| Prueba/Pagar → Click CTA alta | El CTA no es claro | Mejorar botón y microcopy |
+| Caída | % Abandono | Posible problema | Acción sugerida |
+|-------|------------|------------------|-----------------|
+| Visita → Herramientas | Alto (>40%) | El hero no engancha, no scrollean | Mejorar propuesta de valor, reducir fricción visual |
+| Herramientas → Prueba/Pagar | Alto (>50%) | Las cards no convencen | Revisar copy de beneficios, destacar dolor/solución |
+| Prueba/Pagar → Click CTA | Alto (>80%) | El CTA no es claro o no genera urgencia | Mejorar botón, agregar prueba social, microcopy |
+
+### Ejemplo de análisis:
+
+**Escenario:** 1000 visitas, 700 ven herramientas, 400 ven prueba/pagar, 50 hacen click
+
+- **Tasa de scroll inicial:** 70% → El hero funciona bien
+- **Tasa de engagement profundo:** 57% de los que scrollean llegan al CTA → Las herramientas enganchan
+- **Tasa de conversión del CTA:** 12.5% → El CTA necesita mejoras
+
+**Acción:** Enfocarse en mejorar el CTA (botón, texto, urgencia)
 
 ### Métricas clave a monitorear:
 
-1. **Tasa de conversión total**: Click CTA / Visitas
-2. **Feature más interesante**: Mayor cantidad de `feature_interest`
-3. **Diferencia Instagram**: Comparar funnel Instagram vs orgánico
+1. **Tasa de conversión total**: Click CTA / Visitas (objetivo: >5%)
+2. **Tasa de scroll**: Ve Herramientas / Visitas (objetivo: >60%)
+3. **Feature más interesante**: Mayor cantidad de `feature_interest`
+4. **Diferencia Instagram**: Comparar funnel Instagram vs orgánico

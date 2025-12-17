@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 // material-ui
 import { Badge, Box, Button, Container, Grid, Link, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -11,6 +11,7 @@ import { FolderOpen, Profile2User, Calendar, Calculator, Chart, TaskSquare, Cale
 // project-imports
 import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
+import FeatureModal from "components/FeatureModal";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 import { FeatureNames } from "utils/gtm";
 
@@ -96,6 +97,23 @@ const TechnologiesPage = () => {
 	const theme = useTheme();
 	const { trackCitasCTA, trackPruebaPagarCTA, trackFeature } = useLandingAnalytics();
 
+	// Modal state
+	const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
+	const [modalOpen, setModalOpen] = useState(false);
+
+	const handleCardClick = useCallback(
+		(featureKey: string) => {
+			trackFeature(featureKey);
+			setSelectedFeature(featureKey);
+			setModalOpen(true);
+		},
+		[trackFeature],
+	);
+
+	const handleModalClose = useCallback(() => {
+		setModalOpen(false);
+	}, []);
+
 	return (
 		<Container>
 			<Grid container spacing={3} alignItems="center" justifyContent="center" sx={{ mt: { md: 15, xs: 2.5 }, mb: { md: 10, xs: 2.5 } }}>
@@ -151,7 +169,7 @@ const TechnologiesPage = () => {
 							>
 								<FadeInWhenVisible>
 									<MainCard
-										onClick={() => trackFeature(tech.featureKey)}
+										onClick={() => handleCardClick(tech.featureKey)}
 										sx={{
 											height: "100%",
 											transition: "all 0.3s ease",
@@ -395,6 +413,9 @@ const TechnologiesPage = () => {
 					</FadeInWhenVisible>
 				</Grid>
 			</Grid>
+
+			{/* Feature Modal */}
+			<FeatureModal open={modalOpen} onClose={handleModalClose} featureKey={selectedFeature} />
 		</Container>
 	);
 };
