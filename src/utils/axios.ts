@@ -7,6 +7,7 @@ const baseURL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 const axiosInstance = axios.create({
 	baseURL,
 	timeout: 30000,
+	withCredentials: true, // Send cookies with requests
 	headers: {
 		"Content-Type": "application/json",
 	},
