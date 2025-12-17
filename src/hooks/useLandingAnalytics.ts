@@ -17,7 +17,7 @@ if (typeof window !== "undefined") {
 		() => {
 			userHasScrolled = true;
 		},
-		{ once: true, passive: true }
+		{ once: true, passive: true },
 	);
 }
 
@@ -45,7 +45,7 @@ export const useSectionTracking = (sectionName: string, threshold = 0.5) => {
 					}
 				});
 			},
-			{ threshold }
+			{ threshold },
 		);
 
 		observer.observe(element);

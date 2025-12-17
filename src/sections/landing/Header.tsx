@@ -43,11 +43,7 @@ const HeaderPage = () => {
 					<Grid container alignItems="center" justifyContent="center" spacing={{ xs: 2, md: 4 }}>
 						{/* Columna izquierda - Contenido textual */}
 						<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-							<Grid
-								container
-								spacing={{ xs: 1, sm: 1.5, md: 2.5, lg: 3 }}
-								sx={{ textAlign: "center", maxWidth: { md: 500 } }}
-							>
+							<Grid container spacing={{ xs: 1, sm: 1.5, md: 2.5, lg: 3 }} sx={{ textAlign: "center", maxWidth: { md: 500 } }}>
 								<Grid item xs={12}>
 									<motion.div
 										initial={{ opacity: 0, translateY: 50 }}
