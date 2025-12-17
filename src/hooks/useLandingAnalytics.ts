@@ -9,8 +9,21 @@ import {
 	LandingSections,
 } from "utils/gtm";
 
+// Track if user has scrolled at least once
+let userHasScrolled = false;
+if (typeof window !== "undefined") {
+	window.addEventListener(
+		"scroll",
+		() => {
+			userHasScrolled = true;
+		},
+		{ once: true, passive: true }
+	);
+}
+
 /**
  * Hook to track when a section becomes visible using Intersection Observer
+ * Only fires after user has actually scrolled (not on initial page load)
  * @param sectionName - Name of the section to track
  * @param threshold - Visibility threshold (0-1), default 0.5 (50% visible)
  */
@@ -25,7 +38,8 @@ export const useSectionTracking = (sectionName: string, threshold = 0.5) => {
 		const observer = new IntersectionObserver(
 			(entries) => {
 				entries.forEach((entry) => {
-					if (entry.isIntersecting && !hasTracked.current) {
+					// Only track if user has scrolled and section is visible
+					if (entry.isIntersecting && !hasTracked.current && userHasScrolled) {
 						trackScrollSection(sectionName);
 						hasTracked.current = true;
 					}
