@@ -28,7 +28,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 			"Centralizá todas tus causas en un solo lugar. Gestioná movimientos, estados, plazos y documentos sin perder tiempo buscando información.",
 		benefits: [
 			"Vista unificada de todas tus causas activas",
-			"Seguimiento automático de movimientos",
+			"Seguimiento automático de movimientos en PJN y MEV",
 			"Alertas de vencimientos y plazos",
 			"Historial completo de cada expediente",
 		],
@@ -40,12 +40,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		title: "Clientes Centralizados",
 		description:
 			"Toda la información de tus clientes en un solo lugar. Datos de contacto, causas asociadas, historial de interacciones y seguimiento personalizado.",
-		benefits: [
-			"Ficha completa de cada cliente",
-			"Causas asociadas a cada cliente",
-			"Historial de comunicaciones",
-			"Búsqueda rápida por nombre o documento",
-		],
+		benefits: ["Ficha completa de cada cliente", "Causas asociadas a cada cliente", "Búsqueda rápida por nombre o documento"],
 		cta: "Probar Clientes Gratis",
 		iconComponent: Profile2User,
 		colorKey: "secondary",
@@ -82,7 +77,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		title: "Actualización de Montos",
 		description: "Actualizá montos en segundos con tasas BCRA, actas y criterios judiciales. Cálculo automático con diferentes métodos.",
 		benefits: [
-			"Tasas BCRA actualizadas diariamente",
+			"Tasas BCRA y BNA actualizadas diariamente",
 			"Múltiples métodos de cálculo",
 			"Exportación de liquidaciones",
 			"Historial de cálculos realizados",
@@ -94,12 +89,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 	[FeatureNames.TAREAS]: {
 		title: "Gestión de Tareas",
 		description: "Organizá el trabajo diario del estudio. Asigná tareas, definí prioridades y controlá plazos de manera simple.",
-		benefits: [
-			"Asignación de tareas por responsable",
-			"Prioridades y fechas límite",
-			"Vista Kanban y lista",
-			"Notificaciones de vencimiento",
-		],
+		benefits: ["Prioridades y fechas límite", "Notificaciones de vencimiento"],
 		cta: "Probar Tareas Gratis",
 		iconComponent: TaskSquare,
 		colorKey: "error",
