@@ -29,7 +29,9 @@ const UnsubscribePage = () => {
 
 		setLoading(true);
 		try {
-			const response = await axios.delete(`/api/newsletter/${encodeURIComponent(email)}`);
+			const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}`, {
+				withCredentials: true,
+			});
 
 			if (response.data.success) {
 				setSuccess(true);
