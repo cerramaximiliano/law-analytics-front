@@ -1,12 +1,14 @@
 import React, { useEffect, useCallback, useRef } from "react";
 import { Link as RouterLink } from "react-router-dom";
 // material-ui
-import { Box, Button, Dialog, IconButton, Typography } from "@mui/material";
+import { Box, Button, CardMedia, Dialog, IconButton, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 // third party
 import { motion, AnimatePresence } from "framer-motion";
 // icons
 import { FolderOpen, Profile2User, Calendar, Calculator, Chart, TaskSquare, CalendarTick, CloseCircle, TickCircle } from "iconsax-react";
+// images
+import folderMovementsImg from "assets/images/folder_movements.png";
 // tracking
 import { trackFeatureModalOpen, trackFeatureModalClose, trackFeatureModalCTAClick, trackFeatureModalScroll } from "utils/gtm";
 import { FeatureNames } from "utils/gtm";
@@ -18,22 +20,23 @@ interface FeatureModalContent {
 	cta: string;
 	iconComponent: React.ElementType;
 	colorKey: "primary" | "secondary" | "error" | "warning" | "info" | "success";
+	mockupImage?: string;
 }
 
 // Contenido de cada feature para el modal
 export const FeatureModalData: Record<string, FeatureModalContent> = {
 	[FeatureNames.CARPETAS]: {
-		title: "Expedientes Organizados",
-		description:
-			"Centralizá todas tus causas en un solo lugar. Gestioná movimientos, estados, plazos y documentos sin perder tiempo buscando información.",
+		title: "Expedientes organizados, sin esfuerzo",
+		description: "Todo tu estudio en un solo lugar, sincronizado con el Poder Judicial.",
 		benefits: [
 			"Vista unificada de todas tus causas activas",
-			"Seguimiento automático de movimientos en PJN y MEV",
+			"Movimientos automáticos desde PJN y MEV",
 			"Alertas de vencimientos y plazos",
 		],
-		cta: "Probar Expedientes Gratis",
+		cta: "Probar con mis expedientes",
 		iconComponent: FolderOpen,
 		colorKey: "warning",
+		mockupImage: folderMovementsImg,
 	},
 	[FeatureNames.CONTACTOS]: {
 		title: "Clientes Centralizados",
@@ -214,61 +217,99 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 						},
 					}}
 				>
-					<Box ref={contentRef} sx={{ position: "relative", p: { xs: 3, sm: 4 }, maxHeight: "80vh", overflowY: "auto" }}>
-						{/* Close button */}
-						<IconButton
-							onClick={handleClose}
+					<Box ref={contentRef} sx={{ position: "relative", overflow: "hidden" }}>
+						{/* Header con fondo suave */}
+						<Box
 							sx={{
-								position: "absolute",
-								top: 12,
-								right: 12,
-								color: theme.palette.grey[500],
-								"&:hover": {
-									color: theme.palette.grey[700],
-								},
+								bgcolor: "#F8FAFC",
+								px: { xs: 3, sm: 4 },
+								py: 3,
+								position: "relative",
+								borderRadius: "12px 12px 0 0",
 							}}
 						>
-							<CloseCircle size={24} />
-						</IconButton>
-
-						{/* Icon */}
-						<Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-							<Box
+							{/* Close button */}
+							<IconButton
+								onClick={handleClose}
 								sx={{
-									p: 2,
-									borderRadius: "50%",
-									bgcolor: theme.palette[featureData.colorKey].main + "15",
+									position: "absolute",
+									top: 12,
+									right: 12,
+									color: theme.palette.grey[500],
+									"&:hover": {
+										color: theme.palette.grey[700],
+									},
 								}}
 							>
-								<IconComponent size={64} variant="Bulk" style={{ color: theme.palette[featureData.colorKey].main }} />
-							</Box>
+								<CloseCircle size={24} />
+							</IconButton>
+
+							{/* Title */}
+							<Typography
+								variant="h3"
+								sx={{
+									textAlign: "center",
+									mb: 1,
+									fontWeight: 600,
+									color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
+								}}
+							>
+								{featureData.title}
+							</Typography>
+
+							{/* Description */}
+							<Typography
+								variant="body1"
+								sx={{
+									textAlign: "center",
+									color: theme.palette.text.secondary,
+									lineHeight: 1.5,
+								}}
+							>
+								{featureData.description}
+							</Typography>
 						</Box>
 
-						{/* Title */}
-						<Typography
-							variant="h3"
-							sx={{
-								textAlign: "center",
-								mb: 2,
-								fontWeight: 600,
-								color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
-							}}
-						>
-							{featureData.title}
-						</Typography>
+						{/* Content */}
+						<Box sx={{ px: { xs: 3, sm: 4 }, py: 3, borderRadius: "0 0 12px 12px" }}>
 
-						{/* Description */}
-						<Typography
-							variant="body1"
-							sx={{
-								textAlign: "center",
-								mb: 3,
-								color: theme.palette.text.secondary,
-								lineHeight: 1.6,
-							}}
-						>
-							{featureData.description}
-						</Typography>
+						{/* Mockup Image */}
+						{featureData.mockupImage && (
+							<Box
+								sx={{
+									mb: 3,
+									p: 2,
+									borderRadius: 2,
+									bgcolor: "#F9FAFB",
+									display: "flex",
+									justifyContent: "center",
+								}}
+							>
+								<Box
+									sx={{
+										width: "130%",
+										maxWidth: "130%",
+										borderRadius: 1.5,
+										overflow: "hidden",
+										border: "1px solid #E5E7EB",
+										boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+									}}
+								>
+									<CardMedia
+										component="img"
+										image={featureData.mockupImage}
+										alt={featureData.title}
+										sx={{
+											width: "100%",
+											height: "auto",
+											maxHeight: 180,
+											objectFit: "cover",
+											objectPosition: "top",
+										}}
+									/>
+								</Box>
+							</Box>
+						)}
 
 						{/* Benefits */}
 						<Box sx={{ mb: 4 }}>
@@ -291,35 +332,46 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 						</Box>
 
 						{/* CTA Button */}
-						<Button
-							component={RouterLink}
-							to={`/register?source=modal&feature=${featureKey}`}
-							variant="contained"
-							color={featureData.colorKey}
-							size="large"
-							fullWidth
-							onClick={handleCTAClick}
-							sx={{
-								py: 1.5,
-								fontSize: "1rem",
-								fontWeight: 600,
-								borderRadius: 2,
-								mb: 2,
-							}}
-						>
-							{featureData.cta}
-						</Button>
+						<Box sx={{ mt: 4, mb: 2, px: 2 }}>
+							<Button
+								component={RouterLink}
+								to={`/register?source=modal&feature=${featureKey}`}
+								variant="contained"
+								color={featureData.colorKey}
+								size="large"
+								fullWidth
+								onClick={handleCTAClick}
+								sx={{
+									py: 2,
+									fontSize: "1.1rem",
+									fontWeight: 600,
+									borderRadius: 2,
+								}}
+							>
+								{featureData.cta}
+							</Button>
 
-						{/* Microcopy */}
-						<Typography
-							variant="body2"
-							sx={{
-								textAlign: "center",
-								color: theme.palette.text.secondary,
-							}}
-						>
-							No requiere tarjeta · Registrate en 1 minuto
-						</Typography>
+							{/* Microcopy */}
+							<Box
+								sx={{
+									mt: 1.5,
+									display: "flex",
+									justifyContent: "center",
+									alignItems: "center",
+									gap: 2,
+								}}
+							>
+								{["Sin tarjeta", "Registro en 1 minuto"].map((text, index) => (
+									<Box key={index} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+										<TickCircle size={14} variant="Bold" color="#66bb6a" />
+										<Typography variant="caption" color="text.secondary">
+											{text}
+										</Typography>
+									</Box>
+								))}
+							</Box>
+						</Box>
+						</Box>
 					</Box>
 				</Dialog>
 			)}
