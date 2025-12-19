@@ -104,7 +104,7 @@ const HeaderPage = () => {
 												mb: { xs: 0, md: 1.5 },
 											}}
 										>
-											Ahorrá horas de trabajo con expedientes, cálculos, agenda y clientes en un solo lugar.
+											Dejá de perder horas con expedientes, cálculos y agenda. Centralizá todo tu estudio jurídico en un solo sistema.
 										</Typography>
 									</motion.div>
 								</Grid>

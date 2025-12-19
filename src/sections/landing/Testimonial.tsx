@@ -250,26 +250,40 @@ const TestimonialPage = () => {
 					</Grid>
 				</Grid>
 
-				{/* CTA liviano */}
+				{/* CTA */}
 				<Box sx={{ textAlign: "center", mt: 6 }}>
 					<FadeInWhenVisible>
+						<Typography
+							variant="h4"
+							sx={{
+								mb: 3,
+								fontWeight: 600,
+								color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
+							}}
+						>
+							¿Querés trabajar así vos también?
+						</Typography>
 						<Button
 							component={RouterLink}
 							to="/register"
-							variant="outlined"
+							variant="contained"
 							color="primary"
 							size="large"
 							sx={{
-								px: 4,
+								px: 5,
 								py: 1.5,
 								borderRadius: 2,
-								fontWeight: 500,
+								fontWeight: 600,
+								fontSize: "1rem",
+								boxShadow: theme.shadows[4],
 								"&:hover": {
-									bgcolor: alpha(theme.palette.primary.main, 0.08),
+									boxShadow: theme.shadows[8],
+									transform: "translateY(-2px)",
 								},
+								transition: "all 0.2s ease-in-out",
 							}}
 						>
-							Ver cómo empezar
+							Probar gratis ahora
 						</Button>
 					</FadeInWhenVisible>
 				</Box>

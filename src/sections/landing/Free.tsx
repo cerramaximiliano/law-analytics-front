@@ -7,6 +7,8 @@ import { Box, Button, Container, Grid, Typography } from "@mui/material";
 // project-imports
 import FadeInWhenVisible from "./Animation";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
+// icons
+import { TickCircle } from "iconsax-react";
 
 // ==============================|| LANDING - FreePage ||============================== //
 
@@ -35,7 +37,7 @@ const FreePage = () => {
 										color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
 									}}
 								>
-									Probá LawAnalytics gratis y dejá de trabajar a mano
+									Probá Law||Analytics gratis y dejá de trabajar a mano
 								</Typography>
 
 								{/* Subtítulo */}
@@ -86,15 +88,25 @@ const FreePage = () => {
 								</Button>
 
 								{/* Microcopy */}
-								<Typography
-									variant="body2"
+								<Box
 									sx={{
 										mt: 2,
-										color: theme.palette.text.secondary,
+										display: "flex",
+										justifyContent: "center",
+										alignItems: "center",
+										gap: 2,
+										flexWrap: "wrap",
 									}}
 								>
-									Registrate en menos de 1 minuto
-								</Typography>
+									{["Sin tarjeta", "Sin contrato", "Cancelás cuando quieras"].map((text, index) => (
+										<Box key={index} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+											<TickCircle size={16} variant="Bold" color="#66bb6a" />
+											<Typography variant="body2" color="text.secondary">
+												{text}
+											</Typography>
+										</Box>
+									))}
+								</Box>
 							</Box>
 						</Grid>
 					</Grid>
