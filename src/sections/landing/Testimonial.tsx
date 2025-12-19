@@ -1,7 +1,8 @@
 import React from "react";
+import { Link as RouterLink } from "react-router-dom";
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Avatar, Box, Container, Grid, Stack, Typography } from "@mui/material";
+import { Avatar, Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 
 // third party
 import { motion } from "framer-motion";
@@ -194,7 +195,7 @@ const TestimonialPage = () => {
 								}}
 							>
 								<Typography variant="h2">
-									Lo que dicen
+									Abogados que ya
 									<Box
 										component="span"
 										sx={{
@@ -202,9 +203,9 @@ const TestimonialPage = () => {
 											mx: 1,
 										}}
 									>
-										nuestros usuarios
+										dejaron de trabajar
 									</Box>
-									sobre nosotros
+									a mano
 								</Typography>
 							</motion.div>
 						</Grid>
@@ -220,7 +221,7 @@ const TestimonialPage = () => {
 								}}
 							>
 								<Typography variant="h5" color="text.secondary" sx={{ mt: 2 }}>
-									Testimonios de profesionales que utilizan Law||Analytics en su práctica diaria
+									Estudios jurídicos que optimizan su práctica diaria con Law||Analytics
 								</Typography>
 							</motion.div>
 						</Grid>
@@ -248,6 +249,30 @@ const TestimonialPage = () => {
 						</FadeInWhenVisible>
 					</Grid>
 				</Grid>
+
+				{/* CTA liviano */}
+				<Box sx={{ textAlign: "center", mt: 6 }}>
+					<FadeInWhenVisible>
+						<Button
+							component={RouterLink}
+							to="/register"
+							variant="outlined"
+							color="primary"
+							size="large"
+							sx={{
+								px: 4,
+								py: 1.5,
+								borderRadius: 2,
+								fontWeight: 500,
+								"&:hover": {
+									bgcolor: alpha(theme.palette.primary.main, 0.08),
+								},
+							}}
+						>
+							Ver cómo empezar
+						</Button>
+					</FadeInWhenVisible>
+				</Box>
 			</Box>
 		</>
 	);

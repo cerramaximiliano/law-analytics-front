@@ -36,14 +36,34 @@ Se dispara cuando un usuario de Instagram hace scroll hasta "herramientas" pero 
 |--------|-----------|-------|
 | `high_scroll_no_cta` | `source` | `instagram` |
 
-### 5. Eventos de Feature Modal (Próximos a implementar)
+### 5. Vista de Sección Features (Exposición)
+Se dispara cuando la sección de herramientas es visible al 50% en viewport.
+
+| Evento | Parámetros | Cuándo se dispara |
+|--------|------------|-------------------|
+| `view_features_section` | `section: "features"`, `page: "landing"` | Sección visible ≥50% |
+
+### 6. Eventos de Feature Modal
 Se disparan cuando el usuario interactúa con los modals de detalle de herramientas.
 
-| Evento | Parámetro | Cuándo se dispara |
-|--------|-----------|-------------------|
+| Evento | Parámetros | Cuándo se dispara |
+|--------|------------|-------------------|
 | `feature_modal_open` | `feature` | Al abrir el modal de una herramienta |
 | `feature_modal_close` | `feature` | Al cerrar el modal |
-| `feature_modal_cta_click` | `feature` | Al hacer click en el CTA del modal |
+| `feature_modal_scroll` | `feature` | Scroll ≥50% dentro del modal |
+| `feature_modal_cta_click` | `feature`, `destination`, `source` | Al hacer click en el CTA del modal |
+
+### 7. Eventos de Registro (Funnel de Conversión)
+Se disparan durante el proceso de registro para atribución.
+
+| Evento | Parámetros | Cuándo se dispara |
+|--------|------------|-------------------|
+| `register_view` | `source`, `feature` | Al cargar página /register |
+| `sign_up` | `method`, `source`, `feature` | Al completar registro exitoso |
+
+**Valores de `method`:** `email`, `google`
+**Valores de `source`:** `modal`, `direct`, etc.
+**Valores de `feature`:** `carpetas`, `contactos`, `calendario`, `calculos`, `intereses`, `tareas`, `sistema_citas`
 
 > Ver documento completo: [FEATURE_MODALS_IMPLEMENTATION.md](./FEATURE_MODALS_IMPLEMENTATION.md)
 
@@ -77,6 +97,10 @@ Se disparan cuando el usuario interactúa con los modals de detalle de herramien
 | `dlv - cta_location` | `cta_location` |
 | `dlv - feature` | `feature` |
 | `dlv - source` | `source` |
+| `dlv - section` | `section` |
+| `dlv - page` | `page` |
+| `dlv - destination` | `destination` |
+| `dlv - method` | `method` |
 
 ### Paso 2: Crear Variable Constante para ID de GA4
 
@@ -104,6 +128,13 @@ Para cada activador:
 | `CE - cta_click_prueba_pagar` | `cta_click_prueba_pagar` |
 | `CE - feature_interest` | `feature_interest` |
 | `CE - high_scroll_no_cta` | `high_scroll_no_cta` |
+| `CE - view_features_section` | `view_features_section` |
+| `CE - feature_modal_open` | `feature_modal_open` |
+| `CE - feature_modal_close` | `feature_modal_close` |
+| `CE - feature_modal_scroll` | `feature_modal_scroll` |
+| `CE - feature_modal_cta_click` | `feature_modal_cta_click` |
+| `CE - register_view` | `register_view` |
+| `CE - sign_up` | `sign_up` |
 
 ### Paso 4: Crear Tags de GA4
 
@@ -158,6 +189,55 @@ Para cada tag:
 | Parámetro | `source` = `{{dlv - source}}` |
 | Activador | `CE - high_scroll_no_cta` |
 
+#### Tag 7: GA4 - View Features Section
+| Campo | Valor |
+|-------|-------|
+| Nombre del evento | `view_features_section` |
+| Parámetros | `section` = `{{dlv - section}}`, `page` = `{{dlv - page}}` |
+| Activador | `CE - view_features_section` |
+
+#### Tag 8: GA4 - Feature Modal Open
+| Campo | Valor |
+|-------|-------|
+| Nombre del evento | `feature_modal_open` |
+| Parámetro | `feature` = `{{dlv - feature}}` |
+| Activador | `CE - feature_modal_open` |
+
+#### Tag 9: GA4 - Feature Modal Close
+| Campo | Valor |
+|-------|-------|
+| Nombre del evento | `feature_modal_close` |
+| Parámetro | `feature` = `{{dlv - feature}}` |
+| Activador | `CE - feature_modal_close` |
+
+#### Tag 10: GA4 - Feature Modal Scroll
+| Campo | Valor |
+|-------|-------|
+| Nombre del evento | `feature_modal_scroll` |
+| Parámetro | `feature` = `{{dlv - feature}}` |
+| Activador | `CE - feature_modal_scroll` |
+
+#### Tag 11: GA4 - Feature Modal CTA Click
+| Campo | Valor |
+|-------|-------|
+| Nombre del evento | `feature_modal_cta_click` |
+| Parámetros | `feature` = `{{dlv - feature}}`, `destination` = `{{dlv - destination}}`, `source` = `{{dlv - source}}` |
+| Activador | `CE - feature_modal_cta_click` |
+
+#### Tag 12: GA4 - Register View
+| Campo | Valor |
+|-------|-------|
+| Nombre del evento | `register_view` |
+| Parámetros | `source` = `{{dlv - source}}`, `feature` = `{{dlv - feature}}` |
+| Activador | `CE - register_view` |
+
+#### Tag 13: GA4 - Sign Up
+| Campo | Valor |
+|-------|-------|
+| Nombre del evento | `sign_up` |
+| Parámetros | `method` = `{{dlv - method}}`, `source` = `{{dlv - source}}`, `feature` = `{{dlv - feature}}` |
+| Activador | `CE - sign_up` |
+
 ### Paso 5: Publicar GTM
 
 1. Click en **Enviar** (arriba a la derecha)
@@ -209,8 +289,40 @@ Crear las siguientes dimensiones:
 |-------|-------|
 | Nombre de la dimensión | `Source` |
 | Ámbito | Evento |
-| Descripción | Fuente de tráfico para high scroll |
+| Descripción | Fuente de tráfico/atribución |
 | Parámetro de evento | `source` |
+
+#### Dimensión 5
+| Campo | Valor |
+|-------|-------|
+| Nombre de la dimensión | `Destination` |
+| Ámbito | Evento |
+| Descripción | Destino del CTA clickeado |
+| Parámetro de evento | `destination` |
+
+#### Dimensión 6
+| Campo | Valor |
+|-------|-------|
+| Nombre de la dimensión | `Method` |
+| Ámbito | Evento |
+| Descripción | Método de registro (email/google) |
+| Parámetro de evento | `method` |
+
+#### Dimensión 7
+| Campo | Valor |
+|-------|-------|
+| Nombre de la dimensión | `Section` |
+| Ámbito | Evento |
+| Descripción | Sección de la landing vista |
+| Parámetro de evento | `section` |
+
+#### Dimensión 8
+| Campo | Valor |
+|-------|-------|
+| Nombre de la dimensión | `Page` |
+| Ámbito | Evento |
+| Descripción | Página donde ocurrió el evento |
+| Parámetro de evento | `page` |
 
 ---
 
@@ -226,14 +338,21 @@ Crear las siguientes dimensiones:
 3. Espera a que aparezcan los eventos en la lista
 4. Busca cada evento y activa el toggle **Marcar como conversión**
 
-| Evento | ¿Marcar como conversión? |
-|--------|--------------------------|
-| `cta_click_hero` | ✅ SÍ |
-| `cta_click_citas` | ✅ SÍ |
-| `cta_click_prueba_pagar` | ✅ SÍ |
-| `scroll_section` | ❌ NO |
-| `feature_interest` | ❌ NO |
-| `high_scroll_no_cta` | ❌ NO |
+| Evento | ¿Marcar como conversión? | Motivo |
+|--------|--------------------------|--------|
+| `cta_click_hero` | ✅ SÍ | CTA principal |
+| `cta_click_citas` | ✅ SÍ | CTA de feature destacada |
+| `cta_click_prueba_pagar` | ✅ SÍ | CTA final de sección |
+| `feature_modal_cta_click` | ✅ SÍ | Pre-conversión desde modal |
+| `sign_up` | ✅ SÍ | **Conversión final** |
+| `scroll_section` | ❌ NO | Solo engagement |
+| `feature_interest` | ❌ NO | Solo interés |
+| `view_features_section` | ❌ NO | Solo exposición |
+| `feature_modal_open` | ❌ NO | Solo consideración |
+| `feature_modal_scroll` | ❌ NO | Solo engagement |
+| `feature_modal_close` | ❌ NO | Solo comportamiento |
+| `register_view` | ❌ NO | Solo vista de página |
+| `high_scroll_no_cta` | ❌ NO | Solo análisis |
 
 ### Si los eventos no aparecen en la lista
 
@@ -363,27 +482,73 @@ En la columna "Configuración":
 
 ## Checklist de Implementación
 
-### Inmediato (Día 1)
-- [ ] Crear 4 variables de capa de datos en GTM
-- [ ] Crear variable constante con ID de GA4
-- [ ] Crear 6 activadores en GTM
-- [ ] Crear 6 tags de GA4 en GTM
-- [ ] Publicar GTM
-- [ ] Crear 4 dimensiones personalizadas en GA4
-- [ ] Deployar código a producción
+### Inmediato (Día 1) - GTM
+
+#### Variables de Capa de Datos (8 total)
+- [ ] `dlv - section_name`
+- [ ] `dlv - cta_location`
+- [ ] `dlv - feature`
+- [ ] `dlv - source`
+- [ ] `dlv - section`
+- [ ] `dlv - page`
+- [ ] `dlv - destination`
+- [ ] `dlv - method`
+
+#### Variable Constante
+- [ ] `GA4 - Measurement ID`
+
+#### Activadores (13 total)
+- [ ] `CE - scroll_section`
+- [ ] `CE - cta_click_hero`
+- [ ] `CE - cta_click_citas`
+- [ ] `CE - cta_click_prueba_pagar`
+- [ ] `CE - feature_interest`
+- [ ] `CE - high_scroll_no_cta`
+- [ ] `CE - view_features_section`
+- [ ] `CE - feature_modal_open`
+- [ ] `CE - feature_modal_close`
+- [ ] `CE - feature_modal_scroll`
+- [ ] `CE - feature_modal_cta_click`
+- [ ] `CE - register_view`
+- [ ] `CE - sign_up`
+
+#### Tags de GA4 (13 total)
+- [ ] Tag 1-6: Eventos originales de landing
+- [ ] Tag 7: View Features Section
+- [ ] Tag 8: Feature Modal Open
+- [ ] Tag 9: Feature Modal Close
+- [ ] Tag 10: Feature Modal Scroll
+- [ ] Tag 11: Feature Modal CTA Click
+- [ ] Tag 12: Register View
+- [ ] Tag 13: Sign Up
+
+#### Publicar
+- [ ] Publicar GTM con nombre: `Funnel Completo - Features + Registration`
+
+### Inmediato (Día 1) - GA4
+
+#### Dimensiones Personalizadas (8 total)
+- [ ] Section Name
+- [ ] CTA Location
+- [ ] Feature
+- [ ] Source
+- [ ] Destination
+- [ ] Method
+- [ ] Section
+- [ ] Page
 
 ### Después de 24-48 horas (Día 2-3)
 - [ ] Verificar eventos en GA4 DebugView
 - [ ] Verificar eventos en GA4 > Administrar > Eventos
-- [ ] Marcar 3 eventos como conversiones
-- [ ] Crear Funnel de Exploración principal
+- [ ] Marcar 5 eventos como conversiones (ver tabla arriba)
+- [ ] Crear Funnel de Intención por Feature
 - [ ] Crear Segmento de Instagram (opcional)
 
 ### Análisis semanal
-- [ ] Revisar drop-off en funnel
-- [ ] Analizar `feature_interest` más clickeados
-- [ ] Comparar conversión Instagram vs otras fuentes
-- [ ] Ajustar landing según insights
+- [ ] Revisar drop-off en funnel por feature
+- [ ] Analizar qué feature genera más `sign_up`
+- [ ] Comparar conversión modal vs directo
+- [ ] Identificar feature para hero/ads
 
 ---
 

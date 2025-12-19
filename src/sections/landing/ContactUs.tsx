@@ -157,10 +157,10 @@ const ContactUsPage = () => {
 							<Grid container spacing={2}>
 								<Grid item xs={12}>
 									<Typography variant="h2" sx={{ mb: 2, color: theme.palette.text.primary }}>
-										Mantente informado
+										Mantenete actualizado en gestión legal y automatización
 									</Typography>
 									<Typography variant="h5" color="text.secondary" sx={{ mb: 4, fontWeight: 400 }}>
-										Suscríbete a nuestro newsletter para recibir actualizaciones, nuevas funcionalidades y consejos para tu práctica legal.
+										Recibí novedades sobre herramientas legales, automatización y mejoras de LawAnalytics.
 									</Typography>
 
 									<Box sx={{ position: "relative", maxWidth: { xs: "100%", md: "90%" } }}>
@@ -213,7 +213,7 @@ const ContactUsPage = () => {
 											}}
 											endIcon={loading ? undefined : <Send size={18} />}
 										>
-											{loading ? <CircularProgress size={24} color="inherit" /> : "Suscríbete"}
+											{loading ? <CircularProgress size={24} color="inherit" /> : "Suscribirme"}
 										</Button>
 
 										{error && (

@@ -4,14 +4,20 @@ Este documento detalla la implementación de modals para las cards de herramient
 
 ---
 
+## Estado: ✅ IMPLEMENTADO
+
+Última actualización: Diciembre 2024
+
+---
+
 ## Objetivo
 
 Cuando un usuario hace click en una card de herramienta, se abre un modal con:
 - Información detallada de la herramienta
 - Beneficios específicos
-- CTA para registro
+- CTA para registro con atribución
 
-Esto mejora la UX y aumenta las oportunidades de conversión.
+Esto mejora la UX y permite tracking preciso de intención por feature.
 
 ---
 
@@ -33,7 +39,6 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 │  ✓ Beneficio 1                                      │
 │  ✓ Beneficio 2                                      │
 │  ✓ Beneficio 3                                      │
-│  ✓ Beneficio 4                                      │
 │                                                     │
 │  ┌─────────────────────────────────────────────┐    │
 │  │       Probar [Feature] Gratis               │    │
@@ -53,11 +58,12 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 | Animación | Fade in + scale (framer-motion) |
 | Cierre | Click en X, overlay, o tecla Escape |
 | Ícono | 64px, color de la herramienta |
-| CTA | Botón primario, full width |
+| CTA | Botón primario, full width, con query params |
+| Scroll | Tracking al 50% de scroll |
 
 ---
 
-## Contenido por Feature
+## Contenido por Feature (Actualizado)
 
 ### 1. Carpetas / Expedientes
 
@@ -66,10 +72,10 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 | Título | Expedientes Organizados |
 | Descripción | Centralizá todas tus causas en un solo lugar. Gestioná movimientos, estados, plazos y documentos sin perder tiempo buscando información. |
 | Beneficio 1 | Vista unificada de todas tus causas activas |
-| Beneficio 2 | Seguimiento automático de movimientos |
+| Beneficio 2 | Seguimiento automático de movimientos en PJN y MEV |
 | Beneficio 3 | Alertas de vencimientos y plazos |
-| Beneficio 4 | Historial completo de cada expediente |
 | CTA | Probar Expedientes Gratis |
+| URL | `/register?source=modal&feature=carpetas` |
 
 ### 2. Contactos / Clientes
 
@@ -79,9 +85,9 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 | Descripción | Toda la información de tus clientes en un solo lugar. Datos de contacto, causas asociadas, historial de interacciones y seguimiento personalizado. |
 | Beneficio 1 | Ficha completa de cada cliente |
 | Beneficio 2 | Causas asociadas a cada cliente |
-| Beneficio 3 | Historial de comunicaciones |
-| Beneficio 4 | Búsqueda rápida por nombre o documento |
+| Beneficio 3 | Búsqueda rápida por nombre o documento |
 | CTA | Probar Clientes Gratis |
+| URL | `/register?source=modal&feature=contactos` |
 
 ### 3. Calendario / Vencimientos
 
@@ -91,9 +97,9 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 | Descripción | No te olvides nunca más de un vencimiento. Agenda integrada con alertas automáticas y sincronización con Google Calendar. |
 | Beneficio 1 | Alertas automáticas de vencimientos |
 | Beneficio 2 | Sincronización con Google Calendar |
-| Beneficio 3 | Vista diaria, semanal y mensual |
-| Beneficio 4 | Recordatorios por email |
+| Beneficio 3 | Recordatorios por email |
 | CTA | Probar Agenda Gratis |
+| URL | `/register?source=modal&feature=calendario` |
 
 ### 4. Cálculos Laborales
 
@@ -103,9 +109,9 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 | Descripción | Calculá indemnizaciones, despidos, SAC y liquidaciones con precisión legal. Siempre actualizado con los últimos topes y valores. |
 | Beneficio 1 | Cálculo de indemnizaciones por despido |
 | Beneficio 2 | Liquidaciones finales completas |
-| Beneficio 3 | SAC proporcional y aguinaldo |
-| Beneficio 4 | Topes legales siempre actualizados |
+| Beneficio 3 | Topes legales siempre actualizados |
 | CTA | Probar Calculadora Gratis |
+| URL | `/register?source=modal&feature=calculos` |
 
 ### 5. Intereses y Actualización
 
@@ -113,11 +119,11 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 |-------|-----------|
 | Título | Actualización de Montos |
 | Descripción | Actualizá montos en segundos con tasas BCRA, actas y criterios judiciales. Cálculo automático con diferentes métodos. |
-| Beneficio 1 | Tasas BCRA actualizadas diariamente |
+| Beneficio 1 | Tasas BCRA y BNA actualizadas diariamente |
 | Beneficio 2 | Múltiples métodos de cálculo |
 | Beneficio 3 | Exportación de liquidaciones |
-| Beneficio 4 | Historial de cálculos realizados |
 | CTA | Probar Actualización Gratis |
+| URL | `/register?source=modal&feature=intereses` |
 
 ### 6. Tareas
 
@@ -125,11 +131,11 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 |-------|-----------|
 | Título | Gestión de Tareas |
 | Descripción | Organizá el trabajo diario del estudio. Asigná tareas, definí prioridades y controlá plazos de manera simple. |
-| Beneficio 1 | Asignación de tareas por responsable |
-| Beneficio 2 | Prioridades y fechas límite |
-| Beneficio 3 | Vista Kanban y lista |
-| Beneficio 4 | Notificaciones de vencimiento |
+| Beneficio 1 | Prioridades y fechas límite |
+| Beneficio 2 | Notificaciones de vencimiento |
+| Beneficio 3 | Asignación de tareas a carpetas |
 | CTA | Probar Tareas Gratis |
+| URL | `/register?source=modal&feature=tareas` |
 
 ### 7. Sistema de Citas
 
@@ -142,18 +148,29 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 | Beneficio 3 | Sincronización con tu calendario |
 | Beneficio 4 | Recordatorios a clientes |
 | CTA | Probar Sistema de Citas Gratis |
+| URL | `/register?source=modal&feature=sistema_citas` |
 
 ---
 
-## Eventos de Tracking
+## Eventos de Tracking (Completos)
 
-### Nuevos Eventos
+### Eventos del Modal
 
 | Evento | Cuándo se dispara | Parámetros |
 |--------|-------------------|------------|
-| `feature_modal_open` | Al abrir el modal | `feature`: nombre del feature |
-| `feature_modal_close` | Al cerrar el modal | `feature`: nombre del feature |
-| `feature_modal_cta_click` | Al hacer click en CTA del modal | `feature`: nombre del feature |
+| `view_features_section` | Sección visible ≥50% | `section: "features"`, `page: "landing"` |
+| `feature_interest` | Click en card | `feature` |
+| `feature_modal_open` | Al abrir el modal | `feature` |
+| `feature_modal_scroll` | Scroll ≥50% dentro del modal | `feature` |
+| `feature_modal_close` | Al cerrar el modal | `feature` |
+| `feature_modal_cta_click` | Click en CTA del modal | `feature`, `destination`, `source` |
+
+### Eventos de Registro (con atribución)
+
+| Evento | Cuándo se dispara | Parámetros |
+|--------|-------------------|------------|
+| `register_view` | Al cargar /register | `source`, `feature` |
+| `sign_up` | Registro exitoso | `method`, `source`, `feature` |
 
 ### Valores de `feature`
 
@@ -169,149 +186,123 @@ Esto mejora la UX y aumenta las oportunidades de conversión.
 
 ---
 
-## Configuración GTM
-
-### Variables de Capa de Datos
-
-Ya existe `dlv - feature`, se reutiliza.
-
-### Nuevos Activadores
-
-| Nombre | Tipo | Evento |
-|--------|------|--------|
-| `CE - feature_modal_open` | Evento personalizado | `feature_modal_open` |
-| `CE - feature_modal_close` | Evento personalizado | `feature_modal_close` |
-| `CE - feature_modal_cta_click` | Evento personalizado | `feature_modal_cta_click` |
-
-### Nuevos Tags
-
-#### Tag: GA4 - Feature Modal Open
-
-| Campo | Valor |
-|-------|-------|
-| Tipo | Google Analytics: Evento de GA4 |
-| ID de medición | `{{GA4 - Measurement ID}}` |
-| Nombre del evento | `feature_modal_open` |
-| Parámetro | `feature` = `{{dlv - feature}}` |
-| Activador | `CE - feature_modal_open` |
-
-#### Tag: GA4 - Feature Modal Close
-
-| Campo | Valor |
-|-------|-------|
-| Tipo | Google Analytics: Evento de GA4 |
-| ID de medición | `{{GA4 - Measurement ID}}` |
-| Nombre del evento | `feature_modal_close` |
-| Parámetro | `feature` = `{{dlv - feature}}` |
-| Activador | `CE - feature_modal_close` |
-
-#### Tag: GA4 - Feature Modal CTA Click
-
-| Campo | Valor |
-|-------|-------|
-| Tipo | Google Analytics: Evento de GA4 |
-| ID de medición | `{{GA4 - Measurement ID}}` |
-| Nombre del evento | `feature_modal_cta_click` |
-| Parámetro | `feature` = `{{dlv - feature}}` |
-| Activador | `CE - feature_modal_cta_click` |
-
----
-
-## Configuración GA4
-
-### Nueva Conversión
-
-Marcar como evento clave:
-- `feature_modal_cta_click`
-
-### Dimensión Personalizada
-
-Ya existe la dimensión `Feature` con parámetro `feature`, se reutiliza.
-
----
-
 ## Implementación en Código
 
-### Archivos a Modificar/Crear
+### Archivos Implementados
 
-| Archivo | Acción |
-|---------|--------|
-| `src/utils/gtm.ts` | Agregar nuevos eventos |
-| `src/components/FeatureModal.tsx` | Crear componente modal |
-| `src/sections/landing/Technologies.tsx` | Integrar modal |
+| Archivo | Descripción |
+|---------|-------------|
+| `src/utils/gtm.ts` | Funciones de tracking |
+| `src/components/FeatureModal.tsx` | Componente modal |
+| `src/sections/landing/Technologies.tsx` | Sección con Intersection Observer |
+| `src/pages/auth/auth1/register.tsx` | Tracking de register_view y sign_up |
+| `src/sections/auth/auth-forms/AuthRegister.tsx` | Tracking de sign_up email |
 
-### Nuevas Funciones en gtm.ts
+### Funciones en gtm.ts
 
 ```typescript
-// Track feature modal open
+// Vista de sección (Intersection Observer 50%)
+export const trackViewFeaturesSection = (): void => {
+  pushGTMEvent("view_features_section", {
+    section: "features",
+    page: "landing",
+  });
+};
+
+// Modal open
 export const trackFeatureModalOpen = (featureName: string): void => {
   pushGTMEvent("feature_modal_open", { feature: featureName });
 };
 
-// Track feature modal close
+// Modal scroll (50%)
+export const trackFeatureModalScroll = (featureName: string): void => {
+  pushGTMEvent("feature_modal_scroll", { feature: featureName });
+};
+
+// Modal close
 export const trackFeatureModalClose = (featureName: string): void => {
   pushGTMEvent("feature_modal_close", { feature: featureName });
 };
 
-// Track feature modal CTA click
+// Modal CTA click
 export const trackFeatureModalCTAClick = (featureName: string): void => {
-  pushGTMEvent("feature_modal_cta_click", { feature: featureName });
+  pushGTMEvent("feature_modal_cta_click", {
+    feature: featureName,
+    destination: "/register",
+    source: "modal",
+  });
+};
+
+// Register view con atribución
+export const trackRegisterView = (source?: string, feature?: string): void => {
+  pushGTMEvent("register_view", {
+    source: source || "direct",
+    feature: feature || null,
+  });
+};
+
+// Sign up con atribución
+export const trackSignUp = (method: "email" | "google", source?: string, feature?: string): void => {
+  pushGTMEvent("sign_up", {
+    method,
+    source: source || "direct",
+    feature: feature || null,
+  });
 };
 ```
 
-### Nuevos Eventos en GTMEvents
-
-```typescript
-export const GTMEvents = {
-  // ... eventos existentes
-  FEATURE_MODAL_OPEN: "feature_modal_open",
-  FEATURE_MODAL_CLOSE: "feature_modal_close",
-  FEATURE_MODAL_CTA_CLICK: "feature_modal_cta_click",
-} as const;
-```
-
 ---
 
-## Checklist de Implementación
-
-### Código
-- [ ] Agregar eventos a `gtm.ts`
-- [ ] Crear componente `FeatureModal.tsx`
-- [ ] Agregar datos de contenido por feature
-- [ ] Integrar modal en `Technologies.tsx`
-- [ ] Testing de eventos
-
-### GTM
-- [ ] Crear activador `CE - feature_modal_open`
-- [ ] Crear activador `CE - feature_modal_close`
-- [ ] Crear activador `CE - feature_modal_cta_click`
-- [ ] Crear tag `GA4 - Feature Modal Open`
-- [ ] Crear tag `GA4 - Feature Modal Close`
-- [ ] Crear tag `GA4 - Feature Modal CTA Click`
-- [ ] Publicar GTM
-
-### GA4
-- [ ] Marcar `feature_modal_cta_click` como evento clave
-- [ ] Crear Funnel 7: Feature Modal
-
----
-
-## Flujo de Usuario Esperado
+## Flujo de Usuario Completo
 
 ```
 1. Usuario ve landing
-2. Scrollea a Herramientas
+   → (scroll)
+
+2. Sección Features visible (50%)
+   → Dispara: view_features_section
+
 3. Click en card "Expedientes"
    → Dispara: feature_interest (carpetas)
    → Abre modal
    → Dispara: feature_modal_open (carpetas)
-4. Lee beneficios
+
+4. Scrollea en el modal (50%)
+   → Dispara: feature_modal_scroll (carpetas)
+
 5. Click en "Probar Expedientes Gratis"
    → Dispara: feature_modal_cta_click (carpetas)
-   → Navega a /register
-6. Completa registro
-   → Dispara: register_complete
+   → Navega a /register?source=modal&feature=carpetas
+
+6. Ve página de registro
+   → Dispara: register_view (source=modal, feature=carpetas)
+
+7. Completa registro (email o Google)
+   → Dispara: sign_up (method=email, source=modal, feature=carpetas)
 ```
+
+---
+
+## Funnel en GA4
+
+### Funnel de Intención por Feature
+
+| Paso | Evento | Lo que indica |
+|------|--------|---------------|
+| 1 | `view_features_section` | Exposición |
+| 2 | `feature_interest` | Interés (curiosidad) |
+| 3 | `feature_modal_open` | Consideración |
+| 4 | `feature_modal_cta_click` | Alta intención |
+| 5 | `sign_up` | Conversión |
+
+**Filtrar por:** `feature` = `carpetas`, `calculos`, etc.
+
+### Preguntas que responde
+
+- ¿Qué feature genera más interés?
+- ¿Qué feature convierte mejor?
+- ¿Dónde se cae el usuario?
+- ¿Qué feature debería ir en el hero o en ads?
 
 ---
 
@@ -319,6 +310,43 @@ export const GTMEvents = {
 
 | Métrica | Fórmula | Objetivo |
 |---------|---------|----------|
-| Tasa de apertura de modal | `modal_open / feature_interest` | >50% |
-| Tasa de click en CTA modal | `modal_cta_click / modal_open` | >20% |
-| Conversión desde modal | `register_complete (desde modal) / modal_cta_click` | >30% |
+| Tasa de exposición | `view_features_section / page_view` | >60% |
+| Tasa de interés | `feature_interest / view_features_section` | >20% |
+| Tasa de apertura modal | `modal_open / feature_interest` | >80% |
+| Tasa de lectura modal | `modal_scroll / modal_open` | >50% |
+| Tasa de click CTA | `modal_cta_click / modal_open` | >25% |
+| Tasa de conversión | `sign_up (desde modal) / modal_cta_click` | >30% |
+
+---
+
+## Checklist de Implementación
+
+### Código ✅
+- [x] Agregar eventos a `gtm.ts`
+- [x] Crear componente `FeatureModal.tsx`
+- [x] Agregar datos de contenido por feature
+- [x] Integrar modal en `Technologies.tsx`
+- [x] Agregar Intersection Observer para `view_features_section`
+- [x] Agregar scroll tracking en modal
+- [x] Agregar query params a URLs de CTA
+- [x] Agregar `register_view` tracking
+- [x] Agregar `sign_up` tracking (email y Google)
+
+### GTM (Pendiente configurar)
+- [ ] Crear variables de capa de datos
+- [ ] Crear activadores para nuevos eventos
+- [ ] Crear tags de GA4
+- [ ] Publicar GTM
+
+### GA4 (Después de 24-48h)
+- [ ] Crear dimensiones personalizadas
+- [ ] Marcar `feature_modal_cta_click` como conversión
+- [ ] Marcar `sign_up` como conversión
+- [ ] Crear Funnel de Intención por Feature
+
+---
+
+## Documentos Relacionados
+
+- [GTM_GA4_SETUP.md](./GTM_GA4_SETUP.md) - Configuración completa de GTM y GA4
+- [GA4_FUNNELS.md](./GA4_FUNNELS.md) - Todos los funnels de análisis

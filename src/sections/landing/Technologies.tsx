@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 // material-ui
 import { Badge, Box, Button, Container, Grid, Link, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -13,7 +13,7 @@ import FadeInWhenVisible from "./Animation";
 import MainCard from "components/MainCard";
 import FeatureModal from "components/FeatureModal";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
-import { FeatureNames } from "utils/gtm";
+import { FeatureNames, trackViewFeaturesSection } from "utils/gtm";
 
 interface TechnologyItem {
 	iconComponent: React.ElementType;
@@ -97,9 +97,34 @@ const TechnologiesPage = () => {
 	const theme = useTheme();
 	const { trackCitasCTA, trackPruebaPagarCTA, trackFeature } = useLandingAnalytics();
 
+	// Ref for section visibility tracking
+	const sectionRef = useRef<HTMLDivElement>(null);
+	const hasTrackedView = useRef(false);
+
 	// Modal state
 	const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
 	const [modalOpen, setModalOpen] = useState(false);
+
+	// Track when features section is 50% visible
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				entries.forEach((entry) => {
+					if (entry.isIntersecting && !hasTrackedView.current) {
+						trackViewFeaturesSection();
+						hasTrackedView.current = true;
+					}
+				});
+			},
+			{ threshold: 0.5 },
+		);
+
+		if (sectionRef.current) {
+			observer.observe(sectionRef.current);
+		}
+
+		return () => observer.disconnect();
+	}, []);
 
 	const handleCardClick = useCallback(
 		(featureKey: string) => {
@@ -115,7 +140,7 @@ const TechnologiesPage = () => {
 	}, []);
 
 	return (
-		<Container>
+		<Container ref={sectionRef}>
 			<Grid container spacing={3} alignItems="center" justifyContent="center" sx={{ mt: { md: 15, xs: 2.5 }, mb: { md: 10, xs: 2.5 } }}>
 				{/* Título y subtítulo de la sección */}
 				<Grid item xs={12}>

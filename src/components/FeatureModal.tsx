@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { Link as RouterLink } from "react-router-dom";
 // material-ui
 import { Box, Button, Dialog, IconButton, Typography } from "@mui/material";
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // icons
 import { FolderOpen, Profile2User, Calendar, Calculator, Chart, TaskSquare, CalendarTick, CloseCircle, TickCircle } from "iconsax-react";
 // tracking
-import { trackFeatureModalOpen, trackFeatureModalClose, trackFeatureModalCTAClick } from "utils/gtm";
+import { trackFeatureModalOpen, trackFeatureModalClose, trackFeatureModalCTAClick, trackFeatureModalScroll } from "utils/gtm";
 import { FeatureNames } from "utils/gtm";
 
 interface FeatureModalContent {
@@ -30,7 +30,6 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 			"Vista unificada de todas tus causas activas",
 			"Seguimiento automático de movimientos en PJN y MEV",
 			"Alertas de vencimientos y plazos",
-			"Historial completo de cada expediente",
 		],
 		cta: "Probar Expedientes Gratis",
 		iconComponent: FolderOpen,
@@ -52,7 +51,6 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		benefits: [
 			"Alertas automáticas de vencimientos",
 			"Sincronización con Google Calendar",
-			"Vista diaria, semanal y mensual",
 			"Recordatorios por email",
 		],
 		cta: "Probar Agenda Gratis",
@@ -66,7 +64,6 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		benefits: [
 			"Cálculo de indemnizaciones por despido",
 			"Liquidaciones finales completas",
-			"SAC proporcional y aguinaldo",
 			"Topes legales siempre actualizados",
 		],
 		cta: "Probar Calculadora Gratis",
@@ -80,7 +77,6 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 			"Tasas BCRA y BNA actualizadas diariamente",
 			"Múltiples métodos de cálculo",
 			"Exportación de liquidaciones",
-			"Historial de cálculos realizados",
 		],
 		cta: "Probar Actualización Gratis",
 		iconComponent: Chart,
@@ -89,7 +85,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 	[FeatureNames.TAREAS]: {
 		title: "Gestión de Tareas",
 		description: "Organizá el trabajo diario del estudio. Asigná tareas, definí prioridades y controlá plazos de manera simple.",
-		benefits: ["Prioridades y fechas límite", "Notificaciones de vencimiento"],
+		benefits: ["Prioridades y fechas límite", "Notificaciones de vencimiento", "Asignación de tareas a carpetas"],
 		cta: "Probar Tareas Gratis",
 		iconComponent: TaskSquare,
 		colorKey: "error",
@@ -118,6 +114,8 @@ interface FeatureModalProps {
 
 const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }) => {
 	const theme = useTheme();
+	const contentRef = useRef<HTMLDivElement>(null);
+	const hasTrackedScroll = useRef(false);
 
 	const featureData = featureKey ? FeatureModalData[featureKey] : null;
 
@@ -125,7 +123,37 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 	useEffect(() => {
 		if (open && featureKey) {
 			trackFeatureModalOpen(featureKey);
+			// Reset scroll tracking when modal opens
+			hasTrackedScroll.current = false;
 		}
+	}, [open, featureKey]);
+
+	// Track scroll inside modal (50% scroll)
+	useEffect(() => {
+		if (!open || !featureKey) return;
+
+		const handleScroll = () => {
+			if (!contentRef.current || hasTrackedScroll.current) return;
+
+			const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
+			const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
+
+			if (scrollPercentage >= 0.5) {
+				trackFeatureModalScroll(featureKey);
+				hasTrackedScroll.current = true;
+			}
+		};
+
+		const contentElement = contentRef.current;
+		if (contentElement) {
+			contentElement.addEventListener("scroll", handleScroll);
+		}
+
+		return () => {
+			if (contentElement) {
+				contentElement.removeEventListener("scroll", handleScroll);
+			}
+		};
 	}, [open, featureKey]);
 
 	// Handle close with tracking
@@ -186,7 +214,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 						},
 					}}
 				>
-					<Box sx={{ position: "relative", p: { xs: 3, sm: 4 } }}>
+					<Box ref={contentRef} sx={{ position: "relative", p: { xs: 3, sm: 4 }, maxHeight: "80vh", overflowY: "auto" }}>
 						{/* Close button */}
 						<IconButton
 							onClick={handleClose}
@@ -265,7 +293,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 						{/* CTA Button */}
 						<Button
 							component={RouterLink}
-							to="/register"
+							to={`/register?source=modal&feature=${featureKey}`}
 							variant="contained"
 							color={featureData.colorKey}
 							size="large"

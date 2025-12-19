@@ -79,7 +79,7 @@ const ComboPage = () => {
 									delay: 0.2,
 								}}
 							>
-								<Typography variant="h2">Estudio Jurídico Virtual</Typography>
+								<Typography variant="h2">Tu estudio jurídico funcionando 24/7</Typography>
 							</motion.div>
 						</Grid>
 						<Grid item xs={12} md={8}>
@@ -94,8 +94,7 @@ const ComboPage = () => {
 								}}
 							>
 								<Typography variant="h5" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
-									Con Law||Analytics puedes mantener tu estudio jurídico de forma 100% virtual y trabajar de forma remota y colaborativa
-									desde cualquier lugar 🌍
+									Centralizá tu práctica, automatizá tareas y trabajá desde cualquier lugar sin perder control.
 								</Typography>
 							</motion.div>
 						</Grid>

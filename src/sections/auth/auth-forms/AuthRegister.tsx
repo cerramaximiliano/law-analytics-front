@@ -31,6 +31,7 @@ import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { setNeedsVerification } from "store/reducers/auth";
 import { strengthColor, strengthIndicator } from "utils/password-strength";
+import { trackSignUp } from "utils/gtm";
 
 // types
 import { StringColorProps } from "types/password";
@@ -40,7 +41,12 @@ import { Eye, EyeSlash } from "iconsax-react";
 
 // ============================|| JWT - REGISTER ||============================ //
 
-const AuthRegister = () => {
+interface AuthRegisterProps {
+	source?: string;
+	feature?: string;
+}
+
+const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 	const { register } = useAuth();
 	const scriptedRef = useScriptRef();
 	// La navegación se hará con window.location.href
@@ -89,6 +95,10 @@ const AuthRegister = () => {
 						if (scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);
+
+							// Track successful sign up with email
+							trackSignUp("email", source, feature);
+
 							dispatch(
 								openSnackbar({
 									open: true,

@@ -159,23 +159,55 @@ Medir qué porcentaje de usuarios ve toda la landing page.
 
 ---
 
-## Funnel 7: Feature Modal (Próximo a implementar)
+## Funnel 7: Feature Modal Completo (IMPLEMENTADO)
 
 ### Objetivo
-Medir la efectividad de los modals de detalle de features.
+Medir la efectividad de los modals de detalle de features con atribución completa.
 
 ### Configuración
 
 | Paso | Nombre | Evento | Parámetro |
 |------|--------|--------|-----------|
-| 1 | Click en Card | `feature_interest` | (cualquier feature) |
-| 2 | Abre Modal | `feature_modal_open` | `feature` = nombre |
-| 3 | Click CTA Modal | `feature_modal_cta_click` | `feature` = nombre |
-| 4 | Inicia Registro | `register_start` | - |
+| 1 | Vista Sección | `view_features_section` | - |
+| 2 | Click en Card | `feature_interest` | `feature` = nombre |
+| 3 | Abre Modal | `feature_modal_open` | `feature` = nombre |
+| 4 | Scroll Modal | `feature_modal_scroll` | `feature` = nombre |
+| 5 | Click CTA Modal | `feature_modal_cta_click` | `feature` = nombre |
+| 6 | Vista Registro | `register_view` | `source` = modal, `feature` = nombre |
+| 7 | Registro Exitoso | `sign_up` | `method`, `source`, `feature` |
 
 ### Insight esperado
 - ¿Los modals mejoran la conversión?
 - ¿Qué feature en modal convierte mejor?
+- ¿En qué paso se cae el usuario?
+- ¿Qué feature debería ir en el hero o en ads?
+
+---
+
+## Funnel 8: Funnel de Intención por Feature (RECOMENDADO)
+
+### Objetivo
+Medir las 4 capas de intención: exposición → interés → consideración → alta intención
+
+### Configuración (filtrar por feature)
+
+| Paso | Nombre | Evento | Lo que indica |
+|------|--------|--------|---------------|
+| 1 | Exposición | `view_features_section` | ¿La gente llega a ver las features? |
+| 2 | Interés | `feature_interest` | Curiosidad superficial |
+| 3 | Consideración | `feature_modal_open` | Interés real |
+| 4 | Alta Intención | `feature_modal_cta_click` | Pre-conversión |
+| 5 | Conversión | `sign_up` | Conversión final |
+
+### Cómo usarlo
+Filtrar por `feature` = `carpetas`, `calculos`, etc. para ver qué feature vende mejor.
+
+### Insight esperado
+- ¿Qué feature genera más interés?
+- ¿Qué feature convierte mejor?
+- ¿Dónde se cae el usuario?
+- ¿Qué feature debería subir al hero?
+- ¿Qué feature usar en ads?
 
 ---
 
@@ -237,7 +269,8 @@ Medir la efectividad de los modals de detalle de features.
 - [ ] Funnel 4: Comparativo de CTAs (x3)
 - [ ] Funnel 5: Journey Completo con Registro
 - [ ] Funnel 6: Engagement Profundo
-- [ ] Funnel 7: Feature Modal (requiere implementación de modals)
+- [x] Funnel 7: Feature Modal Completo (IMPLEMENTADO)
+- [x] Funnel 8: Funnel de Intención por Feature (IMPLEMENTADO)
 
 ### Segmentos
 - [x] Tráfico Instagram

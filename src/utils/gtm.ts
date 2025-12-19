@@ -32,10 +32,16 @@ export const GTMEvents = {
 	CTA_CLICK_PRUEBA_PAGAR: "cta_click_prueba_pagar",
 	FEATURE_INTEREST: "feature_interest",
 	HIGH_SCROLL_NO_CTA: "high_scroll_no_cta",
+	// Feature section events (funnel tracking)
+	VIEW_FEATURES_SECTION: "view_features_section",
 	// Feature modal events
 	FEATURE_MODAL_OPEN: "feature_modal_open",
 	FEATURE_MODAL_CLOSE: "feature_modal_close",
+	FEATURE_MODAL_SCROLL: "feature_modal_scroll",
 	FEATURE_MODAL_CTA_CLICK: "feature_modal_cta_click",
+	// Registration funnel events
+	REGISTER_VIEW: "register_view",
+	SIGN_UP: "sign_up",
 } as const;
 
 // Landing page section names for scroll tracking
@@ -135,5 +141,47 @@ export const trackFeatureModalClose = (featureName: string): void => {
 export const trackFeatureModalCTAClick = (featureName: string): void => {
 	pushGTMEvent(GTMEvents.FEATURE_MODAL_CTA_CLICK, {
 		feature: featureName,
+		destination: "/register",
+		source: "modal",
+	});
+};
+
+/**
+ * Track view of features section (Intersection Observer - 50% visible)
+ */
+export const trackViewFeaturesSection = (): void => {
+	pushGTMEvent(GTMEvents.VIEW_FEATURES_SECTION, {
+		section: "features",
+		page: "landing",
+	});
+};
+
+/**
+ * Track scroll inside feature modal (50% scroll)
+ */
+export const trackFeatureModalScroll = (featureName: string): void => {
+	pushGTMEvent(GTMEvents.FEATURE_MODAL_SCROLL, {
+		feature: featureName,
+	});
+};
+
+/**
+ * Track register page view with attribution
+ */
+export const trackRegisterView = (source?: string, feature?: string): void => {
+	pushGTMEvent(GTMEvents.REGISTER_VIEW, {
+		source: source || "direct",
+		feature: feature || null,
+	});
+};
+
+/**
+ * Track successful sign up with attribution
+ */
+export const trackSignUp = (method: "email" | "google", source?: string, feature?: string): void => {
+	pushGTMEvent(GTMEvents.SIGN_UP, {
+		method,
+		source: source || "direct",
+		feature: feature || null,
 	});
 };
