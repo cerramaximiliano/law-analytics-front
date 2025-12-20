@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // icons
 import { FolderOpen, Profile2User, Calendar, Calculator, Chart, TaskSquare, CalendarTick, CloseCircle, TickCircle } from "iconsax-react";
 // images
-import folderMovementsImg from "assets/images/folder_movements.png";
+import folderViewImg from "assets/images/folder_view.png";
 // tracking
 import { trackFeatureModalOpen, trackFeatureModalClose, trackFeatureModalCTAClick, trackFeatureModalScroll } from "utils/gtm";
 import { FeatureNames } from "utils/gtm";
@@ -29,14 +29,14 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		title: "Expedientes organizados, sin esfuerzo",
 		description: "Todo tu estudio en un solo lugar, sincronizado con el Poder Judicial.",
 		benefits: [
-			"Vista unificada de todas tus causas activas",
-			"Movimientos automáticos desde PJN y MEV",
-			"Alertas de vencimientos y plazos",
+			"Vista unificada",
+			"Integración con PJN y MEV",
+			"Alertas de movimientos",
 		],
 		cta: "Probar con mis expedientes",
 		iconComponent: FolderOpen,
 		colorKey: "warning",
-		mockupImage: folderMovementsImg,
+		mockupImage: folderViewImg,
 	},
 	[FeatureNames.CONTACTOS]: {
 		title: "Clientes Centralizados",
@@ -204,9 +204,12 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 						exit: { opacity: 0, scale: 0.9 },
 						transition: { duration: 0.2 },
 						sx: {
-							borderRadius: 3,
-							overflow: "visible",
-							maxWidth: 500,
+							borderRadius: "16px",
+							overflow: "hidden",
+							maxWidth: 700,
+							bgcolor: "#F9FAFB",
+							border: "1px solid rgba(0, 0, 0, 0.08)",
+							boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
 						},
 					}}
 					slotProps={{
@@ -217,15 +220,14 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 						},
 					}}
 				>
-					<Box ref={contentRef} sx={{ position: "relative", overflow: "hidden" }}>
-						{/* Header con fondo suave */}
+					<Box ref={contentRef} sx={{ position: "relative" }}>
+						{/* Header con gradiente suave */}
 						<Box
 							sx={{
-								bgcolor: "#F8FAFC",
-								px: { xs: 3, sm: 4 },
-								py: 3,
+								background: "linear-gradient(135deg, #EEF2FF 0%, #F8FAFF 100%)",
+								px: { xs: 2.5, sm: 4 },
+								py: { xs: 2, sm: 3 },
 								position: "relative",
-								borderRadius: "12px 12px 0 0",
 							}}
 						>
 							{/* Close button */}
@@ -250,7 +252,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 								sx={{
 									textAlign: "center",
 									mb: 1,
-									fontWeight: 600,
+									fontWeight: 800,
 									color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
 								}}
 							>
@@ -264,6 +266,8 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 									textAlign: "center",
 									color: theme.palette.text.secondary,
 									lineHeight: 1.5,
+									fontSize: "0.95rem",
+									opacity: 0.75,
 								}}
 							>
 								{featureData.description}
@@ -271,28 +275,28 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 						</Box>
 
 						{/* Content */}
-						<Box sx={{ px: { xs: 3, sm: 4 }, py: 3, borderRadius: "0 0 12px 12px" }}>
+						<Box sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 } }}>
 
-						{/* Mockup Image */}
-						{featureData.mockupImage && (
-							<Box
-								sx={{
-									mb: 3,
-									p: 2,
-									borderRadius: 2,
-									bgcolor: "#F9FAFB",
-									display: "flex",
-									justifyContent: "center",
-								}}
-							>
+						{/* Imagen + Bullets lado a lado (mobile: vertical) */}
+						<Box
+							sx={{
+								display: "flex",
+								flexDirection: { xs: "column", sm: "row" },
+								gap: 2.5,
+								mb: 2.5,
+								alignItems: { xs: "stretch", sm: "flex-start" },
+							}}
+						>
+							{/* Mockup Image */}
+							{featureData.mockupImage && (
 								<Box
 									sx={{
-										width: "130%",
-										maxWidth: "130%",
-										borderRadius: 1.5,
+										width: { xs: "100%", sm: "65%" },
+										flexShrink: 0,
+										borderRadius: "14px",
 										overflow: "hidden",
+										boxShadow: "0 20px 50px rgba(0, 0, 0, 0.15)",
 										border: "1px solid #E5E7EB",
-										boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
 									}}
 								>
 									<CardMedia
@@ -302,37 +306,44 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 										sx={{
 											width: "100%",
 											height: "auto",
-											maxHeight: 180,
-											objectFit: "cover",
-											objectPosition: "top",
+											display: "block",
 										}}
 									/>
 								</Box>
-							</Box>
-						)}
+							)}
 
-						{/* Benefits */}
-						<Box sx={{ mb: 4 }}>
-							{featureData.benefits.map((benefit, index) => (
-								<Box
-									key={index}
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1.5,
-										mb: 1.5,
-									}}
-								>
-									<TickCircle size={20} variant="Bold" style={{ color: theme.palette.success.main, flexShrink: 0 }} />
-									<Typography variant="body2" color="text.primary">
-										{benefit}
-									</Typography>
-								</Box>
-							))}
+							{/* Benefits - 35% */}
+							<Box
+								sx={{
+									flex: 1,
+									px: "12px",
+									py: "8px",
+									borderRadius: "10px",
+									bgcolor: "#F8FAFC",
+									userSelect: "none",
+								}}
+							>
+								{featureData.benefits.map((benefit, index) => (
+									<Box
+										key={index}
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: 0.75,
+											mb: index < featureData.benefits.length - 1 ? 0.5 : 0,
+										}}
+									>
+										<TickCircle size={16} variant="Bold" style={{ color: theme.palette.success.main, flexShrink: 0 }} />
+										<Typography variant="body2" color="text.primary" sx={{ fontSize: "0.75rem", lineHeight: 1.35 }}>
+											{benefit}
+										</Typography>
+									</Box>
+								))}
+							</Box>
 						</Box>
 
-						{/* CTA Button */}
-						<Box sx={{ mt: 4, mb: 2, px: 2 }}>
+						{/* CTA Button - Full width */}
+						<Box sx={{ mt: 1, mb: 2 }}>
 							<Button
 								component={RouterLink}
 								to={`/register?source=modal&feature=${featureKey}`}
@@ -342,10 +353,14 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 								fullWidth
 								onClick={handleCTAClick}
 								sx={{
-									py: 2,
-									fontSize: "1.1rem",
+									height: { xs: "46px", sm: "56px" },
+									fontSize: { xs: "0.95rem", sm: "1.1rem" },
 									fontWeight: 600,
 									borderRadius: 2,
+									boxShadow: "0 6px 20px rgba(0, 0, 0, 0.18)",
+									"&:hover": {
+										boxShadow: "0 8px 25px rgba(0, 0, 0, 0.22)",
+									},
 								}}
 							>
 								{featureData.cta}
@@ -363,7 +378,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 							>
 								{["Sin tarjeta", "Registro en 1 minuto"].map((text, index) => (
 									<Box key={index} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-										<TickCircle size={14} variant="Bold" color="#66bb6a" />
+										<TickCircle size={16} variant="Bold" color="#66bb6a" />
 										<Typography variant="caption" color="text.secondary">
 											{text}
 										</Typography>

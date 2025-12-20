@@ -23,13 +23,20 @@ const UnsubscribePage = () => {
 
 	const email = searchParams.get("email");
 	const category = searchParams.get("category");
+	const template = searchParams.get("template");
+	const campaign = searchParams.get("campaign");
 
 	const handleUnsubscribe = async () => {
 		if (!email) return;
 
 		setLoading(true);
 		try {
-			const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}`, {
+			const params = new URLSearchParams();
+			if (template) params.append("template", template);
+			if (campaign) params.append("campaign", campaign);
+
+			const url = `${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}${params.toString() ? `?${params.toString()}` : ""}`;
+			const response = await axios.delete(url, {
 				withCredentials: true,
 			});
 
