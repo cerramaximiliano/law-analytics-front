@@ -253,38 +253,40 @@ const TestimonialPage = () => {
 				{/* CTA */}
 				<Box sx={{ textAlign: "center", mt: 6 }}>
 					<FadeInWhenVisible>
-						<Typography
-							variant="h4"
-							sx={{
-								mb: 3,
-								fontWeight: 600,
-								color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
-							}}
-						>
-							¿Querés trabajar así vos también?
-						</Typography>
-						<Button
-							component={RouterLink}
-							to="/register"
-							variant="contained"
-							color="primary"
-							size="large"
-							sx={{
-								px: 5,
-								py: 1.5,
-								borderRadius: 2,
-								fontWeight: 600,
-								fontSize: "1rem",
-								boxShadow: theme.shadows[4],
-								"&:hover": {
-									boxShadow: theme.shadows[8],
-									transform: "translateY(-2px)",
-								},
-								transition: "all 0.2s ease-in-out",
-							}}
-						>
-							Probar gratis ahora
-						</Button>
+						<Box>
+							<Typography
+								variant="h4"
+								sx={{
+									mb: 3,
+									fontWeight: 600,
+									color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
+								}}
+							>
+								¿Querés trabajar así vos también?
+							</Typography>
+							<Button
+								component={RouterLink}
+								to="/register"
+								variant="contained"
+								color="primary"
+								size="large"
+								sx={{
+									px: 5,
+									py: 1.5,
+									borderRadius: 2,
+									fontWeight: 600,
+									fontSize: "1rem",
+									boxShadow: theme.shadows[4],
+									"&:hover": {
+										boxShadow: theme.shadows[8],
+										transform: "translateY(-2px)",
+									},
+									transition: "all 0.2s ease-in-out",
+								}}
+							>
+								Probar gratis ahora
+							</Button>
+						</Box>
 					</FadeInWhenVisible>
 				</Box>
 			</Box>
