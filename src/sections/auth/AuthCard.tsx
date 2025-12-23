@@ -10,8 +10,9 @@ import MainCard, { MainCardProps } from "components/MainCard";
 const AuthCard = ({ children, ...other }: MainCardProps) => (
 	<MainCard
 		sx={{
-			maxWidth: { xs: 400, md: 480 },
-			margin: { xs: 2.5, md: 3 },
+			maxWidth: { xs: "calc(100vw - 32px)", sm: 400, md: 420 },
+			width: "100%",
+			margin: { xs: 2, md: 3 },
 			"& > *": {
 				flexGrow: 1,
 				flexBasis: "50%",
@@ -20,7 +21,7 @@ const AuthCard = ({ children, ...other }: MainCardProps) => (
 		content={false}
 		{...other}
 	>
-		<Box sx={{ p: { xs: 2, sm: 3, md: 4, xl: 5 } }}>{children}</Box>
+		<Box sx={{ p: { xs: 2.5, sm: 3, md: 3.5 }, py: { xs: 2, sm: 2.5, md: 3 } }}>{children}</Box>
 	</MainCard>
 );
 

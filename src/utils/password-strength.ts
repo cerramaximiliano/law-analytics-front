@@ -12,13 +12,14 @@ const hasMixed: StringBoolFunc = (number) => new RegExp(/[a-z]/).test(number) &&
 const hasSpecial: StringBoolFunc = (number) => new RegExp(/[!#@$%^&*)(+=._-]/).test(number);
 
 // set color based on password strength
+// Usamos colores neutros/positivos para evitar fricción visual
 export const strengthColor: NumbColorFunc = (count) => {
-	if (count < 2) return { label: "Débil", color: "error.main" };
-	if (count < 3) return { label: "Baja", color: "warning.main" };
-	if (count < 4) return { label: "Normal", color: "warning.dark" };
-	if (count < 5) return { label: "Buena", color: "success.main" };
-	if (count < 6) return { label: "Fuerte", color: "success.dark" };
-	return { label: "Débil", color: "error.main" };
+	if (count < 2) return { label: "Básica", color: "grey.400" };
+	if (count < 3) return { label: "Aceptable", color: "warning.light" };
+	if (count < 4) return { label: "Buena", color: "success.light" };
+	if (count < 5) return { label: "Muy buena", color: "success.main" };
+	if (count < 6) return { label: "Excelente", color: "success.dark" };
+	return { label: "Básica", color: "grey.400" };
 };
 
 // password strength indicator

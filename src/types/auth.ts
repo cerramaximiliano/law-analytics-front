@@ -143,8 +143,8 @@ export interface ServerContextType extends AuthProps {
 	register: (
 		email: string,
 		password: string,
-		firstName: string,
-		lastName: string,
+		firstName?: string,
+		lastName?: string,
 	) => Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }>;
 	verifyCode?: (email: string, code: string) => Promise<VerifyCodeResponse>;
 	updateProfile: (userData: Partial<UserProfile>) => Promise<void>;

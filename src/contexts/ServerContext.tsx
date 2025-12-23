@@ -509,15 +509,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	const register = async (
 		email: string,
 		password: string,
-		firstName: string,
-		lastName: string,
+		firstName?: string,
+		lastName?: string,
 	): Promise<{ email: string; isLoggedIn: boolean; needsVerification: boolean }> => {
 		try {
 			const response = await axios.post<RegisterResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/register`, {
 				email,
 				password,
-				firstName,
-				lastName,
+				...(firstName && { firstName }),
+				...(lastName && { lastName }),
 			});
 
 			// Siempre necesitará verificación para nuevos registros

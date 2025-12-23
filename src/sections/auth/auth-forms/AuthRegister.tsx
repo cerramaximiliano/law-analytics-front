@@ -1,17 +1,18 @@
 import React from "react";
-import { useEffect, useState, SyntheticEvent } from "react";
+import { useState, SyntheticEvent } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import {
+	Alert,
 	Box,
 	Button,
+	CircularProgress,
 	FormControl,
 	FormHelperText,
 	Grid,
 	Link,
 	InputAdornment,
-	InputLabel,
 	OutlinedInput,
 	Stack,
 	Typography,
@@ -37,7 +38,7 @@ import { trackSignUp } from "utils/gtm";
 import { StringColorProps } from "types/password";
 
 // assets
-import { Eye, EyeSlash } from "iconsax-react";
+import { Eye, EyeSlash, TickCircle, Sms, Lock } from "iconsax-react";
 
 // ============================|| JWT - REGISTER ||============================ //
 
@@ -68,30 +69,21 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 		setLevel(strengthColor(temp));
 	};
 
-	useEffect(() => {
-		changePassword("");
-	}, []);
-
 	return (
 		<>
 			<Formik
 				initialValues={{
-					firstname: "",
-					lastname: "",
 					email: "",
-					company: "",
 					password: "",
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
-					firstname: Yup.string().max(255).required("El nombre es requerido"),
-					lastname: Yup.string().max(255).required("El apellido es requerido"),
 					email: Yup.string().email("Debe ser un correo válido").max(255).required("El correo es requerido"),
-					password: Yup.string().max(255).required("El password es requerido"),
+					password: Yup.string().min(8, "Mínimo 8 caracteres").max(255).required("El password es requerido"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
-						await register(values.email, values.password, values.firstname, values.lastname);
+						await register(values.email, values.password);
 						if (scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);
@@ -137,73 +129,15 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
 					<form noValidate onSubmit={handleSubmit}>
 						<Grid container spacing={3}>
-							<Grid item xs={12} md={6}>
-								<Stack spacing={1}>
-									<InputLabel htmlFor="firstname-signup">Nombre*</InputLabel>
-									<OutlinedInput
-										id="firstname-login"
-										type="firstname"
-										value={values.firstname}
-										name="firstname"
-										onBlur={handleBlur}
-										onChange={handleChange}
-										placeholder="John"
-										fullWidth
-										error={Boolean(touched.firstname && errors.firstname)}
-									/>
-									{touched.firstname && errors.firstname && (
-										<FormHelperText error id="helper-text-firstname-signup">
-											{errors.firstname}
-										</FormHelperText>
-									)}
-								</Stack>
-							</Grid>
-							<Grid item xs={12} md={6}>
-								<Stack spacing={1}>
-									<InputLabel htmlFor="lastname-signup">Apellido*</InputLabel>
-									<OutlinedInput
-										fullWidth
-										error={Boolean(touched.lastname && errors.lastname)}
-										id="lastname-signup"
-										type="lastname"
-										value={values.lastname}
-										name="lastname"
-										onBlur={handleBlur}
-										onChange={handleChange}
-										placeholder="Doe"
-										inputProps={{}}
-									/>
-									{touched.lastname && errors.lastname && (
-										<FormHelperText error id="helper-text-lastname-signup">
-											{errors.lastname}
-										</FormHelperText>
-									)}
-								</Stack>
-							</Grid>
+							{errors.submit && (
+								<Grid item xs={12}>
+									<Alert severity="error" sx={{ py: 0.5 }}>
+										{errors.submit}
+									</Alert>
+								</Grid>
+							)}
 							<Grid item xs={12}>
-								<Stack spacing={1}>
-									<InputLabel htmlFor="company-signup">Empresa/Estudio</InputLabel>
-									<OutlinedInput
-										fullWidth
-										error={Boolean(touched.company && errors.company)}
-										id="company-signup"
-										value={values.company}
-										name="company"
-										onBlur={handleBlur}
-										onChange={handleChange}
-										placeholder="Demo Inc."
-										inputProps={{}}
-									/>
-									{touched.company && errors.company && (
-										<FormHelperText error id="helper-text-company-signup">
-											{errors.company}
-										</FormHelperText>
-									)}
-								</Stack>
-							</Grid>
-							<Grid item xs={12}>
-								<Stack spacing={1}>
-									<InputLabel htmlFor="email-signup">Email*</InputLabel>
+								<Stack spacing={0.5}>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.email && errors.email)}
@@ -213,8 +147,18 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										name="email"
 										onBlur={handleBlur}
 										onChange={handleChange}
-										placeholder="demo@company.com"
-										inputProps={{}}
+										placeholder="nombre@estudio.com"
+										startAdornment={
+											<InputAdornment position="start">
+												<Sms size={20} color="#8c8c8c" />
+											</InputAdornment>
+										}
+										sx={{ "& input": { py: 1.5 } }}
+										inputProps={{
+											inputMode: "email",
+											autoCapitalize: "off",
+											autoCorrect: "off",
+										}}
 									/>
 									{touched.email && errors.email && (
 										<FormHelperText error id="helper-text-email-signup">
@@ -224,8 +168,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 								</Stack>
 							</Grid>
 							<Grid item xs={12}>
-								<Stack spacing={1}>
-									<InputLabel htmlFor="password-signup">Password</InputLabel>
+								<Stack spacing={0.5}>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.password && errors.password)}
@@ -238,6 +181,11 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 											handleChange(e);
 											changePassword(e.target.value);
 										}}
+										startAdornment={
+											<InputAdornment position="start">
+												<Lock size={20} color="#8c8c8c" />
+											</InputAdornment>
+										}
 										endAdornment={
 											<InputAdornment position="end">
 												<IconButton
@@ -246,56 +194,113 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 													onMouseDown={handleMouseDownPassword}
 													edge="end"
 													color="secondary"
+													sx={{ minWidth: 44, minHeight: 44 }}
 												>
 													{showPassword ? <Eye /> : <EyeSlash />}
 												</IconButton>
 											</InputAdornment>
 										}
-										placeholder="******"
-										inputProps={{}}
+										placeholder="Elegí una contraseña"
+										sx={{ "& input": { py: 1.5 } }}
+										inputProps={{
+											autoCapitalize: "off",
+											autoCorrect: "off",
+											spellCheck: "false",
+										}}
 									/>
+									<Typography variant="caption" color="text.secondary">
+										8+ caracteres
+									</Typography>
 									{touched.password && errors.password && (
 										<FormHelperText error id="helper-text-password-signup">
 											{errors.password}
 										</FormHelperText>
 									)}
 								</Stack>
-								<FormControl fullWidth sx={{ mt: 2 }}>
-									<Grid container spacing={2} alignItems="center">
-										<Grid item>
-											<Box sx={{ bgcolor: level?.color, width: 85, height: 8, borderRadius: "7px" }} />
+								{values.password.length >= 3 && (
+									<FormControl fullWidth sx={{ mt: 1 }}>
+										<Grid container spacing={2} alignItems="center">
+											<Grid item>
+												<Box sx={{ bgcolor: level?.color, width: 85, height: 8, borderRadius: "7px" }} />
+											</Grid>
+											<Grid item>
+												<Typography variant="subtitle1" fontSize="0.75rem" color="text.secondary">
+													{level?.label}
+												</Typography>
+											</Grid>
 										</Grid>
-										<Grid item>
-											<Typography variant="subtitle1" fontSize="0.75rem">
-												{level?.label}
-											</Typography>
-										</Grid>
-									</Grid>
-								</FormControl>
+									</FormControl>
+								)}
 							</Grid>
 							<Grid item xs={12}>
-								<Typography variant="body2">
-									Registrándose, está de acuerdo con &nbsp;
-									<Link variant="subtitle2" component={RouterLink} to="/terms" target="_blank" rel="noopener noreferrer">
+								<AnimateButton>
+									<Button
+										disableElevation
+										disabled={isSubmitting}
+										fullWidth
+										size="large"
+										type="submit"
+										variant="contained"
+										color="primary"
+										startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+									>
+										{isSubmitting ? "Creando..." : "Empezar gratis ahora"}
+									</Button>
+								</AnimateButton>
+								<Stack
+									direction="row"
+									spacing={1}
+									justifyContent="center"
+									alignItems="center"
+									sx={{ mt: 1.5 }}
+								>
+									<Stack direction="row" alignItems="center" spacing={0.3}>
+										<TickCircle size={10} variant="Bold" color="#4caf50" />
+										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+											Sin tarjeta
+										</Typography>
+									</Stack>
+									<Stack direction="row" alignItems="center" spacing={0.3}>
+										<TickCircle size={10} variant="Bold" color="#4caf50" />
+										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+											Acceso inmediato
+										</Typography>
+									</Stack>
+									<Stack direction="row" alignItems="center" spacing={0.3}>
+										<TickCircle size={10} variant="Bold" color="#4caf50" />
+										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+											Cancelá cuando quieras
+										</Typography>
+									</Stack>
+								</Stack>
+								<Typography
+									variant="caption"
+									color="text.secondary"
+									sx={{ mt: 2, display: "block", textAlign: "center", fontSize: "0.65rem", lineHeight: 1.6, opacity: 0.7 }}
+								>
+									Registrándose, está de acuerdo con{" "}
+									<Link
+										variant="caption"
+										component={RouterLink}
+										to="/terms"
+										target="_blank"
+										rel="noopener noreferrer"
+										sx={{ fontSize: "0.65rem" }}
+									>
 										Términos del Servicio
 									</Link>
-									&nbsp; y &nbsp;
-									<Link variant="subtitle2" component={RouterLink} to="/privacy-policy" target="_blank" rel="noopener noreferrer">
+									{" "}y{" "}
+									<Link
+										variant="caption"
+										component={RouterLink}
+										to="/privacy-policy"
+										target="_blank"
+										rel="noopener noreferrer"
+										sx={{ fontSize: "0.65rem" }}
+									>
 										Política de Privacidad
 									</Link>
 								</Typography>
-							</Grid>
-							{errors.submit && (
-								<Grid item xs={12}>
-									<FormHelperText error>{errors.submit}</FormHelperText>
-								</Grid>
-							)}
-							<Grid item xs={12}>
-								<AnimateButton>
-									<Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-										Crear una Cuenta
-									</Button>
-								</AnimateButton>
 							</Grid>
 						</Grid>
 					</form>

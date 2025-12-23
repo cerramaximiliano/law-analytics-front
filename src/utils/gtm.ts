@@ -42,6 +42,7 @@ export const GTMEvents = {
 	// Registration funnel events
 	REGISTER_VIEW: "register_view",
 	SIGN_UP: "sign_up",
+	GOOGLE_SIGNUP_CLICK: "google_signup_click",
 } as const;
 
 // Landing page section names for scroll tracking
@@ -181,6 +182,16 @@ export const trackRegisterView = (source?: string, feature?: string): void => {
 export const trackSignUp = (method: "email" | "google", source?: string, feature?: string): void => {
 	pushGTMEvent(GTMEvents.SIGN_UP, {
 		method,
+		source: source || "direct",
+		feature: feature || null,
+	});
+};
+
+/**
+ * Track Google signup button click (before auth flow starts)
+ */
+export const trackGoogleSignupClick = (source?: string, feature?: string): void => {
+	pushGTMEvent(GTMEvents.GOOGLE_SIGNUP_CLICK, {
 		source: source || "direct",
 		feature: feature || null,
 	});

@@ -36,10 +36,11 @@ const AuthWrapper = ({ children }: Props) => (
 					alignItems="center"
 					sx={{
 						minHeight: {
-							xs: "calc(100vh - 210px)",
+							xs: "auto",
 							sm: "calc(100vh - 134px)",
 							md: "calc(100vh - 112px)",
 						},
+						py: { xs: 2, sm: 0 },
 					}}
 				>
 					<Grid item>

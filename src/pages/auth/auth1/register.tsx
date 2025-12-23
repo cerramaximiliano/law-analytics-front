@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useGoogleLogin, CredentialResponse } from "@react-oauth/google";
 
 // material-ui
-import { Grid, Stack, Alert, Typography } from "@mui/material";
+import { Grid, Stack, Alert, Typography, Box } from "@mui/material";
+
+// icons
+import { TickCircle } from "iconsax-react";
 
 // project-imports
 import Logo from "components/logo";
@@ -13,7 +16,7 @@ import AuthDivider from "sections/auth/AuthDivider";
 import AuthWrapper from "sections/auth/AuthWrapper";
 import AuthRegister from "sections/auth/auth-forms/AuthRegister";
 import CustomGoogleButton from "components/auth/CustomGoogleButton";
-import { trackRegisterView, trackSignUp } from "utils/gtm";
+import { trackRegisterView, trackSignUp, trackGoogleSignupClick } from "utils/gtm";
 
 const Register = () => {
 	const { loginWithGoogle } = useAuth();
@@ -66,6 +69,12 @@ const Register = () => {
 		flow: "implicit",
 	});
 
+	// Handle Google button click with tracking
+	const handleGoogleClick = () => {
+		trackGoogleSignupClick(source, feature);
+		googleLogin();
+	};
+
 	// Mostrar mensaje de mantenimiento si está activo
 	if (isMaintenanceMode) {
 		return (
@@ -96,29 +105,56 @@ const Register = () => {
 					<Logo to="/" />
 				</Grid>
 				<Grid item xs={12}>
-					<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
-						<Typography variant="h3">Registro</Typography>
+					<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
+						<Typography variant="h3">Empezá gratis</Typography>
 						<Typography component={Link} to={"/login"} variant="body1" sx={{ textDecoration: "none" }} color="primary">
 							¿Ya tienes una cuenta?
 						</Typography>
 					</Stack>
+					<Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+						Configuración inicial en menos de 2 minutos
+					</Typography>
 				</Grid>
 				<Grid item xs={12}>
+					<Box sx={{ mb: 1.5 }}>
+						<Stack spacing={0.3}>
+							<Stack direction="row" alignItems="center" spacing={0.75}>
+								<TickCircle size={14} variant="Bold" color="#4caf50" />
+								<Typography variant="caption" color="text.secondary">Estados y movimientos automáticos</Typography>
+							</Stack>
+							<Stack direction="row" alignItems="center" spacing={0.75}>
+								<TickCircle size={14} variant="Bold" color="#4caf50" />
+								<Typography variant="caption" color="text.secondary">Alertas de vencimientos</Typography>
+							</Stack>
+							<Stack direction="row" alignItems="center" spacing={0.75}>
+								<TickCircle size={14} variant="Bold" color="#4caf50" />
+								<Typography variant="caption" color="text.secondary">Centralizá agenda y cálculos</Typography>
+							</Stack>
+						</Stack>
+					</Box>
 					{error && (
 						<Alert severity="error" sx={{ mb: 2 }}>
 							{error}
 						</Alert>
 					)}
-					<AuthRegister source={source} feature={feature} />
+					<CustomGoogleButton
+						onClick={handleGoogleClick}
+						disabled={isLoading}
+						showLoader={isLoading}
+						text="Registrate con Google"
+						fullWidth
+						sx={{ py: 1.5 }}
+					/>
 				</Grid>
 				<Grid item xs={12}>
 					<AuthDivider>
-						<Typography variant="body1">O</Typography>
+						<Typography variant="caption" color="text.secondary" sx={{ opacity: 0.5, fontSize: "0.7rem" }}>
+							o registrate con email
+						</Typography>
 					</AuthDivider>
 				</Grid>
 				<Grid item xs={12}>
-					{/* Botón personalizado que llama a googleLogin.login() */}
-					<CustomGoogleButton onClick={() => googleLogin()} disabled={isLoading} showLoader={isLoading} text="Registrarse con Google" fullWidth />
+					<AuthRegister source={source} feature={feature} />
 				</Grid>
 			</Grid>
 		</AuthWrapper>
