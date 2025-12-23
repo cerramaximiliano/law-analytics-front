@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, ButtonProps, CircularProgress } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, SxProps, Theme } from "@mui/material/styles";
 
 // Project-imports
 import AnimateButton from "components/@extended/AnimateButton";
@@ -55,6 +55,7 @@ interface CustomGoogleButtonProps {
 	fullWidth?: boolean;
 	customHeight?: string;
 	showLoader?: boolean;
+	sx?: SxProps<Theme>;
 }
 
 const CustomGoogleButton = ({
@@ -64,6 +65,7 @@ const CustomGoogleButton = ({
 	fullWidth = true,
 	customHeight,
 	showLoader = false,
+	sx,
 }: CustomGoogleButtonProps) => {
 	return (
 		<AnimateButton type="scale">
@@ -89,6 +91,7 @@ const CustomGoogleButton = ({
 				size="large"
 				disableElevation // Importante: asegura que no haya sombra
 				customheight={customHeight}
+				sx={sx}
 			>
 				{text}
 			</GoogleButton>
