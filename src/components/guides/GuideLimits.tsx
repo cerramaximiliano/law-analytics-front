@@ -101,7 +101,7 @@ const IntroductionContent = () => {
 						<Typography variant="subtitle1" fontWeight="bold" gutterBottom>
 							Límites de Almacenamiento
 						</Typography>
-						<Typography variant="body2">Controlan el espacio total que utilizas (activos + archivados + archivos)</Typography>
+						<Typography variant="body2">Controlan el espacio total que utilizas (archivados + archivos)</Typography>
 					</Paper>
 				</Grid>
 			</Grid>
@@ -334,7 +334,7 @@ const ActiveVsArchivedContent = () => {
 					</Typography>
 
 					<Typography variant="body2" gutterBottom>
-						Estado final: 3 activas + 2 archivadas = ¡2 espacios libres!
+						Estado final: 3 activas + 2 archivadas = espacio para archivar libre
 					</Typography>
 					<LinearProgress variant="determinate" value={60} sx={{ height: 10, borderRadius: 5 }} color="success" />
 				</Box>
@@ -763,7 +763,7 @@ const GuideLimits = ({ open, onClose }: GuideLimitsProps) => {
 					</Stepper>
 
 					<StyledPaper>
-						<Box sx={{ p: 3, minHeight: 400, maxHeight: "60vh", overflowY: "auto" }}>{steps[activeStep].content}</Box>
+						<Box sx={{ p: 3, height: 400, overflowY: "auto" }}>{steps[activeStep].content}</Box>
 					</StyledPaper>
 				</Box>
 			</DialogContent>

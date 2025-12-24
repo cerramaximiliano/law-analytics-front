@@ -418,7 +418,7 @@ const GuideIntereses: React.FC<GuideInteresesProps> = ({ open, onClose }) => {
 					))}
 				</Stepper>
 
-				<Box sx={{ p: 0 }}>
+				<Box sx={{ p: 0, height: 400, overflowY: "auto" }}>
 					<Box sx={{ p: 3 }}>
 						<Typography variant="h4" gutterBottom color="primary">
 							{steps[activeStep].title}

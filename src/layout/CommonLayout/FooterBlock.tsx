@@ -6,7 +6,7 @@ import { useState } from "react";
 
 // third-party
 import { motion } from "framer-motion";
-import { Facebook, Instagram, MessageText1, DocumentText, MessageQuestion } from "iconsax-react";
+import { Facebook, Instagram, MessageText1, DocumentText, MessageQuestion, Global } from "iconsax-react";
 
 // project-imports
 import Logo from "components/logo";
@@ -107,10 +107,16 @@ const FooterBlock = ({ isFull }: showProps) => {
 										<Typography variant="h5">Empresa</Typography>
 										<Stack spacing={{ xs: 1.5, md: 2.5 }}>
 											<FooterLink href="https://www.rumba-dev.com/" target="_blank" underline="none">
-												Desarrolladores
+												<Stack direction="row" alignItems="center" spacing={1}>
+													<Global size={16} />
+													<span>Desarrolladores</span>
+												</Stack>
 											</FooterLink>
 											<FooterLink href="https://www.instagram.com/law.analytics.app/" target="_blank" underline="none">
-												Redes sociales
+												<Stack direction="row" alignItems="center" spacing={1}>
+													<Instagram size={16} />
+													<span>Redes sociales</span>
+												</Stack>
 											</FooterLink>
 										</Stack>
 									</Stack>

@@ -447,7 +447,7 @@ const GuideLaboral: React.FC<GuideLaboralProps> = ({ open, onClose }) => {
 					))}
 				</Stepper>
 
-				<Box sx={{ p: 0 }}>{steps[activeStep] && <GuideStep title={steps[activeStep].title} content={steps[activeStep].content} />}</Box>
+				<Box sx={{ p: 0, height: 400, overflowY: "auto" }}>{steps[activeStep] && <GuideStep title={steps[activeStep].title} content={steps[activeStep].content} />}</Box>
 			</DialogContent>
 
 			<DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>

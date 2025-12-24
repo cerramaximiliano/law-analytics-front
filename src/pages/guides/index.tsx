@@ -23,6 +23,7 @@ import {
 } from "components/guides";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // icons
 import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21, Cloud } from "iconsax-react";
@@ -52,6 +53,7 @@ const GuidesPage = () => {
 	const [tasks, setTasks] = useState(false);
 	const [analytics, setAnalytics] = useState(false);
 	const [limits, setLimits] = useState(false);
+	const [supportOpen, setSupportOpen] = useState(false);
 
 	const guideData = [
 		{
@@ -212,19 +214,23 @@ const GuidesPage = () => {
 						</Grid>
 
 						<Grid item xs={12}>
-							<Grid container spacing={3}>
+							<Grid container spacing={3} alignItems="stretch">
 								{guideData.map((guide, index) => {
 									const IconComponent = guide.icon;
 									return (
-										<Grid item xs={12} sm={6} md={4} key={index}>
+										<Grid item xs={12} sm={6} md={4} key={index} sx={{ display: "flex" }}>
 											<motion.div
 												initial={{ opacity: 0, translateY: 20 }}
 												animate={{ opacity: 1, translateY: 0 }}
 												transition={{ duration: 0.3, delay: index * 0.1 }}
+												style={{ width: "100%", display: "flex" }}
 											>
 												<Card
 													sx={{
 														height: "100%",
+														width: "100%",
+														display: "flex",
+														flexDirection: "column",
 														transition: "all 0.3s ease",
 														"&:hover": {
 															boxShadow: theme.shadows[10],
@@ -335,7 +341,7 @@ const GuidesPage = () => {
 										soporte.
 									</Typography>
 									<Box sx={{ mt: 2 }}>
-										<Button variant="contained" color="primary" size="large" href="mailto:support@lawanalytics.app">
+										<Button variant="contained" color="primary" size="large" onClick={() => setSupportOpen(true)}>
 											Contactar Soporte
 										</Button>
 									</Box>
@@ -356,6 +362,9 @@ const GuidesPage = () => {
 			<GuideTasks open={tasks} onClose={() => setTasks(false)} />
 			<GuideAnalytics open={analytics} onClose={() => setAnalytics(false)} />
 			<GuideLimits open={limits} onClose={() => setLimits(false)} />
+
+			{/* Modal de Soporte */}
+			<SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
 		</>
 	);
 };

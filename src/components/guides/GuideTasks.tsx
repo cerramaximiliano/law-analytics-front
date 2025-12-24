@@ -393,7 +393,7 @@ const GuideTasks: React.FC<GuideTasksProps> = ({ open, onClose }) => {
 					))}
 				</Stepper>
 
-				<Box sx={{ p: 3 }}>{steps[activeStep] && steps[activeStep].content}</Box>
+				<Box sx={{ p: 3, height: 400, overflowY: "auto" }}>{steps[activeStep] && steps[activeStep].content}</Box>
 			</DialogContent>
 
 			<DialogActions sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
