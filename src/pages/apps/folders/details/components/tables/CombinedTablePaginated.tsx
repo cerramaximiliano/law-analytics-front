@@ -369,148 +369,230 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 								</TableCell>
 							</TableRow>
 						) : (
-							activities.map((activity: CombinedActivity) => (
-								<TableRow hover tabIndex={-1} key={activity._id}>
-									<TableCell>{formatDate(activity.date)}</TableCell>
-									<TableCell>
-										<Stack direction="row" spacing={1} alignItems="center">
-											<Avatar
-												sx={{
-													width: 30,
-													height: 30,
-													bgcolor:
-														activity.type === "movement"
-															? "success.lighter"
-															: activity.type === "notification"
-															? "warning.lighter"
-															: "primary.lighter",
-													color:
-														activity.type === "movement"
-															? "success.main"
-															: activity.type === "notification"
-															? "warning.main"
-															: "primary.main",
-												}}
-											>
-												{getActivityIcon(activity)}
-											</Avatar>
-											<Box>
-												<Typography variant="caption" color="textSecondary">
-													{getTypeLabel(activity.type)}
-												</Typography>
-												<Typography variant="subtitle2">{getActivitySubtype(activity)}</Typography>
-											</Box>
-										</Stack>
-									</TableCell>
-									<TableCell>
-										<Box sx={{ maxWidth: 400 }}>
-											<Typography
-												variant="subtitle2"
-												sx={{
-													display: "-webkit-box",
-													WebkitLineClamp: 2,
-													WebkitBoxOrient: "vertical",
-													overflow: "hidden",
-													textOverflow: "ellipsis",
-													lineHeight: 1.4,
-													wordBreak: "break-word",
-												}}
-											>
-												{activity.title}
-											</Typography>
-											{activity.source === "pjn" && (
-												<Typography
-													variant="caption"
-													color="text.secondary"
+							<>
+								{activities.map((activity: CombinedActivity) => (
+									<TableRow hover tabIndex={-1} key={activity._id}>
+										<TableCell>{formatDate(activity.date)}</TableCell>
+										<TableCell>
+											<Stack direction="row" spacing={1} alignItems="center">
+												<Avatar
 													sx={{
-														fontStyle: "italic",
-														fontSize: "0.7rem",
-														mt: 0.5,
-														display: "block",
+														width: 30,
+														height: 30,
+														bgcolor:
+															activity.type === "movement"
+																? "success.lighter"
+																: activity.type === "notification"
+																? "warning.lighter"
+																: "primary.lighter",
+														color:
+															activity.type === "movement"
+																? "success.main"
+																: activity.type === "notification"
+																? "warning.main"
+																: "primary.main",
 													}}
 												>
-													Sincronizado • PJN
+													{getActivityIcon(activity)}
+												</Avatar>
+												<Box>
+													<Typography variant="caption" color="textSecondary">
+														{getTypeLabel(activity.type)}
+													</Typography>
+													<Typography variant="subtitle2">{getActivitySubtype(activity)}</Typography>
+												</Box>
+											</Stack>
+										</TableCell>
+										<TableCell>
+											<Box sx={{ maxWidth: 400 }}>
+												<Typography
+													variant="subtitle2"
+													sx={{
+														display: "-webkit-box",
+														WebkitLineClamp: 2,
+														WebkitBoxOrient: "vertical",
+														overflow: "hidden",
+														textOverflow: "ellipsis",
+														lineHeight: 1.4,
+														wordBreak: "break-word",
+													}}
+												>
+													{activity.title}
 												</Typography>
-											)}
-										</Box>
-									</TableCell>
-									<TableCell>
-										<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
-											{activity.description || "-"}
-										</Typography>
-									</TableCell>
-									<TableCell>
-										{activity.dateExpiration ? (
-											<Chip
-												label={formatDate(activity.dateExpiration)}
-												size="small"
-												variant="outlined"
-												color="warning"
-												icon={<Clock size={14} />}
-											/>
-										) : (
-											"-"
-										)}
-									</TableCell>
-									<TableCell>
-										<Stack direction="row" spacing={0.5}>
-											{activity.link && (
-												<Tooltip title="Ver documento">
-													<IconButton
-														size="small"
-														color="primary"
-														onClick={(e) => {
-															e.stopPropagation();
-															window.open(activity.link, "_blank");
+												{activity.source === "pjn" && (
+													<Typography
+														variant="caption"
+														color="text.secondary"
+														sx={{
+															fontStyle: "italic",
+															fontSize: "0.7rem",
+															mt: 0.5,
+															display: "block",
 														}}
 													>
-														<Link2 size={18} />
-													</IconButton>
-												</Tooltip>
-											)}
-											<Tooltip title="Ver detalles">
-												<IconButton
+														Sincronizado • PJN
+													</Typography>
+												)}
+											</Box>
+										</TableCell>
+										<TableCell>
+											<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
+												{activity.description || "-"}
+											</Typography>
+										</TableCell>
+										<TableCell>
+											{activity.dateExpiration ? (
+												<Chip
+													label={formatDate(activity.dateExpiration)}
 													size="small"
-													onClick={(e) => {
-														e.stopPropagation();
-														onView(activity);
-													}}
-												>
-													<Eye size={18} />
-												</IconButton>
-											</Tooltip>
-											{activity.source !== "pjn" && (
-												<React.Fragment key={`actions-${activity._id}`}>
-													<Tooltip title="Editar">
+													variant="outlined"
+													color="warning"
+													icon={<Clock size={14} />}
+												/>
+											) : (
+												"-"
+											)}
+										</TableCell>
+										<TableCell>
+											<Stack direction="row" spacing={0.5}>
+												{activity.link && (
+													<Tooltip title="Ver documento">
 														<IconButton
 															size="small"
 															color="primary"
 															onClick={(e) => {
 																e.stopPropagation();
-																onEdit(activity);
+																window.open(activity.link, "_blank");
 															}}
 														>
-															<Edit size={18} />
+															<Link2 size={18} />
 														</IconButton>
 													</Tooltip>
-													<Tooltip title="Eliminar">
-														<IconButton
-															size="small"
-															color="error"
-															onClick={(e) => {
-																e.stopPropagation();
-																onDelete(activity);
+												)}
+												<Tooltip title="Ver detalles">
+													<IconButton
+														size="small"
+														onClick={(e) => {
+															e.stopPropagation();
+															onView(activity);
+														}}
+													>
+														<Eye size={18} />
+													</IconButton>
+												</Tooltip>
+												{activity.source !== "pjn" && (
+													<React.Fragment key={`actions-${activity._id}`}>
+														<Tooltip title="Editar">
+															<IconButton
+																size="small"
+																color="primary"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	onEdit(activity);
+																}}
+															>
+																<Edit size={18} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Eliminar">
+															<IconButton
+																size="small"
+																color="error"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	onDelete(activity);
+																}}
+															>
+																<Trash size={18} />
+															</IconButton>
+														</Tooltip>
+													</React.Fragment>
+												)}
+											</Stack>
+										</TableCell>
+									</TableRow>
+								))}
+								{/* Filas blureadas para usuarios free */}
+								{pjnAccess?.requiresUpgrade && (pjnAccess?.availableMovements ?? 0) > 0 && (
+									<>
+										{[...Array(Math.min(3, pjnAccess.availableMovements || 0))].map((_, index) => (
+											<TableRow
+												key={`blurred-row-${index}`}
+												sx={{
+													position: "relative",
+													"&::after": {
+														content: '""',
+														position: "absolute",
+														top: 0,
+														left: 0,
+														right: 0,
+														bottom: 0,
+														backdropFilter: "blur(2px)",
+														backgroundColor:
+															theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.2)",
+														pointerEvents: "none",
+														zIndex: 1,
+													},
+												}}
+											>
+												<TableCell sx={{ color: "text.disabled" }}>
+													{`${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")}/${String(Math.floor(Math.random() * 12) + 1).padStart(2, "0")}/2024`}
+												</TableCell>
+												<TableCell>
+													<Stack direction="row" spacing={1} alignItems="center">
+														<Avatar
+															sx={{
+																width: 30,
+																height: 30,
+																bgcolor: "grey.200",
+																color: "grey.500",
 															}}
 														>
-															<Trash size={18} />
+															<DocumentText size={16} />
+														</Avatar>
+														<Box>
+															<Typography variant="caption" sx={{ color: "text.disabled" }}>
+																{["Movimiento", "Notificación", "Evento"][index % 3]}
+															</Typography>
+															<Typography variant="subtitle2" sx={{ color: "text.disabled" }}>
+																{["Despacho", "Email", "Audiencia"][index % 3]}
+															</Typography>
+														</Box>
+													</Stack>
+												</TableCell>
+												<TableCell>
+													<Typography variant="subtitle2" sx={{ color: "text.disabled" }}>
+														{
+															[
+																"Providencia simple - Téngase presente",
+																"Notificación de vencimiento próximo",
+																"Audiencia de conciliación programada",
+															][index % 3]
+														}
+													</Typography>
+												</TableCell>
+												<TableCell>
+													<Typography variant="body2" sx={{ color: "text.disabled" }}>
+														Contenido no disponible
+													</Typography>
+												</TableCell>
+												<TableCell>
+													<Typography variant="body2" sx={{ color: "text.disabled" }}>
+														-
+													</Typography>
+												</TableCell>
+												<TableCell>
+													<Stack direction="row" spacing={0.5} sx={{ opacity: 0.3 }}>
+														<IconButton size="small" disabled>
+															<Eye size={18} />
 														</IconButton>
-													</Tooltip>
-												</React.Fragment>
-											)}
-										</Stack>
-									</TableCell>
-								</TableRow>
-							))
+													</Stack>
+												</TableCell>
+											</TableRow>
+										))}
+									</>
+								)}
+							</>
 						)}
 					</TableBody>
 				</Table>

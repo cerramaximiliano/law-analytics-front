@@ -1,6 +1,6 @@
 import React from "react";
 import { useCallback, useEffect, useMemo, useState, Fragment, MouseEvent, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
 import {
@@ -70,6 +70,7 @@ import {
 	CloseCircle,
 	More,
 	SearchStatus1,
+	Folder2,
 } from "iconsax-react";
 
 // types
@@ -107,6 +108,8 @@ interface ReactTableProps extends Props {
 	menuRowId: string | null;
 	handleMenuOpen: (event: MouseEvent<HTMLElement>, rowId: string, folderData?: any) => void;
 	handleMenuClose: () => void;
+	/** If true, shows onboarding-specific UI (special empty state, muted controls) */
+	isOnboarding?: boolean;
 }
 
 function ReactTable({
@@ -131,6 +134,7 @@ function ReactTable({
 	menuRowId,
 	handleMenuOpen,
 	handleMenuClose,
+	isOnboarding = false,
 }: ReactTableProps) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
@@ -335,8 +339,13 @@ function ReactTable({
 						justifyContent="space-between"
 						alignItems={matchDownSM ? "stretch" : "center"}
 					>
-						{/* Buscador (izquierda) */}
-						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
+						{/* Buscador (izquierda) - atenuado en onboarding */}
+						<Box
+							sx={{
+								width: { xs: "100%", sm: "280px" },
+								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
+							}}
+						>
 							<GlobalFilter
 								preGlobalFilteredRows={preGlobalFilteredRows as any}
 								globalFilter={globalFilter}
@@ -347,39 +356,56 @@ function ReactTable({
 
 						{/* Botones principales (derecha) */}
 						<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-							<Button variant="contained" size="small" startIcon={<FolderAdd />} onClick={handleAdd} fullWidth={matchDownSM}>
-								Agregar Carpeta
-							</Button>
 							<Button
-								variant="outlined"
-								color="secondary"
+								variant="contained"
 								size="small"
-								startIcon={<Box1 />}
-								onClick={handleOpenArchivedModal}
+								startIcon={<FolderAdd />}
+								onClick={handleAdd}
 								fullWidth={matchDownSM}
+								sx={{ textTransform: "none" }}
 							>
-								Ver Archivados
+								{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
 							</Button>
-							{handleArchiveSelected && (
-								<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
-									<span style={{ width: matchDownSM ? "100%" : "auto" }}>
-										<Button
-											variant="outlined"
-											color="primary"
-											size="small"
-											startIcon={<Archive />}
-											onClick={() => handleArchiveSelected(selectedFlatRows)}
-											disabled={Object.keys(selectedRowIds).length === 0}
-											fullWidth={matchDownSM}
-										>
-											Archivar{" "}
-											{Object.keys(selectedRowIds).length > 0
-												? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
-												: "causas"}
-										</Button>
-									</span>
-								</Tooltip>
-							)}
+							{/* Botones secundarios - atenuados en onboarding */}
+							<Box
+								sx={{
+									display: "flex",
+									flexDirection: matchDownSM ? "column" : "row",
+									gap: 1,
+									...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
+								}}
+							>
+								<Button
+									variant="outlined"
+									color="secondary"
+									size="small"
+									startIcon={<Box1 />}
+									onClick={handleOpenArchivedModal}
+									fullWidth={matchDownSM}
+								>
+									Ver Archivados
+								</Button>
+								{handleArchiveSelected && (
+									<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
+										<span style={{ width: matchDownSM ? "100%" : "auto" }}>
+											<Button
+												variant="outlined"
+												color="primary"
+												size="small"
+												startIcon={<Archive />}
+												onClick={() => handleArchiveSelected(selectedFlatRows)}
+												disabled={Object.keys(selectedRowIds).length === 0}
+												fullWidth={matchDownSM}
+											>
+												Archivar{" "}
+												{Object.keys(selectedRowIds).length > 0
+													? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
+													: "causas"}
+											</Button>
+										</span>
+									</Tooltip>
+								)}
+							</Box>
 						</Stack>
 					</Stack>
 
@@ -390,30 +416,39 @@ function ReactTable({
 						justifyContent="space-between"
 						alignItems={matchDownSM ? "stretch" : "center"}
 					>
-						{/* Selector de ordenamiento (izquierda) */}
-						<Box sx={{ width: { xs: "100%", sm: "280px" } }}>
+						{/* Selector de ordenamiento (izquierda) - atenuado en onboarding */}
+						<Box
+							sx={{
+								width: { xs: "100%", sm: "280px" },
+								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
+							}}
+						>
 							<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
 						</Box>
 
 						{/* Botones secundarios (derecha) */}
 						<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
-							<Tooltip title="Exportar a CSV">
-								<IconButton color="primary" size="medium">
-									<CSVLink
-										data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data}
-										filename={"causas.csv"}
-										style={{
-											color: "inherit",
-											display: "flex",
-											alignItems: "center",
-											textDecoration: "none",
-										}}
-									>
-										<DocumentDownload variant="Bulk" size={22} />
-									</CSVLink>
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Ver Guía">
+							{/* Exportar CSV - atenuado en onboarding */}
+							<Box sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}>
+								<Tooltip title="Exportar a CSV">
+									<IconButton color="primary" size="medium">
+										<CSVLink
+											data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data}
+											filename={"causas.csv"}
+											style={{
+												color: "inherit",
+												display: "flex",
+												alignItems: "center",
+												textDecoration: "none",
+											}}
+										>
+											<DocumentDownload variant="Bulk" size={22} />
+										</CSVLink>
+									</IconButton>
+								</Tooltip>
+							</Box>
+							{/* Boton de guia - siempre visible, util para onboarding */}
+							<Tooltip title="Ver Guia">
 								<IconButton color="success" onClick={handleOpenGuide}>
 									<InfoCircle variant="Bulk" />
 								</IconButton>
@@ -449,7 +484,7 @@ function ReactTable({
 										}}
 									/>
 								)}
-								{invalidCount > 0 && <Chip label={`${invalidCount} Inválida${invalidCount > 1 ? "s" : ""}`} color="error" size="small" />}
+								{invalidCount > 0 && <Chip label={`${invalidCount} Invalida${invalidCount > 1 ? "s" : ""}`} color="error" size="small" />}
 								<Typography variant="body2" color="text.secondary">
 									(Click para ver)
 								</Typography>
@@ -519,31 +554,64 @@ function ReactTable({
 				<Box
 					sx={{
 						width: "100%",
-						py: 6,
+						py: { xs: 4, sm: 6 },
 						display: "flex",
 						flexDirection: "column",
 						alignItems: "center",
 						justifyContent: "center",
+						px: 2,
 					}}
 				>
 					{data.length === 0 ? (
-						<>
-							<FolderOpen
-								variant="Bulk"
-								size={64}
-								style={{
-									marginBottom: "16px",
-									color: theme.palette.primary.main,
-									opacity: 0.7,
-								}}
-							/>
-							<Typography variant="h5" gutterBottom align="center">
-								No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'.
-							</Typography>
-							<Typography variant="body2" color="textSecondary" align="center">
-								Las causas que guardes aparecerán aquí
-							</Typography>
-						</>
+						isOnboarding ? (
+							// Empty state especial para onboarding
+							<Stack spacing={3} alignItems="center" sx={{ maxWidth: 400, textAlign: "center" }}>
+								<Box
+									sx={{
+										width: 80,
+										height: 80,
+										borderRadius: "50%",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(theme.palette.primary.main, 0.1),
+										color: theme.palette.primary.main,
+									}}
+								>
+									<Folder2 size={40} variant="Bulk" />
+								</Box>
+								<Stack spacing={1} alignItems="center">
+									<Typography variant="h4" color="text.primary">
+										Vamos a crear tu primera carpeta
+									</Typography>
+									<Typography variant="body1" color="text.secondary">
+										Las carpetas representan expedientes, causas o clientes. Podes empezar con una y completarla luego.
+									</Typography>
+								</Stack>
+								<Button variant="contained" color="primary" size="large" startIcon={<Add />} onClick={handleAdd} sx={{ mt: 1, textTransform: "none" }}>
+									Crear mi primera carpeta
+								</Button>
+							</Stack>
+						) : (
+							// Empty state normal
+							<>
+								<FolderOpen
+									variant="Bulk"
+									size={64}
+									style={{
+										marginBottom: "16px",
+										color: theme.palette.primary.main,
+										opacity: 0.7,
+									}}
+								/>
+								<Typography variant="h5" gutterBottom align="center">
+									No hay causas creadas. Puedes crear una usando el boton 'Agregar Carpeta'.
+								</Typography>
+								<Typography variant="body2" color="textSecondary" align="center">
+									Las causas que guardes apareceran aqui
+								</Typography>
+							</>
+						)
 					) : (
 						<>
 							<SearchStatus1
@@ -556,10 +624,10 @@ function ReactTable({
 								}}
 							/>
 							<Typography variant="h5" gutterBottom align="center">
-								No se encontraron causas para esta búsqueda
+								No se encontraron causas para esta busqueda
 							</Typography>
 							<Typography variant="body2" color="textSecondary" align="center">
-								Intenta con otros términos de búsqueda
+								Intenta con otros terminos de busqueda
 							</Typography>
 						</>
 					)}
@@ -575,6 +643,10 @@ const FoldersLayout = () => {
 	const theme = useTheme();
 	const mode = theme.palette.mode;
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+
+	// Detectar si venimos desde onboarding
+	const isOnboarding = searchParams.get("onboarding") === "true";
 
 	// Estados
 	const [open, setOpen] = useState(false);
@@ -1426,6 +1498,22 @@ const FoldersLayout = () => {
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
 
+				{/* Microhint de onboarding */}
+				{isOnboarding && verifiedFolders.length === 0 && (
+					<Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: 0 }}>
+						<Typography
+							variant="caption"
+							sx={{
+								color: "text.secondary",
+								fontSize: "0.75rem",
+								letterSpacing: "0.02em",
+							}}
+						>
+							Primeros pasos · Crea tu primera carpeta
+						</Typography>
+					</Box>
+				)}
+
 				{/* Tabla principal de causas verificadas */}
 				<Box>
 					<ScrollX>
@@ -1448,6 +1536,7 @@ const FoldersLayout = () => {
 							menuRowId={menuRowId}
 							handleMenuOpen={handleMenuOpen}
 							handleMenuClose={handleMenuClose}
+							isOnboarding={isOnboarding}
 						/>
 					</ScrollX>
 				</Box>

@@ -11,7 +11,7 @@ import { useState, SyntheticEvent } from "react";
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
-import LegalDocumentViewer, { LegalDocumentType } from "pages/extra-pages/price/LegalDocumentViewer";
+import LegalDocumentViewerAllPlans from "pages/extra-pages/price/LegalDocumentViewerAllPlans";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -85,13 +85,13 @@ const TermsPage = () => {
 								</Tabs>
 							</Box>
 							<TabPanel value={value} index={0}>
-								<LegalDocumentViewer documentType={LegalDocumentType.SUBSCRIPTION} title="Términos de Suscripción" />
+								<LegalDocumentViewerAllPlans documentType="subscription" title="Términos de Suscripción" />
 							</TabPanel>
 							<TabPanel value={value} index={1}>
-								<LegalDocumentViewer documentType={LegalDocumentType.REFUND} title="Política de Reembolso" />
+								<LegalDocumentViewerAllPlans documentType="refund" title="Política de Reembolso" />
 							</TabPanel>
 							<TabPanel value={value} index={2}>
-								<LegalDocumentViewer documentType={LegalDocumentType.BILLING} title="Términos de Facturación" />
+								<LegalDocumentViewerAllPlans documentType="billing" title="Términos de Facturación" />
 							</TabPanel>
 
 							<Divider sx={{ my: 4 }} />

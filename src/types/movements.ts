@@ -40,6 +40,8 @@ export interface PjnAccess {
 	currentPlan: string;
 	requiredPlans: string[];
 	availableMovements?: number;
+	totalMovements?: number; // Total de movimientos en la causa
+	previewCount?: number; // Cantidad de movimientos de preview mostrados (para usuarios free)
 }
 
 export interface ScrapingProgress {

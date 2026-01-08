@@ -514,230 +514,307 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 									</TableCell>
 								</TableRow>
 							) : (
-								movements.map((movement) => {
-									return (
-										<TableRow hover tabIndex={-1} key={movement._id} sx={{ cursor: "pointer" }}>
-											<TableCell>{formatDate(movement.time)}</TableCell>
-											<TableCell>
-												<Box sx={{ maxWidth: 400 }}>
-													<Typography
-														variant="subtitle2"
-														sx={{
-															display: "-webkit-box",
-															WebkitLineClamp: 2,
-															WebkitBoxOrient: "vertical",
-															overflow: "hidden",
-															textOverflow: "ellipsis",
-															lineHeight: 1.4,
-															wordBreak: "break-word",
-														}}
-													>
-														{movement.title}
-													</Typography>
-													<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-														{movement.source === "pjn" && (
-															<Typography
-																variant="caption"
-																color="text.secondary"
-																sx={{
-																	fontStyle: "italic",
-																	fontSize: "0.7rem",
-																}}
-															>
-																Sincronizado • PJN
-															</Typography>
-														)}
-														{movement.source === "mev" && (
-															<Typography
-																variant="caption"
-																color="text.secondary"
-																sx={{
-																	fontStyle: "italic",
-																	fontSize: "0.7rem",
-																}}
-															>
-																Sincronizado • MEV
-															</Typography>
-														)}
-														{movement.attachments && movement.attachments.length > 0 && (
-															<Tooltip title="Ver archivos adjuntos">
-																<Chip
-																	icon={<DocumentDownload size={14} />}
-																	label={movement.attachments.length}
-																	size="small"
-																	color="info"
-																	variant="outlined"
-																	onClick={(e) => handleAttachmentsClick(e, movement.attachments)}
+								<>
+									{movements.map((movement) => {
+										return (
+											<TableRow hover tabIndex={-1} key={movement._id} sx={{ cursor: "pointer" }}>
+												<TableCell>{formatDate(movement.time)}</TableCell>
+												<TableCell>
+													<Box sx={{ maxWidth: 400 }}>
+														<Typography
+															variant="subtitle2"
+															sx={{
+																display: "-webkit-box",
+																WebkitLineClamp: 2,
+																WebkitBoxOrient: "vertical",
+																overflow: "hidden",
+																textOverflow: "ellipsis",
+																lineHeight: 1.4,
+																wordBreak: "break-word",
+															}}
+														>
+															{movement.title}
+														</Typography>
+														<Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+															{movement.source === "pjn" && (
+																<Typography
+																	variant="caption"
+																	color="text.secondary"
 																	sx={{
-																		height: 20,
+																		fontStyle: "italic",
 																		fontSize: "0.7rem",
-																		cursor: "pointer",
-																		"& .MuiChip-icon": {
-																			marginLeft: "4px",
-																			marginRight: "-2px",
-																		},
-																		"&:hover": {
-																			backgroundColor: theme.palette.info.lighter,
-																			borderColor: theme.palette.info.main,
-																		},
 																	}}
-																/>
-															</Tooltip>
-														)}
-													</Stack>
-												</Box>
-											</TableCell>
-											<TableCell>
-												<Chip
-													icon={getMovementIcon(movement.movement)}
-													label={movement.movement}
-													color={getMovementColor(movement.movement)}
-													size="small"
-													variant="outlined"
-												/>
-											</TableCell>
-											<TableCell>
-												<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
-													{movement.description || "-"}
-												</Typography>
-											</TableCell>
-											<TableCell>
-												{movement.dateExpiration
-													? (() => {
-															const expirationDate = parseDate(movement.dateExpiration);
-															const today = new Date();
-															today.setHours(0, 0, 0, 0);
-															const isExpired = !movement.completed && expirationDate < today;
-															const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-															const isNearExpiration = !movement.completed && daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
-
-															return (
-																<Stack direction="row" spacing={0.5} alignItems="center">
+																>
+																	Sincronizado • PJN
+																</Typography>
+															)}
+															{movement.source === "mev" && (
+																<Typography
+																	variant="caption"
+																	color="text.secondary"
+																	sx={{
+																		fontStyle: "italic",
+																		fontSize: "0.7rem",
+																	}}
+																>
+																	Sincronizado • MEV
+																</Typography>
+															)}
+															{movement.attachments && movement.attachments.length > 0 && (
+																<Tooltip title="Ver archivos adjuntos">
 																	<Chip
-																		label={formatDate(movement.dateExpiration)}
-																		color={movement.completed ? "default" : isExpired ? "error" : isNearExpiration ? "warning" : "success"}
+																		icon={<DocumentDownload size={14} />}
+																		label={movement.attachments.length}
 																		size="small"
-																		variant={isExpired ? "filled" : "outlined"}
-																		icon={
-																			isExpired ? (
-																				<Clock size={14} style={{ color: "inherit" }} />
-																			) : isNearExpiration ? (
-																				<Clock size={14} style={{ color: "inherit" }} />
-																			) : undefined
-																		}
+																		color="info"
+																		variant="outlined"
+																		onClick={(e) => handleAttachmentsClick(e, movement.attachments)}
 																		sx={{
-																			fontWeight: isExpired ? 600 : 500,
+																			height: 20,
+																			fontSize: "0.7rem",
+																			cursor: "pointer",
 																			"& .MuiChip-icon": {
 																				marginLeft: "4px",
 																				marginRight: "-2px",
 																			},
+																			"&:hover": {
+																				backgroundColor: theme.palette.info.lighter,
+																				borderColor: theme.palette.info.main,
+																			},
 																		}}
 																	/>
-																	{movement.completed && (
-																		<Typography variant="caption" color="text.secondary" fontWeight={500}>
-																			Completado
-																		</Typography>
-																	)}
-																	{isExpired && (
-																		<Typography variant="caption" color="error" fontWeight={600}>
-																			Vencido
-																		</Typography>
-																	)}
-																	{isNearExpiration && !isExpired && (
-																		<Typography variant="caption" color="warning.main" fontWeight={500}>
-																			{daysUntilExpiration === 0 ? "Hoy" : `${daysUntilExpiration}d`}
-																		</Typography>
-																	)}
-																</Stack>
-															);
-													  })()
-													: "-"}
-											</TableCell>
-											<TableCell>
-												{movement.link ? (
-													<Tooltip title="Ver documento">
-														<IconButton
-															size="small"
-															color="primary"
-															onClick={(e) => {
-																e.stopPropagation();
-																console.log("Documento URL:", movement.link);
-																setSelectedPdfUrl(movement.link || "");
-																setSelectedPdfTitle(movement.title || "Documento");
-																setSelectedMovementId(movement._id || "");
-																setPdfViewerOpen(true);
-															}}
-														>
-															<Link2 size={18} />
-														</IconButton>
-													</Tooltip>
-												) : (
-													"-"
-												)}
-											</TableCell>
-											<TableCell>
-												<Stack direction="row" spacing={0.5}>
-													{movement.dateExpiration && (
-														<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
+																</Tooltip>
+															)}
+														</Stack>
+													</Box>
+												</TableCell>
+												<TableCell>
+													<Chip
+														icon={getMovementIcon(movement.movement)}
+														label={movement.movement}
+														color={getMovementColor(movement.movement)}
+														size="small"
+														variant="outlined"
+													/>
+												</TableCell>
+												<TableCell>
+													<Typography variant="body2" color="textSecondary" sx={{ maxWidth: 300 }} noWrap>
+														{movement.description || "-"}
+													</Typography>
+												</TableCell>
+												<TableCell>
+													{movement.dateExpiration
+														? (() => {
+																const expirationDate = parseDate(movement.dateExpiration);
+																const today = new Date();
+																today.setHours(0, 0, 0, 0);
+																const isExpired = !movement.completed && expirationDate < today;
+																const daysUntilExpiration = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+																const isNearExpiration = !movement.completed && daysUntilExpiration >= 0 && daysUntilExpiration <= 7;
+
+																return (
+																	<Stack direction="row" spacing={0.5} alignItems="center">
+																		<Chip
+																			label={formatDate(movement.dateExpiration)}
+																			color={movement.completed ? "default" : isExpired ? "error" : isNearExpiration ? "warning" : "success"}
+																			size="small"
+																			variant={isExpired ? "filled" : "outlined"}
+																			icon={
+																				isExpired ? (
+																					<Clock size={14} style={{ color: "inherit" }} />
+																				) : isNearExpiration ? (
+																					<Clock size={14} style={{ color: "inherit" }} />
+																				) : undefined
+																			}
+																			sx={{
+																				fontWeight: isExpired ? 600 : 500,
+																				"& .MuiChip-icon": {
+																					marginLeft: "4px",
+																					marginRight: "-2px",
+																				},
+																			}}
+																		/>
+																		{movement.completed && (
+																			<Typography variant="caption" color="text.secondary" fontWeight={500}>
+																				Completado
+																			</Typography>
+																		)}
+																		{isExpired && (
+																			<Typography variant="caption" color="error" fontWeight={600}>
+																				Vencido
+																			</Typography>
+																		)}
+																		{isNearExpiration && !isExpired && (
+																			<Typography variant="caption" color="warning.main" fontWeight={500}>
+																				{daysUntilExpiration === 0 ? "Hoy" : `${daysUntilExpiration}d`}
+																			</Typography>
+																		)}
+																	</Stack>
+																);
+														  })()
+														: "-"}
+												</TableCell>
+												<TableCell>
+													{movement.link ? (
+														<Tooltip title="Ver documento">
 															<IconButton
 																size="small"
-																color={movement.completed ? "success" : "default"}
-																onClick={(e) => handleToggleComplete(movement._id!, e)}
-																sx={{
-																	backgroundColor: movement.completed ? "success.lighter" : "transparent",
-																	"&:hover": {
-																		backgroundColor: movement.completed ? "success.light" : "action.hover",
-																	},
+																color="primary"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	console.log("Documento URL:", movement.link);
+																	setSelectedPdfUrl(movement.link || "");
+																	setSelectedPdfTitle(movement.title || "Documento");
+																	setSelectedMovementId(movement._id || "");
+																	setPdfViewerOpen(true);
 																}}
 															>
-																{movement.completed ? <TickCircle size={18} variant="Bold" /> : <TickCircle size={18} />}
+																<Link2 size={18} />
 															</IconButton>
 														</Tooltip>
+													) : (
+														"-"
 													)}
-													<Tooltip title="Ver detalles">
-														<IconButton
+												</TableCell>
+												<TableCell>
+													<Stack direction="row" spacing={0.5}>
+														{movement.dateExpiration && (
+															<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
+																<IconButton
+																	size="small"
+																	color={movement.completed ? "success" : "default"}
+																	onClick={(e) => handleToggleComplete(movement._id!, e)}
+																	sx={{
+																		backgroundColor: movement.completed ? "success.lighter" : "transparent",
+																		"&:hover": {
+																			backgroundColor: movement.completed ? "success.light" : "action.hover",
+																		},
+																	}}
+																>
+																	{movement.completed ? <TickCircle size={18} variant="Bold" /> : <TickCircle size={18} />}
+																</IconButton>
+															</Tooltip>
+														)}
+														<Tooltip title="Ver detalles">
+															<IconButton
+																size="small"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	onView(movement);
+																}}
+															>
+																<Eye size={18} />
+															</IconButton>
+														</Tooltip>
+														{movement.source !== "pjn" && movement.source !== "mev" && (
+															<>
+																<Tooltip title="Editar">
+																	<IconButton
+																		size="small"
+																		color="primary"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			onEdit(movement);
+																		}}
+																	>
+																		<Edit size={18} />
+																	</IconButton>
+																</Tooltip>
+																<Tooltip title="Eliminar">
+																	<IconButton
+																		size="small"
+																		color="error"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			onDelete(movement._id!);
+																		}}
+																	>
+																		<Trash size={18} />
+																	</IconButton>
+																</Tooltip>
+															</>
+														)}
+													</Stack>
+												</TableCell>
+											</TableRow>
+										);
+									})}
+									{/* Filas blureadas para usuarios free */}
+									{pjnAccess?.requiresUpgrade && (pjnAccess?.availableMovements ?? 0) > 0 && (
+										<>
+											{[...Array(Math.min(3, pjnAccess.availableMovements || 0))].map((_, index) => (
+												<TableRow
+													key={`blurred-row-${index}`}
+													sx={{
+														position: "relative",
+														"&::after": {
+															content: '""',
+															position: "absolute",
+															top: 0,
+															left: 0,
+															right: 0,
+															bottom: 0,
+															backdropFilter: "blur(2px)",
+															backgroundColor:
+																theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.2)",
+															pointerEvents: "none",
+															zIndex: 1,
+														},
+													}}
+												>
+													<TableCell sx={{ color: "text.disabled" }}>
+														{`${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")}/${String(Math.floor(Math.random() * 12) + 1).padStart(2, "0")}/2024`}
+													</TableCell>
+													<TableCell>
+														<Box sx={{ maxWidth: 400 }}>
+															<Typography variant="subtitle2" sx={{ color: "text.disabled" }}>
+																{
+																	[
+																		"Providencia simple - Téngase presente",
+																		"Notificación electrónica al demandado",
+																		"Vista al actor por el término de ley",
+																		"Resolución interlocutoria - Se hace lugar",
+																		"Traslado de la demanda por diez días",
+																	][index % 5]
+																}
+															</Typography>
+														</Box>
+													</TableCell>
+													<TableCell>
+														<Chip
+															label={["Despacho", "Cédula", "Escrito-Actor"][index % 3]}
 															size="small"
-															onClick={(e) => {
-																e.stopPropagation();
-																onView(movement);
-															}}
-														>
-															<Eye size={18} />
-														</IconButton>
-													</Tooltip>
-													{movement.source !== "pjn" && movement.source !== "mev" && (
-														<>
-															<Tooltip title="Editar">
-																<IconButton
-																	size="small"
-																	color="primary"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		onEdit(movement);
-																	}}
-																>
-																	<Edit size={18} />
-																</IconButton>
-															</Tooltip>
-															<Tooltip title="Eliminar">
-																<IconButton
-																	size="small"
-																	color="error"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		onDelete(movement._id!);
-																	}}
-																>
-																	<Trash size={18} />
-																</IconButton>
-															</Tooltip>
-														</>
-													)}
-												</Stack>
-											</TableCell>
-										</TableRow>
-									);
-								})
+															variant="outlined"
+															sx={{ opacity: 0.5 }}
+														/>
+													</TableCell>
+													<TableCell>
+														<Typography variant="body2" sx={{ color: "text.disabled" }}>
+															Contenido no disponible
+														</Typography>
+													</TableCell>
+													<TableCell>
+														<Typography variant="body2" sx={{ color: "text.disabled" }}>
+															-
+														</Typography>
+													</TableCell>
+													<TableCell>
+														<Typography variant="body2" sx={{ color: "text.disabled" }}>
+															-
+														</Typography>
+													</TableCell>
+													<TableCell>
+														<Stack direction="row" spacing={0.5} sx={{ opacity: 0.3 }}>
+															<IconButton size="small" disabled>
+																<Eye size={18} />
+															</IconButton>
+														</Stack>
+													</TableCell>
+												</TableRow>
+											))}
+										</>
+									)}
+								</>
 							)}
 						</TableBody>
 					</Table>

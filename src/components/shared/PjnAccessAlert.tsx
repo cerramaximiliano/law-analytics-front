@@ -78,18 +78,11 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 						? `+${pjnAccess.availableMovements} movimientos disponibles`
 						: "Acceso Limitado"}
 				</AlertTitle>
-				<Stack spacing={0.5}>
-					<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
-						{pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
-							? `Disponible con plan ${pjnAccess.requiredPlans.map((plan) => plan.charAt(0).toUpperCase() + plan.slice(1)).join(" o ")}`
-							: pjnAccess.message}
-					</Typography>
-					{pjnAccess.currentPlan && (
-						<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
-							Tu plan actual: {pjnAccess.currentPlan}
-						</Typography>
-					)}
-				</Stack>
+				<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
+					{pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
+						? `Disponible con plan ${pjnAccess.requiredPlans.map((plan) => (plan === "standard" ? "Estándar" : plan.charAt(0).toUpperCase() + plan.slice(1))).join(" o ")}`
+						: pjnAccess.message}
+				</Typography>
 			</Alert>
 		</Collapse>
 	);

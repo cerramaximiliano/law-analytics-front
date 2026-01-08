@@ -310,6 +310,20 @@ export interface LegalDocument {
 	};
 }
 
+export interface LegalDocumentAllPlans extends LegalDocument {
+	sectionsByPlan: {
+		free: LegalDocumentSection[];
+		standard: LegalDocumentSection[];
+		premium: LegalDocumentSection[];
+	};
+	commonSections: LegalDocumentSection[];
+	exclusiveSectionsByPlan: {
+		free: LegalDocumentSection[];
+		standard: LegalDocumentSection[];
+		premium: LegalDocumentSection[];
+	};
+}
+
 // ===============================
 // Servicio principal de API
 // ===============================
@@ -960,6 +974,25 @@ class ApiService {
 	}
 
 	/**
+	 * Obtiene un documento legal con TODAS las secciones organizadas por plan
+	 * Este método es para mostrar todos los términos públicamente, organizados por tipo de plan
+	 * @param documentType - Tipo de documento legal
+	 */
+	static async getLegalDocumentAllPlans(
+		documentType: "subscription" | "refund" | "billing"
+	): Promise<ApiResponse<LegalDocumentAllPlans>> {
+		try {
+			const response = await axios.get<ApiResponse<LegalDocumentAllPlans>>(
+				`${API_BASE_URL}/api/legal/all-plans/${documentType}`,
+				{ withCredentials: true }
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
 	 * Verifica si una característica específica está disponible para el usuario actual
 	 * @param featureName - Nombre de la característica a verificar
 	 */
@@ -1062,6 +1095,73 @@ class ApiService {
 			throw this.handleAxiosError(error);
 		}
 	}
+
+	// ================================
+	// Onboarding
+	// ================================
+
+	/**
+	 * Obtiene el estado de onboarding del usuario
+	 */
+	static async getOnboardingStatus(): Promise<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number }>> {
+		try {
+			const response = await axios.get<ApiResponse<{ onboarding: OnboardingStatus; activeFoldersCount: number }>>(
+				`${API_BASE_URL}/api/auth/onboarding`,
+				{
+					withCredentials: true,
+				},
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Actualiza el estado de onboarding del usuario
+	 * @param data - Datos de actualización (step, featureName, dismissed)
+	 */
+	static async updateOnboarding(data: {
+		step?: string;
+		featureName?: string;
+		dismissed?: boolean;
+	}): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
+		try {
+			const response = await axios.put<ApiResponse<{ onboarding: OnboardingStatus }>>(
+				`${API_BASE_URL}/api/auth/onboarding`,
+				data,
+				{
+					withCredentials: true,
+				},
+			);
+			return response.data;
+		} catch (error) {
+			throw this.handleAxiosError(error);
+		}
+	}
+
+	/**
+	 * Descarta el onboarding (no mostrarlo más)
+	 */
+	static async dismissOnboarding(): Promise<ApiResponse<{ onboarding: OnboardingStatus }>> {
+		return this.updateOnboarding({ dismissed: true });
+	}
+}
+
+// Interfaz para el estado de onboarding
+export interface OnboardingStatus {
+	createdFirstFolder: boolean;
+	createdFirstFolderAt: string | null;
+	usedFirstFeature: boolean;
+	firstFeatureUsedAt: string | null;
+	firstFeatureName: string | null;
+	onboardingComplete: boolean;
+	onboardingCompletedAt: string | null;
+	completedSteps: string[];
+	onboardingSessionsCount: number;
+	lastOnboardingSessionAt: string | null;
+	dismissed: boolean;
+	dismissedAt: string | null;
 }
 
 export default ApiService;

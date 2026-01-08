@@ -21,6 +21,7 @@ import { trackRegisterView, trackSignUp, trackGoogleSignupClick } from "utils/gt
 // assets
 import AuthBackground from "assets/images/auth/AuthBackground";
 import desktopDashboard from "assets/images/desktop_dashboard-removebg.png";
+import desktopFolder from "assets/images/desktop_folder-removebg.png";
 
 const Register = () => {
 	const { loginWithGoogle } = useAuth();
@@ -37,6 +38,12 @@ const Register = () => {
 	const params = new URLSearchParams(location.search);
 	const source = params.get("source") || undefined;
 	const feature = params.get("feature") || undefined;
+
+	// Seleccionar imagen según el feature
+	const featureImages: Record<string, string> = {
+		carpetas: desktopFolder,
+	};
+	const displayImage = feature && featureImages[feature] ? featureImages[feature] : desktopDashboard;
 
 	// Track register page view with attribution
 	useEffect(() => {
@@ -209,8 +216,8 @@ const Register = () => {
 						</Box>
 						<Box
 							component="img"
-							src={desktopDashboard}
-							alt="Law Analytics Dashboard"
+							src={displayImage}
+							alt="Law Analytics"
 							sx={{
 								display: { xs: "none", md: "block" },
 								maxWidth: "70%",

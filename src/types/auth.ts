@@ -22,6 +22,33 @@ interface LawyerCollegeWithRegistration {
 // Definimos el tipo para las skills que pueden ser string[] o LawyerCollegeWithRegistration[]
 type UserSkills = string[] | LawyerCollegeWithRegistration[];
 
+// Tipo para el estado de onboarding del usuario
+export interface UserOnboarding {
+	// Fase 1: Activación básica
+	createdFirstFolder: boolean;
+	createdFirstFolderAt: string | null;
+
+	// Fase 2: Valor temprano
+	usedFirstFeature: boolean;
+	firstFeatureUsedAt: string | null;
+	firstFeatureName: string | null;
+
+	// Tracking general
+	onboardingComplete: boolean;
+	onboardingCompletedAt: string | null;
+
+	// Pasos completados
+	completedSteps: string[];
+
+	// Sesiones de onboarding
+	onboardingSessionsCount: number;
+	lastOnboardingSessionAt: string | null;
+
+	// Flag para ocultar onboarding
+	dismissed: boolean;
+	dismissedAt: string | null;
+}
+
 export type UserProfile = {
 	_id?: string;
 	groupId?: string;
@@ -50,6 +77,8 @@ export type UserProfile = {
 	zipCode?: string;
 	isVerified?: boolean;
 	profileCompletionScore?: number;
+	onboarding?: UserOnboarding;
+	activeFoldersCount?: number;
 };
 
 type User = {
