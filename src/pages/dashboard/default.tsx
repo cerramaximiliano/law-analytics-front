@@ -89,12 +89,12 @@ const DashboardDefault = () => {
 				}
 
 				// Primera vez en esta sesion, llamar al backend (esto incrementa el contador)
-				const response = await ApiService.getOnboardingStatus();
-				if (response.success && response.data?.onboarding) {
-					setOnboardingStatus(response.data.onboarding);
+				const response = await ApiService.getOnboardingStatus() as any;
+				if (response.success && response.onboarding) {
+					setOnboardingStatus(response.onboarding);
 					// Guardar en sessionStorage para evitar multiples llamadas
 					sessionStorage.setItem(`${ONBOARDING_SESSION_KEY}_${userId}`, "true");
-					sessionStorage.setItem(`onboarding_data_${userId}`, JSON.stringify(response.data.onboarding));
+					sessionStorage.setItem(`onboarding_data_${userId}`, JSON.stringify(response.onboarding));
 				}
 			} catch (err) {
 				console.error("Error al obtener estado de onboarding:", err);
@@ -138,13 +138,13 @@ const DashboardDefault = () => {
 	const handleDismissOnboarding = useCallback(async () => {
 		try {
 			setIsDismissing(true);
-			const response = await ApiService.dismissOnboarding();
-			if (response.success && response.data?.onboarding) {
+			const response = await ApiService.dismissOnboarding() as any;
+			if (response.success && response.onboarding) {
 				// Actualizar estado local
-				setOnboardingStatus(response.data.onboarding);
+				setOnboardingStatus(response.onboarding);
 				// Actualizar cache en sessionStorage
 				if (userId) {
-					sessionStorage.setItem(`onboarding_data_${userId}`, JSON.stringify(response.data.onboarding));
+					sessionStorage.setItem(`onboarding_data_${userId}`, JSON.stringify(response.onboarding));
 				}
 				setSnackbar({
 					open: true,
