@@ -1016,21 +1016,29 @@ const Pricing = () => {
 										>
 											{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
 											{(() => {
-												// Mapear recursos a objetos con información común
-												const resourceItems = plan.resourceLimits.map((resource) => ({
-													type: "resource" as const,
-													enabled: true,
-													description: planFeatureValue(plan, resource.name) || "",
-													name: resource.name,
-												}));
+												// Features y recursos a ocultar temporalmente
+												const hiddenFeatures = ["teams"];
+												const hiddenResources = ["teamMembers"];
 
-												// Mapear características a objetos con información común
-												const featureItems = plan.features.map((feature) => ({
-													type: "feature" as const,
-													enabled: feature.enabled,
-													description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
-													name: feature.name,
-												}));
+												// Mapear recursos a objetos con información común (filtrando los ocultos)
+												const resourceItems = plan.resourceLimits
+													.filter((resource) => !hiddenResources.includes(resource.name))
+													.map((resource) => ({
+														type: "resource" as const,
+														enabled: true,
+														description: planFeatureValue(plan, resource.name) || "",
+														name: resource.name,
+													}));
+
+												// Mapear características a objetos con información común (filtrando las ocultas)
+												const featureItems = plan.features
+													.filter((feature) => !hiddenFeatures.includes(feature.name))
+													.map((feature) => ({
+														type: "feature" as const,
+														enabled: feature.enabled,
+														description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
+														name: feature.name,
+													}));
 
 												// Combinar ambos arreglos
 												const allItems = [...resourceItems, ...featureItems];
