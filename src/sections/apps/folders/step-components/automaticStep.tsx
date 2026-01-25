@@ -13,13 +13,19 @@ import {
 	Collapse,
 	CircularProgress,
 	Box,
+	Divider,
+	ToggleButtonGroup,
+	ToggleButton,
+	Card,
+	CardContent,
 } from "@mui/material";
-import { DocumentUpload } from "iconsax-react";
+import { DocumentUpload, Link1, DocumentText1, InfoCircle } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
 import { useState, useEffect, useRef } from "react";
 import mevWorkersService, { NavigationCode } from "api/workersMev";
+import PjnAccountConnect, { PjnAccountConnectRef } from "./PjnAccountConnect";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -176,6 +182,9 @@ interface FormValues {
 	navigationCode?: string;
 }
 
+// Modos de importación para PJN Nacional
+type PjnImportMode = "connect" | "single";
+
 const AutomaticStep = () => {
 	const theme = useTheme();
 	const formik = useFormikContext<FormValues>();
@@ -190,8 +199,14 @@ const AutomaticStep = () => {
 	const [loadingCodes, setLoadingCodes] = useState(false);
 	const [organismoError, setOrganismoError] = useState("");
 
+	// Modo de importación PJN: conectar cuenta o importar expediente individual
+	const [pjnImportMode, setPjnImportMode] = useState<PjnImportMode>("connect");
+
 	// Referencia para detectar el botón de siguiente
 	const formSubmitAttempted = useRef<boolean>(false);
+
+	// Referencia al componente PjnAccountConnect para llamar submit desde el botón Siguiente
+	const pjnAccountConnectRef = useRef<PjnAccountConnectRef>(null);
 
 	// Obtener jurisdicciones únicas de Buenos Aires
 	const jurisdictionsBA = React.useMemo(() => {
@@ -588,7 +603,18 @@ const AutomaticStep = () => {
 			document.querySelector('button[type="submit"]');
 
 		if (nextButton) {
-			const handleNextClick = (e: Event) => {
+			const handleNextClick = async (e: Event) => {
+				// Si estamos en modo "connect" de PJN, llamar al submit del componente
+				if (values.judicialPower === "nacional" && pjnImportMode === "connect") {
+					e.preventDefault();
+					e.stopPropagation();
+
+					if (pjnAccountConnectRef.current?.canSubmit()) {
+						await pjnAccountConnectRef.current.submit();
+					}
+					return;
+				}
+
 				// Marcamos el formulario como intentado enviar
 				formSubmitAttempted.current = true;
 
@@ -638,7 +664,7 @@ const AutomaticStep = () => {
 				nextButton.removeEventListener("click", handleNextClick);
 			};
 		}
-	}, [values.folderJuris, values.expedientNumber, values.expedientYear]);
+	}, [values.folderJuris, values.expedientNumber, values.expedientYear, values.judicialPower, pjnImportMode]);
 
 	// Manejar cambio en el campo de año
 	const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -691,10 +717,6 @@ const AutomaticStep = () => {
 				)}
 
 				<Grid item xs={12} md={8}>
-					<Alert severity="warning" sx={{ mb: 2 }}>
-						El expediente debe ser de acceso público.
-					</Alert>
-
 					<Collapse in={success} timeout={500}>
 						<Grid item xs={12}>
 							<Alert
@@ -726,55 +748,151 @@ const AutomaticStep = () => {
 					) : (
 						<Grid container spacing={3}>
 							{values.judicialPower === "nacional" ? (
-								<Grid item xs={12}>
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="folderJuris">Jurisdicción</InputLabel>
-										<FormControl
-											fullWidth
-											style={{ maxHeight: "39.91px" }}
-											error={Boolean(jurisdictionError && (touched.folderJuris || formSubmitAttempted.current))}
-										>
-											<Select
-												id="folderJuris"
-												name="folderJuris"
-												value={values.folderJuris || ""}
-												onChange={handleJurisdictionChange}
-												displayEmpty
-												size="small"
-												renderValue={(selected) => {
-													if (!selected) {
-														return <em>Seleccione una jurisdicción</em>;
+								<>
+									{/* Selector de modo de importación */}
+									<Grid item xs={12}>
+										<Stack spacing={2}>
+											<Typography variant="body2" color="text.secondary">
+												Selecciona cómo deseas importar tus causas:
+											</Typography>
+											<ToggleButtonGroup
+												value={pjnImportMode}
+												exclusive
+												onChange={(_, value) => {
+													if (value !== null) {
+														setPjnImportMode(value);
 													}
-													const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
-													return selectedJurisdiction ? selectedJurisdiction.nombre : "";
 												}}
-												sx={{
-													"& .MuiInputBase-root": { height: 39.91 },
-													"& .MuiInputBase-input": { fontSize: 12 },
-													"& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input.Mui-disabled": {
-														color: "text.disabled",
-													},
-												}}
+												fullWidth
+												size="small"
 											>
-												<MenuItem value="" disabled>
-													<em>Seleccione una jurisdicción</em>
-												</MenuItem>
-												{jurisdicciones
-													.filter((j) => j.value !== "")
-													.map((jurisdiccion) => (
-														<MenuItem key={jurisdiccion.value} value={jurisdiccion.value}>
-															{jurisdiccion.nombre}
-														</MenuItem>
-													))}
-											</Select>
-											{jurisdictionError && (touched.folderJuris || formSubmitAttempted.current) && (
-												<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
-													{jurisdictionError}
-												</Typography>
-											)}
-										</FormControl>
-									</Stack>
-								</Grid>
+												<ToggleButton value="connect" sx={{ py: 1.5 }}>
+													<Stack direction="row" alignItems="center" spacing={1}>
+														<Link1 size={18} />
+														<Typography variant="body2">Conectar mi cuenta</Typography>
+													</Stack>
+												</ToggleButton>
+												<ToggleButton value="single" sx={{ py: 1.5 }}>
+													<Stack direction="row" alignItems="center" spacing={1}>
+														<DocumentText1 size={18} />
+														<Typography variant="body2">Importar expediente</Typography>
+													</Stack>
+												</ToggleButton>
+											</ToggleButtonGroup>
+										</Stack>
+									</Grid>
+
+									{/* Contenido según modo seleccionado */}
+									{pjnImportMode === "connect" ? (
+										<Grid item xs={12}>
+											<PjnAccountConnect
+												ref={pjnAccountConnectRef}
+												onConnectionSuccess={() => {
+													// Opcional: cerrar modal o mostrar mensaje
+												}}
+												onSyncComplete={() => {
+													// Opcional: recargar lista de carpetas
+												}}
+											/>
+										</Grid>
+									) : (
+										<Grid item xs={12}>
+											<Card variant="outlined" sx={{ overflow: "visible" }}>
+												<CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+													<Stack spacing={1.25}>
+														{/* Header */}
+														<Stack direction="row" alignItems="center" spacing={1}>
+															<DocumentText1 size={20} color={theme.palette.primary.main} />
+															<Typography variant="subtitle2" fontWeight={500}>
+																Importar expediente individual
+															</Typography>
+														</Stack>
+
+														{/* Jurisdicción */}
+														<FormControl
+															fullWidth
+															size="small"
+															error={Boolean(jurisdictionError && (touched.folderJuris || formSubmitAttempted.current))}
+														>
+															<Select
+																id="folderJuris"
+																name="folderJuris"
+																value={values.folderJuris || ""}
+																onChange={handleJurisdictionChange}
+																displayEmpty
+																size="small"
+																renderValue={(selected) => {
+																	if (!selected) {
+																		return <em>Seleccione una jurisdicción</em>;
+																	}
+																	const selectedJurisdiction = jurisdicciones.find((j) => j.value === selected);
+																	return selectedJurisdiction ? selectedJurisdiction.nombre : "";
+																}}
+																sx={{
+																	"& .MuiInputBase-input": { fontSize: 12 },
+																}}
+															>
+																<MenuItem value="" disabled>
+																	<em>Seleccione una jurisdicción</em>
+																</MenuItem>
+																{jurisdicciones
+																	.filter((j) => j.value !== "")
+																	.map((jurisdiccion) => (
+																		<MenuItem key={jurisdiccion.value} value={jurisdiccion.value}>
+																			{jurisdiccion.nombre}
+																		</MenuItem>
+																	))}
+															</Select>
+															{jurisdictionError && (touched.folderJuris || formSubmitAttempted.current) && (
+																<Typography color="error" variant="caption" sx={{ mt: 0.5 }}>
+																	{jurisdictionError}
+																</Typography>
+															)}
+														</FormControl>
+
+														{/* Número y Año en una fila */}
+														<Stack direction="row" spacing={1.5}>
+															<InputField
+																fullWidth
+																size="small"
+																id="expedient-number"
+																label="Nº Expediente"
+																placeholder="Ej. 123456"
+																name="expedientNumber"
+																type="number"
+																onChange={handleNumberChange}
+																error={Boolean(numberError && touched.expedientNumber)}
+																helperText={touched.expedientNumber ? numberError : ""}
+															/>
+															<InputField
+																fullWidth
+																size="small"
+																id="expedient-year"
+																label="Año"
+																placeholder="Ej. 2023"
+																name="expedientYear"
+																type="number"
+																onChange={handleYearChange}
+																error={Boolean(yearError && touched.expedientYear)}
+																helperText={touched.expedientYear ? yearError : ""}
+																sx={{ maxWidth: 120 }}
+															/>
+														</Stack>
+
+														{/* Alerta de acceso público */}
+														<Alert
+															severity="warning"
+															icon={<InfoCircle size={14} />}
+															sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}
+														>
+															El expediente debe ser de acceso público.
+														</Alert>
+													</Stack>
+												</CardContent>
+											</Card>
+										</Grid>
+									)}
+								</>
 							) : values.judicialPower === "buenosaires" ? (
 								<>
 									{/* Jurisdicción Buenos Aires */}
@@ -901,38 +1019,54 @@ const AutomaticStep = () => {
 									</Grid>
 								</>
 							) : null}
-							<Grid item xs={12} sm={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="expedientNumber">Número de Expediente</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="expedient-number"
-										placeholder="Ej. 123456"
-										name="expedientNumber"
-										type="number"
-										onChange={handleNumberChange}
-										error={Boolean(numberError && touched.expedientNumber)}
-										helperText={touched.expedientNumber ? numberError : ""}
-									/>
-								</Stack>
-							</Grid>
-							<Grid item xs={12} sm={6}>
-								<Stack spacing={1.25}>
-									<InputLabel htmlFor="expedientYear">Año</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="expedient-year"
-										placeholder="Ej. 2023"
-										name="expedientYear"
-										type="number"
-										onChange={handleYearChange}
-										error={Boolean(yearError && touched.expedientYear)}
-										helperText={touched.expedientYear ? yearError : ""}
-									/>
-								</Stack>
-							</Grid>
+
+							{/* Campos de número y año - solo para Buenos Aires (Nacional los tiene dentro de la Card) */}
+							{values.judicialPower === "buenosaires" && (
+								<>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={1.25}>
+											<InputLabel htmlFor="expedientNumber">Número de Expediente</InputLabel>
+											<InputField
+												fullWidth
+												sx={customInputStyles}
+												id="expedient-number"
+												placeholder="Ej. 123456"
+												name="expedientNumber"
+												type="number"
+												onChange={handleNumberChange}
+												error={Boolean(numberError && touched.expedientNumber)}
+												helperText={touched.expedientNumber ? numberError : ""}
+											/>
+										</Stack>
+									</Grid>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={1.25}>
+											<InputLabel htmlFor="expedientYear">Año</InputLabel>
+											<InputField
+												fullWidth
+												sx={customInputStyles}
+												id="expedient-year"
+												placeholder="Ej. 2023"
+												name="expedientYear"
+												type="number"
+												onChange={handleYearChange}
+												error={Boolean(yearError && touched.expedientYear)}
+												helperText={touched.expedientYear ? yearError : ""}
+											/>
+										</Stack>
+									</Grid>
+									{/* Alerta de acceso público */}
+									<Grid item xs={12}>
+										<Alert
+											severity="warning"
+											icon={<InfoCircle size={14} />}
+											sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}
+										>
+											El expediente debe ser de acceso público.
+										</Alert>
+									</Grid>
+								</>
+							)}
 						</Grid>
 					)}
 				</Grid>
