@@ -672,9 +672,17 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 			try {
 				await googleCalendarService.signInSilently();
 				const isSignedIn = googleCalendarService.isSignedIn;
+				// IMPORTANTE: Verificar que también tenga los scopes de Calendar
+				// El usuario puede estar logueado con Google pero sin permisos de Calendar
+				const hasCalendarScopes = googleCalendarService.hasCalendarScopes();
 
-				if (isSignedIn) {
-					// Reconexión exitosa
+				console.log("checkGoogleCalendarConnection - signInSilently:", {
+					isSignedIn,
+					hasCalendarScopes,
+				});
+
+				if (isSignedIn && hasCalendarScopes) {
+					// Reconexión exitosa CON los scopes correctos
 					const profile = googleCalendarService.getUserProfile();
 					dispatch(setConnected(true));
 					dispatch(setUserProfile(profile));
@@ -698,8 +706,8 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 						);
 					}
 				} else {
-					// No se pudo reconectar silenciosamente, mostrar estado previo
-					// Solo mostrar el mensaje si estamos en una página relacionada con calendario
+					// No se pudo reconectar o no tiene los scopes de Calendar
+					// Mostrar estado previo y pedir reconexión
 					const currentPath = window.location.pathname;
 					const isCalendarPage =
 						currentPath.includes("/calendar") || currentPath.includes("/reservation") || currentPath.includes("/booking");
@@ -721,17 +729,23 @@ export const checkGoogleCalendarConnection = () => async (dispatch: any, getStat
 			} catch (error) {
 				console.log("No se pudo reconectar automáticamente:", error);
 				// Mostrar que había conexión previa pero necesita reconectar
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: `Conexión previa con ${email} detectada. Por favor, reconecta tu cuenta.`,
-						variant: "alert",
-						alert: {
-							color: "warning",
-						},
-						close: true,
-					}),
-				);
+				const currentPath = window.location.pathname;
+				const isCalendarPage =
+					currentPath.includes("/calendar") || currentPath.includes("/reservation") || currentPath.includes("/booking");
+
+				if (isCalendarPage) {
+					dispatch(
+						openSnackbar({
+							open: true,
+							message: `Conexión previa con ${email} detectada. Por favor, reconecta tu cuenta.`,
+							variant: "alert",
+							alert: {
+								color: "warning",
+							},
+							close: true,
+						}),
+					);
+				}
 			}
 		}
 	} catch (error) {
