@@ -36,6 +36,45 @@ class GoogleCalendarService {
 		return this._isSignedIn;
 	}
 
+	// Verificar si el token actual tiene los scopes de Calendar
+	// Esto es importante porque el usuario puede estar logueado con Google (Auth0)
+	// pero no tener los permisos específicos de Calendar
+	hasCalendarScopes(): boolean {
+		try {
+			if (!this.isInitialized || !gapi?.auth2) {
+				return false;
+			}
+
+			const authInstance = gapi.auth2.getAuthInstance();
+			if (!authInstance || !authInstance.isSignedIn.get()) {
+				return false;
+			}
+
+			const currentUser = authInstance.currentUser.get();
+			const grantedScopes = currentUser.getGrantedScopes();
+
+			if (!grantedScopes) {
+				return false;
+			}
+
+			// Verificar que tenga al menos uno de los scopes de Calendar
+			const requiredScopes = ["https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.readonly"];
+
+			const hasScope = requiredScopes.some((scope) => grantedScopes.includes(scope));
+
+			console.log("Scopes verificados:", {
+				grantedScopes,
+				requiredScopes,
+				hasScope,
+			});
+
+			return hasScope;
+		} catch (error) {
+			console.error("Error verificando scopes de Calendar:", error);
+			return false;
+		}
+	}
+
 	// Initialize Google API client
 	async init(): Promise<void> {
 		return new Promise((resolve, reject) => {

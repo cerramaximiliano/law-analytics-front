@@ -98,27 +98,32 @@ export const initializeGoogleCalendar = () => async () => {
 	dispatch(setLoading(true));
 	try {
 		await googleCalendarService.init();
-		const isSignedIn = googleCalendarService.isUserSignedIn();
-		dispatch(setConnected(isSignedIn));
 
-		if (isSignedIn) {
+		// IMPORTANTE: No basta con verificar isSignedIn porque el usuario puede estar
+		// logueado con Google (via Auth0) pero sin los scopes de Calendar.
+		// Solo consideramos "conectado" si tiene los scopes correctos de Calendar.
+		const isSignedIn = googleCalendarService.isUserSignedIn();
+		const hasCalendarScopes = googleCalendarService.hasCalendarScopes();
+
+		// Solo setear como conectado si tiene los scopes de Calendar
+		const isActuallyConnected = isSignedIn && hasCalendarScopes;
+
+		console.log("initializeGoogleCalendar:", {
+			isSignedIn,
+			hasCalendarScopes,
+			isActuallyConnected,
+		});
+
+		dispatch(setConnected(isActuallyConnected));
+
+		if (isActuallyConnected) {
 			const profile = googleCalendarService.getUserProfile();
 			dispatch(setUserProfile(profile));
 		}
 	} catch (error: any) {
 		console.error("Error initializing Google Calendar:", error);
-		const errorMessage = error?.message || "Error al inicializar Google Calendar";
-		dispatch(
-			openSnackbar({
-				open: true,
-				message: errorMessage,
-				variant: "alert",
-				alert: {
-					color: "error",
-				},
-				close: true,
-			}),
-		);
+		// No mostrar error al usuario durante la inicialización silenciosa
+		// El error se mostrará solo si el usuario intenta conectar explícitamente
 	} finally {
 		dispatch(setLoading(false));
 	}

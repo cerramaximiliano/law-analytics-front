@@ -68,7 +68,7 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 		}
 	}, [isConnected, userProfile, isLoading, dispatch]);
 
-	// Sincronización automática cada 15 días
+	// Sincronización automática cada 15 días (solo si ya se conectó previamente)
 	useEffect(() => {
 		// Solo ejecutar si está conectado y no está cargando
 		if (!isConnected || isLoading) {
@@ -80,45 +80,28 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 			return;
 		}
 
+		// IMPORTANTE: Solo sincronizar automáticamente si lastSyncTime existe
+		// Si lastSyncTime es null, significa que el usuario nunca conectó Calendar explícitamente
+		// y debemos esperar a que haga click en "Conectar"
+		if (!lastSyncTime) {
+			console.log("No hay sincronización previa. El usuario debe conectar explícitamente.");
+			return;
+		}
+
 		const checkAutoSync = async () => {
-			// Verificar si han pasado 15 días desde la última sincronización
-			if (lastSyncTime) {
-				const lastSync = new Date(lastSyncTime);
-				const now = new Date();
-				const daysDiff = Math.floor((now.getTime() - lastSync.getTime()) / (1000 * 60 * 60 * 24));
+			const lastSync = new Date(lastSyncTime);
+			const now = new Date();
+			const daysDiff = Math.floor((now.getTime() - lastSync.getTime()) / (1000 * 60 * 60 * 24));
 
-				// Si han pasado 15 días o más, sincronizar automáticamente
-				if (daysDiff >= 15) {
-					console.log(`Han pasado ${daysDiff} días desde la última sincronización. Sincronizando automáticamente...`);
+			// Si han pasado 15 días o más, sincronizar automáticamente
+			if (daysDiff >= 15) {
+				console.log(`Han pasado ${daysDiff} días desde la última sincronización. Sincronizando automáticamente...`);
 
-					// Mostrar notificación de sincronización automática
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: `Sincronizando automáticamente con Google Calendar (${daysDiff} días desde última sincronización)...`,
-							variant: "alert",
-							alert: {
-								color: "info",
-							},
-							close: false,
-						}),
-					);
-
-					// Ejecutar sincronización
-					handleSync();
-				} else {
-					console.log(
-						`Han pasado ${daysDiff} días desde la última sincronización. Se sincronizará automáticamente en ${15 - daysDiff} días.`,
-					);
-				}
-			} else {
-				// Si está conectado pero nunca se ha sincronizado, sincronizar ahora
-				console.log("Primera sincronización automática al cargar el calendario");
-
+				// Mostrar notificación de sincronización automática
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Realizando primera sincronización con Google Calendar...",
+						message: `Sincronizando automáticamente con Google Calendar (${daysDiff} días desde última sincronización)...`,
 						variant: "alert",
 						alert: {
 							color: "info",
@@ -127,7 +110,12 @@ const GoogleCalendarSync = ({ localEvents, onEventsImported }: GoogleCalendarSyn
 					}),
 				);
 
+				// Ejecutar sincronización
 				handleSync();
+			} else {
+				console.log(
+					`Han pasado ${daysDiff} días desde la última sincronización. Se sincronizará automáticamente en ${15 - daysDiff} días.`,
+				);
 			}
 		};
 
