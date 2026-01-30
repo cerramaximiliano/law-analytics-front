@@ -366,15 +366,34 @@ export const connectGoogleCalendar = () => async (dispatch: any, getState: any) 
 					}),
 				);
 			}
-		} catch (importError) {
+		} catch (importError: any) {
 			console.error("Error al importar eventos automáticamente:", importError);
+
+			// Detectar errores específicos para mostrar mensajes más claros
+			let errorMessage = "Error al importar algunos eventos. La conexión se estableció correctamente.";
+			let errorColor: "warning" | "error" = "warning";
+
+			// Verificar si es el error de "usuario no registrado en Google Calendar"
+			const errorBody = importError?.body || "";
+			const errorResult = importError?.result?.error?.message || "";
+
+			if (errorBody.includes("must be signed up for Google Calendar") || errorResult.includes("must be signed up for Google Calendar")) {
+				errorMessage =
+					"Tu cuenta de Google no tiene Google Calendar habilitado. Accede a calendar.google.com para activarlo o contacta a tu administrador.";
+				errorColor = "error";
+			} else if (importError?.status === 403) {
+				// Otros errores 403 (permisos insuficientes)
+				errorMessage = "No tienes permisos para acceder a Google Calendar. Verifica que hayas aceptado todos los permisos.";
+				errorColor = "error";
+			}
+
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al importar algunos eventos. La conexión se estableció correctamente.",
+					message: errorMessage,
 					variant: "alert",
 					alert: {
-						color: "warning",
+						color: errorColor,
 					},
 					close: true,
 				}),
