@@ -29,6 +29,14 @@ const CustomerView: React.FC<ContactViewProps> = ({ data }) => {
 	const [error, setError] = useState<string | null>(null);
 	const isArchived = data.status === "archived";
 	const notAvailableMsg = "No disponible";
+
+	// Helper para formatear role (puede ser string o array)
+	const formatRole = (role: string | string[] | undefined) => {
+		if (!role) return notAvailableMsg;
+		if (Array.isArray(role)) return role.join(", ");
+		return role;
+	};
+
 	const isMountedRef = React.useRef(true);
 	const loadingRef = React.useRef(true);
 
@@ -185,7 +193,7 @@ const CustomerView: React.FC<ContactViewProps> = ({ data }) => {
 								<InfoCard icon={<Location size="20" />} label="Dirección" value={data.address} />
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
-								<InfoCard icon={<Buildings2 size="20" />} label="Rol" value={data.role} />
+								<InfoCard icon={<Buildings2 size="20" />} label="Rol" value={formatRole(data.role)} />
 							</Grid>
 							<Grid item xs={12} sm={6} md={3}>
 								<InfoCard icon={<Calendar size="20" />} label="Fecha de Registro" value={dayjs().format("DD/MM/YYYY")} />

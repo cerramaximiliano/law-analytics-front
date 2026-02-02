@@ -112,6 +112,13 @@ const styles = StyleSheet.create({
 	},
 });
 
+// Helper para formatear role (puede ser string o array)
+const formatRole = (role: string | string[] | undefined): string => {
+	if (!role) return "No disponible";
+	if (Array.isArray(role)) return role.join(", ");
+	return role;
+};
+
 // ==============================|| CUSTOMER - CARD ||============================== //
 
 interface Props {
@@ -128,7 +135,7 @@ const ListSmallCard = ({ customer }: Props) => {
 						<Image style={styles.image} src={avatarImage(`./avatar-${!customer.avatar ? 1 : customer.avatar}.png`)} />
 						<View style={styles.CardInfo}>
 							<Text style={styles.title}>{customer.fatherName}</Text>
-							<Text style={styles.role}>{customer.role}</Text>
+							<Text style={styles.role}>{formatRole(customer.role)}</Text>
 						</View>
 					</View>
 					<View style={styles.hr} />

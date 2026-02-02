@@ -28,11 +28,12 @@ import ThirdStep from "./step-components/thirdStep";
 import { dispatch, useSelector } from "store";
 import { addContact, updateContact } from "store/reducers/contacts";
 import { enqueueSnackbar } from "notistack";
+import { useTeam } from "contexts/TeamContext";
 
 interface CustomerFormValues {
 	name: string;
 	lastName: string;
-	role: string;
+	role: string | string[];
 	type: string;
 	address: string;
 	state: string;
@@ -99,6 +100,7 @@ export interface Props {
 const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: Props) => {
 	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
+	const { getUserIdForResource, getTeamIdForResource, getRequestHeaders } = useTeam();
 	const isCreating = mode === "add";
 	const [initialValues, setInitialValues] = useState(getInitialValues(customer));
 	const formikRef = React.useRef<FormikProps<CustomerFormValues>>(null);
@@ -153,7 +155,12 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 		Yup.object().shape({
 			name: Yup.string().required("El nombre es requerido"),
 			lastName: Yup.string().required("El apellido es requerido"),
-			role: Yup.string().required("La categoría es requerida"),
+			role: Yup.mixed()
+				.required("La categoría es requerida")
+				.test("is-valid-role", "La categoría es requerida", (value) => {
+					if (Array.isArray(value)) return value.length > 0;
+					return typeof value === "string" && value.trim().length > 0;
+				}),
 			type: Yup.string().required("El tipo es requerido"),
 		}),
 		Yup.object().shape({
@@ -229,7 +236,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 				// Verificar el límite de recursos para contactos
 				const checkLimit = async () => {
 					try {
-						const response = await ApiService.checkResourceLimit("contacts");
+						// Pasar headers del equipo si estamos en modo equipo
+						const response = await ApiService.checkResourceLimit("contacts", { headers: getRequestHeaders() });
 						if (response.success && response.data) {
 							if (response.data.hasReachedLimit) {
 								// Si ha alcanzado el límite, mostrar el modal de error y cerrar este modal
@@ -318,19 +326,25 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 
 	async function _submitForm(values: any, actions: any, mode: string | undefined) {
 		try {
-			const userId = auth.user?._id;
+			const userId = getUserIdForResource();
+			const groupId = getTeamIdForResource();
 
 			// Limpiar el número de teléfono si existe
 			const cleanedPhone = values.phone ? cleanArgentinePhoneNumber(values.phone) : "";
 
 			// Preparar los datos asegurando que los campos requeridos estén presentes
+			// Normalizar role: si es array, mantenerlo; si es string, hacer trim
+			const normalizedRole = Array.isArray(values.role)
+				? values.role
+				: (values.role?.trim() || "");
+
 			const cleanedValues = {
 				...values,
 				phone: cleanedPhone,
 				// Asegurar que los campos requeridos no estén vacíos
 				name: values.name?.trim() || "",
 				lastName: values.lastName?.trim() || "",
-				role: values.role?.trim() || "",
+				role: normalizedRole,
 				type: values.type?.trim() || "",
 				state: values.state?.trim() || "",
 				city: values.city?.trim() || "",
@@ -358,7 +372,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 			let message;
 
 			if (mode === "add") {
-				const newContactData = { ...cleanedValues, userId };
+				const newContactData = { ...cleanedValues, userId, ...(groupId && { groupId }) };
 				delete newContactData._id;
 
 				// Si se está creando desde una carpeta específica, agregar el folderId al array folderIds
@@ -366,7 +380,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 					newContactData.folderIds = [folderId];
 				}
 
-				results = await dispatch(addContact(newContactData));
+				results = await dispatch(addContact(newContactData, { headers: getRequestHeaders() }));
 				message = "agregar";
 			} else if (mode === "edit") {
 				const id = values._id;
