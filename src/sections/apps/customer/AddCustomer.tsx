@@ -74,10 +74,10 @@ const getInitialValues = (customer: FormikValues | null) => {
 	return customer ? merge({}, newCustomer, customer) : newCustomer;
 };
 
-function getStepContent(step: number, values: any) {
+function getStepContent(step: number, values: any, isImportedFromPjn: boolean = false) {
 	switch (step) {
 		case 0:
-			return <FirstStep />;
+			return <FirstStep isImportedFromPjn={isImportedFromPjn} />;
 		case 1:
 			return <SecondStep />;
 		case 2:
@@ -104,6 +104,9 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 	const isCreating = mode === "add";
 	const [initialValues, setInitialValues] = useState(getInitialValues(customer));
 	const formikRef = React.useRef<FormikProps<CustomerFormValues>>(null);
+
+	// Detectar si el contacto fue importado desde PJN (intervinientes)
+	const isImportedFromPjn = customer?.importSource === "interviniente";
 
 	// Estado para el modal de límite de recursos
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
@@ -559,7 +562,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 										</Stack>
 
 										{/* Form Content */}
-										<Box sx={{ py: 1 }}>{getStepContent(activeStep, values)}</Box>
+										<Box sx={{ py: 1 }}>{getStepContent(activeStep, values, isImportedFromPjn)}</Box>
 									</Box>
 								</DialogContent>
 
