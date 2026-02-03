@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
-import { useTheme } from "@mui/material/styles";
-import { Box, Button, Container, Grid, Rating, Typography, Link } from "@mui/material";
+import { useTheme, Theme } from "@mui/material/styles";
+import { Box, Button, Chip, Container, Grid, Rating, Typography, Link, Tooltip, useMediaQuery } from "@mui/material";
+
+// project imports
+import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // third party
 import { motion } from "framer-motion";
@@ -17,11 +21,16 @@ import dashboardImage from "assets/images/dashboard.png";
 import logoPJNacion from "assets/images/logos/logo_pj_nacion.png";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
+// Logo externo (Cloudinary)
+const logoPJCABA = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
+
 // ==============================|| LANDING - HeaderPage ||============================== //
 
 const HeaderPage = () => {
 	const theme = useTheme();
 	const { trackHeroCTA } = useLandingAnalytics();
+	const [supportModalOpen, setSupportModalOpen] = useState(false);
+	const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
 	return (
 		<Box
@@ -379,105 +388,247 @@ const HeaderPage = () => {
 									>
 										Integrado con
 									</Typography>
-									<Grid container spacing={4} justifyContent="center">
-										<Grid item xs={6} sm="auto">
-											<Box
-												sx={{
-													display: "flex",
-													flexDirection: "column",
-													alignItems: "center",
-													gap: 1,
-												}}
-											>
+									<Grid container spacing={{ xs: 2, sm: 3 }} justifyContent="center">
+										{/* PJN - Poder Judicial de la Nación */}
+										<Grid item xs={4} sm="auto">
+											<Tooltip title="Poder Judicial de la Nación" arrow placement="top" disableHoverListener={!isMobile}>
 												<Box
 													sx={{
-														width: 56,
-														height: 56,
-														borderRadius: 2,
-														bgcolor: "#232D4F",
-														boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
 														display: "flex",
+														flexDirection: "column",
 														alignItems: "center",
-														justifyContent: "center",
-														p: 0.75,
+														gap: { xs: 0.5, sm: 1 },
+														width: { xs: "auto", sm: 130 },
 													}}
 												>
 													<Box
-														component="img"
-														src={logoPJNacion}
-														alt="Poder Judicial de la Nación"
 														sx={{
-															width: "100%",
-															height: "100%",
-															objectFit: "contain",
+															width: { xs: 48, sm: 60 },
+															height: { xs: 48, sm: 60 },
+															borderRadius: 2,
+															bgcolor: "#232D4F",
+															boxShadow: "0 4px 14px rgba(35, 45, 79, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15)",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															p: 0.75,
+															transition: "transform 0.2s ease, box-shadow 0.2s ease",
+															"&:hover": {
+																transform: "translateY(-2px)",
+																boxShadow: "0 6px 20px rgba(35, 45, 79, 0.5), 0 4px 10px rgba(0, 0, 0, 0.2)",
+															},
 														}}
-													/>
+													>
+														<Box
+															component="img"
+															src={logoPJNacion}
+															alt="Poder Judicial de la Nación"
+															sx={{
+																width: "100%",
+																height: "100%",
+																objectFit: "contain",
+															}}
+														/>
+													</Box>
+													{/* Texto corto en móvil */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "block", sm: "none" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.75rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														PJN
+													</Typography>
+													{/* Texto completo en desktop */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "none", sm: "block" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.8rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														Poder Judicial
+														<br />
+														de la Nación
+													</Typography>
 												</Box>
-												<Typography
-													variant="caption"
-													sx={{
-														color: theme.palette.text.primary,
-														fontWeight: 500,
-														fontSize: "0.8rem",
-														textAlign: "center",
-														lineHeight: 1.3,
-													}}
-												>
-													Poder Judicial
-													<br />
-													de la Nación
-												</Typography>
-											</Box>
+											</Tooltip>
 										</Grid>
-										<Grid item xs={6} sm="auto">
-											<Box
-												sx={{
-													display: "flex",
-													flexDirection: "column",
-													alignItems: "center",
-													gap: 1,
-												}}
-											>
+
+										{/* MEV - Poder Judicial de la Provincia de Buenos Aires */}
+										<Grid item xs={4} sm="auto">
+											<Tooltip title="Poder Judicial de la Provincia de Buenos Aires (MEV)" arrow placement="top" disableHoverListener={!isMobile}>
 												<Box
 													sx={{
-														width: 56,
-														height: 56,
-														borderRadius: 2,
-														bgcolor: "#ffffff",
-														border: "1px solid rgba(0, 0, 0, 0.15)",
-														boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
 														display: "flex",
+														flexDirection: "column",
 														alignItems: "center",
-														justifyContent: "center",
-														p: 0.75,
+														gap: { xs: 0.5, sm: 1 },
+														width: { xs: "auto", sm: 130 },
 													}}
 												>
 													<Box
-														component="img"
-														src={logoPJBuenosAires}
-														alt="Poder Judicial de la Provincia de Buenos Aires"
 														sx={{
-															width: "100%",
-															height: "100%",
-															objectFit: "contain",
+															width: { xs: 48, sm: 60 },
+															height: { xs: 48, sm: 60 },
+															borderRadius: 2,
+															bgcolor: "#ffffff",
+															border: "1px solid rgba(0, 0, 0, 0.1)",
+															boxShadow: "0 4px 14px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															p: 0.75,
+															transition: "transform 0.2s ease, box-shadow 0.2s ease",
+															"&:hover": {
+																transform: "translateY(-2px)",
+																boxShadow: "0 6px 20px rgba(0, 0, 0, 0.18), 0 4px 10px rgba(0, 0, 0, 0.12)",
+															},
+														}}
+													>
+														<Box
+															component="img"
+															src={logoPJBuenosAires}
+															alt="Poder Judicial de la Provincia de Buenos Aires"
+															sx={{
+																width: "100%",
+																height: "100%",
+																objectFit: "contain",
+															}}
+														/>
+													</Box>
+													{/* Texto corto en móvil */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "block", sm: "none" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.75rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														MEV
+													</Typography>
+													{/* Texto completo en desktop */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "none", sm: "block" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.8rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														Poder Judicial de la
+														<br />
+														Prov. de Buenos Aires
+													</Typography>
+												</Box>
+											</Tooltip>
+										</Grid>
+
+										{/* EJE - Poder Judicial de la Ciudad de Buenos Aires */}
+										<Grid item xs={4} sm="auto">
+											<Tooltip title="Poder Judicial de la Ciudad de Buenos Aires (EJE) - Próximamente" arrow placement="top" disableHoverListener={!isMobile}>
+												<Box
+													sx={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														gap: { xs: 0.5, sm: 1 },
+														width: { xs: "auto", sm: 130 },
+														opacity: 0.6,
+													}}
+												>
+													<Box
+														sx={{
+															width: { xs: 48, sm: 60 },
+															height: { xs: 48, sm: 60 },
+															borderRadius: 2,
+															bgcolor: "#ffffff",
+															border: "1px solid rgba(0, 0, 0, 0.1)",
+															boxShadow: "0 4px 14px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06)",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															p: 0.75,
+															filter: "grayscale(20%)",
+															transition: "transform 0.2s ease, box-shadow 0.2s ease",
+														}}
+													>
+														<Box
+															component="img"
+															src={logoPJCABA}
+															alt="Poder Judicial de la Ciudad de Buenos Aires"
+															sx={{
+																width: "100%",
+																height: "100%",
+																objectFit: "contain",
+															}}
+														/>
+													</Box>
+													{/* Texto corto en móvil */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "block", sm: "none" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.75rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														EJE
+													</Typography>
+													{/* Texto completo en desktop */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "none", sm: "block" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.8rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														Poder Judicial de la
+														<br />
+														Ciudad de Buenos Aires
+													</Typography>
+													<Chip
+														label="Próximamente"
+														size="small"
+														sx={{
+															fontSize: { xs: "0.55rem", sm: "0.65rem" },
+															height: { xs: 16, sm: 20 },
+															bgcolor: theme.palette.primary.lighter,
+															color: theme.palette.primary.dark,
+															fontWeight: 600,
 														}}
 													/>
 												</Box>
-												<Typography
-													variant="caption"
-													sx={{
-														color: theme.palette.text.primary,
-														fontWeight: 500,
-														fontSize: "0.8rem",
-														textAlign: "center",
-														lineHeight: 1.3,
-													}}
-												>
-													Poder Judicial de la
-													<br />
-													Prov. de Buenos Aires
-												</Typography>
-											</Box>
+											</Tooltip>
 										</Grid>
 									</Grid>
 									<Typography
@@ -486,11 +637,43 @@ const HeaderPage = () => {
 											mt: 2.5,
 											color: "#6E6E6E",
 											fontSize: "0.875rem",
-											maxWidth: 400,
+											maxWidth: { xs: 300, sm: "none" },
 											mx: "auto",
 										}}
 									>
 										Consulta expedientes, estados y movimientos en tiempo real desde un solo lugar.
+									</Typography>
+									<Typography
+										variant="body2"
+										sx={{
+											mt: 1.5,
+											color: theme.palette.primary.main,
+											fontSize: "0.8rem",
+											maxWidth: { xs: 300, sm: "none" },
+											mx: "auto",
+											fontStyle: "italic",
+										}}
+									>
+										¿Tu jurisdicción no está disponible?{" "}
+										<Link
+											component="button"
+											onClick={() => setSupportModalOpen(true)}
+											sx={{
+												color: theme.palette.primary.dark,
+												fontWeight: 600,
+												textDecoration: "underline",
+												cursor: "pointer",
+												border: "none",
+												background: "none",
+												font: "inherit",
+												"&:hover": {
+													color: theme.palette.primary.main,
+												},
+											}}
+										>
+											Contáctanos
+										</Link>{" "}
+										y desarrollamos una integración personalizada.
 									</Typography>
 								</Box>
 							</motion.div>
@@ -498,6 +681,13 @@ const HeaderPage = () => {
 					</Grid>
 				</Box>
 			</Container>
+
+			{/* Modal de soporte para solicitar nueva jurisdicción */}
+			<SupportModal
+				open={supportModalOpen}
+				onClose={() => setSupportModalOpen(false)}
+				defaultSubject="Solicitud de nueva jurisdicción"
+			/>
 		</Box>
 	);
 };

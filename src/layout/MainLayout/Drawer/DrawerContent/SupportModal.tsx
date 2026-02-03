@@ -45,6 +45,7 @@ export interface SupportFormData {
 interface SupportModalProps {
 	open: boolean;
 	onClose: () => void;
+	defaultSubject?: string;
 }
 
 // Lista de asuntos predefinidos
@@ -55,6 +56,7 @@ const subjectOptions = [
 	"Actualización de datos",
 	"Recuperación de cuenta",
 	"Error en proceso de pago",
+	"Solicitud de nueva jurisdicción",
 	"Otro",
 ];
 
@@ -66,7 +68,7 @@ const priorityOptions = [
 	{ value: "urgent", label: "Urgente" },
 ];
 
-const SupportModal = ({ open, onClose }: SupportModalProps) => {
+const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps) => {
 	const theme = useTheme();
 	const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -74,10 +76,17 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 	const [formData, setFormData] = useState<SupportFormData>({
 		name: "",
 		email: "",
-		subject: "",
+		subject: defaultSubject,
 		priority: "medium",
 		message: "",
 	});
+
+	// Actualizar subject cuando cambia defaultSubject o se abre el modal
+	React.useEffect(() => {
+		if (open && defaultSubject) {
+			setFormData((prev) => ({ ...prev, subject: defaultSubject }));
+		}
+	}, [open, defaultSubject]);
 
 	// Estado para los errores de validación
 	const [errors, setErrors] = useState({
@@ -321,7 +330,7 @@ const SupportModal = ({ open, onClose }: SupportModalProps) => {
 								onChange={handleChange}
 								error={errors.subject}
 								helperText={errors.subject ? "Selecciona un tipo de consulta" : ""}
-								disabled={submitting}
+								disabled={submitting || !!defaultSubject}
 								required
 							>
 								{subjectOptions.map((option) => (
