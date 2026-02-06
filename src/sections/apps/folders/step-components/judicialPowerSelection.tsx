@@ -6,14 +6,14 @@ import { ArrowRight } from "iconsax-react";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
 interface FormValues {
-	judicialPower?: "nacional" | "buenosaires";
+	judicialPower?: "nacional" | "buenosaires" | "caba";
 }
 
 const JudicialPowerSelection = () => {
 	const theme = useTheme();
 	const { setFieldValue, values } = useFormikContext<FormValues>();
 
-	const handleSelectJudicialPower = (power: "nacional" | "buenosaires") => {
+	const handleSelectJudicialPower = (power: "nacional" | "buenosaires" | "caba") => {
 		setFieldValue("judicialPower", power);
 	};
 
@@ -51,6 +51,8 @@ const JudicialPowerSelection = () => {
 							sx={{
 								backgroundColor: "#222E43",
 								borderRadius: 1,
+								border: "1px solid",
+								borderColor: "divider",
 								p: 1,
 								width: 60,
 								height: 60,
@@ -104,6 +106,8 @@ const JudicialPowerSelection = () => {
 							sx={{
 								backgroundColor: "#f8f8f8",
 								borderRadius: 1,
+								border: "1px solid",
+								borderColor: "divider",
 								p: 1,
 								width: 60,
 								height: 60,
@@ -126,6 +130,61 @@ const JudicialPowerSelection = () => {
 					<ListItemText
 						primary="Poder Judicial de la Provincia de Buenos Aires"
 						secondary="Vincule causas del fuero provincial"
+						primaryTypographyProps={{ fontWeight: 600 }}
+					/>
+					<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
+						<ArrowRight size={24} color={theme.palette.text.secondary} />
+					</Box>
+				</ListItemButton>
+			</Grid>
+
+			{/* Poder Judicial de la Ciudad Autónoma de Buenos Aires (EJE) */}
+			<Grid item xs={12}>
+				<ListItemButton
+					onClick={() => handleSelectJudicialPower("caba")}
+					sx={{
+						border: 1,
+						borderColor: values.judicialPower === "caba" ? theme.palette.primary.main : theme.palette.divider,
+						borderRadius: 2,
+						p: 2,
+						display: "flex",
+						alignItems: "center",
+						backgroundColor: values.judicialPower === "caba" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+						"&:hover": {
+							backgroundColor: alpha(theme.palette.primary.main, 0.08),
+							borderColor: theme.palette.primary.main,
+						},
+					}}
+				>
+					<ListItemIcon sx={{ minWidth: 80 }}>
+						<Box
+							sx={{
+								backgroundColor: "#f8f8f8",
+								borderRadius: 1,
+								border: "1px solid",
+								borderColor: "divider",
+								p: 1,
+								width: 60,
+								height: 60,
+								display: "flex",
+								justifyContent: "center",
+								alignItems: "center",
+							}}
+						>
+							<img
+								src="https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png"
+								alt="Poder Judicial de CABA"
+								style={{
+									maxHeight: "100%",
+									maxWidth: "100%",
+									objectFit: "contain",
+								}}
+							/>
+						</Box>
+					</ListItemIcon>
+					<ListItemText
+						primary="Poder Judicial de la Ciudad de Buenos Aires"
+						secondary="Vincule causas del fuero de la Ciudad (EJE)"
 						primaryTypographyProps={{ fontWeight: 600 }}
 					/>
 					<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
