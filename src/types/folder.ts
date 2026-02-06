@@ -91,10 +91,27 @@ export type FolderData = {
 	causaVerified?: boolean; // Indica si la causa ha sido verificada
 	causaIsValid?: boolean; // Indica si la causa es válida
 	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
-	causaAssociationStatus?: string; // Estado de asociación (success, pending, failed)
+	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
 	causaLastSyncDate?: string; // Fecha de última sincronización
 	lastMovementDate?: string; // Fecha del último movimiento
+	// Campos para selección múltiple de causas (EJE/MEV)
+	pendingCausaIds?: string[]; // IDs de causas pendientes de selección
+	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV')
+	searchTerm?: string; // Término de búsqueda original
+	eje?: boolean; // Indica si es una causa EJE (CABA)
 };
+
+// Interfaz para una causa pendiente de selección
+export interface PendingCausa {
+	_id: string;
+	cuij?: string;
+	numero: number;
+	anio: number;
+	caratula?: string;
+	estado?: string;
+	isPrivate?: boolean;
+	fechaInicio?: string;
+}
 
 export type PaginationInfo = {
 	total: number;

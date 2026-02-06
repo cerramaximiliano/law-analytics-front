@@ -6,11 +6,12 @@ import { Grid, Chip, Divider, Stack, TableCell, TableRow, Typography, Box, Paper
 import Transitions from "components/@extended/Transitions";
 import LinkToJudicialPower from "./LinkToJudicialPower";
 import LinkToPJBuenosAires from "./LinkToPJBuenosAires";
+import CausaSelector from "./CausaSelector";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
 
 // assets
-import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare, TickCircle, CloseCircle, InfoCircle } from "iconsax-react";
+import { Calendar, FolderOpen, Profile, Clock, NoteText, ExportSquare, TickCircle, CloseCircle, InfoCircle, Warning2 } from "iconsax-react";
 import { memo, useState } from "react";
 import dayjs from "utils/dayjs-config";
 
@@ -21,8 +22,12 @@ const FolderView = memo(({ data }: any) => {
 	const notAvailableMsg = "No disponible";
 	const [openLinkJudicial, setOpenLinkJudicial] = useState(false);
 	const [openLinkPJBA, setOpenLinkPJBA] = useState(false);
+	const [openCausaSelector, setOpenCausaSelector] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorInfo, setLimitErrorInfo] = useState<any>(null);
+
+	// Detectar si hay selección pendiente de causas (múltiples resultados)
+	const hasPendingSelection = data.causaAssociationStatus === "pending_selection";
 
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
@@ -103,6 +108,45 @@ const FolderView = memo(({ data }: any) => {
 			<TableCell colSpan={8} sx={{ p: 2.5 }}>
 				<Transitions type="slide" direction="down" in={true}>
 					<Box>
+						{/* Alerta de selección pendiente */}
+						{hasPendingSelection && (
+							<Paper
+								elevation={0}
+								onClick={() => setOpenCausaSelector(true)}
+								sx={{
+									p: 2,
+									mb: 2,
+									cursor: "pointer",
+									bgcolor: alpha(theme.palette.warning.main, 0.1),
+									border: `1px solid ${alpha(theme.palette.warning.main, 0.5)}`,
+									borderRadius: 1,
+									transition: "all 0.2s ease",
+									"&:hover": {
+										bgcolor: alpha(theme.palette.warning.main, 0.15),
+										borderColor: theme.palette.warning.main,
+									},
+								}}
+							>
+								<Stack direction="row" spacing={2} alignItems="center">
+									<Warning2 size={24} variant="Bold" color={theme.palette.warning.main} />
+									<Box flex={1}>
+										<Typography variant="subtitle2" color="warning.dark" fontWeight={600}>
+											Acción requerida: Seleccionar expediente
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											Se encontraron múltiples expedientes para esta carpeta. Haz clic aquí para seleccionar el correcto.
+										</Typography>
+									</Box>
+									<Chip
+										label="Seleccionar"
+										color="warning"
+										size="small"
+										sx={{ fontWeight: 500 }}
+									/>
+								</Stack>
+							</Paper>
+						)}
+
 						{/* Header with title and status */}
 						<Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
 							<Stack direction="row" spacing={2} alignItems="center">
@@ -168,6 +212,99 @@ const FolderView = memo(({ data }: any) => {
 											</Box>
 										</Tooltip>
 									)}
+								</Box>
+							) : data.eje && data.causaAssociationStatus === "success" ? (
+								<Box sx={{ position: "relative", display: "inline-flex" }}>
+									<Box
+										sx={{
+											px: 2,
+											py: 0.75,
+											height: 36,
+											display: "flex",
+											alignItems: "center",
+											gap: 0.75,
+											bgcolor: alpha(theme.palette.success.main, 0.1),
+											border: `1px solid ${theme.palette.success.main}`,
+											borderRadius: 0.5,
+										}}
+									>
+										<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+										<Typography
+											variant="body2"
+											sx={{
+												fontWeight: 500,
+												color: theme.palette.success.dark,
+												fontSize: "0.8125rem",
+											}}
+										>
+											Vinculado con EJE
+										</Typography>
+									</Box>
+									{/* Ícono de estado de verificación */}
+									{(data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
+										<Tooltip
+											title={
+												data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida"
+											}
+										>
+											<Box
+												sx={{
+													position: "absolute",
+													bottom: -8,
+													right: -8,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													width: 20,
+													height: 20,
+													bgcolor: theme.palette.background.paper,
+													borderRadius: "50%",
+													boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+												}}
+											>
+												{data.causaVerified === false ? (
+													<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
+												) : data.causaIsValid ? (
+													<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
+												) : (
+													<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
+												)}
+											</Box>
+										</Tooltip>
+									)}
+								</Box>
+							) : hasPendingSelection ? (
+								<Box
+									onClick={() => setOpenCausaSelector(true)}
+									sx={{
+										px: 2,
+										py: 0.75,
+										height: 36,
+										display: "flex",
+										alignItems: "center",
+										gap: 0.75,
+										cursor: "pointer",
+										bgcolor: alpha(theme.palette.warning.main, 0.1),
+										border: `1px solid ${theme.palette.warning.main}`,
+										borderRadius: 0.5,
+										transition: "all 0.2s ease",
+										"&:hover": {
+											bgcolor: alpha(theme.palette.warning.main, 0.2),
+											borderColor: theme.palette.warning.dark,
+										},
+									}}
+								>
+									<Warning2 size={16} variant="Bold" color={theme.palette.warning.main} />
+									<Typography
+										variant="body2"
+										sx={{
+											fontWeight: 500,
+											color: theme.palette.warning.dark,
+											fontSize: "0.8125rem",
+										}}
+									>
+										Seleccionar expediente
+									</Typography>
 								</Box>
 							) : data.mev ? (
 								<Box sx={{ position: "relative", display: "inline-flex" }}>
@@ -400,6 +537,21 @@ const FolderView = memo(({ data }: any) => {
 					message="Esta característica no está disponible en tu plan actual."
 					featureInfo={limitErrorInfo}
 					upgradeRequired={true}
+				/>
+
+				{/* Modal para seleccionar causa cuando hay múltiples resultados */}
+				<CausaSelector
+					open={openCausaSelector}
+					onClose={() => setOpenCausaSelector(false)}
+					folderId={data._id}
+					folderName={data.folderName}
+					onCausaSelected={() => {
+						// Recargar datos del folder si es necesario
+						setOpenCausaSelector(false);
+					}}
+					onSelectionCancelled={() => {
+						setOpenCausaSelector(false);
+					}}
 				/>
 			</TableCell>
 		</TableRow>

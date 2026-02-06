@@ -71,18 +71,22 @@ import {
 	More,
 	SearchStatus1,
 	Folder2,
+	Warning2,
 } from "iconsax-react";
 
 // types
 import { dispatch, useSelector } from "store";
 import {
 	getFoldersByUserId,
+	getFoldersByGroupId,
 	archiveFolders,
 	getArchivedFoldersByUserId,
+	getArchivedFoldersByGroupId,
 	unarchiveFolders,
 	getFolderById,
 	setFolderSort,
 } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
 import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument, Calendar } from "iconsax-react";
@@ -356,16 +360,18 @@ function ReactTable({
 
 						{/* Botones principales (derecha) */}
 						<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-							<Button
-								variant="contained"
-								size="small"
-								startIcon={<FolderAdd />}
-								onClick={handleAdd}
-								fullWidth={matchDownSM}
-								sx={{ textTransform: "none" }}
-							>
-								{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
-							</Button>
+							{handleAdd && (
+								<Button
+									variant="contained"
+									size="small"
+									startIcon={<FolderAdd />}
+									onClick={handleAdd}
+									fullWidth={matchDownSM}
+									sx={{ textTransform: "none" }}
+								>
+									{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
+								</Button>
+							)}
 							{/* Botones secundarios - atenuados en onboarding */}
 							<Box
 								sx={{
@@ -563,8 +569,8 @@ function ReactTable({
 					}}
 				>
 					{data.length === 0 ? (
-						isOnboarding ? (
-							// Empty state especial para onboarding
+						isOnboarding && handleAdd ? (
+							// Empty state especial para onboarding (solo si puede crear)
 							<Stack spacing={3} alignItems="center" sx={{ maxWidth: 400, textAlign: "center" }}>
 								<Box
 									sx={{
@@ -605,10 +611,14 @@ function ReactTable({
 									}}
 								/>
 								<Typography variant="h5" gutterBottom align="center">
-									No hay causas creadas. Puedes crear una usando el boton 'Agregar Carpeta'.
+									{handleAdd
+										? "No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'."
+										: "No hay causas disponibles en este equipo."}
 								</Typography>
 								<Typography variant="body2" color="textSecondary" align="center">
-									Las causas que guardes apareceran aqui
+									{handleAdd
+										? "Las causas que guardes aparecerán aquí"
+										: "Las causas del equipo aparecerán aquí cuando estén disponibles"}
 								</Typography>
 							</>
 						)
@@ -688,102 +698,114 @@ const FoldersLayout = () => {
 	const { folders, archivedFolders, archivedPagination, isLoader } = useSelector((state) => state.folder);
 	const subscription = useSelector((state) => state.auth.subscription);
 
+	// Team context - para cargar recursos del equipo si hay uno activo
+	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized, getRequestHeaders } = useTeam();
+
 	// Separar folders en categorías
 	const { pendingOrInvalidFolders, verifiedFolders, pendingCount, invalidCount } = useMemo(() => {
+		// Helper para determinar si una carpeta es automática (PJN, MEV o EJE)
+		const isAutoFolder = (folder: any) => folder.source === "auto" || folder.pjn === true || folder.mev === true || folder.eje === true;
+
 		// Filtrar folders que necesitan verificación o son inválidos
-		// SOLO para carpetas de source "auto"
+		// Para carpetas automáticas (source "auto", PJN, MEV o EJE)
 		const pending = folders.filter(
 			(folder: any) =>
-				folder.source === "auto" &&
+				isAutoFolder(folder) &&
 				// Pendientes de verificación
 				(folder.causaVerified === false ||
 					// Inválidos (verificados pero no válidos)
-					(folder.causaVerified === true && folder.causaIsValid === false)),
+					(folder.causaVerified === true && folder.causaIsValid === false) ||
+					// Asociación fallida
+					folder.causaAssociationStatus === "failed" ||
+					// Selección pendiente de múltiples causas
+					folder.causaAssociationStatus === "pending_selection"),
 		);
 
 		// Contar pendientes e inválidas por separado
-		const pendingVerification = folders.filter((folder: any) => folder.source === "auto" && folder.causaVerified === false).length;
+		const pendingVerification = folders.filter(
+			(folder: any) => isAutoFolder(folder) && folder.causaVerified === false &&
+				folder.causaAssociationStatus !== "failed" && folder.causaAssociationStatus !== "pending_selection"
+		).length;
+
+		// Contar folders con selección pendiente
+		const pendingSelection = folders.filter(
+			(folder: any) => isAutoFolder(folder) && folder.causaAssociationStatus === "pending_selection"
+		).length;
 
 		const invalid = folders.filter(
-			(folder: any) => folder.source === "auto" && folder.causaVerified === true && folder.causaIsValid === false,
+			(folder: any) => isAutoFolder(folder) && (
+				(folder.causaVerified === true && folder.causaIsValid === false) ||
+				folder.causaAssociationStatus === "failed"
+			),
 		).length;
 
 		// Folders verificados y válidos (incluye todos los que NO están en pending)
 		const verified = folders.filter(
 			(folder: any) =>
-				// Carpetas que NO son de source "auto" (siempre van a la tabla principal)
-				folder.source !== "auto" ||
-				// O carpetas de source "auto" que están verificadas y válidas
-				(folder.source === "auto" && folder.causaVerified === true && folder.causaIsValid === true),
+				// Carpetas que NO son automáticas (siempre van a la tabla principal)
+				!isAutoFolder(folder) ||
+				// O carpetas automáticas que están verificadas y válidas (y no tienen selección pendiente)
+				(isAutoFolder(folder) && folder.causaVerified === true && folder.causaIsValid === true &&
+					folder.causaAssociationStatus !== "failed" && folder.causaAssociationStatus !== "pending_selection"),
 		);
 
 		return {
 			pendingOrInvalidFolders: pending,
 			verifiedFolders: verified,
-			pendingCount: pendingVerification,
+			pendingCount: pendingVerification + pendingSelection,
 			invalidCount: invalid,
 		};
 	}, [folders]);
 
-	// Efecto para la carga inicial
+	// Efecto para la carga inicial y cuando cambia el equipo activo
 	useEffect(() => {
-		// Solo ejecutar en el primer montaje
-		if (!mountedRef.current) {
-			mountedRef.current = true;
+		const loadFolders = async () => {
+			// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
+			if (!user?._id) {
+				setIsInitialLoad(false);
+				return;
+			}
 
-			const initialLoad = async () => {
-				// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
-				if (!user?._id) {
-					setIsInitialLoad(false);
-					return;
-				}
+			// Esperar a que el TeamContext esté inicializado
+			if (!isTeamInitialized) {
+				return;
+			}
 
-				if (loadingRef.current) return;
+			// Si está en modo equipo pero aún no hay equipo activo seleccionado, esperar
+			if (isTeamMode && !activeTeam?._id) {
+				return;
+			}
 
-				try {
-					// Garantizar que user._id es un string
+			if (loadingRef.current) return;
+
+			try {
+				loadingRef.current = true;
+
+				// Si hay equipo activo, cargar folders del grupo
+				// Si no, cargar folders del usuario
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getFoldersByGroupId(activeTeam._id));
+				} else {
 					const userId = user._id;
-					if (!userId) {
-						return;
+					if (userId) {
+						await dispatch(getFoldersByUserId(userId));
 					}
-
-					loadingRef.current = true;
-					await dispatch(getFoldersByUserId(userId)); // No forzar recarga en la carga inicial
-				} catch (error) {
-				} finally {
-					loadingRef.current = false;
-					setIsInitialLoad(false);
 				}
-			};
+			} catch (error) {
+				console.error("Error loading folders:", error);
+			} finally {
+				loadingRef.current = false;
+				setIsInitialLoad(false);
+			}
+		};
 
-			initialLoad();
-		}
-
-		// Este efecto también debe ejecutarse cuando cambia el usuario después del login
-		if (user?._id && !loadingRef.current && mountedRef.current) {
-			const reloadFolders = async () => {
-				try {
-					// Garantizar que user._id es un string antes de pasar a la función
-					const userId = user._id;
-					if (!userId) return; // Verificación adicional
-
-					loadingRef.current = true;
-					await dispatch(getFoldersByUserId(userId)); // No forzar recarga, usar cache si está disponible
-				} catch (error) {
-				} finally {
-					loadingRef.current = false;
-					setIsInitialLoad(false);
-				}
-			};
-
-			reloadFolders();
-		}
+		loadFolders();
 
 		return () => {
-			mountedRef.current = false;
 			loadingRef.current = false;
 		};
-	}, [user?._id]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user?._id, activeTeam?._id, isTeamMode, isTeamInitialized]);
 
 	// Estados para el modal de límite de recursos
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
@@ -858,7 +880,7 @@ const FoldersLayout = () => {
 
 			try {
 				loadingRef.current = true;
-				const result = await dispatch(archiveFolders(user._id, folderIds));
+				const result = await dispatch(archiveFolders(user._id, folderIds, { headers: getRequestHeaders() }));
 
 				if (result.success) {
 					setSnackbarMessage(`${folderIds.length} ${folderIds.length === 1 ? "causa archivada" : "causas archivadas"} correctamente`);
@@ -886,7 +908,12 @@ const FoldersLayout = () => {
 
 		try {
 			loadingRef.current = true;
-			await dispatch(getArchivedFoldersByUserId(user._id, archivedPage, archivedPageSize));
+			// Usar la función correcta según el modo equipo
+			if (isTeamMode && activeTeam?._id) {
+				await dispatch(getArchivedFoldersByGroupId(activeTeam._id, archivedPage, archivedPageSize));
+			} else {
+				await dispatch(getArchivedFoldersByUserId(user._id, archivedPage, archivedPageSize));
+			}
 			setArchivedModalOpen(true);
 		} catch (error) {
 			setSnackbarMessage("Error al obtener causas archivadas");
@@ -895,7 +922,7 @@ const FoldersLayout = () => {
 		} finally {
 			loadingRef.current = false;
 		}
-	}, [user?._id, archivedPage, archivedPageSize]);
+	}, [user?._id, archivedPage, archivedPageSize, isTeamMode, activeTeam?._id]);
 
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
@@ -909,7 +936,12 @@ const FoldersLayout = () => {
 			try {
 				loadingRef.current = true;
 				setArchivedPage(page);
-				await dispatch(getArchivedFoldersByUserId(user._id, page, archivedPageSize));
+				// Usar la función correcta según el modo equipo
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, page, archivedPageSize));
+				} else {
+					await dispatch(getArchivedFoldersByUserId(user._id, page, archivedPageSize));
+				}
 			} catch (error) {
 				setSnackbarMessage("Error al cambiar de página");
 				setSnackbarSeverity("error");
@@ -918,7 +950,7 @@ const FoldersLayout = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id, archivedPageSize],
+		[user?._id, archivedPageSize, isTeamMode, activeTeam?._id],
 	);
 
 	const handleArchivedPageSizeChange = useCallback(
@@ -929,7 +961,12 @@ const FoldersLayout = () => {
 				loadingRef.current = true;
 				setArchivedPageSize(pageSize);
 				setArchivedPage(1); // Resetear a página 1 cuando cambia el tamaño
-				await dispatch(getArchivedFoldersByUserId(user._id, 1, pageSize));
+				// Usar la función correcta según el modo equipo
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getArchivedFoldersByGroupId(activeTeam._id, 1, pageSize));
+				} else {
+					await dispatch(getArchivedFoldersByUserId(user._id, 1, pageSize));
+				}
 			} catch (error) {
 				setSnackbarMessage("Error al cambiar tamaño de página");
 				setSnackbarSeverity("error");
@@ -938,7 +975,7 @@ const FoldersLayout = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id],
+		[user?._id, isTeamMode, activeTeam?._id],
 	);
 
 	const handleOpenGuide = useCallback(() => {
@@ -951,14 +988,18 @@ const FoldersLayout = () => {
 
 			try {
 				setLoadingUnarchive(true);
-				const result = await dispatch(unarchiveFolders(user._id, folderIds));
+				const result = await dispatch(unarchiveFolders(user._id, folderIds, { headers: getRequestHeaders() }));
 
 				if (result.success) {
 					setSnackbarMessage(`${folderIds.length} ${folderIds.length === 1 ? "causa desarchivada" : "causas desarchivadas"} correctamente`);
 					setSnackbarSeverity("success");
 					setArchivedModalOpen(false);
 					// En este caso SÍ necesitamos forzar recarga porque unarchiveFolders podría no tener todos los datos
-					await dispatch(getFoldersByUserId(user._id, true));
+					if (isTeamMode && activeTeam?._id) {
+						await dispatch(getFoldersByGroupId(activeTeam._id));
+					} else {
+						await dispatch(getFoldersByUserId(user._id, true));
+					}
 				} else {
 					setSnackbarMessage(result.message || "Error al desarchivar causas");
 					setSnackbarSeverity("error");
@@ -1089,11 +1130,40 @@ const FoldersLayout = () => {
 					const folder = row.original;
 					const value = folder.folderName;
 
-					// Solo mostrar indicadores visuales si pjn === true o mev === true
-					const showStatusIndicators = folder.pjn === true || folder.mev === true;
+					// Solo mostrar indicadores visuales si pjn === true, mev === true o eje === true
+					const showStatusIndicators = folder.pjn === true || folder.mev === true || folder.eje === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return <span>{formatFolderName(value, 50)}</span>;
+					}
+
+					// Si hay selección pendiente de múltiples causas, mostrar chip de seleccionar
+					if (folder.causaAssociationStatus === "pending_selection") {
+						return (
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<Chip
+									icon={<Warning2 size={14} />}
+									color="warning"
+									label="Seleccionar expediente"
+									size="small"
+									variant="light"
+									sx={{ cursor: "pointer" }}
+								/>
+								<Tooltip title="Se encontraron múltiples expedientes - Haz clic para seleccionar">
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											width: 18,
+											height: 18,
+										}}
+									>
+										<Warning2 size={16} variant="Bold" color="#F59E0B" />
+									</Box>
+								</Tooltip>
+							</Stack>
+						);
 					}
 
 					// Si causaVerified es false, mostrar chip de pendiente con botón de actualización
@@ -1208,7 +1278,7 @@ const FoldersLayout = () => {
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<span>{formatFolderName(value, 50)}</span>
 								<Tooltip
-									title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : "Causa vinculada"}
+									title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : folder.eje === true ? "Causa vinculada a EJE" : "Causa vinculada"}
 								>
 									<Box
 										sx={{
@@ -1437,25 +1507,29 @@ const FoldersLayout = () => {
 									<Maximize variant="Bulk" />
 								</IconButton>
 							</Tooltip>
-							<Tooltip title="Editar">
-								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
-									<Edit variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Eliminar">
-								<IconButton
-									color="error"
-									onClick={(e) =>
-										handleRowAction(e, () => {
-											handleClose();
-											setFolderDeleteId(row.values.folderName);
-											setFolderId(row.values._id);
-										})
-									}
-								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
+							{canUpdate && (
+								<Tooltip title="Editar">
+									<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
+										<Edit variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
+							{canDelete && (
+								<Tooltip title="Eliminar">
+									<IconButton
+										color="error"
+										onClick={(e) =>
+											handleRowAction(e, () => {
+												handleClose();
+												setFolderDeleteId(row.values.folderName);
+												setFolderId(row.values._id);
+											})
+										}
+									>
+										<Trash variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
 							<Tooltip title="Más acciones">
 								<IconButton color="secondary" onClick={(e) => handleMenuOpen(e, row.id, row.original)}>
 									<More variant="Bulk" />
@@ -1466,7 +1540,7 @@ const FoldersLayout = () => {
 				},
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction, handleMenuOpen],
+		[theme, mode, handleEditContact, handleClose, navigate, handleRowAction, handleMenuOpen, canUpdate, canDelete],
 	);
 
 	// Row sub component memoizado
@@ -1520,8 +1594,8 @@ const FoldersLayout = () => {
 						<ReactTable
 							columns={columns as any}
 							data={verifiedFolders}
-							handleAdd={handleAddFolder}
-							handleArchiveSelected={handleArchiveSelected}
+							handleAdd={canCreate ? handleAddFolder : undefined}
+							handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
 							handleOpenGuide={handleOpenGuide}
 							handleOpenArchivedModal={handleOpenArchivedModal}
 							renderRowSubComponent={renderRowSubComponent}
@@ -1575,8 +1649,8 @@ const FoldersLayout = () => {
 							<ReactTable
 								columns={columns as any}
 								data={pendingOrInvalidFolders}
-								handleAdd={handleAddFolder}
-								handleArchiveSelected={handleArchiveSelected}
+								handleAdd={canCreate ? handleAddFolder : undefined}
+								handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
 								handleOpenGuide={handleOpenGuide}
 								handleOpenArchivedModal={handleOpenArchivedModal}
 								renderRowSubComponent={renderRowSubComponent}
@@ -1635,97 +1709,101 @@ const FoldersLayout = () => {
 						</ListItemIcon>
 						<ListItemText>{expandedRowId === menuRowId ? "Cerrar detalles" : "Ver detalles"}</ListItemText>
 					</MenuItem>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							if (menuFolderData && menuFolderData._id) {
-								handleOpenCalculatorModal(menuFolderData._id);
-							}
-						}}
-					>
-						<ListItemIcon>
-							<CalculatorIcon variant="Bulk" size={18} />
-						</ListItemIcon>
-						<ListItemText>Crear Cálculo</ListItemText>
-					</MenuItem>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-								handleOpenTaskModal(menuFolderData._id, menuFolderData.folderName);
-							}
-						}}
-					>
-						<ListItemIcon>
-							<TaskSquare variant="Bulk" size={18} />
-						</ListItemIcon>
-						<ListItemText>Crear Tarea</ListItemText>
-					</MenuItem>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-								handleOpenNoteModal(menuFolderData._id, menuFolderData.folderName);
-							}
-						}}
-					>
-						<ListItemIcon>
-							<DocumentText variant="Bulk" size={18} />
-						</ListItemIcon>
-						<ListItemText>Crear Nota</ListItemText>
-					</MenuItem>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-								handleOpenContactModal(menuFolderData._id, menuFolderData.folderName);
-							}
-						}}
-					>
-						<ListItemIcon>
-							<Profile2User variant="Bulk" size={18} />
-						</ListItemIcon>
-						<ListItemText>Crear Contacto</ListItemText>
-					</MenuItem>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-								handleOpenMovementModal(menuFolderData._id, menuFolderData.folderName);
-							}
-						}}
-					>
-						<ListItemIcon>
-							<TableDocument variant="Bulk" size={18} />
-						</ListItemIcon>
-						<ListItemText>Crear Movimiento</ListItemText>
-					</MenuItem>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-								handleOpenEventModal(menuFolderData._id, menuFolderData.folderName);
-							}
-						}}
-					>
-						<ListItemIcon>
-							<Calendar variant="Bulk" size={18} />
-						</ListItemIcon>
-						<ListItemText>Crear Evento</ListItemText>
-					</MenuItem>
-					<MenuItem
-						onClick={(e) => {
-							e.stopPropagation();
-							if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
-								handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
-							}
-						}}
-					>
-						<ListItemIcon>
-							<Moneys variant="Bulk" size={18} />
-						</ListItemIcon>
-						<ListItemText>Crear Oferta/Reclamo</ListItemText>
-					</MenuItem>
+					{canCreate && (
+						<>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id) {
+										handleOpenCalculatorModal(menuFolderData._id);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<CalculatorIcon variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Cálculo</ListItemText>
+							</MenuItem>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+										handleOpenTaskModal(menuFolderData._id, menuFolderData.folderName);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<TaskSquare variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Tarea</ListItemText>
+							</MenuItem>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+										handleOpenNoteModal(menuFolderData._id, menuFolderData.folderName);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<DocumentText variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Nota</ListItemText>
+							</MenuItem>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+										handleOpenContactModal(menuFolderData._id, menuFolderData.folderName);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<Profile2User variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Contacto</ListItemText>
+							</MenuItem>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+										handleOpenMovementModal(menuFolderData._id, menuFolderData.folderName);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<TableDocument variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Movimiento</ListItemText>
+							</MenuItem>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+										handleOpenEventModal(menuFolderData._id, menuFolderData.folderName);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<Calendar variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Evento</ListItemText>
+							</MenuItem>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+										handleOpenCalcDataModal(menuFolderData._id, menuFolderData.folderName);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<Moneys variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Oferta/Reclamo</ListItemText>
+							</MenuItem>
+						</>
+					)}
 				</Menu>
 
 				<AlertFolderDelete title={folderDeleteId} open={open} handleClose={handleClose} id={folderId} onDelete={async () => {}} />

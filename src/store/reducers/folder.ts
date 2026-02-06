@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { Dispatch } from "redux";
-import { FolderData, FolderState } from "types/folder";
+import { FolderData, FolderState, PendingCausa } from "types/folder";
 import { incrementUserStat, updateUserStorage, isFolderLinkedToCausa } from "./userStats";
 
 // Action types
@@ -167,10 +167,12 @@ const folder = (state = initialFolderState, action: any) => {
 
 // Action creators
 
-export const addFolder = (folderData: FolderData) => async (dispatch: Dispatch) => {
+export const addFolder = (folderData: FolderData, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/folders`, folderData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/folders`, folderData, {
+			headers: options?.headers,
+		});
 		if (response.data.success) {
 			dispatch({
 				type: ADD_FOLDER,
@@ -254,12 +256,15 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 				type: GET_FOLDERS_BY_GROUP,
 				payload: response.data.folders,
 			});
+			return { success: true, folders: response.data.folders };
 		}
+		return { success: false, folders: [] };
 	} catch (error) {
 		dispatch({
 			type: SET_FOLDER_ERROR,
 			payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders por grupo" : "Error desconocido",
 		});
+		return { success: false, folders: [] };
 	}
 };
 
@@ -351,64 +356,70 @@ export const updateFolderById = (folderId: string, updatedData: Partial<FolderDa
 	}
 };
 
-export const archiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch, getState: () => any) => {
-	try {
-		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
-			resourceType: "folders",
-			itemIds: folderIds,
-		});
+export const archiveFolders =
+	(userId: string, folderIds: string[], options?: { headers?: Record<string, string> }) =>
+	async (dispatch: Dispatch, getState: () => any) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+			const response = await axios.post(
+				`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`,
+				{
+					resourceType: "folders",
+					itemIds: folderIds,
+				},
+				{ headers: options?.headers }
+			);
 
-		if (response.data.success) {
-			// Obtener los datos de los folders desde el state para determinar cuáles están vinculados
-			const state = getState();
-			const allFolders: FolderData[] = state.folder.folders || [];
-			const foldersToArchive = allFolders.filter((f) => folderIds.includes(f._id));
+			if (response.data.success) {
+				// Obtener los datos de los folders desde el state para determinar cuáles están vinculados
+				const state = getState();
+				const allFolders: FolderData[] = state.folder.folders || [];
+				const foldersToArchive = allFolders.filter((f) => folderIds.includes(f._id));
 
-			// Contar folders vinculados vs no vinculados
-			let linkedCount = 0;
-			let basicCount = 0;
-			foldersToArchive.forEach((folder) => {
-				if (isFolderLinkedToCausa(folder)) {
-					linkedCount++;
-				} else {
-					basicCount++;
+				// Contar folders vinculados vs no vinculados
+				let linkedCount = 0;
+				let basicCount = 0;
+				foldersToArchive.forEach((folder) => {
+					if (isFolderLinkedToCausa(folder)) {
+						linkedCount++;
+					} else {
+						basicCount++;
+					}
+				});
+
+				// Si no encontramos algunos folders en el state, asumirlos como básicos
+				const notFoundCount = folderIds.length - foldersToArchive.length;
+				basicCount += notFoundCount;
+
+				dispatch({
+					type: ARCHIVE_FOLDERS,
+					payload: folderIds,
+				});
+				// Decrementar contador de folders en userStats (archivadas no cuentan como activas)
+				dispatch(incrementUserStat("folders", -folderIds.length));
+				// Incrementar storage según el tipo de folder (vinculados pesan más)
+				if (linkedCount > 0) {
+					dispatch(updateUserStorage("folderLinked", linkedCount));
 				}
-			});
-
-			// Si no encontramos algunos folders en el state, asumirlos como básicos
-			const notFoundCount = folderIds.length - foldersToArchive.length;
-			basicCount += notFoundCount;
+				if (basicCount > 0) {
+					dispatch(updateUserStorage("folder", basicCount));
+				}
+				return { success: true, message: "Causas archivadas exitosamente" };
+			} else {
+				return { success: false, message: response.data.message || "No se pudieron archivar las causas." };
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al archivar causas."
+				: "Error desconocido al archivar causas.";
 
 			dispatch({
-				type: ARCHIVE_FOLDERS,
-				payload: folderIds,
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
 			});
-			// Decrementar contador de folders en userStats (archivadas no cuentan como activas)
-			dispatch(incrementUserStat("folders", -folderIds.length));
-			// Incrementar storage según el tipo de folder (vinculados pesan más)
-			if (linkedCount > 0) {
-				dispatch(updateUserStorage("folderLinked", linkedCount));
-			}
-			if (basicCount > 0) {
-				dispatch(updateUserStorage("folder", basicCount));
-			}
-			return { success: true, message: "Causas archivadas exitosamente" };
-		} else {
-			return { success: false, message: response.data.message || "No se pudieron archivar las causas." };
+			return { success: false, message: errorMessage };
 		}
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al archivar causas."
-			: "Error desconocido al archivar causas.";
-
-		dispatch({
-			type: SET_FOLDER_ERROR,
-			payload: errorMessage,
-		});
-		return { success: false, message: errorMessage };
-	}
-};
+	};
 
 export const getArchivedFoldersByUserId =
 	(userId: string, page: number = 1, limit: number = 10) =>
@@ -450,93 +461,139 @@ export const getArchivedFoldersByUserId =
 		}
 	};
 
-export const unarchiveFolders = (userId: string, folderIds: string[]) => async (dispatch: Dispatch, getState: () => any) => {
-	try {
-		dispatch({ type: SET_FOLDER_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
-			resourceType: "folders",
-			itemIds: folderIds,
-		});
-
-		if (response.data.success) {
-			// Obtener los IDs de las carpetas que realmente fueron desarchivadas
-			const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
-
-			if (unarchivedIds.length > 0) {
-				// Obtener los datos de los folders archivados desde el state para determinar cuáles están vinculados
-				const state = getState();
-				const archivedFolders: FolderData[] = state.folder.archivedFolders || [];
-				const foldersToUnarchive = archivedFolders.filter((f) => unarchivedIds.includes(f._id));
-
-				// Contar folders vinculados vs no vinculados
-				let linkedCount = 0;
-				let basicCount = 0;
-				foldersToUnarchive.forEach((folder) => {
-					if (isFolderLinkedToCausa(folder)) {
-						linkedCount++;
-					} else {
-						basicCount++;
-					}
-				});
-
-				// Si no encontramos algunos folders en el state, asumirlos como básicos
-				const notFoundCount = unarchivedIds.length - foldersToUnarchive.length;
-				basicCount += notFoundCount;
-
-				// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedFolders
+export const getArchivedFoldersByGroupId =
+	(groupId: string, page: number = 1, limit: number = 10) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
+			const fields =
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
+				params: {
+					archived: true,
+					fields,
+					page,
+					limit,
+				},
+			});
+			if (response.data.success) {
 				dispatch({
-					type: UNARCHIVE_FOLDERS,
-					payload: unarchivedIds,
+					type: GET_ARCHIVED_FOLDERS,
+					payload: {
+						folders: response.data.folders,
+						pagination: response.data.pagination,
+					},
 				});
-				// Incrementar contador de folders en userStats
-				dispatch(incrementUserStat("folders", unarchivedIds.length));
-				// Decrementar storage según el tipo de folder (vinculados pesan más)
-				if (linkedCount > 0) {
-					dispatch(updateUserStorage("folderLinked", -linkedCount));
-				}
-				if (basicCount > 0) {
-					dispatch(updateUserStorage("folder", -basicCount));
-				}
-
 				return {
 					success: true,
-					message: `${unarchivedIds.length} causas desarchivadas exitosamente`,
+					folders: response.data.folders,
+					pagination: response.data.pagination,
 				};
+			}
+			return { success: false };
+		} catch (error) {
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders archivados del grupo" : "Error desconocido",
+			});
+			return { success: false };
+		}
+	};
+
+export const unarchiveFolders =
+	(userId: string, folderIds: string[], options?: { headers?: Record<string, string> }) =>
+	async (dispatch: Dispatch, getState: () => any) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+			const response = await axios.post(
+				`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`,
+				{
+					resourceType: "folders",
+					itemIds: folderIds,
+				},
+				{ headers: options?.headers }
+			);
+
+			if (response.data.success) {
+				// Obtener los IDs de las carpetas que realmente fueron desarchivadas
+				const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
+
+				if (unarchivedIds.length > 0) {
+					// Obtener los datos de los folders archivados desde el state para determinar cuáles están vinculados
+					const state = getState();
+					const archivedFolders: FolderData[] = state.folder.archivedFolders || [];
+					const foldersToUnarchive = archivedFolders.filter((f) => unarchivedIds.includes(f._id));
+
+					// Contar folders vinculados vs no vinculados
+					let linkedCount = 0;
+					let basicCount = 0;
+					foldersToUnarchive.forEach((folder) => {
+						if (isFolderLinkedToCausa(folder)) {
+							linkedCount++;
+						} else {
+							basicCount++;
+						}
+					});
+
+					// Si no encontramos algunos folders en el state, asumirlos como básicos
+					const notFoundCount = unarchivedIds.length - foldersToUnarchive.length;
+					basicCount += notFoundCount;
+
+					// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedFolders
+					dispatch({
+						type: UNARCHIVE_FOLDERS,
+						payload: unarchivedIds,
+					});
+					// Incrementar contador de folders en userStats
+					dispatch(incrementUserStat("folders", unarchivedIds.length));
+					// Decrementar storage según el tipo de folder (vinculados pesan más)
+					if (linkedCount > 0) {
+						dispatch(updateUserStorage("folderLinked", -linkedCount));
+					}
+					if (basicCount > 0) {
+						dispatch(updateUserStorage("folder", -basicCount));
+					}
+
+					return {
+						success: true,
+						message: `${unarchivedIds.length} causas desarchivadas exitosamente`,
+					};
+				} else {
+					// Ninguna carpeta fue desarchivada (posiblemente por límites)
+					// Importante: Despachar SET_FOLDER_ERROR para resetear isLoader
+					dispatch({
+						type: SET_FOLDER_ERROR,
+						payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
+					});
+					return {
+						success: false,
+						message: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
+					};
+				}
 			} else {
-				// Ninguna carpeta fue desarchivada (posiblemente por límites)
 				// Importante: Despachar SET_FOLDER_ERROR para resetear isLoader
 				dispatch({
 					type: SET_FOLDER_ERROR,
-					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
+					payload: response.data.message || "No se pudieron desarchivar las causas.",
 				});
 				return {
 					success: false,
-					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar las causas debido a los límites del plan.",
+					message: response.data.message || "No se pudieron desarchivar las causas.",
 				};
 			}
-		} else {
-			// Importante: Despachar SET_FOLDER_ERROR para resetear isLoader
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al desarchivar causas."
+				: "Error desconocido al desarchivar causas.";
+
 			dispatch({
 				type: SET_FOLDER_ERROR,
-				payload: response.data.message || "No se pudieron desarchivar las causas.",
+				payload: errorMessage,
 			});
-			return {
-				success: false,
-				message: response.data.message || "No se pudieron desarchivar las causas.",
-			};
+			return { success: false, message: errorMessage };
 		}
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al desarchivar causas."
-			: "Error desconocido al desarchivar causas.";
-
-		dispatch({
-			type: SET_FOLDER_ERROR,
-			payload: errorMessage,
-		});
-		return { success: false, message: errorMessage };
-	}
-};
+	};
 
 export interface GetFoldersByIdsResponse {
 	success: boolean;
@@ -791,5 +848,167 @@ export const setFolderSort = (sortBy: string, sortDesc: boolean) => ({
 	type: SET_FOLDER_SORT,
 	payload: { sortBy, sortDesc },
 });
+
+// ============================================
+// ACCIONES PARA SELECCIÓN MÚLTIPLE DE CAUSAS
+// ============================================
+
+export interface PendingCausasResponse {
+	success: boolean;
+	causas: PendingCausa[];
+	causaType: string | null;
+	searchTerm: string | null;
+	count: number;
+	error?: string;
+}
+
+export interface SelectCausaResponse {
+	success: boolean;
+	message?: string;
+	folder?: FolderData;
+	causa?: PendingCausa;
+	error?: string;
+}
+
+/**
+ * Obtener las causas pendientes de selección para un folder
+ */
+export const getPendingCausas = (folderId: string) => async (dispatch: Dispatch): Promise<PendingCausasResponse> => {
+	try {
+		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/pending-causas/${folderId}`);
+
+		if (response.data.success) {
+			return {
+				success: true,
+				causas: response.data.data.causas,
+				causaType: response.data.data.causaType,
+				searchTerm: response.data.data.searchTerm,
+				count: response.data.data.count,
+			};
+		}
+
+		return {
+			success: false,
+			causas: [],
+			causaType: null,
+			searchTerm: null,
+			count: 0,
+			error: response.data.message || "Error al obtener causas pendientes",
+		};
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al obtener causas pendientes"
+			: "Error desconocido";
+
+		return {
+			success: false,
+			causas: [],
+			causaType: null,
+			searchTerm: null,
+			count: 0,
+			error: errorMessage,
+		};
+	}
+};
+
+/**
+ * Seleccionar una causa de las pendientes y completar la vinculación
+ */
+export const selectPendingCausa =
+	(folderId: string, causaId: string, overwrite: boolean = true) =>
+	async (dispatch: Dispatch): Promise<SelectCausaResponse> => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+
+			const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/folders/select-causa/${folderId}`, {
+				causaId,
+				overwrite,
+			});
+
+			if (response.data.success) {
+				// Actualizar el folder en el store
+				dispatch({
+					type: UPDATE_FOLDER,
+					payload: response.data.data.folder,
+				});
+
+				return {
+					success: true,
+					message: response.data.message,
+					folder: response.data.data.folder,
+					causa: response.data.data.causa,
+				};
+			}
+
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: response.data.message || "Error al seleccionar la causa",
+			});
+
+			return {
+				success: false,
+				error: response.data.message || "Error al seleccionar la causa",
+			};
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al seleccionar la causa"
+				: "Error desconocido";
+
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+
+			return {
+				success: false,
+				error: errorMessage,
+			};
+		}
+	};
+
+/**
+ * Limpiar las causas pendientes sin seleccionar ninguna (cancelar selección)
+ */
+export const clearPendingCausas = (folderId: string) => async (dispatch: Dispatch): Promise<{ success: boolean; error?: string }> => {
+	try {
+		dispatch({ type: SET_FOLDER_LOADING });
+
+		const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/folders/pending-causas/${folderId}`);
+
+		if (response.data.success) {
+			// Actualizar el folder en el store
+			dispatch({
+				type: UPDATE_FOLDER,
+				payload: response.data.data.folder,
+			});
+
+			return { success: true };
+		}
+
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: response.data.message || "Error al cancelar la selección",
+		});
+
+		return {
+			success: false,
+			error: response.data.message || "Error al cancelar la selección",
+		};
+	} catch (error) {
+		const errorMessage = axios.isAxiosError(error)
+			? error.response?.data?.message || "Error al cancelar la selección"
+			: "Error desconocido";
+
+		dispatch({
+			type: SET_FOLDER_ERROR,
+			payload: errorMessage,
+		});
+
+		return {
+			success: false,
+			error: errorMessage,
+		};
+	}
+};
 
 export default folder;
