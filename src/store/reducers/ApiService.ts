@@ -28,9 +28,6 @@ export interface UserPreferences {
 	language: string;
 	theme: "light" | "dark" | "system";
 	notifications: NotificationPreferences;
-	pjn?: {
-		syncContactsFromIntervinientes: boolean;
-	};
 }
 
 export interface NotificationSettings {
@@ -1022,12 +1019,8 @@ class ApiService {
 	/**
 	 * Verifica si el usuario ha alcanzado el límite de un recurso específico
 	 * @param resourceType - Tipo de recurso a verificar (folders, calculators, contacts, etc.)
-	 * @param options - Opciones adicionales (headers para contexto de equipo)
 	 */
-	static async checkResourceLimit(
-		resourceType: string,
-		options?: { headers?: Record<string, string> }
-	): Promise<
+	static async checkResourceLimit(resourceType: string): Promise<
 		ApiResponse<{
 			hasReachedLimit: boolean;
 			resourceType: string;
@@ -1041,7 +1034,6 @@ class ApiService {
 		try {
 			const response = await axios.get<ApiResponse>(`${API_BASE_URL}/api/plan-configs/check-resource/${resourceType}`, {
 				withCredentials: true,
-				headers: options?.headers,
 			});
 			return response.data;
 		} catch (error) {
