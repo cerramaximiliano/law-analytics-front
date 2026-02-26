@@ -482,22 +482,6 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
               </Alert>
             )}
 
-            <Stack direction="row" spacing={2} justifyContent="center">
-              <Chip
-                icon={<DocumentText size={16} />}
-                label={`${credentialsStatus.expectedCausasCount || 0} causas`}
-                size="small"
-                variant="outlined"
-              />
-              <Chip
-                icon={<Folder2 size={16} />}
-                label={`${credentialsStatus.foldersCreatedCount || 0} carpetas`}
-                size="small"
-                variant="outlined"
-                color="primary"
-              />
-            </Stack>
-
             <Divider />
 
             <Button
