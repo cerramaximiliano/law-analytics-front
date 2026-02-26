@@ -466,7 +466,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             {isComplete && (
               <Alert severity="success" icon={<TickCircle size={20} />}>
                 Tus causas del Poder Judicial de la Nación están sincronizadas.
-                Se crearon {credentialsStatus.foldersCreatedCount || 0} carpetas con {credentialsStatus.expectedCausasCount || 0} causas.
+                Se crearon {credentialsStatus.foldersCreatedCount || 0} carpetas.
               </Alert>
             )}
 
