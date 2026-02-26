@@ -43,6 +43,8 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { GuideBooking } from "components/guides";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import useSubscription from "hooks/useSubscription";
+import { useTeam } from "contexts/TeamContext";
+import { useEffectiveUser } from "hooks/useEffectiveUser";
 
 // Definición de interfaces para tipar adecuadamente los objetos
 interface CustomField {
@@ -116,7 +118,9 @@ const NoResultsState: React.FC<{
 const AvailabilityCard: React.FC<{
 	availability: AvailabilityType;
 	onDelete: (availabilityId: string) => void;
-}> = ({ availability, onDelete }) => {
+	canEdit?: boolean;
+	canDelete?: boolean;
+}> = ({ availability, onDelete, canEdit = true, canDelete = true }) => {
 	const theme = useTheme();
 	const navigate = useNavigate();
 	const [copied, setCopied] = useState(false);
@@ -230,20 +234,31 @@ const AvailabilityCard: React.FC<{
 				</Stack>
 
 				<Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
-					<Tooltip title="Eliminar Configuración">
-						<IconButton
-							size="small"
-							color="primary"
-							onClick={() => navigate(`/apps/calendar/booking-config?id=${availability._id}`)}
-							sx={{ textTransform: "none" }}
-						>
-							<Edit2 variant="Bulk" size={16} />
-						</IconButton>
+					<Tooltip title={canEdit ? "Editar Configuración" : "No tienes permisos para editar"}>
+						<span>
+							<IconButton
+								size="small"
+								color="primary"
+								onClick={() => navigate(`/apps/calendar/booking-config?id=${availability._id}`)}
+								sx={{ textTransform: "none" }}
+								disabled={!canEdit}
+							>
+								<Edit2 variant="Bulk" size={16} />
+							</IconButton>
+						</span>
 					</Tooltip>
-					<Tooltip title="Editar Configuración">
-						<IconButton size="small" color="error" onClick={() => onDelete(availability._id)} sx={{ textTransform: "none" }}>
-							<Trash variant="Bulk" size={16} />
-						</IconButton>
+					<Tooltip title={canDelete ? "Eliminar Configuración" : "No tienes permisos para eliminar"}>
+						<span>
+							<IconButton
+								size="small"
+								color="error"
+								onClick={() => onDelete(availability._id)}
+								sx={{ textTransform: "none" }}
+								disabled={!canDelete}
+							>
+								<Trash variant="Bulk" size={16} />
+							</IconButton>
+						</span>
 					</Tooltip>
 				</Box>
 
@@ -265,7 +280,9 @@ const BookingCard: React.FC<{
 	onStatusChange: (bookingId: string, newStatus: BookingType["status"]) => void;
 	onDelete: (booking: BookingType) => void;
 	showAvailabilityInfo?: boolean;
-}> = ({ booking, availability, onStatusChange, onDelete, showAvailabilityInfo = false }) => {
+	canUpdate?: boolean;
+	canDelete?: boolean;
+}> = ({ booking, availability, onStatusChange, onDelete, showAvailabilityInfo = false, canUpdate = true, canDelete = true }) => {
 	const theme = useTheme();
 	const [expanded, setExpanded] = useState(false);
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -274,6 +291,10 @@ const BookingCard: React.FC<{
 	// Obtener acceso a las características de suscripción utilizando el hook
 	const { hasFeatureLocal } = useSubscription();
 	const hasBookingFeature = hasFeatureLocal("booking");
+
+	// Combined check: has feature AND has permission
+	const canPerformUpdate = hasBookingFeature && canUpdate;
+	const canPerformDelete = hasBookingFeature && canDelete;
 
 	// Determinar color según estado
 	const getStatusChip = (status: BookingType["status"]) => {
@@ -328,16 +349,20 @@ const BookingCard: React.FC<{
 					<Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
 						{booking.clientName}
 					</Typography>
-					<IconButton
-						size="small"
-						onClick={handleClick}
-						aria-controls={open ? "booking-menu" : undefined}
-						aria-haspopup="true"
-						aria-expanded={open ? "true" : undefined}
-						disabled={!hasBookingFeature}
-					>
-						<MoreSquare size={20} />
-					</IconButton>
+					<Tooltip title={!hasBookingFeature ? "Función no disponible en tu plan" : (!canUpdate && !canDelete) ? "No tienes permisos para realizar acciones" : "Acciones"}>
+						<span>
+							<IconButton
+								size="small"
+								onClick={handleClick}
+								aria-controls={open ? "booking-menu" : undefined}
+								aria-haspopup="true"
+								aria-expanded={open ? "true" : undefined}
+								disabled={!hasBookingFeature || (!canUpdate && !canDelete)}
+							>
+								<MoreSquare size={20} />
+							</IconButton>
+						</span>
+					</Tooltip>
 					<Menu
 						id="booking-menu"
 						anchorEl={anchorEl}
@@ -353,7 +378,7 @@ const BookingCard: React.FC<{
 									handleClose();
 									onStatusChange(booking._id, "confirmed");
 								}}
-								disabled={!hasBookingFeature}
+								disabled={!canPerformUpdate}
 							>
 								<ClipboardTick size={16} style={{ marginRight: 8, color: theme.palette.success.main }} />
 								Confirmar
@@ -367,7 +392,7 @@ const BookingCard: React.FC<{
 									onStatusChange(booking._id, "rejected");
 								}}
 								sx={{ color: "error.main" }}
-								disabled={!hasBookingFeature}
+								disabled={!canPerformUpdate}
 							>
 								<Trash size={16} style={{ marginRight: 8 }} />
 								Rechazar
@@ -381,7 +406,7 @@ const BookingCard: React.FC<{
 									onStatusChange(booking._id, "cancelled");
 								}}
 								sx={{ color: "error.main" }}
-								disabled={!hasBookingFeature}
+								disabled={!canPerformUpdate}
 							>
 								<Trash size={16} style={{ marginRight: 8 }} />
 								Cancelar
@@ -394,7 +419,7 @@ const BookingCard: React.FC<{
 									handleClose();
 									onStatusChange(booking._id, "completed");
 								}}
-								disabled={!hasBookingFeature}
+								disabled={!canPerformUpdate}
 							>
 								<ClipboardTick size={16} style={{ marginRight: 8 }} />
 								Marcar como completada
@@ -407,7 +432,7 @@ const BookingCard: React.FC<{
 								onDelete(booking);
 							}}
 							sx={{ color: "error.main" }}
-							disabled={!hasBookingFeature}
+							disabled={!canPerformDelete}
 						>
 							<Trash size={16} style={{ marginRight: 8 }} />
 							Eliminar
@@ -621,6 +646,19 @@ const BookingsManagement = () => {
 	// Obtener acceso a las características de suscripción utilizando el hook
 	const { subscription, hasFeatureLocal } = useSubscription();
 
+	// Get team context to wait for full initialization before checking features
+	// isReady is true when: initialized AND (no teams OR activeTeam selected)
+	// Also get permission flags for role-based UI controls
+	const { isReady: isTeamReady, canCreate, canUpdate, canDelete, isTeamMode } = useTeam();
+
+	// Get effective user and request headers for team-aware data fetching
+	const { requestHeaders, isReady: isEffectiveUserReady } = useEffectiveUser();
+
+	// Combined permission check: has feature AND has role permission (or not in team mode)
+	const canCreateAvailability = hasBookingFeature && (!isTeamMode || canCreate);
+	const canEditAvailability = hasBookingFeature && (!isTeamMode || canUpdate);
+	const canDeleteAvailability = hasBookingFeature && (!isTeamMode || canDelete);
+
 	// Función para crear el objeto featureInfo de forma estándar
 	const createFeatureInfo = () => ({
 		feature: "Gestión de Reservas",
@@ -642,7 +680,14 @@ const BookingsManagement = () => {
 
 	// Verificar si el usuario tiene acceso a la característica de reservas
 	useEffect(() => {
+		// Esperar a que el contexto de equipos esté completamente listo
+		// isTeamReady es true cuando: inicializado Y (sin equipos O equipo activo seleccionado)
+		// Esto es importante para miembros de equipos que heredan features del owner
+		if (!isTeamReady) return;
+
 		// Verificar si tiene la característica de booking usando el hook
+		// hasFeatureLocal ya considera si el usuario es miembro de un equipo
+		// y hereda features del owner
 		const hasBookingAccess = hasFeatureLocal("booking");
 
 		setHasBookingFeature(hasBookingAccess || false);
@@ -659,7 +704,7 @@ const BookingsManagement = () => {
 				setLimitModalOpen(true);
 			}
 		}
-	}, [subscription, hasModalBeenClosed]);
+	}, [subscription, isTeamReady, hasModalBeenClosed]);
 
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {
@@ -671,32 +716,48 @@ const BookingsManagement = () => {
 	};
 
 	// Función para cargar datos - convertida a callback para reutilizar
+	// Includes requestHeaders for team context (X-Group-Id when in team mode)
 	const fetchData = useCallback(async () => {
+		// Wait for team context to be ready before fetching
+		if (!isEffectiveUserReady) return;
+
 		try {
 			setLoading(true);
 			// Si estamos viendo una disponibilidad específica
 			if (isSpecificAvailability) {
-				// Cargar disponibilidad
-				const availabilityResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`);
+				// Cargar disponibilidad - include team headers
+				const availabilityResponse = await axios.get(
+					`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`,
+					{ headers: requestHeaders }
+				);
 
 				setAvailability(availabilityResponse.data);
 
-				// Cargar reservas para esta disponibilidad específica
-				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}/bookings`);
+				// Cargar reservas para esta disponibilidad específica - include team headers
+				const bookingsResponse = await axios.get(
+					`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}/bookings`,
+					{ headers: requestHeaders }
+				);
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 			} else {
-				// Cargar todas las reservas del usuario
-				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings`);
+				// Cargar todas las reservas del usuario - include team headers
+				const bookingsResponse = await axios.get(
+					`${process.env.REACT_APP_BASE_URL}/api/booking/bookings`,
+					{ headers: requestHeaders }
+				);
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 
-				// Cargar todas las disponibilidades cuando estamos en la vista general
-				const availabilitiesResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
+				// Cargar todas las disponibilidades cuando estamos en la vista general - include team headers
+				const availabilitiesResponse = await axios.get(
+					`${process.env.REACT_APP_BASE_URL}/api/booking/availability`,
+					{ headers: requestHeaders }
+				);
 
 				// Asegurar que siempre sea un array
 				const availabilitiesData = Array.isArray(availabilitiesResponse.data) ? availabilitiesResponse.data : [];
@@ -720,7 +781,7 @@ const BookingsManagement = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [availabilityId, isSpecificAvailability]);
+	}, [availabilityId, isSpecificAvailability, isEffectiveUserReady, requestHeaders]);
 
 	// Cargar datos al montar o cuando cambien las dependencias
 	useEffect(() => {
@@ -796,7 +857,11 @@ const BookingsManagement = () => {
 				payload.cancellationReason = rejectReason;
 			}
 
-			const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${bookingId}/status`, payload);
+			const response = await axios.patch(
+				`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${bookingId}/status`,
+				payload,
+				{ headers: requestHeaders }
+			);
 
 			const updatedBooking = response.data;
 
@@ -855,7 +920,11 @@ const BookingsManagement = () => {
 					cancellationReason: rejectReason || undefined,
 				};
 
-				const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
+				const response = await axios.patch(
+					`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
+					payload,
+					{ headers: requestHeaders }
+				);
 
 				const updatedBooking = response.data;
 
@@ -905,7 +974,11 @@ const BookingsManagement = () => {
 					cancelledBy: "host",
 				};
 
-				const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
+				const response = await axios.patch(
+					`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
+					payload,
+					{ headers: requestHeaders }
+				);
 
 				const updatedBooking = response.data;
 
@@ -955,7 +1028,10 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedBooking) return;
 
-			await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}`);
+			await axios.delete(
+				`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}`,
+				{ headers: requestHeaders }
+			);
 
 			setBookings(bookings.filter((b) => b._id !== selectedBooking._id));
 
@@ -1000,7 +1076,10 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedAvailabilityId) return;
 
-			await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`);
+			await axios.delete(
+				`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`,
+				{ headers: requestHeaders }
+			);
 
 			// Actualizar la lista de disponibilidades
 			setAvailabilities(Array.isArray(availabilities) ? availabilities.filter((a) => a._id !== selectedAvailabilityId) : []);
@@ -1220,14 +1299,18 @@ const BookingsManagement = () => {
 								Ver todas las reservas
 							</Button>
 						)}
-						{hasBookingFeature ? (
+						{canCreateAvailability ? (
 							<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
 								Nueva Disponibilidad
 							</Button>
 						) : (
-							<Button variant="contained" color="primary" startIcon={<Lock size={16} />} onClick={() => navigate("/suscripciones/tables")}>
-								Nueva Disponibilidad
-							</Button>
+							<Tooltip title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}>
+								<span>
+									<Button variant="contained" color="primary" startIcon={<Lock size={16} />} disabled>
+										Nueva Disponibilidad
+									</Button>
+								</span>
+							</Tooltip>
 						)}
 					</Stack>
 				}
@@ -1245,6 +1328,17 @@ const BookingsManagement = () => {
 					>
 						La gestión de reservas y creación de disponibilidades está limitada a planes superiores. Actualiza tu plan para acceder a esta
 						funcionalidad.
+					</Alert>
+				)}
+
+				{/* Alert for viewers in team mode - read-only access */}
+				{hasBookingFeature && isTeamMode && !canCreate && (
+					<Alert
+						severity="info"
+						icon={<InfoCircle variant="Bulk" size={24} color={theme.palette.info.main} />}
+						sx={{ mb: 3, mt: 1 }}
+					>
+						Estás viendo las reservas del equipo en modo lectura. Contacta al administrador si necesitas permisos para crear o modificar disponibilidades.
 					</Alert>
 				)}
 
@@ -1316,7 +1410,12 @@ const BookingsManagement = () => {
 								{Array.isArray(availabilities)
 									? availabilities.map((availability) => (
 											<Grid item xs={12} sm={6} md={4} key={availability._id}>
-												<AvailabilityCard availability={availability} onDelete={handleDeleteAvailabilityClick} />
+												<AvailabilityCard
+													availability={availability}
+													onDelete={handleDeleteAvailabilityClick}
+													canEdit={canEditAvailability}
+													canDelete={canDeleteAvailability}
+												/>
 											</Grid>
 									  ))
 									: null}
@@ -1333,19 +1432,23 @@ const BookingsManagement = () => {
 											Configura tu disponibilidad para que otros puedan agendar citas contigo. Una vez configurada, podrás compartir un
 											enlace para recibir reservas.
 										</Typography>
-										{hasBookingFeature ? (
+										{canCreateAvailability ? (
 											<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
 												Crear Nueva Disponibilidad
 											</Button>
 										) : (
-											<Button
-												variant="contained"
-												color="primary"
-												startIcon={<Lock size={16} />}
-												onClick={() => navigate("/suscripciones/tables")}
-											>
-												Crear Nueva Disponibilidad
-											</Button>
+											<Tooltip title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}>
+												<span>
+													<Button
+														variant="contained"
+														color="primary"
+														startIcon={<Lock size={16} />}
+														disabled
+													>
+														Crear Nueva Disponibilidad
+													</Button>
+												</span>
+											</Tooltip>
 										)}
 									</Box>
 								</CardContent>
@@ -1398,20 +1501,24 @@ const BookingsManagement = () => {
 							}
 						/>
 						{!isSpecificAvailability &&
-							(hasBookingFeature ? (
+							(canCreateAvailability ? (
 								<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")} sx={{ mt: 3 }}>
 									Crear Nueva Disponibilidad
 								</Button>
 							) : (
-								<Button
-									variant="contained"
-									color="primary"
-									startIcon={<Lock size={16} />}
-									onClick={() => navigate("/suscripciones/tables")}
-									sx={{ mt: 3 }}
-								>
-									Crear Nueva Disponibilidad
-								</Button>
+								<Tooltip title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}>
+									<span>
+										<Button
+											variant="contained"
+											color="primary"
+											startIcon={<Lock size={16} />}
+											disabled
+											sx={{ mt: 3 }}
+										>
+											Crear Nueva Disponibilidad
+										</Button>
+									</span>
+								</Tooltip>
 							))}
 					</Box>
 				) : (
@@ -1431,6 +1538,8 @@ const BookingsManagement = () => {
 													onStatusChange={handleStatusChange}
 													onDelete={handleDeleteClick}
 													showAvailabilityInfo={!isSpecificAvailability}
+													canUpdate={canEditAvailability}
+													canDelete={canDeleteAvailability}
 												/>
 											) : (
 												/* Si no tenemos información de disponibilidad, mostramos una versión simplificada */
@@ -1465,7 +1574,7 @@ const BookingsManagement = () => {
 															{booking.status === "completed" && <Chip label="Completada" size="small" color="info" />}
 														</Box>
 													</CardContent>
-													{booking.status === "pending" && (
+													{booking.status === "pending" && canEditAvailability && (
 														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
 															<Button
 																size="small"
@@ -1487,7 +1596,7 @@ const BookingsManagement = () => {
 															</Button>
 														</Box>
 													)}
-													{booking.status === "confirmed" && !isPast && (
+													{booking.status === "confirmed" && !isPast && canEditAvailability && (
 														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
 															<Button
 																size="small"
@@ -1500,7 +1609,7 @@ const BookingsManagement = () => {
 															</Button>
 														</Box>
 													)}
-													{booking.status === "confirmed" && isPast && (
+													{booking.status === "confirmed" && isPast && canEditAvailability && (
 														<Box sx={{ p: 2, pt: 0, display: "flex", gap: 1 }}>
 															<Button
 																size="small"

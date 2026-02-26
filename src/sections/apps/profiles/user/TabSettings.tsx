@@ -35,10 +35,19 @@ import { ArrowDown2 } from "iconsax-react";
 import { openSnackbar } from "store/reducers/snackbar";
 import { dispatch } from "store";
 
+// team context
+import { useTeam } from "contexts/TeamContext";
+import { ROLE_CONFIG } from "types/teams";
+
 // ==============================|| USER PROFILE - SETTINGS ||============================== //
 type SeverityType = "success" | "error" | "warning" | "info";
 
 const TabSettings = () => {
+	// Team context - para mostrar información apropiada a miembros del equipo
+	const { isTeamMode, activeTeam, userRole, isOwner, isAdmin } = useTeam();
+	// Solo owner y admins pueden editar configuraciones en modo equipo
+	const canEditSettings = !isTeamMode || isOwner || isAdmin;
+
 	// Estado para la carga de datos
 	const [loading, setLoading] = useState<boolean>(true);
 	const [saving, setSaving] = useState<boolean>(false);
@@ -660,6 +669,14 @@ const TabSettings = () => {
 				</Alert>
 			</Snackbar>
 
+			{/* Alerta para miembros del equipo sin permisos de edición */}
+			{isTeamMode && !canEditSettings && (
+				<Alert severity="info" sx={{ mb: 2 }}>
+					Estás en modo equipo ({activeTeam?.name}). Solo el propietario o administradores pueden modificar estas configuraciones.
+					Tu rol actual: <strong>{userRole ? ROLE_CONFIG[userRole]?.label : "Desconocido"}</strong>
+				</Alert>
+			)}
+
 			<Box>
 				{/* Canales de comunicación - Accordion */}
 				<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -678,6 +695,7 @@ const TabSettings = () => {
 									edge="end"
 									onChange={handleToggle("chn")}
 									checked={checked.indexOf("chn") !== -1 || preferences.channels?.email || preferences.channels?.browser}
+									disabled={!canEditSettings}
 									inputProps={{
 										"aria-labelledby": "switch-list-label-chn",
 									}}
@@ -698,7 +716,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={() => handleChannelChange("email", !preferences.channels?.email)}
 										checked={preferences.channels?.email}
-										disabled={!channelsEnabled}
+										disabled={!channelsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-channel",
 										}}
@@ -715,7 +733,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={() => handleChannelChange("browser", !preferences.channels?.browser)}
 										checked={preferences.channels?.browser}
-										disabled={!channelsEnabled}
+										disabled={!channelsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-browser-channel",
 										}}
@@ -743,6 +761,7 @@ const TabSettings = () => {
 									edge="end"
 									onChange={handleToggle("sen")}
 									checked={userOptionsEnabled}
+									disabled={!canEditSettings}
 									inputProps={{
 										"aria-labelledby": "switch-list-label-sen",
 									}}
@@ -764,7 +783,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={handleUserOptionToggle("calendar")}
 										checked={preferences.user?.calendar ?? false}
-										disabled={!userOptionsEnabled}
+										disabled={!userOptionsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-calendar",
 										}}
@@ -815,7 +834,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={handleUserOptionToggle("expiration")}
 										checked={preferences.user?.expiration ?? false}
-										disabled={!userOptionsEnabled}
+										disabled={!userOptionsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-expiration",
 										}}
@@ -866,7 +885,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={handleUserOptionToggle("taskExpiration")}
 										checked={preferences.user?.taskExpiration ?? false}
-										disabled={!userOptionsEnabled}
+										disabled={!userOptionsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-task-expiration",
 										}}
@@ -917,7 +936,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={handleUserOptionToggle("inactivity")}
 										checked={preferences.user?.inactivity ?? false}
-										disabled={!userOptionsEnabled}
+										disabled={!userOptionsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-email-inactivity",
 										}}
@@ -1009,6 +1028,7 @@ const TabSettings = () => {
 									edge="end"
 									onChange={handleToggle("usn")}
 									checked={systemOptionsEnabled}
+									disabled={!canEditSettings}
 									inputProps={{
 										"aria-labelledby": "switch-list-label-usn",
 									}}
@@ -1029,7 +1049,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={handleSystemOptionToggle("alerts")}
 										checked={preferences.system?.alerts ?? false}
-										disabled={!systemOptionsEnabled}
+										disabled={!systemOptionsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-system-alerts",
 										}}
@@ -1046,7 +1066,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={handleSystemOptionToggle("news")}
 										checked={preferences.system?.news ?? false}
-										disabled={!systemOptionsEnabled}
+										disabled={!systemOptionsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-system-news",
 										}}
@@ -1063,7 +1083,7 @@ const TabSettings = () => {
 										size="small"
 										onChange={handleSystemOptionToggle("userActivity")}
 										checked={preferences.system?.userActivity ?? false}
-										disabled={!systemOptionsEnabled}
+										disabled={!systemOptionsEnabled || !canEditSettings}
 										inputProps={{
 											"aria-labelledby": "switch-list-label-system-user-activity",
 										}}
@@ -1074,12 +1094,15 @@ const TabSettings = () => {
 					</Accordion>
 				</Box>
 			</Box>
-			<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-				<Button color="error">Cancelar</Button>
-				<Button variant="contained" onClick={savePreferences} disabled={saving} startIcon={saving ? <CircularProgress size={20} /> : null}>
-					{saving ? "Guardando..." : "Guardar"}
-				</Button>
-			</Stack>
+			{/* Solo mostrar botones de acción si puede editar */}
+			{canEditSettings && (
+				<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
+					<Button color="error">Cancelar</Button>
+					<Button variant="contained" onClick={savePreferences} disabled={saving} startIcon={saving ? <CircularProgress size={20} /> : null}>
+						{saving ? "Guardando..." : "Guardar"}
+					</Button>
+				</Stack>
+			)}
 		</MainCard>
 	);
 };

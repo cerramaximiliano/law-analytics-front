@@ -20,7 +20,7 @@ import {
 	alpha,
 } from "@mui/material";
 import { PopupTransition } from "components/@extended/Transitions";
-import { CloseCircle, TickCircle, Lock1, Calendar, DocumentText, InfoCircle } from "iconsax-react";
+import { CloseCircle, TickCircle, Lock1, Calendar, DocumentText, InfoCircle, Warning2 } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 import { dispatch } from "store";
@@ -52,6 +52,8 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 	const [causaType, setCausaType] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [selectedCausaId, setSelectedCausaId] = useState<string | null>(null);
+	const [showCloseWarning, setShowCloseWarning] = useState(false);
+	const [closeAction, setCloseAction] = useState<"close" | "cancel">("close");
 
 	// Cargar causas pendientes cuando se abre el diálogo
 	useEffect(() => {
@@ -89,7 +91,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 			const result = await dispatch(selectPendingCausa(folderId, causaId, true) as any);
 
 			if (result.success) {
-				enqueueSnackbar("Causa vinculada exitosamente", { variant: "success" });
+				enqueueSnackbar("Causa vinculada exitosamente", { variant: "success", anchorOrigin: { vertical: "bottom", horizontal: "right" } });
 				const selectedCausa = causas.find((c) => c._id === causaId);
 				if (selectedCausa) {
 					onCausaSelected?.(selectedCausa);
@@ -97,34 +99,48 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 				onClose();
 			} else {
 				setError(result.error || "Error al seleccionar la causa");
-				enqueueSnackbar(result.error || "Error al seleccionar la causa", { variant: "error" });
+				enqueueSnackbar(result.error || "Error al seleccionar la causa", { variant: "error", anchorOrigin: { vertical: "bottom", horizontal: "right" } });
 			}
 		} catch (err) {
 			setError("Error al seleccionar la causa");
-			enqueueSnackbar("Error al seleccionar la causa", { variant: "error" });
+			enqueueSnackbar("Error al seleccionar la causa", { variant: "error", anchorOrigin: { vertical: "bottom", horizontal: "right" } });
 		} finally {
 			setSelecting(false);
 			setSelectedCausaId(null);
 		}
 	};
 
-	const handleCancelSelection = async () => {
+	// Mostrar advertencia antes de cerrar o cancelar
+	const handleShowCloseWarning = (action: "close" | "cancel") => {
+		setCloseAction(action);
+		setShowCloseWarning(true);
+	};
+
+	// Ejecutar cierre sin cancelar vinculación (solo cerrar el modal)
+	const handleConfirmClose = () => {
+		setShowCloseWarning(false);
+		onClose();
+	};
+
+	// Ejecutar cancelación de vinculación
+	const handleConfirmCancelSelection = async () => {
+		setShowCloseWarning(false);
 		setSelecting(true);
 
 		try {
 			const result = await dispatch(clearPendingCausas(folderId) as any);
 
 			if (result.success) {
-				enqueueSnackbar("Selección cancelada", { variant: "info" });
+				enqueueSnackbar("Vinculación cancelada. El expediente quedó sin asociar.", { variant: "warning", anchorOrigin: { vertical: "bottom", horizontal: "right" } });
 				onSelectionCancelled?.();
 				onClose();
 			} else {
 				setError(result.error || "Error al cancelar la selección");
-				enqueueSnackbar(result.error || "Error al cancelar la selección", { variant: "error" });
+				enqueueSnackbar(result.error || "Error al cancelar la selección", { variant: "error", anchorOrigin: { vertical: "bottom", horizontal: "right" } });
 			}
 		} catch (err) {
 			setError("Error al cancelar la selección");
-			enqueueSnackbar("Error al cancelar la selección", { variant: "error" });
+			enqueueSnackbar("Error al cancelar la selección", { variant: "error", anchorOrigin: { vertical: "bottom", horizontal: "right" } });
 		} finally {
 			setSelecting(false);
 		}
@@ -152,7 +168,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 	return (
 		<Dialog
 			open={open}
-			onClose={() => !selecting && onClose()}
+			onClose={() => !selecting && handleShowCloseWarning("close")}
 			TransitionComponent={PopupTransition}
 			maxWidth="md"
 			fullWidth
@@ -169,7 +185,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 						<Typography variant="h5">Seleccionar Expediente</Typography>
 					</Stack>
 					<IconButton
-						onClick={() => !selecting && onClose()}
+						onClick={() => !selecting && handleShowCloseWarning("close")}
 						disabled={selecting}
 						size="small"
 						sx={{ color: theme.palette.grey[500] }}
@@ -359,16 +375,90 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 				<Button
 					variant="outlined"
 					color="error"
-					onClick={handleCancelSelection}
+					onClick={() => handleShowCloseWarning("cancel")}
 					disabled={selecting || loading}
 					startIcon={<CloseCircle size={18} />}
 				>
 					Cancelar vinculación
 				</Button>
-				<Button variant="outlined" onClick={onClose} disabled={selecting}>
+				<Button variant="outlined" onClick={() => handleShowCloseWarning("close")} disabled={selecting}>
 					Cerrar
 				</Button>
 			</DialogActions>
+
+			{/* Diálogo de confirmación para cerrar/cancelar */}
+			<Dialog
+				open={showCloseWarning}
+				onClose={() => setShowCloseWarning(false)}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle sx={{ pb: 1 }}>
+					<Stack direction="row" spacing={1} alignItems="center">
+						<Warning2 size={24} color={theme.palette.warning.main} />
+						<Typography variant="h5">
+							{closeAction === "cancel" ? "¿Cancelar vinculación?" : "¿Cerrar sin seleccionar?"}
+						</Typography>
+					</Stack>
+				</DialogTitle>
+				<DialogContent>
+					<Alert severity="warning" sx={{ mb: 2 }}>
+						<Typography variant="body2" fontWeight={500} gutterBottom>
+							{closeAction === "cancel"
+								? "Al cancelar la vinculación, el expediente quedará sin asociar a ninguna causa."
+								: "Aún no seleccionaste un expediente. Si cerrás ahora, deberás volver a abrir este diálogo para completar la selección."}
+						</Typography>
+					</Alert>
+
+					{closeAction === "cancel" && (
+						<Stack spacing={1.5}>
+							<Typography variant="subtitle2" color="text.secondary">
+								Consecuencias de cancelar:
+							</Typography>
+							<Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+								<Typography component="li" variant="body2" color="text.secondary">
+									El expediente no recibirá actualizaciones automáticas
+								</Typography>
+								<Typography component="li" variant="body2" color="text.secondary">
+									No se sincronizarán los movimientos del Poder Judicial
+								</Typography>
+								<Typography component="li" variant="body2" color="text.secondary">
+									Perderás la referencia a las opciones encontradas
+								</Typography>
+								<Typography component="li" variant="body2" color="text.secondary">
+									El expediente quedará como "manual" sin vinculación
+								</Typography>
+							</Box>
+						</Stack>
+					)}
+				</DialogContent>
+				<DialogActions sx={{ p: 2.5 }}>
+					<Button
+						variant="outlined"
+						onClick={() => setShowCloseWarning(false)}
+					>
+						Volver a seleccionar
+					</Button>
+					{closeAction === "cancel" ? (
+						<Button
+							variant="contained"
+							color="error"
+							onClick={handleConfirmCancelSelection}
+							disabled={selecting}
+						>
+							Sí, cancelar vinculación
+						</Button>
+					) : (
+						<Button
+							variant="contained"
+							color="warning"
+							onClick={handleConfirmClose}
+						>
+							Cerrar sin seleccionar
+						</Button>
+					)}
+				</DialogActions>
+			</Dialog>
 		</Dialog>
 	);
 };

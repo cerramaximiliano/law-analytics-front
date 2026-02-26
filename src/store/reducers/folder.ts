@@ -12,6 +12,7 @@ const GET_FOLDERS_BY_USER = "GET_FOLDERS_BY_USER";
 const GET_FOLDERS_BY_GROUP = "GET_FOLDERS_BY_GROUP";
 const GET_FOLDER_BY_ID = "GET_FOLDER_BY_ID";
 const DELETE_FOLDER = "DELETE_FOLDER";
+const DELETE_FOLDERS = "DELETE_FOLDERS";
 const UPDATE_FOLDER = "UPDATE_FOLDER";
 const SET_FOLDER_ERROR = "SET_FOLDER_ERROR";
 const ARCHIVE_FOLDERS = "ARCHIVE_FOLDERS";
@@ -87,6 +88,12 @@ const folder = (state = initialFolderState, action: any) => {
 			return {
 				...state,
 				folders: state.folders.filter((folder: FolderData) => folder._id !== action.payload),
+				isLoader: false,
+			};
+		case DELETE_FOLDERS:
+			return {
+				...state,
+				folders: state.folders.filter((folder: FolderData) => !action.payload.includes(folder._id)),
 				isLoader: false,
 			};
 		case ARCHIVE_FOLDERS:
@@ -220,7 +227,7 @@ export const getFoldersByUserId =
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación y timestamps
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,createdAt,updatedAt,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,createdAt,updatedAt,lastMovementDate";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});
@@ -247,7 +254,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 		dispatch({ type: SET_FOLDER_LOADING });
 		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 			params: { fields },
 		});
@@ -332,6 +339,44 @@ export const deleteFolderById = (folderId: string) => async (dispatch: Dispatch)
 		return { success: false, message: errorMessage };
 	}
 };
+
+export const deleteFoldersByIds =
+	(folderIds: string[], options?: { headers?: Record<string, string> }) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
+			const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/folders/bulk/delete`, {
+				data: { ids: folderIds },
+				headers: options?.headers,
+			});
+
+			if (response.data.success || response.data.results?.deleted?.length > 0) {
+				const deletedIds = response.data.results?.deleted?.map((f: { _id: string }) => f._id) || folderIds;
+				dispatch({
+					type: DELETE_FOLDERS,
+					payload: deletedIds,
+				});
+				// Decrementar contador de folders en userStats
+				dispatch(incrementUserStat("folders", -deletedIds.length));
+				return {
+					success: true,
+					deletedCount: deletedIds.length,
+					failedCount: response.data.results?.failed?.length || 0,
+					message: response.data.message,
+				};
+			}
+			return { success: false, message: response.data.message || "Error al eliminar carpetas" };
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al eliminar carpetas"
+				: "Error desconocido";
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+			return { success: false, message: errorMessage };
+		}
+	};
 
 export const updateFolderById = (folderId: string, updatedData: Partial<FolderData>) => async (dispatch: Dispatch) => {
 	try {
@@ -422,20 +467,25 @@ export const archiveFolders =
 	};
 
 export const getArchivedFoldersByUserId =
-	(userId: string, page: number = 1, limit: number = 10) =>
+	(userId: string, page: number = 1, limit?: number) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
+
+			const params: Record<string, any> = {
+				archived: true,
+				fields,
+				page,
+			};
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
+
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
-				params: {
-					archived: true,
-					fields,
-					page,
-					limit,
-				},
+				params,
 			});
 			if (response.data.success) {
 				dispatch({
@@ -462,20 +512,25 @@ export const getArchivedFoldersByUserId =
 	};
 
 export const getArchivedFoldersByGroupId =
-	(groupId: string, page: number = 1, limit: number = 10) =>
+	(groupId: string, page: number = 1, limit?: number) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,causaVerified,causaIsValid,causaAssociationStatus,mev,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
+
+			const params: Record<string, any> = {
+				archived: true,
+				fields,
+				page,
+			};
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
+
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
-				params: {
-					archived: true,
-					fields,
-					page,
-					limit,
-				},
+				params,
 			});
 			if (response.data.success) {
 				dispatch({

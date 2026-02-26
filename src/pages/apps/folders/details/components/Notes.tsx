@@ -31,6 +31,7 @@ import { getNotesByFolderId, deleteNote } from "store/reducers/notes";
 import { openSnackbar } from "store/reducers/snackbar";
 import type { RootState } from "store";
 import type { Note } from "types/note";
+import { useTeam } from "contexts/TeamContext";
 
 interface NotesProps {
 	title: string;
@@ -42,6 +43,7 @@ const CONTENT_TRUNCATE_LENGTH = 150;
 
 const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 	const theme = useTheme();
+	const { canDelete, canUpdate, canCreate } = useTeam();
 	const [openModal, setOpenModal] = useState(false);
 	const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 	const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
@@ -259,22 +261,26 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 												</Typography>
 											</Box>
 											<Stack direction="row" spacing={0.5}>
-												<Tooltip title="Editar">
-													<IconButton size="small" aria-label="edit" onClick={() => handleEditClick(note)} color="primary" sx={{ mt: 0.5 }}>
-														<Edit2 variant="Bulk" />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Eliminar">
-													<IconButton
-														size="small"
-														aria-label="delete"
-														onClick={() => handleDeleteClick(note)}
-														color="error"
-														sx={{ mt: 0.5 }}
-													>
-														<Trash variant="Bulk" />
-													</IconButton>
-												</Tooltip>
+												{canUpdate && (
+													<Tooltip title="Editar">
+														<IconButton size="small" aria-label="edit" onClick={() => handleEditClick(note)} color="primary" sx={{ mt: 0.5 }}>
+															<Edit2 variant="Bulk" />
+														</IconButton>
+													</Tooltip>
+												)}
+												{canDelete && (
+													<Tooltip title="Eliminar">
+														<IconButton
+															size="small"
+															aria-label="delete"
+															onClick={() => handleDeleteClick(note)}
+															color="error"
+															sx={{ mt: 0.5 }}
+														>
+															<Trash variant="Bulk" />
+														</IconButton>
+													</Tooltip>
+												)}
 											</Stack>
 										</Box>
 										{needsTruncation && (
@@ -305,19 +311,21 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 					)}
 				</Box>
 
-				{/* Botón fijo en la parte inferior */}
-				<Box
-					sx={{
-						p: 2.5,
-						pt: 2,
-						borderTop: `1px solid ${theme.palette.divider}`,
-						bgcolor: "background.paper",
-					}}
-				>
-					<Button variant="contained" fullWidth startIcon={<Add size={18} />} onClick={() => setOpenModal(true)}>
-						Nueva Nota
-					</Button>
-				</Box>
+				{/* Botón fijo en la parte inferior (solo para usuarios con permisos de crear) */}
+				{canCreate && (
+					<Box
+						sx={{
+							p: 2.5,
+							pt: 2,
+							borderTop: `1px solid ${theme.palette.divider}`,
+							bgcolor: "background.paper",
+						}}
+					>
+						<Button variant="contained" fullWidth startIcon={<Add size={18} />} onClick={() => setOpenModal(true)}>
+							Nueva Nota
+						</Button>
+					</Box>
+				)}
 			</Box>
 
 			{/* Modal para crear/editar notas */}

@@ -41,6 +41,9 @@ import { RootState } from "store";
 import { fetchCurrentSubscription, updateSubscription, fetchPaymentHistory, selectPaymentHistory } from "store/reducers/auth";
 import { openSnackbar } from "store/reducers/snackbar";
 import dayjs from "utils/dayjs-config";
+import { useTeam } from "contexts/TeamContext";
+import { ROLE_CONFIG } from "types/teams";
+import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 
 // ==============================|| ACCOUNT PROFILE - SUBSCRIPTION ||============================== //
 
@@ -73,6 +76,10 @@ const getStripeValue = (value: any): string => {
 const TabSubscription = () => {
 	const dispatch = useDispatch<AppDispatch>();
 	const navigate = useNavigate();
+
+	// Team context - para mostrar información apropiada a miembros del equipo
+	const { isTeamMode, activeTeam, userRole, isOwner, ownerSubscription } = useTeam();
+	const isTeamMember = isTeamMode && !isOwner; // Usuario es miembro de equipo (no propietario)
 
 	// Obtener la suscripción del estado Redux
 	const subscription = useSelector((state: RootState) => state.auth.subscription);
@@ -715,8 +722,178 @@ const TabSubscription = () => {
 	// Determinar si hay un período de renovación
 	const hasRenewalDate = subscription && subscription.currentPeriodEnd && subscription.status === "active";
 
+	// Si el usuario es miembro de un equipo (no propietario), mostrar vista simplificada
+	if (isTeamMember && activeTeam) {
+		const roleConfig = userRole ? ROLE_CONFIG[userRole as keyof typeof ROLE_CONFIG] : null;
+		const planDisplayNames: Record<string, string> = {
+			free: "Gratuito",
+			standard: "Estándar",
+			premium: "Premium",
+		};
+		const ownerPlanName = ownerSubscription?.planName
+			? planDisplayNames[ownerSubscription.planName.toLowerCase()] || ownerSubscription.planName
+			: "No disponible";
+
+		return (
+			<Grid container spacing={3}>
+				{/* Información del equipo */}
+				<Grid item xs={12}>
+					<MainCard
+						title="Tu membresía en el equipo"
+						sx={{
+							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
+							overflow: "hidden",
+						}}
+					>
+						<Grid container spacing={3}>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={2.5}>
+									<Typography variant="h5" sx={{ fontWeight: 600 }}>
+										Equipo
+									</Typography>
+									<Typography variant="h3" color="primary" sx={{ fontWeight: 700 }}>
+										{activeTeam.name}
+									</Typography>
+									<Stack direction="row" spacing={1} alignItems="center">
+										<Typography variant="body1" color="text.secondary">
+											Tu rol:
+										</Typography>
+										{roleConfig && (
+											<Chip label={roleConfig.label} color={roleConfig.color} size="small" sx={{ fontWeight: 600 }} />
+										)}
+									</Stack>
+								</Stack>
+							</Grid>
+							<Grid item xs={12} md={6}>
+								<Stack spacing={2.5}>
+									<Typography variant="h5" sx={{ fontWeight: 600 }}>
+										Plan del equipo
+									</Typography>
+									<Typography variant="h3" color="secondary" sx={{ fontWeight: 700 }}>
+										{ownerPlanName}
+									</Typography>
+									{ownerSubscription?.status === "active" && (
+										<Chip label="Activo" color="success" size="small" sx={{ width: "fit-content" }} />
+									)}
+								</Stack>
+							</Grid>
+						</Grid>
+
+						<Divider sx={{ my: 3 }} />
+
+						<Alert severity="info" sx={{ borderRadius: 1.5 }}>
+							<Typography variant="body2">
+								Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>.
+								Los límites de recursos y facturación son gestionados por el propietario del equipo.
+							</Typography>
+						</Alert>
+					</MainCard>
+				</Grid>
+
+				{/* Características disponibles del equipo */}
+				<Grid item xs={12}>
+					<MainCard
+						title="Características disponibles"
+						sx={{
+							boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
+							overflow: "hidden",
+						}}
+					>
+						{ownerSubscription?.featuresWithDescriptions ? (
+							// Usar featuresWithDescriptions si está disponible (incluye displayName desde el backend)
+							<List disablePadding>
+								{(() => {
+									// Determinar el ambiente actual y filtrar según visibility
+									const currentEnv = import.meta.env.PROD ? 'production' : 'development';
+									const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+										if (!visibility || visibility === 'all') return true;
+										if (visibility === 'none') return false;
+										return visibility === currentEnv;
+									};
+									return [...ownerSubscription.featuresWithDescriptions]
+										.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
+										.sort((a, b) => (b.enabled ? 1 : 0) - (a.enabled ? 1 : 0));
+								})().map((feature, index, arr) => (
+										<React.Fragment key={feature.name}>
+											<ListItem sx={{ py: 1.5 }}>
+												<ListItemText
+													primary={feature.displayName || feature.description || feature.name}
+													secondary={feature.enabled ? "Disponible en tu equipo" : "No incluido en el plan"}
+												/>
+												<Chip
+													label={feature.enabled ? "Habilitado" : "No disponible"}
+													color={feature.enabled ? "success" : "default"}
+													size="small"
+													variant={feature.enabled ? "filled" : "outlined"}
+												/>
+											</ListItem>
+											{index < arr.length - 1 && <Divider />}
+										</React.Fragment>
+									))}
+							</List>
+						) : ownerSubscription?.features ? (
+							// Fallback a features sin displayName (compatibilidad con versiones anteriores)
+							<List disablePadding>
+								{Object.entries(ownerSubscription.features)
+									.sort(([, a], [, b]) => (b ? 1 : 0) - (a ? 1 : 0))
+									.map(([featureName, enabled], index, arr) => {
+										// Fallback hardcoded solo para versiones antiguas del backend
+										const featureLabels: Record<string, string> = {
+											advancedAnalytics: "Análisis avanzados",
+											exportReports: "Exportar reportes",
+											taskAutomation: "Automatizar tareas",
+											bulkOperations: "Operaciones masivas",
+											prioritySupport: "Soporte prioritario",
+											vinculateFolders: "Vincular causas",
+											booking: "Reservas y agenda",
+											teams: "Equipos",
+											movements: "Sincronizar causas",
+										};
+										return (
+											<React.Fragment key={featureName}>
+												<ListItem sx={{ py: 1.5 }}>
+													<ListItemText
+														primary={featureLabels[featureName] || featureName}
+														secondary={enabled ? "Disponible en tu equipo" : "No incluido en el plan"}
+													/>
+													<Chip
+														label={enabled ? "Habilitado" : "No disponible"}
+														color={enabled ? "success" : "default"}
+														size="small"
+														variant={enabled ? "filled" : "outlined"}
+													/>
+												</ListItem>
+												{index < arr.length - 1 && <Divider />}
+											</React.Fragment>
+										);
+									})}
+							</List>
+						) : (
+							<Typography variant="body2" color="text.secondary">
+								No hay información de características disponible.
+							</Typography>
+						)}
+					</MainCard>
+				</Grid>
+
+				{/* Nota sobre gestión */}
+				<Grid item xs={12}>
+					<Alert severity="warning" sx={{ borderRadius: 1.5 }}>
+						<Typography variant="body2">
+							<strong>Nota:</strong> La facturación, métodos de pago y cambios de plan son gestionados exclusivamente
+							por el propietario del equipo. Si necesitas cambios en tu acceso o permisos, contacta al administrador de tu equipo.
+						</Typography>
+					</Alert>
+				</Grid>
+			</Grid>
+		);
+	}
+
 	return (
 		<Grid container spacing={3}>
+			<Grid item xs={12}>
+				<ResourceUsageWidget />
+			</Grid>
 			<Grid item xs={12}>
 				<MainCard
 					title="Detalles de suscripción"
@@ -864,8 +1041,16 @@ const TabSubscription = () => {
 								}}
 							>
 								{subscription?.limitsWithDescriptions ? (
-									// Usar limitsWithDescriptions si está disponible
-									[...subscription.limitsWithDescriptions].map((item: any) => (
+									// Usar limitsWithDescriptions si está disponible (filtrar por visibility)
+									(() => {
+										const currentEnv = import.meta.env.PROD ? 'production' : 'development';
+										const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+											if (!visibility || visibility === 'all') return true;
+											if (visibility === 'none') return false;
+											return visibility === currentEnv;
+										};
+										return [...subscription.limitsWithDescriptions].filter((item: any) => isVisibleInCurrentEnv(item.visibility));
+									})().map((item: any) => (
 										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
 											<ListItemText
 												primary={
@@ -976,17 +1161,26 @@ const TabSubscription = () => {
 							>
 								{subscription?.featuresWithDescriptions ? (
 									// Usar featuresWithDescriptions si está disponible
-									[...subscription.featuresWithDescriptions] // Crear copia para evitar mutar el estado
-										.sort((a: any, b: any) => {
-											// Primero ordenar por enabled (activos primero)
-											if (a.enabled === b.enabled) {
-												// Si tienen el mismo estado, ordenar alfabéticamente por descripción
-												return (a.description || a.name).localeCompare(b.description || b.name);
-											}
-											// Los true (activos) van primero
-											return a.enabled ? -1 : 1;
-										})
-										.map((feature: any) => (
+									(() => {
+										// Determinar el ambiente actual y filtrar según visibility
+										const currentEnv = import.meta.env.PROD ? 'production' : 'development';
+										const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+											if (!visibility || visibility === 'all') return true;
+											if (visibility === 'none') return false;
+											return visibility === currentEnv;
+										};
+										return [...subscription.featuresWithDescriptions]
+											.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
+											.sort((a: any, b: any) => {
+												// Primero ordenar por enabled (activos primero)
+												if (a.enabled === b.enabled) {
+													// Si tienen el mismo estado, ordenar alfabéticamente por descripción
+													return (a.description || a.name).localeCompare(b.description || b.name);
+												}
+												// Los true (activos) van primero
+												return a.enabled ? -1 : 1;
+											});
+									})().map((feature: any) => (
 											<ListItem key={feature.name} sx={{ px: 1, py: 1.25 }}>
 												<ListItemText
 													primary={

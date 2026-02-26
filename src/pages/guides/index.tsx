@@ -20,13 +20,14 @@ import {
 	GuideTasks,
 	GuideAnalytics,
 	GuideLimits,
+	GuideTeams,
 } from "components/guides";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // icons
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21, Cloud } from "iconsax-react";
+import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21, Cloud, People } from "iconsax-react";
 
 // ==============================|| GUIDES PAGE - HEADER ||============================== //
 
@@ -53,6 +54,7 @@ const GuidesPage = () => {
 	const [tasks, setTasks] = useState(false);
 	const [analytics, setAnalytics] = useState(false);
 	const [limits, setLimits] = useState(false);
+	const [teams, setTeams] = useState(false);
 	const [supportOpen, setSupportOpen] = useState(false);
 
 	const guideData = [
@@ -118,6 +120,13 @@ const GuidesPage = () => {
 			icon: Cloud,
 			color: "secondary",
 			openModal: () => setLimits(true),
+		},
+		{
+			title: "Equipos",
+			description: "Aprende a crear equipos, invitar colaboradores y trabajar de forma colaborativa.",
+			icon: People,
+			color: "warning",
+			openModal: () => setTeams(true),
 		},
 	];
 
@@ -362,6 +371,7 @@ const GuidesPage = () => {
 			<GuideTasks open={tasks} onClose={() => setTasks(false)} />
 			<GuideAnalytics open={analytics} onClose={() => setAnalytics(false)} />
 			<GuideLimits open={limits} onClose={() => setLimits(false)} />
+			<GuideTeams open={teams} onClose={() => setTeams(false)} />
 
 			{/* Modal de Soporte */}
 			<SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />

@@ -32,9 +32,10 @@ import { Calculator, TrendUp, TrendDown, Trash, Add, ArrowDown2, ArrowUp2 } from
 import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
 import { dispatch, useSelector } from "store";
-import { deleteCalculator, getCalculatorsByFolderId } from "store/reducers/calculator";
+import { deleteCalculator } from "store/reducers/calculator";
 import { enqueueSnackbar } from "notistack";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTeam } from "contexts/TeamContext";
 
 // types
 import { CalculatorType, LoadingContentProps } from "types/calculator";
@@ -136,9 +137,10 @@ interface MobileCalcCardProps {
 	index: number;
 	onDelete: (id: string) => void;
 	previousAmount?: number;
+	canDelete?: boolean;
 }
 
-const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, previousAmount }) => {
+const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, previousAmount, canDelete = true }) => {
 	const theme = useTheme();
 	const [expanded, setExpanded] = useState(false);
 
@@ -196,21 +198,23 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, p
 								{formatAmount(row.amount)}
 							</Typography>
 						</Stack>
-						<IconButton
-							size="small"
-							onClick={(e) => {
-								e.stopPropagation();
-								onDelete(row._id);
-							}}
-							sx={{
-								color: theme.palette.error.main,
-								"&:hover": {
-									bgcolor: alpha(theme.palette.error.main, 0.1),
-								},
-							}}
-						>
-							<Trash size={20} />
-						</IconButton>
+						{canDelete && (
+							<IconButton
+								size="small"
+								onClick={(e) => {
+									e.stopPropagation();
+									onDelete(row._id);
+								}}
+								sx={{
+									color: theme.palette.error.main,
+									"&:hover": {
+										bgcolor: alpha(theme.palette.error.main, 0.1),
+									},
+								}}
+							>
+								<Trash size={20} />
+							</IconButton>
+						)}
 					</Stack>
 
 					{/* Additional Info */}
@@ -253,7 +257,7 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, p
 	);
 };
 
-const CalcTableResponsive = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
+const CalcTableResponsive = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number; groupId?: string } }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
@@ -262,6 +266,7 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
+	const { canDelete, canCreate } = useTeam();
 
 	const sortedData = useMemo(
 		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date).diff(dayjs(a.date))),
@@ -300,11 +305,8 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 		return ((latestOfferedAmount / claimedAmount) * 100).toFixed(1);
 	}, [firstClaimedData?.amount, folderData?.monto, latestOfferedAmount]);
 
-	useEffect(() => {
-		if (id) {
-			dispatch(getCalculatorsByFolderId(id));
-		}
-	}, [id]);
+	// Note: Data fetching is handled by the parent component (GestionTabImproved)
+	// to avoid duplicate API calls. The selectedCalculators come from Redux store.
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
 
@@ -427,14 +429,16 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 				{showEmptyState ? (
 					<>
 						<EmptyState />
-						<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-							<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
-								Nuevo Monto
-							</Button>
-							<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
-								Gestionar Cálculos
-							</Button>
-						</Stack>
+						{canCreate && (
+							<Stack direction="row" spacing={2} sx={{ mt: 3 }}>
+								<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
+									Nuevo Monto
+								</Button>
+								<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
+									Gestionar Cálculos
+								</Button>
+							</Stack>
+						)}
 					</>
 				) : (
 					<>
@@ -456,6 +460,7 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 												index={index}
 												onDelete={handleDelete}
 												previousAmount={index < sortedData.length - 1 ? sortedData[index + 1].amount : undefined}
+												canDelete={canDelete}
 											/>
 										</motion.div>
 									))}
@@ -551,21 +556,23 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 															</Stack>
 														</TableCell>
 														<TableCell align="right">
-															<IconButton
-																size="small"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleDelete(row._id);
-																}}
-																sx={{
-																	color: theme.palette.error.main,
-																	"&:hover": {
-																		bgcolor: alpha(theme.palette.error.main, 0.1),
-																	},
-																}}
-															>
-																<Trash size={18} />
-															</IconButton>
+															{canDelete && (
+																<IconButton
+																	size="small"
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		handleDelete(row._id);
+																	}}
+																	sx={{
+																		color: theme.palette.error.main,
+																		"&:hover": {
+																			bgcolor: alpha(theme.palette.error.main, 0.1),
+																		},
+																	}}
+																>
+																	<Trash size={18} />
+																</IconButton>
+															)}
 														</TableCell>
 													</TableRow>
 												))}
@@ -576,14 +583,16 @@ const CalcTableResponsive = ({ title, folderData }: { title: string; folderData:
 							</Paper>
 						)}
 						{/* Action Buttons */}
-						<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-							<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
-								Nuevo Monto
-							</Button>
-							<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
-								Gestionar Cálculos
-							</Button>
-						</Stack>
+						{canCreate && (
+							<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+								<Button variant="contained" fullWidth startIcon={<Add />} onClick={() => setOpenItemModal(true)}>
+									Nuevo Monto
+								</Button>
+								<Button variant="outlined" fullWidth onClick={() => setOpen(true)}>
+									Gestionar Cálculos
+								</Button>
+							</Stack>
+						)}
 					</>
 				)}
 			</Box>

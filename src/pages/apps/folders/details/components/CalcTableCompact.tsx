@@ -35,6 +35,7 @@ import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
 import { dispatch, useSelector } from "store";
 import { deleteCalculator, getCalculatorsByFolderId } from "store/reducers/calculator";
+import { useTeam } from "contexts/TeamContext";
 import { enqueueSnackbar } from "notistack";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -131,13 +132,14 @@ const CompactStatsCard: React.FC<CompactStatsCardProps> = ({ title, value, trend
 	);
 };
 
-const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
+const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number; groupId?: string } }) => {
 	const theme = useTheme();
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
 	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
+	const { activeTeam, isTeamMode, canDelete, canCreate } = useTeam();
 
 	const sortedData = useMemo(
 		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date).diff(dayjs(a.date))),
@@ -178,9 +180,10 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 
 	useEffect(() => {
 		if (id) {
-			dispatch(getCalculatorsByFolderId(id));
+			const groupId = folderData?.groupId || (isTeamMode ? activeTeam?._id : undefined);
+			dispatch(getCalculatorsByFolderId(id, groupId));
 		}
-	}, [id]);
+	}, [id, folderData?.groupId, isTeamMode, activeTeam?._id]);
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
 
@@ -467,22 +470,24 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 														/>
 													</TableCell>
 													<TableCell align="right">
-														<LoadingContent
-															isLoader={isLoader}
-															content={
-																<IconButton
-																	size="small"
-																	color="error"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		handleDelete(row._id);
-																	}}
-																>
-																	<Trash size={18} />
-																</IconButton>
-															}
-															skeleton={<Skeleton width={40} />}
-														/>
+														{canDelete && (
+															<LoadingContent
+																isLoader={isLoader}
+																content={
+																	<IconButton
+																		size="small"
+																		color="error"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleDelete(row._id);
+																		}}
+																	>
+																		<Trash size={18} />
+																	</IconButton>
+																}
+																skeleton={<Skeleton width={40} />}
+															/>
+														)}
 													</TableCell>
 												</motion.tr>
 											))
@@ -504,30 +509,32 @@ const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { 
 					>
 						Exportar
 					</Button>
-					<Stack direction="row" spacing={2}>
-						<Button
-							onClick={() => setOpen(true)}
-							disabled={isLoader}
-							sx={{
-								borderColor: "divider",
-								"&:hover": {
-									borderColor: "primary.main",
-									bgcolor: alpha(theme.palette.primary.main, 0.04),
-								},
-							}}
-						>
-							Vincular
-						</Button>
-						<Button
-							variant="contained"
-							color="primary"
-							onClick={() => setOpenItemModal(true)}
-							disabled={isLoader}
-							startIcon={<Calculator size={18} />}
-						>
-							Agregar cálculo
-						</Button>
-					</Stack>
+					{canCreate && (
+						<Stack direction="row" spacing={2}>
+							<Button
+								onClick={() => setOpen(true)}
+								disabled={isLoader}
+								sx={{
+									borderColor: "divider",
+									"&:hover": {
+										borderColor: "primary.main",
+										bgcolor: alpha(theme.palette.primary.main, 0.04),
+									},
+								}}
+							>
+								Vincular
+							</Button>
+							<Button
+								variant="contained"
+								color="primary"
+								onClick={() => setOpenItemModal(true)}
+								disabled={isLoader}
+								startIcon={<Calculator size={18} />}
+							>
+								Agregar cálculo
+							</Button>
+						</Stack>
+					)}
 				</Stack>
 			</CardContent>
 		</MainCard>

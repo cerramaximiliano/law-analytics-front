@@ -11,9 +11,10 @@ import { Box, Divider, FormLabel, Grid, TextField, Stack, Typography, LinearProg
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
 import ProfileTab from "./ProfileTab";
+import { useTeam } from "contexts/TeamContext";
 
 // assets
-import { Camera, Profile } from "iconsax-react";
+import { Camera, Profile, People } from "iconsax-react";
 
 // types
 import { ThemeMode } from "types/config";
@@ -83,11 +84,27 @@ const ProfileTabs = ({ focusInput }: Props) => {
 		}
 	}, [selectedImage]);
 
+	// Team context para determinar qué stats mostrar
+	const { isTeamMode, isOwner, activeTeam } = useTeam();
+
 	const userStats = useSelector((state: RootState) => state.userStats.data);
 
-	const causasCount = userStats?.counts?.folders || 0;
-	const clientesCount = userStats?.counts?.contacts || 0;
-	const calculosCount = userStats?.counts?.calculators || 0;
+	// Determinar qué stats usar:
+	// - Si NO está en modo equipo: usar userStats (cuenta personal)
+	// - Si está en modo equipo Y es owner: usar userStats (ya incluye todo el equipo)
+	// - Si está en modo equipo Y es miembro: usar ownerStats del equipo
+	const shouldUseTeamStats = isTeamMode && !isOwner && activeTeam?.ownerStats;
+	const teamStats = activeTeam?.ownerStats;
+
+	const causasCount = shouldUseTeamStats
+		? (teamStats?.counts?.folders || 0)
+		: (userStats?.counts?.folders || 0);
+	const clientesCount = shouldUseTeamStats
+		? (teamStats?.counts?.contacts || 0)
+		: (userStats?.counts?.contacts || 0);
+	const calculosCount = shouldUseTeamStats
+		? (teamStats?.counts?.calculators || 0)
+		: (userStats?.counts?.calculators || 0);
 
 	// Funciones helper para formatear bytes
 	const formatBytes = (bytes: number): string => {
@@ -98,17 +115,27 @@ const ProfileTabs = ({ focusInput }: Props) => {
 		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 	};
 
-	// Usar los valores directamente de la API
-	const storageUsed = userStats?.storage?.total || 0;
-	const storageLimit = userStats?.storage?.limit || 52428800; // Default 50MB si no viene de la API
+	// Usar los valores según el contexto
+	const storageUsed = shouldUseTeamStats
+		? (teamStats?.storage?.total || 0)
+		: (userStats?.storage?.total || 0);
+	const storageLimit = shouldUseTeamStats
+		? (teamStats?.storage?.limit || 52428800)
+		: (userStats?.storage?.limit || 52428800); // Default 50MB si no viene de la API
 
-	// Calcular porcentaje - si la API lo provee, usarlo, sino calcularlo
-	const storagePercentage =
-		userStats?.storage?.usedPercentage !== undefined
+	// Calcular porcentaje
+	const storagePercentage = shouldUseTeamStats
+		? (teamStats?.storage?.usedPercentage || 0)
+		: (userStats?.storage?.usedPercentage !== undefined
 			? userStats.storage.usedPercentage
 			: storageLimit > 0
 			? Math.min((storageUsed / storageLimit) * 100, 100)
-			: 0;
+			: 0);
+
+	// Storage breakdown según contexto
+	const storageBreakdown = shouldUseTeamStats
+		? teamStats?.storage
+		: userStats?.storage;
 
 	// Determinar color de la barra según el uso
 	const getStorageColor = (percentage: number) => {
@@ -175,6 +202,15 @@ const ProfileTabs = ({ focusInput }: Props) => {
 				</Grid>
 				<Grid item sm={3} sx={{ display: { sm: "block", md: "none" } }} />
 				<Grid item xs={12} sm={6} md={12}>
+					{/* Indicador de recursos del equipo */}
+					{isTeamMode && (
+						<Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ mb: 2 }}>
+							<People size={16} color={theme.palette.primary.main} />
+							<Typography variant="caption" color="primary.main" fontWeight={500}>
+								Recursos del equipo {activeTeam?.name}
+							</Typography>
+						</Stack>
+					)}
 					<Stack direction="row" justifyContent="space-around" alignItems="center">
 						<Stack spacing={0.5} alignItems="center">
 							<Typography variant="h5">{causasCount}</Typography>
@@ -202,7 +238,19 @@ const ProfileTabs = ({ focusInput }: Props) => {
 					<Stack spacing={2}>
 						<Stack direction="row" justifyContent="space-between" alignItems="center">
 							<Stack spacing={0.5}>
-								<Typography variant="h6">Almacenamiento</Typography>
+								<Stack direction="row" alignItems="center" spacing={1}>
+									<Typography variant="h6">Almacenamiento</Typography>
+									{isTeamMode && (
+										<Chip
+											icon={<People size={12} />}
+											label="Equipo"
+											size="small"
+											color="primary"
+											variant="outlined"
+											sx={{ height: 20, "& .MuiChip-label": { px: 0.5, fontSize: "0.65rem" } }}
+										/>
+									)}
+								</Stack>
 								{userStats?.planInfo?.planName && (
 									<Typography variant="caption" color="text.secondary">
 										{cleanPlanDisplayName(userStats.planInfo.planName)}
@@ -237,7 +285,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 								{formatBytes(storageLimit)} totales
 							</Typography>
 						</Stack>
-						{userStats?.storage && (
+						{storageBreakdown && (
 							<Stack spacing={1} sx={{ mt: 1 }}>
 								<Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
 									Desglose por tipo:
@@ -249,7 +297,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 												Carpetas
 											</Typography>
 											<Typography variant="caption" sx={{ fontWeight: 500 }}>
-												{formatBytes(userStats.storage.folders || 0)}
+												{formatBytes(storageBreakdown.folders || 0)}
 											</Typography>
 										</Stack>
 									</Grid>
@@ -259,7 +307,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 												Contactos
 											</Typography>
 											<Typography variant="caption" sx={{ fontWeight: 500 }}>
-												{formatBytes(userStats.storage.contacts || 0)}
+												{formatBytes(storageBreakdown.contacts || 0)}
 											</Typography>
 										</Stack>
 									</Grid>
@@ -269,7 +317,7 @@ const ProfileTabs = ({ focusInput }: Props) => {
 												Cálculos
 											</Typography>
 											<Typography variant="caption" sx={{ fontWeight: 500 }}>
-												{formatBytes(userStats.storage.calculators || 0)}
+												{formatBytes(storageBreakdown.calculators || 0)}
 											</Typography>
 										</Stack>
 									</Grid>

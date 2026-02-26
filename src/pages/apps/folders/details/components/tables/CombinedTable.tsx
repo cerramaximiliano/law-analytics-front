@@ -36,6 +36,7 @@ import { visuallyHidden } from "@mui/utils";
 import dayjs from "utils/dayjs-config";
 import { Movement } from "types/movements";
 import { NotificationType } from "types/notifications";
+import { useTeam } from "contexts/TeamContext";
 
 // Unified activity type
 export interface UnifiedActivity {
@@ -222,6 +223,7 @@ const formatDate = (dateString: string) => {
 };
 
 const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications, events, searchQuery, onEdit, onDelete, onView }) => {
+	const { canDelete } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof UnifiedActivity>("date");
 	const [page, setPage] = useState(0);
@@ -474,18 +476,20 @@ const CombinedTable: React.FC<CombinedTableProps> = ({ movements, notifications,
 													<Edit size={18} />
 												</IconButton>
 											</Tooltip>
-											<Tooltip title="Eliminar">
-												<IconButton
-													size="small"
-													color="error"
-													onClick={(e) => {
-														e.stopPropagation();
-														onDelete(activity);
-													}}
-												>
-													<Trash size={18} />
-												</IconButton>
-											</Tooltip>
+											{canDelete && (
+												<Tooltip title="Eliminar">
+													<IconButton
+														size="small"
+														color="error"
+														onClick={(e) => {
+															e.stopPropagation();
+															onDelete(activity);
+														}}
+													>
+														<Trash size={18} />
+													</IconButton>
+												</Tooltip>
+											)}
 										</Stack>
 									</TableCell>
 								</TableRow>

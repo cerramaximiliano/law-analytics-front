@@ -14,6 +14,7 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -61,6 +62,7 @@ const CompactField: React.FC<CompactFieldProps> = ({ label, value, isLoading, ed
 const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
+	const { canUpdate } = useTeam();
 
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
@@ -207,7 +209,7 @@ const FolderPreJudDataCompact = ({ folder, isLoader, type }: { folder: any; isLo
 											</Typography>
 										)}
 									</Stack>
-									{!isEditing && (
+									{!isEditing && canUpdate && (
 										<Button size="small" variant="text" onClick={handleEdit} sx={{ minWidth: "auto", px: 1 }}>
 											<Edit2 size={16} />
 										</Button>

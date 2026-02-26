@@ -8,6 +8,7 @@ import {
 	Button,
 	Chip,
 	Dialog,
+	DialogContent,
 	Stack,
 	Table,
 	TableBody,
@@ -25,6 +26,9 @@ import {
 	MenuItem,
 	ListItemIcon,
 	ListItemText,
+	FormControl,
+	Select,
+	SelectChangeEvent,
 } from "@mui/material";
 
 import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
@@ -33,6 +37,7 @@ import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useT
 import MainCard from "components/MainCard";
 import ScrollX from "components/ScrollX";
 import IconButton from "components/@extended/IconButton";
+import Avatar from "components/@extended/Avatar";
 import { PopupTransition } from "components/@extended/Transitions";
 import { IndeterminateCheckbox, HeaderSort, SortingSelect, TablePagination } from "components/third-party/ReactTable";
 import { CSVLink } from "react-csv";
@@ -49,6 +54,7 @@ import ModalNotes from "pages/apps/folders/details/modals/ModalNotes";
 import ModalMovements from "pages/apps/folders/details/modals/ModalMovements";
 import AddCustomer from "sections/apps/customer/AddCustomer";
 import AddEventFrom from "sections/apps/calendar/AddEventForm";
+import CausaSelector from "sections/apps/folders/CausaSelector";
 
 import { renderFilterTypes, GlobalFilter } from "utils/react-table";
 
@@ -72,6 +78,9 @@ import {
 	SearchStatus1,
 	Folder2,
 	Warning2,
+	Filter,
+	ArrowUp2,
+	ArrowDown2,
 } from "iconsax-react";
 
 // types
@@ -85,6 +94,7 @@ import {
 	unarchiveFolders,
 	getFolderById,
 	setFolderSort,
+	deleteFoldersByIds,
 } from "store/reducers/folder";
 import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
@@ -96,6 +106,7 @@ import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
 import { GuideFolders } from "components/guides";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
+import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 // ==============================|| REACT TABLE ||============================== //
 
 interface ReactTableProps extends Props {
@@ -114,6 +125,20 @@ interface ReactTableProps extends Props {
 	handleMenuClose: () => void;
 	/** If true, shows onboarding-specific UI (special empty state, muted controls) */
 	isOnboarding?: boolean;
+	/** Filtros */
+	folderTypeFilter?: 'all' | 'manual' | 'pjn' | 'eje' | 'mev';
+	onFolderTypeFilterChange?: (event: SelectChangeEvent<'all' | 'manual' | 'pjn' | 'eje' | 'mev'>) => void;
+	statusFilter?: 'all' | 'Nueva' | 'En Proceso' | 'Pendiente' | 'Cerrada';
+	onStatusFilterChange?: (event: SelectChangeEvent<string>) => void;
+	parteFilter?: string;
+	onParteFilterChange?: (event: SelectChangeEvent<string>) => void;
+	uniquePartes?: string[];
+	movimientosFilter?: 'all' | 'today' | 'week' | 'month' | 'none';
+	onMovimientosFilterChange?: (event: SelectChangeEvent<string>) => void;
+	jurisdiccionFilter?: string;
+	onJurisdiccionFilterChange?: (event: SelectChangeEvent<string>) => void;
+	uniqueJurisdicciones?: string[];
+	handleDeleteSelected?: (selectedRows: any[]) => void;
 }
 
 function ReactTable({
@@ -122,6 +147,7 @@ function ReactTable({
 	renderRowSubComponent,
 	handleAdd,
 	handleArchiveSelected,
+	handleDeleteSelected,
 	isLoading,
 	handleOpenArchivedModal,
 	handleOpenGuide,
@@ -139,10 +165,35 @@ function ReactTable({
 	handleMenuOpen,
 	handleMenuClose,
 	isOnboarding = false,
+	folderTypeFilter = 'all',
+	onFolderTypeFilterChange,
+	statusFilter = 'all',
+	onStatusFilterChange,
+	parteFilter = 'all',
+	onParteFilterChange,
+	uniquePartes = [],
+	movimientosFilter = 'all',
+	onMovimientosFilterChange,
+	jurisdiccionFilter = 'all',
+	onJurisdiccionFilterChange,
+	uniqueJurisdicciones = [],
 }: ReactTableProps) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
+	const [showFilters, setShowFilters] = useState(false);
+	const csvLinkRef = useRef<any>(null);
+
+	// Contar filtros activos
+	const activeFiltersCount = useMemo(() => {
+		let count = 0;
+		if (folderTypeFilter !== 'all') count++;
+		if (statusFilter !== 'all') count++;
+		if (parteFilter !== 'all') count++;
+		if (movimientosFilter !== 'all') count++;
+		if (jurisdiccionFilter !== 'all') count++;
+		return count;
+	}, [folderTypeFilter, statusFilter, parteFilter, movimientosFilter, jurisdiccionFilter]);
 
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "folderName", desc: false };
@@ -221,6 +272,39 @@ function ReactTable({
 		}
 	}, [tableSortBy]);
 
+	const csvHeaders = [
+		{ label: "Nombre", key: "folderName" },
+		{ label: "Materia", key: "materia" },
+		{ label: "Estado", key: "status" },
+		{ label: "Jurisdicción", key: "jurisdiccion" },
+		{ label: "Fuero", key: "folderFuero" },
+		{ label: "Fecha inicio", key: "initialDateFolder" },
+		{ label: "Fecha cierre", key: "finalDateFolder" },
+		{ label: "Monto", key: "amount" },
+		{ label: "Descripción", key: "description" },
+		{ label: "Nro. Expediente", key: "expedientNumber" },
+		{ label: "Año Expediente", key: "expedientYear" },
+		{ label: "Origen", key: "source" },
+	];
+
+	const csvData = useMemo(() => {
+		const sourceRows = selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data;
+		return sourceRows.map((folder: Folder) => ({
+			folderName: folder.folderName || "",
+			materia: folder.materia || "",
+			status: folder.status || "",
+			jurisdiccion: folder.folderJuris?.label || "",
+			folderFuero: folder.folderFuero || "",
+			initialDateFolder: folder.initialDateFolder || "",
+			finalDateFolder: folder.finalDateFolder || "",
+			amount: folder.amount ?? "",
+			description: folder.description || "",
+			expedientNumber: folder.expedientNumber || "",
+			expedientYear: folder.expedientYear || "",
+			source: folder.source || (folder.pjn ? "PJN" : "manual"),
+		}));
+	}, [selectedFlatRows, data]);
+
 	if (!isColumnsReady || isLoading) {
 		// Skeleton simplificado para tabla secundaria
 		if (simpleSkeleton) {
@@ -263,37 +347,49 @@ function ReactTable({
 			<>
 				{/* <TableRowSelection selected={0} /> */}
 				<Stack spacing={3}>
-					{/* Skeleton de controles superiores */}
+					{/* Skeleton de toolbar - una sola fila */}
 					<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
-						{/* Primera fila: buscador + botones */}
 						<Stack
 							direction={matchDownSM ? "column" : "row"}
 							spacing={{ xs: 1.5, sm: 2 }}
-							justifyContent="space-between"
 							alignItems={matchDownSM ? "stretch" : "center"}
+							flexWrap="wrap"
+							useFlexGap
 						>
-							{/* Buscador */}
-							<Skeleton variant="rounded" width={280} height={40} />
-							{/* Botones principales */}
-							<Stack direction={matchDownSM ? "column" : "row"} spacing={1}>
-								<Skeleton variant="rounded" width={145} height={32} />
-								<Skeleton variant="rounded" width={130} height={32} />
-								<Skeleton variant="rounded" width={140} height={32} />
-							</Stack>
-						</Stack>
-						{/* Segunda fila: selector + iconos */}
-						<Stack
-							direction={matchDownSM ? "column" : "row"}
-							spacing={{ xs: 1.5, sm: 2 }}
-							justifyContent="space-between"
-							alignItems={matchDownSM ? "stretch" : "center"}
-						>
-							{/* Selector de ordenamiento */}
-							<Skeleton variant="rounded" width={280} height={40} />
-							{/* Iconos */}
+							{/* Grupo 1: Acción principal */}
+							<Skeleton variant="rounded" width={140} height={32} />
+
+							{/* Separador */}
+							{!matchDownSM && <Skeleton variant="rounded" width={2} height={28} />}
+
+							{/* Grupo 2: Gestión archivados */}
 							<Stack direction="row" spacing={1}>
-								<Skeleton variant="circular" width={36} height={36} />
-								<Skeleton variant="circular" width={36} height={36} />
+								<Skeleton variant="rounded" width={100} height={32} />
+								<Skeleton variant="rounded" width={85} height={32} />
+							</Stack>
+
+							{/* Separador */}
+							{!matchDownSM && <Skeleton variant="rounded" width={2} height={28} />}
+
+							{/* Grupo 3: Filtros y ordenamiento */}
+							<Stack direction="row" spacing={1}>
+								<Skeleton variant="rounded" width={90} height={31} />
+								<Skeleton variant="rounded" width={160} height={31} />
+							</Stack>
+
+							{/* Separador */}
+							{!matchDownSM && <Skeleton variant="rounded" width={2} height={28} />}
+
+							{/* Grupo 4: Búsqueda y utilidades */}
+							<Stack
+								direction="row"
+								spacing={1}
+								alignItems="center"
+								sx={{ flex: matchDownSM ? "none" : 1, justifyContent: matchDownSM ? "flex-start" : "flex-end" }}
+							>
+								<Skeleton variant="rounded" width={220} height={32} />
+								<Skeleton variant="circular" width={28} height={28} />
+								<Skeleton variant="circular" width={28} height={28} />
 							</Stack>
 						</Stack>
 					</Stack>
@@ -336,131 +432,331 @@ function ReactTable({
 			{/* Controles FUERA del ScrollX para que siempre estén visibles */}
 			{!hideControls && (
 				<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
-					{/* Primera fila: buscador a la izquierda, botones principales a la derecha */}
+					{/* Toolbar principal - una sola fila en desktop, múltiples en mobile */}
 					<Stack
 						direction={matchDownSM ? "column" : "row"}
 						spacing={{ xs: 1.5, sm: 2 }}
-						justifyContent="space-between"
 						alignItems={matchDownSM ? "stretch" : "center"}
+						flexWrap="wrap"
+						useFlexGap
 					>
-						{/* Buscador (izquierda) - atenuado en onboarding */}
-						<Box
+						{/* Grupo 1: Acción principal */}
+						{handleAdd && (
+							<Button
+								variant="contained"
+								size="small"
+								startIcon={<FolderAdd />}
+								onClick={handleAdd}
+								fullWidth={matchDownSM}
+								sx={{ textTransform: "none" }}
+							>
+								{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
+							</Button>
+						)}
+
+						{/* Separador */}
+						{!matchDownSM && handleAdd && (
+							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
+						)}
+
+						{/* Grupo 2: Gestión de archivados */}
+						<Stack
+							direction="row"
+							spacing={1}
 							sx={{
-								width: { xs: "100%", sm: "280px" },
 								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
 							}}
 						>
-							<GlobalFilter
-								preGlobalFilteredRows={preGlobalFilteredRows as any}
-								globalFilter={globalFilter}
-								setGlobalFilter={setGlobalFilter}
-								disabled={data.length === 0}
-							/>
-						</Box>
+							<Button
+								variant="outlined"
+								color="secondary"
+								size="small"
+								startIcon={<Box1 size={18} />}
+								onClick={handleOpenArchivedModal}
+								sx={{ textTransform: "none" }}
+							>
+								Archivados
+							</Button>
+							{handleArchiveSelected && (
+								<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
+									<span>
+										<Button
+											variant="outlined"
+											color="secondary"
+											size="small"
+											startIcon={<Archive size={18} />}
+											onClick={() => handleArchiveSelected(selectedFlatRows)}
+											disabled={Object.keys(selectedRowIds).length === 0}
+											sx={{ textTransform: "none" }}
+										>
+											{Object.keys(selectedRowIds).length > 0
+												? `Archivar (${selectedFlatRows.length})`
+												: "Archivar"}
+										</Button>
+									</span>
+								</Tooltip>
+							)}
+						</Stack>
 
-						{/* Botones principales (derecha) */}
-						<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-							{handleAdd && (
+						{/* Separador */}
+						{!matchDownSM && (
+							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
+						)}
+
+						{/* Grupo 3: Filtros y ordenamiento */}
+						<Stack
+							direction="row"
+							spacing={1}
+							alignItems="center"
+							sx={{
+								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
+							}}
+						>
+							{/* Botón de Filtros */}
+							{onFolderTypeFilterChange && (
 								<Button
-									variant="contained"
+									variant={showFilters || activeFiltersCount > 0 ? "contained" : "outlined"}
+									color={activeFiltersCount > 0 ? "primary" : "secondary"}
 									size="small"
-									startIcon={<FolderAdd />}
-									onClick={handleAdd}
-									fullWidth={matchDownSM}
-									sx={{ textTransform: "none" }}
+									startIcon={<Filter size={18} />}
+									endIcon={showFilters ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
+									onClick={() => setShowFilters(!showFilters)}
+									sx={{
+										textTransform: "none",
+										height: "30.75px",
+										minWidth: 100,
+									}}
 								>
-									{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
+									{activeFiltersCount > 0 ? `Filtros (${activeFiltersCount})` : "Filtros"}
 								</Button>
 							)}
-							{/* Botones secundarios - atenuados en onboarding */}
-							<Box
-								sx={{
-									display: "flex",
-									flexDirection: matchDownSM ? "column" : "row",
-									gap: 1,
-									...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
-								}}
-							>
-								<Button
-									variant="outlined"
-									color="secondary"
-									size="small"
-									startIcon={<Box1 />}
-									onClick={handleOpenArchivedModal}
-									fullWidth={matchDownSM}
-								>
-									Ver Archivados
-								</Button>
-								{handleArchiveSelected && (
-									<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
-										<span style={{ width: matchDownSM ? "100%" : "auto" }}>
-											<Button
-												variant="outlined"
-												color="primary"
-												size="small"
-												startIcon={<Archive />}
-												onClick={() => handleArchiveSelected(selectedFlatRows)}
-												disabled={Object.keys(selectedRowIds).length === 0}
-												fullWidth={matchDownSM}
-											>
-												Archivar{" "}
-												{Object.keys(selectedRowIds).length > 0
-													? `${selectedFlatRows.length} ${selectedFlatRows.length === 1 ? "causa" : "causas"}`
-													: "causas"}
-											</Button>
-										</span>
-									</Tooltip>
-								)}
+							{/* Ordenamiento */}
+							<Box sx={{ minWidth: 160 }}>
+								<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
 							</Box>
 						</Stack>
-					</Stack>
 
-					{/* Segunda fila: selector de ordenamiento a la izquierda, botones secundarios a la derecha */}
-					<Stack
-						direction={matchDownSM ? "column" : "row"}
-						spacing={{ xs: 1.5, sm: 2 }}
-						justifyContent="space-between"
-						alignItems={matchDownSM ? "stretch" : "center"}
-					>
-						{/* Selector de ordenamiento (izquierda) - atenuado en onboarding */}
-						<Box
+						{/* Separador */}
+						{!matchDownSM && (
+							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
+						)}
+
+						{/* Grupo 4: Búsqueda y utilidades */}
+						<Stack
+							direction="row"
+							spacing={1}
+							alignItems="center"
 							sx={{
-								width: { xs: "100%", sm: "280px" },
+								flex: matchDownSM ? "none" : 1,
+								justifyContent: matchDownSM ? "flex-start" : "flex-end",
 								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
 							}}
 						>
-							<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
-						</Box>
-
-						{/* Botones secundarios (derecha) */}
-						<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
-							{/* Exportar CSV - atenuado en onboarding */}
-							<Box sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}>
-								<Tooltip title="Exportar a CSV">
-									<IconButton color="primary" size="medium">
-										<CSVLink
-											data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: any) => d.original) : data}
-											filename={"causas.csv"}
-											style={{
-												color: "inherit",
-												display: "flex",
-												alignItems: "center",
-												textDecoration: "none",
+							<Box sx={{ width: { xs: "100%", sm: "220px" } }}>
+								<GlobalFilter
+									preGlobalFilteredRows={preGlobalFilteredRows as any}
+									globalFilter={globalFilter}
+									setGlobalFilter={setGlobalFilter}
+									disabled={data.length === 0}
+								/>
+							</Box>
+							<Tooltip title="Exportar a CSV">
+								<IconButton
+									color="primary"
+									size="small"
+									onClick={() => csvLinkRef.current?.link?.click()}
+								>
+									<DocumentDownload variant="Bulk" size={20} />
+								</IconButton>
+							</Tooltip>
+							<CSVLink
+								ref={csvLinkRef}
+								data={csvData}
+								headers={csvHeaders}
+								filename={"causas.csv"}
+								style={{ display: "none" }}
+							/>
+							{/* Botón de eliminar seleccionados */}
+							{handleDeleteSelected && (
+								<Tooltip
+									title={
+										Object.keys(selectedRowIds).length === 0
+											? "Selecciona carpetas para eliminar"
+											: `Eliminar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
+									}
+								>
+									<span>
+										<IconButton
+											color="error"
+											size="small"
+											onClick={() => handleDeleteSelected(selectedFlatRows)}
+											disabled={Object.keys(selectedRowIds).length === 0}
+											sx={{
+												opacity: Object.keys(selectedRowIds).length === 0 ? 0.5 : 1,
+												position: "relative",
 											}}
 										>
-											<DocumentDownload variant="Bulk" size={22} />
-										</CSVLink>
-									</IconButton>
+											<Trash variant="Bulk" size={20} />
+											{Object.keys(selectedRowIds).length > 0 && (
+												<Box
+													sx={{
+														position: "absolute",
+														top: -4,
+														right: -4,
+														bgcolor: "error.main",
+														color: "white",
+														borderRadius: "50%",
+														width: 16,
+														height: 16,
+														fontSize: "0.65rem",
+														fontWeight: "bold",
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+													}}
+												>
+													{selectedFlatRows.length}
+												</Box>
+											)}
+										</IconButton>
+									</span>
 								</Tooltip>
-							</Box>
-							{/* Boton de guia - siempre visible, util para onboarding */}
-							<Tooltip title="Ver Guia">
-								<IconButton color="success" onClick={handleOpenGuide}>
-									<InfoCircle variant="Bulk" />
+							)}
+							<Tooltip title="Ver Guía">
+								<IconButton color="success" size="small" onClick={handleOpenGuide}>
+									<InfoCircle variant="Bulk" size={20} />
 								</IconButton>
 							</Tooltip>
 						</Stack>
 					</Stack>
+
+					{/* Panel de filtros colapsable */}
+					{onFolderTypeFilterChange && (
+						<Collapse in={showFilters}>
+							<Box
+								sx={{
+									p: 2,
+									bgcolor: "action.hover",
+									borderRadius: 1,
+									border: "1px solid",
+									borderColor: "divider",
+								}}
+							>
+								<Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+									{/* Filtro por Tipo */}
+									<FormControl size="small" sx={{ minWidth: 120 }}>
+										<Select
+											id="folder-type-filter"
+											displayEmpty
+											value={folderTypeFilter}
+											onChange={onFolderTypeFilterChange}
+											sx={{
+												maxHeight: "30.75px",
+												bgcolor: "background.paper",
+												"& .MuiSelect-select": { py: "6px" },
+											}}
+										>
+											<MenuItem value="all"><Typography variant="body2">Tipo: Todos</Typography></MenuItem>
+											<MenuItem value="manual"><Typography variant="body2">Manual</Typography></MenuItem>
+											<MenuItem value="pjn"><Typography variant="body2">PJN</Typography></MenuItem>
+											<MenuItem value="eje"><Typography variant="body2">EJE</Typography></MenuItem>
+											<MenuItem value="mev"><Typography variant="body2">MEV</Typography></MenuItem>
+										</Select>
+									</FormControl>
+									{/* Filtro por Estado */}
+									{onStatusFilterChange && (
+										<FormControl size="small" sx={{ minWidth: 130 }}>
+											<Select
+												id="status-filter"
+												displayEmpty
+												value={statusFilter}
+												onChange={onStatusFilterChange}
+												sx={{
+													maxHeight: "30.75px",
+													bgcolor: "background.paper",
+													"& .MuiSelect-select": { py: "6px" },
+												}}
+											>
+												<MenuItem value="all"><Typography variant="body2">Estado: Todos</Typography></MenuItem>
+												<MenuItem value="Nueva"><Typography variant="body2">Nueva</Typography></MenuItem>
+												<MenuItem value="En Proceso"><Typography variant="body2">En Proceso</Typography></MenuItem>
+												<MenuItem value="Pendiente"><Typography variant="body2">Pendiente</Typography></MenuItem>
+												<MenuItem value="Cerrada"><Typography variant="body2">Cerrada</Typography></MenuItem>
+											</Select>
+										</FormControl>
+									)}
+									{/* Filtro por Parte */}
+									{onParteFilterChange && uniquePartes.length > 0 && (
+										<FormControl size="small" sx={{ minWidth: 120 }}>
+											<Select
+												id="parte-filter"
+												displayEmpty
+												value={parteFilter}
+												onChange={onParteFilterChange}
+												sx={{
+													maxHeight: "30.75px",
+													bgcolor: "background.paper",
+													"& .MuiSelect-select": { py: "6px" },
+												}}
+											>
+												<MenuItem value="all"><Typography variant="body2">Parte: Todas</Typography></MenuItem>
+												{uniquePartes.map((parte) => (
+													<MenuItem key={parte} value={parte}>
+														<Typography variant="body2">{parte}</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
+									{/* Filtro por Movimientos */}
+									{onMovimientosFilterChange && (
+										<FormControl size="small" sx={{ minWidth: 150 }}>
+											<Select
+												id="movimientos-filter"
+												displayEmpty
+												value={movimientosFilter}
+												onChange={onMovimientosFilterChange}
+												sx={{
+													maxHeight: "30.75px",
+													bgcolor: "background.paper",
+													"& .MuiSelect-select": { py: "6px" },
+												}}
+											>
+												<MenuItem value="all"><Typography variant="body2">Movimientos: Todos</Typography></MenuItem>
+												<MenuItem value="today"><Typography variant="body2">Hoy</Typography></MenuItem>
+												<MenuItem value="week"><Typography variant="body2">Última semana</Typography></MenuItem>
+												<MenuItem value="month"><Typography variant="body2">Último mes</Typography></MenuItem>
+												<MenuItem value="none"><Typography variant="body2">Sin movimientos</Typography></MenuItem>
+											</Select>
+										</FormControl>
+									)}
+									{/* Filtro por Jurisdicción */}
+									{onJurisdiccionFilterChange && uniqueJurisdicciones.length > 0 && (
+										<FormControl size="small" sx={{ minWidth: 140 }}>
+											<Select
+												id="jurisdiccion-filter"
+												displayEmpty
+												value={jurisdiccionFilter}
+												onChange={onJurisdiccionFilterChange}
+												sx={{
+													maxHeight: "30.75px",
+													bgcolor: "background.paper",
+													"& .MuiSelect-select": { py: "6px" },
+												}}
+											>
+												<MenuItem value="all"><Typography variant="body2">Jurisdicción: Todas</Typography></MenuItem>
+												{uniqueJurisdicciones.map((juris) => (
+													<MenuItem key={juris} value={juris}>
+														<Typography variant="body2">{juris}</Typography>
+													</MenuItem>
+												))}
+											</Select>
+										</FormControl>
+									)}
+								</Stack>
+							</Box>
+						</Collapse>
+					)}
 
 					{/* Banner de alertas - movido después de los controles */}
 					{(pendingCount > 0 || invalidCount > 0) && onScrollToPending && (
@@ -688,6 +984,17 @@ const FoldersLayout = () => {
 	const [eventModalOpen, setEventModalOpen] = useState(false);
 	const [selectedFolderForModal, setSelectedFolderForModal] = useState<{ id: string; name: string }>({ id: "", name: "" });
 
+	// Estado para CausaSelector (selección de múltiples resultados)
+	const [causaSelectorOpen, setCausaSelectorOpen] = useState(false);
+	const [causaSelectorFolder, setCausaSelectorFolder] = useState<{ id: string; name: string }>({ id: "", name: "" });
+
+	// Estados para filtros de carpetas
+	const [folderTypeFilter, setFolderTypeFilter] = useState<'all' | 'manual' | 'pjn' | 'eje' | 'mev'>('all');
+	const [statusFilter, setStatusFilter] = useState<'all' | 'Nueva' | 'En Proceso' | 'Pendiente' | 'Cerrada'>('all');
+	const [parteFilter, setParteFilter] = useState<string>('all');
+	const [movimientosFilter, setMovimientosFilter] = useState<'all' | 'today' | 'week' | 'month' | 'none'>('all');
+	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>('all');
+
 	// Referencias
 	const mountedRef = useRef(false);
 	const loadingRef = useRef(false);
@@ -756,6 +1063,89 @@ const FoldersLayout = () => {
 			invalidCount: invalid,
 		};
 	}, [folders]);
+
+	// Filtrar carpetas verificadas por tipo
+	// Extraer valores únicos para filtros dinámicos
+	const uniquePartes = useMemo(() => {
+		const partes = new Set<string>();
+		verifiedFolders.forEach((folder: any) => {
+			if (folder.orderStatus) {
+				partes.add(folder.orderStatus);
+			}
+		});
+		return Array.from(partes).sort();
+	}, [verifiedFolders]);
+
+	const uniqueJurisdicciones = useMemo(() => {
+		const jurisdicciones = new Set<string>();
+		verifiedFolders.forEach((folder: any) => {
+			if (folder.folderJuris?.label) {
+				jurisdicciones.add(folder.folderJuris.label);
+			}
+		});
+		return Array.from(jurisdicciones).sort();
+	}, [verifiedFolders]);
+
+	// Filtrar carpetas verificadas por todos los filtros
+	const filteredVerifiedFolders = useMemo(() => {
+		return verifiedFolders.filter((folder: any) => {
+			// Filtro por tipo de carpeta
+			if (folderTypeFilter !== 'all') {
+				switch (folderTypeFilter) {
+					case 'manual':
+						if (!(folder.source === 'manual' || (!folder.pjn && !folder.mev && !folder.eje))) return false;
+						break;
+					case 'pjn':
+						if (folder.pjn !== true) return false;
+						break;
+					case 'mev':
+						if (folder.mev !== true) return false;
+						break;
+					case 'eje':
+						if (folder.eje !== true) return false;
+						break;
+				}
+			}
+
+			// Filtro por estado
+			if (statusFilter !== 'all' && folder.status !== statusFilter) {
+				return false;
+			}
+
+			// Filtro por parte
+			if (parteFilter !== 'all' && folder.orderStatus !== parteFilter) {
+				return false;
+			}
+
+			// Filtro por jurisdicción
+			if (jurisdiccionFilter !== 'all' && folder.folderJuris?.label !== jurisdiccionFilter) {
+				return false;
+			}
+
+			// Filtro por movimientos recientes
+			if (movimientosFilter !== 'all') {
+				const lastMovement = folder.lastMovementDate ? dayjs(folder.lastMovementDate) : null;
+				const today = dayjs().startOf('day');
+
+				switch (movimientosFilter) {
+					case 'today':
+						if (!lastMovement || !lastMovement.isSame(today, 'day')) return false;
+						break;
+					case 'week':
+						if (!lastMovement || !lastMovement.isAfter(today.subtract(7, 'day'))) return false;
+						break;
+					case 'month':
+						if (!lastMovement || !lastMovement.isAfter(today.subtract(30, 'day'))) return false;
+						break;
+					case 'none':
+						if (lastMovement) return false;
+						break;
+				}
+			}
+
+			return true;
+		});
+	}, [verifiedFolders, folderTypeFilter, statusFilter, parteFilter, jurisdiccionFilter, movimientosFilter]);
 
 	// Efecto para la carga inicial y cuando cambia el equipo activo
 	useEffect(() => {
@@ -902,6 +1292,54 @@ const FoldersLayout = () => {
 		[user?._id],
 	);
 
+	// Estado para diálogo de confirmación de eliminación
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [foldersToDelete, setFoldersToDelete] = useState<Row<any>[]>([]);
+
+	// Manejador para eliminar carpetas seleccionadas
+	const handleDeleteSelected = useCallback((selectedRows: Row<any>[]) => {
+		if (selectedRows.length === 0) return;
+		setFoldersToDelete(selectedRows);
+		setDeleteDialogOpen(true);
+	}, []);
+
+	const handleConfirmDelete = useCallback(async () => {
+		if (!user?._id || foldersToDelete.length === 0 || loadingRef.current) return;
+
+		const folderIds = foldersToDelete.map((row) => row.original._id);
+
+		try {
+			loadingRef.current = true;
+			setDeleteDialogOpen(false);
+
+			const result = await dispatch(deleteFoldersByIds(folderIds, { headers: getRequestHeaders() }));
+
+			if (result.success) {
+				setSnackbarMessage(
+					`${result.deletedCount} ${result.deletedCount === 1 ? "carpeta eliminada" : "carpetas eliminadas"} correctamente`
+				);
+				setSnackbarSeverity("success");
+			} else {
+				setSnackbarMessage(result.message || "Error al eliminar carpetas");
+				setSnackbarSeverity("error");
+			}
+
+			setSnackbarOpen(true);
+		} catch (error) {
+			setSnackbarMessage("Error al eliminar carpetas");
+			setSnackbarSeverity("error");
+			setSnackbarOpen(true);
+		} finally {
+			loadingRef.current = false;
+			setFoldersToDelete([]);
+		}
+	}, [user?._id, foldersToDelete, getRequestHeaders]);
+
+	const handleCancelDelete = useCallback(() => {
+		setDeleteDialogOpen(false);
+		setFoldersToDelete([]);
+	}, []);
+
 	// Manejadores para elementos archivados
 	const handleOpenArchivedModal = useCallback(async () => {
 		if (!user?._id || loadingRef.current) return;
@@ -980,6 +1418,27 @@ const FoldersLayout = () => {
 
 	const handleOpenGuide = useCallback(() => {
 		setGuideOpen(true);
+	}, []);
+
+	// Handler para el filtro de tipo de carpeta
+	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<'all' | 'manual' | 'pjn' | 'eje' | 'mev'>) => {
+		setFolderTypeFilter(event.target.value as 'all' | 'manual' | 'pjn' | 'eje' | 'mev');
+	}, []);
+
+	const handleStatusFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setStatusFilter(event.target.value as 'all' | 'Nueva' | 'En Proceso' | 'Pendiente' | 'Cerrada');
+	}, []);
+
+	const handleParteFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setParteFilter(event.target.value);
+	}, []);
+
+	const handleMovimientosFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setMovimientosFilter(event.target.value as 'all' | 'today' | 'week' | 'month' | 'none');
+	}, []);
+
+	const handleJurisdiccionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
+		setJurisdiccionFilter(event.target.value);
 	}, []);
 
 	const handleUnarchiveSelected = useCallback(
@@ -1147,9 +1606,41 @@ const FoldersLayout = () => {
 									label="Seleccionar expediente"
 									size="small"
 									variant="light"
+									onClick={(e) => {
+										e.stopPropagation();
+										setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
+										setCausaSelectorOpen(true);
+									}}
 									sx={{ cursor: "pointer" }}
 								/>
 								<Tooltip title="Se encontraron múltiples expedientes - Haz clic para seleccionar">
+									<IconButton
+										size="small"
+										onClick={(e) => {
+											e.stopPropagation();
+											setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
+											setCausaSelectorOpen(true);
+										}}
+										sx={{
+											padding: 0.5,
+											"&:hover": {
+												backgroundColor: "warning.lighter",
+											},
+										}}
+									>
+										<Warning2 size={16} variant="Bold" color="#F59E0B" />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
+					// Si la asociación falló, mostrar chip de error
+					if (folder.causaAssociationStatus === "failed") {
+						return (
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<Chip color="error" label="Asociación fallida" size="small" variant="light" />
+								<Tooltip title="No se pudo vincular la causa - Verifique los datos ingresados">
 									<Box
 										sx={{
 											display: "inline-flex",
@@ -1159,15 +1650,15 @@ const FoldersLayout = () => {
 											height: 18,
 										}}
 									>
-										<Warning2 size={16} variant="Bold" color="#F59E0B" />
+										<CloseCircle size={16} variant="Bold" color="#EF4444" />
 									</Box>
 								</Tooltip>
 							</Stack>
 						);
 					}
 
-					// Si causaVerified es false, mostrar chip de pendiente con botón de actualización
-					if (folder.causaVerified === false) {
+					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
+					if (folder.causaVerified === false || (folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje))) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
@@ -1179,11 +1670,17 @@ const FoldersLayout = () => {
 											const result = await dispatch(getFolderById(folder._id, true));
 
 											if (result.success && result.folder) {
-												if (result.folder.causaVerified && result.folder.causaIsValid) {
+												if (result.folder.causaAssociationStatus === "pending_selection") {
+													// Múltiples resultados - requiere selección
+													setSnackbarMessage("Hay múltiples resultados. Seleccione el expediente correcto.");
+													setSnackbarSeverity("info");
+													setSnackbarOpen(true);
+												} else if (result.folder.causaVerified && result.folder.causaIsValid) {
 													setSnackbarMessage("La carpeta fue sincronizada correctamente");
 													setSnackbarSeverity("success");
 													setSnackbarOpen(true);
-												} else if (result.folder.causaVerified && !result.folder.causaIsValid) {
+												} else if (result.folder.causaVerified && result.folder.causaIsValid === false) {
+													// Solo si es explícitamente false (no null)
 													setSnackbarMessage("La carpeta no existe o no es pública");
 													setSnackbarSeverity("error");
 													setSnackbarOpen(true);
@@ -1243,11 +1740,17 @@ const FoldersLayout = () => {
 											const result = await dispatch(getFolderById(folder._id, true));
 
 											if (result.success && result.folder) {
-												if (result.folder.causaVerified && result.folder.causaIsValid) {
+												if (result.folder.causaAssociationStatus === "pending_selection") {
+													// Múltiples resultados - requiere selección
+													setSnackbarMessage("Hay múltiples resultados. Seleccione el expediente correcto.");
+													setSnackbarSeverity("info");
+													setSnackbarOpen(true);
+												} else if (result.folder.causaVerified && result.folder.causaIsValid) {
 													setSnackbarMessage("La carpeta fue sincronizada correctamente");
 													setSnackbarSeverity("success");
 													setSnackbarOpen(true);
-												} else if (result.folder.causaVerified && !result.folder.causaIsValid) {
+												} else if (result.folder.causaVerified && result.folder.causaIsValid === false) {
+													// Solo si es explícitamente false (no null)
 													setSnackbarMessage("La carpeta no existe o no es pública");
 													setSnackbarSeverity("error");
 													setSnackbarOpen(true);
@@ -1340,7 +1843,7 @@ const FoldersLayout = () => {
 						const dayjsDates = dates
 							.map((date) => {
 								// Parsear sin zona horaria para evitar cambios
-								const parsed = dayjs(date);
+								const parsed = dayjs.utc(date);
 								return parsed.isValid() ? parsed : null;
 							})
 							.filter((date): date is dayjs.Dayjs => date !== null);
@@ -1500,40 +2003,81 @@ const FoldersLayout = () => {
 				className: "cell-center",
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
+					const folder = row.original;
+					const isAutoFolder = folder.pjn || folder.mev || folder.eje;
+
+					// Folders con error: asociación fallida o causa inválida
+					const isErrorFolder =
+						isAutoFolder &&
+						(folder.causaAssociationStatus === "failed" || (folder.causaVerified === true && folder.causaIsValid === false));
+
+					// Folders pendientes de verificación (sin error, esperando al worker)
+					const isPendingVerification =
+						isAutoFolder &&
+						!isErrorFolder &&
+						(folder.causaVerified !== true || folder.causaAssociationStatus === "pending_selection");
+
+					// Deshabilitar acciones principales para pendientes y errores
+					const disableMainActions = isPendingVerification || isErrorFolder;
+
+					// Tooltip según el estado
+					const getTooltipText = (action: string) => {
+						if (isPendingVerification) return "Pendiente de verificación";
+						if (isErrorFolder) return action === "Eliminar" ? "Eliminar" : "Causa con error";
+						return action;
+					};
+
 					return (
 						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
-							<Tooltip title="Abrir">
-								<IconButton color="success" onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}>
-									<Maximize variant="Bulk" />
-								</IconButton>
+							<Tooltip title={getTooltipText("Abrir")}>
+								<span>
+									<IconButton
+										color="success"
+										disabled={disableMainActions}
+										onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}
+									>
+										<Maximize variant="Bulk" />
+									</IconButton>
+								</span>
 							</Tooltip>
 							{canUpdate && (
-								<Tooltip title="Editar">
-									<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}>
-										<Edit variant="Bulk" />
-									</IconButton>
+								<Tooltip title={getTooltipText("Editar")}>
+									<span>
+										<IconButton
+											color="primary"
+											disabled={disableMainActions}
+											onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}
+										>
+											<Edit variant="Bulk" />
+										</IconButton>
+									</span>
 								</Tooltip>
 							)}
 							{canDelete && (
-								<Tooltip title="Eliminar">
-									<IconButton
-										color="error"
-										onClick={(e) =>
-											handleRowAction(e, () => {
-												handleClose();
-												setFolderDeleteId(row.values.folderName);
-												setFolderId(row.values._id);
-											})
-										}
-									>
-										<Trash variant="Bulk" />
-									</IconButton>
+								<Tooltip title={getTooltipText("Eliminar")}>
+									<span>
+										<IconButton
+											color="error"
+											disabled={isPendingVerification}
+											onClick={(e) =>
+												handleRowAction(e, () => {
+													handleClose();
+													setFolderDeleteId(row.values.folderName);
+													setFolderId(row.values._id);
+												})
+											}
+										>
+											<Trash variant="Bulk" />
+										</IconButton>
+									</span>
 								</Tooltip>
 							)}
-							<Tooltip title="Más acciones">
-								<IconButton color="secondary" onClick={(e) => handleMenuOpen(e, row.id, row.original)}>
-									<More variant="Bulk" />
-								</IconButton>
+							<Tooltip title={getTooltipText("Más acciones")}>
+								<span>
+									<IconButton color="secondary" disabled={disableMainActions} onClick={(e) => handleMenuOpen(e, row.id, row.original)}>
+										<More variant="Bulk" />
+									</IconButton>
+								</span>
 							</Tooltip>
 						</Stack>
 					);
@@ -1571,6 +2115,7 @@ const FoldersLayout = () => {
 			<SEO path="/apps/folders" />
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
+				<ResourceUsageBar resourceType="folders" compact />
 
 				{/* Microhint de onboarding */}
 				{isOnboarding && verifiedFolders.length === 0 && (
@@ -1593,16 +2138,17 @@ const FoldersLayout = () => {
 					<ScrollX>
 						<ReactTable
 							columns={columns as any}
-							data={verifiedFolders}
+							data={filteredVerifiedFolders}
 							handleAdd={canCreate ? handleAddFolder : undefined}
 							handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
+							handleDeleteSelected={canDelete ? handleDeleteSelected : undefined}
 							handleOpenGuide={handleOpenGuide}
 							handleOpenArchivedModal={handleOpenArchivedModal}
 							renderRowSubComponent={renderRowSubComponent}
 							isLoading={isLoader}
 							expandedRowId={expandedRowId}
 							navigate={navigate}
-							skeletonRowCount={verifiedFolders.length}
+							skeletonRowCount={filteredVerifiedFolders.length}
 							pendingCount={pendingCount}
 							invalidCount={invalidCount}
 							onScrollToPending={handleScrollToPending}
@@ -1611,6 +2157,18 @@ const FoldersLayout = () => {
 							handleMenuOpen={handleMenuOpen}
 							handleMenuClose={handleMenuClose}
 							isOnboarding={isOnboarding}
+							folderTypeFilter={folderTypeFilter}
+							onFolderTypeFilterChange={handleFolderTypeFilterChange}
+							statusFilter={statusFilter}
+							onStatusFilterChange={handleStatusFilterChange}
+							parteFilter={parteFilter}
+							onParteFilterChange={handleParteFilterChange}
+							uniquePartes={uniquePartes}
+							movimientosFilter={movimientosFilter}
+							onMovimientosFilterChange={handleMovimientosFilterChange}
+							jurisdiccionFilter={jurisdiccionFilter}
+							onJurisdiccionFilterChange={handleJurisdiccionFilterChange}
+							uniqueJurisdicciones={uniqueJurisdicciones}
 						/>
 					</ScrollX>
 				</Box>
@@ -1951,6 +2509,30 @@ const FoldersLayout = () => {
 					</Dialog>
 				)}
 
+				{/* Modal de selección de causa (múltiples resultados) */}
+				<CausaSelector
+					open={causaSelectorOpen}
+					onClose={() => setCausaSelectorOpen(false)}
+					folderId={causaSelectorFolder.id}
+					folderName={causaSelectorFolder.name}
+					onCausaSelected={() => {
+						// Refrescar la lista de folders
+						if (isTeamMode && activeTeam?._id) {
+							dispatch(getFoldersByGroupId(activeTeam._id));
+						} else if (user?._id) {
+							dispatch(getFoldersByUserId(user._id, true));
+						}
+					}}
+					onSelectionCancelled={() => {
+						// Refrescar la lista de folders
+						if (isTeamMode && activeTeam?._id) {
+							dispatch(getFoldersByGroupId(activeTeam._id));
+						} else if (user?._id) {
+							dispatch(getFoldersByUserId(user._id, true));
+						}
+					}}
+				/>
+
 				{/* Modal de límite de recursos */}
 				<LimitErrorModal
 					open={limitErrorOpen}
@@ -1978,6 +2560,45 @@ const FoldersLayout = () => {
 						{snackbarMessage}
 					</Alert>
 				</Snackbar>
+
+				{/* Diálogo de confirmación de eliminación */}
+				<Dialog
+					open={deleteDialogOpen}
+					onClose={handleCancelDelete}
+					keepMounted
+					TransitionComponent={PopupTransition}
+					maxWidth="xs"
+					aria-labelledby="delete-dialog-title"
+					aria-describedby="delete-dialog-description"
+				>
+					<DialogContent sx={{ mt: 2, my: 1 }}>
+						<Stack alignItems="center" spacing={3.5}>
+							<Avatar color="error" sx={{ width: 72, height: 72, fontSize: "1.75rem" }}>
+								<Trash variant="Bold" />
+							</Avatar>
+							<Stack spacing={2}>
+								<Typography variant="h4" align="center">
+									¿Estás seguro que deseas eliminarlo?
+								</Typography>
+								<Typography align="center">
+									Eliminando{" "}
+									<Typography variant="subtitle1" component="span">
+										{foldersToDelete.length} {foldersToDelete.length === 1 ? "carpeta" : "carpetas"}
+									</Typography>{" "}
+									no podrás luego recuperar sus datos.
+								</Typography>
+							</Stack>
+							<Stack direction="row" spacing={2} sx={{ width: 1 }}>
+								<Button fullWidth onClick={handleCancelDelete} color="secondary" variant="outlined">
+									Cancelar
+								</Button>
+								<Button fullWidth onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+									Eliminar
+								</Button>
+							</Stack>
+						</Stack>
+					</DialogContent>
+				</Dialog>
 			</MainCard>
 		</>
 	);

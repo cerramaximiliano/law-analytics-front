@@ -30,6 +30,7 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -57,6 +58,7 @@ const customTextareaStyles = {
 
 const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
+	const { canUpdate } = useTeam();
 
 	// Formateo de fechas a DD/MM/YYYY
 	const formatDate = (date: string | null | undefined) => {
@@ -461,6 +463,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 										</>
 									)}
 
+									{canUpdate && (
 									<Stack direction="row" spacing={2}>
 										<Grid>
 											{isEditing ? (
@@ -474,6 +477,7 @@ const FolderPreJudData = ({ folder, isLoader, type }: { folder: any; isLoader: b
 											)}
 										</Grid>
 									</Stack>
+								)}
 								</Stack>
 							</Grid>
 						</Grid>

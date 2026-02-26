@@ -23,9 +23,10 @@ import ResponsiveDialog from "components/@extended/ResponsiveDialog";
 import { DocumentCloud, SearchNormal1, Edit2 } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useSelector, dispatch } from "store";
-import { getFoldersByUserId } from "store/reducers/folder";
+import { getFoldersByUserId, getFoldersByGroupId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
 import { Folder } from "types/folders";
+import { useTeam } from "contexts/TeamContext";
 
 interface LinkCauseSelectorProps {
 	requiereField: string;
@@ -55,12 +56,15 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 	// Obtener el ID del usuario desde Redux
 	const userId = useSelector((state) => state.auth.user?._id);
 
+	// Obtener contexto del equipo
+	const { isTeamMode, activeTeam } = useTeam();
+
 	// Efecto para cargar carpetas cuando se abre el modal
 	useEffect(() => {
 		if (openModal) {
 			fetchFolders();
 		}
-	}, [openModal, userId]);
+	}, [openModal, userId, isTeamMode, activeTeam?._id]);
 
 	// Manejar cambio de tab
 	const handleMethodClick = (method: "manual" | "causa") => {
@@ -87,27 +91,18 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 		}
 	};
 
-	// Obtener carpetas del usuario
+	// Obtener carpetas del usuario o del equipo según el contexto
 	const fetchFolders = async () => {
 		setIsLoading(true);
 
 		try {
-			if (userId) {
-				const response = (await dispatch(getFoldersByUserId(userId))) as unknown as GetFoldersResponse;
+			let response: GetFoldersResponse;
 
-				if (response.success && response.folders) {
-					setFolders(response.folders);
-				} else {
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: "No se encontraron carpetas disponibles",
-							variant: "alert",
-							alert: { color: "warning" },
-							close: true,
-						}),
-					);
-				}
+			// Si está en modo equipo, obtener carpetas del grupo
+			if (isTeamMode && activeTeam?._id) {
+				response = (await dispatch(getFoldersByGroupId(activeTeam._id))) as unknown as GetFoldersResponse;
+			} else if (userId) {
+				response = (await dispatch(getFoldersByUserId(userId))) as unknown as GetFoldersResponse;
 			} else {
 				dispatch(
 					openSnackbar({
@@ -115,6 +110,21 @@ const LinkCauseSelector: React.FC<LinkCauseSelectorProps> = ({ requiereField, re
 						message: "Necesita iniciar sesión para acceder a las carpetas",
 						variant: "alert",
 						alert: { color: "error" },
+						close: true,
+					}),
+				);
+				return;
+			}
+
+			if (response.success && response.folders) {
+				setFolders(response.folders);
+			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "No se encontraron carpetas disponibles",
+						variant: "alert",
+						alert: { color: "warning" },
 						close: true,
 					}),
 				);

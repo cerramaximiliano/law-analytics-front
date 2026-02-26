@@ -24,6 +24,7 @@ import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";
 import { CalculatorType } from "types/calculator";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
+import { useTeam } from "contexts/TeamContext";
 
 //third party
 import dayjs from "utils/dayjs-config";
@@ -99,6 +100,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 	const [segmentsTasasData, setSegmentsTasasData] = useState<Record<string, any>>({});
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
+	const { getRequestHeaders } = useTeam();
 
 	// Cargar datos de tasas cuando se abre el modal
 	useEffect(() => {
@@ -837,7 +839,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 
 			// Utilizar la acción asíncrona addCalculator que ya tienes en tu store
 			// Esta acción ya maneja la llamada a la API y la actualización del store
-			const result = await dispatch(addCalculator(calculatorData));
+			const result = await dispatch(addCalculator(calculatorData, { headers: getRequestHeaders() }));
 
 			if (result.success) {
 				enqueueSnackbar("Cálculo guardado correctamente", {

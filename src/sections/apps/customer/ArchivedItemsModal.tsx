@@ -369,7 +369,7 @@ const ArchivedItemsModal = ({
 				</Box>
 
 				{/* Pagination controls */}
-				{pagination && pagination.totalPages > 1 && (
+				{pagination && (
 					<Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
 						<Stack direction="row" spacing={2} alignItems="center">
 							<Typography variant="body2" color="textSecondary">

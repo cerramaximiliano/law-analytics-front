@@ -16,6 +16,7 @@ import { AppDispatch, RootState } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
+import { useEffectiveUser } from "hooks/useEffectiveUser";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import ExportReportModal from "sections/dashboard/analytics/ExportReportModal";
 import AnalyticsHistorySelector from "sections/dashboard/analytics/AnalyticsHistorySelector";
@@ -48,6 +49,11 @@ const DashboardAnalytics = () => {
 	const subscription = subscriptionData?.subscription;
 	const hasFeatureLocal = subscriptionData?.hasFeatureLocal || (() => false);
 
+	// Get effective user for team-aware data fetching
+	// effectiveUserId: owner's userId in team mode, personal userId otherwise
+	// isReady: true when context is fully initialized
+	const { effectiveUserId, isReady: isTeamReady, isViewingTeamData } = useEffectiveUser();
+
 	// Obtener el estado de las estadísticas
 	const {
 		data: statsData,
@@ -70,6 +76,7 @@ const DashboardAnalytics = () => {
 	const [isCheckingFeatures, setIsCheckingFeatures] = useState(true);
 
 	// Función para crear el objeto featureInfo
+	// Usa el plan efectivo (puede ser del owner si es miembro de equipo)
 	const createFeatureInfo = () => ({
 		feature: "Analíticas Avanzadas y Exportación de Reportes",
 		plan: subscription?.plan || "free",
@@ -89,11 +96,16 @@ const DashboardAnalytics = () => {
 
 	// Verificar si el usuario tiene acceso a las características
 	useEffect(() => {
-		if (!subscription) return; // Esperar a que se cargue la suscripción
+		// Esperar a que se cargue la suscripción Y el contexto de equipos esté completamente listo
+		// isTeamReady es true cuando: inicializado Y (sin equipos O equipo activo seleccionado)
+		// Esto es importante para miembros de equipos que heredan features del owner
+		if (!subscription || !isTeamReady) return;
 
 		setIsCheckingFeatures(true);
 
 		// Verificar si tiene las características usando el hook
+		// hasFeatureLocal ya considera si el usuario es miembro de un equipo
+		// y hereda features del owner
 		const hasAdvanced = hasFeatureLocal("advancedAnalytics");
 		const hasExport = hasFeatureLocal("exportReports");
 
@@ -114,7 +126,7 @@ const DashboardAnalytics = () => {
 		}
 
 		setIsCheckingFeatures(false);
-	}, [subscription, hasModalBeenClosed]);
+	}, [subscription, isTeamReady, hasModalBeenClosed]);
 
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {
@@ -128,34 +140,33 @@ const DashboardAnalytics = () => {
 	// Estado para controlar si ya intentamos cargar los datos
 	const [hasTriedToLoad, setHasTriedToLoad] = useState(false);
 
-	// Usar el ID correcto del usuario
-	const userId = user?._id || user?.id;
+	// Usar effectiveUserId del hook (owner's userId en modo equipo)
+	const userId = effectiveUserId;
 
 	useEffect(() => {
 		console.log("📊 [Analytics] useEffect triggered:", {
 			hasUser: !!user,
-			userId: userId,
-			user_id: user?._id,
-			user_id_alt: user?.id,
-			userName: user?.name,
-			userObject: user,
+			effectiveUserId,
+			isTeamReady,
+			isViewingTeamData,
 			statsLoading,
 			hasData: !!statsData,
 			hasTriedToLoad,
 		});
 
-		if (userId && !hasTriedToLoad) {
-			console.log("📊 [Analytics] Fetching stats for user:", userId);
+		// Esperar a que el contexto esté listo antes de cargar
+		if (effectiveUserId && isTeamReady && !hasTriedToLoad) {
+			console.log("📊 [Analytics] Fetching stats for:", isViewingTeamData ? "team owner" : "personal user", effectiveUserId);
 			// Fetch all sections for analytics
-			dispatch(getUnifiedStats(userId, "all", false));
+			dispatch(getUnifiedStats(effectiveUserId, "all", false));
 			setHasTriedToLoad(true);
-		} else if (!userId) {
-			console.log("⚠️ [Analytics] No user ID available yet");
+		} else if (!effectiveUserId) {
+			console.log("⚠️ [Analytics] No effective user ID available yet");
 		}
-	}, [dispatch, userId, hasTriedToLoad]);
+	}, [dispatch, effectiveUserId, isTeamReady, hasTriedToLoad, isViewingTeamData]);
 
-	// Mostrar skeleton mientras se carga el usuario, los datos, la suscripción o se verifican features
-	if (!user || statsLoading || !subscription || isCheckingFeatures) {
+	// Mostrar skeleton mientras se carga el usuario, los datos, la suscripción, el contexto de equipos o se verifican features
+	if (!user || statsLoading || !subscription || !isTeamReady || isCheckingFeatures) {
 		return (
 			<Box>
 				<MainCard title="Panel de Analíticas">

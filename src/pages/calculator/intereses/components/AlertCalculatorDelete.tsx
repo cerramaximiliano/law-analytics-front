@@ -9,6 +9,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { Trash } from "iconsax-react";
 import { dispatch } from "store";
 import { deleteCalculator } from "store/reducers/calculator";
+import { openSnackbar } from "store/reducers/snackbar";
 
 // types
 interface Props {
@@ -28,8 +29,29 @@ export default function AlertCalculatorDelete({ id, title, open, handleClose }: 
 				// Cierra el diálogo después de eliminar con éxito
 				handleClose();
 			} else {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: result.error || "Error al eliminar el cálculo",
+						variant: "alert",
+						alert: { color: "error" },
+						close: true,
+					}),
+				);
+				handleClose();
 			}
-		} catch (error) {}
+		} catch (error) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al eliminar el cálculo",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+			handleClose();
+		}
 	};
 
 	return (

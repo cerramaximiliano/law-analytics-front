@@ -34,6 +34,7 @@ import { dispatch, useSelector } from "store";
 import { deleteCalculator, getCalculatorsByFolderId } from "store/reducers/calculator";
 import { Trash } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
+import { useTeam } from "contexts/TeamContext";
 
 // types
 import { CalculatorType, LoadingContentProps } from "types/calculator";
@@ -45,12 +46,13 @@ const formatAmount = (amount: number | null | undefined): string => {
 
 const LoadingContent = ({ isLoader, content, skeleton }: LoadingContentProps): JSX.Element => (isLoader ? <>{skeleton}</> : <>{content}</>);
 
-const CalcTable = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
+const CalcTable = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number; groupId?: string } }) => {
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
 	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
 
 	const { id } = useParams();
+	const { activeTeam, isTeamMode, canDelete, canCreate } = useTeam();
 
 	const sortedData = useMemo(
 		() => selectedCalculators.slice().sort((a: any, b: any) => dayjs(b.date, "DD/MM/YYYY").diff(dayjs(a.date, "DD/MM/YYYY"))),
@@ -64,9 +66,10 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 
 	useEffect(() => {
 		if (id) {
-			dispatch(getCalculatorsByFolderId(id));
+			const groupId = folderData?.groupId || (isTeamMode ? activeTeam?._id : undefined);
+			dispatch(getCalculatorsByFolderId(id, groupId));
 		}
-	}, [id]);
+	}, [id, folderData?.groupId, isTeamMode, activeTeam?._id]);
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
 
@@ -256,29 +259,31 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 														</>
 													))}
 													<TableCell align="right" sx={{ p: 1 }}>
-														<LoadingContent
-															isLoader={isLoader}
-															content={
-																<Tooltip title="Eliminar cálculo">
-																	<IconButton
-																		color="error"
-																		size="small"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			handleDelete(row._id);
-																		}}
-																		sx={{
-																			"&:hover": {
-																				bgcolor: "error.lighter",
-																			},
-																		}}
-																	>
-																		<Trash variant="Bulk" size={18} />
-																	</IconButton>
-																</Tooltip>
-															}
-															skeleton={<Skeleton width={40} />}
-														/>
+														{canDelete && (
+															<LoadingContent
+																isLoader={isLoader}
+																content={
+																	<Tooltip title="Eliminar cálculo">
+																		<IconButton
+																			color="error"
+																			size="small"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				handleDelete(row._id);
+																			}}
+																			sx={{
+																				"&:hover": {
+																					bgcolor: "error.lighter",
+																				},
+																			}}
+																		>
+																			<Trash variant="Bulk" size={18} />
+																		</IconButton>
+																	</Tooltip>
+																}
+																skeleton={<Skeleton width={40} />}
+															/>
+														)}
 													</TableCell>
 												</TableRow>
 											);
@@ -290,18 +295,20 @@ const CalcTable = ({ title, folderData }: { title: string; folderData: { folderN
 					</ScrollX>
 				</SimpleBar>
 				{/* ... Stack de botones ... */}
-				<Stack direction="row" justifyContent={"right"} spacing={2} marginTop={2}>
-					<Grid item>
-						<Button onClick={() => setOpen(true)} disabled={isLoader}>
-							Vincular
-						</Button>
-					</Grid>
-					<Grid item>
-						<Button variant="contained" color="primary" onClick={() => setOpenItemModal(true)} disabled={isLoader}>
-							Agregar
-						</Button>
-					</Grid>
-				</Stack>
+				{canCreate && (
+					<Stack direction="row" justifyContent={"right"} spacing={2} marginTop={2}>
+						<Grid item>
+							<Button onClick={() => setOpen(true)} disabled={isLoader}>
+								Vincular
+							</Button>
+						</Grid>
+						<Grid item>
+							<Button variant="contained" color="primary" onClick={() => setOpenItemModal(true)} disabled={isLoader}>
+								Agregar
+							</Button>
+						</Grid>
+					</Stack>
+				)}
 			</CardContent>
 		</MainCard>
 	);

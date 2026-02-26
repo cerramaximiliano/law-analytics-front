@@ -56,6 +56,7 @@ import ModalCalcTable from "../modals/ModalCalcTable";
 import ModalCalcData from "../modals/ModalCalcData";
 import { dispatch, useSelector } from "store";
 import { deleteCalculator, getCalculatorsByFolderId } from "store/reducers/calculator";
+import { useTeam } from "contexts/TeamContext";
 import { enqueueSnackbar } from "notistack";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -167,12 +168,13 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, icon, color 
 	);
 };
 
-const CalcTableEnhanced = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number } }) => {
+const CalcTableEnhanced = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number; groupId?: string } }) => {
 	const theme = useTheme();
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [selectedRow, setSelectedRow] = useState<CalculatorType | null>(null);
+	const { activeTeam, isTeamMode, canDelete, canCreate, canUpdate } = useTeam();
 	const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 	const [showFilters, setShowFilters] = useState(false);
 	const { selectedCalculators, isLoader } = useSelector((state) => state.calculator);
@@ -206,9 +208,10 @@ const CalcTableEnhanced = ({ title, folderData }: { title: string; folderData: {
 
 	useEffect(() => {
 		if (id) {
-			dispatch(getCalculatorsByFolderId(id));
+			const groupId = folderData?.groupId || (isTeamMode ? activeTeam?._id : undefined);
+			dispatch(getCalculatorsByFolderId(id, groupId));
 		}
-	}, [id]);
+	}, [id, folderData?.groupId, isTeamMode, activeTeam?._id]);
 
 	const showEmptyState = !isLoader && sortedData.length === 0;
 
@@ -247,9 +250,11 @@ const CalcTableEnhanced = ({ title, folderData }: { title: string; folderData: {
 						<Typography variant="body2" color="textSecondary" sx={{ mb: 3, maxWidth: 360 }}>
 							Los cálculos te ayudan a llevar un registro detallado de montos y ofertas relacionadas con este expediente
 						</Typography>
-						<Button variant="contained" color="primary" startIcon={<Calculator />} onClick={() => setOpenItemModal(true)} size="large">
-							Agregar primer cálculo
-						</Button>
+						{canCreate && (
+							<Button variant="contained" color="primary" startIcon={<Calculator />} onClick={() => setOpenItemModal(true)} size="large">
+								Agregar primer cálculo
+							</Button>
+						)}
 					</Box>
 				</Stack>
 			</TableCell>
@@ -358,27 +363,35 @@ const CalcTableEnhanced = ({ title, folderData }: { title: string; folderData: {
 					</ListItemIcon>
 					<Typography variant="body2">Ver detalles</Typography>
 				</MenuItem>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<Edit2 size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Editar</Typography>
-				</MenuItem>
-				<MenuItem onClick={handleMenuClose}>
-					<ListItemIcon>
-						<DocumentCopy size={18} />
-					</ListItemIcon>
-					<Typography variant="body2">Duplicar</Typography>
-				</MenuItem>
-				<Divider />
-				<MenuItem onClick={() => selectedRow && handleDelete(selectedRow._id)}>
-					<ListItemIcon>
-						<Trash size={18} color={theme.palette.error.main} />
-					</ListItemIcon>
-					<Typography variant="body2" color="error">
-						Eliminar
-					</Typography>
-				</MenuItem>
+				{canUpdate && (
+					<MenuItem onClick={handleMenuClose}>
+						<ListItemIcon>
+							<Edit2 size={18} />
+						</ListItemIcon>
+						<Typography variant="body2">Editar</Typography>
+					</MenuItem>
+				)}
+				{canCreate && (
+					<MenuItem onClick={handleMenuClose}>
+						<ListItemIcon>
+							<DocumentCopy size={18} />
+						</ListItemIcon>
+						<Typography variant="body2">Duplicar</Typography>
+					</MenuItem>
+				)}
+				{canDelete && (
+					<>
+						<Divider />
+						<MenuItem onClick={() => selectedRow && handleDelete(selectedRow._id)}>
+							<ListItemIcon>
+								<Trash size={18} color={theme.palette.error.main} />
+							</ListItemIcon>
+							<Typography variant="body2" color="error">
+								Eliminar
+							</Typography>
+						</MenuItem>
+					</>
+				)}
 			</Menu>
 
 			<CardContent>
@@ -636,36 +649,38 @@ const CalcTableEnhanced = ({ title, folderData }: { title: string; folderData: {
 					>
 						Exportar
 					</Button>
-					<Stack direction="row" spacing={2}>
-						<Button
-							onClick={() => setOpen(true)}
-							disabled={isLoader}
-							sx={{
-								borderColor: "divider",
-								"&:hover": {
-									borderColor: "primary.main",
-									bgcolor: alpha(theme.palette.primary.main, 0.04),
-								},
-							}}
-						>
-							Vincular
-						</Button>
-						<Button
-							variant="contained"
-							color="primary"
-							onClick={() => setOpenItemModal(true)}
-							disabled={isLoader}
-							startIcon={<Calculator size={18} />}
-							sx={{
-								boxShadow: theme.shadows[4],
-								"&:hover": {
-									boxShadow: theme.shadows[8],
-								},
-							}}
-						>
-							Agregar cálculo
-						</Button>
-					</Stack>
+					{canCreate && (
+						<Stack direction="row" spacing={2}>
+							<Button
+								onClick={() => setOpen(true)}
+								disabled={isLoader}
+								sx={{
+									borderColor: "divider",
+									"&:hover": {
+										borderColor: "primary.main",
+										bgcolor: alpha(theme.palette.primary.main, 0.04),
+									},
+								}}
+							>
+								Vincular
+							</Button>
+							<Button
+								variant="contained"
+								color="primary"
+								onClick={() => setOpenItemModal(true)}
+								disabled={isLoader}
+								startIcon={<Calculator size={18} />}
+								sx={{
+									boxShadow: theme.shadows[4],
+									"&:hover": {
+										boxShadow: theme.shadows[8],
+									},
+								}}
+							>
+								Agregar cálculo
+							</Button>
+						</Stack>
+					)}
 				</Stack>
 			</CardContent>
 		</MainCard>

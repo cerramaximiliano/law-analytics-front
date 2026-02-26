@@ -8,6 +8,7 @@ import { useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import { addNote, updateNote } from "store/reducers/notes";
 import { dispatch } from "store";
+import { useTeam } from "contexts/TeamContext";
 
 // icons
 import { DocumentText } from "iconsax-react";
@@ -18,9 +19,10 @@ import { PopupTransition } from "components/@extended/Transitions";
 // types
 import { NoteModalType, NoteFormValues } from "types/note";
 
-const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName, note }: NoteModalType) => {
+const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName, note, initialValues: externalInitialValues, dialogSx }: NoteModalType) => {
 	const theme = useTheme();
 	const userId = useSelector((state: any) => state.auth?.user?._id);
+	const { getRequestHeaders } = useTeam();
 	const isEditMode = Boolean(note);
 
 	function closeNoteModal() {
@@ -32,12 +34,14 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName, note 
 		content: Yup.string().max(5000),
 	});
 
-	const initialValues: NoteFormValues = {
+	const defaultValues: NoteFormValues = {
 		title: note?.title || "",
 		content: note?.content || "",
 		userId,
 		folderId,
 	};
+
+	const initialValues: NoteFormValues = !note && externalInitialValues ? { ...defaultValues, ...externalInitialValues } : defaultValues;
 
 	async function _submitForm(values: NoteFormValues, actions: any) {
 		try {
@@ -48,7 +52,7 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName, note 
 				result = await dispatch(updateNote(note._id, values));
 			} else {
 				// Crear nueva nota
-				result = await dispatch(addNote(values));
+				result = await dispatch(addNote(values, { headers: getRequestHeaders() }));
 			}
 
 			if (result.success) {
@@ -129,6 +133,7 @@ const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName, note 
 						maxWidth="xs"
 						fullWidth
 						aria-labelledby="note-modal-title"
+						sx={dialogSx}
 						PaperProps={{
 							elevation: 5,
 							sx: {

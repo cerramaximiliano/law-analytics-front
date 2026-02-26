@@ -97,4 +97,6 @@ export interface MovementsModalType {
 	folderName: string;
 	editMode?: boolean;
 	movementData?: Movement | null;
+	onSuccess?: () => void;
+	dialogSx?: Record<string, any>;
 }

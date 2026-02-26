@@ -17,9 +17,10 @@ const UPDATE_TASK_ASSIGNMENTS = "tasks/UPDATE_TASK_ASSIGNMENTS";
 const SET_TASK_DETAIL = "tasks/SET_TASK_DETAIL";
 const SET_TASK_DETAIL_LOADING = "tasks/SET_TASK_DETAIL_LOADING";
 
-const initialState: TaskState = {
+const initialState: TaskState & { selectedFolderId?: string } = {
 	tasks: [],
 	selectedTasks: [], // Tareas filtradas
+	selectedFolderId: undefined, // ID de la carpeta actualmente seleccionada
 	upcomingTasks: [], // Nueva propiedad para tareas próximas
 	task: null, // Single task for detail view
 	taskDetails: {}, // Task details by ID
@@ -37,8 +38,8 @@ const tasksReducer = (state = initialState, action: any) => {
 		case SET_ERROR:
 			return { ...state, isLoader: false, error: action.payload };
 		case ADD_TASK: {
-			// Si selectedTasks tiene tareas del mismo folder, agregar la nueva tarea
-			const shouldAddToSelected = state.selectedTasks.length > 0 && state.selectedTasks[0]?.folderId === action.payload.folderId;
+			// Si la tarea pertenece a la carpeta actualmente seleccionada, agregarla a selectedTasks
+			const shouldAddToSelected = state.selectedFolderId && action.payload.folderId === state.selectedFolderId;
 
 			return {
 				...state,
@@ -59,6 +60,7 @@ const tasksReducer = (state = initialState, action: any) => {
 			return {
 				...state,
 				selectedTasks: action.payload,
+				selectedFolderId: action.folderId || state.selectedFolderId,
 				isLoader: false,
 			};
 		case UPDATE_TASK:
@@ -124,10 +126,12 @@ const tasksReducer = (state = initialState, action: any) => {
 };
 
 // Acciones existentes
-export const addTask = (data: Omit<TaskType, "_id">) => async (dispatch: Dispatch) => {
+export const addTask = (data: Omit<TaskType, "_id">, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/tasks`, data);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/tasks`, data, {
+			headers: options?.headers,
+		});
 
 		dispatch({
 			type: ADD_TASK,
@@ -176,15 +180,24 @@ export const getTasksByUserId =
 		}
 	};
 
-export const getTasksByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
+export const getTasksByGroupId = (groupId: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
 	try {
+		const state = getState();
+		const { isInitialized, tasks } = state.tasksReducer;
+
+		// Cache validation: si ya tenemos datos y no forzamos refresh, retornar del cache
+		if (!forceRefresh && isInitialized && tasks.length > 0) {
+			return { success: true, tasks, fromCache: true };
+		}
+
 		dispatch({ type: SET_LOADING });
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/group/${groupId}`);
 		dispatch({
 			type: SET_TASKS,
 			payload: response.data,
+			groupId: groupId,
 		});
-		return { success: true };
+		return { success: true, tasks: response.data };
 	} catch (error: unknown) {
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";
@@ -193,9 +206,35 @@ export const getTasksByGroupId = (groupId: string) => async (dispatch: Dispatch)
 	}
 };
 
-export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
+export const getTasksByFolderId = (folderId: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
 	try {
 		const state = getState();
+		const teamsState = state.teams;
+		const activeTeam = teamsState?.activeTeam;
+		const { selectedFolderId, selectedTasks } = state.tasksReducer;
+
+		// Cache validation: si ya tenemos datos de esta carpeta y no forzamos refresh, retornar del cache
+		if (!forceRefresh && selectedFolderId === folderId && selectedTasks.length >= 0) {
+			return { success: true, tasks: selectedTasks, fromCache: true };
+		}
+
+		dispatch({ type: SET_LOADING });
+
+		// Si hay un equipo activo, obtener tareas directamente del backend por folderId
+		// Esto es necesario para que viewers y otros miembros del equipo vean las tareas
+		if (activeTeam) {
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/folder/${folderId}`, {
+				headers: { "X-Group-Id": activeTeam._id },
+			});
+			dispatch({
+				type: SET_SELECTED_TASKS,
+				payload: response.data,
+				folderId: folderId,
+			});
+			return { success: true, tasks: response.data };
+		}
+
+		// Sin equipo activo: comportamiento original - filtrar localmente
 		const { tasks, isInitialized } = state.tasksReducer;
 		const auth = state.auth;
 		const userId = auth.user?._id;
@@ -216,6 +255,7 @@ export const getTasksByFolderId = (folderId: string) => async (dispatch: Dispatc
 		dispatch({
 			type: SET_SELECTED_TASKS,
 			payload: filteredTasks,
+			folderId: folderId,
 		});
 
 		return { success: true, tasks: filteredTasks };

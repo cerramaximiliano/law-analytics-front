@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 // project-imports
 import { APP_DEFAULT_PATH } from "config";
@@ -14,10 +14,17 @@ const GuestGuard = ({ children }: GuardProps) => {
 	const { isLoggedIn } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const [searchParams] = useSearchParams();
 
 	useEffect(() => {
 		// Si es la página de verificación de código, permitir acceso incluso si está autenticado
 		if (location.pathname === "/code-verification") {
+			return;
+		}
+
+		// Si tiene el parámetro forceLogin=true y NO está logueado, permitir acceso al login
+		// Esto se usa cuando hay estado de autenticación obsoleto (ej: desde invitaciones de equipos)
+		if (searchParams.get("forceLogin") === "true" && !isLoggedIn) {
 			return;
 		}
 
@@ -30,7 +37,7 @@ const GuestGuard = ({ children }: GuardProps) => {
 				replace: true,
 			});
 		}
-	}, [isLoggedIn, navigate, location]);
+	}, [isLoggedIn, navigate, location, searchParams]);
 
 	return children;
 };

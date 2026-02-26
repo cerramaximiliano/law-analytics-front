@@ -23,8 +23,9 @@ import Notes from "../components/Notes";
 import { FolderData } from "types/folder";
 import { useSelector, dispatch } from "store";
 import { getCalculatorsByFolderId } from "store/reducers/calculator";
-import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
+import { filterContactsByFolder, getContactsByUserId, getContactsByGroupId } from "store/reducers/contacts";
 import { getTasksByFolderId } from "store/reducers/tasks";
+import { useTeam } from "contexts/TeamContext";
 import type { RootState } from "store";
 
 interface TabPanelProps {
@@ -44,7 +45,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 interface GestionTabImprovedProps {
-	folder: FolderData;
+	folder: FolderData & { groupId?: string };
 	isDetailedView: boolean;
 }
 
@@ -54,36 +55,60 @@ const GestionTabImproved: React.FC<GestionTabImprovedProps> = ({ folder, isDetai
 	const [value, setValue] = useState(0);
 	const [mobileOpen, setMobileOpen] = useState(false);
 
+	// Team context
+	const { activeTeam, isTeamMode } = useTeam();
+
 	// Get data from Redux store
 	const { selectedCalculators } = useSelector((state: RootState) => state.calculator);
-	const { selectedContacts, contacts } = useSelector((state: RootState) => state.contacts);
-	const { selectedTasks } = useSelector((state: RootState) => state.tasksReducer);
+	const { selectedContacts, isInitialized: contactsInitialized } = useSelector((state: RootState) => state.contacts);
+	const { selectedTasks, selectedFolderId: tasksFolderId } = useSelector((state: RootState) => state.tasksReducer);
 	const { selectedNotes } = useSelector((state: RootState) => state.notesReducer);
 	const userId = useSelector((state: RootState) => state.auth.user?._id);
 
-	// Fetch data when component mounts
-	useEffect(() => {
-		if (folder._id) {
-			const fetchData = async () => {
-				// Fetch calculations and tasks
-				dispatch(getCalculatorsByFolderId(folder._id));
-				dispatch(getTasksByFolderId(folder._id));
+	// Track which folder's data we have loaded to avoid redundant API calls
+	const lastFetchedFolderIdRef = React.useRef<string | null>(null);
 
-				// Fetch contacts if needed, then filter by folder
-				if (userId && (!contacts || contacts.length === 0)) {
-					await dispatch(getContactsByUserId(userId));
-				}
-				dispatch(filterContactsByFolder(folder._id));
-			};
-			fetchData();
+	// Fetch data when component mounts - with cache validation
+	useEffect(() => {
+		if (!folder._id) return;
+
+		// Skip if we already fetched data for this folder
+		if (lastFetchedFolderIdRef.current === folder._id) {
+			return;
 		}
-	}, [folder._id, userId]);
+
+		const fetchData = async () => {
+			// Determinar groupId: usar el del folder o el del equipo activo
+			const groupId = folder.groupId || (isTeamMode ? activeTeam?._id : undefined);
+
+			// Fetch calculations - solo si no tenemos datos de esta carpeta
+			dispatch(getCalculatorsByFolderId(folder._id, groupId));
+
+			// Fetch tasks - solo si selectedFolderId no coincide
+			if (tasksFolderId !== folder._id) {
+				dispatch(getTasksByFolderId(folder._id));
+			}
+
+			// Fetch contacts: si hay equipo, obtener del grupo; si no, del usuario
+			if (groupId) {
+				await dispatch(getContactsByGroupId(groupId));
+			} else if (userId && !contactsInitialized) {
+				await dispatch(getContactsByUserId(userId));
+			}
+			dispatch(filterContactsByFolder(folder._id));
+
+			// Mark this folder as fetched
+			lastFetchedFolderIdRef.current = folder._id;
+		};
+
+		fetchData();
+	}, [folder._id, folder.groupId, userId, isTeamMode, activeTeam?._id, tasksFolderId, contactsInitialized]);
 
 	const pendingTasks = selectedTasks?.filter((t: any) => !t.checked).length || 0;
 	const totalTasks = selectedTasks?.length || 0;
 	const completedTasks = totalTasks - pendingTasks;
 
-	const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+	const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
 		setValue(newValue);
 		if (isMobile) {
 			setMobileOpen(false);

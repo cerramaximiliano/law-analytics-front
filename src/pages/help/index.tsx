@@ -30,7 +30,7 @@ import {
 	AnalyticsContent,
 } from "components/guides/GuideContent";
 import { LimitsContent } from "components/guides/LimitsContent";
-import { BookingContent } from "components/guides";
+import { BookingContent, TeamsContent } from "components/guides";
 import { useTheme } from "@mui/material/styles";
 
 // Icons
@@ -49,6 +49,7 @@ import {
 	Task,
 	Chart21,
 	Cloud,
+	People,
 } from "iconsax-react";
 
 // ==============================|| COMPONENTES DE AYUDA ||============================== //
@@ -68,6 +69,7 @@ const GuidesSection = () => {
 	const tareasCardRef = useRef<HTMLDivElement>(null);
 	const analyticsCardRef = useRef<HTMLDivElement>(null);
 	const limitsCardRef = useRef<HTMLDivElement>(null);
+	const teamsCardRef = useRef<HTMLDivElement>(null);
 
 	// Create refs for expanded content
 	const laboralContentRef = useRef<HTMLDivElement>(null);
@@ -79,6 +81,7 @@ const GuidesSection = () => {
 	const tareasContentRef = useRef<HTMLDivElement>(null);
 	const analyticsContentRef = useRef<HTMLDivElement>(null);
 	const limitsContentRef = useRef<HTMLDivElement>(null);
+	const teamsContentRef = useRef<HTMLDivElement>(null);
 
 	const handleExpandGuide = (guideName: string) => {
 		if (expandedGuide === guideName) {
@@ -117,6 +120,9 @@ const GuidesSection = () => {
 						break;
 					case "limits":
 						contentRef = limitsContentRef;
+						break;
+					case "teams":
+						contentRef = teamsContentRef;
 						break;
 					default:
 						break;
@@ -649,6 +655,59 @@ const GuidesSection = () => {
 						</CardActionArea>
 					</Card>
 				</Grid>
+				{/* Guía Equipos */}
+				<Grid item xs={12} sm={6} md={4} lg={4}>
+					<Card
+						ref={teamsCardRef}
+						sx={{
+							height: "100%",
+							display: "flex",
+							flexDirection: "column",
+							transition: "all 0.2s",
+							borderRadius: 2,
+							"&:hover": {
+								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+								transform: "translateY(-4px)",
+							},
+						}}
+					>
+						<CardActionArea sx={{ height: "100%" }} onClick={() => handleExpandGuide("teams")}>
+							<CardContent
+								sx={{
+									textAlign: "center",
+									pb: 3,
+									px: 4,
+									height: "100%",
+									minHeight: 280,
+									display: "flex",
+									flexDirection: "column",
+									justifyContent: "space-between",
+								}}
+							>
+								<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
+									<People
+										variant="Bulk"
+										size={62}
+										style={{
+											color: theme.palette.warning.main,
+											marginBottom: 28,
+											marginTop: 12,
+										}}
+									/>
+								</Box>
+								<Typography variant="h4" gutterBottom>
+									Equipos
+								</Typography>
+								<Typography variant="body2" color="textSecondary" sx={{ minHeight: 60 }}>
+									Aprende a crear equipos, invitar colaboradores y trabajar de forma colaborativa.
+								</Typography>
+								<Button variant="outlined" size="small" endIcon={<ArrowRight2 />} sx={{ mt: 3 }}>
+									{expandedGuide === "teams" ? "Cerrar guía" : "Ver guía"}
+								</Button>
+							</CardContent>
+						</CardActionArea>
+					</Card>
+				</Grid>
 			</Grid>
 
 			{/* Contenidos expandidos de las guías */}
@@ -776,6 +835,20 @@ const GuidesSection = () => {
 					}}
 				>
 					<LimitsContent />
+				</Paper>
+			</Collapse>
+
+			<Collapse in={expandedGuide === "teams"} timeout="auto" unmountOnExit ref={teamsContentRef}>
+				<Paper
+					elevation={3}
+					sx={{
+						mt: 3,
+						mb: 2,
+						p: 2,
+						borderTop: `3px solid ${theme.palette.warning.main}`,
+					}}
+				>
+					<TeamsContent />
 				</Paper>
 			</Collapse>
 		</Box>

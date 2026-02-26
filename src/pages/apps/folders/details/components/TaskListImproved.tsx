@@ -35,6 +35,7 @@ import { getTasksByFolderId, deleteTask, toggleTaskStatus } from "store/reducers
 import { dispatch, useSelector } from "store";
 import type { RootState } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import { useTeam } from "contexts/TeamContext";
 
 // Types
 import { TaskListProps, TaskType } from "types/task";
@@ -43,6 +44,7 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const { id } = useParams<{ id: string }>();
+	const { canDelete, canUpdate, canCreate } = useTeam();
 
 	// Redux state
 	const tasks = useSelector((state: RootState) => state.tasksReducer?.selectedTasks || []) as TaskType[];
@@ -259,6 +261,7 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 						<Checkbox
 							checked={task.checked}
 							onChange={() => handleCheckboxChange(task._id)}
+							disabled={!canUpdate}
 							color="primary"
 							sx={{
 								"&.Mui-checked": {
@@ -305,36 +308,40 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 							</Stack>
 						</Box>
 						<Stack direction="row" spacing={0.5}>
-							<Tooltip title="Editar">
-								<IconButton
-									size="small"
-									onClick={() => handleEditTask(task)}
-									sx={{
-										color: "text.secondary",
-										"&:hover": {
-											bgcolor: alpha(theme.palette.primary.main, 0.1),
-											color: "primary.main",
-										},
-									}}
-								>
-									<Edit2 size={16} />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Eliminar">
-								<IconButton
-									size="small"
-									onClick={() => handleDeleteTask(task._id)}
-									sx={{
-										color: "text.secondary",
-										"&:hover": {
-											bgcolor: alpha(theme.palette.error.main, 0.1),
-											color: "error.main",
-										},
-									}}
-								>
-									<Trash size={16} />
-								</IconButton>
-							</Tooltip>
+							{canUpdate && (
+								<Tooltip title="Editar">
+									<IconButton
+										size="small"
+										onClick={() => handleEditTask(task)}
+										sx={{
+											color: "text.secondary",
+											"&:hover": {
+												bgcolor: alpha(theme.palette.primary.main, 0.1),
+												color: "primary.main",
+											},
+										}}
+									>
+										<Edit2 size={16} />
+									</IconButton>
+								</Tooltip>
+							)}
+							{canDelete && (
+								<Tooltip title="Eliminar">
+									<IconButton
+										size="small"
+										onClick={() => handleDeleteTask(task._id)}
+										sx={{
+											color: "text.secondary",
+											"&:hover": {
+												bgcolor: alpha(theme.palette.error.main, 0.1),
+												color: "error.main",
+											},
+										}}
+									>
+										<Trash size={16} />
+									</IconButton>
+								</Tooltip>
+							)}
 						</Stack>
 					</Stack>
 				</Paper>
@@ -403,35 +410,37 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 					// Empty state - compact view
 					<>
 						<EmptyState />
-						{/* Task Action Buttons */}
-						<Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 1 : 2} sx={{ mt: 3 }}>
-							<ResponsiveButton
-								variant="contained"
-								fullWidth={!isMobile}
-								color="primary"
-								startIcon={<Add size={18} />}
-								onClick={handleOpen}
-								disabled={isLoading}
-								mobileText="Nueva"
-								desktopText="Nueva Tarea"
-								hideTextOnMobile={false}
-							>
-								Nueva Tarea
-							</ResponsiveButton>
-							<ResponsiveButton
-								variant="outlined"
-								fullWidth={!isMobile}
-								color="primary"
-								startIcon={<TaskSquare size={18} />}
-								onClick={() => setLinkModalOpen(true)}
-								disabled={isLoading}
-								mobileText="Vincular"
-								desktopText="Vincular Tarea"
-								hideTextOnMobile={false}
-							>
-								Vincular Tarea
-							</ResponsiveButton>
-						</Stack>
+						{/* Task Action Buttons (solo para usuarios con permisos de crear) */}
+						{canCreate && (
+							<Stack direction={isMobile ? "column" : "row"} spacing={isMobile ? 1 : 2} sx={{ mt: 3 }}>
+								<ResponsiveButton
+									variant="contained"
+									fullWidth={!isMobile}
+									color="primary"
+									startIcon={<Add size={18} />}
+									onClick={handleOpen}
+									disabled={isLoading}
+									mobileText="Nueva"
+									desktopText="Nueva Tarea"
+									hideTextOnMobile={false}
+								>
+									Nueva Tarea
+								</ResponsiveButton>
+								<ResponsiveButton
+									variant="outlined"
+									fullWidth={!isMobile}
+									color="primary"
+									startIcon={<TaskSquare size={18} />}
+									onClick={() => setLinkModalOpen(true)}
+									disabled={isLoading}
+									mobileText="Vincular"
+									desktopText="Vincular Tarea"
+									hideTextOnMobile={false}
+								>
+									Vincular Tarea
+								</ResponsiveButton>
+							</Stack>
+						)}
 					</>
 				) : (
 					// Tasks view - with fixed height and scroll
@@ -566,29 +575,31 @@ const TaskListImproved: React.FC<TaskListProps> = ({ title, folderName }) => {
 									</Box>
 								</SimpleBar>
 							</Box>
-							{/* Task Action Buttons - Fixed at bottom */}
-							<Stack direction="row" spacing={2} sx={{ mt: 2, flexShrink: 0 }}>
-								<Button
-									variant="contained"
-									fullWidth
-									color="primary"
-									startIcon={<Add size={18} />}
-									onClick={handleOpen}
-									disabled={isLoading}
-								>
-									Nueva Tarea
-								</Button>
-								<Button
-									variant="outlined"
-									fullWidth
-									color="primary"
-									startIcon={<TaskSquare size={18} />}
-									onClick={() => setLinkModalOpen(true)}
-									disabled={isLoading}
-								>
-									Vincular Tarea
-								</Button>
-							</Stack>
+							{/* Task Action Buttons - Fixed at bottom (solo para usuarios con permisos de crear) */}
+							{canCreate && (
+								<Stack direction="row" spacing={2} sx={{ mt: 2, flexShrink: 0 }}>
+									<Button
+										variant="contained"
+										fullWidth
+										color="primary"
+										startIcon={<Add size={18} />}
+										onClick={handleOpen}
+										disabled={isLoading}
+									>
+										Nueva Tarea
+									</Button>
+									<Button
+										variant="outlined"
+										fullWidth
+										color="primary"
+										startIcon={<TaskSquare size={18} />}
+										onClick={() => setLinkModalOpen(true)}
+										disabled={isLoading}
+									>
+										Vincular Tarea
+									</Button>
+								</Stack>
+							)}
 						</>
 					</Box>
 				)}

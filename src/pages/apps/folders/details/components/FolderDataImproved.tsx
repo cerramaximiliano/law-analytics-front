@@ -29,6 +29,7 @@ import { enqueueSnackbar } from "notistack";
 import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -168,6 +169,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+	const { canUpdate } = useTeam();
 
 	const initialValues = {
 		...folder,
@@ -344,7 +346,7 @@ const FolderDataImproved = ({ folder, isLoader }: { folder: any; isLoader: boole
 									</Grid>
 									<Grid item xs={12} md={4}>
 										<Stack spacing={2} alignItems={{ xs: "flex-start", md: "flex-end" }}>
-											{!isEditing && (
+											{!isEditing && canUpdate && (
 												<Button
 													variant="contained"
 													onClick={handleEdit}

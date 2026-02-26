@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, Fragment, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -11,6 +11,7 @@ import {
 	List,
 	ListItem,
 	ListItemText,
+	Divider,
 	Stack,
 	Switch,
 	Typography,
@@ -28,7 +29,7 @@ import {
 } from "@mui/material";
 
 // icons
-import { Lock, DiscountShape } from "iconsax-react";
+import { Lock, DiscountShape, TickCircle, CloseCircle } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -37,6 +38,8 @@ import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import TabLegalDocuments from "./TabPanel";
 import { getPlanPricing, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
+import { useTeam } from "contexts/TeamContext";
+import { ROLE_CONFIG } from "types/teams";
 
 // ==============================|| PRICING ||============================== //
 
@@ -48,6 +51,11 @@ interface DowngradeOption {
 
 const Pricing = () => {
 	const theme = useTheme();
+
+	// Team context - para mostrar información apropiada a miembros del equipo
+	const { isTeamMode, activeTeam, userRole, isOwner, ownerSubscription } = useTeam();
+	const isTeamMember = isTeamMode && !isOwner;
+
 	const [timePeriod, setTimePeriod] = useState(true); // true = mensual, false = anual
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -756,6 +764,102 @@ const Pricing = () => {
 		);
 	}
 
+	// Si el usuario es miembro de un equipo (no propietario), mostrar vista informativa
+	if (isTeamMember && activeTeam) {
+		const roleConfig = userRole ? ROLE_CONFIG[userRole as keyof typeof ROLE_CONFIG] : null;
+		const planDisplayNames: Record<string, string> = {
+			free: "Gratuito",
+			standard: "Estándar",
+			premium: "Premium",
+		};
+		const ownerPlanName = ownerSubscription?.planName
+			? planDisplayNames[ownerSubscription.planName.toLowerCase()] || ownerSubscription.planName
+			: "No disponible";
+
+		return (
+			<Grid container spacing={3} justifyContent="center">
+				<Grid item xs={12} md={8} lg={6}>
+					<MainCard
+						sx={{
+							textAlign: "center",
+							py: 4,
+							px: 3,
+						}}
+					>
+						<Stack spacing={3} alignItems="center">
+							{/* Icono de equipo */}
+							<Box
+								sx={{
+									width: 80,
+									height: 80,
+									borderRadius: "50%",
+									bgcolor: "primary.lighter",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+								}}
+							>
+								<Lock size={40} color={theme.palette.primary.main} variant="Bulk" />
+							</Box>
+
+							{/* Título */}
+							<Typography variant="h3" sx={{ fontWeight: 700 }}>
+								Eres miembro de un equipo
+							</Typography>
+
+							{/* Información del equipo */}
+							<Stack spacing={1} alignItems="center">
+								<Typography variant="h4" color="primary">
+									{activeTeam.name}
+								</Typography>
+								{roleConfig && (
+									<Chip
+										label={roleConfig.label}
+										color={roleConfig.color}
+										size="medium"
+										sx={{ fontWeight: 600, px: 2 }}
+									/>
+								)}
+							</Stack>
+
+							{/* Plan del equipo */}
+							<Box
+								sx={{
+									bgcolor: "secondary.lighter",
+									borderRadius: 2,
+									px: 4,
+									py: 2,
+									width: "100%",
+									maxWidth: 300,
+								}}
+							>
+								<Typography variant="body2" color="text.secondary" gutterBottom>
+									Plan del equipo
+								</Typography>
+								<Typography variant="h4" color="secondary.dark" sx={{ fontWeight: 700 }}>
+									{ownerPlanName}
+								</Typography>
+							</Box>
+
+							{/* Mensaje informativo */}
+							<Alert severity="info" sx={{ borderRadius: 2, textAlign: "left" }}>
+								<Typography variant="body2">
+									Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>.
+									La gestión del plan y la facturación son responsabilidad del propietario del equipo.
+								</Typography>
+							</Alert>
+
+							{/* Nota */}
+							<Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
+								Si necesitas cambios en el plan o más permisos, contacta al administrador de tu equipo.
+							</Typography>
+						</Stack>
+					</MainCard>
+				</Grid>
+			</Grid>
+		);
+	}
+
 	return (
 		<Grid container spacing={3}>
 			{!isDevelopment && (
@@ -1003,68 +1107,97 @@ const Pricing = () => {
 										</Box>
 									</Grid>
 									<Grid item xs={12}>
-										<List
-											sx={{
-												m: 0,
-												p: 0,
-												"&> li": {
-													px: 0,
-													py: 0.625,
-												},
-											}}
-											component="ul"
-										>
-											{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
-											{(() => {
-												// Features y recursos a ocultar temporalmente
-												const hiddenFeatures = ["teams"];
-												const hiddenResources = ["teamMembers"];
+										{(() => {
+										// Determinar el ambiente actual
+										const currentEnv = import.meta.env.PROD ? "production" : "development";
 
-												// Mapear recursos a objetos con información común (filtrando los ocultos)
-												const resourceItems = plan.resourceLimits
-													.filter((resource) => !hiddenResources.includes(resource.name))
-													.map((resource) => ({
-														type: "resource" as const,
-														enabled: true,
-														description: planFeatureValue(plan, resource.name) || "",
-														name: resource.name,
-													}));
+										// Función para verificar si un elemento es visible en el ambiente actual
+										const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+											if (!visibility || visibility === "all") return true;
+											if (visibility === "none") return false;
+											return visibility === currentEnv;
+										};
 
-												// Mapear características a objetos con información común (filtrando las ocultas)
-												const featureItems = plan.features
-													.filter((feature) => !hiddenFeatures.includes(feature.name))
-													.map((feature) => ({
-														type: "feature" as const,
-														enabled: feature.enabled,
-														description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
-														name: feature.name,
-													}));
+										// Mapear recursos (filtrando según visibility)
+										const resourceItems = plan.resourceLimits
+											.filter((resource: any) => isVisibleInCurrentEnv(resource.visibility))
+											.map((resource) => ({
+												description: planFeatureValue(plan, resource.name) || "",
+												name: resource.name,
+											}));
 
-												// Combinar ambos arreglos
-												const allItems = [...resourceItems, ...featureItems];
+										// Mapear características (filtrando según visibility)
+										const featureItems = plan.features
+											.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
+											.map((feature) => ({
+												enabled: feature.enabled,
+												description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
+												name: feature.name,
+											}));
 
-												// Ordenar: primero por enabled (true primero), luego alfabéticamente por description
-												const sortedItems = allItems.sort((a, b) => {
-													// Primero ordenar por enabled (true antes que false)
-													if (a.enabled !== b.enabled) {
-														return a.enabled ? -1 : 1;
-													}
-													// Luego ordenar alfabéticamente por description
-													return a.description.localeCompare(b.description, "es", { sensitivity: "base" });
-												});
+										// Ordenar features: habilitadas primero, luego alfabéticamente
+										const sortedFeatures = featureItems.sort((a, b) => {
+											if (a.enabled !== b.enabled) {
+												return a.enabled ? -1 : 1;
+											}
+											return a.description.localeCompare(b.description, "es", { sensitivity: "base" });
+										});
 
-												return sortedItems.map((item, i) => (
-													<Fragment key={`${item.type}-${i}`}>
-														<ListItem sx={!item.enabled ? priceListDisable : {}}>
-															<ListItemText
-																primary={item.description}
-																sx={{ textAlign: "center", fontWeight: item.enabled ? "medium" : "normal" }}
-															/>
-														</ListItem>
-													</Fragment>
-												));
-											})()}
-										</List>
+										return (
+											<Box sx={{ px: 1 }}>
+												{/* Recursos en grid */}
+												<Grid container spacing={1} sx={{ mb: 2 }}>
+													{resourceItems.map((item, i) => (
+														<Grid item xs={6} sm={3} key={`resource-${i}`}>
+															<Box
+																sx={{
+																	textAlign: "center",
+																	p: 1,
+																	bgcolor: theme.palette.background.default,
+																	borderRadius: 1,
+																}}
+															>
+																<Typography variant="body2" fontWeight="medium">
+																	{item.description}
+																</Typography>
+															</Box>
+														</Grid>
+													))}
+												</Grid>
+
+												<Divider sx={{ my: 1.5 }} />
+
+												{/* Features en grid de 2 columnas con iconos */}
+												<Grid container spacing={1}>
+													{sortedFeatures.map((item, i) => (
+														<Grid item xs={12} sm={6} key={`feature-${i}`}>
+															<Box
+																sx={{
+																	display: "flex",
+																	alignItems: "center",
+																	gap: 1,
+																	py: 0.5,
+																	...(item.enabled ? {} : priceListDisable),
+																}}
+															>
+																{item.enabled ? (
+																	<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
+																) : (
+																	<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
+																)}
+																<Typography
+																	variant="body2"
+																	sx={{ fontWeight: item.enabled ? "medium" : "normal" }}
+																>
+																	{item.description}
+																</Typography>
+															</Box>
+														</Grid>
+													))}
+												</Grid>
+											</Box>
+										);
+									})()}
 									</Grid>
 								</Grid>
 

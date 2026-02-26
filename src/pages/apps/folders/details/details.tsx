@@ -26,6 +26,8 @@ import {
 	ArrowLeft,
 	TickCircle,
 	CloseCircle,
+	Clock,
+	MessageText1,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -41,6 +43,7 @@ import FolderDataImproved from "./components/FolderDataImproved";
 import FolderPreJudDataImproved from "./components/FolderPreJudDataImproved";
 import FolderJudDataImproved from "./components/FolderJudDataImproved";
 import ActivityTables from "./components/ActivityTables";
+import HistorialTab from "./components/HistorialTab";
 import LinkToJudicialPower from "sections/apps/folders/LinkToJudicialPower";
 import LinkToPJBuenosAires from "sections/apps/folders/LinkToPJBuenosAires";
 import NavigationControls from "./components/NavigationControls";
@@ -51,6 +54,7 @@ import { dispatch } from "store";
 import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
+import { RagChat } from "sections/apps/rag";
 
 interface StateType {
 	folder: {
@@ -280,6 +284,20 @@ const Details = () => {
 				icon: <Briefcase size="20" />,
 				shortLabel: "Gestión",
 				ariaLabel: "Gestión",
+			},
+			{
+				value: 3,
+				label: "IA Chat",
+				icon: <MessageText1 size="20" />,
+				shortLabel: "IA",
+				ariaLabel: "Chat IA",
+			},
+			{
+				value: 4,
+				label: "Historial",
+				icon: <Clock size="20" />,
+				shortLabel: "Historial",
+				ariaLabel: "Historial de Cambios",
 			},
 		],
 		[],
@@ -807,6 +825,25 @@ const Details = () => {
 					{/* Tab 3: Gestión */}
 					<TabPanel value={tabValue} index={2}>
 						{folder && <GestionTabImproved folder={folder} isDetailedView={isDetailedView} />}
+					</TabPanel>
+
+					{/* Tab 4: IA Chat */}
+					<TabPanel value={tabValue} index={3}>
+						{folder?.causaId && folder?.causaType && id && (
+							<RagChat causaId={folder.causaId} causaType={folder.causaType} folderId={id} />
+						)}
+						{!folder?.causaId && (
+							<Box sx={{ py: 4, textAlign: "center" }}>
+								<Typography variant="body2" color="text.secondary">
+									Para usar el chat con IA, primero vincula esta carpeta con una causa judicial.
+								</Typography>
+							</Box>
+						)}
+					</TabPanel>
+
+					{/* Tab 5: Historial */}
+					<TabPanel value={tabValue} index={4}>
+						{id && <HistorialTab folderId={id} />}
 					</TabPanel>
 				</Box>
 

@@ -68,13 +68,14 @@ import {
 	Grid6,
 } from "iconsax-react";
 import { dispatch, useSelector } from "store";
-import { addBatchEvents, deleteEvent, getEventsByUserId, selectEvent, updateEvent } from "store/reducers/events";
+import { addBatchEvents, deleteEvent, getEventsByUserId, getEventsByGroupId, selectEvent, updateEvent } from "store/reducers/events";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // Importación de eventos y carpetas types
 import { Event } from "types/events";
 import { Folder } from "types/folders";
-import { getFoldersByUserId } from "store/reducers/folder";
+import { getFoldersByUserId, getFoldersByGroupId } from "store/reducers/folder";
+import { useTeam } from "contexts/TeamContext";
 import googleCalendarService from "services/googleCalendarService";
 
 // ==============================|| LINK FOLDERS MODAL ||============================== //
@@ -195,10 +196,12 @@ interface EventDetailsViewProps {
 	onEdit: () => void;
 	onLink: () => void;
 	onDelete: () => void;
+	canUpdate?: boolean;
+	canDelete?: boolean;
 }
 
 // Componente para la visualización detallada de un evento
-const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete }: EventDetailsViewProps) => {
+const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate = true, canDelete = true }: EventDetailsViewProps) => {
 	const theme = useTheme();
 	const eventType = event?.type || "";
 
@@ -341,25 +344,31 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete }: EventDet
 			>
 				<Grid container justifyContent="space-between" alignItems="center">
 					<Grid item>
-						<Tooltip title="Eliminar Evento" placement="top">
-							<IconButton onClick={onDelete} size="large" color="error">
-								<Trash variant="Bold" />
-							</IconButton>
-						</Tooltip>
-						<Tooltip title="Vincular Evento" placement="top">
-							<IconButton onClick={onLink} size="large" color="primary" sx={{ ml: 1 }}>
-								<Link1 variant="Bold" />
-							</IconButton>
-						</Tooltip>
+						{canDelete && (
+							<Tooltip title="Eliminar Evento" placement="top">
+								<IconButton onClick={onDelete} size="large" color="error">
+									<Trash variant="Bold" />
+								</IconButton>
+							</Tooltip>
+						)}
+						{canUpdate && (
+							<Tooltip title="Vincular Evento" placement="top">
+								<IconButton onClick={onLink} size="large" color="primary" sx={{ ml: canDelete ? 1 : 0 }}>
+									<Link1 variant="Bold" />
+								</IconButton>
+							</Tooltip>
+						)}
 					</Grid>
 					<Grid item>
 						<Stack direction="row" spacing={2} alignItems="center">
 							<Button color="error" onClick={onClose}>
 								Cerrar
 							</Button>
-							<Button variant="contained" startIcon={<Edit2 />} onClick={onEdit}>
-								Editar
-							</Button>
+							{canUpdate && (
+								<Button variant="contained" startIcon={<Edit2 />} onClick={onEdit}>
+									Editar
+								</Button>
+							)}
 						</Stack>
 					</Grid>
 				</Grid>
@@ -390,6 +399,10 @@ const Calendar = () => {
 	const auth = useSelector((state) => state.auth);
 	const id = auth.user?._id;
 
+	// Team context - para cargar recursos del equipo si hay uno activo
+	// isOwner: true if user is the owner of the active team (can manage Google Calendar sync)
+	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isOwner, isInitialized: isTeamInitialized } = useTeam();
+
 	// Componente autónomo para manejar el modal
 	const selectedEvent = useSelector((state) => {
 		const { selectedEventId } = state.events;
@@ -402,29 +415,50 @@ const Calendar = () => {
 	});
 
 	useEffect(() => {
-		if (id && id !== "undefined") {
-			const fetchData = async () => {
-				setLoading(true);
-				try {
+		const fetchData = async () => {
+			if (!id || id === "undefined") return;
+
+			// Esperar a que el TeamContext esté inicializado
+			if (!isTeamInitialized) return;
+
+			// Si está en modo equipo pero aún no hay equipo activo seleccionado, esperar
+			if (isTeamMode && !activeTeam?._id) return;
+
+			setLoading(true);
+			try {
+				// Si hay equipo activo, cargar eventos del grupo
+				// Si no, cargar eventos del usuario
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getEventsByGroupId(activeTeam._id));
+				} else {
 					await dispatch(getEventsByUserId(id));
-					setLoading(false);
-				} catch (error) {}
-			};
-			fetchData();
-		}
-	}, [id, dispatch]);
+				}
+			} catch (error) {
+				console.error("Error loading events:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetchData();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [id, activeTeam?._id, isTeamMode, isTeamInitialized, dispatch]);
 
 	// Recargar eventos cuando cambie el estado de conexión de Google Calendar
 	useEffect(() => {
-		// Solo recargar si hay un userId válido y Google Calendar se acaba de desconectar
-		if (id && id !== "undefined" && !isGoogleConnected) {
+		// Solo recargar si hay un userId válido, TeamContext inicializado y Google Calendar se acaba de desconectar
+		if (id && id !== "undefined" && !isGoogleConnected && isTeamInitialized) {
 			// Pequeño delay para asegurar que el backend completó la eliminación
 			const timer = setTimeout(() => {
-				dispatch(getEventsByUserId(id));
+				if (isTeamMode && activeTeam?._id) {
+					dispatch(getEventsByGroupId(activeTeam._id));
+				} else if (!isTeamMode) {
+					dispatch(getEventsByUserId(id));
+				}
 			}, 500);
 			return () => clearTimeout(timer);
 		}
-	}, [isGoogleConnected, id, dispatch]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isGoogleConnected, id, activeTeam?._id, isTeamMode, isTeamInitialized, dispatch]);
 
 	useEffect(() => {
 		const calendarEl = calendarRef.current;
@@ -765,10 +799,12 @@ const Calendar = () => {
 				<CalendarStyled>
 					{/* Skeleton para barra superior integrada */}
 					<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-						{/* Skeleton para Google Calendar Sync */}
-						<Box sx={{ maxWidth: { xs: "200px", sm: "300px", md: "400px" } }}>
-							<Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
-						</Box>
+						{/* Skeleton para Google Calendar Sync - Solo para owner o modo personal */}
+						{(!isTeamMode || isOwner) && (
+							<Box sx={{ maxWidth: { xs: "200px", sm: "300px", md: "400px" } }}>
+								<Skeleton variant="rectangular" height={36} sx={{ borderRadius: 1 }} />
+							</Box>
+						)}
 
 						{/* Skeleton para controles del calendario */}
 						<Stack direction="row" alignItems="center" spacing={1}>
@@ -1037,16 +1073,19 @@ const Calendar = () => {
 					spacing={2}
 					sx={{ mb: 2, flexWrap: { sm: "wrap", md: "nowrap" } }}
 				>
-					{/* Google Calendar Sync Component - Primero en móvil */}
-					<Box
-						sx={{
-							width: { xs: "100%", sm: "auto" },
-							maxWidth: { xs: "100%", sm: "300px", md: "400px" },
-							order: { xs: 1, md: 1 },
-						}}
-					>
-						<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
-					</Box>
+					{/* Google Calendar Sync Component - Solo visible para owner o modo personal */}
+					{/* Los miembros del equipo no pueden gestionar la sincronización con Google Calendar */}
+					{(!isTeamMode || isOwner) && (
+						<Box
+							sx={{
+								width: { xs: "100%", sm: "auto" },
+								maxWidth: { xs: "100%", sm: "300px", md: "400px" },
+								order: { xs: 1, md: 1 },
+							}}
+						>
+							<GoogleCalendarSync localEvents={events} onEventsImported={handleEventsImported} />
+						</Box>
+					)}
 
 					{/* Controles del calendario y botones - Agrupados en móvil */}
 					<Stack
@@ -1119,11 +1158,13 @@ const Calendar = () => {
 							)}
 
 							{/* Botones de acción */}
-							<Tooltip title="Agregar Nuevo Evento">
-								<IconButton color="primary" onClick={handleAddEventClick} size={matchDownSM ? "small" : "medium"}>
-									<Add variant="Bulk" size={matchDownSM ? 20 : 24} />
-								</IconButton>
-							</Tooltip>
+							{canCreate && (
+								<Tooltip title="Agregar Nuevo Evento">
+									<IconButton color="primary" onClick={handleAddEventClick} size={matchDownSM ? "small" : "medium"}>
+										<Add variant="Bulk" size={matchDownSM ? 20 : 24} />
+									</IconButton>
+								</Tooltip>
+							)}
 							<Tooltip title="Ver Guía">
 								<IconButton color="success" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"}>
 									<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
@@ -1135,9 +1176,9 @@ const Calendar = () => {
 
 				<FullCalendar
 					weekends
-					editable
-					droppable
-					selectable
+					editable={canUpdate}
+					droppable={canCreate}
+					selectable={canCreate}
 					events={formattedEvents as EventSourceInput}
 					ref={calendarRef}
 					rerenderDelay={10}
@@ -1147,11 +1188,11 @@ const Calendar = () => {
 					eventDisplay="block"
 					headerToolbar={false}
 					allDayMaintainDuration
-					eventResizableFromStart
-					select={handleRangeSelect}
-					eventDrop={handleEventUpdate}
+					eventResizableFromStart={canUpdate}
+					select={canCreate ? handleRangeSelect : undefined}
+					eventDrop={canUpdate ? handleEventUpdate : undefined}
 					eventClick={handleEventSelect}
-					eventResize={handleEventUpdate}
+					eventResize={canUpdate ? handleEventUpdate : undefined}
 					locale={esLocale}
 					height="auto"
 					contentHeight="auto"
@@ -1197,6 +1238,8 @@ const Calendar = () => {
 						onEdit={handleSwitchToEditMode}
 						onDelete={handleDeleteEvent}
 						onLink={handleLinkEvent}
+						canUpdate={canUpdate}
+						canDelete={canDelete}
 					/>
 				) : (
 					<AddEventForm event={isEditingEvent ? selectedEvent : null} range={selectedRange} onCancel={handleModalClose} userId={id} />

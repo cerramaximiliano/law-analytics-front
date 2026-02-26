@@ -20,20 +20,7 @@ import {
 	Popover,
 	Link,
 } from "@mui/material";
-import {
-	Edit,
-	Trash,
-	Eye,
-	Link2,
-	DocumentText,
-	Judge,
-	NotificationStatus,
-	Status,
-	Clock,
-	TickCircle,
-	DocumentDownload,
-	Link1,
-} from "iconsax-react";
+import { Edit, Trash, Eye, Link2, Clock, TickCircle, DocumentDownload, Link1 } from "iconsax-react";
 import { Movement, PaginationInfo, PjnAccess } from "types/movements";
 import dayjs from "utils/dayjs-config";
 import { visuallyHidden } from "@mui/utils";
@@ -44,6 +31,8 @@ import PDFViewer from "components/shared/PDFViewer";
 import PaginationWithJump from "components/shared/PaginationWithJump";
 import PjnAccessAlert from "components/shared/PjnAccessAlert";
 import ScrollX from "components/ScrollX";
+import { useTeam } from "contexts/TeamContext";
+import { getMovementIcon, getMovementColor, parseDate, formatDate } from "../utils/movementUtils";
 
 interface MovementsTableProps {
 	movements: Movement[];
@@ -51,6 +40,7 @@ interface MovementsTableProps {
 	onEdit: (movement: Movement) => void;
 	onDelete: (id: string) => void;
 	onView: (movement: Movement) => void;
+	onOpenExplorer?: (movement: Movement) => void;
 	filters?: any;
 	pagination?: PaginationInfo;
 	isLoading?: boolean;
@@ -79,91 +69,6 @@ const headCells: HeadCell[] = [
 	{ id: "actions", label: "Acciones", numeric: false, width: "140px" },
 ];
 
-const getMovementIcon = (movement?: string) => {
-	switch (movement) {
-		case "Escrito-Actor":
-		case "Escrito-Demandado":
-			return <DocumentText size={16} />;
-		case "Despacho":
-			return <Judge size={16} />;
-		case "Cédula":
-		case "Oficio":
-			return <NotificationStatus size={16} />;
-		case "Evento":
-			return <Status size={16} />;
-		default:
-			return <DocumentText size={16} />;
-	}
-};
-
-const getMovementColor = (movement?: string): "success" | "error" | "secondary" | "primary" | "warning" | "default" => {
-	switch (movement) {
-		case "Escrito-Actor":
-			return "success";
-		case "Escrito-Demandado":
-			return "error";
-		case "Despacho":
-			return "secondary";
-		case "Cédula":
-		case "Oficio":
-			return "primary";
-		case "Evento":
-			return "warning";
-		default:
-			return "default";
-	}
-};
-
-const parseDate = (dateString: string) => {
-	try {
-		// Try to parse as ISO date first
-		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsed = dayjs(dateString);
-			if (parsed.isValid()) {
-				// Normalizar a medianoche en zona horaria local para evitar cambios de fecha
-				return dayjs(parsed.format("YYYY-MM-DD")).toDate();
-			}
-		}
-
-		// Try to parse as DD/MM/YYYY format
-		const parsed = dayjs(dateString, "DD/MM/YYYY");
-		if (parsed.isValid()) {
-			return parsed.toDate();
-		}
-
-		return new Date(0);
-	} catch {
-		return new Date(0);
-	}
-};
-
-const formatDate = (dateString: string) => {
-	if (!dateString || dateString.trim() === "") {
-		return "";
-	}
-
-	try {
-		// Try to parse as ISO date first
-		if (dateString.includes("T") || dateString.includes("-")) {
-			const parsed = dayjs.utc(dateString);
-			if (parsed.isValid()) {
-				// Usar componentes de fecha UTC para evitar conversión de zona horaria
-				return parsed.format("DD/MM/YYYY");
-			}
-		}
-
-		// Try to parse as DD/MM/YYYY format
-		const parsed = dayjs(dateString, "DD/MM/YYYY");
-		if (parsed.isValid()) {
-			return parsed.format("DD/MM/YYYY");
-		}
-
-		return "";
-	} catch {
-		return "";
-	}
-};
-
 // Helper para construir el filtro de movimiento
 // Nota: Todos los tipos (tanto generales como PJN) usan el campo 'movement' en el backend
 const buildMovementFilter = (type: string) => {
@@ -184,6 +89,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	onEdit,
 	onDelete,
 	onView,
+	onOpenExplorer,
 	filters = {},
 	pagination,
 	isLoading,
@@ -195,6 +101,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 	const { id } = useParams<{ id: string }>();
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const { canDelete, canUpdate } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof Movement>("time");
 	const [page, setPage] = useState(0);
@@ -662,7 +569,6 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																color="primary"
 																onClick={(e) => {
 																	e.stopPropagation();
-																	console.log("Documento URL:", movement.link);
 																	setSelectedPdfUrl(movement.link || "");
 																	setSelectedPdfTitle(movement.title || "Documento");
 																	setSelectedMovementId(movement._id || "");
@@ -678,7 +584,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 												</TableCell>
 												<TableCell>
 													<Stack direction="row" spacing={0.5}>
-														{movement.dateExpiration && (
+														{movement.dateExpiration && canUpdate && (
 															<Tooltip title={movement.completed ? "Marcar como pendiente" : "Marcar como completado"}>
 																<IconButton
 																	size="small"
@@ -708,30 +614,34 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 														</Tooltip>
 														{movement.source !== "pjn" && movement.source !== "mev" && (
 															<>
-																<Tooltip title="Editar">
-																	<IconButton
-																		size="small"
-																		color="primary"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onEdit(movement);
-																		}}
-																	>
-																		<Edit size={18} />
-																	</IconButton>
-																</Tooltip>
-																<Tooltip title="Eliminar">
-																	<IconButton
-																		size="small"
-																		color="error"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			onDelete(movement._id!);
-																		}}
-																	>
-																		<Trash size={18} />
-																	</IconButton>
-																</Tooltip>
+																{canUpdate && (
+																	<Tooltip title="Editar">
+																		<IconButton
+																			size="small"
+																			color="primary"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				onEdit(movement);
+																			}}
+																		>
+																			<Edit size={18} />
+																		</IconButton>
+																	</Tooltip>
+																)}
+																{canDelete && (
+																	<Tooltip title="Eliminar">
+																		<IconButton
+																			size="small"
+																			color="error"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				onDelete(movement._id!);
+																			}}
+																		>
+																			<Trash size={18} />
+																		</IconButton>
+																	</Tooltip>
+																)}
 															</>
 														)}
 													</Stack>
@@ -882,6 +792,18 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 				totalWithLinks={totalWithLinks}
 				documentsBeforeThisPage={documentsBeforeThisPage}
 				documentsInThisPage={documentsInThisPage}
+				onOpenExplorer={
+					onOpenExplorer
+						? () => {
+								// Find the current movement and open explorer with it
+								const currentMov = movements.find((m) => m._id === selectedMovementId) || movements.find((m) => m.link === selectedPdfUrl);
+								setPdfViewerOpen(false);
+								if (currentMov) {
+									onOpenExplorer(currentMov);
+								}
+						  }
+						: undefined
+				}
 			/>
 
 			{/* Popover para mostrar archivos adjuntos */}

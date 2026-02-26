@@ -12,6 +12,7 @@ import { dispatch, useSelector } from "store";
 import { enqueueSnackbar } from "notistack";
 import { ModalCalcType } from "types/calculator";
 import { Moneys } from "iconsax-react";
+import { useTeam } from "contexts/TeamContext";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -38,6 +39,7 @@ const customTextareaStyles = {
 const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: ModalCalcType) => {
 	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
+	const { getRequestHeaders, activeTeam, isTeamMode } = useTeam();
 
 	const validationSchema = Yup.object().shape({
 		type: Yup.string().required("Campo requerido"),
@@ -62,6 +64,9 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 
 	const handleSubmit = async (values: any, actions: any) => {
 		try {
+			// Obtener groupId del equipo activo si estamos en modo equipo
+			const groupId = isTeamMode ? activeTeam?._id : undefined;
+
 			const calculatorData = {
 				type: values.type,
 				user: values.user,
@@ -70,13 +75,13 @@ const ModalCalcData = ({ open, setOpen, handlerAddress, folderId, folderName }: 
 				folderId: folderId,
 				date: values.date,
 				description: values.description,
-				...(auth.user?.groupId && { groupId: auth.user.groupId }),
+				...(groupId && { groupId }),
 			};
 
-			const result = await dispatch(addCalculator(calculatorData));
+			const result = await dispatch(addCalculator(calculatorData, { headers: getRequestHeaders() }));
 
 			if (folderId) {
-				await dispatch(getCalculatorsByFolderId(folderId));
+				await dispatch(getCalculatorsByFolderId(folderId, groupId, true));
 			}
 
 			if (result.success) {

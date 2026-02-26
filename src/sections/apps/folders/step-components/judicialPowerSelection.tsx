@@ -18,12 +18,12 @@ const JudicialPowerSelection = () => {
 	};
 
 	return (
-		<Grid container spacing={3} justifyContent="center">
+		<Grid container spacing={1.5} justifyContent="center">
 			<Grid item xs={12}>
-				<Typography variant="h6" color="textPrimary" sx={{ mb: 1 }}>
+				<Typography variant="h6" color="textPrimary" sx={{ mb: 0.5 }}>
 					Seleccione el poder judicial
 				</Typography>
-				<Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+				<Typography variant="body2" color="textSecondary">
 					Elija el poder judicial del cual desea importar la causa
 				</Typography>
 			</Grid>
@@ -36,7 +36,7 @@ const JudicialPowerSelection = () => {
 						border: 1,
 						borderColor: values.judicialPower === "nacional" ? theme.palette.primary.main : theme.palette.divider,
 						borderRadius: 2,
-						p: 2,
+						p: 1.5,
 						display: "flex",
 						alignItems: "center",
 						backgroundColor: values.judicialPower === "nacional" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
@@ -46,7 +46,7 @@ const JudicialPowerSelection = () => {
 						},
 					}}
 				>
-					<ListItemIcon sx={{ minWidth: 80 }}>
+					<ListItemIcon sx={{ minWidth: 56 }}>
 						<Box
 							sx={{
 								backgroundColor: "#222E43",
@@ -54,8 +54,8 @@ const JudicialPowerSelection = () => {
 								border: "1px solid",
 								borderColor: "divider",
 								p: 1,
-								width: 60,
-								height: 60,
+								width: 44,
+								height: 44,
 								display: "flex",
 								justifyContent: "center",
 								alignItems: "center",
@@ -91,7 +91,7 @@ const JudicialPowerSelection = () => {
 						border: 1,
 						borderColor: values.judicialPower === "buenosaires" ? theme.palette.primary.main : theme.palette.divider,
 						borderRadius: 2,
-						p: 2,
+						p: 1.5,
 						display: "flex",
 						alignItems: "center",
 						backgroundColor: values.judicialPower === "buenosaires" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
@@ -101,7 +101,7 @@ const JudicialPowerSelection = () => {
 						},
 					}}
 				>
-					<ListItemIcon sx={{ minWidth: 80 }}>
+					<ListItemIcon sx={{ minWidth: 56 }}>
 						<Box
 							sx={{
 								backgroundColor: "#f8f8f8",
@@ -109,8 +109,8 @@ const JudicialPowerSelection = () => {
 								border: "1px solid",
 								borderColor: "divider",
 								p: 1,
-								width: 60,
-								height: 60,
+								width: 44,
+								height: 44,
 								display: "flex",
 								justifyContent: "center",
 								alignItems: "center",
@@ -146,7 +146,7 @@ const JudicialPowerSelection = () => {
 						border: 1,
 						borderColor: values.judicialPower === "caba" ? theme.palette.primary.main : theme.palette.divider,
 						borderRadius: 2,
-						p: 2,
+						p: 1.5,
 						display: "flex",
 						alignItems: "center",
 						backgroundColor: values.judicialPower === "caba" ? alpha(theme.palette.primary.main, 0.05) : "transparent",
@@ -156,7 +156,7 @@ const JudicialPowerSelection = () => {
 						},
 					}}
 				>
-					<ListItemIcon sx={{ minWidth: 80 }}>
+					<ListItemIcon sx={{ minWidth: 56 }}>
 						<Box
 							sx={{
 								backgroundColor: "#f8f8f8",
@@ -164,8 +164,8 @@ const JudicialPowerSelection = () => {
 								border: "1px solid",
 								borderColor: "divider",
 								p: 1,
-								width: 60,
-								height: 60,
+								width: 44,
+								height: 44,
 								display: "flex",
 								justifyContent: "center",
 								alignItems: "center",

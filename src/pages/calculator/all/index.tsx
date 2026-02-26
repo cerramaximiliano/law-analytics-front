@@ -56,12 +56,15 @@ import { CSVLink } from "react-csv";
 import { dispatch, useSelector } from "store";
 import {
 	getCalculatorsByUserId,
+	getCalculatorsByGroupId,
 	archiveCalculators,
 	unarchiveCalculators,
 	getArchivedCalculatorsByUserId,
+	getArchivedCalculatorsByGroupId,
 	deleteCalculator,
 } from "store/reducers/calculator";
 import { openSnackbar } from "store/reducers/snackbar";
+import { useTeam } from "contexts/TeamContext";
 
 // types
 import { CalculatorType } from "types/calculator";
@@ -73,6 +76,7 @@ import { GuideSelector } from "components/guides";
 import ArchivedCalculatorsModal from "sections/apps/calculator/ArchivedCalculatorsModal";
 import AlertCalculatorDelete from "sections/apps/calculator/AlertCalculatorDelete";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
+import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 
 // ==============================|| CALCULATOR CARD COMPONENT ||============================== //
 
@@ -356,12 +360,14 @@ interface ReactTableProps {
 	isLoading: boolean;
 	renderRowSubComponent: (props: { row: Row<CalculatorType> }) => React.ReactNode;
 	handleSelectedRows: (selectedIds: string[]) => void;
-	handleDeleteSelected: () => void;
+	handleDeleteSelected?: () => void;
 	processingAction: boolean;
 	onOpenArchivedModal: () => void;
-	onArchiveCalculators: (ids: string[]) => void;
+	onArchiveCalculators?: (ids: string[]) => void;
 	selectedCalculatorIds: string[];
 	scrollToCalculators: () => void;
+	canUpdate?: boolean;
+	canDelete?: boolean;
 }
 
 // Componente para los checkboxes de selección con estado indeterminado
@@ -402,6 +408,8 @@ function ReactTable({
 	onArchiveCalculators,
 	selectedCalculatorIds,
 	scrollToCalculators,
+	canUpdate = true,
+	canDelete = true,
 }: ReactTableProps) {
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 	const theme = useTheme();
@@ -575,21 +583,23 @@ function ReactTable({
 						>
 							Archivados
 						</Button>
-						<Tooltip title={selectedCalculatorIds.length === 0 ? "Seleccione elementos para archivar" : ""}>
-							<span style={{ width: matchDownSM ? "100%" : "auto" }}>
-								<Button
-									color="primary"
-									size="small"
-									variant="outlined"
-									startIcon={<Archive />}
-									onClick={() => onArchiveCalculators(selectedCalculatorIds)}
-									disabled={selectedCalculatorIds.length === 0 || processingAction}
-									fullWidth={matchDownSM}
-								>
-									Archivar {selectedCalculatorIds.length > 0 ? `(${selectedCalculatorIds.length})` : ""}
-								</Button>
-							</span>
-						</Tooltip>
+						{canUpdate && onArchiveCalculators && (
+							<Tooltip title={selectedCalculatorIds.length === 0 ? "Seleccione elementos para archivar" : ""}>
+								<span style={{ width: matchDownSM ? "100%" : "auto" }}>
+									<Button
+										color="primary"
+										size="small"
+										variant="outlined"
+										startIcon={<Archive />}
+										onClick={() => onArchiveCalculators(selectedCalculatorIds)}
+										disabled={selectedCalculatorIds.length === 0 || processingAction}
+										fullWidth={matchDownSM}
+									>
+										Archivar {selectedCalculatorIds.length > 0 ? `(${selectedCalculatorIds.length})` : ""}
+									</Button>
+								</span>
+							</Tooltip>
+						)}
 						<Button
 							color="primary"
 							size="small"
@@ -618,51 +628,53 @@ function ReactTable({
 					{/* Botones de eliminar y exportar (derecha) */}
 					<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
 						{/* Botón de eliminar */}
-						<Tooltip
-							title={
-								Object.keys(selectedRowIds).length === 0
-									? "Seleccione elementos para eliminar"
-									: `Eliminar ${Object.keys(selectedRowIds).length} elementos`
-							}
-						>
-							<span>
-								<IconButton
-									color="error"
-									onClick={handleDeleteSelected}
-									disabled={Object.keys(selectedRowIds).length === 0 || processingAction}
-									size="medium"
-									sx={{
-										position: "relative",
-										"&.Mui-disabled": {
-											color: "text.disabled",
-										},
-									}}
-								>
-									<Trash variant="Bulk" size={22} />
-									{Object.keys(selectedRowIds).length > 0 && (
-										<Box
-											sx={{
-												position: "absolute",
-												top: -8,
-												right: -8,
-												bgcolor: "error.main",
-												color: "white",
-												borderRadius: "50%",
-												fontSize: "0.75rem",
-												minWidth: "20px",
-												height: "20px",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												fontWeight: "bold",
-											}}
-										>
-											{Object.keys(selectedRowIds).length}
-										</Box>
-									)}
-								</IconButton>
-							</span>
-						</Tooltip>
+						{canDelete && handleDeleteSelected && (
+							<Tooltip
+								title={
+									Object.keys(selectedRowIds).length === 0
+										? "Seleccione elementos para eliminar"
+										: `Eliminar ${Object.keys(selectedRowIds).length} elementos`
+								}
+							>
+								<span>
+									<IconButton
+										color="error"
+										onClick={handleDeleteSelected}
+										disabled={Object.keys(selectedRowIds).length === 0 || processingAction}
+										size="medium"
+										sx={{
+											position: "relative",
+											"&.Mui-disabled": {
+												color: "text.disabled",
+											},
+										}}
+									>
+										<Trash variant="Bulk" size={22} />
+										{Object.keys(selectedRowIds).length > 0 && (
+											<Box
+												sx={{
+													position: "absolute",
+													top: -8,
+													right: -8,
+													bgcolor: "error.main",
+													color: "white",
+													borderRadius: "50%",
+													fontSize: "0.75rem",
+													minWidth: "20px",
+													height: "20px",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													fontWeight: "bold",
+												}}
+											>
+												{Object.keys(selectedRowIds).length}
+											</Box>
+										)}
+									</IconButton>
+								</span>
+							</Tooltip>
+						)}
 
 						{/* Botón de exportar CSV personalizado */}
 						<Tooltip title="Exportar a CSV">
@@ -808,10 +820,15 @@ function ReactTable({
 const AllCalculators = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
-	const { calculators, archivedCalculators, isLoader, isInitialized, lastFetchedUserId } = useSelector((state: any) => state.calculator);
+	const { calculators, archivedCalculators, archivedPagination, isLoader, isInitialized, lastFetchedUserId } = useSelector(
+		(state: any) => state.calculator
+	);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
 	const [loading, setLoading] = useState(true);
+
+	// Team context - para cargar recursos del equipo si hay uno activo
+	const { activeTeam, isTeamMode, canUpdate, canDelete, isInitialized: isTeamInitialized, getRequestHeaders } = useTeam();
 
 	// Estados para confirmación y archivado
 	const [deleteId, setDeleteId] = useState<string>("");
@@ -820,6 +837,8 @@ const AllCalculators = () => {
 	const [openArchivedModal, setOpenArchivedModal] = useState<boolean>(false);
 	const [processingArchiveAction, setProcessingArchiveAction] = useState<boolean>(false);
 	const [selectedCalculatorIds, setSelectedCalculatorIds] = useState<string[]>([]);
+	const [archivedPage, setArchivedPage] = useState(1);
+	const [archivedPageSize, setArchivedPageSize] = useState(10);
 
 	// Crear una referencia para la sección de calculadoras disponibles
 	const calculatorsSectionRef = useRef<HTMLDivElement>(null);
@@ -832,33 +851,71 @@ const AllCalculators = () => {
 		calculatorsSectionRef.current?.scrollIntoView({ behavior: "smooth" });
 	};
 
-	// Función para actualizar calculadoras archivadas cuando se abre el modal
+	// Función para actualizar calculadoras archivadas cuando se abre el modal o cambia la página
 	useEffect(() => {
-		if (openArchivedModal && userId) {
-			dispatch(getArchivedCalculatorsByUserId(userId));
+		if (openArchivedModal) {
+			// En modo equipo, obtener archivados del grupo; si no, del usuario
+			if (isTeamMode && activeTeam?._id) {
+				dispatch(getArchivedCalculatorsByGroupId(activeTeam._id, archivedPage, archivedPageSize));
+			} else if (userId) {
+				dispatch(getArchivedCalculatorsByUserId(userId, archivedPage, archivedPageSize));
+			}
 		}
-	}, [openArchivedModal, userId]);
+	}, [openArchivedModal, userId, isTeamMode, activeTeam?._id, archivedPage, archivedPageSize]);
 
-	// Fetch all calculators for the user
+	// Handler para cambio de página en archivados
+	const handleArchivedPageChange = (page: number) => {
+		setArchivedPage(page);
+	};
+
+	// Handler para cambio de tamaño de página en archivados
+	const handleArchivedPageSizeChange = (pageSize: number) => {
+		setArchivedPageSize(pageSize);
+		setArchivedPage(1); // Reset a primera página
+	};
+
+	// Fetch all calculators for the user or group
 	useEffect(() => {
 		const fetchData = async () => {
 			setLoading(true);
 
-			if (userId) {
-				// SIEMPRE forzar refresh en esta vista para obtener TODOS los cálculos
-				// Usamos forceRefresh=true para ignorar el caché
-				await dispatch(getCalculatorsByUserId(userId, true));
-				await dispatch(getArchivedCalculatorsByUserId(userId));
-
-				// Esperar a que termine el dispatch antes de quitar loading
+			if (!userId) {
 				setLoading(false);
-			} else {
+				return;
+			}
+
+			// Esperar a que el TeamContext esté inicializado
+			if (!isTeamInitialized) {
+				return;
+			}
+
+			// Si está en modo equipo pero aún no hay equipo activo seleccionado, esperar
+			if (isTeamMode && !activeTeam?._id) {
+				return;
+			}
+
+			try {
+				// Si hay equipo activo, cargar calculators del grupo
+				// Si no, cargar del usuario
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getCalculatorsByGroupId(activeTeam._id, true));
+					await dispatch(getArchivedCalculatorsByGroupId(activeTeam._id));
+				} else {
+					// SIEMPRE forzar refresh en esta vista para obtener TODOS los cálculos
+					// Usamos forceRefresh=true para ignorar el caché
+					await dispatch(getCalculatorsByUserId(userId, true));
+					await dispatch(getArchivedCalculatorsByUserId(userId));
+				}
+			} catch (error) {
+				console.error("Error loading calculators:", error);
+			} finally {
 				setLoading(false);
 			}
 		};
 
 		fetchData();
-	}, [userId]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [userId, activeTeam?._id, isTeamMode, isTeamInitialized]);
 
 	// Handle delete multiple calculators
 	const handleDeleteSelectedCalculators = async () => {
@@ -970,7 +1027,7 @@ const AllCalculators = () => {
 		setProcessingArchiveAction(true);
 
 		try {
-			const response = await dispatch(archiveCalculators(userId, calculatorIds));
+			const response = await dispatch(archiveCalculators(userId, calculatorIds, { headers: getRequestHeaders() }));
 
 			if (response.success) {
 				dispatch(
@@ -1015,9 +1072,15 @@ const AllCalculators = () => {
 		setProcessingArchiveAction(true);
 
 		try {
-			const response = await dispatch(unarchiveCalculators(userId, calculatorIds));
+			const response = await dispatch(unarchiveCalculators(userId, calculatorIds, { headers: getRequestHeaders() }));
 
 			if (response.success) {
+				// Force refresh the active calculators list from server to ensure table matches widget
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getCalculatorsByGroupId(activeTeam._id, true));
+				} else {
+					await dispatch(getCalculatorsByUserId(userId, true));
+				}
 				setOpenArchivedModal(false);
 				dispatch(
 					openSnackbar({
@@ -1291,36 +1354,40 @@ const AllCalculators = () => {
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
-							<Tooltip title="Archivar">
-								<IconButton
-									color="primary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleArchiveCalculators([row.original._id]);
-									}}
-									size="small"
-								>
-									<Archive variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Eliminar">
-								<IconButton
-									color="error"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleDeleteCalculator(row.original._id, row.original.folderName || "Cálculo");
-									}}
-									size="small"
-								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
+							{canUpdate && (
+								<Tooltip title="Archivar">
+									<IconButton
+										color="primary"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											handleArchiveCalculators([row.original._id]);
+										}}
+										size="small"
+									>
+										<Archive variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
+							{canDelete && (
+								<Tooltip title="Eliminar">
+									<IconButton
+										color="error"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											handleDeleteCalculator(row.original._id, row.original.folderName || "Cálculo");
+										}}
+										size="small"
+									>
+										<Trash variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
 						</Stack>
 					);
 				},
 			},
 		],
-		[theme.palette.error.main, theme.palette.text.secondary],
+		[theme.palette.error.main, theme.palette.text.secondary, canUpdate, canDelete],
 	);
 
 	// Función para manejar selección de calculadoras
@@ -1335,6 +1402,7 @@ const AllCalculators = () => {
 		<MainCard title="Cálculos Legales">
 			<Container maxWidth="lg">
 				<DowngradeGracePeriodAlert />
+				<ResourceUsageBar resourceType="calculators" compact />
 				{/* PRIMERO: Tabla de cálculos guardados */}
 				<MainCard
 					title={
@@ -1353,12 +1421,14 @@ const AllCalculators = () => {
 							isLoading={isLoader || loading}
 							renderRowSubComponent={renderRowSubComponent}
 							handleSelectedRows={handleSelectedRows}
-							handleDeleteSelected={handleDeleteSelectedCalculators}
+							handleDeleteSelected={canDelete ? handleDeleteSelectedCalculators : undefined}
 							processingAction={processingArchiveAction}
 							onOpenArchivedModal={() => setOpenArchivedModal(true)}
-							onArchiveCalculators={handleArchiveCalculators}
+							onArchiveCalculators={canUpdate ? handleArchiveCalculators : undefined}
 							selectedCalculatorIds={selectedCalculatorIds}
 							scrollToCalculators={scrollToCalculators}
+							canUpdate={canUpdate}
+							canDelete={canDelete}
 						/>
 					</ScrollX>
 				</MainCard>
@@ -1425,10 +1495,16 @@ const AllCalculators = () => {
 				{/* Modales */}
 				<ArchivedCalculatorsModal
 					open={openArchivedModal}
-					onClose={() => setOpenArchivedModal(false)}
+					onClose={() => {
+						setOpenArchivedModal(false);
+						setArchivedPage(1); // Reset page on close
+					}}
 					items={archivedCalculators || []}
 					onUnarchive={handleUnarchiveCalculators}
 					loading={isLoader || processingArchiveAction}
+					pagination={archivedPagination}
+					onPageChange={handleArchivedPageChange}
+					onPageSizeChange={handleArchivedPageSizeChange}
 				/>
 
 				<AlertCalculatorDelete title={deleteTitle} open={openDeleteModal} handleClose={handleCloseDeleteModal} id={deleteId} />

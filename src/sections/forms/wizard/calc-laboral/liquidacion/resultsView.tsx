@@ -8,6 +8,7 @@ import LinkCauseModal from "../components/linkCauseModal";
 import liquidacionFormModel from "./formModel/liquidacionFormModel";
 import dayjs from "utils/dayjs-config";
 import { enqueueSnackbar } from "notistack";
+import { useTeam } from "contexts/TeamContext";
 
 // Tipos
 interface ResultItem {
@@ -33,6 +34,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 
 	const userFromRedux = useSelector((state: RootState) => state.auth.user);
 	const interestRates = useSelector((state: RootState) => state.interestRates.rates);
+	const { getRequestHeaders } = useTeam();
 
 	const getLabelForKey = (key: string): string => {
 		// Manejo especial para carátula
@@ -487,7 +489,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, onReset, folderId, fo
 				},
 			};
 
-			const result = await dispatch(addCalculator(calculatorData));
+			const result = await dispatch(addCalculator(calculatorData, { headers: getRequestHeaders() }));
 
 			if (result.success) {
 				enqueueSnackbar("Cálculo guardado correctamente", {

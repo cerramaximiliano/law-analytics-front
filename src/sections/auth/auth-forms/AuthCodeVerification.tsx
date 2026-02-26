@@ -139,6 +139,20 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 				const response = await verifyCode(emailToUse, otp);
 
 				if (response) {
+					// IMPORTANTE: Guardar groupId ANTES del dispatch LOGIN para evitar race condition.
+					// El dispatch LOGIN cambia isLoggedIn=true, lo cual puede desmontar este componente
+					// por el route guard antes de que se ejecute el código posterior.
+					const urlParams = new URLSearchParams(window.location.search);
+					const groupId = urlParams.get("groupId");
+					if (groupId) {
+						localStorage.setItem("activeTeamId", groupId);
+					}
+
+					// Track registration complete event in GTM
+					pushGTMEvent(GTMEvents.REGISTER_COMPLETE, {
+						method: "email",
+					});
+
 					// Si el servidor devuelve el objeto usuario completo en la respuesta
 					if (response.user) {
 						// Actualizar estado global de auth con la data completa del usuario
@@ -161,11 +175,6 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 						setIsLoggedIn(true);
 						setNeedsVerification(false);
 					}
-
-					// Track registration complete event in GTM
-					pushGTMEvent(GTMEvents.REGISTER_COMPLETE, {
-						method: "email",
-					});
 
 					navigate("/dashboard/default");
 					if (onVerificationSuccess) onVerificationSuccess();

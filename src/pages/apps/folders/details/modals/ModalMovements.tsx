@@ -24,13 +24,15 @@ import { addMovement, updateMovement } from "store/reducers/movements";
 import { Movement } from "types/movements";
 import { enqueueSnackbar } from "notistack";
 import dayjs from "utils/dayjs-config";
+import { useTeam } from "contexts/TeamContext";
 // types
 import { MovementsModalType } from "types/movements";
 
-const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = false, movementData = null }: MovementsModalType) => {
+const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = false, movementData = null, onSuccess, dialogSx }: MovementsModalType) => {
 	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;
+	const { getRequestHeaders } = useTeam();
 
 	function closeTaskModal() {
 		setOpen(false);
@@ -136,14 +138,14 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 		userId: userId || "",
 	};
 
-	async function _submitForm(values: any, actions: any) {
+	async function _submitForm(values: any, actions: any): Promise<boolean> {
 		try {
 			actions.setSubmitting(true);
 
 			const result =
 				editMode && movementData?._id
 					? await dispatch(updateMovement(movementData._id, { ...values, userId }))
-					: await dispatch(addMovement({ ...values, userId }));
+					: await dispatch(addMovement({ ...values, userId }, { headers: getRequestHeaders() }));
 
 			if (result.success) {
 				enqueueSnackbar(`Se ${editMode ? "actualizó" : "agregó"} correctamente`, {
@@ -153,6 +155,12 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 					autoHideDuration: 3000,
 				});
 				actions.resetForm();
+				// Para agregar, refrescar datos para que aparezca en la posición correcta
+				// Para editar, el updateMovement ya actualizó el estado local en Redux
+				if (!editMode) {
+					onSuccess?.();
+				}
+				return true;
 			} else {
 				// Si hay un error, mostramos el mensaje de error
 				enqueueSnackbar(result.error || `Error al ${editMode ? "actualizar" : "crear"} el movimiento`, {
@@ -161,26 +169,28 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
+				return false;
 			}
 		} catch (error) {
 			// Manejo de errores inesperados
-
 			enqueueSnackbar(`Error inesperado al ${editMode ? "actualizar" : "crear"} el movimiento`, {
 				variant: "error",
 				anchorOrigin: { vertical: "bottom", horizontal: "right" },
 				TransitionComponent: Zoom,
 				autoHideDuration: 4000,
 			});
+			return false;
 		} finally {
 			// Siempre finalizamos el estado de envío
 			actions.setSubmitting(false);
 		}
 	}
 
-	function _handleSubmit(values: any, actions: any) {
-		_submitForm(values, actions);
-		closeTaskModal();
-		actions.resetForm();
+	async function _handleSubmit(values: any, actions: any) {
+		const result = await _submitForm(values, actions);
+		if (result) {
+			closeTaskModal();
+		}
 	}
 	const customInputStyles = {
 		"& .MuiInputBase-root": {
@@ -201,6 +211,7 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 				maxWidth="sm"
 				fullWidth
 				open={open}
+				sx={dialogSx}
 				PaperProps={{
 					sx: {
 						p: 0,

@@ -31,6 +31,7 @@ import "assets/css/custom.css";
 import App from "./App";
 import { store, persister } from "store";
 import { ConfigProvider } from "contexts/ConfigContext";
+import { TeamProvider } from "contexts/TeamContext";
 import reportWebVitals from "./reportWebVitals";
 import { preloadCriticalRoutes } from "./utils/lazyRetry";
 
@@ -71,7 +72,9 @@ root.render(
 		<PersistGateWrapper>
 			<ConfigProvider>
 				<BrowserRouter basename={import.meta.env.VITE_BASE_NAME}>
-					<App />
+					<TeamProvider>
+						<App />
+					</TeamProvider>
 				</BrowserRouter>
 			</ConfigProvider>
 		</PersistGateWrapper>

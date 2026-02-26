@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Dispatch } from "redux";
 import { Movement, MovementState, PaginationInfo, PjnAccess, ScrapingProgress } from "types/movements";
+import { UPDATE_ACTIVITY } from "./activities";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
 export const GET_MOVEMENTS = "movements/GET_MOVEMENTS";
@@ -52,7 +53,9 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 		case UPDATE_MOVEMENT:
 			return {
 				...state,
-				movements: state.movements.map((movement) => (movement._id === action.payload._id ? action.payload : movement)),
+				movements: state.movements.map((movement) =>
+					String(movement._id) === String(action.payload._id) ? action.payload : movement
+				),
 				isLoading: false,
 			};
 		case DELETE_MOVEMENT:
@@ -134,11 +137,31 @@ export const updateMovement = (movementId: string, updateData: Partial<Movement>
 		const response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/movements/${movementId}`, updateData);
 
 		if (response.data.success && response.data.movement) {
+			const updatedMovement = response.data.movement;
+
+			// Actualizar el reducer de movements
 			dispatch({
 				type: UPDATE_MOVEMENT,
-				payload: response.data.movement,
+				payload: updatedMovement,
 			});
-			return { success: true, movement: response.data.movement };
+
+			// También actualizar el reducer de activities (para Vista Combinada)
+			// Convertimos el movement a formato de actividad
+			dispatch({
+				type: UPDATE_ACTIVITY,
+				payload: {
+					_id: updatedMovement._id,
+					title: updatedMovement.title,
+					description: updatedMovement.description,
+					date: updatedMovement.time,
+					movement: updatedMovement.movement,
+					dateExpiration: updatedMovement.dateExpiration,
+					link: updatedMovement.link,
+					completed: updatedMovement.completed,
+				},
+			});
+
+			return { success: true, movement: updatedMovement };
 		}
 
 		throw new Error(response.data.message || "Error al actualizar el movimiento");
@@ -191,11 +214,13 @@ export const deleteMovement = (movementId: string) => async (dispatch: Dispatch)
 	}
 };
 
-export const addMovement = (movementData: Omit<Movement, "_id">) => async (dispatch: Dispatch) => {
+export const addMovement = (movementData: Omit<Movement, "_id">, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
 
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/movements`, movementData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/movements`, movementData, {
+			headers: options?.headers,
+		});
 
 		if (response.data.success && response.data.movement) {
 			dispatch({
@@ -388,6 +413,16 @@ export const toggleMovementComplete = (movementId: string) => async (dispatch: D
 					completed: response.data.movement.completed,
 				},
 			});
+
+			// También actualizar el reducer de activities (para Vista Combinada)
+			dispatch({
+				type: UPDATE_ACTIVITY,
+				payload: {
+					_id: movementId,
+					completed: response.data.movement.completed,
+				},
+			});
+
 			return {
 				success: true,
 				movement: response.data.movement,

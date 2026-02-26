@@ -93,13 +93,14 @@ const eventReducer = (state = initialEventState, action: Action): EventState => 
 // Action creators
 
 // Agregar un nuevo evento
-export const addEvent = (eventData: Event) => async (dispatch: Dispatch) => {
+export const addEvent = (eventData: Event, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.post(`${baseUrl}/api/events`, eventData, {
 			headers: {
 				"X-Calendar-Operation": "true", // Evitar rate limit para operaciones de calendario
+				...options?.headers,
 			},
 		});
 
@@ -194,27 +195,33 @@ export const getEventsByUserId = (userId: string) => async (dispatch: Dispatch) 
 	}
 };
 
-// Obtener eventos por userId
-export const getEventsById = (_id: string) => async (dispatch: Dispatch) => {
+// Obtener eventos por folderId
+export const getEventsById = (folderId: string) => async (dispatch: Dispatch) => {
 	dispatch({ type: SET_LOADING });
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
-		const response = await axios.get(`${baseUrl}/api/events/id/${_id}`);
+		const response = await axios.get(`${baseUrl}/api/events/folder/${folderId}`);
 		if (response.data.success && Array.isArray(response.data.events)) {
 			dispatch({
 				type: GET_EVENTS_BY_ID,
 				payload: response.data.events,
 			});
 		} else {
+			// Si no hay eventos, establecer array vacío (no es un error)
 			dispatch({
-				type: SET_EVENT_ERROR,
-				payload: "No se encontraron eventos para este id",
+				type: GET_EVENTS_BY_ID,
+				payload: [],
 			});
 		}
 	} catch (error) {
+		// En caso de error, limpiar eventos para no mostrar datos incorrectos
+		dispatch({
+			type: GET_EVENTS_BY_ID,
+			payload: [],
+		});
 		dispatch({
 			type: SET_EVENT_ERROR,
-			payload: (error as any).response?.data?.message || "Error al obtener eventos del usuario",
+			payload: (error as any).response?.data?.message || "Error al obtener eventos de la carpeta",
 		});
 	}
 };
@@ -225,10 +232,18 @@ export const getEventsByGroupId = (groupId: string) => async (dispatch: Dispatch
 	try {
 		const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 		const response = await axios.get(`${baseUrl}/api/events/group/${groupId}`);
-		dispatch({
-			type: GET_EVENTS_BY_GROUP,
-			payload: response.data,
-		});
+
+		if (response.data.success && Array.isArray(response.data.events)) {
+			dispatch({
+				type: GET_EVENTS_BY_GROUP,
+				payload: response.data.events,
+			});
+		} else {
+			dispatch({
+				type: SET_EVENT_ERROR,
+				payload: "No se encontraron eventos para este grupo",
+			});
+		}
 	} catch (error) {
 		dispatch({
 			type: SET_EVENT_ERROR,
@@ -247,11 +262,19 @@ export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
 			type: DELETE_EVENT,
 			payload: eventId,
 		});
+		return { success: true };
 	} catch (error) {
+		const errorMessage = (error as any).response?.data?.message || "Error al eliminar evento";
+		const statusCode = (error as any).response?.status;
 		dispatch({
 			type: SET_EVENT_ERROR,
-			payload: (error as any).response?.data?.message || "Error al eliminar evento",
+			payload: errorMessage,
 		});
+		return {
+			success: false,
+			error: errorMessage,
+			statusCode
+		};
 	}
 };
 

@@ -40,6 +40,7 @@ import { Add, Eye, Trash, Maximize } from "iconsax-react";
 // types
 import { ThemeMode } from "types/config";
 import { getCalculatorsByFilter, clearSelectedCalculators } from "store/reducers/calculator";
+import { useTeam } from "contexts/TeamContext";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -204,6 +205,7 @@ const SavedCivil = () => {
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
+	const { activeTeam, isTeamMode, isInitialized: isTeamInitialized } = useTeam();
 
 	const data = useMemo(() => makeData(20), []);
 	const [open, setOpen] = useState<boolean>(false);
@@ -217,18 +219,38 @@ const SavedCivil = () => {
 		// Marcar como montado
 		isMountedRef.current = true;
 
+		// Esperar a que el TeamContext esté inicializado
+		if (!isTeamInitialized) {
+			return;
+		}
+
+		// Si está en modo equipo pero aún no hay equipo activo, esperar
+		if (isTeamMode && !activeTeam?._id) {
+			return;
+		}
+
 		// Usar setTimeout para retrasar la primera ejecución y evitar conflictos
 		const timeoutId = setTimeout(
 			() => {
-				if (userId && isMountedRef.current) {
+				if (isMountedRef.current) {
 					// getCalculatorsByFilter ya maneja la lógica de cache internamente
-					dispatch(
-						getCalculatorsByFilter({
-							userId,
-							type: "calculado",
-							classType: "civil",
-						}),
-					);
+					if (isTeamMode && activeTeam?._id) {
+						dispatch(
+							getCalculatorsByFilter({
+								groupId: activeTeam._id,
+								type: "calculado",
+								classType: "civil",
+							}),
+						);
+					} else if (userId) {
+						dispatch(
+							getCalculatorsByFilter({
+								userId,
+								type: "calculado",
+								classType: "civil",
+							}),
+						);
+					}
 				}
 			},
 			isFirstRenderRef.current ? 100 : 0,
@@ -242,7 +264,7 @@ const SavedCivil = () => {
 			// Limpiar selectedCalculators cuando el componente se desmonta
 			dispatch(clearSelectedCalculators());
 		};
-	}, [userId, dispatch]); // Incluir dispatch en las dependencias
+	}, [userId, isTeamMode, activeTeam?._id, isTeamInitialized]); // Incluir dependencias de equipo
 
 	const handleAdd = () => {
 		setAdd(!add);

@@ -18,6 +18,7 @@ import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
+import { useTeam } from "contexts/TeamContext";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -64,6 +65,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+	const { canUpdate } = useTeam();
 
 	const initialValues = {
 		...folder,
@@ -236,7 +238,7 @@ const FolderDataCompact = ({ folder, isLoader, type }: { folder: any; isLoader: 
 											)}
 										</Stack>
 									</Box>
-									{!isEditing && (
+									{!isEditing && canUpdate && (
 										<Button size="small" variant="text" onClick={handleEdit} startIcon={<Edit2 size={16} />}>
 											Editar
 										</Button>

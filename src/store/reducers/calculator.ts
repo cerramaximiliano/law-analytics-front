@@ -20,7 +20,14 @@ const CLEAR_SELECTED_CALCULATORS = "calculators/CLEAR_SELECTED_CALCULATORS";
 const initialState: CalculatorState = {
 	calculators: [],
 	selectedCalculators: [],
+	selectedFolderId: undefined,
 	archivedCalculators: [],
+	archivedPagination: {
+		total: 0,
+		page: 1,
+		limit: 10,
+		totalPages: 0,
+	},
 	isLoader: false,
 	error: null,
 	isInitialized: false,
@@ -44,22 +51,24 @@ const calculatorsReducer = (state = initialState, action: any) => {
 				...state,
 				calculators: action.payload,
 				isLoader: false,
-				// Solo actualizar isInitialized y lastFetchedUserId si se proporciona userId
-				...(action.userId && {
+				// Marcar como inicializado si se proporciona userId o groupId
+				...((action.userId || action.groupId) && {
 					isInitialized: true,
-					lastFetchedUserId: action.userId,
+					lastFetchedUserId: action.userId || state.lastFetchedUserId,
 				}),
 			};
 		case SET_SELECTED_CALCULATORS:
 			return {
 				...state,
 				selectedCalculators: action.payload,
+				selectedFolderId: action.folderId || state.selectedFolderId,
 				isLoader: false,
 			};
 		case SET_ARCHIVED_CALCULATORS:
 			return {
 				...state,
-				archivedCalculators: action.payload,
+				archivedCalculators: action.payload.calculators,
+				archivedPagination: action.payload.pagination || state.archivedPagination,
 				isLoader: false,
 			};
 		case UPDATE_CALCULATOR:
@@ -119,7 +128,7 @@ const calculatorsReducer = (state = initialState, action: any) => {
 };
 
 // Actions
-export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "error">) => async (dispatch: Dispatch) => {
+export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "error">, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_LOADING });
 
@@ -130,7 +139,9 @@ export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "e
 			data: data,
 		});
 
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/calculators`, data);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/calculators`, data, {
+			headers: options?.headers,
+		});
 
 		// 🔍 LOG: Respuesta exitosa del backend
 		console.log("✅ [addCalculator] Respuesta exitosa del backend:", {
@@ -142,8 +153,10 @@ export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "e
 			type: ADD_CALCULATOR,
 			payload: response.data.calculator,
 		});
-		// Incrementar contador de calculators en userStats
-		dispatch(incrementUserStat("calculators", 1));
+		// Solo incrementar contador si es tipo "Calculado" (match con lógica del backend)
+		if (data.type === "Calculado") {
+			dispatch(incrementUserStat("calculators", 1));
+		}
 		return { success: true, calculator: response.data.calculator };
 	} catch (error: unknown) {
 		// 🔍 LOG: Error del backend
@@ -198,8 +211,16 @@ export const getCalculatorsByUserId =
 		}
 	};
 
-export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dispatch) => {
+export const getCalculatorsByGroupId = (groupId: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
 	try {
+		const state = getState();
+		const { isInitialized, calculators } = state.calculator;
+
+		// Cache validation: si ya tenemos datos y no forzamos refresh, retornar del cache
+		if (!forceRefresh && isInitialized && calculators.length > 0) {
+			return { success: true, calculators, fromCache: true };
+		}
+
 		dispatch({ type: SET_LOADING });
 		// Campos optimizados para listas
 		const fields =
@@ -210,8 +231,9 @@ export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dis
 		dispatch({
 			type: SET_CALCULATORS,
 			payload: response.data.calculators,
+			groupId: groupId,
 		});
-		return { success: true };
+		return { success: true, calculators: response.data.calculators };
 	} catch (error: unknown) {
 		const errorMessage =
 			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
@@ -220,16 +242,30 @@ export const getCalculatorsByGroupId = (groupId: string) => async (dispatch: Dis
 	}
 };
 
-export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: Dispatch, getState: any) => {
+export const getCalculatorsByFolderId = (folderId: string, groupId?: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
 	try {
 		const state = getState();
-		const { calculators, isInitialized } = state.calculator;
+		const { calculators, isInitialized, selectedFolderId, selectedCalculators } = state.calculator;
 		const auth = state.auth;
 		const userId = auth.user?._id;
 
-		// Si tenemos userId y no hay datos en cache, descargar todos primero
-		if (userId && !isInitialized) {
-			// Descargar todos los calculadores del usuario
+		// Cache validation: si ya tenemos datos de esta carpeta y no forzamos refresh, retornar del cache
+		if (!forceRefresh && selectedFolderId === folderId && isInitialized) {
+			return { success: true, calculators: selectedCalculators, fromCache: true };
+		}
+
+		// Si tenemos groupId, obtener datos del equipo
+		// Si no, obtener datos del usuario individual
+		if (groupId) {
+			// Modo equipo: descargar calculadores del grupo si no están en cache
+			if (!isInitialized) {
+				const result = await dispatch(getCalculatorsByGroupId(groupId) as any);
+				if (!result.success) {
+					return result;
+				}
+			}
+		} else if (userId && !isInitialized) {
+			// Modo individual: descargar todos los calculadores del usuario
 			const result = await dispatch(getCalculatorsByUserId(userId) as any);
 			if (!result.success) {
 				return result;
@@ -243,6 +279,7 @@ export const getCalculatorsByFolderId = (folderId: string) => async (dispatch: D
 		dispatch({
 			type: SET_SELECTED_CALCULATORS,
 			payload: filteredCalculators,
+			folderId: folderId,
 		});
 
 		return { success: true, calculators: filteredCalculators };
@@ -303,6 +340,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 				dispatch({
 					type: SET_SELECTED_CALCULATORS,
 					payload: filteredCalculators,
+					folderId: folderId || undefined,
 				});
 
 				return { success: true, calculators: filteredCalculators };
@@ -325,6 +363,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 			dispatch({
 				type: SET_SELECTED_CALCULATORS,
 				payload: filteredCalculators,
+				folderId: folderId || undefined,
 			});
 
 			return { success: true, calculators: filteredCalculators };
@@ -348,6 +387,7 @@ export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch:
 		dispatch({
 			type: SET_SELECTED_CALCULATORS,
 			payload: response.data.calculators,
+			folderId: folderId || undefined,
 		});
 
 		return { success: true, calculators: response.data.calculators };
@@ -377,16 +417,20 @@ export const updateCalculator =
 		}
 	};
 
-export const deleteCalculator = (id: string) => async (dispatch: Dispatch) => {
+export const deleteCalculator = (id: string) => async (dispatch: Dispatch, getState: any) => {
 	try {
+		// Obtener el tipo antes de eliminar del state
+		const calculator = getState().calculator.calculators.find((c: CalculatorType) => c._id === id);
 		dispatch({ type: SET_LOADING });
 		await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/calculators/${id}`);
 		dispatch({
 			type: DELETE_CALCULATOR,
 			payload: id,
 		});
-		// Decrementar contador de calculators en userStats
-		dispatch(incrementUserStat("calculators", -1));
+		// Solo decrementar contador si es tipo "Calculado" (match con lógica del backend)
+		if (calculator?.type === "Calculado") {
+			dispatch(incrementUserStat("calculators", -1));
+		}
 		return { success: true };
 	} catch (error: unknown) {
 		const errorMessage =
@@ -396,131 +440,212 @@ export const deleteCalculator = (id: string) => async (dispatch: Dispatch) => {
 	}
 };
 
-export const archiveCalculators = (userId: string, calculatorIds: string[]) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
-			resourceType: "calculators",
-			itemIds: calculatorIds,
-		});
+export const archiveCalculators =
+	(userId: string, calculatorIds: string[], options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch, getState: any) => {
+		try {
+			// Contar cuántos son tipo "Calculado" antes de archivar
+			const calculators = getState().calculator.calculators;
+			const calculadoCount = calculatorIds.filter((id: string) => {
+				const calc = calculators.find((c: CalculatorType) => c._id === id);
+				return calc?.type === "Calculado";
+			}).length;
 
-		if (response.data.success) {
-			dispatch({
-				type: ARCHIVE_CALCULATORS,
-				payload: calculatorIds,
-			});
-			// Decrementar contador de calculators en userStats (archivados no cuentan como activos)
-			dispatch(incrementUserStat("calculators", -calculatorIds.length));
-			// Incrementar storage (los cálculos archivados sí cuentan en el storage)
-			dispatch(updateUserStorage("calculator", calculatorIds.length));
-			return { success: true, message: "Cálculos archivados exitosamente" };
-		} else {
-			return { success: false, message: response.data.message || "No se pudieron archivar los cálculos." };
-		}
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al archivar cálculos."
-			: "Error desconocido al archivar cálculos.";
+			dispatch({ type: SET_LOADING });
+			const response = await axios.post(
+				`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`,
+				{
+					resourceType: "calculators",
+					itemIds: calculatorIds,
+				},
+				{ headers: options?.headers }
+			);
 
-		dispatch({
-			type: SET_ERROR,
-			payload: errorMessage,
-		});
-		return { success: false, message: errorMessage };
-	}
-};
-
-export const unarchiveCalculators = (userId: string, calculatorIds: string[]) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
-			resourceType: "calculators",
-			itemIds: calculatorIds,
-		});
-
-		if (response.data.success) {
-			// Obtener los IDs de los calculadores que realmente fueron desarchivados
-			const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
-
-			if (unarchivedIds.length > 0) {
-				// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedCalculators
+			if (response.data.success) {
 				dispatch({
-					type: UNARCHIVE_CALCULATORS,
-					payload: unarchivedIds,
+					type: ARCHIVE_CALCULATORS,
+					payload: calculatorIds,
 				});
-				// Incrementar contador de calculators en userStats
-				dispatch(incrementUserStat("calculators", unarchivedIds.length));
-				// Decrementar storage (los cálculos desarchivados ya no cuentan en el storage)
-				dispatch(updateUserStorage("calculator", -unarchivedIds.length));
-
-				return {
-					success: true,
-					message: `${unarchivedIds.length} cálculos desarchivados exitosamente`,
-				};
+				// Solo decrementar por la cantidad de tipo "Calculado" (match con lógica del backend)
+				if (calculadoCount > 0) {
+					dispatch(incrementUserStat("calculators", -calculadoCount));
+				}
+				// Incrementar storage (los cálculos archivados sí cuentan en el storage)
+				dispatch(updateUserStorage("calculator", calculatorIds.length));
+				return { success: true, message: "Cálculos archivados exitosamente" };
 			} else {
-				// Ningún cálculo fue desarchivado (posiblemente por límites)
+				return { success: false, message: response.data.message || "No se pudieron archivar los cálculos." };
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al archivar cálculos."
+				: "Error desconocido al archivar cálculos.";
+
+			dispatch({
+				type: SET_ERROR,
+				payload: errorMessage,
+			});
+			return { success: false, message: errorMessage };
+		}
+	};
+
+export const unarchiveCalculators =
+	(userId: string, calculatorIds: string[], options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch, getState: any) => {
+		try {
+			dispatch({ type: SET_LOADING });
+			const response = await axios.post(
+				`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`,
+				{
+					resourceType: "calculators",
+					itemIds: calculatorIds,
+				},
+				{ headers: options?.headers }
+			);
+
+			if (response.data.success) {
+				// Obtener los IDs de los calculadores que realmente fueron desarchivados
+				const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
+
+				if (unarchivedIds.length > 0) {
+					// Contar cuántos son tipo "Calculado" antes de actualizar el stat
+					const archivedCalculators = getState().calculator.archivedCalculators;
+					const calculadoCount = unarchivedIds.filter((id: string) => {
+						const calc = archivedCalculators.find((c: CalculatorType) => c._id === id);
+						return calc?.type === "Calculado";
+					}).length;
+
+					// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedCalculators
+					dispatch({
+						type: UNARCHIVE_CALCULATORS,
+						payload: unarchivedIds,
+					});
+					// Solo incrementar por la cantidad de tipo "Calculado" (match con lógica del backend)
+					if (calculadoCount > 0) {
+						dispatch(incrementUserStat("calculators", calculadoCount));
+					}
+					// Decrementar storage (los cálculos desarchivados ya no cuentan en el storage)
+					dispatch(updateUserStorage("calculator", -unarchivedIds.length));
+
+					return {
+						success: true,
+						message: `${unarchivedIds.length} cálculos desarchivados exitosamente`,
+					};
+				} else {
+					// Ningún cálculo fue desarchivado (posiblemente por límites)
+					// Importante: Despachar SET_ERROR para resetear isLoader
+					dispatch({
+						type: SET_ERROR,
+						payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
+					});
+					return {
+						success: false,
+						message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
+					};
+				}
+			} else {
 				// Importante: Despachar SET_ERROR para resetear isLoader
 				dispatch({
 					type: SET_ERROR,
-					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
+					payload: response.data.message || "No se pudieron desarchivar los cálculos.",
 				});
 				return {
 					success: false,
-					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los cálculos debido a los límites del plan.",
+					message: response.data.message || "No se pudieron desarchivar los cálculos.",
 				};
 			}
-		} else {
-			// Importante: Despachar SET_ERROR para resetear isLoader
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al desarchivar cálculos."
+				: "Error desconocido al desarchivar cálculos.";
+
 			dispatch({
 				type: SET_ERROR,
-				payload: response.data.message || "No se pudieron desarchivar los cálculos.",
+				payload: errorMessage,
 			});
-			return {
-				success: false,
-				message: response.data.message || "No se pudieron desarchivar los cálculos.",
-			};
+			return { success: false, message: errorMessage };
 		}
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al desarchivar cálculos."
-			: "Error desconocido al desarchivar cálculos.";
+	};
 
-		dispatch({
-			type: SET_ERROR,
-			payload: errorMessage,
-		});
-		return { success: false, message: errorMessage };
-	}
-};
+export const getArchivedCalculatorsByUserId =
+	(userId: string, page: number = 1, limit?: number) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_LOADING });
+			// Campos optimizados para listas
+			const fields =
+				"_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
 
-export const getArchivedCalculatorsByUserId = (userId: string) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
-		// Campos optimizados para listas
-		const fields =
-			"_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
-			params: {
+			const params: Record<string, any> = {
 				archived: true,
 				fields,
-			},
-		});
+				page,
+			};
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
 
-		dispatch({
-			type: SET_ARCHIVED_CALCULATORS,
-			payload: response.data.calculators,
-		});
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/user/${userId}`, {
+				params,
+			});
 
-		return { success: true };
-	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError
-				? error.response?.data?.message || "Error al obtener los cálculos archivados"
-				: "Error al obtener los cálculos archivados";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
+			dispatch({
+				type: SET_ARCHIVED_CALCULATORS,
+				payload: {
+					calculators: response.data.calculators,
+					pagination: response.data.pagination,
+				},
+			});
+
+			return { success: true, pagination: response.data.pagination };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError
+					? error.response?.data?.message || "Error al obtener los cálculos archivados"
+					: "Error al obtener los cálculos archivados";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+	};
+
+export const getArchivedCalculatorsByGroupId =
+	(groupId: string, page: number = 1, limit?: number) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_LOADING });
+			// Campos optimizados para listas
+			const fields =
+				"_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
+
+			const params: Record<string, any> = {
+				archived: true,
+				fields,
+				page,
+			};
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
+
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/group/${groupId}`, {
+				params,
+			});
+
+			dispatch({
+				type: SET_ARCHIVED_CALCULATORS,
+				payload: {
+					calculators: response.data.calculators,
+					pagination: response.data.pagination,
+				},
+			});
+
+			return { success: true, pagination: response.data.pagination };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError
+					? error.response?.data?.message || "Error al obtener los cálculos archivados del equipo"
+					: "Error al obtener los cálculos archivados del equipo";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+	};
 
 // Action to reset calculators state
 export const resetCalculatorsState = () => ({

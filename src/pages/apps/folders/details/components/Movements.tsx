@@ -43,6 +43,7 @@ import dayjs from "utils/dayjs-config";
 import AlertMemberDelete from "../modals/alertMemberDelete";
 import { Movement } from "types/movements";
 import EmptyStateCard from "components/EmptyStateCard";
+import { useTeam } from "contexts/TeamContext";
 
 interface MovementsProps {
 	title: string;
@@ -111,6 +112,7 @@ const MovementsLoader = () => (
 
 const Movements = ({ title, folderName = "" }: MovementsProps) => {
 	const theme = useTheme();
+	const { canDelete } = useTeam();
 	const [open, setOpen] = useState<boolean>(false);
 	const [openModal, setOpenModal] = useState(false);
 	const [editMovement, setEditMovement] = useState<Movement | null>(null);
@@ -127,7 +129,16 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 
 	const handleOpen = () => {
 		if (!movementsData.isLoader) {
+			setEditMovement(null); // Resetear para asegurar que abre en modo "agregar"
 			setOpen(true);
+		}
+	};
+
+	// Callback cuando se cierra el modal
+	const handleCloseModal = (isOpen: boolean) => {
+		setOpen(isOpen);
+		if (!isOpen) {
+			setEditMovement(null); // Resetear al cerrar
 		}
 	};
 
@@ -148,6 +159,13 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 			fetchData();
 		}
 	}, [id]);
+
+	// Función para refrescar los movimientos después de una edición
+	const handleRefreshMovements = () => {
+		if (id) {
+			dispatch(getMovementsByFolderId(id));
+		}
+	};
 
 	const toggleShowAll = () => {
 		setShowAll((prev) => !prev);
@@ -401,45 +419,47 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 					</span>
 				</Tooltip>
 
-				<Tooltip
-					title={
-						selectedMovementId
-							? (() => {
-									const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
-									return movement?.source === "mev" || movement?.source === "pjn"
-										? "No se puede eliminar movimientos sincronizados"
-										: "Eliminar movimiento";
-							  })()
-							: "Seleccione un movimiento para eliminar"
-					}
-				>
-					<span>
-						<IconButton
-							color="error"
-							disabled={
-								!selectedMovementId ||
-								(() => {
-									const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
-									return movement?.source === "mev" || movement?.source === "pjn";
-								})()
-							}
-							size="medium"
-							onClick={(e) => {
-								e.stopPropagation();
-								handleClose();
-								setOpenModal(!openModal);
-							}}
-							sx={{
-								border: `1.5px solid ${theme.palette.error.main}`,
-								"&:hover": {
-									bgcolor: "error.lighter",
-								},
-							}}
-						>
-							<Trash variant="Bulk" size={20} />
-						</IconButton>
-					</span>
-				</Tooltip>
+				{canDelete && (
+					<Tooltip
+						title={
+							selectedMovementId
+								? (() => {
+										const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
+										return movement?.source === "mev" || movement?.source === "pjn"
+											? "No se puede eliminar movimientos sincronizados"
+											: "Eliminar movimiento";
+								  })()
+								: "Seleccione un movimiento para eliminar"
+						}
+					>
+						<span>
+							<IconButton
+								color="error"
+								disabled={
+									!selectedMovementId ||
+									(() => {
+										const movement = movementsData.movements.find((m: Movement) => m._id === selectedMovementId);
+										return movement?.source === "mev" || movement?.source === "pjn";
+									})()
+								}
+								size="medium"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleClose();
+									setOpenModal(!openModal);
+								}}
+								sx={{
+									border: `1.5px solid ${theme.palette.error.main}`,
+									"&:hover": {
+										bgcolor: "error.lighter",
+									},
+								}}
+							>
+								<Trash variant="Bulk" size={20} />
+							</IconButton>
+						</span>
+					</Tooltip>
+				)}
 			</Stack>
 		</Paper>
 	);
@@ -470,13 +490,23 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 		>
 			<ModalMovements
 				open={open}
-				setOpen={setOpen}
+				setOpen={handleCloseModal}
 				folderId={id}
 				editMode={!!editMovement}
 				movementData={editMovement}
 				folderName={folderName}
+				onSuccess={handleRefreshMovements}
 			/>
-			<AlertMemberDelete title="" open={openModal} handleClose={handleClose} id={selectedMovementId} />
+			<AlertMemberDelete
+				title={
+					selectedMovementId
+						? movementsData.movements.find((m: Movement) => m._id === selectedMovementId)?.title || "este movimiento"
+						: ""
+				}
+				open={openModal}
+				handleClose={handleClose}
+				id={selectedMovementId}
+			/>
 			<CardContent sx={{ p: 3 }}>
 				{movementsData.isLoader ? (
 					<MovementsLoader />

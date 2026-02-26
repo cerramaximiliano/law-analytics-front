@@ -38,6 +38,7 @@ const AccountTabAccount = Loadable(lazyRetry(() => import("sections/apps/profile
 const AccountTabPassword = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPassword")));
 const AccountTabRole = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabRole")));
 const AccountTabSettings = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabSettings")));
+const AccountTabPjnIntegration = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPjnIntegration")));
 
 // render - folders
 const FoldersLayout = Loadable(lazyRetry(() => import("pages/apps/folders/folders")));
@@ -77,6 +78,9 @@ const SubscriptionError = Loadable(lazyRetry(() => import("pages/apps/subscripti
 // help page
 const HelpPage = Loadable(lazyRetry(() => import("pages/help")));
 
+// teams pages
+const AcceptInvitation = Loadable(lazyRetry(() => import("pages/teams/accept-invitation")));
+
 // admin pages
 const AdminNotificationsPage = Loadable(lazyRetry(() => import("pages/admin/notifications")));
 const AdminJudicialMovementsPage = Loadable(lazyRetry(() => import("pages/admin/notifications/judicial-movements")));
@@ -104,6 +108,15 @@ const MainRoutes = {
 		{
 			path: "manage-booking/:token",
 			element: <ManageBookingPage />,
+		},
+		{
+			path: "teams",
+			children: [
+				{
+					path: "invitation/:token",
+					element: <AcceptInvitation />,
+				},
+			],
 		},
 		{
 			path: "/",
@@ -252,6 +265,10 @@ const MainRoutes = {
 										{
 											path: "settings",
 											element: <AccountTabSettings />,
+										},
+										{
+											path: "pjn",
+											element: <AccountTabPjnIntegration />,
 										},
 									],
 								},

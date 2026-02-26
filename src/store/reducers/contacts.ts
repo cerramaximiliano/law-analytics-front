@@ -21,11 +21,18 @@ const RESET_CONTACTS_STATE = "RESET_CONTACTS_STATE";
 const initialContactState: ContactState = {
 	contacts: [],
 	archivedContacts: [],
+	archivedPagination: {
+		total: 0,
+		page: 1,
+		limit: 10,
+		totalPages: 0,
+	},
 	selectedContacts: [],
 	error: null,
 	isLoader: false,
 	isInitialized: false,
 	lastFetchedUserId: undefined,
+	archivedByFolderCount: 0,
 };
 
 // ==============================|| CONTACT REDUCER & ACTIONS ||============================== //
@@ -64,12 +71,14 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 			return {
 				...state,
 				archivedContacts: action.payload?.contacts || action.payload || [],
+				archivedPagination: action.payload?.pagination || state.archivedPagination,
 				isLoader: false,
 			};
 		case FILTER_CONTACTS_BY_FOLDER:
 			return {
 				...state,
-				selectedContacts: action.payload,
+				selectedContacts: action.payload.contacts || action.payload,
+				archivedByFolderCount: action.payload.archivedByFolderCount || 0,
 				isLoader: false,
 			};
 		case DELETE_CONTACT:
@@ -139,9 +148,11 @@ const contacts = (state = initialContactState, action: Action): ContactState => 
 // Action creators
 
 // Agregar un nuevo contacto
-export const addContact = (contactData: Contact) => async (dispatch: Dispatch) => {
+export const addContact = (contactData: Contact, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
 	try {
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/contacts/create`, contactData);
+		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/contacts/create`, contactData, {
+			headers: options?.headers,
+		});
 
 		if (response.data && response.data.contact) {
 			dispatch({
@@ -296,23 +307,30 @@ export const updateMultipleContacts = (contacts: { id: string; updateData: Parti
 
 // Obtener contactos por userId
 export const getContactsByUserId =
-	(userId: string, forceRefresh: boolean = false) =>
-	async (dispatch: Dispatch, getState: any): Promise<{ success: boolean; contacts?: any; message?: string }> => {
+	(userId: string, forceRefresh: boolean = false, countArchivedByFolderId?: string) =>
+	async (dispatch: Dispatch, getState: any): Promise<{ success: boolean; contacts?: any; message?: string; archivedByFolderCount?: number }> => {
 		try {
 			// Obtener el estado actual del store
 			const state = getState();
 			const { isInitialized, lastFetchedUserId } = state.contacts;
 
 			// Si ya está inicializado y es el mismo usuario, no hacer la petición
-			if (isInitialized && lastFetchedUserId === userId && !forceRefresh) {
+			if (isInitialized && lastFetchedUserId === userId && !forceRefresh && !countArchivedByFolderId) {
 				return { success: true, contacts: state.contacts.contacts };
 			}
 
 			dispatch({ type: SET_CONTACT_LOADING });
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
+			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+			const params: Record<string, string> = { fields };
+
+			// Si se solicita count de archivados por folder, agregarlo
+			if (countArchivedByFolderId) {
+				params.countArchivedByFolderId = countArchivedByFolderId;
+			}
+
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
-				params: { fields },
+				params,
 			});
 
 			// Pasamos toda la respuesta como payload, y el reducer extraerá los contactos
@@ -321,7 +339,11 @@ export const getContactsByUserId =
 				payload: { ...response.data, userId },
 			});
 
-			return { success: true, contacts: response.data.contacts };
+			return {
+				success: true,
+				contacts: response.data.contacts,
+				archivedByFolderCount: response.data.archivedByFolderCount,
+			};
 		} catch (error) {
 			const errorMessage = (error as any).response?.data?.message || "Error al obtener contactos del usuario";
 			dispatch({
@@ -333,27 +355,35 @@ export const getContactsByUserId =
 	};
 // Obtener contactos por groupId
 export const getContactsByGroupId =
-	(groupId: string, archived: boolean = false) =>
+	(groupId: string, archived: boolean = false, page: number = 1, limit?: number) =>
 	async (dispatch: Dispatch) => {
 		try {
 			dispatch({ type: SET_CONTACT_LOADING });
 
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
+			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+
+			const params: Record<string, any> = {
+				archived,
+				fields,
+				page,
+			};
+
+			// Solo enviar limit si se especifica explícitamente
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/group/${groupId}`, {
-				params: {
-					archived,
-					fields,
-				},
+				params,
 			});
 
 			if (response.data && response.data.success) {
 				dispatch({
-					type: GET_CONTACTS_BY_GROUP,
-					payload: response.data, // El reducer ya sabe manejar esta estructura
+					type: archived ? GET_ARCHIVED_CONTACTS : GET_CONTACTS_BY_GROUP,
+					payload: response.data,
 				});
-				return { success: true, contacts: response.data.contacts };
+				return { success: true, contacts: response.data.contacts, pagination: response.data.pagination };
 			} else {
 				dispatch({
 					type: SET_CONTACT_ERROR,
@@ -378,8 +408,8 @@ export const getContactsByGroupId =
 		}
 	};
 
-export const getArchivedContactsByGroupId = (groupId: string) => {
-	return getContactsByGroupId(groupId, true);
+export const getArchivedContactsByGroupId = (groupId: string, page: number = 1, limit?: number) => {
+	return getContactsByGroupId(groupId, true, page, limit);
 };
 
 // Eliminar contacto por _id
@@ -414,12 +444,29 @@ export const filterContactsByFolder = (folderId: string) => async (dispatch: Dis
 		const auth = state.auth;
 		const userId = auth.user?._id;
 
+		let archivedByFolderCount = 0;
+
 		// Si tenemos userId y no hay datos en cache, descargar todos primero
 		if (userId && !isInitialized) {
-			// Descargar todos los contactos del usuario
-			const result = await dispatch(getContactsByUserId(userId) as any);
+			// Descargar todos los contactos del usuario, incluyendo count de archivados por folder
+			const result = await dispatch(getContactsByUserId(userId, false, folderId) as any);
 			if (!result.success) {
 				return result;
+			}
+			archivedByFolderCount = result.archivedByFolderCount || 0;
+		} else if (userId) {
+			// Si ya está inicializado, hacer una llamada ligera solo para obtener el count de archivados
+			try {
+				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
+					params: {
+						fields: "_id",
+						limit: 1,
+						countArchivedByFolderId: folderId,
+					},
+				});
+				archivedByFolderCount = response.data.archivedByFolderCount || 0;
+			} catch {
+				// Si falla, continuar sin el count
 			}
 		}
 
@@ -442,13 +489,13 @@ export const filterContactsByFolder = (folderId: string) => async (dispatch: Dis
 			return contact.folderIds.includes(folderId);
 		});
 
-		// Despacha la acción con los contactos filtrados
+		// Despacha la acción con los contactos filtrados y el count de archivados
 		dispatch({
 			type: FILTER_CONTACTS_BY_FOLDER,
-			payload: filteredContacts,
+			payload: { contacts: filteredContacts, archivedByFolderCount },
 		});
 
-		return { success: true, contacts: filteredContacts };
+		return { success: true, contacts: filteredContacts, archivedByFolderCount };
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : "Error al filtrar contactos";
 		dispatch({
@@ -546,130 +593,149 @@ export const linkFoldersToContact = (contactId: string, folderIds: string[]) => 
 	}
 };
 
-export const archiveContacts = (userId: string, contactIds: string[]) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_CONTACT_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`, {
-			resourceType: "contacts",
-			itemIds: contactIds,
-		});
+export const archiveContacts =
+	(userId: string, contactIds: string[], options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_CONTACT_LOADING });
+			const response = await axios.post(
+				`${import.meta.env.VITE_BASE_URL}/api/subscriptions/archive-items?userId=${userId}`,
+				{
+					resourceType: "contacts",
+					itemIds: contactIds,
+				},
+				{ headers: options?.headers }
+			);
 
-		if (response.data.success) {
+			if (response.data.success) {
+				dispatch({
+					type: ARCHIVE_CONTACTS,
+					payload: contactIds,
+				});
+				// Decrementar contador de contacts en userStats (archivados no cuentan como activos)
+				dispatch(incrementUserStat("contacts", -contactIds.length));
+				// Incrementar storage (los contactos archivados sí cuentan en el storage)
+				dispatch(updateUserStorage("contact", contactIds.length));
+				return { success: true, message: "Contactos archivados exitosamente" };
+			} else {
+				return { success: false, message: response.data.message || "No se pudieron archivar los contactos." };
+			}
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al archivar contactos."
+				: "Error desconocido al archivar contactos.";
+
 			dispatch({
-				type: ARCHIVE_CONTACTS,
-				payload: contactIds,
+				type: SET_CONTACT_ERROR,
+				payload: errorMessage,
 			});
-			// Decrementar contador de contacts en userStats (archivados no cuentan como activos)
-			dispatch(incrementUserStat("contacts", -contactIds.length));
-			// Incrementar storage (los contactos archivados sí cuentan en el storage)
-			dispatch(updateUserStorage("contact", contactIds.length));
-			return { success: true, message: "Contactos archivados exitosamente" };
-		} else {
-			return { success: false, message: response.data.message || "No se pudieron archivar los contactos." };
+			return { success: false, message: errorMessage };
 		}
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al archivar contactos."
-			: "Error desconocido al archivar contactos.";
+	};
 
-		dispatch({
-			type: SET_CONTACT_ERROR,
-			payload: errorMessage,
-		});
-		return { success: false, message: errorMessage };
-	}
-};
+export const getArchivedContactsByUserId =
+	(userId: string, page: number = 1, limit?: number) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_CONTACT_LOADING });
+			// Campos optimizados para listas y vistas resumidas
+			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
 
-export const getArchivedContactsByUserId = (userId: string) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_CONTACT_LOADING });
-		// Campos optimizados para listas y vistas resumidas
-		const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
-			params: {
+			const params: Record<string, any> = {
 				archived: true,
 				fields,
-			},
-		});
+				page,
+			};
+			if (limit !== undefined) {
+				params.limit = limit;
+			}
 
-		dispatch({
-			type: GET_ARCHIVED_CONTACTS,
-			payload: response.data,
-		});
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
+				params,
+			});
 
-		return { success: true };
-	} catch (error) {
-		dispatch({
-			type: SET_CONTACT_ERROR,
-			payload: (error as any).response?.data?.message || "Error al obtener contactos archivados del usuario",
-		});
+			dispatch({
+				type: GET_ARCHIVED_CONTACTS,
+				payload: response.data,
+			});
 
-		return { success: false, error };
-	}
-};
+			return { success: true, pagination: response.data.pagination };
+		} catch (error) {
+			dispatch({
+				type: SET_CONTACT_ERROR,
+				payload: (error as any).response?.data?.message || "Error al obtener contactos archivados del usuario",
+			});
 
-export const unarchiveContacts = (userId: string, contactIds: string[]) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_CONTACT_LOADING });
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`, {
-			resourceType: "contacts",
-			itemIds: contactIds,
-		});
+			return { success: false, error };
+		}
+	};
 
-		if (response.data.success) {
-			// Obtener los IDs de los contactos que realmente fueron desarchivados
-			const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
+export const unarchiveContacts =
+	(userId: string, contactIds: string[], options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_CONTACT_LOADING });
+			const response = await axios.post(
+				`${import.meta.env.VITE_BASE_URL}/api/subscriptions/unarchive-items?userId=${userId}`,
+				{
+					resourceType: "contacts",
+					itemIds: contactIds,
+				},
+				{ headers: options?.headers }
+			);
 
-			if (unarchivedIds.length > 0) {
-				// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedContacts
-				dispatch({
-					type: UNARCHIVE_CONTACTS,
-					payload: unarchivedIds,
-				});
-				// Incrementar contador de contacts en userStats
-				dispatch(incrementUserStat("contacts", unarchivedIds.length));
-				// Decrementar storage (los contactos desarchivados ya no cuentan en el storage)
-				dispatch(updateUserStorage("contact", -unarchivedIds.length));
+			if (response.data.success) {
+				// Obtener los IDs de los contactos que realmente fueron desarchivados
+				const unarchivedIds = response.data.unarchiveResult?.unarchivedIds || [];
 
-				return {
-					success: true,
-					message: `${unarchivedIds.length} contactos desarchivados exitosamente`,
-				};
+				if (unarchivedIds.length > 0) {
+					// Enviar solo los IDs al reducer - el reducer buscará los datos completos en archivedContacts
+					dispatch({
+						type: UNARCHIVE_CONTACTS,
+						payload: unarchivedIds,
+					});
+					// Incrementar contador de contacts en userStats
+					dispatch(incrementUserStat("contacts", unarchivedIds.length));
+					// Decrementar storage (los contactos desarchivados ya no cuentan en el storage)
+					dispatch(updateUserStorage("contact", -unarchivedIds.length));
+
+					return {
+						success: true,
+						message: `${unarchivedIds.length} contactos desarchivados exitosamente`,
+					};
+				} else {
+					// Ningún contacto fue desarchivado (posiblemente por límites)
+					// Importante: Despachar SET_CONTACT_ERROR para resetear isLoader
+					dispatch({
+						type: SET_CONTACT_ERROR,
+						payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
+					});
+					return {
+						success: false,
+						message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
+					};
+				}
 			} else {
-				// Ningún contacto fue desarchivado (posiblemente por límites)
 				// Importante: Despachar SET_CONTACT_ERROR para resetear isLoader
 				dispatch({
 					type: SET_CONTACT_ERROR,
-					payload: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
+					payload: response.data.message || "No se pudieron desarchivar los contactos.",
 				});
 				return {
 					success: false,
-					message: response.data.unarchiveResult?.message || "No se pudieron desarchivar los contactos debido a los límites del plan.",
+					message: response.data.message || "No se pudieron desarchivar los contactos.",
 				};
 			}
-		} else {
-			// Importante: Despachar SET_CONTACT_ERROR para resetear isLoader
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al desarchivar contactos."
+				: "Error desconocido al desarchivar contactos.";
+
 			dispatch({
 				type: SET_CONTACT_ERROR,
-				payload: response.data.message || "No se pudieron desarchivar los contactos.",
+				payload: errorMessage,
 			});
-			return {
-				success: false,
-				message: response.data.message || "No se pudieron desarchivar los contactos.",
-			};
+			return { success: false, message: errorMessage };
 		}
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al desarchivar contactos."
-			: "Error desconocido al desarchivar contactos.";
-
-		dispatch({
-			type: SET_CONTACT_ERROR,
-			payload: errorMessage,
-		});
-		return { success: false, message: errorMessage };
-	}
-};
+	};
 
 // Reset contacts state
 export const resetContactsState = () => ({

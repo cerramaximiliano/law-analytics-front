@@ -33,6 +33,7 @@ import * as Yup from "yup";
 import { useParams } from "react-router";
 import { updateFolderById } from "store/reducers/folder";
 import { getJuzgadosByJurisdiction, Juzgado } from "api/juzgados";
+import { useTeam } from "contexts/TeamContext";
 
 // ===========================|| DATA WIDGET - USER PERSONAL DATA ||=========================== //
 
@@ -60,6 +61,7 @@ const customTextareaStyles = {
 
 const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: boolean; type: string }) => {
 	const { id } = useParams<{ id: string }>();
+	const { canUpdate } = useTeam();
 	const formatDate = (date: string | null | undefined) => {
 		if (!date) return "";
 		return dayjs(date, ["DD-MM-YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]).format("DD/MM/YYYY");
@@ -597,6 +599,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 										</>
 									)}
 
+									{canUpdate && (
 									<Stack direction="row" spacing={2}>
 										<Grid>
 											{isEditing ? (
@@ -610,6 +613,7 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 											)}
 										</Grid>
 									</Stack>
+								)}
 								</Stack>
 							</Grid>
 						</Grid>

@@ -65,10 +65,12 @@ import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1, InfoCircle, Docu
 
 // types
 import { dispatch, useSelector } from "store";
-import { getContactsByUserId, archiveContacts, getArchivedContactsByUserId, unarchiveContacts } from "store/reducers/contacts";
+import { getContactsByUserId, getContactsByGroupId, archiveContacts, getArchivedContactsByUserId, getArchivedContactsByGroupId, unarchiveContacts } from "store/reducers/contacts";
+import { useTeam } from "contexts/TeamContext";
 import { Contact } from "types/contact";
 import { GuideContacts } from "components/guides";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
+import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
 // import useSubscription from "hooks/useSubscription";
 
 // ==============================|| REACT TABLE ||============================== //
@@ -77,7 +79,7 @@ interface Props {
 	columns: Column<Contact>[];
 	data: Contact[];
 	renderRowSubComponent: (props: { row: Row<Contact>; rowProps: any; visibleColumns: any; expanded: any }) => React.ReactNode;
-	handleAdd: () => void;
+	handleAdd?: () => void;
 	handleArchiveSelected?: (selectedRows: Row<Contact>[]) => void;
 	isLoading?: boolean;
 	handleOpenArchivedModal: () => void;
@@ -99,6 +101,7 @@ function ReactTable({
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
+	const csvLinkRef = useRef<any>(null);
 
 	// Use parent expanded row ID
 	const expandedRowId = parentExpandedRowId ?? null;
@@ -189,6 +192,49 @@ function ReactTable({
 		};
 	}, [setHiddenColumns, defaultHiddenColumns]);
 
+	const csvHeaders = [
+		{ label: "Nombre", key: "name" },
+		{ label: "Apellido", key: "lastName" },
+		{ label: "Rol", key: "role" },
+		{ label: "Tipo", key: "type" },
+		{ label: "Email", key: "email" },
+		{ label: "Teléfono", key: "phone" },
+		{ label: "Dirección", key: "address" },
+		{ label: "Ciudad", key: "city" },
+		{ label: "Provincia", key: "state" },
+		{ label: "Código Postal", key: "zipCode" },
+		{ label: "Nacionalidad", key: "nationality" },
+		{ label: "Documento", key: "document" },
+		{ label: "CUIT", key: "cuit" },
+		{ label: "Estado", key: "status" },
+		{ label: "Actividad", key: "activity" },
+		{ label: "Empresa", key: "company" },
+		{ label: "Fiscal", key: "fiscal" },
+	];
+
+	const csvData = useMemo(() => {
+		const sourceRows = selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data;
+		return sourceRows.map((contact: Contact) => ({
+			name: contact.name || "",
+			lastName: contact.lastName || "",
+			role: Array.isArray(contact.role) ? contact.role.join(", ") : contact.role || "",
+			type: contact.type || "",
+			email: contact.email || "",
+			phone: contact.phone || "",
+			address: contact.address || "",
+			city: contact.city || "",
+			state: contact.state || "",
+			zipCode: contact.zipCode || "",
+			nationality: contact.nationality || "",
+			document: contact.document || "",
+			cuit: contact.cuit || "",
+			status: contact.status || "",
+			activity: contact.activity || "",
+			company: contact.company || "",
+			fiscal: contact.fiscal || "",
+		}));
+	}, [selectedFlatRows, data]);
+
 	if (!isColumnsReady || isLoading) {
 		return (
 			<>
@@ -260,9 +306,11 @@ function ReactTable({
 
 					{/* Botones principales (derecha) */}
 					<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
-						<Button variant="contained" size="small" startIcon={<UserAdd />} onClick={handleAdd} fullWidth={matchDownSM}>
-							Agregar Contacto
-						</Button>
+						{handleAdd && (
+							<Button variant="contained" size="small" startIcon={<UserAdd />} onClick={handleAdd} fullWidth={matchDownSM}>
+								Agregar Contacto
+							</Button>
+						)}
 						<Button
 							variant="outlined"
 							color="secondary"
@@ -311,21 +359,21 @@ function ReactTable({
 					{/* Botones secundarios (derecha) */}
 					<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
 						<Tooltip title="Exportar a CSV">
-							<IconButton color="primary" size="medium">
-								<CSVLink
-									data={selectedFlatRows.length > 0 ? selectedFlatRows.map((d: Row<Contact>) => d.original) : data}
-									filename={"contactos.csv"}
-									style={{
-										color: "inherit",
-										display: "flex",
-										alignItems: "center",
-										textDecoration: "none",
-									}}
-								>
-									<DocumentDownload variant="Bulk" size={22} />
-								</CSVLink>
+							<IconButton
+								color="primary"
+								size="medium"
+								onClick={() => csvLinkRef.current?.link?.click()}
+							>
+								<DocumentDownload variant="Bulk" size={22} />
 							</IconButton>
 						</Tooltip>
+						<CSVLink
+							ref={csvLinkRef}
+							data={csvData}
+							headers={csvHeaders}
+							filename={"contactos.csv"}
+							style={{ display: "none" }}
+						/>
 						<Tooltip title="Ver Guía">
 							<IconButton color="success" onClick={handleOpenGuide}>
 								<InfoCircle variant="Bulk" />
@@ -461,6 +509,8 @@ const CustomerListPage = () => {
 	const [loadingUnarchive, setLoadingUnarchive] = useState(false);
 	const [guideOpen, setGuideOpen] = useState(false);
 	const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+	const [archivedPage, setArchivedPage] = useState(1);
+	const [archivedPageSize, setArchivedPageSize] = useState(10);
 
 	// Estado para el modal de límite de recursos
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
@@ -474,70 +524,60 @@ const CustomerListPage = () => {
 	// Selectores
 	const user = useSelector((state) => state.auth.user);
 	const { subscription } = useSelector((state) => state.auth);
-	const { contacts, archivedContacts, isLoader } = useSelector((state) => state.contacts);
-	// const { getLimitLocal } = useSubscription();
+	const { contacts, archivedContacts, archivedPagination, isLoader } = useSelector((state) => state.contacts);
 
-	// Efecto para la carga inicial
+	// Team context - para cargar recursos del equipo si hay uno activo
+	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized, getRequestHeaders } = useTeam();
+
+	// Efecto para la carga inicial y cuando cambia el equipo activo
 	useEffect(() => {
-		// Solo ejecutar en el primer montaje
-		if (!mountedRef.current) {
-			mountedRef.current = true;
+		const loadContacts = async () => {
+			// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
+			if (!user?._id) {
+				setIsInitialLoad(false);
+				return;
+			}
 
-			const initialLoad = async () => {
-				// Si no hay usuario, establecer isInitialLoad a false para mostrar la UI vacía
-				if (!user?._id) {
-					setIsInitialLoad(false);
-					return;
-				}
+			// Esperar a que el TeamContext esté inicializado
+			if (!isTeamInitialized) {
+				return;
+			}
 
-				if (loadingRef.current) return;
+			// Si está en modo equipo pero aún no hay equipo activo seleccionado, esperar
+			if (isTeamMode && !activeTeam?._id) {
+				return;
+			}
 
-				try {
-					// Garantizar que user._id es un string
+			if (loadingRef.current) return;
+
+			try {
+				loadingRef.current = true;
+
+				// Si hay equipo activo, cargar contactos del grupo
+				// Si no, cargar contactos del usuario
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getContactsByGroupId(activeTeam._id));
+				} else {
 					const userId = user._id;
-					if (!userId) {
-						return;
+					if (userId) {
+						await dispatch(getContactsByUserId(userId));
 					}
-
-					loadingRef.current = true;
-					await dispatch(getContactsByUserId(userId));
-				} catch (error) {
-				} finally {
-					loadingRef.current = false;
-					setIsInitialLoad(false);
 				}
-			};
+			} catch (error) {
+				console.error("Error loading contacts:", error);
+			} finally {
+				loadingRef.current = false;
+				setIsInitialLoad(false);
+			}
+		};
 
-			initialLoad();
-		}
-
-		// Este efecto también debe ejecutarse cuando cambia el usuario después del login
-		if (user?._id && !loadingRef.current && mountedRef.current) {
-			const reloadContacts = async () => {
-				try {
-					// Garantizar que user._id es un string
-					const userId = user._id;
-					if (!userId) {
-						return;
-					}
-
-					loadingRef.current = true;
-					await dispatch(getContactsByUserId(userId));
-				} catch (error) {
-				} finally {
-					loadingRef.current = false;
-					setIsInitialLoad(false);
-				}
-			};
-
-			reloadContacts();
-		}
+		loadContacts();
 
 		return () => {
-			mountedRef.current = false;
 			loadingRef.current = false;
 		};
-	}, [user?._id]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user?._id, activeTeam?._id, isTeamMode, isTeamInitialized]);
 
 	// Handlers
 	const handleCloseDialog = useCallback(() => {
@@ -593,18 +633,16 @@ const CustomerListPage = () => {
 		if (!user?._id || loadingRef.current) return;
 
 		try {
-			// Garantizar que user._id es un string
-			const userId = user._id;
-			if (!userId) {
-				return;
-			}
-
 			loadingRef.current = true;
-			await dispatch(getContactsByUserId(userId, true)); // forceRefresh=true para recargar después de cambios
+			if (isTeamMode && activeTeam?._id) {
+				await dispatch(getContactsByGroupId(activeTeam._id));
+			} else {
+				await dispatch(getContactsByUserId(user._id, true));
+			}
 		} finally {
 			loadingRef.current = false;
 		}
-	}, [user?._id]);
+	}, [user?._id, isTeamMode, activeTeam?._id]);
 
 	const handleRowAction = useCallback((e: MouseEvent<HTMLButtonElement>, action: () => void) => {
 		e.stopPropagation();
@@ -629,7 +667,7 @@ const CustomerListPage = () => {
 
 			try {
 				loadingRef.current = true;
-				const result = await dispatch(archiveContacts(userId, contactIds));
+				const result = await dispatch(archiveContacts(userId, contactIds, { headers: getRequestHeaders() }));
 
 				if (result.success) {
 					setSnackbarMessage(
@@ -653,32 +691,60 @@ const CustomerListPage = () => {
 		[user?._id],
 	);
 
+	// Función para cargar contactos archivados con paginación
+	const loadArchivedContacts = useCallback(
+		async (page: number, pageSize: number) => {
+			if (!user?._id || loadingRef.current) return;
+
+			try {
+				loadingRef.current = true;
+				// Usar la función correcta según el modo equipo
+				if (isTeamMode && activeTeam?._id) {
+					await dispatch(getArchivedContactsByGroupId(activeTeam._id, page, pageSize));
+				} else {
+					await dispatch(getArchivedContactsByUserId(user._id, page, pageSize));
+				}
+			} catch (error) {
+				setSnackbarMessage("Error al obtener contactos archivados");
+				setSnackbarSeverity("error");
+				setSnackbarOpen(true);
+			} finally {
+				loadingRef.current = false;
+			}
+		},
+		[user?._id, isTeamMode, activeTeam?._id]
+	);
+
 	// Manejadores para elementos archivados
 	const handleOpenArchivedModal = useCallback(async () => {
-		if (!user?._id || loadingRef.current) return;
-
-		try {
-			// Garantizar que user._id es un string
-			const userId = user._id;
-			if (!userId) {
-				return;
-			}
-
-			loadingRef.current = true;
-			await dispatch(getArchivedContactsByUserId(userId));
-			setArchivedModalOpen(true);
-		} catch (error) {
-			setSnackbarMessage("Error al obtener contactos archivados");
-			setSnackbarSeverity("error");
-			setSnackbarOpen(true);
-		} finally {
-			loadingRef.current = false;
-		}
-	}, [user?._id]);
+		setArchivedPage(1); // Reset to first page
+		await loadArchivedContacts(1, archivedPageSize);
+		setArchivedModalOpen(true);
+	}, [loadArchivedContacts, archivedPageSize]);
 
 	const handleCloseArchivedModal = useCallback(() => {
 		setArchivedModalOpen(false);
+		setArchivedPage(1); // Reset page on close
 	}, []);
+
+	// Handler para cambio de página en archivados
+	const handleArchivedPageChange = useCallback(
+		(page: number) => {
+			setArchivedPage(page);
+			loadArchivedContacts(page, archivedPageSize);
+		},
+		[loadArchivedContacts, archivedPageSize]
+	);
+
+	// Handler para cambio de tamaño de página en archivados
+	const handleArchivedPageSizeChange = useCallback(
+		(pageSize: number) => {
+			setArchivedPageSize(pageSize);
+			setArchivedPage(1);
+			loadArchivedContacts(1, pageSize);
+		},
+		[loadArchivedContacts]
+	);
 
 	const handleOpenGuide = useCallback(() => {
 		setGuideOpen(true);
@@ -701,7 +767,7 @@ const CustomerListPage = () => {
 
 			try {
 				setLoadingUnarchive(true);
-				const result = await dispatch(unarchiveContacts(userId, contactIds));
+				const result = await dispatch(unarchiveContacts(userId, contactIds, { headers: getRequestHeaders() }));
 
 				if (result.success) {
 					setSnackbarMessage(
@@ -881,39 +947,45 @@ const CustomerListPage = () => {
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
-							<Tooltip title="Vincular">
-								<IconButton
-									color="success"
-									onClick={(e) =>
-										handleRowAction(e, () => {
-											setCustomerId(original._id);
-											setFolderIds(original.folderIds || []);
-											handleOpenLink();
-										})
-									}
-								>
-									<Link1 variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Editar">
-								<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(original))}>
-									<Edit2 variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Eliminar">
-								<IconButton
-									color="error"
-									onClick={(e) =>
-										handleRowAction(e, () => {
-											handleClose();
-											setCustomerDeleteId(`${original.name || ""} ${original.lastName || ""}`);
-											setCustomerId(original._id);
-										})
-									}
-								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
+							{canUpdate && (
+								<Tooltip title="Vincular">
+									<IconButton
+										color="success"
+										onClick={(e) =>
+											handleRowAction(e, () => {
+												setCustomerId(original._id);
+												setFolderIds(original.folderIds || []);
+												handleOpenLink();
+											})
+										}
+									>
+										<Link1 variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
+							{canUpdate && (
+								<Tooltip title="Editar">
+									<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(original))}>
+										<Edit2 variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
+							{canDelete && (
+								<Tooltip title="Eliminar">
+									<IconButton
+										color="error"
+										onClick={(e) =>
+											handleRowAction(e, () => {
+												handleClose();
+												setCustomerDeleteId(`${original.name || ""} ${original.lastName || ""}`);
+												setCustomerId(original._id);
+											})
+										}
+									>
+										<Trash variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
 						</Stack>
 					);
 				},
@@ -921,7 +993,7 @@ const CustomerListPage = () => {
 				disableSortBy: true,
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, handleOpenLink, handleRowAction, expandedRowId, handleToggleExpanded],
+		[theme, mode, handleEditContact, handleClose, handleOpenLink, handleRowAction, expandedRowId, handleToggleExpanded, canUpdate, canDelete],
 	);
 
 	// Row sub component memoizado
@@ -952,12 +1024,13 @@ const CustomerListPage = () => {
 	return (
 		<MainCard content={false}>
 			<DowngradeGracePeriodAlert />
+			<ResourceUsageBar resourceType="contacts" compact />
 			<ScrollX>
 				<ReactTable
 					columns={columns}
 					data={contacts}
-					handleAdd={handleAddContact}
-					handleArchiveSelected={handleArchiveSelected}
+					handleAdd={canCreate ? handleAddContact : undefined}
+					handleArchiveSelected={canUpdate ? handleArchiveSelected : undefined}
 					handleOpenArchivedModal={handleOpenArchivedModal}
 					handleOpenGuide={handleOpenGuide}
 					renderRowSubComponent={renderRowSubComponent}
@@ -1001,6 +1074,9 @@ const CustomerListPage = () => {
 				onUnarchive={handleUnarchiveSelected}
 				loading={loadingUnarchive}
 				itemType="contacts"
+				pagination={archivedPagination}
+				onPageChange={handleArchivedPageChange}
+				onPageSizeChange={handleArchivedPageSizeChange}
 			/>
 
 			{/* Guía de contactos */}

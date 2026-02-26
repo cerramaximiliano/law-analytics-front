@@ -58,6 +58,7 @@ import { ThemeMode } from "types/config";
 import { getCalculatorsByFilter, clearSelectedCalculators, updateCalculator } from "store/reducers/calculator";
 import { openSnackbar } from "store/reducers/snackbar";
 import LinkCauseModal from "sections/forms/wizard/calc-laboral/components/linkCauseModal";
+import { useTeam } from "contexts/TeamContext";
 
 // ==============================|| REACT TABLE ||============================== //
 
@@ -824,6 +825,7 @@ const SavedIntereses = () => {
 	const { selectedCalculators, isLoader } = useSelector((state: any) => state.calculator);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;
+	const { activeTeam, isTeamMode, isInitialized: isTeamInitialized, canDelete } = useTeam();
 
 	const [linkModalOpen, setLinkModalOpen] = useState(false);
 	const [selectedCalculationId, setSelectedCalculationId] = useState("");
@@ -847,18 +849,38 @@ const SavedIntereses = () => {
 		// Marcar como montado
 		isMountedRef.current = true;
 
+		// Esperar a que el TeamContext esté inicializado
+		if (!isTeamInitialized) {
+			return;
+		}
+
+		// Si está en modo equipo pero aún no hay equipo activo, esperar
+		if (isTeamMode && !activeTeam?._id) {
+			return;
+		}
+
 		// Usar setTimeout para retrasar la primera ejecución y evitar conflictos
 		const timeoutId = setTimeout(
 			() => {
-				if (userId && isMountedRef.current) {
+				if (isMountedRef.current) {
 					// getCalculatorsByFilter ya maneja la lógica de cache internamente
-					dispatch(
-						getCalculatorsByFilter({
-							userId,
-							type: "Calculado",
-							classType: "intereses",
-						}),
-					);
+					if (isTeamMode && activeTeam?._id) {
+						dispatch(
+							getCalculatorsByFilter({
+								groupId: activeTeam._id,
+								type: "Calculado",
+								classType: "intereses",
+							}),
+						);
+					} else if (userId) {
+						dispatch(
+							getCalculatorsByFilter({
+								userId,
+								type: "Calculado",
+								classType: "intereses",
+							}),
+						);
+					}
 				}
 			},
 			isFirstRenderRef.current ? 100 : 0,
@@ -872,7 +894,7 @@ const SavedIntereses = () => {
 			// Limpiar selectedCalculators cuando el componente se desmonta
 			dispatch(clearSelectedCalculators());
 		};
-	}, [userId, dispatch]); // Incluir dispatch en las dependencias
+	}, [userId, isTeamMode, activeTeam?._id, isTeamInitialized]); // Incluir dependencias de equipo
 
 	const handleDeleteDialogClose = () => {
 		setOpen(false);
@@ -1393,28 +1415,30 @@ const SavedIntereses = () => {
 									<Sms variant="Bulk" />
 								</IconButton>
 							</Tooltip>
-							<Tooltip
-								componentsProps={{
-									tooltip: {
-										sx: {
-											backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
-											opacity: 0.9,
+							{canDelete && (
+								<Tooltip
+									componentsProps={{
+										tooltip: {
+											sx: {
+												backgroundColor: mode === ThemeMode.DARK ? theme.palette.grey[50] : theme.palette.grey[700],
+												opacity: 0.9,
+											},
 										},
-									},
-								}}
-								title="Eliminar"
-							>
-								<IconButton
-									color="error"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										setCalculatorIdToDelete(row.original._id);
-										setOpen(true);
 									}}
+									title="Eliminar"
 								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
+									<IconButton
+										color="error"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											setCalculatorIdToDelete(row.original._id);
+											setOpen(true);
+										}}
+									>
+										<Trash variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
 							{!row.original.folderId && (
 								<Tooltip
 									componentsProps={{

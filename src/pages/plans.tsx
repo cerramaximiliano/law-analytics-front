@@ -385,13 +385,19 @@ const Plans = () => {
 													>
 														{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
 														{(() => {
-															// Features y recursos a ocultar temporalmente
-															const hiddenFeatures = ["teams"];
-															const hiddenResources = ["teamMembers"];
+															// Determinar el ambiente actual
+															const currentEnv = import.meta.env.PROD ? 'production' : 'development';
 
-															// Mapear recursos a objetos con información común (filtrando los ocultos)
+															// Función para verificar si un elemento es visible en el ambiente actual
+															const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+																if (!visibility || visibility === 'all') return true;
+																if (visibility === 'none') return false;
+																return visibility === currentEnv;
+															};
+
+															// Mapear recursos a objetos con información común (filtrando según visibility)
 															const resourceItems = plan.resourceLimits
-																.filter((resource) => !hiddenResources.includes(resource.name))
+																.filter((resource: any) => isVisibleInCurrentEnv(resource.visibility))
 																.map((resource) => ({
 																	type: "resource" as const,
 																	enabled: true,
@@ -399,9 +405,9 @@ const Plans = () => {
 																	name: resource.name,
 																}));
 
-															// Mapear características a objetos con información común (filtrando las ocultas)
+															// Mapear características a objetos con información común (filtrando según visibility)
 															const featureItems = plan.features
-																.filter((feature) => !hiddenFeatures.includes(feature.name))
+																.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
 																.map((feature) => ({
 																	type: "feature" as const,
 																	enabled: feature.enabled,

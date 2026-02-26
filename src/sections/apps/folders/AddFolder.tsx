@@ -36,6 +36,7 @@ import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import dayjs from "utils/dayjs-config";
 import folderData from "data/folder.json";
+import { useTeam } from "contexts/TeamContext";
 
 const getInitialValues = (folder: FormikValues | null) => {
 	const newFolder = {
@@ -51,10 +52,14 @@ const getInitialValues = (folder: FormikValues | null) => {
 		folderJuris: null,
 		folderFuero: null,
 		entryMethod: "manual", // Nuevo campo para seleccionar el método de ingreso
-		judicialPower: "", // Poder judicial seleccionado (nacional o buenosaires)
+		judicialPower: "", // Poder judicial seleccionado (nacional, buenosaires o caba)
 		expedientNumber: "", // Para ingreso automático
 		expedientYear: "", // Para ingreso automático
 		pjn: false, // Para indicar si los datos provienen del Poder Judicial de la Nación
+		mev: false, // Para indicar si los datos provienen del MEV (Buenos Aires)
+		eje: false, // Para indicar si los datos provienen del EJE (CABA)
+		ejeSearchType: "expediente", // Tipo de búsqueda para EJE: "cuij" o "expediente"
+		ejeCuij: "", // CUIJ para búsqueda en EJE
 	};
 
 	if (folder) {
@@ -115,6 +120,7 @@ function getStepContent(step: number, values: any) {
 
 const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder) => {
 	const auth = useSelector((state) => state.auth);
+	const { isTeamMode, activeTeam, getUserIdForResource, getTeamIdForResource, getRequestHeaders } = useTeam();
 	const isCreating = mode === "add";
 
 	// Estado para el modal de límite de recursos
@@ -133,7 +139,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	});
 
 	const judicialPowerSchema = Yup.object().shape({
-		judicialPower: Yup.string().oneOf(["nacional", "buenosaires"], "Seleccione un poder judicial").required("Seleccione un poder judicial"),
+		judicialPower: Yup.string().oneOf(["nacional", "buenosaires", "caba"], "Seleccione un poder judicial").required("Seleccione un poder judicial"),
 	});
 
 	// Esquema para PJN
@@ -149,6 +155,26 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		organismoBA: Yup.string().required("Seleccione un organismo"),
 		expedientNumber: Yup.string().required("Ingrese el número de expediente"),
 		expedientYear: Yup.string().required("Ingrese el año del expediente"),
+	});
+
+	// Esquema para CABA (EJE) - validación dinámica según tipo de búsqueda
+	const automaticEntryEjeSchema = Yup.object().shape({
+		ejeSearchType: Yup.string().oneOf(["cuij", "expediente"]).required(),
+		ejeCuij: Yup.string().when("ejeSearchType", {
+			is: "cuij",
+			then: (schema) => schema.required("Ingrese el CUIJ del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientNumber: Yup.string().when("ejeSearchType", {
+			is: "expediente",
+			then: (schema) => schema.required("Ingrese el número de expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
+		expedientYear: Yup.string().when("ejeSearchType", {
+			is: "expediente",
+			then: (schema) => schema.required("Ingrese el año del expediente"),
+			otherwise: (schema) => schema.notRequired(),
+		}),
 	});
 
 	const manualStepOneSchema = Yup.object().shape({
@@ -209,6 +235,9 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 						// Usar el esquema correcto según el poder judicial
 						if (values.judicialPower === "buenosaires") {
 							return automaticEntryBASchema;
+						} else if (values.judicialPower === "caba") {
+							// Para CABA, usar esquema dinámico que valida según ejeSearchType
+							return automaticEntryEjeSchema;
 						} else {
 							return automaticEntryPJNSchema;
 						}
@@ -284,7 +313,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 				// Verificar el límite de recursos para carpetas (folders)
 				const checkLimit = async () => {
 					try {
-						const response = await ApiService.checkResourceLimit("folders");
+						// Pasar headers del equipo si estamos en modo equipo
+						const response = await ApiService.checkResourceLimit("folders", { headers: getRequestHeaders() });
 						if (response.success && response.data) {
 							if (response.data.hasReachedLimit) {
 								// Si ha alcanzado el límite, mostrar el modal de error y cerrar este modal
@@ -364,7 +394,9 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	};
 
 	async function _submitForm(values: any, actions: any, mode: string | undefined) {
-		const userId = auth.user?._id;
+		// En modo equipo, usar el userId del owner del grupo
+		const userId = getUserIdForResource();
+		const groupId = getTeamIdForResource();
 		const id = values._id;
 
 		let results;
@@ -376,7 +408,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		try {
 			if (mode === "add") {
 				// Preparar los datos según el tipo de poder judicial
-				let folderDataToSend = { ...values, userId };
+				// Incluir groupId si estamos en modo equipo
+				let folderDataToSend = { ...values, userId, ...(groupId && { groupId }) };
 
 				// Si es Poder Judicial de Buenos Aires (MEV), agregar campos específicos
 				if (values.judicialPower === "buenosaires") {
@@ -392,9 +425,23 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 						pjn: true,
 						// folderJuris se usa como pjnCode en el backend
 					};
+				} else if (values.judicialPower === "caba") {
+					// Poder Judicial de CABA (EJE)
+					folderDataToSend = {
+						...folderDataToSend,
+						eje: true,
+						ejeSearchType: values.ejeSearchType,
+						// Si es búsqueda por CUIJ, incluir el CUIJ
+						...(values.ejeSearchType === "cuij" && { ejeCuij: values.ejeCuij }),
+						// Si es búsqueda por número/año, incluir esos campos
+						...(values.ejeSearchType === "expediente" && {
+							expedientNumber: values.expedientNumber,
+							expedientYear: values.expedientYear,
+						}),
+					};
 				}
 
-				results = await dispatch(addFolder(folderDataToSend));
+				results = await dispatch(addFolder(folderDataToSend, { headers: getRequestHeaders() }));
 				message = "agregar";
 			}
 			if (mode === "edit") {
@@ -546,7 +593,19 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 									) : (
 										<Box>
 											{/* Steps Progress */}
-											<Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+											<Stack
+												direction="row"
+												spacing={2}
+												sx={{
+													mb: 2,
+													pb: 4,
+													position: "sticky",
+													top: -16,
+													zIndex: 1,
+													bgcolor: "background.paper",
+													pt: 2,
+												}}
+											>
 												{steps.map((label, index) => (
 													<Box key={label} sx={{ position: "relative", width: "100%" }}>
 														<Box

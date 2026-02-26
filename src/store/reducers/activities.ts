@@ -3,6 +3,7 @@ import { Dispatch } from "redux";
 import { CombinedActivitiesState, CombinedActivitiesResponse, ActivityQueryParams } from "types/activities";
 
 export const GET_COMBINED_ACTIVITIES = "activities/GET_COMBINED_ACTIVITIES";
+export const UPDATE_ACTIVITY = "activities/UPDATE_ACTIVITY";
 export const SET_LOADING = "activities/SET_LOADING";
 export const SET_ERROR = "activities/SET_ERROR";
 export const SET_PAGINATION = "activities/SET_PAGINATION";
@@ -36,6 +37,14 @@ const activitiesReducer = (state = initialState, action: any): CombinedActivitie
 				pjnAccess: action.payload.pjnAccess,
 				isLoading: false,
 				error: undefined,
+			};
+
+		case UPDATE_ACTIVITY:
+			return {
+				...state,
+				activities: state.activities.map((activity) =>
+					activity._id === action.payload._id ? { ...activity, ...action.payload } : activity
+				),
 			};
 
 		case SET_PAGINATION:
@@ -160,6 +169,15 @@ export const getCombinedActivities = (folderId: string, params?: ActivityQueryPa
 
 export const clearActivities = () => (dispatch: Dispatch) => {
 	dispatch({ type: CLEAR_ACTIVITIES });
+};
+
+// Actualizar una actividad individual (para sincronizar con ediciones de movements/notifications/events)
+export const updateActivity = (activityData: Partial<{ _id: string; title: string; description?: string; date?: string; movement?: string; dateExpiration?: string; link?: string; completed?: boolean }>) => (dispatch: Dispatch) => {
+	if (!activityData._id) return;
+	dispatch({
+		type: UPDATE_ACTIVITY,
+		payload: activityData,
+	});
 };
 
 export default activitiesReducer;

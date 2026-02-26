@@ -263,15 +263,21 @@ const Availability = () => {
 		}
 	}, []);
 
+	// Referencia al ID inicial de la URL para evitar ciclos infinitos
+	const initialAvailabilityIdRef = React.useRef<string | null>(searchParams.get("id"));
+
 	// Función para cargar la configuración existente - convertida a callback
 	const loadAvailabilitySettings = useCallback(async () => {
 		setLoading(true);
 		try {
 			let response;
 
-			// Si hay un ID específico en la URL, cargar esa configuración
-			if (availabilityId) {
-				response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`);
+			// Usar el ID inicial de la URL (si existe) para la primera carga
+			const idToLoad = initialAvailabilityIdRef.current;
+
+			// Si hay un ID específico en la URL, cargar esa configuración por su _id
+			if (idToLoad) {
+				response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/byId/${idToLoad}`);
 
 				// Verificar respuesta exitosa
 				if (response.status !== 200) {
@@ -287,8 +293,8 @@ const Availability = () => {
 				// Aplicar configuración
 				applyConfigData(activeConfig);
 			} else {
-				// Cargar todas las configuraciones disponibles
-				response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
+				// Cargar todas las configuraciones disponibles del usuario actual
+				response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`);
 
 				// Verificar respuesta exitosa
 				if (response.status !== 200) {
@@ -323,7 +329,7 @@ const Availability = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [availabilityId, applyConfigData]);
+	}, [applyConfigData]); // Removido availabilityId de las dependencias para evitar ciclo infinito
 
 	// Cargar configuración al iniciar
 	useEffect(() => {
@@ -515,10 +521,10 @@ const Availability = () => {
 
 			if (availabilityId) {
 				// Actualizar configuración existente
-				response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`, availabilityData);
+				response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`, availabilityData);
 			} else {
 				// Crear nueva configuración
-				response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`, availabilityData);
+				response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`, availabilityData);
 			}
 
 			// Verificar respuesta exitosa

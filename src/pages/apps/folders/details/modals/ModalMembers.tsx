@@ -47,8 +47,8 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 
 	const toggleSelection = (address: Contact) => {
 		setSelectedAddresses((prev) =>
-			prev.some((selected) => selected.email === address.email)
-				? prev.filter((selected) => selected.email !== address.email)
+			prev.some((selected) => selected._id === address._id)
+				? prev.filter((selected) => selected._id !== address._id)
 				: [...prev, address],
 		);
 	};
@@ -158,10 +158,11 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 	}, [open]);
 
 	const filteredContacts = contacts.filter((contact: Contact) => {
+		const search = searchTerm.toLowerCase();
 		const matchesSearch =
-			contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			contact.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			contact.email.toLowerCase().includes(searchTerm.toLowerCase());
+			(contact.name || "").toLowerCase().includes(search) ||
+			(contact.lastName || "").toLowerCase().includes(search) ||
+			(contact.email || "").toLowerCase().includes(search);
 
 		const isNotMember = !membersData.some((member) => member._id === contact._id);
 
@@ -237,7 +238,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 								>
 									<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
 										{selectedAddresses.map((address) => (
-											<Tooltip key={address.email} title={`${address.name} ${address.lastName || ""}`}>
+											<Tooltip key={address._id} title={`${address.name} ${address.lastName || ""}`}>
 												<Box
 													sx={{
 														p: 1,
@@ -284,23 +285,21 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 					</FormControl>
 				</Box>
 
-				<Box sx={{ flex: 1, overflow: "hidden", px: 2.5, pb: 2.5 }}>
+				<Box sx={{ flex: 1, minHeight: 0, px: 2.5, pb: 2.5 }}>
 					<SimpleBar
 						sx={{
-							height: "100%",
+							maxHeight: { xs: "40vh", sm: "45vh" },
 							width: "100%",
 							overflowX: "hidden",
-							overflowY: "auto",
-							position: "relative",
 						}}
 					>
 						<Stack spacing={1.5}>
 							{filteredContacts.length > 0 ? (
 								filteredContacts.map((contact: Contact) => {
-									const isSelected = selectedAddresses.some((selected) => selected.email === contact.email);
+									const isSelected = selectedAddresses.some((selected) => selected._id === contact._id);
 									return (
 										<Box
-											key={contact.email}
+											key={contact._id}
 											onClick={() => toggleSelection(contact)}
 											sx={{
 												width: "100%",
@@ -317,8 +316,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 													transform: "translateY(-2px)",
 													boxShadow: `0 4px 8px ${theme.palette.primary.lighter}`,
 													zIndex: 10,
-													marginTop: "10px",
-													marginBottom: "6px",
+	
 												},
 											}}
 										>

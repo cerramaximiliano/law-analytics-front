@@ -21,6 +21,7 @@ import { NotificationType } from "types/notifications";
 import { visuallyHidden } from "@mui/utils";
 import dayjs from "utils/dayjs-config";
 import ScrollX from "components/ScrollX";
+import { useTeam } from "contexts/TeamContext";
 
 interface NotificationsTableProps {
 	notifications: NotificationType[];
@@ -142,6 +143,7 @@ const formatDate = (dateString: string) => {
 };
 
 const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, searchQuery, onEdit, onDelete, onView }) => {
+	const { canUpdate, canDelete } = useTeam();
 	const [order, setOrder] = useState<Order>("desc");
 	const [orderBy, setOrderBy] = useState<keyof NotificationType>("time");
 	const [page, setPage] = useState(0);
@@ -324,30 +326,34 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({ notifications, 
 														<Eye size={18} />
 													</IconButton>
 												</Tooltip>
-												<Tooltip title="Editar">
-													<IconButton
-														size="small"
-														color="primary"
-														onClick={(e) => {
-															e.stopPropagation();
-															onEdit(notification);
-														}}
-													>
-														<Edit size={18} />
-													</IconButton>
-												</Tooltip>
-												<Tooltip title="Eliminar">
-													<IconButton
-														size="small"
-														color="error"
-														onClick={(e) => {
-															e.stopPropagation();
-															onDelete(notification._id!);
-														}}
-													>
-														<Trash size={18} />
-													</IconButton>
-												</Tooltip>
+												{canUpdate && (
+													<Tooltip title="Editar">
+														<IconButton
+															size="small"
+															color="primary"
+															onClick={(e) => {
+																e.stopPropagation();
+																onEdit(notification);
+															}}
+														>
+															<Edit size={18} />
+														</IconButton>
+													</Tooltip>
+												)}
+												{canDelete && (
+													<Tooltip title="Eliminar">
+														<IconButton
+															size="small"
+															color="error"
+															onClick={(e) => {
+																e.stopPropagation();
+																onDelete(notification._id!);
+															}}
+														>
+															<Trash size={18} />
+														</IconButton>
+													</Tooltip>
+												)}
 											</Stack>
 										</TableCell>
 									</TableRow>

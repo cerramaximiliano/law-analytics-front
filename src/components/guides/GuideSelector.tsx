@@ -14,7 +14,8 @@ import GuideContacts from "./GuideContacts";
 import GuideCalendar from "./GuideCalendar";
 import GuideBooking from "./GuideBooking";
 import GuideTasks from "./GuideTasks";
-import { Calculator, Coin, Warning2, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task } from "iconsax-react";
+import GuideTeams from "./GuideTeams";
+import { Calculator, Coin, Warning2, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, People } from "iconsax-react";
 
 // ==============================|| COMPONENTE SELECTOR DE GUÍAS ||============================== //
 
@@ -32,6 +33,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 	const [guideCalendarOpen, setGuideCalendarOpen] = useState(false);
 	const [guideBookingOpen, setGuideBookingOpen] = useState(false);
 	const [guideTasksOpen, setGuideTasksOpen] = useState(false);
+	const [guideTeamsOpen, setGuideTeamsOpen] = useState(false);
 
 	const handleOpenGuideLaboral = () => {
 		onClose();
@@ -66,6 +68,11 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 	const handleOpenGuideTasks = () => {
 		onClose();
 		setGuideTasksOpen(true);
+	};
+
+	const handleOpenGuideTeams = () => {
+		onClose();
+		setGuideTeamsOpen(true);
 	};
 
 	return (
@@ -241,6 +248,27 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 								</CardContent>
 							</Card>
 						</Grid>
+						<Grid item xs={12} sm={6} md={4}>
+							<Card
+								sx={{
+									cursor: "pointer",
+									transition: "all 0.3s",
+									"&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
+									height: "100%",
+								}}
+								onClick={handleOpenGuideTeams}
+							>
+								<CardContent sx={{ p: 3, textAlign: "center" }}>
+									<People size={64} variant="Bulk" style={{ color: theme.palette.warning.main, marginBottom: "16px" }} />
+									<Typography variant="h4" gutterBottom>
+										Guía de Equipos
+									</Typography>
+									<Typography variant="body2" color="text.secondary">
+										Aprende a crear equipos, invitar colaboradores y trabajar de forma colaborativa.
+									</Typography>
+								</CardContent>
+							</Card>
+						</Grid>
 					</Grid>
 				</DialogContent>
 			</Dialog>
@@ -253,6 +281,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 			<GuideCalendar open={guideCalendarOpen} onClose={() => setGuideCalendarOpen(false)} />
 			<GuideBooking open={guideBookingOpen} onClose={() => setGuideBookingOpen(false)} />
 			<GuideTasks open={guideTasksOpen} onClose={() => setGuideTasksOpen(false)} />
+			<GuideTeams open={guideTeamsOpen} onClose={() => setGuideTeamsOpen(false)} />
 		</>
 	);
 };

@@ -19,7 +19,9 @@ import * as Yup from "yup";
 import { Formik, Form } from "formik"; // Importar Form de Formik
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
-import { addTask } from "store/reducers/tasks";
+import { addTask, updateTask } from "store/reducers/tasks";
+import { useTeam } from "contexts/TeamContext";
+import dayjs from "utils/dayjs-config";
 
 // icons
 import { TaskSquare } from "iconsax-react";
@@ -30,12 +32,18 @@ import { PopupTransition } from "components/@extended/Transitions";
 // types
 import { TaskModalType, TaskFormValues } from "types/task";
 
-const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: TaskModalType) => {
+const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName, editMode, taskToEdit, onClose, initialValues: externalInitialValues, dialogSx }: TaskModalType) => {
 	const theme = useTheme();
 	const userId = useSelector((state: any) => state.auth?.user?._id);
+	const { getRequestHeaders } = useTeam();
+
+	const isEditMode = editMode && taskToEdit;
 
 	function closeTaskModal() {
 		setOpen(false);
+		if (onClose) {
+			onClose();
+		}
 	}
 
 	const CustomerSchema = Yup.object().shape({
@@ -48,25 +56,67 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 		description: Yup.string().max(500),
 	});
 
-	const getInitialValues = (folderId: string, userId: string | undefined): TaskFormValues => ({
-		dueDate: "",
-		name: "",
-		description: "",
-		checked: false,
-		folderId,
-		userId,
-	});
+	const getInitialValues = (folderId: string, userId: string | undefined): TaskFormValues => {
+		if (isEditMode && taskToEdit) {
+			// Format dueDate to DD/MM/YYYY if it exists
+			let formattedDueDate = "";
+			if (taskToEdit.dueDate) {
+				const parsedDate = dayjs(taskToEdit.dueDate);
+				if (parsedDate.isValid()) {
+					formattedDueDate = parsedDate.format("DD/MM/YYYY");
+				}
+			} else if (taskToEdit.date) {
+				// Fallback to date field if dueDate is not available
+				const parsedDate = dayjs(taskToEdit.date, "DD/MM/YYYY");
+				if (parsedDate.isValid()) {
+					formattedDueDate = parsedDate.format("DD/MM/YYYY");
+				}
+			}
+
+			return {
+				dueDate: formattedDueDate,
+				name: taskToEdit.name || "",
+				description: taskToEdit.description || "",
+				checked: taskToEdit.checked || false,
+				folderId: taskToEdit.folderId || folderId,
+				userId: taskToEdit.userId || userId,
+			};
+		}
+
+		const defaults: TaskFormValues = {
+			dueDate: "",
+			name: "",
+			description: "",
+			checked: false,
+			folderId,
+			userId,
+		};
+
+		if (externalInitialValues) {
+			return { ...defaults, ...externalInitialValues };
+		}
+
+		return defaults;
+	};
 	const initialValues = getInitialValues(folderId, userId);
 
 	async function _submitForm(values: TaskFormValues, actions: any) {
 		try {
-			const result = await dispatch(addTask(values));
+			let result;
+
+			if (isEditMode && taskToEdit) {
+				// Update existing task
+				result = await dispatch(updateTask(taskToEdit._id, values));
+			} else {
+				// Create new task
+				result = await dispatch(addTask(values, { headers: getRequestHeaders() }));
+			}
 
 			if (result.success) {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Tarea creada exitosamente.",
+						message: isEditMode ? "Tarea actualizada exitosamente." : "Tarea creada exitosamente.",
 						variant: "alert",
 						alert: {
 							color: "success",
@@ -85,7 +135,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: "Error al crear la tarea.",
+						message: isEditMode ? "Error al actualizar la tarea." : "Error al crear la tarea.",
 						variant: "alert",
 						alert: {
 							color: "error",
@@ -101,7 +151,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al crear la tarea.",
+					message: isEditMode ? "Error al actualizar la tarea." : "Error al crear la tarea.",
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -122,7 +172,13 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 	}
 
 	return (
-		<Formik initialValues={initialValues} validationSchema={CustomerSchema} onSubmit={_handleSubmit} enableReinitialize>
+		<Formik
+			key={isEditMode ? `edit-${taskToEdit?._id}` : "create"}
+			initialValues={initialValues}
+			validationSchema={CustomerSchema}
+			onSubmit={_handleSubmit}
+			enableReinitialize
+		>
 			{({ isSubmitting, resetForm, handleSubmit }) => {
 				const handleClose = () => {
 					if (!isSubmitting) {
@@ -140,6 +196,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 						maxWidth="sm"
 						fullWidth
 						aria-labelledby="task-modal-title"
+						sx={dialogSx}
 						PaperProps={{
 							elevation: 5,
 							sx: {
@@ -161,11 +218,13 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 									<Stack direction="row" alignItems="center" spacing={1}>
 										<TaskSquare size={24} color={theme.palette.primary.main} variant="Bold" />
 										<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
-											Nueva Tarea
+											{isEditMode ? "Editar Tarea" : "Nueva Tarea"}
 										</Typography>
 									</Stack>
 									<Typography variant="body2" color="textSecondary">
-										Agrega una nueva tarea a la carpeta "{folderName}"
+										{isEditMode
+											? `Edita la tarea "${taskToEdit?.name}" de la carpeta "${folderName}"`
+											: `Agrega una nueva tarea a la carpeta "${folderName}"`}
 									</Typography>
 								</Stack>
 							</DialogTitle>
@@ -218,7 +277,13 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName }: Tas
 									disabled={isSubmitting}
 									startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
 								>
-									{isSubmitting ? "Creando..." : "Crear tarea"}
+									{isSubmitting
+										? isEditMode
+											? "Guardando..."
+											: "Creando..."
+										: isEditMode
+										? "Guardar cambios"
+										: "Crear tarea"}
 								</Button>
 							</DialogActions>
 						</Form>

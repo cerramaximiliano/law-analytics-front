@@ -63,11 +63,17 @@ import { CombinedActivity } from "types/activities";
 import { PopupTransition } from "components/@extended/Transitions";
 import { toggleModal, selectEvent } from "store/reducers/calendar";
 import { deleteEvent } from "store/reducers/events";
+import { openSnackbar } from "store/reducers/snackbar";
 import ActivityFilters from "./filters/ActivityFilters";
 import { exportActivityData } from "./utils/exportUtils";
 import PDFViewer from "components/shared/PDFViewer";
+import DocumentExplorer from "components/shared/DocumentExplorer";
 import ScrapingProgressBanner from "./ScrapingProgressBanner";
 import { useScrapingProgress } from "hooks/useScrapingProgress";
+import { useTeam } from "contexts/TeamContext";
+import { toggleMovementComplete } from "store/reducers/movements";
+import ModalTasks from "../modals/MoldalTasks";
+import ModalNotes from "../modals/ModalNotes";
 
 // Types
 interface ActivityTablesProps {
@@ -88,6 +94,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { id } = useParams<{ id: string }>();
+	const { canCreate } = useTeam();
 	const [activeTab, setActiveTab] = useState<TabValue>("movements");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [showFilters, setShowFilters] = useState(false);
@@ -136,6 +143,16 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	// Estado para ScrapingProgressBanner
 	const [scrapingBannerClosed, setScrapingBannerClosed] = useState(false);
+
+	// Document Explorer (overlay) states
+	const [explorerOpen, setExplorerOpen] = useState(false);
+	const [explorerMovement, setExplorerMovement] = useState<Movement | null>(null);
+
+	// Quick action modals from DocumentPanel
+	const [panelTaskModalOpen, setPanelTaskModalOpen] = useState(false);
+	const [panelTaskInitialValues, setPanelTaskInitialValues] = useState<any>(undefined);
+	const [panelNoteModalOpen, setPanelNoteModalOpen] = useState(false);
+	const [panelNoteInitialValues, setPanelNoteInitialValues] = useState<any>(undefined);
 
 	// Selectors
 	const movementsData = useSelector((state: any) => state.movements);
@@ -351,9 +368,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	const handleRefreshMovements = () => {
 		if (id) {
+			// Usar la página actual para mantener la vista del usuario
+			const currentPage = movementsData.pagination?.page || 1;
 			dispatch(
 				getMovementsByFolderId(id, {
-					page: 1,
+					page: currentPage,
 					limit: 10,
 					sort: "-time",
 					filter: buildFilterObject(filters.onlyWithDocuments),
@@ -364,6 +383,83 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	const handleCloseBanner = () => {
 		setScrapingBannerClosed(true);
+	};
+
+	// Document Explorer handlers
+	const handleOpenExplorer = (movement: Movement) => {
+		setExplorerMovement(movement);
+		setExplorerOpen(true);
+	};
+
+	const handleCloseExplorer = () => {
+		setExplorerOpen(false);
+		setExplorerMovement(null);
+	};
+
+	const handleOpenExplorerFromNavigation = () => {
+		// Close document navigation modal, open explorer with current movement
+		const movementsWithLinks = movementsData.movements.filter((m: Movement) => m.link);
+		const movementToOpen = currentDocumentMovement || movementsWithLinks[0];
+		setDocumentNavigationOpen(false);
+		setCurrentDocumentMovement(null);
+		if (movementToOpen) {
+			handleOpenExplorer(movementToOpen);
+		}
+	};
+
+	const handleExplorerPageRequest = async (page: number) => {
+		if (id) {
+			await dispatch(
+				getMovementsByFolderId(id, {
+					page,
+					limit: 10,
+					sort: "-time",
+					filter: buildFilterObject(filters.onlyWithDocuments),
+				}),
+			);
+		}
+	};
+
+	// Cerrar explorer si se cambia de tab
+	useEffect(() => {
+		if (activeTab !== "movements") {
+			handleCloseExplorer();
+		}
+	}, [activeTab]);
+
+	// Quick action handlers from DocumentPanel
+	const handleCreateTaskFromPanel = (movement: Movement) => {
+		const movementRef = movement.source === "pjn" ? movement.link : movement._id;
+		setPanelTaskInitialValues({
+			name: `[${movement.movement}] ${movement.title}`,
+			description: movement.description || "",
+			dueDate: movement.dateExpiration || "",
+			movementRef: movementRef || undefined,
+			movementSource: movement.source || undefined,
+		});
+		setPanelTaskModalOpen(true);
+	};
+
+	const handleAddNoteFromPanel = (movement: Movement) => {
+		const movementRef = movement.source === "pjn" ? movement.link : movement._id;
+		setPanelNoteInitialValues({
+			title: `Nota: ${movement.title}`,
+			content: movement.description || "",
+			movementRef: movementRef || undefined,
+			movementSource: movement.source || undefined,
+		});
+		setPanelNoteModalOpen(true);
+	};
+
+	const handleEditMovementFromPanel = (movement: Movement) => {
+		handleEditMovement(movement);
+	};
+
+	const handleToggleCompleteFromPanel = async (movementId: string) => {
+		const result = await dispatch(toggleMovementComplete(movementId));
+		if (!result.success) {
+			console.error("Error al cambiar el estado del movimiento:", result.error);
+		}
 	};
 
 	// Notification handlers
@@ -416,9 +512,39 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	const handleConfirmDeleteEvent = async () => {
 		if (eventToDelete) {
-			await dispatch(deleteEvent(eventToDelete));
+			const result = await dispatch(deleteEvent(eventToDelete) as any);
 			setDeleteEventDialog(false);
 			setEventToDelete(null);
+
+			if (result?.success) {
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: "Evento eliminado exitosamente",
+						variant: "alert",
+						alert: {
+							color: "success",
+						},
+						close: true,
+					})
+				);
+			} else {
+				// Mostrar mensaje de error apropiado según el código de estado
+				const errorMessage = result?.statusCode === 403
+					? "No tienes permisos para eliminar este evento"
+					: result?.error || "Error al eliminar el evento";
+				dispatch(
+					openSnackbar({
+						open: true,
+						message: errorMessage,
+						variant: "alert",
+						alert: {
+							color: "error",
+						},
+						close: true,
+					})
+				);
+			}
 		}
 	};
 
@@ -772,9 +898,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										</Box>
 									</Stack>
 
-									{/* Action Buttons */}
+									{/* Action Buttons (solo para usuarios con permisos de crear) */}
 									<Stack direction="row" spacing={1}>
-										{activeTab !== "combined" && (
+										{activeTab !== "combined" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
@@ -1045,7 +1171,14 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 						</Paper>
 
 						{/* Main Content Area */}
-						<Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+						<Box
+							sx={{
+								flex: 1,
+								display: "flex",
+								flexDirection: "column",
+								overflow: "hidden",
+							}}
+						>
 							{/* Header Toolbar */}
 							<Box
 								sx={{
@@ -1099,7 +1232,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												<ExportSquare />
 											</IconButton>
 										</Tooltip>
-										{activeTab !== "combined" && (
+										{activeTab !== "combined" && canCreate && (
 											<Tooltip title={`Agregar ${currentTab?.label.toLowerCase().slice(0, -1)}`}>
 												<IconButton
 													size="small"
@@ -1344,6 +1477,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													onEdit={handleEditMovement}
 													onDelete={handleDeleteMovement}
 													onView={handleViewMovement}
+													onOpenExplorer={handleOpenExplorer}
 													filters={filters}
 													pagination={movementsData.pagination}
 													isLoading={movementsData.isLoading}
@@ -1390,6 +1524,8 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 								)}
 							</Box>
 						</Box>
+
+						{/* Document Explorer rendered as portal overlay below */}
 					</>
 				)}
 			</Box>
@@ -1402,9 +1538,22 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				editMode={!!selectedMovement}
 				movementData={selectedMovement}
 				folderName={folderName || ""}
+				onSuccess={handleRefreshMovements}
+				dialogSx={explorerOpen ? { zIndex: (t: any) => t.zIndex.modal + 20 } : undefined}
 			/>
 
-			<AlertMemberDelete title="¿Eliminar movimiento?" open={openDeleteModal} handleClose={handleCloseDeleteModal} id={movementToDelete} />
+			<AlertMemberDelete
+				title={
+					movementToDelete
+						? movementsData.movements.find((m: Movement) => m._id === movementToDelete)?.title ||
+						  activitiesData.activities.find((a: any) => a._id === movementToDelete)?.title ||
+						  "este movimiento"
+						: ""
+				}
+				open={openDeleteModal}
+				handleClose={handleCloseDeleteModal}
+				id={movementToDelete}
+			/>
 
 			{/* Notifications Modals */}
 			<ModalNotifications
@@ -1819,7 +1968,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
 			>
 				<AddEventFrom
-					event={eventsData.events.find((e: any) => e._id === eventsData.selectedEventId)}
+					event={eventsData.events.find((e: any) => e._id === calendarState.selectedEventId)}
 					range={calendarState.selectedRange}
 					onCancel={handleCloseEventModal}
 					userId={userId}
@@ -1958,6 +2107,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									);
 								}
 							}}
+							onOpenExplorer={!isMobile ? handleOpenExplorerFromNavigation : undefined}
 						/>
 					) : null;
 				})()}
@@ -1973,6 +2123,52 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 				url={pdfUrlFromDetails}
 				title={pdfTitleFromDetails}
 			/>
+
+			{/* Quick Action Modals from Explorer */}
+			<ModalTasks
+				open={panelTaskModalOpen}
+				setOpen={setPanelTaskModalOpen}
+				folderId={id || ""}
+				folderName={folderName || ""}
+				initialValues={panelTaskInitialValues}
+				onClose={() => {
+					setPanelTaskModalOpen(false);
+					setPanelTaskInitialValues(undefined);
+				}}
+				dialogSx={{ zIndex: (t: any) => t.zIndex.modal + 20 }}
+			/>
+			<ModalNotes
+				open={panelNoteModalOpen}
+				setOpen={(open: boolean) => {
+					setPanelNoteModalOpen(open);
+					if (!open) setPanelNoteInitialValues(undefined);
+				}}
+				folderId={id || ""}
+				folderName={folderName || ""}
+				initialValues={panelNoteInitialValues}
+				dialogSx={{ zIndex: (t: any) => t.zIndex.modal + 20 }}
+			/>
+
+			{/* Document Explorer (full-screen overlay) - desktop only */}
+			{!isMobile && (
+				<DocumentExplorer
+					open={explorerOpen}
+					onClose={handleCloseExplorer}
+					initialMovement={explorerMovement}
+					movements={movementsData.movements}
+					pagination={movementsData.pagination}
+					totalWithLinks={movementsData.totalWithLinks}
+					documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
+					isLoading={movementsData.isLoading}
+					onRequestPage={handleExplorerPageRequest}
+					folderId={id || ""}
+					folderName={folderName || ""}
+					onCreateTask={handleCreateTaskFromPanel}
+					onAddNote={handleAddNoteFromPanel}
+					onEditMovement={handleEditMovementFromPanel}
+					onToggleComplete={handleToggleCompleteFromPanel}
+				/>
+			)}
 		</MainCard>
 	);
 };

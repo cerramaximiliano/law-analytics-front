@@ -27,6 +27,10 @@ import {
 	useTheme,
 	alpha,
 	Grid,
+	Pagination,
+	Select,
+	MenuItem,
+	FormControl,
 } from "@mui/material";
 
 // project-imports
@@ -34,7 +38,7 @@ import { PopupTransition } from "components/@extended/Transitions";
 import { Archive, Warning2, Calculator, Coin, Chart2 } from "iconsax-react";
 
 // types
-import { CalculatorType } from "types/calculator";
+import { CalculatorType, CalculatorPaginationInfo } from "types/calculator";
 import dayjs from "utils/dayjs-config";
 
 interface ArchivedCalculatorsModalProps {
@@ -43,11 +47,23 @@ interface ArchivedCalculatorsModalProps {
 	items: CalculatorType[];
 	onUnarchive: (selectedIds: string[]) => void;
 	loading: boolean;
+	pagination?: CalculatorPaginationInfo;
+	onPageChange?: (page: number) => void;
+	onPageSizeChange?: (pageSize: number) => void;
 }
 
 // ==============================|| ARCHIVED CALCULATORS MODAL ||============================== //
 
-const ArchivedCalculatorsModal = ({ open, onClose, items, onUnarchive, loading }: ArchivedCalculatorsModalProps) => {
+const ArchivedCalculatorsModal = ({
+	open,
+	onClose,
+	items,
+	onUnarchive,
+	loading,
+	pagination,
+	onPageChange,
+	onPageSizeChange,
+}: ArchivedCalculatorsModalProps) => {
 	const [selected, setSelected] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const theme = useTheme();
@@ -190,46 +206,48 @@ const ArchivedCalculatorsModal = ({ open, onClose, items, onUnarchive, loading }
 			</DialogTitle>
 			<Divider />
 
-			<DialogContent sx={{ p: 2.5 }}>
-				<Box sx={{ minHeight: 400 }}>
-					{/* Notification alert */}
+			<DialogContent sx={{ p: 2.5, height: 650, display: "flex", flexDirection: "column" }}>
+				{/* Notification alert */}
+				<Alert
+					severity="info"
+					icon={<Warning2 variant="Bulk" />}
+					sx={{
+						mb: 3,
+						borderRadius: 1.5,
+						border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+						bgcolor: alpha(theme.palette.info.main, 0.1),
+						flexShrink: 0,
+					}}
+				>
+					<AlertTitle>Selección de cálculos</AlertTitle>
+					Selecciona los cálculos que deseas desarchivar marcando las casillas correspondientes.
+				</Alert>
+
+				{error && (
 					<Alert
-						severity="info"
-						icon={<Warning2 variant="Bulk" />}
+						severity="error"
 						sx={{
-							mb: 3,
+							mb: 2,
 							borderRadius: 1.5,
-							border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-							bgcolor: alpha(theme.palette.info.main, 0.1),
+							border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+							bgcolor: alpha(theme.palette.error.main, 0.1),
+							"& .MuiAlert-icon": {
+								alignItems: "center",
+							},
+							flexShrink: 0,
 						}}
 					>
-						<AlertTitle>Selección de cálculos</AlertTitle>
-						Selecciona los cálculos que deseas desarchivar marcando las casillas correspondientes.
+						{error}
 					</Alert>
+				)}
 
-					{error && (
-						<Alert
-							severity="error"
-							sx={{
-								mb: 2,
-								borderRadius: 1.5,
-								border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
-								bgcolor: alpha(theme.palette.error.main, 0.1),
-								"& .MuiAlert-icon": {
-									alignItems: "center",
-								},
-							}}
-						>
-							{error}
-						</Alert>
-					)}
-
+				<Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 					{loading ? (
-						<Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
+						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }}>
 							<CircularProgress />
 						</Stack>
 					) : items.length === 0 ? (
-						<>
+						<Stack alignItems="center" justifyContent="center" sx={{ flex: 1 }}>
 							<Stack alignItems="center" justifyContent="center" spacing={1} sx={{ py: 5, px: 2 }}>
 								<Box sx={{ p: 2, bgcolor: "primary.lighter", borderRadius: "50%" }}>
 									<Archive size={32} variant="Bulk" style={{ color: "var(--mui-palette-primary-main)" }} />
@@ -241,7 +259,7 @@ const ArchivedCalculatorsModal = ({ open, onClose, items, onUnarchive, loading }
 									Los elementos archivados aparecerán aquí
 								</Typography>
 							</Stack>
-						</>
+						</Stack>
 					) : (
 						<Paper
 							sx={{
@@ -249,17 +267,23 @@ const ArchivedCalculatorsModal = ({ open, onClose, items, onUnarchive, loading }
 								overflow: "hidden",
 								borderRadius: 2,
 								boxShadow: theme.shadows[2],
+								flex: 1,
+								display: "flex",
+								flexDirection: "column",
 							}}
 						>
 							<TableContainer sx={{ maxHeight: 400 }}>
-								<Table stickyHeader>
+								<Table stickyHeader aria-label="sticky table">
 									<TableHead>
 										<TableRow>
 											<TableCell
 												padding="checkbox"
 												sx={{
-													bgcolor: alpha(theme.palette.primary.main, 0.08),
+													backgroundColor: theme.palette.background.default,
 													borderBottom: `1px solid ${theme.palette.divider}`,
+													position: "sticky !important",
+													top: 0,
+													zIndex: 2,
 												}}
 											>
 												<Checkbox
@@ -282,11 +306,12 @@ const ArchivedCalculatorsModal = ({ open, onClose, items, onUnarchive, loading }
 													key={column.id}
 													style={{ minWidth: column.minWidth }}
 													sx={{
-														fontWeight: 600,
 														py: 2,
-														bgcolor: alpha(theme.palette.primary.main, 0.08),
-														color: theme.palette.text.secondary,
+														backgroundColor: theme.palette.background.default,
 														borderBottom: `1px solid ${theme.palette.divider}`,
+														position: "sticky !important",
+														top: 0,
+														zIndex: 2,
 													}}
 												>
 													{column.label}
@@ -364,6 +389,39 @@ const ArchivedCalculatorsModal = ({ open, onClose, items, onUnarchive, loading }
 						</Paper>
 					)}
 				</Box>
+
+				{/* Pagination controls */}
+				{pagination && (
+					<Box sx={{ mt: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+						<Stack direction="row" spacing={2} alignItems="center">
+							<Typography variant="body2" color="textSecondary">
+								Mostrando {items.length > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0} -{" "}
+								{Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}
+							</Typography>
+							{onPageSizeChange && (
+								<FormControl size="small" sx={{ minWidth: 120 }}>
+									<Select value={pagination.limit} onChange={(e) => onPageSizeChange(Number(e.target.value))} disabled={loading}>
+										<MenuItem value={5}>5 por página</MenuItem>
+										<MenuItem value={10}>10 por página</MenuItem>
+										<MenuItem value={25}>25 por página</MenuItem>
+										<MenuItem value={50}>50 por página</MenuItem>
+									</Select>
+								</FormControl>
+							)}
+						</Stack>
+						{onPageChange && (
+							<Pagination
+								count={pagination.totalPages}
+								page={pagination.page}
+								onChange={(_event, page) => onPageChange(page)}
+								color="primary"
+								disabled={loading}
+								showFirstButton
+								showLastButton
+							/>
+						)}
+					</Box>
+				)}
 			</DialogContent>
 
 			<Divider />

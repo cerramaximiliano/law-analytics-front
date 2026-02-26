@@ -35,6 +35,7 @@ import { addEvent } from "store/reducers/events";
 import { useMemo, useState } from "react";
 import { createGoogleEvent, updateGoogleEvent } from "store/reducers/googleCalendar";
 import googleCalendarService from "services/googleCalendarService";
+import { useTeam } from "contexts/TeamContext";
 
 const getInitialValues = (event: FormikValues | null, range: DateRange | null) => {
 	if (event) {
@@ -84,6 +85,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 	const isCreating = useMemo(() => event == null || Object.keys(event).length === 0, [event]);
 	const { isConnected: isGoogleConnected } = useSelector((state: any) => state.googleCalendar);
 	const [syncWithGoogle, setSyncWithGoogle] = useState(isGoogleConnected);
+	const { getTeamIdForResource, getRequestHeaders } = useTeam();
 
 	const EventSchema = Yup.object().shape({
 		title: Yup.string().max(255).required("El título es requerido"),
@@ -139,8 +141,10 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 					return;
 				}
 
+				const groupId = getTeamIdForResource();
 				const newEvent = {
 					userId: userId,
+					...(groupId && { groupId }),
 					folderId: folderId || undefined,
 					title: values.title,
 					description: values.description,
@@ -200,7 +204,7 @@ const AddEventFrom = ({ event, range, onCancel, userId, folderId, folderName }: 
 
 					// Crear en la base de datos (con o sin googleCalendarId)
 					const eventToCreate = googleCalendarId ? { ...newEvent, googleCalendarId } : newEvent;
-					const result = (await dispatch(addEvent(eventToCreate))) as any;
+					const result = (await dispatch(addEvent(eventToCreate, { headers: getRequestHeaders() }))) as any;
 
 					if (result && result.success) {
 						dispatch(

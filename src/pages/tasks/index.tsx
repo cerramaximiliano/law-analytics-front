@@ -55,9 +55,10 @@ import { Add, Task, Eye, Trash, Edit2, DocumentDownload, InfoCircle } from "icon
 
 // types
 import { dispatch, useSelector } from "store";
-import { getTasksByUserId, deleteTask, getTaskDetail } from "store/reducers/tasks";
-import { getFoldersByUserId } from "store/reducers/folder";
+import { getTasksByUserId, getTasksByGroupId, deleteTask, getTaskDetail } from "store/reducers/tasks";
+import { getFoldersByUserId, getFoldersByGroupId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
+import { useTeam } from "contexts/TeamContext";
 import { TaskType } from "types/task";
 import dayjs from "utils/dayjs-config";
 import { CSVLink } from "react-csv";
@@ -67,7 +68,7 @@ import { CSVLink } from "react-csv";
 interface Props {
 	columns: Column<TaskType>[];
 	data: TaskType[];
-	handleAdd: () => void;
+	handleAdd?: () => void;
 	handleOpenGuide: () => void;
 	isLoading?: boolean;
 	expandedTaskId?: string | null;
@@ -224,9 +225,11 @@ function ReactTable({
 						</Box>
 
 						{/* Botón principal (derecha) */}
-						<Button variant="contained" size="small" startIcon={<Add />} onClick={handleAdd} fullWidth={matchDownSM}>
-							Nueva Tarea
-						</Button>
+						{handleAdd && (
+							<Button variant="contained" size="small" startIcon={<Add />} onClick={handleAdd} fullWidth={matchDownSM}>
+								Nueva Tarea
+							</Button>
+						)}
 					</Stack>
 
 					{/* Segunda fila: selector de ordenamiento a la izquierda, botones secundarios a la derecha */}
@@ -378,6 +381,9 @@ const Tasks = () => {
 	const { user } = useSelector((state) => state.auth);
 	const userId = user?._id;
 
+	// Team context - para cargar recursos del equipo si hay uno activo
+	const { activeTeam, isTeamMode, canCreate, canUpdate, canDelete, isInitialized: isTeamInitialized } = useTeam();
+
 	const { tasks, isLoader, taskDetails, taskDetailsLoading } = useSelector((state) => state.tasksReducer);
 	const { folders } = useSelector((state) => state.folder);
 	const [taskData, setTaskData] = useState<TaskType[]>([]);
@@ -398,11 +404,25 @@ const Tasks = () => {
 	const [pageSize, setPageSize] = useState(10);
 
 	useEffect(() => {
-		if (userId) {
+		if (!userId) return;
+
+		// Esperar a que el TeamContext esté inicializado
+		if (!isTeamInitialized) return;
+
+		// Si está en modo equipo pero aún no hay equipo activo, esperar
+		if (isTeamMode && !activeTeam?._id) return;
+
+		// Si hay equipo activo, cargar tareas y folders del grupo
+		// Si no, cargar del usuario
+		if (isTeamMode && activeTeam?._id) {
+			dispatch(getTasksByGroupId(activeTeam._id));
+			dispatch(getFoldersByGroupId(activeTeam._id));
+		} else {
 			dispatch(getTasksByUserId(userId));
 			dispatch(getFoldersByUserId(userId));
 		}
-	}, [userId]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [userId, activeTeam?._id, isTeamMode, isTeamInitialized]);
 
 	useEffect(() => {
 		setTaskData(tasks);
@@ -606,34 +626,38 @@ const Tasks = () => {
 									{collapseIcon}
 								</IconButton>
 							</Tooltip>
-							<Tooltip title="Editar">
-								<IconButton
-									color="primary"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleEditTask(row.original);
-									}}
-								>
-									<Edit2 variant="Bulk" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip title="Eliminar">
-								<IconButton
-									color="error"
-									onClick={(e: MouseEvent<HTMLButtonElement>) => {
-										e.stopPropagation();
-										handleDeleteClick(row.original._id, row.original.name);
-									}}
-								>
-									<Trash variant="Bulk" />
-								</IconButton>
-							</Tooltip>
+							{canUpdate && (
+								<Tooltip title="Editar">
+									<IconButton
+										color="primary"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											handleEditTask(row.original);
+										}}
+									>
+										<Edit2 variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
+							{canDelete && (
+								<Tooltip title="Eliminar">
+									<IconButton
+										color="error"
+										onClick={(e: MouseEvent<HTMLButtonElement>) => {
+											e.stopPropagation();
+											handleDeleteClick(row.original._id, row.original.name);
+										}}
+									>
+										<Trash variant="Bulk" />
+									</IconButton>
+								</Tooltip>
+							)}
 						</Stack>
 					);
 				},
 			},
 		],
-		[theme, folders, expandedTaskId, handleViewTask, handleEditTask],
+		[theme, folders, expandedTaskId, handleViewTask, handleEditTask, canUpdate, canDelete],
 	);
 
 	const filteredData = useMemo(() => {
@@ -657,7 +681,7 @@ const Tasks = () => {
 				<ReactTable
 					columns={columns}
 					data={filteredData}
-					handleAdd={handleAddTask}
+					handleAdd={canCreate ? handleAddTask : undefined}
 					handleOpenGuide={() => setOpenGuide(true)}
 					isLoading={isLoader}
 					expandedTaskId={expandedTaskId}

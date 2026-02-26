@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 // react
 
 // material-ui
@@ -15,6 +15,7 @@ import dayjs from "utils/dayjs-config";
 // project imports
 import { dispatch, useSelector } from "store";
 import { addTask, updateTask } from "store/reducers/tasks";
+import { useTeam } from "contexts/TeamContext";
 
 // assets
 import { Add } from "iconsax-react";
@@ -42,18 +43,27 @@ const TaskSchema = Yup.object().shape({
 const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 	const { folders } = useSelector((state) => state.folder);
 	const { user } = useSelector((state) => state.auth);
+	const { getRequestHeaders } = useTeam();
 
 	const isCreating = !task;
 
-	const formik = useFormik({
-		initialValues: {
+	// Memoizar valores iniciales para evitar que enableReinitialize resetee el form en cada render
+	// Solo se recalculan cuando cambia el task._id (es decir, cuando se edita una tarea diferente)
+	const initialValues = useMemo(
+		() => ({
 			name: task?.name || "",
 			description: task?.description || "",
 			dueDate: task?.dueDate ? dayjs(task.dueDate) : dayjs(),
 			priority: task?.priority || "media",
 			status: task?.status || "pendiente",
 			folderId: task?.folderId || "",
-		},
+		}),
+		[task?._id] // Solo dependemos del ID, no del objeto completo
+	);
+
+	const formik = useFormik({
+		initialValues,
+		enableReinitialize: true, // Permite reinicializar el form cuando cambia la tarea
 		validationSchema: TaskSchema,
 		onSubmit: async (values, { setSubmitting, resetForm }) => {
 			try {
@@ -66,7 +76,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 
 				let result;
 				if (isCreating) {
-					result = await dispatch(addTask(taskData));
+					result = await dispatch(addTask(taskData, { headers: getRequestHeaders() }));
 				} else {
 					result = await dispatch(updateTask(task._id, taskData));
 				}
