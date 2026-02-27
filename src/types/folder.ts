@@ -92,6 +92,7 @@ export type FolderData = {
 	causaIsValid?: boolean; // Indica si la causa es válida
 	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
+	pjnNotFound?: boolean; // Indica si la causa no fue encontrada en el último sync del portal PJN
 	causaLastSyncDate?: string; // Fecha de última sincronización
 	lastMovementDate?: string; // Fecha del último movimiento
 	// Campos para selección múltiple de causas (EJE/MEV)

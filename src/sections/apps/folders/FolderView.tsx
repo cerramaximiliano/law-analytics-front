@@ -163,17 +163,23 @@ const FolderView = memo(({ data }: any) => {
 											display: "flex",
 											alignItems: "center",
 											gap: 0.75,
-											bgcolor: alpha(theme.palette.success.main, 0.1),
-											border: `1px solid ${theme.palette.success.main}`,
+											bgcolor: data.pjnNotFound
+												? alpha(theme.palette.warning.main, 0.1)
+												: alpha(theme.palette.success.main, 0.1),
+											border: `1px solid ${data.pjnNotFound ? theme.palette.warning.main : theme.palette.success.main}`,
 											borderRadius: 0.5,
 										}}
 									>
-										<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+										<ExportSquare
+											size={16}
+											variant="Bold"
+											color={data.pjnNotFound ? theme.palette.warning.main : theme.palette.success.main}
+										/>
 										<Typography
 											variant="body2"
 											sx={{
 												fontWeight: 500,
-												color: theme.palette.success.dark,
+												color: data.pjnNotFound ? theme.palette.warning.dark : theme.palette.success.dark,
 												fontSize: "0.8125rem",
 											}}
 										>
@@ -181,10 +187,16 @@ const FolderView = memo(({ data }: any) => {
 										</Typography>
 									</Box>
 									{/* Ícono de estado de verificación */}
-									{(data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
+									{(data.pjnNotFound || data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
 										<Tooltip
 											title={
-												data.causaVerified === false ? "Pendiente de verificación" : data.causaIsValid ? "Causa válida" : "Causa inválida"
+												data.pjnNotFound
+													? "Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
+													: data.causaVerified === false
+													? "Pendiente de verificación"
+													: data.causaIsValid
+													? "Causa válida"
+													: "Causa inválida"
 											}
 										>
 											<Box
@@ -202,7 +214,9 @@ const FolderView = memo(({ data }: any) => {
 													boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 												}}
 											>
-												{data.causaVerified === false ? (
+												{data.pjnNotFound ? (
+													<Warning2 size={18} variant="Bold" color={theme.palette.warning.main} />
+												) : data.causaVerified === false ? (
 													<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
 												) : data.causaIsValid ? (
 													<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />

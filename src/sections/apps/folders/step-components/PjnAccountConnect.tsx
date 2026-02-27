@@ -22,6 +22,8 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
@@ -37,8 +39,14 @@ import {
 } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
+import { useSelector } from "react-redux";
+import { dispatch as storeDispatch } from "store";
+import { getFoldersByUserId } from "store/reducers/folder";
+import { PopupTransition } from "components/@extended/Transitions";
+import Avatar from "components/@extended/Avatar";
 import pjnCredentialsService, {
   PjnCredentialsStatus,
+  UnlinkImpact,
 } from "api/pjnCredentials";
 
 interface PjnAccountConnectProps {
@@ -59,6 +67,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   onServiceAvailableChange,
 }, ref) => {
   const theme = useTheme();
+  const authUser = useSelector((state: any) => state.auth?.user);
 
   // Estado del formulario
   const [cuil, setCuil] = useState("");
@@ -81,6 +90,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Errores
   const [cuilError, setCuilError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  // Estado del dialog de desvinculación
+  const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
+  const [unlinkImpact, setUnlinkImpact] = useState<UnlinkImpact | null>(null);
+  const [isLoadingImpact, setIsLoadingImpact] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
 
   // Polling cleanup
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
@@ -310,13 +325,32 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
     }
   };
 
-  // Desvincular cuenta
-  const handleUnlink = async () => {
+  // Abre el dialog y carga el análisis de impacto
+  const handleUnlinkClick = async () => {
+    setUnlinkDialogOpen(true);
+    setUnlinkImpact(null);
+    setIsLoadingImpact(true);
     try {
-      const response = await pjnCredentialsService.unlinkCredentials();
+      const response = await pjnCredentialsService.getUnlinkImpact();
+      if (response.success && response.data) {
+        setUnlinkImpact(response.data);
+      }
+    } catch {
+      // Si falla el análisis de impacto, igual se puede continuar con el dialog
+    } finally {
+      setIsLoadingImpact(false);
+    }
+  };
+
+  // Ejecuta la desvinculación con el modo elegido
+  const handleUnlink = async (mode: "keep" | "delete") => {
+    setIsUnlinking(true);
+    try {
+      const response = await pjnCredentialsService.unlinkCredentials(mode);
 
       if (response.success) {
-        enqueueSnackbar("Cuenta desvinculada correctamente", {
+        setUnlinkDialogOpen(false);
+        enqueueSnackbar(response.message || "Cuenta desvinculada correctamente", {
           variant: "success",
           anchorOrigin: { vertical: "bottom", horizontal: "right" },
           TransitionComponent: Zoom,
@@ -327,6 +361,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         setCredentialsStatus(null);
         if (stopPolling) {
           stopPolling();
+        }
+
+        // Recargar carpetas en Redux para reflejar los cambios
+        const userId = authUser?._id || authUser?.id;
+        if (userId) {
+          storeDispatch(getFoldersByUserId(userId, true) as any);
         }
       } else {
         enqueueSnackbar(response.error || "Error al desvincular cuenta", {
@@ -343,6 +383,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         TransitionComponent: Zoom,
         autoHideDuration: 4000,
       });
+    } finally {
+      setIsUnlinking(false);
     }
   };
 
@@ -353,6 +395,92 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
     if (clean.length <= 10) return `${clean.slice(0, 2)}-${clean.slice(2)}`;
     return `${clean.slice(0, 2)}-${clean.slice(2, 10)}-${clean.slice(10, 11)}`;
   };
+
+  // Dialog de confirmación de desvinculación
+  const unlinkDialog = (
+    <Dialog
+      open={unlinkDialogOpen}
+      onClose={() => !isUnlinking && setUnlinkDialogOpen(false)}
+      keepMounted
+      TransitionComponent={PopupTransition}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogContent sx={{ mt: 2, my: 1 }}>
+        <Stack alignItems="center" spacing={2.5}>
+          <Avatar color="error" sx={{ width: 64, height: 64, fontSize: "1.5rem" }}>
+            <CloseCircle variant="Bold" size={32} />
+          </Avatar>
+
+          <Typography variant="h5" align="center">
+            ¿Cómo deseas desvincular la cuenta PJN?
+          </Typography>
+
+          {isLoadingImpact ? (
+            <CircularProgress size={24} />
+          ) : unlinkImpact ? (
+            <Stack spacing={1} sx={{ width: "100%" }}>
+              <Alert severity="warning" sx={{ "& .MuiAlert-message": { fontSize: "0.8rem" } }}>
+                {unlinkImpact.folders.total} carpetas afectadas
+                ({unlinkImpact.folders.active} activas, {unlinkImpact.folders.archived} archivadas)
+              </Alert>
+              {unlinkImpact.folders.names.length > 0 && (
+                <Box
+                  sx={{
+                    maxHeight: 160,
+                    overflowY: "auto",
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 1,
+                    p: 1,
+                  }}
+                >
+                  <Stack spacing={0.25}>
+                    {unlinkImpact.folders.names.map((name, idx) => (
+                      <Typography key={idx} variant="caption" color="text.secondary" noWrap>
+                        • {name}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+            </Stack>
+          ) : null}
+
+          <Stack spacing={1} sx={{ width: "100%" }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              color="warning"
+              onClick={() => handleUnlink("keep")}
+              disabled={isUnlinking}
+              startIcon={isUnlinking ? <CircularProgress size={14} color="inherit" /> : undefined}
+            >
+              Conservar sin sincronización
+            </Button>
+            <Button
+              fullWidth
+              variant="contained"
+              color="error"
+              onClick={() => handleUnlink("delete")}
+              disabled={isUnlinking}
+              startIcon={isUnlinking ? <CircularProgress size={14} color="inherit" /> : undefined}
+            >
+              Eliminar carpetas y causas
+            </Button>
+            <Button
+              fullWidth
+              variant="text"
+              color="secondary"
+              onClick={() => setUnlinkDialogOpen(false)}
+              disabled={isUnlinking}
+            >
+              Cancelar
+            </Button>
+          </Stack>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
 
   // Renderizar estado de carga
   if (isLoadingStatus) {
@@ -434,68 +562,71 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
     const hasError = credentialsStatus.syncStatus === "error";
 
     return (
-      <Card variant="outlined" sx={{ borderColor: isComplete ? theme.palette.success.light : theme.palette.warning.light }}>
-        <CardContent>
-          <Stack spacing={2}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack direction="row" alignItems="center" spacing={1}>
-                {isComplete ? (
-                  <TickCircle size={24} color={theme.palette.success.main} variant="Bold" />
-                ) : hasError ? (
-                  <CloseCircle size={24} color={theme.palette.error.main} variant="Bold" />
-                ) : (
-                  <Link1 size={24} color={theme.palette.warning.main} />
-                )}
-                <Typography variant="subtitle1" fontWeight={500}>
-                  {isComplete ? "Cuenta conectada" : hasError ? "Error de sincronización" : "Cuenta vinculada"}
-                </Typography>
+      <>
+        {unlinkDialog}
+        <Card variant="outlined" sx={{ borderColor: isComplete ? theme.palette.success.light : theme.palette.warning.light }}>
+          <CardContent>
+            <Stack spacing={2}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  {isComplete ? (
+                    <TickCircle size={24} color={theme.palette.success.main} variant="Bold" />
+                  ) : hasError ? (
+                    <CloseCircle size={24} color={theme.palette.error.main} variant="Bold" />
+                  ) : (
+                    <Link1 size={24} color={theme.palette.warning.main} />
+                  )}
+                  <Typography variant="subtitle1" fontWeight={500}>
+                    {isComplete ? "Cuenta conectada" : hasError ? "Error de sincronización" : "Cuenta vinculada"}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" spacing={1}>
+                  <IconButton
+                    size="small"
+                    onClick={handleResync}
+                    title="Re-sincronizar"
+                    disabled={!credentialsStatus.enabled}
+                  >
+                    <Refresh2 size={18} />
+                  </IconButton>
+                </Stack>
               </Stack>
 
-              <Stack direction="row" spacing={1}>
-                <IconButton
-                  size="small"
-                  onClick={handleResync}
-                  title="Re-sincronizar"
-                  disabled={!credentialsStatus.enabled}
-                >
-                  <Refresh2 size={18} />
-                </IconButton>
-              </Stack>
+              {isComplete && (
+                <Alert severity="success" icon={<TickCircle size={20} />}>
+                  Tus causas del Poder Judicial de la Nación están sincronizadas.
+                  Se crearon {credentialsStatus.foldersCreatedCount || 0} carpetas.
+                </Alert>
+              )}
+
+              {hasError && credentialsStatus.lastError && (
+                <Alert severity="error">
+                  {credentialsStatus.lastError.message}
+                </Alert>
+              )}
+
+              {!isComplete && !hasError && credentialsStatus.syncStatus === "pending" && (
+                <Alert severity="info">
+                  Tu cuenta está vinculada. La sincronización comenzará en breve.
+                </Alert>
+              )}
+
+              <Divider />
+
+              <Button
+                variant="text"
+                color="error"
+                size="small"
+                onClick={handleUnlinkClick}
+                startIcon={<CloseCircle size={16} />}
+              >
+                Desvincular cuenta
+              </Button>
             </Stack>
-
-            {isComplete && (
-              <Alert severity="success" icon={<TickCircle size={20} />}>
-                Tus causas del Poder Judicial de la Nación están sincronizadas.
-                Se crearon {credentialsStatus.foldersCreatedCount || 0} carpetas.
-              </Alert>
-            )}
-
-            {hasError && credentialsStatus.lastError && (
-              <Alert severity="error">
-                {credentialsStatus.lastError.message}
-              </Alert>
-            )}
-
-            {!isComplete && !hasError && credentialsStatus.syncStatus === "pending" && (
-              <Alert severity="info">
-                Tu cuenta está vinculada. La sincronización comenzará en breve.
-              </Alert>
-            )}
-
-            <Divider />
-
-            <Button
-              variant="text"
-              color="error"
-              size="small"
-              onClick={handleUnlink}
-              startIcon={<CloseCircle size={16} />}
-            >
-              Desvincular cuenta
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </>
     );
   }
 

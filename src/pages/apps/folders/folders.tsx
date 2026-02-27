@@ -1596,6 +1596,29 @@ const FoldersLayout = () => {
 						return <span>{formatFolderName(value, 50)}</span>;
 					}
 
+					// Si la causa no fue encontrada en el portal PJN en el último sync
+					if (folder.pjn === true && folder.pjnNotFound === true) {
+						return (
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<span>{formatFolderName(value, 50)}</span>
+								<Tooltip title="Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.">
+									<IconButton
+										size="small"
+										onClick={(e) => e.stopPropagation()}
+										sx={{
+											padding: 0.5,
+											"&:hover": {
+												backgroundColor: "warning.lighter",
+											},
+										}}
+									>
+										<Warning2 size={16} variant="Bold" color="#F59E0B" />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						);
+					}
+
 					// Si hay selección pendiente de múltiples causas, mostrar chip de seleccionar
 					if (folder.causaAssociationStatus === "pending_selection") {
 						return (

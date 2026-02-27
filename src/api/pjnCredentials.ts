@@ -116,6 +116,19 @@ export interface GenericResponse {
   data?: any;
 }
 
+export interface UnlinkImpact {
+  folders: {
+    total: number;
+    active: number;
+    archived: number;
+    names: string[];
+  };
+  causas: {
+    totalToDelete: number;
+    totalToUnlink: number;
+  };
+}
+
 class PjnCredentialsService {
   /**
    * Vincula credenciales PJN a la cuenta del usuario
@@ -187,11 +200,31 @@ class PjnCredentialsService {
   }
 
   /**
-   * Elimina las credenciales PJN del usuario
+   * Obtiene el impacto de desvincular las credenciales PJN
    */
-  async unlinkCredentials(): Promise<GenericResponse> {
+  async getUnlinkImpact(): Promise<{ success: boolean; data?: UnlinkImpact; error?: string }> {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/pjn-credentials/impact`, {
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<any>;
+      return {
+        success: false,
+        error: axiosError.response?.data?.error || "Error al analizar impacto"
+      };
+    }
+  }
+
+  /**
+   * Desvincula las credenciales PJN del usuario
+   * @param mode - "keep" conserva carpetas como manuales, "delete" las elimina junto con causas PJN
+   */
+  async unlinkCredentials(mode: "delete" | "keep" = "keep"): Promise<GenericResponse> {
     try {
       const response = await axios.delete(`${BASE_URL}/api/pjn-credentials`, {
+        data: { mode },
         withCredentials: true
       });
       return response.data;
