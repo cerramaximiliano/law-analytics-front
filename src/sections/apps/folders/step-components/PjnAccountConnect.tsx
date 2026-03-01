@@ -98,12 +98,14 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Polling cleanup
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
-  // Suscripción a eventos WebSocket de progreso PJN
+  // Suscripción a eventos WebSocket de progreso PJN.
+  // Se registra al montar (sin depender de isSyncing) para capturar
+  // eventos aunque el componente monte en medio de una sincronización.
   useEffect(() => {
-    if (!isSyncing) return;
-
     const unsubscribe = webSocketService.subscribe("SYNC_PROGRESS", (message) => {
       const p = message.payload;
+      // Activar UI de sincronización si llegó un evento y no estaba activa
+      setIsSyncing(true);
       if (typeof p.progress === "number") {
         setSyncProgress(p.progress);
       }
@@ -113,7 +115,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
     });
 
     return unsubscribe;
-  }, [isSyncing]);
+  }, []);
 
   // Cargar estado de credenciales al montar
   useEffect(() => {
