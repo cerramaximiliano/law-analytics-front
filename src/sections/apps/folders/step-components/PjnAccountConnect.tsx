@@ -5,7 +5,7 @@
  * automáticamente todas sus causas.
  */
 
-import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import {
   Box,
   Stack,
@@ -15,7 +15,6 @@ import {
   Alert,
   CircularProgress,
   LinearProgress,
-  Collapse,
   IconButton,
   InputAdornment,
   Divider,
@@ -36,16 +35,17 @@ import {
 } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { dispatch as storeDispatch } from "store";
+import { RootState } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
+import { pjnSyncStarted, pjnSyncReset } from "store/reducers/pjnSync";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar from "components/@extended/Avatar";
 import pjnCredentialsService, {
   PjnCredentialsStatus,
   UnlinkImpact,
 } from "api/pjnCredentials";
-import webSocketService from "store/reducers/WebSocketService";
 import { useTeam } from "contexts/TeamContext";
 
 interface PjnAccountConnectProps {
@@ -66,7 +66,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   onServiceAvailableChange,
 }, ref) => {
   const theme = useTheme();
+  const dispatch = useDispatch();
   const authUser = useSelector((state: any) => state.auth?.user);
+  const pjnSync = useSelector((state: RootState) => state.pjnSync);
   const { isTeamMode, isOwner } = useTeam();
   const isTeamMember = isTeamMode && !isOwner;
 
@@ -83,11 +85,6 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   const [serviceAvailable, setServiceAvailable] = useState(true);
   const [serviceMessage, setServiceMessage] = useState("");
 
-  // Estado de sincronización
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncProgress, setSyncProgress] = useState(0);
-  const [syncMessage, setSyncMessage] = useState("");
-
   // Errores
   const [cuilError, setCuilError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -98,44 +95,40 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   const [isLoadingImpact, setIsLoadingImpact] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
 
-  // Polling cleanup
-  const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
+  // Ref para detectar transición isActive: true → false
+  const prevIsActiveRef = useRef(false);
 
-  // Ref que indica si hay un sync activo (controlado por startPolling/onComplete).
-  // El handler WS lo usa para ignorar eventos tardíos tras la finalización.
-  const isSyncActiveRef = React.useRef(false);
-
-  // Suscripción a eventos WebSocket de progreso PJN.
-  // Se registra al montar (sin depender de isSyncing) para capturar
-  // eventos aunque el componente monte en medio de una sincronización.
+  // Detecta cuando el sync pasa de activo a inactivo para mostrar snackbar
   useEffect(() => {
-    const unsubscribe = webSocketService.subscribe("SYNC_PROGRESS", (message) => {
-      // Ignorar eventos WS si no hay sync activo conocido (evita re-activar
-      // isSyncing con eventos tardíos después de que onComplete ya finalizó).
-      if (!isSyncActiveRef.current) return;
-      const p = message.payload;
-      setIsSyncing(true);
-      if (typeof p.progress === "number") {
-        setSyncProgress(p.progress);
+    if (prevIsActiveRef.current && !pjnSync.isActive) {
+      if (pjnSync.hasError) {
+        enqueueSnackbar(`Error en sincronización: ${pjnSync.errorMessage}`, {
+          variant: "error",
+          anchorOrigin: { vertical: "bottom", horizontal: "right" },
+          TransitionComponent: Zoom,
+          autoHideDuration: 5000,
+        });
+      } else if (pjnSync.completedAt) {
+        enqueueSnackbar(
+          `Sincronización completada: ${pjnSync.foldersCreated} carpetas creadas`,
+          {
+            variant: "success",
+            anchorOrigin: { vertical: "bottom", horizontal: "right" },
+            TransitionComponent: Zoom,
+            autoHideDuration: 5000,
+          }
+        );
+        // Recargar credenciales para mostrar "Cuenta conectada"
+        loadCredentialsStatus();
+        onSyncComplete?.();
       }
-      if (p.message) {
-        setSyncMessage(p.message);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
+    }
+    prevIsActiveRef.current = pjnSync.isActive;
+  }, [pjnSync.isActive]);
 
   // Cargar estado de credenciales al montar
   useEffect(() => {
     loadCredentialsStatus();
-
-    // Cleanup polling on unmount
-    return () => {
-      if (stopPolling) {
-        stopPolling();
-      }
-    };
   }, []);
 
   const loadCredentialsStatus = async () => {
@@ -150,13 +143,16 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         setCredentialsStatus(response.data);
         setHasCredentials(true);
 
-        // Si está en progreso, iniciar polling; si no, limpiar isSyncing
-        // (puede haber quedado en true por un evento WS previo al load)
+        // Si hay sync en curso, inicializar estado en Redux para mostrar UI correcta
         if (response.data.syncStatus === "in_progress" || response.data.syncStatus === "pending") {
-          startPolling();
+          const cp = response.data.currentSyncProgress;
+          dispatch(pjnSyncStarted({
+            progress: cp?.progress ?? 0,
+            message: "Sincronizando causas...",
+          }));
         } else {
-          isSyncActiveRef.current = false;
-          setIsSyncing(false);
+          // Limpiar estado stale (sync ya terminó o nunca empezó)
+          dispatch(pjnSyncReset());
         }
       } else {
         setHasCredentials(false);
@@ -168,68 +164,6 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       setIsLoadingStatus(false);
     }
   };
-
-  const startPolling = useCallback(() => {
-    isSyncActiveRef.current = true;
-    setIsSyncing(true);
-    setSyncProgress(0);
-    setSyncMessage("Sincronizando causas...");
-
-    const stop = pjnCredentialsService.pollSyncStatus(
-      3000,
-      // onProgress
-      (status) => {
-        setCredentialsStatus(status);
-        if (status.currentSyncProgress) {
-          setSyncProgress(status.currentSyncProgress.progress || 0);
-          const { causasProcessed, totalExpected, currentPage, totalPages } = status.currentSyncProgress;
-          if (totalExpected > 0 && totalPages > 0) {
-            setSyncMessage(`Procesando causas: ${causasProcessed}/${totalExpected} (Página ${currentPage}/${totalPages})`);
-          } else if (totalExpected > 0) {
-            setSyncMessage(`Obteniendo causas: ${causasProcessed}/${totalExpected}...`);
-          } else {
-            setSyncMessage("Verificando credenciales...");
-          }
-        }
-      },
-      // onComplete
-      (status) => {
-        isSyncActiveRef.current = false;
-        setCredentialsStatus(status);
-        setIsSyncing(false);
-        setSyncProgress(100);
-        setSyncMessage("Sincronización completada");
-
-        enqueueSnackbar(
-          `Sincronización completada: ${status.foldersCreatedCount} carpetas creadas`,
-          {
-            variant: "success",
-            anchorOrigin: { vertical: "bottom", horizontal: "right" },
-            TransitionComponent: Zoom,
-            autoHideDuration: 5000,
-          }
-        );
-
-        if (onSyncComplete) {
-          onSyncComplete();
-        }
-      },
-      // onError
-      (error) => {
-        isSyncActiveRef.current = false;
-        setIsSyncing(false);
-        setSyncMessage("");
-        enqueueSnackbar(`Error en sincronización: ${error}`, {
-          variant: "error",
-          anchorOrigin: { vertical: "bottom", horizontal: "right" },
-          TransitionComponent: Zoom,
-          autoHideDuration: 5000,
-        });
-      }
-    );
-
-    setStopPolling(() => stop);
-  }, [onSyncComplete]);
 
   // Validar CUIL
   const validateCuil = (value: string): boolean => {
@@ -294,8 +228,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
           } as PjnCredentialsStatus);
         }
 
-        // Iniciar polling para ver progreso
-        startPolling();
+        // El WS enviará el evento "started" cuando el worker arranque
+        // Mientras tanto mostrar estado pendiente via Redux
+        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas..." }));
 
         if (onConnectionSuccess) {
           onConnectionSuccess();
@@ -342,7 +277,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
           autoHideDuration: 3000,
         });
 
-        startPolling();
+        // Mostrar UI de sync mientras el WS no llegue con el evento "started"
+        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas..." }));
       } else {
         enqueueSnackbar(response.error || "No se pudo iniciar sincronización", {
           variant: "warning",
@@ -395,9 +331,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
         setHasCredentials(false);
         setCredentialsStatus(null);
-        if (stopPolling) {
-          stopPolling();
-        }
+        dispatch(pjnSyncReset());
 
         // Recargar carpetas en Redux para reflejar los cambios
         const userId = authUser?._id || authUser?.id;
@@ -555,7 +489,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   }
 
   // Renderizar estado de sincronización en progreso
-  if (isSyncing || (credentialsStatus?.syncStatus === "in_progress")) {
+  if (pjnSync.isActive || credentialsStatus?.syncStatus === "in_progress") {
     return (
       <Card variant="outlined" sx={{ borderColor: theme.palette.primary.light }}>
         <CardContent>
@@ -569,12 +503,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
             <Box>
               <LinearProgress
-                variant={syncProgress > 0 ? "determinate" : "indeterminate"}
-                value={syncProgress > 0 ? syncProgress : undefined}
+                variant={pjnSync.progress > 0 ? "determinate" : "indeterminate"}
+                value={pjnSync.progress > 0 ? pjnSync.progress : undefined}
                 sx={{ height: 8, borderRadius: 4 }}
               />
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                {syncMessage || (syncProgress > 0 ? `${syncProgress.toFixed(0)}% completado` : "Iniciando sincronización...")}
+                {pjnSync.message || (pjnSync.progress > 0 ? `${pjnSync.progress.toFixed(0)}% completado` : "Iniciando sincronización...")}
               </Typography>
             </Box>
 

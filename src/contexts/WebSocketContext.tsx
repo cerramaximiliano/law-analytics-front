@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { openSnackbar } from "store/reducers/snackbar";
 // Importamos correctamente las acciones
 import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
+import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
 import { Alert } from "types/alert";
 import { FolderData } from "types/folder";
 
@@ -100,6 +101,19 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 					} else {
 						showNotification(`${newFolders.length} carpetas PJN agregadas`, "info");
 					}
+				}
+			}
+
+			if (message.type === "SYNC_PROGRESS") {
+				const p = message.payload as any;
+				if (p?.phase === "started") {
+					dispatch(pjnSyncStarted({ progress: p.progress, message: p.message }));
+				} else if (p?.phase === "completed") {
+					dispatch(pjnSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
+				} else if (p?.phase === "error") {
+					dispatch(pjnSyncError({ message: p.message ?? "Error en sincronización" }));
+				} else if (p?.phase) {
+					dispatch(pjnSyncProgress({ progress: p.progress ?? 0, message: p.message ?? "", phase: p.phase }));
 				}
 			}
 

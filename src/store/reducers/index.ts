@@ -34,6 +34,7 @@ import googleCalendar from "./googleCalendar";
 import teams from "./teams";
 import activityLog from "./activityLog";
 import rag from "./rag";
+import pjnSync from "./pjnSync";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -75,6 +76,7 @@ const reducers = combineReducers({
 	teams,
 	activityLog,
 	rag,
+	pjnSync,
 });
 
 export default reducers;
