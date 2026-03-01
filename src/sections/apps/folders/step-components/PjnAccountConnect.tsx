@@ -101,13 +101,19 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Polling cleanup
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
+  // Ref que indica si hay un sync activo (controlado por startPolling/onComplete).
+  // El handler WS lo usa para ignorar eventos tardíos tras la finalización.
+  const isSyncActiveRef = React.useRef(false);
+
   // Suscripción a eventos WebSocket de progreso PJN.
   // Se registra al montar (sin depender de isSyncing) para capturar
   // eventos aunque el componente monte en medio de una sincronización.
   useEffect(() => {
     const unsubscribe = webSocketService.subscribe("SYNC_PROGRESS", (message) => {
+      // Ignorar eventos WS si no hay sync activo conocido (evita re-activar
+      // isSyncing con eventos tardíos después de que onComplete ya finalizó).
+      if (!isSyncActiveRef.current) return;
       const p = message.payload;
-      // Activar UI de sincronización si llegó un evento y no estaba activa
       setIsSyncing(true);
       if (typeof p.progress === "number") {
         setSyncProgress(p.progress);
@@ -144,9 +150,13 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         setCredentialsStatus(response.data);
         setHasCredentials(true);
 
-        // Si está en progreso, iniciar polling
+        // Si está en progreso, iniciar polling; si no, limpiar isSyncing
+        // (puede haber quedado en true por un evento WS previo al load)
         if (response.data.syncStatus === "in_progress" || response.data.syncStatus === "pending") {
           startPolling();
+        } else {
+          isSyncActiveRef.current = false;
+          setIsSyncing(false);
         }
       } else {
         setHasCredentials(false);
@@ -160,6 +170,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   };
 
   const startPolling = useCallback(() => {
+    isSyncActiveRef.current = true;
     setIsSyncing(true);
     setSyncProgress(0);
     setSyncMessage("Sincronizando causas...");
@@ -183,6 +194,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       },
       // onComplete
       (status) => {
+        isSyncActiveRef.current = false;
         setCredentialsStatus(status);
         setIsSyncing(false);
         setSyncProgress(100);
@@ -204,6 +216,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       },
       // onError
       (error) => {
+        isSyncActiveRef.current = false;
         setIsSyncing(false);
         setSyncMessage("");
         enqueueSnackbar(`Error en sincronización: ${error}`, {
