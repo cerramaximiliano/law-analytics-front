@@ -46,6 +46,7 @@ import pjnCredentialsService, {
   UnlinkImpact,
 } from "api/pjnCredentials";
 import webSocketService from "store/reducers/WebSocketService";
+import { useTeam } from "contexts/TeamContext";
 
 interface PjnAccountConnectProps {
   onConnectionSuccess?: () => void;
@@ -66,6 +67,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 }, ref) => {
   const theme = useTheme();
   const authUser = useSelector((state: any) => state.auth?.user);
+  const { isTeamMode, isOwner } = useTeam();
+  const isTeamMember = isTeamMode && !isOwner;
 
   // Estado del formulario
   const [cuil, setCuil] = useState("");
@@ -501,6 +504,20 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       </DialogContent>
     </Dialog>
   );
+
+  // Miembros del equipo (viewer/editor): solo lectura, sin gestión PJN
+  if (isTeamMember) {
+    return (
+      <Alert
+        severity="info"
+        icon={<InfoCircle size={18} />}
+        sx={{ "& .MuiAlert-message": { fontSize: "0.85rem" } }}
+      >
+        La integración PJN es gestionada por el propietario del equipo.
+        Solo el propietario puede vincular, desvincular o iniciar sincronizaciones.
+      </Alert>
+    );
+  }
 
   // Renderizar estado de carga
   if (isLoadingStatus) {
