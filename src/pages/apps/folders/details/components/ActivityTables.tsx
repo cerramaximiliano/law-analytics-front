@@ -69,6 +69,7 @@ import { exportActivityData } from "./utils/exportUtils";
 import PDFViewer from "components/shared/PDFViewer";
 import DocumentExplorer from "components/shared/DocumentExplorer";
 import ScrapingProgressBanner from "./ScrapingProgressBanner";
+import PjnSyncStatus from "./PjnSyncStatus";
 import { useScrapingProgress } from "hooks/useScrapingProgress";
 import { useTeam } from "contexts/TeamContext";
 import { toggleMovementComplete } from "store/reducers/movements";
@@ -188,7 +189,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		}
 	}, [id, activeTab, filters.onlyWithDocuments, filters.type]);
 
-	// Polling para scrapingProgress cada 30 segundos
+	// Polling para scrapingProgress: 10s cuando está en progreso, 30s en otros estados activos
 	useEffect(() => {
 		// Solo hacer polling si:
 		// 1. Hay scrapingProgress
@@ -199,7 +200,9 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			return;
 		}
 
-		// Configurar intervalo de 30 segundos
+		// Más frecuente mientras está activamente descargando
+		const pollMs = scrapingProgress.status === "in_progress" ? 10000 : 30000;
+
 		const pollInterval = setInterval(() => {
 			dispatch(
 				getMovementsByFolderId(id, {
@@ -209,7 +212,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 					filter: buildFilterObject(filters.onlyWithDocuments),
 				}),
 			);
-		}, 30000); // 30 segundos
+		}, pollMs);
 
 		// Limpiar intervalo al desmontar o cuando cambian las dependencias
 		return () => clearInterval(pollInterval);
@@ -1079,16 +1082,23 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									</Stack>
 								) : (
 									<Box>
-										{/* Scraping Progress Banner - solo para movements */}
-										{activeTab === "movements" && scrapingProgress && !scrapingBannerClosed && (
-											<Box sx={{ mb: 2 }}>
-												<ScrapingProgressBanner
-													scrapingProgress={scrapingProgress}
-													source={scrapingSource}
-													onRefresh={handleRefreshMovements}
-													onClose={handleCloseBanner}
-												/>
-											</Box>
+										{/* Scraping Progress Banner / Estado de sincronización PJN */}
+										{activeTab === "movements" && (
+											<>
+												{scrapingProgress && !scrapingBannerClosed && (
+													<Box sx={{ mb: 2 }}>
+														<ScrapingProgressBanner
+															scrapingProgress={scrapingProgress}
+															source={scrapingSource}
+															onRefresh={handleRefreshMovements}
+															onClose={handleCloseBanner}
+														/>
+													</Box>
+												)}
+												{!scrapingProgress && movementsData.pjnAccess && (
+													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
+												)}
+											</>
 										)}
 
 										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>
@@ -1457,16 +1467,23 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 									</Stack>
 								) : (
 									<Box>
-										{/* Scraping Progress Banner - solo para movements */}
-										{activeTab === "movements" && scrapingProgress && !scrapingBannerClosed && (
-											<Box sx={{ mb: 2 }}>
-												<ScrapingProgressBanner
-													scrapingProgress={scrapingProgress}
-													source={scrapingSource}
-													onRefresh={handleRefreshMovements}
-													onClose={handleCloseBanner}
-												/>
-											</Box>
+										{/* Scraping Progress Banner / Estado de sincronización PJN */}
+										{activeTab === "movements" && (
+											<>
+												{scrapingProgress && !scrapingBannerClosed && (
+													<Box sx={{ mb: 2 }}>
+														<ScrapingProgressBanner
+															scrapingProgress={scrapingProgress}
+															source={scrapingSource}
+															onRefresh={handleRefreshMovements}
+															onClose={handleCloseBanner}
+														/>
+													</Box>
+												)}
+												{!scrapingProgress && movementsData.pjnAccess && (
+													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
+												)}
+											</>
 										)}
 
 										<Paper elevation={0} sx={{ height: "100%", border: `1px solid ${theme.palette.divider}` }}>

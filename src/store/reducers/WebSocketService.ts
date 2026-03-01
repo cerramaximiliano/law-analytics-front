@@ -4,7 +4,7 @@ import { io, Socket } from "socket.io-client";
 import { Alert } from "types/alert";
 
 // Tipos para los eventos y mensajes
-export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE";
+export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE" | "SYNC_PROGRESS";
 
 export interface WSMessage<T = any> {
 	type: WSMessageType;
@@ -317,6 +317,27 @@ class WebSocketService {
 			this.handleMessage({
 				type: "NOTIFICATION",
 				payload: { pendingAlerts: validAlerts },
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// Escuchar folders creados desde workers PJN
+		this.socket.on("folders_created", (folders: any[]) => {
+			if (!Array.isArray(folders) || folders.length === 0) return;
+			this.log(`${folders.length} folder(s) PJN recibido(s) via WS`);
+			this.handleMessage({
+				type: "FOLDER_UPDATE",
+				payload: { newFolders: folders },
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// Escuchar progreso de sincronización PJN desde workers
+		this.socket.on("sync_progress", (progress: any) => {
+			this.log("Progreso de sincronización PJN recibido");
+			this.handleMessage({
+				type: "SYNC_PROGRESS",
+				payload: progress,
 				timestamp: new Date().toISOString(),
 			});
 		});

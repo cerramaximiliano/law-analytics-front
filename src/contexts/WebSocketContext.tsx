@@ -7,6 +7,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 // Importamos correctamente las acciones
 import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
 import { Alert } from "types/alert";
+import { FolderData } from "types/folder";
 
 // Definición del contexto WebSocket
 export interface WebSocketContextType {
@@ -88,6 +89,20 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 			setLastMessage(message);
 
 			// Manejar tipos específicos de mensajes
+			if (message.type === "FOLDER_UPDATE") {
+				if (message.payload?.newFolders && Array.isArray(message.payload.newFolders)) {
+					const newFolders = message.payload.newFolders as FolderData[];
+					newFolders.forEach((folder) => {
+						dispatch({ type: "ADD_FOLDER", payload: folder });
+					});
+					if (newFolders.length === 1) {
+						showNotification(`Carpeta PJN agregada: ${newFolders[0].folderName || "Nueva carpeta"}`, "info");
+					} else {
+						showNotification(`${newFolders.length} carpetas PJN agregadas`, "info");
+					}
+				}
+			}
+
 			if (message.type === "NOTIFICATION") {
 				// Manejar alertas pendientes - formato {pendingAlerts: Alert[]}
 				if (message.payload && message.payload.pendingAlerts) {

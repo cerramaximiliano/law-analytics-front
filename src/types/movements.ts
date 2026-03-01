@@ -49,6 +49,7 @@ export interface ScrapingProgress {
 	isComplete: boolean;
 	totalExpected: number;
 	totalProcessed: number;
+	startedAt?: string;
 }
 
 export interface PaginatedMovementsResponse {
@@ -69,6 +70,7 @@ export interface MovementState {
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
 	scrapingProgress?: ScrapingProgress;
+	causaLastSyncDate?: string | null;
 	isLoading: boolean;
 	error?: string;
 }

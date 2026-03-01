@@ -20,6 +20,7 @@ const initialMovementState: MovementState = {
 	documentsBeforeThisPage: undefined,
 	documentsInThisPage: undefined,
 	scrapingProgress: undefined,
+	causaLastSyncDate: undefined,
 	isLoading: false,
 	error: undefined,
 };
@@ -48,6 +49,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				documentsInThisPage: action.payload.documentsInThisPage || undefined,
 				pjnAccess: action.payload.pjnAccess || undefined,
 				scrapingProgress: action.payload.scrapingProgress || undefined,
+				causaLastSyncDate: action.payload.causaLastSyncDate !== undefined ? action.payload.causaLastSyncDate : undefined,
 				isLoading: false,
 			};
 		case UPDATE_MOVEMENT:
@@ -260,6 +262,7 @@ interface SuccessResponse {
 	success: true;
 	movements: Movement[];
 	count: number;
+	causaLastSyncDate?: string | null;
 }
 
 interface PaginatedSuccessResponse {
@@ -272,6 +275,7 @@ interface PaginatedSuccessResponse {
 		documentsInThisPage?: number;
 		pjnAccess?: PjnAccess;
 		scrapingProgress?: ScrapingProgress;
+		causaLastSyncDate?: string | null;
 	};
 }
 
@@ -343,6 +347,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						documentsInThisPage: paginatedData.data.documentsInThisPage,
 						pjnAccess: paginatedData.data.pjnAccess,
 						scrapingProgress: paginatedData.data.scrapingProgress,
+						causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 					},
 				});
 
@@ -354,19 +359,24 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 					documentsInThisPage: paginatedData.data.documentsInThisPage,
 					scrapingProgress: paginatedData.data.scrapingProgress,
+					causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 				};
 			} else {
 				// Manejar respuesta no paginada (retrocompatibilidad)
 				const nonPaginatedData = response.data as SuccessResponse;
 				dispatch({
 					type: GET_MOVEMENTS_BY_FOLDER,
-					payload: nonPaginatedData.movements,
+					payload: {
+						movements: nonPaginatedData.movements,
+						causaLastSyncDate: nonPaginatedData.causaLastSyncDate,
+					},
 				});
 
 				return {
 					success: true,
 					movements: nonPaginatedData.movements,
 					count: nonPaginatedData.count,
+					causaLastSyncDate: nonPaginatedData.causaLastSyncDate,
 				};
 			}
 		}

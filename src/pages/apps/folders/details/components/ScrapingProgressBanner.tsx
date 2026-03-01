@@ -26,8 +26,8 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 
 	const { status, totalExpected, totalProcessed } = scrapingProgress;
 
-	// Detectar si el total es desconocido (caso PJN)
-	const isTotalUnknown = totalExpected === 0 && totalProcessed > 0;
+	// Detectar si el total es desconocido (caso PJN: no hay total definido)
+	const isTotalUnknown = totalExpected === 0;
 
 	// Calcular porcentaje
 	const percentage = totalExpected > 0 ? Math.round((totalProcessed / totalExpected) * 100) : 0;

@@ -21,7 +21,6 @@ import {
   Divider,
   Card,
   CardContent,
-  Chip,
   Dialog,
   DialogContent,
 } from "@mui/material";
@@ -34,8 +33,6 @@ import {
   CloseCircle,
   Refresh2,
   InfoCircle,
-  Folder2,
-  DocumentText,
 } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
@@ -48,6 +45,7 @@ import pjnCredentialsService, {
   PjnCredentialsStatus,
   UnlinkImpact,
 } from "api/pjnCredentials";
+import webSocketService from "store/reducers/WebSocketService";
 
 interface PjnAccountConnectProps {
   onConnectionSuccess?: () => void;
@@ -100,6 +98,23 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Polling cleanup
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
+  // Suscripción a eventos WebSocket de progreso PJN
+  useEffect(() => {
+    if (!isSyncing) return;
+
+    const unsubscribe = webSocketService.subscribe("SYNC_PROGRESS", (message) => {
+      const p = message.payload;
+      if (typeof p.progress === "number") {
+        setSyncProgress(p.progress);
+      }
+      if (p.message) {
+        setSyncMessage(p.message);
+      }
+    });
+
+    return unsubscribe;
+  }, [isSyncing]);
+
   // Cargar estado de credenciales al montar
   useEffect(() => {
     loadCredentialsStatus();
@@ -151,8 +166,10 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         if (status.currentSyncProgress) {
           setSyncProgress(status.currentSyncProgress.progress || 0);
           const { causasProcessed, totalExpected, currentPage, totalPages } = status.currentSyncProgress;
-          if (totalExpected > 0) {
+          if (totalExpected > 0 && totalPages > 0) {
             setSyncMessage(`Procesando causas: ${causasProcessed}/${totalExpected} (Página ${currentPage}/${totalPages})`);
+          } else if (totalExpected > 0) {
+            setSyncMessage(`Obteniendo causas: ${causasProcessed}/${totalExpected}...`);
           } else {
             setSyncMessage("Verificando credenciales...");
           }
@@ -519,12 +536,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
             <Box>
               <LinearProgress
-                variant="determinate"
-                value={syncProgress}
+                variant={syncProgress > 0 ? "determinate" : "indeterminate"}
+                value={syncProgress > 0 ? syncProgress : undefined}
                 sx={{ height: 8, borderRadius: 4 }}
               />
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                {syncMessage || `${syncProgress.toFixed(0)}% completado`}
+                {syncMessage || (syncProgress > 0 ? `${syncProgress.toFixed(0)}% completado` : "Iniciando sincronización...")}
               </Typography>
             </Box>
 
@@ -532,24 +549,6 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
               El proceso puede tomar varios minutos dependiendo de la cantidad de causas.
               Puede cerrar este diálogo y continuar trabajando, las carpetas se crearán automáticamente.
             </Alert>
-
-            {credentialsStatus?.currentSyncProgress && (
-              <Stack direction="row" spacing={2} justifyContent="center">
-                <Chip
-                  icon={<DocumentText size={16} />}
-                  label={`${credentialsStatus.currentSyncProgress.causasProcessed || 0} causas`}
-                  size="small"
-                  variant="outlined"
-                />
-                <Chip
-                  icon={<Folder2 size={16} />}
-                  label={`${credentialsStatus.foldersCreatedCount || 0} carpetas`}
-                  size="small"
-                  variant="outlined"
-                  color="primary"
-                />
-              </Stack>
-            )}
           </Stack>
         </CardContent>
       </Card>
