@@ -158,6 +158,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
   const startPolling = useCallback(() => {
     setIsSyncing(true);
+    setSyncProgress(0);
     setSyncMessage("Sincronizando causas...");
 
     const stop = pjnCredentialsService.pollSyncStatus(
