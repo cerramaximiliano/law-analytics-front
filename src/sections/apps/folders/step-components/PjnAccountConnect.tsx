@@ -482,7 +482,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
               disabled={isUnlinking}
               startIcon={isUnlinking ? <CircularProgress size={14} color="inherit" /> : undefined}
             >
-              Eliminar carpetas y causas
+              Eliminar carpetas
             </Button>
             <Button
               fullWidth
