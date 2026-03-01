@@ -69,6 +69,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   const dispatch = useDispatch();
   const authUser = useSelector((state: any) => state.auth?.user);
   const pjnSync = useSelector((state: RootState) => state.pjnSync);
+  const folders = useSelector((state: RootState) => state.folder.folders);
   const { isTeamMode, isOwner } = useTeam();
   const isTeamMember = isTeamMode && !isOwner;
 
@@ -333,7 +334,18 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         setCredentialsStatus(null);
         dispatch(pjnSyncReset());
 
-        // Recargar carpetas en Redux para reflejar los cambios
+        if (mode === "delete") {
+          // Eliminar inmediatamente del store los folders PJN para que no
+          // se sigan mostrando en la UI mientras el server confirma la operación
+          const pjnIds = folders
+            .filter((f: any) => f.pjn)
+            .map((f: any) => f._id);
+          if (pjnIds.length > 0) {
+            dispatch({ type: "DELETE_FOLDERS", payload: pjnIds });
+          }
+        }
+
+        // Recargar carpetas desde el server para confirmar el estado final
         const userId = authUser?._id || authUser?.id;
         if (userId) {
           storeDispatch(getFoldersByUserId(userId, true) as any);
