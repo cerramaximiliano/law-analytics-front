@@ -594,7 +594,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
             <Alert severity="info" icon={<InfoCircle size={20} />}>
               El proceso puede tomar varios minutos dependiendo de la cantidad de causas.
-              Puede cerrar este diálogo y continuar trabajando, las carpetas se crearán automáticamente.
+              Puede continuar trabajando con normalidad, las carpetas se crearán automáticamente.
             </Alert>
           </Stack>
         </CardContent>
@@ -605,20 +605,28 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Renderizar cuenta conectada
   if (hasCredentials && credentialsStatus) {
     const isComplete = credentialsStatus.isValid && credentialsStatus.verified;
-    const hasError = credentialsStatus.syncStatus === "error";
+    const syncErrored = credentialsStatus.syncStatus === "error";
+    // hasError solo cuando hay error Y las credenciales no están en estado completo
+    // (si isValid && verified, la cuenta sigue conectada a pesar del error de seguimiento)
+    const hasError = syncErrored && !isComplete;
+    const isCredentialError = hasError && credentialsStatus.lastError?.code === "CREDENTIAL_INVALID";
+    // Error con credenciales válidas → error de seguimiento o transitorio (ej. DocumentNotFoundError)
+    const isTrackingError = hasError && !isCredentialError && credentialsStatus.isValid;
 
     return (
       <>
         {unlinkDialog}
-        <Card variant="outlined" sx={{ borderColor: isComplete ? theme.palette.success.light : theme.palette.warning.light }}>
+        <Card variant="outlined" sx={{ borderColor: isComplete ? theme.palette.success.light : isCredentialError ? theme.palette.error.light : theme.palette.warning.light }}>
           <CardContent>
             <Stack spacing={2}>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Stack direction="row" alignItems="center" spacing={1}>
                   {isComplete ? (
                     <TickCircle size={24} color={theme.palette.success.main} variant="Bold" />
-                  ) : hasError ? (
+                  ) : isCredentialError ? (
                     <CloseCircle size={24} color={theme.palette.error.main} variant="Bold" />
+                  ) : hasError ? (
+                    <CloseCircle size={24} color={theme.palette.warning.main} variant="Bold" />
                   ) : (
                     <Link1 size={24} color={theme.palette.warning.main} />
                   )}
@@ -646,33 +654,47 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
                 </Alert>
               )}
 
-              {hasError && credentialsStatus.lastError && (
+              {hasError && (
                 <Alert
-                  severity="error"
+                  severity={isCredentialError ? "error" : "warning"}
                   action={
-                    credentialsStatus.lastError.code === "CREDENTIAL_INVALID" ? (
-                      <Button
-                        color="inherit"
-                        size="small"
-                        onClick={handleResync}
-                        disabled={!credentialsStatus.enabled}
-                      >
-                        Reintentar
+                    isCredentialError ? (
+                      credentialsStatus.enabled ? (
+                        <Button color="inherit" size="small" onClick={handleResync}>
+                          Reintentar
+                        </Button>
+                      ) : undefined
+                    ) : (
+                      <Button color="inherit" size="small" onClick={loadCredentialsStatus}>
+                        Verificar
                       </Button>
-                    ) : undefined
+                    )
                   }
                 >
-                  {credentialsStatus.lastError.code === "CREDENTIAL_INVALID"
-                    ? !credentialsStatus.enabled
-                      ? "Cuenta desactivada: la contraseña del PJN falló en múltiples intentos. Actualizá tu contraseña y volvé a intentar."
-                      : "Contraseña del PJN incorrecta o expirada. Verificá tus credenciales en el portal del Poder Judicial."
-                    : credentialsStatus.lastError.message}
-                  {credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
+                  {isCredentialError
+                    ? (!credentialsStatus.enabled
+                        ? "Cuenta desactivada: la contraseña del PJN falló en múltiples intentos. Actualizá tu contraseña y volvé a intentar."
+                        : "Contraseña del PJN incorrecta o expirada. Verificá tus credenciales en el portal del Poder Judicial.")
+                    : "Ocurrió un error durante la sincronización. Tus credenciales son válidas — podés reintentar la sincronización o verificar el estado actual."}
+                  {isCredentialError && credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
                     <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.8 }}>
                       Intentos fallidos: {credentialsStatus.consecutiveErrors} / 5
                     </Typography>
                   )}
                 </Alert>
+              )}
+
+              {isTrackingError && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="warning"
+                  startIcon={<Refresh2 size={16} />}
+                  onClick={handleResync}
+                  disabled={!credentialsStatus.enabled}
+                >
+                  Reintentar sincronización
+                </Button>
               )}
 
               {!isComplete && !hasError && credentialsStatus.syncStatus === "pending" && (
