@@ -448,9 +448,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 	}, [isLogoutProcess]);
 
 	// Login normal
-	const login = async (email: string, password: string): Promise<boolean> => {
+	const login = async (email: string, password: string, rememberMe?: boolean): Promise<boolean> => {
 		try {
-			const response = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/login`, { email, password });
+			const response = await axios.post<LoginResponse>(`${import.meta.env.VITE_BASE_URL}/api/auth/login`, { email, password, rememberMe: rememberMe ?? false });
 
 			const { user, subscription, paymentHistory, customer } = response.data;
 

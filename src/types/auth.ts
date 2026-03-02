@@ -167,7 +167,7 @@ export interface VerifyCodeResponse {
 // Interfaz actualizada para el contexto del servidor
 export interface ServerContextType extends AuthProps {
 	isGoogleLoggedIn: boolean;
-	login: (email: string, password: string) => Promise<boolean>;
+	login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>;
 	logout: (showMessage?: boolean) => Promise<void>;
 	register: (
 		email: string,

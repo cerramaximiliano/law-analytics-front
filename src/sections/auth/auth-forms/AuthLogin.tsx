@@ -74,7 +74,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 						if (onLoadingChange) {
 							onLoadingChange(true);
 						}
-						await login(values.email, values.password);
+						await login(values.email, values.password, checked);
 						if (scriptedRef.current) {
 							setStatus({ success: true });
 							setSubmitting(false);
