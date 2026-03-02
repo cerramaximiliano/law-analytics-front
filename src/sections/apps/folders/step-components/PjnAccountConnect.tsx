@@ -39,7 +39,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { dispatch as storeDispatch } from "store";
 import { RootState } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
-import { pjnSyncStarted, pjnSyncReset } from "store/reducers/pjnSync";
+import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar from "components/@extended/Avatar";
 import pjnCredentialsService, {
@@ -99,6 +99,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Ref para detectar transición isActive: true → false
   const prevIsActiveRef = useRef(false);
 
+  // Rescue polling: fallback cuando los eventos WS no llegan
+  const WS_TIMEOUT_MS = 20000;
+  const WS_RESCUE_INTERVAL_MS = 10000;
+  const lastWsEventRef = useRef<number>(0);
+  const rescuePollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Detecta cuando el sync pasa de activo a inactivo para mostrar snackbar
   useEffect(() => {
     if (prevIsActiveRef.current && !pjnSync.isActive) {
@@ -125,6 +131,54 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       }
     }
     prevIsActiveRef.current = pjnSync.isActive;
+  }, [pjnSync.isActive]);
+
+  // Actualiza el timestamp del último evento WS al recibir cambios de progreso
+  useEffect(() => {
+    if (pjnSync.isActive) {
+      lastWsEventRef.current = Date.now();
+    }
+  }, [pjnSync.isActive, pjnSync.progress, pjnSync.message, pjnSync.phase]);
+
+  // Rescue polling: se activa si no llegan eventos WS en WS_TIMEOUT_MS
+  useEffect(() => {
+    if (!pjnSync.isActive) {
+      if (rescuePollIntervalRef.current) {
+        clearInterval(rescuePollIntervalRef.current);
+        rescuePollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const poll = async () => {
+      if (Date.now() - lastWsEventRef.current < WS_TIMEOUT_MS) return;
+
+      try {
+        const response = await pjnCredentialsService.getCredentialsStatus();
+        if (!response.success || !response.data) return;
+
+        const { syncStatus, lastError } = response.data;
+        setCredentialsStatus(response.data);
+
+        if (syncStatus === "in_progress") return;
+
+        if (syncStatus === "error") {
+          dispatch(pjnSyncError({ message: lastError?.message || "Error en sincronización" }));
+        } else {
+          dispatch(pjnSyncCompleted({ foldersCreated: response.data.foldersCreatedCount ?? 0, newCausas: 0 }));
+        }
+      } catch {
+        // Silently ignore — es un fallback, no debe afectar la UX
+      }
+    };
+
+    rescuePollIntervalRef.current = setInterval(poll, WS_RESCUE_INTERVAL_MS);
+    return () => {
+      if (rescuePollIntervalRef.current) {
+        clearInterval(rescuePollIntervalRef.current);
+        rescuePollIntervalRef.current = null;
+      }
+    };
   }, [pjnSync.isActive]);
 
   // Cargar estado de credenciales al montar
@@ -586,8 +640,31 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
               )}
 
               {hasError && credentialsStatus.lastError && (
-                <Alert severity="error">
-                  {credentialsStatus.lastError.message}
+                <Alert
+                  severity="error"
+                  action={
+                    credentialsStatus.lastError.code === "CREDENTIAL_INVALID" ? (
+                      <Button
+                        color="inherit"
+                        size="small"
+                        onClick={handleResync}
+                        disabled={!credentialsStatus.enabled}
+                      >
+                        Reintentar
+                      </Button>
+                    ) : undefined
+                  }
+                >
+                  {credentialsStatus.lastError.code === "CREDENTIAL_INVALID"
+                    ? !credentialsStatus.enabled
+                      ? "Cuenta desactivada: la contraseña del PJN falló en múltiples intentos. Actualizá tu contraseña y volvé a intentar."
+                      : "Contraseña del PJN incorrecta o expirada. Verificá tus credenciales en el portal del Poder Judicial."
+                    : credentialsStatus.lastError.message}
+                  {credentialsStatus.consecutiveErrors > 1 && credentialsStatus.enabled && (
+                    <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.8 }}>
+                      Intentos fallidos: {credentialsStatus.consecutiveErrors} / 5
+                    </Typography>
+                  )}
                 </Alert>
               )}
 
