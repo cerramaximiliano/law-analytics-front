@@ -713,14 +713,27 @@ const AutomaticStep = () => {
 
 		if (nextButton) {
 			const handleNextClick = async (e: Event) => {
-				// Si estamos en modo "connect" de PJN, llamar al submit del componente
+				// Si estamos en modo "connect" de PJN, manejar según estado de credenciales
 				if (values.judicialPower === "nacional" && pjnImportMode === "connect") {
-					e.preventDefault();
-					e.stopPropagation();
+					const canSubmit = pjnAccountConnectRef.current?.canSubmit();
+					const isConnected = pjnAccountConnectRef.current?.isConnected();
 
-					if (pjnAccountConnectRef.current?.canSubmit()) {
-						await pjnAccountConnectRef.current.submit();
+					if (canSubmit) {
+						// Hay credenciales para enviar: interceptar y llamar al submit del componente
+						e.preventDefault();
+						e.stopPropagation();
+						await pjnAccountConnectRef.current!.submit();
+						return;
 					}
+
+					if (!isConnected) {
+						// No conectado y sin datos para enviar: bloquear avance
+						e.preventDefault();
+						e.stopPropagation();
+						return;
+					}
+
+					// isConnected=true y canSubmit=false → credenciales ya vinculadas, dejar avanzar el wizard
 					return;
 				}
 

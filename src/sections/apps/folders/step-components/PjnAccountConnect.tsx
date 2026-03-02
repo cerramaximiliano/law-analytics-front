@@ -58,6 +58,7 @@ interface PjnAccountConnectProps {
 export interface PjnAccountConnectRef {
   submit: () => Promise<boolean>;
   canSubmit: () => boolean;
+  isConnected: () => boolean;
 }
 
 const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProps>(({
@@ -212,8 +213,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             progress: cp?.progress ?? 0,
             message: "Sincronizando causas...",
           }));
-        } else {
-          // Limpiar estado stale (sync ya terminó o nunca empezó)
+        } else if (!pjnSync.isActive) {
+          // Limpiar estado stale solo si WS no ha marcado un sync activo
           dispatch(pjnSyncReset());
         }
       } else {
@@ -325,7 +326,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Exponer métodos al componente padre
   useImperativeHandle(ref, () => ({
     submit: handleSubmit,
-    canSubmit: () => Boolean(cuil && password && !isSubmitting && !hasCredentials),
+    canSubmit: () => Boolean(cuil && password && !isSubmitting && !hasCredentials && !isLoadingStatus),
+    isConnected: () => hasCredentials,
   }));
 
   // Solicitar re-sincronización
