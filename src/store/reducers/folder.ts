@@ -22,6 +22,7 @@ const GET_FOLDERS_BY_IDS = "GET_FOLDERS_BY_IDS";
 const RESET_FOLDERS_STATE = "RESET_FOLDERS_STATE";
 const SET_SELECTED_FOLDERS = "SET_SELECTED_FOLDERS";
 const SET_FOLDER_SORT = "SET_FOLDER_SORT";
+const UPSERT_FOLDER = "UPSERT_FOLDER";
 
 // Initial state
 const initialFolderState: FolderState = {
@@ -55,6 +56,17 @@ const folder = (state = initialFolderState, action: any) => {
 				folders: [...state.folders, action.payload],
 				isLoader: false,
 			};
+		case UPSERT_FOLDER: {
+			const id = action.payload._id;
+			const exists = state.folders.some((f: FolderData) => f._id === id);
+			return {
+				...state,
+				folders: exists
+					? state.folders.map((f: FolderData) => (f._id === id ? { ...f, ...action.payload } : f))
+					: [...state.folders, action.payload],
+				isLoader: false,
+			};
+		}
 		case GET_FOLDERS_BY_USER:
 			return {
 				...state,

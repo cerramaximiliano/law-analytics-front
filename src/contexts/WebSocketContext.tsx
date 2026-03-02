@@ -7,6 +7,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 // Importamos correctamente las acciones
 import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
 import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { Alert } from "types/alert";
 import { FolderData } from "types/folder";
 
@@ -94,7 +95,7 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 				if (message.payload?.newFolders && Array.isArray(message.payload.newFolders)) {
 					const newFolders = message.payload.newFolders as FolderData[];
 					newFolders.forEach((folder) => {
-						dispatch({ type: "ADD_FOLDER", payload: folder });
+						dispatch({ type: "UPSERT_FOLDER", payload: folder });
 					});
 					if (newFolders.length === 1) {
 						showNotification(`Carpeta PJN agregada: ${newFolders[0].folderName || "Nueva carpeta"}`, "info");
@@ -110,6 +111,10 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 					dispatch(pjnSyncStarted({ progress: p.progress, message: p.message }));
 				} else if (p?.phase === "completed") {
 					dispatch(pjnSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
+					// Recargar todos los folders para reflejar pjn:true en los re-asociados y los recién creados
+					if (userId) {
+						dispatch(getFoldersByUserId(userId) as any);
+					}
 				} else if (p?.phase === "error") {
 					dispatch(pjnSyncError({ message: p.message ?? "Error en sincronización" }));
 				} else if (p?.phase) {
@@ -158,7 +163,7 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 				}
 			}
 		},
-		[dispatch, showNotification],
+		[dispatch, showNotification, userId],
 	);
 
 	// Conectar al WebSocket

@@ -158,9 +158,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       } else {
         setHasCredentials(false);
         setCredentialsStatus(null);
+        dispatch(pjnSyncReset());
       }
     } catch (error) {
       setHasCredentials(false);
+      dispatch(pjnSyncReset());
     } finally {
       setIsLoadingStatus(false);
     }
@@ -522,6 +524,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
                 {pjnSync.message || (pjnSync.progress > 0 ? `${pjnSync.progress.toFixed(0)}% completado` : "Iniciando sincronización...")}
               </Typography>
+              {pjnSync.progress >= 5 && (
+                <Typography variant="caption" color="success.main" sx={{ mt: 0.25, display: "block" }}>
+                  ✓ Autenticación exitosa
+                </Typography>
+              )}
             </Box>
 
             <Alert severity="info" icon={<InfoCircle size={20} />}>

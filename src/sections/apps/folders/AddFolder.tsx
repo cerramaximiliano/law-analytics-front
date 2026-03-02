@@ -60,6 +60,8 @@ const getInitialValues = (folder: FormikValues | null) => {
 		eje: false, // Para indicar si los datos provienen del EJE (CABA)
 		ejeSearchType: "expediente", // Tipo de búsqueda para EJE: "cuij" o "expediente"
 		ejeCuij: "", // CUIJ para búsqueda en EJE
+		pjnImportMode: "connect", // Modo de importación PJN: "connect" o "single"
+		baImportMode: "connect", // Modo de importación BA: "connect" o "single"
 	};
 
 	if (folder) {
@@ -673,15 +675,20 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 												<Button color="error" onClick={onCancel} sx={{ minWidth: 100 }}>
 													Cancelar
 												</Button>
-												<Button
-													type="submit"
-													variant="contained"
-													disabled={isSubmitting || isProcessing}
-													endIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : !isLastStep && <ArrowRight2 size={18} />}
-													sx={{ minWidth: 100 }}
-												>
-													{isProcessing ? "Procesando..." : folder && isLastStep ? "Editar" : !folder && isLastStep ? "Crear" : "Siguiente"}
-												</Button>
+												{!(activeStep === 2 && values.entryMethod === "automatic" && (
+													values.judicialPower === "nacional" ||
+													values.judicialPower === "buenosaires"
+												)) && (
+													<Button
+														type="submit"
+														variant="contained"
+														disabled={isSubmitting || isProcessing}
+														endIcon={isProcessing ? <CircularProgress size={16} color="inherit" /> : !isLastStep && <ArrowRight2 size={18} />}
+														sx={{ minWidth: 100 }}
+													>
+														{isProcessing ? "Procesando..." : folder && isLastStep ? "Editar" : !folder && isLastStep ? "Crear" : "Siguiente"}
+													</Button>
+												)}
 											</Stack>
 										</Grid>
 									</Grid>

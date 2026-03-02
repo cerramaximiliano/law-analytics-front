@@ -21,8 +21,9 @@ import {
 	RadioGroup,
 	FormControlLabel,
 	Radio,
+	Button,
 } from "@mui/material";
-import { DocumentUpload, Link1, DocumentText1, InfoCircle, SearchNormal1 } from "iconsax-react";
+import { DocumentUpload, Link1, DocumentText1, InfoCircle, SearchNormal1, ArrowRight2 } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
@@ -199,7 +200,7 @@ type BaImportMode = "connect" | "single";
 const AutomaticStep = () => {
 	const theme = useTheme();
 	const formik = useFormikContext<FormValues>();
-	const { setFieldValue, values, setFieldError, touched, setTouched } = formik;
+	const { setFieldValue, values, setFieldError, touched, setTouched, isSubmitting } = formik;
 
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState(false);
@@ -904,6 +905,7 @@ const AutomaticStep = () => {
 												onChange={(_, value) => {
 													if (value !== null) {
 														setPjnImportMode(value);
+														setFieldValue("pjnImportMode", value);
 													}
 												}}
 												fullWidth
@@ -1030,6 +1032,17 @@ const AutomaticStep = () => {
 														>
 															El expediente debe ser de acceso público.
 														</Alert>
+
+														<Button
+															type="submit"
+															variant="contained"
+															fullWidth
+															size="small"
+															disabled={isSubmitting}
+															startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <ArrowRight2 size={16} />}
+														>
+															{isSubmitting ? "Procesando..." : "Siguiente"}
+														</Button>
 													</Stack>
 												</CardContent>
 											</Card>
@@ -1050,6 +1063,7 @@ const AutomaticStep = () => {
 												onChange={(_, value) => {
 													if (value !== null) {
 														setBaImportMode(value);
+														setFieldValue("baImportMode", value);
 													}
 												}}
 												fullWidth
@@ -1372,6 +1386,19 @@ const AutomaticStep = () => {
 										>
 											El expediente debe ser de acceso público.
 										</Alert>
+									</Grid>
+
+									<Grid item xs={12}>
+										<Button
+											type="submit"
+											variant="contained"
+											fullWidth
+											size="small"
+											disabled={isSubmitting}
+											startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <ArrowRight2 size={16} />}
+										>
+											{isSubmitting ? "Procesando..." : "Siguiente"}
+										</Button>
 									</Grid>
 								</>
 							)}
