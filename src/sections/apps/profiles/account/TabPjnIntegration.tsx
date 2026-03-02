@@ -128,7 +128,7 @@ const TabPjnIntegration = () => {
 									Los intervinientes (partes y letrados) extraídos de tus causas se crearán automáticamente
 									como contactos en las carpetas vinculadas.
 								</Typography>
-								<Alert severity="info" variant="outlined">
+								<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
 									La cantidad de contactos sincronizados está sujeta a los límites de tu plan actual.
 								</Alert>
 							</Stack>
