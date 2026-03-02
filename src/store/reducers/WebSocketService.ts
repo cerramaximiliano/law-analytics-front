@@ -2,6 +2,7 @@ import axios from "axios";
 import { WS_BASE_URL, API_BASE_URL } from "../../config";
 import { io, Socket } from "socket.io-client";
 import { Alert } from "types/alert";
+import secureStorage from "../../services/secureStorage";
 
 // Tipos para los eventos y mensajes
 export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE" | "SYNC_PROGRESS";
@@ -90,7 +91,7 @@ class WebSocketService {
 				withCredentials: true,
 				auth: {
 					userId: this.userId,
-					token: typeof window !== "undefined" ? localStorage.getItem("token") : undefined,
+					token: secureStorage.getAuthToken() || undefined,
 				},
 				transports: ["websocket"], // Solo WebSocket para mayor seguridad
 				secure: process.env.NODE_ENV === "production",

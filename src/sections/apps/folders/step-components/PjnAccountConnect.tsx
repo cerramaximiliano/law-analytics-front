@@ -560,7 +560,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   }
 
   // Renderizar estado de sincronización en progreso
-  if (pjnSync.isActive || credentialsStatus?.syncStatus === "in_progress") {
+  if (pjnSync.isActive || (credentialsStatus?.syncStatus === "in_progress" && !pjnSync.completedAt && !pjnSync.hasError)) {
     return (
       <Card variant="outlined" sx={{ borderColor: theme.palette.primary.light }}>
         <CardContent>
