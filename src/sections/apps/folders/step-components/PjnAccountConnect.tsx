@@ -167,7 +167,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
           // Recargar carpetas para reflejar el badge PJN
           const uid = authUser?._id || authUser?.id;
           if (uid) {
-            storeDispatch(getFoldersByUserId(uid) as any);
+            storeDispatch(getFoldersByUserId(uid, true) as any);
           }
         }
       } catch {

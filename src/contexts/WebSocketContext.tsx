@@ -112,7 +112,7 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 				} else if (p?.phase === "completed") {
 					dispatch(pjnSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
 					if (userId) {
-						dispatch(getFoldersByUserId(userId) as any);
+						dispatch(getFoldersByUserId(userId, true) as any);
 					}
 					showNotification(`Sincronización completada: ${p.newFolders ?? 0} carpetas creadas`, "success");
 				} else if (p?.phase === "error") {
