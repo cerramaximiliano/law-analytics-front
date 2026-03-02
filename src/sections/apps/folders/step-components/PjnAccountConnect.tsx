@@ -578,14 +578,14 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
             <Box>
               <LinearProgress
-                variant={pjnSync.progress > 0 ? "determinate" : "indeterminate"}
-                value={pjnSync.progress > 0 ? pjnSync.progress : undefined}
-                sx={{ height: 8, borderRadius: 4 }}
+                variant={pjnSync.progress > 0 && pjnSync.phase !== "retrying" ? "determinate" : "indeterminate"}
+                value={pjnSync.progress > 0 && pjnSync.phase !== "retrying" ? pjnSync.progress : undefined}
+                sx={{ height: 8, borderRadius: 4, ...(pjnSync.phase === "retrying" && { "& .MuiLinearProgress-bar": { backgroundColor: theme.palette.warning.main } }) }}
               />
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
                 {pjnSync.message || (pjnSync.progress > 0 ? `${pjnSync.progress.toFixed(0)}% completado` : "Iniciando sincronización...")}
               </Typography>
-              {pjnSync.progress >= 5 && (
+              {pjnSync.progress >= 5 && pjnSync.phase !== "retrying" && (
                 <Typography variant="caption" color="success.main" sx={{ mt: 0.25, display: "block" }}>
                   ✓ Autenticación exitosa
                 </Typography>
