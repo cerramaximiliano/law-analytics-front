@@ -111,12 +111,13 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 					dispatch(pjnSyncStarted({ progress: p.progress, message: p.message }));
 				} else if (p?.phase === "completed") {
 					dispatch(pjnSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
-					// Recargar todos los folders para reflejar pjn:true en los re-asociados y los recién creados
 					if (userId) {
 						dispatch(getFoldersByUserId(userId) as any);
 					}
+					showNotification(`Sincronización completada: ${p.newFolders ?? 0} carpetas creadas`, "success");
 				} else if (p?.phase === "error") {
 					dispatch(pjnSyncError({ message: p.message ?? "Error en sincronización" }));
+					showNotification(`Error en sincronización: ${p.message ?? "Error desconocido"}`, "error");
 				} else if (p?.phase) {
 					dispatch(pjnSyncProgress({ progress: p.progress ?? 0, message: p.message ?? "", phase: p.phase }));
 				}

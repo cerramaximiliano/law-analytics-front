@@ -87,10 +87,10 @@ class WebSocketService {
 				reconnection: this.options.autoReconnect,
 				reconnectionAttempts: this.options.maxReconnectAttempts,
 				reconnectionDelay: this.options.reconnectInterval,
-				withCredentials: true, // Usar cookies para autenticación
+				withCredentials: true,
 				auth: {
 					userId: this.userId,
-					// El token se enviará automáticamente via cookie httpOnly
+					token: typeof window !== "undefined" ? localStorage.getItem("token") : undefined,
 				},
 				transports: ["websocket"], // Solo WebSocket para mayor seguridad
 				secure: process.env.NODE_ENV === "production",

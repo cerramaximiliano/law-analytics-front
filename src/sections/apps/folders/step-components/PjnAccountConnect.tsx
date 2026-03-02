@@ -105,27 +105,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   const lastWsEventRef = useRef<number>(0);
   const rescuePollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Detecta cuando el sync pasa de activo a inactivo para mostrar snackbar
+  // Detecta cuando el sync pasa de activo a inactivo para recargar estado
+  // El snackbar de completado/error se dispara en WebSocketContext (path WS)
+  // o directamente en la función poll del rescue polling (path fallback)
   useEffect(() => {
     if (prevIsActiveRef.current && !pjnSync.isActive) {
-      if (pjnSync.hasError) {
-        enqueueSnackbar(`Error en sincronización: ${pjnSync.errorMessage}`, {
-          variant: "error",
-          anchorOrigin: { vertical: "bottom", horizontal: "right" },
-          TransitionComponent: Zoom,
-          autoHideDuration: 5000,
-        });
-      } else if (pjnSync.completedAt) {
-        enqueueSnackbar(
-          `Sincronización completada: ${pjnSync.foldersCreated} carpetas creadas`,
-          {
-            variant: "success",
-            anchorOrigin: { vertical: "bottom", horizontal: "right" },
-            TransitionComponent: Zoom,
-            autoHideDuration: 5000,
-          }
-        );
-        // Recargar credenciales para mostrar "Cuenta conectada"
+      if (pjnSync.completedAt) {
         loadCredentialsStatus();
         onSyncComplete?.();
       }
@@ -164,8 +149,26 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
         if (syncStatus === "error") {
           dispatch(pjnSyncError({ message: lastError?.message || "Error en sincronización" }));
+          enqueueSnackbar(`Error en sincronización: ${lastError?.message || "Error desconocido"}`, {
+            variant: "error",
+            anchorOrigin: { vertical: "bottom", horizontal: "right" },
+            TransitionComponent: Zoom,
+            autoHideDuration: 5000,
+          });
         } else {
-          dispatch(pjnSyncCompleted({ foldersCreated: response.data.foldersCreatedCount ?? 0, newCausas: 0 }));
+          const foldersCreated = response.data.foldersCreatedCount ?? 0;
+          dispatch(pjnSyncCompleted({ foldersCreated, newCausas: 0 }));
+          enqueueSnackbar(`Sincronización completada: ${foldersCreated} carpetas creadas`, {
+            variant: "success",
+            anchorOrigin: { vertical: "bottom", horizontal: "right" },
+            TransitionComponent: Zoom,
+            autoHideDuration: 5000,
+          });
+          // Recargar carpetas para reflejar el badge PJN
+          const uid = authUser?._id || authUser?.id;
+          if (uid) {
+            storeDispatch(getFoldersByUserId(uid) as any);
+          }
         }
       } catch {
         // Silently ignore — es un fallback, no debe afectar la UX
