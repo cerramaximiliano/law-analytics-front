@@ -142,10 +142,14 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         const response = await pjnCredentialsService.getCredentialsStatus();
         if (!response.success || !response.data) return;
 
+        // Abortar si el WS ya manejó la finalización mientras la llamada API estaba en curso
+        if (!rescuePollIntervalRef.current) return;
+
         const { syncStatus, lastError } = response.data;
         setCredentialsStatus(response.data);
 
-        if (syncStatus === "in_progress") return;
+        // Solo actuar con evidencia explícita — cualquier otro valor (null, idle, pending) → seguir esperando
+        if (syncStatus !== "completed" && syncStatus !== "error") return;
 
         if (syncStatus === "error") {
           dispatch(pjnSyncError({ message: lastError?.message || "Error en sincronización" }));
