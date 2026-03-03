@@ -272,9 +272,10 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             progress: cp?.progress ?? 0,
             message: "Sincronizando causas...",
           }));
-        } else if (!pjnSyncActiveRef.current) {
+        } else if (!pjnSyncActiveRef.current && !calledAfterCompletion) {
           // Limpiar estado stale solo si WS no ha marcado un sync activo
-          // Usar ref en lugar del closure para evitar stale closure en llamadas async
+          // Excluir calledAfterCompletion=true: pjnSyncReset borraría completedAt,
+          // anulando la guardia !completedAt en el render y mostrando el sync card stale.
           dispatch(pjnSyncReset());
         }
       } else {
