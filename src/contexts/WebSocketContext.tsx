@@ -111,7 +111,17 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 					dispatch(pjnSyncError({ message: p.message ?? "Error en sincronización" }));
 					showNotification(`Error en sincronización: ${p.message ?? "Error desconocido"}`, "error");
 				} else if (p?.phase) {
-					dispatch(pjnSyncProgress({ progress: p.progress ?? 0, message: p.message ?? "", phase: p.phase }));
+					dispatch(pjnSyncProgress({
+						progress: p.progress ?? 0,
+						message: p.message ?? "",
+						phase: p.phase,
+						currentPage: p.currentPage,
+						totalPages: p.totalPages,
+						causasProcessed: p.causasProcessed,
+						totalExpected: p.totalExpected,
+						batchNum: p.batchNum,
+						totalBatches: p.totalBatches,
+					}));
 				}
 			}
 

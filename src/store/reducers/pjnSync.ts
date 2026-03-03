@@ -6,11 +6,20 @@ export interface PjnSyncState {
 	progress: number;
 	message: string;
 	phase: string | null;
+	// Fases ya superadas (persisten aunque lleguen en ráfaga, para la UI de pasos)
+	seenPhases: string[];
 	completedAt: string | null;
 	foldersCreated: number;
 	newCausas: number;
 	hasError: boolean;
 	errorMessage: string | null;
+	// Datos adicionales para UI rica por fase
+	currentPage?: number;
+	totalPages?: number;
+	causasProcessed?: number;
+	totalExpected?: number;
+	batchNum?: number;
+	totalBatches?: number;
 }
 
 // Action types
@@ -25,6 +34,7 @@ const initialState: PjnSyncState = {
 	progress: 0,
 	message: "",
 	phase: null,
+	seenPhases: [],
 	completedAt: null,
 	foldersCreated: 0,
 	newCausas: 0,
@@ -38,7 +48,17 @@ export const pjnSyncStarted = (payload?: { progress?: number; message?: string; 
 	payload,
 });
 
-export const pjnSyncProgress = (payload: { progress: number; message: string; phase: string }) => ({
+export const pjnSyncProgress = (payload: {
+	progress: number;
+	message: string;
+	phase: string;
+	currentPage?: number;
+	totalPages?: number;
+	causasProcessed?: number;
+	totalExpected?: number;
+	batchNum?: number;
+	totalBatches?: number;
+}) => ({
 	type: PJN_SYNC_PROGRESS as typeof PJN_SYNC_PROGRESS,
 	payload,
 });
@@ -79,26 +99,49 @@ const pjnSyncReducer = (state = initialState, action: any): PjnSyncState => {
 			};
 		}
 
-		case PJN_SYNC_PROGRESS:
+		case PJN_SYNC_PROGRESS: {
+			const newPhase = action.payload.phase;
+			const previousPhase = state.phase;
+			// Acumular la fase anterior en seenPhases al transicionar a una nueva
+			const seenPhases =
+				previousPhase && previousPhase !== newPhase && !state.seenPhases.includes(previousPhase)
+					? [...state.seenPhases, previousPhase]
+					: state.seenPhases;
 			return {
 				...state,
 				isActive: true,
 				progress: action.payload.progress,
 				message: action.payload.message,
-				phase: action.payload.phase,
+				phase: newPhase,
+				seenPhases,
+				currentPage: action.payload.currentPage,
+				totalPages: action.payload.totalPages,
+				causasProcessed: action.payload.causasProcessed,
+				totalExpected: action.payload.totalExpected,
+				batchNum: action.payload.batchNum,
+				totalBatches: action.payload.totalBatches,
 			};
+		}
 
-		case PJN_SYNC_COMPLETED:
+		case PJN_SYNC_COMPLETED: {
+			// Registrar la última fase activa antes de marcar como completado
+			const lastPhase = state.phase;
+			const seenPhases =
+				lastPhase && lastPhase !== "completed" && !state.seenPhases.includes(lastPhase)
+					? [...state.seenPhases, lastPhase]
+					: state.seenPhases;
 			return {
 				...state,
 				isActive: false,
 				progress: 100,
 				message: "Sincronización completada",
 				phase: "completed",
+				seenPhases,
 				completedAt: new Date().toISOString(),
 				foldersCreated: action.payload.foldersCreated,
 				newCausas: action.payload.newCausas,
 			};
+		}
 
 		case PJN_SYNC_ERROR:
 			return {

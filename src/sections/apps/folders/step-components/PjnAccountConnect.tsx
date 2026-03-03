@@ -97,6 +97,21 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   const [isLoadingImpact, setIsLoadingImpact] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
 
+  // Muestra el resumen de pasos completados brevemente después de que el sync termina
+  const [showCompletionSummary, setShowCompletionSummary] = useState(false);
+  const completionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (pjnSync.phase === "completed") {
+      setShowCompletionSummary(true);
+      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
+      completionTimerRef.current = setTimeout(() => setShowCompletionSummary(false), 3000);
+    }
+    return () => {
+      if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
+    };
+  }, [pjnSync.phase]);
+
   // Ref para detectar transición isActive: true → false
   const prevIsActiveRef = useRef(false);
 
@@ -593,8 +608,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
     );
   }
 
-  // Renderizar estado de carga
-  if (isLoadingStatus) {
+  // Renderizar estado de carga (no interrumpir si estamos mostrando el resumen de finalización)
+  if (isLoadingStatus && !showCompletionSummary) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight={150}>
         <CircularProgress size={32} />
@@ -619,40 +634,106 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Incluye "pending" para evitar flash de "Cuenta conectada" entre requestSync y el evento WS "started"
   if (
     pjnSync.isActive ||
+    showCompletionSummary ||
     (credentialsStatus?.syncStatus === "in_progress" && !pjnSync.completedAt && !pjnSync.hasError) ||
     credentialsStatus?.syncStatus === "pending"
   ) {
+    const isCompleted = pjnSync.phase === "completed";
+    const isRetrying = pjnSync.phase === "retrying";
+    // Orden canónico de las fases visibles
+    const PHASE_STEPS = [
+      { key: "started", label: "Autenticación con PJN" },
+      { key: "extraction", label: "Extracción de causas" },
+      { key: "processing", label: "Creación de carpetas" },
+    ];
+    // Fases acumuladas por el reducer (persisten aunque los eventos lleguen en ráfaga)
+    const seen = pjnSync.seenPhases ?? [];
+    // Cuando el sync completó, todas las fases se muestran como ✓
+    const stepsToShow = isCompleted
+      ? PHASE_STEPS
+      : PHASE_STEPS.filter((s) => seen.includes(s.key));
+    // Etiqueta del paso activo (solo cuando no está completado)
+    const activeLabel = PHASE_STEPS.find((s) => s.key === pjnSync.phase)?.label ?? "Autenticación con PJN";
+
     return (
-      <Card variant="outlined" sx={{ borderColor: theme.palette.primary.light }}>
+      <Card variant="outlined" sx={{ borderColor: isCompleted ? theme.palette.success.light : isRetrying ? theme.palette.warning.light : theme.palette.primary.light }}>
         <CardContent>
           <Stack spacing={2}>
+            {/* Título */}
             <Stack direction="row" alignItems="center" spacing={1}>
-              <CircularProgress size={20} />
-              <Typography variant="subtitle1" fontWeight={500}>
-                Sincronizando causas...
+              {isCompleted ? (
+                <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: "success.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Typography sx={{ color: "white", fontSize: "0.65rem", fontWeight: 700, lineHeight: 1 }}>✓</Typography>
+                </Box>
+              ) : (
+                <CircularProgress size={20} color={isRetrying ? "warning" : "primary"} />
+              )}
+              <Typography variant="subtitle1" fontWeight={500} color={isCompleted ? "success.main" : "text.primary"}>
+                {isCompleted ? "Sincronización completada" : "Sincronizando causas..."}
               </Typography>
-            </Stack>
-
-            <Box>
-              <LinearProgress
-                variant={pjnSync.progress > 0 && pjnSync.phase !== "retrying" ? "determinate" : "indeterminate"}
-                value={pjnSync.progress > 0 && pjnSync.phase !== "retrying" ? pjnSync.progress : undefined}
-                sx={{ height: 8, borderRadius: 4, ...(pjnSync.phase === "retrying" && { "& .MuiLinearProgress-bar": { backgroundColor: theme.palette.warning.main } }) }}
-              />
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                {pjnSync.message || (pjnSync.progress > 0 ? `${pjnSync.progress.toFixed(0)}% completado` : "Iniciando sincronización...")}
-              </Typography>
-              {pjnSync.progress >= 5 && pjnSync.phase !== "retrying" && (
-                <Typography variant="caption" color="success.main" sx={{ mt: 0.25, display: "block" }}>
-                  ✓ Autenticación exitosa
+              {!isCompleted && pjnSync.progress > 0 && (
+                <Typography variant="caption" color="text.secondary" sx={{ ml: "auto" }}>
+                  {pjnSync.progress.toFixed(0)}%
                 </Typography>
               )}
-            </Box>
+            </Stack>
 
-            <Alert severity="info" icon={<InfoCircle size={20} />}>
-              El proceso puede tomar varios minutos dependiendo de la cantidad de causas.
-              Puede continuar trabajando con normalidad, las carpetas se crearán automáticamente.
-            </Alert>
+            {/* Barra de progreso (solo mientras sincroniza) */}
+            {!isCompleted && (
+              <LinearProgress
+                variant={pjnSync.progress > 0 && !isRetrying ? "determinate" : "indeterminate"}
+                value={pjnSync.progress > 0 && !isRetrying ? pjnSync.progress : undefined}
+                color={isRetrying ? "warning" : "primary"}
+                sx={{ height: 8, borderRadius: 4 }}
+              />
+            )}
+
+            {/* Pasos */}
+            <Stack spacing={1}>
+              {/* Fases ya superadas o completadas: tilde verde */}
+              {stepsToShow.map((step) => (
+                <Stack key={step.key} direction="row" alignItems="center" spacing={1}>
+                  <Box
+                    sx={{
+                      width: 20, height: 20, borderRadius: "50%",
+                      bgcolor: "success.main", flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >
+                    <Typography sx={{ color: "white", fontSize: "0.65rem", fontWeight: 700, lineHeight: 1 }}>✓</Typography>
+                  </Box>
+                  <Typography variant="body2" color="success.main">
+                    {step.label}
+                  </Typography>
+                </Stack>
+              ))}
+
+              {/* Fase activa: solo texto, sin spinner (solo mientras sincroniza) */}
+              {!isCompleted && (
+                <Box>
+                  <Typography variant="body2" fontWeight={500} color={isRetrying ? "warning.main" : "text.primary"}>
+                    {activeLabel}
+                  </Typography>
+                  {pjnSync.message ? (
+                    <Typography variant="caption" color={isRetrying ? "warning.main" : "text.secondary"}>
+                      {pjnSync.message}
+                    </Typography>
+                  ) : (
+                    <Typography variant="caption" color="text.disabled">
+                      {credentialsStatus?.syncStatus === "pending" ? "En cola, esperando inicio..." : "Iniciando..."}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Stack>
+
+            {/* Info (solo mientras sincroniza) */}
+            {!isCompleted && (
+              <Alert severity="info" icon={<InfoCircle size={20} />}>
+                El proceso puede tomar varios minutos dependiendo de la cantidad de causas.
+                Puede continuar trabajando con normalidad, las carpetas se crearán automáticamente.
+              </Alert>
+            )}
           </Stack>
         </CardContent>
       </Card>
@@ -722,7 +803,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
                         </Button>
                       ) : undefined
                     ) : (
-                      <Button color="inherit" size="small" onClick={loadCredentialsStatus}>
+                      <Button color="inherit" size="small" onClick={() => loadCredentialsStatus()}>
                         Verificar
                       </Button>
                     )
