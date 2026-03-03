@@ -72,10 +72,13 @@ class WebSocketService {
 			this.options = { ...this.options, ...customOptions };
 		}
 
-		// Si ya hay una conexión activa, cerrarla primero
-		if (this.socket && this.socket.connected) {
-			this.log("Cerrando conexión Socket.IO existente antes de crear una nueva");
+		// Cerrar CUALQUIER socket existente antes de crear uno nuevo.
+		// Incluye sockets en estado CONNECTING (no solo los ya conectados).
+		// Evita dobles conexiones cuando connect() se llama dos veces en rápida sucesión.
+		if (this.socket) {
+			this.log("Cerrando socket existente antes de reconectar (estado: " + (this.socket.connected ? "connected" : "connecting") + ")");
 			this.socket.disconnect();
+			this.socket = null;
 		}
 
 		// Actualizar estado

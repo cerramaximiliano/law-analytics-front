@@ -67,22 +67,14 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 	);
 
 	// Manejar cambios de estado de conexión
+	// isInitialized eliminado de los deps: solo estaba en código comentado.
+	// Mantenerlo causaba que handleConnectionStateChange cambiara al conectar,
+	// re-ejecutando el efecto de suscripción innecesariamente.
 	const handleConnectionStateChange = useCallback(
 		(state: ConnectionState) => {
 			setConnectionState(state);
-
-			// Comentado: Las notificaciones de conexión no son necesarias para el usuario
-			// if (state === ConnectionState.CONNECTED) {
-			// 	if (isInitialized) {
-			// 		showNotification("Conexión con el servidor establecida", "success");
-			// 	}
-			// } else if (state === ConnectionState.AUTHENTICATED) {
-			// 	showNotification("Autenticación con el servidor establecida", "success");
-			// } else if (state === ConnectionState.ERROR) {
-			// 	showNotification("Error en la conexión con el servidor", "error");
-			// }
 		},
-		[isInitialized, showNotification],
+		[],
 	);
 
 	// Manejar mensajes recibidos
@@ -192,14 +184,18 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 		return webSocketService.subscribe(type, callback);
 	}, []);
 
-	// Conectar/desconectar automáticamente según el estado de autenticación
+	// Conectar/desconectar automáticamente según el estado de autenticación.
+	// isInitialized eliminado de los deps: llamar setIsInitialized(true) dentro de connect()
+	// re-ejecutaba este efecto, causando una segunda llamada a connect() y doble conexión WS.
+	// webSocketService.disconnect() es un no-op si no hay socket activo, así que el
+	// else if simplificado a !isLoggedIn es seguro.
 	useEffect(() => {
 		if (isLoggedIn && autoConnect && userId) {
 			connect();
-		} else if (!isLoggedIn && isInitialized) {
+		} else if (!isLoggedIn) {
 			disconnect();
 		}
-	}, [isLoggedIn, autoConnect, connect, disconnect, isInitialized, userId]);
+	}, [isLoggedIn, autoConnect, connect, disconnect, userId]);
 
 	// Actualizar userId cuando cambie
 	useEffect(() => {
@@ -217,10 +213,9 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 			stateUnsubscribe();
 			messageUnsubscribe();
 
-			// Asegurar que nos desconectamos al desmontar
-			if (webSocketService.isConnected()) {
-				webSocketService.disconnect();
-			}
+			// Desconectar siempre al hacer cleanup, no solo si isConnected().
+			// Cubre sockets en estado CONNECTING que de otro modo quedarían huérfanos.
+			webSocketService.disconnect();
 		};
 	}, [handleConnectionStateChange, handleMessage]);
 
