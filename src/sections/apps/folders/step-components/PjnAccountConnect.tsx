@@ -100,9 +100,16 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Muestra el resumen de pasos completados brevemente después de que el sync termina
   const [showCompletionSummary, setShowCompletionSummary] = useState(false);
   const completionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref para rastrear la fase anterior y detectar transiciones (no el valor al montar)
+  const prevPhaseRef = useRef(pjnSync.phase);
 
   useEffect(() => {
-    if (pjnSync.phase === "completed") {
+    const prevPhase = prevPhaseRef.current;
+    prevPhaseRef.current = pjnSync.phase;
+    // Solo activar si este componente presenció la transición hacia "completed".
+    // Evita que al montar con phase="completed" (heredado del modal) se active
+    // el timer y luego se cancele por un pjnSyncReset dejando showCompletionSummary=true.
+    if (pjnSync.phase === "completed" && prevPhase !== "completed") {
       setShowCompletionSummary(true);
       if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
       completionTimerRef.current = setTimeout(() => setShowCompletionSummary(false), 3000);
@@ -138,11 +145,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       lastWsEventRef.current = Date.now();
     }
     if (prevIsActiveRef.current && !pjnSync.isActive) {
-      if (pjnSync.completedAt) {
+      if (pjnSync.completedAt || pjnSync.hasError) {
         // calledAfterCompletion=true: el WS ya confirmó el fin del sync.
         // Si el DB devuelve syncStatus=in_progress (stale), no redisparar pjnSyncStarted.
         loadCredentialsStatus(true);
-        onSyncComplete?.();
+        if (pjnSync.completedAt) onSyncComplete?.();
       }
     }
     prevIsActiveRef.current = pjnSync.isActive;
@@ -266,7 +273,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
         // Si hay sync en curso, inicializar estado en Redux para mostrar UI correcta.
         // Cuando calledAfterCompletion=true el WS ya envió "completed": ignorar DB stale.
-        if (!calledAfterCompletion && (response.data.syncStatus === "in_progress" || response.data.syncStatus === "pending")) {
+        // Cuando pjnSyncActiveRef.current=true el WS ya marcó un sync activo: no resetear
+        // seenPhases (PJN_SYNC_STARTED hace full-reset incluyendo seenPhases=[]).
+        if (!calledAfterCompletion && !pjnSyncActiveRef.current && (response.data.syncStatus === "in_progress" || response.data.syncStatus === "pending")) {
           const cp = response.data.currentSyncProgress;
           dispatch(pjnSyncStarted({
             progress: cp?.progress ?? 0,
