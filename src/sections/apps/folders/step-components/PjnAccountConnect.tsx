@@ -124,7 +124,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
     }
     if (prevIsActiveRef.current && !pjnSync.isActive) {
       if (pjnSync.completedAt) {
-        loadCredentialsStatus();
+        // calledAfterCompletion=true: el WS ya confirmó el fin del sync.
+        // Si el DB devuelve syncStatus=in_progress (stale), no redisparar pjnSyncStarted.
+        loadCredentialsStatus(true);
         onSyncComplete?.();
       }
     }
@@ -231,7 +233,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
     loadCredentialsStatus();
   }, []);
 
-  const loadCredentialsStatus = async () => {
+  // calledAfterCompletion=true cuando se invoca desde la transición isActive: true→false.
+  // En ese contexto, el DB puede devolver syncStatus=in_progress stale (ya que el WS
+  // completó antes de que el DB se actualizara). No redisparar pjnSyncStarted en ese caso
+  // para evitar el ciclo: completedAt set → stale DB in_progress → pjnSyncStarted → cycle.
+  const loadCredentialsStatus = async (calledAfterCompletion = false) => {
     setIsLoadingStatus(true);
     try {
       const response = await pjnCredentialsService.getCredentialsStatus();
@@ -243,16 +249,14 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         setCredentialsStatus(response.data);
         setHasCredentials(true);
 
-        // Si hay sync en curso, inicializar estado en Redux para mostrar UI correcta
-        if (response.data.syncStatus === "in_progress" || response.data.syncStatus === "pending") {
+        // Si hay sync en curso, inicializar estado en Redux para mostrar UI correcta.
+        // Cuando calledAfterCompletion=true el WS ya envió "completed": ignorar DB stale.
+        if (!calledAfterCompletion && (response.data.syncStatus === "in_progress" || response.data.syncStatus === "pending")) {
           const cp = response.data.currentSyncProgress;
           dispatch(pjnSyncStarted({
             progress: cp?.progress ?? 0,
             message: "Sincronizando causas...",
           }));
-          // Iniciar rescue polling pronto: si no llegan eventos WS en 5s, consultar DB
-          // Esto cubre el caso de recarga de página con sync en curso (WS puede no haber llegado)
-          lastWsEventRef.current = Date.now() - WS_TIMEOUT_MS + 5000;
         } else if (!pjnSyncActiveRef.current) {
           // Limpiar estado stale solo si WS no ha marcado un sync activo
           // Usar ref en lugar del closure para evitar stale closure en llamadas async
@@ -316,7 +320,8 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       if (response.success) {
         // Dispatch ANTES de setHasCredentials para evitar flash de "Cuenta conectada"
         // Si hay un render entre estos dos calls, pjnSync.isActive=true toma prioridad
-        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas..." }));
+        // force=true: acción explícita del usuario, ignora el grace period del reducer.
+        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas...", force: true }));
 
         enqueueSnackbar("Cuenta vinculada. Iniciando sincronización...", {
           variant: "success",
@@ -387,8 +392,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
           autoHideDuration: 3000,
         });
 
-        // Mostrar UI de sync mientras el WS no llegue con el evento "started"
-        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas..." }));
+        // Mostrar UI de sync mientras el WS no llegue con el evento "started".
+        // force=true: acción explícita del usuario, ignora el grace period del reducer.
+        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas...", force: true }));
       } else {
         enqueueSnackbar(response.error || "No se pudo iniciar sincronización", {
           variant: "warning",

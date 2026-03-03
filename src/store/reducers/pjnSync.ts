@@ -33,7 +33,7 @@ const initialState: PjnSyncState = {
 };
 
 // Action creators
-export const pjnSyncStarted = (payload?: { progress?: number; message?: string }) => ({
+export const pjnSyncStarted = (payload?: { progress?: number; message?: string; force?: boolean }) => ({
 	type: PJN_SYNC_STARTED as typeof PJN_SYNC_STARTED,
 	payload,
 });
@@ -59,7 +59,17 @@ export const pjnSyncReset = () => ({
 
 const pjnSyncReducer = (state = initialState, action: any): PjnSyncState => {
 	switch (action.type) {
-		case PJN_SYNC_STARTED:
+		case PJN_SYNC_STARTED: {
+			// Grace period: si el sync completó hace menos de 60s Y el dispatch no es forzado,
+			// ignorar el evento "started". Esto previene cycling por eventos WS stale (ej. un
+			// segundo credential-processor iniciándose justo después de que el primero completó).
+			// Las acciones explícitas del usuario (handleResync, handleSubmit) usan force=true.
+			if (!action.payload?.force && state.completedAt) {
+				const elapsed = Date.now() - new Date(state.completedAt).getTime();
+				if (elapsed < 60 * 1000) {
+					return state;
+				}
+			}
 			return {
 				...initialState,
 				isActive: true,
@@ -67,6 +77,7 @@ const pjnSyncReducer = (state = initialState, action: any): PjnSyncState => {
 				message: action.payload?.message ?? "Sincronizando causas...",
 				phase: "started",
 			};
+		}
 
 		case PJN_SYNC_PROGRESS:
 			return {

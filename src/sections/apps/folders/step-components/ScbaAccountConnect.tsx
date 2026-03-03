@@ -389,8 +389,8 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							</Box>
 
 							<Alert severity="info" icon={<InfoCircle size={20} />}>
-								El proceso puede tomar varios minutos dependiendo de la cantidad de causas. Puede cerrar este diálogo y
-								continuar trabajando.
+								El proceso puede tomar varios minutos dependiendo de la cantidad de causas. Puede continuar trabajando
+								con normalidad, las carpetas se crearán automáticamente.
 							</Alert>
 
 							{credentialsStatus?.currentSyncProgress && (
