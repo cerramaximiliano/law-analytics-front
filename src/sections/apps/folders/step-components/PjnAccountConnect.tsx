@@ -100,16 +100,28 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Ref para detectar transición isActive: true → false
   const prevIsActiveRef = useRef(false);
 
+  // Ref que refleja pjnSync.isActive en tiempo real
+  // Evita stale closures en funciones async (loadCredentialsStatus, handleSubmit)
+  const pjnSyncActiveRef = useRef(pjnSync.isActive);
+  pjnSyncActiveRef.current = pjnSync.isActive;
+
   // Rescue polling: fallback cuando los eventos WS no llegan
   const WS_TIMEOUT_MS = 20000;
   const WS_RESCUE_INTERVAL_MS = 10000;
+  const MAX_SYNC_DURATION_MS = 5 * 60 * 1000; // 5 minutos máximo (sync típica: 2-3 min)
   const lastWsEventRef = useRef<number>(0);
+  const syncStartedAtRef = useRef<number>(0);
   const rescuePollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Detecta cuando el sync pasa de activo a inactivo para recargar estado
   // El snackbar de completado/error se dispara en WebSocketContext (path WS)
   // o directamente en la función poll del rescue polling (path fallback)
   useEffect(() => {
+    if (!prevIsActiveRef.current && pjnSync.isActive) {
+      // Sync acaba de empezar: registrar timestamp de inicio para el timeout del rescue polling
+      syncStartedAtRef.current = Date.now();
+      lastWsEventRef.current = Date.now();
+    }
     if (prevIsActiveRef.current && !pjnSync.isActive) {
       if (pjnSync.completedAt) {
         loadCredentialsStatus();
@@ -141,7 +153,20 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
       try {
         const response = await pjnCredentialsService.getCredentialsStatus();
-        if (!response.success || !response.data) return;
+        if (!response.success || !response.data) {
+          // Sin datos: verificar si superó el tiempo máximo de espera
+          const elapsed = syncStartedAtRef.current > 0 ? Date.now() - syncStartedAtRef.current : 0;
+          if (elapsed > MAX_SYNC_DURATION_MS) {
+            dispatch(pjnSyncError({ message: "La sincronización tardó demasiado y no pudo completarse" }));
+            enqueueSnackbar("La sincronización tardó más de lo esperado. Puedes reintentar manualmente.", {
+              variant: "warning",
+              anchorOrigin: { vertical: "bottom", horizontal: "right" },
+              TransitionComponent: Zoom,
+              autoHideDuration: 6000,
+            });
+          }
+          return;
+        }
 
         // Abortar si el WS ya manejó la finalización mientras la llamada API estaba en curso
         if (!rescuePollIntervalRef.current) return;
@@ -149,8 +174,20 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         const { syncStatus, lastError } = response.data;
         setCredentialsStatus(response.data);
 
-        // Solo actuar con evidencia explícita — cualquier otro valor (null, idle, pending) → seguir esperando
-        if (syncStatus !== "completed" && syncStatus !== "error") return;
+        if (syncStatus !== "completed" && syncStatus !== "error") {
+          // Sync sigue en curso: verificar si superó el tiempo máximo
+          const elapsed = syncStartedAtRef.current > 0 ? Date.now() - syncStartedAtRef.current : 0;
+          if (elapsed > MAX_SYNC_DURATION_MS) {
+            dispatch(pjnSyncError({ message: "La sincronización tardó demasiado y no pudo completarse" }));
+            enqueueSnackbar("La sincronización tardó más de lo esperado. Puedes reintentar manualmente.", {
+              variant: "warning",
+              anchorOrigin: { vertical: "bottom", horizontal: "right" },
+              TransitionComponent: Zoom,
+              autoHideDuration: 6000,
+            });
+          }
+          return;
+        }
 
         if (syncStatus === "error") {
           dispatch(pjnSyncError({ message: lastError?.message || "Error en sincronización" }));
@@ -213,8 +250,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             progress: cp?.progress ?? 0,
             message: "Sincronizando causas...",
           }));
-        } else if (!pjnSync.isActive) {
+          // Iniciar rescue polling pronto: si no llegan eventos WS en 5s, consultar DB
+          // Esto cubre el caso de recarga de página con sync en curso (WS puede no haber llegado)
+          lastWsEventRef.current = Date.now() - WS_TIMEOUT_MS + 5000;
+        } else if (!pjnSyncActiveRef.current) {
           // Limpiar estado stale solo si WS no ha marcado un sync activo
+          // Usar ref en lugar del closure para evitar stale closure en llamadas async
           dispatch(pjnSyncReset());
         }
       } else {
@@ -257,6 +298,9 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
 
   // Enviar credenciales
   const handleSubmit = async (): Promise<boolean> => {
+    // Guard: evitar re-submit si ya hay un sync activo
+    if (pjnSyncActiveRef.current) return false;
+
     const cuilValid = validateCuil(cuil);
     const passwordValid = validatePassword(password);
 
@@ -270,11 +314,15 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       const response = await pjnCredentialsService.linkCredentials(cuil, password);
 
       if (response.success) {
-        enqueueSnackbar(response.message || "Cuenta vinculada correctamente", {
+        // Dispatch ANTES de setHasCredentials para evitar flash de "Cuenta conectada"
+        // Si hay un render entre estos dos calls, pjnSync.isActive=true toma prioridad
+        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas..." }));
+
+        enqueueSnackbar("Cuenta vinculada. Iniciando sincronización...", {
           variant: "success",
           anchorOrigin: { vertical: "bottom", horizontal: "right" },
           TransitionComponent: Zoom,
-          autoHideDuration: 4000,
+          autoHideDuration: 3000,
         });
 
         // Limpiar formulario
@@ -292,10 +340,6 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             syncStatus: "pending",
           } as PjnCredentialsStatus);
         }
-
-        // El WS enviará el evento "started" cuando el worker arranque
-        // Mientras tanto mostrar estado pendiente via Redux
-        dispatch(pjnSyncStarted({ progress: 0, message: "Sincronizando causas..." }));
 
         if (onConnectionSuccess) {
           onConnectionSuccess();
@@ -326,7 +370,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Exponer métodos al componente padre
   useImperativeHandle(ref, () => ({
     submit: handleSubmit,
-    canSubmit: () => Boolean(cuil && password && !isSubmitting && !hasCredentials && !isLoadingStatus),
+    canSubmit: () => Boolean(cuil && password && !isSubmitting && !hasCredentials && !isLoadingStatus && !pjnSyncActiveRef.current),
     isConnected: () => hasCredentials,
   }));
 
@@ -566,7 +610,12 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   }
 
   // Renderizar estado de sincronización en progreso
-  if (pjnSync.isActive || (credentialsStatus?.syncStatus === "in_progress" && !pjnSync.completedAt && !pjnSync.hasError)) {
+  // Incluye "pending" para evitar flash de "Cuenta conectada" entre requestSync y el evento WS "started"
+  if (
+    pjnSync.isActive ||
+    (credentialsStatus?.syncStatus === "in_progress" && !pjnSync.completedAt && !pjnSync.hasError) ||
+    credentialsStatus?.syncStatus === "pending"
+  ) {
     return (
       <Card variant="outlined" sx={{ borderColor: theme.palette.primary.light }}>
         <CardContent>
@@ -697,12 +746,6 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
                 >
                   Reintentar sincronización
                 </Button>
-              )}
-
-              {!isComplete && !hasError && credentialsStatus.syncStatus === "pending" && (
-                <Alert severity="info">
-                  Tu cuenta está vinculada. La sincronización comenzará en breve.
-                </Alert>
               )}
 
               <Divider />
