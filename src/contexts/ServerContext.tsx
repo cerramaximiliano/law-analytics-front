@@ -21,6 +21,7 @@ import secureStorage from "services/secureStorage";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
 import { extractErrorMessage } from "utils/errorMessages";
+import webSocketService from "store/reducers/WebSocketService";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = import.meta.env.VITE_HIDE_BANKING_DATA === "true";
@@ -284,10 +285,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					authTokenService.setToken(token);
 					// También guardar en secureStorage para persistencia
 					secureStorage.setAuthToken(token);
+					// Propagar el token renovado al WebSocket activo
+					webSocketService.updateToken(token);
 				} else if (tokenFromData) {
 					authTokenService.setToken(tokenFromData);
 					// También guardar en secureStorage para persistencia
 					secureStorage.setAuthToken(tokenFromData);
+					// Propagar el token renovado al WebSocket activo
+					webSocketService.updateToken(tokenFromData);
 				}
 
 				return response;

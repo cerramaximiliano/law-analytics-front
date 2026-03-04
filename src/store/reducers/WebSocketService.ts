@@ -145,6 +145,48 @@ class WebSocketService {
 	}
 
 	/**
+	 * Re-autentica al usuario con el token más reciente disponible en secureStorage.
+	 * Se usa cuando el servidor solicita renovación (token_refresh_needed / auth_expired).
+	 */
+	private reAuthenticate(): void {
+		if (!this.socket || !this.socket.connected || !this.userId) return;
+
+		const freshToken = secureStorage.getAuthToken();
+		if (!freshToken) {
+			this.log("No hay token disponible para re-autenticación", "error");
+			return;
+		}
+
+		this.log("Re-autenticando con token actualizado");
+		this.socket.emit("re_authenticate", { token: freshToken });
+
+		this.socket.once("authenticated", (response) => {
+			if (response?.success) {
+				this.log("Re-autenticación exitosa");
+				this.updateConnectionState(ConnectionState.AUTHENTICATED);
+			}
+		});
+	}
+
+	/**
+	 * Notifica al servidor de un nuevo token cuando la API HTTP lo refresca.
+	 * Solo actúa si el socket está actualmente autenticado.
+	 */
+	public updateToken(newToken: string): void {
+		if (!this.socket || !this.socket.connected) return;
+		if (this.connectionState !== ConnectionState.AUTHENTICATED) return;
+
+		this.log("Actualizando token en WebSocket tras refresh HTTP");
+		this.socket.emit("re_authenticate", { token: newToken });
+
+		this.socket.once("authenticated", (response) => {
+			if (response?.success) {
+				this.log("Token WebSocket actualizado correctamente");
+			}
+		});
+	}
+
+	/**
 	 * Actualiza el ID del usuario (útil si cambia durante la sesión)
 	 * @param userId Nuevo ID de usuario
 	 */
@@ -292,6 +334,18 @@ class WebSocketService {
 			if (this.userId) {
 				this.authenticateUser();
 			}
+		});
+
+		// El servidor solicita renovación de token (vencido pero conexión activa)
+		this.socket.on("token_refresh_needed", () => {
+			this.log("Servidor solicita renovación de token");
+			this.reAuthenticate();
+		});
+
+		// El servidor cerró la sesión por token vencido (compatibilidad con versión anterior)
+		this.socket.on("auth_expired", () => {
+			this.log("Token expirado notificado por servidor, intentando re-autenticar");
+			this.reAuthenticate();
 		});
 
 		// Escuchar eventos específicos del servidor
