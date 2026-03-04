@@ -62,6 +62,16 @@ export interface PjnAccountConnectRef {
   isConnected: () => boolean;
 }
 
+// Timeout dinámico: ~60s/página × 2 buffer, mínimo 5 min, máximo 90 min.
+// 15 causas/página es el límite del scraper PJN.
+const computeMaxSyncDuration = (totalExpected: number): number => {
+  const MIN_MS = 5 * 60 * 1000;
+  const MAX_MS = 90 * 60 * 1000;
+  const pages = Math.ceil(totalExpected / 15);
+  const estimated = pages * 60 * 1000 * 2;
+  return Math.min(MAX_MS, Math.max(MIN_MS, estimated));
+};
+
 const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProps>(({
   onConnectionSuccess,
   onSyncComplete,
@@ -131,10 +141,20 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   // Rescue polling: fallback cuando los eventos WS no llegan
   const WS_TIMEOUT_MS = 20000;
   const WS_RESCUE_INTERVAL_MS = 10000;
-  const MAX_SYNC_DURATION_MS = 5 * 60 * 1000; // 5 minutos máximo (sync típica: 2-3 min)
+  const maxSyncDurationRef = useRef(5 * 60 * 1000); // Dinámico según causas esperadas; mínimo 5 min
   const lastWsEventRef = useRef<number>(0);
   const syncStartedAtRef = useRef<number>(0);
   const rescuePollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Actualiza el timeout máximo cuando se conoce la cantidad de causas esperadas.
+  // Usa pjnSync.totalExpected (llega vía WS durante la extracción) o el valor inicial
+  // de la credencial (expectedCausasCount) cuando el WS aún no ha enviado datos.
+  useEffect(() => {
+    const totalExpected = pjnSync.totalExpected ?? credentialsStatus?.expectedCausasCount ?? 0;
+    if (totalExpected > 0) {
+      maxSyncDurationRef.current = computeMaxSyncDuration(totalExpected);
+    }
+  }, [pjnSync.totalExpected, credentialsStatus?.expectedCausasCount]);
 
   // Detecta cuando el sync pasa de activo a inactivo para recargar estado
   // El snackbar de completado/error se dispara en WebSocketContext (path WS)
@@ -181,7 +201,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         if (!response.success || !response.data) {
           // Sin datos: verificar si superó el tiempo máximo de espera
           const elapsed = syncStartedAtRef.current > 0 ? Date.now() - syncStartedAtRef.current : 0;
-          if (elapsed > MAX_SYNC_DURATION_MS) {
+          if (elapsed > maxSyncDurationRef.current) {
             dispatch(pjnSyncError({ message: "La sincronización tardó demasiado y no pudo completarse" }));
             enqueueSnackbar("La sincronización tardó más de lo esperado. Puedes reintentar manualmente.", {
               variant: "warning",
@@ -202,7 +222,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         if (syncStatus !== "completed" && syncStatus !== "error") {
           // Sync sigue en curso: verificar si superó el tiempo máximo
           const elapsed = syncStartedAtRef.current > 0 ? Date.now() - syncStartedAtRef.current : 0;
-          if (elapsed > MAX_SYNC_DURATION_MS) {
+          if (elapsed > maxSyncDurationRef.current) {
             dispatch(pjnSyncError({ message: "La sincronización tardó demasiado y no pudo completarse" }));
             enqueueSnackbar("La sincronización tardó más de lo esperado. Puedes reintentar manualmente.", {
               variant: "warning",
