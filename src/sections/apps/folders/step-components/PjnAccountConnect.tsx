@@ -220,7 +220,14 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
         setCredentialsStatus(response.data);
 
         if (syncStatus !== "completed" && syncStatus !== "error") {
-          // Sync sigue en curso: verificar si superó el tiempo máximo
+          // "pending" = credencial en cola, el worker aún no arrancó.
+          // Resetear el timer: el timeout solo cuenta desde que el procesamiento
+          // efectivamente comenzó (in_progress), no desde que entró a la cola.
+          if (syncStatus === "pending") {
+            syncStartedAtRef.current = Date.now();
+            return;
+          }
+          // Sync sigue en curso (in_progress): verificar si superó el tiempo máximo
           const elapsed = syncStartedAtRef.current > 0 ? Date.now() - syncStartedAtRef.current : 0;
           if (elapsed > maxSyncDurationRef.current) {
             dispatch(pjnSyncError({ message: "La sincronización tardó demasiado y no pudo completarse" }));
