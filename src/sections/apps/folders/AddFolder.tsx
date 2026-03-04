@@ -360,7 +360,6 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 								// Si no ha alcanzado el límite, mostrar el modal de nueva carpeta
 								setIsCheckingLimit(false);
 								setShowAddFolderModal(true);
-								if (initialStep !== undefined) setActiveStep(initialStep);
 							}
 						} else {
 							// Si hay un error en la respuesta, mostrar el modal de nueva carpeta por defecto
@@ -392,6 +391,13 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 			if (isCreating) setInitialValues(getInitialValues(null, initialFormValues));
 		}
 	}, [open, isCreating, onCancel]);
+
+	// Saltar al paso inicial cuando el modal esté listo y se haya indicado un paso de inicio
+	useEffect(() => {
+		if (showAddFolderModal && initialStep !== undefined) {
+			setActiveStep(initialStep);
+		}
+	}, [showAddFolderModal, initialStep]);
 
 	useEffect(() => {
 		if (folder) {
