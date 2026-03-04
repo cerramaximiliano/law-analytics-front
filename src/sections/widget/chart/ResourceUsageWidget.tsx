@@ -1,13 +1,20 @@
-import { useEffect } from "react";
-import { Box, Stack, Typography, LinearProgress, Chip, Skeleton } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Box, Stack, Typography, LinearProgress, Chip, Skeleton, Tooltip } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import { FolderOpen, Profile2User, Calculator, StatusUp } from "iconsax-react";
+import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle } from "iconsax-react";
 import { useSelector, dispatch } from "store";
 import { fetchUserStats } from "store/reducers/userStats";
 import { cleanPlanDisplayName } from "utils/planPricingUtils";
 import { useNavigate } from "react-router-dom";
+import pjnCredentialsService from "api/pjnCredentials";
+import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+
+// ==============================|| CONSTANTS ||============================== //
+
+const PJN_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1746884259/xndhymcmzv3kk0f62v0y.png";
+const CABA_LOGO_URL = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
 
 // ==============================|| TYPES ||============================== //
 
@@ -16,10 +23,21 @@ type ResourceType = "folders" | "contacts" | "calculators";
 interface ResourceUsageBarProps {
 	resourceType: ResourceType;
 	compact?: boolean;
+	barWidth?: number;
 }
 
 interface ResourceUsageWidgetProps {
 	title?: string;
+}
+
+interface JudicialBadgeProps {
+	logoSrc: string;
+	alt: string;
+	bgColor: string;
+	label: string;
+	tooltip: string;
+	synced?: boolean | null;
+	onClick?: () => void;
 }
 
 // ==============================|| HELPERS ||============================== //
@@ -36,9 +54,127 @@ const getUsageColor = (percentage: number): "primary" | "warning" | "error" => {
 	return "error";
 };
 
+// ==============================|| JUDICIAL BADGE ||============================== //
+
+const JudicialBadge = ({ logoSrc, alt, bgColor, label, tooltip, synced = null, onClick }: JudicialBadgeProps) => {
+	const theme = useTheme();
+	return (
+		<Tooltip title={tooltip} arrow placement="top">
+			<Stack
+				alignItems="center"
+				spacing={0.25}
+				onClick={onClick}
+				sx={{ cursor: onClick ? "pointer" : "default", flexShrink: 0 }}
+			>
+				<Box sx={{ position: "relative" }}>
+					<Box
+						sx={{
+							width: 26,
+							height: 26,
+							borderRadius: 0.75,
+							backgroundColor: bgColor,
+							border: "1px solid",
+							borderColor: "divider",
+							display: "flex",
+							justifyContent: "center",
+							alignItems: "center",
+							p: "3px",
+						}}
+					>
+						<img src={logoSrc} alt={alt} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+					</Box>
+					{synced === true && (
+						<Box
+							sx={{
+								position: "absolute",
+								bottom: -3,
+								right: -3,
+								width: 11,
+								height: 11,
+								borderRadius: "50%",
+								backgroundColor: theme.palette.background.paper,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							<TickCircle size={11} variant="Bold" color={theme.palette.success.main} />
+						</Box>
+					)}
+				</Box>
+				<Typography
+					sx={{
+						fontSize: "0.55rem",
+						fontWeight: 600,
+						lineHeight: 1,
+						color: theme.palette.text.secondary,
+						letterSpacing: "0.02em",
+						userSelect: "none",
+					}}
+				>
+					{label}
+				</Typography>
+			</Stack>
+		</Tooltip>
+	);
+};
+
+// ==============================|| FOLDERS SYNC BADGES (NAMED EXPORT) ||============================== //
+
+export const FoldersSyncBadges = () => {
+	const navigate = useNavigate();
+	const [pjnSynced, setPjnSynced] = useState<boolean | null>(null);
+
+	useEffect(() => {
+		pjnCredentialsService
+			.getCredentialsStatus()
+			.then((response) => {
+				setPjnSynced(!!(response.success && response.hasCredentials && response.data?.isValid));
+			})
+			.catch(() => {
+				setPjnSynced(false);
+			});
+	}, []);
+
+	const pjnTooltip =
+		pjnSynced === null
+			? "Cargando estado PJN..."
+			: pjnSynced
+				? "Poder Judicial de la Nación — Sincronizado"
+				: "Poder Judicial de la Nación — No sincronizado. Click para conectar";
+
+	return (
+		<Stack direction="row" alignItems="center" spacing={0.75}>
+			<JudicialBadge
+				logoSrc={PJN_LOGO_URL}
+				alt="PJN"
+				bgColor="#222E43"
+				label="PJN"
+				tooltip={pjnTooltip}
+				synced={pjnSynced}
+				onClick={() => navigate("/apps/profiles/account/pjn")}
+			/>
+			<JudicialBadge
+				logoSrc={logoPJBuenosAires}
+				alt="PJ Buenos Aires"
+				bgColor="#f8f8f8"
+				label="BA"
+				tooltip="Poder Judicial de la Provincia de Buenos Aires"
+			/>
+			<JudicialBadge
+				logoSrc={CABA_LOGO_URL}
+				alt="PJ CABA"
+				bgColor="#f8f8f8"
+				label="CABA"
+				tooltip="Poder Judicial de la Ciudad de Buenos Aires"
+			/>
+		</Stack>
+	);
+};
+
 // ==============================|| RESOURCE USAGE BAR (NAMED EXPORT) ||============================== //
 
-export const ResourceUsageBar = ({ resourceType, compact = false }: ResourceUsageBarProps) => {
+export const ResourceUsageBar = ({ resourceType, compact = false, barWidth }: ResourceUsageBarProps) => {
 	const theme = useTheme();
 	const userStats = useSelector((state) => state.userStats.data);
 	const loading = useSelector((state) => state.userStats.loading);
@@ -56,11 +192,12 @@ export const ResourceUsageBar = ({ resourceType, compact = false }: ResourceUsag
 	const isUnlimited = limit === 0;
 	const percentage = isUnlimited ? 0 : Math.min((count / limit) * 100, 100);
 	const color = getUsageColor(percentage);
+	const isFolders = resourceType === "folders";
 
 	// Skeleton mientras carga
 	if (loading && !userStats?.planInfo) {
 		return (
-			<Box sx={{ px: compact ? 2 : 0, py: compact ? 1 : 0 }}>
+			<Box sx={{ px: compact ? { xs: 2, sm: 3 } : 0, py: compact ? 1 : 0 }}>
 				<Stack direction="row" alignItems="center" spacing={1.5}>
 					<Skeleton variant="circular" width={18} height={18} />
 					<Skeleton variant="text" width={70} />
@@ -75,7 +212,7 @@ export const ResourceUsageBar = ({ resourceType, compact = false }: ResourceUsag
 	if (!userStats?.planInfo) return null;
 
 	return (
-		<Box sx={{ px: compact ? 2 : 0, py: compact ? 1 : 0 }}>
+		<Box sx={{ px: compact ? { xs: 2, sm: 3 } : 0, py: compact ? 1 : 0 }}>
 			<Stack direction="row" alignItems="center" spacing={1.5}>
 				<Box sx={{ color: isUnlimited ? theme.palette.text.secondary : theme.palette[color].main, display: "flex" }}>
 					{config.icon}
@@ -94,7 +231,8 @@ export const ResourceUsageBar = ({ resourceType, compact = false }: ResourceUsag
 							value={percentage}
 							color={color}
 							sx={{
-								flex: 1,
+								flex: compact && isFolders && barWidth ? "0 0 auto" : 1,
+								width: compact && isFolders && barWidth ? barWidth : undefined,
 								height: compact ? 6 : 8,
 								borderRadius: 1,
 								backgroundColor: theme.palette.grey[300],
@@ -108,7 +246,13 @@ export const ResourceUsageBar = ({ resourceType, compact = false }: ResourceUsag
 						</Typography>
 					</>
 				)}
-				</Stack>
+				{isFolders && compact && (
+					<>
+						<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
+						<FoldersSyncBadges />
+					</>
+				)}
+			</Stack>
 		</Box>
 	);
 };

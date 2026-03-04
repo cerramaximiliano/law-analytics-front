@@ -1,5 +1,5 @@
 import React from "react";
-import { useCallback, useEffect, useMemo, useState, Fragment, MouseEvent, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, Fragment, MouseEvent, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 // material-ui
 import { alpha, useTheme } from "@mui/material/styles";
@@ -178,12 +178,32 @@ function ReactTable({
 	jurisdiccionFilter = 'all',
 	onJurisdiccionFilterChange,
 	uniqueJurisdicciones = [],
+	onBarWidthMeasured,
 }: ReactTableProps) {
 	const theme = useTheme();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
 	const [showFilters, setShowFilters] = useState(false);
 	const csvLinkRef = useRef<any>(null);
+	const g1ButtonRef = useRef<HTMLButtonElement>(null);
+	const g2StackRef = useRef<HTMLDivElement>(null);
+
+	// Medir ancho de G1+G2 (botones Agregar carpeta + Archivados + Archivar) para alinear la barra de carpetas
+	useLayoutEffect(() => {
+		const update = () => {
+			if (!g1ButtonRef.current || !g2StackRef.current || matchDownSM || !onBarWidthMeasured) {
+				return;
+			}
+			const left = g1ButtonRef.current.getBoundingClientRect().left;
+			const right = g2StackRef.current.getBoundingClientRect().right;
+			onBarWidthMeasured(right - left);
+		};
+		update();
+		const ro = new ResizeObserver(update);
+		if (g1ButtonRef.current) ro.observe(g1ButtonRef.current);
+		if (g2StackRef.current) ro.observe(g2StackRef.current);
+		return () => ro.disconnect();
+	}, [matchDownSM, onBarWidthMeasured]);
 
 	// Contar filtros activos
 	const activeFiltersCount = useMemo(() => {
@@ -444,6 +464,7 @@ function ReactTable({
 						{/* Grupo 1: Acción principal */}
 						{handleAdd && (
 							<Button
+								ref={g1ButtonRef}
 								variant="contained"
 								size="small"
 								startIcon={<FolderAdd />}
@@ -462,6 +483,7 @@ function ReactTable({
 
 						{/* Grupo 2: Gestión de archivados */}
 						<Stack
+							ref={g2StackRef}
 							direction="row"
 							spacing={1}
 							sx={{
@@ -995,6 +1017,9 @@ const FoldersLayout = () => {
 	const [parteFilter, setParteFilter] = useState<string>('all');
 	const [movimientosFilter, setMovimientosFilter] = useState<'all' | 'today' | 'week' | 'month' | 'none'>('all');
 	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>('all');
+
+	// Estado para alinear la barra de carpetas con los botones de la toolbar
+	const [barWidth, setBarWidth] = useState<number | undefined>(undefined);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -2140,7 +2165,7 @@ const FoldersLayout = () => {
 			<SEO path="/apps/folders" />
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
-				<ResourceUsageBar resourceType="folders" compact />
+				<ResourceUsageBar resourceType="folders" compact barWidth={barWidth} />
 
 				{/* Microhint de onboarding */}
 				{isOnboarding && verifiedFolders.length === 0 && (
@@ -2194,6 +2219,7 @@ const FoldersLayout = () => {
 							jurisdiccionFilter={jurisdiccionFilter}
 							onJurisdiccionFilterChange={handleJurisdiccionFilterChange}
 							uniqueJurisdicciones={uniqueJurisdicciones}
+						onBarWidthMeasured={setBarWidth}
 						/>
 					</ScrollX>
 				</Box>
