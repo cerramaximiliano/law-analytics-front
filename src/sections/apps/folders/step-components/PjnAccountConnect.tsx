@@ -296,7 +296,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       }
     } catch (error) {
       setHasCredentials(false);
-      dispatch(pjnSyncReset());
+      // No resetear si hay un sync activo (p.ej. error de red o interceptor de auth
+      // que lanza excepción). El WS sigue enviando eventos y la UI debe mantenerse.
+      if (!pjnSyncActiveRef.current) {
+        dispatch(pjnSyncReset());
+      }
     } finally {
       setIsLoadingStatus(false);
     }
