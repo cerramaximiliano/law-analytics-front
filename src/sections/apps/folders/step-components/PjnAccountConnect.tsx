@@ -39,6 +39,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { dispatch as storeDispatch } from "store";
 import { RootState } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
+import { incrementUserStat } from "store/reducers/userStats";
 import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar from "components/@extended/Avatar";
@@ -482,6 +483,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             .map((f: any) => f._id);
           if (pjnIds.length > 0) {
             dispatch({ type: "DELETE_FOLDERS", payload: pjnIds });
+            dispatch(incrementUserStat("folders", -pjnIds.length));
           }
         }
 
