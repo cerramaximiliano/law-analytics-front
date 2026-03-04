@@ -24,6 +24,7 @@ interface ResourceUsageBarProps {
 	resourceType: ResourceType;
 	compact?: boolean;
 	barWidth?: number;
+	onCabaClick?: () => void;
 }
 
 interface ResourceUsageWidgetProps {
@@ -121,7 +122,7 @@ const JudicialBadge = ({ logoSrc, alt, bgColor, label, tooltip, synced = null, o
 
 // ==============================|| FOLDERS SYNC BADGES (NAMED EXPORT) ||============================== //
 
-export const FoldersSyncBadges = () => {
+export const FoldersSyncBadges = ({ onCabaClick }: { onCabaClick?: () => void } = {}) => {
 	const navigate = useNavigate();
 	const [pjnSynced, setPjnSynced] = useState<boolean | null>(null);
 
@@ -166,7 +167,8 @@ export const FoldersSyncBadges = () => {
 				alt="PJ CABA"
 				bgColor="#f8f8f8"
 				label="CABA"
-				tooltip="Poder Judicial de la Ciudad de Buenos Aires"
+				tooltip={onCabaClick ? "Poder Judicial de la Ciudad de Buenos Aires — Click para agregar causa" : "Poder Judicial de la Ciudad de Buenos Aires"}
+				onClick={onCabaClick}
 			/>
 		</Stack>
 	);
@@ -174,7 +176,7 @@ export const FoldersSyncBadges = () => {
 
 // ==============================|| RESOURCE USAGE BAR (NAMED EXPORT) ||============================== //
 
-export const ResourceUsageBar = ({ resourceType, compact = false, barWidth }: ResourceUsageBarProps) => {
+export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCabaClick }: ResourceUsageBarProps) => {
 	const theme = useTheme();
 	const userStats = useSelector((state) => state.userStats.data);
 	const loading = useSelector((state) => state.userStats.loading);
@@ -249,7 +251,7 @@ export const ResourceUsageBar = ({ resourceType, compact = false, barWidth }: Re
 				{isFolders && compact && (
 					<>
 						<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-						<FoldersSyncBadges />
+						<FoldersSyncBadges onCabaClick={onCabaClick} />
 					</>
 				)}
 			</Stack>

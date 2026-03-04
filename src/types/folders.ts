@@ -92,4 +92,6 @@ export interface PropsAddFolder {
 	onAddFolder: (folder: any) => void;
 	open: boolean;
 	mode: "add" | "edit";
+	initialStep?: number;
+	initialFormValues?: { entryMethod?: string; judicialPower?: string };
 }

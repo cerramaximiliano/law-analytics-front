@@ -355,6 +355,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 								// Si no ha alcanzado el límite, mostrar el modal de nueva carpeta
 								setIsCheckingLimit(false);
 								setShowAddFolderModal(true);
+								if (initialStep !== undefined) setActiveStep(initialStep);
 							}
 						} else {
 							// Si hay un error en la respuesta, mostrar el modal de nueva carpeta por defecto
@@ -382,6 +383,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 			setIsCheckingLimit(false);
 			// Resetear el paso activo cuando se cierra el modal
 			setActiveStep(0);
+			// Restaurar initialValues con overrides para la próxima apertura
+			if (isCreating) setInitialValues(getInitialValues(null, initialFormValues));
 		}
 	}, [open, isCreating, onCancel]);
 

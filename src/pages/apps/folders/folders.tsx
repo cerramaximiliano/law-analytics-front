@@ -1020,6 +1020,9 @@ const FoldersLayout = () => {
 
 	// Estado para alinear la barra de carpetas con los botones de la toolbar
 	const [barWidth, setBarWidth] = useState<number | undefined>(undefined);
+	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
+	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
+	const [addFolderInitialFormValues, setAddFolderInitialFormValues] = useState<{ entryMethod?: string; judicialPower?: string } | undefined>(undefined);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -1232,6 +1235,8 @@ const FoldersLayout = () => {
 	// Handlers
 	const handleCloseDialog = useCallback(() => {
 		setAdd(false);
+		setAddFolderInitialStep(undefined);
+		setAddFolderInitialFormValues(undefined);
 	}, []);
 
 	const handleCloseLimitErrorModal = useCallback(() => {
@@ -1287,6 +1292,15 @@ const FoldersLayout = () => {
 
 	const handleSnackbarClose = useCallback(() => {
 		setSnackbarOpen(false);
+	}, []);
+
+	// Abrir modal AddFolder en el paso de importar causa desde CABA (EJE)
+	const handleOpenCabaFolder = useCallback(() => {
+		setAddFolderInitialStep(2);
+		setAddFolderInitialFormValues({ entryMethod: "automatic", judicialPower: "caba" });
+		setAdd(true);
+		setAddFolderMode("add");
+		setFolder(null);
 	}, []);
 
 	const handleArchiveSelected = useCallback(
@@ -2165,7 +2179,7 @@ const FoldersLayout = () => {
 			<SEO path="/apps/folders" />
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
-				<ResourceUsageBar resourceType="folders" compact barWidth={barWidth} />
+				<ResourceUsageBar resourceType="folders" compact barWidth={barWidth} onCabaClick={canCreate ? handleOpenCabaFolder : undefined} />
 
 				{/* Microhint de onboarding */}
 				{isOnboarding && verifiedFolders.length === 0 && (
@@ -2434,7 +2448,7 @@ const FoldersLayout = () => {
 							},
 						}}
 					>
-						<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleCloseDialog} />
+						<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleCloseDialog} initialStep={addFolderInitialStep} initialFormValues={addFolderInitialFormValues} />
 					</Dialog>
 				)}
 
