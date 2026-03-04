@@ -38,7 +38,7 @@ import dayjs from "utils/dayjs-config";
 import folderData from "data/folder.json";
 import { useTeam } from "contexts/TeamContext";
 
-const getInitialValues = (folder: FormikValues | null) => {
+const getInitialValues = (folder: FormikValues | null, overrides?: { entryMethod?: string; judicialPower?: string }) => {
 	const newFolder = {
 		folderName: "",
 		description: "",
@@ -51,8 +51,8 @@ const getInitialValues = (folder: FormikValues | null) => {
 		folderJurisLabel: "",
 		folderJuris: null,
 		folderFuero: null,
-		entryMethod: "manual", // Nuevo campo para seleccionar el método de ingreso
-		judicialPower: "", // Poder judicial seleccionado (nacional, buenosaires o caba)
+		entryMethod: overrides?.entryMethod ?? "manual", // Nuevo campo para seleccionar el método de ingreso
+		judicialPower: overrides?.judicialPower ?? "", // Poder judicial seleccionado (nacional, buenosaires o caba)
 		expedientNumber: "", // Para ingreso automático
 		expedientYear: "", // Para ingreso automático
 		pjn: false, // Para indicar si los datos provienen del Poder Judicial de la Nación
@@ -120,7 +120,7 @@ function getStepContent(step: number, values: any) {
 	}
 }
 
-const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder) => {
+const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, initialFormValues }: PropsAddFolder) => {
 	const auth = useSelector((state) => state.auth);
 	const { isTeamMode, activeTeam, getUserIdForResource, getTeamIdForResource, getRequestHeaders } = useTeam();
 	const isCreating = mode === "add";
@@ -206,7 +206,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 
 	// Esquemas para los pasos dependiendo de si estamos editando o creando
 
-	const [initialValues, setInitialValues] = useState(getInitialValues(folder));
+	const [initialValues, setInitialValues] = useState(getInitialValues(folder, !folder ? initialFormValues : undefined));
 	const [values, setValues] = useState<any>(initialValues);
 	const [isLoadingData, setIsLoadingData] = useState(!isCreating && !folder); // Loading solo cuando editamos y no hay datos
 	const stepsEditing = ["Datos requeridos", "Datos opcionales"];
