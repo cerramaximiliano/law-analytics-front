@@ -664,8 +664,15 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
       { key: "extraction", label: "Extracción de causas" },
       { key: "processing", label: "Creación de carpetas" },
     ];
-    // Fases acumuladas por el reducer (persisten aunque los eventos lleguen en ráfaga)
-    const seen = pjnSync.seenPhases ?? [];
+    // Fases acumuladas por el reducer (persisten aunque los eventos lleguen en ráfaga).
+    // También inferimos fases completadas desde la fase actual: si phase="extraction",
+    // "started" ya ocurrió aunque seenPhases esté vacío (p.ej. por reset + llegada tardía
+    // del WS "started" que reseteó el acumulador). Evita el "card sin ticks" en cualquier
+    // condición de carrera entre el dispatcher y los eventos WS.
+    const PHASE_ORDER = ["started", "extraction", "processing"];
+    const currentPhaseIdx = PHASE_ORDER.indexOf(pjnSync.phase ?? "");
+    const inferredSeen = currentPhaseIdx > 0 ? PHASE_ORDER.slice(0, currentPhaseIdx) : [];
+    const seen = [...new Set([...inferredSeen, ...(pjnSync.seenPhases ?? [])])];
     // Cuando el sync completó, todas las fases se muestran como ✓
     const stepsToShow = isCompleted
       ? PHASE_STEPS
