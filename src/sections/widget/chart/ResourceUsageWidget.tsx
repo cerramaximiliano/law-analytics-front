@@ -25,6 +25,7 @@ interface ResourceUsageBarProps {
 	compact?: boolean;
 	barWidth?: number;
 	onCabaClick?: () => void;
+	onBaClick?: () => void;
 }
 
 interface ResourceUsageWidgetProps {
@@ -122,7 +123,7 @@ const JudicialBadge = ({ logoSrc, alt, bgColor, label, tooltip, synced = null, o
 
 // ==============================|| FOLDERS SYNC BADGES (NAMED EXPORT) ||============================== //
 
-export const FoldersSyncBadges = ({ onCabaClick }: { onCabaClick?: () => void } = {}) => {
+export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: () => void; onBaClick?: () => void } = {}) => {
 	const navigate = useNavigate();
 	const [pjnSynced, setPjnSynced] = useState<boolean | null>(null);
 
@@ -160,7 +161,8 @@ export const FoldersSyncBadges = ({ onCabaClick }: { onCabaClick?: () => void } 
 				alt="PJ Buenos Aires"
 				bgColor="#f8f8f8"
 				label="BA"
-				tooltip="Poder Judicial de la Provincia de Buenos Aires"
+				tooltip={onBaClick ? "Poder Judicial de la Provincia de Buenos Aires — Click para agregar causa" : "Poder Judicial de la Provincia de Buenos Aires"}
+				onClick={onBaClick}
 			/>
 			<JudicialBadge
 				logoSrc={CABA_LOGO_URL}
@@ -176,7 +178,7 @@ export const FoldersSyncBadges = ({ onCabaClick }: { onCabaClick?: () => void } 
 
 // ==============================|| RESOURCE USAGE BAR (NAMED EXPORT) ||============================== //
 
-export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCabaClick }: ResourceUsageBarProps) => {
+export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCabaClick, onBaClick }: ResourceUsageBarProps) => {
 	const theme = useTheme();
 	const userStats = useSelector((state) => state.userStats.data);
 	const loading = useSelector((state) => state.userStats.loading);
@@ -251,7 +253,7 @@ export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCa
 				{isFolders && compact && (
 					<>
 						<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-						<FoldersSyncBadges onCabaClick={onCabaClick} />
+						<FoldersSyncBadges onCabaClick={onCabaClick} onBaClick={onBaClick} />
 					</>
 				)}
 			</Stack>

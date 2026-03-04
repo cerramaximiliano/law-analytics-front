@@ -1303,6 +1303,15 @@ const FoldersLayout = () => {
 		setFolder(null);
 	}, []);
 
+	// Abrir modal AddFolder en el paso de importar causa desde PJ Buenos Aires (MEV)
+	const handleOpenBaFolder = useCallback(() => {
+		setAddFolderInitialStep(2);
+		setAddFolderInitialFormValues({ entryMethod: "automatic", judicialPower: "buenosaires" });
+		setAdd(true);
+		setAddFolderMode("add");
+		setFolder(null);
+	}, []);
+
 	const handleArchiveSelected = useCallback(
 		async (selectedRows: Row<any>[]) => {
 			if (!user?._id || selectedRows.length === 0 || loadingRef.current) return;
@@ -2179,7 +2188,7 @@ const FoldersLayout = () => {
 			<SEO path="/apps/folders" />
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
-				<ResourceUsageBar resourceType="folders" compact barWidth={barWidth} onCabaClick={canCreate ? handleOpenCabaFolder : undefined} />
+				<ResourceUsageBar resourceType="folders" compact barWidth={barWidth} onCabaClick={canCreate ? handleOpenCabaFolder : undefined} onBaClick={canCreate ? handleOpenBaFolder : undefined} />
 
 				{/* Microhint de onboarding */}
 				{isOnboarding && verifiedFolders.length === 0 && (
