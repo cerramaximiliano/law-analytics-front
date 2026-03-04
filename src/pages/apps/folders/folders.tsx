@@ -96,6 +96,7 @@ import {
 	setFolderSort,
 	deleteFoldersByIds,
 } from "store/reducers/folder";
+import { fetchUserStats } from "store/reducers/userStats";
 import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
@@ -1181,6 +1182,7 @@ const FoldersLayout = () => {
 						await dispatch(getFoldersByUserId(userId));
 					}
 				}
+				dispatch(fetchUserStats() as any);
 			} catch (error) {
 				console.error("Error loading folders:", error);
 			} finally {
