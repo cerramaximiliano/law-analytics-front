@@ -80,13 +80,12 @@ export const pjnSyncReset = () => ({
 const pjnSyncReducer = (state = initialState, action: any): PjnSyncState => {
 	switch (action.type) {
 		case PJN_SYNC_STARTED: {
-			// Grace period: si el sync completó hace menos de 60s Y el dispatch no es forzado,
-			// ignorar el evento "started". Esto previene cycling por eventos WS stale (ej. un
-			// segundo credential-processor iniciándose justo después de que el primero completó).
-			// Las acciones explícitas del usuario (handleResync, handleSubmit) usan force=true.
+			// Grace period: ignorar evento "started" sin force si llegó hace menos de 5s
+			// del último sync completado (evita eventos stale con latencia de red mínima).
+			// 5s es suficiente para filtrar duplicados reales; syncs legítimos toman mucho más.
 			if (!action.payload?.force && state.completedAt) {
 				const elapsed = Date.now() - new Date(state.completedAt).getTime();
-				if (elapsed < 60 * 1000) {
+				if (elapsed < 5 * 1000) {
 					return state;
 				}
 			}
@@ -102,6 +101,27 @@ const pjnSyncReducer = (state = initialState, action: any): PjnSyncState => {
 		case PJN_SYNC_PROGRESS: {
 			const newPhase = action.payload.phase;
 			const previousPhase = state.phase;
+
+			// Si llega un evento de progreso pero el sync no estaba activo (evento "started"
+			// perdido, llegó fuera de orden, o fue bloqueado por el grace period), inicializar
+			// el estado como si "started" ya hubiera ocurrido: la autenticación ya sucedió.
+			if (!state.isActive) {
+				return {
+					...initialState,
+					isActive: true,
+					progress: action.payload.progress,
+					message: action.payload.message,
+					phase: newPhase,
+					seenPhases: ["started"],
+					currentPage: action.payload.currentPage,
+					totalPages: action.payload.totalPages,
+					causasProcessed: action.payload.causasProcessed,
+					totalExpected: action.payload.totalExpected,
+					batchNum: action.payload.batchNum,
+					totalBatches: action.payload.totalBatches,
+				};
+			}
+
 			// Acumular la fase anterior en seenPhases al transicionar a una nueva
 			const seenPhases =
 				previousPhase && previousPhase !== newPhase && !state.seenPhases.includes(previousPhase)

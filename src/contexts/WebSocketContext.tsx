@@ -100,7 +100,7 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 			if (message.type === "SYNC_PROGRESS") {
 				const p = message.payload as any;
 				if (p?.phase === "started") {
-					dispatch(pjnSyncStarted({ progress: p.progress, message: p.message }));
+					dispatch(pjnSyncStarted({ progress: p.progress, message: p.message, force: true }));
 				} else if (p?.phase === "completed") {
 					dispatch(pjnSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
 					if (userId) {
