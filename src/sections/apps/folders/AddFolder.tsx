@@ -308,6 +308,11 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 		if (open) {
 			// Si estamos creando, verificar límites
 			if (isCreating) {
+				// Resetear valores con overrides (entryMethod, judicialPower) para que steps sea correcto
+				const freshValues = getInitialValues(null, initialFormValues);
+				setInitialValues(freshValues);
+				setValues(freshValues);
+
 				// Resetear el estado del modal
 				setShowAddFolderModal(false);
 				setIsCheckingLimit(true);
