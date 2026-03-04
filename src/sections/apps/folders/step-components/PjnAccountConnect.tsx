@@ -39,7 +39,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { dispatch as storeDispatch } from "store";
 import { RootState } from "store";
 import { getFoldersByUserId } from "store/reducers/folder";
-import { incrementUserStat } from "store/reducers/userStats";
+import { incrementUserStat, fetchUserStats } from "store/reducers/userStats";
 import { pjnSyncStarted, pjnSyncReset, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
 import { PopupTransition } from "components/@extended/Transitions";
 import Avatar from "components/@extended/Avatar";
@@ -231,10 +231,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             TransitionComponent: Zoom,
             autoHideDuration: 5000,
           });
-          // Recargar carpetas para reflejar el badge PJN
+          // Recargar carpetas para reflejar el badge PJN y actualizar contador del widget
           const uid = authUser?._id || authUser?.id;
           if (uid) {
             storeDispatch(getFoldersByUserId(uid, true) as any);
+            storeDispatch(fetchUserStats() as any);
           }
         }
       } catch {
@@ -487,10 +488,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
           }
         }
 
-        // Recargar carpetas desde el server para confirmar el estado final
+        // Recargar carpetas desde el server para confirmar el estado final y actualizar contador
         const userId = authUser?._id || authUser?.id;
         if (userId) {
           storeDispatch(getFoldersByUserId(userId, true) as any);
+          storeDispatch(fetchUserStats() as any);
         }
       } else {
         enqueueSnackbar(response.error || "Error al desvincular cuenta", {
