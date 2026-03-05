@@ -56,6 +56,7 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 				{pjnAccess.requiresUpgrade && (
 					<Button
 						size="small"
+						color="warning"
 						onClick={handleUpgrade}
 						sx={{
 							py: 0,
@@ -64,7 +65,6 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 							fontSize: "0.7rem",
 							fontWeight: 600,
 							textTransform: "none",
-							color: "warning.dark",
 							whiteSpace: "nowrap",
 						}}
 					>
