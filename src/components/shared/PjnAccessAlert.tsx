@@ -50,7 +50,7 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 				}}
 			>
 				<Crown size={14} color="var(--mui-palette-warning-main, #ed6c02)" />
-				<Typography variant="caption" color="warning.dark" sx={{ flexGrow: 1 }}>
+				<Typography variant="caption" color="text.primary" sx={{ flexGrow: 1 }}>
 					{label}{planText ? ` · Plan ${planText}` : ""}
 				</Typography>
 				{pjnAccess.requiresUpgrade && (
@@ -74,7 +74,7 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 				<IconButton
 					size="small"
 					onClick={() => setOpen(false)}
-					sx={{ color: "warning.dark", p: 0.25 }}
+					sx={{ color: "text.secondary", p: 0.25 }}
 				>
 					<Add size={14} style={{ transform: "rotate(45deg)" }} />
 				</IconButton>
