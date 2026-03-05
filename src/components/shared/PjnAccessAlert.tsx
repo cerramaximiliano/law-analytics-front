@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, AlertTitle, Button, Stack, Typography, IconButton, Collapse } from "@mui/material";
+import { Box, Button, Typography, IconButton, Collapse } from "@mui/material";
 import { Crown, Add } from "iconsax-react";
 import { PjnAccess } from "types/movements";
 import { useNavigate } from "react-router-dom";
@@ -21,69 +21,64 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 		if (onUpgrade) {
 			onUpgrade();
 		} else {
-			// Navegar a la página de suscripciones en la misma pestaña
 			navigate("/suscripciones/tables");
 		}
 	};
 
+	const label = pjnAccess.availableMovements && pjnAccess.availableMovements > 0
+		? `+${pjnAccess.availableMovements} movimientos`
+		: "Acceso limitado";
+
+	const planText = pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
+		? pjnAccess.requiredPlans.map((p) => (p === "standard" ? "Estándar" : p.charAt(0).toUpperCase() + p.slice(1))).join(" o ")
+		: null;
+
 	return (
 		<Collapse in={open} timeout={300}>
-			<Alert
-				severity="warning"
-				icon={<Crown size={20} />}
+			<Box
 				sx={{
-					mb: 2,
-					"& .MuiAlert-icon": {
-						color: "warning.main",
-					},
-					"& .MuiAlert-message": {
-						width: "100%",
-					},
+					display: "flex",
+					alignItems: "center",
+					gap: 1,
+					mb: 1,
+					px: 1,
+					py: 0.5,
+					borderRadius: 1,
+					bgcolor: "warning.lighter",
+					border: "1px solid",
+					borderColor: "warning.light",
 				}}
-				action={
-					<Stack direction="row" spacing={1} alignItems="center">
-						{pjnAccess.requiresUpgrade && (
-							<Button
-								color="inherit"
-								size="small"
-								onClick={handleUpgrade}
-								sx={{
-									fontWeight: 600,
-									textTransform: "none",
-									whiteSpace: "nowrap",
-								}}
-							>
-								Mejorar Plan
-							</Button>
-						)}
-						<IconButton
-							size="small"
-							onClick={() => setOpen(false)}
-							sx={{
-								color: "inherit",
-								transform: "rotate(45deg)",
-								transition: "transform 0.2s",
-								"&:hover": {
-									transform: "rotate(45deg) scale(1.1)",
-								},
-							}}
-						>
-							<Add size={20} />
-						</IconButton>
-					</Stack>
-				}
 			>
-				<AlertTitle sx={{ fontWeight: 600, fontSize: "0.95rem" }}>
-					{pjnAccess.availableMovements && pjnAccess.availableMovements > 0
-						? `+${pjnAccess.availableMovements} movimientos disponibles`
-						: "Acceso Limitado"}
-				</AlertTitle>
-				<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
-					{pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
-						? `Disponible con plan ${pjnAccess.requiredPlans.map((plan) => (plan === "standard" ? "Estándar" : plan.charAt(0).toUpperCase() + plan.slice(1))).join(" o ")}`
-						: pjnAccess.message}
+				<Crown size={14} color="var(--mui-palette-warning-main, #ed6c02)" />
+				<Typography variant="caption" color="warning.dark" sx={{ flexGrow: 1 }}>
+					{label}{planText ? ` · Plan ${planText}` : ""}
 				</Typography>
-			</Alert>
+				{pjnAccess.requiresUpgrade && (
+					<Button
+						size="small"
+						onClick={handleUpgrade}
+						sx={{
+							py: 0,
+							px: 1,
+							minWidth: 0,
+							fontSize: "0.7rem",
+							fontWeight: 600,
+							textTransform: "none",
+							color: "warning.dark",
+							whiteSpace: "nowrap",
+						}}
+					>
+						Mejorar
+					</Button>
+				)}
+				<IconButton
+					size="small"
+					onClick={() => setOpen(false)}
+					sx={{ color: "warning.dark", p: 0.25 }}
+				>
+					<Add size={14} style={{ transform: "rotate(45deg)" }} />
+				</IconButton>
+			</Box>
 		</Collapse>
 	);
 };
