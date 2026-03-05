@@ -7,6 +7,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 // Importamos correctamente las acciones
 import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
 import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
+import { movementsSyncStarted, movementsSyncCompleted } from "store/reducers/movementsSync";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { Alert } from "types/alert";
 import { FolderData } from "types/folder";
@@ -110,6 +111,11 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 				} else if (p?.phase === "error") {
 					dispatch(pjnSyncError({ message: p.message ?? "Error en sincronización" }));
 					showNotification(`Error en sincronización: ${p.message ?? "Error desconocido"}`, "error");
+				} else if (p?.phase === "movements_started") {
+					dispatch(movementsSyncStarted({ totalCausas: p.totalCausas, isInitialSync: p.isInitialSync }));
+				} else if (p?.phase === "movements_completed") {
+					dispatch(movementsSyncCompleted({ newMovimientos: p.newMovimientos, totalCausas: p.totalCausas, isInitialSync: p.isInitialSync }));
+					showNotification(`Movimientos sincronizados: ${p.newMovimientos ?? 0} nuevos`, "success");
 				} else if (p?.phase) {
 					dispatch(pjnSyncProgress({
 						progress: p.progress ?? 0,
