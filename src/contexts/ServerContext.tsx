@@ -325,10 +325,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 					!url.includes("/api/auth/logout") &&
 					!url.includes("/api/auth/me") // Excluir /api/auth/me para evitar problemas en registro
 				) {
-					// Si el backend indica que necesita refresh
-					if (error.response?.data && (error.response.data as any).needRefresh === true) {
+					// Intentar refrescar el token automáticamente ante cualquier 401
+					if (!originalRequest._queued && !originalRequest._retry) {
 						try {
-							// Intentar refrescar el token automáticamente
 							const refreshResponse = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/auth/refresh-token`);
 
 							// Si el refresh es exitoso, reintentar la petición original
@@ -338,20 +337,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 									_hasBeenHandled: false,
 								});
 							}
-						} catch (refreshError) {
-							// Si no es una petición ya encolada y no es una petición de retry
-							if (!originalRequest._queued && !originalRequest._retry) {
-								// Encolar la petición para reintentar después de la autenticación
-								const queuedPromise = requestQueueService.enqueue(originalRequest);
-								setShowUnauthorizedModal(true);
-								return queuedPromise;
-							}
-
-							return Promise.reject(refreshError);
-						}
-					} else {
-						// Si no necesita refresh, encolar la petición si no ha sido encolada
-						if (!originalRequest._queued && !originalRequest._retry) {
+						} catch (_refreshError) {
+							// El refresh falló (refresh token también expirado o sesión inválida)
+							// Encolar la petición y pedir re-autenticación
 							const queuedPromise = requestQueueService.enqueue(originalRequest);
 							setShowUnauthorizedModal(true);
 							return queuedPromise;

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import {
 	Dialog,
 	DialogTitle,
@@ -87,35 +86,7 @@ export const UnauthorizedProvider: React.FC<{ children: React.ReactNode }> = ({ 
 		}
 	}, [showUnauthorizedModal]);
 
-	useEffect(() => {
-		// Rutas públicas donde no se debe mostrar el modal de sesión expirada
-		const publicRoutes = ["/teams/invitation", "/auth/", "/login", "/register"];
-		// Endpoints que no deben activar el modal
-		const silentEndpoints = ["/api/auth/", "/api/groups/invitations/"];
-
-		const interceptor = axios.interceptors.response.use(
-			(response) => response,
-			(error) => {
-				if (error.response?.status === 401 && !error.config._retry) {
-					const requestUrl = error.config?.url || "";
-					const currentPath = window.location.pathname;
-
-					// Verificar si es un endpoint silencioso
-					const isSilentEndpoint = silentEndpoints.some((endpoint) => requestUrl.includes(endpoint));
-					// Verificar si estamos en una ruta pública
-					const isPublicRoute = publicRoutes.some((route) => currentPath.startsWith(route));
-
-					if (!isSilentEndpoint && !isPublicRoute) {
-						error.config._retry = true;
-						setShowUnauthorizedModal(true);
-					}
-				}
-				return Promise.reject(error);
-			},
-		);
-
-		return () => axios.interceptors.response.eject(interceptor);
-	}, []);
+	// El manejo de 401 (refresco automático + modal) está centralizado en ServerContext.
 
 	const handleFormSubmit = async (values: FormValues, { setErrors, setStatus }: FormikHelpers<FormValues>) => {
 		if (isSubmitting) return;

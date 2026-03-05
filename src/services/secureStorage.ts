@@ -17,7 +17,7 @@ class SecureStorageService {
 	setAuthToken(token: string, remember: boolean = false): void {
 		const options = {
 			...this.defaultOptions,
-			expires: remember ? 30 : 1, // 30 días si "recordar", 1 día si no
+			expires: remember ? 30 : 7, // 30 días si "recordar", 7 días si no
 			// NOTA: httpOnly no se puede setear desde JavaScript
 			// El backend debe setear la cookie con httpOnly=true
 		};
