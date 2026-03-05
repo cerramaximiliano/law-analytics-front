@@ -973,41 +973,20 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												}
 											/>
 
-											{/* Alerta informativa cuando hay más movimientos disponibles */}
+											{/* Texto compacto cuando hay más movimientos disponibles */}
 											{filters.onlyWithDocuments &&
 												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Alert
-														severity="info"
-														sx={{
-															mt: 1,
-															py: 0.5,
-															fontSize: "0.75rem",
-															"& .MuiAlert-message": {
-																py: 0.5,
-															},
-														}}
-													>
-														<Typography variant="caption">
-															Mostrando {movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} movimientos
-															totales.{" "}
-															<Typography
-																component="span"
-																variant="caption"
-																sx={{
-																	color: "info.main",
-																	cursor: "pointer",
-																	textDecoration: "underline",
-																	fontWeight: 600,
-																}}
-																onClick={() => {
-																	// Solo actualizar el estado, el useEffect se encargará del dispatch
-																	setFilters({ ...filters, onlyWithDocuments: false });
-																}}
-															>
-																Ver todos
-															</Typography>
+													<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} ·{" "}
+														<Typography
+															component="span"
+															variant="caption"
+															sx={{ color: "primary.main", cursor: "pointer", fontWeight: 600 }}
+															onClick={() => setFilters({ ...filters, onlyWithDocuments: false })}
+														>
+															Ver todos
 														</Typography>
-													</Alert>
+													</Typography>
 												)}
 
 											<Divider sx={{ my: 1 }} />
@@ -1355,40 +1334,20 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 												</Button>
 											</Stack>
 
-											{/* Alerta informativa cuando hay más movimientos disponibles */}
+											{/* Texto compacto cuando hay más movimientos disponibles */}
 											{filters.onlyWithDocuments &&
 												(movementsData.pagination?.totalAvailable ?? 0) > (movementsData.pagination?.total ?? 0) && (
-													<Alert
-														severity="info"
-														sx={{
-															py: 0.5,
-															fontSize: "0.75rem",
-															"& .MuiAlert-message": {
-																py: 0.5,
-															},
-														}}
-													>
-														<Typography variant="caption">
-															Mostrando {movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} movimientos
-															totales.{" "}
-															<Typography
-																component="span"
-																variant="caption"
-																sx={{
-																	color: "info.main",
-																	cursor: "pointer",
-																	textDecoration: "underline",
-																	fontWeight: 600,
-																}}
-																onClick={() => {
-																	// Solo actualizar el estado, el useEffect se encargará del dispatch
-																	setFilters({ ...filters, onlyWithDocuments: false });
-																}}
-															>
-																Ver todos
-															</Typography>
+													<Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+														{movementsData.pagination.total || 0} de {movementsData.pagination.totalAvailable} ·{" "}
+														<Typography
+															component="span"
+															variant="caption"
+															sx={{ color: "primary.main", cursor: "pointer", fontWeight: 600 }}
+															onClick={() => setFilters({ ...filters, onlyWithDocuments: false })}
+														>
+															Ver todos
 														</Typography>
-													</Alert>
+													</Typography>
 												)}
 
 											{/* Filtros avanzados - Collapsible */}

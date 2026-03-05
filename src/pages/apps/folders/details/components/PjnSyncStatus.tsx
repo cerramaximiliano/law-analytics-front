@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Typography, Box } from "@mui/material";
+import { Typography, Box } from "@mui/material";
 import { TickCircle, Clock } from "iconsax-react";
 import dayjs from "dayjs";
 
@@ -20,11 +20,12 @@ const PjnSyncStatus: React.FC<PjnSyncStatusProps> = ({ causaLastSyncDate }) => {
 	}
 
 	return (
-		<Alert severity="warning" icon={<Clock size={18} />} sx={{ mb: 1, py: 0.5 }}>
-			<Typography variant="body2">
-				<strong>Pendiente de primera actualización PJN.</strong> Los movimientos se sincronizarán en el próximo ciclo de actualización.
+		<Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1, color: "warning.main" }}>
+			<Clock size={16} />
+			<Typography variant="caption" color="warning.main">
+				Pendiente de primera sincronización PJN
 			</Typography>
-		</Alert>
+		</Box>
 	);
 };
 
