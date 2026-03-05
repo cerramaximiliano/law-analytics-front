@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
 	Box,
 	Paper,
@@ -71,6 +71,7 @@ import DocumentExplorer from "components/shared/DocumentExplorer";
 import ScrapingProgressBanner from "./ScrapingProgressBanner";
 import PjnSyncStatus from "./PjnSyncStatus";
 import { useScrapingProgress } from "hooks/useScrapingProgress";
+import { MovementsSyncState } from "store/reducers/movementsSync";
 import { useTeam } from "contexts/TeamContext";
 import { toggleMovementComplete } from "store/reducers/movements";
 import ModalTasks from "../modals/MoldalTasks";
@@ -142,8 +143,10 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const [pdfUrlFromDetails, setPdfUrlFromDetails] = useState<string>("");
 	const [pdfTitleFromDetails, setPdfTitleFromDetails] = useState<string>("");
 
-	// Estado para ScrapingProgressBanner
+	// Estado para ScrapingProgressBanner (MEV)
 	const [scrapingBannerClosed, setScrapingBannerClosed] = useState(false);
+	// Estado para banner PJN vía WS
+	const [pjnSyncBannerClosed, setPjnSyncBannerClosed] = useState(false);
 
 	// Document Explorer (overlay) states
 	const [explorerOpen, setExplorerOpen] = useState(false);
@@ -162,13 +165,22 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	const activitiesData = useSelector((state: any) => state.activities);
 	const calendarState = useSelector((state: any) => state.calendar);
 	const auth = useSelector((state: any) => state.auth);
+	const movementsSync = useSelector((state: any) => state.movementsSync as MovementsSyncState);
 	const userId = auth.user?._id;
 
-	// Hook personalizado para gestionar scrapingProgress con transición suave
+	// Hook personalizado para gestionar scrapingProgress con transición suave (MEV)
 	const { scrapingProgress } = useScrapingProgress(movementsData.scrapingProgress, id);
 
 	// Detectar si es PJN o MEV basado en la presencia de pjnAccess
 	const scrapingSource: "mev" | "pjn" = movementsData.pjnAccess ? "pjn" : "mev";
+
+	// Progreso PJN derivado del estado WS (sin polling)
+	const isPjn = !!movementsData.pjnAccess;
+	const pjnWsProgress = isPjn && movementsSync.isActive
+		? { status: "in_progress", isComplete: false, totalExpected: movementsSync.totalCausas, totalProcessed: 0 }
+		: isPjn && movementsSync.completedAt && !pjnSyncBannerClosed
+		? { status: "completed", isComplete: true, totalExpected: movementsSync.totalCausas, totalProcessed: movementsSync.newMovimientos }
+		: null;
 
 	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
@@ -189,18 +201,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 		}
 	}, [id, activeTab, filters.onlyWithDocuments, filters.type]);
 
-	// Polling para scrapingProgress: 10s cuando está en progreso, 30s en otros estados activos
+	// Polling para scrapingProgress MEV: 10s cuando está en progreso, 30s en otros estados activos
+	// No aplica a PJN — el WS se encarga de notificar inicio y fin
 	useEffect(() => {
-		// Solo hacer polling si:
-		// 1. Hay scrapingProgress
-		// 2. No está completo
-		// 3. El estado no es "completed"
-		// 4. Hay un folderId
-		if (!scrapingProgress || scrapingProgress.isComplete || scrapingProgress.status === "completed" || !id) {
+		if (isPjn || !scrapingProgress || scrapingProgress.isComplete || scrapingProgress.status === "completed" || !id) {
 			return;
 		}
 
-		// Más frecuente mientras está activamente descargando
 		const pollMs = scrapingProgress.status === "in_progress" ? 10000 : 30000;
 
 		const pollInterval = setInterval(() => {
@@ -214,9 +221,26 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 			);
 		}, pollMs);
 
-		// Limpiar intervalo al desmontar o cuando cambian las dependencias
 		return () => clearInterval(pollInterval);
-	}, [id, scrapingProgress?.isComplete, scrapingProgress?.status, filters.onlyWithDocuments]);
+	}, [isPjn, id, scrapingProgress?.isComplete, scrapingProgress?.status, filters.onlyWithDocuments]);
+
+	// Cuando el WS señala que la sync PJN terminó: recargar movimientos del folder
+	const prevCompletedAtRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (!isPjn || !id || !movementsSync.completedAt) return;
+		if (movementsSync.completedAt === prevCompletedAtRef.current) return;
+
+		prevCompletedAtRef.current = movementsSync.completedAt;
+		setPjnSyncBannerClosed(false);
+		dispatch(
+			getMovementsByFolderId(id, {
+				page: 1,
+				limit: 10,
+				sort: "-time",
+				filter: buildFilterObject(filters.onlyWithDocuments),
+			}),
+		);
+	}, [isPjn, id, movementsSync.completedAt]);
 
 	// Resetear estado del banner cuando cambia scrapingProgress
 	useEffect(() => {
@@ -1085,17 +1109,17 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										{/* Scraping Progress Banner / Estado de sincronización PJN */}
 										{activeTab === "movements" && (
 											<>
-												{scrapingProgress && !scrapingBannerClosed && (
+												{(pjnWsProgress || (scrapingProgress && !scrapingBannerClosed)) && (
 													<Box sx={{ mb: 2 }}>
 														<ScrapingProgressBanner
-															scrapingProgress={scrapingProgress}
+															scrapingProgress={(pjnWsProgress || scrapingProgress)!}
 															source={scrapingSource}
 															onRefresh={handleRefreshMovements}
-															onClose={handleCloseBanner}
+															onClose={pjnWsProgress ? () => setPjnSyncBannerClosed(true) : handleCloseBanner}
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && movementsData.pjnAccess && (
+												{!pjnWsProgress && !scrapingProgress && movementsData.pjnAccess && (
 													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
@@ -1470,17 +1494,17 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 										{/* Scraping Progress Banner / Estado de sincronización PJN */}
 										{activeTab === "movements" && (
 											<>
-												{scrapingProgress && !scrapingBannerClosed && (
+												{(pjnWsProgress || (scrapingProgress && !scrapingBannerClosed)) && (
 													<Box sx={{ mb: 2 }}>
 														<ScrapingProgressBanner
-															scrapingProgress={scrapingProgress}
+															scrapingProgress={(pjnWsProgress || scrapingProgress)!}
 															source={scrapingSource}
 															onRefresh={handleRefreshMovements}
-															onClose={handleCloseBanner}
+															onClose={pjnWsProgress ? () => setPjnSyncBannerClosed(true) : handleCloseBanner}
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && movementsData.pjnAccess && (
+												{!pjnWsProgress && !scrapingProgress && movementsData.pjnAccess && (
 													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
