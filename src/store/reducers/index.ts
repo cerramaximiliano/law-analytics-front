@@ -35,6 +35,7 @@ import teams from "./teams";
 import activityLog from "./activityLog";
 import rag from "./rag";
 import pjnSync from "./pjnSync";
+import movementsSync from "./movementsSync";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -77,6 +78,7 @@ const reducers = combineReducers({
 	activityLog,
 	rag,
 	pjnSync,
+	movementsSync,
 });
 
 export default reducers;
