@@ -830,7 +830,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
                     size="small"
                     onClick={handleResync}
                     title="Re-sincronizar"
-                    disabled={!credentialsStatus.enabled}
+                    disabled={!credentialsStatus.enabled || isCredentialError}
                   >
                     <Refresh2 size={18} />
                   </IconButton>
@@ -848,17 +848,11 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
                 <Alert
                   severity={isCredentialError ? "error" : "warning"}
                   action={
-                    isCredentialError ? (
-                      credentialsStatus.enabled ? (
-                        <Button color="inherit" size="small" onClick={handleResync}>
-                          Reintentar
-                        </Button>
-                      ) : undefined
-                    ) : (
+                    !isCredentialError ? (
                       <Button color="inherit" size="small" onClick={() => loadCredentialsStatus()}>
                         Verificar
                       </Button>
-                    )
+                    ) : undefined
                   }
                 >
                   {isCredentialError
