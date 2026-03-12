@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, Fragment, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -11,6 +11,7 @@ import {
 	List,
 	ListItem,
 	ListItemText,
+	Divider,
 	Stack,
 	Switch,
 	Typography,
@@ -28,7 +29,7 @@ import {
 } from "@mui/material";
 
 // icons
-import { Lock, DiscountShape } from "iconsax-react";
+import { Lock, DiscountShape, TickCircle, CloseCircle } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -37,6 +38,8 @@ import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 import TabLegalDocuments from "./TabPanel";
 import { getPlanPricing, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
+import { useTeam } from "contexts/TeamContext";
+import { ROLE_CONFIG } from "types/teams";
 
 // ==============================|| PRICING ||============================== //
 
@@ -48,6 +51,11 @@ interface DowngradeOption {
 
 const Pricing = () => {
 	const theme = useTheme();
+
+	// Team context - para mostrar información apropiada a miembros del equipo
+	const { isTeamMode, activeTeam, userRole, isOwner, ownerSubscription } = useTeam();
+	const isTeamMember = isTeamMode && !isOwner;
+
 	const [timePeriod, setTimePeriod] = useState(true); // true = mensual, false = anual
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -731,6 +739,102 @@ const Pricing = () => {
 		);
 	}
 
+	// Si el usuario es miembro de un equipo (no propietario), mostrar vista informativa
+	if (isTeamMember && activeTeam) {
+		const roleConfig = userRole ? ROLE_CONFIG[userRole as keyof typeof ROLE_CONFIG] : null;
+		const planDisplayNames: Record<string, string> = {
+			free: "Gratuito",
+			standard: "Estándar",
+			premium: "Premium",
+		};
+		const ownerPlanName = ownerSubscription?.planName
+			? planDisplayNames[ownerSubscription.planName.toLowerCase()] || ownerSubscription.planName
+			: "No disponible";
+
+		return (
+			<Grid container spacing={3} justifyContent="center">
+				<Grid item xs={12} md={8} lg={6}>
+					<MainCard
+						sx={{
+							textAlign: "center",
+							py: 4,
+							px: 3,
+						}}
+					>
+						<Stack spacing={3} alignItems="center">
+							{/* Icono de equipo */}
+							<Box
+								sx={{
+									width: 80,
+									height: 80,
+									borderRadius: "50%",
+									bgcolor: "primary.lighter",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+								}}
+							>
+								<Lock size={40} color={theme.palette.primary.main} variant="Bulk" />
+							</Box>
+
+							{/* Título */}
+							<Typography variant="h3" sx={{ fontWeight: 700 }}>
+								Eres miembro de un equipo
+							</Typography>
+
+							{/* Información del equipo */}
+							<Stack spacing={1} alignItems="center">
+								<Typography variant="h4" color="primary">
+									{activeTeam.name}
+								</Typography>
+								{roleConfig && (
+									<Chip
+										label={roleConfig.label}
+										color={roleConfig.color}
+										size="medium"
+										sx={{ fontWeight: 600, px: 2 }}
+									/>
+								)}
+							</Stack>
+
+							{/* Plan del equipo */}
+							<Box
+								sx={{
+									bgcolor: "secondary.lighter",
+									borderRadius: 2,
+									px: 4,
+									py: 2,
+									width: "100%",
+									maxWidth: 300,
+								}}
+							>
+								<Typography variant="body2" color="text.secondary" gutterBottom>
+									Plan del equipo
+								</Typography>
+								<Typography variant="h4" color="secondary.dark" sx={{ fontWeight: 700 }}>
+									{ownerPlanName}
+								</Typography>
+							</Box>
+
+							{/* Mensaje informativo */}
+							<Alert severity="info" sx={{ borderRadius: 2, textAlign: "left" }}>
+								<Typography variant="body2">
+									Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>.
+									La gestión del plan y la facturación son responsabilidad del propietario del equipo.
+								</Typography>
+							</Alert>
+
+							{/* Nota */}
+							<Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
+								Si necesitas cambios en el plan o más permisos, contacta al administrador de tu equipo.
+							</Typography>
+						</Stack>
+					</MainCard>
+				</Grid>
+			</Grid>
+		);
+	}
+
 	return (
 		<Grid container spacing={3}>
 			{!isDevelopment && (
@@ -978,18 +1082,8 @@ const Pricing = () => {
 										</Box>
 									</Grid>
 									<Grid item xs={12}>
-										<List
-											sx={{
-												m: 0,
-												p: 0,
-												"&> li": {
-													px: 0,
-													py: 0.625,
-												},
-											}}
-											component="ul"
-										>
-											{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
+										<Box sx={{ p: 1 }}>
+											{/* Resources: Grid de cajas */}
 											{(() => {
 												const currentEnv = import.meta.env.PROD ? "production" : "development";
 												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
@@ -997,52 +1091,55 @@ const Pricing = () => {
 													if (visibility === "none") return false;
 													return visibility === currentEnv;
 												};
-
-												// Mapear recursos a objetos con información común (filtrando por visibility)
-												const resourceItems = plan.resourceLimits
-													.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
-													.map((resource) => ({
-														type: "resource" as const,
-														enabled: true,
-														description: planFeatureValue(plan, resource.name) || "",
-														name: resource.name,
-													}));
-
-												// Mapear características a objetos con información común (filtrando por visibility)
-												const featureItems = plan.features
-													.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
-													.map((feature) => ({
-														type: "feature" as const,
-														enabled: feature.enabled,
-														description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
-														name: feature.name,
-													}));
-
-												// Combinar ambos arreglos
-												// Combinar ambos arreglos
-												const allItems = [...resourceItems, ...featureItems];
-
-												// Ordenar: primero resources por order, luego features por order
-												const sortedItems = allItems.sort((a, b) => {
-													// Resources siempre antes que features
-													if (a.type !== b.type) return a.type === "resource" ? -1 : 1;
-													// Dentro del mismo tipo, ordenar por order
-													const orderA = (plan.resourceLimits.find((r: any) => r.name === a.name)?.order ?? plan.features.find((f: any) => f.name === a.name)?.order) ?? 99;
-													const orderB = (plan.resourceLimits.find((r: any) => r.name === b.name)?.order ?? plan.features.find((f: any) => f.name === b.name)?.order) ?? 99;
-													return orderA - orderB;
-												});
-												return sortedItems.map((item, i) => (
-													<Fragment key={`${item.type}-${i}`}>
-														<ListItem sx={!item.enabled ? priceListDisable : {}}>
-															<ListItemText
-																primary={item.description}
-																sx={{ textAlign: "center", fontWeight: item.enabled ? "medium" : "normal" }}
-															/>
-														</ListItem>
-													</Fragment>
-												));
+												const visibleResources = plan.resourceLimits
+													.filter((r) => isVisibleInCurrentEnv(r.visibility))
+													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+												return (
+													<Grid container spacing={1} sx={{ mb: 2 }}>
+														{visibleResources.map((resource, i) => (
+															<Grid item xs={6} key={`resource-${i}`}>
+																<Box sx={{ textAlign: "center", p: 1, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
+																	<Typography variant="body2" fontWeight="medium" sx={{ wordBreak: "break-word" }}>
+																		{planFeatureValue(plan, resource.name)}
+																	</Typography>
+																</Box>
+															</Grid>
+														))}
+													</Grid>
+												);
 											})()}
-										</List>
+											<Divider sx={{ my: 1.5 }} />
+											{/* Features: grid de 2 columnas con iconos */}
+											{(() => {
+												const currentEnv = import.meta.env.PROD ? "production" : "development";
+												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+													if (!visibility || visibility === "all") return true;
+													if (visibility === "none") return false;
+													return visibility === currentEnv;
+												};
+												const visibleFeatures = plan.features
+													.filter((f) => isVisibleInCurrentEnv(f.visibility))
+													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+												return (
+													<Grid container spacing={1}>
+														{visibleFeatures.map((feature, i) => (
+															<Grid item xs={12} sm={6} key={`feature-${i}`}>
+																<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																	{feature.enabled ? (
+																		<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
+																	) : (
+																		<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
+																	)}
+																	<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																		{feature.displayName || feature.description}
+																	</Typography>
+																</Box>
+															</Grid>
+														))}
+													</Grid>
+												);
+											})()}
+										</Box>
 									</Grid>
 								</Grid>
 
