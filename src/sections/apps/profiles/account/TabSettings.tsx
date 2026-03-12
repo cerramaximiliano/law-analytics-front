@@ -875,7 +875,7 @@ const TabSubscription = () => {
 											<ListItemText
 												primary={
 													<Typography color="text.secondary" variant="subtitle2">
-														{item.description || item.name}
+														{item.displayName || item.description || item.name}
 													</Typography>
 												}
 												secondary={
@@ -992,7 +992,7 @@ const TabSubscription = () => {
 											// Primero ordenar por enabled (activos primero)
 											if (a.enabled === b.enabled) {
 												// Si tienen el mismo estado, ordenar alfabéticamente por descripción
-												return (a.description || a.name).localeCompare(b.description || b.name);
+												return (a.displayName || a.description || a.name).localeCompare(b.displayName || b.description || b.name);
 											}
 											// Los true (activos) van primero
 											return a.enabled ? -1 : 1;
@@ -1002,7 +1002,7 @@ const TabSubscription = () => {
 												<ListItemText
 													primary={
 														<Typography color="text.primary" variant="subtitle2">
-															{feature.description || feature.name}
+															{feature.displayName || feature.description || feature.name}
 														</Typography>
 													}
 												/>

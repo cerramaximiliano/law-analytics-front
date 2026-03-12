@@ -569,26 +569,13 @@ const Pricing = () => {
 		// Para límites de recursos
 		const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === featureType);
 		if (resource) {
-			switch (featureType) {
-				case "folders":
-					return `+${resource.limit} Causas`;
-				case "calculators":
-					return `+${resource.limit} Cálculos`;
-				case "contacts":
-					return `+${resource.limit} Contactos`;
-				case "storage":
-					return `${resource.limit} MB de Almacenamiento`;
-				default:
-					// Capitalizar el nombre del recurso
-					const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
-					return `${resource.limit} ${displayName}`;
-			}
+			return `${resource.limit} ${resource.displayName}`;
 		}
 
 		// Para características booleanas
 		const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
 		if (feature) {
-			return feature.enabled ? feature.description : null;
+			return feature.enabled ? (feature.displayName || feature.description) : null;
 		}
 
 		return null;
@@ -596,31 +583,19 @@ const Pricing = () => {
 
 	// Función para obtener el texto predeterminado para características deshabilitadas
 	const getDefaultFeatureText = (featureType: string): string => {
-		// Primero buscar si es un recurso en algún plan para obtener su descripción
+		// Primero buscar si es un recurso en algún plan para obtener su displayName
 		for (const plan of plans) {
 			const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === featureType);
 			if (resource) {
-				switch (featureType) {
-					case "folders":
-						return "+0 Causas";
-					case "calculators":
-						return "+0 Cálculos";
-					case "contacts":
-						return "+0 Contactos";
-					case "storage":
-						return "0 MB de Almacenamiento";
-					default:
-						const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
-						return `0 ${displayName}`;
-				}
+				return `0 ${resource.displayName}`;
 			}
 		}
 
-		// Buscar si es una característica en algún plan para obtener su descripción
+		// Buscar si es una característica en algún plan para obtener su displayName o descripción
 		for (const plan of plans) {
 			const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
 			if (feature) {
-				return feature.description;
+				return feature.displayName || feature.description;
 			}
 		}
 
@@ -1016,13 +991,16 @@ const Pricing = () => {
 										>
 											{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
 											{(() => {
-												// Features y recursos a ocultar temporalmente
-												const hiddenFeatures = ["teams"];
-												const hiddenResources = ["teamMembers"];
+												const currentEnv = import.meta.env.PROD ? "production" : "development";
+												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+													if (!visibility || visibility === "all") return true;
+													if (visibility === "none") return false;
+													return visibility === currentEnv;
+												};
 
-												// Mapear recursos a objetos con información común (filtrando los ocultos)
+												// Mapear recursos a objetos con información común (filtrando por visibility)
 												const resourceItems = plan.resourceLimits
-													.filter((resource) => !hiddenResources.includes(resource.name))
+													.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
 													.map((resource) => ({
 														type: "resource" as const,
 														enabled: true,
@@ -1030,9 +1008,9 @@ const Pricing = () => {
 														name: resource.name,
 													}));
 
-												// Mapear características a objetos con información común (filtrando las ocultas)
+												// Mapear características a objetos con información común (filtrando por visibility)
 												const featureItems = plan.features
-													.filter((feature) => !hiddenFeatures.includes(feature.name))
+													.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
 													.map((feature) => ({
 														type: "feature" as const,
 														enabled: feature.enabled,
