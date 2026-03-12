@@ -494,36 +494,16 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 												>
 													{/* Primero mostrar los recursos del plan */}
 													{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => {
-														// Formatear la descripción del recurso de forma legible
-														let formattedDescription;
-														switch (resource.name) {
-															case "folders":
-																formattedDescription = `+${resource.limit} Causas`;
-																break;
-															case "calculators":
-																formattedDescription = `+${resource.limit} Cálculos`;
-																break;
-															case "contacts":
-																formattedDescription = `+${resource.limit} Contactos`;
-																break;
-															case "storage":
-																formattedDescription = `${resource.limit} MB de Almacenamiento`;
-																break;
-															default:
-																// Capitalizar el nombre del recurso
-																const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
-																formattedDescription = `${resource.limit} ${displayName}`;
-														}
-
+														// Usar displayName del recurso
 														return (
 															<React.Fragment key={`resource-${i}`}>
 																<ListItem>
-																	<ListItemText primary={formattedDescription} sx={{ textAlign: "center", fontWeight: "medium" }} />
+																	<ListItemText primary={`${resource.limit} ${resource.displayName}`} sx={{ textAlign: "center", fontWeight: "medium" }} />
 																</ListItem>
 															</React.Fragment>
 														);
-													})}
 
+													})}
 													{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
 													{[...plan.features]
 														.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
