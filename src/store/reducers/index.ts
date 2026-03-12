@@ -31,6 +31,7 @@ import stripeSubscriptions from "./stripe-subscriptions";
 import activities from "./activities";
 import notificationMonitoring from "./notificationMonitoring";
 import googleCalendar from "./googleCalendar";
+import teams from "./teams";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -69,6 +70,7 @@ const reducers = combineReducers({
 	activities,
 	notificationMonitoring,
 	googleCalendar,
+	teams,
 });
 
 export default reducers;
