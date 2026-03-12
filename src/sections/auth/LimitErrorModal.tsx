@@ -340,7 +340,370 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		);
 	};
 
-	// Renderizado de planes
+	// Helper para formatear descripción de recursos
+	const formatResourceDescription = (resource: { name: string; limit: number; displayName?: string }) => {
+		return `${resource.limit} ${resource.displayName || resource.name}`;
+	};
+
+	// Renderizado de un solo plan (formato ancho con grid de features)
+	const renderSinglePlan = (plan: Plan) => {
+		const pricing = getPlanPricing(plan);
+		const displayPrice = pricing.basePrice;
+		const hasDiscount = plan.activeDiscounts && plan.activeDiscounts.length > 0;
+		const discount = hasDiscount ? plan.activeDiscounts![0] : null;
+
+		// Ordenar features: habilitadas primero (filtrando por visibility)
+		const currentEnv = import.meta.env.PROD ? "production" : "development";
+		const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+			if (!visibility || visibility === "all") return true;
+			if (visibility === "none") return false;
+			return visibility === currentEnv;
+		};
+		const sortedFeatures = [...plan.features].filter((f) => isVisibleInCurrentEnv(f.visibility)).sort((a, b) => {
+			if (a.enabled === b.enabled) return 0;
+			return a.enabled ? -1 : 1;
+		});
+
+		return (
+			<MainCard
+				elevation={0}
+				sx={{
+					width: "100%",
+					maxWidth: "700px",
+					mx: "auto",
+					overflow: "visible",
+					border: `1px solid ${theme.palette.divider}`,
+					transition: "all 0.3s ease-in-out",
+					"&:hover": {
+						boxShadow: theme.shadows[4],
+						borderColor: theme.palette.primary.main,
+					},
+				}}
+			>
+				{/* Header del plan con precio y botón */}
+				<Box
+					sx={{
+						...getPlanStyle(plan.planId, false),
+						pt: 2,
+						pb: 2,
+					}}
+				>
+					<Stack spacing={1.5} alignItems="center">
+						{getPlanChip(plan.planId, false, plan.isDefault)}
+						<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
+						{hasDiscount && discount ? (
+							<>
+								<Stack direction="row" spacing={1.5} alignItems="baseline" justifyContent="center">
+									<Typography
+										variant="h4"
+										sx={{
+											textDecoration: "line-through",
+											color: "text.secondary",
+											fontWeight: 500,
+											opacity: 0.8,
+										}}
+									>
+										${discount.originalPrice}
+									</Typography>
+									<Typography variant="h2" sx={{ ...price, color: "success.main" }}>
+										${discount.finalPrice}
+									</Typography>
+								</Stack>
+								<Typography variant="h6" color="textSecondary">
+									{getBillingPeriodText(pricing.billingPeriod)}
+								</Typography>
+								<Box sx={{ textAlign: "center", mt: 0.5 }}>
+									<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
+										<DiscountShape size={14} color="var(--mui-palette-success-main)" />
+										<Chip
+											label={discount.badge}
+											size="small"
+											color="success"
+											sx={{ fontWeight: 700, fontSize: "0.7rem" }}
+										/>
+									</Stack>
+									<Typography variant="caption" color="success.dark" sx={{ display: "block", mt: 0.5, fontWeight: 600 }}>
+										{discount.promotionalMessage}
+									</Typography>
+									{discount.durationInMonths && (
+										<Typography variant="caption" color="success.dark" sx={{ display: "block" }}>
+											Válido por {discount.durationInMonths} meses
+										</Typography>
+									)}
+								</Box>
+							</>
+						) : (
+							<Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
+								<Typography variant="h2" sx={price}>
+									${displayPrice}
+								</Typography>
+								<Typography variant="h6" color="textSecondary" sx={{ ml: 1 }}>
+									{getBillingPeriodText(pricing.billingPeriod)}
+								</Typography>
+							</Box>
+						)}
+						<Button
+							color={getButtonColor(plan.planId, false)}
+							variant="contained"
+							onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
+							disabled={loadingPlanId !== null}
+							endIcon={loadingPlanId === plan.planId ? <CircularProgress size={16} color="inherit" /> : <ArrowRight size={16} />}
+							size="large"
+							sx={{
+								py: 1.5,
+								px: 4,
+								fontWeight: 600,
+								transition: "all 0.3s ease-in-out",
+								"&:hover": {
+									transform: "scale(1.02)",
+								},
+							}}
+						>
+							{loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme Ahora"}
+						</Button>
+					</Stack>
+				</Box>
+
+				{/* Grid de recursos y features */}
+				<Box sx={{ p: 2 }}>
+					{/* Recursos en una fila */}
+					<Grid container spacing={1} sx={{ mb: 2 }}>
+						{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => (
+							<Grid item xs={6} sm={3} key={`resource-${i}`}>
+								<Box
+									sx={{
+										textAlign: "center",
+										p: 1,
+										bgcolor: theme.palette.background.default,
+										borderRadius: 1,
+									}}
+								>
+									<Typography variant="body2" fontWeight="medium">
+										{formatResourceDescription(resource)}
+									</Typography>
+								</Box>
+							</Grid>
+						))}
+					</Grid>
+
+					<Divider sx={{ my: 1.5 }} />
+
+					{/* Features en grid de 2 columnas */}
+					<Grid container spacing={1}>
+						{sortedFeatures.map((feature, i) => (
+							<Grid item xs={12} sm={6} key={`feature-${i}`}>
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										gap: 1,
+										py: 0.5,
+										...(feature.enabled ? {} : priceListDisable),
+									}}
+								>
+									{feature.enabled ? (
+										<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
+									) : (
+										<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
+									)}
+									<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal" }}>
+										{feature.description}
+									</Typography>
+								</Box>
+							</Grid>
+						))}
+					</Grid>
+				</Box>
+			</MainCard>
+		);
+	};
+
+	// Renderizado de múltiples planes (formato compacto con grid de features)
+	const renderMultiplePlans = (activePlans: Plan[]) => {
+		return (
+			<Grid container spacing={2} justifyContent="center">
+				{activePlans.map((plan) => {
+					const pricing = getPlanPricing(plan);
+					const displayPrice = pricing.basePrice;
+					const hasDiscount = plan.activeDiscounts && plan.activeDiscounts.length > 0;
+					const discount = hasDiscount ? plan.activeDiscounts![0] : null;
+
+					// Ordenar features: habilitadas primero (filtrando por visibility)
+					const currentEnv = import.meta.env.PROD ? "production" : "development";
+					const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+						if (!visibility || visibility === "all") return true;
+						if (visibility === "none") return false;
+						return visibility === currentEnv;
+					};
+					const sortedFeatures = [...plan.features].filter((f) => isVisibleInCurrentEnv(f.visibility)).sort((a, b) => {
+						if (a.enabled === b.enabled) return 0;
+						return a.enabled ? -1 : 1;
+					});
+
+					return (
+						<Grid item xs={12} sm={6} key={plan.planId}>
+							<MainCard
+								elevation={0}
+								sx={{
+									height: "100%",
+									overflow: "visible",
+									border: `1px solid ${theme.palette.divider}`,
+									transition: "all 0.3s ease-in-out",
+									"&:hover": {
+										transform: "translateY(-3px)",
+										boxShadow: theme.shadows[4],
+										borderColor: theme.palette.primary.main,
+									},
+								}}
+							>
+								{/* Header del plan */}
+								<Box
+									sx={{
+										...getPlanStyle(plan.planId, false),
+										pt: 1.5,
+										pb: 1.5,
+									}}
+								>
+									<Stack spacing={1} alignItems="center">
+										{getPlanChip(plan.planId, false, plan.isDefault)}
+										<Typography variant="h5">{cleanPlanDisplayName(plan.displayName)}</Typography>
+										{hasDiscount && discount ? (
+											<>
+												<Stack direction="row" spacing={1} alignItems="baseline">
+													<Typography
+														variant="h5"
+														sx={{
+															textDecoration: "line-through",
+															color: "text.secondary",
+															fontWeight: 500,
+															opacity: 0.8,
+														}}
+													>
+														${discount.originalPrice}
+													</Typography>
+													<Typography variant="h3" sx={{ fontWeight: 700, color: "success.main" }}>
+														${discount.finalPrice}
+													</Typography>
+												</Stack>
+												<Typography variant="caption" color="textSecondary">
+													{getBillingPeriodText(pricing.billingPeriod)}
+												</Typography>
+												<Box sx={{ textAlign: "center" }}>
+													<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
+														<DiscountShape size={12} color="var(--mui-palette-success-main)" />
+														<Chip
+															label={discount.badge}
+															size="small"
+															color="success"
+															sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
+														/>
+													</Stack>
+													<Typography variant="caption" color="success.dark" sx={{ display: "block", mt: 0.25, fontWeight: 600, fontSize: "0.65rem" }}>
+														{discount.promotionalMessage}
+													</Typography>
+													{discount.durationInMonths && (
+														<Typography variant="caption" color="success.dark" sx={{ display: "block", fontSize: "0.65rem" }}>
+															Válido por {discount.durationInMonths} meses
+														</Typography>
+													)}
+												</Box>
+											</>
+										) : (
+											<>
+												<Box sx={{ display: "flex", alignItems: "baseline" }}>
+													<Typography variant="h3" sx={{ fontWeight: 700 }}>
+														${displayPrice}
+													</Typography>
+													<Typography variant="body2" color="textSecondary" sx={{ ml: 0.5 }}>
+														{getBillingPeriodText(pricing.billingPeriod)}
+													</Typography>
+												</Box>
+											</>
+										)}
+										<Button
+											color={getButtonColor(plan.planId, false)}
+											variant="contained"
+											fullWidth
+											onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
+											disabled={loadingPlanId !== null}
+											endIcon={loadingPlanId === plan.planId ? <CircularProgress size={14} color="inherit" /> : <ArrowRight size={14} />}
+											size="small"
+											sx={{
+												py: 0.75,
+												fontWeight: 600,
+											}}
+										>
+											{loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme"}
+										</Button>
+									</Stack>
+								</Box>
+
+								{/* Contenido: recursos y features en grid */}
+								<Box sx={{ p: 1.5 }}>
+									{/* Recursos en grid 2x2 */}
+									<Grid container spacing={0.5} sx={{ mb: 1 }}>
+										{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => (
+											<Grid item xs={6} key={`resource-${i}`}>
+												<Box
+													sx={{
+														textAlign: "center",
+														py: 0.5,
+														px: 0.5,
+														bgcolor: theme.palette.background.default,
+														borderRadius: 0.5,
+													}}
+												>
+													<Typography variant="caption" fontWeight="medium">
+														{formatResourceDescription(resource)}
+													</Typography>
+												</Box>
+											</Grid>
+										))}
+									</Grid>
+
+									<Divider sx={{ my: 1 }} />
+
+									{/* Features en grid 2 columnas */}
+									<Grid container spacing={0.5}>
+										{sortedFeatures.map((feature, i) => (
+											<Grid item xs={6} key={`feature-${i}`}>
+												<Box
+													sx={{
+														display: "flex",
+														alignItems: "center",
+														gap: 0.5,
+														py: 0.25,
+														...(feature.enabled ? {} : priceListDisable),
+													}}
+												>
+													{feature.enabled ? (
+														<TickCircle size={12} variant="Bold" color={theme.palette.success.main} />
+													) : (
+														<CloseCircle size={12} variant="Bold" color={theme.palette.text.disabled} />
+													)}
+													<Typography
+														variant="caption"
+														sx={{
+															fontWeight: feature.enabled ? 500 : "normal",
+															lineHeight: 1.2,
+														}}
+													>
+														{feature.description}
+													</Typography>
+												</Box>
+											</Grid>
+										))}
+									</Grid>
+								</Box>
+							</MainCard>
+						</Grid>
+					);
+				})}
+			</Grid>
+		);
+	};
+
+	// Función principal de renderizado de planes
 	const renderPlansList = () => {
 		if (loading) {
 			return (
