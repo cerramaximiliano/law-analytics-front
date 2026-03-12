@@ -870,7 +870,7 @@ const TabSubscription = () => {
 										if (!item.visibility || item.visibility === "all") return true;
 										if (item.visibility === "none") return false;
 										return item.visibility === currentEnv;
-									}).map((item: any) => (
+									}).sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99)).map((item: any) => (
 										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
 											<ListItemText
 												primary={
@@ -988,15 +988,7 @@ const TabSubscription = () => {
 											if (feature.visibility === "none") return false;
 											return feature.visibility === currentEnv;
 										})
-										.sort((a: any, b: any) => {
-											// Primero ordenar por enabled (activos primero)
-											if (a.enabled === b.enabled) {
-												// Si tienen el mismo estado, ordenar alfabéticamente por descripción
-												return (a.displayName || a.description || a.name).localeCompare(b.displayName || b.description || b.name);
-											}
-											// Los true (activos) van primero
-											return a.enabled ? -1 : 1;
-										})
+											.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
 										.map((feature: any) => (
 											<ListItem key={feature.name} sx={{ px: 1, py: 1.25 }}>
 												<ListItemText

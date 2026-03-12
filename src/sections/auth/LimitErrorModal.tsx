@@ -507,11 +507,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 													{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
 													{[...plan.features]
 														.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
-														.sort((a, b) => {
-															// Ordenar: enabled (true) primero, luego disabled (false)
-															if (a.enabled === b.enabled) return 0;
-															return a.enabled ? -1 : 1;
-														})
+														.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
 														.map((feature, i) => (
 															<React.Fragment key={`feature-${i}`}>
 																<ListItem sx={!feature.enabled ? priceListDisable : {}}>

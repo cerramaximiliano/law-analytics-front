@@ -390,14 +390,14 @@ const Plans = () => {
 															// Combinar ambos arreglos
 															const allItems = [...resourceItems, ...featureItems];
 
-															// Ordenar: primero por enabled (true primero), luego alfabéticamente por description
+															// Ordenar: primero resources por order, luego features por order
 															const sortedItems = allItems.sort((a, b) => {
-																// Primero ordenar por enabled (true antes que false)
-																if (a.enabled !== b.enabled) {
-																	return a.enabled ? -1 : 1;
-																}
-																// Luego ordenar alfabéticamente por description
-																return a.description.localeCompare(b.description, "es", { sensitivity: "base" });
+																// Resources siempre antes que features
+																if (a.type !== b.type) return a.type === "resource" ? -1 : 1;
+																// Dentro del mismo tipo, ordenar por order
+																const orderA = (plan.resourceLimits.find(r => r.name === a.name)?.order ?? plan.features.find(f => f.name === a.name)?.order) ?? 99;
+																const orderB = (plan.resourceLimits.find(r => r.name === b.name)?.order ?? plan.features.find(f => f.name === b.name)?.order) ?? 99;
+																return orderA - orderB;
 															});
 
 															return sortedItems.map((item, i) => (
