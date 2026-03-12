@@ -380,20 +380,8 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	};
 
 	// Helper para formatear descripción de recursos
-	const formatResourceDescription = (resource: { name: string; limit: number }) => {
-		switch (resource.name) {
-			case "folders":
-				return `+${resource.limit} Causas`;
-			case "calculators":
-				return `+${resource.limit} Cálculos`;
-			case "contacts":
-				return `+${resource.limit} Contactos`;
-			case "storage":
-				return `${resource.limit} MB de Almacenamiento`;
-			default:
-				const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
-				return `${resource.limit} ${displayName}`;
-		}
+	const formatResourceDescription = (resource: { name: string; limit: number; displayName?: string }) => {
+		return `${resource.limit} ${resource.displayName || resource.name}`;
 	};
 
 	// Renderizado de un solo plan (formato ancho con grid de features)
