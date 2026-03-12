@@ -865,7 +865,12 @@ const TabSubscription = () => {
 							>
 								{subscription?.limitsWithDescriptions ? (
 									// Usar limitsWithDescriptions si está disponible
-									[...subscription.limitsWithDescriptions].map((item: any) => (
+									[...subscription.limitsWithDescriptions].filter((item: any) => {
+										const currentEnv = import.meta.env.PROD ? "production" : "development";
+										if (!item.visibility || item.visibility === "all") return true;
+										if (item.visibility === "none") return false;
+										return item.visibility === currentEnv;
+									}).map((item: any) => (
 										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
 											<ListItemText
 												primary={
@@ -977,6 +982,12 @@ const TabSubscription = () => {
 								{subscription?.featuresWithDescriptions ? (
 									// Usar featuresWithDescriptions si está disponible
 									[...subscription.featuresWithDescriptions] // Crear copia para evitar mutar el estado
+										.filter((feature: any) => {
+											const currentEnv = import.meta.env.PROD ? "production" : "development";
+											if (!feature.visibility || feature.visibility === "all") return true;
+											if (feature.visibility === "none") return false;
+											return feature.visibility === currentEnv;
+										})
 										.sort((a: any, b: any) => {
 											// Primero ordenar por enabled (activos primero)
 											if (a.enabled === b.enabled) {
