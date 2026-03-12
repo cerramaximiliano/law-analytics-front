@@ -363,6 +363,13 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		// Filtrar solo planes activos
 		const activePlans = recommendedPlans.filter((plan) => plan.isActive);
 
+		const currentEnv = import.meta.env.PROD ? "production" : "development";
+		const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+			if (!visibility || visibility === "all") return true;
+			if (visibility === "none") return false;
+			return visibility === currentEnv;
+		};
+
 		// Si no hay planes activos disponibles
 		if (activePlans.length === 0) {
 			return <Alert severity="info">No hay planes disponibles para actualizar en este momento.</Alert>;
@@ -486,7 +493,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 													component="ul"
 												>
 													{/* Primero mostrar los recursos del plan */}
-													{plan.resourceLimits.map((resource, i) => {
+													{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => {
 														// Formatear la descripción del recurso de forma legible
 														let formattedDescription;
 														switch (resource.name) {
@@ -519,6 +526,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 													{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
 													{[...plan.features]
+														.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
 														.sort((a, b) => {
 															// Ordenar: enabled (true) primero, luego disabled (false)
 															if (a.enabled === b.enabled) return 0;
