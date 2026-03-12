@@ -1041,16 +1041,13 @@ const TabSubscription = () => {
 								}}
 							>
 								{subscription?.limitsWithDescriptions ? (
-									// Usar limitsWithDescriptions si está disponible (filtrar por visibility)
-									(() => {
-										const currentEnv = import.meta.env.PROD ? 'production' : 'development';
-										const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-											if (!visibility || visibility === 'all') return true;
-											if (visibility === 'none') return false;
-											return visibility === currentEnv;
-										};
-										return [...subscription.limitsWithDescriptions].filter((item: any) => isVisibleInCurrentEnv(item.visibility));
-									})().map((item: any) => (
+									// Usar limitsWithDescriptions si está disponible
+									[...subscription.limitsWithDescriptions].filter((item: any) => {
+										const currentEnv = import.meta.env.PROD ? "production" : "development";
+										if (!item.visibility || item.visibility === "all") return true;
+										if (item.visibility === "none") return false;
+										return item.visibility === currentEnv;
+									}).map((item: any) => (
 										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
 											<ListItemText
 												primary={
@@ -1161,26 +1158,23 @@ const TabSubscription = () => {
 							>
 								{subscription?.featuresWithDescriptions ? (
 									// Usar featuresWithDescriptions si está disponible
-									(() => {
-										// Determinar el ambiente actual y filtrar según visibility
-										const currentEnv = import.meta.env.PROD ? 'production' : 'development';
-										const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-											if (!visibility || visibility === 'all') return true;
-											if (visibility === 'none') return false;
-											return visibility === currentEnv;
-										};
-										return [...subscription.featuresWithDescriptions]
-											.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
-											.sort((a: any, b: any) => {
-												// Primero ordenar por enabled (activos primero)
-												if (a.enabled === b.enabled) {
-													// Si tienen el mismo estado, ordenar alfabéticamente por descripción
-													return (a.description || a.name).localeCompare(b.description || b.name);
-												}
-												// Los true (activos) van primero
-												return a.enabled ? -1 : 1;
-											});
-									})().map((feature: any) => (
+									[...subscription.featuresWithDescriptions] // Crear copia para evitar mutar el estado
+										.filter((feature: any) => {
+											const currentEnv = import.meta.env.PROD ? "production" : "development";
+											if (!feature.visibility || feature.visibility === "all") return true;
+											if (feature.visibility === "none") return false;
+											return feature.visibility === currentEnv;
+										})
+										.sort((a: any, b: any) => {
+											// Primero ordenar por enabled (activos primero)
+											if (a.enabled === b.enabled) {
+												// Si tienen el mismo estado, ordenar alfabéticamente por descripción
+												return (a.description || a.name).localeCompare(b.description || b.name);
+											}
+											// Los true (activos) van primero
+											return a.enabled ? -1 : 1;
+										})
+										.map((feature: any) => (
 											<ListItem key={feature.name} sx={{ px: 1, py: 1.25 }}>
 												<ListItemText
 													primary={

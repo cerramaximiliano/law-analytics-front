@@ -103,12 +103,16 @@ export interface ResourceLimit {
 	name: string;
 	limit: number;
 	description: string;
+	displayName: string;
+	visibility?: string;
 }
 
 export interface PlanFeature {
 	name: string;
 	enabled: boolean;
 	description: string;
+	displayName?: string;
+	visibility?: string;
 }
 
 export interface ActiveDiscount {
