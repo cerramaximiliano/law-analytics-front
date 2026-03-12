@@ -775,6 +775,14 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		const recommendedPlans = getRecommendedPlans();
 		const activePlans = recommendedPlans.filter((plan) => plan.isActive);
 
+		const currentEnv = import.meta.env.PROD ? "production" : "development";
+		const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+			if (!visibility || visibility === "all") return true;
+			if (visibility === "none") return false;
+			return visibility === currentEnv;
+		};
+
+		// Si no hay planes activos disponibles
 		if (activePlans.length === 0) {
 			return <Alert severity="info">No hay planes disponibles para actualizar en este momento.</Alert>;
 		}

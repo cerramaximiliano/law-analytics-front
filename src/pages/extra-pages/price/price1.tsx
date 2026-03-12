@@ -577,26 +577,13 @@ const Pricing = () => {
 		// Para límites de recursos
 		const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === featureType);
 		if (resource) {
-			switch (featureType) {
-				case "folders":
-					return `+${resource.limit} Causas`;
-				case "calculators":
-					return `+${resource.limit} Cálculos`;
-				case "contacts":
-					return `+${resource.limit} Contactos`;
-				case "storage":
-					return `${resource.limit} MB de Almacenamiento`;
-				default:
-					// Capitalizar el nombre del recurso
-					const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
-					return `${resource.limit} ${displayName}`;
-			}
+			return `${resource.limit} ${resource.displayName}`;
 		}
 
 		// Para características booleanas
 		const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
 		if (feature) {
-			return feature.enabled ? feature.description : null;
+			return feature.enabled ? (feature.displayName || feature.description) : null;
 		}
 
 		return null;
@@ -604,31 +591,19 @@ const Pricing = () => {
 
 	// Función para obtener el texto predeterminado para características deshabilitadas
 	const getDefaultFeatureText = (featureType: string): string => {
-		// Primero buscar si es un recurso en algún plan para obtener su descripción
+		// Primero buscar si es un recurso en algún plan para obtener su displayName
 		for (const plan of plans) {
 			const resource = plan.resourceLimits.find((r: ResourceLimit) => r.name === featureType);
 			if (resource) {
-				switch (featureType) {
-					case "folders":
-						return "+0 Causas";
-					case "calculators":
-						return "+0 Cálculos";
-					case "contacts":
-						return "+0 Contactos";
-					case "storage":
-						return "0 MB de Almacenamiento";
-					default:
-						const displayName = resource.name.charAt(0).toUpperCase() + resource.name.slice(1);
-						return `0 ${displayName}`;
-				}
+				return `0 ${resource.displayName}`;
 			}
 		}
 
-		// Buscar si es una característica en algún plan para obtener su descripción
+		// Buscar si es una característica en algún plan para obtener su displayName o descripción
 		for (const plan of plans) {
 			const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
 			if (feature) {
-				return feature.description;
+				return feature.displayName || feature.description;
 			}
 		}
 
@@ -1107,97 +1082,71 @@ const Pricing = () => {
 										</Box>
 									</Grid>
 									<Grid item xs={12}>
-										{(() => {
-										// Determinar el ambiente actual
-										const currentEnv = import.meta.env.PROD ? "production" : "development";
+										<List
+											sx={{
+												m: 0,
+												p: 0,
+												"&> li": {
+													px: 0,
+													py: 0.625,
+												},
+											}}
+											component="ul"
+										>
+											{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
+											{(() => {
+												const currentEnv = import.meta.env.PROD ? "production" : "development";
+												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+													if (!visibility || visibility === "all") return true;
+													if (visibility === "none") return false;
+													return visibility === currentEnv;
+												};
 
-										// Función para verificar si un elemento es visible en el ambiente actual
-										const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-											if (!visibility || visibility === "all") return true;
-											if (visibility === "none") return false;
-											return visibility === currentEnv;
-										};
+												// Mapear recursos a objetos con información común (filtrando por visibility)
+												const resourceItems = plan.resourceLimits
+													.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
+													.map((resource) => ({
+														type: "resource" as const,
+														enabled: true,
+														description: planFeatureValue(plan, resource.name) || "",
+														name: resource.name,
+													}));
 
-										// Mapear recursos (filtrando según visibility)
-										const resourceItems = plan.resourceLimits
-											.filter((resource: any) => isVisibleInCurrentEnv(resource.visibility))
-											.map((resource) => ({
-												description: planFeatureValue(plan, resource.name) || "",
-												name: resource.name,
-											}));
+												// Mapear características a objetos con información común (filtrando por visibility)
+												const featureItems = plan.features
+													.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
+													.map((feature) => ({
+														type: "feature" as const,
+														enabled: feature.enabled,
+														description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
+														name: feature.name,
+													}));
 
-										// Mapear características (filtrando según visibility)
-										const featureItems = plan.features
-											.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
-											.map((feature) => ({
-												enabled: feature.enabled,
-												description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
-												name: feature.name,
-											}));
+												// Combinar ambos arreglos
+												// Combinar ambos arreglos
+												const allItems = [...resourceItems, ...featureItems];
 
-										// Ordenar features: habilitadas primero, luego alfabéticamente
-										const sortedFeatures = featureItems.sort((a, b) => {
-											if (a.enabled !== b.enabled) {
-												return a.enabled ? -1 : 1;
-											}
-											return a.description.localeCompare(b.description, "es", { sensitivity: "base" });
-										});
-
-										return (
-											<Box sx={{ px: 1 }}>
-												{/* Recursos en grid */}
-												<Grid container spacing={1} sx={{ mb: 2 }}>
-													{resourceItems.map((item, i) => (
-														<Grid item xs={6} sm={3} key={`resource-${i}`}>
-															<Box
-																sx={{
-																	textAlign: "center",
-																	p: 1,
-																	bgcolor: theme.palette.background.default,
-																	borderRadius: 1,
-																}}
-															>
-																<Typography variant="body2" fontWeight="medium">
-																	{item.description}
-																</Typography>
-															</Box>
-														</Grid>
-													))}
-												</Grid>
-
-												<Divider sx={{ my: 1.5 }} />
-
-												{/* Features en grid de 2 columnas con iconos */}
-												<Grid container spacing={1}>
-													{sortedFeatures.map((item, i) => (
-														<Grid item xs={12} sm={6} key={`feature-${i}`}>
-															<Box
-																sx={{
-																	display: "flex",
-																	alignItems: "center",
-																	gap: 1,
-																	py: 0.5,
-																	...(item.enabled ? {} : priceListDisable),
-																}}
-															>
-																{item.enabled ? (
-																	<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
-																) : (
-																	<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
-																)}
-																<Typography
-																	variant="body2"
-																	sx={{ fontWeight: item.enabled ? "medium" : "normal" }}
-																>
-																	{item.description}
-																</Typography>
-															</Box>
-														</Grid>
-													))}
-												</Grid>
-											</Box>
-										);
-									})()}
+												// Ordenar: primero resources por order, luego features por order
+												const sortedItems = allItems.sort((a, b) => {
+													// Resources siempre antes que features
+													if (a.type !== b.type) return a.type === "resource" ? -1 : 1;
+													// Dentro del mismo tipo, ordenar por order
+													const orderA = (plan.resourceLimits.find((r: any) => r.name === a.name)?.order ?? plan.features.find((f: any) => f.name === a.name)?.order) ?? 99;
+													const orderB = (plan.resourceLimits.find((r: any) => r.name === b.name)?.order ?? plan.features.find((f: any) => f.name === b.name)?.order) ?? 99;
+													return orderA - orderB;
+												});
+												return sortedItems.map((item, i) => (
+													<Fragment key={`${item.type}-${i}`}>
+														<ListItem sx={!item.enabled ? priceListDisable : {}}>
+															<ListItemText
+																primary={item.description}
+																sx={{ textAlign: "center", fontWeight: item.enabled ? "medium" : "normal" }}
+															/>
+														</ListItem>
+													</Fragment>
+												));
+											})()}
+										</List>
 									</Grid>
 								</Grid>
 
