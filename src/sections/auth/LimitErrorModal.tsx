@@ -403,8 +403,14 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		const hasDiscount = plan.activeDiscounts && plan.activeDiscounts.length > 0;
 		const discount = hasDiscount ? plan.activeDiscounts![0] : null;
 
-		// Ordenar features: habilitadas primero
-		const sortedFeatures = [...plan.features].sort((a, b) => {
+		// Ordenar features: habilitadas primero (filtrando por visibility)
+		const currentEnv = import.meta.env.PROD ? "production" : "development";
+		const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+			if (!visibility || visibility === "all") return true;
+			if (visibility === "none") return false;
+			return visibility === currentEnv;
+		};
+		const sortedFeatures = [...plan.features].filter((f) => isVisibleInCurrentEnv(f.visibility)).sort((a, b) => {
 			if (a.enabled === b.enabled) return 0;
 			return a.enabled ? -1 : 1;
 		});
@@ -513,7 +519,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				<Box sx={{ p: 2 }}>
 					{/* Recursos en una fila */}
 					<Grid container spacing={1} sx={{ mb: 2 }}>
-						{plan.resourceLimits.map((resource, i) => (
+						{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => (
 							<Grid item xs={6} sm={3} key={`resource-${i}`}>
 								<Box
 									sx={{
@@ -573,8 +579,14 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					const hasDiscount = plan.activeDiscounts && plan.activeDiscounts.length > 0;
 					const discount = hasDiscount ? plan.activeDiscounts![0] : null;
 
-					// Ordenar features: habilitadas primero
-					const sortedFeatures = [...plan.features].sort((a, b) => {
+					// Ordenar features: habilitadas primero (filtrando por visibility)
+					const currentEnv = import.meta.env.PROD ? "production" : "development";
+					const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+						if (!visibility || visibility === "all") return true;
+						if (visibility === "none") return false;
+						return visibility === currentEnv;
+					};
+					const sortedFeatures = [...plan.features].filter((f) => isVisibleInCurrentEnv(f.visibility)).sort((a, b) => {
 						if (a.enabled === b.enabled) return 0;
 						return a.enabled ? -1 : 1;
 					});
@@ -681,7 +693,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 								<Box sx={{ p: 1.5 }}>
 									{/* Recursos en grid 2x2 */}
 									<Grid container spacing={0.5} sx={{ mb: 1 }}>
-										{plan.resourceLimits.map((resource, i) => (
+										{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => (
 											<Grid item xs={6} key={`resource-${i}`}>
 												<Box
 													sx={{
