@@ -1082,18 +1082,8 @@ const Pricing = () => {
 										</Box>
 									</Grid>
 									<Grid item xs={12}>
-										<List
-											sx={{
-												m: 0,
-												p: 0,
-												"&> li": {
-													px: 0,
-													py: 0.625,
-												},
-											}}
-											component="ul"
-										>
-											{/* Crear un arreglo combinado de recursos y características, ordenado correctamente */}
+										<Box sx={{ p: 1 }}>
+											{/* Resources: Grid de cajas */}
 											{(() => {
 												const currentEnv = import.meta.env.PROD ? "production" : "development";
 												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
@@ -1101,52 +1091,55 @@ const Pricing = () => {
 													if (visibility === "none") return false;
 													return visibility === currentEnv;
 												};
-
-												// Mapear recursos a objetos con información común (filtrando por visibility)
-												const resourceItems = plan.resourceLimits
-													.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
-													.map((resource) => ({
-														type: "resource" as const,
-														enabled: true,
-														description: planFeatureValue(plan, resource.name) || "",
-														name: resource.name,
-													}));
-
-												// Mapear características a objetos con información común (filtrando por visibility)
-												const featureItems = plan.features
-													.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
-													.map((feature) => ({
-														type: "feature" as const,
-														enabled: feature.enabled,
-														description: feature.enabled ? feature.description : getDefaultFeatureText(feature.name),
-														name: feature.name,
-													}));
-
-												// Combinar ambos arreglos
-												// Combinar ambos arreglos
-												const allItems = [...resourceItems, ...featureItems];
-
-												// Ordenar: primero resources por order, luego features por order
-												const sortedItems = allItems.sort((a, b) => {
-													// Resources siempre antes que features
-													if (a.type !== b.type) return a.type === "resource" ? -1 : 1;
-													// Dentro del mismo tipo, ordenar por order
-													const orderA = (plan.resourceLimits.find((r: any) => r.name === a.name)?.order ?? plan.features.find((f: any) => f.name === a.name)?.order) ?? 99;
-													const orderB = (plan.resourceLimits.find((r: any) => r.name === b.name)?.order ?? plan.features.find((f: any) => f.name === b.name)?.order) ?? 99;
-													return orderA - orderB;
-												});
-												return sortedItems.map((item, i) => (
-													<Fragment key={`${item.type}-${i}`}>
-														<ListItem sx={!item.enabled ? priceListDisable : {}}>
-															<ListItemText
-																primary={item.description}
-																sx={{ textAlign: "center", fontWeight: item.enabled ? "medium" : "normal" }}
-															/>
-														</ListItem>
-													</Fragment>
-												));
+												const visibleResources = plan.resourceLimits
+													.filter((r) => isVisibleInCurrentEnv(r.visibility))
+													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+												return (
+													<Grid container spacing={1} sx={{ mb: 2 }}>
+														{visibleResources.map((resource, i) => (
+															<Grid item xs={6} key={`resource-${i}`}>
+																<Box sx={{ textAlign: "center", p: 1, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
+																	<Typography variant="body2" fontWeight="medium" sx={{ wordBreak: "break-word" }}>
+																		{planFeatureValue(plan, resource.name)}
+																	</Typography>
+																</Box>
+															</Grid>
+														))}
+													</Grid>
+												);
 											})()}
-										</List>
+											<Divider sx={{ my: 1.5 }} />
+											{/* Features: grid de 2 columnas con iconos */}
+											{(() => {
+												const currentEnv = import.meta.env.PROD ? "production" : "development";
+												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+													if (!visibility || visibility === "all") return true;
+													if (visibility === "none") return false;
+													return visibility === currentEnv;
+												};
+												const visibleFeatures = plan.features
+													.filter((f) => isVisibleInCurrentEnv(f.visibility))
+													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+												return (
+													<Grid container spacing={1}>
+														{visibleFeatures.map((feature, i) => (
+															<Grid item xs={12} sm={6} key={`feature-${i}`}>
+																<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																	{feature.enabled ? (
+																		<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
+																	) : (
+																		<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
+																	)}
+																	<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																		{feature.displayName || feature.description}
+																	</Typography>
+																</Box>
+															</Grid>
+														))}
+													</Grid>
+												);
+											})()}
+										</Box>
 									</Grid>
 								</Grid>
 
