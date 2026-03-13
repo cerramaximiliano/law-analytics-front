@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import * as Yup from "yup";
 import { useFormik, Form, FormikProvider } from "formik";
-import { dispatch } from "store";
+import { dispatch, useSelector } from "store";
 import { createPostalTracking, updatePostalTracking } from "store/reducers/postalTracking";
 import { Add } from "iconsax-react";
 import { PostalTrackingType } from "types/postal-tracking";
@@ -39,6 +39,7 @@ const CreateSchema = Yup.object().shape({
     .matches(/^\d{9}$/, "Debe tener exactamente 9 dígitos numéricos")
     .required("El número de envío es requerido"),
   label: Yup.string(),
+  folderId: Yup.string(),
 });
 
 const EditSchema = Yup.object().shape({
@@ -48,6 +49,7 @@ const EditSchema = Yup.object().shape({
 
 const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
   const isCreating = !tracking;
+  const { folders } = useSelector((state) => state.folder);
 
   const formik = useFormik({
     initialValues: {
@@ -55,6 +57,7 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
       numberId: tracking?.numberId || "",
       label: tracking?.label || "",
       tags: tracking?.tags || [],
+      folderId: tracking?.folderId || "",
     },
     validationSchema: isCreating ? CreateSchema : EditSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
@@ -67,6 +70,7 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
               numberId: values.numberId,
               label: values.label || undefined,
               tags: values.tags.length > 0 ? values.tags : undefined,
+              folderId: values.folderId || undefined,
             })
           );
         } else {
@@ -134,6 +138,30 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
                     error={Boolean(touched.numberId && errors.numberId)}
                     helperText={touched.numberId && errors.numberId}
                   />
+                </Stack>
+              </Grid>
+              <Grid item xs={12}>
+                <Stack spacing={1}>
+                  <InputLabel htmlFor="folderId">Causa vinculada (opcional)</InputLabel>
+                  <FormControl fullWidth>
+                    <Select
+                      id="folderId"
+                      {...getFieldProps("folderId")}
+                      displayEmpty
+                      renderValue={(selected) => {
+                        if (!selected) return <em style={{ color: "#919EAB" }}>Sin causa vinculada</em>;
+                        const f = folders?.find((f: any) => f._id === selected);
+                        return f ? f.folderName : "";
+                      }}
+                    >
+                      <MenuItem value=""><em>Sin causa vinculada</em></MenuItem>
+                      {folders?.map((folder: any) => (
+                        <MenuItem key={folder._id} value={folder._id}>
+                          {folder.folderName}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Stack>
               </Grid>
             </>

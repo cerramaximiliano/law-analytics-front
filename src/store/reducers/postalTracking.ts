@@ -121,6 +121,19 @@ export const updatePostalTracking = (id: string, data: UpdatePostalTrackingData)
   }
 };
 
+export const linkFolderToTracking = (id: string, folderId: string | null) => async (dispatch: Dispatch) => {
+  try {
+    dispatch({ type: SET_LOADING });
+    const response = await axios.patch(`${BASE_URL}/${id}`, { folderId });
+    dispatch({ type: UPDATE_TRACKING, payload: response.data.data });
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al vincular la carpeta" : "Error al vincular la carpeta";
+    dispatch({ type: SET_ERROR, payload: msg });
+    return { success: false, error: msg };
+  }
+};
+
 export const deletePostalTracking = (id: string) => async (dispatch: Dispatch) => {
   try {
     dispatch({ type: SET_LOADING });

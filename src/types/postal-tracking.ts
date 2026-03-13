@@ -69,4 +69,5 @@ export interface CreatePostalTrackingData {
 export interface UpdatePostalTrackingData {
   label?: string | null;
   tags?: string[];
+  folderId?: string | null;
 }

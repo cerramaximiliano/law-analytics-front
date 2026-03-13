@@ -19,7 +19,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { Add, Edit2, Eye, SearchNormal1, Trash } from "iconsax-react";
+import { Add, Box as BoxIcon, Edit2, Eye, Link1, SearchNormal1, Trash } from "iconsax-react";
 
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
@@ -35,6 +35,7 @@ import { PostalTrackingType } from "types/postal-tracking";
 import AlertPostalTrackingDelete from "sections/apps/postal-tracking/AlertPostalTrackingDelete";
 import PostalTrackingModal from "sections/apps/postal-tracking/PostalTrackingModal";
 import PostalTrackingDetail from "sections/apps/postal-tracking/PostalTrackingDetail";
+import LinkPostalTrackingToFolder from "sections/apps/postal-tracking/LinkPostalTrackingToFolder";
 
 const CORREO_LOGO = "https://res.cloudinary.com/dqyoeolib/image/upload/v1773403406/logo-correo_lxrcmr.png";
 
@@ -65,16 +66,40 @@ function formatDate(date?: string | null) {
   }).format(new Date(date));
 }
 
-// ==============================|| SEGUIMIENTO DE ENVÍOS ||============================== //
+// ── Empty state ────────────────────────────────────────────────────────────────
+
+const EmptyState = ({ onAdd }: { onAdd: () => void }) => {
+  const theme = useTheme();
+  return (
+    <Stack alignItems="center" justifyContent="center" spacing={2.5} sx={{ py: 8 }}>
+      <Box sx={{ p: 2.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
+        <BoxIcon size={40} variant="Bulk" style={{ color: theme.palette.primary.main }} />
+      </Box>
+      <Stack alignItems="center" spacing={1}>
+        <Typography variant="h5" color="textSecondary">
+          Todavía no tenés seguimientos
+        </Typography>
+        <Typography variant="body2" color="textSecondary" align="center" sx={{ maxWidth: 380 }}>
+          Agregá el código y número de tu envío postal para hacer el seguimiento automático.
+          Te avisaremos cada vez que cambie el estado.
+        </Typography>
+      </Stack>
+      <Button variant="contained" startIcon={<Add />} onClick={onAdd}>
+        Crear primer seguimiento
+      </Button>
+    </Stack>
+  );
+};
+
+// ── Página principal ───────────────────────────────────────────────────────────
 
 const PostalTrackingPage = () => {
   const theme = useTheme();
-  const { trackings, isLoader, total, totalPages } = useSelector(
-    (state: any) => state.postalTrackingReducer
-  );
+  const { trackings, isLoader, total } = useSelector((state: any) => state.postalTrackingReducer);
+  const { tracking: trackingDetail } = useSelector((state: any) => state.postalTrackingReducer);
 
-  // Paginación y filtros (estado local)
-  const [page, setPage] = useState(0); // MUI TablePagination es 0-based
+  // Paginación y filtros
+  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -85,8 +110,7 @@ const PostalTrackingPage = () => {
   const [trackingToDelete, setTrackingToDelete] = useState<PostalTrackingType | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-
-  const { tracking: trackingDetail } = useSelector((state: any) => state.postalTrackingReducer);
+  const [linkTracking, setLinkTracking] = useState<PostalTrackingType | null>(null);
 
   const loadData = useCallback(() => {
     dispatch(
@@ -102,7 +126,7 @@ const PostalTrackingPage = () => {
     loadData();
   }, [loadData]);
 
-  // Búsqueda con debounce básico
+  // Búsqueda con debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
@@ -159,172 +183,209 @@ const PostalTrackingPage = () => {
     setTrackingToDelete(null);
   };
 
+  const handleCloseLinkModal = () => {
+    setLinkTracking(null);
+    loadData();
+  };
+
   return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={2}>
           <Typography variant="h5">Seguimiento de envíos</Typography>
-          <Box sx={{ bgcolor: "#FFCE00", borderRadius: 1, px: 1, py: 0.5, display: "flex", alignItems: "center" }}>
-            <Box
-              component="img"
-              src={CORREO_LOGO}
-              alt="Correo Argentino"
-              sx={{ height: 24, width: "auto" }}
-            />
+          <Box
+            sx={{
+              bgcolor: "#FFCE00",
+              borderRadius: 1,
+              px: 1,
+              py: 0.5,
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 24, width: "auto" }} />
           </Box>
         </Stack>
       }
       secondary={
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setOpenCreate(true)}
-          size="small"
-        >
+        <Button variant="contained" startIcon={<Add />} onClick={() => setOpenCreate(true)} size="small">
           Nuevo seguimiento
         </Button>
       }
     >
-      {/* Barra de búsqueda */}
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          size="small"
-          placeholder="Buscar por número, etiqueta o estado..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          sx={{ width: 340 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchNormal1 size={16} color={theme.palette.text.secondary} />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Stack>
+      {/* Barra de búsqueda — solo si hay datos o se está buscando */}
+      {(trackings.length > 0 || search) && (
+        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+          <TextField
+            size="small"
+            placeholder="Buscar por número, etiqueta o estado..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{ width: 340 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchNormal1 size={16} color={theme.palette.text.secondary} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Stack>
+      )}
 
       {/* Tabla */}
-      <TableContainer>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ width: 60 }}>Proveedor</TableCell>
-              <TableCell>Código / Número</TableCell>
-              <TableCell>Etiqueta</TableCell>
-              <TableCell>Estado proceso</TableCell>
-              <TableCell>Estado envío</TableCell>
-              <TableCell>Último chequeo</TableCell>
-              <TableCell align="center">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoader ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                  <CircularProgress size={32} />
-                </TableCell>
-              </TableRow>
-            ) : trackings.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                  <Typography color="textSecondary">
-                    {search ? "Sin resultados para la búsqueda" : "No hay seguimientos creados todavía"}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              trackings.map((row: PostalTrackingType) => (
-                <TableRow key={row._id} hover>
-                  <TableCell>
-                    <Box
-                      sx={{
-                        bgcolor: "#FFCE00",
-                        borderRadius: 1,
-                        px: 0.75,
-                        py: 0.5,
-                        display: "inline-flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={CORREO_LOGO}
-                        alt="Correo Argentino"
-                        sx={{ height: 20, width: "auto" }}
-                      />
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontFamily="monospace" fontWeight={600}>
-                      {row.codeId} {row.numberId}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color={row.label ? "textPrimary" : "textSecondary"}>
-                      {row.label || "—"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
-                      color={STATUS_COLORS[row.processingStatus] ?? "default"}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography
-                      variant="body2"
-                      color={row.trackingStatus ? "textPrimary" : "textSecondary"}
-                      sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                    >
-                      {row.trackingStatus || "—"}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="textSecondary">
-                      {formatDate(row.lastCheckedAt)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                      <Tooltip title="Ver detalle">
-                        <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="primary">
-                          <Eye size={16} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => handleOpenEdit(row)} color="info">
-                          <Edit2 size={16} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar">
-                        <IconButton size="small" onClick={() => setTrackingToDelete(row)} color="error">
-                          <Trash size={16} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
+      {isLoader ? (
+        <Stack alignItems="center" sx={{ py: 6 }}>
+          <CircularProgress />
+        </Stack>
+      ) : trackings.length === 0 && !search ? (
+        <EmptyState onAdd={() => setOpenCreate(true)} />
+      ) : (
+        <>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ width: 60 }}>Proveedor</TableCell>
+                  <TableCell>Código / Número</TableCell>
+                  <TableCell>Etiqueta</TableCell>
+                  <TableCell>Estado proceso</TableCell>
+                  <TableCell>Estado envío</TableCell>
+                  <TableCell>Último chequeo</TableCell>
+                  <TableCell align="center">Acciones</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              </TableHead>
+              <TableBody>
+                {trackings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography color="textSecondary">Sin resultados para la búsqueda</Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  trackings.map((row: PostalTrackingType) => (
+                    <TableRow key={row._id} hover>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            bgcolor: "#FFCE00",
+                            borderRadius: 1,
+                            px: 0.75,
+                            py: 0.5,
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Box
+                            component="img"
+                            src={CORREO_LOGO}
+                            alt="Correo Argentino"
+                            sx={{ height: 20, width: "auto" }}
+                          />
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontFamily="monospace" fontWeight={600}>
+                          {row.codeId} {row.numberId}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography
+                          variant="body2"
+                          color={row.label ? "textPrimary" : "textSecondary"}
+                        >
+                          {row.label || "—"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          size="small"
+                          label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
+                          color={STATUS_COLORS[row.processingStatus] ?? "default"}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography
+                          variant="body2"
+                          color={row.trackingStatus ? "textPrimary" : "textSecondary"}
+                          sx={{
+                            maxWidth: 200,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.trackingStatus || "—"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="textSecondary">
+                          {formatDate(row.lastCheckedAt)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Stack direction="row" spacing={0.5} justifyContent="center">
+                          <Tooltip title="Ver detalle">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewDetail(row._id)}
+                              color="primary"
+                            >
+                              <Eye size={16} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Editar">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenEdit(row)}
+                              color="info"
+                            >
+                              <Edit2 size={16} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}>
+                            <IconButton
+                              size="small"
+                              onClick={() => setLinkTracking(row)}
+                              color={row.folderId ? "success" : "default"}
+                            >
+                              <Link1 size={16} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Eliminar">
+                            <IconButton
+                              size="small"
+                              onClick={() => setTrackingToDelete(row)}
+                              color="error"
+                            >
+                              <Trash size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-      <TablePagination
-        component="div"
-        count={total}
-        page={page}
-        onPageChange={(_, newPage) => setPage(newPage)}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[10, 20, 50]}
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
-      />
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[10, 20, 50]}
+            labelRowsPerPage="Filas por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+          />
+        </>
+      )}
 
       {/* Modales */}
       <PostalTrackingModal
@@ -340,6 +401,15 @@ const PostalTrackingPage = () => {
         loading={detailLoading}
         handleClose={handleCloseDetail}
       />
+
+      {linkTracking && (
+        <LinkPostalTrackingToFolder
+          open={Boolean(linkTracking)}
+          onClose={handleCloseLinkModal}
+          trackingId={linkTracking._id}
+          currentFolderId={linkTracking.folderId}
+        />
+      )}
 
       {trackingToDelete && (
         <AlertPostalTrackingDelete
