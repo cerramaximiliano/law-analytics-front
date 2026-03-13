@@ -32,6 +32,7 @@ import activities from "./activities";
 import notificationMonitoring from "./notificationMonitoring";
 import googleCalendar from "./googleCalendar";
 import teams from "./teams";
+import postalTrackingReducer from "./postalTracking";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -71,6 +72,7 @@ const reducers = combineReducers({
 	notificationMonitoring,
 	googleCalendar,
 	teams,
+	postalTrackingReducer,
 });
 
 export default reducers;

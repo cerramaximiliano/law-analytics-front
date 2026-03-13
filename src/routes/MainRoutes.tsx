@@ -84,6 +84,9 @@ const AdminJudicialMovementsPage = Loadable(lazyRetry(() => import("pages/admin/
 // render - tasks
 const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
 
+// render - herramientas
+const PostalTrackingPage = Loadable(lazyRetry(() => import("pages/herramientas/postal-tracking"), "PostalTrackingPage"));
+
 // ==============================|| MAIN ROUTES ||============================== //
 
 const MainRoutes = {
@@ -311,6 +314,15 @@ const MainRoutes = {
 				{
 					path: "tareas",
 					element: <TasksPage />,
+				},
+				{
+					path: "herramientas",
+					children: [
+						{
+							path: "seguimiento-postal",
+							element: <PostalTrackingPage />,
+						},
+					],
 				},
 				{
 					path: "ayuda",
