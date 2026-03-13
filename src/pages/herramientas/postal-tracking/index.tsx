@@ -302,6 +302,7 @@ const PostalTrackingPage = () => {
                           size="small"
                           label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
                           color={STATUS_COLORS[row.processingStatus] ?? "default"}
+                          sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
                         />
                       </TableCell>
                       <TableCell>
