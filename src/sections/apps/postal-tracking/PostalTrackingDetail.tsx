@@ -101,6 +101,7 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
               size="small"
               label={STATUS_LABELS[tracking.processingStatus] ?? tracking.processingStatus}
               color={STATUS_COLORS[tracking.processingStatus] ?? "default"}
+              sx={tracking.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
             />
             {tracking.isFinalStatus && (
               <Chip size="small" label="Estado final" color="success" variant="outlined" />
