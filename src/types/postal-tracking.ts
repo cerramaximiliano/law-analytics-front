@@ -63,6 +63,7 @@ export interface CreatePostalTrackingData {
   movementId?: string;
   notificationId?: string;
   documentId?: string;
+  screenshotEnabled?: boolean;
 }
 
 export interface UpdatePostalTrackingData {

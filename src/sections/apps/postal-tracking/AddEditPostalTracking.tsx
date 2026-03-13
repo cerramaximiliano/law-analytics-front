@@ -4,14 +4,19 @@ import {
   Button,
   Chip,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   Grid,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
+import { InfoCircle } from "iconsax-react";
 import * as Yup from "yup";
 import { useFormik, Form, FormikProvider } from "formik";
 import { useEffect } from "react";
@@ -67,6 +72,7 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
       label: tracking?.label || "",
       tags: tracking?.tags || [],
       folderId: tracking?.folderId || "",
+      screenshotEnabled: false,
     },
     validationSchema: isCreating ? CreateSchema : EditSchema,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
@@ -80,6 +86,7 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
               label: values.label || undefined,
               tags: values.tags.length > 0 ? values.tags : undefined,
               folderId: values.folderId || undefined,
+              screenshotEnabled: values.screenshotEnabled,
             })
           );
         } else {
@@ -171,6 +178,35 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
                       ))}
                     </Select>
                   </FormControl>
+                </Stack>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between"
+                  sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 2, py: 1.5 }}
+                >
+                  <Stack spacing={0.25}>
+                    <Stack direction="row" alignItems="center" spacing={0.75}>
+                      <Typography variant="body2" fontWeight={500}>Captura de pantalla</Typography>
+                      <Tooltip title="Si está activado, el sistema tomará una captura de pantalla del estado del envío en el sitio del Correo Argentino.">
+                        <InfoCircle size={15} style={{ cursor: "help", opacity: 0.5 }} />
+                      </Tooltip>
+                    </Stack>
+                    <Typography variant="caption" color="textSecondary">
+                      Guardar imagen del estado del envío
+                    </Typography>
+                  </Stack>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={values.screenshotEnabled}
+                        onChange={(e) => setFieldValue("screenshotEnabled", e.target.checked)}
+                        size="small"
+                      />
+                    }
+                    label=""
+                    sx={{ m: 0 }}
+                  />
                 </Stack>
               </Grid>
             </>
