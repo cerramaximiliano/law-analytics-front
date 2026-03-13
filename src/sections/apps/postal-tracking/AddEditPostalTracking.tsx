@@ -182,7 +182,7 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
               <TextField
                 fullWidth
                 id="label"
-                placeholder="Ej: Cédula expediente 12345/24"
+                placeholder="Telegrama enviado causa 1234/2026"
                 {...getFieldProps("label")}
                 error={Boolean(touched.label && errors.label)}
                 helperText={touched.label && errors.label}
