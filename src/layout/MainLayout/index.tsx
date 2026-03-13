@@ -13,6 +13,7 @@ import Footer from "./Footer";
 import HorizontalBar from "./Drawer/HorizontalBar";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
 import { BreadcrumbProvider } from "contexts/BreadcrumbContext";
+import { TeamProvider } from "contexts/TeamContext";
 
 import { DRAWER_WIDTH } from "config";
 import navigation from "menu-items";
@@ -49,6 +50,7 @@ const MainLayout = () => {
 	}, [downXL]);
 
 	return (
+		<TeamProvider>
 		<Box sx={{ display: "flex", width: "100%" }}>
 			<Header />
 			{!isHorizontal ? <Drawer /> : <HorizontalBar />}
@@ -81,6 +83,7 @@ const MainLayout = () => {
 				</BreadcrumbProvider>
 			</Box>
 		</Box>
+		</TeamProvider>
 	);
 };
 
