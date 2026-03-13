@@ -14,8 +14,10 @@ import {
 } from "@mui/material";
 import * as Yup from "yup";
 import { useFormik, Form, FormikProvider } from "formik";
+import { useEffect } from "react";
 import { dispatch, useSelector } from "store";
 import { createPostalTracking, updatePostalTracking } from "store/reducers/postalTracking";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { Add } from "iconsax-react";
 import { PostalTrackingType } from "types/postal-tracking";
 
@@ -50,6 +52,13 @@ const EditSchema = Yup.object().shape({
 const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
   const isCreating = !tracking;
   const { folders } = useSelector((state) => state.folder);
+  const { user } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (folders.length === 0 && user?._id) {
+      dispatch(getFoldersByUserId(user._id));
+    }
+  }, [folders.length, user?._id]);
 
   const formik = useFormik({
     initialValues: {
@@ -142,19 +151,19 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
               </Grid>
               <Grid item xs={12}>
                 <Stack spacing={1}>
-                  <InputLabel htmlFor="folderId">Causa vinculada (opcional)</InputLabel>
+                  <InputLabel htmlFor="folderId">Carpeta vinculada (opcional)</InputLabel>
                   <FormControl fullWidth>
                     <Select
                       id="folderId"
                       {...getFieldProps("folderId")}
                       displayEmpty
                       renderValue={(selected) => {
-                        if (!selected) return <em style={{ color: "#919EAB" }}>Sin causa vinculada</em>;
+                        if (!selected) return <em style={{ color: "#919EAB" }}>Sin carpeta vinculada</em>;
                         const f = folders?.find((f: any) => f._id === selected);
                         return f ? f.folderName : "";
                       }}
                     >
-                      <MenuItem value=""><em>Sin causa vinculada</em></MenuItem>
+                      <MenuItem value=""><em>Sin carpeta vinculada</em></MenuItem>
                       {folders?.map((folder: any) => (
                         <MenuItem key={folder._id} value={folder._id}>
                           {folder.folderName}

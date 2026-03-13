@@ -139,7 +139,7 @@ const LinkPostalTrackingToFolder = ({ open, onClose, trackingId, currentFolderId
       >
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-            Vincular a causa
+            Seleccione Carpetas
           </Typography>
           {selectedFolder && (
             <Typography variant="subtitle2" color="textSecondary">
