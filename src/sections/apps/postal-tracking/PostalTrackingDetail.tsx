@@ -43,6 +43,7 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "Completado",
   paused: "Pausado",
   error: "Error",
+  not_found: "No encontrado",
 };
 
 function formatDate(date?: string | null) {

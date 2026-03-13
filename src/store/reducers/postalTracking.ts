@@ -134,6 +134,28 @@ export const linkFolderToTracking = (id: string, folderId: string | null) => asy
   }
 };
 
+export const reactivatePostalTracking = (id: string) => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.patch(`${BASE_URL}/${id}/reactivate`);
+    dispatch({ type: UPDATE_TRACKING, payload: response.data.data });
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al reactivar el seguimiento" : "Error al reactivar el seguimiento";
+    return { success: false, error: msg };
+  }
+};
+
+export const markPostalTrackingAsCompleted = (id: string) => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.patch(`${BASE_URL}/${id}/complete`);
+    dispatch({ type: UPDATE_TRACKING, payload: response.data.data });
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al completar el seguimiento" : "Error al completar el seguimiento";
+    return { success: false, error: msg };
+  }
+};
+
 export const deletePostalTracking = (id: string) => async (dispatch: Dispatch) => {
   try {
     dispatch({ type: SET_LOADING });

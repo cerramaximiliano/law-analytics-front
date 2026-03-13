@@ -29,6 +29,8 @@ export interface PostalTrackingType {
   lastChangedAt?: string | null;
   nextCheckAt?: string | null;
   checkCount: number;
+  manuallyCompleted?: boolean | null;
+  autoCompletedReason?: string | null;
   screenshotKey?: string | null;
   screenshotUrl?: string | null;
   screenshotUpdatedAt?: string | null;

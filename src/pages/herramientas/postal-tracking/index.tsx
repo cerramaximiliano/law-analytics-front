@@ -20,7 +20,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { Add, Box as BoxIcon, DocumentUpload, Edit2, Eye, Link1, SearchNormal1, Trash } from "iconsax-react";
+import { Add, Box as BoxIcon, DocumentUpload, Edit2, Eye, Link1, Refresh2, SearchNormal1, TickCircle, Trash } from "iconsax-react";
 
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
@@ -30,6 +30,8 @@ import {
   getPostalTrackingById,
   clearPostalTrackingDetail,
   uploadAttachment,
+  markPostalTrackingAsCompleted,
+  reactivatePostalTracking,
 } from "store/reducers/postalTracking";
 import { openSnackbar } from "store/reducers/snackbar";
 import { PostalTrackingType } from "types/postal-tracking";
@@ -55,6 +57,7 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "Completado",
   paused: "Pausado",
   error: "Error",
+  not_found: "No encontrado",
 };
 
 function formatDate(date?: string | null) {
@@ -206,6 +209,24 @@ const PostalTrackingPage = () => {
   const handleCloseLinkModal = () => {
     setLinkTracking(null);
     loadData();
+  };
+
+  const handleReactivate = async (id: string) => {
+    const result = await dispatch(reactivatePostalTracking(id));
+    if (result.success) {
+      showSnackbar("Seguimiento reactivado", "success");
+    } else {
+      showSnackbar(result.error || "Error al reactivar el seguimiento", "error");
+    }
+  };
+
+  const handleMarkAsCompleted = async (id: string) => {
+    const result = await dispatch(markPostalTrackingAsCompleted(id));
+    if (result.success) {
+      showSnackbar("Seguimiento marcado como completado", "success");
+    } else {
+      showSnackbar(result.error || "Error al completar el seguimiento", "error");
+    }
   };
 
   const handleAttachmentClick = (id: string) => {
@@ -412,6 +433,31 @@ const PostalTrackingPage = () => {
                               <DocumentUpload size={16} />
                             </IconButton>
                           </Tooltip>
+                          {["pending", "active", "paused", "error"].includes(row.processingStatus) && (
+                            <Tooltip title="Marcar como completado">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleMarkAsCompleted(row._id)}
+                                color="success"
+                              >
+                                <TickCircle size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {(row.processingStatus === "paused" ||
+                            row.processingStatus === "error" ||
+                            (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected"))
+                          ) && (
+                            <Tooltip title="Reactivar seguimiento">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleReactivate(row._id)}
+                                color="warning"
+                              >
+                                <Refresh2 size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           <Tooltip title="Eliminar">
                             <IconButton
                               size="small"
