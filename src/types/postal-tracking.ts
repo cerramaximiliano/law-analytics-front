@@ -32,6 +32,9 @@ export interface PostalTrackingType {
   screenshotKey?: string | null;
   screenshotUrl?: string | null;
   screenshotUpdatedAt?: string | null;
+  attachmentKey?: string | null;
+  attachmentUrl?: string | null;
+  attachmentUpdatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +55,8 @@ export interface PostalTrackingFilters {
   processingStatus?: string;
   isFinalStatus?: boolean;
   search?: string;
+  sortBy?: "label" | "createdAt";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CreatePostalTrackingData {

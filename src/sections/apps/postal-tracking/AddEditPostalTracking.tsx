@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
-  Autocomplete,
+  Box,
   Button,
-  Chip,
   FormControl,
   FormControlLabel,
   FormHelperText,
   Grid,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
@@ -16,12 +16,12 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { InfoCircle } from "iconsax-react";
+import { CloseCircle, DocumentUpload, InfoCircle } from "iconsax-react";
 import * as Yup from "yup";
 import { useFormik, Form, FormikProvider } from "formik";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { dispatch, useSelector } from "store";
-import { createPostalTracking, updatePostalTracking } from "store/reducers/postalTracking";
+import { createPostalTracking, updatePostalTracking, uploadAttachment } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { Add } from "iconsax-react";
 import { PostalTrackingType } from "types/postal-tracking";
@@ -51,13 +51,14 @@ const CreateSchema = Yup.object().shape({
 
 const EditSchema = Yup.object().shape({
   label: Yup.string(),
-  tags: Yup.array().of(Yup.string()),
 });
 
 const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
   const isCreating = !tracking;
   const { folders } = useSelector((state) => state.folder);
   const { user } = useSelector((state) => state.auth);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (folders.length === 0 && user?._id) {
@@ -70,7 +71,6 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
       codeId: tracking?.codeId || "CD",
       numberId: tracking?.numberId || "",
       label: tracking?.label || "",
-      tags: tracking?.tags || [],
       folderId: tracking?.folderId || "",
       screenshotEnabled: false,
     },
@@ -84,7 +84,6 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
               codeId: values.codeId,
               numberId: values.numberId,
               label: values.label || undefined,
-              tags: values.tags.length > 0 ? values.tags : undefined,
               folderId: values.folderId || undefined,
               screenshotEnabled: values.screenshotEnabled,
             })
@@ -93,13 +92,29 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
           result = await dispatch(
             updatePostalTracking(tracking._id, {
               label: values.label || null,
-              tags: values.tags,
             })
           );
         }
 
         if (result.success) {
+          // Subir adjunto si hay archivo seleccionado
+          const uploadId = isCreating ? result.id : tracking?._id;
+          if (attachmentFile && uploadId) {
+            const uploadResult = await dispatch(uploadAttachment(uploadId, attachmentFile));
+            if (!uploadResult.success) {
+              showSnackbar(
+                (isCreating ? "Seguimiento creado" : "Seguimiento actualizado") +
+                  ", pero falló la subida del adjunto: " + (uploadResult.error || ""),
+                "error"
+              );
+              resetForm();
+              setAttachmentFile(null);
+              onCancel();
+              return;
+            }
+          }
           resetForm();
+          setAttachmentFile(null);
           onCancel();
           showSnackbar(
             isCreating ? "Seguimiento creado exitosamente" : "Seguimiento actualizado exitosamente",
@@ -209,6 +224,7 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
                   />
                 </Stack>
               </Grid>
+
             </>
           )}
 
@@ -218,44 +234,76 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
               <TextField
                 fullWidth
                 id="label"
-                placeholder="TCL, CD, etc."
+                placeholder="Ej: Telegrama TCL 1234/2026"
                 {...getFieldProps("label")}
                 error={Boolean(touched.label && errors.label)}
-                helperText={touched.label && errors.label}
+                helperText={
+                  (touched.label && errors.label) ||
+                  "Usá la etiqueta para identificar, filtrar y ordenar los seguimientos en la tabla."
+                }
               />
             </Stack>
           </Grid>
 
           <Grid item xs={12}>
             <Stack spacing={1}>
-              <InputLabel htmlFor="tags">Etiquetas</InputLabel>
-              <Autocomplete
-                multiple
-                freeSolo
-                id="tags"
-                options={[]}
-                value={values.tags}
-                onChange={(_, newValue) => setFieldValue("tags", newValue)}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip
-                      variant="outlined"
-                      label={option}
-                      size="small"
-                      {...getTagProps({ index })}
-                    />
-                  ))
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Escribí y presioná Enter para agregar"
-                    size="small"
-                  />
-                )}
+              <InputLabel>Adjunto {tracking?.attachmentKey ? "(reemplazar)" : "(opcional)"}</InputLabel>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setAttachmentFile(file);
+                  e.target.value = "";
+                }}
               />
+              {attachmentFile ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    px: 1.5,
+                    py: 1,
+                  }}
+                >
+                  <DocumentUpload size={16} style={{ opacity: 0.6, flexShrink: 0 }} />
+                  <Typography variant="body2" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {attachmentFile.name}
+                  </Typography>
+                  <IconButton size="small" onClick={() => setAttachmentFile(null)} sx={{ p: 0.25 }}>
+                    <CloseCircle size={16} />
+                  </IconButton>
+                </Box>
+              ) : (
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<DocumentUpload size={16} />}
+                    onClick={() => fileInputRef.current?.click()}
+                    sx={{ alignSelf: "flex-start" }}
+                  >
+                    {tracking?.attachmentKey ? "Cambiar adjunto" : "Adjuntar imagen o PDF"}
+                  </Button>
+                  {tracking?.attachmentKey && (
+                    <Typography variant="caption" color="success.main">
+                      Tiene adjunto cargado
+                    </Typography>
+                  )}
+                </Stack>
+              )}
+              <Typography variant="caption" color="textSecondary">
+                JPG, PNG, WEBP o PDF · Máx. 10 MB
+              </Typography>
             </Stack>
           </Grid>
+
 
           <Grid item xs={12}>
             <Stack direction="row" spacing={2} justifyContent="flex-end">

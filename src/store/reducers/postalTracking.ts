@@ -87,7 +87,7 @@ export const createPostalTracking = (data: CreatePostalTrackingData) => async (d
     dispatch({ type: SET_LOADING });
     const response = await axios.post(BASE_URL, data);
     dispatch({ type: ADD_TRACKING, payload: response.data.data });
-    return { success: true };
+    return { success: true, id: response.data.data._id as string };
   } catch (error: unknown) {
     const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al crear el seguimiento" : "Error al crear el seguimiento";
     dispatch({ type: SET_ERROR, payload: msg });
@@ -143,6 +143,30 @@ export const deletePostalTracking = (id: string) => async (dispatch: Dispatch) =
   } catch (error: unknown) {
     const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al eliminar el seguimiento" : "Error al eliminar el seguimiento";
     dispatch({ type: SET_ERROR, payload: msg });
+    return { success: false, error: msg };
+  }
+};
+
+export const uploadAttachment = (id: string, file: File) => async (_dispatch: Dispatch) => {
+  try {
+    const formData = new FormData();
+    formData.append("attachment", file);
+    const response = await axios.post(`${BASE_URL}/${id}/attachment`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { success: true, data: response.data.data };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al subir el adjunto" : "Error al subir el adjunto";
+    return { success: false, error: msg };
+  }
+};
+
+export const deleteAttachment = (id: string) => async (_dispatch: Dispatch) => {
+  try {
+    await axios.delete(`${BASE_URL}/${id}/attachment`);
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al eliminar el adjunto" : "Error al eliminar el adjunto";
     return { success: false, error: msg };
   }
 };

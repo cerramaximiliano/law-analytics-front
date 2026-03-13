@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Box,
   Button,
@@ -14,12 +14,13 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TableSortLabel,
   TextField,
   Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
-import { Add, Box as BoxIcon, Edit2, Eye, Link1, SearchNormal1, Trash } from "iconsax-react";
+import { Add, Box as BoxIcon, DocumentUpload, Edit2, Eye, Link1, SearchNormal1, Trash } from "iconsax-react";
 
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
@@ -28,6 +29,7 @@ import {
   deletePostalTracking,
   getPostalTrackingById,
   clearPostalTrackingDetail,
+  uploadAttachment,
 } from "store/reducers/postalTracking";
 import { openSnackbar } from "store/reducers/snackbar";
 import { PostalTrackingType } from "types/postal-tracking";
@@ -103,6 +105,8 @@ const PostalTrackingPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [sortBy, setSortBy] = useState<"label" | "createdAt">("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Modales
   const [openCreate, setOpenCreate] = useState(false);
@@ -112,15 +116,31 @@ const PostalTrackingPage = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [linkTracking, setLinkTracking] = useState<PostalTrackingType | null>(null);
 
+  // Adjunto
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
+  const [attachmentTargetId, setAttachmentTargetId] = useState<string | null>(null);
+
   const loadData = useCallback(() => {
     dispatch(
       fetchPostalTrackings({
         page: page + 1,
         limit: rowsPerPage,
         search: search || undefined,
+        sortBy,
+        sortOrder,
       })
     );
-  }, [page, rowsPerPage, search]);
+  }, [page, rowsPerPage, search, sortBy, sortOrder]);
+
+  const handleLabelSort = () => {
+    if (sortBy === "label") {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy("label");
+      setSortOrder("asc");
+      setPage(0);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -188,6 +208,24 @@ const PostalTrackingPage = () => {
     loadData();
   };
 
+  const handleAttachmentClick = (id: string) => {
+    setAttachmentTargetId(id);
+    attachmentInputRef.current?.click();
+  };
+
+  const handleAttachmentChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !attachmentTargetId) return;
+    const result = await dispatch(uploadAttachment(attachmentTargetId, file));
+    setAttachmentTargetId(null);
+    if (result.success) {
+      showSnackbar("Adjunto guardado exitosamente", "success");
+    } else {
+      showSnackbar(result.error || "Error al subir el adjunto", "error");
+    }
+  };
+
   return (
     <MainCard
       title={
@@ -248,9 +286,17 @@ const PostalTrackingPage = () => {
                 <TableRow>
                   <TableCell sx={{ width: 60 }}>Proveedor</TableCell>
                   <TableCell>Código / Número</TableCell>
-                  <TableCell>Etiqueta</TableCell>
+                  <TableCell sortDirection={sortBy === "label" ? sortOrder : false}>
+                    <TableSortLabel
+                      active={sortBy === "label"}
+                      direction={sortBy === "label" ? sortOrder : "asc"}
+                      onClick={handleLabelSort}
+                    >
+                      Etiqueta
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell>Estado proceso</TableCell>
-                  <TableCell>Estado envío</TableCell>
+                  <TableCell>Estado envío / Entrega</TableCell>
                   <TableCell>Último chequeo</TableCell>
                   <TableCell align="center">Acciones</TableCell>
                 </TableRow>
@@ -306,18 +352,22 @@ const PostalTrackingPage = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Typography
-                          variant="body2"
-                          color={row.trackingStatus ? "textPrimary" : "textSecondary"}
-                          sx={{
-                            maxWidth: 200,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {row.trackingStatus || "—"}
-                        </Typography>
+                        <Stack spacing={0.25}>
+                          <Typography
+                            variant="body2"
+                            color={row.trackingStatus ? "textPrimary" : "textSecondary"}
+                            sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          >
+                            {row.trackingStatus || "—"}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color={row.deliveryStatus ? "textSecondary" : "text.disabled"}
+                            sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                          >
+                            {row.deliveryStatus || "—"}
+                          </Typography>
+                        </Stack>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" color="textSecondary">
@@ -351,6 +401,15 @@ const PostalTrackingPage = () => {
                               color={row.folderId ? "success" : "default"}
                             >
                               <Link1 size={16} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleAttachmentClick(row._id)}
+                              color={row.attachmentKey ? "success" : "default"}
+                            >
+                              <DocumentUpload size={16} />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Eliminar">
@@ -387,6 +446,15 @@ const PostalTrackingPage = () => {
           />
         </>
       )}
+
+      {/* Input oculto para adjuntos */}
+      <input
+        ref={attachmentInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        style={{ display: "none" }}
+        onChange={handleAttachmentChange}
+      />
 
       {/* Modales */}
       <PostalTrackingModal
