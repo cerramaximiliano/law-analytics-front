@@ -1,9 +1,8 @@
 export interface PostalTrackingHistoryEvent {
-  date: string;
+  eventDate?: string;
   status: string;
-  description?: string;
-  location?: string;
   deliveryStatus?: string;
+  location?: string;
 }
 
 export interface PostalTrackingType {

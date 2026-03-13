@@ -143,7 +143,7 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
                         <TableRow>
                           <TableCell>Fecha</TableCell>
                           <TableCell>Estado</TableCell>
-                          <TableCell>Descripción</TableCell>
+                          <TableCell>Estado de entrega</TableCell>
                           <TableCell>Ubicación</TableCell>
                         </TableRow>
                       </TableHead>
@@ -151,14 +151,14 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
                         {[...history].reverse().map((event, idx) => (
                           <TableRow key={idx} hover>
                             <TableCell sx={{ whiteSpace: "nowrap" }}>
-                              {formatDate(event.date)}
+                              {formatDate(event.eventDate)}
                             </TableCell>
                             <TableCell>
                               <Typography variant="body2" fontWeight={500}>
                                 {event.status}
                               </Typography>
                             </TableCell>
-                            <TableCell>{event.description || "—"}</TableCell>
+                            <TableCell>{event.deliveryStatus || "—"}</TableCell>
                             <TableCell>{event.location || "—"}</TableCell>
                           </TableRow>
                         ))}
