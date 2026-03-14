@@ -156,6 +156,17 @@ export const markPostalTrackingAsCompleted = (id: string) => async (dispatch: Di
   }
 };
 
+export const bulkDeletePostalTrackings = (ids: string[]) => async (dispatch: Dispatch) => {
+  try {
+    await axios.delete(`${BASE_URL}/bulk`, { data: { ids } });
+    ids.forEach((id) => dispatch({ type: DELETE_TRACKING, payload: id }));
+    return { success: true, deleted: ids.length };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al eliminar los seguimientos" : "Error al eliminar los seguimientos";
+    return { success: false, error: msg };
+  }
+};
+
 export const deletePostalTracking = (id: string) => async (dispatch: Dispatch) => {
   try {
     dispatch({ type: SET_LOADING });

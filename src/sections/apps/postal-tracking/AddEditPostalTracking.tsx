@@ -245,64 +245,66 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
             </Stack>
           </Grid>
 
-          <Grid item xs={12}>
-            <Stack spacing={1}>
-              <InputLabel>Adjunto {tracking?.attachmentKey ? "(reemplazar)" : "(opcional)"}</InputLabel>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setAttachmentFile(file);
-                  e.target.value = "";
-                }}
-              />
-              {attachmentFile ? (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    px: 1.5,
-                    py: 1,
+          {tracking?.processingStatus !== "not_found" && (
+            <Grid item xs={12}>
+              <Stack spacing={1}>
+                <InputLabel>Adjunto {tracking?.attachmentKey ? "(reemplazar)" : "(opcional)"}</InputLabel>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setAttachmentFile(file);
+                    e.target.value = "";
                   }}
-                >
-                  <DocumentUpload size={16} style={{ opacity: 0.6, flexShrink: 0 }} />
-                  <Typography variant="body2" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {attachmentFile.name}
-                  </Typography>
-                  <IconButton size="small" onClick={() => setAttachmentFile(null)} sx={{ p: 0.25 }}>
-                    <CloseCircle size={16} />
-                  </IconButton>
-                </Box>
-              ) : (
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<DocumentUpload size={16} />}
-                    onClick={() => fileInputRef.current?.click()}
-                    sx={{ alignSelf: "flex-start" }}
+                />
+                {attachmentFile ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      px: 1.5,
+                      py: 1,
+                    }}
                   >
-                    {tracking?.attachmentKey ? "Cambiar adjunto" : "Adjuntar imagen o PDF"}
-                  </Button>
-                  {tracking?.attachmentKey && (
-                    <Typography variant="caption" color="success.main">
-                      Tiene adjunto cargado
+                    <DocumentUpload size={16} style={{ opacity: 0.6, flexShrink: 0 }} />
+                    <Typography variant="body2" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {attachmentFile.name}
                     </Typography>
-                  )}
-                </Stack>
-              )}
-              <Typography variant="caption" color="textSecondary">
-                JPG, PNG, WEBP o PDF · Máx. 10 MB
-              </Typography>
-            </Stack>
-          </Grid>
+                    <IconButton size="small" onClick={() => setAttachmentFile(null)} sx={{ p: 0.25 }}>
+                      <CloseCircle size={16} />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DocumentUpload size={16} />}
+                      onClick={() => fileInputRef.current?.click()}
+                      sx={{ alignSelf: "flex-start" }}
+                    >
+                      {tracking?.attachmentKey ? "Cambiar adjunto" : "Adjuntar imagen o PDF"}
+                    </Button>
+                    {tracking?.attachmentKey && (
+                      <Typography variant="caption" color="success.main">
+                        Tiene adjunto cargado
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+                <Typography variant="caption" color="textSecondary">
+                  JPG, PNG, WEBP o PDF · Máx. 10 MB
+                </Typography>
+              </Stack>
+            </Grid>
+          )}
 
 
           <Grid item xs={12}>
