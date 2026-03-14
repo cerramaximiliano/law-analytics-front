@@ -159,14 +159,6 @@ const applications: NavItemType = {
 			icon: icons.documents,
 			type: "item",
 			url: "/apps/documents",
-			disabled: true,
-			chip: {
-				label: "Próximamente",
-				color: "primary",
-				size: "small",
-				variant: "filled",
-				className: "truncate-chip coming-soon-chip",
-			},
 		},
 		/* 
 		{
