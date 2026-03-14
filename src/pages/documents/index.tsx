@@ -302,9 +302,20 @@ const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Tr
     if (!document || !selected) return;
     setSubmitting(true);
     try {
+      const trackingFolder = selected.folderId || null;
+      const documentFolder = document.linkedFolderId || null;
+      // El folder del seguimiento tiene precedencia; si solo el documento tiene folder, lo propaga al seguimiento.
+      const resolvedFolder = trackingFolder || documentFolder;
+
       await Promise.all([
-        dispatch(updatePostalTracking(selected._id, { documentId: document._id })),
-        dispatch(updatePostalDocument(document._id, { linkedTrackingId: selected._id })),
+        dispatch(updatePostalTracking(selected._id, {
+          documentId: document._id,
+          ...(!trackingFolder && resolvedFolder ? { folderId: resolvedFolder } : {}),
+        })),
+        dispatch(updatePostalDocument(document._id, {
+          linkedTrackingId: selected._id,
+          ...(resolvedFolder && resolvedFolder !== documentFolder ? { linkedFolderId: resolvedFolder } : {}),
+        })),
       ]);
       showSnackbar("Documento vinculado al seguimiento exitosamente", "success");
       onSuccess();
@@ -314,6 +325,14 @@ const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Tr
     }
     setSubmitting(false);
   };
+
+  // Análisis de conflicto de carpetas para mostrar advertencia
+  const folderConflict = selected
+    ? selected.folderId && document?.linkedFolderId && selected.folderId !== document.linkedFolderId
+    : false;
+  const folderPropagation = selected
+    ? (!selected.folderId && document?.linkedFolderId) || (selected.folderId && !document?.linkedFolderId)
+    : false;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -422,6 +441,18 @@ const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Tr
             {selected?.documentId && selected.documentId !== document?._id && (
               <Typography variant="caption" color="warning.main">
                 Este seguimiento ya tiene un documento vinculado. Al continuar se reemplazará.
+              </Typography>
+            )}
+            {folderConflict && (
+              <Typography variant="caption" color="warning.main">
+                El seguimiento y el documento están vinculados a carpetas distintas. Se usará la carpeta del seguimiento para ambos.
+              </Typography>
+            )}
+            {folderPropagation && !folderConflict && (
+              <Typography variant="caption" color="info.main">
+                {selected?.folderId
+                  ? "El documento adoptará la carpeta del seguimiento para mantener consistencia."
+                  : "La carpeta del documento se asignará también al seguimiento."}
               </Typography>
             )}
           </Stack>
