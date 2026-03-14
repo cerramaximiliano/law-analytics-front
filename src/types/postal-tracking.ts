@@ -77,4 +77,5 @@ export interface UpdatePostalTrackingData {
   label?: string | null;
   tags?: string[];
   folderId?: string | null;
+  documentId?: string | null;
 }
