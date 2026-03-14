@@ -106,11 +106,11 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => {
           Todavía no tenés documentos
         </Typography>
         <Typography variant="body2" color="textSecondary" align="center" sx={{ maxWidth: 380 }}>
-          Generá documentos PDF a partir de las plantillas disponibles para tus causas y comunicaciones.
+          Generá escritos a partir de los modelos disponibles o redactalos manualmente.
         </Typography>
       </Stack>
       <Button variant="contained" startIcon={<Add />} onClick={onAdd}>
-        Crear primer documento
+        Crear primer escrito
       </Button>
     </Stack>
   );
@@ -610,7 +610,7 @@ const DocumentsLayout = () => {
 
   return (
     <MainCard
-      title="Documentos generados"
+      title="Escritos"
       secondary={
         <Button variant="contained" startIcon={<Add />} onClick={() => setOpenCreate(true)} size="small">
           Nuevo documento

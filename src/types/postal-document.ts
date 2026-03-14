@@ -20,6 +20,9 @@ export interface PdfTemplate {
   fields: PdfTemplateField[];
   isActive: boolean;
   isPublic: boolean;
+  source?: 'system' | 'user';
+  modelType?: 'static' | 'dynamic';
+  userId?: string;
   fillConfig: { flatten: boolean };
   previewUrl?: string;
   createdAt?: string;

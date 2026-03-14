@@ -153,14 +153,7 @@ const applications: NavItemType = {
 			type: "item",
 			url: "/tareas",
 		},
-		{
-			id: "documents",
-			title: <FormattedMessage id="Documentos" />,
-			icon: icons.documents,
-			type: "item",
-			url: "/apps/documents",
-		},
-		/* 
+		/*
 		{
 			id: "invoice",
 			title: <FormattedMessage id="Facturación" />,

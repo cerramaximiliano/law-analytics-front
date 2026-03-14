@@ -86,7 +86,9 @@ const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
 
 // render - herramientas
 const PostalTrackingPage = Loadable(lazyRetry(() => import("pages/herramientas/postal-tracking"), "PostalTrackingPage"));
-const PlantillasPage = Loadable(lazyRetry(() => import("pages/herramientas/plantillas"), "PlantillasPage"));
+
+// render - documentos
+const ModelosPage = Loadable(lazyRetry(() => import("pages/herramientas/plantillas"), "ModelosPage"));
 
 // ==============================|| MAIN ROUTES ||============================== //
 
@@ -324,8 +326,22 @@ const MainRoutes = {
 							element: <PostalTrackingPage />,
 						},
 						{
+							/* legacy — kept for bookmarks */
 							path: "plantillas",
-							element: <PlantillasPage />,
+							element: <ModelosPage />,
+						},
+					],
+				},
+				{
+					path: "documentos",
+					children: [
+						{
+							path: "escritos",
+							element: <DocumentsLayout />,
+						},
+						{
+							path: "modelos",
+							element: <ModelosPage />,
 						},
 					],
 				},
