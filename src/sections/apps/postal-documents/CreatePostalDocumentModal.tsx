@@ -29,7 +29,7 @@ import {
 import { Profile2User, Save2 } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, createPostalDocument } from "store/reducers/postalDocuments";
-import { getContactsByUserId, addContact } from "store/reducers/contacts";
+import { getContactsByUserId, addContact, updateContact } from "store/reducers/contacts";
 import { PdfTemplate, PdfTemplateField } from "types/postal-document";
 import { Contact } from "types/contact";
 
@@ -179,6 +179,12 @@ export default function CreatePostalDocumentModal({
   const [description, setDescription] = useState("");
   const [generating, setGenerating] = useState(false);
 
+  // Contact selected per group (null = manual entry)
+  const [selectedContacts, setSelectedContacts] = useState<Record<"destinatario" | "remitente", Contact | null>>({
+    destinatario: null,
+    remitente: null,
+  });
+
   // Save-as-contact dialog
   const [saveDialog, setSaveDialog] = useState<SaveContactDialogState>({
     open: false,
@@ -198,7 +204,7 @@ export default function CreatePostalDocumentModal({
       setLoadingTemplates(false);
     });
     if (userId && allContacts.length === 0) {
-      dispatch(getContactsByUserId(userId, {}));
+      dispatch(getContactsByUserId(userId));
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -211,6 +217,7 @@ export default function CreatePostalDocumentModal({
     setTitle("");
     setDescription("");
     setGenerating(false);
+    setSelectedContacts({ destinatario: null, remitente: null });
     setSaveDialog({ open: false, group: null, contactType: "Humana", role: "" });
   };
 
@@ -230,9 +237,12 @@ export default function CreatePostalDocumentModal({
   const handleFieldChange = (name: string, value: string) =>
     setFormValues((prev) => ({ ...prev, [name]: value }));
 
-  const applyContact = (contact: Contact, group: "destinatario" | "remitente") => {
-    const mapped = contactToFormValues(contact, group);
-    setFormValues((prev) => ({ ...prev, ...mapped }));
+  const applyContact = (contact: Contact | null, group: "destinatario" | "remitente") => {
+    setSelectedContacts((prev) => ({ ...prev, [group]: contact }));
+    if (contact) {
+      const mapped = contactToFormValues(contact, group);
+      setFormValues((prev) => ({ ...prev, ...mapped }));
+    }
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -257,6 +267,26 @@ export default function CreatePostalDocumentModal({
     } else {
       showSnackbar(result.error || "Error al generar", "error");
     }
+  };
+
+  // ── Update existing contact ───────────────────────────────────────────────
+
+  const handleUpdateContact = async (group: "destinatario" | "remitente") => {
+    const contact = selectedContacts[group];
+    if (!contact?._id) return;
+    setSavingContact(true);
+    const contactData = formValuesToContact(formValues, group, contact.type as "Humana" | "Jurídica", Array.isArray(contact.role) ? contact.role[0] : contact.role || "");
+    try {
+      const result = await dispatch(updateContact(contact._id, contactData));
+      if (result?.success !== false) {
+        showSnackbar("Contacto actualizado exitosamente", "success");
+      } else {
+        showSnackbar("Error al actualizar el contacto", "error");
+      }
+    } catch {
+      showSnackbar("Error al actualizar el contacto", "error");
+    }
+    setSavingContact(false);
   };
 
   // ── Save as contact ───────────────────────────────────────────────────────
@@ -367,7 +397,7 @@ export default function CreatePostalDocumentModal({
   const renderGroup = (groupKey: string, fields: PdfTemplateField[]) => {
     const isContactGroup = CONTACT_GROUPS.includes(groupKey);
     const group = groupKey as "destinatario" | "remitente";
-    const activeContacts = allContacts.filter((c: Contact) => !c.archived);
+    const activeContacts = allContacts.filter((c: Contact) => c.status !== "archived");
 
     return (
       <Box key={groupKey}>
@@ -377,18 +407,34 @@ export default function CreatePostalDocumentModal({
             {GROUP_LABELS[groupKey] || groupKey.toUpperCase()}
           </Typography>
           {isContactGroup && hasGroupData(formValues, group) && (
-            <Tooltip title={`Guardar datos de ${GROUP_LABELS[group]} como nuevo contacto`}>
-              <Button
-                size="small"
-                variant="outlined"
-                color="secondary"
-                startIcon={<Save2 size={14} />}
-                onClick={() => openSaveDialog(group)}
-                sx={{ fontSize: "0.7rem", py: 0.25 }}
-              >
-                Guardar como contacto
-              </Button>
-            </Tooltip>
+            selectedContacts[group] ? (
+              <Tooltip title={`Actualizar contacto "${getContactLabel(selectedContacts[group]!)}" con los datos actuales`}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  startIcon={savingContact ? <CircularProgress size={14} color="inherit" /> : <Save2 size={14} />}
+                  onClick={() => handleUpdateContact(group)}
+                  disabled={savingContact}
+                  sx={{ fontSize: "0.7rem", py: 0.25 }}
+                >
+                  Actualizar contacto
+                </Button>
+              </Tooltip>
+            ) : (
+              <Tooltip title={`Guardar datos de ${GROUP_LABELS[group]} como nuevo contacto`}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={<Save2 size={14} />}
+                  onClick={() => openSaveDialog(group)}
+                  sx={{ fontSize: "0.7rem", py: 0.25 }}
+                >
+                  Guardar como contacto
+                </Button>
+              </Tooltip>
+            )
           )}
         </Stack>
 
@@ -397,7 +443,9 @@ export default function CreatePostalDocumentModal({
           <Autocomplete
             size="small"
             options={activeContacts}
+            value={selectedContacts[group]}
             getOptionLabel={(c: Contact) => getContactLabel(c)}
+            isOptionEqualToValue={(opt, val) => opt._id === val._id}
             renderOption={(props, c: Contact) => (
               <Box component="li" {...props} key={c._id}>
                 <Stack>
@@ -411,7 +459,7 @@ export default function CreatePostalDocumentModal({
                 </Stack>
               </Box>
             )}
-            onChange={(_e, contact) => { if (contact) applyContact(contact, group); }}
+            onChange={(_e, contact) => applyContact(contact, group)}
             renderInput={(params) => (
               <TextField
                 {...params}
