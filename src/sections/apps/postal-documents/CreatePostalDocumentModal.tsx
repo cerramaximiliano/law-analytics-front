@@ -39,6 +39,7 @@ interface Props {
   open: boolean;
   handleClose: () => void;
   prefilledTrackingId?: string | null;
+  preselectedTemplate?: PdfTemplate | null;
   showSnackbar: (msg: string, sev: "success" | "error") => void;
 }
 
@@ -163,6 +164,7 @@ export default function CreatePostalDocumentModal({
   open,
   handleClose,
   prefilledTrackingId,
+  preselectedTemplate,
   showSnackbar,
 }: Props) {
   // Redux state
@@ -198,11 +200,18 @@ export default function CreatePostalDocumentModal({
 
   useEffect(() => {
     if (!open) return;
-    setLoadingTemplates(true);
-    dispatch(fetchPdfTemplates()).then((res: any) => {
-      if (res.success) setTemplates(res.templates || []);
-      setLoadingTemplates(false);
-    });
+    // Si viene una plantilla preseleccionada, saltar al paso 1 directamente
+    if (preselectedTemplate) {
+      setSelectedTemplate(preselectedTemplate);
+      setFormValues(getInitialFormValues(preselectedTemplate.fields));
+      setStep(1);
+    } else {
+      setLoadingTemplates(true);
+      dispatch(fetchPdfTemplates()).then((res: any) => {
+        if (res.success) setTemplates(res.templates || []);
+        setLoadingTemplates(false);
+      });
+    }
     if (userId && allContacts.length === 0) {
       dispatch(getContactsByUserId(userId));
     }

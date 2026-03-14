@@ -86,6 +86,7 @@ const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
 
 // render - herramientas
 const PostalTrackingPage = Loadable(lazyRetry(() => import("pages/herramientas/postal-tracking"), "PostalTrackingPage"));
+const PlantillasPage = Loadable(lazyRetry(() => import("pages/herramientas/plantillas"), "PlantillasPage"));
 
 // ==============================|| MAIN ROUTES ||============================== //
 
@@ -321,6 +322,10 @@ const MainRoutes = {
 						{
 							path: "seguimiento-postal",
 							element: <PostalTrackingPage />,
+						},
+						{
+							path: "plantillas",
+							element: <PlantillasPage />,
 						},
 					],
 				},
