@@ -10,7 +10,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   FormControl,
   Grid,
   IconButton,
@@ -20,18 +19,20 @@ import {
   Select,
   Skeleton,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   TextField,
   Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
-import { Add, DocumentDownload, DocumentText, Edit2, Eye, Link1, Routing, Trash } from "iconsax-react";
+import { Add, DocumentDownload, DocumentText, Edit2, Eye, Routing, Trash } from "iconsax-react";
 import { SearchNormal1 } from "iconsax-react";
 
 import MainCard from "components/MainCard";
@@ -145,7 +146,7 @@ const TableSkeleton = ({ rows }: { rows: number }) => (
               <TableCell><Skeleton variant="rounded" width={120} height={20} /></TableCell>
               <TableCell align="center">
                 <Stack direction="row" spacing={0.5} justifyContent="center">
-                  {Array(5).fill(0).map((_, j) => (
+                  {Array(4).fill(0).map((_, j) => (
                     <Skeleton key={j} variant="circular" width={28} height={28} />
                   ))}
                 </Stack>
@@ -230,9 +231,9 @@ const DocumentDetailDialog = ({ open, document, onClose }: DocumentDetailDialogP
   );
 };
 
-// ── Crear seguimiento desde documento ─────────────────────────────────────────
+// ── Modal de seguimiento (crear / vincular) ────────────────────────────────────
 
-interface CreateTrackingDialogProps {
+interface TrackingDialogProps {
   open: boolean;
   document: PostalDocumentType | null;
   onClose: () => void;
@@ -240,23 +241,35 @@ interface CreateTrackingDialogProps {
   showSnackbar: (msg: string, sev: "success" | "error") => void;
 }
 
-const CreateTrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: CreateTrackingDialogProps) => {
+const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: TrackingDialogProps) => {
+  const trackings: PostalTrackingType[] = useSelector((state: any) => state.postalTracking?.trackings || []);
+
+  const [tab, setTab] = useState(0);
+  const [loadingTrackings, setLoadingTrackings] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Tab 0 — Crear nuevo
   const [codeId, setCodeId] = useState("TC");
   const [numberId, setNumberId] = useState("");
   const [label, setLabel] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+
+  // Tab 1 — Vincular existente
+  const [selected, setSelected] = useState<PostalTrackingType | null>(null);
 
   useEffect(() => {
-    if (open && document) {
-      setLabel(document.title || "");
-      setNumberId("");
-      setCodeId("TC");
-    }
-  }, [open, document]);
+    if (!open || !document) return;
+    setTab(0);
+    setCodeId("TC");
+    setNumberId("");
+    setLabel(document.title || "");
+    setSelected(null);
+    setLoadingTrackings(true);
+    dispatch(fetchPostalTrackings()).then(() => setLoadingTrackings(false));
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const numberIdValid = /^\d{9}$/.test(numberId);
 
-  const handleSubmit = async () => {
+  const handleCreate = async () => {
     if (!document || !numberIdValid) return;
     setSubmitting(true);
     try {
@@ -285,91 +298,7 @@ const CreateTrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar
     setSubmitting(false);
   };
 
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Crear seguimiento postal</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <Typography variant="body2" color="textSecondary">
-            Ingresá el código de seguimiento del envío para vincularlo al documento{" "}
-            <strong>{document?.title}</strong>.
-          </Typography>
-
-          <Stack direction="row" spacing={1.5}>
-            <FormControl size="small" sx={{ minWidth: 90 }}>
-              <Select value={codeId} onChange={(e) => setCodeId(e.target.value)}>
-                {VALID_CODE_IDS.map((c) => (
-                  <MenuItem key={c} value={c}>{c}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              size="small"
-              label="Número (9 dígitos)"
-              fullWidth
-              value={numberId}
-              onChange={(e) => setNumberId(e.target.value.replace(/\D/g, "").slice(0, 9))}
-              error={numberId.length > 0 && !numberIdValid}
-              helperText={numberId.length > 0 && !numberIdValid ? "Debe tener exactamente 9 dígitos" : ""}
-              inputProps={{ inputMode: "numeric" }}
-            />
-          </Stack>
-
-          <TextField
-            size="small"
-            label="Etiqueta (opcional)"
-            fullWidth
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-          />
-
-          {document?.linkedFolderId && (
-            <Typography variant="caption" color="textSecondary">
-              El seguimiento también se vinculará a la carpeta asociada al documento.
-            </Typography>
-          )}
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} color="secondary" variant="outlined">Cancelar</Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={submitting || !numberIdValid}
-          startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Routing size={16} />}
-        >
-          Crear seguimiento
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
-// ── Vincular seguimiento existente ────────────────────────────────────────────
-
-interface LinkTrackingDialogProps {
-  open: boolean;
-  document: PostalDocumentType | null;
-  onClose: () => void;
-  onSuccess: () => void;
-  showSnackbar: (msg: string, sev: "success" | "error") => void;
-}
-
-const LinkTrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: LinkTrackingDialogProps) => {
-  const trackings: PostalTrackingType[] = useSelector((state: any) => state.postalTracking?.trackings || []);
-  const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<PostalTrackingType | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setSelected(null);
-      setLoading(true);
-      dispatch(fetchPostalTrackings()).then(() => setLoading(false));
-    }
-  }, [open]);
-
-  const handleSubmit = async () => {
+  const handleLink = async () => {
     if (!document || !selected) return;
     setSubmitting(true);
     try {
@@ -388,64 +317,138 @@ const LinkTrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Vincular a seguimiento existente</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
+      <DialogTitle>
+        <Stack spacing={0.5}>
+          <Typography variant="h5">Seguimiento de envío</Typography>
           <Typography variant="body2" color="textSecondary">
-            Seleccioná un seguimiento postal para vincularlo al documento{" "}
-            <strong>{document?.title}</strong>.
+            {document?.title}
           </Typography>
-
-          {loading ? (
-            <Stack alignItems="center" sx={{ py: 3 }}>
-              <CircularProgress size={28} />
-            </Stack>
-          ) : (
-            <Autocomplete
-              size="small"
-              options={trackings}
-              value={selected}
-              getOptionLabel={(t: PostalTrackingType) =>
-                `${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`
-              }
-              isOptionEqualToValue={(opt, val) => opt._id === val._id}
-              onChange={(_e, val) => setSelected(val)}
-              renderOption={(props, t: PostalTrackingType) => (
-                <Box component="li" {...props} key={t._id}>
-                  <Stack>
-                    <Typography variant="body2" fontWeight={500}>
-                      {t.codeId} {t.numberId}
-                    </Typography>
-                    {t.label && (
-                      <Typography variant="caption" color="textSecondary">{t.label}</Typography>
-                    )}
-                  </Stack>
-                </Box>
-              )}
-              renderInput={(params) => (
-                <TextField {...params} label="Buscar seguimiento..." />
-              )}
-              noOptionsText="Sin seguimientos disponibles"
-            />
-          )}
-
-          {selected?.documentId && selected.documentId !== document?._id && (
-            <Typography variant="caption" color="warning.main">
-              Este seguimiento ya tiene un documento vinculado. Al continuar se reemplazará.
-            </Typography>
-          )}
         </Stack>
+      </DialogTitle>
+
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}
+      >
+        <Tab label="Crear nuevo seguimiento" />
+        <Tab label="Vincular a uno existente" />
+      </Tabs>
+
+      <DialogContent sx={{ pt: 2.5 }}>
+        {/* ── Tab 0: crear ── */}
+        {tab === 0 && (
+          <Stack spacing={2}>
+            <Typography variant="body2" color="textSecondary">
+              Ingresá el código de seguimiento del envío postal para registrarlo y vincularlo a este documento.
+            </Typography>
+
+            <Stack direction="row" spacing={1.5}>
+              <FormControl size="small" sx={{ minWidth: 90 }}>
+                <Select value={codeId} onChange={(e) => setCodeId(e.target.value)}>
+                  {VALID_CODE_IDS.map((c) => (
+                    <MenuItem key={c} value={c}>{c}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                size="small"
+                label="Número (9 dígitos)"
+                fullWidth
+                value={numberId}
+                onChange={(e) => setNumberId(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                error={numberId.length > 0 && !numberIdValid}
+                helperText={numberId.length > 0 && !numberIdValid ? "Debe tener exactamente 9 dígitos" : ""}
+                inputProps={{ inputMode: "numeric" }}
+              />
+            </Stack>
+
+            <TextField
+              size="small"
+              label="Etiqueta (opcional)"
+              fullWidth
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+
+            {document?.linkedFolderId && (
+              <Typography variant="caption" color="textSecondary">
+                El seguimiento también se vinculará a la carpeta asociada al documento.
+              </Typography>
+            )}
+          </Stack>
+        )}
+
+        {/* ── Tab 1: vincular ── */}
+        {tab === 1 && (
+          <Stack spacing={2}>
+            <Typography variant="body2" color="textSecondary">
+              Seleccioná un seguimiento postal ya existente para vincularlo a este documento.
+            </Typography>
+
+            {loadingTrackings ? (
+              <Stack alignItems="center" sx={{ py: 3 }}>
+                <CircularProgress size={28} />
+              </Stack>
+            ) : (
+              <Autocomplete
+                size="small"
+                options={trackings}
+                value={selected}
+                getOptionLabel={(t: PostalTrackingType) =>
+                  `${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`
+                }
+                isOptionEqualToValue={(opt, val) => opt._id === val._id}
+                onChange={(_e, val) => setSelected(val)}
+                renderOption={(props, t: PostalTrackingType) => (
+                  <Box component="li" {...props} key={t._id}>
+                    <Stack>
+                      <Typography variant="body2" fontWeight={500}>
+                        {t.codeId} {t.numberId}
+                      </Typography>
+                      {t.label && (
+                        <Typography variant="caption" color="textSecondary">{t.label}</Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                )}
+                renderInput={(params) => (
+                  <TextField {...params} label="Buscar seguimiento..." />
+                )}
+                noOptionsText="Sin seguimientos disponibles"
+              />
+            )}
+
+            {selected?.documentId && selected.documentId !== document?._id && (
+              <Typography variant="caption" color="warning.main">
+                Este seguimiento ya tiene un documento vinculado. Al continuar se reemplazará.
+              </Typography>
+            )}
+          </Stack>
+        )}
       </DialogContent>
+
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} color="secondary" variant="outlined">Cancelar</Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={submitting || !selected}
-          startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Link1 size={16} />}
-        >
-          Vincular
-        </Button>
+        {tab === 0 ? (
+          <Button
+            onClick={handleCreate}
+            variant="contained"
+            disabled={submitting || !numberIdValid}
+            startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Routing size={16} />}
+          >
+            Crear seguimiento
+          </Button>
+        ) : (
+          <Button
+            onClick={handleLink}
+            variant="contained"
+            disabled={submitting || !selected || loadingTrackings}
+            startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Routing size={16} />}
+          >
+            Vincular
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -468,8 +471,7 @@ const DocumentsLayout = () => {
   const [openCreate, setOpenCreate] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<PostalDocumentType | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [createTrackingDoc, setCreateTrackingDoc] = useState<PostalDocumentType | null>(null);
-  const [linkTrackingDoc, setLinkTrackingDoc] = useState<PostalDocumentType | null>(null);
+  const [trackingDialogDoc, setTrackingDialogDoc] = useState<PostalDocumentType | null>(null);
 
   // Selección múltiple
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -490,7 +492,6 @@ const DocumentsLayout = () => {
     loadData();
   }, [loadData]);
 
-  // Búsqueda con debounce 400ms
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
@@ -585,7 +586,6 @@ const DocumentsLayout = () => {
         </Button>
       }
     >
-      {/* Barra de búsqueda — solo si hay datos o se está buscando */}
       {(documents.length > 0 || search) && (
         <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
           <TextField
@@ -605,7 +605,6 @@ const DocumentsLayout = () => {
         </Stack>
       )}
 
-      {/* Tabla */}
       {isLoader ? (
         <TableSkeleton rows={Math.min(rowsPerPage, 10)} />
       ) : documents.length === 0 && !search ? (
@@ -694,7 +693,7 @@ const DocumentsLayout = () => {
                           </Stack>
                           {row.linkedTrackingId && (
                             <Tooltip title="Vinculado a un seguimiento postal">
-                              <Chip size="small" label="Seguimiento" color="info" variant="outlined" icon={<Routing size={12} />} />
+                              <Chip size="small" label="Seguimiento" color="info" variant="outlined" />
                             </Tooltip>
                           )}
                         </Stack>
@@ -738,39 +737,19 @@ const DocumentsLayout = () => {
                             </Tooltip>
                           )}
 
-                          {/* Crear seguimiento */}
-                          {row.linkedTrackingId ? (
-                            <Tooltip title="Ya tiene un seguimiento vinculado">
-                              <span style={{ display: "inline-flex" }}>
-                                <IconButton size="small" disabled>
-                                  <Routing size={16} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title="Crear seguimiento postal">
-                              <IconButton size="small" color="success" onClick={() => setCreateTrackingDoc(row)}>
+                          {/* Seguimiento de envío */}
+                          <Tooltip title={row.linkedTrackingId ? "Ya tiene un seguimiento vinculado" : "Seguimiento de envío"}>
+                            <span style={{ display: "inline-flex" }}>
+                              <IconButton
+                                size="small"
+                                color={row.linkedTrackingId ? "default" : "success"}
+                                disabled={Boolean(row.linkedTrackingId)}
+                                onClick={() => setTrackingDialogDoc(row)}
+                              >
                                 <Routing size={16} />
                               </IconButton>
-                            </Tooltip>
-                          )}
-
-                          {/* Vincular seguimiento existente */}
-                          {row.linkedTrackingId ? (
-                            <Tooltip title="Ya tiene un seguimiento vinculado">
-                              <span style={{ display: "inline-flex" }}>
-                                <IconButton size="small" disabled>
-                                  <Link1 size={16} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title="Vincular a seguimiento existente">
-                              <IconButton size="small" color="warning" onClick={() => setLinkTrackingDoc(row)}>
-                                <Link1 size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
+                            </span>
+                          </Tooltip>
 
                           {/* Editar (pendiente) */}
                           <Tooltip title="Editar (próximamente)">
@@ -853,18 +832,10 @@ const DocumentsLayout = () => {
         onClose={handleCloseDetail}
       />
 
-      <CreateTrackingDialog
-        open={Boolean(createTrackingDoc)}
-        document={createTrackingDoc}
-        onClose={() => setCreateTrackingDoc(null)}
-        onSuccess={loadData}
-        showSnackbar={showSnackbar}
-      />
-
-      <LinkTrackingDialog
-        open={Boolean(linkTrackingDoc)}
-        document={linkTrackingDoc}
-        onClose={() => setLinkTrackingDoc(null)}
+      <TrackingDialog
+        open={Boolean(trackingDialogDoc)}
+        document={trackingDialogDoc}
+        onClose={() => setTrackingDialogDoc(null)}
         onSuccess={loadData}
         showSnackbar={showSnackbar}
       />
