@@ -13,19 +13,15 @@ import {
 	useTheme,
 	Grid,
 	Chip,
-	List,
-	ListItem,
-	ListItemText,
 	CircularProgress,
 	Alert,
-	alpha,
 } from "@mui/material";
-import { Lock, ArrowRight, TickCircle, CloseCircle, Crown } from "iconsax-react";
+import { Lock, ArrowRight, TickCircle, CloseCircle, Crown, DiscountShape } from "iconsax-react";
 // Importar MainCard desde el componente personalizado
 import MainCard from "components/MainCard";
 // Importar el servicio API para obtener planes dinámicamente
 import ApiService, { Plan } from "store/reducers/ApiService";
-import { getPlanPricing, formatPrice, getBillingPeriodText, cleanPlanDisplayName } from "utils/planPricingUtils";
+import { getPlanPricing, getBillingPeriodText, cleanPlanDisplayName } from "utils/planPricingUtils";
 
 interface LimitInfo {
 	resourceType: string;
@@ -832,63 +828,44 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 												</Box>
 											</Grid>
 											<Grid item xs={12}>
-												<List
-													sx={{
-														m: 0,
-														p: 0,
-														"&> li": {
-															px: 0,
-															py: 0.4,
-														},
-														maxHeight: "180px",
-														overflowY: "auto",
-														"&::-webkit-scrollbar": {
-															width: "6px",
-														},
-														"&::-webkit-scrollbar-track": {
-															backgroundColor: alpha(theme.palette.background.paper, 0.1),
-														},
-														"&::-webkit-scrollbar-thumb": {
-															backgroundColor: alpha(theme.palette.primary.main, 0.2),
-															borderRadius: "6px",
-														},
-													}}
-													component="ul"
-												>
-													{/* Primero mostrar los recursos del plan */}
-													{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => {
-														// Usar displayName del recurso
-														return (
-															<React.Fragment key={`resource-${i}`}>
-																<ListItem>
-																	<ListItemText primary={`${resource.limit} ${resource.displayName}`} sx={{ textAlign: "center", fontWeight: "medium" }} />
-																</ListItem>
-															</React.Fragment>
-														);
-
-													})}
-													{/* Luego mostrar las características en orden: habilitadas primero, deshabilitadas después */}
-													{[...plan.features]
-														.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
-														.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
-														.map((feature, i) => (
-															<React.Fragment key={`feature-${i}`}>
-																<ListItem sx={!feature.enabled ? priceListDisable : {}}>
-																	<Box sx={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center", gap: 1 }}>
+												<Box sx={{ p: 1 }}>
+													{/* Resources: Grid de cajas */}
+													<Grid container spacing={1} sx={{ mb: 2 }}>
+														{plan.resourceLimits
+															.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
+															.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+															.map((resource, i) => (
+																<Grid item xs={6} key={`resource-${i}`}>
+																	<Box sx={{ textAlign: "center", p: 1, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
+																		<Typography variant="body2" fontWeight="medium" sx={{ wordBreak: "break-word" }}>
+																			{`${resource.limit} ${resource.displayName}`}
+																		</Typography>
+																	</Box>
+																</Grid>
+															))}
+													</Grid>
+													<Divider sx={{ my: 1.5 }} />
+													{/* Features: grid de 2 columnas con iconos */}
+													<Grid container spacing={1}>
+														{[...plan.features]
+															.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
+															.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+															.map((feature, i) => (
+																<Grid item xs={12} sm={6} key={`feature-${i}`}>
+																	<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
 																		{feature.enabled ? (
 																			<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
 																		) : (
 																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
 																		)}
-																		<ListItemText
-																			primary={feature.description}
-																			sx={{ textAlign: "center", fontWeight: feature.enabled ? "medium" : "normal" }}
-																		/>
+																		<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																			{feature.displayName || feature.description}
+																		</Typography>
 																	</Box>
-																</ListItem>
-															</React.Fragment>
-														))}
-												</List>
+																</Grid>
+															))}
+													</Grid>
+												</Box>
 											</Grid>
 										</Grid>
 									</MainCard>
