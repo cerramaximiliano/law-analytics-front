@@ -6,11 +6,15 @@ import { PostalTrackingType, PostalTrackingState, PostalTrackingFilters, CreateP
 const SET_LOADING = "postalTracking/SET_LOADING";
 const SET_ERROR = "postalTracking/SET_ERROR";
 const SET_TRACKINGS = "postalTracking/SET_TRACKINGS";
+const SET_ALL_TRACKINGS = "postalTracking/SET_ALL_TRACKINGS";
 const ADD_TRACKING = "postalTracking/ADD_TRACKING";
 const UPDATE_TRACKING = "postalTracking/UPDATE_TRACKING";
 const DELETE_TRACKING = "postalTracking/DELETE_TRACKING";
 const SET_TRACKING_DETAIL = "postalTracking/SET_TRACKING_DETAIL";
 const CLEAR_TRACKING_DETAIL = "postalTracking/CLEAR_TRACKING_DETAIL";
+
+// Tiempo de vida del caché: 5 minutos
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const initialState: PostalTrackingState = {
   trackings: [],
@@ -20,6 +24,8 @@ const initialState: PostalTrackingState = {
   total: 0,
   page: 1,
   totalPages: 1,
+  allTrackings: [],
+  allTrackingsCachedAt: 0,
 };
 
 const postalTrackingReducer = (state = initialState, action: any): PostalTrackingState => {
@@ -37,10 +43,17 @@ const postalTrackingReducer = (state = initialState, action: any): PostalTrackin
         totalPages: action.payload.totalPages,
         isLoader: false,
       };
+    case SET_ALL_TRACKINGS:
+      return {
+        ...state,
+        allTrackings: action.payload,
+        allTrackingsCachedAt: Date.now(),
+      };
     case ADD_TRACKING:
       return {
         ...state,
         trackings: [action.payload, ...state.trackings],
+        allTrackings: [action.payload, ...state.allTrackings],
         total: state.total + 1,
         isLoader: false,
       };
@@ -48,6 +61,7 @@ const postalTrackingReducer = (state = initialState, action: any): PostalTrackin
       return {
         ...state,
         trackings: state.trackings.map((t) => (t._id === action.payload._id ? action.payload : t)),
+        allTrackings: state.allTrackings.map((t) => (t._id === action.payload._id ? action.payload : t)),
         tracking: state.tracking?._id === action.payload._id ? action.payload : state.tracking,
         isLoader: false,
       };
@@ -55,6 +69,7 @@ const postalTrackingReducer = (state = initialState, action: any): PostalTrackin
       return {
         ...state,
         trackings: state.trackings.filter((t) => t._id !== action.payload),
+        allTrackings: state.allTrackings.filter((t) => t._id !== action.payload),
         total: state.total - 1,
         isLoader: false,
       };
@@ -78,6 +93,25 @@ export const fetchPostalTrackings = (filters: PostalTrackingFilters = {}) => asy
   } catch (error: unknown) {
     const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los seguimientos" : "Error al obtener los seguimientos";
     dispatch({ type: SET_ERROR, payload: msg });
+    return { success: false, error: msg };
+  }
+};
+
+/**
+ * Carga todos los seguimientos en un caché plano para usar en autocompletes.
+ * Solo hace el request si el caché está vacío o expiró (TTL 5 min).
+ * No interfiere con el listado paginado (state.trackings).
+ */
+export const fetchAllTrackings = () => async (dispatch: Dispatch, getState: () => any) => {
+  const { allTrackings, allTrackingsCachedAt } = getState().postalTrackingReducer;
+  const isStale = Date.now() - allTrackingsCachedAt > CACHE_TTL_MS;
+  if (allTrackings.length > 0 && !isStale) return { success: true };
+  try {
+    const response = await axios.get(BASE_URL, { params: { limit: 200 } });
+    dispatch({ type: SET_ALL_TRACKINGS, payload: response.data.data });
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los seguimientos" : "Error al obtener los seguimientos";
     return { success: false, error: msg };
   }
 };

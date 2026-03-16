@@ -10,12 +10,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   Grid,
   IconButton,
   InputAdornment,
   MenuItem,
   Pagination,
+  Paper,
   Select,
   Skeleton,
   Stack,
@@ -47,7 +49,7 @@ import {
 import { openSnackbar } from "store/reducers/snackbar";
 import {
   createPostalTracking,
-  fetchPostalTrackings,
+  fetchAllTrackings,
   updatePostalTracking,
 } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
@@ -182,28 +184,50 @@ interface DocumentDetailDialogProps {
   onClose: () => void;
 }
 
+const PROCESSING_STATUS_LABELS: Record<string, string> = {
+  pending: "Pendiente",
+  active: "Activo",
+  completed: "Completado",
+  paused: "Pausado",
+  error: "Error",
+};
+
+const PROCESSING_STATUS_COLORS: Record<string, "default" | "warning" | "success" | "info" | "error"> = {
+  pending: "warning",
+  active: "info",
+  completed: "success",
+  paused: "default",
+  error: "error",
+};
+
 const DocumentDetailDialog = ({ open, document, onClose }: DocumentDetailDialogProps) => {
   const folders = useSelector((state: any) => state.folder?.folders || []);
+  const allTrackings: PostalTrackingType[] = useSelector((state: any) => state.postalTrackingReducer?.allTrackings || []);
   if (!document) return null;
+
+  const TRACKING_SLUGS = ["telegrama_laboral"];
+  const supportsTracking = Boolean(document.supportsTracking) || TRACKING_SLUGS.includes(document.templateSlug ?? "");
+
   const linkedFolder = document.linkedFolderId
     ? folders.find((f: FolderData) => f._id === document.linkedFolderId)
     : null;
+  const linkedTracking = supportsTracking && document.linkedTrackingId
+    ? allTrackings.find((t) => t._id === document.linkedTrackingId)
+    : null;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack spacing={0.5}>
             <Typography variant="h5">{document.title}</Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
               <Chip size="small" label={document.templateName} variant="outlined" />
               <Chip
                 size="small"
                 label={STATUS_LABELS[document.status] ?? document.status}
                 color={STATUS_COLORS[document.status] ?? "default"}
               />
-              {linkedFolder && (
-                <Chip size="small" label={`Carpeta: ${linkedFolder.folderName}`} color="secondary" variant="outlined" />
-              )}
               <Typography variant="caption" color="textSecondary">
                 {formatDate(document.createdAt)}
               </Typography>
@@ -221,20 +245,131 @@ const DocumentDetailDialog = ({ open, document, onClose }: DocumentDetailDialogP
           )}
         </Stack>
       </DialogTitle>
-      <DialogContent dividers>
-        {document.documentUrl ? (
-          <iframe
-            src={document.documentUrl}
-            title={document.title}
-            style={{ width: "100%", height: 500, border: "none" }}
-          />
-        ) : (
-          <Stack alignItems="center" justifyContent="center" sx={{ py: 6 }}>
-            <Typography color="textSecondary">
-              El PDF aún no ha sido generado o no está disponible.
-            </Typography>
-          </Stack>
-        )}
+      <DialogContent dividers sx={{ p: 0 }}>
+        <Grid container sx={{ height: 580 }}>
+          {/* ── PDF ── */}
+          <Grid item xs={12} md={8} sx={{ height: "100%", borderRight: 1, borderColor: "divider" }}>
+            {document.documentUrl ? (
+              <iframe
+                src={document.documentUrl}
+                title={document.title}
+                style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+              />
+            ) : (
+              <Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
+                <Typography color="textSecondary">
+                  El PDF aún no ha sido generado o no está disponible.
+                </Typography>
+              </Stack>
+            )}
+          </Grid>
+
+          {/* ── Panel de detalles ── */}
+          <Grid item xs={12} md={4} sx={{ height: "100%", overflowY: "auto", p: 2.5 }}>
+            <Stack spacing={2.5}>
+              {/* Descripción */}
+              {document.description && (
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="textSecondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
+                    Descripción
+                  </Typography>
+                  <Typography variant="body2">{document.description}</Typography>
+                </Stack>
+              )}
+
+              {/* Carpeta vinculada */}
+              <Stack spacing={0.75}>
+                <Typography variant="caption" color="textSecondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
+                  Carpeta
+                </Typography>
+                {linkedFolder ? (
+                  <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1.5 }}>
+                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                      <FolderOpen size={20} style={{ flexShrink: 0, marginTop: 2 }} />
+                      <Stack spacing={0.25}>
+                        <Typography variant="body2" fontWeight={500}>{linkedFolder.folderName}</Typography>
+                        {linkedFolder.folderFuero && (
+                          <Typography variant="caption" color="textSecondary">{linkedFolder.folderFuero}</Typography>
+                        )}
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">Sin carpeta vinculada</Typography>
+                )}
+              </Stack>
+
+              {supportsTracking && <Divider />}
+
+              {/* Seguimiento postal */}
+              {supportsTracking && (
+              <Stack spacing={0.75}>
+                <Typography variant="caption" color="textSecondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
+                  Seguimiento postal
+                </Typography>
+                {linkedTracking ? (
+                  <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1.5 }}>
+                    <Stack spacing={1}>
+                      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                        <Typography variant="body2" fontWeight={600}>
+                          {linkedTracking.codeId} {linkedTracking.numberId}
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={PROCESSING_STATUS_LABELS[linkedTracking.processingStatus] ?? linkedTracking.processingStatus}
+                          color={PROCESSING_STATUS_COLORS[linkedTracking.processingStatus] ?? "default"}
+                        />
+                      </Stack>
+                      {linkedTracking.label && (
+                        <Typography variant="caption" color="textSecondary">{linkedTracking.label}</Typography>
+                      )}
+                      {linkedTracking.trackingStatus && (
+                        <Stack spacing={0.25}>
+                          <Typography variant="caption" color="textSecondary" fontWeight={500}>Estado del envío</Typography>
+                          <Typography variant="caption">{linkedTracking.trackingStatus}</Typography>
+                        </Stack>
+                      )}
+                      <Stack direction="row" spacing={2}>
+                        {linkedTracking.lastCheckedAt && (
+                          <Stack spacing={0.25}>
+                            <Typography variant="caption" color="textSecondary" fontWeight={500}>Último chequeo</Typography>
+                            <Typography variant="caption">{formatDate(linkedTracking.lastCheckedAt)}</Typography>
+                          </Stack>
+                        )}
+                        {linkedTracking.nextCheckAt && (
+                          <Stack spacing={0.25}>
+                            <Typography variant="caption" color="textSecondary" fontWeight={500}>Próximo chequeo</Typography>
+                            <Typography variant="caption">{formatDate(linkedTracking.nextCheckAt)}</Typography>
+                          </Stack>
+                        )}
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                ) : (
+                  <Typography variant="body2" color="textSecondary">Sin seguimiento vinculado</Typography>
+                )}
+              </Stack>
+              )}
+
+              {/* Tags */}
+              {document.tags && document.tags.length > 0 && (
+                <>
+                  <Divider />
+                  <Stack spacing={0.75}>
+                    <Typography variant="caption" color="textSecondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
+                      Etiquetas
+                    </Typography>
+                    <Stack direction="row" flexWrap="wrap" gap={0.75}>
+                      {document.tags.map((tag: string) => (
+                        <Chip key={tag} size="small" label={tag} variant="outlined" />
+                      ))}
+                    </Stack>
+                  </Stack>
+                </>
+              )}
+            </Stack>
+          </Grid>
+        </Grid>
       </DialogContent>
     </Dialog>
   );
@@ -252,7 +387,7 @@ interface VincularDialogProps {
 
 const VincularDialog = ({ open, document, onClose, onSuccess, showSnackbar }: VincularDialogProps) => {
   const folders: FolderData[]           = useSelector((state: any) => state.folder?.folders || []);
-  const trackings: PostalTrackingType[] = useSelector((state: any) => state.postalTracking?.trackings || []);
+  const trackings: PostalTrackingType[] = useSelector((state: any) => state.postalTrackingReducer?.allTrackings || []);
   const userId                          = useSelector((state: any) => state.auth?.user?._id);
 
   // Fallback para documentos anteriores a la migración que no tienen el campo
@@ -288,10 +423,8 @@ const VincularDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Vi
     setLabel(document.title || "");
     setSelectedTracking(null);
     if (folders.length === 0 && userId) dispatch(getFoldersByUserId(userId) as any);
-    if (supportsTracking) {
-      setLoadingTrackings(true);
-      dispatch(fetchPostalTrackings()).then(() => setLoadingTrackings(false));
-    }
+    setLoadingTrackings(true);
+    dispatch(fetchAllTrackings() as any).then(() => setLoadingTrackings(false));
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Guardar carpeta ──

@@ -34,9 +34,8 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, createPostalDocument, updatePostalDocument } from "store/reducers/postalDocuments";
 import { getContactsByUserId, addContact, updateContact } from "store/reducers/contacts";
-import { createPostalTracking } from "store/reducers/postalTracking";
+import { createPostalTracking, fetchAllTrackings } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
-import { fetchPostalTrackings } from "store/reducers/postalTracking";
 import { PdfTemplate, PdfTemplateField } from "types/postal-document";
 import { Contact } from "types/contact";
 import { FolderData } from "types/folder";
@@ -370,7 +369,7 @@ export default function CreatePostalDocumentModal({
   // Redux state
   const allContacts: Contact[] = useSelector((state: any) => state.contacts?.contacts || []);
   const allFolders: FolderData[] = useSelector((state: any) => state.folder?.folders || []);
-  const allTrackings: PostalTrackingType[] = useSelector((state: any) => state.postalTracking?.trackings || []);
+  const allTrackings: PostalTrackingType[] = useSelector((state: any) => state.postalTrackingReducer?.allTrackings || []);
   const userId = useSelector((state: any) => state.auth?.user?._id);
   const user = useSelector((state: any) => state.auth?.user);
 
@@ -438,9 +437,7 @@ export default function CreatePostalDocumentModal({
     if (userId && allFolders.length === 0) {
       dispatch(getFoldersByUserId(userId) as any);
     }
-    if (allTrackings.length === 0) {
-      dispatch(fetchPostalTrackings({ limit: 200 }) as any);
-    }
+    dispatch(fetchAllTrackings() as any);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Reset ─────────────────────────────────────────────────────────────────
@@ -867,7 +864,7 @@ export default function CreatePostalDocumentModal({
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose_} maxWidth="md" fullWidth>
+      <Dialog open={open} onClose={handleClose_} maxWidth={step === 1 ? "lg" : "md"} fullWidth>
         <DialogTitle>
           {step === 0 ? "Seleccioná una plantilla" : `Completar formulario — ${selectedTemplate?.name}`}
         </DialogTitle>
@@ -989,14 +986,37 @@ export default function CreatePostalDocumentModal({
                   });
                   return { groups: gs, groupOrder: go };
                 })();
-                return groupOrder.map((gk) => (
-                  <Box key={gk}>
-                    {renderGroup(gk, groups[gk])}
-                    {CONTACT_GROUPS.includes(gk as ContactGroupKey) && gk !== groupOrder[groupOrder.length - 1] && (
-                      <Divider sx={{ mt: 2 }} />
-                    )}
-                  </Box>
-                ));
+                // Pair destinatario + remitente side-by-side when consecutive
+                const renderItems: Array<string | [string, string]> = [];
+                let ri = 0;
+                while (ri < groupOrder.length) {
+                  if (groupOrder[ri] === "destinatario" && groupOrder[ri + 1] === "remitente") {
+                    renderItems.push(["destinatario", "remitente"]);
+                    ri += 2;
+                  } else {
+                    renderItems.push(groupOrder[ri]);
+                    ri++;
+                  }
+                }
+                return renderItems.map((item) => {
+                  if (Array.isArray(item)) {
+                    const [gk1, gk2] = item;
+                    return (
+                      <Grid container spacing={2} key={`${gk1}-${gk2}`} alignItems="flex-start">
+                        <Grid item xs={12} md={6}>{renderGroup(gk1, groups[gk1])}</Grid>
+                        <Grid item xs={12} md={6}>{renderGroup(gk2, groups[gk2])}</Grid>
+                      </Grid>
+                    );
+                  }
+                  return (
+                    <Box key={item}>
+                      {renderGroup(item, groups[item])}
+                      {CONTACT_GROUPS.includes(item as ContactGroupKey) && item !== groupOrder[groupOrder.length - 1] && (
+                        <Divider sx={{ mt: 2 }} />
+                      )}
+                    </Box>
+                  );
+                });
               })()}
 
               {/* ── Vincular ── */}
