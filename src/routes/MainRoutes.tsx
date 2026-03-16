@@ -88,6 +88,12 @@ const AdminJudicialMovementsPage = Loadable(lazyRetry(() => import("pages/admin/
 // render - tasks
 const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
 
+// render - herramientas
+const PostalTrackingPage = Loadable(lazyRetry(() => import("pages/herramientas/postal-tracking"), "PostalTrackingPage"));
+
+// render - documentos
+const ModelosPage = Loadable(lazyRetry(() => import("pages/herramientas/plantillas"), "ModelosPage"));
+
 // ==============================|| MAIN ROUTES ||============================== //
 
 const MainRoutes = {
@@ -328,6 +334,33 @@ const MainRoutes = {
 				{
 					path: "tareas",
 					element: <TasksPage />,
+				},
+				{
+					path: "herramientas",
+					children: [
+						{
+							path: "seguimiento-postal",
+							element: <PostalTrackingPage />,
+						},
+						{
+							/* legacy — kept for bookmarks */
+							path: "plantillas",
+							element: <ModelosPage />,
+						},
+					],
+				},
+				{
+					path: "documentos",
+					children: [
+						{
+							path: "escritos",
+							element: <DocumentsLayout />,
+						},
+						{
+							path: "modelos",
+							element: <ModelosPage />,
+						},
+					],
 				},
 				{
 					path: "ayuda",

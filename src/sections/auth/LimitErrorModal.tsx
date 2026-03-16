@@ -13,19 +13,15 @@ import {
 	useTheme,
 	Grid,
 	Chip,
-	List,
-	ListItem,
-	ListItemText,
 	CircularProgress,
 	Alert,
-	alpha,
 } from "@mui/material";
 import { Lock, ArrowRight, TickCircle, CloseCircle, Crown, DiscountShape } from "iconsax-react";
 // Importar MainCard desde el componente personalizado
 import MainCard from "components/MainCard";
 // Importar el servicio API para obtener planes dinámicamente
 import ApiService, { Plan } from "store/reducers/ApiService";
-import { getPlanPricing, formatPrice, getBillingPeriodText, cleanPlanDisplayName } from "utils/planPricingUtils";
+import { getPlanPricing, getBillingPeriodText, cleanPlanDisplayName } from "utils/planPricingUtils";
 
 // Helper para formatear nombres de planes en español
 const formatPlanNameSpanish = (planName: string): string => {
@@ -780,8 +776,131 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			return renderSinglePlan(activePlans[0]);
 		}
 
-		// Si hay múltiples planes, usar formato de cards
-		return renderMultiplePlans(activePlans);
+							return (
+								<Grid item xs={12} sm={6} md={activePlans.length <= 2 ? 5 : 4} key={plan.planId}>
+									<MainCard
+										elevation={0}
+										sx={{
+											height: "100%",
+											minHeight: "380px",
+											overflow: "visible",
+											border: `1px solid ${theme.palette.divider}`,
+											transition: "all 0.3s ease-in-out",
+											"&:hover": {
+												transform: "translateY(-5px)",
+												boxShadow: theme.shadows[4],
+												borderColor: theme.palette.primary.main,
+											},
+										}}
+									>
+										<Grid container spacing={1}>
+											<Grid item xs={12}>
+												<Box
+													sx={{
+														...getPlanStyle(plan.planId, false),
+														pt: 2,
+														pb: 2,
+													}}
+												>
+													<Grid container spacing={1}>
+														{/* Mostramos el chip correspondiente */}
+														<Grid item xs={12} sx={{ textAlign: "center" }}>
+															{getPlanChip(plan.planId, false, plan.isDefault)}
+														</Grid>
+														<Grid item xs={12}>
+															<Stack spacing={0} textAlign="center">
+																<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
+															</Stack>
+														</Grid>
+														<Grid item xs={12}>
+															<Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
+																<Typography variant="h2" sx={price}>
+																	${displayPrice}
+																</Typography>
+																<Typography variant="h6" color="textSecondary" sx={{ ml: 1 }}>
+																	{getBillingPeriodText(pricing.billingPeriod)}
+																</Typography>
+															</Box>
+														</Grid>
+														<Grid item xs={12}>
+															<Button
+																color={getButtonColor(plan.planId, false)}
+																variant={
+																	plan.planId.toLowerCase() === "standard" || plan.planId.toLowerCase() === "premium"
+																		? "contained"
+																		: "outlined"
+																}
+																fullWidth
+																onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
+																disabled={loadingPlanId !== null}
+																endIcon={
+																	loadingPlanId === plan.planId ? <CircularProgress size={16} color="inherit" /> : <ArrowRight size={16} />
+																}
+																size="medium"
+																sx={{
+																	py: 1,
+																	fontWeight: 600,
+																	transition: "all 0.3s ease-in-out",
+																	"&:hover": {
+																		transform: "scale(1.02)",
+																	},
+																}}
+															>
+																{loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme Ahora"}
+															</Button>
+														</Grid>
+													</Grid>
+												</Box>
+											</Grid>
+											<Grid item xs={12}>
+												<Box sx={{ p: 1 }}>
+													{/* Resources: Grid de cajas */}
+													<Grid container spacing={1} sx={{ mb: 2 }}>
+														{plan.resourceLimits
+															.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
+															.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+															.map((resource, i) => (
+																<Grid item xs={6} key={`resource-${i}`}>
+																	<Box sx={{ textAlign: "center", p: 1, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
+																		<Typography variant="body2" fontWeight="medium" sx={{ wordBreak: "break-word" }}>
+																			{`${resource.limit} ${resource.displayName}`}
+																		</Typography>
+																	</Box>
+																</Grid>
+															))}
+													</Grid>
+													<Divider sx={{ my: 1.5 }} />
+													{/* Features: grid de 2 columnas con iconos */}
+													<Grid container spacing={1}>
+														{[...plan.features]
+															.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
+															.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+															.map((feature, i) => (
+																<Grid item xs={12} sm={6} key={`feature-${i}`}>
+																	<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																		{feature.enabled ? (
+																			<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
+																		) : (
+																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
+																		)}
+																		<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																			{feature.displayName || feature.description}
+																		</Typography>
+																	</Box>
+																</Grid>
+															))}
+													</Grid>
+												</Box>
+											</Grid>
+										</Grid>
+									</MainCard>
+								</Grid>
+							);
+						})}
+					</Grid>
+				</Box>
+			</Grid>
+		);
 	};
 
 	// Altura fija del contenido para evitar resize durante la carga

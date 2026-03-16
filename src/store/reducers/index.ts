@@ -36,6 +36,8 @@ import activityLog from "./activityLog";
 import rag from "./rag";
 import pjnSync from "./pjnSync";
 import movementsSync from "./movementsSync";
+import postalTrackingReducer from "./postalTracking";
+import postalDocumentsReducer from "./postalDocuments";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -79,6 +81,8 @@ const reducers = combineReducers({
 	rag,
 	pjnSync,
 	movementsSync,
+	postalTrackingReducer,
+	postalDocumentsReducer,
 });
 
 export default reducers;
