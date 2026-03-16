@@ -49,6 +49,9 @@ export interface PostalTrackingState {
   total: number;
   page: number;
   totalPages: number;
+  // Cache plano para autocompletes — no se sobreescribe con llamadas paginadas
+  allTrackings: PostalTrackingType[];
+  allTrackingsCachedAt: number; // timestamp ms, 0 = nunca cargado
 }
 
 export interface PostalTrackingFilters {

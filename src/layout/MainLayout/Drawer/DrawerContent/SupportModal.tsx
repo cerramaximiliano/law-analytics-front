@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, SyntheticEvent, ChangeEvent } from "react";
+import { useState, SyntheticEvent, ChangeEvent, useRef } from "react";
 import axios from "axios";
 
 import {
@@ -23,14 +23,15 @@ import {
 	Box,
 	Alert,
 	CircularProgress,
+	IconButton,
 } from "@mui/material";
 
 // icons
-import { MessageQuestion, TickCircle } from "iconsax-react";
+import { MessageQuestion, TickCircle, DocumentUpload, CloseCircle } from "iconsax-react";
 
 // project imports
 import { PopupTransition } from "components/@extended/Transitions";
-import { dispatch } from "store";
+import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
 
 // Tipos para el formulario de soporte
@@ -57,6 +58,7 @@ const subjectOptions = [
 	"Recuperación de cuenta",
 	"Error en proceso de pago",
 	"Solicitud de nueva jurisdicción",
+	"Solicitud de nuevo modelo de documento",
 	"Otro",
 ];
 
@@ -68,174 +70,169 @@ const priorityOptions = [
 	{ value: "urgent", label: "Urgente" },
 ];
 
+const SUBJECT_TEMPLATE_REQUEST = "Solicitud de nuevo modelo de documento";
+
+const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
+const MAX_FILE_SIZE_MB = 10;
+
 const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps) => {
 	const theme = useTheme();
 	const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	// Estado para los datos del formulario
+	const authUser = useSelector((state: any) => state.auth?.user);
+	const userName = authUser ? `${authUser.name || ""}${authUser.lastName ? " " + authUser.lastName : ""}`.trim() : "";
+	const userEmail = authUser?.email || "";
+
 	const [formData, setFormData] = useState<SupportFormData>({
-		name: "",
-		email: "",
+		name: userName,
+		email: userEmail,
 		subject: defaultSubject,
 		priority: "medium",
 		message: "",
 	});
 
-	// Actualizar subject cuando cambia defaultSubject o se abre el modal
-	React.useEffect(() => {
-		if (open && defaultSubject) {
-			setFormData((prev) => ({ ...prev, subject: defaultSubject }));
-		}
-	}, [open, defaultSubject]);
+	const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+	const [attachmentError, setAttachmentError] = useState("");
 
-	// Estado para los errores de validación
+	// Sincronizar nombre/email del usuario y subject al abrir
+	React.useEffect(() => {
+		if (open) {
+			setFormData((prev) => ({
+				...prev,
+				name: userName,
+				email: userEmail,
+				...(defaultSubject ? { subject: defaultSubject } : {}),
+			}));
+		}
+	}, [open, defaultSubject, userName, userEmail]);
+
 	const [errors, setErrors] = useState({
-		name: false,
-		email: false,
 		subject: false,
 		message: false,
 	});
 
-	// Estado para envío
 	const [submitting, setSubmitting] = useState(false);
 	const [submitted, setSubmitted] = useState(false);
 
-	// Resetear el formulario cuando se abre
 	const resetForm = () => {
 		setFormData({
-			name: "",
-			email: "",
+			name: userName,
+			email: userEmail,
 			subject: "",
 			priority: "medium",
 			message: "",
 		});
-		setErrors({
-			name: false,
-			email: false,
-			subject: false,
-			message: false,
-		});
+		setErrors({ name: false, email: false, subject: false, message: false });
+		setAttachmentFile(null);
+		setAttachmentError("");
 		setSubmitted(false);
 		setSubmitting(false);
 	};
 
-	// Manejar cambios en campos de texto
 	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-		setFormData({
-			...formData,
-			[event.target.name]: event.target.value,
-		});
-
-		// Limpiar error cuando el usuario empieza a escribir
-		if (errors[event.target.name as keyof typeof errors]) {
-			setErrors({
-				...errors,
-				[event.target.name]: false,
-			});
+		setFormData({ ...formData, [event.target.name]: event.target.value });
+		const key = event.target.name as keyof typeof errors;
+		if (key in errors && errors[key]) {
+			setErrors({ ...errors, [key]: false });
 		}
 	};
 
-	// Manejar cambios en campo select de prioridad
 	const handlePriorityChange = (event: SelectChangeEvent<string>) => {
-		setFormData({
-			...formData,
-			priority: event.target.value,
-		});
+		setFormData({ ...formData, priority: event.target.value });
 	};
 
-	// Validar el formulario
+	const handleFileChange = (file: File | null) => {
+		if (!file) {
+			setAttachmentFile(null);
+			setAttachmentError("");
+			return;
+		}
+		const name = file.name.toLowerCase();
+		const validExt = ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext));
+		if (!validExt) {
+			setAttachmentError("Formato no permitido. Usá PDF, DOC o DOCX.");
+			setAttachmentFile(null);
+			return;
+		}
+		if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+			setAttachmentError(`El archivo no puede superar ${MAX_FILE_SIZE_MB} MB.`);
+			setAttachmentFile(null);
+			return;
+		}
+		setAttachmentError("");
+		setAttachmentFile(file);
+	};
+
 	const validateForm = (): boolean => {
 		const newErrors = {
-			name: !formData.name.trim(),
-			email: !formData.email.trim() || !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email),
 			subject: !formData.subject.trim(),
 			message: !formData.message.trim(),
 		};
-
 		setErrors(newErrors);
-
-		return !Object.values(newErrors).some((error) => error);
+		return !Object.values(newErrors).some(Boolean);
 	};
 
-	// Manejar envío del formulario
 	const handleSubmit = async (event: SyntheticEvent) => {
 		event.preventDefault();
+		if (!validateForm()) return;
 
-		if (validateForm()) {
-			setSubmitting(true);
-			try {
-				const response = await axios.post(
-					`${import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL}/api/support-contacts`,
-					formData,
-					{
-						headers: {
-							"Content-Type": "application/json",
-						},
-						withCredentials: true,
-					},
-				);
+		setSubmitting(true);
+		try {
+			const payload = new FormData();
+			payload.append("name", formData.name);
+			payload.append("email", formData.email);
+			payload.append("subject", formData.subject);
+			payload.append("priority", formData.priority);
+			payload.append("message", formData.message);
+			if (attachmentFile) {
+				payload.append("attachment", attachmentFile);
+			}
 
-				// Si la solicitud es exitosa
-				if (response.data.success) {
-					// Mostrar mensaje de éxito
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: "Tu consulta ha sido enviada correctamente. Te responderemos pronto.",
-							variant: "alert",
-							alert: {
-								color: "success",
-							},
-							close: false,
-						}),
-					);
+			const response = await axios.post(
+				`${import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL}/api/support-contacts`,
+				payload,
+				{ withCredentials: true },
+			);
 
-					setSubmitted(true);
-
-					// Cerrar el modal después de 2 segundos
-					setTimeout(() => {
-						onClose();
-						resetForm();
-					}, 2000);
-				}
-			} catch (error) {
-				// Manejar diferentes tipos de errores
-				let errorMessage = "Error al enviar la consulta. Por favor, intenta más tarde.";
-
-				if (axios.isAxiosError(error)) {
-					if (error.response) {
-						errorMessage = error.response.data.error || errorMessage;
-					} else if (error.request) {
-						errorMessage = "No se pudo conectar con el servidor. Verifica tu conexión.";
-					}
-				}
-
-				// Mostrar mensaje de error
+			if (response.data.success) {
 				dispatch(
 					openSnackbar({
 						open: true,
-						message: errorMessage,
+						message: "Tu consulta ha sido enviada correctamente. Te responderemos pronto.",
 						variant: "alert",
-						alert: {
-							color: "error",
-						},
+						alert: { color: "success" },
 						close: false,
 					}),
 				);
-			} finally {
-				setSubmitting(false);
+				setSubmitted(true);
+				setTimeout(() => { onClose(); resetForm(); }, 2000);
 			}
+		} catch (error) {
+			let errorMessage = "Error al enviar la consulta. Por favor, intenta más tarde.";
+			if (axios.isAxiosError(error)) {
+				if (error.response) errorMessage = error.response.data.error || errorMessage;
+				else if (error.request) errorMessage = "No se pudo conectar con el servidor. Verifica tu conexión.";
+			}
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: errorMessage,
+					variant: "alert",
+					alert: { color: "error" },
+					close: false,
+				}),
+			);
+		} finally {
+			setSubmitting(false);
 		}
 	};
 
-	// Manejar cierre del modal
 	const handleClose = () => {
-		if (!submitting) {
-			onClose();
-			// Resetear el formulario después de cerrar
-			setTimeout(resetForm, 300);
-		}
+		if (!submitting) { onClose(); setTimeout(resetForm, 300); }
 	};
+
+	const isTemplateRequest = formData.subject === SUBJECT_TEMPLATE_REQUEST;
 
 	return (
 		<Dialog
@@ -245,22 +242,13 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 			keepMounted
 			maxWidth="sm"
 			fullWidth
+			fullScreen={fullScreen}
 			aria-labelledby="support-modal-title"
-			PaperProps={{
-				elevation: 5,
-				sx: {
-					borderRadius: 2,
-					overflow: "hidden",
-				},
-			}}
+			PaperProps={{ elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } }}
 		>
 			<DialogTitle
 				id="support-modal-title"
-				sx={{
-					bgcolor: theme.palette.primary.lighter,
-					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
-				}}
+				sx={{ bgcolor: theme.palette.primary.lighter, p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}
 			>
 				<Stack spacing={1}>
 					<Stack direction="row" alignItems="center" spacing={1}>
@@ -288,37 +276,15 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 				) : (
 					<Box component="form" onSubmit={handleSubmit}>
 						<Stack spacing={2.5}>
-							{/* Alert informativo */}
-							<Alert severity="info" sx={{ mb: 1 }}>
-								Si tu consulta es sobre un error de pago, incluye todos los detalles posibles para ayudarte mejor.
-							</Alert>
-
-							{/* Nombre */}
-							<TextField
-								fullWidth
-								label="Nombre completo"
-								name="name"
-								value={formData.name}
-								onChange={handleChange}
-								error={errors.name}
-								helperText={errors.name ? "El nombre es requerido" : ""}
-								disabled={submitting}
-								required
-							/>
-
-							{/* Email */}
-							<TextField
-								fullWidth
-								label="Correo electrónico"
-								name="email"
-								type="email"
-								value={formData.email}
-								onChange={handleChange}
-								error={errors.email}
-								helperText={errors.email ? "Ingresa un correo válido" : ""}
-								disabled={submitting}
-								required
-							/>
+							{isTemplateRequest ? (
+								<Alert severity="info" sx={{ mb: 0 }}>
+									Adjuntá el PDF, DOC o DOCX que querés que integremos como modelo autocompletable. Indicá también qué campos deberían ser completables y a qué tipo de expediente corresponde.
+								</Alert>
+							) : (
+								<Alert severity="info" sx={{ mb: 0 }}>
+									Si tu consulta es sobre un error de pago, incluí todos los detalles posibles para ayudarte mejor.
+								</Alert>
+							)}
 
 							{/* Asunto */}
 							<TextField
@@ -329,7 +295,7 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 								value={formData.subject}
 								onChange={handleChange}
 								error={errors.subject}
-								helperText={errors.subject ? "Selecciona un tipo de consulta" : ""}
+								helperText={errors.subject ? "Seleccioná un tipo de consulta" : ""}
 								disabled={submitting || !!defaultSubject}
 								required
 							>
@@ -364,15 +330,89 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 								label="Describe tu consulta"
 								name="message"
 								multiline
-								rows={5}
+								rows={4}
 								value={formData.message}
 								onChange={handleChange}
 								error={errors.message}
-								helperText={errors.message ? "El mensaje es requerido" : "Proporciona todos los detalles posibles"}
+								helperText={errors.message ? "El mensaje es requerido" : "Proporcioná todos los detalles posibles"}
 								disabled={submitting}
 								required
-								placeholder="Describe detalladamente tu consulta o problema..."
+								placeholder={
+									isTemplateRequest
+										? "Describí el tipo de documento, para qué fuero/jurisdicción se usa y qué campos deberían ser autocompletables..."
+										: "Describí detalladamente tu consulta o problema..."
+								}
 							/>
+
+							{/* Adjunto — solo para solicitud de modelo */}
+							{isTemplateRequest && (
+								<Box>
+									<Typography variant="subtitle2" sx={{ mb: 1 }}>
+										Documento de referencia <Typography component="span" variant="caption" color="textSecondary">(PDF, DOC o DOCX — máx. {MAX_FILE_SIZE_MB} MB)</Typography>
+									</Typography>
+									{attachmentFile ? (
+										<Stack
+											direction="row"
+											alignItems="center"
+											spacing={1}
+											sx={{
+												p: 1.5,
+												border: `1px solid ${theme.palette.success.main}`,
+												borderRadius: 1.5,
+												bgcolor: "success.lighter",
+											}}
+										>
+											<DocumentUpload size={20} color={theme.palette.success.main} />
+											<Typography variant="body2" sx={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+												{attachmentFile.name}
+											</Typography>
+											<Typography variant="caption" color="textSecondary" sx={{ flexShrink: 0 }}>
+												{(attachmentFile.size / 1024 / 1024).toFixed(1)} MB
+											</Typography>
+											<IconButton size="small" onClick={() => { setAttachmentFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} disabled={submitting}>
+												<CloseCircle size={18} />
+											</IconButton>
+										</Stack>
+									) : (
+										<Box
+											onClick={() => fileInputRef.current?.click()}
+											sx={{
+												p: 2.5,
+												border: `2px dashed ${attachmentError ? theme.palette.error.main : theme.palette.divider}`,
+												borderRadius: 1.5,
+												textAlign: "center",
+												cursor: "pointer",
+												transition: "border-color 0.2s, background-color 0.2s",
+												"&:hover": {
+													borderColor: theme.palette.primary.main,
+													bgcolor: "primary.lighter",
+												},
+											}}
+										>
+											<DocumentUpload size={28} style={{ opacity: 0.5, marginBottom: 6 }} />
+											<Typography variant="body2" color="textSecondary">
+												Hacé click para seleccionar un archivo
+											</Typography>
+											<Typography variant="caption" color="textSecondary">
+												PDF, DOC, DOCX — máx. {MAX_FILE_SIZE_MB} MB
+											</Typography>
+										</Box>
+									)}
+									{attachmentError && (
+										<Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+											{attachmentError}
+										</Typography>
+									)}
+									<input
+										ref={fileInputRef}
+										type="file"
+										accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+										style={{ display: "none" }}
+										onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+										disabled={submitting}
+									/>
+								</Box>
+							)}
 						</Stack>
 					</Box>
 				)}
