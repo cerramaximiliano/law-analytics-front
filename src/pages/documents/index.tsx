@@ -32,7 +32,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { Add, DocumentDownload, DocumentText, Edit2, Eye, Routing, Trash } from "iconsax-react";
+import { Add, DocumentDownload, DocumentText, Edit2, Eye, FolderOpen, Routing, Trash } from "iconsax-react";
 import { SearchNormal1 } from "iconsax-react";
 
 import MainCard from "components/MainCard";
@@ -50,8 +50,10 @@ import {
   fetchPostalTrackings,
   updatePostalTracking,
 } from "store/reducers/postalTracking";
+import { getFoldersByUserId } from "store/reducers/folder";
 import { PostalDocumentType } from "types/postal-document";
 import { PostalTrackingType } from "types/postal-tracking";
+import { FolderData } from "types/folder";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
 import AlertPostalTrackingDelete from "sections/apps/postal-tracking/AlertPostalTrackingDelete";
 
@@ -181,7 +183,11 @@ interface DocumentDetailDialogProps {
 }
 
 const DocumentDetailDialog = ({ open, document, onClose }: DocumentDetailDialogProps) => {
+  const folders = useSelector((state: any) => state.folder?.folders || []);
   if (!document) return null;
+  const linkedFolder = document.linkedFolderId
+    ? folders.find((f: FolderData) => f._id === document.linkedFolderId)
+    : null;
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>
@@ -195,6 +201,9 @@ const DocumentDetailDialog = ({ open, document, onClose }: DocumentDetailDialogP
                 label={STATUS_LABELS[document.status] ?? document.status}
                 color={STATUS_COLORS[document.status] ?? "default"}
               />
+              {linkedFolder && (
+                <Chip size="small" label={`Carpeta: ${linkedFolder.folderName}`} color="secondary" variant="outlined" />
+              )}
               <Typography variant="caption" color="textSecondary">
                 {formatDate(document.createdAt)}
               </Typography>
@@ -231,9 +240,9 @@ const DocumentDetailDialog = ({ open, document, onClose }: DocumentDetailDialogP
   );
 };
 
-// ── Modal de seguimiento (crear / vincular) ────────────────────────────────────
+// ── Modal Vincular ─────────────────────────────────────────────────────────────
 
-interface TrackingDialogProps {
+interface VincularDialogProps {
   open: boolean;
   document: PostalDocumentType | null;
   onClose: () => void;
@@ -241,35 +250,71 @@ interface TrackingDialogProps {
   showSnackbar: (msg: string, sev: "success" | "error") => void;
 }
 
-const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: TrackingDialogProps) => {
+const VincularDialog = ({ open, document, onClose, onSuccess, showSnackbar }: VincularDialogProps) => {
+  const folders: FolderData[]           = useSelector((state: any) => state.folder?.folders || []);
   const trackings: PostalTrackingType[] = useSelector((state: any) => state.postalTracking?.trackings || []);
+  const userId                          = useSelector((state: any) => state.auth?.user?._id);
 
+  // Fallback para documentos anteriores a la migración que no tienen el campo
+  const TRACKING_SLUGS = ["telegrama_laboral"];
+  const supportsTracking = Boolean(document?.supportsTracking) || TRACKING_SLUGS.includes(document?.templateSlug ?? "");
+
+  // Tab principal: 0 = Carpeta, 1 = Seguimiento (solo si supportsTracking)
   const [tab, setTab] = useState(0);
-  const [loadingTrackings, setLoadingTrackings] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Tab 0 — Crear nuevo
+  // ── Tab Carpeta ──
+  const [selectedFolder, setSelectedFolder] = useState<FolderData | null>(null);
+
+  // ── Tab Seguimiento — sub-tabs ──
+  const [trackingTab, setTrackingTab] = useState(0); // 0=crear, 1=vincular existente
+  const [loadingTrackings, setLoadingTrackings] = useState(false);
   const [codeId, setCodeId] = useState("TC");
   const [numberId, setNumberId] = useState("");
   const [label, setLabel] = useState("");
-
-  // Tab 1 — Vincular existente
-  const [selected, setSelected] = useState<PostalTrackingType | null>(null);
+  const [selectedTracking, setSelectedTracking] = useState<PostalTrackingType | null>(null);
 
   useEffect(() => {
     if (!open || !document) return;
     setTab(0);
+    setSubmitting(false);
+    // Pre-seleccionar carpeta actual
+    const currentFolder = folders.find((f) => f._id === (document.linkedFolderId as any)) || null;
+    setSelectedFolder(currentFolder);
+    // Seguimiento
+    setTrackingTab(0);
     setCodeId("TC");
     setNumberId("");
     setLabel(document.title || "");
-    setSelected(null);
-    setLoadingTrackings(true);
-    dispatch(fetchPostalTrackings()).then(() => setLoadingTrackings(false));
+    setSelectedTracking(null);
+    if (folders.length === 0 && userId) dispatch(getFoldersByUserId(userId) as any);
+    if (supportsTracking) {
+      setLoadingTrackings(true);
+      dispatch(fetchPostalTrackings()).then(() => setLoadingTrackings(false));
+    }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Guardar carpeta ──
+  const handleSaveFolder = async () => {
+    if (!document) return;
+    setSubmitting(true);
+    try {
+      await dispatch(updatePostalDocument(document._id, {
+        linkedFolderId: selectedFolder?._id || null,
+      }));
+      showSnackbar(selectedFolder ? "Carpeta vinculada al documento" : "Vinculación con carpeta eliminada", "success");
+      onSuccess();
+      onClose();
+    } catch {
+      showSnackbar("Error al vincular la carpeta", "error");
+    }
+    setSubmitting(false);
+  };
+
+  // ── Crear seguimiento ──
   const numberIdValid = /^\d{9}$/.test(numberId);
 
-  const handleCreate = async () => {
+  const handleCreateTracking = async () => {
     if (!document || !numberIdValid) return;
     setSubmitting(true);
     try {
@@ -279,7 +324,7 @@ const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Tr
           numberId,
           label,
           documentId: document._id,
-          ...(document.linkedFolderId ? { folderId: document.linkedFolderId } : {}),
+          ...(document.linkedFolderId ? { folderId: document.linkedFolderId as any } : {}),
         })
       );
       if (result?.success !== false) {
@@ -298,23 +343,29 @@ const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Tr
     setSubmitting(false);
   };
 
-  const handleLink = async () => {
-    if (!document || !selected) return;
+  // ── Vincular seguimiento existente ──
+  const folderConflict = selectedTracking
+    ? selectedTracking.folderId && document?.linkedFolderId && selectedTracking.folderId !== document.linkedFolderId
+    : false;
+  const folderPropagation = selectedTracking
+    ? (!selectedTracking.folderId && document?.linkedFolderId) || (selectedTracking.folderId && !document?.linkedFolderId)
+    : false;
+
+  const handleLinkTracking = async () => {
+    if (!document || !selectedTracking) return;
     setSubmitting(true);
     try {
-      const trackingFolder = selected.folderId || null;
+      const trackingFolder = selectedTracking.folderId || null;
       const documentFolder = document.linkedFolderId || null;
-      // El folder del seguimiento tiene precedencia; si solo el documento tiene folder, lo propaga al seguimiento.
       const resolvedFolder = trackingFolder || documentFolder;
-
       await Promise.all([
-        dispatch(updatePostalTracking(selected._id, {
+        dispatch(updatePostalTracking(selectedTracking._id, {
           documentId: document._id,
-          ...(!trackingFolder && resolvedFolder ? { folderId: resolvedFolder } : {}),
+          ...(!trackingFolder && resolvedFolder ? { folderId: resolvedFolder as any } : {}),
         })),
         dispatch(updatePostalDocument(document._id, {
-          linkedTrackingId: selected._id,
-          ...(resolvedFolder && resolvedFolder !== documentFolder ? { linkedFolderId: resolvedFolder } : {}),
+          linkedTrackingId: selectedTracking._id,
+          ...(resolvedFolder && resolvedFolder !== documentFolder ? { linkedFolderId: resolvedFolder as any } : {}),
         })),
       ]);
       showSnackbar("Documento vinculado al seguimiento exitosamente", "success");
@@ -326,22 +377,14 @@ const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Tr
     setSubmitting(false);
   };
 
-  // Análisis de conflicto de carpetas para mostrar advertencia
-  const folderConflict = selected
-    ? selected.folderId && document?.linkedFolderId && selected.folderId !== document.linkedFolderId
-    : false;
-  const folderPropagation = selected
-    ? (!selected.folderId && document?.linkedFolderId) || (selected.folderId && !document?.linkedFolderId)
-    : false;
+  const activeFolders = folders.filter((f: any) => f.status !== "archived");
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack spacing={0.5}>
-          <Typography variant="h5">Seguimiento de envío</Typography>
-          <Typography variant="body2" color="textSecondary">
-            {document?.title}
-          </Typography>
+          <Typography variant="h5">Vincular</Typography>
+          <Typography variant="body2" color="textSecondary">{document?.title}</Typography>
         </Stack>
       </DialogTitle>
 
@@ -350,134 +393,192 @@ const TrackingDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Tr
         onChange={(_, v) => setTab(v)}
         sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}
       >
-        <Tab label="Crear nuevo seguimiento" />
-        <Tab label="Vincular a uno existente" />
+        <Tab label="Carpeta" />
+        {supportsTracking && <Tab label="Seguimiento postal" />}
       </Tabs>
 
-      <DialogContent sx={{ pt: 2.5 }}>
-        {/* ── Tab 0: crear ── */}
+      <DialogContent sx={{ pt: 2.5, height: 320, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+
+        {/* ── Tab 0: Carpeta ── */}
         {tab === 0 && (
           <Stack spacing={2}>
             <Typography variant="body2" color="textSecondary">
-              Ingresá el código de seguimiento del envío postal para registrarlo y vincularlo a este documento.
+              Vinculá este documento a una carpeta de tu lista.
             </Typography>
-
-            <Stack direction="row" spacing={1.5}>
-              <FormControl size="small" sx={{ minWidth: 90 }}>
-                <Select value={codeId} onChange={(e) => setCodeId(e.target.value)}>
-                  {VALID_CODE_IDS.map((c) => (
-                    <MenuItem key={c} value={c}>{c}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField
-                size="small"
-                label="Número (9 dígitos)"
-                fullWidth
-                value={numberId}
-                onChange={(e) => setNumberId(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                error={numberId.length > 0 && !numberIdValid}
-                helperText={numberId.length > 0 && !numberIdValid ? "Debe tener exactamente 9 dígitos" : ""}
-                inputProps={{ inputMode: "numeric" }}
-              />
-            </Stack>
-
-            <TextField
+            <Autocomplete
               size="small"
-              label="Etiqueta (opcional)"
-              fullWidth
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
+              options={activeFolders}
+              value={selectedFolder}
+              getOptionLabel={(f: FolderData) => f.folderName || f.folderId || ""}
+              isOptionEqualToValue={(opt, val) => opt._id === val._id}
+              onChange={(_e, val) => setSelectedFolder(val)}
+              renderOption={(props, f: FolderData) => (
+                <Box component="li" {...props} key={f._id}>
+                  <Stack>
+                    <Typography variant="body2" fontWeight={500}>{f.folderName}</Typography>
+                    {f.folderFuero && (
+                      <Typography variant="caption" color="textSecondary">{f.folderFuero}</Typography>
+                    )}
+                  </Stack>
+                </Box>
+              )}
+              renderInput={(params) => (
+                <TextField {...params} label="Buscar carpeta..." />
+              )}
+              noOptionsText="Sin carpetas disponibles"
             />
-
-            {document?.linkedFolderId && (
-              <Typography variant="caption" color="textSecondary">
-                El seguimiento también se vinculará a la carpeta asociada al documento.
+            {document?.linkedFolderId && !selectedFolder && (
+              <Typography variant="caption" color="warning.main">
+                Si confirmás sin seleccionar una carpeta, se eliminará la vinculación actual.
               </Typography>
             )}
           </Stack>
         )}
 
-        {/* ── Tab 1: vincular ── */}
-        {tab === 1 && (
-          <Stack spacing={2}>
-            <Typography variant="body2" color="textSecondary">
-              Seleccioná un seguimiento postal ya existente para vincularlo a este documento.
-            </Typography>
+        {/* ── Tab 1: Seguimiento postal ── */}
+        {tab === 1 && supportsTracking && (
+          <Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
+            {/* Sub-tabs verticales */}
+            <Tabs
+              value={trackingTab}
+              onChange={(_, v) => setTrackingTab(v)}
+              orientation="vertical"
+              sx={{
+                borderRight: 1,
+                borderColor: "divider",
+                minWidth: 140,
+                mr: 2,
+                "& .MuiTab-root": { alignItems: "flex-start", textAlign: "left", minHeight: 52 },
+              }}
+            >
+              <Tab label="Crear nuevo" />
+              <Tab label="Vincular existente" />
+            </Tabs>
 
-            {loadingTrackings ? (
-              <Stack alignItems="center" sx={{ py: 3 }}>
-                <CircularProgress size={28} />
-              </Stack>
-            ) : (
-              <Autocomplete
-                size="small"
-                options={trackings}
-                value={selected}
-                getOptionLabel={(t: PostalTrackingType) =>
-                  `${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`
-                }
-                isOptionEqualToValue={(opt, val) => opt._id === val._id}
-                onChange={(_e, val) => setSelected(val)}
-                renderOption={(props, t: PostalTrackingType) => (
-                  <Box component="li" {...props} key={t._id}>
-                    <Stack>
-                      <Typography variant="body2" fontWeight={500}>
-                        {t.codeId} {t.numberId}
-                      </Typography>
-                      {t.label && (
-                        <Typography variant="caption" color="textSecondary">{t.label}</Typography>
-                      )}
+            {/* Contenido del sub-tab */}
+            <Box sx={{ flex: 1, overflow: "auto" }}>
+              {trackingTab === 0 && (
+                <Stack spacing={2}>
+                  <Typography variant="body2" color="textSecondary">
+                    Ingresá el código de seguimiento del envío postal para registrarlo y vincularlo a este documento.
+                  </Typography>
+                  <Stack direction="row" spacing={1.5}>
+                    <FormControl size="small" sx={{ minWidth: 90 }}>
+                      <Select value={codeId} onChange={(e) => setCodeId(e.target.value)}>
+                        {VALID_CODE_IDS.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <TextField
+                      size="small"
+                      label="Número (9 dígitos)"
+                      fullWidth
+                      value={numberId}
+                      onChange={(e) => setNumberId(e.target.value.replace(/\D/g, "").slice(0, 9))}
+                      error={numberId.length > 0 && !numberIdValid}
+                      helperText={numberId.length > 0 && !numberIdValid ? "Debe tener exactamente 9 dígitos" : ""}
+                      inputProps={{ inputMode: "numeric" }}
+                    />
+                  </Stack>
+                  <TextField
+                    size="small"
+                    label="Etiqueta (opcional)"
+                    fullWidth
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                  />
+                  {document?.linkedFolderId && (
+                    <Typography variant="caption" color="textSecondary">
+                      El seguimiento también se vinculará a la carpeta asociada al documento.
+                    </Typography>
+                  )}
+                </Stack>
+              )}
+
+              {trackingTab === 1 && (
+                <Stack spacing={2}>
+                  <Typography variant="body2" color="textSecondary">
+                    Seleccioná un seguimiento postal ya existente para vincularlo a este documento.
+                  </Typography>
+                  {loadingTrackings ? (
+                    <Stack alignItems="center" sx={{ py: 3 }}>
+                      <CircularProgress size={28} />
                     </Stack>
-                  </Box>
-                )}
-                renderInput={(params) => (
-                  <TextField {...params} label="Buscar seguimiento..." />
-                )}
-                noOptionsText="Sin seguimientos disponibles"
-              />
-            )}
-
-            {selected?.documentId && selected.documentId !== document?._id && (
-              <Typography variant="caption" color="warning.main">
-                Este seguimiento ya tiene un documento vinculado. Al continuar se reemplazará.
-              </Typography>
-            )}
-            {folderConflict && (
-              <Typography variant="caption" color="warning.main">
-                El seguimiento y el documento están vinculados a carpetas distintas. Se usará la carpeta del seguimiento para ambos.
-              </Typography>
-            )}
-            {folderPropagation && !folderConflict && (
-              <Typography variant="caption" color="info.main">
-                {selected?.folderId
-                  ? "El documento adoptará la carpeta del seguimiento para mantener consistencia."
-                  : "La carpeta del documento se asignará también al seguimiento."}
-              </Typography>
-            )}
+                  ) : (
+                    <Autocomplete
+                      size="small"
+                      options={trackings}
+                      value={selectedTracking}
+                      getOptionLabel={(t: PostalTrackingType) =>
+                        `${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`
+                      }
+                      isOptionEqualToValue={(opt, val) => opt._id === val._id}
+                      onChange={(_e, val) => setSelectedTracking(val)}
+                      renderOption={(props, t: PostalTrackingType) => (
+                        <Box component="li" {...props} key={t._id}>
+                          <Stack>
+                            <Typography variant="body2" fontWeight={500}>{t.codeId} {t.numberId}</Typography>
+                            {t.label && <Typography variant="caption" color="textSecondary">{t.label}</Typography>}
+                          </Stack>
+                        </Box>
+                      )}
+                      renderInput={(params) => <TextField {...params} label="Buscar seguimiento..." />}
+                      noOptionsText="Sin seguimientos disponibles"
+                    />
+                  )}
+                  {selectedTracking?.documentId && selectedTracking.documentId !== document?._id && (
+                    <Typography variant="caption" color="warning.main">
+                      Este seguimiento ya tiene un documento vinculado. Al continuar se reemplazará.
+                    </Typography>
+                  )}
+                  {folderConflict && (
+                    <Typography variant="caption" color="warning.main">
+                      El seguimiento y el documento están vinculados a carpetas distintas. Se usará la carpeta del seguimiento para ambos.
+                    </Typography>
+                  )}
+                  {folderPropagation && !folderConflict && (
+                    <Typography variant="caption" color="info.main">
+                      {selectedTracking?.folderId
+                        ? "El documento adoptará la carpeta del seguimiento para mantener consistencia."
+                        : "La carpeta del documento se asignará también al seguimiento."}
+                    </Typography>
+                  )}
+                </Stack>
+              )}
+            </Box>
           </Stack>
         )}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} color="secondary" variant="outlined">Cancelar</Button>
-        {tab === 0 ? (
+        {tab === 0 && (
           <Button
-            onClick={handleCreate}
+            onClick={handleSaveFolder}
+            variant="contained"
+            disabled={submitting}
+            startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <FolderOpen size={16} />}
+          >
+            Guardar carpeta
+          </Button>
+        )}
+        {tab === 1 && trackingTab === 0 && (
+          <Button
+            onClick={handleCreateTracking}
             variant="contained"
             disabled={submitting || !numberIdValid}
             startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Routing size={16} />}
           >
             Crear seguimiento
           </Button>
-        ) : (
+        )}
+        {tab === 1 && trackingTab === 1 && (
           <Button
-            onClick={handleLink}
+            onClick={handleLinkTracking}
             variant="contained"
-            disabled={submitting || !selected || loadingTrackings}
+            disabled={submitting || !selectedTracking || loadingTrackings}
             startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Routing size={16} />}
           >
-            Vincular
+            Vincular seguimiento
           </Button>
         )}
       </DialogActions>
@@ -491,6 +592,7 @@ const DocumentsLayout = () => {
   const theme = useTheme();
   const { documents, isLoader, total } = useSelector((state: any) => state.postalDocumentsReducer);
   const { document: documentDetail } = useSelector((state: any) => state.postalDocumentsReducer);
+  const folders: FolderData[] = useSelector((state: any) => state.folder?.folders || []);
 
   // Paginación y filtros
   const [page, setPage] = useState(0);
@@ -502,7 +604,7 @@ const DocumentsLayout = () => {
   const [openCreate, setOpenCreate] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<PostalDocumentType | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [trackingDialogDoc, setTrackingDialogDoc] = useState<PostalDocumentType | null>(null);
+  const [vincularDialogDoc, setVincularDialogDoc] = useState<PostalDocumentType | null>(null);
 
   // Selección múltiple
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -610,7 +712,7 @@ const DocumentsLayout = () => {
 
   return (
     <MainCard
-      title="Escritos"
+      title="Documentos"
       secondary={
         <Button variant="contained" startIcon={<Add />} onClick={() => setOpenCreate(true)} size="small">
           Nuevo documento
@@ -707,25 +809,29 @@ const DocumentsLayout = () => {
                         </Stack>
                       </TableCell>
                       <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Stack>
-                            <Typography variant="body2" fontWeight={500}>
-                              {row.title}
-                            </Typography>
-                            {row.description && (
-                              <Typography
-                                variant="caption"
-                                color="textSecondary"
-                                sx={{ display: "block", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                              >
-                                {row.description}
+                        <Stack spacing={0.25}>
+                          <Typography variant="body2" fontWeight={500}>
+                            {row.title}
+                          </Typography>
+                          {(() => {
+                            const folder = row.linkedFolderId ? folders.find((f) => f._id === row.linkedFolderId) : null;
+                            return folder ? (
+                              <Typography variant="caption" color="text.secondary">
+                                {folder.folderName}
                               </Typography>
-                            )}
-                          </Stack>
+                            ) : null;
+                          })()}
+                          {row.description && (
+                            <Typography
+                              variant="caption"
+                              color="textSecondary"
+                              sx={{ display: "block", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            >
+                              {row.description}
+                            </Typography>
+                          )}
                           {row.linkedTrackingId && (
-                            <Tooltip title="Vinculado a un seguimiento postal">
-                              <Chip size="small" label="Seguimiento" color="info" variant="outlined" />
-                            </Tooltip>
+                            <Chip size="small" label="Seguimiento" color="info" variant="outlined" sx={{ alignSelf: "flex-start" }} />
                           )}
                         </Stack>
                       </TableCell>
@@ -752,43 +858,19 @@ const DocumentsLayout = () => {
                           </Tooltip>
 
                           {/* Descargar */}
-                          {row.documentUrl ? (
+                          {row.documentUrl && (
                             <Tooltip title="Descargar PDF">
                               <IconButton size="small" onClick={() => window.open(row.documentUrl, "_blank")} color="info">
                                 <DocumentDownload size={16} />
                               </IconButton>
                             </Tooltip>
-                          ) : (
-                            <Tooltip title="PDF no disponible">
-                              <span style={{ display: "inline-flex" }}>
-                                <IconButton size="small" disabled>
-                                  <DocumentDownload size={16} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
                           )}
 
-                          {/* Seguimiento de envío */}
-                          <Tooltip title={row.linkedTrackingId ? "Ya tiene un seguimiento vinculado" : "Seguimiento de envío"}>
-                            <span style={{ display: "inline-flex" }}>
-                              <IconButton
-                                size="small"
-                                color={row.linkedTrackingId ? "default" : "success"}
-                                disabled={Boolean(row.linkedTrackingId)}
-                                onClick={() => setTrackingDialogDoc(row)}
-                              >
-                                <Routing size={16} />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-
-                          {/* Editar (pendiente) */}
-                          <Tooltip title="Editar (próximamente)">
-                            <span style={{ display: "inline-flex" }}>
-                              <IconButton size="small" disabled>
-                                <Edit2 size={16} />
-                              </IconButton>
-                            </span>
+                          {/* Vincular */}
+                          <Tooltip title="Vincular">
+                            <IconButton size="small" color="primary" onClick={() => setVincularDialogDoc(row)}>
+                              <FolderOpen size={16} />
+                            </IconButton>
                           </Tooltip>
 
                           {/* Eliminar */}
@@ -863,10 +945,10 @@ const DocumentsLayout = () => {
         onClose={handleCloseDetail}
       />
 
-      <TrackingDialog
-        open={Boolean(trackingDialogDoc)}
-        document={trackingDialogDoc}
-        onClose={() => setTrackingDialogDoc(null)}
+      <VincularDialog
+        open={Boolean(vincularDialogDoc)}
+        document={vincularDialogDoc}
+        onClose={() => setVincularDialogDoc(null)}
         onSuccess={loadData}
         showSnackbar={showSnackbar}
       />

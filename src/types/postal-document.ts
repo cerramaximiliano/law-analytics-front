@@ -1,13 +1,26 @@
 export interface PdfTemplateField {
-  pdfFieldName: string;
+  pdfFieldName?: string;
   name: string;
   label: string;
-  type: 'text' | 'multiline' | 'date' | 'radio' | 'checkbox';
+  type: 'text' | 'multiline' | 'date' | 'radio' | 'checkbox' | 'flow-section';
   group: string;
   required: boolean;
   placeholder?: string;
   options?: string[];
   order: number;
+  // Overlay positioning (fillMethod: 'overlay')
+  x?: number;
+  y?: number;
+  maxWidth?: number;
+  minY?: number;
+  overflowPage?: boolean;
+  fontSize?: number;
+  // Flow section
+  inFlowSection?: boolean;
+  wrapX?: number;
+  wrapMaxWidth?: number;
+  whiteOut?: { x: number; y: number; w: number; h: number };
+  segments?: Array<{ text?: string; field?: string; newLine?: boolean; concat?: any[] }>;
 }
 
 export interface PdfTemplate {
@@ -22,6 +35,8 @@ export interface PdfTemplate {
   isPublic: boolean;
   source?: 'system' | 'user';
   modelType?: 'static' | 'dynamic';
+  supportsTracking?: boolean;
+  fillMethod?: 'acroform' | 'overlay';
   userId?: string;
   fillConfig: { flatten: boolean };
   previewUrl?: string;
@@ -36,6 +51,7 @@ export interface PostalDocumentType {
   templateSlug: string;
   templateName: string;
   templateCategory: string;
+  supportsTracking?: boolean;
   title: string;
   description?: string;
   formData: Record<string, string>;

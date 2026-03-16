@@ -88,8 +88,15 @@ export const createPostalDocument = (data: {
     const res = await axios.post(BASE_URL, data);
     return { success: true, document: res.data.document };
   } catch (error: unknown) {
-    const msg = error instanceof AxiosError ? error.response?.data?.message || 'Error al generar el documento' : 'Error al generar el documento';
-    return { success: false, error: msg };
+    if (error instanceof AxiosError) {
+      const data = error.response?.data;
+      const msg = data?.message || 'Error al generar el documento';
+      if (error.response?.status === 403 && data?.limitInfo) {
+        return { success: false, error: msg, limitInfo: data.limitInfo };
+      }
+      return { success: false, error: msg };
+    }
+    return { success: false, error: 'Error al generar el documento' };
   }
 };
 

@@ -17,7 +17,7 @@ const documentos: NavItemType = {
   children: [
     {
       id: "escritos",
-      title: <FormattedMessage id="Escritos" />,
+      title: <FormattedMessage id="Documentos" />,
       type: "item",
       icon: icons.escritos,
       url: "/documentos/escritos",
