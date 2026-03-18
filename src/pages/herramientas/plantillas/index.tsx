@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -9,37 +10,46 @@ import {
   Chip,
   CircularProgress,
   Dialog,
+  DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
   Divider,
   Grid,
+  IconButton,
   InputAdornment,
   Skeleton,
   Stack,
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
-import { Add, ClipboardText, DocumentText, DocumentUpload, Eye, SearchNormal1, Setting2 } from "iconsax-react";
+import { Add, ClipboardText, DocumentText, DocumentUpload, Edit2, Eye, SearchNormal1, Setting2, Trash } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, getPdfTemplate } from "store/reducers/postalDocuments";
+import { fetchRichTextTemplates, deleteRichTextTemplate } from "store/reducers/richTextDocuments";
 import { openSnackbar } from "store/reducers/snackbar";
 import { PdfTemplate } from "types/postal-document";
+import { RichTextTemplate, RichTextTemplateCategory } from "types/rich-text-document";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const CATEGORY_COLORS: Record<string, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
-  postal:      "info",
-  laboral:     "warning",
-  judicial:    "error",
-  societario:  "secondary",
-  notarial:    "success",
-  otros:       "default",
+const PDF_CATEGORY_COLORS: Record<string, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
+  postal: "info", laboral: "warning", judicial: "error", societario: "secondary", notarial: "success", otros: "default",
+};
+
+const RT_CATEGORY_COLORS: Record<RichTextTemplateCategory, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
+  laboral: "warning", civil: "info", penal: "error", societario: "secondary", familia: "success", otro: "default",
+};
+
+const RT_CATEGORY_LABELS: Record<RichTextTemplateCategory, string> = {
+  laboral: "Laboral", civil: "Civil", penal: "Penal", societario: "Societario", familia: "Familia", otro: "Otro",
 };
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
@@ -70,7 +80,7 @@ const CardsSkeleton = ({ count = 4 }: { count?: number }) => (
   </Grid>
 );
 
-// ── Vista previa ───────────────────────────────────────────────────────────────
+// ── Vista previa PDF ───────────────────────────────────────────────────────────
 
 interface PreviewDialogProps {
   open: boolean;
@@ -86,7 +96,7 @@ const PreviewDialog = ({ open, template, pdfUrl, loading, onClose }: PreviewDial
       <Stack direction="row" alignItems="center" spacing={1.5}>
         <Typography variant="h5">{template?.name}</Typography>
         {template?.category && (
-          <Chip size="small" label={template.category} color={CATEGORY_COLORS[template.category] ?? "default"} />
+          <Chip size="small" label={template.category} color={PDF_CATEGORY_COLORS[template.category] ?? "default"} />
         )}
         <Chip
           size="small"
@@ -112,7 +122,7 @@ const PreviewDialog = ({ open, template, pdfUrl, loading, onClose }: PreviewDial
   </Dialog>
 );
 
-// ── Tarjeta de modelo ──────────────────────────────────────────────────────────
+// ── Tarjeta modelo PDF ─────────────────────────────────────────────────────────
 
 interface ModelCardProps {
   template: PdfTemplate;
@@ -125,12 +135,7 @@ const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => (
     <CardContent sx={{ flexGrow: 1 }}>
       <Stack spacing={1.5}>
         <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
-          <Chip
-            size="small"
-            label={template.category}
-            color={CATEGORY_COLORS[template.category] ?? "default"}
-            variant="outlined"
-          />
+          <Chip size="small" label={template.category} color={PDF_CATEGORY_COLORS[template.category] ?? "default"} variant="outlined" />
           <Chip
             size="small"
             label={template.modelType === "dynamic" ? "Dinámico" : "Estático"}
@@ -138,13 +143,9 @@ const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => (
             color={template.modelType === "dynamic" ? "secondary" : "default"}
           />
         </Stack>
-        <Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>
-          {template.name}
-        </Typography>
+        <Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>{template.name}</Typography>
         {template.description && (
-          <Typography variant="body2" color="textSecondary">
-            {template.description}
-          </Typography>
+          <Typography variant="body2" color="textSecondary">{template.description}</Typography>
         )}
         <Divider />
         <Stack direction="row" alignItems="center" spacing={0.75}>
@@ -156,13 +157,7 @@ const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => (
       </Stack>
     </CardContent>
     <CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
-      <Button
-        size="small"
-        variant="outlined"
-        color="secondary"
-        startIcon={<Eye size={15} />}
-        onClick={() => onPreview(template)}
-      >
+      <Button size="small" variant="outlined" color="secondary" startIcon={<Eye size={15} />} onClick={() => onPreview(template)}>
         Vista previa
       </Button>
       <Button size="small" variant="contained" onClick={() => onUse(template)}>
@@ -172,37 +167,142 @@ const ModelCard = ({ template, onPreview, onUse }: ModelCardProps) => (
   </Card>
 );
 
+// ── Tarjeta modelo rich text ───────────────────────────────────────────────────
+
+interface RichTextModelCardProps {
+  template: RichTextTemplate;
+  onEdit: (t: RichTextTemplate) => void;
+  onDelete: (t: RichTextTemplate) => void;
+  onUse: (t: RichTextTemplate) => void;
+}
+
+const RichTextModelCard = ({ template, onEdit, onDelete, onUse }: RichTextModelCardProps) => (
+  <Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <CardContent sx={{ flexGrow: 1 }}>
+      <Stack spacing={1.5}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Chip
+            size="small"
+            label={RT_CATEGORY_LABELS[template.category] ?? template.category}
+            color={RT_CATEGORY_COLORS[template.category] ?? "default"}
+            variant="outlined"
+          />
+          <Stack direction="row">
+            <Tooltip title="Editar">
+              <IconButton size="small" onClick={() => onEdit(template)}>
+                <Edit2 size={15} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Eliminar">
+              <IconButton size="small" color="error" onClick={() => onDelete(template)}>
+                <Trash size={15} />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        </Stack>
+        <Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>{template.name}</Typography>
+        {template.description && (
+          <Typography variant="body2" color="textSecondary">{template.description}</Typography>
+        )}
+        <Divider />
+        <Stack direction="row" alignItems="center" spacing={0.75}>
+          <DocumentText size={14} style={{ opacity: 0.5 }} />
+          <Typography variant="caption" color="textSecondary">
+            {template.mergeFields?.length ?? 0} campo{template.mergeFields?.length !== 1 ? "s" : ""} dinámico{template.mergeFields?.length !== 1 ? "s" : ""}
+          </Typography>
+        </Stack>
+      </Stack>
+    </CardContent>
+    <CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
+      <Button size="small" variant="outlined" onClick={() => onEdit(template)} startIcon={<Edit2 size={15} />}>
+        Editar
+      </Button>
+      <Button size="small" variant="contained" onClick={() => onUse(template)} startIcon={<DocumentUpload size={15} />}>
+        Crear documento
+      </Button>
+    </CardActions>
+  </Card>
+);
+
+// ── Confirmación de eliminación ────────────────────────────────────────────────
+
+interface DeleteConfirmProps {
+  open: boolean;
+  name: string;
+  loading: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}
+
+const DeleteConfirmDialog = ({ open, name, loading, onConfirm, onClose }: DeleteConfirmProps) => (
+  <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <DialogTitle>Eliminar modelo</DialogTitle>
+    <DialogContent>
+      <DialogContentText>
+        ¿Eliminás el modelo <strong>{name}</strong>? Esta acción no se puede deshacer.
+      </DialogContentText>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onClose} disabled={loading}>Cancelar</Button>
+      <Button color="error" variant="contained" onClick={onConfirm} disabled={loading}>
+        {loading ? <CircularProgress size={16} /> : "Eliminar"}
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
+
 // ── Página principal ───────────────────────────────────────────────────────────
 
 const ModelosPage = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const userId = useSelector((state: any) => state.auth?.user?._id);
-  const [templates, setTemplates] = useState<PdfTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(0);
-  const [search, setSearch] = useState("");
 
-  // Vista previa
+  // PDF templates (Tab 0)
+  const [pdfTemplates, setPdfTemplates] = useState<PdfTemplate[]>([]);
+  const [pdfLoading, setPdfLoading] = useState(true);
   const [previewTemplate, setPreviewTemplate] = useState<PdfTemplate | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-
-  // Crear escrito desde modelo
   const [createFromTemplate, setCreateFromTemplate] = useState<PdfTemplate | null>(null);
 
-  // Solicitar nuevo modelo
-  const [requestModelOpen, setRequestModelOpen] = useState(false);
+  // Rich text templates (Tab 1)
+  const [rtTemplates, setRtTemplates] = useState<RichTextTemplate[]>([]);
+  const [rtLoading, setRtLoading] = useState(false);
+  const [rtSearch, setRtSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<RichTextTemplate | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchPdfTemplates()).then((res: any) => {
-      if (res.success) setTemplates(res.templates || []);
-      setLoading(false);
-    });
-  }, []);
+  // Shared — initialise from ?tab= query param
+  const [activeTab, setActiveTab] = useState(() => {
+    const t = Number(searchParams.get("tab"));
+    return isNaN(t) ? 0 : t;
+  });
+  const [pdfSearch, setPdfSearch] = useState("");
+  const [requestModelOpen, setRequestModelOpen] = useState(false);
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: severity }, close: true }));
   };
+
+  // Cargar PDF templates
+  useEffect(() => {
+    dispatch(fetchPdfTemplates()).then((res: any) => {
+      if (res.success) setPdfTemplates(res.templates || []);
+      setPdfLoading(false);
+    });
+  }, []);
+
+  // Cargar rich text templates cuando se activa el tab
+  useEffect(() => {
+    if (activeTab !== 1) return;
+    setRtLoading(true);
+    dispatch(fetchRichTextTemplates({ source: "user" })).then((res: any) => {
+      if (res.success) setRtTemplates(res.templates || []);
+      setRtLoading(false);
+    });
+  }, [activeTab]);
 
   const handlePreview = async (tpl: PdfTemplate) => {
     setPreviewTemplate(tpl);
@@ -217,25 +317,38 @@ const ModelosPage = () => {
     setPreviewLoading(false);
   };
 
-  // Separar modelos del sistema y del usuario
-  const systemTemplates = templates
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    const res = await dispatch(deleteRichTextTemplate(deleteTarget._id));
+    if (res.success) {
+      setRtTemplates((prev) => prev.filter((t) => t._id !== deleteTarget._id));
+      showSnackbar("Modelo eliminado", "success");
+    } else {
+      showSnackbar(res.error || "Error al eliminar", "error");
+    }
+    setDeleteLoading(false);
+    setDeleteTarget(null);
+  };
+
+  // Filtros
+  const systemTemplates = pdfTemplates
     .filter((t) => t.source === "system" || t.isPublic || !t.userId)
     .filter((t) => {
-      if (!search.trim()) return true;
-      const q = search.toLowerCase();
+      if (!pdfSearch.trim()) return true;
+      const q = pdfSearch.toLowerCase();
       return t.name.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q);
     });
-  const userTemplates = templates.filter(
-    (t) => t.source === "user" && !t.isPublic && t.userId === userId
-  );
+
+  const filteredRtTemplates = rtTemplates.filter((t) => {
+    if (!rtSearch.trim()) return true;
+    const q = rtSearch.toLowerCase();
+    return t.name.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
+  });
 
   return (
     <MainCard title="Modelos">
-      <Tabs
-        value={activeTab}
-        onChange={(_e, v) => setActiveTab(v)}
-        sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}
-      >
+      <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
         <Tab
           label={
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -249,7 +362,6 @@ const ModelosPage = () => {
             <Stack direction="row" alignItems="center" spacing={1}>
               <ClipboardText size={16} />
               <span>Mis modelos</span>
-              <Chip label="En desarrollo" size="small" color="warning" variant="outlined" sx={{ height: 18, fontSize: "0.65rem" }} />
             </Stack>
           }
         />
@@ -260,36 +372,26 @@ const ModelosPage = () => {
         <>
           <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ sm: "center" }} justifyContent="space-between" spacing={1.5} sx={{ mb: 2.5 }}>
             <Typography variant="body2" color="textSecondary">
-              Plantillas predefinidas listas para usar. Pueden ser estáticas (PDF con campos fijos) o dinámicas (autocompletado con datos del sistema).
+              Plantillas predefinidas listas para usar.
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center">
-              <Button
-                size="small"
-                variant="outlined"
-                color="secondary"
-                startIcon={<DocumentUpload size={15} />}
-                onClick={() => setRequestModelOpen(true)}
-              >
+              <Button size="small" variant="outlined" color="secondary" startIcon={<DocumentUpload size={15} />} onClick={() => setRequestModelOpen(true)}>
                 Solicitar modelo
               </Button>
               <TextField
                 size="small"
                 placeholder="Buscar modelo..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={pdfSearch}
+                onChange={(e) => setPdfSearch(e.target.value)}
                 sx={{ minWidth: 220 }}
                 InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchNormal1 size={16} style={{ opacity: 0.5 }} />
-                    </InputAdornment>
-                  ),
+                  startAdornment: <InputAdornment position="start"><SearchNormal1 size={16} style={{ opacity: 0.5 }} /></InputAdornment>,
                 }}
               />
             </Stack>
           </Stack>
 
-          {loading ? (
+          {pdfLoading ? (
             <CardsSkeleton count={4} />
           ) : systemTemplates.length === 0 ? (
             <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: 6 }}>
@@ -297,7 +399,7 @@ const ModelosPage = () => {
                 <ClipboardText size={32} style={{ color: theme.palette.text.secondary }} />
               </Box>
               <Typography color="textSecondary">
-                {search.trim() ? `Sin resultados para "${search}"` : "No hay modelos del sistema configurados."}
+                {pdfSearch.trim() ? `Sin resultados para "${pdfSearch}"` : "No hay modelos del sistema configurados."}
               </Typography>
             </Stack>
           ) : (
@@ -307,25 +409,15 @@ const ModelosPage = () => {
                   <ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} />
                 </Grid>
               ))}
-              {/* Tarjeta para solicitar nuevo modelo */}
               <Grid item xs={12} sm={6} md={4} lg={3}>
                 <Card
                   variant="outlined"
                   onClick={() => setRequestModelOpen(true)}
                   sx={{
-                    height: "100%",
-                    minHeight: 160,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderStyle: "dashed",
-                    borderColor: "primary.light",
-                    cursor: "pointer",
+                    height: "100%", minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center",
+                    borderStyle: "dashed", borderColor: "primary.light", cursor: "pointer",
                     transition: "border-color 0.2s, background-color 0.2s",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      bgcolor: "primary.lighter",
-                    },
+                    "&:hover": { borderColor: "primary.main", bgcolor: "primary.lighter" },
                   }}
                 >
                   <CardContent>
@@ -333,9 +425,7 @@ const ModelosPage = () => {
                       <Box sx={{ p: 1.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
                         <DocumentUpload size={24} color={theme.palette.primary.main} />
                       </Box>
-                      <Typography variant="subtitle2" fontWeight={600} color="primary">
-                        Solicitar nuevo modelo
-                      </Typography>
+                      <Typography variant="subtitle2" fontWeight={600} color="primary">Solicitar nuevo modelo</Typography>
                       <Typography variant="caption" color="textSecondary">
                         ¿Tenés un PDF o DOC que querés convertir en modelo autocompletable?
                       </Typography>
@@ -351,39 +441,82 @@ const ModelosPage = () => {
       {/* ── Tab 1: Mis modelos ── */}
       {activeTab === 1 && (
         <>
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 2.5 }}>
-            Modelos propios creados con el editor de documentos. Podés definir campos autocompletables vinculados a carpetas, contactos u otros recursos.
-          </Typography>
-
-          <Alert
-            severity="info"
-            icon={<Add size={18} />}
-            sx={{ mb: 3 }}
-            action={
-              <Button size="small" disabled>
+          <Stack direction={{ xs: "column", sm: "row" }} alignItems={{ sm: "center" }} justifyContent="space-between" spacing={1.5} sx={{ mb: 2.5 }}>
+            <Typography variant="body2" color="textSecondary">
+              Modelos de texto enriquecido propios con campos dinámicos vinculables a expedientes y contactos.
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                size="small"
+                placeholder="Buscar modelo..."
+                value={rtSearch}
+                onChange={(e) => setRtSearch(e.target.value)}
+                sx={{ minWidth: 200 }}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><SearchNormal1 size={16} style={{ opacity: 0.5 }} /></InputAdornment>,
+                }}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<Add size={16} />}
+                onClick={() => navigate("/documentos/modelos/nuevo")}
+              >
                 Crear modelo
               </Button>
-            }
-          >
-            Próximamente podrás crear tus propios modelos con un editor WYSIWYG, definir campos dinámicos y vincularlos a tus recursos del sistema.
-          </Alert>
+            </Stack>
+          </Stack>
 
-          {loading ? (
-            <CardsSkeleton count={2} />
-          ) : userTemplates.length === 0 ? (
+          {rtLoading ? (
+            <CardsSkeleton count={3} />
+          ) : filteredRtTemplates.length === 0 ? (
             <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: 6 }}>
               <Box sx={{ p: 2, bgcolor: "grey.100", borderRadius: "50%" }}>
                 <ClipboardText size={32} style={{ color: theme.palette.text.secondary }} />
               </Box>
-              <Typography color="textSecondary">Todavía no creaste ningún modelo propio.</Typography>
+              <Typography color="textSecondary">
+                {rtSearch.trim() ? `Sin resultados para "${rtSearch}"` : "Todavía no creaste ningún modelo propio."}
+              </Typography>
+              {!rtSearch.trim() && (
+                <Button variant="outlined" size="small" startIcon={<Add size={16} />} onClick={() => navigate("/documentos/modelos/nuevo")}>
+                  Crear mi primer modelo
+                </Button>
+              )}
             </Stack>
           ) : (
             <Grid container spacing={2.5}>
-              {userTemplates.map((tpl) => (
+              {filteredRtTemplates.map((tpl) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={tpl._id}>
-                  <ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} />
+                  <RichTextModelCard
+                    template={tpl}
+                    onEdit={(t) => navigate(`/documentos/modelos/${t._id}/editar`)}
+                    onDelete={setDeleteTarget}
+                    onUse={(t) => navigate(`/documentos/escritos/nuevo?templateId=${t._id}`)}
+                  />
                 </Grid>
               ))}
+              {/* Tarjeta para crear nuevo */}
+              <Grid item xs={12} sm={6} md={4} lg={3}>
+                <Card
+                  variant="outlined"
+                  onClick={() => navigate("/documentos/modelos/nuevo")}
+                  sx={{
+                    height: "100%", minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center",
+                    borderStyle: "dashed", borderColor: "primary.light", cursor: "pointer",
+                    transition: "border-color 0.2s, background-color 0.2s",
+                    "&:hover": { borderColor: "primary.main", bgcolor: "primary.lighter" },
+                  }}
+                >
+                  <CardContent>
+                    <Stack alignItems="center" spacing={1.5} sx={{ textAlign: "center" }}>
+                      <Box sx={{ p: 1.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
+                        <Add size={24} color={theme.palette.primary.main} />
+                      </Box>
+                      <Typography variant="subtitle2" fontWeight={600} color="primary">Nuevo modelo</Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
             </Grid>
           )}
         </>
@@ -409,6 +542,14 @@ const ModelosPage = () => {
         open={requestModelOpen}
         onClose={() => setRequestModelOpen(false)}
         defaultSubject="Solicitud de nuevo modelo de documento"
+      />
+
+      <DeleteConfirmDialog
+        open={Boolean(deleteTarget)}
+        name={deleteTarget?.name ?? ""}
+        loading={deleteLoading}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteTarget(null)}
       />
     </MainCard>
   );

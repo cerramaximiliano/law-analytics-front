@@ -38,6 +38,7 @@ import pjnSync from "./pjnSync";
 import movementsSync from "./movementsSync";
 import postalTrackingReducer from "./postalTracking";
 import postalDocumentsReducer from "./postalDocuments";
+import richTextDocumentsReducer from "./richTextDocuments";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -83,6 +84,7 @@ const reducers = combineReducers({
 	movementsSync,
 	postalTrackingReducer,
 	postalDocumentsReducer,
+	richTextDocumentsReducer,
 });
 
 export default reducers;

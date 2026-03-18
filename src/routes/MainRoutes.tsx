@@ -1,3 +1,4 @@
+// @refresh reset
 import React from "react";
 
 // project-imports
@@ -93,6 +94,9 @@ const PostalTrackingPage = Loadable(lazyRetry(() => import("pages/herramientas/p
 
 // render - documentos
 const ModelosPage = Loadable(lazyRetry(() => import("pages/herramientas/plantillas"), "ModelosPage"));
+const TemplateEditorPage = Loadable(lazyRetry(() => import("pages/documentos/template-editor"), "TemplateEditorPage"));
+const DocumentEditorPage = Loadable(lazyRetry(() => import("pages/documentos/document-editor"), "DocumentEditorPage"));
+const EscritosPage = Loadable(lazyRetry(() => import("pages/documentos/escritos"), "EscritosPage"));
 
 // ==============================|| MAIN ROUTES ||============================== //
 
@@ -354,11 +358,27 @@ const MainRoutes = {
 					children: [
 						{
 							path: "escritos",
-							element: <DocumentsLayout />,
+							element: <EscritosPage />,
+						},
+						{
+							path: "escritos/nuevo",
+							element: <DocumentEditorPage />,
+						},
+						{
+							path: "escritos/:id/editar",
+							element: <DocumentEditorPage />,
 						},
 						{
 							path: "modelos",
 							element: <ModelosPage />,
+						},
+						{
+							path: "modelos/nuevo",
+							element: <TemplateEditorPage />,
+						},
+						{
+							path: "modelos/:id/editar",
+							element: <TemplateEditorPage />,
 						},
 					],
 				},
