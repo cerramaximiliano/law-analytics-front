@@ -1,0 +1,105 @@
+/* ==============================|| TIPTAP EDITOR STYLES ||============================== */
+
+/* Área de scroll — fondo gris, centrado */
+.tiptap-scroll {
+	flex: 1;
+	overflow-y: auto;
+	background: #e8e8e8;
+	padding: 24px 16px;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+}
+
+/* El ProseMirror con paginación activa ya tiene width/padding seteados por PaginationPlus.
+   Solo le agregamos estilo visual de hoja. */
+.tiptap-editor-content .ProseMirror.rm-with-pagination {
+	background: #fff;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	outline: none;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 12pt;
+	line-height: 1.5;
+	color: #000;
+}
+
+/* Fallback: sin paginación activa (primer render) */
+.tiptap-editor-content .ProseMirror {
+	outline: none;
+	font-family: "Times New Roman", Times, serif;
+	font-size: 12pt;
+	line-height: 1.5;
+	color: #000;
+	tab-size: 12;
+	-moz-tab-size: 12;
+}
+
+.tiptap-editor-content .ProseMirror p {
+	margin: 0 0 0.5em;
+}
+
+.tiptap-editor-content .ProseMirror h1 {
+	font-size: 18pt;
+	font-weight: bold;
+	margin: 0.8em 0 0.4em;
+}
+
+.tiptap-editor-content .ProseMirror h2 {
+	font-size: 14pt;
+	font-weight: bold;
+	margin: 0.8em 0 0.4em;
+}
+
+.tiptap-editor-content .ProseMirror h3 {
+	font-size: 12pt;
+	font-weight: bold;
+	margin: 0.8em 0 0.4em;
+}
+
+.tiptap-editor-content .ProseMirror ul,
+.tiptap-editor-content .ProseMirror ol {
+	padding-left: 1.5em;
+	margin: 0 0 0.5em;
+}
+
+.tiptap-editor-content .ProseMirror blockquote {
+	border-left: 3px solid #ccc;
+	margin: 0.5em 0;
+	padding-left: 1em;
+	color: #555;
+}
+
+/* Placeholder */
+.tiptap-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+	content: attr(data-placeholder);
+	color: #aaa;
+	pointer-events: none;
+	float: left;
+	height: 0;
+}
+
+/* Merge fields — tokens con estilo */
+.tiptap-editor-content .ProseMirror .merge-field {
+	display: inline-block;
+	background: #e3f2fd;
+	color: #1565c0;
+	border: 1px solid #90caf9;
+	border-radius: 4px;
+	padding: 0 5px;
+	font-family: monospace;
+	font-size: 0.85em;
+	font-weight: 600;
+	cursor: default;
+	user-select: all;
+	white-space: nowrap;
+}
+
+.tiptap-editor-content .ProseMirror .merge-field.ProseMirror-selectednode {
+	outline: 2px solid #1565c0;
+	background: #bbdefb;
+}
+
+/* Selección */
+.tiptap-editor-content .ProseMirror ::selection {
+	background: #b3d4ff;
+}
