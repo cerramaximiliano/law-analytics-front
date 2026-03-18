@@ -23,26 +23,6 @@ import MainCard from "components/MainCard";
 import ApiService, { Plan } from "store/reducers/ApiService";
 import { getPlanPricing, getBillingPeriodText, cleanPlanDisplayName } from "utils/planPricingUtils";
 
-// Helper para formatear nombres de planes en español
-const formatPlanNameSpanish = (planName: string): string => {
-	const planLower = planName.toLowerCase();
-	if (planLower === "free" || planLower === "gratuito") return "Gratuito";
-	if (planLower === "standard" || planLower === "estándar") return "Estándar";
-	if (planLower === "premium") return "Premium";
-	return planName;
-};
-
-// Helper para transformar mensaje con nombres de planes en español
-const formatMessageWithSpanishPlans = (msg: string): string => {
-	return msg
-		.replace(/\(free\)/gi, "(Gratuito)")
-		.replace(/\(standard\)/gi, "(Estándar)")
-		.replace(/\(premium\)/gi, "(Premium)")
-		.replace(/plan free/gi, "plan Gratuito")
-		.replace(/plan standard/gi, "plan Estándar")
-		.replace(/plan premium/gi, "plan Premium");
-};
-
 interface LimitInfo {
 	resourceType: string;
 	plan: string;
@@ -144,7 +124,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	};
 
 	// Determinar planes recomendados según el error
-	// Solo muestra planes de nivel superior al actual
 	const getRecommendedPlans = () => {
 		if (plans.length === 0) return [];
 
@@ -156,26 +135,8 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			currentUserPlan = featureInfo.plan.toLowerCase();
 		}
 
-		// Normalizar nombre del plan (gratuito = free)
-		if (currentUserPlan === "gratuito") {
-			currentUserPlan = "free";
-		}
-
-		// Orden jerárquico de planes (de menor a mayor)
-		const planHierarchy: { [key: string]: number } = {
-			free: 0,
-			gratuito: 0,
-			standard: 1,
-			premium: 2,
-		};
-
-		const currentPlanLevel = planHierarchy[currentUserPlan] ?? 0;
-
-		// Filtrar solo planes de nivel superior al actual
-		return plans.filter((plan) => {
-			const planLevel = planHierarchy[plan.planId.toLowerCase()] ?? 0;
-			return planLevel > currentPlanLevel;
-		});
+		// Filtrar planes según el plan actual del usuario
+		return plans.filter((plan) => plan.planId.toLowerCase() !== currentUserPlan);
 	};
 
 	// Función para obtener el color y el estilo según el tipo de plan
@@ -280,7 +241,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 					}}
 				>
 					<Typography variant="body1" color="text.primary" sx={{ mb: 1 }}>
-						{formatMessageWithSpanishPlans(message)}
+						{message}
 					</Typography>
 					<Stack spacing={1.5}>
 						<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -313,7 +274,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 						color="text.primary"
 						sx={{ mb: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
 					>
-						{formatMessageWithSpanishPlans(message)}
+						{message}
 					</Typography>
 					<Stack spacing={1}>
 						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -330,11 +291,11 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 							</Typography>
 							<Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
 								<Crown size={14} variant="Bulk" color={theme.palette.primary.main} />
-								{formatPlanNameSpanish(featureInfo.plan)}
+								{featureInfo.plan}
 							</Typography>
 						</Box>
 
-						{featureInfo.availableIn && featureInfo.availableIn.length > 0 && (
+						{featureInfo.availableIn.length > 0 && (
 							<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 								<Typography variant="body2" color="text.secondary">
 									Disponible en:
@@ -344,7 +305,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 										<Chip
 											key={index}
 											size="small"
-											label={formatPlanNameSpanish(plan)}
+											label={plan}
 											icon={<Crown size={12} variant="Bulk" />}
 											color="primary"
 											variant="outlined"
@@ -742,7 +703,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	const renderPlansList = () => {
 		if (loading) {
 			return (
-				<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 350 }}>
+				<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px" }}>
 					<CircularProgress />
 				</Box>
 			);
@@ -757,6 +718,8 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		}
 
 		const recommendedPlans = getRecommendedPlans();
+
+		// Filtrar solo planes activos
 		const activePlans = recommendedPlans.filter((plan) => plan.isActive);
 
 		const currentEnv = import.meta.env.PROD ? "production" : "development";
@@ -771,10 +734,22 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			return <Alert severity="info">No hay planes disponibles para actualizar en este momento.</Alert>;
 		}
 
-		// Si hay un solo plan, usar formato ancho con grid
-		if (activePlans.length === 1) {
-			return renderSinglePlan(activePlans[0]);
-		}
+		return (
+			<Grid container spacing={2}>
+				<Box sx={{ width: "100%", display: "flex", justifyContent: "center", mt: 0 }}>
+					<Grid
+						container
+						spacing={2}
+						justifyContent="center"
+						sx={{
+							maxWidth: "100%",
+							margin: "auto",
+						}}
+					>
+						{activePlans.map((plan) => {
+							// Obtener la información de precios según el entorno
+							const pricing = getPlanPricing(plan);
+							const displayPrice = pricing.basePrice;
 
 							return (
 								<Grid item xs={12} sm={6} md={activePlans.length <= 2 ? 5 : 4} key={plan.planId}>
@@ -903,9 +878,6 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		);
 	};
 
-	// Altura fija del contenido para evitar resize durante la carga
-	const MODAL_CONTENT_HEIGHT = 480;
-
 	return (
 		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}>
 			<DialogTitle
@@ -929,8 +901,8 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			</DialogTitle>
 			<Divider />
 
-			<DialogContent sx={{ p: 2.5, minHeight: MODAL_CONTENT_HEIGHT }}>
-				<Box sx={{ mx: "auto", height: "100%" }}>
+			<DialogContent sx={{ p: 2.5 }}>
+				<Box sx={{ mx: "auto" }}>
 					<Box sx={{ maxWidth: "100%", mx: "auto", mb: 1.5 }}>{getContentMessage()}</Box>
 					{renderPlansList()}
 				</Box>
