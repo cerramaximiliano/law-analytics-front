@@ -22,14 +22,14 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { Add, ClipboardText, DocumentText, Eye, SearchNormal1, Setting2 } from "iconsax-react";
-
+import { Add, ClipboardText, DocumentText, DocumentUpload, Eye, SearchNormal1, Setting2 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
 import { fetchPdfTemplates, getPdfTemplate } from "store/reducers/postalDocuments";
 import { openSnackbar } from "store/reducers/snackbar";
 import { PdfTemplate } from "types/postal-document";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
+import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -190,6 +190,9 @@ const ModelosPage = () => {
   // Crear escrito desde modelo
   const [createFromTemplate, setCreateFromTemplate] = useState<PdfTemplate | null>(null);
 
+  // Solicitar nuevo modelo
+  const [requestModelOpen, setRequestModelOpen] = useState(false);
+
   useEffect(() => {
     dispatch(fetchPdfTemplates()).then((res: any) => {
       if (res.success) setTemplates(res.templates || []);
@@ -259,20 +262,31 @@ const ModelosPage = () => {
             <Typography variant="body2" color="textSecondary">
               Plantillas predefinidas listas para usar. Pueden ser estáticas (PDF con campos fijos) o dinámicas (autocompletado con datos del sistema).
             </Typography>
-            <TextField
-              size="small"
-              placeholder="Buscar modelo..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ minWidth: 220 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchNormal1 size={16} style={{ opacity: 0.5 }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Button
+                size="small"
+                variant="outlined"
+                color="secondary"
+                startIcon={<DocumentUpload size={15} />}
+                onClick={() => setRequestModelOpen(true)}
+              >
+                Solicitar modelo
+              </Button>
+              <TextField
+                size="small"
+                placeholder="Buscar modelo..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{ minWidth: 220 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchNormal1 size={16} style={{ opacity: 0.5 }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Stack>
           </Stack>
 
           {loading ? (
@@ -293,6 +307,42 @@ const ModelosPage = () => {
                   <ModelCard template={tpl} onPreview={handlePreview} onUse={setCreateFromTemplate} />
                 </Grid>
               ))}
+              {/* Tarjeta para solicitar nuevo modelo */}
+              <Grid item xs={12} sm={6} md={4} lg={3}>
+                <Card
+                  variant="outlined"
+                  onClick={() => setRequestModelOpen(true)}
+                  sx={{
+                    height: "100%",
+                    minHeight: 160,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderStyle: "dashed",
+                    borderColor: "primary.light",
+                    cursor: "pointer",
+                    transition: "border-color 0.2s, background-color 0.2s",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      bgcolor: "primary.lighter",
+                    },
+                  }}
+                >
+                  <CardContent>
+                    <Stack alignItems="center" spacing={1.5} sx={{ textAlign: "center" }}>
+                      <Box sx={{ p: 1.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
+                        <DocumentUpload size={24} color={theme.palette.primary.main} />
+                      </Box>
+                      <Typography variant="subtitle2" fontWeight={600} color="primary">
+                        Solicitar nuevo modelo
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        ¿Tenés un PDF o DOC que querés convertir en modelo autocompletable?
+                      </Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
             </Grid>
           )}
         </>
@@ -353,6 +403,12 @@ const ModelosPage = () => {
         handleClose={() => setCreateFromTemplate(null)}
         preselectedTemplate={createFromTemplate}
         showSnackbar={showSnackbar}
+      />
+
+      <SupportModal
+        open={requestModelOpen}
+        onClose={() => setRequestModelOpen(false)}
+        defaultSubject="Solicitud de nuevo modelo de documento"
       />
     </MainCard>
   );
