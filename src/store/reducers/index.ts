@@ -34,6 +34,7 @@ import googleCalendar from "./googleCalendar";
 import teams from "./teams";
 import postalTrackingReducer from "./postalTracking";
 import postalDocumentsReducer from "./postalDocuments";
+import richTextDocumentsReducer from "./richTextDocuments";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -75,6 +76,7 @@ const reducers = combineReducers({
 	teams,
 	postalTrackingReducer,
 	postalDocumentsReducer,
+	richTextDocumentsReducer,
 });
 
 export default reducers;
