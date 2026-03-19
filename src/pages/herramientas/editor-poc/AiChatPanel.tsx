@@ -66,9 +66,13 @@ function parseEdits(text: string): EditOp[] | null {
 	}
 }
 
-/** Strips the [EDICION]...[/EDICION] block from the displayed message */
+/** Strips the [EDICION] block from the displayed message (complete or truncated) */
 function stripEditBlock(text: string): string {
-	return text.replace(/\[EDICION\][\s\S]*?\[\/EDICION\]/g, "").trim();
+	// Remove complete blocks first
+	let result = text.replace(/\[EDICION\][\s\S]*?\[\/EDICION\]/g, "");
+	// Remove any incomplete/truncated block at end of text
+	result = result.replace(/\[EDICION\][\s\S]*$/, "");
+	return result.trim();
 }
 
 /**
@@ -231,16 +235,15 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 					},
 				);
 
-				// After stream completes: detect and apply partial document edits
-				const edits = includeDoc ? parseEdits(accumulated) : null;
-				let displayContent = accumulated;
+				// After stream completes: detect and apply partial document edits.
+				// Strip the [EDICION] block from display always — even if truncated or unparseable.
+				const hasEditBlock = accumulated.includes("[EDICION]");
+				const edits = includeDoc && hasEditBlock ? parseEdits(accumulated) : null;
+				const displayContent = hasEditBlock ? stripEditBlock(accumulated) : accumulated;
 				let editsApplied = 0;
 
 				if (edits && edits.length > 0) {
 					editsApplied = applyEdits(editor, edits);
-					if (editsApplied > 0) {
-						displayContent = stripEditBlock(accumulated);
-					}
 				}
 
 				setMessages((prev) =>
