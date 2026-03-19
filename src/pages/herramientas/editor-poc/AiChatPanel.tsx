@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from "react";
+import secureStorage from "services/secureStorage";
 import {
 	Box,
 	Chip,
@@ -13,9 +14,7 @@ import {
 	Typography,
 } from "@mui/material";
 import { type Editor } from "@tiptap/react";
-import { CloseCircle, Copy, DirectboxSend, MagicStar, Send2, TextBlock } from "iconsax-react";
-import axios from "utils/axios";
-
+import { CloseCircle, Copy, DirectboxSend, Edit2, MagicStar, Send2, TextBlock } from "iconsax-react";
 // ==============================|| AI CHAT PANEL ||============================== //
 
 interface AiChatPanelProps {
@@ -29,7 +28,96 @@ interface ChatMessage {
 	role: "user" | "assistant";
 	content: string;
 	pending?: boolean;
+	editsApplied?: number;
 }
+
+interface EditOp {
+	op?: "replace" | "insert_after" | "delete";
+	idx: number;
+	new?: string;
+}
+
+// ── Document edit helpers ────────────────────────────────────────────────────
+
+function extractNodeText(node: any): string {
+	if (node.type === "text") return node.text || "";
+	if (node.content) return (node.content as any[]).map(extractNodeText).join("");
+	return "";
+}
+
+/** Builds numbered paragraph context sent to the LLM: "[0] text\n[1] text\n..." */
+function buildNumberedContext(editor: Editor): string {
+	const doc = editor.getJSON() as any;
+	return (doc.content || [])
+		.map((node: any, idx: number) => `[${idx}] ${extractNodeText(node)}`)
+		.join("\n");
+}
+
+/** Parses the [EDICION]...[/EDICION] block from an LLM response */
+function parseEdits(text: string): EditOp[] | null {
+	const match = text.match(/\[EDICION\]([\s\S]*?)\[\/EDICION\]/);
+	if (!match) return null;
+	try {
+		const parsed = JSON.parse(match[1].trim());
+		return Array.isArray(parsed) ? parsed : null;
+	} catch {
+		return null;
+	}
+}
+
+/** Strips the [EDICION]...[/EDICION] block from the displayed message */
+function stripEditBlock(text: string): string {
+	return text.replace(/\[EDICION\][\s\S]*?\[\/EDICION\]/g, "").trim();
+}
+
+/**
+ * Applies edit operations to the TipTap editor.
+ * Processes in descending idx order so splice operations don't shift indices.
+ * Returns the number of operations successfully applied.
+ */
+function applyEdits(editor: Editor, edits: EditOp[]): number {
+	const doc = editor.getJSON() as any;
+	const clone: any = JSON.parse(JSON.stringify(doc));
+	const content: any[] = clone.content || [];
+
+	const sorted = [...edits].sort((a, b) => b.idx - a.idx);
+
+	let applied = 0;
+	for (const edit of sorted) {
+		const op = edit.op ?? "replace";
+		const { idx } = edit;
+
+		if (op === "delete") {
+			if (idx >= 0 && idx < content.length) {
+				content.splice(idx, 1);
+				applied++;
+			}
+		} else if (op === "insert_after" && edit.new !== undefined) {
+			const insertAt = Math.min(idx + 1, content.length);
+			content.splice(insertAt, 0, {
+				type: "paragraph",
+				content: [{ type: "text", text: edit.new }],
+			});
+			applied++;
+		} else if (op === "replace" && edit.new !== undefined) {
+			if (idx >= 0 && idx < content.length) {
+				// Preserve node type (heading level, etc.) but replace text content
+				clone.content[idx] = {
+					...clone.content[idx],
+					content: [{ type: "text", text: edit.new }],
+				};
+				applied++;
+			}
+		}
+	}
+
+	if (applied > 0) {
+		editor.commands.setContent(clone);
+	}
+	return applied;
+}
+
+// ── Static helpers ───────────────────────────────────────────────────────────
 
 /** Extracts code blocks wrapped in triple backtick from AI text */
 function parseBlocks(text: string): { type: "text" | "code"; content: string }[] {
@@ -46,9 +134,6 @@ function parseBlocks(text: string): { type: "text" | "code"; content: string }[]
 	return parts;
 }
 
-let msgCounter = 0;
-const nextId = () => `msg-${++msgCounter}`;
-
 const SUGGESTED_PROMPTS = [
 	"Mejorá la redacción del documento actual",
 	"Escribí una introducción formal para este escrito",
@@ -64,6 +149,8 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 	const [streaming, setStreaming] = useState(false);
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const readerRef = useRef<ReadableStreamDefaultReader | null>(null);
+	const msgCounterRef = useRef(0);
+	const nextId = () => `msg-${++msgCounterRef.current}`;
 
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,7 +160,6 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 		readerRef.current?.cancel();
 		readerRef.current = null;
 		setStreaming(false);
-		// Mark last assistant message as no longer pending
 		setMessages((prev) => prev.map((m) => (m.pending ? { ...m, pending: false } : m)));
 	}, []);
 
@@ -90,35 +176,34 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 			setStreaming(true);
 
 			try {
-				// Build history for OpenAI (exclude the pending placeholder)
 				const history = [...messages, userMsg].map((m) => ({
 					role: m.role,
 					content: m.content,
 				}));
 
-				const documentText = includeDoc ? editor.getText() : undefined;
+				// Send numbered paragraphs when doc context is enabled so the LLM
+				// can reference paragraphs by index in [EDICION] edit blocks.
+				const documentText = includeDoc ? buildNumberedContext(editor) : undefined;
 				const attachedPdfUrl = includePdf && pdfUrl ? pdfUrl : undefined;
 
-				// Use fetch directly for SSE (axios does not support streaming)
-				const token = localStorage.getItem("token") || "";
-				const resp = await fetch("/rag/editor/chat", {
+				const bearerToken = secureStorage.getAuthToken();
+				const resp = await fetch(`${import.meta.env.VITE_RAG_URL}/rag/editor/chat`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						...(token ? { Authorization: `Bearer ${token}` } : {}),
+						...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
 					},
 					credentials: "include",
 					body: JSON.stringify({ messages: history, documentText, pdfUrl: attachedPdfUrl, stream: true }),
 				});
 
-				if (!resp.ok || !resp.body) {
-					throw new Error(`HTTP ${resp.status}`);
-				}
+				if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
 
 				const reader = resp.body.getReader();
 				readerRef.current = reader;
 				const decoder = new TextDecoder();
 				let buffer = "";
+				let accumulated = "";
 
 				while (true) {
 					const { done, value } = await reader.read();
@@ -135,9 +220,10 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 						try {
 							const event = JSON.parse(raw);
 							if (event.type === "chunk") {
+								accumulated += event.text;
 								setMessages((prev) =>
 									prev.map((m) =>
-										m.id === assistantId ? { ...m, content: m.content + event.text } : m
+										m.id === assistantId ? { ...m, content: accumulated } : m
 									)
 								);
 							} else if (event.type === "done" || event.type === "error") {
@@ -148,7 +234,27 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 						}
 					}
 				}
-			} catch (err: any) {
+
+				// After stream completes: detect and apply partial document edits
+				const edits = includeDoc ? parseEdits(accumulated) : null;
+				let displayContent = accumulated;
+				let editsApplied = 0;
+
+				if (edits && edits.length > 0) {
+					editsApplied = applyEdits(editor, edits);
+					if (editsApplied > 0) {
+						displayContent = stripEditBlock(accumulated);
+					}
+				}
+
+				setMessages((prev) =>
+					prev.map((m) =>
+						m.id === assistantId
+							? { ...m, content: displayContent, editsApplied, pending: false }
+							: m
+					)
+				);
+			} catch (_err: any) {
 				setMessages((prev) =>
 					prev.map((m) =>
 						m.id === assistantId
@@ -159,10 +265,11 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 			} finally {
 				readerRef.current = null;
 				setStreaming(false);
+				// Fallback: ensure no messages remain pending
 				setMessages((prev) => prev.map((m) => (m.pending ? { ...m, pending: false } : m)));
 			}
 		},
-		[messages, streaming, includeDoc, editor]
+		[messages, streaming, includeDoc, includePdf, editor, pdfUrl]
 	);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -275,58 +382,71 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 										</Typography>
 									</Stack>
 								) : (
-									parseBlocks(msg.content).map((block, i) =>
-										block.type === "code" ? (
-											<Box
-												key={i}
-												sx={{
-													bgcolor: "grey.50",
-													border: "1px solid",
-													borderColor: "divider",
-													borderRadius: 1,
-													p: 1,
-													fontSize: "0.78rem",
-													lineHeight: 1.6,
-													fontFamily: "inherit",
-													whiteSpace: "pre-wrap",
-													wordBreak: "break-word",
-												}}
-											>
-												{block.content}
-												<Stack direction="row" spacing={0.5} mt={0.75}>
-													<Tooltip title="Insertar en el cursor">
-														<Chip
-															icon={<DirectboxSend size={12} />}
-															label="Insertar"
-															size="small"
-															color="primary"
-															variant="outlined"
-															onClick={() => insertIntoEditor(block.content)}
-															sx={{ fontSize: "0.68rem", height: 22, cursor: "pointer" }}
-														/>
-													</Tooltip>
-													<Tooltip title="Copiar">
-														<Chip
-															icon={<Copy size={12} />}
-															label="Copiar"
-															size="small"
-															variant="outlined"
-															onClick={() => copyToClipboard(block.content)}
-															sx={{ fontSize: "0.68rem", height: 22, cursor: "pointer" }}
-														/>
-													</Tooltip>
-												</Stack>
-											</Box>
-										) : (
-											<Typography
-												key={i}
-												variant="body2"
-												sx={{ fontSize: "0.8rem", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-											>
-												{block.content}
-											</Typography>
-										)
-									)
+									<>
+										{parseBlocks(msg.content).map((block, i) =>
+											block.type === "code" ? (
+												<Box
+													key={i}
+													sx={{
+														bgcolor: "grey.50",
+														border: "1px solid",
+														borderColor: "divider",
+														borderRadius: 1,
+														p: 1,
+														fontSize: "0.78rem",
+														lineHeight: 1.6,
+														fontFamily: "inherit",
+														whiteSpace: "pre-wrap",
+														wordBreak: "break-word",
+													}}
+												>
+													{block.content}
+													<Stack direction="row" spacing={0.5} mt={0.75}>
+														<Tooltip title="Insertar en el cursor">
+															<Chip
+																icon={<DirectboxSend size={12} />}
+																label="Insertar"
+																size="small"
+																color="primary"
+																variant="outlined"
+																onClick={() => insertIntoEditor(block.content)}
+																sx={{ fontSize: "0.68rem", height: 22, cursor: "pointer" }}
+															/>
+														</Tooltip>
+														<Tooltip title="Copiar">
+															<Chip
+																icon={<Copy size={12} />}
+																label="Copiar"
+																size="small"
+																variant="outlined"
+																onClick={() => copyToClipboard(block.content)}
+																sx={{ fontSize: "0.68rem", height: 22, cursor: "pointer" }}
+															/>
+														</Tooltip>
+													</Stack>
+												</Box>
+											) : (
+												<Typography
+													key={i}
+													variant="body2"
+													sx={{ fontSize: "0.8rem", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+												>
+													{block.content}
+												</Typography>
+											)
+										)}
+										{/* Edit confirmation chip */}
+										{msg.editsApplied != null && msg.editsApplied > 0 && (
+											<Chip
+												icon={<Edit2 size={12} />}
+												label={`${msg.editsApplied} cambio${msg.editsApplied !== 1 ? "s" : ""} aplicado${msg.editsApplied !== 1 ? "s" : ""} en el documento`}
+												size="small"
+												color="success"
+												variant="outlined"
+												sx={{ fontSize: "0.68rem", height: 22, alignSelf: "flex-start", mt: 0.25 }}
+											/>
+										)}
+									</>
 								)}
 							</Box>
 						)}
