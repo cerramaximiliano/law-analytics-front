@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from "react";
-import secureStorage from "services/secureStorage";
+import axios from "axios";
+import ragAxios from "utils/ragAxios";
 import {
 	Box,
 	Chip,
@@ -148,7 +149,7 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 	const [includePdf, setIncludePdf] = useState(false);
 	const [streaming, setStreaming] = useState(false);
 	const bottomRef = useRef<HTMLDivElement>(null);
-	const readerRef = useRef<ReadableStreamDefaultReader | null>(null);
+	const abortControllerRef = useRef<AbortController | null>(null);
 	const msgCounterRef = useRef(0);
 	const nextId = () => `msg-${++msgCounterRef.current}`;
 
@@ -157,8 +158,8 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 	}, [messages]);
 
 	const stopStreaming = useCallback(() => {
-		readerRef.current?.cancel();
-		readerRef.current = null;
+		abortControllerRef.current?.abort();
+		abortControllerRef.current = null;
 		setStreaming(false);
 		setMessages((prev) => prev.map((m) => (m.pending ? { ...m, pending: false } : m)));
 	}, []);
@@ -186,54 +187,49 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 				const documentText = includeDoc ? buildNumberedContext(editor) : undefined;
 				const attachedPdfUrl = includePdf && pdfUrl ? pdfUrl : undefined;
 
-				const bearerToken = secureStorage.getAuthToken();
-				const resp = await fetch(`${import.meta.env.VITE_RAG_URL}/rag/editor/chat`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
-					},
-					credentials: "include",
-					body: JSON.stringify({ messages: history, documentText, pdfUrl: attachedPdfUrl, stream: true }),
-				});
+				const controller = new AbortController();
+				abortControllerRef.current = controller;
 
-				if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
-
-				const reader = resp.body.getReader();
-				readerRef.current = reader;
-				const decoder = new TextDecoder();
-				let buffer = "";
+				let sseBuffer = "";
+				let lastLength = 0;
 				let accumulated = "";
 
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
+				await ragAxios.post(
+					"/rag/editor/chat",
+					{ messages: history, documentText, pdfUrl: attachedPdfUrl, stream: true },
+					{
+						responseType: "text",
+						signal: controller.signal,
+						onDownloadProgress: (progressEvent) => {
+							const fullText = (progressEvent.event?.target as XMLHttpRequest)?.response ?? "";
+							const newText = fullText.slice(lastLength);
+							lastLength = fullText.length;
 
-					buffer += decoder.decode(value, { stream: true });
-					const lines = buffer.split("\n");
-					buffer = lines.pop() ?? "";
+							sseBuffer += newText;
+							const lines = sseBuffer.split("\n");
+							sseBuffer = lines.pop() ?? "";
 
-					for (const line of lines) {
-						if (!line.startsWith("data: ")) continue;
-						const raw = line.slice(6).trim();
-						if (!raw) continue;
-						try {
-							const event = JSON.parse(raw);
-							if (event.type === "chunk") {
-								accumulated += event.text;
-								setMessages((prev) =>
-									prev.map((m) =>
-										m.id === assistantId ? { ...m, content: accumulated } : m
-									)
-								);
-							} else if (event.type === "done" || event.type === "error") {
-								break;
+							for (const line of lines) {
+								if (!line.startsWith("data: ")) continue;
+								const raw = line.slice(6).trim();
+								if (!raw) continue;
+								try {
+									const sseEvent = JSON.parse(raw);
+									if (sseEvent.type === "chunk") {
+										accumulated += sseEvent.text;
+										setMessages((prev) =>
+											prev.map((m) =>
+												m.id === assistantId ? { ...m, content: accumulated } : m
+											)
+										);
+									}
+								} catch {
+									// ignore malformed SSE event
+								}
 							}
-						} catch {
-							// ignore malformed event
-						}
-					}
-				}
+						},
+					},
+				);
 
 				// After stream completes: detect and apply partial document edits
 				const edits = includeDoc ? parseEdits(accumulated) : null;
@@ -254,22 +250,24 @@ const AiChatPanel = ({ editor, onClose, pdfUrl }: AiChatPanelProps) => {
 							: m
 					)
 				);
-			} catch (_err: any) {
-				setMessages((prev) =>
-					prev.map((m) =>
-						m.id === assistantId
-							? { ...m, content: "Error al conectar con el asistente. Intentá de nuevo.", pending: false }
-							: m
-					)
-				);
+			} catch (err: any) {
+				if (!axios.isCancel(err)) {
+					setMessages((prev) =>
+						prev.map((m) =>
+							m.id === assistantId
+								? { ...m, content: "Error al conectar con el asistente. Intentá de nuevo.", pending: false }
+								: m
+						)
+					);
+				}
 			} finally {
-				readerRef.current = null;
+				abortControllerRef.current = null;
 				setStreaming(false);
 				// Fallback: ensure no messages remain pending
 				setMessages((prev) => prev.map((m) => (m.pending ? { ...m, pending: false } : m)));
 			}
 		},
-		[messages, streaming, includeDoc, includePdf, editor, pdfUrl]
+		[messages, streaming, includeDoc, includePdf, editor, pdfUrl],
 	);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
