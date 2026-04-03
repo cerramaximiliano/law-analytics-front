@@ -328,6 +328,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					totalWithLinks: paginatedData.data.totalWithLinks,
 					documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 					documentsInThisPage: paginatedData.data.documentsInThisPage,
+					pjnAccess: paginatedData.data.pjnAccess,
 					scrapingProgress: paginatedData.data.scrapingProgress,
 				};
 			} else {

@@ -17,6 +17,7 @@ interface LawyerCollegeWithRegistration {
 	taxCondition: "autonomo" | "monotributo" | "";
 	taxCode: string;
 	electronicAddress: string;
+	physicalAddress?: string;
 }
 
 // Definimos el tipo para las skills que pueden ser string[] o LawyerCollegeWithRegistration[]

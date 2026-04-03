@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useEditorState } from "@tiptap/react";
 import {
 	Box,
 	Button,
@@ -66,6 +67,14 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 	const [colorAnchor, setColorAnchor] = useState<HTMLButtonElement | null>(null);
 	const colorInputRef = useRef<HTMLInputElement>(null);
 
+	const { canUndo, canRedo } = useEditorState({
+		editor,
+		selector: (ctx) => ({
+			canUndo: ctx.editor.can().undo(),
+			canRedo: ctx.editor.can().redo(),
+		}),
+	});
+
 	const getHeadingValue = () => {
 		if (editor.isActive("heading", { level: 1 })) return "h1";
 		if (editor.isActive("heading", { level: 2 })) return "h2";
@@ -121,14 +130,14 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 			{/* Deshacer / Rehacer */}
 			<Tooltip title="Deshacer">
 				<span>
-					<IconButton size="small" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
+					<IconButton size="small" onClick={() => editor.chain().focus().undo().run()} disabled={!canUndo}>
 						<ArrowRotateLeft size={16} />
 					</IconButton>
 				</span>
 			</Tooltip>
 			<Tooltip title="Rehacer">
 				<span>
-					<IconButton size="small" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
+					<IconButton size="small" onClick={() => editor.chain().focus().redo().run()} disabled={!canRedo}>
 						<ArrowRotateRight size={16} />
 					</IconButton>
 				</span>

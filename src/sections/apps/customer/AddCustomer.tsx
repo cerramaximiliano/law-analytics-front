@@ -22,8 +22,9 @@ import AlertCustomerDelete from "./AlertCustomerDelete";
 import { Trash, ArrowRight2, ArrowLeft2, Profile2User } from "iconsax-react";
 import ApiService from "store/reducers/ApiService";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
-import SecondStep from "./step-components/secondStep";
+import TypeStep from "./step-components/typeStep";
 import FirstStep from "./step-components/firstStep";
+import SecondStep from "./step-components/secondStep";
 import ThirdStep from "./step-components/thirdStep";
 import { dispatch, useSelector } from "store";
 import { addContact, updateContact } from "store/reducers/contacts";
@@ -57,6 +58,9 @@ const getInitialValues = (customer: FormikValues | null) => {
 		lastName: "",
 		role: "",
 		type: "",
+		representado: false,
+		tipoRepresentacion: "",
+		representanteLegal: { nombre: "", dni: "" },
 		address: "",
 		state: "",
 		city: "",
@@ -71,16 +75,25 @@ const getInitialValues = (customer: FormikValues | null) => {
 		company: "",
 		fiscal: "",
 	};
-	return customer ? merge({}, newCustomer, customer) : newCustomer;
+	if (!customer) return newCustomer;
+	const merged = merge({}, newCustomer, customer);
+	// If lastName is "-" (old default) and type is not jurídica, show empty in edit mode
+	const isJuridica = merged.type?.toLowerCase().includes("jurídica");
+	if (!isJuridica && merged.lastName === "-") {
+		merged.lastName = "";
+	}
+	return merged;
 };
 
-function getStepContent(step: number, values: any, isImportedFromPjn: boolean = false) {
+function getStepContent(step: number, _values: any, isImportedFromPjn: boolean = false) {
 	switch (step) {
 		case 0:
-			return <FirstStep isImportedFromPjn={isImportedFromPjn} />;
+			return <TypeStep isImportedFromPjn={isImportedFromPjn} />;
 		case 1:
-			return <SecondStep />;
+			return <FirstStep />;
 		case 2:
+			return <SecondStep />;
+		case 3:
 			return <ThirdStep />;
 		default:
 			return false;
@@ -155,28 +168,44 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 	};
 
 	const CustomerSchema = [
+		// Step 0 — Tipo y Categoría
 		Yup.object().shape({
-			name: Yup.string().required("El nombre es requerido"),
-			lastName: Yup.string().required("El apellido es requerido"),
+			type: Yup.string().required("El tipo es requerido"),
 			role: Yup.mixed()
 				.required("La categoría es requerida")
 				.test("is-valid-role", "La categoría es requerida", (value) => {
 					if (Array.isArray(value)) return value.length > 0;
 					return typeof value === "string" && value.trim().length > 0;
 				}),
-			type: Yup.string().required("El tipo es requerido"),
 		}),
+		// Step 1 — Datos Personales (condicional según tipo ya elegido)
+		Yup.object().shape({
+			name: Yup.string().when("type", {
+				is: (type: string) => !type?.toLowerCase().includes("jurídica"),
+				then: (s) => s.required("El nombre es requerido"),
+				otherwise: (s) => s,
+			}),
+			lastName: Yup.string().when("type", {
+				is: (type: string) => !type?.toLowerCase().includes("jurídica"),
+				then: (s) => s.required("El apellido es requerido"),
+				otherwise: (s) => s,
+			}),
+			company: Yup.string().when("type", {
+				is: (type: string) => type?.toLowerCase().includes("jurídica"),
+				then: (s) => s.required("La razón social es requerida"),
+				otherwise: (s) => s,
+			}),
+		}),
+		// Step 2 — Datos de Contacto
 		Yup.object().shape({
 			state: Yup.string().required("La provincia/estado es requerida"),
 			city: Yup.string().required("La ciudad es requerida"),
-			zipCode: Yup.string(), // Opcional
-			email: Yup.string().email("Correo electrónico inválido"), // Ahora es opcional
+			zipCode: Yup.string(),
+			email: Yup.string().email("Correo electrónico inválido"),
 			phone: Yup.string().test("phone-format", "Complete el código de área sin el 0 y móvil sin el 15", function (value) {
-				if (!value) return true; // Skip validation if no value
-
+				if (!value) return true;
 				const cleanNumber = cleanArgentinePhoneNumber(value);
 				const originalDigitsOnly = value.replace(/[^0-9]/g, "");
-
 				return (
 					cleanNumber.length === originalDigitsOnly.length ||
 					(originalDigitsOnly.startsWith("0") && cleanNumber.length === originalDigitsOnly.length - 1) ||
@@ -184,9 +213,10 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 				);
 			}),
 		}),
+		// Step 3 — Información Adicional (todo opcional)
 	];
 
-	const steps = ["Datos Personales", "Datos de Contacto", "Información Adicional"];
+	const steps = ["Tipo y Categoría", "Datos Personales", "Datos de Contacto", "Información Adicional"];
 	const [openAlert, setOpenAlert] = useState(false);
 	const [activeStep, setActiveStep] = useState(0);
 	const isLastStep = activeStep === steps.length - 1;
@@ -341,14 +371,21 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 				? values.role
 				: (values.role?.trim() || "");
 
-			const cleanedValues = {
+			const isJuridica = values.type?.toLowerCase().includes("jurídica");
+		const razonSocial = values.company?.trim() || "";
+
+		const cleanedValues = {
 				...values,
 				phone: cleanedPhone,
-				// Asegurar que los campos requeridos no estén vacíos
-				name: values.name?.trim() || "",
-				lastName: values.lastName?.trim() || "",
+				// Para jurídicas: usar razón social como nombre principal (backward compat)
+				name: isJuridica ? razonSocial : (values.name?.trim() || ""),
+				lastName: isJuridica ? "-" : (values.lastName?.trim() || ""),
+				company: razonSocial || (values.company?.trim() || ""),
 				role: normalizedRole,
 				type: values.type?.trim() || "",
+				representado: values.representado === true,
+				tipoRepresentacion: values.representado && values.tipoRepresentacion ? values.tipoRepresentacion : null,
+				...(isJuridica && { representanteLegal: { nombre: values.representanteLegal?.nombre?.trim() || "", dni: values.representanteLegal?.dni?.trim() || "" } }),
 				state: values.state?.trim() || "",
 				city: values.city?.trim() || "",
 				// Campos opcionales - solo incluir si tienen valor
@@ -625,7 +662,11 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 
 					{!isCreating && (
 						<AlertCustomerDelete
-							title={`${customer.name} ${customer.lastName}`}
+							title={
+								customer.type?.toLowerCase().includes("jurídica")
+									? customer.company || customer.name || ""
+									: `${customer.name}${customer.lastName && customer.lastName !== "-" ? " " + customer.lastName : ""}`.trim()
+							}
 							open={openAlert}
 							handleClose={handleAlertClose}
 							id={customer._id}

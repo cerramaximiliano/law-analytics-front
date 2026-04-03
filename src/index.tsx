@@ -27,6 +27,10 @@ import "assets/third-party/react-table.css";
 // custom styles
 import "assets/css/custom.css";
 
+// tiptap ui components
+import "./styles/_variables.scss";
+import "./styles/_keyframe-animations.scss";
+
 // project-imports
 import App from "./App";
 import { store, persister } from "store";

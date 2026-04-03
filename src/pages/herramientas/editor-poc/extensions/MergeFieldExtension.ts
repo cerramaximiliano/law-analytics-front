@@ -28,8 +28,16 @@ const MergeFieldExtension = Node.create<MergeFieldOptions>({
 
 	addAttributes() {
 		return {
-			key: { default: null },
-			label: { default: null },
+			key: {
+				default: null,
+				parseHTML: (el) => el.getAttribute("data-merge-field"),
+				renderHTML: (attrs) => ({ "data-merge-field": attrs.key }),
+			},
+			label: {
+				default: null,
+				parseHTML: (el) => el.getAttribute("data-label") ?? el.getAttribute("data-merge-field"),
+				renderHTML: (attrs) => ({ "data-label": attrs.label }),
+			},
 		};
 	},
 
@@ -38,16 +46,18 @@ const MergeFieldExtension = Node.create<MergeFieldOptions>({
 	},
 
 	renderHTML({ node, HTMLAttributes }) {
-		const { bg, color, border } = getGroupColorByKey(node.attrs.key ?? "");
+		const key = node.attrs.key ?? "";
+		const label = node.attrs.label ?? key;
+		const { bg, color, border } = getGroupColorByKey(key);
+		const isBloque = key.startsWith("bloque.");
 		return [
 			"span",
 			mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-				"data-merge-field": node.attrs.key,
-				class: "merge-field",
+				class: isBloque ? "merge-field merge-field--bloque" : "merge-field",
 				contenteditable: "false",
 				style: `background:${bg};color:${color};border-color:${border}`,
 			}),
-			`{{${node.attrs.label ?? node.attrs.key}}}`,
+			`[${label}]`,
 		];
 	},
 

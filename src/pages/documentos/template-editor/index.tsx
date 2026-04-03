@@ -4,6 +4,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
 	Box,
 	Stack,
+	Tab,
+	Tabs,
 	TextField,
 	Select,
 	MenuItem,
@@ -17,7 +19,7 @@ import {
 	Typography,
 	Chip,
 } from "@mui/material";
-import { ArrowLeft2, MagicStar } from "iconsax-react";
+import { ArrowLeft2, DocumentText, MagicStar } from "iconsax-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -41,6 +43,7 @@ import TabIndentExtension from "pages/herramientas/editor-poc/extensions/TabInde
 import FontSizeExtension from "pages/herramientas/editor-poc/extensions/FontSizeExtension";
 import LineHeightExtension from "pages/herramientas/editor-poc/extensions/LineHeightExtension";
 import { Color } from "@tiptap/extension-color";
+import Highlight from "@tiptap/extension-highlight";
 import { type RichTextTemplateCategory } from "types/rich-text-document";
 
 // ==============================|| TEMPLATE EDITOR ||============================== //
@@ -118,7 +121,7 @@ const TemplateEditorPage = () => {
 	const [saving, setSaving] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [contentLoaded, setContentLoaded] = useState(false);
-	const [aiPanelOpen, setAiPanelOpen] = useState(false);
+	const [rightTab, setRightTab] = useState<"fields" | "ai">("fields");
 	const printIframeRef = useRef<HTMLIFrameElement | null>(null);
 
 	const editor = useEditor({
@@ -133,6 +136,7 @@ const TemplateEditorPage = () => {
 			FontSizeExtension,
 			LineHeightExtension,
 			Color,
+			Highlight.configure({ multicolor: true }),
 			PaginationPlus.configure(A4_CONFIG),
 		],
 		content: "",
@@ -153,7 +157,12 @@ const TemplateEditorPage = () => {
 			setDescription(tpl.description ?? "");
 			setCategory((tpl.category as RichTextTemplateCategory) ?? "otro");
 			if (tpl.content && Object.keys(tpl.content).length > 0) {
-				editor.commands.setContent(tpl.content as Parameters<typeof editor.commands.setContent>[0]);
+				const parsedTpl = editor.schema.nodeFromJSON(tpl.content as Parameters<typeof editor.commands.setContent>[0]);
+				editor.view.dispatch(
+					editor.state.tr
+						.replaceWith(0, editor.state.doc.content.size, parsedTpl.content)
+						.setMeta("addToHistory", false)
+				);
 			}
 			setContentLoaded(true);
 		})();
@@ -300,8 +309,8 @@ const TemplateEditorPage = () => {
 								variant="outlined"
 							/>
 						)}
-						<Tooltip title={aiPanelOpen ? "Cerrar asistente IA" : "Asistente IA"}>
-							<IconButton size="small" color={aiPanelOpen ? "secondary" : "default"} onClick={() => setAiPanelOpen((v) => !v)}>
+						<Tooltip title={rightTab === "ai" ? "Cerrar asistente IA" : "Asistente IA"}>
+							<IconButton size="small" color={rightTab === "ai" ? "secondary" : "default"} onClick={() => setRightTab((t) => (t === "ai" ? "fields" : "ai"))}>
 								<MagicStar size={18} />
 							</IconButton>
 						</Tooltip>
@@ -349,8 +358,49 @@ const TemplateEditorPage = () => {
 						<EditorContent editor={editor} className="tiptap-editor-content" />
 					</Box>
 
-					{editor && <MergeFieldsPanel editor={editor} />}
-					{editor && aiPanelOpen && <AiChatPanel editor={editor} onClose={() => setAiPanelOpen(false)} />}
+					{editor && (
+						<Box
+							sx={{
+								width: 300,
+								flexShrink: 0,
+								borderLeft: "1px solid",
+								borderColor: "divider",
+								display: "flex",
+								flexDirection: "column",
+								bgcolor: "background.paper",
+								overflow: "hidden",
+							}}
+						>
+							<Tabs
+								value={rightTab}
+								onChange={(_e, v) => setRightTab(v)}
+								variant="fullWidth"
+								sx={{ minHeight: 36, borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}
+								TabIndicatorProps={{ style: { height: 2 } }}
+							>
+								<Tab
+									value="fields"
+									icon={<DocumentText size={14} />}
+									iconPosition="start"
+									label="Campos"
+									sx={{ minHeight: 36, fontSize: "0.75rem", py: 0, textTransform: "none" }}
+								/>
+								<Tab
+									value="ai"
+									icon={<MagicStar size={14} />}
+									iconPosition="start"
+									label="Asistente IA"
+									sx={{ minHeight: 36, fontSize: "0.75rem", py: 0, textTransform: "none" }}
+								/>
+							</Tabs>
+							<Box sx={{ display: rightTab === "fields" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
+								<MergeFieldsPanel editor={editor} embedded />
+							</Box>
+							<Box sx={{ display: rightTab === "ai" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
+								<AiChatPanel editor={editor} embedded />
+							</Box>
+						</Box>
+					)}
 				</Box>
 			</Box>
 		</Stack>

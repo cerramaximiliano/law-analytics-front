@@ -6,9 +6,10 @@ import { MERGE_FIELD_GROUPS, GROUP_COLORS, type MergeFieldDef } from "./mergeFie
 
 interface MergeFieldsPanelProps {
 	editor: Editor;
+	embedded?: boolean;
 }
 
-const MergeFieldsPanel = ({ editor }: MergeFieldsPanelProps) => {
+const MergeFieldsPanel = ({ editor, embedded }: MergeFieldsPanelProps) => {
 	const [search, setSearch] = useState("");
 	const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ expediente: true });
 
@@ -27,21 +28,20 @@ const MergeFieldsPanel = ({ editor }: MergeFieldsPanelProps) => {
 	return (
 		<Box
 			sx={{
-				width: 220,
-				flexShrink: 0,
-				borderLeft: "1px solid",
-				borderColor: "divider",
+				...(embedded ? { flex: 1 } : { width: 220, flexShrink: 0, borderLeft: "1px solid", borderColor: "divider" }),
 				display: "flex",
 				flexDirection: "column",
 				bgcolor: "background.paper",
 				overflow: "hidden",
 			}}
 		>
-			{/* Header */}
+			{/* Header — solo en modo standalone */}
 			<Box sx={{ px: 1.5, py: 1.25, borderBottom: "1px solid", borderColor: "divider" }}>
-				<Typography variant="subtitle2" fontWeight={600} gutterBottom>
-					Campos dinámicos
-				</Typography>
+				{!embedded && (
+					<Typography variant="subtitle2" fontWeight={600} gutterBottom>
+						Campos dinámicos
+					</Typography>
+				)}
 				<TextField
 					size="small"
 					placeholder="Buscar campo..."

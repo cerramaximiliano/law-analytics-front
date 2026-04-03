@@ -41,6 +41,7 @@ interface LawyerCollege {
 	_id: string;
 	name: string;
 	abbreviation: string;
+	province: string;
 }
 
 // Interfaz para los colegios de abogados con matrícula
@@ -51,6 +52,7 @@ interface LawyerCollegeWithRegistration {
 	taxCondition: "autonomo" | "monotributo" | "";
 	taxCode: string;
 	electronicAddress: string;
+	physicalAddress?: string;
 }
 
 // Interfaz para los valores del formulario
@@ -68,7 +70,7 @@ function useInputRef() {
 
 const TabProfessional = () => {
 	const [loading, setLoading] = useState(false);
-	const [collegesList, setCollegesList] = useState<string[]>([]);
+	const [collegesList, setCollegesList] = useState<LawyerCollege[]>([]);
 	const [collegesLoading, setCollegesLoading] = useState(false);
 	const [editingSkills, setEditingSkills] = useState<Set<number>>(new Set());
 	const inputRef = useInputRef();
@@ -118,11 +120,13 @@ const TabProfessional = () => {
 		const fetchColleges = async () => {
 			setCollegesLoading(true);
 			try {
-				const response = await axios.get("/api/colleges/");
+				const response = await axios.get("/api/colleges/?fields=name,province");
 				if (response.data.success) {
-					// Extraemos solo los nombres para usar en el Autocomplete
-					const names = response.data.data.map((college: LawyerCollege) => college.name);
-					setCollegesList(names);
+					const sorted = [...response.data.data].sort((a: LawyerCollege, b: LawyerCollege) => {
+						const prov = a.province.localeCompare(b.province, "es");
+						return prov !== 0 ? prov : a.name.localeCompare(b.name, "es");
+					});
+					setCollegesList(sorted);
 				}
 			} catch (error) {
 			} finally {
@@ -154,6 +158,7 @@ const TabProfessional = () => {
 				taxCondition: "" as const,
 				taxCode: "",
 				electronicAddress: "",
+				physicalAddress: "",
 			}));
 		}
 
@@ -283,14 +288,16 @@ const TabProfessional = () => {
 									<Autocomplete
 										fullWidth
 										id="add-college"
-										options={collegesList.filter((name) => !values.colleges.some((college) => college.name === name))}
+										options={collegesList.filter((c) => !values.colleges.some((college) => college.name === c.name))}
+										getOptionLabel={(option) => option.name}
+										groupBy={(option) => option.province}
 										renderInput={(params) => <TextField {...params} placeholder="Agregar colegio de abogados" sx={{ mb: 2 }} />}
-										onChange={(event, newValue) => {
+										onChange={(_event, newValue) => {
 											if (newValue) {
 												setFieldValue("colleges", [
 													...values.colleges,
 													{
-														name: newValue,
+														name: newValue.name,
 														registrationNumber: "",
 														taxCondition: "" as const,
 														taxCode: "",
@@ -502,6 +509,29 @@ const TabProfessional = () => {
 																)}
 															</Stack>
 														</Grid>
+
+														{/* Domicilio físico */}
+														<Grid item xs={12} sm={6}>
+															<Stack spacing={1}>
+																<InputLabel htmlFor={`college-${index}-physicalAddress`}>Domicilio físico constituido</InputLabel>
+																{!!college._id && !editingSkills.has(index) ? (
+																	<Typography variant="body2" sx={{ py: 1 }}>
+																		{college.physicalAddress || <Typography component="span" variant="caption" color="text.disabled">No cargado</Typography>}
+																	</Typography>
+																) : (
+																	<TextField
+																		fullWidth
+																		id={`college-${index}-physicalAddress`}
+																		value={college.physicalAddress || ""}
+																		name={`colleges[${index}].physicalAddress`}
+																		onBlur={handleBlur}
+																		onChange={handleChange}
+																		placeholder="Ej: Av. Corrientes 1234, CABA"
+																	/>
+																)}
+															</Stack>
+														</Grid>
+
 													</Grid>
 												</Box>
 											))}

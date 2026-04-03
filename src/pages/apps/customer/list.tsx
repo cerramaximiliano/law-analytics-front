@@ -978,7 +978,9 @@ const CustomerListPage = () => {
 							p: 0,
 							display: "flex",
 							flexDirection: "column",
-							maxHeight: "90vh",
+							height: { xs: "90vh", sm: "85vh", md: "80vh" },
+							maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+							overflow: "hidden",
 						},
 					}}
 				>

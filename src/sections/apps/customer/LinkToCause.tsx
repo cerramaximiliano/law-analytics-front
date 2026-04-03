@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
 	Box,
 	Button,
@@ -17,13 +17,13 @@ import {
 	CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { SearchNormal1, TickCircle } from "iconsax-react";
+import { SearchNormal1, TickCircle, MinusCirlce } from "iconsax-react";
 import SimpleBar from "components/third-party/SimpleBar";
 import { useSelector, useDispatch } from "store";
 import { Folder } from "types/folders";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
-import { linkFoldersToContact } from "store/reducers/contacts";
+import { linkFoldersToContact, unlinkFolderFromContact } from "store/reducers/contacts";
 
 interface LinkToCauseProps {
 	openLink: boolean;
@@ -36,8 +36,9 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 	const theme = useTheme();
 	const dispatch = useDispatch();
 	const [isLoading, setIsLoading] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedFolders, setSelectedFolders] = useState<Folder[]>([]);
+	const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set());
 	const { folders } = useSelector((state) => state.folder);
 	const { user } = useSelector((state) => state.auth);
 
@@ -58,81 +59,86 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 		loadFolders();
 	}, [folders.length, user?._id, openLink, dispatch]);
 
-	// Resetear selección cuando se abre el modal
+	// Pre-seleccionar carpetas ya vinculadas cuando se abre el modal
 	useEffect(() => {
 		if (openLink) {
-			setSelectedFolders([]);
+			setSelectedFolderIds(new Set(folderIds || []));
 			setSearchTerm("");
 		}
-	}, [openLink]);
+	}, [openLink]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setSearchTerm(event.target.value);
-	};
+	const originalFolderIds = useMemo(() => new Set(folderIds || []), [folderIds]);
 
-	const handleFolderSelect = (folder: Folder) => {
-		setSelectedFolders((prev) => {
-			const isSelected = prev.some((f) => f._id === folder._id);
-			if (isSelected) {
-				return prev.filter((f) => f._id !== folder._id);
+	const handleFolderToggle = (folder: Folder) => {
+		setSelectedFolderIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(folder._id)) {
+				next.delete(folder._id);
 			} else {
-				return [...prev, folder];
+				next.add(folder._id);
 			}
+			return next;
 		});
 	};
 
-	const handleLink = async () => {
-		if (selectedFolders.length > 0) {
-			const folderIds = selectedFolders.map((folder) => folder._id);
+	const toLink = useMemo(
+		() => [...selectedFolderIds].filter((id) => !originalFolderIds.has(id)),
+		[selectedFolderIds, originalFolderIds],
+	);
 
-			try {
-				const result = await dispatch(linkFoldersToContact(contactId, folderIds));
+	const toUnlink = useMemo(
+		() => [...originalFolderIds].filter((id) => !selectedFolderIds.has(id)),
+		[selectedFolderIds, originalFolderIds],
+	);
 
-				if (result.success) {
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: "Causas vinculadas correctamente",
-							variant: "alert",
-							alert: { color: "success" },
-							close: true,
-						}),
-					);
-					onCancelLink();
-				} else {
-					dispatch(
-						openSnackbar({
-							open: true,
-							message: result.error || "Error al vincular las causas",
-							variant: "alert",
-							alert: { color: "error" },
-							close: true,
-						}),
-					);
-				}
-			} catch (error) {
-				dispatch(
-					openSnackbar({
-						open: true,
-						message: "Error inesperado al vincular las causas",
-						variant: "alert",
-						alert: { color: "error" },
-						close: true,
-					}),
-				);
+	const hasChanges = toLink.length > 0 || toUnlink.length > 0;
+
+	const handleSave = async () => {
+		if (!hasChanges) return;
+		setIsSaving(true);
+		try {
+			// Vincular nuevas carpetas
+			if (toLink.length > 0) {
+				const result = await dispatch(linkFoldersToContact(contactId, toLink));
+				if (!result.success) throw new Error(result.error || "Error al vincular carpetas");
 			}
+
+			// Desvincular carpetas removidas (una por una según la API)
+			for (const folderId of toUnlink) {
+				const result = await dispatch(unlinkFolderFromContact(contactId, folderId));
+				if (!result.success) throw new Error(result.error || "Error al desvincular carpeta");
+			}
+
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Carpetas actualizadas correctamente",
+					variant: "alert",
+					alert: { color: "success" },
+					close: true,
+				}),
+			);
+			onCancelLink();
+		} catch (error: any) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: error?.message || "Error al actualizar las carpetas",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
-	const removeFolder = (folderId: string) => {
-		setSelectedFolders((prev) => prev.filter((f) => f._id !== folderId));
-	};
+	const filteredFolders = folders.filter((folder: Folder) =>
+		folder.folderName.toLowerCase().includes(searchTerm.toLowerCase()),
+	);
 
-	const filteredFolders = folders.filter((folder: Folder) => {
-		const nameMatches = folder.folderName.toLowerCase().includes(searchTerm.toLowerCase());
-		const isNotLinked = !folderIds?.includes(folder._id);
-		return nameMatches && isNotLinked;
-	});
+	const linkedCount = selectedFolderIds.size;
 
 	return (
 		<Dialog
@@ -158,11 +164,19 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 			>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
 					<Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
-						Seleccione Causas
+						Gestionar Carpetas
 					</Typography>
-					<Typography color="textSecondary" variant="subtitle2">
-						{selectedFolders.length} seleccionadas
-					</Typography>
+					<Stack direction="row" spacing={1.5} alignItems="center">
+						{toUnlink.length > 0 && (
+							<Chip label={`-${toUnlink.length} a desvincular`} size="small" color="error" variant="outlined" />
+						)}
+						{toLink.length > 0 && (
+							<Chip label={`+${toLink.length} a vincular`} size="small" color="success" variant="outlined" />
+						)}
+						<Typography color="textSecondary" variant="subtitle2">
+							{linkedCount} vinculada{linkedCount !== 1 ? "s" : ""}
+						</Typography>
+					</Stack>
 				</Stack>
 			</DialogTitle>
 			<Divider />
@@ -174,36 +188,11 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 					overflowY: "auto",
 				}}
 			>
-				{selectedFolders.length > 0 && (
-					<Box sx={{ mb: 2 }}>
-						<Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
-							{selectedFolders.map((folder) => (
-								<Chip
-									key={folder._id}
-									label={folder.folderName}
-									onDelete={() => removeFolder(folder._id)}
-									color="primary"
-									variant="outlined"
-									sx={{
-										maxWidth: "200px",
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										whiteSpace: "nowrap",
-										"&:hover": {
-											bgcolor: `${theme.palette.primary.lighter} !important`,
-										},
-									}}
-								/>
-							))}
-						</Stack>
-					</Box>
-				)}
-
 				<FormControl sx={{ width: "100%", mb: 3 }}>
 					<TextField
 						autoFocus
 						value={searchTerm}
-						onChange={handleSearchChange}
+						onChange={(e) => setSearchTerm(e.target.value)}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
@@ -212,12 +201,10 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 							),
 							sx: {
 								bgcolor: theme.palette.background.paper,
-								"&:hover": {
-									bgcolor: theme.palette.action.hover,
-								},
+								"&:hover": { bgcolor: theme.palette.action.hover },
 							},
 						}}
-						placeholder="Buscar causas..."
+						placeholder="Buscar carpetas..."
 						fullWidth
 					/>
 				</FormControl>
@@ -231,40 +218,52 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 					}}
 				>
 					{isLoading ? (
-						<Box
-							sx={{
-								display: "flex",
-								justifyContent: "center",
-								alignItems: "center",
-								py: 3,
-							}}
-						>
+						<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 3 }}>
 							<CircularProgress />
 						</Box>
 					) : (
 						<Stack spacing={1.5}>
 							{filteredFolders.length > 0 ? (
 								filteredFolders.map((folder: Folder) => {
-									const isSelected = selectedFolders.some((f) => f._id === folder._id);
+									const isSelected = selectedFolderIds.has(folder._id);
+									const wasLinked = originalFolderIds.has(folder._id);
+									const willUnlink = wasLinked && !isSelected;
+									const willLink = !wasLinked && isSelected;
+
+									let borderColor = "divider";
+									let bgcolor = "background.paper";
+									if (willUnlink) {
+										borderColor = theme.palette.error.main;
+										bgcolor = theme.palette.error.lighter;
+									} else if (willLink) {
+										borderColor = theme.palette.success.main;
+										bgcolor = theme.palette.success.lighter;
+									} else if (isSelected) {
+										borderColor = theme.palette.primary.main;
+										bgcolor = theme.palette.primary.lighter;
+									}
+
 									return (
 										<Box
 											key={folder._id}
-											onClick={() => handleFolderSelect(folder)}
+											onClick={() => handleFolderToggle(folder)}
 											sx={{
 												width: "100%",
 												border: "1px solid",
-												borderColor: isSelected ? theme.palette.primary.main : "divider",
+												borderColor,
 												borderRadius: 1,
 												p: 2,
 												cursor: "pointer",
-												bgcolor: isSelected ? `${theme.palette.primary.lighter}` : "background.paper",
-												transition: "all 0.3s ease",
+												bgcolor,
+												transition: "all 0.2s ease",
 												"&:hover": {
-													borderColor: theme.palette.primary.main,
-													bgcolor: isSelected ? theme.palette.primary.lighter : theme.palette.primary.lighter + "80",
+													borderColor: willUnlink
+														? theme.palette.error.dark
+														: isSelected
+															? theme.palette.primary.main
+															: theme.palette.primary.light,
 												},
 												position: "relative",
-												maxWidth: "100%",
 											}}
 										>
 											<Stack spacing={1}>
@@ -280,14 +279,11 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 													>
 														{folder.folderName}
 													</Typography>
-													{isSelected && (
-														<TickCircle
-															variant="Bold"
-															size={24}
-															style={{
-																color: theme.palette.primary.main,
-															}}
-														/>
+													{willUnlink && (
+														<MinusCirlce variant="Bold" size={22} style={{ color: theme.palette.error.main, flexShrink: 0 }} />
+													)}
+													{(isSelected && !willUnlink) && (
+														<TickCircle variant="Bold" size={22} style={{ color: willLink ? theme.palette.success.main : theme.palette.primary.main, flexShrink: 0 }} />
 													)}
 												</Stack>
 												<Stack direction="row" spacing={2} sx={{ color: "text.secondary" }}>
@@ -315,7 +311,9 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 										borderColor: theme.palette.divider,
 									}}
 								>
-									<Typography color="textSecondary">{searchTerm ? "No se encontraron causas" : "No hay causas disponibles"}</Typography>
+									<Typography color="textSecondary">
+										{searchTerm ? "No se encontraron carpetas" : "No hay carpetas disponibles"}
+									</Typography>
 								</Box>
 							)}
 						</Stack>
@@ -335,28 +333,19 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 				<Button
 					color="inherit"
 					onClick={onCancelLink}
-					disabled={isLoading}
-					sx={{
-						color: theme.palette.text.secondary,
-						"&:hover": {
-							bgcolor: theme.palette.action.hover,
-						},
-					}}
+					disabled={isSaving}
+					sx={{ color: theme.palette.text.secondary }}
 				>
 					Cancelar
 				</Button>
 				<Button
-					onClick={handleLink}
+					onClick={handleSave}
 					color="primary"
 					variant="contained"
-					disabled={selectedFolders.length === 0 || isLoading}
-					sx={{
-						minWidth: 120,
-						py: 1.25,
-						fontWeight: 600,
-					}}
+					disabled={!hasChanges || isSaving}
+					sx={{ minWidth: 120, py: 1.25, fontWeight: 600 }}
 				>
-					Vincular {selectedFolders.length > 0 && `(${selectedFolders.length})`}
+					{isSaving ? <CircularProgress size={18} color="inherit" /> : "Guardar cambios"}
 				</Button>
 			</DialogActions>
 		</Dialog>
