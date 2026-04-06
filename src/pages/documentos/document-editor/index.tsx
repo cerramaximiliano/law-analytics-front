@@ -8,6 +8,7 @@ import {
 	Chip,
 	CircularProgress,
 	Divider,
+	Drawer,
 	FormControl,
 	IconButton,
 	InputLabel,
@@ -20,7 +21,8 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { ArrowLeft2, DocumentText, MagicStar, Refresh, Save2, Setting4, Warning2 } from "iconsax-react";
+import { ArrowLeft2, CloseCircle, DocumentText, MagicStar, Refresh, Save2, Setting4, Warning2 } from "iconsax-react";
+import AiSparklesIcon from "components/icons/AiSparklesIcon";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -49,6 +51,7 @@ import AiChatPanel from "pages/herramientas/editor-poc/AiChatPanel";
 import MergeFieldExtension from "pages/herramientas/editor-poc/extensions/MergeFieldExtension";
 import TabIndentExtension from "pages/herramientas/editor-poc/extensions/TabIndentExtension";
 import SelectionBubble, { type CaseContext } from "pages/herramientas/editor-poc/SelectionBubble";
+import BottomActionBar from "pages/herramientas/editor-poc/BottomActionBar";
 import DiffReviewPanel, { type PendingDiff } from "pages/herramientas/editor-poc/DiffReviewPanel";
 import { Fragment } from "prosemirror-model";
 import { wordDiff, insertDiffWithoutHistory } from "pages/herramientas/editor-poc/diffUtils";
@@ -223,7 +226,9 @@ const DocumentEditorPage = () => {
 	const [templateName, setTemplateName] = useState("");
 	const [templateCategory, setTemplateCategory] = useState("");
 	const [contentLoaded, setContentLoaded] = useState(false);
-	const [rightTab, setRightTab] = useState<"fields" | "data" | "ai">("fields");
+	const [rightTab, setRightTab] = useState<"fields" | "data">("fields");
+	const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+	const [aiDrawerInitialMessage, setAiDrawerInitialMessage] = useState<string | undefined>();
 
 	const [editingTitle, setEditingTitle] = useState(false);
 	const [pendingFields, setPendingFields] = useState(0);
@@ -546,6 +551,11 @@ const DocumentEditorPage = () => {
 
 	// ── End diff handlers ───────────────────────────────────────────────────
 
+	const handleOpenAiDrawer = useCallback((initialMessage?: string) => {
+		setAiDrawerInitialMessage(initialMessage);
+		setAiDrawerOpen(true);
+	}, []);
+
 	const handleExportPdf = useCallback(() => {
 		if (!editor) return;
 		const content = normalizeHtmlForPrint(editor.getHTML());
@@ -839,6 +849,16 @@ const DocumentEditorPage = () => {
 									</Button>
 								</span>
 							</Tooltip>
+							<Tooltip title="Asistente IA">
+								<IconButton
+									size="small"
+									onClick={() => handleOpenAiDrawer()}
+									color={aiDrawerOpen ? "secondary" : "default"}
+									sx={{ borderRadius: 1.5 }}
+								>
+									<AiSparklesIcon size={18} />
+								</IconButton>
+							</Tooltip>
 						</Stack>
 
 					</Stack>
@@ -937,11 +957,6 @@ const DocumentEditorPage = () => {
 									<Box component="span" sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: pendingFields > 0 ? "warning.main" : "grey.400", display: "inline-block", flexShrink: 0 }} />
 								</Stack>
 							}
-						/>
-						<Tab value="ai"
-							icon={<MagicStar size={18} />}
-							iconPosition="top"
-							label="Asistente IA"
 						/>
 					</Tabs>
 						{/* Siempre montados para preservar estado; visibilidad por display */}
@@ -1137,12 +1152,20 @@ const DocumentEditorPage = () => {
 								</Stack>
 							</Box>
 						</Box>
-						<Box sx={{ display: rightTab === "ai" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
-							<AiChatPanel editor={editor} embedded movements={folderMovements} movementsLimited={movementsLimited} caseContext={caseContext} />
-						</Box>
 						</Box>
 					)}
 				</Box>
+
+				{editor && editorViewReady && (
+					<BottomActionBar
+						editor={editor}
+						onDiffReady={(diff) => { setPendingDiff(diff); setDiffLoading(false); }}
+						onLoadingStart={(label) => { setDiffLoadingLabel(label); setDiffLoading(true); }}
+						hasPendingDiff={!!pendingDiff}
+						caseContext={caseContext}
+						onOpenAiDrawer={handleOpenAiDrawer}
+					/>
+				)}
 			</Box>
 
 		{editor && (
@@ -1158,6 +1181,26 @@ const DocumentEditorPage = () => {
 				refining={diffRefining}
 			/>
 		)}
+
+		<Drawer
+			anchor="right"
+			open={aiDrawerOpen}
+			onClose={() => setAiDrawerOpen(false)}
+			PaperProps={{ sx: { width: 440, display: "flex", flexDirection: "column" } }}
+		>
+			<Stack direction="row" alignItems="center" justifyContent="space-between" px={2} py={1.25} sx={{ borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}>
+				<Stack direction="row" alignItems="center" spacing={1}>
+					<AiSparklesIcon size={16} />
+					<Typography variant="subtitle2" fontWeight={600}>Asistente IA</Typography>
+				</Stack>
+				<IconButton size="small" onClick={() => setAiDrawerOpen(false)}>
+					<CloseCircle size={18} />
+				</IconButton>
+			</Stack>
+			<Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+				{editor && <AiChatPanel editor={editor} embedded movements={folderMovements} movementsLimited={movementsLimited} caseContext={caseContext} initialMessage={aiDrawerInitialMessage} />}
+			</Box>
+		</Drawer>
 		</Stack>
 	);
 };

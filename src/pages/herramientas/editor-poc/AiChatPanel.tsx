@@ -34,6 +34,7 @@ interface AiChatPanelProps {
 	movementsLimited?: boolean;
 	embedded?: boolean;
 	caseContext?: CaseContext | null;
+	initialMessage?: string;
 }
 
 interface PendingEdits {
@@ -165,7 +166,7 @@ function parseBlocks(text: string): { type: "text" | "code"; content: string }[]
 	return parts;
 }
 
-const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false, embedded, caseContext }: AiChatPanelProps) => {
+const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false, embedded, caseContext, initialMessage }: AiChatPanelProps) => {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
 	const [includeDoc, setIncludeDoc] = useState(false);
@@ -182,6 +183,14 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 	const msgCounterRef = useRef(0);
 	const nextId = () => `msg-${++msgCounterRef.current}`;
 	const selectionRangeRef = useRef<{ from: number; to: number } | null>(null);
+	const inputRef = useRef<HTMLInputElement | null>(null);
+
+	// Set initial message and auto-focus when provided
+	useEffect(() => {
+		if (!initialMessage) return;
+		setInput(initialMessage);
+		setTimeout(() => inputRef.current?.focus(), 50);
+	}, [initialMessage]);
 
 	// Track editor text selection
 	useEffect(() => {
@@ -208,14 +217,11 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 		for (const mov of movements) {
 			const date = mov.time ? new Date(mov.time).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" }) : "";
 			const baseLabel = mov.title || mov.movement || "Movimiento";
+			// MEV: solo el texto guardado en la propiedad (los adjuntos no se incluyen como contexto)
 			if (mov.source === "mev" && mov.texto) {
 				items.push({ label: `${date} ${baseLabel}`.trim(), type: "text", value: mov.texto });
 			}
-			if (mov.source === "mev" && mov.attachments?.length) {
-				for (const att of mov.attachments) {
-					if (att.url) items.push({ label: `${date} ${att.name || "Adjunto"}`.trim(), type: "pdf", value: att.url });
-				}
-			}
+			// PJN: link que apunta al PDF del documento
 			if (mov.source === "pjn" && mov.link?.startsWith("http")) {
 				items.push({ label: `${date} ${baseLabel}`.trim(), type: "pdf", value: mov.link });
 			}
@@ -431,7 +437,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 	};
 
 	const sectionLabel = {
-		color: "text.disabled",
+		color: "text.secondary",
 		fontSize: "0.62rem",
 		fontWeight: 700,
 		textTransform: "uppercase" as const,
@@ -581,9 +587,9 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 											/>
 										)}
 										{!msg.pending && msg.hadDocContext && !msg.hadEditBlock && (msg.editsApplied === 0 || msg.editsApplied == null) && (
-											<Typography variant="caption" sx={{ fontSize: "0.65rem", color: "text.secondary", mt: 0.25, display: "block" }}>
-												<Box component="span" sx={{ color: "warning.main" }}>⚠</Box> La IA respondió sin generar ediciones directas. Intentá ser más específico.
-											</Typography>
+											<Alert severity="warning" sx={{ mt: 0.5, py: 0.25, px: 1, fontSize: "0.75rem", "& .MuiAlert-icon": { fontSize: 16, mr: 0.75 } }}>
+												La IA respondió sin generar ediciones directas. Intentá ser más específico.
+											</Alert>
 										)}
 										{msg.editsApplied != null && msg.editsApplied < 0 && pendingEdits?.messageId === msg.id && (
 											<Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5} sx={{ mt: 0.25 }}>
@@ -654,67 +660,51 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 			<Divider />
 
 			{/* ── Contexto activo ──────────────────────────── */}
-			<Box sx={{ px: 1.5, pt: 0.75, pb: 0.5, position: "relative" }}>
-				<Typography sx={{ ...sectionLabel, display: "block", mb: 0.6 }}>Contexto activo</Typography>
-				<Stack spacing={0.4}>
+			<Box sx={{ px: 1.5, pt: 0.75, pb: 0.75, position: "relative" }}>
+				<Typography sx={{ ...sectionLabel, display: "block", mb: 0.75 }}>Contexto activo</Typography>
+				<Stack direction="row" flexWrap="wrap" gap={0.5}>
 					{/* Documento */}
-					<Stack direction="row" alignItems="center" spacing={0.75}>
-						<Box
-							onClick={() => setIncludeDoc((v) => !v)}
-							sx={{ width: 14, height: 14, borderRadius: "50%", border: "1.5px solid", borderColor: includeDoc ? "primary.main" : "divider", bgcolor: includeDoc ? "primary.main" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
-						>
-							{includeDoc && <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#fff" }} />}
-						</Box>
-						<Typography
-							variant="caption"
-							onClick={() => setIncludeDoc((v) => !v)}
-							sx={{ fontSize: "0.72rem", cursor: "pointer", color: includeDoc ? "text.primary" : "text.disabled", fontWeight: includeDoc ? 600 : 400 }}
-						>
-							Documento
-						</Typography>
-					</Stack>
+					<Chip
+						icon={<DocumentText size={12} />}
+						label="Documento"
+						size="small"
+						onClick={() => setIncludeDoc((v) => !v)}
+						variant={includeDoc ? "filled" : "outlined"}
+						color={includeDoc ? "primary" : "default"}
+						sx={{ fontSize: "0.7rem", height: 24, cursor: "pointer" }}
+					/>
 
 					{/* Movimiento adjunto */}
 					{attachedContext ? (
-						<Stack direction="row" alignItems="center" spacing={0.75}>
-							<Box sx={{ width: 14, height: 14, borderRadius: "50%", border: "1.5px solid", borderColor: "info.main", bgcolor: "info.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-								<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#fff" }} />
-							</Box>
-							<Typography variant="caption" sx={{ fontSize: "0.72rem", color: "text.primary", fontWeight: 600, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-								{attachedContext.label}
-							</Typography>
-							<Box onClick={() => { setAttachedContext(null); setPickerOpen(false); }} sx={{ fontSize: "0.65rem", color: "text.disabled", cursor: "pointer", "&:hover": { color: "error.main" }, flexShrink: 0 }}>
-								✕
-							</Box>
-						</Stack>
+						<Chip
+							icon={attachedContext.type === "pdf" ? <Paperclip size={12} /> : <DocumentText size={12} />}
+							label={attachedContext.label}
+							size="small"
+							color="info"
+							variant="filled"
+							onDelete={() => { setAttachedContext(null); setPickerOpen(false); }}
+							sx={{ fontSize: "0.7rem", height: 24, maxWidth: 180 }}
+						/>
 					) : movementsWithContent.length > 0 && (
-						<Stack direction="row" alignItems="center" spacing={0.75}>
-							<Box sx={{ width: 14, height: 14, borderRadius: "50%", border: "1.5px dashed", borderColor: "divider", flexShrink: 0 }} />
-							<Typography
-								variant="caption"
-								onClick={() => setPickerOpen((v) => !v)}
-								sx={{ fontSize: "0.72rem", color: "text.disabled", cursor: "pointer", "&:hover": { color: "text.secondary" } }}
-							>
-								+ Adjuntar movimiento
-							</Typography>
-						</Stack>
+						<Chip
+							icon={<Paperclip size={12} />}
+							label="Agregar Movimiento"
+							size="small"
+							variant="outlined"
+							onClick={() => setPickerOpen((v) => !v)}
+							sx={{ fontSize: "0.7rem", height: 24, cursor: "pointer" }}
+						/>
 					)}
 
 					{/* Selección activa */}
 					{selectedText && (
-						<Stack direction="row" alignItems="flex-start" spacing={0.75}>
-							<Box sx={{ width: 14, height: 14, borderRadius: "50%", border: "1.5px solid", borderColor: "secondary.main", bgcolor: "secondary.main", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, mt: "1px" }}>
-								<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#fff" }} />
-							</Box>
-							<Box sx={{ flex: 1, minWidth: 0 }}>
-								<Typography variant="caption" sx={{ fontSize: "0.72rem", color: "text.primary", fontWeight: 600, display: "block" }}>
-									Selección
-								</Typography>
-								<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.68rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-									{selectedText.length > 55 ? selectedText.slice(0, 55) + "…" : selectedText}
-								</Typography>
-							</Box>
-						</Stack>
+						<Chip
+							label={`"${selectedText.length > 30 ? selectedText.slice(0, 30) + "…" : selectedText}"`}
+							size="small"
+							color="secondary"
+							variant="filled"
+							sx={{ fontSize: "0.7rem", height: 24, maxWidth: 200 }}
+						/>
 					)}
 				</Stack>
 
@@ -755,7 +745,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 								</Box>
 							))}
 							{movementsLimited && (
-								<Typography variant="caption" sx={{ display: "block", px: 1, py: 0.4, fontSize: "0.62rem", color: "text.disabled", borderTop: "1px solid", borderColor: "divider" }}>
+								<Typography variant="caption" sx={{ display: "block", px: 1, py: 0.4, fontSize: "0.62rem", color: "text.secondary", borderTop: "1px solid", borderColor: "divider" }}>
 									Solo últimos movimientos · Plan gratuito
 								</Typography>
 							)}
@@ -776,6 +766,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 					onKeyDown={handleKeyDown}
 					disabled={streaming}
 					fullWidth
+					inputRef={inputRef}
 					sx={{ "& .MuiInputBase-root": { fontSize: "0.8rem" } }}
 				/>
 				{streaming ? (

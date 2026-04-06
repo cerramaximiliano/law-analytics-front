@@ -38,7 +38,7 @@ const NavItem = ({ item, level }: Props) => {
 	const isSelected = openItem.findIndex((id) => id === item.id) > -1;
 
 	const Icon = item.icon!;
-	const itemIcon = item.icon ? <Icon variant="Bulk" size={drawerOpen ? 20 : 22} /> : false;
+	const itemIcon = item.icon ? <Icon variant={isSelected ? "Bold" : "Bulk"} size={drawerOpen ? 20 : 22} /> : false;
 
 	const { pathname } = useLocation();
 

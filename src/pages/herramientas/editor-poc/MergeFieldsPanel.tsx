@@ -11,7 +11,7 @@ interface MergeFieldsPanelProps {
 
 const MergeFieldsPanel = ({ editor, embedded }: MergeFieldsPanelProps) => {
 	const [search, setSearch] = useState("");
-	const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ expediente: true });
+	const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ bloque: true });
 
 	const toggleGroup = (id: string) => setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
 

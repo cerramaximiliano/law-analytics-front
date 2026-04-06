@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Portal } from "@mui/base";
 import { Box, Chip, CircularProgress, Stack, Tooltip, Typography } from "@mui/material";
 import { type Editor } from "@tiptap/react";
-import { MagicStar } from "iconsax-react";
+import AiSparklesIcon from "components/icons/AiSparklesIcon";
 import ragAxios from "utils/ragAxios";
 import axios from "axios";
 import { useEditorActions, buildPrompt, type EditorActionDef } from "hooks/use-editor-actions";
@@ -257,7 +257,7 @@ Devolvé SOLO el texto resultante, sin explicaciones, aclaraciones ni comillas.`
 				onMouseDown={(e) => e.preventDefault()}
 			>
 				<Stack direction="row" alignItems="center" spacing={0.5}>
-					<MagicStar size={13} color="#9c27b0" style={{ flexShrink: 0, opacity: 0.85 }} />
+					<AiSparklesIcon size={13} sx={{ flexShrink: 0 }} />
 
 					{applied ? (
 						<Typography

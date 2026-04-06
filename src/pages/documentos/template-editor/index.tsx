@@ -4,8 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
 	Box,
 	Stack,
-	Tab,
-	Tabs,
 	TextField,
 	Select,
 	MenuItem,
@@ -19,7 +17,7 @@ import {
 	Typography,
 	Chip,
 } from "@mui/material";
-import { ArrowLeft2, DocumentText, MagicStar } from "iconsax-react";
+import { ArrowLeft2 } from "iconsax-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -37,7 +35,6 @@ import { openSnackbar } from "store/reducers/snackbar";
 import MainCard from "components/MainCard";
 import EditorToolbar from "pages/herramientas/editor-poc/EditorToolbar";
 import MergeFieldsPanel from "pages/herramientas/editor-poc/MergeFieldsPanel";
-import AiChatPanel from "pages/herramientas/editor-poc/AiChatPanel";
 import MergeFieldExtension from "pages/herramientas/editor-poc/extensions/MergeFieldExtension";
 import TabIndentExtension from "pages/herramientas/editor-poc/extensions/TabIndentExtension";
 import FontSizeExtension from "pages/herramientas/editor-poc/extensions/FontSizeExtension";
@@ -121,7 +118,6 @@ const TemplateEditorPage = () => {
 	const [saving, setSaving] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [contentLoaded, setContentLoaded] = useState(false);
-	const [rightTab, setRightTab] = useState<"fields" | "ai">("fields");
 	const printIframeRef = useRef<HTMLIFrameElement | null>(null);
 
 	const editor = useEditor({
@@ -260,7 +256,7 @@ const TemplateEditorPage = () => {
 					{/* Left: back + title fields */}
 					<Stack direction="row" alignItems="center" spacing={1.5} flex={1} flexWrap="wrap" gap={1}>
 						<Tooltip title="Volver a modelos">
-							<IconButton size="small" onClick={() => navigate("/documentos/modelos?tab=1")}>
+							<IconButton size="small" sx={{ height: 36, width: 36 }} onClick={() => navigate("/documentos/modelos?tab=1")}>
 								<ArrowLeft2 size={18} />
 							</IconButton>
 						</Tooltip>
@@ -270,11 +266,11 @@ const TemplateEditorPage = () => {
 							placeholder="Nombre del modelo *"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							sx={{ minWidth: 240, flex: 1, maxWidth: 360 }}
+							sx={{ minWidth: 240, flex: 1, maxWidth: 360, "& .MuiInputBase-root": { height: 36 } }}
 							inputProps={{ maxLength: 120 }}
 						/>
 
-						<FormControl size="small" sx={{ minWidth: 140 }}>
+						<FormControl size="small" sx={{ minWidth: 140, "& .MuiInputBase-root": { height: 36 } }}>
 							<InputLabel>Categoría</InputLabel>
 							<Select
 								label="Categoría"
@@ -294,7 +290,7 @@ const TemplateEditorPage = () => {
 							placeholder="Descripción (opcional)"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							sx={{ minWidth: 200, flex: 1, maxWidth: 340 }}
+							sx={{ minWidth: 200, flex: 1, maxWidth: 340, "& .MuiInputBase-root": { height: 36 } }}
 							inputProps={{ maxLength: 240 }}
 						/>
 					</Stack>
@@ -309,17 +305,13 @@ const TemplateEditorPage = () => {
 								variant="outlined"
 							/>
 						)}
-						<Tooltip title={rightTab === "ai" ? "Cerrar asistente IA" : "Asistente IA"}>
-							<IconButton size="small" color={rightTab === "ai" ? "secondary" : "default"} onClick={() => setRightTab((t) => (t === "ai" ? "fields" : "ai"))}>
-								<MagicStar size={18} />
-							</IconButton>
-						</Tooltip>
-						<Button variant="outlined" size="small" onClick={handleExportPdf}>
+						<Button variant="outlined" size="small" sx={{ height: 36 }} onClick={handleExportPdf}>
 							Vista previa PDF
 						</Button>
 						<Button
 							variant="contained"
 							size="small"
+							sx={{ height: 36 }}
 							onClick={handleSave}
 							disabled={saving}
 							startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
@@ -371,34 +363,7 @@ const TemplateEditorPage = () => {
 								overflow: "hidden",
 							}}
 						>
-							<Tabs
-								value={rightTab}
-								onChange={(_e, v) => setRightTab(v)}
-								variant="fullWidth"
-								sx={{ minHeight: 36, borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}
-								TabIndicatorProps={{ style: { height: 2 } }}
-							>
-								<Tab
-									value="fields"
-									icon={<DocumentText size={14} />}
-									iconPosition="start"
-									label="Campos"
-									sx={{ minHeight: 36, fontSize: "0.75rem", py: 0, textTransform: "none" }}
-								/>
-								<Tab
-									value="ai"
-									icon={<MagicStar size={14} />}
-									iconPosition="start"
-									label="Asistente IA"
-									sx={{ minHeight: 36, fontSize: "0.75rem", py: 0, textTransform: "none" }}
-								/>
-							</Tabs>
-							<Box sx={{ display: rightTab === "fields" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
-								<MergeFieldsPanel editor={editor} embedded />
-							</Box>
-							<Box sx={{ display: rightTab === "ai" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
-								<AiChatPanel editor={editor} embedded />
-							</Box>
+							<MergeFieldsPanel editor={editor} embedded />
 						</Box>
 					)}
 				</Box>

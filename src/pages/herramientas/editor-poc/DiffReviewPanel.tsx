@@ -1,6 +1,6 @@
-import { useTheme } from "@mui/material";
 import { Box, Stack, Typography, Button, IconButton, alpha } from "@mui/material";
-import { MagicStar, CloseCircle, TickCircle, CloseSquare } from "iconsax-react";
+import { CloseCircle, TickCircle, CloseSquare } from "iconsax-react";
+import AiSparklesIcon from "components/icons/AiSparklesIcon";
 import { type Editor } from "@tiptap/react";
 import type { DiffSegment } from "./diffUtils";
 
@@ -43,8 +43,6 @@ const DiffReviewPanel = ({
 	onClose,
 	refining,
 }: DiffReviewPanelProps) => {
-	const theme = useTheme();
-
 	const isVisible = loading || refining || diff !== null;
 
 	if (!isVisible) return null;
@@ -85,7 +83,7 @@ const DiffReviewPanel = ({
 				onMouseDown={(e) => e.preventDefault()}
 			>
 				{/* Icon + label */}
-				<MagicStar size={14} color={theme.palette.secondary.main} style={{ flexShrink: 0 }} />
+				<AiSparklesIcon size={14} sx={{ flexShrink: 0 }} />
 				<Typography variant="body2" fontWeight={700} sx={{ fontSize: "0.78rem", color: "text.primary" }}>
 					{loading || refining
 						? `${refining ? "Refinando" : loadingLabel}...`
