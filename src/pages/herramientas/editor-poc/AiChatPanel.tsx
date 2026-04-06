@@ -221,9 +221,10 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 			if (mov.source === "mev" && mov.texto) {
 				items.push({ label: `${date} ${baseLabel}`.trim(), type: "text", value: mov.texto });
 			}
-			// PJN: link que apunta al PDF del documento
+			// PJN: viewer.seam sin parámetros devuelve HTML — download=true sirve el PDF binario
 			if (mov.source === "pjn" && mov.link?.startsWith("http")) {
-				items.push({ label: `${date} ${baseLabel}`.trim(), type: "pdf", value: mov.link });
+				const pdfUrl = mov.link.includes("download=true") ? mov.link : `${mov.link}${mov.link.includes("?") ? "&" : "?"}download=true`;
+				items.push({ label: `${date} ${baseLabel}`.trim(), type: "pdf", value: pdfUrl });
 			}
 		}
 		return items;
