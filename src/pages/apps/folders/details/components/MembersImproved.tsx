@@ -557,7 +557,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				fullWidth
 				onClose={handleAdd}
 				open={add}
-				sx={{ "& .MuiDialog-paper": { p: 0 }, transition: "transform 225ms" }}
+				sx={{ "& .MuiDialog-paper": { p: 0, height: { xs: "90vh", sm: "85vh", md: "80vh" }, maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" }, display: "flex", flexDirection: "column", overflow: "hidden" }, transition: "transform 225ms" }}
 				aria-describedby="alert-dialog-slide-description"
 			>
 				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" folderId={folderId} />

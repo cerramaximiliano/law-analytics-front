@@ -23,6 +23,9 @@
 		"types": ["node", "vite/client"],
 		"typeRoots": ["./types"],
 		"baseUrl": "src",
+		"paths": {
+			"@/*": ["./*"]
+		},
 		"downlevelIteration": true
 	},
 	"include": ["src"]

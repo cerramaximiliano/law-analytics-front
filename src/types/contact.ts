@@ -51,6 +51,12 @@ export type Contact = {
 	userId: string;
 	groupId?: string;
 	folderIds?: string[] | null;
+	representado?: boolean;
+	tipoRepresentacion?: "Patrocinante" | "Apoderado" | null;
+	representanteLegal?: {
+		nombre?: string;
+		dni?: string;
+	};
 	// Campos para contactos importados de intervinientes
 	importSource?: "manual" | "interviniente";
 	intervinienteRef?: IntervinienteRef;

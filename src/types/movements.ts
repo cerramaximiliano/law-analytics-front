@@ -11,6 +11,7 @@ export type Movement = {
 	title: string;
 	description?: string;
 	link?: string;
+	texto?: string; // Contenido de texto del escrito (MEV únicamente)
 	source?: "pjn" | "mev"; // Campo para identificar movimientos sincronizados (PJN o MEV)
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 	attachments?: Array<{

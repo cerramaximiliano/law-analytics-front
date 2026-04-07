@@ -1051,7 +1051,7 @@ const EscritosPage = () => {
 			{/* Table card */}
 			<MainCard>
 				{/* Filters */}
-				<Stack direction="row" spacing={1.5} flexWrap="wrap" gap={1} mb={2}>
+				<Stack direction="row" spacing={1.5} flexWrap="wrap" gap={1} mb={2} alignItems="center">
 					<TextField
 						size="small"
 						placeholder="Buscar por título o plantilla..."
@@ -1077,7 +1077,7 @@ const EscritosPage = () => {
 						<MuiMenuItem value="postal">Del Sistema</MuiMenuItem>
 						<MuiMenuItem value="richtext">Mis Modelos</MuiMenuItem>
 					</Select>
-					<Button size="small" variant="outlined" onClick={handleSearchSubmit}>
+					<Button size="small" variant="contained" onClick={handleSearchSubmit}>
 						Buscar
 					</Button>
 				</Stack>
@@ -1200,9 +1200,9 @@ const EscritosPage = () => {
 															)}
 														</>
 													) : (
-														<Tooltip title="Editar documento">
+														<Tooltip title="Ver / Editar documento">
 															<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}>
-																<Edit2 size={15} />
+																<Eye size={15} />
 															</IconButton>
 														</Tooltip>
 													)}

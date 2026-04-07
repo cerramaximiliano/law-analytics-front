@@ -1,4 +1,6 @@
 import "../../../pages/herramientas/editor-poc/editor.css";
+import "../../../styles/_variables.scss";
+import "../../../styles/_keyframe-animations.scss";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -17,7 +19,7 @@ import {
 	Typography,
 	Chip,
 } from "@mui/material";
-import { ArrowLeft2, MagicStar } from "iconsax-react";
+import { ArrowLeft2 } from "iconsax-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -35,12 +37,12 @@ import { openSnackbar } from "store/reducers/snackbar";
 import MainCard from "components/MainCard";
 import EditorToolbar from "pages/herramientas/editor-poc/EditorToolbar";
 import MergeFieldsPanel from "pages/herramientas/editor-poc/MergeFieldsPanel";
-import AiChatPanel from "pages/herramientas/editor-poc/AiChatPanel";
 import MergeFieldExtension from "pages/herramientas/editor-poc/extensions/MergeFieldExtension";
 import TabIndentExtension from "pages/herramientas/editor-poc/extensions/TabIndentExtension";
 import FontSizeExtension from "pages/herramientas/editor-poc/extensions/FontSizeExtension";
 import LineHeightExtension from "pages/herramientas/editor-poc/extensions/LineHeightExtension";
 import { Color } from "@tiptap/extension-color";
+import Highlight from "@tiptap/extension-highlight";
 import { type RichTextTemplateCategory } from "types/rich-text-document";
 
 // ==============================|| TEMPLATE EDITOR ||============================== //
@@ -118,7 +120,6 @@ const TemplateEditorPage = () => {
 	const [saving, setSaving] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [contentLoaded, setContentLoaded] = useState(false);
-	const [aiPanelOpen, setAiPanelOpen] = useState(false);
 	const printIframeRef = useRef<HTMLIFrameElement | null>(null);
 
 	const editor = useEditor({
@@ -133,6 +134,7 @@ const TemplateEditorPage = () => {
 			FontSizeExtension,
 			LineHeightExtension,
 			Color,
+			Highlight.configure({ multicolor: true }),
 			PaginationPlus.configure(A4_CONFIG),
 		],
 		content: "",
@@ -153,7 +155,12 @@ const TemplateEditorPage = () => {
 			setDescription(tpl.description ?? "");
 			setCategory((tpl.category as RichTextTemplateCategory) ?? "otro");
 			if (tpl.content && Object.keys(tpl.content).length > 0) {
-				editor.commands.setContent(tpl.content as Parameters<typeof editor.commands.setContent>[0]);
+				const parsedTpl = editor.schema.nodeFromJSON(tpl.content as Parameters<typeof editor.commands.setContent>[0]);
+				editor.view.dispatch(
+					editor.state.tr
+						.replaceWith(0, editor.state.doc.content.size, parsedTpl.content)
+						.setMeta("addToHistory", false)
+				);
 			}
 			setContentLoaded(true);
 		})();
@@ -251,7 +258,7 @@ const TemplateEditorPage = () => {
 					{/* Left: back + title fields */}
 					<Stack direction="row" alignItems="center" spacing={1.5} flex={1} flexWrap="wrap" gap={1}>
 						<Tooltip title="Volver a modelos">
-							<IconButton size="small" onClick={() => navigate("/documentos/modelos?tab=1")}>
+							<IconButton size="small" sx={{ height: 36, width: 36 }} onClick={() => navigate("/documentos/modelos?tab=1")}>
 								<ArrowLeft2 size={18} />
 							</IconButton>
 						</Tooltip>
@@ -261,11 +268,11 @@ const TemplateEditorPage = () => {
 							placeholder="Nombre del modelo *"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							sx={{ minWidth: 240, flex: 1, maxWidth: 360 }}
+							sx={{ minWidth: 240, flex: 1, maxWidth: 360, "& .MuiInputBase-root": { height: 36 } }}
 							inputProps={{ maxLength: 120 }}
 						/>
 
-						<FormControl size="small" sx={{ minWidth: 140 }}>
+						<FormControl size="small" sx={{ minWidth: 140, "& .MuiInputBase-root": { height: 36 } }}>
 							<InputLabel>Categoría</InputLabel>
 							<Select
 								label="Categoría"
@@ -285,7 +292,7 @@ const TemplateEditorPage = () => {
 							placeholder="Descripción (opcional)"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							sx={{ minWidth: 200, flex: 1, maxWidth: 340 }}
+							sx={{ minWidth: 200, flex: 1, maxWidth: 340, "& .MuiInputBase-root": { height: 36 } }}
 							inputProps={{ maxLength: 240 }}
 						/>
 					</Stack>
@@ -300,17 +307,13 @@ const TemplateEditorPage = () => {
 								variant="outlined"
 							/>
 						)}
-						<Tooltip title={aiPanelOpen ? "Cerrar asistente IA" : "Asistente IA"}>
-							<IconButton size="small" color={aiPanelOpen ? "secondary" : "default"} onClick={() => setAiPanelOpen((v) => !v)}>
-								<MagicStar size={18} />
-							</IconButton>
-						</Tooltip>
-						<Button variant="outlined" size="small" onClick={handleExportPdf}>
+						<Button variant="outlined" size="small" sx={{ height: 36 }} onClick={handleExportPdf}>
 							Vista previa PDF
 						</Button>
 						<Button
 							variant="contained"
 							size="small"
+							sx={{ height: 36 }}
 							onClick={handleSave}
 							disabled={saving}
 							startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
@@ -349,8 +352,22 @@ const TemplateEditorPage = () => {
 						<EditorContent editor={editor} className="tiptap-editor-content" />
 					</Box>
 
-					{editor && <MergeFieldsPanel editor={editor} />}
-					{editor && aiPanelOpen && <AiChatPanel editor={editor} onClose={() => setAiPanelOpen(false)} />}
+					{editor && (
+						<Box
+							sx={{
+								width: 300,
+								flexShrink: 0,
+								borderLeft: "1px solid",
+								borderColor: "divider",
+								display: "flex",
+								flexDirection: "column",
+								bgcolor: "background.paper",
+								overflow: "hidden",
+							}}
+						>
+							<MergeFieldsPanel editor={editor} embedded />
+						</Box>
+					)}
 				</Box>
 			</Box>
 		</Stack>

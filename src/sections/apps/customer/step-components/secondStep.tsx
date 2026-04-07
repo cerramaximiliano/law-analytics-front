@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Grid, Stack, InputLabel } from "@mui/material";
+import { useFormikContext } from "formik";
 import data from "data/folder.json";
 import InputField from "components/UI/InputField";
 import SelectField from "components/UI/SelectField";
@@ -18,6 +19,15 @@ const customInputStyles = {
 };
 
 const SecondStep = () => {
+	const { values, setFieldValue } = useFormikContext<{ state: string; city: string }>();
+	const isCaba = values.state === "CABA";
+
+	useEffect(() => {
+		if (isCaba) {
+			setFieldValue("city", "CABA");
+		}
+	}, [isCaba, setFieldValue]);
+
 	return (
 		<Grid container spacing={2} justifyContent="center">
 			<Grid item xs={12} md={8}>
@@ -49,7 +59,15 @@ const SecondStep = () => {
 							<InputLabel htmlFor="city" required>
 								Localidad
 							</InputLabel>
-							<InputField fullWidth sx={customInputStyles} id="city" name="city" placeholder="Ingrese una localidad" required />
+							<InputField
+								fullWidth
+								sx={customInputStyles}
+								id="city"
+								name="city"
+								placeholder="Ingrese una localidad"
+								required
+								disabled={isCaba}
+							/>
 						</Stack>
 					</Grid>
 

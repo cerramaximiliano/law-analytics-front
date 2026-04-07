@@ -69,34 +69,55 @@
 	color: #555;
 }
 
-/* Placeholder */
-.tiptap-editor-content .ProseMirror p.is-editor-empty:first-child::before {
-	content: attr(data-placeholder);
-	color: #aaa;
-	pointer-events: none;
-	float: left;
-	height: 0;
-}
 
-/* Merge fields — tokens con estilo */
+/* Variables — fondo muy suave, borde fino sólido, texto oscuro */
 .tiptap-editor-content .ProseMirror .merge-field {
 	display: inline-block;
-	background: #e3f2fd;
-	color: #1565c0;
-	border: 1px solid #90caf9;
-	border-radius: 4px;
-	padding: 0 5px;
-	font-family: monospace;
-	font-size: 0.85em;
+	border: 1px solid;
+	border-radius: 3px;
+	padding: 1px 6px;
+	font-family: inherit;
+	font-size: 0.88em;
 	font-weight: 600;
-	cursor: default;
+	font-style: normal;
+	cursor: pointer;
 	user-select: all;
 	white-space: nowrap;
+	transition: filter 0.15s, box-shadow 0.15s;
+}
+
+.tiptap-editor-content .ProseMirror .merge-field:not(.merge-field--bloque):hover {
+	filter: brightness(0.93);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* Bloques — presencia visual fuerte */
+.tiptap-editor-content .ProseMirror .merge-field--bloque {
+	padding: 3px 12px 3px 9px;
+	font-size: 0.9em;
+	font-weight: 700;
+	font-style: normal;
+	border-width: 2px;
+	border-radius: 5px;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+	border-left-width: 4px;
+}
+
+.tiptap-editor-content .ProseMirror .merge-field--bloque::before {
+	content: "⊞ ";
+	font-size: 0.78em;
+	opacity: 0.55;
+	margin-right: 2px;
 }
 
 .tiptap-editor-content .ProseMirror .merge-field.ProseMirror-selectednode {
-	outline: 2px solid #1565c0;
-	background: #bbdefb;
+	outline: 2px solid currentColor;
+	outline-offset: 1px;
+}
+
+/* Pending state — solo opacidad, sin bordes punteados */
+.has-pending .tiptap-editor-content .ProseMirror .merge-field {
+	opacity: 0.45;
 }
 
 /* Selección */

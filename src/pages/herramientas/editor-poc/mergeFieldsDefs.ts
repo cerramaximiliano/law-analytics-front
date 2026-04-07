@@ -15,23 +15,38 @@ export interface GroupColor {
 	border: string;
 }
 
+const VAR_COLOR:    GroupColor = { bg: "#f1f5f9", color: "#1f2937", border: "#7f8fa6" };
+const BLOQUE_COLOR: GroupColor = { bg: "#d0d9e6", color: "#1e293b", border: "#4a6380" };
+
 export const GROUP_COLORS: Record<string, GroupColor> = {
-	expediente:  { bg: "#f0fdf4", color: "#166534", border: "#86efac" },
-	cliente:     { bg: "#eff6ff", color: "#1d4ed8", border: "#93c5fd" },
-	contraparte: { bg: "#fff7ed", color: "#9a3412", border: "#fdba74" },
-	letrado:     { bg: "#faf5ff", color: "#6b21a8", border: "#c4b5fd" },
-	fecha:       { bg: "#f0fdfa", color: "#0f766e", border: "#5eead4" },
-	calculo:     { bg: "#fefce8", color: "#854d0e", border: "#fde047" },
-	movimiento:  { bg: "#f0f9ff", color: "#0369a1", border: "#7dd3fc" },
+	expediente: VAR_COLOR,
+	actor:      VAR_COLOR,
+	demandado:  VAR_COLOR,
+	letrado:    VAR_COLOR,
+	fecha:      VAR_COLOR,
+	calculo:    VAR_COLOR,
+	movimiento: VAR_COLOR,
+	bloque:     BLOQUE_COLOR,
 };
 
 /** Devuelve los colores del grupo a partir de una key de merge field (ej: "expediente.numero") */
 export function getGroupColorByKey(key: string): GroupColor {
 	const prefix = key.split(".")[0];
-	return GROUP_COLORS[prefix] ?? { bg: "#f5f5f5", color: "#333", border: "#ccc" };
+	// Backward compat: cliente → actor, contraparte → demandado
+	const normalized = prefix === "cliente" ? "actor" : prefix === "contraparte" ? "demandado" : prefix;
+	return GROUP_COLORS[normalized] ?? { bg: "#f5f5f5", color: "#333", border: "#ccc" };
 }
 
 export const MERGE_FIELD_GROUPS: MergeFieldGroup[] = [
+	{
+		id: "bloque",
+		title: "📦 Bloques",
+		fields: [
+			{ key: "bloque.encabezado_judicial", label: "Encabezado judicial" },
+			{ key: "bloque.actor_completo", label: "Actor completo" },
+			{ key: "bloque.demandado_completo", label: "Demandado completo" },
+		],
+	},
 	{
 		id: "expediente",
 		title: "Expediente",
@@ -45,27 +60,34 @@ export const MERGE_FIELD_GROUPS: MergeFieldGroup[] = [
 		],
 	},
 	{
-		id: "cliente",
-		title: "Cliente",
+		id: "actor",
+		title: "Actor",
 		fields: [
-			{ key: "cliente.nombre", label: "Nombre del cliente" },
-			{ key: "cliente.apellido", label: "Apellido del cliente" },
-			{ key: "cliente.nombre_completo", label: "Nombre y apellido del cliente" },
-			{ key: "cliente.dni", label: "DNI del cliente" },
-			{ key: "cliente.cuit", label: "CUIT del cliente" },
-			{ key: "cliente.domicilio", label: "Domicilio del cliente" },
-			{ key: "cliente.email", label: "Email del cliente" },
-			{ key: "cliente.telefono", label: "Teléfono del cliente" },
+			{ key: "actor.nombre_completo", label: "Nombre completo / Razón social del actor" },
+			{ key: "actor.nombre", label: "Nombre del actor" },
+			{ key: "actor.apellido", label: "Apellido del actor" },
+			{ key: "actor.razon_social", label: "Razón social del actor" },
+			{ key: "actor.dni", label: "DNI del actor" },
+			{ key: "actor.cuit", label: "CUIT/CUIL del actor" },
+			{ key: "actor.domicilio", label: "Domicilio del actor" },
+			{ key: "actor.email", label: "Email del actor" },
+			{ key: "actor.telefono", label: "Teléfono del actor" },
 		],
 	},
 	{
-		id: "contraparte",
-		title: "Contraparte",
+		id: "demandado",
+		title: "Demandado",
 		fields: [
-			{ key: "contraparte.nombre", label: "Nombre / Razón social" },
-			{ key: "contraparte.dni", label: "DNI / CUIT de la contraparte" },
-			{ key: "contraparte.domicilio", label: "Domicilio de la contraparte" },
-			{ key: "contraparte.representante", label: "Representante legal" },
+			{ key: "demandado.nombre_completo", label: "Nombre completo / Razón social del demandado" },
+			{ key: "demandado.nombre", label: "Nombre del demandado" },
+			{ key: "demandado.apellido", label: "Apellido del demandado" },
+			{ key: "demandado.razon_social", label: "Razón social del demandado" },
+			{ key: "demandado.dni", label: "DNI del demandado" },
+			{ key: "demandado.cuit", label: "CUIT/CUIL del demandado" },
+			{ key: "demandado.domicilio", label: "Domicilio del demandado" },
+			{ key: "demandado.email", label: "Email del demandado" },
+			{ key: "demandado.telefono", label: "Teléfono del demandado" },
+			{ key: "demandado.representante", label: "Representante legal del demandado" },
 		],
 	},
 	{
@@ -75,7 +97,8 @@ export const MERGE_FIELD_GROUPS: MergeFieldGroup[] = [
 			{ key: "letrado.nombre_completo", label: "Nombre y apellido del letrado" },
 			{ key: "letrado.colegio", label: "Colegio de abogados" },
 			{ key: "letrado.matricula", label: "Matrícula del letrado" },
-			{ key: "letrado.domicilio_constituido", label: "Domicilio constituido" },
+			{ key: "letrado.domicilio_constituido", label: "Domicilio físico constituido" },
+			{ key: "letrado.domicilio_electronico", label: "Domicilio electrónico" },
 			{ key: "letrado.email", label: "Email del letrado" },
 		],
 	},
