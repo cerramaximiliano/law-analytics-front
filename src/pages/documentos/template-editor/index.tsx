@@ -1,4 +1,6 @@
 import "../../../pages/herramientas/editor-poc/editor.css";
+import "../../../styles/_variables.scss";
+import "../../../styles/_keyframe-animations.scss";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {

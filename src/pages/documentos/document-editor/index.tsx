@@ -1,4 +1,6 @@
 import "../../../pages/herramientas/editor-poc/editor.css";
+import "../../../styles/_variables.scss";
+import "../../../styles/_keyframe-animations.scss";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams, useParams, Link } from "react-router-dom";
 import {
@@ -51,7 +53,6 @@ import AiChatPanel from "pages/herramientas/editor-poc/AiChatPanel";
 import MergeFieldExtension from "pages/herramientas/editor-poc/extensions/MergeFieldExtension";
 import TabIndentExtension from "pages/herramientas/editor-poc/extensions/TabIndentExtension";
 import SelectionBubble, { type CaseContext } from "pages/herramientas/editor-poc/SelectionBubble";
-import BottomActionBar from "pages/herramientas/editor-poc/BottomActionBar";
 import DiffReviewPanel, { type PendingDiff } from "pages/herramientas/editor-poc/DiffReviewPanel";
 import { Fragment } from "prosemirror-model";
 import { wordDiff, insertDiffWithoutHistory } from "pages/herramientas/editor-poc/diffUtils";
@@ -1156,16 +1157,6 @@ const DocumentEditorPage = () => {
 					)}
 				</Box>
 
-				{editor && editorViewReady && (
-					<BottomActionBar
-						editor={editor}
-						onDiffReady={(diff) => { setPendingDiff(diff); setDiffLoading(false); }}
-						onLoadingStart={(label) => { setDiffLoadingLabel(label); setDiffLoading(true); }}
-						hasPendingDiff={!!pendingDiff}
-						caseContext={caseContext}
-						onOpenAiDrawer={handleOpenAiDrawer}
-					/>
-				)}
 			</Box>
 
 		{editor && (
