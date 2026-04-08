@@ -12,6 +12,9 @@ const SET_DOCUMENTS = 'postalDocuments/SET_DOCUMENTS';
 const SET_DOCUMENT  = 'postalDocuments/SET_DOCUMENT';
 const DELETE_DOCUMENT = 'postalDocuments/DELETE_DOCUMENT';
 const CLEAR_DOCUMENT  = 'postalDocuments/CLEAR_DOCUMENT';
+const SET_FOLDER_DOCS    = 'postalDocuments/SET_FOLDER_DOCS';
+const DELETE_FOLDER_DOC  = 'postalDocuments/DELETE_FOLDER_DOC';
+const UPDATE_FOLDER_DOC  = 'postalDocuments/UPDATE_FOLDER_DOC';
 
 interface State {
   templates: PdfTemplate[];
@@ -19,6 +22,9 @@ interface State {
   document: PostalDocumentType | null;
   isLoader: boolean;
   total: number;
+  folderDocuments: PostalDocumentType[];
+  folderDocumentsTotal: number;
+  folderDocumentsLoading: boolean;
 }
 
 const initialState: State = {
@@ -27,6 +33,9 @@ const initialState: State = {
   document: null,
   isLoader: false,
   total: 0,
+  folderDocuments: [],
+  folderDocumentsTotal: 0,
+  folderDocumentsLoading: false,
 };
 
 // Reducer
@@ -44,6 +53,12 @@ const postalDocumentsReducer = (state = initialState, action: any): State => {
       return { ...state, documents: state.documents.filter(d => d._id !== action.payload) };
     case CLEAR_DOCUMENT:
       return { ...state, document: null };
+    case SET_FOLDER_DOCS:
+      return { ...state, folderDocuments: action.payload.documents, folderDocumentsTotal: action.payload.total, folderDocumentsLoading: false };
+    case DELETE_FOLDER_DOC:
+      return { ...state, folderDocuments: state.folderDocuments.filter(d => d._id !== action.payload) };
+    case UPDATE_FOLDER_DOC:
+      return { ...state, folderDocuments: state.folderDocuments.map(d => d._id === action.payload._id ? action.payload : d) };
     default:
       return state;
   }
@@ -106,6 +121,7 @@ export const fetchPostalDocuments = (params: {
   search?: string;
   templateSlug?: string;
   status?: string;
+  folderId?: string;
 }) => async (dispatch: Dispatch) => {
   dispatch({ type: SET_LOADING });
   try {
@@ -152,4 +168,27 @@ export const deletePostalDocument = (id: string) => async (dispatch: Dispatch) =
 
 export const clearPostalDocument = () => (dispatch: Dispatch) => {
   dispatch({ type: CLEAR_DOCUMENT });
+};
+
+export const fetchPostalDocumentsByFolder = (folderId: string) => async (dispatch: Dispatch) => {
+  dispatch({ type: SET_LOADING });
+  try {
+    const res = await axios.get(BASE_URL, { params: { folderId, limit: 100 } });
+    dispatch({ type: SET_FOLDER_DOCS, payload: { documents: res.data.documents, total: res.data.total } });
+    return { success: true, documents: res.data.documents as PostalDocumentType[] };
+  } catch (error: unknown) {
+    dispatch({ type: SET_FOLDER_DOCS, payload: { documents: [], total: 0 } });
+    return { success: false };
+  }
+};
+
+export const deletePostalFolderDocument = (id: string) => async (dispatch: Dispatch) => {
+  try {
+    await axios.delete(`${BASE_URL}/${id}`);
+    dispatch({ type: DELETE_FOLDER_DOC, payload: id });
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof AxiosError ? error.response?.data?.message || 'Error al eliminar' : 'Error al eliminar';
+    return { success: false, error: msg };
+  }
 };

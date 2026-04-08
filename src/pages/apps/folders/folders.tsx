@@ -6,9 +6,14 @@ import { alpha, useTheme } from "@mui/material/styles";
 import {
 	Box,
 	Button,
+	Card,
+	CardActionArea,
+	CardContent,
 	Chip,
 	Dialog,
 	DialogContent,
+	DialogTitle,
+	Divider,
 	Stack,
 	Table,
 	TableBody,
@@ -100,7 +105,10 @@ import { fetchUserStats } from "store/reducers/userStats";
 import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
-import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument, Calendar } from "iconsax-react";
+import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument, Calendar, DocumentText1, NoteText } from "iconsax-react";
+import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
+import PickModelDialog from "sections/apps/rich-text-documents/PickModelDialog";
+import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
 
 // sections
 import ArchivedItemsModal from "sections/apps/customer/ArchivedItemsModal";
@@ -1006,6 +1014,10 @@ const FoldersLayout = () => {
 	const [movementModalOpen, setMovementModalOpen] = useState(false);
 	const [eventModalOpen, setEventModalOpen] = useState(false);
 	const [selectedFolderForModal, setSelectedFolderForModal] = useState<{ id: string; name: string }>({ id: "", name: "" });
+	const [docChooserOpen, setDocChooserOpen] = useState(false);
+	const [createPostalOpen, setCreatePostalOpen] = useState(false);
+	const [pickModelOpen, setPickModelOpen] = useState(false);
+	const [selectedFolderForDoc, setSelectedFolderForDoc] = useState<{ id: string; name: string } | null>(null);
 
 	// Estado para CausaSelector (selección de múltiples resultados)
 	const [causaSelectorOpen, setCausaSelectorOpen] = useState(false);
@@ -1602,6 +1614,13 @@ const FoldersLayout = () => {
 		setMovementModalOpen(true);
 		handleMenuClose();
 	}, []);
+
+	// Handlers para el modal de documentos
+	const handleOpenDocChooser = useCallback((folderId: string, folderName: string) => {
+		setSelectedFolderForDoc({ id: folderId, name: folderName });
+		setDocChooserOpen(true);
+		handleMenuClose();
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Handlers para el modal de eventos
 	const handleOpenEventModal = useCallback((folderId: string, folderName: string) => {
@@ -2346,6 +2365,19 @@ const FoldersLayout = () => {
 							<MenuItem
 								onClick={(e) => {
 									e.stopPropagation();
+									if (menuFolderData && menuFolderData._id && menuFolderData.folderName) {
+										handleOpenDocChooser(menuFolderData._id, menuFolderData.folderName);
+									}
+								}}
+							>
+								<ListItemIcon>
+									<DocumentText1 variant="Bulk" size={18} />
+								</ListItemIcon>
+								<ListItemText>Crear Documento</ListItemText>
+							</MenuItem>
+							<MenuItem
+								onClick={(e) => {
+									e.stopPropagation();
 									if (menuFolderData && menuFolderData._id) {
 										handleOpenCalculatorModal(menuFolderData._id);
 									}
@@ -2590,7 +2622,6 @@ const FoldersLayout = () => {
 					folderId={causaSelectorFolder.id}
 					folderName={causaSelectorFolder.name}
 					onCausaSelected={() => {
-						// Refrescar la lista de folders
 						if (isTeamMode && activeTeam?._id) {
 							dispatch(getFoldersByGroupId(activeTeam._id));
 						} else if (user?._id) {
@@ -2598,13 +2629,92 @@ const FoldersLayout = () => {
 						}
 					}}
 					onSelectionCancelled={() => {
-						// Refrescar la lista de folders
 						if (isTeamMode && activeTeam?._id) {
 							dispatch(getFoldersByGroupId(activeTeam._id));
 						} else if (user?._id) {
 							dispatch(getFoldersByUserId(user._id, true));
 						}
 					}}
+				/>
+
+				{/* Chooser: elegir tipo de documento */}
+				<ResponsiveDialog
+					open={docChooserOpen}
+					onClose={() => setDocChooserOpen(false)}
+					maxWidth="xs"
+					fullWidth
+					PaperProps={{ elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } }}
+				>
+					<DialogTitle sx={{ bgcolor: theme.palette.primary.lighter, p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+						<Stack spacing={1}>
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<DocumentText1 size={24} color={theme.palette.primary.main} variant="Bold" />
+								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>Crear Documento</Typography>
+							</Stack>
+							<Typography variant="body2" color="textSecondary">
+								{selectedFolderForDoc?.name ?? ""}
+							</Typography>
+						</Stack>
+					</DialogTitle>
+					<Divider />
+					<DialogContent sx={{ pb: 3 }}>
+						<Stack spacing={1.5}>
+							<Card
+								variant="outlined"
+								sx={{ cursor: "pointer", "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" }, transition: "border-color 0.15s" }}
+							>
+								<CardActionArea onClick={() => { setDocChooserOpen(false); setCreatePostalOpen(true); }}>
+									<CardContent>
+										<Stack direction="row" spacing={1.5} alignItems="center">
+											<NoteText size={28} variant="Bulk" />
+											<Stack spacing={0.25}>
+												<Typography variant="body2" fontWeight={600}>Modelo del Sistema</Typography>
+												<Typography variant="caption" color="text.secondary">Telegramas, cartas documento y más</Typography>
+											</Stack>
+										</Stack>
+									</CardContent>
+								</CardActionArea>
+							</Card>
+							<Divider><Typography variant="caption" color="text.secondary">o</Typography></Divider>
+							<Card
+								variant="outlined"
+								sx={{ cursor: "pointer", "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" }, transition: "border-color 0.15s" }}
+							>
+								<CardActionArea onClick={() => { setDocChooserOpen(false); setPickModelOpen(true); }}>
+									<CardContent>
+										<Stack direction="row" spacing={1.5} alignItems="center">
+											<DocumentText size={28} variant="Bulk" />
+											<Stack spacing={0.25}>
+												<Typography variant="body2" fontWeight={600}>Mis Modelos</Typography>
+												<Typography variant="caption" color="text.secondary">Escritos personalizados con editor de texto</Typography>
+											</Stack>
+										</Stack>
+									</CardContent>
+								</CardActionArea>
+							</Card>
+						</Stack>
+					</DialogContent>
+				</ResponsiveDialog>
+
+				{/* Modal postal */}
+				{createPostalOpen && (
+					<CreatePostalDocumentModal
+						open={createPostalOpen}
+						handleClose={() => setCreatePostalOpen(false)}
+						prefilledFolderId={selectedFolderForDoc?.id ?? null}
+						showSnackbar={(message, severity) => {
+							setSnackbarMessage(message);
+							setSnackbarSeverity(severity);
+							setSnackbarOpen(true);
+						}}
+					/>
+				)}
+
+				{/* Modal mis modelos */}
+				<PickModelDialog
+					open={pickModelOpen}
+					onClose={() => setPickModelOpen(false)}
+					folderId={selectedFolderForDoc?.id ?? null}
 				/>
 
 				{/* Modal de límite de recursos */}

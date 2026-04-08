@@ -31,6 +31,9 @@ const ADD_DOCUMENT          = 'richTextDocuments/ADD_DOCUMENT';
 const UPDATE_DOCUMENT       = 'richTextDocuments/UPDATE_DOCUMENT';
 const DELETE_DOCUMENT       = 'richTextDocuments/DELETE_DOCUMENT';
 const CLEAR_DOCUMENT        = 'richTextDocuments/CLEAR_DOCUMENT';
+const SET_FOLDER_DOCS       = 'richTextDocuments/SET_FOLDER_DOCS';
+const DELETE_FOLDER_DOC     = 'richTextDocuments/DELETE_FOLDER_DOC';
+const UPDATE_FOLDER_DOC     = 'richTextDocuments/UPDATE_FOLDER_DOC';
 
 // ── State ───────────────────────────────────────────────────────────────────────
 
@@ -42,6 +45,8 @@ interface State {
   document: RichTextDocument | null;
   documentsTotal: number;
   isLoader: boolean;
+  folderDocuments: RichTextDocument[];
+  folderDocumentsTotal: number;
 }
 
 const initialState: State = {
@@ -52,6 +57,8 @@ const initialState: State = {
   document: null,
   documentsTotal: 0,
   isLoader: false,
+  folderDocuments: [],
+  folderDocumentsTotal: 0,
 };
 
 // ── Reducer ─────────────────────────────────────────────────────────────────────
@@ -82,6 +89,12 @@ const richTextDocumentsReducer = (state = initialState, action: any): State => {
       return { ...state, documents: state.documents.filter(d => d._id !== action.payload) };
     case CLEAR_DOCUMENT:
       return { ...state, document: null };
+    case SET_FOLDER_DOCS:
+      return { ...state, folderDocuments: action.payload.documents, folderDocumentsTotal: action.payload.total };
+    case DELETE_FOLDER_DOC:
+      return { ...state, folderDocuments: state.folderDocuments.filter(d => d._id !== action.payload) };
+    case UPDATE_FOLDER_DOC:
+      return { ...state, folderDocuments: state.folderDocuments.map(d => d._id === action.payload._id ? action.payload : d) };
     default:
       return state;
   }
@@ -204,6 +217,27 @@ export const deleteRichTextDocument = (id: string) => async (dispatch: Dispatch)
 
 export const clearRichTextDocument = () => (dispatch: Dispatch) => {
   dispatch({ type: CLEAR_DOCUMENT });
+};
+
+export const fetchRichTextDocumentsByFolder = (folderId: string) => async (dispatch: Dispatch) => {
+  try {
+    const res = await axios.get(DOCUMENTS_URL, { params: { folderId, limit: 100 } });
+    dispatch({ type: SET_FOLDER_DOCS, payload: { documents: res.data.documents, total: res.data.total } });
+    return { success: true, documents: res.data.documents as RichTextDocument[] };
+  } catch (error) {
+    dispatch({ type: SET_FOLDER_DOCS, payload: { documents: [], total: 0 } });
+    return { success: false };
+  }
+};
+
+export const deleteRichTextFolderDocument = (id: string) => async (dispatch: Dispatch) => {
+  try {
+    await axios.delete(`${DOCUMENTS_URL}/${id}`);
+    dispatch({ type: DELETE_FOLDER_DOC, payload: id });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: getErrorMsg(error, 'Error al eliminar documento') };
+  }
 };
 
 // ── Merge field resolution ──────────────────────────────────────────────────────

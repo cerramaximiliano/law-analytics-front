@@ -48,6 +48,7 @@ interface Props {
   handleClose: () => void;
   prefilledTrackingId?: string | null;
   preselectedTemplate?: PdfTemplate | null;
+  prefilledFolderId?: string | null;
   showSnackbar: (msg: string, sev: "success" | "error") => void;
 }
 
@@ -364,6 +365,7 @@ export default function CreatePostalDocumentModal({
   handleClose,
   prefilledTrackingId,
   preselectedTemplate,
+  prefilledFolderId,
   showSnackbar,
 }: Props) {
   // Redux state
@@ -439,6 +441,13 @@ export default function CreatePostalDocumentModal({
     }
     dispatch(fetchAllTrackings() as any);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-select folder when prefilledFolderId is provided
+  useEffect(() => {
+    if (!prefilledFolderId || !allFolders.length) return;
+    const found = allFolders.find((f) => f._id === prefilledFolderId);
+    if (found) setLinkedFolder(found);
+  }, [prefilledFolderId, allFolders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Reset ─────────────────────────────────────────────────────────────────
 

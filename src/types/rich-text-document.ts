@@ -80,6 +80,7 @@ export interface RichTextDocumentsQueryParams {
 	search?: string;
 	status?: RichTextDocumentStatus;
 	templateId?: string;
+	folderId?: string;
 }
 
 // ── Merge field resolution ────────────────────────────────────────────────────

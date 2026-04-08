@@ -54,6 +54,8 @@ import { fetchPostalDocuments, deletePostalDocument, updatePostalDocument, getPo
 import { createPostalTracking, fetchAllTrackings, updatePostalTracking } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
+import ApiService from "store/reducers/ApiService";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { type RichTextDocument, type RichTextTemplate, type RichTextTemplateCategory } from "types/rich-text-document";
 import { type PostalDocumentType } from "types/postal-document";
 import { type PostalTrackingType } from "types/postal-tracking";
@@ -190,7 +192,6 @@ interface TemplatePickerDialogProps {
 const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
-
 	const { templates, isLoader } = useSelector((state: any) => state.richTextDocumentsReducer);
 
 	const [search, setSearch] = useState("");
@@ -342,7 +343,7 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 
 			<DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
 				<Button variant="text" color="secondary" onClick={handleBlank}>
-					Continuar sin plantilla
+					Continuar sin modelo
 				</Button>
 				<Stack direction="row" spacing={1}>
 					<Button variant="outlined" onClick={onClose}>
@@ -810,7 +811,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 						<Stack spacing={2}>
 							<Stack spacing={0.5}>
 								<Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
-									Plantilla
+									Modelo
 								</Typography>
 								<Typography variant="body2">{doc.templateName}</Typography>
 							</Stack>
@@ -902,6 +903,8 @@ const EscritosPage = () => {
 	const [vincularRow, setVincularRow] = useState<DocRow | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<{ kind: "postal" | "richtext"; id: string; title: string } | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
+	const [mainLimitErrorOpen, setMainLimitErrorOpen] = useState(false);
+	const [mainLimitErrorData, setMainLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(null);
 
 	// Load folders if needed
 	useEffect(() => {
@@ -951,6 +954,25 @@ const EscritosPage = () => {
 		setPage(1);
 	};
 
+	const checkMainLimit = async (): Promise<boolean> => {
+		try {
+			const res = await ApiService.checkResourceLimit("postalDocuments");
+			if (res.success && res.data?.hasReachedLimit) {
+				setMainLimitErrorData({
+					resourceType: "Documentos",
+					plan: res.data.currentPlan || "free",
+					currentCount: `${res.data.currentCount}`,
+					limit: res.data.limit,
+				});
+				setMainLimitErrorOpen(true);
+				return false;
+			}
+		} catch {
+			// ante error de red, permitir continuar
+		}
+		return true;
+	};
+
 	const showSnackbar = (message: string, severity: "success" | "error") => {
 		dispatch(openSnackbar({ open: true, message, variant: "alert", alert: { color: severity }, close: true }));
 	};
@@ -995,7 +1017,7 @@ const EscritosPage = () => {
 					<Stack spacing={0.25}>
 						<Typography variant="h4">Documentos</Typography>
 						<Typography variant="body2" color="text.secondary">
-							Documentos generados a partir de plantillas del sistema y modelos propios
+							Documentos generados a partir de modelos del sistema y modelos propios
 						</Typography>
 					</Stack>
 
@@ -1011,15 +1033,16 @@ const EscritosPage = () => {
 						</Button>
 						<Menu anchorEl={newDocMenuAnchor} open={Boolean(newDocMenuAnchor)} onClose={() => setNewDocMenuAnchor(null)}>
 							<MuiMenuItem
-								onClick={() => {
+								onClick={async () => {
 									setNewDocMenuAnchor(null);
+									if (!(await checkMainLimit())) return;
 									setOpenCreatePostal(true);
 								}}
 								sx={{ py: 1.5 }}
 							>
 								<Stack spacing={0.25}>
 									<Typography variant="body2" fontWeight={500}>
-										Plantilla del Sistema
+										Modelo del Sistema
 									</Typography>
 									<Typography variant="caption" color="text.secondary">
 										Telegramas, cartas documento y más
@@ -1028,8 +1051,9 @@ const EscritosPage = () => {
 							</MuiMenuItem>
 							<Divider />
 							<MuiMenuItem
-								onClick={() => {
+								onClick={async () => {
 									setNewDocMenuAnchor(null);
+									if (!(await checkMainLimit())) return;
 									setOpenTemplatePicker(true);
 								}}
 								sx={{ py: 1.5 }}
@@ -1054,7 +1078,7 @@ const EscritosPage = () => {
 				<Stack direction="row" spacing={1.5} flexWrap="wrap" gap={1} mb={2} alignItems="center">
 					<TextField
 						size="small"
-						placeholder="Buscar por título o plantilla..."
+						placeholder="Buscar por título o modelo..."
 						value={searchInput}
 						onChange={(e) => setSearchInput(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
@@ -1090,7 +1114,7 @@ const EscritosPage = () => {
 						<TableHead>
 							<TableRow>
 									<TableCell>Título</TableCell>
-								<TableCell>Plantilla</TableCell>
+								<TableCell>Modelo</TableCell>
 								<TableCell>Estado</TableCell>
 								<TableCell>Carpeta</TableCell>
 								<TableCell>Fecha</TableCell>
@@ -1249,6 +1273,13 @@ const EscritosPage = () => {
 
 			{/* ── Modals ── */}
 			<TemplatePickerDialog open={openTemplatePicker} onClose={() => setOpenTemplatePicker(false)} />
+
+			<LimitErrorModal
+				open={mainLimitErrorOpen}
+				onClose={() => setMainLimitErrorOpen(false)}
+				message="Has alcanzado el límite de documentos para tu plan actual."
+				limitInfo={mainLimitErrorData ?? undefined}
+			/>
 
 			<VincularDialog
 				open={!!vincularRow}

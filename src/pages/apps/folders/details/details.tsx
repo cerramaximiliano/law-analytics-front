@@ -22,6 +22,7 @@ import {
 	Briefcase,
 	Category,
 	TableDocument,
+	DocumentText,
 	FolderCross,
 	ArrowLeft,
 	TickCircle,
@@ -55,6 +56,7 @@ import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
 import { RagChat } from "sections/apps/rag";
+import FolderRecursosTab from "./components/FolderRecursosTab";
 
 interface StateType {
 	folder: {
@@ -86,7 +88,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`folder-tabpanel-${index}`} aria-labelledby={`folder-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 2, px: 2 }}>{children}</Box>}
+			{value === index && <Box sx={{ pt: 2, px: 2, pb: 2 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -287,13 +289,20 @@ const Details = () => {
 			},
 			{
 				value: 3,
+				label: "Recursos",
+				icon: <DocumentText size="20" />,
+				shortLabel: "Recursos",
+				ariaLabel: "Recursos",
+			},
+			{
+				value: 4,
 				label: "IA Chat",
 				icon: <MessageText1 size="20" />,
 				shortLabel: "IA",
 				ariaLabel: "Chat IA",
 			},
 			{
-				value: 4,
+				value: 5,
 				label: "Historial",
 				icon: <Clock size="20" />,
 				shortLabel: "Historial",
@@ -827,8 +836,13 @@ const Details = () => {
 						{folder && <GestionTabImproved folder={folder} isDetailedView={isDetailedView} />}
 					</TabPanel>
 
-					{/* Tab 4: IA Chat */}
+					{/* Tab 4: Recursos */}
 					<TabPanel value={tabValue} index={3}>
+						{id && <FolderRecursosTab folderId={id} folderName={folder?.folderName} />}
+					</TabPanel>
+
+					{/* Tab 5: IA Chat */}
+					<TabPanel value={tabValue} index={4}>
 						{folder?.causaId && folder?.causaType && id && (
 							<RagChat causaId={folder.causaId} causaType={folder.causaType} folderId={id} />
 						)}
@@ -841,8 +855,8 @@ const Details = () => {
 						)}
 					</TabPanel>
 
-					{/* Tab 5: Historial */}
-					<TabPanel value={tabValue} index={4}>
+					{/* Tab 6: Historial */}
+					<TabPanel value={tabValue} index={5}>
 						{id && <HistorialTab folderId={id} />}
 					</TabPanel>
 				</Box>

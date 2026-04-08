@@ -251,7 +251,7 @@ const TemplateEditorPage = () => {
 	}
 
 	return (
-		<Stack spacing={2} sx={{ height: "calc(100vh - 80px)" }}>
+		<Stack className="tiptap-root" spacing={2} sx={{ height: "calc(100vh - 80px)" }}>
 			{/* Header */}
 			<MainCard>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
