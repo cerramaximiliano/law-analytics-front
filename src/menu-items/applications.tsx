@@ -77,6 +77,12 @@ const applications: NavItemType = {
 					url: "/apps/calc/labor",
 				},
 				{
+					id: "previsional-calculator",
+					title: <FormattedMessage id="Previsional" />,
+					type: "item",
+					url: "/apps/calc/previsional",
+				},
+				{
 					id: "intereses-calculator",
 					title: <FormattedMessage id="intereses" />,
 					type: "item",
@@ -87,20 +93,6 @@ const applications: NavItemType = {
 					title: <FormattedMessage id="civil" />,
 					type: "item",
 					url: "/apps/calc/civil",
-					disabled: true,
-					chip: {
-						label: "Próximamente",
-						color: "primary",
-						size: "small",
-						variant: "filled",
-						className: "truncate-chip coming-soon-chip",
-					},
-				},
-				{
-					id: "previsional-calculator",
-					title: <FormattedMessage id="Previsional" />,
-					type: "item",
-					url: "/apps/calc/previsional",
 					disabled: true,
 					chip: {
 						label: "Próximamente",
