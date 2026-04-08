@@ -28,7 +28,6 @@ import {
 	TickCircle,
 	CloseCircle,
 	Clock,
-	MessageText1,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -55,7 +54,6 @@ import { dispatch } from "store";
 import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
-import { RagChat } from "sections/apps/rag";
 import FolderRecursosTab from "./components/FolderRecursosTab";
 
 interface StateType {
@@ -296,13 +294,6 @@ const Details = () => {
 			},
 			{
 				value: 4,
-				label: "IA Chat",
-				icon: <MessageText1 size="20" />,
-				shortLabel: "IA",
-				ariaLabel: "Chat IA",
-			},
-			{
-				value: 5,
 				label: "Historial",
 				icon: <Clock size="20" />,
 				shortLabel: "Historial",
@@ -841,22 +832,8 @@ const Details = () => {
 						{id && <FolderRecursosTab folderId={id} folderName={folder?.folderName} />}
 					</TabPanel>
 
-					{/* Tab 5: IA Chat */}
+					{/* Tab 5: Historial */}
 					<TabPanel value={tabValue} index={4}>
-						{folder?.causaId && folder?.causaType && id && (
-							<RagChat causaId={folder.causaId} causaType={folder.causaType} folderId={id} />
-						)}
-						{!folder?.causaId && (
-							<Box sx={{ py: 4, textAlign: "center" }}>
-								<Typography variant="body2" color="text.secondary">
-									Para usar el chat con IA, primero vincula esta carpeta con una causa judicial.
-								</Typography>
-							</Box>
-						)}
-					</TabPanel>
-
-					{/* Tab 6: Historial */}
-					<TabPanel value={tabValue} index={5}>
 						{id && <HistorialTab folderId={id} />}
 					</TabPanel>
 				</Box>

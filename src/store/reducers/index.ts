@@ -33,7 +33,6 @@ import notificationMonitoring from "./notificationMonitoring";
 import googleCalendar from "./googleCalendar";
 import teams from "./teams";
 import activityLog from "./activityLog";
-import rag from "./rag";
 import pjnSync from "./pjnSync";
 import movementsSync from "./movementsSync";
 import postalTrackingReducer from "./postalTracking";
@@ -79,7 +78,6 @@ const reducers = combineReducers({
 	googleCalendar,
 	teams,
 	activityLog,
-	rag,
 	pjnSync,
 	movementsSync,
 	postalTrackingReducer,

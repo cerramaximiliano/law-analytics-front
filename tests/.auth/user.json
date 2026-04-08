@@ -1,0 +1,43 @@
+{
+  "cookies": [
+    {
+      "name": "_ga",
+      "value": "GA1.1.890395585.1775607893",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1810167893.499348,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_BQMBQ9ZV34",
+      "value": "GS2.1.s1775607893$o1$g0$t1775607894$j59$l0$h0",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1810167894.491392,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTAzMDBkMTUzYmNjYWFjNDJiMzdkYiIsImlhdCI6MTc3NTYwNzg5MCwiZXhwIjoxNzc1NjA5NjkwfQ.mXkfv6PcpDlh-1m5Kj4o_IWapIX1iuchHoYY3c0sPt0"
+        },
+        {
+          "name": "able-pro-material-ts-cart",
+          "value": "{\"error\":\"null\",\"checkout\":\"{\\\"step\\\":0,\\\"products\\\":[],\\\"subtotal\\\":0,\\\"total\\\":0,\\\"discount\\\":0,\\\"shipping\\\":0,\\\"billing\\\":null,\\\"payment\\\":{\\\"type\\\":\\\"free\\\",\\\"method\\\":\\\"card\\\",\\\"card\\\":\\\"\\\"}}\",\"_persist\":\"{\\\"version\\\":-1,\\\"rehydrated\\\":true}\"}"
+        },
+        {
+          "name": "sw_cleanup_done",
+          "value": "done"
+        }
+      ]
+    }
+  ]
+}
