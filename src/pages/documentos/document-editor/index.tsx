@@ -199,6 +199,7 @@ const DocumentEditorPage = () => {
 	const { id: documentId } = useParams<{ id: string }>();
 	const templateId = searchParams.get("templateId");
 	const folderIdParam = searchParams.get("folderId");
+	const autoResolveParam = searchParams.get("autoResolve") === "true";
 	const isEdit = Boolean(documentId);
 
 	const userId = useSelector((state: any) => state.auth?.user?._id);
@@ -232,6 +233,8 @@ const DocumentEditorPage = () => {
 	const [templateName, setTemplateName] = useState("");
 	const [templateCategory, setTemplateCategory] = useState("");
 	const [contentLoaded, setContentLoaded] = useState(false);
+	const [templateLoaded, setTemplateLoaded] = useState(false);
+	const autoResolveFired = useRef(false);
 	const [rightTab, setRightTab] = useState<"fields" | "data">("fields");
 	const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
 	const [aiDrawerInitialMessage, setAiDrawerInitialMessage] = useState<string | undefined>();
@@ -375,10 +378,23 @@ const DocumentEditorPage = () => {
 							.setMeta("addToHistory", false)
 					);
 				}
+				setTemplateLoaded(true);
 			}
 		})();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isEdit, templateId, editor]);
+
+	// Auto-resolve cuando se navega con ?autoResolve=true (desde modal de carpeta)
+	useEffect(() => {
+		if (!autoResolveParam || autoResolveFired.current) return;
+		if (!editor || !selectedFolder) return;
+		// Esperar a que el contenido esté en el editor antes de resolver
+		const contentReady = isEdit ? contentLoaded : (!templateId || templateLoaded);
+		if (!contentReady) return;
+		autoResolveFired.current = true;
+		handleResolve();
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [autoResolveParam, editor, selectedFolder, contentLoaded, templateLoaded, isEdit, templateId]);
 
 	const handleResolve = async () => {
 		if (!editor) return;

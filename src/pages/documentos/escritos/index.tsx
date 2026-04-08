@@ -343,7 +343,7 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 
 			<DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
 				<Button variant="text" color="secondary" onClick={handleBlank}>
-					Continuar sin plantilla
+					Continuar sin modelo
 				</Button>
 				<Stack direction="row" spacing={1}>
 					<Button variant="outlined" onClick={onClose}>
@@ -811,7 +811,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 						<Stack spacing={2}>
 							<Stack spacing={0.5}>
 								<Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase" letterSpacing={0.5}>
-									Plantilla
+									Modelo
 								</Typography>
 								<Typography variant="body2">{doc.templateName}</Typography>
 							</Stack>
@@ -1017,7 +1017,7 @@ const EscritosPage = () => {
 					<Stack spacing={0.25}>
 						<Typography variant="h4">Documentos</Typography>
 						<Typography variant="body2" color="text.secondary">
-							Documentos generados a partir de plantillas del sistema y modelos propios
+							Documentos generados a partir de modelos del sistema y modelos propios
 						</Typography>
 					</Stack>
 
@@ -1042,7 +1042,7 @@ const EscritosPage = () => {
 							>
 								<Stack spacing={0.25}>
 									<Typography variant="body2" fontWeight={500}>
-										Plantilla del Sistema
+										Modelo del Sistema
 									</Typography>
 									<Typography variant="caption" color="text.secondary">
 										Telegramas, cartas documento y más
@@ -1078,7 +1078,7 @@ const EscritosPage = () => {
 				<Stack direction="row" spacing={1.5} flexWrap="wrap" gap={1} mb={2} alignItems="center">
 					<TextField
 						size="small"
-						placeholder="Buscar por título o plantilla..."
+						placeholder="Buscar por título o modelo..."
 						value={searchInput}
 						onChange={(e) => setSearchInput(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
@@ -1114,7 +1114,7 @@ const EscritosPage = () => {
 						<TableHead>
 							<TableRow>
 									<TableCell>Título</TableCell>
-								<TableCell>Plantilla</TableCell>
+								<TableCell>Modelo</TableCell>
 								<TableCell>Estado</TableCell>
 								<TableCell>Carpeta</TableCell>
 								<TableCell>Fecha</TableCell>

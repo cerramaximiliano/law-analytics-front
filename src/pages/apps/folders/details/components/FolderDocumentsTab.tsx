@@ -5,6 +5,10 @@ import {
 	Button,
 	Chip,
 	CircularProgress,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
 	Divider,
 	IconButton,
 	Menu,
@@ -19,6 +23,8 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
 import { Add, ArrowDown2, DocumentDownload, DocumentText, Eye, Printer, Trash } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
 import {
@@ -34,6 +40,7 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import ApiService from "store/reducers/ApiService";
 import { printRichTextDocument } from "utils/printRichTextDocument";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
+import PickModelDialog from "sections/apps/rich-text-documents/PickModelDialog";
 import type { PostalDocumentType } from "types/postal-document";
 import type { RichTextDocument } from "types/rich-text-document";
 
@@ -74,7 +81,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const KIND_LABEL: Record<DocKind, string> = {
-	postal: "Plantilla Sistema",
+	postal: "Modelo Sistema",
 	richtext: "Mis Modelos",
 };
 
@@ -93,6 +100,7 @@ interface Props {
 const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
+	const theme = useTheme();
 
 	const postalDocs: PostalDocumentType[] = useSelector(
 		(state: any) => state.postalDocumentsReducer?.folderDocuments ?? []
@@ -106,7 +114,9 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 
 	const [newDocAnchor, setNewDocAnchor] = useState<null | HTMLElement>(null);
 	const [openCreatePostal, setOpenCreatePostal] = useState(false);
+	const [openPickModel, setOpenPickModel] = useState(false);
 	const [deleteLoading, setDeleteLoading] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState<{ _id: string; kind: DocKind; title: string } | null>(null);
 	const [printLoading, setPrintLoading] = useState<string | null>(null);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorData, setLimitErrorData] = useState<{
@@ -162,7 +172,7 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 	const handleNewRichText = async () => {
 		setNewDocAnchor(null);
 		if (!(await checkLimit())) return;
-		navigate(`/documentos/escritos/nuevo?folderId=${folderId}`);
+		setOpenPickModel(true);
 	};
 
 	const handleView = (row: DocRow) => {
@@ -191,15 +201,17 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [navigate]);
 
-	const handleDelete = async (row: DocRow) => {
+	const handleDelete = async () => {
+		if (!deleteTarget) return;
 		setDeleteLoading(true);
 		let result: any;
-		if (row.kind === "postal") {
-			result = await dispatch(deletePostalFolderDocument(row._id) as any);
+		if (deleteTarget.kind === "postal") {
+			result = await dispatch(deletePostalFolderDocument(deleteTarget._id) as any);
 		} else {
-			result = await dispatch(deleteRichTextFolderDocument(row._id) as any);
+			result = await dispatch(deleteRichTextFolderDocument(deleteTarget._id) as any);
 		}
 		setDeleteLoading(false);
+		setDeleteTarget(null);
 		if (result?.success) {
 			showSnackbar("Documento eliminado", "success");
 		} else {
@@ -212,17 +224,51 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 		dispatch(fetchRichTextDocumentsByFolder(folderId) as any);
 	};
 
-	return (
-		<Box>
-			{/* Header */}
-			<Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+	// Dropdown menu compartido (se reutiliza en header y empty state)
+	const newDocMenu = (
+		<Menu
+			anchorEl={newDocAnchor}
+			open={Boolean(newDocAnchor)}
+			onClose={() => setNewDocAnchor(null)}
+		>
+			<MenuItem onClick={handleNewPostal} sx={{ py: 1.5 }}>
 				<Stack spacing={0.25}>
-					<Typography variant="h5">Documentos</Typography>
-					<Typography variant="body2" color="text.secondary">
-						Documentos vinculados a {folderName ? `"${folderName}"` : "este expediente"}
+					<Typography variant="body2" fontWeight={500}>Modelo del Sistema</Typography>
+					<Typography variant="caption" color="text.secondary">
+						Telegramas, cartas documento y más
 					</Typography>
 				</Stack>
-				<Box>
+			</MenuItem>
+			<Divider />
+			<MenuItem onClick={handleNewRichText} sx={{ py: 1.5 }}>
+				<Stack spacing={0.25}>
+					<Typography variant="body2" fontWeight={500}>Mis Modelos</Typography>
+					<Typography variant="caption" color="text.secondary">
+						Escritos personalizados con editor de texto
+					</Typography>
+				</Stack>
+			</MenuItem>
+		</Menu>
+	);
+
+	return (
+		<Box>
+			{/* Table */}
+			{isLoading ? (
+				<Stack alignItems="center" justifyContent="center" py={6}>
+					<CircularProgress size={28} />
+				</Stack>
+			) : rows.length === 0 ? (
+				<Stack alignItems="center" justifyContent="center" spacing={2} py={8}>
+					<DocumentText size={44} variant="Linear" color="text.secondary" />
+					<Stack alignItems="center" spacing={0.5}>
+						<Typography variant="body1" fontWeight={500} color="text.secondary">
+							Sin documentos vinculados
+						</Typography>
+						<Typography variant="body2" color="text.disabled">
+							Creá un nuevo documento o vinculá uno existente desde Documentos › Escritos
+						</Typography>
+					</Stack>
 					<Button
 						variant="contained"
 						size="small"
@@ -232,50 +278,23 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 					>
 						Nuevo documento
 					</Button>
-					<Menu
-						anchorEl={newDocAnchor}
-						open={Boolean(newDocAnchor)}
-						onClose={() => setNewDocAnchor(null)}
-					>
-						<MenuItem onClick={handleNewPostal} sx={{ py: 1.5 }}>
-							<Stack spacing={0.25}>
-								<Typography variant="body2" fontWeight={500}>Plantilla del Sistema</Typography>
-								<Typography variant="caption" color="text.secondary">
-									Telegramas, cartas documento y más
-								</Typography>
-							</Stack>
-						</MenuItem>
-						<Divider />
-						<MenuItem onClick={handleNewRichText} sx={{ py: 1.5 }}>
-							<Stack spacing={0.25}>
-								<Typography variant="body2" fontWeight={500}>Mis Modelos</Typography>
-								<Typography variant="caption" color="text.secondary">
-									Escritos personalizados con editor de texto
-								</Typography>
-							</Stack>
-						</MenuItem>
-					</Menu>
-				</Box>
-			</Stack>
-
-			{/* Table */}
-			{isLoading ? (
-				<Stack alignItems="center" justifyContent="center" py={6}>
-					<CircularProgress size={28} />
-				</Stack>
-			) : rows.length === 0 ? (
-				<Stack alignItems="center" justifyContent="center" spacing={1.5} py={8}>
-					<DocumentText size={40} variant="Linear" color="text.secondary" />
-					<Stack alignItems="center" spacing={0.5}>
-						<Typography variant="body1" fontWeight={500} color="text.secondary">
-							Sin documentos vinculados
-						</Typography>
-						<Typography variant="body2" color="text.disabled">
-							Creá un nuevo documento o vinculá uno existente desde Documentos › Escritos
-						</Typography>
-					</Stack>
+					{newDocMenu}
 				</Stack>
 			) : (
+				<>
+				{/* Header con botón cuando hay documentos */}
+				<Stack direction="row" justifyContent="flex-end" mb={1.5}>
+					<Button
+						variant="outlined"
+						size="small"
+						startIcon={<Add size={16} />}
+						endIcon={<ArrowDown2 size={14} />}
+						onClick={(e) => setNewDocAnchor(e.currentTarget)}
+					>
+						Nuevo documento
+					</Button>
+					{newDocMenu}
+				</Stack>
 				<TableContainer>
 					<Table size="small">
 						<TableHead>
@@ -349,8 +368,7 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 												<IconButton
 													size="small"
 													color="error"
-													disabled={deleteLoading}
-													onClick={() => handleDelete(row)}
+													onClick={() => setDeleteTarget({ _id: row._id, kind: row.kind, title: row.title })}
 												>
 													<Trash size={16} />
 												</IconButton>
@@ -362,9 +380,16 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 						</TableBody>
 					</Table>
 				</TableContainer>
+				</>
 			)}
 
 			{/* Modals */}
+			<PickModelDialog
+				open={openPickModel}
+				onClose={() => setOpenPickModel(false)}
+				folderId={folderId}
+			/>
+
 			<CreatePostalDocumentModal
 				open={openCreatePostal}
 				handleClose={() => {
@@ -381,6 +406,38 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 				message="Has alcanzado el límite de documentos para tu plan actual."
 				limitInfo={limitErrorData ?? undefined}
 			/>
+
+			<ResponsiveDialog
+				open={!!deleteTarget}
+				onClose={() => setDeleteTarget(null)}
+				maxWidth="xs"
+				fullWidth
+				PaperProps={{ elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } }}
+			>
+				<DialogTitle sx={{ bgcolor: theme.palette.error.lighter, p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+					<Stack spacing={1}>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<Trash size={24} color={theme.palette.error.main} variant="Bold" />
+							<Typography variant="h5" color="error" sx={{ fontWeight: 600 }}>Eliminar documento</Typography>
+						</Stack>
+					</Stack>
+				</DialogTitle>
+				<Divider />
+				<DialogContent sx={{ p: 3 }}>
+					<DialogContentText>
+						¿Eliminás el documento <strong>{deleteTarget?.title}</strong>? Esta acción no se puede deshacer.
+					</DialogContentText>
+				</DialogContent>
+				<Divider />
+				<DialogActions sx={{ px: 3, py: 2 }}>
+					<Button onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>
+						Cancelar
+					</Button>
+					<Button color="error" variant="contained" onClick={handleDelete} disabled={deleteLoading}>
+						{deleteLoading ? <CircularProgress size={16} color="inherit" /> : "Eliminar"}
+					</Button>
+				</DialogActions>
+			</ResponsiveDialog>
 		</Box>
 	);
 };

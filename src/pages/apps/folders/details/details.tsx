@@ -52,7 +52,7 @@ import { dispatch } from "store";
 import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
-import FolderDocumentsTab from "./components/FolderDocumentsTab";
+import FolderRecursosTab from "./components/FolderRecursosTab";
 
 interface StateType {
 	folder: {
@@ -84,7 +84,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`folder-tabpanel-${index}`} aria-labelledby={`folder-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 2, px: 2 }}>{children}</Box>}
+			{value === index && <Box sx={{ pt: 2, px: 2, pb: 2 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -820,7 +820,7 @@ const Details = () => {
 
 					{/* Tab 4: Recursos */}
 					<TabPanel value={tabValue} index={3}>
-						{id && <FolderDocumentsTab folderId={id} folderName={folder?.folderName} />}
+						{id && <FolderRecursosTab folderId={id} folderName={folder?.folderName} />}
 					</TabPanel>
 				</Box>
 
