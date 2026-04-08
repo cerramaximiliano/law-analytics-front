@@ -559,7 +559,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 						enableReinitialize
 						validationSchema={currentValidationSchema}
 						onSubmit={_handleSubmit}
-						innerRef={formikRef}
+						innerRef={formikRef as any}
 					>
 						{({ isSubmitting, values }) => (
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>

@@ -121,13 +121,13 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 							<Typography variant="body2" color="textSecondary">
 								Start Date:
 							</Typography>
-							<Typography variant="body1">{new Date(subscription.currentPeriodStart).toLocaleDateString()}</Typography>
+							<Typography variant="body1">{subscription.currentPeriodStart ? new Date(subscription.currentPeriodStart as unknown as string).toLocaleDateString() : ""}</Typography>
 						</Grid>
 						<Grid item xs={6} sm={3}>
 							<Typography variant="body2" color="textSecondary">
 								End Date:
 							</Typography>
-							<Typography variant="body1">{new Date(subscription.currentPeriodEnd).toLocaleDateString()}</Typography>
+							<Typography variant="body1">{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd as unknown as string).toLocaleDateString() : ""}</Typography>
 						</Grid>
 						<Grid item xs={6} sm={3}>
 							<Typography variant="body2" color="textSecondary">
@@ -300,7 +300,7 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 					<Box mt={2} sx={{ bgcolor: "warning.light", p: 2, borderRadius: 1 }}>
 						<Typography variant="body2" color="warning.dark">
 							Your subscription will be canceled at the end of the current billing period on{" "}
-							{new Date(subscription.currentPeriodEnd).toLocaleDateString()}.
+							{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd as unknown as string).toLocaleDateString() : ""}.
 						</Typography>
 						<Button
 							variant="outlined"

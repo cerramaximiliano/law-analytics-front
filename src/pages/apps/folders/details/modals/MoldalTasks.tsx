@@ -126,7 +126,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName, editM
 				);
 
 				if (handlerAddress) {
-					handlerAddress(result.task);
+					handlerAddress((result as any).task);
 				}
 				closeTaskModal();
 				actions.resetForm();

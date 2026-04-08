@@ -432,7 +432,7 @@ const DocumentEditorPage = () => {
 		editor.commands.setContent(resolved as Parameters<typeof editor.commands.setContent>[0]);
 
 		// Contar cuántos se resolvieron
-		const remaining = countPendingFields(resolved);
+		const remaining = countPendingFields(resolved as Record<string, unknown>);
 		const total = countPendingFields(json);
 		const count = total - remaining;
 		setResolvedCount(count);

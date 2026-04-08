@@ -211,7 +211,12 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 				maxWidth="sm"
 				fullWidth
 				open={open}
-				sx={dialogSx}
+				sx={{
+					...(dialogSx || {}),
+					"& .MuiBackdrop-root": {
+						opacity: "0.5 !important",
+					},
+				}}
 				PaperProps={{
 					sx: {
 						p: 0,
@@ -220,11 +225,6 @@ const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = f
 						display: "flex",
 						flexDirection: "column",
 						maxHeight: "90vh",
-					},
-				}}
-				sx={{
-					"& .MuiBackdrop-root": {
-						opacity: "0.5 !important",
 					},
 				}}
 			>

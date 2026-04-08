@@ -490,7 +490,7 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 		>
 			<ModalMovements
 				open={open}
-				setOpen={handleCloseModal}
+				setOpen={handleCloseModal as React.Dispatch<React.SetStateAction<boolean>>}
 				folderId={id}
 				editMode={!!editMovement}
 				movementData={editMovement}

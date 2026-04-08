@@ -71,7 +71,7 @@ export interface Action {
 export interface Props {
 	columns: Column[];
 	data: Folder[];
-	handleAdd: () => void;
+	handleAdd?: () => void;
 	handleArchiveSelected?: (selectedRows: any[]) => void;
 	handleOpenArchivedModal?: () => void;
 	handleOpenGuide?: () => void;

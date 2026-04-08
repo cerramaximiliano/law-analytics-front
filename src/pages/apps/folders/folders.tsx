@@ -148,6 +148,7 @@ interface ReactTableProps extends Props {
 	onJurisdiccionFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniqueJurisdicciones?: string[];
 	handleDeleteSelected?: (selectedRows: any[]) => void;
+	onBarWidthMeasured?: (width: number) => void;
 }
 
 function ReactTable({

@@ -123,7 +123,7 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 			priority: "medium",
 			message: "",
 		});
-		setErrors({ name: false, email: false, subject: false, message: false });
+		setErrors({ subject: false, message: false });
 		setAttachmentFile(null);
 		setAttachmentError("");
 		setSubmitted(false);

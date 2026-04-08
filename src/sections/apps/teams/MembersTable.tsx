@@ -254,7 +254,7 @@ export default function MembersTable({ onMemberUpdated }: MembersTableProps) {
                       <Tooltip title="Opciones">
                         <IconButton
                           size="small"
-                          onClick={(e) => handleMenuOpen(e, member as TeamMember)}
+                          onClick={(e) => handleMenuOpen(e, member as unknown as TeamMember)}
                           disabled={isUpdating}
                         >
                           <More size={18} style={{ transform: "rotate(90deg)" }} />

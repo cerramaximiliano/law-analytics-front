@@ -27,7 +27,7 @@ interface LeaveTeamDialogProps {
 
 export default function LeaveTeamDialog({ open, onClose, onSuccess }: LeaveTeamDialogProps) {
   const dispatch = useDispatch();
-  const { activeTeam, isOwner, switchToPersonalMode, refreshTeams } = useTeam();
+  const { activeTeam, isOwner, switchTeam, refreshTeams } = useTeam();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export default function LeaveTeamDialog({ open, onClose, onSuccess }: LeaveTeamD
         dispatch(resetFoldersState());
         dispatch(resetContactsState());
         dispatch(resetCalculatorsState());
-        switchToPersonalMode();
+        switchTeam("");
         await refreshTeams();
         dispatch(fetchUserStats() as any);
         handleClose();
@@ -82,7 +82,7 @@ export default function LeaveTeamDialog({ open, onClose, onSuccess }: LeaveTeamD
         dispatch(resetFoldersState());
         dispatch(resetContactsState());
         dispatch(resetCalculatorsState());
-        switchToPersonalMode();
+        switchTeam("");
         await refreshTeams();
         dispatch(fetchUserStats() as any);
         handleClose();

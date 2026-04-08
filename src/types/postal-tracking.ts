@@ -19,7 +19,7 @@ export interface PostalTrackingType {
   attachment?: string | null;
   notificationDate?: string | null;
   deadlineDays?: number | null;
-  processingStatus: "pending" | "active" | "completed" | "paused" | "error";
+  processingStatus: "pending" | "active" | "completed" | "paused" | "error" | "not_found";
   trackingStatus?: string | null;
   deliveryStatus?: string | null;
   isFinalStatus: boolean;
@@ -31,6 +31,7 @@ export interface PostalTrackingType {
   checkCount: number;
   manuallyCompleted?: boolean | null;
   autoCompletedReason?: string | null;
+  screenshotEnabled?: boolean | null;
   screenshotKey?: string | null;
   screenshotUrl?: string | null;
   screenshotUpdatedAt?: string | null;

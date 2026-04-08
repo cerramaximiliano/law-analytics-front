@@ -74,7 +74,7 @@ export interface PjnSyncHistoryEntry {
 
 export interface LinkCredentialsResponse {
   success: boolean;
-  message: string;
+  message?: string;
   data?: {
     id: string;
     status: string;

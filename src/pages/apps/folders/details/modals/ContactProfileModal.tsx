@@ -120,11 +120,11 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 					</Stack>
 					<Chip
 						label={contact?.role || ""}
-						color={getColorByRole(contact?.role || "")}
+						color={getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : (contact?.role || ""))}
 						size="small"
 						sx={{
 							fontWeight: 600,
-							...(getColorByRole(contact?.role || "") === "warning" && {
+							...(getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : (contact?.role || "")) === "warning" && {
 								color: "black",
 								"& .MuiChip-label": {
 									color: "black",
@@ -153,7 +153,7 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 							mb: 2,
 						}}
 					>
-						{!contact.avatar && getRoleIcon(contact.role)}
+						{!contact.avatar && getRoleIcon(Array.isArray(contact.role) ? contact.role[0] : contact.role)}
 					</Avatar>
 					<Typography variant="h4" fontWeight={600} gutterBottom>
 						{`${contact.name || ""} ${contact.lastName || ""}`}
