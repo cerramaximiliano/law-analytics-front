@@ -22,6 +22,7 @@ import {
 	Briefcase,
 	Category,
 	TableDocument,
+	DocumentText,
 	FolderCross,
 	ArrowLeft,
 	TickCircle,
@@ -51,6 +52,7 @@ import { dispatch } from "store";
 import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
+import FolderDocumentsTab from "./components/FolderDocumentsTab";
 
 interface StateType {
 	folder: {
@@ -280,6 +282,13 @@ const Details = () => {
 				icon: <Briefcase size="20" />,
 				shortLabel: "Gestión",
 				ariaLabel: "Gestión",
+			},
+			{
+				value: 3,
+				label: "Recursos",
+				icon: <DocumentText size="20" />,
+				shortLabel: "Recursos",
+				ariaLabel: "Recursos",
 			},
 		],
 		[],
@@ -807,6 +816,11 @@ const Details = () => {
 					{/* Tab 3: Gestión */}
 					<TabPanel value={tabValue} index={2}>
 						{folder && <GestionTabImproved folder={folder} isDetailedView={isDetailedView} />}
+					</TabPanel>
+
+					{/* Tab 4: Recursos */}
+					<TabPanel value={tabValue} index={3}>
+						{id && <FolderDocumentsTab folderId={id} folderName={folder?.folderName} />}
 					</TabPanel>
 				</Box>
 

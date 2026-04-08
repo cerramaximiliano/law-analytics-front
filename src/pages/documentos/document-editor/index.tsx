@@ -198,6 +198,7 @@ const DocumentEditorPage = () => {
 	const [searchParams] = useSearchParams();
 	const { id: documentId } = useParams<{ id: string }>();
 	const templateId = searchParams.get("templateId");
+	const folderIdParam = searchParams.get("folderId");
 	const isEdit = Boolean(documentId);
 
 	const userId = useSelector((state: any) => state.auth?.user?._id);
@@ -340,12 +341,14 @@ const DocumentEditorPage = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isEdit, documentId, editor, contentLoaded]);
 
-	// Pre-poblar selectedFolder cuando allFolders esté disponible
+	// Pre-poblar selectedFolder: desde documento existente o desde URL param (nuevo doc)
 	useEffect(() => {
-		if (!linkedFolderIdFromDoc || selectedFolder) return;
-		const found = allFolders.find((f) => f._id === linkedFolderIdFromDoc);
+		if (selectedFolder) return;
+		const targetId = linkedFolderIdFromDoc || (!isEdit ? folderIdParam : null);
+		if (!targetId) return;
+		const found = allFolders.find((f) => f._id === targetId);
 		if (found) setSelectedFolder(found);
-	}, [linkedFolderIdFromDoc, allFolders, selectedFolder]);
+	}, [linkedFolderIdFromDoc, folderIdParam, allFolders, selectedFolder, isEdit]);
 
 	// Pre-poblar selectedContact cuando allContacts esté disponible
 	useEffect(() => {
