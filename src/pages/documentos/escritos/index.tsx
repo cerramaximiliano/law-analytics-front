@@ -54,6 +54,8 @@ import { fetchPostalDocuments, deletePostalDocument, updatePostalDocument, getPo
 import { createPostalTracking, fetchAllTrackings, updatePostalTracking } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { openSnackbar } from "store/reducers/snackbar";
+import ApiService from "store/reducers/ApiService";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import { type RichTextDocument, type RichTextTemplate, type RichTextTemplateCategory } from "types/rich-text-document";
 import { type PostalDocumentType } from "types/postal-document";
 import { type PostalTrackingType } from "types/postal-tracking";
@@ -190,7 +192,6 @@ interface TemplatePickerDialogProps {
 const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
-
 	const { templates, isLoader } = useSelector((state: any) => state.richTextDocumentsReducer);
 
 	const [search, setSearch] = useState("");
@@ -902,6 +903,8 @@ const EscritosPage = () => {
 	const [vincularRow, setVincularRow] = useState<DocRow | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<{ kind: "postal" | "richtext"; id: string; title: string } | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
+	const [mainLimitErrorOpen, setMainLimitErrorOpen] = useState(false);
+	const [mainLimitErrorData, setMainLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(null);
 
 	// Load folders if needed
 	useEffect(() => {
@@ -949,6 +952,25 @@ const EscritosPage = () => {
 	const handleTypeChange = (t: TypeFilter) => {
 		setTypeFilter(t);
 		setPage(1);
+	};
+
+	const checkMainLimit = async (): Promise<boolean> => {
+		try {
+			const res = await ApiService.checkResourceLimit("postalDocuments");
+			if (res.success && res.data?.hasReachedLimit) {
+				setMainLimitErrorData({
+					resourceType: "Documentos",
+					plan: res.data.currentPlan || "free",
+					currentCount: `${res.data.currentCount}`,
+					limit: res.data.limit,
+				});
+				setMainLimitErrorOpen(true);
+				return false;
+			}
+		} catch {
+			// ante error de red, permitir continuar
+		}
+		return true;
 	};
 
 	const showSnackbar = (message: string, severity: "success" | "error") => {
@@ -1011,8 +1033,9 @@ const EscritosPage = () => {
 						</Button>
 						<Menu anchorEl={newDocMenuAnchor} open={Boolean(newDocMenuAnchor)} onClose={() => setNewDocMenuAnchor(null)}>
 							<MuiMenuItem
-								onClick={() => {
+								onClick={async () => {
 									setNewDocMenuAnchor(null);
+									if (!(await checkMainLimit())) return;
 									setOpenCreatePostal(true);
 								}}
 								sx={{ py: 1.5 }}
@@ -1028,8 +1051,9 @@ const EscritosPage = () => {
 							</MuiMenuItem>
 							<Divider />
 							<MuiMenuItem
-								onClick={() => {
+								onClick={async () => {
 									setNewDocMenuAnchor(null);
+									if (!(await checkMainLimit())) return;
 									setOpenTemplatePicker(true);
 								}}
 								sx={{ py: 1.5 }}
@@ -1249,6 +1273,13 @@ const EscritosPage = () => {
 
 			{/* ── Modals ── */}
 			<TemplatePickerDialog open={openTemplatePicker} onClose={() => setOpenTemplatePicker(false)} />
+
+			<LimitErrorModal
+				open={mainLimitErrorOpen}
+				onClose={() => setMainLimitErrorOpen(false)}
+				message="Has alcanzado el límite de documentos para tu plan actual."
+				limitInfo={mainLimitErrorData ?? undefined}
+			/>
 
 			<VincularDialog
 				open={!!vincularRow}

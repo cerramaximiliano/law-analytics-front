@@ -46,6 +46,8 @@ import { getContactsByUserId } from "store/reducers/contacts";
 import { getMovementsByFolderId } from "store/reducers/movements";
 import { Movement } from "types/movements";
 import { openSnackbar } from "store/reducers/snackbar";
+import ApiService from "store/reducers/ApiService";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import MainCard from "components/MainCard";
 import EditorToolbar from "pages/herramientas/editor-poc/EditorToolbar";
 import MergeFieldsPanel from "pages/herramientas/editor-poc/MergeFieldsPanel";
@@ -224,6 +226,8 @@ const DocumentEditorPage = () => {
 	const [resolving, setResolving] = useState(false);
 	const [resolvedCount, setResolvedCount] = useState(0);
 	const [saving, setSaving] = useState(false);
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorData, setLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(null);
 	const [templateName, setTemplateName] = useState("");
 	const [templateCategory, setTemplateCategory] = useState("");
 	const [contentLoaded, setContentLoaded] = useState(false);
@@ -583,6 +587,26 @@ const DocumentEditorPage = () => {
 
 	const handleSave = async () => {
 		if (!editor) return;
+
+		// For new documents only, check resource limit before saving
+		if (!isEdit) {
+			try {
+				const res = await ApiService.checkResourceLimit("postalDocuments");
+				if (res.success && res.data?.hasReachedLimit) {
+					setLimitErrorData({
+						resourceType: "Documentos",
+						plan: res.data.currentPlan || "free",
+						currentCount: `${res.data.currentCount}`,
+						limit: res.data.limit,
+					});
+					setLimitErrorOpen(true);
+					return;
+				}
+			} catch {
+				// ante error de red, permitir continuar
+			}
+		}
+
 		if (!title.trim()) {
 			dispatch(
 				openSnackbar({
@@ -769,7 +793,7 @@ const DocumentEditorPage = () => {
 	}, [allContacts, selectedFolder]);
 
 	return (
-		<Stack spacing={1} sx={{ height: "calc(100vh - 80px)" }}>
+		<Stack className="tiptap-root" spacing={1} sx={{ height: "calc(100vh - 80px)" }}>
 			{/* Header */}
 			<MainCard sx={{ "& .MuiCardContent-root": { py: "10px !important" } }}>
 				<Stack direction="row" alignItems="flex-start" gap={1.5}>
@@ -1192,6 +1216,13 @@ const DocumentEditorPage = () => {
 				{editor && <AiChatPanel editor={editor} embedded movements={folderMovements} movementsLimited={movementsLimited} caseContext={caseContext} initialMessage={aiDrawerInitialMessage} />}
 			</Box>
 		</Drawer>
+
+		<LimitErrorModal
+			open={limitErrorOpen}
+			onClose={() => setLimitErrorOpen(false)}
+			message="Has alcanzado el límite de documentos para tu plan actual."
+			limitInfo={limitErrorData ?? undefined}
+		/>
 		</Stack>
 	);
 };
