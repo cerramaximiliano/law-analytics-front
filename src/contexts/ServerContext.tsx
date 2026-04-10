@@ -447,6 +447,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 		};
 	}, [isLogoutProcess]);
 
+	// Escuchar errores de límite IA provenientes de ragAxios (instancia separada)
+	useEffect(() => {
+		const handler = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			setLimitErrorData({
+				message: detail.message || "Alcanzaste el límite mensual de consultas al Asistente IA.",
+				limitInfo: detail.limitInfo ?? null,
+				featureInfo: detail.featureInfo ?? null,
+				upgradeRequired: true,
+			});
+			setTimeout(() => setShowLimitErrorModal(true), 300);
+		};
+		window.addEventListener("ragPlanLimitReached", handler);
+		return () => window.removeEventListener("ragPlanLimitReached", handler);
+	}, []);
+
 	// Login normal
 	const login = async (email: string, password: string): Promise<boolean> => {
 		try {
