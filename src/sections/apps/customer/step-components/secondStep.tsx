@@ -89,6 +89,37 @@ const SecondStep = () => {
 							<InputField fullWidth sx={customInputStyles} id="phone" name="phone" placeholder="Ingrese un Teléfono" />
 						</Stack>
 					</Grid>
+
+					<Grid item xs={4}>
+						<Stack spacing={1}>
+							<InputLabel htmlFor="phoneCodArea">
+								Cód. área celular
+							</InputLabel>
+							<InputField
+								fullWidth
+								sx={customInputStyles}
+								id="phoneCodArea"
+								name="phoneCodArea"
+								placeholder="11, 351, 341..."
+								inputProps={{ maxLength: 4 }}
+							/>
+						</Stack>
+					</Grid>
+					<Grid item xs={8}>
+						<Stack spacing={1}>
+							<InputLabel htmlFor="phoneCelular">
+								Celular (sin 15)
+							</InputLabel>
+							<InputField
+								fullWidth
+								sx={customInputStyles}
+								id="phoneCelular"
+								name="phoneCelular"
+								placeholder="55554444"
+								inputProps={{ maxLength: 8 }}
+							/>
+						</Stack>
+					</Grid>
 				</Grid>
 			</Grid>
 		</Grid>

@@ -42,6 +42,8 @@ interface CustomerFormValues {
 	zipCode: string;
 	email: string;
 	phone: string;
+	phoneCodArea: string;
+	phoneCelular: string;
 	nationality: string;
 	document: string;
 	cuit: string;
@@ -67,6 +69,8 @@ const getInitialValues = (customer: FormikValues | null) => {
 		zipCode: "",
 		email: "",
 		phone: "",
+		phoneCodArea: "",
+		phoneCelular: "",
 		nationality: "",
 		document: "",
 		cuit: "",
@@ -202,6 +206,12 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 			city: Yup.string().required("La ciudad es requerida"),
 			zipCode: Yup.string(),
 			email: Yup.string().email("Correo electrónico inválido"),
+			phoneCodArea: Yup.string()
+				.matches(/^\d{2,4}$/, "Solo dígitos, sin 0 inicial (ej: 11, 351)")
+				.optional(),
+			phoneCelular: Yup.string()
+				.matches(/^\d{6,8}$/, "Entre 6 y 8 dígitos, sin 15 (ej: 55554444)")
+				.optional(),
 			phone: Yup.string().test("phone-format", "Complete el código de área sin el 0 y móvil sin el 15", function (value) {
 				if (!value) return true;
 				const cleanNumber = cleanArgentinePhoneNumber(value);
@@ -270,10 +280,10 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 				const checkLimit = async () => {
 					try {
 						// Pasar headers del equipo si estamos en modo equipo
-						const response = await ApiService.checkResourceLimit("contacts", { headers: getRequestHeaders() });
+						const response = await ApiService.checkResourceLimit("contacts");
 						if (response.success && response.data) {
 							if (response.data.hasReachedLimit) {
-								// Si ha alcanzado el límite, mostrar el modal de error y cerrar este modal
+								// Si ha alcanzado el límite, mostrar el modal de error sin desmontar el componente
 								setLimitErrorInfo({
 									resourceType: "Contactos",
 									plan: response.data.currentPlan || "free",
@@ -281,30 +291,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 									limit: response.data.limit,
 								});
 								setLimitErrorMessage("Has alcanzado el límite de contactos disponibles en tu plan actual.");
-
-								// Primero dejar de mostrar el indicador de carga
 								setIsCheckingLimit(false);
-
-								// Lanzar un pequeño delay para evitar problemas de renderizado
-								setTimeout(() => {
-									// Cerrar el modal actual
-									onCancel();
-
-									// Mostrar el modal de límite después de otro pequeño delay
-									setTimeout(() => {
-										setLimitErrorOpen(true);
-
-										// Disparar evento para coordinación con otros componentes
-										window.dispatchEvent(
-											new CustomEvent("planRestrictionError", {
-												detail: {
-													resourceType: "contacts",
-													openDialogsCount: 1,
-												},
-											}),
-										);
-									}, 100);
-								}, 100);
+								setLimitErrorOpen(true);
 							} else {
 								// Si no ha alcanzado el límite, mostrar el modal de nuevo contacto
 								setIsCheckingLimit(false);
@@ -365,6 +353,14 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 			// Limpiar el número de teléfono si existe
 			const cleanedPhone = values.phone ? cleanArgentinePhoneNumber(values.phone) : "";
 
+			// Limpiar campos celular SECLO: código de área sin 0 inicial, número sin 15
+			const cleanedCodArea = values.phoneCodArea
+				? values.phoneCodArea.replace(/\D/g, "").replace(/^0+/, "")
+				: "";
+			const cleanedCelular = values.phoneCelular
+				? values.phoneCelular.replace(/\D/g, "").replace(/^15/, "")
+				: "";
+
 			// Preparar los datos asegurando que los campos requeridos estén presentes
 			// Normalizar role: si es array, mantenerlo; si es string, hacer trim
 			const normalizedRole = Array.isArray(values.role)
@@ -377,6 +373,8 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 		const cleanedValues = {
 				...values,
 				phone: cleanedPhone,
+				phoneCodArea: cleanedCodArea,
+				phoneCelular: cleanedCelular,
 				// Para jurídicas: usar razón social como nombre principal (backward compat)
 				name: isJuridica ? razonSocial : (values.name?.trim() || ""),
 				lastName: isJuridica ? "-" : (values.lastName?.trim() || ""),
@@ -420,7 +418,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 					newContactData.folderIds = [folderId];
 				}
 
-				results = await dispatch(addContact(newContactData, { headers: getRequestHeaders() }));
+				results = await dispatch(addContact(newContactData));
 				message = "agregar";
 			} else if (mode === "edit") {
 				const id = values._id;
@@ -487,6 +485,11 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 	// Manejador para cerrar el modal de límite de error
 	const handleCloseLimitErrorModal = () => {
 		setLimitErrorOpen(false);
+		// Si el modal se abrió porque se alcanzó el límite antes de mostrar el formulario,
+		// también cerrar el diálogo padre
+		if (!showAddCustomerModal) {
+			onCancel();
+		}
 	};
 
 	// Este componente tiene dos comportamientos:
@@ -559,7 +562,7 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 						enableReinitialize
 						validationSchema={currentValidationSchema}
 						onSubmit={_handleSubmit}
-						innerRef={formikRef}
+						innerRef={formikRef as any}
 					>
 						{({ isSubmitting, values }) => (
 							<Form autoComplete="off" noValidate style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
