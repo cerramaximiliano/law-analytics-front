@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mantenimiento — Law Analytics</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAK+klEQVR42sVaaaxdVRVea+1zb9+d3sRok4q0TGUogWJrqxULhQq0qARLsYZBjQJhLCGKBI2YAGWoCZgYjQhYJICmQAwkGAZFKGMttLUtLdNDSmRo36Nvvvfstfxx7j33nL33Gd5T4bybvHvPvXuftdZe61vfWnujiIB1iQCzRiQihE/7EgCttSJCdAiDtgLMTETB+53v/XvLa2+81ffewOCgsDCLgCCAAAQDBcCcFRGk+T/6Nba+DW9L9H7rS0RAJEIslzumTd1v5qHTZxx4QPCtZlYtwcLLMz5rzUoRCP/xocfuuu/PL2zYumv3ADQ0IIK05BIxP0alD+2GrdUEBITmKGgJHtPCdSGCos7O6tFHzFhx5qnnnrW0o1Rqipe0AlprpdT6VzavvPbWp599BcjrKE/xCorQ6UiOx2PLoGLZF2P3AQElSwcW0NofHW1AvT7ryBm3/Ozyk074krEObQUC6dfc9/AFV60aGW90dlZFhJmdQTLRK3TfYDZEzDktAhARKhoaGgHt3/yTi1defH4gakyB4Nad96z9zqXXlWq1gqd8rTNlyiNEIHood/A+ejPnVIqIBYZ399943aU/vOx7oQ4YmJmInn3+5YVfv6BQKhMCs2QKmmJUxGzsMn5saJhkCyIa7B9Ye/dN31h6cuBLyMwAMDY2NnfxOVu2/6tS6Yja3pA++JhHvv8xkrZkIKJ63d+np/KPJ/6wzz57iwBpzYh4570Pbtq4o1or+1pH5QvEDS/Luuh6TSw6MkdFLcjMpY7iznfev+WXdyOiCCMz+74/Z9GKTdv7yuUOrdk2v2FyaucURKT4iguCiIhmNuQgIkKECOoigDSll+AVfbpTgeCRvubuWsfmpx/Ye69eDxE3bNyyadubpUrFGG/7oogg0eDQCIyPg1IQVSxEd63B8yq1GkDMFoN7hqDhQxvFsW13AdAalKp0VcF6qOHGIjKl6L2/84PHnnh2xbKlHgA899KreqxOtRozpy+lp9Tw4PCF53zt9K9+ZdfAxwTY+ms+gll6uju3bNvx41W/LRaLIBzYfmRw5KoLz164YO6u/gGitkOCgIAwS29357Ydb/7o+l8XioVAB+fit5Ui9eQzLzUV2LK9D0iFNrQDt30fRBUKW7e/feKC4RVnnubU84G1j/5t3QZFFDiLiIiI8mjbG32nLJr/7WVLnKP+8uQz617cSC2iYYhuL4IUClt3vC3CKCJnnHP5g4/8vbO7FnXcJExExNHRcf3Bh2vuXb38zCXa18pTAMCaSdG659cfv+hcqFaqtXL4RBEhpYaGRmFg99133fytZUuNUZs2bzv2+LNBedWumogY/CoAkphNCcfHGzOm7f/y4/cQAIzXG4DNJB8YLCkSRISFO2sV1d219fU+TymllKeUpxQp8pR6/e2dVC719HbH+REKc29Xjaqdz63/p6eU8pqjlCJPqTf6dmKh0LNXT9NtrKeb0SiIiPV6oz5eJwDQHNAsEz0TYA+ZWbMIW6wXoF5vMLMTTDRrhuYwNIeKCGhOS5cGzYOA8iKQQbaiYN8ONWM6hJR8GYUkU1RJzAV5eJQxVXCbjMlDh8siJ4JOcTAKkLEkJWGtlIBxtn5u/4lL7MV/7/Z+06Mk2W4SuoREq4Oo4ZJhGtKzUHxBxCxoMCuft3XAZH/ATI9JKC1QnO5qU9fWsrQSvIH0YBZ47mCAtFKqPVMM+/KMSyDtNqiEHz1bOTuJJNgMk6NXEsdNvDqyiwezJsZUsp4EqTgJQJkgWU3omMTkiaKQg3sk5JFkNLECsb28zV5FFvBCVDZKcgGJKYBmEBuub06BE1iBdoABpqBoXvyIlhGILRRqYZ/NmSZafGE8nceWEdzAmnxx2LJxEvvAOh7EZ7UrVHSBeXIGFhvWwuonbSjmimAzFUgzBqweTrqhMBecGKUpgKQGMaZP5TSKgFAoSzYHzAWFDoM1C+tkEdvtvBwhYvyGwOWYoZbuGVOCOL6YYQ4SEUlhIM21SQy5FG5GKQQrPYhTmaXYdABz5wCz+Gp1RmwBENBr81CQTCLVHirpejnCSbKkBlcVZrTPbMRrZwp0PlUkGy9TbdlO6hPhDrYPRxchDFEB8VKsnug/OAFR8rieAACKc16Dk9pzUyi+O2OnwZFkmX7ybW0jCabwOS/0v6AKSUocji6NJK6OHXMZKNTaDgmfEnWeJPMFt1swiuigX0kVWTKdNu6Fs0VCOSW3TIy5mDVxaDxnZWPdlDxlYSyDpiQyl/8lVTDGszyb3+Xs9E/OwZ1qSOqGiNORxK4HcuFPNhRNVq/4ficmkIO4t1gKOL0/OfNPOj1MDI5CJIzmAYmjUK7qM4+lM5o/afWYuV1pMAijTA+pORnQYUePYxEwURRpNn4wJ2WYcEPOWdRLjmwSS+OSkgXS94vSxc+70WSx0ahrR6rhFEjNQnTIpP52EphM5MfpNCb1lZxFPUjeFqddcyYDUa6iLKoyOSUREUcSjS2iOxNL2CO2O7VNzob/bbfIdqGEHnwOJIaMJkpOWTE3pMbXS0IXgqSSMqOsSazH0FUP4GQDOLugmUDUAwARKkXGsZdAgnKphERKoeG4IkKEitDzlK27UgqR7LNAeYCVAGBKsQASc/12yeOqcgb2jOr+gcMOPkBHLmHWWs86/CAR7v+o3xpFg8NjetfAUTOna6213xzFLFrrQ6Z/VkT37xrIrI8jnU0pFFTB8wgAenu6gBkQMpsCiNho+AuOm7n6tmtXLDtdKTVlSlEppZQqFApKqaOPmvnQmltPPWk+EUpEZ+37xx150A2rr/7B+cvjozyl1OEzD/nTHTcsXjiHMnNo69wUM9dqlXKl5AHAwdOnAXOImM6uTojifqNx4oLPzz7myIcffSrSRkcRAQRh6e7qPO+sJS9s2DoyVkdqxlJjvP6F2UfMm3vMQ48+BSCtE1ztR/T29J63fMmLG7eN1RsKKWWrGBERiev6c9M+o5SHIvLEX9ed9M2La11dunVOJe2ECtLw8Ag0fGgdOTJBXGsgVamWAWOTDI+MSb0OynMDgtZAVKpVKKG1E+1TeJ76+MP+W6+/fOVF53kAMPe4WQceMPXd9weKRSVsnkyyNsikVq1iTDiwubp97KJa6cBqGSDYwWcEkthhCQHXERFnR9HX3FEtLV44HwDI93W1Wl12+qL68LAXN08SmAY7wWH4+r6OX7F94nAxmSUY5WutNZuDtNbMecDQUzQyNHLigtlHzDwkOKpFInLJ98/eb/+9x+s+kbKJuNWj5Qy+4DpqYY0N3gcvcTbQnRgoQB7RNVd8NwhoIkJmmbr/fjdec+Hox3uU8qJ8LrptnFTlGLBrQ7Akty7tGE0fUiwU9nzUf+VFy+fNOUYzK0WxQ3+XXX3Dbb+6v2ffvRraF5b8HeP/6xWuYbFY7P9g92mL5z+45hdEqnlsJ2owRLxg5XW/uXNttbfHU9TQPgh8umo095GUEsA9H/WfcvK8++9YVa3Vwk4c2j2wm2//3c9X3zU4NFquVgoeBSUMs6RQfJEsNpzKwZPYEBIhgu/z8NCoV8BLzj9j1U+vKBSLsdRk9bKBCDdvee2m23//yOPrdu/qB0Hw1CdveRABrUG42l074Yuzr7xoxZfnz7GLXscWRng+ue+dd59et/7lV7e+9c57wyMjANg6YiOu09utG9g6xCcI0TPUJpFsjm7+rtnub+EHYWlKcdrUfY+dddiCecceevAMANDMZB+gcTo3MwtAJj38xK7g1LxTnv8AFS8edp3uHUoAAAAASUVORK5CYII=" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 52px 48px 44px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo img {
+      height: 36px;
+      width: auto;
+      filter: brightness(0) invert(1);
+    }
+
+    .logo-text {
+      font-size: 17px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: -0.3px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(234, 179, 8, 0.1);
+      border: 1px solid rgba(234, 179, 8, 0.28);
+      color: #fbbf24;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fbbf24;
+      flex-shrink: 0;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.35; transform: scale(0.8); }
+    }
+
+    .icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      margin: 0 auto 28px;
+    }
+
+    .icon-wrap svg {
+      width: 34px;
+      height: 34px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.25;
+      margin-bottom: 14px;
+      letter-spacing: -0.4px;
+    }
+
+    p {
+      font-size: 15px;
+      color: #94a3b8;
+      line-height: 1.7;
+      margin-bottom: 36px;
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .progress-bar {
+      height: 3px;
+      background: #1e293b;
+      border-radius: 100px;
+      overflow: hidden;
+      margin-bottom: 36px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, #6366f1, #818cf8);
+      border-radius: 100px;
+      animation: progress 2.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes progress {
+      0%   { width: 20%; margin-left: 0; }
+      100% { width: 40%; margin-left: 60%; }
+    }
+
+    .divider {
+      height: 1px;
+      background: #1e293b;
+      margin-bottom: 24px;
+    }
+
+    .footer {
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .footer a {
+      color: #6366f1;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 40px 28px 36px; }
+      h1 { font-size: 22px; }
+      .logo-text { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-row">
+      <div class="logo">
+        <img src="data:image/png;base64,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" alt="Law Analytics" />
+        <span class="logo-text">Law Analytics</span>
+      </div>
+      <div class="badge">
+        <span class="dot"></span>
+        Mantenimiento
+      </div>
+    </div>
+
+    <div class="icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z" fill="#818cf8"/>
+      </svg>
+    </div>
+
+    <h1>Actualizando la plataforma</h1>
+    <p>Estamos desplegando una nueva versión de Law Analytics. El servicio estará disponible nuevamente en unos minutos.</p>
+
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="footer">
+      ¿Necesitás ayuda? Escribinos a <a href="mailto:soporte@lawanalytics.app">soporte@lawanalytics.app</a>
+    </div>
+  </div>
+</body>
+</html>
