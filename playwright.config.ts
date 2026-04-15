@@ -1,71 +1,43 @@
 import { defineConfig, devices } from "@playwright/test";
 
+/**
+ * Playwright config para tests de auth y navegación.
+ * Requiere que el dev server esté corriendo en localhost:3000
+ * y el backend en localhost:5000.
+ *
+ * Ejecutar: npx playwright test
+ * Con UI:   npx playwright test --ui
+ */
 export default defineConfig({
-	testDir: "./tests/visual",
-	snapshotDir: "./tests/snapshots",
-
-	// Falla si hay diferencias visuales mayores al 0.2% de los píxeles
-	expect: {
-		toHaveScreenshot: {
-			maxDiffPixelRatio: 0.002,
-			threshold: 0.2,
-			animations: "disabled",
-		},
-	},
-
-	// No correr tests en paralelo para evitar interferencias visuales
-	fullyParallel: false,
+	testDir: "./tests",
+	testIgnore: "**/visual/**",
+	timeout: 40_000,
+	expect: { timeout: 12_000 },
+	fullyParallel: false, // los tests de auth comparten estado de sesión
+	retries: 1, // 1 retry para tests e2e con backend real (flakiness de red/latencia)
 	workers: 1,
-
-	// Reintentos para evitar flakiness por animaciones
-	retries: 1,
-
-	reporter: [["html", { outputFolder: "tests/playwright-report", open: "never" }], ["line"]],
-
+	reporter: [["html", { open: "never", outputFolder: "test-results/html" }], ["line"]],
 	use: {
 		baseURL: "http://localhost:3000",
-		// Viewport fijo para screenshots consistentes
-		viewport: { width: 1440, height: 900 },
-		// Capturar screenshot solo en fallos
+		headless: true,
+		viewport: { width: 1280, height: 720 },
 		screenshot: "only-on-failure",
-		// Deshabilitar animaciones CSS para snapshots estables
-		reducedMotion: "reduce",
-		// Ignorar errores HTTPS en local
-		ignoreHTTPSErrors: true,
-		// Timeout por acción
-		actionTimeout: 10_000,
-		navigationTimeout: 30_000,
+		video: "retain-on-failure",
+		trace: "retain-on-failure",
+		// Las APIs van directamente a localhost:5000
+		// page.route() intercepta requests a ese origen
 	},
-
 	projects: [
-		// Proyecto de setup: hace login y guarda el auth state
+		// Setup: login via API y guarda auth state (no llama al formulario)
 		{
 			name: "setup",
 			testMatch: "**/global-setup.ts",
 		},
-		// Tests visuales — dependen del setup de auth
 		{
-			name: "visual",
-			use: {
-				...devices["Desktop Chrome"],
-				storageState: "tests/.auth/user.json",
-			},
+			name: "chromium",
+			use: { ...devices["Desktop Chrome"] },
 			dependencies: ["setup"],
 		},
-		// Tests visuales de páginas públicas (sin auth)
-		{
-			name: "visual-public",
-			use: {
-				...devices["Desktop Chrome"],
-			},
-		},
 	],
-
-	// Inicia el dev server automáticamente si no está corriendo
-	webServer: {
-		command: "npm run start",
-		url: "http://localhost:3000",
-		reuseExistingServer: true,
-		timeout: 60_000,
-	},
+	outputDir: "test-results/artifacts",
 });

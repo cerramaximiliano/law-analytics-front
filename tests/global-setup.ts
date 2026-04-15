@@ -2,11 +2,11 @@ import { test as setup, expect } from "@playwright/test";
 import path from "path";
 import fs from "fs";
 
-const authFile = path.join(__dirname, "../.auth/user.json");
+const authFile = path.join(__dirname, ".auth/user.json");
 
 // Leer .env manualmente ya que las variables VITE_* no se inyectan en el contexto Node de Playwright
 function readEnvFile(): Record<string, string> {
-	const envPath = path.join(__dirname, "../../.env");
+	const envPath = path.join(__dirname, "../.env");
 	if (!fs.existsSync(envPath)) return {};
 	return Object.fromEntries(
 		fs
@@ -35,6 +35,7 @@ const PASSWORD = env.VITE_DEV_PASSWORD || "";
  */
 setup("autenticar usuario", async ({ page }) => {
 	// 1. Navegar a cualquier ruta para inicializar el contexto del browser
+	//    (necesario para que las cookies del dominio correcto se apliquen)
 	await page.goto("/login");
 
 	// 2. Llamar login via page.request — comparte el contexto de cookies con la página
@@ -59,11 +60,13 @@ setup("autenticar usuario", async ({ page }) => {
 	await page.goto("/dashboard/default");
 
 	// 5. Esperar un selector que solo exista cuando el usuario ESTÁ autenticado
+	//    (no la URL, que React Router setea antes del check async de auth)
 	await expect(page.getByRole("navigation")).toBeVisible({ timeout: 30_000 });
 	await expect(page).toHaveURL(/\/dashboard\//, { timeout: 5_000 });
 
-	// 6. Verificar token o cookie
+	// 6. Verificar que el token sigue en localStorage
 	const storedToken = await page.evaluate(() => localStorage.getItem("token"));
+	// El token puede haber sido migrado a cookies por secureStorage, permitir ambos
 	const cookieToken = await page.evaluate(() => document.cookie.includes("auth_token"));
 	expect(storedToken || cookieToken, "No hay token ni en localStorage ni en cookies").toBeTruthy();
 

@@ -17,8 +17,8 @@ export async function fillLoginForm(page: Page): Promise<void> {
 	await page.waitForSelector("#email-login", { state: "visible", timeout: 15_000 });
 	await page.fill("#email-login", CREDENTIALS.email);
 	await page.fill("#password-login", CREDENTIALS.password);
-	// El botón de la página de login dice "Login"
-	await page.getByRole("button", { name: "Login", exact: true }).click();
+	// El botón de la página de login dice "Iniciar sesión"
+	await page.getByRole("button", { name: "Iniciar sesión", exact: true }).click();
 	await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 20_000 });
 }
 
@@ -53,10 +53,14 @@ export async function loginViaModal(page: Page): Promise<void> {
  * Retorna una función para quitar el intercept.
  */
 export async function interceptApiWith401(page: Page): Promise<() => Promise<void>> {
+	// Excluimos login/google/logout para que el re-login en el modal funcione.
+	// refresh-token NO está excluido: debe devolver 401 para que el ServerContext
+	// falle el refresh y muestre el UnauthorizedModal (dev branch tiene auto-refresh).
+	// /api/auth/me tampoco se excluye aquí (se mantiene fuera del intercept de forma
+	// implícita porque page.route solo intercepta llamadas del browser a ${API_BASE}).
 	const AUTH_PATHS = [
 		"/api/auth/login",
 		"/api/auth/google",
-		"/api/auth/refresh-token",
 		"/api/auth/logout",
 		"/api/auth/me",
 	];
