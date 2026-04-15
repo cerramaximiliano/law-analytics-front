@@ -21,6 +21,7 @@ import secureStorage from "services/secureStorage";
 import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
 import { extractErrorMessage } from "utils/errorMessages";
+import { APP_DEFAULT_PATH } from "config";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = import.meta.env.VITE_HIDE_BANKING_DATA === "true";
@@ -125,9 +126,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 	// Redirección después del logout
 	const handleLogoutAndRedirect = async (): Promise<void> => {
+		// Capturar el pathname ANTES de que logout() navegue a /login
+		const returnTo = location.pathname !== "/login" ? location.pathname : APP_DEFAULT_PATH;
 		await logout();
 		navigate("/login", {
-			state: { from: location.pathname },
+			state: { from: returnTo },
 			replace: true,
 		});
 	};
