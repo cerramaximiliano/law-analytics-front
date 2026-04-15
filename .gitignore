@@ -123,3 +123,7 @@ bundle-stats.html
 
 # TipTap Pro credentials
 .npmrc
+
+# Playwright test results (artefactos generados)
+test-results/
+playwright-report/
