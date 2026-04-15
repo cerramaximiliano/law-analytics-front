@@ -21,6 +21,7 @@ const RESET_CONTACTS_STATE = "RESET_CONTACTS_STATE";
 const initialContactState: ContactState = {
 	contacts: [],
 	archivedContacts: [],
+	archivedPagination: { total: 0, page: 1, limit: 10, totalPages: 0 },
 	selectedContacts: [],
 	error: null,
 	isLoader: false,
@@ -309,8 +310,7 @@ export const getContactsByUserId =
 			}
 
 			dispatch({ type: SET_CONTACT_LOADING });
-			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
+			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
 				params: { fields },
 			});
@@ -338,8 +338,7 @@ export const getContactsByGroupId =
 		try {
 			dispatch({ type: SET_CONTACT_LOADING });
 
-			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
+			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/group/${groupId}`, {
 				params: {
@@ -583,8 +582,7 @@ export const archiveContacts = (userId: string, contactIds: string[]) => async (
 export const getArchivedContactsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_CONTACT_LOADING });
-		// Campos optimizados para listas y vistas resumidas
-		const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds";
+		const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
 			params: {
 				archived: true,

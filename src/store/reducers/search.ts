@@ -57,7 +57,7 @@ const searchInContacts = (contacts: Contact[], query: string): SearchResult[] =>
 			id: contact._id,
 			type: "contact" as const,
 			title: `${contact.name} ${contact.lastName || ""}`.trim(),
-			subtitle: contact.role,
+			subtitle: Array.isArray(contact.role) ? contact.role[0] : contact.role,
 			description: contact.email || contact.phone || "",
 			metadata: {
 				role: contact.role,
