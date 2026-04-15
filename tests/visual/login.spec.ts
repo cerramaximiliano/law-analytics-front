@@ -26,7 +26,7 @@ test.describe("Login — visual", () => {
 	});
 
 	test("botón de login", async ({ page }) => {
-		await expect(page.locator('button:has-text("Login")')).toHaveScreenshot("login-btn.png");
+		await expect(page.getByRole("button", { name: "Iniciar sesión", exact: true })).toHaveScreenshot("login-btn.png");
 	});
 
 	test("formulario completo", async ({ page }) => {
