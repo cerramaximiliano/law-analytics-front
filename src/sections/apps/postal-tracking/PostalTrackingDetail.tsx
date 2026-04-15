@@ -285,7 +285,7 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
                         Adjuntar imagen o PDF
                       </Button>
                     </Stack>
-                  ) : tracking.attachmentKey?.toLowerCase().endsWith(".pdf") ? (
+                  ) : tracking!.attachmentKey?.toLowerCase().endsWith(".pdf") ? (
                     <Stack spacing={1.5} alignItems="flex-start">
                       <Typography variant="body2" color="textSecondary">
                         El adjunto es un archivo PDF.
@@ -293,7 +293,7 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
                       <Button
                         variant="outlined"
                         size="small"
-                        href={tracking.attachmentUrl!}
+                        href={tracking!.attachmentUrl!}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -303,7 +303,7 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
                   ) : (
                     <Box
                       component="img"
-                      src={tracking.attachmentUrl!}
+                      src={tracking!.attachmentUrl!}
                       alt="Adjunto del envío"
                       sx={{ width: "100%", height: "auto", display: "block", borderRadius: 1, border: `1px solid ${theme.palette.divider}` }}
                     />
@@ -312,7 +312,7 @@ const PostalTrackingDetail = ({ open, tracking, loading, handleClose }: Props) =
                 {hasAttachment && (
                   <Box sx={{ flexShrink: 0, px: 2, py: 1.25, borderTop: `1px solid ${theme.palette.divider}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Typography variant="caption" color="textSecondary">
-                      Cargado el {formatDate(tracking.attachmentUpdatedAt)}. Expira en 15 min.
+                      Cargado el {formatDate(tracking!.attachmentUpdatedAt)}. Expira en 15 min.
                     </Typography>
                     <Stack direction="row" spacing={0.5}>
                       <Tooltip title="Reemplazar adjunto">

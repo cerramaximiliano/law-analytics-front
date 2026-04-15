@@ -428,7 +428,7 @@ const DocumentEditorPage = () => {
 		}
 
 		const json = editor.getJSON() as Record<string, unknown>;
-		const resolved = resolveMergeFieldsInJson(json, result.resolvedFields);
+		const resolved = resolveMergeFieldsInJson(json, result.resolvedFields) as Record<string, unknown>;
 		editor.commands.setContent(resolved as Parameters<typeof editor.commands.setContent>[0]);
 
 		// Contar cuántos se resolvieron

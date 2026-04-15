@@ -108,6 +108,8 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 	}, [open, defaultSubject, userName, userEmail]);
 
 	const [errors, setErrors] = useState({
+		name: false,
+		email: false,
 		subject: false,
 		message: false,
 	});
@@ -166,6 +168,8 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 
 	const validateForm = (): boolean => {
 		const newErrors = {
+			name: false,
+			email: false,
 			subject: !formData.subject.trim(),
 			message: !formData.message.trim(),
 		};

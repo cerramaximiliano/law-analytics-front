@@ -287,7 +287,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 						const response = await ApiService.checkResourceLimit("folders");
 						if (response.success && response.data) {
 							if (response.data.hasReachedLimit) {
-								// Si ha alcanzado el límite, mostrar el modal de error y cerrar este modal
+								// Si ha alcanzado el límite, mostrar el modal de error sin desmontar el componente
 								setLimitErrorInfo({
 									resourceType: "Carpetas",
 									plan: response.data.currentPlan || "free",
@@ -295,30 +295,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 									limit: response.data.limit,
 								});
 								setLimitErrorMessage("Has alcanzado el límite de carpetas disponibles en tu plan actual.");
-
-								// Primero dejar de mostrar el indicador de carga
 								setIsCheckingLimit(false);
-
-								// Lanzar un pequeño delay para evitar problemas de renderizado
-								setTimeout(() => {
-									// Cerrar el modal actual
-									onCancel();
-
-									// Mostrar el modal de límite después de otro pequeño delay
-									setTimeout(() => {
-										setLimitErrorOpen(true);
-
-										// Disparar evento para coordinación con otros componentes
-										window.dispatchEvent(
-											new CustomEvent("planRestrictionError", {
-												detail: {
-													resourceType: "folders",
-													openDialogsCount: 1,
-												},
-											}),
-										);
-									}, 100);
-								}, 100);
+								setLimitErrorOpen(true);
 							} else {
 								// Si no ha alcanzado el límite, mostrar el modal de nueva carpeta
 								setIsCheckingLimit(false);
@@ -469,6 +447,11 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode }: PropsAddFolder
 	// Manejador para cerrar el modal de límite de error
 	const handleCloseLimitErrorModal = () => {
 		setLimitErrorOpen(false);
+		// Si el modal se abrió porque se alcanzó el límite antes de mostrar el formulario,
+		// también cerrar el diálogo padre
+		if (!showAddFolderModal) {
+			onCancel();
+		}
 	};
 
 	// Este componente tiene dos comportamientos:

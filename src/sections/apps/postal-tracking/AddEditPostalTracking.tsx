@@ -98,7 +98,7 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
 
         if (result.success) {
           // Subir adjunto si hay archivo seleccionado
-          const uploadId = isCreating ? result.id : tracking?._id;
+          const uploadId = isCreating ? (result as { success: boolean; id: string }).id : tracking?._id;
           if (attachmentFile && uploadId) {
             const uploadResult = await dispatch(uploadAttachment(uploadId, attachmentFile));
             if (!uploadResult.success) {

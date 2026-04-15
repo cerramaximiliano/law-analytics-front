@@ -19,7 +19,8 @@ export interface PostalTrackingType {
   attachment?: string | null;
   notificationDate?: string | null;
   deadlineDays?: number | null;
-  processingStatus: "pending" | "active" | "completed" | "paused" | "error";
+  processingStatus: "pending" | "active" | "completed" | "paused" | "error" | "not_found";
+  screenshotEnabled?: boolean;
   trackingStatus?: string | null;
   deliveryStatus?: string | null;
   isFinalStatus: boolean;
