@@ -295,6 +295,7 @@ test.describe("GRUPO 4 — Smoke: navegación completa sin errores", () => {
 	});
 
 	test("navegación cruzada entre secciones sin perder sesión", async ({ page }) => {
+		test.setTimeout(90_000); // 13 rutas × ~5s cada una + login
 		await loginViaForm(page);
 
 		const crossRoutes = [
@@ -314,7 +315,7 @@ test.describe("GRUPO 4 — Smoke: navegación completa sin errores", () => {
 		];
 
 		for (const route of crossRoutes) {
-			await page.goto(route);
+			await page.goto(route, { waitUntil: "commit" });
 			await expect(page).not.toHaveURL(/\/login/);
 			await expect(page).toHaveURL(pathRegex(route));
 		}
