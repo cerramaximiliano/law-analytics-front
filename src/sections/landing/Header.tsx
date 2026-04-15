@@ -630,6 +630,91 @@ const HeaderPage = () => {
 												</Box>
 											</Tooltip>
 										</Grid>
+
+										{/* SECLO - Próximamente */}
+										<Grid item xs={4} sm="auto">
+											<Tooltip title="SECLO - Próximamente" arrow placement="top" disableHoverListener={!isMobile}>
+												<Box
+													sx={{
+														display: "flex",
+														flexDirection: "column",
+														alignItems: "center",
+														gap: { xs: 0.5, sm: 1 },
+														width: { xs: "auto", sm: 130 },
+														opacity: 0.6,
+													}}
+												>
+													<Box
+														sx={{
+															width: { xs: 48, sm: 60 },
+															height: { xs: 48, sm: 60 },
+															borderRadius: 2,
+															bgcolor: "#ffffff",
+															border: "1px solid rgba(0, 0, 0, 0.1)",
+															boxShadow: "0 4px 14px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06)",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+															p: 0.75,
+															filter: "grayscale(20%)",
+															transition: "transform 0.2s ease, box-shadow 0.2s ease",
+														}}
+													>
+														<Box
+															component="img"
+															src="https://res.cloudinary.com/dqyoeolib/image/upload/q_auto/f_auto/v1776203385/seclo-removebg-preview_rxcvzm.png"
+															alt="SECLO"
+															sx={{
+																width: "100%",
+																height: "100%",
+																objectFit: "contain",
+															}}
+														/>
+													</Box>
+													{/* Texto corto en móvil */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "block", sm: "none" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.75rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														SECLO
+													</Typography>
+													{/* Texto completo en desktop */}
+													<Typography
+														variant="caption"
+														sx={{
+															display: { xs: "none", sm: "block" },
+															color: theme.palette.text.primary,
+															fontWeight: 600,
+															fontSize: "0.8rem",
+															textAlign: "center",
+															lineHeight: 1.3,
+															textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+														}}
+													>
+														SECLO
+													</Typography>
+													<Chip
+														label="Próximamente"
+														size="small"
+														sx={{
+															fontSize: { xs: "0.55rem", sm: "0.65rem" },
+															height: { xs: 16, sm: 20 },
+															bgcolor: theme.palette.primary.lighter,
+															color: theme.palette.primary.dark,
+															fontWeight: 600,
+														}}
+													/>
+												</Box>
+											</Tooltip>
+										</Grid>
 									</Grid>
 									<Typography
 										variant="body2"
