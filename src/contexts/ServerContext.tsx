@@ -22,6 +22,7 @@ import { requestQueueService } from "services/requestQueueService";
 import authTokenService from "services/authTokenService";
 import { extractErrorMessage } from "utils/errorMessages";
 import webSocketService from "store/reducers/WebSocketService";
+import { APP_DEFAULT_PATH } from "config";
 
 // Global setting for hiding international banking data
 export const HIDE_INTERNATIONAL_BANKING_DATA = import.meta.env.VITE_HIDE_BANKING_DATA === "true";
@@ -126,9 +127,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 	// Redirección después del logout
 	const handleLogoutAndRedirect = async (): Promise<void> => {
+		// Capturar el pathname ANTES de que logout() navegue a /login
+		const returnTo = location.pathname !== "/login" ? location.pathname : APP_DEFAULT_PATH;
 		await logout();
 		navigate("/login", {
-			state: { from: location.pathname },
+			state: { from: returnTo },
 			replace: true,
 		});
 	};
@@ -439,6 +442,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 			});
 		};
 	}, [isLogoutProcess]);
+
+	// Escuchar errores de límite IA provenientes de ragAxios (instancia separada)
+	useEffect(() => {
+		const handler = (e: Event) => {
+			const detail = (e as CustomEvent).detail;
+			setLimitErrorData({
+				message: detail.message || "Alcanzaste el límite mensual de consultas al Asistente IA.",
+				limitInfo: detail.limitInfo ?? null,
+				featureInfo: detail.featureInfo ?? null,
+				upgradeRequired: true,
+			});
+			setTimeout(() => setShowLimitErrorModal(true), 300);
+		};
+		window.addEventListener("ragPlanLimitReached", handler);
+		return () => window.removeEventListener("ragPlanLimitReached", handler);
+	}, []);
 
 	// Login normal
 	const login = async (email: string, password: string, rememberMe?: boolean): Promise<boolean> => {

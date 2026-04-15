@@ -4,7 +4,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { EventInput } from "@fullcalendar/common";
 
 // project-imports
-import axios from "utils/axios";
+import axios from "axios";
 import { dispatch } from "store";
 
 // types
@@ -98,22 +98,6 @@ const calendar = createSlice({
 export default calendar.reducer;
 
 export const { selectEvent, toggleModal, updateCalendarView } = calendar.actions;
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export function getEvents(id: any) {
-	return async () => {
-		dispatch(calendar.actions.loading());
-		try {
-			const response = await axios.get("/api/calendar/events");
-			await delay(5000);
-			//
-			dispatch(calendar.actions.setEvents(response.data.events));
-		} catch (error) {
-			//dispatch(calendar.actions.hasError(error));
-		}
-	};
-}
 
 export function createEvent(newEvent: Omit<EventInput, "id">) {
 	return async () => {

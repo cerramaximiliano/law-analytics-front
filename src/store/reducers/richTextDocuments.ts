@@ -1,5 +1,5 @@
 import { Dispatch } from 'redux';
-import axios from 'utils/axios';
+import axios from 'axios';
 import { AxiosError } from 'axios';
 import {
   RichTextTemplate,

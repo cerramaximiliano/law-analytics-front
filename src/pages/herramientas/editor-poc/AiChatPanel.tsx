@@ -338,10 +338,15 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 				);
 			} catch (err: any) {
 				if (!axios.isCancel(err)) {
+					const status = err?.response?.status;
+					const isLimit = status === 429 || (status === 403 && err?.response?.data?.upgradeRequired);
+					const errorContent = isLimit
+						? (err?.response?.data?.message || "Alcanzaste el límite mensual de consultas al Asistente IA. Actualizá tu plan para continuar.")
+						: "Error al conectar con el asistente. Intentá de nuevo.";
 					setMessages((prev) =>
 						prev.map((m) =>
 							m.id === assistantId
-								? { ...m, content: "Error al conectar con el asistente. Intentá de nuevo.", pending: false }
+								? { ...m, content: errorContent, pending: false }
 								: m
 						)
 					);
@@ -407,7 +412,12 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 					}
 				} catch (err: any) {
 					if (!axios.isCancel(err)) {
-						setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: "Error al conectar con el asistente.", pending: false } : m));
+						const status = err?.response?.status;
+						const isLimit = status === 429 || (status === 403 && err?.response?.data?.upgradeRequired);
+						const errorContent = isLimit
+							? (err?.response?.data?.message || "Alcanzaste el límite mensual de consultas al Asistente IA. Actualizá tu plan para continuar.")
+							: "Error al conectar con el asistente.";
+						setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: errorContent, pending: false } : m));
 					}
 				} finally {
 					setStreaming(false);

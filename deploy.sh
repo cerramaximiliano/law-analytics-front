@@ -136,23 +136,58 @@ echo -e "${YELLOW}3. Configurando versión...${NC}"
 echo "VITE_APP_VERSION=${VERSION}" > .env.production.local
 echo -e "${GREEN}✓ Versión configurada${NC}"
 
-# 4. Limpiar builds anteriores
-echo -e "${YELLOW}4. Limpiando builds anteriores...${NC}"
-rm -rf build/ node_modules/.vite/ node_modules/.cache/
-echo -e "${GREEN}✓ Directorios limpiados${NC}"
+# 4. Activar modo mantenimiento (solo en servidor)
+if [ "$IS_SERVER" = true ]; then
+    echo -e "${YELLOW}4. Activando modo mantenimiento...${NC}"
+    # Copiar maintenance.html sobre index.html del build actual para que nginx lo sirva
+    # vía try_files mientras se construye la nueva versión
+    if [ -d "build" ]; then
+        cp maintenance.html build/index.html
+    else
+        mkdir -p build
+        cp maintenance.html build/index.html
+    fi
+    # Limpiar solo caches, NO el directorio build (usuarios ven maintenance.html)
+    rm -rf node_modules/.vite/ node_modules/.cache/
+    # Recargar nginx para que sirva maintenance.html inmediatamente
+    if command -v nginx &> /dev/null; then
+        sudo nginx -t &> /dev/null && sudo systemctl reload nginx
+    fi
+    echo -e "${GREEN}✓ Modo mantenimiento activo — usuarios ven maintenance.html${NC}"
+else
+    echo -e "${YELLOW}4. Limpiando builds anteriores...${NC}"
+    rm -rf build/ node_modules/.vite/ node_modules/.cache/
+    echo -e "${GREEN}✓ Directorios limpiados${NC}"
+fi
 
-# 5. Construir aplicación
+# 5. Construir aplicación en directorio temporal (evita ventana sin contenido)
 echo -e "${YELLOW}5. Construyendo aplicación...${NC}"
-npm run build
-if [ $? -ne 0 ]; then
-    echo -e "${RED}✗ Error durante el build${NC}"
-    exit 1
+if [ "$IS_SERVER" = true ]; then
+    # Build a directorio temporal para hacer swap atómico
+    rm -rf build_new/
+    npx vite build --outDir build_new --mode production
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}✗ Error durante el build${NC}"
+        # Restaurar build anterior si existe backup
+        rm -rf build_new/
+        exit 1
+    fi
+else
+    npm run build
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}✗ Error durante el build${NC}"
+        exit 1
+    fi
 fi
 echo -e "${GREEN}✓ Build completado${NC}"
 
+# Directorio de build destino (build_new en servidor, build en local)
+BUILD_DIR="build"
+[ "$IS_SERVER" = true ] && BUILD_DIR="build_new"
+
 # 6. Crear archivo de versión para tracking
 echo -e "${YELLOW}6. Creando archivo de versión...${NC}"
-cat > build/version.json <<EOF
+cat > ${BUILD_DIR}/version.json <<EOF
 {
   "version": "${VERSION}",
   "timestamp": "${TIMESTAMP}",
@@ -165,43 +200,47 @@ echo -e "${GREEN}✓ Archivo de versión creado${NC}"
 
 # 7. Optimizar index.html
 echo -e "${YELLOW}7. Optimizando index.html...${NC}"
-if [ -f "build/index.html" ]; then
-    # Añadir versión como meta tag
-    sed -i "s|</head>|<meta name=\"app-version\" content=\"${VERSION}\">\\n</head>|" build/index.html
-    
-    # Asegurar headers de no-cache
-    if ! grep -q "no-store" build/index.html; then
-        sed -i '/<head>/a <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />' build/index.html
-        sed -i '/<head>/a <meta http-equiv="Pragma" content="no-cache" />' build/index.html
+if [ -f "${BUILD_DIR}/index.html" ]; then
+    sed -i "s|</head>|<meta name=\"app-version\" content=\"${VERSION}\">\\n</head>|" ${BUILD_DIR}/index.html
+    if ! grep -q "no-store" ${BUILD_DIR}/index.html; then
+        sed -i '/<head>/a <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />' ${BUILD_DIR}/index.html
+        sed -i '/<head>/a <meta http-equiv="Pragma" content="no-cache" />' ${BUILD_DIR}/index.html
     fi
-    
-    # No agregar Service Workers
-    
     echo -e "${GREEN}✓ index.html optimizado${NC}"
 fi
 
-# 8. Copiar recursos adicionales si existen
+# 8. Copiar recursos adicionales y maintenance.html
 echo -e "${YELLOW}8. Copiando recursos...${NC}"
-[ -f public/logo192.png ] && cp public/logo192.png build/
-[ -f public/logo512.png ] && cp public/logo512.png build/
-[ -f public/manifest.json ] && cp public/manifest.json build/
+[ -f public/logo192.png ] && cp public/logo192.png ${BUILD_DIR}/
+[ -f public/logo512.png ] && cp public/logo512.png ${BUILD_DIR}/
+[ -f public/manifest.json ] && cp public/manifest.json ${BUILD_DIR}/
+[ -f maintenance.html ] && cp maintenance.html ${BUILD_DIR}/maintenance.html
 echo -e "${GREEN}✓ Recursos copiados${NC}"
 
-# 9. Archivo vacío por compatibilidad (algunos navegadores pueden cachear la ruta)
+# 9. Archivo vacío SW por compatibilidad
 echo -e "${YELLOW}9. Creando archivo SW vacío por compatibilidad...${NC}"
-echo "// No Service Worker" > build/sw.js
+echo "// No Service Worker" > ${BUILD_DIR}/sw.js
 echo -e "${GREEN}✓ Archivo de compatibilidad creado${NC}"
 
-# 10. Recargar nginx si está disponible y estamos en servidor
+# 10. Swap atómico (servidor) + recargar nginx
 if [ "$IS_SERVER" = true ] && command -v nginx &> /dev/null; then
-    echo -e "${YELLOW}10. Recargando nginx...${NC}"
+    echo -e "${YELLOW}10. Publicando nueva versión (swap atómico)...${NC}"
+    # Reemplazar build/ con build_new/ de forma atómica
+    mv build build_old 2>/dev/null || true
+    mv build_new build
+    rm -rf build_old/
+    # Recargar nginx — usuarios dejan de ver maintenance y ven la nueva versión
     sudo nginx -t &> /dev/null
     if [ $? -eq 0 ]; then
         sudo systemctl reload nginx
-        echo -e "${GREEN}✓ Nginx recargado${NC}"
+        echo -e "${GREEN}✓ Swap completado — mantenimiento desactivado${NC}"
     else
         echo -e "${YELLOW}⚠ Verifica la configuración de nginx manualmente${NC}"
     fi
+elif [ "$IS_SERVER" = false ] && command -v nginx &> /dev/null; then
+    echo -e "${YELLOW}10. Recargando nginx...${NC}"
+    sudo nginx -t &> /dev/null && sudo systemctl reload nginx
+    echo -e "${GREEN}✓ Nginx recargado${NC}"
 fi
 
 # 11. Mostrar resumen

@@ -128,3 +128,5 @@ bundle-stats.html
 tests/.auth/
 tests/playwright-report/
 tests/test-results/
+test-results/
+playwright-report/

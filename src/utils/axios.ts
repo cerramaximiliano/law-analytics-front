@@ -27,13 +27,17 @@ axiosInstance.interceptors.request.use(
 	},
 );
 
-
 // Interceptor para manejar errores
-// Nota: los 401 son manejados por el interceptor central en ServerContext (refresco automático).
-// Aquí solo propagamos el error para no interferir con ese flujo.
 axiosInstance.interceptors.response.use(
 	(response) => response,
 	(error) => {
+		if (error.response?.status === 401) {
+			// Token expirado o inválido — no redirigir aquí.
+			// El ServerContext maneja los 401 globalmente via su propio interceptor
+			// y muestra el UnauthorizedModal en lugar de hacer una navegación dura
+			// que pierde el estado de React Router (location.state.from).
+			localStorage.removeItem("token");
+		}
 		return Promise.reject(error);
 	},
 );

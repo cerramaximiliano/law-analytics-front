@@ -119,7 +119,7 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 						</Typography>
 					</Stack>
 					<Chip
-						label={contact?.role || ""}
+						label={Array.isArray(contact?.role) ? contact.role[0] : (contact?.role || "")}
 						color={getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : (contact?.role || ""))}
 						size="small"
 						sx={{
