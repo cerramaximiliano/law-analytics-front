@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useState, SyntheticEvent } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 
 // material-ui
 import {
@@ -35,7 +35,7 @@ import { strengthColor, strengthIndicator } from "utils/password-strength";
 import { StringColorProps } from "types/password";
 
 // assets
-import { Eye, EyeSlash } from "iconsax-react";
+import { Eye, EyeSlash, InfoCircle } from "iconsax-react";
 
 // ============================|| RESET PASSWORD ||============================ //
 
@@ -69,12 +69,10 @@ const AuthResetPassword = () => {
 	const code = locationState?.code || storedCode;
 	const verified = locationState?.verified || storedVerified;
 
-	// Log para depuración
-
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	const [redirected, setRedirected] = useState(false);
+	const [showFallback, setShowFallback] = useState(false);
 
 	const handleClickShowPassword = () => {
 		setShowPassword(!showPassword);
@@ -96,40 +94,45 @@ const AuthResetPassword = () => {
 	useEffect(() => {
 		changePassword("");
 
-		// IMPORTANTE: Solo redireccionar una vez para evitar ciclos infinitos
-		if (!redirected && !verified && !storedVerified) {
-			setRedirected(true);
-			// Intentar determinar la ruta correcta
-			const forgotPasswordPath = "/forgot-password";
-			navigate(forgotPasswordPath);
+		if (!verified && !storedVerified) {
+			setShowFallback(true);
 		}
 	}, []);
 
-	// Si no hay información de verificación, mostrar mensaje
-	if (!email || !code || (!verified && !storedVerified)) {
+	// Pantalla de fallback cuando no hay contexto de verificación válido
+	if (showFallback || !email || !code) {
 		return (
 			<Grid container spacing={3}>
 				<Grid item xs={12}>
-					<Typography variant="h3" textAlign="center" gutterBottom>
-						Información incompleta
-					</Typography>
-					<Typography variant="body1" textAlign="center" gutterBottom>
-						Se requiere verificación antes de restablecer la contraseña.
-					</Typography>
+					<Stack alignItems="center" spacing={2} sx={{ py: 2 }}>
+						<InfoCircle size={48} variant="Bulk" />
+						<Typography variant="h3" textAlign="center">
+							No podemos restablecer tu contraseña ahora
+						</Typography>
+						<Typography variant="body1" textAlign="center" color="secondary">
+							El enlace puede haber expirado o ser inválido. Pedí uno nuevo para continuar.
+						</Typography>
+					</Stack>
 				</Grid>
 				<Grid item xs={12}>
 					<AnimateButton>
 						<Button
+							component={Link}
+							to="/forgot-password"
 							disableElevation
 							fullWidth
 							size="large"
 							variant="contained"
 							color="primary"
-							onClick={() => navigate("/forgot-password")}
 						>
-							Solicitar restablecimiento
+							Pedir nuevo enlace
 						</Button>
 					</AnimateButton>
+				</Grid>
+				<Grid item xs={12}>
+					<Button component={Link} to="/login" fullWidth size="large" variant="text" color="secondary">
+						Volver al inicio de sesión
+					</Button>
 				</Grid>
 			</Grid>
 		);

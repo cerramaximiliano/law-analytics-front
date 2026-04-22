@@ -1,4 +1,3 @@
-import React from "react";
 import { useState, SyntheticEvent } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -198,18 +197,8 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 					// Check if either form is loading
 					const isAnyFormLoading = isSubmitting || isGoogleLoading;
 
-					// Create a custom submit handler to avoid the persist error
-					const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-						e.preventDefault();
-						e.stopPropagation();
-
-						// TEMPORARY FIX: Disable Enter key submission due to Formik/InputBase conflict
-						// Only allow submission via button click
-						return false;
-					};
-
 					return (
-						<form noValidate onSubmit={onFormSubmit}>
+						<form noValidate onSubmit={handleSubmit}>
 							<Grid container spacing={3}>
 								<Grid item xs={12}>
 									<Stack spacing={1}>
@@ -226,13 +215,6 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											error={Boolean(touched.email && errors.email)}
 											disabled={isAnyFormLoading}
 											autoComplete="username"
-											onKeyDown={(e) => {
-												// Prevent form submission on Enter in input fields
-												if (e.key === "Enter") {
-													e.preventDefault();
-													e.stopPropagation();
-												}
-											}}
 										/>
 										{touched.email && errors.email && (
 											<FormHelperText error id="standard-weight-helper-text-email-login">
@@ -255,13 +237,6 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											onChange={handleChange}
 											disabled={isAnyFormLoading}
 											autoComplete="current-password"
-											onKeyDown={(e) => {
-												// Prevent form submission on Enter in input fields
-												if (e.key === "Enter") {
-													e.preventDefault();
-													e.stopPropagation();
-												}
-											}}
 											endAdornment={
 												<InputAdornment position="end">
 													<IconButton
@@ -324,7 +299,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											disabled={isAnyFormLoading}
 											fullWidth
 											size="large"
-											type="button"
+											type="submit"
 											variant="contained"
 											color="primary"
 											startIcon={
@@ -338,12 +313,6 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 													/>
 												) : null
 											}
-											onClick={(e) => {
-												e.preventDefault();
-												if (!isAnyFormLoading) {
-													handleSubmit();
-												}
-											}}
 											sx={{
 												"&.Mui-disabled": {
 													backgroundColor: (theme) => theme.palette.primary.main,
