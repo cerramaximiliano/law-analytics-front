@@ -1,5 +1,6 @@
 // @refresh reset
 import React from "react";
+import { Navigate } from "react-router-dom";
 
 // project-imports
 import MainLayout from "layout/MainLayout";
@@ -36,7 +37,6 @@ const UserTabProfessional = Loadable(lazyRetry(() => import("sections/apps/profi
 
 const AccountProfile = Loadable(lazyRetry(() => import("pages/apps/profiles/account")));
 const AccountTabAccount = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabAccount")));
-const AccountTabPassword = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPassword")));
 const AccountTabRole = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabRole")));
 const AccountTabSettings = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabSettings")));
 const AccountTabPjnIntegration = Loadable(lazyRetry(() => import("sections/apps/profiles/account/TabPjnIntegration")));
@@ -265,10 +265,6 @@ const MainRoutes = {
 											element: <AccountTabAccount />,
 										},
 										{
-											path: "password",
-											element: <AccountTabPassword />,
-										},
-										{
 											path: "role",
 											element: <AccountTabRole />,
 										},
@@ -349,7 +345,7 @@ const MainRoutes = {
 						{
 							/* legacy — kept for bookmarks */
 							path: "plantillas",
-							element: <ModelosPage />,
+							element: <Navigate replace to="/documentos/modelos" />,
 						},
 					],
 				},
