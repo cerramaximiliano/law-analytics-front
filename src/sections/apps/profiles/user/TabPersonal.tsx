@@ -33,6 +33,7 @@ import countries from "data/countries";
 import { dispatch, useSelector } from "store";
 import { updateUserProfile } from "store/reducers/auth"; // Importamos la acción
 import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
+import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 
 // assets
 import dayjs from "utils/dayjs-config";
@@ -56,6 +57,47 @@ function useInputRef() {
 
 const TabPersonal = () => {
 	const [loading, setLoading] = useState(false);
+
+	const handleSubmit = useFormWithSnackbar({
+		onSubmit: async (values: {
+			firstName: string;
+			lastName: string;
+			email: string;
+			dob: Date | null;
+			contact: string;
+			designation: string;
+			address: string;
+			address1: string;
+			country: string;
+			state: string;
+			colleges: string[];
+			note: string;
+			submit: null;
+		}) => {
+			setLoading(true);
+			try {
+				const formattedDate = values.dob ? dayjs(values.dob).format("YYYY-MM-DD") : null;
+				const updateData = {
+					firstName: values.firstName,
+					lastName: values.lastName,
+					dob: formattedDate,
+					contact: values.contact,
+					designation: values.designation,
+					address: values.address,
+					address1: values.address1,
+					country: values.country,
+					state: values.state,
+					skill: values.colleges,
+					note: values.note,
+				};
+				await dispatch(updateUserProfile(updateData));
+			} finally {
+				setLoading(false);
+			}
+		},
+		successMessage: "Perfil actualizado correctamente",
+		errorMessage: "Error al actualizar el perfil",
+	});
 
 	const handleChangeDay = (event: SelectChangeEvent<string>, date: Date, setFieldValue: (field: string, value: any) => void) => {
 		setFieldValue("dob", new Date(date.setDate(parseInt(event.target.value, 10))));
@@ -129,7 +171,7 @@ const TabPersonal = () => {
 					address1: userData.user?.address1 || "",
 					country: userData.user?.country || "",
 					state: userData.user?.state || "",
-					colleges: userData.user?.skill || [], // Cambiamos skill por colleges
+					colleges: (userData.user?.skill as string[]) || [], // Cambiamos skill por colleges
 					note: userData.user?.note || "",
 					submit: null,
 				}}
@@ -138,37 +180,7 @@ const TabPersonal = () => {
 					lastName: Yup.string().max(255).required("El apellido es requerido."),
 					note: Yup.string().min(5, "La nota debe tener más de 5 caracteres."),
 				})}
-				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
-					setLoading(true);
-					try {
-						const formattedDate = dayjs(values.dob).format("YYYY-MM-DD");
-						// Preparar datos para enviar al servidor
-						const updateData = {
-							firstName: values.firstName,
-							lastName: values.lastName,
-							dob: formattedDate,
-							contact: values.contact,
-							designation: values.designation,
-							address: values.address,
-							address1: values.address1,
-							country: values.country,
-							state: values.state,
-							skill: values.colleges, // Enviamos colleges como skill para mantener compatibilidad
-							note: values.note,
-						};
-						// Utilizamos la acción de Redux para actualizar el perfil
-						await dispatch(updateUserProfile(updateData));
-						setStatus({ success: true });
-					} catch (err: any) {
-						setStatus({ success: false });
-						setErrors({
-							submit: err.response?.data?.message || err.message || "Error al actualizar el perfil",
-						});
-					} finally {
-						setLoading(false);
-						setSubmitting(false);
-					}
-				}}
+				onSubmit={handleSubmit}
 			>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, setFieldValue, touched, values, resetForm }) => (
 					<form noValidate onSubmit={handleSubmit}>
@@ -514,13 +526,8 @@ const TabPersonal = () => {
 									{errors.note}
 								</FormHelperText>
 							)}
-							{errors.submit && (
-								<Box sx={{ mt: 2 }}>
-									<FormHelperText error>{errors.submit}</FormHelperText>
-								</Box>
-							)}
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-								<Button color="error" onClick={() => resetForm()}>
+								<Button color="error" onClick={() => resetForm()} disabled={isSubmitting || loading}>
 									Cancelar
 								</Button>
 								<Button

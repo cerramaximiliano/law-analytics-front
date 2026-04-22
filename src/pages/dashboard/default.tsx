@@ -95,7 +95,7 @@ const DashboardDefault = () => {
 				}
 
 				// Primera vez en esta sesion, llamar al backend (esto incrementa el contador)
-				const response = await ApiService.getOnboardingStatus() as any;
+				const response = (await ApiService.getOnboardingStatus()) as any;
 				if (response.success && response.onboarding) {
 					setOnboardingStatus(response.onboarding);
 					// Guardar en sessionStorage para evitar multiples llamadas
@@ -144,7 +144,7 @@ const DashboardDefault = () => {
 	const handleDismissOnboarding = useCallback(async () => {
 		try {
 			setIsDismissing(true);
-			const response = await ApiService.dismissOnboarding() as any;
+			const response = (await ApiService.dismissOnboarding()) as any;
 			if (response.success && response.onboarding) {
 				// Actualizar estado local
 				setOnboardingStatus(response.onboarding);
@@ -154,7 +154,7 @@ const DashboardDefault = () => {
 				}
 				setSnackbar({
 					open: true,
-					message: "No volveras a ver esta guia de inicio",
+					message: "No volverás a ver esta guía de inicio",
 					severity: "success",
 				});
 			}
@@ -318,7 +318,7 @@ const DashboardDefault = () => {
 			<Grid item xs={12} sm={6} lg={3}>
 				<OnboardingCard
 					title="Vencimientos"
-					description="Configura alertas para vencimientos judiciales. Recibe notificaciones antes de cada fecha limite."
+					description="Configura alertas para vencimientos judiciales. Recibe notificaciones antes de cada fecha límite."
 					actionLabel="Ver vencimientos"
 					onAction={handleViewDeadlines}
 					icon={<CloudChange size={24} />}
@@ -362,7 +362,7 @@ const DashboardDefault = () => {
 								fontStyle: "italic",
 							}}
 						>
-							Ultima actualizacion:{" "}
+							Última actualización:{" "}
 							{new Date(lastUpdated).toLocaleString("es-AR", {
 								day: "2-digit",
 								month: "2-digit",
@@ -478,13 +478,13 @@ const DashboardDefault = () => {
 
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
-									title="Vencimientos Proximos"
+									title="Vencimientos Próximos"
 									count={(dashboardData?.deadlines?.nextWeek || 0).toString()}
 									color="error"
 									iconPrimary={<CloudChange color={theme.palette.error.dark} />}
 									percentage={
 										<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Typography variant="caption">En los proximos 7 dias</Typography>
+											<Typography variant="caption">En los próximos 7 días</Typography>
 										</Typography>
 									}
 								>
