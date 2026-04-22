@@ -151,7 +151,8 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 						<Typography variant="subtitle1" gutterBottom>
 							Seleccione una carpeta para vincular este evento:
 						</Typography>
-						<Typography variant="body2" color="error.main" gutterBottom>
+						<Typography variant="body2" color="text.secondary" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+							<InfoCircle size={14} />
 							Nota: Sólo se permite vincular un evento a una única carpeta.
 						</Typography>
 						<List sx={{ width: "100%", bgcolor: "background.paper" }}>
@@ -275,7 +276,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 										width: 12,
 										height: 12,
 										borderRadius: "50%",
-										backgroundColor: event?.color || "#1890ff",
+										backgroundColor: event?.color || theme.palette.primary.main,
 										mr: 1,
 									}}
 								/>
@@ -379,6 +380,10 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 
 const Calendar = () => {
 	const matchDownSM = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+
+	// Compute the responsive initial view synchronously so FullCalendar receives the
+	// correct value on its very first render — before any useEffect fires.
+	const responsiveInitialView = matchDownSM ? "listWeek" : "dayGridMonth";
 
 	const [loading, setLoading] = useState<boolean>(true);
 	const [guideOpen, setGuideOpen] = useState<boolean>(false);
@@ -1176,14 +1181,27 @@ const Calendar = () => {
 
 							{/* Botones de acción */}
 							{canCreate && (
-								<Tooltip title="Agregar Nuevo Evento">
-									<IconButton color="primary" onClick={handleAddEventClick} size={matchDownSM ? "small" : "medium"} data-testid="calendar-add-btn">
-										<Add variant="Bulk" size={matchDownSM ? 20 : 24} />
-									</IconButton>
-								</Tooltip>
+								matchDownSM ? (
+									<Tooltip title="Agregar Nuevo Evento">
+										<IconButton color="primary" onClick={handleAddEventClick} size="small" data-testid="calendar-add-btn">
+											<Add variant="Bulk" size={20} />
+										</IconButton>
+									</Tooltip>
+								) : (
+									<Button
+										variant="contained"
+										color="primary"
+										startIcon={<Add variant="Bulk" size={18} />}
+										onClick={handleAddEventClick}
+										size="small"
+										data-testid="calendar-add-btn"
+									>
+										Nuevo evento
+									</Button>
+								)
 							)}
 							<Tooltip title="Ver Guía">
-								<IconButton color="success" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"} data-testid="calendar-guide-btn">
+								<IconButton color="inherit" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"} data-testid="calendar-guide-btn">
 									<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
 								</IconButton>
 							</Tooltip>
@@ -1200,7 +1218,7 @@ const Calendar = () => {
 					ref={calendarRef}
 					rerenderDelay={10}
 					initialDate={date}
-					initialView={calendarView}
+					initialView={responsiveInitialView}
 					dayMaxEventRows={4}
 					eventDisplay="block"
 					headerToolbar={false}
@@ -1217,6 +1235,50 @@ const Calendar = () => {
 					fixedWeekCount={false}
 					showNonCurrentDates={false}
 					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
+					eventContent={(eventArg) => {
+						const title = eventArg.event.title;
+						// timeText can be empty for all-day events; only render when present
+						const time = eventArg.timeText;
+						return (
+							<Tooltip title={title} placement="top" arrow>
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										width: "100%",
+										overflow: "hidden",
+										px: 0.5,
+									}}
+								>
+									{time && (
+										<Typography
+											component="span"
+											variant="caption"
+											sx={{
+												flexShrink: 0,
+												mr: 0.5,
+												fontWeight: 600,
+											}}
+										>
+											{time}
+										</Typography>
+									)}
+									<Typography
+										component="span"
+										variant="caption"
+										sx={{
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+											display: "block",
+										}}
+									>
+										{title}
+									</Typography>
+								</Box>
+							</Tooltip>
+						);
+					}}
 					noEventsContent={
 						<Box
 							sx={{

@@ -34,6 +34,7 @@ import {
 	FormControl,
 	Select,
 	SelectChangeEvent,
+	CardActions,
 } from "@mui/material";
 
 import { useFilters, useExpanded, useGlobalFilter, useRowSelect, useSortBy, useTable, usePagination, Row, HeaderProps } from "react-table";
@@ -196,6 +197,11 @@ function ReactTable({
 	const csvLinkRef = useRef<any>(null);
 	const g1ButtonRef = useRef<HTMLButtonElement>(null);
 	const g2StackRef = useRef<HTMLDivElement>(null);
+	// Mobile overflow menu
+	const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
+	const mobileMenuOpen = Boolean(mobileMenuAnchor);
+	const handleMobileMenuOpen = (e: MouseEvent<HTMLElement>) => setMobileMenuAnchor(e.currentTarget);
+	const handleMobileMenuClose = () => setMobileMenuAnchor(null);
 
 	// Medir ancho de G1+G2 (botones Agregar carpeta + Archivados + Archivar) para alinear la barra de carpetas
 	useLayoutEffect(() => {
@@ -462,130 +468,17 @@ function ReactTable({
 			{/* Controles FUERA del ScrollX para que siempre estén visibles */}
 			{!hideControls && (
 				<Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
-					{/* Toolbar principal - una sola fila en desktop, múltiples en mobile */}
-					<Stack
-						direction={matchDownSM ? "column" : "row"}
-						spacing={{ xs: 1.5, sm: 2 }}
-						alignItems={matchDownSM ? "stretch" : "center"}
-						flexWrap="wrap"
-						useFlexGap
-					>
-						{/* Grupo 1: Acción principal */}
-						{handleAdd && (
-							<Button
-								ref={g1ButtonRef}
-								variant="contained"
-								size="small"
-								startIcon={<FolderAdd />}
-								onClick={handleAdd}
-								fullWidth={matchDownSM}
-								sx={{ textTransform: "none" }}
-								data-testid="folder-add-btn"
-							>
-								{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
-							</Button>
-						)}
+					{/* ── TOOLBAR ──────────────────────────────────────────────────────────
+					    Desktop (≥ sm): una sola fila —  Agregar | sep | Archivados+Archivar | sep | Filtros+Orden | sep | [Buscador · CSV · Eliminar · Guía]
+					    Mobile (< sm):  fila 1 = Buscador full-width
+					                   fila 2 = [Agregar carpeta (contained)] [overflow MoreVert → resto de acciones]
+					─────────────────────────────────────────────────────────────────────── */}
 
-						{/* Separador */}
-						{!matchDownSM && handleAdd && (
-							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-						)}
-
-						{/* Grupo 2: Gestión de archivados */}
-						<Stack
-							ref={g2StackRef}
-							direction="row"
-							spacing={1}
-							sx={{
-								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
-							}}
-						>
-							<Button
-								variant="outlined"
-								color="secondary"
-								size="small"
-								startIcon={<Box1 size={18} />}
-								onClick={handleOpenArchivedModal}
-								sx={{ textTransform: "none" }}
-							>
-								Archivados
-							</Button>
-							{handleArchiveSelected && (
-								<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
-									<span>
-										<Button
-											variant="outlined"
-											color="secondary"
-											size="small"
-											startIcon={<Archive size={18} />}
-											onClick={() => handleArchiveSelected(selectedFlatRows)}
-											disabled={Object.keys(selectedRowIds).length === 0}
-											sx={{ textTransform: "none" }}
-										>
-											{Object.keys(selectedRowIds).length > 0
-												? `Archivar (${selectedFlatRows.length})`
-												: "Archivar"}
-										</Button>
-									</span>
-								</Tooltip>
-							)}
-						</Stack>
-
-						{/* Separador */}
-						{!matchDownSM && (
-							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-						)}
-
-						{/* Grupo 3: Filtros y ordenamiento */}
-						<Stack
-							direction="row"
-							spacing={1}
-							alignItems="center"
-							sx={{
-								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
-							}}
-						>
-							{/* Botón de Filtros */}
-							{onFolderTypeFilterChange && (
-								<Button
-									variant={showFilters || activeFiltersCount > 0 ? "contained" : "outlined"}
-									color={activeFiltersCount > 0 ? "primary" : "secondary"}
-									size="small"
-									startIcon={<Filter size={18} />}
-									endIcon={showFilters ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
-									onClick={() => setShowFilters(!showFilters)}
-									sx={{
-										textTransform: "none",
-										height: "30.75px",
-										minWidth: 100,
-									}}
-								>
-									{activeFiltersCount > 0 ? `Filtros (${activeFiltersCount})` : "Filtros"}
-								</Button>
-							)}
-							{/* Ordenamiento */}
-							<Box sx={{ minWidth: 160 }}>
-								<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
-							</Box>
-						</Stack>
-
-						{/* Separador */}
-						{!matchDownSM && (
-							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-						)}
-
-						{/* Grupo 4: Búsqueda y utilidades */}
-						<Stack
-							direction="row"
-							spacing={1}
-							alignItems="center"
-							sx={{
-								flex: matchDownSM ? "none" : 1,
-								justifyContent: matchDownSM ? "flex-start" : "flex-end",
-								...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
-							}}
-						>
-							<Box sx={{ width: { xs: "100%", sm: "220px" } }}>
+					{matchDownSM ? (
+						/* ── MOBILE TOOLBAR ── */
+						<Stack spacing={1.5} sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.7 }) }}>
+							{/* Fila 1: Buscador (acción primaria) */}
+							<Box sx={{ width: "100%", ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}>
 								<GlobalFilter
 									preGlobalFilteredRows={preGlobalFilteredRows as any}
 									globalFilter={globalFilter}
@@ -593,88 +486,309 @@ function ReactTable({
 									disabled={data.length === 0}
 								/>
 							</Box>
-							<Tooltip title="Exportar a CSV">
-								<IconButton
-									color="primary"
-									size="small"
-									onClick={() => csvLinkRef.current?.link?.click()}
-								>
-									<DocumentDownload variant="Bulk" size={20} />
-								</IconButton>
-							</Tooltip>
-							<CSVLink
-								ref={csvLinkRef}
-								data={csvData}
-								headers={csvHeaders}
-								filename={"causas.csv"}
-								style={{ display: "none" }}
-							/>
-							{/* Botón de eliminar seleccionados */}
-							{handleDeleteSelected && (
-								<Tooltip
-									title={
-										Object.keys(selectedRowIds).length === 0
-											? "Selecciona carpetas para eliminar"
-											: `Eliminar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
-									}
-								>
+
+							{/* Fila 2: Agregar carpeta + overflow */}
+							<Stack direction="row" spacing={1} alignItems="center">
+								{handleAdd && (
+									<Button
+										ref={g1ButtonRef}
+										variant="contained"
+										size="small"
+										startIcon={<FolderAdd />}
+										onClick={handleAdd}
+										sx={{ textTransform: "none", flex: 1 }}
+										data-testid="folder-add-btn"
+									>
+										{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
+									</Button>
+								)}
+
+								{/* Overflow: resto de acciones colapsadas */}
+								<Tooltip title="Más opciones">
 									<span>
-										<IconButton
-											color="error"
-											size="small"
-											onClick={() => handleDeleteSelected(selectedFlatRows)}
-											disabled={Object.keys(selectedRowIds).length === 0}
-											sx={{
-												opacity: Object.keys(selectedRowIds).length === 0 ? 0.5 : 1,
-												position: "relative",
-											}}
-										>
-											<Trash variant="Bulk" size={20} />
-											{Object.keys(selectedRowIds).length > 0 && (
-												<Box
-													sx={{
-														position: "absolute",
-														top: -4,
-														right: -4,
-														bgcolor: "error.main",
-														color: "white",
-														borderRadius: "50%",
-														width: 16,
-														height: 16,
-														fontSize: "0.65rem",
-														fontWeight: "bold",
-														display: "flex",
-														alignItems: "center",
-														justifyContent: "center",
-													}}
-												>
-													{selectedFlatRows.length}
-												</Box>
-											)}
+										<IconButton size="small" color="secondary" onClick={handleMobileMenuOpen} aria-label="Más opciones">
+											<More variant="Bulk" size={20} />
 										</IconButton>
 									</span>
 								</Tooltip>
-							)}
-							<Tooltip title="Ver Guía">
-								<IconButton color="success" size="small" onClick={handleOpenGuide}>
-									<InfoCircle variant="Bulk" size={20} />
-								</IconButton>
-							</Tooltip>
-						</Stack>
-					</Stack>
+								<Menu
+									anchorEl={mobileMenuAnchor}
+									open={mobileMenuOpen}
+									onClose={handleMobileMenuClose}
+									anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+									transformOrigin={{ vertical: "top", horizontal: "right" }}
+									slotProps={{ paper: { sx: { minWidth: 200 } } }}
+								>
+									{/* Archivados */}
+									<MenuItem
+										onClick={() => { handleMobileMenuClose(); handleOpenArchivedModal?.(); }}
+										sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
+									>
+										<ListItemIcon><Box1 size={18} /></ListItemIcon>
+										<ListItemText>Archivados</ListItemText>
+									</MenuItem>
 
-					{/* Panel de filtros colapsable */}
-					{onFolderTypeFilterChange && (
-						<Collapse in={showFilters}>
-							<Box
+									{/* Archivar seleccionados */}
+									{handleArchiveSelected && (
+										<MenuItem
+											onClick={() => { handleMobileMenuClose(); handleArchiveSelected(selectedFlatRows); }}
+											disabled={Object.keys(selectedRowIds).length === 0}
+											sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
+										>
+											<ListItemIcon><Archive size={18} /></ListItemIcon>
+											<ListItemText>
+												{Object.keys(selectedRowIds).length > 0
+													? `Archivar (${selectedFlatRows.length})`
+													: "Archivar seleccionados"}
+											</ListItemText>
+										</MenuItem>
+									)}
+
+									{/* Filtros toggle */}
+									{onFolderTypeFilterChange && (
+										<MenuItem
+											onClick={() => { handleMobileMenuClose(); setShowFilters((prev) => !prev); }}
+											sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
+										>
+											<ListItemIcon><Filter size={18} /></ListItemIcon>
+											<ListItemText>
+												{activeFiltersCount > 0 ? `Filtros (${activeFiltersCount})` : showFilters ? "Ocultar filtros" : "Filtros"}
+											</ListItemText>
+										</MenuItem>
+									)}
+
+									{/* Eliminar seleccionados */}
+									{handleDeleteSelected && (
+										<MenuItem
+											onClick={() => { handleMobileMenuClose(); handleDeleteSelected(selectedFlatRows); }}
+											disabled={Object.keys(selectedRowIds).length === 0}
+										>
+											<ListItemIcon><Trash variant="Bulk" size={18} /></ListItemIcon>
+											<ListItemText>
+												{Object.keys(selectedRowIds).length > 0
+													? `Eliminar (${selectedFlatRows.length})`
+													: "Eliminar seleccionados"}
+											</ListItemText>
+										</MenuItem>
+									)}
+
+									{/* Exportar CSV */}
+									<MenuItem onClick={() => { handleMobileMenuClose(); csvLinkRef.current?.link?.click(); }}>
+										<ListItemIcon><DocumentDownload variant="Bulk" size={18} /></ListItemIcon>
+										<ListItemText>Exportar CSV</ListItemText>
+									</MenuItem>
+
+									{/* Guía */}
+									<MenuItem onClick={() => { handleMobileMenuClose(); handleOpenGuide?.(); }}>
+										<ListItemIcon><InfoCircle variant="Bulk" size={18} /></ListItemIcon>
+										<ListItemText>Ver Guía</ListItemText>
+									</MenuItem>
+								</Menu>
+								<CSVLink ref={csvLinkRef} data={csvData} headers={csvHeaders} filename={"causas.csv"} style={{ display: "none" }} />
+							</Stack>
+						</Stack>
+					) : (
+						/* ── DESKTOP TOOLBAR ── */
+						<Stack
+							ref={g2StackRef}
+							direction="row"
+							spacing={2}
+							alignItems="center"
+							flexWrap="wrap"
+							useFlexGap
+						>
+							{/* Grupo 1: Acción principal */}
+							{handleAdd && (
+								<Button
+									ref={g1ButtonRef}
+									variant="contained"
+									size="small"
+									startIcon={<FolderAdd />}
+									onClick={handleAdd}
+									sx={{ textTransform: "none" }}
+									data-testid="folder-add-btn"
+								>
+									{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
+								</Button>
+							)}
+
+							{/* Separador */}
+							{handleAdd && (
+								<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
+							)}
+
+							{/* Grupo 2: Gestión de archivados */}
+							<Stack
+								direction="row"
+								spacing={1}
+								sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
+							>
+								<Button
+									variant="outlined"
+									color="secondary"
+									size="small"
+									startIcon={<Box1 size={18} />}
+									onClick={handleOpenArchivedModal}
+									sx={{ textTransform: "none" }}
+								>
+									Archivados
+								</Button>
+								{handleArchiveSelected && (
+									<Tooltip
+										title={Object.keys(selectedRowIds).length === 0 ? "Seleccioná al menos una carpeta para archivar" : ""}
+										placement="top"
+									>
+										<span>
+											<Button
+												variant="outlined"
+												color="secondary"
+												size="small"
+												startIcon={<Archive size={18} />}
+												onClick={() => handleArchiveSelected(selectedFlatRows)}
+												disabled={Object.keys(selectedRowIds).length === 0}
+												sx={{ textTransform: "none" }}
+												aria-label={
+													Object.keys(selectedRowIds).length === 0
+														? "Archivar carpetas — seleccioná al menos una"
+														: `Archivar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
+												}
+											>
+												{Object.keys(selectedRowIds).length > 0
+													? `Archivar (${selectedFlatRows.length})`
+													: "Archivar"}
+											</Button>
+										</span>
+									</Tooltip>
+								)}
+							</Stack>
+
+							{/* Separador */}
+							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
+
+							{/* Grupo 3: Filtros y ordenamiento */}
+							<Stack
+								direction="row"
+								spacing={1}
+								alignItems="center"
+								sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
+							>
+								{onFolderTypeFilterChange && (
+									<Button
+										variant={showFilters || activeFiltersCount > 0 ? "contained" : "outlined"}
+										color={activeFiltersCount > 0 ? "primary" : "secondary"}
+										size="small"
+										startIcon={<Filter size={18} />}
+										endIcon={showFilters ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
+										onClick={() => setShowFilters(!showFilters)}
+										sx={{ textTransform: "none", height: "30.75px", minWidth: 100 }}
+										aria-label={
+											activeFiltersCount > 0
+												? `Mostrar filtros — ${activeFiltersCount} activo${activeFiltersCount > 1 ? "s" : ""}`
+												: showFilters ? "Ocultar filtros" : "Mostrar filtros"
+										}
+										aria-expanded={showFilters}
+									>
+										{activeFiltersCount > 0 ? `Filtros (${activeFiltersCount})` : "Filtros"}
+									</Button>
+								)}
+								<Box sx={{ minWidth: 160 }}>
+									<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
+								</Box>
+							</Stack>
+
+							{/* Separador */}
+							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
+
+							{/* Grupo 4: Búsqueda y utilidades — alineado a la derecha */}
+							<Stack
+								direction="row"
+								spacing={1}
+								alignItems="center"
 								sx={{
-									p: 2,
-									bgcolor: "action.hover",
-									borderRadius: 1,
-									border: "1px solid",
-									borderColor: "divider",
+									flex: 1,
+									justifyContent: "flex-end",
+									...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
 								}}
 							>
+								<Box sx={{ width: "220px" }}>
+									<GlobalFilter
+										preGlobalFilteredRows={preGlobalFilteredRows as any}
+										globalFilter={globalFilter}
+										setGlobalFilter={setGlobalFilter}
+										disabled={data.length === 0}
+									/>
+								</Box>
+								<Tooltip title="Exportar a CSV">
+									<IconButton
+										color="primary"
+										size="small"
+										onClick={() => csvLinkRef.current?.link?.click()}
+										aria-label="Descargar CSV"
+									>
+										<DocumentDownload variant="Bulk" size={20} />
+									</IconButton>
+								</Tooltip>
+								<CSVLink ref={csvLinkRef} data={csvData} headers={csvHeaders} filename={"causas.csv"} style={{ display: "none" }} />
+								{handleDeleteSelected && (
+									<Tooltip
+										title={
+											Object.keys(selectedRowIds).length === 0
+												? "Selecciona carpetas para eliminar"
+												: `Eliminar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
+										}
+									>
+										<span>
+											<IconButton
+												color="error"
+												size="small"
+												onClick={() => handleDeleteSelected(selectedFlatRows)}
+												disabled={Object.keys(selectedRowIds).length === 0}
+												sx={{ opacity: Object.keys(selectedRowIds).length === 0 ? 0.5 : 1, position: "relative" }}
+												aria-label={
+													Object.keys(selectedRowIds).length === 0
+														? "Eliminar carpetas — seleccioná al menos una"
+														: `Eliminar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
+												}
+											>
+												<Trash variant="Bulk" size={20} />
+												{Object.keys(selectedRowIds).length > 0 && (
+													<Box
+														sx={{
+															position: "absolute",
+															top: -4,
+															right: -4,
+															bgcolor: "error.main",
+															color: "white",
+															borderRadius: "50%",
+															width: 16,
+															height: 16,
+															fontSize: "0.65rem",
+															fontWeight: "bold",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+														}}
+													>
+														{selectedFlatRows.length}
+													</Box>
+												)}
+											</IconButton>
+										</span>
+									</Tooltip>
+								)}
+								<Tooltip title="Ver Guía">
+									<IconButton color="success" size="small" onClick={handleOpenGuide} aria-label="Ver Guía de carpetas">
+										<InfoCircle variant="Bulk" size={20} />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						</Stack>
+					)}
+
+					{/* Panel de filtros colapsable (desktop + mobile) */}
+					{onFolderTypeFilterChange && (
+						<Collapse in={showFilters}>
+							<Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 1, border: "1px solid", borderColor: "divider" }}>
 								<Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
 									{/* Filtro por Tipo */}
 									<FormControl size="small" sx={{ minWidth: 120 }}>
@@ -683,11 +797,7 @@ function ReactTable({
 											displayEmpty
 											value={folderTypeFilter}
 											onChange={onFolderTypeFilterChange}
-											sx={{
-												maxHeight: "30.75px",
-												bgcolor: "background.paper",
-												"& .MuiSelect-select": { py: "6px" },
-											}}
+											sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 										>
 											<MenuItem value="all"><Typography variant="body2">Tipo: Todos</Typography></MenuItem>
 											<MenuItem value="manual"><Typography variant="body2">Manual</Typography></MenuItem>
@@ -704,11 +814,7 @@ function ReactTable({
 												displayEmpty
 												value={statusFilter}
 												onChange={onStatusFilterChange}
-												sx={{
-													maxHeight: "30.75px",
-													bgcolor: "background.paper",
-													"& .MuiSelect-select": { py: "6px" },
-												}}
+												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
 												<MenuItem value="all"><Typography variant="body2">Estado: Todos</Typography></MenuItem>
 												<MenuItem value="Nueva"><Typography variant="body2">Nueva</Typography></MenuItem>
@@ -726,17 +832,11 @@ function ReactTable({
 												displayEmpty
 												value={parteFilter}
 												onChange={onParteFilterChange}
-												sx={{
-													maxHeight: "30.75px",
-													bgcolor: "background.paper",
-													"& .MuiSelect-select": { py: "6px" },
-												}}
+												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
 												<MenuItem value="all"><Typography variant="body2">Parte: Todas</Typography></MenuItem>
 												{uniquePartes.map((parte) => (
-													<MenuItem key={parte} value={parte}>
-														<Typography variant="body2">{parte}</Typography>
-													</MenuItem>
+													<MenuItem key={parte} value={parte}><Typography variant="body2">{parte}</Typography></MenuItem>
 												))}
 											</Select>
 										</FormControl>
@@ -749,11 +849,7 @@ function ReactTable({
 												displayEmpty
 												value={movimientosFilter}
 												onChange={onMovimientosFilterChange}
-												sx={{
-													maxHeight: "30.75px",
-													bgcolor: "background.paper",
-													"& .MuiSelect-select": { py: "6px" },
-												}}
+												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
 												<MenuItem value="all"><Typography variant="body2">Movimientos: Todos</Typography></MenuItem>
 												<MenuItem value="today"><Typography variant="body2">Hoy</Typography></MenuItem>
@@ -771,17 +867,11 @@ function ReactTable({
 												displayEmpty
 												value={jurisdiccionFilter}
 												onChange={onJurisdiccionFilterChange}
-												sx={{
-													maxHeight: "30.75px",
-													bgcolor: "background.paper",
-													"& .MuiSelect-select": { py: "6px" },
-												}}
+												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
 												<MenuItem value="all"><Typography variant="body2">Jurisdicción: Todas</Typography></MenuItem>
 												{uniqueJurisdicciones.map((juris) => (
-													<MenuItem key={juris} value={juris}>
-														<Typography variant="body2">{juris}</Typography>
-													</MenuItem>
+													<MenuItem key={juris} value={juris}><Typography variant="body2">{juris}</Typography></MenuItem>
 												))}
 											</Select>
 										</FormControl>
@@ -829,57 +919,187 @@ function ReactTable({
 				</Stack>
 			)}
 
-			{/* Tabla con ScrollX */}
-			<ScrollX>
-				<Table {...getTableProps()}>
-					<TableHead>
-						{headerGroups.map((headerGroup) => (
-							<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
-								{headerGroup.headers.map((column: any) => (
-									<TableCell {...column.getHeaderProps([{ className: column.className }])}>
-										<HeaderSort column={column} sort />
-									</TableCell>
-								))}
-							</TableRow>
-						))}
-					</TableHead>
-					<TableBody {...getTableBodyProps()}>
-						{page.map((row, i) => {
-							prepareRow(row);
-							const rowProps = row.getRowProps();
-							return (
-								<Fragment key={i}>
-									<TableRow
-										{...row.getRowProps()}
-										onClick={() => {
-											row.toggleRowSelected();
-										}}
-										onDoubleClick={() => {
-											navigate(`../details/${row.original._id}`);
-										}}
-										sx={{
-											cursor: "pointer",
-											bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
-										}}
-									>
-										{row.cells.map((cell) => (
-											<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
-										))}
-									</TableRow>
-									<TableRow>
-										<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={visibleColumns.length}>
-											<Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
-												<Box sx={{ margin: 1 }}>{renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}</Box>
-											</Collapse>
+			{/* Vista condicional: cards en mobile, tabla en desktop */}
+			{matchDownSM ? (
+				/* ── MOBILE: Cards verticales ─────────────────────────────────────── */
+				<Stack spacing={1.5} sx={{ px: 2, pb: 2 }}>
+					{page.map((row) => {
+						prepareRow(row);
+						const folder = row.original as any;
+						const isSelected = row.isSelected;
+
+						// Chip de estado
+						const statusChip = (() => {
+							switch (folder.status) {
+								case "Cerrada": return <Chip color="error" label="Cerrada" size="small" variant="light" />;
+								case "Nueva": return <Chip color="success" label="Nueva" size="small" variant="light" />;
+								case "En Proceso": return <Chip color="info" label="En Proceso" size="small" variant="light" />;
+								case "Pendiente": return <Chip color="warning" label="Pendiente" size="small" variant="light" />;
+								default: return folder.status ? <Chip color="default" label={folder.status} size="small" variant="light" /> : null;
+							}
+						})();
+
+						// Badge de fuente (PJN / MEV / EJE)
+						const sourceBadge = folder.pjn
+							? <Chip label="PJN" size="small" color="primary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
+							: folder.mev
+							? <Chip label="MEV" size="small" color="secondary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
+							: folder.eje
+							? <Chip label="EJE" size="small" color="info" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
+							: null;
+
+						// Último movimiento formateado
+						const lastMovStr = folder.lastMovementDate
+							? (() => {
+								try { return dayjs.utc(folder.lastMovementDate).format("DD/MM/YYYY"); }
+								catch { return null; }
+							})()
+							: null;
+
+						// Fecha inicio formateada
+						const initDateStr = folder.initialDateFolder
+							? (() => {
+								try { return dayjs.utc(folder.initialDateFolder).format("DD/MM/YYYY"); }
+								catch { return null; }
+							})()
+							: null;
+
+						return (
+							<Card
+								key={row.id}
+								variant="outlined"
+								onClick={() => row.toggleRowSelected()}
+								sx={{
+									borderColor: isSelected ? "primary.main" : "divider",
+									bgcolor: isSelected ? alpha(theme.palette.primary.lighter, 0.25) : "background.paper",
+									cursor: "pointer",
+									transition: "border-color 0.15s, background-color 0.15s",
+								}}
+							>
+								{/* Header de la card: carátula + badges */}
+								<CardContent sx={{ pb: 1, "&:last-child": { pb: 1 } }}>
+									<Stack spacing={0.75}>
+										{/* Fila: carátula + chips de fuente y estado */}
+										<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+											<Typography
+												variant="subtitle2"
+												fontWeight={600}
+												sx={{ flex: 1, lineHeight: 1.3, wordBreak: "break-word" }}
+												onClick={(e) => { e.stopPropagation(); navigate(`../details/${folder._id}`); }}
+											>
+												{folder.folderName ? formatFolderName(folder.folderName, 60) : "Sin nombre"}
+											</Typography>
+											<Stack direction="row" spacing={0.5} alignItems="center" flexShrink={0}>
+												{sourceBadge}
+												{statusChip}
+											</Stack>
+										</Stack>
+
+										{/* Fuero y Jurisdicción */}
+										{(folder.folderFuero || folder.folderJuris?.label) && (
+											<Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+												{folder.folderFuero && (
+													<Typography variant="caption" color="text.secondary">
+														{folder.folderFuero}
+													</Typography>
+												)}
+												{folder.folderFuero && folder.folderJuris?.label && (
+													<Typography variant="caption" color="text.secondary">·</Typography>
+												)}
+												{folder.folderJuris?.label && (
+													<Typography variant="caption" color="text.secondary">
+														{folder.folderJuris.label}
+													</Typography>
+												)}
+											</Stack>
+										)}
+
+										{/* Parte */}
+										{folder.orderStatus && (
+											<Typography variant="caption" color="text.secondary">
+												Parte: <strong>{folder.orderStatus}</strong>
+											</Typography>
+										)}
+
+										{/* Fechas */}
+										<Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+											{initDateStr && (
+												<Typography variant="caption" color="text.secondary">
+													Inicio: {initDateStr}
+												</Typography>
+											)}
+											{lastMovStr && (
+												<Typography variant="caption" color="text.secondary">
+													Últ. mov.: {lastMovStr}
+												</Typography>
+											)}
+										</Stack>
+									</Stack>
+								</CardContent>
+
+								<Divider />
+
+								{/* Footer: acciones — delega en la Cell "Acciones" ya preparada */}
+								<CardActions sx={{ px: 1, py: 0.5, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
+									{row.cells.find((c) => (c.column as any).Header === "Acciones")?.render("Cell")}
+								</CardActions>
+							</Card>
+						);
+					})}
+				</Stack>
+			) : (
+				/* ── DESKTOP: Tabla con ScrollX ───────────────────────────────────── */
+				<ScrollX>
+					<Table {...getTableProps()}>
+						<TableHead>
+							{headerGroups.map((headerGroup) => (
+								<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
+									{headerGroup.headers.map((column: any) => (
+										<TableCell {...column.getHeaderProps([{ className: column.className }])}>
+											<HeaderSort column={column} sort />
 										</TableCell>
-									</TableRow>
-								</Fragment>
-							);
-						})}
-					</TableBody>
-				</Table>
-			</ScrollX>
-			{page.length > 0 && (
+									))}
+								</TableRow>
+							))}
+						</TableHead>
+						<TableBody {...getTableBodyProps()}>
+							{page.map((row, i) => {
+								prepareRow(row);
+								const rowProps = row.getRowProps();
+								return (
+									<Fragment key={i}>
+										<TableRow
+											{...row.getRowProps()}
+											onClick={() => {
+												row.toggleRowSelected();
+											}}
+											onDoubleClick={() => {
+												navigate(`../details/${row.original._id}`);
+											}}
+											sx={{
+												cursor: "pointer",
+												bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
+											}}
+										>
+											{row.cells.map((cell) => (
+												<TableCell {...cell.getCellProps([{ className: cell.column.className }])}>{cell.render("Cell")}</TableCell>
+											))}
+										</TableRow>
+										<TableRow>
+											<TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={visibleColumns.length}>
+												<Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
+													<Box sx={{ margin: 1 }}>{renderRowSubComponent({ row, rowProps, visibleColumns, expanded })}</Box>
+												</Collapse>
+											</TableCell>
+										</TableRow>
+									</Fragment>
+								);
+							})}
+						</TableBody>
+					</Table>
+				</ScrollX>
+			)}
+			{page.length > 0 && rows.length > pageSize && (
 				<Box sx={{ p: 2, py: 3 }}>
 					<TablePagination gotoPage={gotoPage} rows={rows as any} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
 				</Box>
@@ -1656,6 +1876,7 @@ const FoldersLayout = () => {
 			{
 				Header: "Carátula",
 				accessor: "folderName",
+				minWidth: 180,
 				Cell: ({ row }: { row: any }) => {
 					const folder = row.original;
 					const value = folder.folderName;
@@ -1664,14 +1885,41 @@ const FoldersLayout = () => {
 					const showStatusIndicators = folder.pjn === true || folder.mev === true || folder.eje === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
-						return <span>{formatFolderName(value, 50)}</span>;
+						return (
+							<Tooltip title={value || ""}>
+								<span
+									style={{
+										display: "-webkit-box",
+										WebkitLineClamp: 2,
+										WebkitBoxOrient: "vertical",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+									}}
+								>
+									{formatFolderName(value, 50)}
+								</span>
+							</Tooltip>
+						);
 					}
 
 					// Si la causa no fue encontrada en el portal PJN en el último sync
 					if (folder.pjn === true && folder.pjnNotFound === true) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<span>{formatFolderName(value, 50)}</span>
+								<Tooltip title={value || ""}>
+									<span
+										style={{
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											flex: 1,
+										}}
+									>
+										{formatFolderName(value, 50)}
+									</span>
+								</Tooltip>
 								<Tooltip title="Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.">
 									<IconButton
 										size="small"
@@ -1873,7 +2121,20 @@ const FoldersLayout = () => {
 					if (folder.causaVerified === true && folder.causaIsValid === true) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<span>{formatFolderName(value, 50)}</span>
+								<Tooltip title={value || ""}>
+									<span
+										style={{
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											flex: 1,
+										}}
+									>
+										{formatFolderName(value, 50)}
+									</span>
+								</Tooltip>
 								<Tooltip
 									title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : folder.eje === true ? "Causa vinculada a EJE" : "Causa vinculada"}
 								>
@@ -1894,7 +2155,21 @@ const FoldersLayout = () => {
 					}
 
 					// En todos los demás casos, mostrar solo el nombre del folder
-					return <span>{formatFolderName(value, 50)}</span>;
+					return (
+						<Tooltip title={value || ""}>
+							<span
+								style={{
+									display: "-webkit-box",
+									WebkitLineClamp: 2,
+									WebkitBoxOrient: "vertical",
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+								}}
+							>
+								{formatFolderName(value, 50)}
+							</span>
+						</Tooltip>
+					);
 				},
 			},
 			{

@@ -12,10 +12,10 @@ import {
 	Divider,
 	FormHelperText,
 	Grid,
+	InputAdornment,
 	InputLabel,
 	MenuItem,
 	Select,
-	SelectChangeEvent,
 	Stack,
 	TextField,
 	Skeleton,
@@ -32,21 +32,13 @@ import MainCard from "components/MainCard";
 import countries from "data/countries";
 import { dispatch, useSelector } from "store";
 import { updateUserProfile } from "store/reducers/auth"; // Importamos la acción
-import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
+import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 
 // assets
 import dayjs from "utils/dayjs-config";
+import { Lock } from "iconsax-react";
 
 // styles & constant
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-	PaperProps: {
-		style: {
-			maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-		},
-	},
-};
 
 function useInputRef() {
 	return useOutletContext<RefObject<HTMLInputElement>>();
@@ -57,16 +49,47 @@ function useInputRef() {
 const TabPersonal = () => {
 	const [loading, setLoading] = useState(false);
 
-	const handleChangeDay = (event: SelectChangeEvent<string>, date: Date, setFieldValue: (field: string, value: any) => void) => {
-		setFieldValue("dob", new Date(date.setDate(parseInt(event.target.value, 10))));
-	};
+	const handleSubmit = useFormWithSnackbar({
+		onSubmit: async (values: {
+			firstName: string;
+			lastName: string;
+			email: string;
+			dob: Date | null;
+			contact: string;
+			designation: string;
+			address: string;
+			address1: string;
+			country: string;
+			state: string;
+			colleges: string[];
+			note: string;
+			submit: null;
+		}) => {
+			setLoading(true);
+			try {
+				const formattedDate = values.dob ? dayjs(values.dob).format("YYYY-MM-DD") : null;
+				const updateData = {
+					firstName: values.firstName,
+					lastName: values.lastName,
+					dob: formattedDate,
+					contact: values.contact,
+					designation: values.designation,
+					address: values.address,
+					address1: values.address1,
+					country: values.country,
+					state: values.state,
+					skill: values.colleges,
+					note: values.note,
+				};
+				await dispatch(updateUserProfile(updateData));
+			} finally {
+				setLoading(false);
+			}
+		},
+		successMessage: "Perfil actualizado correctamente",
+		errorMessage: "Error al actualizar el perfil",
+	});
 
-	const handleChangeMonth = (event: SelectChangeEvent<string>, date: Date, setFieldValue: (field: string, value: any) => void) => {
-		setFieldValue("dob", new Date(date.setMonth(parseInt(event.target.value, 10))));
-	};
-
-	const maxDate = new Date();
-	maxDate.setFullYear(maxDate.getFullYear() - 18);
 	const inputRef = useInputRef();
 
 	const userData = useSelector((state) => state.auth);
@@ -129,46 +152,17 @@ const TabPersonal = () => {
 					address1: userData.user?.address1 || "",
 					country: userData.user?.country || "",
 					state: userData.user?.state || "",
-					colleges: userData.user?.skill || [], // Cambiamos skill por colleges
+					colleges: (userData.user?.skill as string[]) || [], // Cambiamos skill por colleges
 					note: userData.user?.note || "",
 					submit: null,
 				}}
 				validationSchema={Yup.object().shape({
 					firstName: Yup.string().max(255).required("El nombre es requerido"),
 					lastName: Yup.string().max(255).required("El apellido es requerido."),
+					dob: Yup.date().nullable().max(new Date(), "La fecha no puede ser futura"),
 					note: Yup.string().min(5, "La nota debe tener más de 5 caracteres."),
 				})}
-				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
-					setLoading(true);
-					try {
-						const formattedDate = dayjs(values.dob).format("YYYY-MM-DD");
-						// Preparar datos para enviar al servidor
-						const updateData = {
-							firstName: values.firstName,
-							lastName: values.lastName,
-							dob: formattedDate,
-							contact: values.contact,
-							designation: values.designation,
-							address: values.address,
-							address1: values.address1,
-							country: values.country,
-							state: values.state,
-							skill: values.colleges, // Enviamos colleges como skill para mantener compatibilidad
-							note: values.note,
-						};
-						// Utilizamos la acción de Redux para actualizar el perfil
-						await dispatch(updateUserProfile(updateData));
-						setStatus({ success: true });
-					} catch (err: any) {
-						setStatus({ success: false });
-						setErrors({
-							submit: err.response?.data?.message || err.message || "Error al actualizar el perfil",
-						});
-					} finally {
-						setLoading(false);
-						setSubmitting(false);
-					}
-				}}
+				onSubmit={handleSubmit}
 			>
 				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, setFieldValue, touched, values, resetForm }) => (
 					<form noValidate onSubmit={handleSubmit}>
@@ -225,110 +219,44 @@ const TabPersonal = () => {
 											value={values.email}
 											name="email"
 											id="personal-email"
-											placeholder="Correo Electrónico"
 											disabled
 											InputProps={{
 												readOnly: true,
+												endAdornment: (
+													<InputAdornment position="end">
+														<Lock size={16} />
+													</InputAdornment>
+												),
 											}}
+											helperText="El correo no puede modificarse. Contactá a soporte para cambiarlo."
 										/>
 									</Stack>
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="dob-date">Fecha de Nacimiento</InputLabel>
-										<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-											<Select
-												fullWidth
-												displayEmpty
-												value={values.dob ? values.dob.getDate().toString() : ""}
-												name="dob-date"
-												onBlur={handleBlur}
-												onChange={(e: SelectChangeEvent<string>) => handleChangeDay(e, values.dob || new Date(), setFieldValue)}
-												MenuProps={MenuProps}
-												renderValue={(selected) => {
-													if (!selected) {
-														return <span style={{ color: "#aaa" }}>DD</span>;
-													}
-													return selected;
+										<InputLabel htmlFor="personal-dob">Fecha de Nacimiento</InputLabel>
+										<LocalizationProvider dateAdapter={AdapterDateFns}>
+											<DatePicker
+												value={values.dob}
+												onChange={(newValue) => {
+													setFieldValue("dob", newValue);
 												}}
-											>
-												{[
-													1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-												].map((i) => (
-													<MenuItem
-														key={i}
-														value={i}
-														disabled={
-															values.dob
-																? (values.dob.getMonth() === 1 && i > (values.dob.getFullYear() % 4 === 0 ? 29 : 28)) ||
-																  (values.dob.getMonth() % 2 !== 0 && values.dob.getMonth() < 7 && i > 30) ||
-																  (values.dob.getMonth() % 2 === 0 && values.dob.getMonth() > 7 && i > 30)
-																: false
-														}
-													>
-														{i}
-													</MenuItem>
-												))}
-											</Select>
-
-											<Select
-												fullWidth
-												displayEmpty
-												value={values.dob ? values.dob.getMonth().toString() : ""}
-												name="dob-month"
-												onChange={(e: SelectChangeEvent<string>) => handleChangeMonth(e, values.dob || new Date(), setFieldValue)}
-												renderValue={(selected) => {
-													if (selected === "") {
-														return <span style={{ color: "#aaa" }}>Mes</span>;
-													}
-													const months = [
-														"Enero",
-														"Febrero",
-														"Marzo",
-														"Abril",
-														"Mayo",
-														"Junio",
-														"Julio",
-														"Agosto",
-														"Septiembre",
-														"Octubre",
-														"Noviembre",
-														"Diciembre",
-													];
-													return months[parseInt(selected, 10)];
+												format="dd/MM/yyyy"
+												maxDate={new Date()}
+												minDate={new Date(1900, 0, 1)}
+												sx={{ width: 1 }}
+												slotProps={{
+													textField: {
+														id: "personal-dob",
+														fullWidth: true,
+														onBlur: handleBlur,
+														name: "dob",
+														placeholder: "DD/MM/AAAA",
+														error: Boolean(touched.dob && errors.dob),
+													},
 												}}
-											>
-												<MenuItem value="0">Enero</MenuItem>
-												<MenuItem value="1">Febrero</MenuItem>
-												<MenuItem value="2">Marzo</MenuItem>
-												<MenuItem value="3">Abril</MenuItem>
-												<MenuItem value="4">Mayo</MenuItem>
-												<MenuItem value="5">Junio</MenuItem>
-												<MenuItem value="6">Julio</MenuItem>
-												<MenuItem value="7">Agosto</MenuItem>
-												<MenuItem value="8">Septiembre</MenuItem>
-												<MenuItem value="9">Octubre</MenuItem>
-												<MenuItem value="10">Noviembre</MenuItem>
-												<MenuItem value="11">Diciembre</MenuItem>
-											</Select>
-
-											<LocalizationProvider dateAdapter={AdapterDateFns}>
-												<DatePicker
-													views={["year"]}
-													value={values.dob}
-													maxDate={maxDate}
-													onChange={(newValue) => {
-														setFieldValue("dob", newValue);
-													}}
-													sx={{ width: 1 }}
-													slotProps={{
-														textField: {
-															placeholder: "AAAA",
-														},
-													}}
-												/>
-											</LocalizationProvider>
-										</Stack>
+											/>
+										</LocalizationProvider>
 										{touched.dob && errors.dob && (
 											<FormHelperText error id="personal-dob-helper">
 												{errors.dob as string}
@@ -361,16 +289,26 @@ const TabPersonal = () => {
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
 										<InputLabel htmlFor="personal-designation">Cargo</InputLabel>
-										<TextField
+										<Select
 											fullWidth
 											id="personal-designation"
 											value={values.designation}
 											name="designation"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="Cargo"
+											displayEmpty
 											error={Boolean(touched.designation && errors.designation)}
-										/>
+											inputProps={{ id: "personal-designation" }}
+										>
+											<MenuItem value="">
+												<em>Seleccioná tu cargo</em>
+											</MenuItem>
+											{["Abogado", "Procurador", "Estudio Jurídico", "Contador Público", "Escribano/a", "Otro"].map((option) => (
+												<MenuItem key={option} value={option}>
+													{option}
+												</MenuItem>
+											))}
+										</Select>
 										{touched.designation && errors.designation && (
 											<FormHelperText error id="personal-designation-helper">
 												{errors.designation}
@@ -386,7 +324,7 @@ const TabPersonal = () => {
 							<Grid container spacing={3}>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-addrees1">Domicilio</InputLabel>
+										<InputLabel htmlFor="personal-addrees1">Domicilio principal</InputLabel>
 										<TextField
 											multiline
 											rows={3}
@@ -408,7 +346,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-addrees2">Domicilio</InputLabel>
+										<InputLabel htmlFor="personal-addrees2">Domicilio alternativo</InputLabel>
 										<TextField
 											multiline
 											rows={3}
@@ -508,23 +446,14 @@ const TabPersonal = () => {
 								id="personal-note"
 								placeholder="Puede agregar notas en este espacio"
 								error={Boolean(touched.note && errors.note)}
+								helperText={touched.note && errors.note ? errors.note : "Mínimo 5 caracteres si querés agregar una nota."}
 							/>
-							{touched.note && errors.note && (
-								<FormHelperText error id="personal-note-helper">
-									{errors.note}
-								</FormHelperText>
-							)}
-							{errors.submit && (
-								<Box sx={{ mt: 2 }}>
-									<FormHelperText error>{errors.submit}</FormHelperText>
-								</Box>
-							)}
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-								<Button color="error" onClick={() => resetForm()}>
+								<Button color="error" onClick={() => resetForm()} disabled={isSubmitting || loading}>
 									Cancelar
 								</Button>
 								<Button
-									disabled={isSubmitting || loading || Object.keys(errors).filter((key) => key !== "submit").length !== 0}
+									disabled={isSubmitting || loading}
 									type="submit"
 									variant="contained"
 									startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
@@ -536,10 +465,6 @@ const TabPersonal = () => {
 					</form>
 				)}
 			</Formik>
-			<Divider />
-			<Box sx={{ p: 2.5 }} data-testid="profile-personal-usage">
-				<ResourceUsageWidget title="Uso de Recursos" />
-			</Box>
 		</MainCard>
 	);
 };

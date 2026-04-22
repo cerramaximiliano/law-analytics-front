@@ -1,10 +1,23 @@
 # UX Audit — 2026-04-21-2127
 
 **Rama:** `dev`
-**Commit:** `b34f830`
+**Commit base:** `b34f830`
 **Rutas auditadas:** 8 (5 activas + 3 del template)
 **Viewports:** desktop (1440×900) · tablet (820×1180) · mobile (390×844)
 **Total issues accionables:** 36 (🔴 alta: 9 · 🟡 media: 18 · 🟢 baja: 9)
+
+## Estado: COMPLETADO ✓
+
+Implementación en branch `ux/audit-2026-04-21`, 4 commits:
+
+- `7484731` — **Batch 1** · 5 patrones sistémicos (P-S1..P-S5)
+- `496c145` — **Batch 2** · 9 issues alta prioridad (D1..E2)
+- `866c820` — **Batch 3** · 14 issues media prioridad (D3..E6)
+- `a4932d8` — **Batch 4** · 9 issues baja prioridad (D5..E7)
+
+**Pendientes:** rutas del template a eliminar (DEL-1..4) — quedaron fuera de scope del audit por decisión del usuario (PR separada).
+
+Comparación visual antes/después disponible en `compare.html` (4 batches seleccionables).
 
 ---
 

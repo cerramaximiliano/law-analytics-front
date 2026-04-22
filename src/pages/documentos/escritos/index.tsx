@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+	Alert,
 	Autocomplete,
 	Box,
 	Button,
+	CardActions,
 	Chip,
 	CircularProgress,
 	Dialog,
@@ -12,6 +14,7 @@ import {
 	DialogContentText,
 	DialogTitle,
 	Divider,
+	Fab,
 	FormControl,
 	Grid,
 	IconButton,
@@ -34,6 +37,8 @@ import {
 	TextField,
 	Tooltip,
 	Typography,
+	useMediaQuery,
+	useTheme,
 } from "@mui/material";
 import {
 	Add,
@@ -43,6 +48,7 @@ import {
 	Edit2,
 	Eye,
 	FolderOpen,
+	More,
 	Routing,
 	SearchNormal1,
 	Trash,
@@ -882,6 +888,8 @@ const DeleteDialog = ({ open, title, loading, onConfirm, onClose }: DeleteDialog
 const EscritosPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
 	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector(
 		(state: any) => state.richTextDocumentsReducer
@@ -905,6 +913,7 @@ const EscritosPage = () => {
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [mainLimitErrorOpen, setMainLimitErrorOpen] = useState(false);
 	const [mainLimitErrorData, setMainLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(null);
+	const [rowMenuAnchor, setRowMenuAnchor] = useState<{ el: HTMLElement; row: DocRow } | null>(null);
 
 	// Load folders if needed
 	useEffect(() => {
@@ -1014,24 +1023,33 @@ const EscritosPage = () => {
 			{/* Header */}
 			<MainCard>
 				<Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1.5}>
-					<Stack spacing={0.25}>
-						<Typography variant="h4">Documentos</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Documentos generados a partir de modelos del sistema y modelos propios
-						</Typography>
-					</Stack>
+					<Typography variant="body2" color="text.secondary">
+						Documentos generados a partir de modelos del sistema y modelos propios
+					</Typography>
 
 					<Box>
-						<Button
-							variant="contained"
-							size="small"
-							startIcon={<Add size={16} />}
-							endIcon={<ArrowDown2 size={14} />}
-							onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
-							data-testid="escritos-new-btn"
-						>
-							Nuevo documento
-						</Button>
+						{isMobile ? (
+							<Fab
+								size="small"
+								color="primary"
+								aria-label="Nuevo documento"
+								onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
+								data-testid="escritos-new-btn"
+							>
+								<Add size={18} />
+							</Fab>
+						) : (
+							<Button
+								variant="contained"
+								size="small"
+								startIcon={<Add size={16} />}
+								endIcon={<ArrowDown2 size={14} />}
+								onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
+								data-testid="escritos-new-btn"
+							>
+								Nuevo documento
+							</Button>
+						)}
 						<Menu anchorEl={newDocMenuAnchor} open={Boolean(newDocMenuAnchor)} onClose={() => setNewDocMenuAnchor(null)}>
 							<MuiMenuItem
 								onClick={async () => {
@@ -1078,14 +1096,15 @@ const EscritosPage = () => {
 			{/* Table card */}
 			<MainCard>
 				{/* Filters */}
-				<Stack direction="row" spacing={1.5} flexWrap="wrap" gap={1} mb={2} alignItems="center">
+				<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} gap={1} mb={2} alignItems={{ sm: "center" }}>
 					<TextField
 						size="small"
-						placeholder="Buscar por título o modelo..."
+						label="Buscar en escritos"
+						placeholder="Título o modelo..."
 						value={searchInput}
 						onChange={(e) => setSearchInput(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
-						sx={{ minWidth: 240, flex: 1, maxWidth: 360 }}
+						sx={{ minWidth: { sm: 240 }, flex: { sm: 1 }, maxWidth: { sm: 360 }, width: { xs: "100%", sm: "auto" } }}
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
@@ -1098,78 +1117,70 @@ const EscritosPage = () => {
 						size="small"
 						value={typeFilter}
 						onChange={(e) => handleTypeChange(e.target.value as TypeFilter)}
-						sx={{ minWidth: 160 }}
+						sx={{ minWidth: { sm: 160 }, width: { xs: "100%", sm: "auto" } }}
 					>
 						<MuiMenuItem value="all">Todos los tipos</MuiMenuItem>
 						<MuiMenuItem value="postal">Del Sistema</MuiMenuItem>
 						<MuiMenuItem value="richtext">Mis Modelos</MuiMenuItem>
 					</Select>
-					<Button size="small" variant="contained" onClick={handleSearchSubmit}>
+					<Button size="small" variant="contained" onClick={handleSearchSubmit} sx={{ width: { xs: "100%", sm: "auto" } }}>
 						Buscar
 					</Button>
 				</Stack>
 
 				<Divider sx={{ mb: 2 }} />
 
-				{/* Table */}
-				<TableContainer>
-					<Table size="small">
-						<TableHead>
-							<TableRow>
-									<TableCell>Título</TableCell>
-								<TableCell>Modelo</TableCell>
-								<TableCell>Estado</TableCell>
-								<TableCell>Carpeta</TableCell>
-								<TableCell>Fecha</TableCell>
-								<TableCell align="right">Acciones</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{isLoading ? (
-								Array(5)
-									.fill(0)
-									.map((_, i) => <RowSkeleton key={i} />)
-							) : rows.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={6}>
-										<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
-											<DocumentText size={40} style={{ opacity: 0.3 }} />
-											<Typography variant="body2" color="text.secondary">
-												{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
-											</Typography>
+				{/* Table (>= sm) / Cards (< sm) */}
+				{isMobile ? (
+					/* ── Mobile card list ── */
+					<Stack spacing={1.5}>
+						{isLoading ? (
+							Array(4)
+								.fill(0)
+								.map((_, i) => (
+									<Paper key={i} variant="outlined" sx={{ p: 1.5 }}>
+										<Stack spacing={1}>
+											<Skeleton variant="text" width="70%" />
+											<Skeleton variant="text" width="40%" />
+											<Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 1 }} />
 										</Stack>
-									</TableCell>
-								</TableRow>
-							) : (
-								rows.map((row) => {
-									const isPostal = row.kind === "postal";
-									const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
-									const hasTracking = isPostal && Boolean(row.linkedTrackingId);
+									</Paper>
+								))
+						) : rows.length === 0 ? (
+							<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
+								<DocumentText size={40} style={{ opacity: 0.3 }} />
+								<Typography variant="body2" color="text.secondary" textAlign="center">
+									{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
+								</Typography>
+							</Stack>
+						) : (
+							rows.map((row) => {
+								const isPostal = row.kind === "postal";
+								const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
+								const hasTracking = isPostal && Boolean(row.linkedTrackingId);
 
-									return (
-										<TableRow key={`${row.kind}-${row.id}`} hover>
-											<TableCell>
-												<Stack spacing={0.25}>
-													<Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 200 }}>
-														{row.title}
-													</Typography>
-													{hasTracking && (
-														<Chip
-															size="small"
-															label="Seguimiento"
-															color="info"
-															variant="outlined"
-															sx={{ alignSelf: "flex-start", height: 18, fontSize: "0.65rem" }}
-														/>
-													)}
-												</Stack>
-											</TableCell>
-											<TableCell>
-												<Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 140 }}>
-													{row.templateName}
+								return (
+									<Paper key={`${row.kind}-${row.id}`} variant="outlined" sx={{ overflow: "hidden" }}>
+										{/* Card body */}
+										<Stack spacing={1} sx={{ p: 1.5 }}>
+											{/* Title row */}
+											<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+												<Typography variant="body2" fontWeight={600} sx={{ flex: 1, wordBreak: "break-word" }}>
+													{row.title}
 												</Typography>
-											</TableCell>
-											<TableCell>
+												{/* Type chip */}
+												<Chip
+													size="small"
+													label={isPostal ? "Postal" : "Escrito"}
+													icon={isPostal ? <DocumentDownload size={12} /> : <DocumentText size={12} />}
+													variant="outlined"
+													color={isPostal ? "info" : "default"}
+													sx={{ flexShrink: 0, height: 20, fontSize: "0.65rem" }}
+												/>
+											</Stack>
+
+											{/* Status + tracking */}
+											<Stack direction="row" spacing={0.75} flexWrap="wrap" alignItems="center">
 												{isPostal ? (
 													<Chip
 														size="small"
@@ -1184,83 +1195,309 @@ const EscritosPage = () => {
 														variant={row.status === "final" ? "filled" : "outlined"}
 													/>
 												)}
-											</TableCell>
-											<TableCell>
-												{linkedFolder ? (
-													<Typography
-														variant="body2"
-														onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
-														sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
-													>
-														{linkedFolder.folderName}
-													</Typography>
-												) : (
-													<Typography variant="caption" color="text.disabled">
-														Sin vincular
-													</Typography>
+												{hasTracking && (
+													<Chip
+														size="small"
+														label="Seguimiento"
+														color="info"
+														variant="outlined"
+														sx={{ height: 18, fontSize: "0.65rem" }}
+													/>
 												)}
-											</TableCell>
-											<TableCell>
-												<Typography variant="caption" color="text.secondary">
-													{formatDate(row.createdAt)}
-												</Typography>
-											</TableCell>
-											<TableCell align="right">
-												<Stack direction="row" justifyContent="flex-end" spacing={0.5}>
-													{isPostal ? (
-														<>
-															<Tooltip title="Ver documento">
-																<IconButton size="small" color="primary" onClick={() => setPostalDetail(row.rawPostal!)}>
-																	<Eye size={15} />
-																</IconButton>
-															</Tooltip>
-															{row.documentUrl && (
-																<Tooltip title="Descargar PDF">
-																	<IconButton
-																		size="small"
-																		color="info"
-																		onClick={() => window.open(row.documentUrl, "_blank")}
-																	>
-																		<DocumentDownload size={15} />
-																	</IconButton>
-																</Tooltip>
-															)}
-														</>
+											</Stack>
+
+											{/* Metadata row: carpeta + fecha */}
+											<Stack direction="row" spacing={2} flexWrap="wrap">
+												<Stack spacing={0.1}>
+													<Typography variant="caption" color="text.disabled" fontWeight={600} textTransform="uppercase" letterSpacing={0.4}>
+														Carpeta
+													</Typography>
+													{linkedFolder ? (
+														<Typography
+															variant="caption"
+															onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
+															sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+														>
+															{linkedFolder.folderName}
+														</Typography>
 													) : (
-														<Tooltip title="Ver / Editar documento">
-															<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+														<Typography variant="caption" color="text.disabled">
+															Sin vincular
+														</Typography>
+													)}
+												</Stack>
+												<Stack spacing={0.1}>
+													<Typography variant="caption" color="text.disabled" fontWeight={600} textTransform="uppercase" letterSpacing={0.4}>
+														Fecha
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														{formatDate(row.createdAt)}
+													</Typography>
+												</Stack>
+											</Stack>
+										</Stack>
+
+										<Divider />
+
+										{/* Card footer: actions */}
+										<CardActions sx={{ px: 1, py: 0.75, justifyContent: "flex-end" }}>
+											<Stack direction="row" spacing={0.25}>
+												{isPostal ? (
+													<>
+														<Tooltip title="Ver documento">
+															<IconButton size="small" color="primary" onClick={() => setPostalDetail(row.rawPostal!)}>
 																<Eye size={15} />
 															</IconButton>
 														</Tooltip>
+														{row.documentUrl && (
+															<Tooltip title="Descargar PDF">
+																<IconButton size="small" color="info" onClick={() => window.open(row.documentUrl, "_blank")}>
+																	<DocumentDownload size={15} />
+																</IconButton>
+															</Tooltip>
+														)}
+													</>
+												) : (
+													<Tooltip title="Ver / Editar documento">
+														<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+															<Eye size={15} />
+														</IconButton>
+													</Tooltip>
+												)}
+												<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
+													<IconButton
+														size="small"
+														color={row.linkedFolderId ? "success" : "default"}
+														onClick={() => setVincularRow(row)}
+													>
+														<Routing size={15} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Eliminar">
+													<IconButton
+														size="small"
+														color="error"
+														onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
+														data-testid="escritos-delete-btn"
+													>
+														<Trash size={15} />
+													</IconButton>
+												</Tooltip>
+											</Stack>
+										</CardActions>
+									</Paper>
+								);
+							})
+						)}
+					</Stack>
+				) : (
+					/* ── Desktop / tablet table (>= sm) ── */
+					<TableContainer>
+						<Table size="small">
+							<TableHead>
+								<TableRow>
+									<TableCell>Título</TableCell>
+									<TableCell>Modelo</TableCell>
+									<TableCell>Estado</TableCell>
+									<TableCell>Carpeta</TableCell>
+									<TableCell>Fecha</TableCell>
+									<TableCell align="right">Acciones</TableCell>
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{isLoading ? (
+									Array(5)
+										.fill(0)
+										.map((_, i) => <RowSkeleton key={i} />)
+								) : rows.length === 0 ? (
+									<TableRow>
+										<TableCell colSpan={6}>
+											<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
+												<DocumentText size={40} style={{ opacity: 0.3 }} />
+												<Typography variant="body2" color="text.secondary">
+													{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
+												</Typography>
+											</Stack>
+										</TableCell>
+									</TableRow>
+								) : (
+									rows.map((row) => {
+										const isPostal = row.kind === "postal";
+										const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
+										const hasTracking = isPostal && Boolean(row.linkedTrackingId);
+
+										return (
+											<TableRow key={`${row.kind}-${row.id}`} hover>
+												<TableCell>
+													<Stack spacing={0.25}>
+														<Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 200 }}>
+															{row.title}
+														</Typography>
+														{hasTracking && (
+															<Chip
+																size="small"
+																label="Seguimiento"
+																color="info"
+																variant="outlined"
+																sx={{ alignSelf: "flex-start", height: 18, fontSize: "0.65rem" }}
+															/>
+														)}
+													</Stack>
+												</TableCell>
+												<TableCell>
+													<Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 140 }}>
+														{row.templateName}
+													</Typography>
+												</TableCell>
+												<TableCell>
+													{isPostal ? (
+														<Chip
+															size="small"
+															label={POSTAL_STATUS_LABELS[row.status] ?? row.status}
+															color={POSTAL_STATUS_COLORS[row.status] ?? "default"}
+														/>
+													) : (
+														<Chip
+															size="small"
+															label={RT_STATUS_LABELS[row.status] ?? row.status}
+															color={(RT_STATUS_COLORS[row.status] ?? "default") as "default" | "success"}
+															variant={row.status === "final" ? "filled" : "outlined"}
+														/>
 													)}
-													<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
+												</TableCell>
+												<TableCell>
+													{linkedFolder ? (
+														<Typography
+															variant="body2"
+															onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
+															sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+														>
+															{linkedFolder.folderName}
+														</Typography>
+													) : (
+														<Typography variant="caption" color="text.disabled">
+															Sin vincular
+														</Typography>
+													)}
+												</TableCell>
+												<TableCell>
+													<Typography variant="caption" color="text.secondary">
+														{formatDate(row.createdAt)}
+													</Typography>
+												</TableCell>
+												<TableCell align="right" sx={{ width: 48 }}>
+													<Tooltip title="Acciones">
 														<IconButton
 															size="small"
-															color={row.linkedFolderId ? "success" : "default"}
-															onClick={() => setVincularRow(row)}
+															onClick={(e) => setRowMenuAnchor({ el: e.currentTarget, row })}
+															data-testid="escritos-row-menu-btn"
 														>
-															<Routing size={15} />
+															<More size={16} style={{ transform: "rotate(90deg)" }} />
 														</IconButton>
 													</Tooltip>
-													<Tooltip title="Eliminar">
-														<IconButton
-															size="small"
-															color="error"
-															onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
-															data-testid="escritos-delete-btn"
-														>
-															<Trash size={15} />
-														</IconButton>
-													</Tooltip>
-												</Stack>
-											</TableCell>
-										</TableRow>
-									);
-								})
-							)}
-						</TableBody>
-					</Table>
-				</TableContainer>
+												</TableCell>
+											</TableRow>
+										);
+									})
+								)}
+							</TableBody>
+						</Table>
+					</TableContainer>
+				)}
+
+				{/* Row actions overflow menu (desktop table) */}
+				<Menu
+					anchorEl={rowMenuAnchor?.el}
+					open={Boolean(rowMenuAnchor)}
+					onClose={() => setRowMenuAnchor(null)}
+					transformOrigin={{ horizontal: "right", vertical: "top" }}
+					anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+				>
+					{rowMenuAnchor?.row.kind === "postal" ? (
+						[
+							<MuiMenuItem
+								key="ver"
+								onClick={() => {
+									setPostalDetail(rowMenuAnchor.row.rawPostal!);
+									setRowMenuAnchor(null);
+								}}
+							>
+								<Eye size={16} style={{ marginRight: 8 }} />
+								Ver documento
+							</MuiMenuItem>,
+							rowMenuAnchor.row.documentUrl ? (
+								<MuiMenuItem
+									key="descargar"
+									onClick={() => {
+										window.open(rowMenuAnchor.row.documentUrl, "_blank");
+										setRowMenuAnchor(null);
+									}}
+								>
+									<DocumentDownload size={16} style={{ marginRight: 8 }} />
+									Descargar PDF
+								</MuiMenuItem>
+							) : null,
+							<MuiMenuItem
+								key="vincular"
+								onClick={() => {
+									setVincularRow(rowMenuAnchor.row);
+									setRowMenuAnchor(null);
+								}}
+							>
+								<Routing size={16} style={{ marginRight: 8 }} />
+								{rowMenuAnchor.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
+							</MuiMenuItem>,
+							<Divider key="divider" />,
+							<MuiMenuItem
+								key="eliminar"
+								onClick={() => {
+									setDeleteTarget({ kind: rowMenuAnchor.row.kind, id: rowMenuAnchor.row.id, title: rowMenuAnchor.row.title });
+									setRowMenuAnchor(null);
+								}}
+								sx={{ color: "error.main" }}
+							>
+								<Trash size={16} style={{ marginRight: 8 }} />
+								Eliminar
+							</MuiMenuItem>,
+						]
+					) : (
+						[
+							<MuiMenuItem
+								key="editar"
+								onClick={() => {
+									navigate(`/documentos/escritos/${rowMenuAnchor?.row.id}/editar`);
+									setRowMenuAnchor(null);
+								}}
+								data-testid="escritos-edit-btn"
+							>
+								<Eye size={16} style={{ marginRight: 8 }} />
+								Ver / Editar
+							</MuiMenuItem>,
+							<MuiMenuItem
+								key="vincular"
+								onClick={() => {
+									setVincularRow(rowMenuAnchor!.row);
+									setRowMenuAnchor(null);
+								}}
+							>
+								<Routing size={16} style={{ marginRight: 8 }} />
+								{rowMenuAnchor?.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
+							</MuiMenuItem>,
+							<Divider key="divider" />,
+							<MuiMenuItem
+								key="eliminar"
+								onClick={() => {
+									setDeleteTarget({ kind: rowMenuAnchor!.row.kind, id: rowMenuAnchor!.row.id, title: rowMenuAnchor!.row.title });
+									setRowMenuAnchor(null);
+								}}
+								sx={{ color: "error.main" }}
+							>
+								<Trash size={16} style={{ marginRight: 8 }} />
+								Eliminar
+							</MuiMenuItem>,
+						]
+					)}
+				</Menu>
 
 				{/* Pagination — only in type-specific mode */}
 				{typeFilter !== "all" && totalPages > 1 && (
@@ -1269,9 +1506,18 @@ const EscritosPage = () => {
 					</Box>
 				)}
 				{typeFilter === "all" && postalTotal + rtTotal > PAGE_SIZE && (
-					<Typography variant="caption" color="text.disabled" sx={{ display: "block", textAlign: "center", mt: 1.5 }}>
-						Mostrando los {PAGE_SIZE} documentos más recientes. Para ver el historial completo, filtrá por tipo.
-					</Typography>
+					<Alert
+						severity="info"
+						sx={{ mt: 1.5 }}
+						action={
+							<Stack direction="row" spacing={1}>
+								<Button size="small" onClick={() => handleTypeChange("richtext")}>Ver escritos</Button>
+								<Button size="small" onClick={() => handleTypeChange("postal")}>Ver postales</Button>
+							</Stack>
+						}
+					>
+						Mostrando los {PAGE_SIZE} documentos más recientes. Seleccioná un tipo para ver el historial paginado.
+					</Alert>
 				)}
 			</MainCard>
 

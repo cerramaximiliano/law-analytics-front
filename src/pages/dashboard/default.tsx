@@ -95,7 +95,7 @@ const DashboardDefault = () => {
 				}
 
 				// Primera vez en esta sesion, llamar al backend (esto incrementa el contador)
-				const response = await ApiService.getOnboardingStatus() as any;
+				const response = (await ApiService.getOnboardingStatus()) as any;
 				if (response.success && response.onboarding) {
 					setOnboardingStatus(response.onboarding);
 					// Guardar en sessionStorage para evitar multiples llamadas
@@ -144,7 +144,7 @@ const DashboardDefault = () => {
 	const handleDismissOnboarding = useCallback(async () => {
 		try {
 			setIsDismissing(true);
-			const response = await ApiService.dismissOnboarding() as any;
+			const response = (await ApiService.dismissOnboarding()) as any;
 			if (response.success && response.onboarding) {
 				// Actualizar estado local
 				setOnboardingStatus(response.onboarding);
@@ -154,7 +154,7 @@ const DashboardDefault = () => {
 				}
 				setSnackbar({
 					open: true,
-					message: "No volveras a ver esta guia de inicio",
+					message: "No volverás a ver esta guía de inicio",
 					severity: "success",
 				});
 			}
@@ -247,19 +247,21 @@ const DashboardDefault = () => {
 		<>
 			{[1, 2, 3, 4].map((item) => (
 				<Grid item xs={12} sm={6} lg={3} key={item}>
-					<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
 				</Grid>
 			))}
-			<Grid item xs={12} md={8} lg={9}>
+			<Grid item xs={12} md={6} lg={5}>
+				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
+			</Grid>
+			<Grid item xs={12} md={6} lg={3}>
 				<Stack spacing={3}>
-					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={170} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={100} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={70} sx={{ borderRadius: 1.5 }} />
 				</Stack>
 			</Grid>
-			<Grid item xs={12} md={4} lg={3}>
-				<Stack spacing={3}>
-					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
-					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
-				</Stack>
+			<Grid item xs={12} md={6} lg={4}>
+				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
 			</Grid>
 		</>
 	);
@@ -318,7 +320,7 @@ const DashboardDefault = () => {
 			<Grid item xs={12} sm={6} lg={3}>
 				<OnboardingCard
 					title="Vencimientos"
-					description="Configura alertas para vencimientos judiciales. Recibe notificaciones antes de cada fecha limite."
+					description="Configura alertas para vencimientos judiciales. Recibe notificaciones antes de cada fecha límite."
 					actionLabel="Ver vencimientos"
 					onAction={handleViewDeadlines}
 					icon={<CloudChange size={24} />}
@@ -354,15 +356,14 @@ const DashboardDefault = () => {
 					{lastUpdated && !isFullyLoading && !error && !showOnboarding && (
 						<Typography
 							variant="caption"
+							color="text.secondary"
 							sx={{
 								display: "flex",
 								justifyContent: "flex-end",
 								mt: 1,
-								color: "text.secondary",
-								fontStyle: "italic",
 							}}
 						>
-							Ultima actualizacion:{" "}
+							Última actualización:{" "}
 							{new Date(lastUpdated).toLocaleString("es-AR", {
 								day: "2-digit",
 								month: "2-digit",
@@ -423,7 +424,7 @@ const DashboardDefault = () => {
 							{renderOnboardingCards()}
 
 							{/* Bloque educativo en lugar del grafico */}
-							<Grid item xs={12} md={6} lg={6}>
+							<Grid item xs={12} md={6} lg={5}>
 								<OnboardingEducationalBlock />
 							</Grid>
 
@@ -435,7 +436,7 @@ const DashboardDefault = () => {
 									<AssignUsers />
 								</Stack>
 							</Grid>
-							<Grid item xs={12} md={6} lg={3}>
+							<Grid item xs={12} md={6} lg={4}>
 								<ProjectRelease />
 							</Grid>
 						</Grid>
@@ -478,13 +479,13 @@ const DashboardDefault = () => {
 
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
-									title="Vencimientos Proximos"
+									title="Vencimientos Próximos"
 									count={(dashboardData?.deadlines?.nextWeek || 0).toString()}
 									color="error"
 									iconPrimary={<CloudChange color={theme.palette.error.dark} />}
 									percentage={
 										<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Typography variant="caption">En los proximos 7 dias</Typography>
+											<Typography variant="caption">En los próximos 7 días</Typography>
 										</Typography>
 									}
 								>
@@ -496,7 +497,7 @@ const DashboardDefault = () => {
 							</Grid>
 
 							{/* row 2 */}
-							<Grid item xs={12} md={6} lg={6}>
+							<Grid item xs={12} md={6} lg={5}>
 								<RepeatCustomerRate />
 							</Grid>
 							<Grid item xs={12} md={6} lg={3}>
@@ -506,7 +507,7 @@ const DashboardDefault = () => {
 									<AssignUsers />
 								</Stack>
 							</Grid>
-							<Grid item xs={12} md={6} lg={3}>
+							<Grid item xs={12} md={6} lg={4}>
 								<ProjectRelease />
 							</Grid>
 						</Grid>
