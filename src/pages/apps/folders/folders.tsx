@@ -1099,7 +1099,7 @@ function ReactTable({
 					</Table>
 				</ScrollX>
 			)}
-			{page.length > 0 && (
+			{page.length > 0 && rows.length > pageSize && (
 				<Box sx={{ p: 2, py: 3 }}>
 					<TablePagination gotoPage={gotoPage} rows={rows as any} setPageSize={setPageSize} pageSize={pageSize} pageIndex={pageIndex} />
 				</Box>
@@ -1876,6 +1876,7 @@ const FoldersLayout = () => {
 			{
 				Header: "Carátula",
 				accessor: "folderName",
+				minWidth: 180,
 				Cell: ({ row }: { row: any }) => {
 					const folder = row.original;
 					const value = folder.folderName;
@@ -1884,14 +1885,41 @@ const FoldersLayout = () => {
 					const showStatusIndicators = folder.pjn === true || folder.mev === true || folder.eje === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
-						return <span>{formatFolderName(value, 50)}</span>;
+						return (
+							<Tooltip title={value || ""}>
+								<span
+									style={{
+										display: "-webkit-box",
+										WebkitLineClamp: 2,
+										WebkitBoxOrient: "vertical",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+									}}
+								>
+									{formatFolderName(value, 50)}
+								</span>
+							</Tooltip>
+						);
 					}
 
 					// Si la causa no fue encontrada en el portal PJN en el último sync
 					if (folder.pjn === true && folder.pjnNotFound === true) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<span>{formatFolderName(value, 50)}</span>
+								<Tooltip title={value || ""}>
+									<span
+										style={{
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											flex: 1,
+										}}
+									>
+										{formatFolderName(value, 50)}
+									</span>
+								</Tooltip>
 								<Tooltip title="Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.">
 									<IconButton
 										size="small"
@@ -2093,7 +2121,20 @@ const FoldersLayout = () => {
 					if (folder.causaVerified === true && folder.causaIsValid === true) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<span>{formatFolderName(value, 50)}</span>
+								<Tooltip title={value || ""}>
+									<span
+										style={{
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											flex: 1,
+										}}
+									>
+										{formatFolderName(value, 50)}
+									</span>
+								</Tooltip>
 								<Tooltip
 									title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : folder.eje === true ? "Causa vinculada a EJE" : "Causa vinculada"}
 								>
@@ -2114,7 +2155,21 @@ const FoldersLayout = () => {
 					}
 
 					// En todos los demás casos, mostrar solo el nombre del folder
-					return <span>{formatFolderName(value, 50)}</span>;
+					return (
+						<Tooltip title={value || ""}>
+							<span
+								style={{
+									display: "-webkit-box",
+									WebkitLineClamp: 2,
+									WebkitBoxOrient: "vertical",
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+								}}
+							>
+								{formatFolderName(value, 50)}
+							</span>
+						</Tooltip>
+					);
 				},
 			},
 			{

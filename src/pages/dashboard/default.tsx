@@ -247,19 +247,21 @@ const DashboardDefault = () => {
 		<>
 			{[1, 2, 3, 4].map((item) => (
 				<Grid item xs={12} sm={6} lg={3} key={item}>
-					<Skeleton variant="rectangular" height={180} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
 				</Grid>
 			))}
-			<Grid item xs={12} md={8} lg={9}>
+			<Grid item xs={12} md={6} lg={5}>
+				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
+			</Grid>
+			<Grid item xs={12} md={6} lg={3}>
 				<Stack spacing={3}>
-					<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={170} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={100} sx={{ borderRadius: 1.5 }} />
+					<Skeleton variant="rectangular" height={70} sx={{ borderRadius: 1.5 }} />
 				</Stack>
 			</Grid>
-			<Grid item xs={12} md={4} lg={3}>
-				<Stack spacing={3}>
-					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
-					<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1.5 }} />
-				</Stack>
+			<Grid item xs={12} md={6} lg={4}>
+				<Skeleton variant="rectangular" height={360} sx={{ borderRadius: 1.5 }} />
 			</Grid>
 		</>
 	);
@@ -354,12 +356,11 @@ const DashboardDefault = () => {
 					{lastUpdated && !isFullyLoading && !error && !showOnboarding && (
 						<Typography
 							variant="caption"
+							color="text.secondary"
 							sx={{
 								display: "flex",
 								justifyContent: "flex-end",
 								mt: 1,
-								color: "text.secondary",
-								fontStyle: "italic",
 							}}
 						>
 							Última actualización:{" "}

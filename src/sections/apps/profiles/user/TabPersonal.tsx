@@ -32,7 +32,6 @@ import MainCard from "components/MainCard";
 import countries from "data/countries";
 import { dispatch, useSelector } from "store";
 import { updateUserProfile } from "store/reducers/auth"; // Importamos la acción
-import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 
 // assets
@@ -447,12 +446,8 @@ const TabPersonal = () => {
 								id="personal-note"
 								placeholder="Puede agregar notas en este espacio"
 								error={Boolean(touched.note && errors.note)}
+								helperText={touched.note && errors.note ? errors.note : "Mínimo 5 caracteres si querés agregar una nota."}
 							/>
-							{touched.note && errors.note && (
-								<FormHelperText error id="personal-note-helper">
-									{errors.note}
-								</FormHelperText>
-							)}
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
 								<Button color="error" onClick={() => resetForm()} disabled={isSubmitting || loading}>
 									Cancelar
@@ -470,10 +465,6 @@ const TabPersonal = () => {
 					</form>
 				)}
 			</Formik>
-			<Divider />
-			<Box sx={{ p: 2.5 }} data-testid="profile-personal-usage">
-				<ResourceUsageWidget title="Uso de Recursos" />
-			</Box>
 		</MainCard>
 	);
 };

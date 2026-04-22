@@ -151,7 +151,8 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 						<Typography variant="subtitle1" gutterBottom>
 							Seleccione una carpeta para vincular este evento:
 						</Typography>
-						<Typography variant="body2" color="error.main" gutterBottom>
+						<Typography variant="body2" color="text.secondary" gutterBottom sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+							<InfoCircle size={14} />
 							Nota: Sólo se permite vincular un evento a una única carpeta.
 						</Typography>
 						<List sx={{ width: "100%", bgcolor: "background.paper" }}>
@@ -275,7 +276,7 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 										width: 12,
 										height: 12,
 										borderRadius: "50%",
-										backgroundColor: event?.color || "#1890ff",
+										backgroundColor: event?.color || theme.palette.primary.main,
 										mr: 1,
 									}}
 								/>

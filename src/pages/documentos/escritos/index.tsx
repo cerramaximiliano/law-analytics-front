@@ -1099,7 +1099,8 @@ const EscritosPage = () => {
 				<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} gap={1} mb={2} alignItems={{ sm: "center" }}>
 					<TextField
 						size="small"
-						placeholder="Buscar por título o modelo..."
+						label="Buscar en escritos"
+						placeholder="Título o modelo..."
 						value={searchInput}
 						onChange={(e) => setSearchInput(e.target.value)}
 						onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
