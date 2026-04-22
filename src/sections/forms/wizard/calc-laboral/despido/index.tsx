@@ -744,31 +744,46 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 	return (
 		<Box sx={{ width: "100%" }}>
 			{/* Progress Steps */}
-			<Stack direction="row" spacing={1.5} sx={{ pb: 4 }}>
-				{steps.map((label, index) => (
-					<Box key={label} sx={{ position: "relative", width: "100%" }}>
-						<Box
-							sx={{
-								height: 3,
-								bgcolor: index <= activeStep ? "primary.main" : "divider",
-								borderRadius: 1,
-								transition: "all 0.3s ease",
-							}}
-						/>
-						<Typography
-							variant="caption"
-							sx={{
-								position: "absolute",
-								top: 6,
-								fontSize: 11,
-								color: index <= activeStep ? "primary.main" : "text.secondary",
-								transition: "color 0.3s ease",
-							}}
-						>
-							{label}
-						</Typography>
-					</Box>
-				))}
+			<Stack spacing={0.5} sx={{ pb: 4 }}>
+				<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+					<Typography variant="caption" color="text.secondary" sx={{ fontSize: 12 }}>
+						{steps[activeStep]}
+					</Typography>
+					<Typography variant="caption" color="text.secondary" sx={{ fontSize: 12 }}>
+						Paso {activeStep + 1} / {steps.length}
+					</Typography>
+				</Stack>
+				<Stack direction="row" spacing={1.5}>
+					{steps.map((label, index) => (
+						<Box key={label} sx={{ width: "100%" }}>
+							<Box
+								sx={{
+									height: 4,
+									bgcolor: index < activeStep ? "primary.main" : index === activeStep ? "primary.light" : "divider",
+									borderRadius: 1,
+									transition: "all 0.3s ease",
+								}}
+							/>
+						</Box>
+					))}
+				</Stack>
+				<Stack direction="row" spacing={1.5}>
+					{steps.map((label, index) => (
+						<Box key={label} sx={{ width: "100%" }}>
+							<Typography
+								variant="caption"
+								sx={{
+									fontSize: 12,
+									fontWeight: index === activeStep ? 600 : 400,
+									color: index < activeStep ? "primary.main" : index === activeStep ? "primary.main" : "text.secondary",
+									transition: "color 0.3s ease",
+								}}
+							>
+								{index < activeStep ? `✓ ${label}` : label}
+							</Typography>
+						</Box>
+					))}
+				</Stack>
 			</Stack>
 			{activeStep === steps.length ? (
 				<ResultsView

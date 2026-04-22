@@ -53,6 +53,7 @@ interface PjnAccountConnectProps {
   onConnectionSuccess?: () => void;
   onSyncComplete?: () => void;
   onServiceAvailableChange?: (available: boolean, message?: string) => void;
+  onConnectionStatusChange?: (connected: boolean) => void;
 }
 
 // Interface para exponer métodos al componente padre
@@ -76,6 +77,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   onConnectionSuccess,
   onSyncComplete,
   onServiceAvailableChange,
+  onConnectionStatusChange,
 }, ref) => {
   const theme = useTheme();
   const dispatch = useDispatch();
@@ -283,6 +285,13 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
   useEffect(() => {
     loadCredentialsStatus();
   }, []);
+
+  // Notificar al padre cuando el estado de conexión cambia (después de que cargó)
+  useEffect(() => {
+    if (!isLoadingStatus) {
+      onConnectionStatusChange?.(hasCredentials);
+    }
+  }, [hasCredentials, isLoadingStatus]);
 
   // calledAfterCompletion=true cuando se invoca desde la transición isActive: true→false.
   // En ese contexto, el DB puede devolver syncStatus=in_progress stale (ya que el WS
@@ -924,7 +933,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
           <TextField
             fullWidth
             label="CUIL"
-            placeholder="XX-XXXXXXXX-X"
+            placeholder="Ej: 20-12345678-9"
             value={formatCuil(cuil)}
             onChange={(e) => {
               const value = e.target.value.replace(/\D/g, "");
@@ -933,9 +942,10 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
             }}
             onBlur={() => validateCuil(cuil)}
             error={Boolean(cuilError)}
-            helperText={cuilError}
+            helperText={cuilError || "Formato: XX-XXXXXXXX-X (11 dígitos)"}
             disabled={isSubmitting}
-            inputProps={{ maxLength: 13 }}
+            inputProps={{ maxLength: 13, inputMode: "numeric" }}
+            autoComplete="username"
             size="small"
           />
 

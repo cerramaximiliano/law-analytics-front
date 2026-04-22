@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 // material-ui
@@ -11,9 +11,8 @@ import { CloseCircle, ArrowLeft, RefreshSquare, MessageQuestion } from "iconsax-
 
 // project-imports
 import MainCard from "components/MainCard";
+import Avatar from "components/@extended/Avatar";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
-import { dispatch } from "store";
-import { openSnackbar } from "store/reducers/snackbar";
 
 // ==============================|| SUBSCRIPTION ERROR ||============================== //
 
@@ -22,20 +21,6 @@ const SubscriptionError = () => {
 	const navigate = useNavigate();
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [supportModalOpen, setSupportModalOpen] = useState(false);
-
-	useEffect(() => {
-		dispatch(
-			openSnackbar({
-				open: true,
-				message: "Error al procesar el pago. No se realizó ningún cargo.",
-				variant: "alert",
-				alert: {
-					color: "error",
-				},
-				close: false,
-			}),
-		);
-	}, []);
 
 	return (
 		<Box
@@ -51,7 +36,16 @@ const SubscriptionError = () => {
 					<CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
 						{/* Icono centrado */}
 						<Box sx={{ textAlign: "center", mb: { xs: 1, sm: 1.5 } }}>
-							<CloseCircle size={matchDownSM ? 48 : 56} variant="Bulk" color={theme.palette.error.main} />
+							<Avatar
+								sx={{
+									width: 120,
+									height: 120,
+									margin: "0 auto",
+									bgcolor: theme.palette.error.main,
+								}}
+							>
+								<CloseCircle size={60} color="white" variant="Bold" />
+							</Avatar>
 						</Box>
 
 						{/* Título principal */}
@@ -69,8 +63,8 @@ const SubscriptionError = () => {
 							variant="outlined"
 							sx={{
 								mb: { xs: 1.5, sm: 2 },
-								bgcolor: theme.palette.grey[50],
-								borderColor: theme.palette.grey[300],
+								bgcolor: "background.default",
+								borderColor: "divider",
 							}}
 						>
 							<CardContent sx={{ py: { xs: 1, sm: 1.5 }, px: { xs: 1.5, sm: 2 } }}>

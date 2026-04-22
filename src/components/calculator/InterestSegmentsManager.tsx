@@ -28,7 +28,7 @@ import {
 	Chip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Add, Trash, Calculator, Edit2, TickCircle, CloseCircle } from "iconsax-react";
+import { Add, Trash, Calculator, Edit2, TickCircle, CloseCircle, InfoCircle } from "iconsax-react";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
@@ -791,16 +791,26 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			{/* Header con opción de capitalización */}
 			<Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
 				<Typography variant="h6">Tramos de Intereses</Typography>
-				<FormControlLabel
-					control={
-						<Checkbox
-							checked={capitalizeInterest}
-							onChange={(e) => handleCapitalizeChange(e.target.checked)}
-							disabled={disabled || segments.length === 0}
-						/>
-					}
-					label="Capitalizar intereses"
-				/>
+				<Tooltip
+					title="Activa el interés compuesto: los intereses de cada tramo se suman al capital del tramo siguiente (art. 770 CCyCN)."
+					placement="top"
+				>
+					<FormControlLabel
+						control={
+							<Checkbox
+								checked={capitalizeInterest}
+								onChange={(e) => handleCapitalizeChange(e.target.checked)}
+								disabled={disabled || segments.length === 0}
+							/>
+						}
+						label={
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<span>Capitalizar intereses</span>
+								<InfoCircle size={16} />
+							</Stack>
+						}
+					/>
+				</Tooltip>
 			</Stack>
 
 			{/* Mensaje de error */}

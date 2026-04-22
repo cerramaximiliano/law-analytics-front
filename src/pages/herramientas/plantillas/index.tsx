@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
+  Badge,
   Box,
   Button,
   Card,
@@ -273,6 +274,8 @@ const ModelosPage = () => {
   const [rtSearch, setRtSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<RichTextTemplate | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Conteo de modelos propios para el badge del tab
+  const [myModelsCount, setMyModelsCount] = useState<number | null>(null);
 
   // Shared — initialise from ?tab= query param
   const [activeTab, setActiveTab] = useState(() => {
@@ -291,6 +294,16 @@ const ModelosPage = () => {
     dispatch(fetchPdfTemplates()).then((res: any) => {
       if (res.success) setPdfTemplates(res.templates || []);
       setPdfLoading(false);
+    });
+  }, []);
+
+  // Prefetch del conteo de modelos propios para el badge del Tab 1
+  useEffect(() => {
+    dispatch(fetchRichTextTemplates({ source: "user" })).then((res: any) => {
+      if (res.success) {
+        const count = (res.templates || []).length;
+        setMyModelsCount(count > 0 ? count : null);
+      }
     });
   }, []);
 
@@ -361,7 +374,9 @@ const ModelosPage = () => {
           label={
             <Stack direction="row" alignItems="center" spacing={1}>
               <ClipboardText size={16} />
-              <span>Mis modelos</span>
+              <Badge badgeContent={myModelsCount} color="primary" max={99}>
+                <span style={{ paddingRight: myModelsCount ? 8 : 0 }}>Mis modelos</span>
+              </Badge>
             </Stack>
           }
         />
@@ -412,7 +427,10 @@ const ModelosPage = () => {
               <Grid item xs={12} sm={6} md={4} lg={3}>
                 <Card
                   variant="outlined"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setRequestModelOpen(true)}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setRequestModelOpen(true)}
                   sx={{
                     height: "100%", minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center",
                     borderStyle: "dashed", borderColor: "primary.light", cursor: "pointer",
@@ -499,7 +517,10 @@ const ModelosPage = () => {
               <Grid item xs={12} sm={6} md={4} lg={3}>
                 <Card
                   variant="outlined"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => navigate("/documentos/modelos/nuevo")}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && navigate("/documentos/modelos/nuevo")}
                   sx={{
                     height: "100%", minHeight: 160, display: "flex", alignItems: "center", justifyContent: "center",
                     borderStyle: "dashed", borderColor: "primary.light", cursor: "pointer",

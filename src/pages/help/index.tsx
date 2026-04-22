@@ -14,6 +14,10 @@ import {
 	Chip,
 	Skeleton,
 	Stack,
+	Select,
+	MenuItem,
+	FormControl,
+	useMediaQuery,
 } from "@mui/material";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -164,6 +168,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "laboral" ? 2 : 1,
+							borderColor: expandedGuide === "laboral" ? theme.palette.primary.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -221,6 +227,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "intereses" ? 2 : 1,
+							borderColor: expandedGuide === "intereses" ? theme.palette.success.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -278,6 +286,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "carpetas" ? 2 : 1,
+							borderColor: expandedGuide === "carpetas" ? theme.palette.warning.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -333,6 +343,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "contactos" ? 2 : 1,
+							borderColor: expandedGuide === "contactos" ? theme.palette.info.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -390,6 +402,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "calendario" ? 2 : 1,
+							borderColor: expandedGuide === "calendario" ? theme.palette.secondary.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -447,6 +461,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "citas" ? 2 : 1,
+							borderColor: expandedGuide === "citas" ? theme.palette.error.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -504,6 +520,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "tareas" ? 2 : 1,
+							borderColor: expandedGuide === "tareas" ? theme.palette.primary.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -558,6 +576,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "analytics" ? 2 : 1,
+							borderColor: expandedGuide === "analytics" ? theme.palette.info.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -612,6 +632,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "limits" ? 2 : 1,
+							borderColor: expandedGuide === "limits" ? theme.palette.secondary.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -665,6 +687,8 @@ const GuidesSection = () => {
 							flexDirection: "column",
 							transition: "all 0.2s",
 							borderRadius: 2,
+							border: expandedGuide === "teams" ? 2 : 1,
+							borderColor: expandedGuide === "teams" ? theme.palette.warning.main : "divider",
 							"&:hover": {
 								boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
 								transform: "translateY(-4px)",
@@ -1174,7 +1198,7 @@ const FAQSection = () => {
 	);
 };
 
-// Sección de Recursos (para demostrar la estructura extensible)
+// Sección de Recursos
 const ResourcesSection = () => {
 	const theme = useTheme();
 
@@ -1186,19 +1210,46 @@ const ResourcesSection = () => {
 			</Box>
 
 			<Typography paragraph color="textSecondary">
-				Material complementario para sacar el máximo provecho de la plataforma.
+				Canales y recursos para obtener ayuda y estar al tanto de las novedades de la plataforma.
 			</Typography>
 
-			<Card sx={{ mb: 2 }}>
-				<CardContent>
-					<Typography variant="h5" gutterBottom>
-						Próximamente
-					</Typography>
-					<Typography variant="body2" color="textSecondary">
-						Estamos preparando una biblioteca de recursos adicionales para ti.
-					</Typography>
-				</CardContent>
-			</Card>
+			<Grid container spacing={2}>
+				<Grid item xs={12} sm={6}>
+					<Card sx={{ mb: 0, height: "100%" }}>
+						<CardContent>
+							<Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+								<MessageQuestion size={20} style={{ marginRight: 8, color: theme.palette.primary.main }} />
+								<Typography variant="h5">Soporte técnico</Typography>
+							</Box>
+							<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+								¿Encontraste un problema o necesitás asistencia? Contactanos directamente por email.
+							</Typography>
+							<Button
+								variant="outlined"
+								size="small"
+								href="mailto:soporte@lawanalytics.app"
+								component="a"
+							>
+								soporte@lawanalytics.app
+							</Button>
+						</CardContent>
+					</Card>
+				</Grid>
+				<Grid item xs={12} sm={6}>
+					<Card sx={{ mb: 0, height: "100%" }}>
+						<CardContent>
+							<Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+								<InfoCircle size={20} style={{ marginRight: 8, color: theme.palette.info.main }} />
+								<Typography variant="h5">Novedades</Typography>
+							</Box>
+							<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+								Seguí las actualizaciones y nuevas funcionalidades a través de las notificaciones en la plataforma.
+							</Typography>
+							<Chip label="Notificaciones activas" color="info" size="small" variant="outlined" />
+						</CardContent>
+					</Card>
+				</Grid>
+			</Grid>
 		</Box>
 	);
 };
@@ -1206,6 +1257,7 @@ const ResourcesSection = () => {
 // Componente principal de la página de Ayuda
 const HelpPage = () => {
 	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [isLoading, setIsLoading] = useState(true);
 
 	// Secciones disponibles
@@ -1307,47 +1359,68 @@ const HelpPage = () => {
 	return (
 		<MainCard title="Centro de Ayuda">
 			<Grid container spacing={4}>
-				{/* Menú lateral */}
+				{/* Menú de navegación: Select en mobile, List lateral en desktop */}
 				<Grid item xs={12} md={3}>
-					<Paper sx={{ p: 2, mb: { xs: 3, md: 0 } }}>
-						<Typography variant="h4" sx={{ mb: 2 }}>
-							Secciones
-						</Typography>
-						<List component="nav">
-							<ListItemButton
-								onClick={() => setActiveSection(null)}
-								selected={activeSection === null}
-								sx={{
-									borderRadius: 1,
-									mb: 1,
-									bgcolor: activeSection === null ? theme.palette.primary.lighter : "inherit",
-								}}
-							>
-								<ListItemIcon>
-									<InfoCircle size={20} />
-								</ListItemIcon>
-								<ListItemText primary="Todas las secciones" />
-							</ListItemButton>
-
-							<Divider sx={{ my: 1.5 }} />
-
-							{sections.map((section) => (
+					{isMobile ? (
+						/* Mobile: Select sticky debajo del título */
+						<Box sx={{ mb: 2, position: "sticky", top: 64, zIndex: 10, bgcolor: "background.paper", pb: 1 }}>
+							<FormControl fullWidth size="small">
+								<Select
+									value={activeSection ?? "all"}
+									onChange={(e) => setActiveSection(e.target.value === "all" ? null : e.target.value)}
+									displayEmpty
+								>
+									<MenuItem value="all">Todas las secciones</MenuItem>
+									{sections.map((section) => (
+										<MenuItem key={section.id} value={section.id}>
+											{section.name}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+						</Box>
+					) : (
+						/* Desktop: menú lateral */
+						<Paper sx={{ p: 2 }}>
+							<Typography variant="h4" sx={{ mb: 2 }}>
+								Secciones
+							</Typography>
+							<List component="nav">
 								<ListItemButton
-									key={section.id}
-									onClick={() => handleSectionClick(section.id)}
-									selected={activeSection === section.id}
+									onClick={() => setActiveSection(null)}
+									selected={activeSection === null}
 									sx={{
 										borderRadius: 1,
 										mb: 1,
-										bgcolor: activeSection === section.id ? theme.palette.primary.lighter : "inherit",
+										bgcolor: activeSection === null ? theme.palette.primary.lighter : "inherit",
 									}}
 								>
-									<ListItemIcon>{section.icon}</ListItemIcon>
-									<ListItemText primary={section.name} />
+									<ListItemIcon>
+										<InfoCircle size={20} />
+									</ListItemIcon>
+									<ListItemText primary="Todas las secciones" />
 								</ListItemButton>
-							))}
-						</List>
-					</Paper>
+
+								<Divider sx={{ my: 1.5 }} />
+
+								{sections.map((section) => (
+									<ListItemButton
+										key={section.id}
+										onClick={() => handleSectionClick(section.id)}
+										selected={activeSection === section.id}
+										sx={{
+											borderRadius: 1,
+											mb: 1,
+											bgcolor: activeSection === section.id ? theme.palette.primary.lighter : "inherit",
+										}}
+									>
+										<ListItemIcon>{section.icon}</ListItemIcon>
+										<ListItemText primary={section.name} />
+									</ListItemButton>
+								))}
+							</List>
+						</Paper>
+					)}
 				</Grid>
 
 				{/* Contenido principal */}

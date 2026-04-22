@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Alert, CircularProgress, FormControlLabel, Stack, Switch, Typography, Grid } from "@mui/material";
-import { InfoCircle, Link1, People } from "iconsax-react";
+import { Alert, Chip, CircularProgress, FormControlLabel, Stack, Switch, Typography, Grid } from "@mui/material";
+import { InfoCircle, Link1, People, TickCircle, CloseCircle } from "iconsax-react";
 import { useTheme } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
 
@@ -17,6 +17,9 @@ const TabPjnIntegration = () => {
 	// Estado del servicio PJN
 	const [serviceAvailable, setServiceAvailable] = useState(true);
 	const [serviceMessage, setServiceMessage] = useState("");
+
+	// Estado de conexión (informado por PjnAccountConnect al cargar credenciales)
+	const [isConnected, setIsConnected] = useState<boolean | null>(null);
 
 	// Sincronización de intervinientes
 	const [syncContactsEnabled, setSyncContactsEnabled] = useState(false);
@@ -76,9 +79,28 @@ const TabPjnIntegration = () => {
 			<Grid item xs={12} md={6}>
 				<MainCard
 					title={
-						<Stack direction="row" alignItems="center" spacing={1}>
+						<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
 							<Link1 size={22} color={theme.palette.primary.main} />
 							<Typography variant="h5">Integración PJN</Typography>
+							{isConnected !== null && (
+								isConnected ? (
+									<Chip
+										label="Conectado"
+										color="success"
+										size="small"
+										icon={<TickCircle size={14} />}
+										sx={{ ml: 1 }}
+									/>
+								) : (
+									<Chip
+										label="No conectado"
+										color="default"
+										size="small"
+										icon={<CloseCircle size={14} />}
+										sx={{ ml: 1 }}
+									/>
+								)
+							)}
 						</Stack>
 					}
 				>
@@ -87,10 +109,13 @@ const TabPjnIntegration = () => {
 							Vincula tu cuenta del Poder Judicial de la Nación para sincronizar automáticamente
 							todas tus causas y mantenerlas actualizadas.
 						</Typography>
-						<PjnAccountConnect onServiceAvailableChange={(available, message) => {
-							setServiceAvailable(available);
-							setServiceMessage(message || "");
-						}} />
+						<PjnAccountConnect
+							onServiceAvailableChange={(available, message) => {
+								setServiceAvailable(available);
+								setServiceMessage(message || "");
+							}}
+							onConnectionStatusChange={(connected) => setIsConnected(connected)}
+						/>
 					</Stack>
 				</MainCard>
 			</Grid>
@@ -128,6 +153,13 @@ const TabPjnIntegration = () => {
 									Los intervinientes (partes y letrados) extraídos de tus causas se crearán automáticamente
 									como contactos en las carpetas vinculadas.
 								</Typography>
+								{!syncContactsEnabled && (
+									<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.5, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
+										Al activarlo, los actores y demandados de tus causas se crearán como contactos. La app detecta
+										contactos existentes con el mismo CUIT para evitar duplicados. Si tenés muchas causas, se pueden
+										crear cientos de contactos nuevos — activá con criterio.
+									</Alert>
+								)}
 								<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
 									La cantidad de contactos sincronizados está sujeta a los límites de tu plan actual.
 								</Alert>

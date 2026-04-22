@@ -66,7 +66,7 @@ const ProfileTab = ({ handleLogout, handleClose }: Props) => {
 
 			<ListItemButton
 				selected={selectedIndex === 5}
-				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 5, "/apps/profiles/account/settings")}
+				onClick={(event: MouseEvent<HTMLDivElement>) => handleListItemClick(event, 5, "/apps/profiles/account/subscription")}
 			>
 				<ListItemIcon>
 					<Card variant="Bulk" size={18} />

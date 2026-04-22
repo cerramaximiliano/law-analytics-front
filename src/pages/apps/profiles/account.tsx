@@ -24,7 +24,7 @@ const AccountProfile = () => {
 
 	const tabPaths = [
 		"/apps/profiles/account/my-account",
-		"/apps/profiles/account/settings",
+		"/apps/profiles/account/subscription",
 		"/apps/profiles/account/role",
 		...(showPjnTab ? ["/apps/profiles/account/pjn"] : []),
 	];
@@ -56,7 +56,7 @@ const AccountProfile = () => {
 			<Box sx={{ borderBottom: 1, borderColor: "divider", width: "100%" }}>
 				<Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons="auto" aria-label="account profile tab">
 					<Tab label="Mi cuenta" component={Link} to="/apps/profiles/account/my-account" icon={<TableDocument />} iconPosition="start" />
-					<Tab label="Suscripción" component={Link} to="/apps/profiles/account/settings" icon={<Card />} iconPosition="start" />
+					<Tab label="Suscripción" component={Link} to="/apps/profiles/account/subscription" icon={<Card />} iconPosition="start" />
 					<Tab label="Mi Equipo" component={Link} to="/apps/profiles/account/role" icon={<Profile2User />} iconPosition="start" />
 					{showPjnTab && (
 						<Tab label="Integración PJN" component={Link} to="/apps/profiles/account/pjn" icon={<Link1 />} iconPosition="start" />

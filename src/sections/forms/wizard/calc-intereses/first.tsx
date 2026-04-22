@@ -266,9 +266,9 @@ export default function FirstForm(props: FirstFormProps) {
 								disabled={(values[segments.name] || []).length > 0}
 							/>
 							{(values[segments.name] || []).length > 0 && (
-								<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+								<Alert severity="info" sx={{ mt: 1 }}>
 									Elimine los tramos para modificar el capital
-								</Typography>
+								</Alert>
 							)}
 						</Grid>
 					</Grid>
