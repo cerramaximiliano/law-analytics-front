@@ -60,16 +60,21 @@ interface ExtendedUserPreferences extends UserPreferences {
 
 // Zonas horarias comunes
 const timeZones = [
-	{ value: "Europe/Madrid", label: "(GMT+01:00) Madrid" },
-	{ value: "Europe/London", label: "(GMT+00:00) Londres" },
+	{ value: "America/Argentina/Buenos_Aires", label: "(GMT-03:00) Buenos Aires" },
+	{ value: "America/Argentina/Cordoba", label: "(GMT-03:00) Córdoba" },
+	{ value: "America/Argentina/Jujuy", label: "(GMT-03:00) Jujuy" },
+	{ value: "America/Argentina/Mendoza", label: "(GMT-03:00) Mendoza" },
+	{ value: "America/Argentina/San_Luis", label: "(GMT-03:00) San Luis" },
+	{ value: "America/Buenos_Aires", label: "(GMT-03:00) Buenos Aires (legacy)" },
 	{ value: "America/New_York", label: "(GMT-05:00) Nueva York" },
-	{ value: "America/Los_Angeles", label: "(GMT-08:00) Los Ángeles" },
 	{ value: "America/Chicago", label: "(GMT-06:00) Chicago" },
 	{ value: "America/Denver", label: "(GMT-07:00) Denver" },
-	{ value: "America/Buenos_Aires", label: "(GMT-03:00) Buenos Aires" },
-	{ value: "Asia/Tokyo", label: "(GMT+09:00) Tokio" },
-	{ value: "Asia/Shanghai", label: "(GMT+08:00) Shanghai" },
+	{ value: "America/Los_Angeles", label: "(GMT-08:00) Los Ángeles" },
+	{ value: "Europe/London", label: "(GMT+00:00) Londres" },
+	{ value: "Europe/Madrid", label: "(GMT+01:00) Madrid" },
 	{ value: "Asia/Dubai", label: "(GMT+04:00) Dubai" },
+	{ value: "Asia/Shanghai", label: "(GMT+08:00) Shanghai" },
+	{ value: "Asia/Tokyo", label: "(GMT+09:00) Tokio" },
 	{ value: "Australia/Sydney", label: "(GMT+10:00) Sídney" },
 ];
 
@@ -95,7 +100,7 @@ const deactivationReasons = [
 const TabAccount = () => {
 	// Check if international banking data should be displayed
 	const showBankingData = useBankingDisplay();
-	const [checked, setChecked] = useState(["sb", "ln", "la"]);
+	const [checked, setChecked] = useState(["ln", "la"]);
 	const auth = useSelector((state) => state.auth);
 	const email = auth.user?.email || "";
 
@@ -155,7 +160,7 @@ const TabAccount = () => {
 				// Crear un objeto UserPreferences válido
 				const userPrefs: UserPreferences = {
 					// Valores por defecto o valores del servidor
-					timeZone: responseData.timeZone || "Europe/Madrid",
+					timeZone: responseData.timeZone || "America/Argentina/Buenos_Aires",
 					dateFormat: responseData.dateFormat || "DD/MM/YYYY",
 					language: responseData.language || "es",
 					theme: responseData.theme || "light",
@@ -216,7 +221,7 @@ const TabAccount = () => {
 				}
 
 				// Configurar switches
-				const newChecked = ["sb", "la"]; // Valores base
+				const newChecked = ["la"]; // Valores base
 
 				// Verificar loginAlerts con acceso seguro
 				const loginAlertsValue = Boolean(
@@ -536,9 +541,9 @@ const TabAccount = () => {
 			setTimeZone(foundTimeZone.value);
 			setOriginalTimeZone(foundTimeZone.value);
 		} else {
-			// Si no existe en nuestra lista, usar Madrid por defecto
-			setTimeZone("Europe/Madrid");
-			setOriginalTimeZone("Europe/Madrid");
+			// Si no existe en nuestra lista, usar Buenos Aires por defecto
+			setTimeZone("America/Argentina/Buenos_Aires");
+			setOriginalTimeZone("America/Argentina/Buenos_Aires");
 		}
 
 		// Cargar las sesiones activas
@@ -784,14 +789,13 @@ const TabAccount = () => {
 				<MainCard title="Configuración de seguridad" content={false}>
 					<List sx={{ p: 0 }}>
 						<ListItem divider>
-							<ListItemText id="switch-list-label-sb" primary="Navegación segura" secondary="Usar HTTPS cuando esté disponible" />
-							<Switch
-								edge="end"
-								onChange={handleToggle("sb")}
-								checked={checked.indexOf("sb") !== -1}
-								inputProps={{
-									"aria-labelledby": "switch-list-label-sb",
-								}}
+							<ListItemText
+								primary="Navegación segura"
+								secondary={
+									<Typography variant="caption" color="text.secondary">
+										La conexión con Law Analytics siempre usa HTTPS.
+									</Typography>
+								}
 							/>
 						</ListItem>
 						<ListItem divider>
@@ -878,7 +882,12 @@ const TabAccount = () => {
 										{session.isCurrentSession ? (
 											<Button disabled>Sesión actual</Button>
 										) : (
-											<Button color="error" onClick={() => handleOpenCloseSessionDialog(session.deviceId, session.isCurrentSession)}>
+											<Button
+												color="error"
+												variant="outlined"
+												size="small"
+												onClick={() => handleOpenCloseSessionDialog(session.deviceId, session.isCurrentSession)}
+											>
 												Cerrar sesión
 											</Button>
 										)}
@@ -1079,6 +1088,7 @@ const TabAccount = () => {
 									fullWidth
 									required
 									error={!!deactivateError}
+									autoComplete="current-password"
 								/>
 							</FormControl>
 
