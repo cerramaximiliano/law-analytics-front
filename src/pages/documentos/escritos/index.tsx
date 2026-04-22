@@ -4,6 +4,7 @@ import {
 	Autocomplete,
 	Box,
 	Button,
+	CardActions,
 	Chip,
 	CircularProgress,
 	Dialog,
@@ -12,6 +13,7 @@ import {
 	DialogContentText,
 	DialogTitle,
 	Divider,
+	Fab,
 	FormControl,
 	Grid,
 	IconButton,
@@ -34,6 +36,8 @@ import {
 	TextField,
 	Tooltip,
 	Typography,
+	useMediaQuery,
+	useTheme,
 } from "@mui/material";
 import {
 	Add,
@@ -882,6 +886,8 @@ const DeleteDialog = ({ open, title, loading, onConfirm, onClose }: DeleteDialog
 const EscritosPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
 	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector(
 		(state: any) => state.richTextDocumentsReducer
@@ -1022,16 +1028,28 @@ const EscritosPage = () => {
 					</Stack>
 
 					<Box>
-						<Button
-							variant="contained"
-							size="small"
-							startIcon={<Add size={16} />}
-							endIcon={<ArrowDown2 size={14} />}
-							onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
-							data-testid="escritos-new-btn"
-						>
-							Nuevo documento
-						</Button>
+						{isMobile ? (
+							<Fab
+								size="small"
+								color="primary"
+								aria-label="Nuevo documento"
+								onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
+								data-testid="escritos-new-btn"
+							>
+								<Add size={18} />
+							</Fab>
+						) : (
+							<Button
+								variant="contained"
+								size="small"
+								startIcon={<Add size={16} />}
+								endIcon={<ArrowDown2 size={14} />}
+								onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
+								data-testid="escritos-new-btn"
+							>
+								Nuevo documento
+							</Button>
+						)}
 						<Menu anchorEl={newDocMenuAnchor} open={Boolean(newDocMenuAnchor)} onClose={() => setNewDocMenuAnchor(null)}>
 							<MuiMenuItem
 								onClick={async () => {
@@ -1111,65 +1129,57 @@ const EscritosPage = () => {
 
 				<Divider sx={{ mb: 2 }} />
 
-				{/* Table */}
-				<TableContainer>
-					<Table size="small">
-						<TableHead>
-							<TableRow>
-									<TableCell>Título</TableCell>
-								<TableCell>Modelo</TableCell>
-								<TableCell>Estado</TableCell>
-								<TableCell>Carpeta</TableCell>
-								<TableCell>Fecha</TableCell>
-								<TableCell align="right">Acciones</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{isLoading ? (
-								Array(5)
-									.fill(0)
-									.map((_, i) => <RowSkeleton key={i} />)
-							) : rows.length === 0 ? (
-								<TableRow>
-									<TableCell colSpan={6}>
-										<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
-											<DocumentText size={40} style={{ opacity: 0.3 }} />
-											<Typography variant="body2" color="text.secondary">
-												{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
-											</Typography>
+				{/* Table (>= sm) / Cards (< sm) */}
+				{isMobile ? (
+					/* ── Mobile card list ── */
+					<Stack spacing={1.5}>
+						{isLoading ? (
+							Array(4)
+								.fill(0)
+								.map((_, i) => (
+									<Paper key={i} variant="outlined" sx={{ p: 1.5 }}>
+										<Stack spacing={1}>
+											<Skeleton variant="text" width="70%" />
+											<Skeleton variant="text" width="40%" />
+											<Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 1 }} />
 										</Stack>
-									</TableCell>
-								</TableRow>
-							) : (
-								rows.map((row) => {
-									const isPostal = row.kind === "postal";
-									const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
-									const hasTracking = isPostal && Boolean(row.linkedTrackingId);
+									</Paper>
+								))
+						) : rows.length === 0 ? (
+							<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
+								<DocumentText size={40} style={{ opacity: 0.3 }} />
+								<Typography variant="body2" color="text.secondary" textAlign="center">
+									{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
+								</Typography>
+							</Stack>
+						) : (
+							rows.map((row) => {
+								const isPostal = row.kind === "postal";
+								const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
+								const hasTracking = isPostal && Boolean(row.linkedTrackingId);
 
-									return (
-										<TableRow key={`${row.kind}-${row.id}`} hover>
-											<TableCell>
-												<Stack spacing={0.25}>
-													<Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 200 }}>
-														{row.title}
-													</Typography>
-													{hasTracking && (
-														<Chip
-															size="small"
-															label="Seguimiento"
-															color="info"
-															variant="outlined"
-															sx={{ alignSelf: "flex-start", height: 18, fontSize: "0.65rem" }}
-														/>
-													)}
-												</Stack>
-											</TableCell>
-											<TableCell>
-												<Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 140 }}>
-													{row.templateName}
+								return (
+									<Paper key={`${row.kind}-${row.id}`} variant="outlined" sx={{ overflow: "hidden" }}>
+										{/* Card body */}
+										<Stack spacing={1} sx={{ p: 1.5 }}>
+											{/* Title row */}
+											<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+												<Typography variant="body2" fontWeight={600} sx={{ flex: 1, wordBreak: "break-word" }}>
+													{row.title}
 												</Typography>
-											</TableCell>
-											<TableCell>
+												{/* Type chip */}
+												<Chip
+													size="small"
+													label={isPostal ? "Postal" : "Escrito"}
+													icon={isPostal ? <DocumentDownload size={12} /> : <DocumentText size={12} />}
+													variant="outlined"
+													color={isPostal ? "info" : "default"}
+													sx={{ flexShrink: 0, height: 20, fontSize: "0.65rem" }}
+												/>
+											</Stack>
+
+											{/* Status + tracking */}
+											<Stack direction="row" spacing={0.75} flexWrap="wrap" alignItems="center">
 												{isPostal ? (
 													<Chip
 														size="small"
@@ -1184,83 +1194,253 @@ const EscritosPage = () => {
 														variant={row.status === "final" ? "filled" : "outlined"}
 													/>
 												)}
-											</TableCell>
-											<TableCell>
-												{linkedFolder ? (
-													<Typography
-														variant="body2"
-														onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
-														sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
-													>
-														{linkedFolder.folderName}
-													</Typography>
-												) : (
-													<Typography variant="caption" color="text.disabled">
-														Sin vincular
-													</Typography>
+												{hasTracking && (
+													<Chip
+														size="small"
+														label="Seguimiento"
+														color="info"
+														variant="outlined"
+														sx={{ height: 18, fontSize: "0.65rem" }}
+													/>
 												)}
-											</TableCell>
-											<TableCell>
-												<Typography variant="caption" color="text.secondary">
-													{formatDate(row.createdAt)}
-												</Typography>
-											</TableCell>
-											<TableCell align="right">
-												<Stack direction="row" justifyContent="flex-end" spacing={0.5}>
-													{isPostal ? (
-														<>
-															<Tooltip title="Ver documento">
-																<IconButton size="small" color="primary" onClick={() => setPostalDetail(row.rawPostal!)}>
-																	<Eye size={15} />
-																</IconButton>
-															</Tooltip>
-															{row.documentUrl && (
-																<Tooltip title="Descargar PDF">
-																	<IconButton
-																		size="small"
-																		color="info"
-																		onClick={() => window.open(row.documentUrl, "_blank")}
-																	>
-																		<DocumentDownload size={15} />
-																	</IconButton>
-																</Tooltip>
-															)}
-														</>
+											</Stack>
+
+											{/* Metadata row: carpeta + fecha */}
+											<Stack direction="row" spacing={2} flexWrap="wrap">
+												<Stack spacing={0.1}>
+													<Typography variant="caption" color="text.disabled" fontWeight={600} textTransform="uppercase" letterSpacing={0.4}>
+														Carpeta
+													</Typography>
+													{linkedFolder ? (
+														<Typography
+															variant="caption"
+															onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
+															sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+														>
+															{linkedFolder.folderName}
+														</Typography>
 													) : (
-														<Tooltip title="Ver / Editar documento">
-															<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+														<Typography variant="caption" color="text.disabled">
+															Sin vincular
+														</Typography>
+													)}
+												</Stack>
+												<Stack spacing={0.1}>
+													<Typography variant="caption" color="text.disabled" fontWeight={600} textTransform="uppercase" letterSpacing={0.4}>
+														Fecha
+													</Typography>
+													<Typography variant="caption" color="text.secondary">
+														{formatDate(row.createdAt)}
+													</Typography>
+												</Stack>
+											</Stack>
+										</Stack>
+
+										<Divider />
+
+										{/* Card footer: actions */}
+										<CardActions sx={{ px: 1, py: 0.75, justifyContent: "flex-end" }}>
+											<Stack direction="row" spacing={0.25}>
+												{isPostal ? (
+													<>
+														<Tooltip title="Ver documento">
+															<IconButton size="small" color="primary" onClick={() => setPostalDetail(row.rawPostal!)}>
 																<Eye size={15} />
 															</IconButton>
 														</Tooltip>
+														{row.documentUrl && (
+															<Tooltip title="Descargar PDF">
+																<IconButton size="small" color="info" onClick={() => window.open(row.documentUrl, "_blank")}>
+																	<DocumentDownload size={15} />
+																</IconButton>
+															</Tooltip>
+														)}
+													</>
+												) : (
+													<Tooltip title="Ver / Editar documento">
+														<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+															<Eye size={15} />
+														</IconButton>
+													</Tooltip>
+												)}
+												<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
+													<IconButton
+														size="small"
+														color={row.linkedFolderId ? "success" : "default"}
+														onClick={() => setVincularRow(row)}
+													>
+														<Routing size={15} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Eliminar">
+													<IconButton
+														size="small"
+														color="error"
+														onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
+														data-testid="escritos-delete-btn"
+													>
+														<Trash size={15} />
+													</IconButton>
+												</Tooltip>
+											</Stack>
+										</CardActions>
+									</Paper>
+								);
+							})
+						)}
+					</Stack>
+				) : (
+					/* ── Desktop / tablet table (>= sm) ── */
+					<TableContainer>
+						<Table size="small">
+							<TableHead>
+								<TableRow>
+									<TableCell>Título</TableCell>
+									<TableCell>Modelo</TableCell>
+									<TableCell>Estado</TableCell>
+									<TableCell>Carpeta</TableCell>
+									<TableCell>Fecha</TableCell>
+									<TableCell align="right">Acciones</TableCell>
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{isLoading ? (
+									Array(5)
+										.fill(0)
+										.map((_, i) => <RowSkeleton key={i} />)
+								) : rows.length === 0 ? (
+									<TableRow>
+										<TableCell colSpan={6}>
+											<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
+												<DocumentText size={40} style={{ opacity: 0.3 }} />
+												<Typography variant="body2" color="text.secondary">
+													{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
+												</Typography>
+											</Stack>
+										</TableCell>
+									</TableRow>
+								) : (
+									rows.map((row) => {
+										const isPostal = row.kind === "postal";
+										const linkedFolder = row.linkedFolderId ? folders.find((f: any) => f._id === row.linkedFolderId) : null;
+										const hasTracking = isPostal && Boolean(row.linkedTrackingId);
+
+										return (
+											<TableRow key={`${row.kind}-${row.id}`} hover>
+												<TableCell>
+													<Stack spacing={0.25}>
+														<Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 200 }}>
+															{row.title}
+														</Typography>
+														{hasTracking && (
+															<Chip
+																size="small"
+																label="Seguimiento"
+																color="info"
+																variant="outlined"
+																sx={{ alignSelf: "flex-start", height: 18, fontSize: "0.65rem" }}
+															/>
+														)}
+													</Stack>
+												</TableCell>
+												<TableCell>
+													<Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 140 }}>
+														{row.templateName}
+													</Typography>
+												</TableCell>
+												<TableCell>
+													{isPostal ? (
+														<Chip
+															size="small"
+															label={POSTAL_STATUS_LABELS[row.status] ?? row.status}
+															color={POSTAL_STATUS_COLORS[row.status] ?? "default"}
+														/>
+													) : (
+														<Chip
+															size="small"
+															label={RT_STATUS_LABELS[row.status] ?? row.status}
+															color={(RT_STATUS_COLORS[row.status] ?? "default") as "default" | "success"}
+															variant={row.status === "final" ? "filled" : "outlined"}
+														/>
 													)}
-													<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
-														<IconButton
-															size="small"
-															color={row.linkedFolderId ? "success" : "default"}
-															onClick={() => setVincularRow(row)}
+												</TableCell>
+												<TableCell>
+													{linkedFolder ? (
+														<Typography
+															variant="body2"
+															onClick={() => navigate(`/apps/folders/details/${row.linkedFolderId}`)}
+															sx={{ cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
 														>
-															<Routing size={15} />
-														</IconButton>
-													</Tooltip>
-													<Tooltip title="Eliminar">
-														<IconButton
-															size="small"
-															color="error"
-															onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
-															data-testid="escritos-delete-btn"
-														>
-															<Trash size={15} />
-														</IconButton>
-													</Tooltip>
-												</Stack>
-											</TableCell>
-										</TableRow>
-									);
-								})
-							)}
-						</TableBody>
-					</Table>
-				</TableContainer>
+															{linkedFolder.folderName}
+														</Typography>
+													) : (
+														<Typography variant="caption" color="text.disabled">
+															Sin vincular
+														</Typography>
+													)}
+												</TableCell>
+												<TableCell>
+													<Typography variant="caption" color="text.secondary">
+														{formatDate(row.createdAt)}
+													</Typography>
+												</TableCell>
+												<TableCell align="right">
+													<Stack direction="row" justifyContent="flex-end" spacing={0.5}>
+														{isPostal ? (
+															<>
+																<Tooltip title="Ver documento">
+																	<IconButton size="small" color="primary" onClick={() => setPostalDetail(row.rawPostal!)}>
+																		<Eye size={15} />
+																	</IconButton>
+																</Tooltip>
+																{row.documentUrl && (
+																	<Tooltip title="Descargar PDF">
+																		<IconButton
+																			size="small"
+																			color="info"
+																			onClick={() => window.open(row.documentUrl, "_blank")}
+																		>
+																			<DocumentDownload size={15} />
+																		</IconButton>
+																	</Tooltip>
+																)}
+															</>
+														) : (
+															<Tooltip title="Ver / Editar documento">
+																<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+																	<Eye size={15} />
+																</IconButton>
+															</Tooltip>
+														)}
+														<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
+															<IconButton
+																size="small"
+																color={row.linkedFolderId ? "success" : "default"}
+																onClick={() => setVincularRow(row)}
+															>
+																<Routing size={15} />
+															</IconButton>
+														</Tooltip>
+														<Tooltip title="Eliminar">
+															<IconButton
+																size="small"
+																color="error"
+																onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
+																data-testid="escritos-delete-btn"
+															>
+																<Trash size={15} />
+															</IconButton>
+														</Tooltip>
+													</Stack>
+												</TableCell>
+											</TableRow>
+										);
+									})
+								)}
+							</TableBody>
+						</Table>
+					</TableContainer>
+				)}
 
 				{/* Pagination — only in type-specific mode */}
 				{typeFilter !== "all" && totalPages > 1 && (

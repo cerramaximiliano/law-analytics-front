@@ -13,9 +13,6 @@ import {
 	FormHelperText,
 	Grid,
 	InputLabel,
-	MenuItem,
-	Select,
-	SelectChangeEvent,
 	Stack,
 	TextField,
 	Skeleton,
@@ -39,15 +36,6 @@ import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 import dayjs from "utils/dayjs-config";
 
 // styles & constant
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-	PaperProps: {
-		style: {
-			maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-		},
-	},
-};
 
 function useInputRef() {
 	return useOutletContext<RefObject<HTMLInputElement>>();
@@ -99,16 +87,6 @@ const TabPersonal = () => {
 		errorMessage: "Error al actualizar el perfil",
 	});
 
-	const handleChangeDay = (event: SelectChangeEvent<string>, date: Date, setFieldValue: (field: string, value: any) => void) => {
-		setFieldValue("dob", new Date(date.setDate(parseInt(event.target.value, 10))));
-	};
-
-	const handleChangeMonth = (event: SelectChangeEvent<string>, date: Date, setFieldValue: (field: string, value: any) => void) => {
-		setFieldValue("dob", new Date(date.setMonth(parseInt(event.target.value, 10))));
-	};
-
-	const maxDate = new Date();
-	maxDate.setFullYear(maxDate.getFullYear() - 18);
 	const inputRef = useInputRef();
 
 	const userData = useSelector((state) => state.auth);
@@ -178,6 +156,7 @@ const TabPersonal = () => {
 				validationSchema={Yup.object().shape({
 					firstName: Yup.string().max(255).required("El nombre es requerido"),
 					lastName: Yup.string().max(255).required("El apellido es requerido."),
+					dob: Yup.date().nullable().max(new Date(), "La fecha no puede ser futura"),
 					note: Yup.string().min(5, "La nota debe tener más de 5 caracteres."),
 				})}
 				onSubmit={handleSubmit}
@@ -247,100 +226,29 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="dob-date">Fecha de Nacimiento</InputLabel>
-										<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-											<Select
-												fullWidth
-												displayEmpty
-												value={values.dob ? values.dob.getDate().toString() : ""}
-												name="dob-date"
-												onBlur={handleBlur}
-												onChange={(e: SelectChangeEvent<string>) => handleChangeDay(e, values.dob || new Date(), setFieldValue)}
-												MenuProps={MenuProps}
-												renderValue={(selected) => {
-													if (!selected) {
-														return <span style={{ color: "#aaa" }}>DD</span>;
-													}
-													return selected;
+										<InputLabel htmlFor="personal-dob">Fecha de Nacimiento</InputLabel>
+										<LocalizationProvider dateAdapter={AdapterDateFns}>
+											<DatePicker
+												value={values.dob}
+												onChange={(newValue) => {
+													setFieldValue("dob", newValue);
 												}}
-											>
-												{[
-													1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-												].map((i) => (
-													<MenuItem
-														key={i}
-														value={i}
-														disabled={
-															values.dob
-																? (values.dob.getMonth() === 1 && i > (values.dob.getFullYear() % 4 === 0 ? 29 : 28)) ||
-																  (values.dob.getMonth() % 2 !== 0 && values.dob.getMonth() < 7 && i > 30) ||
-																  (values.dob.getMonth() % 2 === 0 && values.dob.getMonth() > 7 && i > 30)
-																: false
-														}
-													>
-														{i}
-													</MenuItem>
-												))}
-											</Select>
-
-											<Select
-												fullWidth
-												displayEmpty
-												value={values.dob ? values.dob.getMonth().toString() : ""}
-												name="dob-month"
-												onChange={(e: SelectChangeEvent<string>) => handleChangeMonth(e, values.dob || new Date(), setFieldValue)}
-												renderValue={(selected) => {
-													if (selected === "") {
-														return <span style={{ color: "#aaa" }}>Mes</span>;
-													}
-													const months = [
-														"Enero",
-														"Febrero",
-														"Marzo",
-														"Abril",
-														"Mayo",
-														"Junio",
-														"Julio",
-														"Agosto",
-														"Septiembre",
-														"Octubre",
-														"Noviembre",
-														"Diciembre",
-													];
-													return months[parseInt(selected, 10)];
+												format="dd/MM/yyyy"
+												maxDate={new Date()}
+												minDate={new Date(1900, 0, 1)}
+												sx={{ width: 1 }}
+												slotProps={{
+													textField: {
+														id: "personal-dob",
+														fullWidth: true,
+														onBlur: handleBlur,
+														name: "dob",
+														placeholder: "DD/MM/AAAA",
+														error: Boolean(touched.dob && errors.dob),
+													},
 												}}
-											>
-												<MenuItem value="0">Enero</MenuItem>
-												<MenuItem value="1">Febrero</MenuItem>
-												<MenuItem value="2">Marzo</MenuItem>
-												<MenuItem value="3">Abril</MenuItem>
-												<MenuItem value="4">Mayo</MenuItem>
-												<MenuItem value="5">Junio</MenuItem>
-												<MenuItem value="6">Julio</MenuItem>
-												<MenuItem value="7">Agosto</MenuItem>
-												<MenuItem value="8">Septiembre</MenuItem>
-												<MenuItem value="9">Octubre</MenuItem>
-												<MenuItem value="10">Noviembre</MenuItem>
-												<MenuItem value="11">Diciembre</MenuItem>
-											</Select>
-
-											<LocalizationProvider dateAdapter={AdapterDateFns}>
-												<DatePicker
-													views={["year"]}
-													value={values.dob}
-													maxDate={maxDate}
-													onChange={(newValue) => {
-														setFieldValue("dob", newValue);
-													}}
-													sx={{ width: 1 }}
-													slotProps={{
-														textField: {
-															placeholder: "AAAA",
-														},
-													}}
-												/>
-											</LocalizationProvider>
-										</Stack>
+											/>
+										</LocalizationProvider>
 										{touched.dob && errors.dob && (
 											<FormHelperText error id="personal-dob-helper">
 												{errors.dob as string}
@@ -398,7 +306,7 @@ const TabPersonal = () => {
 							<Grid container spacing={3}>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-addrees1">Domicilio</InputLabel>
+										<InputLabel htmlFor="personal-addrees1">Domicilio principal</InputLabel>
 										<TextField
 											multiline
 											rows={3}
@@ -420,7 +328,7 @@ const TabPersonal = () => {
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
-										<InputLabel htmlFor="personal-addrees2">Domicilio</InputLabel>
+										<InputLabel htmlFor="personal-addrees2">Domicilio alternativo</InputLabel>
 										<TextField
 											multiline
 											rows={3}

@@ -380,6 +380,10 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 const Calendar = () => {
 	const matchDownSM = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
 
+	// Compute the responsive initial view synchronously so FullCalendar receives the
+	// correct value on its very first render — before any useEffect fires.
+	const responsiveInitialView = matchDownSM ? "listWeek" : "dayGridMonth";
+
 	const [loading, setLoading] = useState<boolean>(true);
 	const [guideOpen, setGuideOpen] = useState<boolean>(false);
 	const [localModalOpen, setLocalModalOpen] = useState(false);
@@ -1200,7 +1204,7 @@ const Calendar = () => {
 					ref={calendarRef}
 					rerenderDelay={10}
 					initialDate={date}
-					initialView={calendarView}
+					initialView={responsiveInitialView}
 					dayMaxEventRows={4}
 					eventDisplay="block"
 					headerToolbar={false}
@@ -1217,6 +1221,50 @@ const Calendar = () => {
 					fixedWeekCount={false}
 					showNonCurrentDates={false}
 					plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
+					eventContent={(eventArg) => {
+						const title = eventArg.event.title;
+						// timeText can be empty for all-day events; only render when present
+						const time = eventArg.timeText;
+						return (
+							<Tooltip title={title} placement="top" arrow>
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										width: "100%",
+										overflow: "hidden",
+										px: 0.5,
+									}}
+								>
+									{time && (
+										<Typography
+											component="span"
+											variant="caption"
+											sx={{
+												flexShrink: 0,
+												mr: 0.5,
+												fontWeight: 600,
+											}}
+										>
+											{time}
+										</Typography>
+									)}
+									<Typography
+										component="span"
+										variant="caption"
+										sx={{
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+											display: "block",
+										}}
+									>
+										{title}
+									</Typography>
+								</Box>
+							</Tooltip>
+						);
+					}}
 					noEventsContent={
 						<Box
 							sx={{
