@@ -25,6 +25,7 @@ import IconButton from "components/@extended/IconButton";
 import { dispatch } from "store";
 import { changeUserPassword } from "store/reducers/auth"; // Importamos la acción
 import { isNumber, isLowercaseChar, isUppercaseChar, isSpecialChar, minLength } from "utils/password-validation";
+import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 
 // third-party
 import * as Yup from "yup";
@@ -39,7 +40,6 @@ const TabPassword = () => {
 	const [showOldPassword, setShowOldPassword] = useState(false);
 	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-	const [loading, setLoading] = useState(false);
 
 	const handleClickShowOldPassword = () => {
 		setShowOldPassword(!showOldPassword);
@@ -54,6 +54,19 @@ const TabPassword = () => {
 	const handleMouseDownPassword = (event: SyntheticEvent) => {
 		event.preventDefault();
 	};
+
+	const handleSubmit = useFormWithSnackbar({
+		onSubmit: async (values: { old: string; password: string; confirm: string; submit: null }) => {
+			await dispatch(
+				changeUserPassword({
+					currentPassword: values.old,
+					newPassword: values.password,
+				}),
+			);
+		},
+		successMessage: "Contraseña actualizada correctamente",
+		errorMessage: "Error al cambiar la contraseña",
+	});
 
 	return (
 		<MainCard title="Cambiar Contraseña">
@@ -76,38 +89,10 @@ const TabPassword = () => {
 						.required("La confirmación es requerida.")
 						.test("confirm", `No coinciden las contraseñas.`, (confirm: string, yup: any) => yup.parent.password === confirm),
 				})}
-				onSubmit={async (values, { resetForm, setErrors, setStatus, setSubmitting }) => {
-					try {
-						setLoading(true);
-
-						// Llamar a la acción de cambio de contraseña
-						await dispatch(
-							changeUserPassword({
-								currentPassword: values.old,
-								newPassword: values.password,
-							}),
-						);
-
-						// Si llegamos aquí, la acción fue exitosa
-						resetForm();
-						setStatus({ success: true });
-					} catch (err: any) {
-						setStatus({ success: false });
-
-						// Si el error tiene un mensaje de respuesta del servidor, mostrar ese
-						if (err.response && err.response.data && err.response.data.message) {
-							setErrors({ submit: err.response.data.message });
-						} else {
-							setErrors({ submit: err.message || "Error al cambiar la contraseña" });
-						}
-					} finally {
-						setLoading(false);
-						setSubmitting(false);
-					}
-				}}
+				onSubmit={handleSubmit}
 			>
-				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
-					<form noValidate onSubmit={handleSubmit}>
+				{({ errors, handleBlur, handleChange, handleSubmit: formikHandleSubmit, isSubmitting, touched, values, resetForm }) => (
+					<form noValidate onSubmit={formikHandleSubmit}>
 						<Grid container spacing={3}>
 							<Grid item container spacing={3} xs={12} sm={6}>
 								<Grid item xs={12}>
@@ -265,14 +250,14 @@ const TabPassword = () => {
 							</Grid>
 							<Grid item xs={12}>
 								<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
-									<Button color="error">Cancelar</Button>
+									<Button color="error" onClick={() => resetForm()}>Cancelar</Button>
 									<Button
-										disabled={isSubmitting || loading || Object.keys(errors).length !== 0}
+										disabled={isSubmitting || Object.keys(errors).length !== 0}
 										type="submit"
 										variant="contained"
-										startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+										startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
 									>
-										{loading ? "Guardando..." : "Guardar"}
+										{isSubmitting ? "Guardando..." : "Guardar"}
 									</Button>
 								</Stack>
 							</Grid>

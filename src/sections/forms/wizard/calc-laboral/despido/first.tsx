@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { Box, Checkbox, Grid, InputLabel, Typography } from "@mui/material";
+import { Box, Checkbox, FormControlLabel, Grid, InputLabel, Typography } from "@mui/material";
 import DateInputField from "components/UI/DateInputField";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
@@ -152,10 +152,10 @@ export default function FirstForm(props: FirstFormProps) {
 						<>
 							<Grid item xs={12} lg={6}>
 								<Grid container spacing={2} alignItems="center">
-									<Grid item xs={12} lg={3}>
+									<Grid item xs={12} lg={4}>
 										<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamante*:</InputLabel>
 									</Grid>
-									<Grid item xs={12} lg={9}>
+									<Grid item xs={12} lg={8}>
 										<InputField
 											InputProps={{ startAdornment: <UserSquare /> }}
 											fullWidth
@@ -167,10 +167,10 @@ export default function FirstForm(props: FirstFormProps) {
 							</Grid>
 							<Grid item xs={12} lg={6}>
 								<Grid container spacing={2} alignItems="center">
-									<Grid item xs={12} lg={3}>
+									<Grid item xs={12} lg={4}>
 										<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Reclamado*:</InputLabel>
 									</Grid>
-									<Grid item xs={12} lg={9}>
+									<Grid item xs={12} lg={8}>
 										<InputField
 											InputProps={{ startAdornment: <UserSquare /> }}
 											fullWidth
@@ -185,30 +185,30 @@ export default function FirstForm(props: FirstFormProps) {
 
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Fecha de ingreso*:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<DateInputField name={fechaIngreso.name} />
 							</Grid>
 						</Grid>
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Fecha de egreso*:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<DateInputField name={fechaEgreso.name} />
 							</Grid>
 						</Grid>
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Remuneración*</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -224,10 +224,10 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Otras sumas adeudadas:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									allowNegative={false}
@@ -243,10 +243,10 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
+							<Grid item xs={12} lg={4}>
 								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Días no trabajados:</InputLabel>
 							</Grid>
-							<Grid item xs={12} lg={9}>
+							<Grid item xs={12} lg={8}>
 								<NumberField
 									thousandSeparator={","}
 									decimalScale={0}
@@ -260,24 +260,28 @@ export default function FirstForm(props: FirstFormProps) {
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
-								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Incluir SAC:</InputLabel>
-							</Grid>
-							<Grid item xs={12} lg={9}>
-								<Checkbox checked={incluirSACField.value || false} onChange={incluirSACField.onChange} name={incluirSACField.name} />
+							<Grid item xs={12} lg={4} />
+							<Grid item xs={12} lg={8}>
+								<FormControlLabel
+									control={<Checkbox checked={incluirSACField.value || false} onChange={incluirSACField.onChange} name={incluirSACField.name} />}
+									label="Incluir SAC"
+								/>
 							</Grid>
 						</Grid>
 					</Grid>
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
-							<Grid item xs={12} lg={3}>
-								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Aplicar Ley 27.742:</InputLabel>
-							</Grid>
-							<Grid item xs={12} lg={9}>
-								<Checkbox
-									checked={aplicarLey27742Field.value || false}
-									onChange={aplicarLey27742Field.onChange}
-									name={aplicarLey27742Field.name}
+							<Grid item xs={12} lg={4} />
+							<Grid item xs={12} lg={8}>
+								<FormControlLabel
+									control={
+										<Checkbox
+											checked={aplicarLey27742Field.value || false}
+											onChange={aplicarLey27742Field.onChange}
+											name={aplicarLey27742Field.name}
+										/>
+									}
+									label="Aplicar Ley 27.742"
 								/>
 							</Grid>
 						</Grid>

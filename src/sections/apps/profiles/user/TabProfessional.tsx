@@ -1,5 +1,5 @@
 import React from "react";
-import { RefObject, useState, useEffect } from "react";
+import { RefObject, useState, useEffect, useRef } from "react";
 import { useOutletContext } from "react-router";
 
 // material-ui
@@ -32,6 +32,7 @@ import axios from "axios";
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
 import { updateUserProfile, addUserSkills, deleteUserSkill } from "store/reducers/auth";
+import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 
 // assets
 import { Trash, Edit2, InfoCircle } from "iconsax-react";
@@ -75,6 +76,10 @@ const TabProfessional = () => {
 	const [editingSkills, setEditingSkills] = useState<Set<number>>(new Set());
 	const inputRef = useInputRef();
 	const userData = useSelector((state) => state.auth);
+
+	// Refs for post-submit callbacks used by useFormWithSnackbar
+	const setFieldValueRef = useRef<((field: string, value: any) => void) | null>(null);
+	const setEditingSkillsRef = useRef(setEditingSkills);
 
 	// Helper functions for safe error access
 	const getFieldError = (errors: any, touched: any, fieldPath: string): string | undefined => {
@@ -165,6 +170,46 @@ const TabProfessional = () => {
 		return [];
 	};
 
+	const handleSubmit = useFormWithSnackbar({
+		onSubmit: async (values: FormValues) => {
+			setLoading(true);
+			try {
+				// Validate that all college entries have complete information
+				const invalidColleges = values.colleges.filter(
+					(college) =>
+						!college.name || !college.registrationNumber || !college.taxCondition || !college.taxCode || !college.electronicAddress,
+				);
+
+				if (invalidColleges.length > 0) {
+					throw new Error("Por favor complete todos los campos requeridos para cada colegio profesional");
+				}
+
+				// First update the designation using the existing updateUserProfile
+				if (values.designation) {
+					await dispatch(updateUserProfile({ designation: values.designation }));
+				}
+
+				// Then update the skills using the new addUserSkills action
+				if (values.colleges && values.colleges.length > 0) {
+					const result = await dispatch(addUserSkills(values.colleges));
+					// Update the form with the skills returned from the server (which include _id)
+					if (result && result.skills) {
+						const formattedSkills = result.skills.map((skill: any) => ({
+							...skill,
+							taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : "",
+						}));
+						setFieldValueRef.current?.("colleges", formattedSkills);
+						setEditingSkillsRef.current(new Set());
+					}
+				}
+			} finally {
+				setLoading(false);
+			}
+		},
+		successMessage: "Información profesional actualizada correctamente",
+		errorMessage: "Error al actualizar información profesional",
+	});
+
 	return (
 		<MainCard content={false} title="Información Profesional" sx={{ "& .MuiInputLabel-root": { fontSize: "0.875rem" } }}>
 			<Formik<FormValues>
@@ -191,57 +236,14 @@ const TabProfessional = () => {
 					designation: Yup.string().max(255),
 					experienceYears: Yup.string(),
 				})}
-				onSubmit={async (values, { setErrors, setStatus, setSubmitting, setFieldValue }) => {
-					setLoading(true);
-					try {
-						// Validate that all college entries have complete information
-						const invalidColleges = values.colleges.filter(
-							(college) =>
-								!college.name || !college.registrationNumber || !college.taxCondition || !college.taxCode || !college.electronicAddress,
-						);
-
-						if (invalidColleges.length > 0) {
-							setErrors({
-								submit: "Por favor complete todos los campos requeridos para cada colegio profesional",
-							});
-							return;
-						}
-
-						// First update the designation using the existing updateUserProfile
-						if (values.designation) {
-							await dispatch(updateUserProfile({ designation: values.designation }));
-						}
-
-						// Then update the skills using the new addUserSkills action
-						if (values.colleges && values.colleges.length > 0) {
-							const result = await dispatch(addUserSkills(values.colleges));
-							// Update the form with the skills returned from the server (which include _id)
-							if (result && result.skills) {
-								// Format CUIT when updating from server response
-								const formattedSkills = result.skills.map((skill: any) => ({
-									...skill,
-									taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : "",
-								}));
-								setFieldValue("colleges", formattedSkills);
-								// Clear editing state since all skills are now saved
-								setEditingSkills(new Set());
-							}
-						}
-
-						setStatus({ success: true });
-					} catch (err: any) {
-						setStatus({ success: false });
-						setErrors({
-							submit: err.response?.data?.message || err.message || "Error al actualizar información profesional",
-						});
-					} finally {
-						setLoading(false);
-						setSubmitting(false);
-					}
-				}}
+				onSubmit={handleSubmit}
 			>
-				{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, setFieldValue, touched, values }) => (
-					<form noValidate onSubmit={handleSubmit}>
+				{({ errors, handleBlur, handleChange, handleSubmit: formikHandleSubmit, isSubmitting, setFieldValue, touched, values, resetForm }) => {
+					// Keep refs updated for use inside useFormWithSnackbar closures
+					setFieldValueRef.current = setFieldValue;
+					setEditingSkillsRef.current = setEditingSkills;
+					return (
+					<form noValidate onSubmit={formikHandleSubmit}>
 						<Box sx={{ p: 2.5 }}>
 							<Grid container spacing={3}>
 								<Grid item xs={12} sm={6}>
@@ -285,13 +287,14 @@ const TabProfessional = () => {
 								</Box>
 							) : (
 								<>
+									<InputLabel htmlFor="add-college">Colegio de abogados</InputLabel>
 									<Autocomplete
 										fullWidth
 										id="add-college"
 										options={collegesList.filter((c) => !values.colleges.some((college) => college.name === c.name))}
 										getOptionLabel={(option) => option.name}
 										groupBy={(option) => option.province}
-										renderInput={(params) => <TextField {...params} placeholder="Agregar colegio de abogados" sx={{ mb: 2 }} />}
+										renderInput={(params) => <TextField {...params} placeholder="Agregar colegio de abogados" sx={{ mt: 1, mb: 2 }} />}
 										onChange={(_event, newValue) => {
 											if (newValue) {
 												setFieldValue("colleges", [
@@ -341,7 +344,7 @@ const TabProfessional = () => {
 																					if (editingSkills.has(index)) {
 																						// Save changes
 																						try {
-																							await handleSubmit();
+																							await formikHandleSubmit();
 																							const newEditingSkills = new Set(editingSkills);
 																							newEditingSkills.delete(index);
 																							setEditingSkills(newEditingSkills);
@@ -405,7 +408,11 @@ const TabProfessional = () => {
 														{/* Número de matrícula */}
 														<Grid item xs={12} sm={6}>
 															<Stack spacing={1}>
-																<InputLabel htmlFor={`college-${index}-registration`}>Número de matrícula</InputLabel>
+																{!!college._id && !editingSkills.has(index) ? (
+																	<Typography variant="caption" color="text.secondary">Número de matrícula</Typography>
+																) : (
+																	<InputLabel htmlFor={`college-${index}-registration`}>Número de matrícula</InputLabel>
+																)}
 																{!!college._id && !editingSkills.has(index) ? (
 																	<Typography variant="body2" sx={{ py: 1 }}>
 																		{college.registrationNumber}
@@ -429,7 +436,11 @@ const TabProfessional = () => {
 														{/* Condición fiscal */}
 														<Grid item xs={12} sm={6}>
 															<Stack spacing={1}>
-																<InputLabel htmlFor={`college-${index}-taxCondition`}>Condición fiscal</InputLabel>
+																{!!college._id && !editingSkills.has(index) ? (
+																	<Typography variant="caption" color="text.secondary">Condición fiscal</Typography>
+																) : (
+																	<InputLabel htmlFor={`college-${index}-taxCondition`}>Condición fiscal</InputLabel>
+																)}
 																{!!college._id && !editingSkills.has(index) ? (
 																	<Typography variant="body2" sx={{ py: 1, textTransform: "capitalize" }}>
 																		{college.taxCondition === "autonomo" ? "Autónomo" : "Monotributo"}
@@ -461,7 +472,11 @@ const TabProfessional = () => {
 														{/* CUIT */}
 														<Grid item xs={12} sm={6}>
 															<Stack spacing={1}>
-																<InputLabel htmlFor={`college-${index}-taxCode`}>CUIT</InputLabel>
+																{!!college._id && !editingSkills.has(index) ? (
+																	<Typography variant="caption" color="text.secondary">CUIT</Typography>
+																) : (
+																	<InputLabel htmlFor={`college-${index}-taxCode`}>CUIT</InputLabel>
+																)}
 																{!!college._id && !editingSkills.has(index) ? (
 																	<Typography variant="body2" sx={{ py: 1 }}>
 																		{college.taxCode}
@@ -489,7 +504,11 @@ const TabProfessional = () => {
 														{/* Domicilio electrónico */}
 														<Grid item xs={12} sm={6}>
 															<Stack spacing={1}>
-																<InputLabel htmlFor={`college-${index}-electronicAddress`}>Domicilio electrónico</InputLabel>
+																{!!college._id && !editingSkills.has(index) ? (
+																	<Typography variant="caption" color="text.secondary">Domicilio electrónico</Typography>
+																) : (
+																	<InputLabel htmlFor={`college-${index}-electronicAddress`}>Domicilio electrónico</InputLabel>
+																)}
 																{!!college._id && !editingSkills.has(index) ? (
 																	<Typography variant="body2" sx={{ py: 1 }}>
 																		{college.electronicAddress}
@@ -513,7 +532,11 @@ const TabProfessional = () => {
 														{/* Domicilio físico */}
 														<Grid item xs={12} sm={6}>
 															<Stack spacing={1}>
-																<InputLabel htmlFor={`college-${index}-physicalAddress`}>Domicilio físico constituido</InputLabel>
+																{!!college._id && !editingSkills.has(index) ? (
+																	<Typography variant="caption" color="text.secondary">Domicilio físico constituido</Typography>
+																) : (
+																	<InputLabel htmlFor={`college-${index}-physicalAddress`}>Domicilio físico constituido</InputLabel>
+																)}
 																{!!college._id && !editingSkills.has(index) ? (
 																	<Typography variant="body2" sx={{ py: 1 }}>
 																		{college.physicalAddress || <Typography component="span" variant="caption" color="text.disabled">No cargado</Typography>}
@@ -576,23 +599,24 @@ const TabProfessional = () => {
 							)}
 
 							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 3 }}>
-								<Button color="error">Cancelar</Button>
+								<Button color="error" onClick={() => resetForm()}>Cancelar</Button>
 								<Tooltip title={values.colleges.length === 0 ? "Debe agregar al menos un colegio profesional para guardar" : ""} arrow>
 									<span>
 										<Button
 											disabled={isSubmitting || loading || values.colleges.length === 0}
 											type="submit"
 											variant="contained"
-											startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+											startIcon={(isSubmitting || loading) ? <CircularProgress size={20} color="inherit" /> : null}
 										>
-											{loading ? "Guardando..." : "Guardar"}
+											{(isSubmitting || loading) ? "Guardando..." : "Guardar"}
 										</Button>
 									</span>
 								</Tooltip>
 							</Stack>
 						</Box>
 					</form>
-				)}
+					);
+				}}
 			</Formik>
 		</MainCard>
 	);

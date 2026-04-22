@@ -61,7 +61,7 @@ export interface PostalTrackingFilters {
   processingStatus?: string;
   isFinalStatus?: boolean;
   search?: string;
-  sortBy?: "label" | "createdAt";
+  sortBy?: "label" | "createdAt" | "lastCheckedAt";
   sortOrder?: "asc" | "desc";
   /** Filtra trackings del team indicado (team mode) */
   groupId?: string;

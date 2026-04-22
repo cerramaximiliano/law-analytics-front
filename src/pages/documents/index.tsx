@@ -3,6 +3,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  CardActions,
   Checkbox,
   Chip,
   CircularProgress,
@@ -32,6 +33,7 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
   useTheme,
 } from "@mui/material";
 import { Add, DocumentDownload, DocumentText, Edit2, Eye, FolderOpen, Routing, Trash } from "iconsax-react";
@@ -723,6 +725,7 @@ const VincularDialog = ({ open, document, onClose, onSuccess, showSnackbar }: Vi
 
 const DocumentsLayout = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { documents, isLoader, total } = useSelector((state: any) => state.postalDocumentsReducer);
   const { document: documentDetail } = useSelector((state: any) => state.postalDocumentsReducer);
   const folders: FolderData[] = useSelector((state: any) => state.folder?.folders || []);
@@ -897,69 +900,58 @@ const DocumentsLayout = () => {
             </Stack>
           )}
 
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      size="small"
-                      checked={allCurrentSelected}
-                      indeterminate={!allCurrentSelected && someCurrentSelected}
-                      onChange={handleToggleAll}
-                    />
-                  </TableCell>
-                  <TableCell>Plantilla</TableCell>
-                  <TableCell>Título</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell align="center">Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {documents.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography color="textSecondary">Sin resultados para la búsqueda</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  documents.map((row: PostalDocumentType) => (
-                    <TableRow key={row._id} hover selected={selectedIds.has(row._id)}>
-                      <TableCell padding="checkbox">
+          {/* ── Mobile card list (xs) ── */}
+          {isMobile ? (
+            <Stack spacing={1.5}>
+              {documents.length === 0 ? (
+                <Typography color="textSecondary" align="center" sx={{ py: 4 }}>
+                  Sin resultados para la búsqueda
+                </Typography>
+              ) : (
+                documents.map((row: PostalDocumentType) => {
+                  const linkedFolder = row.linkedFolderId ? folders.find((f) => f._id === row.linkedFolderId) : null;
+                  return (
+                    <Paper
+                      key={row._id}
+                      variant="outlined"
+                      sx={{
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        borderColor: selectedIds.has(row._id) ? "primary.main" : "divider",
+                        bgcolor: selectedIds.has(row._id) ? "primary.lighter" : "background.paper",
+                      }}
+                    >
+                      {/* Header: checkbox + Plantilla + Título */}
+                      <Stack direction="row" alignItems="flex-start" spacing={1} sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
                         <Checkbox
                           size="small"
                           checked={selectedIds.has(row._id)}
                           onChange={() => handleToggleSelect(row._id)}
+                          sx={{ mt: -0.5, flexShrink: 0 }}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Typography variant="body2">{row.templateName}</Typography>
-                          {row.templateCategory && (
-                            <Chip size="small" label={row.templateCategory} variant="outlined" />
-                          )}
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Stack spacing={0.25}>
-                          <Typography variant="body2" fontWeight={500}>
+                        <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                          <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap">
+                            <Typography variant="caption" color="textSecondary" fontWeight={600}>
+                              {row.templateName}
+                            </Typography>
+                            {row.templateCategory && (
+                              <Chip size="small" label={row.templateCategory} variant="outlined" />
+                            )}
+                          </Stack>
+                          <Typography
+                            variant="body2"
+                            fontWeight={500}
+                            sx={{ wordBreak: "break-word" }}
+                          >
                             {row.title}
                           </Typography>
-                          {(() => {
-                            const folder = row.linkedFolderId ? folders.find((f) => f._id === row.linkedFolderId) : null;
-                            return folder ? (
-                              <Typography variant="caption" color="text.secondary">
-                                {folder.folderName}
-                              </Typography>
-                            ) : null;
-                          })()}
+                          {linkedFolder && (
+                            <Typography variant="caption" color="text.secondary">
+                              {linkedFolder.folderName}
+                            </Typography>
+                          )}
                           {row.description && (
-                            <Typography
-                              variant="caption"
-                              color="textSecondary"
-                              sx={{ display: "block", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                            >
+                            <Typography variant="caption" color="textSecondary" sx={{ display: "block" }}>
                               {row.description}
                             </Typography>
                           )}
@@ -967,61 +959,206 @@ const DocumentsLayout = () => {
                             <Chip size="small" label="Seguimiento" color="info" variant="outlined" sx={{ alignSelf: "flex-start" }} />
                           )}
                         </Stack>
-                      </TableCell>
-                      <TableCell>
+                      </Stack>
+
+                      {/* Status row: Chip estado + Fecha */}
+                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1.5, pb: 1 }}>
                         <Chip
                           size="small"
                           label={STATUS_LABELS[row.status] ?? row.status}
                           color={STATUS_COLORS[row.status] ?? "default"}
                           sx={row.status === "draft" ? { color: "text.primary", fontWeight: 500 } : undefined}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="textSecondary">
+                        <Typography variant="caption" color="textSecondary">
                           {formatDate(row.createdAt)}
                         </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={0.5} justifyContent="center">
-                          {/* Ver detalle */}
-                          <Tooltip title="Ver documento">
-                            <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="primary">
-                              <Eye size={16} />
+                      </Stack>
+
+                      <Divider />
+
+                      {/* Footer: acciones */}
+                      <CardActions sx={{ px: 1, py: 0.5, justifyContent: "flex-end" }}>
+                        <Tooltip title="Ver documento">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewDetail(row._id)}
+                            color="default"
+                            aria-label="Ver documento"
+                          >
+                            <Eye size={18} />
+                          </IconButton>
+                        </Tooltip>
+                        {row.documentUrl && (
+                          <Tooltip title="Descargar PDF">
+                            <IconButton
+                              size="small"
+                              onClick={() => window.open(row.documentUrl, "_blank")}
+                              color="default"
+                              aria-label="Descargar PDF"
+                            >
+                              <DocumentDownload size={18} />
                             </IconButton>
                           </Tooltip>
-
-                          {/* Descargar */}
-                          {row.documentUrl && (
-                            <Tooltip title="Descargar PDF">
-                              <IconButton size="small" onClick={() => window.open(row.documentUrl, "_blank")} color="info">
-                                <DocumentDownload size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-
-                          {/* Vincular */}
-                          <Tooltip title="Vincular">
-                            <IconButton size="small" color="primary" onClick={() => setVincularDialogDoc(row)}>
-                              <FolderOpen size={16} />
-                            </IconButton>
-                          </Tooltip>
-
-                          {/* Eliminar */}
-                          <Tooltip title="Eliminar">
-                            <IconButton size="small" onClick={() => setDocumentToDelete(row)} color="error">
-                              <Trash size={16} />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
+                        )}
+                        <Tooltip title="Vincular">
+                          <IconButton
+                            size="small"
+                            color="default"
+                            onClick={() => setVincularDialogDoc(row)}
+                            aria-label="Vincular"
+                          >
+                            <FolderOpen size={18} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar">
+                          <IconButton
+                            size="small"
+                            onClick={() => setDocumentToDelete(row)}
+                            color="error"
+                            aria-label="Eliminar"
+                          >
+                            <Trash size={18} />
+                          </IconButton>
+                        </Tooltip>
+                      </CardActions>
+                    </Paper>
+                  );
+                })
+              )}
+            </Stack>
+          ) : (
+            /* ── Desktop table (sm+) ── */
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        size="small"
+                        checked={allCurrentSelected}
+                        indeterminate={!allCurrentSelected && someCurrentSelected}
+                        onChange={handleToggleAll}
+                      />
+                    </TableCell>
+                    <TableCell>Plantilla</TableCell>
+                    <TableCell>Título</TableCell>
+                    <TableCell>Estado</TableCell>
+                    <TableCell>Fecha</TableCell>
+                    <TableCell align="center">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {documents.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                        <Typography color="textSecondary">Sin resultados para la búsqueda</Typography>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ) : (
+                    documents.map((row: PostalDocumentType) => (
+                      <TableRow key={row._id} hover selected={selectedIds.has(row._id)}>
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            size="small"
+                            checked={selectedIds.has(row._id)}
+                            onChange={() => handleToggleSelect(row._id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="body2">{row.templateName}</Typography>
+                            {row.templateCategory && (
+                              <Chip size="small" label={row.templateCategory} variant="outlined" />
+                            )}
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Stack spacing={0.25}>
+                            <Typography variant="body2" fontWeight={500}>
+                              {row.title}
+                            </Typography>
+                            {(() => {
+                              const folder = row.linkedFolderId ? folders.find((f) => f._id === row.linkedFolderId) : null;
+                              return folder ? (
+                                <Typography variant="caption" color="text.secondary">
+                                  {folder.folderName}
+                                </Typography>
+                              ) : null;
+                            })()}
+                            {row.description && (
+                              <Typography
+                                variant="caption"
+                                color="textSecondary"
+                                sx={{ display: "block", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                              >
+                                {row.description}
+                              </Typography>
+                            )}
+                            {row.linkedTrackingId && (
+                              <Chip size="small" label="Seguimiento" color="info" variant="outlined" sx={{ alignSelf: "flex-start" }} />
+                            )}
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={STATUS_LABELS[row.status] ?? row.status}
+                            color={STATUS_COLORS[row.status] ?? "default"}
+                            sx={row.status === "draft" ? { color: "text.primary", fontWeight: 500 } : undefined}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="textSecondary">
+                            {formatDate(row.createdAt)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Stack direction="row" spacing={0.5} justifyContent="center">
+                            {/* Ver detalle */}
+                            <Tooltip title="Ver documento">
+                              <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="default">
+                                <Eye size={16} />
+                              </IconButton>
+                            </Tooltip>
 
-          <Grid container alignItems="center" justifyContent="space-between" sx={{ px: 1, pt: 2 }}>
+                            {/* Descargar */}
+                            {row.documentUrl && (
+                              <Tooltip title="Descargar PDF">
+                                <IconButton size="small" onClick={() => window.open(row.documentUrl, "_blank")} color="info">
+                                  <DocumentDownload size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+
+                            {/* Vincular */}
+                            <Tooltip title="Vincular">
+                              <IconButton size="small" color="default" onClick={() => setVincularDialogDoc(row)}>
+                                <FolderOpen size={16} />
+                              </IconButton>
+                            </Tooltip>
+
+                            {/* Eliminar */}
+                            <Tooltip title="Eliminar">
+                              <IconButton size="small" onClick={() => setDocumentToDelete(row)} color="error">
+                                <Trash size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          <Grid
+            container
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ px: 1, pt: 2, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1.5, sm: 0 } }}
+          >
             <Grid item>
               <Stack direction="row" spacing={1} alignItems="center">
                 <Typography variant="caption" color="secondary">Filas por Páginas</Typography>
@@ -1037,7 +1174,9 @@ const DocumentsLayout = () => {
                     ))}
                   </Select>
                 </FormControl>
-                <Typography variant="caption" color="secondary">Ir a</Typography>
+                <Typography variant="caption" color="secondary" sx={{ display: { xs: "none", sm: "inline" } }}>
+                  Ir a
+                </Typography>
                 <TextField
                   size="small"
                   type="number"
@@ -1046,11 +1185,11 @@ const DocumentsLayout = () => {
                     const p = Math.max(1, Math.min(Number(e.target.value), Math.ceil(total / rowsPerPage)));
                     setPage(p - 1);
                   }}
-                  sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 } }}
+                  sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 }, display: { xs: "none", sm: "flex" } }}
                 />
               </Stack>
             </Grid>
-            <Grid item sx={{ mt: { xs: 2, sm: 0 } }}>
+            <Grid item>
               <Pagination
                 count={Math.ceil(total / rowsPerPage)}
                 page={page + 1}

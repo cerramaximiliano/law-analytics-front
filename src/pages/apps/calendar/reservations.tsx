@@ -372,47 +372,6 @@ const BookingCard: React.FC<{
 							"aria-labelledby": "booking-button",
 						}}
 					>
-						{booking.status === "pending" && (
-							<MenuItem
-								onClick={() => {
-									handleClose();
-									onStatusChange(booking._id, "confirmed");
-								}}
-								disabled={!canPerformUpdate}
-							>
-								<ClipboardTick size={16} style={{ marginRight: 8, color: theme.palette.success.main }} />
-								Confirmar
-							</MenuItem>
-						)}
-
-						{booking.status === "pending" && (
-							<MenuItem
-								onClick={() => {
-									handleClose();
-									onStatusChange(booking._id, "rejected");
-								}}
-								sx={{ color: "error.main" }}
-								disabled={!canPerformUpdate}
-							>
-								<Trash size={16} style={{ marginRight: 8 }} />
-								Rechazar
-							</MenuItem>
-						)}
-
-						{booking.status === "confirmed" && !isPast && (
-							<MenuItem
-								onClick={() => {
-									handleClose();
-									onStatusChange(booking._id, "cancelled");
-								}}
-								sx={{ color: "error.main" }}
-								disabled={!canPerformUpdate}
-							>
-								<Trash size={16} style={{ marginRight: 8 }} />
-								Cancelar
-							</MenuItem>
-						)}
-
 						{booking.status === "confirmed" && isPast && (
 							<MenuItem
 								onClick={() => {
@@ -453,7 +412,7 @@ const BookingCard: React.FC<{
 								{dayjs(booking.startTime).format("dddd, D [de] MMMM [de] YYYY")}
 							</Typography>
 							<Typography variant="body2" color="text.secondary">
-								{dayjs(booking.startTime).format("h:mm a")} - {dayjs(booking.endTime).format("h:mm a")}
+								{dayjs(booking.startTime).format("HH:mm")} - {dayjs(booking.endTime).format("HH:mm")}
 							</Typography>
 						</Box>
 					</Box>
@@ -635,8 +594,6 @@ const BookingsManagement = () => {
 	const [hasBookingFeature, setHasBookingFeature] = useState(false);
 	const [featureInfo, setFeatureInfo] = useState<any>(null);
 	const [limitModalOpen, setLimitModalOpen] = useState(false);
-	// Estado para controlar si el modal ha sido cerrado una vez
-	const [hasModalBeenClosed, setHasModalBeenClosed] = useState(false);
 
 	// Determinar si estamos viendo una disponibilidad específica o todas las reservas
 	const urlParts = window.location.pathname.split("/");
@@ -666,18 +623,6 @@ const BookingsManagement = () => {
 		availableIn: ["standard", "premium"],
 	});
 
-	// Se ejecuta solo al montar el componente
-	useEffect(() => {
-		// Limpiar el flag del sessionStorage al montar el componente
-		// Esto asegura que al navegar fuera y volver, el modal pueda mostrarse nuevamente
-		sessionStorage.removeItem("booking_modal_shown");
-
-		// Efecto de limpieza: remover también cuando el componente se desmonte
-		return () => {
-			sessionStorage.removeItem("booking_modal_shown");
-		};
-	}, []);
-
 	// Verificar si el usuario tiene acceso a la característica de reservas
 	useEffect(() => {
 		// Esperar a que el contexto de equipos esté completamente listo
@@ -692,27 +637,20 @@ const BookingsManagement = () => {
 
 		setHasBookingFeature(hasBookingAccess || false);
 
-		// Si no tiene la característica habilitada y el modal no ha sido cerrado manualmente
-		if (!hasBookingAccess && !hasModalBeenClosed) {
+		if (!hasBookingAccess) {
 			setFeatureInfo(createFeatureInfo());
-
-			// Comprobar si ya mostramos el modal en esta visita a la página
-			const modalShown = sessionStorage.getItem("booking_modal_shown");
-
-			// Solo mostrar el modal si no se ha mostrado antes
-			if (!modalShown) {
-				setLimitModalOpen(true);
-			}
 		}
-	}, [subscription, isTeamReady, hasModalBeenClosed]);
+	}, [subscription, isTeamReady]);
 
 	// Manejar cierre del modal
 	const handleCloseLimitModal = () => {
-		// Marcar que el modal fue cerrado explícitamente por el usuario
-		setHasModalBeenClosed(true);
-		// Marcar que ya se mostró, para evitar mostrarlo nuevamente en esta sesión
-		sessionStorage.setItem("booking_modal_shown", "true");
 		setLimitModalOpen(false);
+	};
+
+	// Abrir modal de upgrade solo cuando el usuario intenta crear una nueva disponibilidad
+	const handleNewAvailabilityLockedClick = () => {
+		setFeatureInfo(createFeatureInfo());
+		setLimitModalOpen(true);
 	};
 
 	// Función para cargar datos - convertida a callback para reutilizar
@@ -1301,13 +1239,19 @@ const BookingsManagement = () => {
 						)}
 						{canCreateAvailability ? (
 							<Button variant="contained" color="primary" onClick={() => navigate("/apps/calendar/booking-config")}>
-								Nueva Disponibilidad
+								+ Nueva Disponibilidad
 							</Button>
 						) : (
 							<Tooltip title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}>
 								<span>
-									<Button variant="contained" color="primary" startIcon={<Lock size={16} />} disabled>
-										Nueva Disponibilidad
+									<Button
+										variant="contained"
+										color="primary"
+										startIcon={<Lock size={16} />}
+										onClick={!hasBookingFeature ? handleNewAvailabilityLockedClick : undefined}
+										disabled={hasBookingFeature}
+									>
+										+ Nueva Disponibilidad
 									</Button>
 								</span>
 							</Tooltip>
@@ -1317,17 +1261,15 @@ const BookingsManagement = () => {
 			>
 				{!hasBookingFeature && (
 					<Alert
-						severity="warning"
-						icon={<Lock variant="Bulk" size={24} color={theme.palette.warning.main} />}
+						severity="info"
 						sx={{ mb: 3, mt: 1 }}
 						action={
-							<Button color="warning" size="small" onClick={() => navigate("/suscripciones/tables")}>
-								Actualizar Plan
+							<Button color="info" size="small" onClick={() => navigate("/suscripciones/tables")}>
+								Ver planes
 							</Button>
 						}
 					>
-						La gestión de reservas y creación de disponibilidades está limitada a planes superiores. Actualiza tu plan para acceder a esta
-						funcionalidad.
+						Tu plan no incluye gestión de reservas nuevas. Podés ver las existentes o actualizar tu plan.
 					</Alert>
 				)}
 
@@ -1443,7 +1385,8 @@ const BookingsManagement = () => {
 														variant="contained"
 														color="primary"
 														startIcon={<Lock size={16} />}
-														disabled
+														onClick={!hasBookingFeature ? handleNewAvailabilityLockedClick : undefined}
+														disabled={hasBookingFeature}
 													>
 														Crear Nueva Disponibilidad
 													</Button>
@@ -1486,19 +1429,65 @@ const BookingsManagement = () => {
 					</Box>
 				</Paper>
 
+				{/* Chips de filtros activos */}
+				{(filter !== "all" || statusFilter !== "all") && (
+					<Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}>
+						{filter !== "all" && (
+							<Chip
+								label={filter === "upcoming" ? "Próximas" : "Pasadas"}
+								size="small"
+								onDelete={() => setFilter("all")}
+							/>
+						)}
+						{statusFilter !== "all" && (
+							<Chip
+								label={
+									statusFilter === "pending"
+										? "Pendientes"
+										: statusFilter === "confirmed"
+										? "Confirmadas"
+										: statusFilter === "cancelled"
+										? "Canceladas"
+										: statusFilter === "rejected"
+										? "Rechazadas"
+										: "Completadas"
+								}
+								size="small"
+								onDelete={() => setStatusFilter("all")}
+							/>
+						)}
+					</Stack>
+				)}
+
 				{filteredBookings.length === 0 ? (
 					<Box sx={{ textAlign: "center", py: 4 }}>
 						<NoResultsState
 							title="No hay reservas"
-							description={
-								statusFilter !== "all"
-									? "No hay reservas con el filtro aplicado"
-									: filter === "upcoming"
-									? "No hay reservas próximas"
-									: filter === "past"
-									? "No hay reservas pasadas"
-									: "No hay reservas registradas. Crea una disponibilidad para empezar a recibir citas."
-							}
+							description={(() => {
+								const tabLabel = filter === "upcoming" ? "próximas" : filter === "past" ? "pasadas" : "";
+								const statusLabel =
+									statusFilter === "pending"
+										? "pendientes"
+										: statusFilter === "confirmed"
+										? "confirmadas"
+										: statusFilter === "cancelled"
+										? "canceladas"
+										: statusFilter === "rejected"
+										? "rechazadas"
+										: statusFilter === "completed"
+										? "completadas"
+										: "";
+								if (tabLabel && statusLabel) {
+									return `No hay reservas ${tabLabel} ${statusLabel}.`;
+								}
+								if (statusLabel) {
+									return `No hay reservas ${statusLabel}.`;
+								}
+								if (tabLabel) {
+									return `No hay reservas ${tabLabel}.`;
+								}
+								return "No hay reservas registradas. Crea una disponibilidad para empezar a recibir citas.";
+							})()}
 						/>
 						{!isSpecificAvailability &&
 							(canCreateAvailability ? (
@@ -1512,7 +1501,8 @@ const BookingsManagement = () => {
 											variant="contained"
 											color="primary"
 											startIcon={<Lock size={16} />}
-											disabled
+											onClick={!hasBookingFeature ? handleNewAvailabilityLockedClick : undefined}
+											disabled={hasBookingFeature}
 											sx={{ mt: 3 }}
 										>
 											Crear Nueva Disponibilidad

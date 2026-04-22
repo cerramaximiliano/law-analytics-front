@@ -2,13 +2,13 @@ import React from "react";
 import { useState, ReactNode, SyntheticEvent, useEffect } from "react";
 
 // material-ui
-import { Box, Tab, Tabs, Typography, Alert, Tooltip, IconButton, Divider, Stack } from "@mui/material";
+import { Box, Tab, Tabs, Typography, Alert, Divider, Stack } from "@mui/material";
 
 // project-imports
 import MainCard from "components/MainCard";
 
 // assets
-import { Calculator, DocumentCloud, InfoCircle } from "iconsax-react";
+import { Calculator, DocumentCloud } from "iconsax-react";
 import CompensacionWizard from "sections/forms/wizard/calc-civil/compensacion";
 import PunitivosWizard from "sections/forms/wizard/calc-civil/punitivos";
 import ResarcimientoWizard from "sections/forms/wizard/calc-civil/resarcimiento";
@@ -101,11 +101,6 @@ export default function CivilTabs() {
 						<Tab label="Daños y Perjuicios 'Mendez'" icon={<Calculator />} iconPosition="start" {...a11yProps(3)} />
 						<Tab label="Guardados" icon={<DocumentCloud />} iconPosition="start" {...a11yProps(4)} />
 					</Tabs>
-					<Tooltip title="Ver Guía">
-						<IconButton color="success" size="medium">
-							<InfoCircle variant="Bulk" />
-						</IconButton>
-					</Tooltip>
 				</Box>
 
 				{/* Mostrar nombre de la carpeta debajo del header cuando aplica */}

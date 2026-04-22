@@ -4,8 +4,21 @@ import { useField } from "formik";
 import { NumericFormat } from "react-number-format";
 import { TextField } from "@mui/material";
 
-export default function NumberField(props: any) {
-	const { allowNegative, allowLeadingZeros, thousandSeparator, decimalScale, ...rest } = props;
+interface NumberFieldProps {
+	name: string;
+	label?: string;
+	allowNegative?: boolean;
+	allowLeadingZeros?: boolean;
+	thousandSeparator?: string | boolean;
+	decimalScale?: number;
+	inputMode?: "decimal" | "numeric";
+	inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+	helperText?: string;
+	[key: string]: any;
+}
+
+export default function NumberField(props: NumberFieldProps) {
+	const { allowNegative, allowLeadingZeros, thousandSeparator, decimalScale, inputMode, inputProps, helperText: staticHelperText, ...rest } = props;
 	const [field, meta, helpers] = useField(props);
 	const { setValue } = helpers;
 	function _renderHelperText() {
@@ -13,6 +26,7 @@ export default function NumberField(props: any) {
 		if (touched && error) {
 			return error;
 		}
+		return staticHelperText;
 	}
 	const handleValueChange = (values: any) => {
 		const { floatValue } = values;
@@ -22,16 +36,17 @@ export default function NumberField(props: any) {
 	return (
 		<NumericFormat
 			valueIsNumericString={true}
-			allowNegative={allowNegative || false}
-			allowLeadingZeros={allowLeadingZeros || false}
-			decimalScale={decimalScale || 0}
-			thousandSeparator={thousandSeparator || null}
+			allowNegative={allowNegative ?? false}
+			allowLeadingZeros={allowLeadingZeros ?? false}
+			decimalScale={decimalScale ?? 0}
+			thousandSeparator={thousandSeparator ?? undefined}
 			type="text"
 			customInput={TextField}
-			error={meta.touched && meta.error && true}
+			error={Boolean(meta.touched && meta.error)}
 			helperText={_renderHelperText()}
 			onValueChange={handleValueChange}
 			value={field.value}
+			inputProps={{ ...inputProps, inputMode: inputMode ?? "decimal" }}
 			{...rest}
 		/>
 	);

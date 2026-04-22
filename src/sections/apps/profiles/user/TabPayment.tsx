@@ -31,8 +31,7 @@ import { PatternFormat } from "react-number-format";
 // project-imports
 import IconButton from "components/@extended/IconButton";
 import MainCard from "components/MainCard";
-import { dispatch } from "store";
-import { openSnackbar } from "store/reducers/snackbar";
+import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 
 // assets
 import { Add, Eye, EyeSlash, Trash } from "iconsax-react";
@@ -144,6 +143,23 @@ const TabPayment = () => {
 		setValue(event.target.value);
 	};
 
+	const handlePaypalSubmit = useFormWithSnackbar({
+		onSubmit: async (_values: { email: string; submit: null }) => {
+			// Paypal email update logic goes here
+		},
+		successMessage: "Email de PayPal actualizado correctamente",
+		errorMessage: "Error al actualizar el email de PayPal",
+	});
+
+	const handleAddCardSubmit = useFormWithSnackbar({
+		onSubmit: async (_values: { cardname: string; cardNumber: string; expiry: Date; cvv: string; security: string; submit: null }) => {
+			// Card save logic goes here
+		},
+		successMessage: "Tarjeta agregada correctamente",
+		errorMessage: "Error al agregar la tarjeta",
+		onSuccess: () => setMethod("card"),
+	});
+
 	return (
 		<MainCard title="Payment">
 			<Grid container spacing={3}>
@@ -221,29 +237,9 @@ const TabPayment = () => {
 							validationSchema={Yup.object().shape({
 								email: Yup.string().email("Invalid email address.").max(255).required("Email is required"),
 							})}
-							onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
-								try {
-									dispatch(
-										openSnackbar({
-											open: true,
-											message: "Paypal email updated successfully.",
-											variant: "alert",
-											alert: {
-												color: "success",
-											},
-											close: false,
-										}),
-									);
-									setStatus({ success: false });
-									setSubmitting(false);
-								} catch (err: any) {
-									setStatus({ success: false });
-									setErrors({ submit: err.message });
-									setSubmitting(false);
-								}
-							}}
+							onSubmit={handlePaypalSubmit}
 						>
-							{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+							{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values, resetForm }) => (
 								<form noValidate onSubmit={handleSubmit}>
 									<Grid container spacing={3}>
 										<Grid item xs={12}>
@@ -268,7 +264,7 @@ const TabPayment = () => {
 										</Grid>
 										<Grid item xs={12}>
 											<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
-												<Button color="error" onClick={() => setMethod("card")}>
+												<Button color="error" onClick={() => { resetForm(); setMethod("card"); }}>
 													Cancel
 												</Button>
 												<Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">
@@ -299,32 +295,9 @@ const TabPayment = () => {
 								cvv: Yup.string().min(3).required("CVV is required"),
 								security: Yup.string().min(6).required("Security Code is required"),
 							})}
-							onSubmit={(values, { resetForm, setErrors, setStatus, setSubmitting }) => {
-								try {
-									dispatch(
-										openSnackbar({
-											open: true,
-											message: "Card added successfully.",
-											variant: "alert",
-											alert: {
-												color: "success",
-											},
-											close: false,
-										}),
-									);
-
-									resetForm();
-									setStatus({ success: false });
-									setSubmitting(false);
-									setMethod("card");
-								} catch (err: any) {
-									setStatus({ success: false });
-									setErrors({ submit: err.message });
-									setSubmitting(false);
-								}
-							}}
+							onSubmit={handleAddCardSubmit}
 						>
-							{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, setFieldValue, touched, values }) => (
+							{({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, setFieldValue, touched, values, resetForm }) => (
 								<form noValidate onSubmit={handleSubmit}>
 									<Grid container spacing={3}>
 										<Grid item xs={12} sm={6}>
@@ -338,6 +311,7 @@ const TabPayment = () => {
 													onBlur={handleBlur}
 													onChange={handleChange}
 													placeholder="Name on Card"
+													autoComplete="cc-name"
 												/>
 												{touched.cardname && errors.cardname && (
 													<FormHelperText error id="ayment-card-name-helper">
@@ -359,11 +333,11 @@ const TabPayment = () => {
 													customInput={TextField}
 													placeholder="Card Number"
 													onBlur={handleBlur}
-													onValueChange={(values) => {
-														const { value } = values;
-														setFieldValue("cardNumber", value);
+													onValueChange={(vals) => {
+														setFieldValue("cardNumber", vals.value);
 													}}
 													onChange={handleChange}
+													autoComplete="cc-number"
 												/>
 												{touched.cardNumber && errors.cardNumber && (
 													<FormHelperText error id="ayment-cardNumber-helper">
@@ -384,6 +358,7 @@ const TabPayment = () => {
 															setExpiry(newValue);
 														}}
 														format="MM/yyyy"
+														slotProps={{ textField: { autoComplete: "cc-exp" } }}
 													/>
 												</LocalizationProvider>
 											</Stack>
@@ -401,10 +376,10 @@ const TabPayment = () => {
 													customInput={TextField}
 													placeholder="CVV Number"
 													onBlur={handleBlur}
-													onValueChange={(values) => {
-														const { value } = values;
-														setFieldValue("cvv", value);
+													onValueChange={(vals) => {
+														setFieldValue("cvv", vals.value);
 													}}
+													autoComplete="cc-csc"
 												/>
 												{touched.cvv && errors.cvv && (
 													<FormHelperText error id="ayment-cvv-helper">
@@ -449,7 +424,7 @@ const TabPayment = () => {
 										</Grid>
 										<Grid item xs={12}>
 											<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
-												<Button variant="outlined" color="secondary" onClick={() => setMethod("card")}>
+												<Button variant="outlined" color="secondary" onClick={() => { resetForm(); setMethod("card"); }}>
 													Cancel
 												</Button>
 												<Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">

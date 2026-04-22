@@ -49,6 +49,7 @@ import {
 	HambergerMenu,
 	Image,
 	InfoCircle,
+	MessageText1,
 	More,
 	Paperclip,
 	Send,
@@ -137,7 +138,7 @@ const Chat = () => {
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Message required",
+					message: "El mensaje no puede estar vacío",
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -178,10 +179,20 @@ const Chat = () => {
 		setAnchorElEmoji(null);
 	};
 
-	// close sidebar when widow size below 'md' breakpoint
+	// En tablet (< lg pero >= md) abrimos el drawer por defecto para que el usuario vea la lista.
+	// En mobile (< md) lo dejamos cerrado para no tapar el contenido; el empty state invita a abrirlo.
 	useEffect(() => {
-		setOpenChatDrawer(!matchDownSM);
-	}, [matchDownSM]);
+		if (matchDownMD) {
+			// mobile: cerrado
+			setOpenChatDrawer(false);
+		} else if (matchDownSM) {
+			// tablet (entre md y lg): abierto por defecto
+			setOpenChatDrawer(true);
+		} else {
+			// desktop (>= lg): persistente, siempre visible
+			setOpenChatDrawer(true);
+		}
+	}, [matchDownSM, matchDownMD]);
 
 	useEffect(() => {
 		setUser(chatState.user);
@@ -210,7 +221,39 @@ const Chat = () => {
 		<Box sx={{ display: "flex" }}>
 			<ChatDrawer openChatDrawer={openChatDrawer} handleDrawerOpen={handleDrawerOpen} setUser={setUser} />
 			<Main theme={theme} open={openChatDrawer}>
-				<Grid container>
+				{matchDownMD && !user.name && (
+					<Stack
+						alignItems="center"
+						justifyContent="center"
+						spacing={2}
+						sx={{ height: "calc(100vh - 120px)", px: 3 }}
+					>
+						<Box
+							sx={{
+								width: 72,
+								height: 72,
+								borderRadius: "50%",
+								bgcolor: theme.palette.mode === ThemeMode.DARK ? "dark.light" : "secondary.lighter",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							<MessageText1 size={36} color={theme.palette.secondary.main} variant="Bulk" />
+						</Box>
+						<Stack spacing={0.5} alignItems="center">
+							<Typography variant="h5" color="textPrimary">
+								Tus mensajes
+							</Typography>
+							<Typography variant="body2" color="textSecondary" align="center">
+								Tocá el ícono{" "}
+								<HambergerMenu size={14} style={{ verticalAlign: "middle" }} />{" "}
+								para ver tus conversaciones y elegir un contacto.
+							</Typography>
+						</Stack>
+					</Stack>
+				)}
+				<Grid container style={{ display: matchDownMD && !user.name ? "none" : undefined }}>
 					<Grid
 						item
 						xs={12}
@@ -263,23 +306,23 @@ const Chat = () => {
 												<Stack>
 													<Typography variant="subtitle1">{user.name}</Typography>
 													<Typography variant="caption" color="textSecondary">
-														Active {user.lastMessage} ago
+														{user.lastMessage ? `Activo hace ${user.lastMessage}` : "Activo recientemente"}
 													</Typography>
 												</Stack>
 											</Stack>
 										</Grid>
 										<Grid item>
 											<Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={1}>
-												<IconButton size="large" color="secondary">
+												<IconButton size="large" color="secondary" aria-label="Llamar">
 													<Call />
 												</IconButton>
-												<IconButton size="large" color="secondary">
+												<IconButton size="large" color="secondary" aria-label="Video">
 													<Camera />
 												</IconButton>
-												<IconButton onClick={handleUserChange} size="large" color={emailDetails ? "error" : "secondary"}>
+												<IconButton onClick={handleUserChange} size="large" color={emailDetails ? "error" : "secondary"} aria-label="Información del contacto">
 													{emailDetails ? <Add style={{ transform: "rotate(45deg)" }} /> : <InfoCircle />}
 												</IconButton>
-												<IconButton onClick={handleClickSort} size="large" color="secondary">
+												<IconButton onClick={handleClickSort} size="large" color="secondary" aria-label="Más opciones">
 													<More />
 												</IconButton>
 												<Menu
@@ -299,15 +342,15 @@ const Chat = () => {
 												>
 													<MenuItem onClick={handleCloseSort}>
 														<DocumentDownload style={{ paddingRight: 8 }} />
-														<Typography>Archive</Typography>
+														<Typography>Archivar</Typography>
 													</MenuItem>
 													<MenuItem onClick={handleCloseSort}>
 														<VolumeMute style={{ paddingRight: 8 }} />
-														<Typography>Muted</Typography>
+														<Typography>Silenciar</Typography>
 													</MenuItem>
 													<MenuItem onClick={handleCloseSort}>
 														<Trash style={{ paddingRight: 8 }} />
-														<Typography>Delete</Typography>
+														<Typography>Eliminar</Typography>
 													</MenuItem>
 												</Menu>
 											</Stack>
@@ -322,8 +365,43 @@ const Chat = () => {
 											minHeight: 420,
 										}}
 									>
-										<Box sx={{ pl: 1, pr: 3 }}>
-											<ChatHistory theme={theme} user={user} data={data} />
+										<Box sx={{ pl: 1, pr: 3, height: "100%" }}>
+											{data.length === 0 ? (
+												<Stack
+													alignItems="center"
+													justifyContent="center"
+													spacing={2}
+													sx={{ height: "100%", minHeight: 380, py: 6 }}
+												>
+													<Box
+														sx={{
+															width: 72,
+															height: 72,
+															borderRadius: "50%",
+															bgcolor: theme.palette.mode === ThemeMode.DARK ? "dark.light" : "secondary.lighter",
+															display: "flex",
+															alignItems: "center",
+															justifyContent: "center",
+														}}
+													>
+														<MessageText1
+															size={36}
+															color={theme.palette.secondary.main}
+															variant="Bulk"
+														/>
+													</Box>
+													<Stack spacing={0.5} alignItems="center">
+														<Typography variant="h5" color="textPrimary">
+															Aún no hay mensajes
+														</Typography>
+														<Typography variant="body2" color="textSecondary" align="center">
+															Escribí el primero para iniciar la conversación.
+														</Typography>
+													</Stack>
+												</Stack>
+											) : (
+												<ChatHistory theme={theme} user={user} data={data} />
+											)}
 										</Box>
 									</SimpleBar>
 								</Grid>
@@ -342,7 +420,7 @@ const Chat = () => {
 											fullWidth
 											multiline
 											rows={4}
-											placeholder="Your Message..."
+											placeholder="Escribí tu mensaje..."
 											value={message}
 											onChange={(e) => setMessage(e.target.value.length <= 1 ? e.target.value.trim() : e.target.value)}
 											onKeyPress={handleEnter}

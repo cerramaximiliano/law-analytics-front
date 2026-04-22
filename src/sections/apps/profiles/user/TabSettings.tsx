@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect, SyntheticEvent } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // material-ui
 import {
@@ -14,7 +14,6 @@ import {
 	Box,
 	CircularProgress,
 	Alert,
-	Snackbar,
 	Accordion,
 	AccordionSummary,
 	AccordionDetails,
@@ -40,7 +39,6 @@ import { useTeam } from "contexts/TeamContext";
 import { ROLE_CONFIG } from "types/teams";
 
 // ==============================|| USER PROFILE - SETTINGS ||============================== //
-type SeverityType = "success" | "error" | "warning" | "info";
 
 const TabSettings = () => {
 	// Team context - para mostrar información apropiada a miembros del equipo
@@ -53,19 +51,12 @@ const TabSettings = () => {
 	const [saving, setSaving] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
-	// Estado para notificaciones
-	const [notification, setNotification] = useState<{
-		open: boolean;
-		message: string;
-		severity: SeverityType;
-	}>({
-		open: false,
-		message: "",
-		severity: "success",
-	});
-
 	// Estado para los elementos principales
 	const [checked, setChecked] = useState<string[]>([]);
+
+	// Ref para restaurar preferencias al cancelar
+	const savedPreferencesRef = useRef<NotificationPreferences | null>(null);
+	const savedCheckedRef = useRef<string[]>([]);
 
 	// Valores por defecto para settings de notificación
 	const defaultSettings: NotificationSettings = {
@@ -188,7 +179,7 @@ const TabSettings = () => {
 		preferences.system?.userActivity,
 	]);
 
-	const handleAccordionChange = (panel: string) => (event: SyntheticEvent, isExpanded: boolean) => {
+	const handleAccordionChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
 		setExpanded(isExpanded ? panel : null);
 	};
 
@@ -265,6 +256,10 @@ const TabSettings = () => {
 					if (normalizedData.loginAlerts) newChecked.push("lc");
 
 					setChecked(newChecked);
+
+					// Guardar snapshot inicial para restore en Cancelar
+					savedPreferencesRef.current = normalizedData;
+					savedCheckedRef.current = newChecked;
 				}
 			} catch (error) {
 				setError("No se pudieron cargar las preferencias de notificaciones");
@@ -314,7 +309,11 @@ const TabSettings = () => {
 
 			if (response.success && response.data) {
 				// Normalizar los datos de la respuesta para asegurar que todos los campos existan
-				setPreferences(normalizePreferences(response.data));
+				const savedData = normalizePreferences(response.data);
+				setPreferences(savedData);
+				// Actualizar snapshot para que Cancelar restaure al último guardado
+				savedPreferencesRef.current = savedData;
+				savedCheckedRef.current = [...checked];
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -627,14 +626,6 @@ const TabSettings = () => {
 		});
 	};
 
-	// Cerrar notificación
-	const handleCloseNotification = () => {
-		setNotification({
-			...notification,
-			open: false,
-		});
-	};
-
 	if (loading) {
 		return (
 			<MainCard title="Configuración">
@@ -657,18 +648,6 @@ const TabSettings = () => {
 
 	return (
 		<MainCard title="Configuración">
-			{/* Notificaciones */}
-			<Snackbar
-				open={notification.open}
-				autoHideDuration={6000}
-				onClose={handleCloseNotification}
-				anchorOrigin={{ vertical: "top", horizontal: "right" }}
-			>
-				<Alert onClose={handleCloseNotification} severity={notification.severity}>
-					{notification.message}
-				</Alert>
-			</Snackbar>
-
 			{/* Alerta para miembros del equipo sin permisos de edición */}
 			{isTeamMode && !canEditSettings && (
 				<Alert severity="info" sx={{ mb: 2 }}>
@@ -1097,7 +1076,17 @@ const TabSettings = () => {
 			{/* Solo mostrar botones de acción si puede editar */}
 			{canEditSettings && (
 				<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 2.5 }}>
-					<Button color="error">Cancelar</Button>
+					<Button
+						color="error"
+						onClick={() => {
+							if (savedPreferencesRef.current) {
+								setPreferences(savedPreferencesRef.current);
+								setChecked(savedCheckedRef.current);
+							}
+						}}
+					>
+						Cancelar
+					</Button>
 					<Button variant="contained" onClick={savePreferences} disabled={saving} startIcon={saving ? <CircularProgress size={20} /> : null}>
 						{saving ? "Guardando..." : "Guardar"}
 					</Button>

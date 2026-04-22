@@ -57,7 +57,7 @@ const AccountProfile = () => {
 				<Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons="auto" aria-label="account profile tab">
 					<Tab label="Mi cuenta" component={Link} to="/apps/profiles/account/my-account" icon={<TableDocument />} iconPosition="start" />
 					<Tab label="Suscripción" component={Link} to="/apps/profiles/account/settings" icon={<Card />} iconPosition="start" />
-					<Tab label="Roles" component={Link} to="/apps/profiles/account/role" icon={<Profile2User />} iconPosition="start" />
+					<Tab label="Mi Equipo" component={Link} to="/apps/profiles/account/role" icon={<Profile2User />} iconPosition="start" />
 					{showPjnTab && (
 						<Tab label="Integración PJN" component={Link} to="/apps/profiles/account/pjn" icon={<Link1 />} iconPosition="start" />
 					)}

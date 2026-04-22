@@ -2,14 +2,20 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Box,
   Button,
+  CardActions,
   Checkbox,
   Chip,
+  Divider,
   FormControl,
   Grid,
   IconButton,
   InputAdornment,
+  ListItemIcon,
+  ListItemText,
+  Menu,
   MenuItem,
   Pagination,
+  Paper,
   Select,
   Skeleton,
   Stack,
@@ -23,9 +29,10 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Add, Box as BoxIcon, DocumentUpload, Edit2, Eye, Link1, Refresh2, SearchNormal1, TickCircle, Trash } from "iconsax-react";
+import { Add, Box as BoxIcon, DocumentUpload, Edit2, Eye, Link1, More, Refresh2, SearchNormal1, TickCircle, Trash } from "iconsax-react";
 
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
@@ -108,6 +115,8 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => {
 
 const PostalTrackingPage = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMd = useMediaQuery(theme.breakpoints.down("md"));
   const { trackings, isLoader, total } = useSelector((state: any) => state.postalTrackingReducer);
   const { tracking: trackingDetail } = useSelector((state: any) => state.postalTrackingReducer);
 
@@ -116,8 +125,12 @@ const PostalTrackingPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [sortBy, setSortBy] = useState<"label" | "createdAt">("createdAt");
+  const [sortBy, setSortBy] = useState<"label" | "createdAt" | "lastCheckedAt">("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Menú contextual de acciones secundarias (mobile/tablet)
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
+  const [actionMenuRow, setActionMenuRow] = useState<PostalTrackingType | null>(null);
 
   // Modales
   const [openCreate, setOpenCreate] = useState(false);
@@ -163,6 +176,16 @@ const PostalTrackingPage = () => {
     } else {
       setSortBy("label");
       setSortOrder("asc");
+      setPage(0);
+    }
+  };
+
+  const handleLastCheckedSort = () => {
+    if (sortBy === "lastCheckedAt") {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy("lastCheckedAt");
+      setSortOrder("desc");
       setPage(0);
     }
   };
@@ -336,7 +359,9 @@ const PostalTrackingPage = () => {
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={2}>
-          <Typography variant="h5">Seguimiento de envíos</Typography>
+          <Typography variant="h5">
+            {total > 0 ? `Seguimientos · ${total}` : "Seguimientos"}
+          </Typography>
           <Box
             sx={{
               bgcolor: "#FFCE00",
@@ -470,218 +495,497 @@ const PostalTrackingPage = () => {
             </Stack>
           )}
 
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      size="small"
-                      checked={allCurrentSelected}
-                      indeterminate={!allCurrentSelected && someCurrentSelected}
-                      onChange={handleToggleAll}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ width: 60 }}>Proveedor</TableCell>
-                  <TableCell>Código / Número</TableCell>
-                  <TableCell sortDirection={sortBy === "label" ? sortOrder : false}>
-                    <TableSortLabel
-                      active={sortBy === "label"}
-                      direction={sortBy === "label" ? sortOrder : "asc"}
-                      onClick={handleLabelSort}
-                    >
-                      Etiqueta
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell>Estado proceso</TableCell>
-                  <TableCell>Estado envío / Entrega</TableCell>
-                  <TableCell>Último chequeo</TableCell>
-                  <TableCell align="center">Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {trackings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                      <Typography color="textSecondary">Sin resultados para la búsqueda</Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  trackings.map((row: PostalTrackingType) => (
-                    <TableRow key={row._id} hover selected={selectedIds.has(row._id)}>
-                      <TableCell padding="checkbox">
-                        <Checkbox
+          {/* ── Mobile card list (xs) ── */}
+          {isMobile ? (
+            <Stack spacing={1.5}>
+              {trackings.length === 0 ? (
+                <Typography color="textSecondary" align="center" sx={{ py: 4 }}>
+                  Sin resultados para la búsqueda
+                </Typography>
+              ) : (
+                trackings.map((row: PostalTrackingType) => (
+                  <Paper
+                    key={row._id}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      borderColor: selectedIds.has(row._id) ? "primary.main" : "divider",
+                      bgcolor: selectedIds.has(row._id) ? "primary.lighter" : "background.paper",
+                    }}
+                  >
+                    {/* Header: logo + código + more-menu */}
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
+                      <Checkbox
+                        size="small"
+                        checked={selectedIds.has(row._id)}
+                        onChange={() => handleToggleSelect(row._id)}
+                        sx={{ flexShrink: 0 }}
+                      />
+                      <Box
+                        sx={{
+                          bgcolor: "#FFCE00",
+                          borderRadius: 1,
+                          px: 0.75,
+                          py: 0.5,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 18, width: "auto" }} />
+                      </Box>
+                      <Typography variant="body2" fontFamily="monospace" fontWeight={600} sx={{ flex: 1 }}>
+                        {row.codeId} {row.numberId}
+                      </Typography>
+                      <Tooltip title="Más acciones">
+                        <IconButton
                           size="small"
-                          checked={selectedIds.has(row._id)}
-                          onChange={() => handleToggleSelect(row._id)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box
-                          sx={{
-                            bgcolor: "#FFCE00",
-                            borderRadius: 1,
-                            px: 0.75,
-                            py: 0.5,
-                            display: "inline-flex",
-                            alignItems: "center",
-                          }}
+                          onClick={(e) => { setActionMenuAnchor(e.currentTarget); setActionMenuRow(row); }}
+                          aria-label="Más acciones"
                         >
-                          <Box
-                            component="img"
-                            src={CORREO_LOGO}
-                            alt="Correo Argentino"
-                            sx={{ height: 20, width: "auto" }}
-                          />
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontFamily="monospace" fontWeight={600}>
-                          {row.codeId} {row.numberId}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          color={row.label ? "textPrimary" : "textSecondary"}
-                        >
-                          {row.label || "—"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
+                          <More size={18} />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+
+                    {/* Estados: proceso + envío */}
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pb: 1 }} flexWrap="wrap">
+                      <Chip
+                        size="small"
+                        label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
+                        color={STATUS_COLORS[row.processingStatus] ?? "default"}
+                        sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
+                      />
+                      {row.trackingStatus && (
                         <Chip
                           size="small"
-                          label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
-                          color={STATUS_COLORS[row.processingStatus] ?? "default"}
-                          sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
+                          label={row.trackingStatus}
+                          variant="outlined"
+                          color="default"
+                          sx={{ maxWidth: 200, "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis" } }}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <Stack spacing={0.25}>
-                          <Typography
-                            variant="body2"
-                            color={row.trackingStatus ? "textPrimary" : "textSecondary"}
-                            sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                          >
-                            {row.trackingStatus || "—"}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color={row.deliveryStatus ? "textSecondary" : "text.disabled"}
-                            sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                          >
-                            {row.deliveryStatus || "—"}
-                          </Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="textSecondary">
-                          {formatDate(row.lastCheckedAt)}
+                      )}
+                    </Stack>
+
+                    {/* Metadata: etiqueta + último chequeo */}
+                    <Stack spacing={0.25} sx={{ px: 1.5, pb: 1 }}>
+                      {row.label && (
+                        <Typography variant="caption" color="textPrimary">
+                          {row.label}
                         </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={0.5} justifyContent="center">
+                      )}
+                      <Typography variant="caption" color="textSecondary">
+                        Último chequeo: {formatDate(row.lastCheckedAt)}
+                      </Typography>
+                    </Stack>
 
-                          {/* Ver detalle — siempre habilitado */}
-                          <Tooltip title="Ver detalle">
-                            <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="primary" data-testid="postal-view-btn">
-                              <Eye size={16} />
-                            </IconButton>
-                          </Tooltip>
+                    <Divider />
 
-                          {/* Editar — siempre habilitado */}
-                          <Tooltip title="Editar">
-                            <IconButton size="small" onClick={() => handleOpenEdit(row)} color="info" data-testid="postal-edit-btn">
-                              <Edit2 size={16} />
-                            </IconButton>
-                          </Tooltip>
+                    {/* Footer: acciones críticas */}
+                    <CardActions sx={{ px: 1, py: 0.5, justifyContent: "flex-end" }}>
+                      <Tooltip title="Ver detalle">
+                        <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="primary" aria-label="Ver detalle" data-testid="postal-view-btn">
+                          <Eye size={18} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Editar">
+                        <IconButton size="small" onClick={() => handleOpenEdit(row)} color="info" aria-label="Editar" data-testid="postal-edit-btn">
+                          <Edit2 size={18} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar">
+                        <IconButton size="small" onClick={() => setTrackingToDelete(row)} color="error" aria-label="Eliminar" data-testid="postal-delete-btn">
+                          <Trash size={18} />
+                        </IconButton>
+                      </Tooltip>
+                    </CardActions>
+                  </Paper>
+                ))
+              )}
 
-                          {/* Vincular a causa — deshabilitado si not_found sin carpeta previa */}
-                          {row.processingStatus === "not_found" && !row.folderId ? (
-                            <Tooltip title="No se puede vincular una causa a un seguimiento no encontrado">
-                              <span style={{ display: "inline-flex" }}>
-                                <IconButton size="small" disabled data-testid="postal-link-btn">
-                                  <Link1 size={16} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title={row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}>
-                              <IconButton size="small" onClick={() => setLinkTracking(row)} color={row.folderId ? "success" : "default"} data-testid="postal-link-btn">
-                                <Link1 size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-
-                          {/* Adjuntar — deshabilitado si not_found */}
-                          {row.processingStatus === "not_found" ? (
-                            <Tooltip title="No se puede adjuntar archivos a un seguimiento no encontrado">
-                              <span style={{ display: "inline-flex" }}>
-                                <IconButton size="small" disabled data-testid="postal-attachment-btn">
-                                  <DocumentUpload size={16} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title={row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}>
-                              <IconButton size="small" onClick={() => handleAttachmentClick(row._id)} color={row.attachmentKey ? "success" : "default"} data-testid="postal-attachment-btn">
-                                <DocumentUpload size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-
-                          {/* Marcar como completado — solo para estados en curso */}
-                          {["pending", "active", "paused", "error"].includes(row.processingStatus) && (
-                            <Tooltip title="Marcar como completado">
-                              <IconButton size="small" onClick={() => handleMarkAsCompleted(row._id)} color="success" data-testid="postal-complete-btn">
-                                <TickCircle size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-
-                          {/* Reactivar — visible en todos los estados terminales, deshabilitado cuando no aplica */}
-                          {["completed", "not_found", "error", "paused"].includes(row.processingStatus) && (() => {
-                            const canReactivate =
-                              row.processingStatus === "paused" ||
-                              row.processingStatus === "error" ||
-                              (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected"));
-                            const reactivateTooltip = row.processingStatus === "not_found"
-                              ? "No se puede reactivar un seguimiento no encontrado por el sitio"
-                              : "No se puede reactivar un seguimiento con estado final determinado por el sistema";
-                            return canReactivate ? (
-                              <Tooltip title="Reactivar seguimiento">
-                                <IconButton size="small" onClick={() => handleReactivate(row._id)} color="warning" data-testid="postal-reactivate-btn">
-                                  <Refresh2 size={16} />
-                                </IconButton>
-                              </Tooltip>
-                            ) : (
-                              <Tooltip title={reactivateTooltip}>
-                                <span style={{ display: "inline-flex" }}>
-                                  <IconButton size="small" disabled data-testid="postal-reactivate-btn">
-                                    <Refresh2 size={16} />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            );
-                          })()}
-
-                          {/* Eliminar — siempre habilitado */}
-                          <Tooltip title="Eliminar">
-                            <IconButton size="small" onClick={() => setTrackingToDelete(row)} color="error" data-testid="postal-delete-btn">
-                              <Trash size={16} />
-                            </IconButton>
-                          </Tooltip>
-
-                        </Stack>
+              {/* Menú contextual de acciones secundarias en mobile */}
+              <Menu
+                anchorEl={actionMenuAnchor}
+                open={Boolean(actionMenuAnchor) && Boolean(actionMenuRow)}
+                onClose={() => { setActionMenuAnchor(null); setActionMenuRow(null); }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+              >
+                {actionMenuRow && (() => {
+                  const row = actionMenuRow;
+                  const canLink = !(row.processingStatus === "not_found" && !row.folderId);
+                  const canAttach = row.processingStatus !== "not_found";
+                  const canComplete = ["pending", "active", "paused", "error"].includes(row.processingStatus);
+                  const canReactivate =
+                    ["completed", "not_found", "error", "paused"].includes(row.processingStatus) &&
+                    (row.processingStatus === "paused" ||
+                      row.processingStatus === "error" ||
+                      (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected")));
+                  return [
+                    <MenuItem
+                      key="link"
+                      disabled={!canLink}
+                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canLink) setLinkTracking(row); }}
+                      data-testid="postal-link-btn"
+                    >
+                      <ListItemIcon><Link1 size={16} /></ListItemIcon>
+                      <ListItemText>{row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}</ListItemText>
+                    </MenuItem>,
+                    <MenuItem
+                      key="attach"
+                      disabled={!canAttach}
+                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canAttach) handleAttachmentClick(row._id); }}
+                      data-testid="postal-attachment-btn"
+                    >
+                      <ListItemIcon><DocumentUpload size={16} /></ListItemIcon>
+                      <ListItemText>{row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}</ListItemText>
+                    </MenuItem>,
+                    canComplete && (
+                      <MenuItem
+                        key="complete"
+                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleMarkAsCompleted(row._id); }}
+                        data-testid="postal-complete-btn"
+                      >
+                        <ListItemIcon><TickCircle size={16} /></ListItemIcon>
+                        <ListItemText>Marcar como completado</ListItemText>
+                      </MenuItem>
+                    ),
+                    canReactivate && (
+                      <MenuItem
+                        key="reactivate"
+                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleReactivate(row._id); }}
+                        data-testid="postal-reactivate-btn"
+                      >
+                        <ListItemIcon><Refresh2 size={16} /></ListItemIcon>
+                        <ListItemText>Reactivar seguimiento</ListItemText>
+                      </MenuItem>
+                    ),
+                  ].filter(Boolean);
+                })()}
+              </Menu>
+            </Stack>
+          ) : (
+            /* ── Desktop / tablet table (sm+) ── */
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        size="small"
+                        checked={allCurrentSelected}
+                        indeterminate={!allCurrentSelected && someCurrentSelected}
+                        onChange={handleToggleAll}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ width: 60 }}>Proveedor</TableCell>
+                    <TableCell>Código / Número</TableCell>
+                    <TableCell sortDirection={sortBy === "label" ? sortOrder : false}>
+                      <TableSortLabel
+                        active={sortBy === "label"}
+                        direction={sortBy === "label" ? sortOrder : "asc"}
+                        onClick={handleLabelSort}
+                      >
+                        Etiqueta
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell>Estado proceso</TableCell>
+                    <TableCell>Estado envío / Entrega</TableCell>
+                    <TableCell sortDirection={sortBy === "lastCheckedAt" ? sortOrder : false}>
+                      <TableSortLabel
+                        active={sortBy === "lastCheckedAt"}
+                        direction={sortBy === "lastCheckedAt" ? sortOrder : "desc"}
+                        onClick={handleLastCheckedSort}
+                      >
+                        Último chequeo
+                      </TableSortLabel>
+                    </TableCell>
+                    <TableCell align="center">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {trackings.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                        <Typography color="textSecondary">Sin resultados para la búsqueda</Typography>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ) : (
+                    trackings.map((row: PostalTrackingType) => (
+                      <TableRow key={row._id} hover selected={selectedIds.has(row._id)}>
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            size="small"
+                            checked={selectedIds.has(row._id)}
+                            onChange={() => handleToggleSelect(row._id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              bgcolor: "#FFCE00",
+                              borderRadius: 1,
+                              px: 0.75,
+                              py: 0.5,
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Box
+                              component="img"
+                              src={CORREO_LOGO}
+                              alt="Correo Argentino"
+                              sx={{ height: 20, width: "auto" }}
+                            />
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontFamily="monospace" fontWeight={600}>
+                            {row.codeId} {row.numberId}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            color={row.label ? "textPrimary" : "textSecondary"}
+                          >
+                            {row.label || "—"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
+                            color={STATUS_COLORS[row.processingStatus] ?? "default"}
+                            sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Stack spacing={0.25}>
+                            <Typography
+                              variant="body2"
+                              color={row.trackingStatus ? "textPrimary" : "textSecondary"}
+                              sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            >
+                              {row.trackingStatus || "—"}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color={row.deliveryStatus ? "textSecondary" : "text.disabled"}
+                              sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            >
+                              {row.deliveryStatus || "—"}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="textSecondary">
+                            {formatDate(row.lastCheckedAt)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Stack direction="row" spacing={0.5} justifyContent="center">
 
-          <Grid container alignItems="center" justifyContent="space-between" sx={{ px: 1, pt: 2 }}>
+                            {/* Ver detalle — siempre habilitado */}
+                            <Tooltip title="Ver detalle">
+                              <IconButton
+                                size={isMd ? "medium" : "small"}
+                                onClick={() => handleViewDetail(row._id)}
+                                color="primary"
+                                data-testid="postal-view-btn"
+                              >
+                                <Eye size={isMd ? 18 : 16} />
+                              </IconButton>
+                            </Tooltip>
+
+                            {/* Editar — siempre habilitado */}
+                            <Tooltip title="Editar">
+                              <IconButton
+                                size={isMd ? "medium" : "small"}
+                                onClick={() => handleOpenEdit(row)}
+                                color="info"
+                                data-testid="postal-edit-btn"
+                              >
+                                <Edit2 size={isMd ? 18 : 16} />
+                              </IconButton>
+                            </Tooltip>
+
+                            {/* Acciones secundarias: colapsadas en tablet (< md), expandidas en desktop */}
+                            {isMd ? (
+                              <>
+                                <Tooltip title="Más acciones">
+                                  <IconButton
+                                    size="medium"
+                                    onClick={(e) => { setActionMenuAnchor(e.currentTarget); setActionMenuRow(row); }}
+                                    aria-label="Más acciones"
+                                  >
+                                    <More size={18} />
+                                  </IconButton>
+                                </Tooltip>
+                              </>
+                            ) : (
+                              <>
+                                {/* Vincular a causa */}
+                                {row.processingStatus === "not_found" && !row.folderId ? (
+                                  <Tooltip title="No se puede vincular una causa a un seguimiento no encontrado">
+                                    <span style={{ display: "inline-flex" }}>
+                                      <IconButton size="small" disabled data-testid="postal-link-btn">
+                                        <Link1 size={16} />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                ) : (
+                                  <Tooltip title={row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}>
+                                    <IconButton size="small" onClick={() => setLinkTracking(row)} color={row.folderId ? "success" : "default"} data-testid="postal-link-btn">
+                                      <Link1 size={16} />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+
+                                {/* Adjuntar */}
+                                {row.processingStatus === "not_found" ? (
+                                  <Tooltip title="No se puede adjuntar archivos a un seguimiento no encontrado">
+                                    <span style={{ display: "inline-flex" }}>
+                                      <IconButton size="small" disabled data-testid="postal-attachment-btn">
+                                        <DocumentUpload size={16} />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                ) : (
+                                  <Tooltip title={row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}>
+                                    <IconButton size="small" onClick={() => handleAttachmentClick(row._id)} color={row.attachmentKey ? "success" : "default"} data-testid="postal-attachment-btn">
+                                      <DocumentUpload size={16} />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+
+                                {/* Marcar como completado */}
+                                {["pending", "active", "paused", "error"].includes(row.processingStatus) && (
+                                  <Tooltip title="Marcar como completado">
+                                    <IconButton size="small" onClick={() => handleMarkAsCompleted(row._id)} color="success" data-testid="postal-complete-btn">
+                                      <TickCircle size={16} />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+
+                                {/* Reactivar */}
+                                {["completed", "not_found", "error", "paused"].includes(row.processingStatus) && (() => {
+                                  const canReactivate =
+                                    row.processingStatus === "paused" ||
+                                    row.processingStatus === "error" ||
+                                    (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected"));
+                                  const reactivateTooltip = row.processingStatus === "not_found"
+                                    ? "No se puede reactivar un seguimiento no encontrado por el sitio"
+                                    : "No se puede reactivar un seguimiento con estado final determinado por el sistema";
+                                  return canReactivate ? (
+                                    <Tooltip title="Reactivar seguimiento">
+                                      <IconButton size="small" onClick={() => handleReactivate(row._id)} color="warning" data-testid="postal-reactivate-btn">
+                                        <Refresh2 size={16} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  ) : (
+                                    <Tooltip title={reactivateTooltip}>
+                                      <span style={{ display: "inline-flex" }}>
+                                        <IconButton size="small" disabled data-testid="postal-reactivate-btn">
+                                          <Refresh2 size={16} />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  );
+                                })()}
+                              </>
+                            )}
+
+                            {/* Eliminar — siempre habilitado */}
+                            <Tooltip title="Eliminar">
+                              <IconButton
+                                size={isMd ? "medium" : "small"}
+                                onClick={() => setTrackingToDelete(row)}
+                                color="error"
+                                data-testid="postal-delete-btn"
+                              >
+                                <Trash size={isMd ? 18 : 16} />
+                              </IconButton>
+                            </Tooltip>
+
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+
+              {/* Menú contextual de acciones secundarias — tablet (sm < md) */}
+              <Menu
+                anchorEl={actionMenuAnchor}
+                open={Boolean(actionMenuAnchor) && Boolean(actionMenuRow)}
+                onClose={() => { setActionMenuAnchor(null); setActionMenuRow(null); }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+              >
+                {actionMenuRow && (() => {
+                  const row = actionMenuRow;
+                  const canLink = !(row.processingStatus === "not_found" && !row.folderId);
+                  const canAttach = row.processingStatus !== "not_found";
+                  const canComplete = ["pending", "active", "paused", "error"].includes(row.processingStatus);
+                  const canReactivate =
+                    ["completed", "not_found", "error", "paused"].includes(row.processingStatus) &&
+                    (row.processingStatus === "paused" ||
+                      row.processingStatus === "error" ||
+                      (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected")));
+                  return [
+                    <MenuItem
+                      key="link"
+                      disabled={!canLink}
+                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canLink) setLinkTracking(row); }}
+                      data-testid="postal-link-btn"
+                    >
+                      <ListItemIcon><Link1 size={16} /></ListItemIcon>
+                      <ListItemText>{row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}</ListItemText>
+                    </MenuItem>,
+                    <MenuItem
+                      key="attach"
+                      disabled={!canAttach}
+                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canAttach) handleAttachmentClick(row._id); }}
+                      data-testid="postal-attachment-btn"
+                    >
+                      <ListItemIcon><DocumentUpload size={16} /></ListItemIcon>
+                      <ListItemText>{row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}</ListItemText>
+                    </MenuItem>,
+                    canComplete && (
+                      <MenuItem
+                        key="complete"
+                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleMarkAsCompleted(row._id); }}
+                        data-testid="postal-complete-btn"
+                      >
+                        <ListItemIcon><TickCircle size={16} /></ListItemIcon>
+                        <ListItemText>Marcar como completado</ListItemText>
+                      </MenuItem>
+                    ),
+                    canReactivate && (
+                      <MenuItem
+                        key="reactivate"
+                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleReactivate(row._id); }}
+                        data-testid="postal-reactivate-btn"
+                      >
+                        <ListItemIcon><Refresh2 size={16} /></ListItemIcon>
+                        <ListItemText>Reactivar seguimiento</ListItemText>
+                      </MenuItem>
+                    ),
+                  ].filter(Boolean);
+                })()}
+              </Menu>
+            </TableContainer>
+          )}
+
+          <Grid
+            container
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ px: 1, pt: 2, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1.5, sm: 0 } }}
+          >
             <Grid item>
               <Stack direction="row" spacing={1} alignItems="center">
                 <Typography variant="caption" color="secondary">Filas por Páginas</Typography>
@@ -697,7 +1001,9 @@ const PostalTrackingPage = () => {
                     ))}
                   </Select>
                 </FormControl>
-                <Typography variant="caption" color="secondary">Ir a</Typography>
+                <Typography variant="caption" color="secondary" sx={{ display: { xs: "none", sm: "inline" } }}>
+                  Ir a
+                </Typography>
                 <TextField
                   size="small"
                   type="number"
@@ -706,11 +1012,11 @@ const PostalTrackingPage = () => {
                     const p = Math.max(1, Math.min(Number(e.target.value), Math.ceil(total / rowsPerPage)));
                     setPage(p - 1);
                   }}
-                  sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 } }}
+                  sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 }, display: { xs: "none", sm: "flex" } }}
                 />
               </Stack>
             </Grid>
-            <Grid item sx={{ mt: { xs: 2, sm: 0 } }}>
+            <Grid item>
               <Pagination
                 count={Math.ceil(total / rowsPerPage)}
                 page={page + 1}

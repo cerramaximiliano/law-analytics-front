@@ -335,6 +335,10 @@ const Availability = () => {
 	useEffect(() => {
 		if (user && user._id) {
 			loadAvailabilitySettings();
+		} else {
+			// user aún no está disponible (auth todavía inicializando):
+			// no disparar el spinner infinito — salir del estado loading.
+			setLoading(false);
 		}
 	}, [user, loadAvailabilitySettings]);
 
@@ -471,6 +475,9 @@ const Availability = () => {
 
 		setSaving(true);
 		try {
+			// Detectar timezone del browser con fallback argentino
+			const detectedTimezone = dayjs.tz.guess() || "America/Argentina/Buenos_Aires";
+
 			// Generar URL pública si no existe
 			const urlToUse = publicUrl || `citas-${Date.now()}`;
 
@@ -505,7 +512,7 @@ const Availability = () => {
 				timeSlots: timeSlots,
 				excludedDates: excludedDates,
 				customFields: customFields,
-				timezone: "America/Mexico_City",
+				timezone: detectedTimezone,
 				isActive: true,
 				isPubliclyVisible: isPubliclyVisible,
 				publicUrl: urlToUse,
@@ -534,10 +541,8 @@ const Availability = () => {
 
 			const savedData = response.data as AvailabilityConfig;
 
-			// Actualizar el ID y URL si es una creación nueva
-			if (!availabilityId) {
-				setAvailabilityId(savedData._id);
-			}
+			// Actualizar el ID y URL (siempre sincronizar con la respuesta del servidor)
+			setAvailabilityId(savedData._id);
 			setPublicUrl(savedData.publicUrl);
 
 			// Mostrar notificación de éxito
@@ -552,9 +557,6 @@ const Availability = () => {
 					close: false,
 				}),
 			);
-
-			// Después de guardar, redirigir a la página de reservas
-			navigate("/apps/calendar/reservations");
 		} catch (error) {
 			dispatch(
 				openSnackbar({
@@ -580,7 +582,7 @@ const Availability = () => {
 	};
 
 	return (
-		<MainCard title="Configuración de Citas">
+		<MainCard title={availabilityId ? "Editar configuración de citas" : "Nueva configuración de citas"}>
 			{loading ? (
 				<Box display="flex" justifyContent="center" alignItems="center" sx={{ py: 8 }}>
 					<CircularProgress />
@@ -683,6 +685,14 @@ const Availability = () => {
 												<Typography variant="caption" color="textSecondary">
 													Comparte este enlace con tus clientes para que puedan agendar citas contigo.
 												</Typography>
+												<Button
+													variant="outlined"
+													color="primary"
+													onClick={() => navigate("/apps/calendar/reservations")}
+													sx={{ alignSelf: "flex-start" }}
+												>
+													Ver reservas
+												</Button>
 											</Stack>
 										</>
 									)}
@@ -752,9 +762,6 @@ const Availability = () => {
 									<Stack spacing={2}>
 										<Typography variant="subtitle2">Duración de las citas</Typography>
 										<Stack direction="row" spacing={2} alignItems="center">
-											<Typography variant="body2" sx={{ minWidth: "30px" }}>
-												{slotDuration} min
-											</Typography>
 											<Slider
 												value={slotDuration}
 												onChange={(_event, newValue) => setSlotDuration(newValue as number)}
@@ -765,15 +772,24 @@ const Availability = () => {
 												valueLabelDisplay="auto"
 												aria-labelledby="slot-duration-slider"
 											/>
+											<TextField
+												type="number"
+												size="small"
+												value={slotDuration}
+												onChange={(e) => {
+													const val = Math.min(120, Math.max(15, parseInt(e.target.value) || 15));
+													setSlotDuration(val);
+												}}
+												InputProps={{ inputProps: { min: 15, max: 120 } }}
+												sx={{ width: "80px", flexShrink: 0 }}
+												label="min"
+											/>
 										</Stack>
 									</Stack>
 
 									<Stack spacing={2}>
 										<Typography variant="subtitle2">Tiempo de descanso entre citas</Typography>
 										<Stack direction="row" spacing={2} alignItems="center">
-											<Typography variant="body2" sx={{ minWidth: "30px" }}>
-												{bufferTime} min
-											</Typography>
 											<Slider
 												value={bufferTime}
 												onChange={(_event, newValue) => setBufferTime(newValue as number)}
@@ -782,6 +798,18 @@ const Availability = () => {
 												max={60}
 												valueLabelDisplay="auto"
 												aria-labelledby="buffer-time-slider"
+											/>
+											<TextField
+												type="number"
+												size="small"
+												value={bufferTime}
+												onChange={(e) => {
+													const val = Math.min(60, Math.max(0, parseInt(e.target.value) || 0));
+													setBufferTime(val);
+												}}
+												InputProps={{ inputProps: { min: 0, max: 60 } }}
+												sx={{ width: "80px", flexShrink: 0 }}
+												label="min"
 											/>
 										</Stack>
 									</Stack>
@@ -792,9 +820,6 @@ const Availability = () => {
 									<Stack spacing={2}>
 										<Typography variant="subtitle2">Tiempo máximo de anticipación</Typography>
 										<Stack direction="row" spacing={2} alignItems="center">
-											<Typography variant="body2" sx={{ minWidth: "30px" }}>
-												{maxDaysInAdvance} días
-											</Typography>
 											<Slider
 												value={maxDaysInAdvance}
 												onChange={(_event, newValue) => setMaxDaysInAdvance(newValue as number)}
@@ -805,6 +830,18 @@ const Availability = () => {
 												valueLabelDisplay="auto"
 												aria-labelledby="max-days-slider"
 											/>
+											<TextField
+												type="number"
+												size="small"
+												value={maxDaysInAdvance}
+												onChange={(e) => {
+													const val = Math.min(120, Math.max(5, parseInt(e.target.value) || 5));
+													setMaxDaysInAdvance(val);
+												}}
+												InputProps={{ inputProps: { min: 5, max: 120 } }}
+												sx={{ width: "80px", flexShrink: 0 }}
+												label="días"
+											/>
 										</Stack>
 										<Typography variant="caption" color="textSecondary">
 											Máximo número de días en el futuro para los que se pueden agendar citas.
@@ -814,9 +851,6 @@ const Availability = () => {
 									<Stack spacing={2}>
 										<Typography variant="subtitle2">Tiempo mínimo de anticipación</Typography>
 										<Stack direction="row" spacing={2} alignItems="center">
-											<Typography variant="body2" sx={{ minWidth: "30px" }}>
-												{minNoticeHours} hrs
-											</Typography>
 											<Slider
 												value={minNoticeHours}
 												onChange={(_event, newValue) => setMinNoticeHours(newValue as number)}
@@ -826,6 +860,18 @@ const Availability = () => {
 												max={72}
 												valueLabelDisplay="auto"
 												aria-labelledby="min-hours-slider"
+											/>
+											<TextField
+												type="number"
+												size="small"
+												value={minNoticeHours}
+												onChange={(e) => {
+													const val = Math.min(72, Math.max(0, parseInt(e.target.value) || 0));
+													setMinNoticeHours(val);
+												}}
+												InputProps={{ inputProps: { min: 0, max: 72 } }}
+												sx={{ width: "80px", flexShrink: 0 }}
+												label="hrs"
 											/>
 										</Stack>
 										<Typography variant="caption" color="textSecondary">
@@ -940,8 +986,14 @@ const Availability = () => {
 											<Stack spacing={2}>
 												<Typography variant="subtitle2">Campos obligatorios</Typography>
 												<FormGroup>
-													<FormControlLabel control={<Checkbox checked={true} disabled />} label="Nombre (obligatorio)" />
-													<FormControlLabel control={<Checkbox checked={true} disabled />} label="Correo electrónico (obligatorio)" />
+													<Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
+														<Typography variant="body2">Nombre</Typography>
+														<Chip label="Obligatorio" size="small" color="primary" />
+													</Stack>
+													<Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
+														<Typography variant="body2">Correo electrónico</Typography>
+														<Chip label="Obligatorio" size="small" color="primary" />
+													</Stack>
 													<FormControlLabel
 														control={<Checkbox checked={requiredFields.phone} onChange={() => handleRequiredFieldChange("phone")} />}
 														label="Teléfono"
