@@ -91,10 +91,10 @@ const WidgetDataCard = ({ title, count, percentage, color, iconPrimary, children
 					<MainCard content={false} border={false} sx={{ bgcolor: "background.default" }}>
 						<Box sx={{ p: 3, pb: 1.25 }}>
 							<Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-								<Grid item xs={7}>
+								<Grid item xs={7} sx={{ display: { xs: "none", md: "block" } }}>
 									{children}
 								</Grid>
-								<Grid item xs={5}>
+								<Grid item xs={12} md={5}>
 									<Stack spacing={1}>
 										<Typography variant="h5">{count}</Typography>
 										{percentage}

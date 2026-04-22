@@ -51,8 +51,8 @@ const RESOURCE_CONFIG: Record<ResourceType, { label: string; icon: React.ReactNo
 };
 
 const getUsageColor = (percentage: number): "primary" | "warning" | "error" => {
-	if (percentage < 60) return "primary";
-	if (percentage < 80) return "warning";
+	if (percentage < 80) return "primary";
+	if (percentage < 100) return "warning";
 	return "error";
 };
 
@@ -66,6 +66,10 @@ const JudicialBadge = ({ logoSrc, alt, bgColor, label, tooltip, synced = null, o
 				alignItems="center"
 				spacing={0.25}
 				onClick={onClick}
+				aria-label={tooltip}
+				role={onClick ? "button" : undefined}
+				tabIndex={onClick ? 0 : undefined}
+				onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") onClick(); } : undefined}
 				sx={{ cursor: onClick ? "pointer" : "default", flexShrink: 0 }}
 			>
 				<Box sx={{ position: "relative" }}>
@@ -140,13 +144,13 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 
 	const pjnTooltip =
 		pjnSynced === null
-			? "Cargando estado PJN..."
+			? "PJN - Poder Judicial de la Nación — Cargando estado..."
 			: pjnSynced
-				? "Poder Judicial de la Nación — Sincronizado"
-				: "Poder Judicial de la Nación — No sincronizado. Click para conectar";
+				? "PJN - Poder Judicial de la Nación — Sincronizado"
+				: "PJN - Poder Judicial de la Nación — No sincronizado. Click para conectar";
 
 	return (
-		<Stack direction="row" alignItems="center" spacing={0.75}>
+		<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
 			<JudicialBadge
 				logoSrc={PJN_LOGO_URL}
 				alt="PJN"
@@ -161,7 +165,11 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 				alt="PJ Buenos Aires"
 				bgColor="#f8f8f8"
 				label="BA"
-				tooltip={onBaClick ? "Poder Judicial de la Provincia de Buenos Aires — Click para agregar causa" : "Poder Judicial de la Provincia de Buenos Aires"}
+				tooltip={
+					onBaClick
+						? "BA - Buenos Aires — Click para agregar causa del Poder Judicial de la Provincia"
+						: "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires"
+				}
 				onClick={onBaClick}
 			/>
 			<JudicialBadge
@@ -169,7 +177,11 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 				alt="PJ CABA"
 				bgColor="#f8f8f8"
 				label="CABA"
-				tooltip={onCabaClick ? "Poder Judicial de la Ciudad de Buenos Aires — Click para agregar causa" : "Poder Judicial de la Ciudad de Buenos Aires"}
+				tooltip={
+					onCabaClick
+						? "CABA - Ciudad de Buenos Aires — Click para agregar causa del Poder Judicial"
+						: "CABA - Ciudad de Buenos Aires — Poder Judicial de la Ciudad de Buenos Aires"
+				}
 				onClick={onCabaClick}
 			/>
 		</Stack>
@@ -230,24 +242,35 @@ export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCa
 					</Typography>
 				) : (
 					<>
-						<LinearProgress
-							variant="determinate"
-							value={percentage}
-							color={color}
-							sx={{
-								flex: compact && isFolders && barWidth ? "0 0 auto" : 1,
-								width: compact && isFolders && barWidth ? barWidth : undefined,
-								height: compact ? 6 : 8,
-								borderRadius: 1,
-								backgroundColor: theme.palette.grey[300],
-								"& .MuiLinearProgress-bar": {
+						<Tooltip
+							title={`${isFolders ? "Carpetas activas del plan" : config.label}: ${count} de ${limit} (${Math.round(percentage)}%)`}
+							placement="top"
+						>
+							<LinearProgress
+								variant="determinate"
+								value={percentage}
+								color={color}
+								aria-label={isFolders ? `Carpetas activas del plan: ${count} de ${limit}` : `${config.label}: ${count} de ${limit}`}
+								aria-valuenow={count}
+								aria-valuemin={0}
+								aria-valuemax={limit}
+								sx={{
+									flex: compact && isFolders && barWidth ? "0 0 auto" : 1,
+									width: compact && isFolders && barWidth ? barWidth : undefined,
+									height: compact ? 6 : 8,
 									borderRadius: 1,
-								},
-							}}
-						/>
-						<Typography variant="caption" color="text.secondary" sx={{ minWidth: 55, textAlign: "right" }}>
-							{count} / {limit}
-						</Typography>
+									backgroundColor: theme.palette.grey[300],
+									"& .MuiLinearProgress-bar": {
+										borderRadius: 1,
+									},
+								}}
+							/>
+						</Tooltip>
+						<Tooltip title={isFolders ? "Carpetas activas del plan" : config.label} placement="top">
+							<Typography variant="caption" color="text.secondary" sx={{ minWidth: 55, textAlign: "right", cursor: "default" }}>
+								{count} / {limit}
+							</Typography>
+						</Tooltip>
 					</>
 				)}
 				{isFolders && compact && (

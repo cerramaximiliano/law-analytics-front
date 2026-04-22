@@ -423,7 +423,7 @@ const DashboardDefault = () => {
 							{renderOnboardingCards()}
 
 							{/* Bloque educativo en lugar del grafico */}
-							<Grid item xs={12} md={6} lg={6}>
+							<Grid item xs={12} md={6} lg={5}>
 								<OnboardingEducationalBlock />
 							</Grid>
 
@@ -435,7 +435,7 @@ const DashboardDefault = () => {
 									<AssignUsers />
 								</Stack>
 							</Grid>
-							<Grid item xs={12} md={6} lg={3}>
+							<Grid item xs={12} md={6} lg={4}>
 								<ProjectRelease />
 							</Grid>
 						</Grid>
@@ -496,7 +496,7 @@ const DashboardDefault = () => {
 							</Grid>
 
 							{/* row 2 */}
-							<Grid item xs={12} md={6} lg={6}>
+							<Grid item xs={12} md={6} lg={5}>
 								<RepeatCustomerRate />
 							</Grid>
 							<Grid item xs={12} md={6} lg={3}>
@@ -506,7 +506,7 @@ const DashboardDefault = () => {
 									<AssignUsers />
 								</Stack>
 							</Grid>
-							<Grid item xs={12} md={6} lg={3}>
+							<Grid item xs={12} md={6} lg={4}>
 								<ProjectRelease />
 							</Grid>
 						</Grid>

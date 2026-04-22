@@ -1180,14 +1180,27 @@ const Calendar = () => {
 
 							{/* Botones de acción */}
 							{canCreate && (
-								<Tooltip title="Agregar Nuevo Evento">
-									<IconButton color="primary" onClick={handleAddEventClick} size={matchDownSM ? "small" : "medium"} data-testid="calendar-add-btn">
-										<Add variant="Bulk" size={matchDownSM ? 20 : 24} />
-									</IconButton>
-								</Tooltip>
+								matchDownSM ? (
+									<Tooltip title="Agregar Nuevo Evento">
+										<IconButton color="primary" onClick={handleAddEventClick} size="small" data-testid="calendar-add-btn">
+											<Add variant="Bulk" size={20} />
+										</IconButton>
+									</Tooltip>
+								) : (
+									<Button
+										variant="contained"
+										color="primary"
+										startIcon={<Add variant="Bulk" size={18} />}
+										onClick={handleAddEventClick}
+										size="small"
+										data-testid="calendar-add-btn"
+									>
+										Nuevo evento
+									</Button>
+								)
 							)}
 							<Tooltip title="Ver Guía">
-								<IconButton color="success" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"} data-testid="calendar-guide-btn">
+								<IconButton color="inherit" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"} data-testid="calendar-guide-btn">
 									<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
 								</IconButton>
 							</Tooltip>

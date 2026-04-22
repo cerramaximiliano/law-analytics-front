@@ -12,7 +12,10 @@ import {
 	Divider,
 	FormHelperText,
 	Grid,
+	InputAdornment,
 	InputLabel,
+	MenuItem,
+	Select,
 	Stack,
 	TextField,
 	Skeleton,
@@ -34,6 +37,7 @@ import { useFormWithSnackbar } from "hooks/useFormWithSnackbar";
 
 // assets
 import dayjs from "utils/dayjs-config";
+import { Lock } from "iconsax-react";
 
 // styles & constant
 
@@ -216,11 +220,16 @@ const TabPersonal = () => {
 											value={values.email}
 											name="email"
 											id="personal-email"
-											placeholder="Correo Electrónico"
 											disabled
 											InputProps={{
 												readOnly: true,
+												endAdornment: (
+													<InputAdornment position="end">
+														<Lock size={16} />
+													</InputAdornment>
+												),
 											}}
+											helperText="El correo no puede modificarse. Contactá a soporte para cambiarlo."
 										/>
 									</Stack>
 								</Grid>
@@ -281,16 +290,26 @@ const TabPersonal = () => {
 								<Grid item xs={12} sm={6}>
 									<Stack spacing={1.25}>
 										<InputLabel htmlFor="personal-designation">Cargo</InputLabel>
-										<TextField
+										<Select
 											fullWidth
 											id="personal-designation"
 											value={values.designation}
 											name="designation"
 											onBlur={handleBlur}
 											onChange={handleChange}
-											placeholder="Cargo"
+											displayEmpty
 											error={Boolean(touched.designation && errors.designation)}
-										/>
+											inputProps={{ id: "personal-designation" }}
+										>
+											<MenuItem value="">
+												<em>Seleccioná tu cargo</em>
+											</MenuItem>
+											{["Abogado", "Procurador", "Estudio Jurídico", "Contador Público", "Escribano/a", "Otro"].map((option) => (
+												<MenuItem key={option} value={option}>
+													{option}
+												</MenuItem>
+											))}
+										</Select>
 										{touched.designation && errors.designation && (
 											<FormHelperText error id="personal-designation-helper">
 												{errors.designation}
@@ -439,7 +458,7 @@ const TabPersonal = () => {
 									Cancelar
 								</Button>
 								<Button
-									disabled={isSubmitting || loading || Object.keys(errors).filter((key) => key !== "submit").length !== 0}
+									disabled={isSubmitting || loading}
 									type="submit"
 									variant="contained"
 									startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}

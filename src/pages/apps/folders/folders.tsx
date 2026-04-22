@@ -634,7 +634,10 @@ function ReactTable({
 									Archivados
 								</Button>
 								{handleArchiveSelected && (
-									<Tooltip title={Object.keys(selectedRowIds).length === 0 ? "Selecciona causas para archivar" : ""} placement="top">
+									<Tooltip
+										title={Object.keys(selectedRowIds).length === 0 ? "Seleccioná al menos una carpeta para archivar" : ""}
+										placement="top"
+									>
 										<span>
 											<Button
 												variant="outlined"
@@ -644,6 +647,11 @@ function ReactTable({
 												onClick={() => handleArchiveSelected(selectedFlatRows)}
 												disabled={Object.keys(selectedRowIds).length === 0}
 												sx={{ textTransform: "none" }}
+												aria-label={
+													Object.keys(selectedRowIds).length === 0
+														? "Archivar carpetas — seleccioná al menos una"
+														: `Archivar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
+												}
 											>
 												{Object.keys(selectedRowIds).length > 0
 													? `Archivar (${selectedFlatRows.length})`
@@ -673,6 +681,12 @@ function ReactTable({
 										endIcon={showFilters ? <ArrowUp2 size={14} /> : <ArrowDown2 size={14} />}
 										onClick={() => setShowFilters(!showFilters)}
 										sx={{ textTransform: "none", height: "30.75px", minWidth: 100 }}
+										aria-label={
+											activeFiltersCount > 0
+												? `Mostrar filtros — ${activeFiltersCount} activo${activeFiltersCount > 1 ? "s" : ""}`
+												: showFilters ? "Ocultar filtros" : "Mostrar filtros"
+										}
+										aria-expanded={showFilters}
 									>
 										{activeFiltersCount > 0 ? `Filtros (${activeFiltersCount})` : "Filtros"}
 									</Button>
@@ -705,7 +719,12 @@ function ReactTable({
 									/>
 								</Box>
 								<Tooltip title="Exportar a CSV">
-									<IconButton color="primary" size="small" onClick={() => csvLinkRef.current?.link?.click()}>
+									<IconButton
+										color="primary"
+										size="small"
+										onClick={() => csvLinkRef.current?.link?.click()}
+										aria-label="Descargar CSV"
+									>
 										<DocumentDownload variant="Bulk" size={20} />
 									</IconButton>
 								</Tooltip>
@@ -725,6 +744,11 @@ function ReactTable({
 												onClick={() => handleDeleteSelected(selectedFlatRows)}
 												disabled={Object.keys(selectedRowIds).length === 0}
 												sx={{ opacity: Object.keys(selectedRowIds).length === 0 ? 0.5 : 1, position: "relative" }}
+												aria-label={
+													Object.keys(selectedRowIds).length === 0
+														? "Eliminar carpetas — seleccioná al menos una"
+														: `Eliminar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
+												}
 											>
 												<Trash variant="Bulk" size={20} />
 												{Object.keys(selectedRowIds).length > 0 && (
@@ -753,7 +777,7 @@ function ReactTable({
 									</Tooltip>
 								)}
 								<Tooltip title="Ver Guía">
-									<IconButton color="success" size="small" onClick={handleOpenGuide}>
+									<IconButton color="success" size="small" onClick={handleOpenGuide} aria-label="Ver Guía de carpetas">
 										<InfoCircle variant="Bulk" size={20} />
 									</IconButton>
 								</Tooltip>
