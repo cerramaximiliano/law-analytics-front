@@ -137,6 +137,7 @@
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:headed": "playwright test --headed",
 		"test:e2e:report": "playwright show-report test-results/html",
+		"test:ux-overflow": "rm -rf tests/.overflow-results tests/ux-overflow-report.json && playwright test --config=playwright.ux-overflow.config.ts; node scripts/aggregate-overflow-report.js || true",
 		"format": "prettier --write .",
 		"lint": "eslint --fix . --ext .js,.jsx,.ts,.tsx",
 		"type-check": "tsc --noEmit",

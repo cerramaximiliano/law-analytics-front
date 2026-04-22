@@ -134,3 +134,7 @@ playwright-report/
 # UX audit — commit audit.md, ignore heavy artifacts
 ux-reports/**/screenshots/
 ux-reports/**/.playwright-output/
+
+# Overflow detection — resultados temporales del test, reporte agregado (el test lo regenera)
+tests/.overflow-results/
+tests/ux-overflow-report.json

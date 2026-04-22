@@ -389,8 +389,8 @@ const ModelosPage = () => {
             <Typography variant="body2" color="textSecondary">
               Plantillas predefinidas listas para usar.
             </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Button size="small" variant="outlined" color="secondary" startIcon={<DocumentUpload size={15} />} onClick={() => setRequestModelOpen(true)}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ xs: "stretch", sm: "center" }} sx={{ width: { xs: "100%", sm: "auto" } }}>
+              <Button size="small" variant="outlined" color="secondary" startIcon={<DocumentUpload size={15} />} onClick={() => setRequestModelOpen(true)} sx={{ width: { xs: "100%", sm: "auto" } }}>
                 Solicitar modelo
               </Button>
               <TextField
@@ -398,7 +398,7 @@ const ModelosPage = () => {
                 placeholder="Buscar modelo..."
                 value={pdfSearch}
                 onChange={(e) => setPdfSearch(e.target.value)}
-                sx={{ minWidth: 220 }}
+                sx={{ minWidth: { sm: 220 }, width: { xs: "100%", sm: "auto" } }}
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><SearchNormal1 size={16} style={{ opacity: 0.5 }} /></InputAdornment>,
                 }}
