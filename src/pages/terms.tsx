@@ -5,7 +5,7 @@ import { Box, Container, Grid, Typography, Divider, Tab, Tabs } from "@mui/mater
 
 // third-party
 import { motion } from "framer-motion";
-import { useState, SyntheticEvent } from "react";
+import { useState, useRef, SyntheticEvent } from "react";
 
 // project imports
 import MainCard from "components/MainCard";
@@ -23,10 +23,14 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
 	const { children, value, index, ...other } = props;
+	const visited = useRef(false);
+	if (value === index) {
+		visited.current = true;
+	}
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`terms-tabpanel-${index}`} aria-labelledby={`terms-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+			{visited.current && <Box sx={{ pt: 3 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -64,6 +68,8 @@ const TermsPage = () => {
 
 	const TAB_INDEX_TO_ID = ["terminos-suscripcion", "politica-reembolso", "terminos-facturacion"];
 
+	const TAB_INDEX_TO_LABEL = ["Términos de Suscripción", "Política de Reembolso", "Términos de Facturación"];
+
 	const handleTocItemClick = (id: string) => {
 		const idx = TAB_ID_TO_INDEX[id];
 		if (idx !== undefined) {
@@ -95,8 +101,11 @@ const TermsPage = () => {
 							}}
 						>
 							<motion.div initial={{ opacity: 0, translateY: 20 }} animate={{ opacity: 1, translateY: 0 }} transition={{ duration: 0.5 }}>
-								<Typography variant="h1" sx={{ mb: 1 }}>
+								<Typography variant="h1" sx={{ mb: 0.5 }}>
 									Términos y Condiciones
+								</Typography>
+								<Typography variant="h4" color="text.secondary" sx={{ mb: 0.5, fontWeight: 400 }}>
+									&rsaquo; {TAB_INDEX_TO_LABEL[value]}
 								</Typography>
 								<Typography variant="body1" color="text.secondary">
 									Última actualización: {LEGAL_LAST_UPDATED}

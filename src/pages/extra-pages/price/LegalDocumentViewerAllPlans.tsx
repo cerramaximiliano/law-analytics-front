@@ -52,7 +52,7 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 	const [document, setDocument] = useState<LegalDocumentAllPlans | null>(null);
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
-	const [expanded, setExpanded] = useState<string | false>("common");
+	const [expanded, setExpanded] = useState<Record<string, boolean>>({ common: true });
 	const theme = useTheme();
 
 	useEffect(() => {
@@ -79,7 +79,7 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 	}, [documentType]);
 
 	const handleAccordionChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
-		setExpanded(isExpanded ? panel : false);
+		setExpanded((prev) => ({ ...prev, [panel]: isExpanded }));
 	};
 
 	const formatDate = (dateString: string | Date) => {
@@ -114,8 +114,11 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 
 	if (loading) {
 		return (
-			<Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+			<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 8 }}>
 				<CircularProgress />
+				<Typography variant="body2" color="text.secondary">
+					Cargando {title ?? "documento"}...
+				</Typography>
 			</Box>
 		);
 	}
@@ -162,7 +165,7 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 			{/* Acordeón: Términos Generales (comunes a todos los planes) */}
 			{document.commonSections && document.commonSections.length > 0 && (
 				<Accordion
-					expanded={expanded === "common"}
+					expanded={!!expanded["common"]}
 					onChange={handleAccordionChange("common")}
 					sx={{
 						mb: 2,
@@ -175,7 +178,7 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 						expandIcon={<ArrowDown2 size={20} />}
 						sx={{
 							bgcolor: alpha(theme.palette.info.main, 0.08),
-							borderRadius: expanded === "common" ? "8px 8px 0 0" : 2,
+							borderRadius: expanded["common"] ? "8px 8px 0 0" : 2,
 							"&:hover": { bgcolor: alpha(theme.palette.info.main, 0.12) },
 						}}
 					>
@@ -206,7 +209,7 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 				return (
 					<Accordion
 						key={planId}
-						expanded={expanded === planId}
+						expanded={!!expanded[planId]}
 						onChange={handleAccordionChange(planId)}
 						sx={{
 							mb: 2,
@@ -224,7 +227,7 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 										: planId === "standard"
 											? alpha(theme.palette.primary.main, 0.08)
 											: alpha(theme.palette.secondary.main, 0.08),
-								borderRadius: expanded === planId ? "8px 8px 0 0" : 2,
+								borderRadius: expanded[planId] ? "8px 8px 0 0" : 2,
 								"&:hover": {
 									bgcolor:
 										planId === "free"

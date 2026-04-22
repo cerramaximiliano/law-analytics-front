@@ -1,7 +1,8 @@
 import React from "react";
 // material-ui
 import { useTheme, alpha } from "@mui/material/styles";
-import { Box, Container, Grid, Typography, Divider, Link } from "@mui/material";
+import { Box, Container, Grid, Typography, Divider, Link, Alert } from "@mui/material";
+import { InfoCircle } from "iconsax-react";
 
 // third-party
 import { motion } from "framer-motion";
@@ -77,7 +78,7 @@ const PrivacyPolicy = () => {
 
 					<Grid item xs={12} md={9}>
 						<MainCard sx={{ overflow: "hidden" }}>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								La presente Política de Privacidad establece los términos en que Law||Analytics usa y protege la información que es
 								proporcionada por sus usuarios al momento de utilizar su sitio web y aplicación. Estamos comprometidos con la seguridad de
 								los datos de nuestros usuarios. Cuando le pedimos completar campos de información personal con la cual usted pueda ser
@@ -95,7 +96,7 @@ const PrivacyPolicy = () => {
 							>
 								Información que recopilamos
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Nuestro sitio web y aplicación podrán recoger información personal, por ejemplo:
 							</Typography>
 							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 } }}>
@@ -127,7 +128,7 @@ const PrivacyPolicy = () => {
 							>
 								Uso de la información recogida
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Nuestro sitio web y aplicación emplean la información con el fin de proporcionar el mejor servicio posible, particularmente
 								para:
 							</Typography>
@@ -161,7 +162,7 @@ const PrivacyPolicy = () => {
 							>
 								Cookies
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Una cookie se refiere a un fichero que es enviado con la finalidad de solicitar permiso para almacenarse en su ordenador. Al
 								aceptar, dicho fichero se crea y la cookie sirve entonces para tener información respecto al tráfico web, y también facilita
 								las futuras visitas a una web recurrente. Para más información sobre nuestro uso de cookies, por favor consulte nuestra{" "}
@@ -179,7 +180,7 @@ const PrivacyPolicy = () => {
 							>
 								Seguridad
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Law||Analytics se compromete a proteger su información personal. Utilizamos sistemas seguros para la protección de la
 								información y la actualizamos constantemente para asegurarnos de que no exista ningún acceso no autorizado.
 							</Typography>
@@ -195,7 +196,7 @@ const PrivacyPolicy = () => {
 							>
 								Integración con Google Calendar
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Law||Analytics ofrece integración opcional con Google Calendar para mejorar la gestión de eventos y audiencias legales. Esta
 								integración es completamente voluntaria y puede ser activada o desactivada en cualquier momento por el usuario.
 							</Typography>
@@ -203,7 +204,7 @@ const PrivacyPolicy = () => {
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
 								Permisos de Google Calendar
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Cuando usted conecta su cuenta de Google Calendar, solicitamos los siguientes permisos específicos:
 							</Typography>
 							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 }, mb: 2 }}>
@@ -220,7 +221,7 @@ const PrivacyPolicy = () => {
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
 								Cumplimiento de la política de Google (“Limited Use”)
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Cumplimos con la <em>Google API Services User Data Policy (Limited Use)</em>. Los datos obtenidos mediante los scopes de
 								Google se utilizan exclusivamente para proporcionar o mejorar funciones visibles al usuario dentro de Law||Analytics.{" "}
 								<strong>No vendemos</strong> ni <strong>transferimos</strong> datos de Google a terceros; solo podemos compartirlos con
@@ -237,16 +238,12 @@ const PrivacyPolicy = () => {
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
 								Uso de los datos de Google Calendar - no se comparten con terceros
 							</Typography>
-							<Typography
-								variant="body1"
-								paragraph
-								sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify", fontWeight: "bold" }}
-							>
-								IMPORTANTE: Los datos de Google Calendar NUNCA se comparten, venden, ceden o transfieren a terceros fuera de los proveedores
-								que actúan como procesadores para operar el servicio. Estos datos se utilizan EXCLUSIVAMENTE dentro de Law||Analytics para
-								proporcionar la funcionalidad de sincronización de calendario.
-							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Alert severity="info" icon={<InfoCircle size={20} />} sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+								Los datos de Google Calendar no se comparten, venden, ceden ni transfieren a terceros fuera de los proveedores que actúan
+								como procesadores para operar el servicio. Estos datos se utilizan exclusivamente dentro de Law||Analytics para proporcionar
+								la funcionalidad de sincronización de calendario.
+							</Alert>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Los datos obtenidos de Google Calendar se utilizan únicamente para:
 							</Typography>
 							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 }, mb: 2 }}>
@@ -267,7 +264,7 @@ const PrivacyPolicy = () => {
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
 								Almacenamiento y seguridad de datos de Google - uso interno exclusivo
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								<strong>Importante:</strong> Los tokens de autenticación de Google se almacenan únicamente en su navegador web
 								(sessionStorage) y nunca se envían ni almacenan en nuestros servidores. Los eventos importados desde Google Calendar se
 								almacenan en nuestra base de datos con un identificador especial (googleCalendarId) que permite mantener la sincronización.{" "}
@@ -277,7 +274,7 @@ const PrivacyPolicy = () => {
 								Aplicamos cifrado en tránsito y en reposo, y el acceso humano está limitado a casos de soporte, seguridad o cumplimiento
 								legal, bajo controles y registro de acceso.
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Solo almacenamos la siguiente información de eventos de Google Calendar:
 							</Typography>
 							<Box component="ul" sx={{ pl: { xs: 2, sm: 3, md: 4 }, pr: { xs: 1, sm: 2 }, mb: 2 }}>
@@ -298,7 +295,7 @@ const PrivacyPolicy = () => {
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
 								Desvinculación y eliminación de datos de Google
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Usted puede desvincular su cuenta de Google Calendar en cualquier momento desde la sección de calendario de la aplicación.
 								Al desvincular:
 							</Typography>
@@ -317,7 +314,7 @@ const PrivacyPolicy = () => {
 									Los eventos creados localmente en Law||Analytics permanecen intactos
 								</Typography>
 							</Box>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Para revocar el acceso de Law||Analytics a su cuenta de Google, también puede hacerlo directamente desde su{" "}
 								<Link href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" sx={{ ml: 0.5 }}>
 									configuración de permisos de Google
@@ -336,7 +333,7 @@ const PrivacyPolicy = () => {
 							>
 								Enlaces a terceros
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Este sitio web puede contener enlaces a otros sitios que pudieran ser de su interés. Una vez que usted hace clic en estos
 								enlaces y abandona nuestra página, ya no tenemos control sobre el sitio al que es redirigido y, por lo tanto, no somos
 								responsables de los términos o privacidad ni de la protección de sus datos en esos otros sitios terceros.
@@ -353,11 +350,11 @@ const PrivacyPolicy = () => {
 							>
 								Control de su información personal
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								En cualquier momento usted puede restringir la recopilación o el uso de la información personal que es proporcionada a
 								nuestro sitio web. Puede acceder a su información personal almacenada en su cuenta para corregirla o eliminarla.
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Law||Analytics no venderá ni transferirá información personal ni datos obtenidos desde Google a terceros, salvo a
 								proveedores que actúan como encargados de tratamiento para operar el servicio, bajo contrato y sin reutilización para fines
 								propios, o cuando sea requerido por ley o por una orden judicial válida. Esto incluye específicamente los datos obtenidos a
@@ -376,7 +373,7 @@ const PrivacyPolicy = () => {
 							>
 								Cambios en la política de privacidad
 							</Typography>
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Law||Analytics se reserva el derecho de cambiar los términos de la presente Política de Privacidad en cualquier momento. Le
 								notificaremos cualquier cambio significativo en la forma en que tratamos su información personal enviando un aviso a la
 								dirección de correo electrónico principal especificada en su cuenta o colocando un aviso prominente en nuestro sitio.
@@ -384,7 +381,7 @@ const PrivacyPolicy = () => {
 
 							<Divider sx={{ my: 4 }} />
 
-							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
+							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: { xs: "left", sm: "justify" } }}>
 								Si tiene alguna pregunta sobre esta Política de Privacidad, puede contactarnos a través de nuestro formulario de contacto o
 								por correo electrónico a soporte@lawanalytics.app.
 							</Typography>

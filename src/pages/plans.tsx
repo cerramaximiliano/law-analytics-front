@@ -19,6 +19,7 @@ import {
 	Alert,
 	Paper,
 	Divider,
+	useMediaQuery,
 } from "@mui/material";
 
 // third-party
@@ -37,11 +38,15 @@ import { getPlanPricing, formatPrice, getBillingPeriodText, getCurrentEnvironmen
 
 const Plans = () => {
 	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const [timePeriod, setTimePeriod] = useState(true); // true = mensual, false = anual
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null); // Para tracking del plan siendo procesado
+	const [expandedFeatures, setExpandedFeatures] = useState<Record<string, boolean>>({});
+
+	const MOBILE_FEATURES_LIMIT = 5;
 
 	// Obtener los planes al cargar el componente
 	useEffect(() => {
@@ -396,7 +401,7 @@ const Plans = () => {
 															);
 														})()}
 														<Divider sx={{ my: 1.5 }} />
-														{/* Features: grid de 2 columnas con iconos */}
+														{/* Features: grid de 2 columnas con iconos, colapsable en mobile */}
 														{(() => {
 															const currentEnv = import.meta.env.PROD ? "production" : "development";
 															const isVisibleInCurrentEnv = (visibility: string | undefined) => {
@@ -407,23 +412,50 @@ const Plans = () => {
 															const visibleFeatures = plan.features
 																.filter((f) => isVisibleInCurrentEnv(f.visibility))
 																.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-															return (
-																<Grid container spacing={1}>
-																	{visibleFeatures.map((feature, i) => (
-																		<Grid item xs={12} sm={6} key={`feature-${i}`}>
-																			<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
-																				{feature.enabled ? (
-																					<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
-																				) : (
-																					<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
-																				)}
-																				<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
-																					{feature.displayName || feature.description}
-																				</Typography>
-																			</Box>
-																		</Grid>
-																	))}
+															const isExpanded = expandedFeatures[plan.planId] ?? false;
+															const showToggle = isMobile && visibleFeatures.length > MOBILE_FEATURES_LIMIT;
+															const displayedFeatures =
+																showToggle && !isExpanded ? visibleFeatures.slice(0, MOBILE_FEATURES_LIMIT) : visibleFeatures;
+															const hiddenCount = visibleFeatures.length - MOBILE_FEATURES_LIMIT;
+
+															const renderFeatureItem = (feature: PlanFeature, i: number) => (
+																<Grid item xs={12} sm={6} key={`feature-${i}`}>
+																	<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																		{feature.enabled ? (
+																			<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
+																		) : (
+																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
+																		)}
+																		<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																			{feature.displayName || feature.description}
+																		</Typography>
+																	</Box>
 																</Grid>
+															);
+
+															return (
+																<>
+																	<Grid container spacing={1}>
+																		{displayedFeatures.map((feature, i) => renderFeatureItem(feature, i))}
+																	</Grid>
+																	{showToggle && (
+																		<Box sx={{ mt: 1, textAlign: "center" }}>
+																			<Button
+																				size="small"
+																				variant="text"
+																				onClick={() =>
+																					setExpandedFeatures((prev) => ({
+																						...prev,
+																						[plan.planId]: !isExpanded,
+																					}))
+																				}
+																				sx={{ fontSize: "0.75rem", textTransform: "none" }}
+																			>
+																				{isExpanded ? "Ver menos" : `Ver ${hiddenCount} más`}
+																			</Button>
+																		</Box>
+																	)}
+																</>
 															);
 														})()}
 													</Box>
@@ -465,6 +497,16 @@ const Plans = () => {
 														<Typography variant="caption" color="text.secondary">
 															Este plan estará disponible pronto
 														</Typography>
+														<Box sx={{ mt: 1.5 }}>
+															<Button
+																variant="contained"
+																size="small"
+																color="warning"
+																href={`mailto:soporte@lawanalytics.app?subject=${encodeURIComponent("Interesado en plan " + cleanPlanDisplayName(plan.displayName))}`}
+															>
+																Avisame cuando esté disponible
+															</Button>
+														</Box>
 													</Paper>
 												</Box>
 											)}

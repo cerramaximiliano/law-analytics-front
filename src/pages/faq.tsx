@@ -336,11 +336,11 @@ const FaqPage = () => {
 											size="medium"
 											onClick={() => handleCategoryClick(category.id)}
 											sx={{
-												backgroundColor: activeCategory === category.id ? `${category.color}20` : "default",
+												backgroundColor: activeCategory === category.id ? alpha(category.color, 0.12) : undefined,
 												color: activeCategory === category.id ? category.color : "inherit",
 												fontWeight: activeCategory === category.id ? "bold" : "normal",
 												"&:hover": {
-													backgroundColor: `${category.color}15`,
+													backgroundColor: alpha(category.color, 0.08),
 												},
 											}}
 										/>
@@ -369,7 +369,14 @@ const FaqPage = () => {
 														<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 															<Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
 																{category?.icon && (
-																	<Box color={categoryColor} sx={{ display: { xs: "none", sm: "block" } }}>
+																	<Box
+																		color={categoryColor}
+																		sx={{
+																			display: "flex",
+																			alignItems: "center",
+																			"& svg": { width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 } },
+																		}}
+																	>
 																		{category.icon}
 																	</Box>
 																)}
