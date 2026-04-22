@@ -3,7 +3,7 @@ import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import { useTheme, Theme } from "@mui/material/styles";
-import { Box, Button, Chip, Container, Grid, Rating, Typography, Link, Tooltip, useMediaQuery } from "@mui/material";
+import { Box, Button, Chip, Container, Grid, Typography, Link, Tooltip, useMediaQuery } from "@mui/material";
 
 // project imports
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
@@ -241,54 +241,16 @@ const HeaderPage = () => {
 											delay: 0.6,
 										}}
 									>
-										<Grid container spacing={{ xs: 1.5, sm: 2.5, md: 3 }} justifyContent="center">
-											<Grid
-												item
-												sx={{
-													position: "relative",
-													"&:after": {
-														content: '""',
-														position: "absolute",
-														height: 30,
-														bottom: 10,
-														left: "auto",
-														right: "-12px",
-														width: "1px",
-														background: theme.palette.divider,
-														display: { xs: "none", sm: "block" },
-													},
-												}}
-											>
-												<Rating name="read-only" value={4.5} size="small" readOnly />
-												<Typography variant="h4">
-													4.7/5
-													<span
-														style={{
-															fontSize: "75%",
-															fontWeight: 400,
-															margin: 5,
-															color: theme.palette.text.secondary,
-														}}
-													>
-														Ratings
-													</span>
-												</Typography>
-											</Grid>
-											<Grid item>
-												<Typography variant="h5">
-													<span
-														style={{
-															fontSize: "75%",
-															fontWeight: 400,
-															color: theme.palette.text.secondary,
-														}}
-													>
-														Usuarios
-													</span>
-												</Typography>
-												<Typography variant="h4">500+</Typography>
-											</Grid>
-										</Grid>
+										<Typography
+											variant="body2"
+											sx={{
+												color: theme.palette.text.secondary,
+												fontSize: { xs: "0.8rem", sm: "0.875rem" },
+												lineHeight: 1.5,
+											}}
+										>
+											Usado por estudios jurídicos en CABA, PBA y fuero nacional
+										</Typography>
 									</motion.div>
 								</Grid>
 							</Grid>

@@ -13,6 +13,7 @@ import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import LegalDocumentViewerAllPlans from "pages/extra-pages/price/LegalDocumentViewerAllPlans";
 import { LEGAL_LAST_UPDATED } from "config/legalDates";
+import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -37,14 +38,42 @@ function a11yProps(index: number) {
 	};
 }
 
+// Tab anchor IDs used both for navigation and for the TOC items
+const TERMS_TOC_ITEMS: TocItem[] = [
+	{ id: "terminos-suscripcion", label: "Términos de suscripción" },
+	{ id: "politica-reembolso", label: "Política de reembolso" },
+	{ id: "terminos-facturacion", label: "Términos de facturación" },
+];
+
 // ==============================|| TERMS PAGE ||============================== //
 
 const TermsPage = () => {
 	const theme = useTheme();
 	const [value, setValue] = useState(0);
 
-	const handleChange = (event: SyntheticEvent, newValue: number) => {
+	const handleChange = (_event: SyntheticEvent, newValue: number) => {
 		setValue(newValue);
+	};
+
+	// Map TOC item ids to tab indices
+	const TAB_ID_TO_INDEX: Record<string, number> = {
+		"terminos-suscripcion": 0,
+		"politica-reembolso": 1,
+		"terminos-facturacion": 2,
+	};
+
+	const TAB_INDEX_TO_ID = ["terminos-suscripcion", "politica-reembolso", "terminos-facturacion"];
+
+	const handleTocItemClick = (id: string) => {
+		const idx = TAB_ID_TO_INDEX[id];
+		if (idx !== undefined) {
+			setValue(idx);
+			// Scroll to the tab panel area after switching
+			const panel = document.getElementById(`terms-tabpanel-${idx}`);
+			if (panel) {
+				panel.scrollIntoView({ behavior: "smooth", block: "start" });
+			}
+		}
 	};
 
 	// breadcrumb items
@@ -76,7 +105,27 @@ const TermsPage = () => {
 						</Box>
 					</Grid>
 
-					<Grid item xs={12}>
+					{/* Mobile TOC — visible only on xs/sm */}
+					<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+						<LegalPageTOC
+							items={TERMS_TOC_ITEMS}
+							ariaLabel="Índice de Términos y Condiciones"
+							onItemClick={handleTocItemClick}
+							activeItemId={TAB_INDEX_TO_ID[value]}
+						/>
+					</Grid>
+
+					{/* Desktop TOC sidebar */}
+					<Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
+						<LegalPageTOC
+							items={TERMS_TOC_ITEMS}
+							ariaLabel="Índice de Términos y Condiciones"
+							onItemClick={handleTocItemClick}
+							activeItemId={TAB_INDEX_TO_ID[value]}
+						/>
+					</Grid>
+
+					<Grid item xs={12} md={9}>
 						<MainCard>
 							<Box sx={{ borderBottom: 1, borderColor: "divider" }}>
 								<Tabs value={value} onChange={handleChange} aria-label="legal documents tabs" variant="scrollable">

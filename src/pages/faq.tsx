@@ -1,6 +1,23 @@
 import React from "react";
 import { useState } from "react";
-import { Box, Typography, Card, CardContent, CardActionArea, Collapse, Paper, Chip, Grid, Container } from "@mui/material";
+import {
+	Box,
+	Typography,
+	Card,
+	CardContent,
+	CardActionArea,
+	Collapse,
+	Paper,
+	Chip,
+	Grid,
+	Container,
+	TextField,
+	InputAdornment,
+	Fab,
+	useScrollTrigger,
+	Zoom,
+	Button,
+} from "@mui/material";
 import MainCard from "components/MainCard";
 import PageBackground from "components/PageBackground";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
@@ -8,7 +25,7 @@ import { useTheme, alpha } from "@mui/material/styles";
 import { motion } from "framer-motion";
 
 // Icons
-import { ArrowRight2, Calculator, Calendar, CalendarTick, Folder, InfoCircle, MessageQuestion, Profile2User } from "iconsax-react";
+import { ArrowRight2, ArrowUp2, Calculator, Calendar, CalendarTick, Folder, InfoCircle, MessageQuestion, Profile2User, SearchNormal1 } from "iconsax-react";
 
 // ==============================|| FAQ PAGE ||============================== //
 
@@ -16,6 +33,18 @@ const FaqPage = () => {
 	const theme = useTheme();
 	const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 	const [activeCategory, setActiveCategory] = useState<string | null>(null);
+	const [searchQuery, setSearchQuery] = useState<string>("");
+
+	const scrollTrigger = useScrollTrigger({ disableHysteresis: true, threshold: 300 });
+
+	const handleScrollToTop = () => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+
+	const handleClearSearch = () => {
+		setSearchQuery("");
+		setActiveCategory(null);
+	};
 
 	// breadcrumb items
 	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Preguntas Frecuentes" }];
@@ -223,8 +252,14 @@ const FaqPage = () => {
 		},
 	];
 
-	// Filtrar las FAQs basado en la categoría seleccionada
-	const filteredFaqs = activeCategory ? allFaqs.filter((faq) => faq.category === activeCategory) : allFaqs;
+	// Filtrar las FAQs por categoría y por búsqueda (ambos filtros se aplican en conjunto)
+	const filteredFaqs = allFaqs
+		.filter((faq) => (activeCategory ? faq.category === activeCategory : true))
+		.filter((faq) => {
+			const q = searchQuery.trim().toLowerCase();
+			if (!q) return true;
+			return faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q);
+		});
 
 	return (
 		<Box
@@ -257,6 +292,27 @@ const FaqPage = () => {
 
 					<Grid item xs={12}>
 						<MainCard>
+							{/* Búsqueda */}
+							<Box sx={{ mb: 2 }}>
+								<TextField
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									placeholder="Buscar en preguntas frecuentes..."
+									label="Buscar"
+									variant="outlined"
+									size="small"
+									fullWidth
+									InputProps={{
+										startAdornment: (
+											<InputAdornment position="start">
+												<SearchNormal1 size={18} style={{ color: theme.palette.text.secondary }} />
+											</InputAdornment>
+										),
+									}}
+									sx={{ maxWidth: { xs: "100%", sm: 500 } }}
+								/>
+							</Box>
+
 							{/* Categorías */}
 							<Box sx={{ mb: 4 }}>
 								<Typography variant="h5" gutterBottom>
@@ -357,11 +413,20 @@ const FaqPage = () => {
 										<Paper variant="outlined" sx={{ p: 4, textAlign: "center" }}>
 											<MessageQuestion size={40} style={{ color: theme.palette.text.secondary, marginBottom: 16 }} />
 											<Typography variant="h5" color="textSecondary" gutterBottom>
-												No se encontraron preguntas en esta categoría
+												{searchQuery.trim()
+													? "No encontramos preguntas que coincidan con tu búsqueda."
+													: "No se encontraron preguntas en esta categoría"}
 											</Typography>
-											<Typography color="textSecondary">
-												Por favor, selecciona otra categoría o consulta todas las preguntas disponibles
+											<Typography color="textSecondary" sx={{ mb: searchQuery.trim() ? 2 : 0 }}>
+												{searchQuery.trim()
+													? "Intentá con otras palabras o explorá las categorías disponibles."
+													: "Por favor, selecciona otra categoría o consulta todas las preguntas disponibles"}
 											</Typography>
+											{searchQuery.trim() && (
+												<Button variant="outlined" size="small" onClick={handleClearSearch}>
+													Limpiar búsqueda
+												</Button>
+											)}
 										</Paper>
 									</Grid>
 								)}
@@ -370,6 +435,19 @@ const FaqPage = () => {
 					</Grid>
 				</Grid>
 			</Container>
+
+			{/* FAB back-to-top — aparece tras 300px de scroll (FQ3) */}
+			<Zoom in={scrollTrigger}>
+				<Fab
+					onClick={handleScrollToTop}
+					size="medium"
+					color="primary"
+					aria-label="Volver al inicio"
+					sx={{ position: "fixed", bottom: { xs: 24, md: 32 }, right: { xs: 16, md: 32 }, zIndex: 1200 }}
+				>
+					<ArrowUp2 size={20} />
+				</Fab>
+			</Zoom>
 		</Box>
 	);
 };

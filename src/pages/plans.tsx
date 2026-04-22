@@ -30,7 +30,6 @@ import { Lock, TickCircle, CloseCircle } from "iconsax-react";
 // project-imports
 import MainCard from "components/MainCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
-import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import { getPlanPricing, formatPrice, getBillingPeriodText, getCurrentEnvironment, cleanPlanDisplayName } from "utils/planPricingUtils";
 
@@ -43,10 +42,6 @@ const Plans = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null); // Para tracking del plan siendo procesado
-	const isDevelopment = getCurrentEnvironment() === "development";
-
-	// breadcrumb items
-	const breadcrumbItems = [{ title: "Inicio", to: "/" }, { title: "Planes y Precios" }];
 
 	// Obtener los planes al cargar el componente
 	useEffect(() => {
@@ -224,7 +219,6 @@ const Plans = () => {
 			<Container>
 				<Grid container spacing={3}>
 					<Grid item xs={12}>
-						<CustomBreadcrumbs items={breadcrumbItems} />
 						<Box
 							sx={{
 								position: "relative",
@@ -242,17 +236,15 @@ const Plans = () => {
 								</Typography>
 							</motion.div>
 						</Box>
-						{!isDevelopment && (
-							<Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
-								<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-									Cobro Anual
-								</Typography>
-								<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
-								<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-									Cobro Mensual
-								</Typography>
-							</Stack>
-						)}
+						<Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
+							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
+								Cobro Anual
+							</Typography>
+							<Switch checked={timePeriod} onChange={() => setTimePeriod(!timePeriod)} inputProps={{ "aria-label": "container" }} />
+							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
+								Cobro Mensual
+							</Typography>
+						</Stack>
 					</Grid>
 
 					{/* Si está cargando, mostrar indicador */}
@@ -288,10 +280,13 @@ const Plans = () => {
 								});
 
 								// Calcular el precio según el periodo seleccionado
-								// Solo aplicar descuento anual si estamos en producción con planes mensuales
+								const isAnnual = !timePeriod;
+								const annualPrice = Math.round(pricing.basePrice * 12 * 0.75); // Descuento anual del 25%
+								const annualFullPrice = pricing.basePrice * 12;
+								const monthlyEquivalent = Math.round(annualPrice / 12);
 								const displayPrice =
-									!isDevelopment && !timePeriod && pricing.billingPeriod === "monthly"
-										? Math.round(pricing.basePrice * 12 * 0.75) // Descuento anual del 25%
+									isAnnual && pricing.billingPeriod === "monthly"
+										? annualPrice
 										: pricing.basePrice;
 
 								return (
@@ -312,13 +307,39 @@ const Plans = () => {
 																</Stack>
 															</Grid>
 															<Grid item xs={12}>
-																<Stack spacing={0} alignItems="center">
-																	<Typography variant="h2" sx={price}>
-																		${displayPrice}
-																	</Typography>
-																	<Typography variant="h6" color="textSecondary">
-																		{getBillingPeriodText(pricing.billingPeriod)}
-																	</Typography>
+																<Stack spacing={0.5} alignItems="center">
+																	{isAnnual && pricing.billingPeriod === "monthly" ? (
+																		<>
+																			<Chip
+																				color="success"
+																				size="small"
+																				label="Ahorrá 25%"
+																				sx={{ mb: 0.5 }}
+																			/>
+																			<Typography
+																				variant="h6"
+																				color="text.secondary"
+																				sx={{ textDecoration: "line-through" }}
+																			>
+																				{formatPrice(annualFullPrice, pricing.currency)}
+																			</Typography>
+																			<Typography variant="h2" sx={price}>
+																				{formatPrice(annualPrice, pricing.currency)}
+																			</Typography>
+																			<Typography variant="caption" color="text.secondary">
+																				equivalente a {formatPrice(monthlyEquivalent, pricing.currency)}/mes · cobrado anualmente
+																			</Typography>
+																		</>
+																	) : (
+																		<>
+																			<Typography variant="h2" sx={price}>
+																				{formatPrice(displayPrice, pricing.currency)}
+																			</Typography>
+																			<Typography variant="h6" color="textSecondary">
+																				{getBillingPeriodText(pricing.billingPeriod)}
+																			</Typography>
+																		</>
+																	)}
 																</Stack>
 															</Grid>
 															<Grid item xs={12}>

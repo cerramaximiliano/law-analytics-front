@@ -11,8 +11,20 @@ import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import { LEGAL_LAST_UPDATED } from "config/legalDates";
+import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 
 // ==============================|| PRIVACY POLICY PAGE ||============================== //
+
+const PRIVACY_TOC_ITEMS: TocItem[] = [
+	{ id: "informacion-recopilamos", label: "Información que recopilamos" },
+	{ id: "uso-informacion", label: "Uso de la información recogida" },
+	{ id: "cookies", label: "Cookies" },
+	{ id: "seguridad", label: "Seguridad" },
+	{ id: "integracion-google-calendar", label: "Integración con Google Calendar" },
+	{ id: "enlaces-terceros", label: "Enlaces a terceros" },
+	{ id: "control-informacion", label: "Control de su información personal" },
+	{ id: "cambios-politica", label: "Cambios en la política de privacidad" },
+];
 
 const PrivacyPolicy = () => {
 	const theme = useTheme();
@@ -53,7 +65,17 @@ const PrivacyPolicy = () => {
 						</Box>
 					</Grid>
 
-					<Grid item xs={12}>
+					{/* Mobile TOC — rendered above the card, only visible on xs/sm */}
+					<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+						<LegalPageTOC items={PRIVACY_TOC_ITEMS} ariaLabel="Índice de Política de Privacidad" />
+					</Grid>
+
+					{/* Desktop TOC sidebar */}
+					<Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
+						<LegalPageTOC items={PRIVACY_TOC_ITEMS} ariaLabel="Índice de Política de Privacidad" />
+					</Grid>
+
+					<Grid item xs={12} md={9}>
 						<MainCard sx={{ overflow: "hidden" }}>
 							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								La presente Política de Privacidad establece los términos en que Law||Analytics usa y protege la información que es
@@ -63,6 +85,7 @@ const PrivacyPolicy = () => {
 							</Typography>
 
 							<Typography
+								id="informacion-recopilamos"
 								variant="h3"
 								gutterBottom
 								sx={{
@@ -94,6 +117,7 @@ const PrivacyPolicy = () => {
 							</Box>
 
 							<Typography
+								id="uso-informacion"
 								variant="h3"
 								gutterBottom
 								sx={{
@@ -127,6 +151,7 @@ const PrivacyPolicy = () => {
 							</Box>
 
 							<Typography
+								id="cookies"
 								variant="h3"
 								gutterBottom
 								sx={{
@@ -144,6 +169,7 @@ const PrivacyPolicy = () => {
 							</Typography>
 
 							<Typography
+								id="seguridad"
 								variant="h3"
 								gutterBottom
 								sx={{
@@ -159,6 +185,7 @@ const PrivacyPolicy = () => {
 							</Typography>
 
 							<Typography
+								id="integracion-google-calendar"
 								variant="h3"
 								gutterBottom
 								sx={{
@@ -299,6 +326,7 @@ const PrivacyPolicy = () => {
 							</Typography>
 
 							<Typography
+								id="enlaces-terceros"
 								variant="h3"
 								gutterBottom
 								sx={{
@@ -315,6 +343,7 @@ const PrivacyPolicy = () => {
 							</Typography>
 
 							<Typography
+								id="control-informacion"
 								variant="h3"
 								gutterBottom
 								sx={{
@@ -337,6 +366,7 @@ const PrivacyPolicy = () => {
 							</Typography>
 
 							<Typography
+								id="cambios-politica"
 								variant="h3"
 								gutterBottom
 								sx={{

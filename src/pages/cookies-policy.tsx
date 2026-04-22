@@ -12,8 +12,17 @@ import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import { LEGAL_LAST_UPDATED } from "config/legalDates";
+import LegalPageTOC, { TocItem } from "components/legal/LegalPageTOC";
 
 // ==============================|| COOKIES POLICY PAGE ||============================== //
+
+const COOKIES_TOC_ITEMS: TocItem[] = [
+	{ id: "que-son-cookies", label: "¿Qué son las cookies?" },
+	{ id: "tipos-cookies", label: "Tipos de cookies que utilizamos" },
+	{ id: "gestion-cookies", label: "Cómo gestionamos las cookies" },
+	{ id: "cookies-terceros", label: "Cookies de terceros" },
+	{ id: "cambios-politica-cookies", label: "Cambios en nuestra política de cookies" },
+];
 
 const CookiesPolicy = () => {
 	const theme = useTheme();
@@ -47,7 +56,17 @@ const CookiesPolicy = () => {
 						</Box>
 					</Grid>
 
-					<Grid item xs={12}>
+					{/* Mobile TOC — visible only on xs/sm */}
+					<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+						<LegalPageTOC items={COOKIES_TOC_ITEMS} ariaLabel="Índice de Política de Cookies" />
+					</Grid>
+
+					{/* Desktop TOC sidebar */}
+					<Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
+						<LegalPageTOC items={COOKIES_TOC_ITEMS} ariaLabel="Índice de Política de Cookies" />
+					</Grid>
+
+					<Grid item xs={12} md={9}>
 						<MainCard>
 							<Typography variant="body1" paragraph>
 								Esta Política de Cookies explica qué son las cookies y cómo las utilizamos en Law||Analytics. Debe leer esta política para
@@ -55,7 +74,7 @@ const CookiesPolicy = () => {
 								cookies y cómo se utiliza esa información, y cómo controlar las preferencias de cookies.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography id="que-son-cookies" variant="h3" gutterBottom sx={{ mt: 4 }}>
 								¿Qué son las cookies?
 							</Typography>
 							<Typography variant="body1" paragraph>
@@ -65,7 +84,7 @@ const CookiesPolicy = () => {
 								que pasó en nuestro sitio web, las páginas visitadas y las preferencias de idioma.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography id="tipos-cookies" variant="h3" gutterBottom sx={{ mt: 4 }}>
 								Tipos de cookies que utilizamos
 							</Typography>
 							<Typography variant="body1">
@@ -113,7 +132,7 @@ const CookiesPolicy = () => {
 								</Typography>
 							</Box>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography id="gestion-cookies" variant="h3" gutterBottom sx={{ mt: 4 }}>
 								Cómo gestionamos las cookies
 							</Typography>
 							<Typography variant="body1" paragraph>
@@ -139,7 +158,7 @@ const CookiesPolicy = () => {
 								</Typography>
 							</ul>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography id="cookies-terceros" variant="h3" gutterBottom sx={{ mt: 4 }}>
 								Cookies de terceros
 							</Typography>
 							<Typography variant="body1" paragraph>
@@ -147,7 +166,7 @@ const CookiesPolicy = () => {
 								sitio, entregar anuncios en y a través del Servicio, y así sucesivamente.
 							</Typography>
 
-							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
+							<Typography id="cambios-politica-cookies" variant="h3" gutterBottom sx={{ mt: 4 }}>
 								Cambios en nuestra política de cookies
 							</Typography>
 							<Typography variant="body1" paragraph>
