@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import { LEGAL_LAST_UPDATED } from "config/legalDates";
 
 // ==============================|| PRIVACY POLICY PAGE ||============================== //
 
@@ -46,7 +47,7 @@ const PrivacyPolicy = () => {
 									Política de Privacidad
 								</Typography>
 								<Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-									Última actualización: 21 de Agosto de 2025
+									Última actualización: {LEGAL_LAST_UPDATED}
 								</Typography>
 							</motion.div>
 						</Box>
@@ -207,7 +208,7 @@ const PrivacyPolicy = () => {
 							</Typography>
 
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
-								Uso de los Datos de Google Calendar - NO se Comparten con Terceros
+								Uso de los datos de Google Calendar - no se comparten con terceros
 							</Typography>
 							<Typography
 								variant="body1"
@@ -237,7 +238,7 @@ const PrivacyPolicy = () => {
 							</Box>
 
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
-								Almacenamiento y Seguridad de Datos de Google - Uso Interno Exclusivo
+								Almacenamiento y seguridad de datos de Google - uso interno exclusivo
 							</Typography>
 							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								<strong>Importante:</strong> Los tokens de autenticación de Google se almacenan únicamente en su navegador web
@@ -268,7 +269,7 @@ const PrivacyPolicy = () => {
 							</Box>
 
 							<Typography variant="h4" gutterBottom sx={{ mt: 3, mb: 2, fontSize: { xs: "1rem", sm: "1.125rem" } }}>
-								Desvinculación y Eliminación de Datos de Google
+								Desvinculación y eliminación de datos de Google
 							</Typography>
 							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Usted puede desvincular su cuenta de Google Calendar en cualquier momento desde la sección de calendario de la aplicación.
@@ -305,7 +306,7 @@ const PrivacyPolicy = () => {
 									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
 								}}
 							>
-								Enlaces a Terceros
+								Enlaces a terceros
 							</Typography>
 							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Este sitio web puede contener enlaces a otros sitios que pudieran ser de su interés. Una vez que usted hace clic en estos
@@ -343,7 +344,7 @@ const PrivacyPolicy = () => {
 									fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
 								}}
 							>
-								Cambios en la Política de Privacidad
+								Cambios en la política de privacidad
 							</Typography>
 							<Typography variant="body1" paragraph sx={{ fontSize: { xs: "0.875rem", sm: "1rem" }, textAlign: "justify" }}>
 								Law||Analytics se reserva el derecho de cambiar los términos de la presente Política de Privacidad en cualquier momento. Le

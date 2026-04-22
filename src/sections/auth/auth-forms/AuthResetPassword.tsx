@@ -73,10 +73,15 @@ const AuthResetPassword = () => {
 
 	const [level, setLevel] = useState<StringColorProps>();
 	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [redirected, setRedirected] = useState(false);
 
 	const handleClickShowPassword = () => {
 		setShowPassword(!showPassword);
+	};
+
+	const handleClickShowConfirmPassword = () => {
+		setShowConfirmPassword(!showConfirmPassword);
 	};
 
 	const handleMouseDownPassword = (event: SyntheticEvent) => {
@@ -133,8 +138,8 @@ const AuthResetPassword = () => {
 	return (
 		<>
 			<Stack sx={{ mb: { xs: -0.5, sm: 0.5 } }} spacing={1}>
-				<Typography variant="h3">Reseteo de Password</Typography>
-				<Typography color="secondary">Ingrese un nuevo Password</Typography>
+				<Typography variant="h3">Restablecer contraseña</Typography>
+				<Typography color="secondary">Ingresá tu nueva contraseña</Typography>
 			</Stack>
 			<Formik
 				initialValues={{
@@ -204,7 +209,7 @@ const AuthResetPassword = () => {
 						<Grid container spacing={3}>
 							<Grid item xs={12}>
 								<Stack spacing={1}>
-									<InputLabel htmlFor="password-reset">Password</InputLabel>
+									<InputLabel htmlFor="password-reset">Nueva contraseña</InputLabel>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.password && errors.password)}
@@ -230,7 +235,8 @@ const AuthResetPassword = () => {
 												</IconButton>
 											</InputAdornment>
 										}
-										placeholder="Enter password"
+										autoComplete="new-password"
+									placeholder="Ingresá tu nueva contraseña"
 									/>
 									{touched.password && errors.password && (
 										<FormHelperText error id="helper-text-password-reset">
@@ -253,17 +259,31 @@ const AuthResetPassword = () => {
 							</Grid>
 							<Grid item xs={12}>
 								<Stack spacing={1}>
-									<InputLabel htmlFor="confirm-password-reset">Confirmar Password</InputLabel>
+									<InputLabel htmlFor="confirm-password-reset">Confirmar contraseña</InputLabel>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.confirmPassword && errors.confirmPassword)}
 										id="confirm-password-reset"
-										type="password"
+										type={showConfirmPassword ? "text" : "password"}
 										value={values.confirmPassword}
 										name="confirmPassword"
 										onBlur={handleBlur}
 										onChange={handleChange}
-										placeholder="Enter confirm password"
+										autoComplete="new-password"
+										endAdornment={
+											<InputAdornment position="end">
+												<IconButton
+													aria-label="toggle confirm password visibility"
+													onClick={handleClickShowConfirmPassword}
+													onMouseDown={handleMouseDownPassword}
+													edge="end"
+													color="secondary"
+												>
+													{showConfirmPassword ? <Eye /> : <EyeSlash />}
+												</IconButton>
+											</InputAdornment>
+										}
+										placeholder="Confirmá tu contraseña"
 									/>
 									{touched.confirmPassword && errors.confirmPassword && (
 										<FormHelperText error id="helper-text-confirm-password-reset">
@@ -281,7 +301,7 @@ const AuthResetPassword = () => {
 							<Grid item xs={12}>
 								<AnimateButton>
 									<Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-										Resetear Password
+										Restablecer contraseña
 									</Button>
 								</AnimateButton>
 							</Grid>

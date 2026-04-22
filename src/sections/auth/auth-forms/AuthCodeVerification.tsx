@@ -214,7 +214,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
 				<Typography variant="h3" textAlign="center" gutterBottom>
-					{mode === "register" ? "Verificación de cuenta" : "Verificación para reseteo de contraseña"}
+					{mode === "register" ? "Verificación de cuenta" : "Verificación para restablecer contraseña"}
 				</Typography>
 				<Typography variant="body1" textAlign="center" sx={{ mb: 3 }}>
 					Hemos enviado un código a <strong>{emailToUse}</strong>

@@ -19,9 +19,9 @@ const CheckMail = () => {
 			<Grid container spacing={3}>
 				<Grid item xs={12}>
 					<Box sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
-						<Typography variant="h3">Hola, Revisa tu Correo</Typography>
+						<Typography variant="h3">Hola, revisá tu correo</Typography>
 						<Typography color="secondary" sx={{ mb: 0.5, mt: 1.25 }}>
-							Enviamos las instrucciones para recuperar tu password a tu email.
+							Enviamos las instrucciones para recuperar tu contraseña a tu email.
 						</Typography>
 					</Box>
 				</Grid>
@@ -37,7 +37,7 @@ const CheckMail = () => {
 							variant="contained"
 							color="primary"
 						>
-							Sign in
+							Iniciar sesión
 						</Button>
 					</AnimateButton>
 				</Grid>

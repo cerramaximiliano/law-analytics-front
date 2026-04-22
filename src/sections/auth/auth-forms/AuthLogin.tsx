@@ -225,7 +225,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 											fullWidth
 											error={Boolean(touched.email && errors.email)}
 											disabled={isAnyFormLoading}
-											autoComplete="email"
+											autoComplete="username"
 											onKeyDown={(e) => {
 												// Prevent form submission on Enter in input fields
 												if (e.key === "Enter") {
@@ -276,7 +276,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 													</IconButton>
 												</InputAdornment>
 											}
-											placeholder="Ingrese una contraseña"
+											placeholder="Ingresá tu contraseña"
 										/>
 										{touched.password && errors.password && (
 											<FormHelperText error id="standard-weight-helper-text-password-login">
@@ -313,7 +313,7 @@ const AuthLogin = ({ forgot, isGoogleLoading = false, onLoadingChange }: AuthLog
 												textDecoration: isAnyFormLoading ? "none" : undefined,
 											}}
 										>
-											Olvidé mi Password
+											Olvidé mi contraseña
 										</Link>
 									</Stack>
 								</Grid>

@@ -12,6 +12,7 @@ import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
 import LegalDocumentViewerAllPlans from "pages/extra-pages/price/LegalDocumentViewerAllPlans";
+import { LEGAL_LAST_UPDATED } from "config/legalDates";
 
 interface TabPanelProps {
 	children?: React.ReactNode;
@@ -69,7 +70,7 @@ const TermsPage = () => {
 									Términos y Condiciones
 								</Typography>
 								<Typography variant="body1" color="text.secondary">
-									Última actualización: 1 de Mayo de 2025
+									Última actualización: {LEGAL_LAST_UPDATED}
 								</Typography>
 							</motion.div>
 						</Box>

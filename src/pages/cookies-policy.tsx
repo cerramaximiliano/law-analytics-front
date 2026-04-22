@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import MainCard from "components/MainCard";
 import CustomBreadcrumbs from "components/guides/CustomBreadcrumbs";
 import PageBackground from "components/PageBackground";
+import { LEGAL_LAST_UPDATED } from "config/legalDates";
 
 // ==============================|| COOKIES POLICY PAGE ||============================== //
 
@@ -40,7 +41,7 @@ const CookiesPolicy = () => {
 									Política de Cookies
 								</Typography>
 								<Typography variant="body1" color="text.secondary">
-									Última actualización: 1 de Mayo de 2025
+									Última actualización: {LEGAL_LAST_UPDATED}
 								</Typography>
 							</motion.div>
 						</Box>
@@ -147,7 +148,7 @@ const CookiesPolicy = () => {
 							</Typography>
 
 							<Typography variant="h3" gutterBottom sx={{ mt: 4 }}>
-								Cambios en nuestra Política de Cookies
+								Cambios en nuestra política de cookies
 							</Typography>
 							<Typography variant="body1" paragraph>
 								Si realizamos cambios en nuestra Política de Cookies, publicaremos la política actualizada en esta página. Le recomendamos
