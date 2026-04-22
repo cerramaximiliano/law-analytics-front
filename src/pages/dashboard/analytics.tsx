@@ -13,7 +13,7 @@ import { Lock, Export, Crown, InfoCircle, Clock } from "iconsax-react";
 import MainCard from "components/MainCard";
 import IconButton from "components/@extended/IconButton";
 import { AppDispatch, RootState } from "store";
-import { getUnifiedStats } from "store/reducers/unifiedStats";
+import { getUnifiedStats, setSelectedHistory } from "store/reducers/unifiedStats";
 import useAuth from "hooks/useAuth";
 import useSubscription from "hooks/useSubscription";
 import { useEffectiveUser } from "hooks/useEffectiveUser";
@@ -165,15 +165,51 @@ const DashboardAnalytics = () => {
 		}
 	}, [dispatch, effectiveUserId, isTeamReady, hasTriedToLoad, isViewingTeamData]);
 
+	// Configuración de items skeleton: representativos en mobile (4 items), completos en desktop (12)
+	// Cada item define su columna para cada breakpoint: xs, md, lg
+	const skeletonItems: Array<{ xs: number; md: number; lg: number; chartBar?: boolean }> = [
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 6, md: 6, lg: 3 },
+		{ xs: 12, md: 6, lg: 3, chartBar: true },
+		{ xs: 12, md: 6, lg: 5, chartBar: true },
+		{ xs: 12, md: 6, lg: 4 },
+		{ xs: 12, md: 12, lg: 8, chartBar: true },
+		{ xs: 12, md: 6, lg: 4 },
+		{ xs: 12, md: 6, lg: 6, chartBar: true },
+		{ xs: 12, md: 6, lg: 6, chartBar: true },
+		{ xs: 12, md: 12, lg: 12, chartBar: true },
+	];
+
 	// Mostrar skeleton mientras se carga el usuario, los datos, la suscripción, el contexto de equipos o se verifican features
 	if (!user || statsLoading || !subscription || !isTeamReady || isCheckingFeatures) {
 		return (
 			<Box>
 				<MainCard title="Panel de Analíticas">
 					<Grid container spacing={3}>
-						{[...Array(12)].map((_, index) => (
-							<Grid item xs={12} md={6} lg={index < 4 ? 3 : index < 6 ? 8 : 6} key={index}>
-								<Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
+						{skeletonItems.map((item, index) => (
+							<Grid
+								item
+								// En mobile mostramos solo los primeros 4 como pares (6+6 = fila completa x2)
+								// Los items siguientes se ocultan en xs via display
+								xs={item.xs}
+								md={item.md}
+								lg={item.lg}
+								key={index}
+								sx={index >= 4 ? { display: { xs: "none", md: "block" } } : undefined}
+							>
+								<Skeleton
+									variant="rectangular"
+									sx={{ borderRadius: 1, height: item.chartBar ? { xs: 120, md: 200 } : { xs: 80, md: 140 } }}
+								/>
+								{item.chartBar && (
+									<Stack direction="row" spacing={0.5} sx={{ mt: 1, display: { xs: "none", md: "flex" } }}>
+										{[...Array(6)].map((__, i) => (
+											<Skeleton key={i} variant="rectangular" width="100%" height={8} sx={{ borderRadius: 0.5 }} />
+										))}
+									</Stack>
+								)}
 							</Grid>
 						))}
 					</Grid>
@@ -188,7 +224,15 @@ const DashboardAnalytics = () => {
 				title={
 					<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
 						<Typography variant="h3">Panel de Analíticas</Typography>
-						{selectedHistoryId && <Chip label="Viendo histórico" size="small" color="info" variant="filled" />}
+						{selectedHistoryId && (
+							<Chip
+								label="Viendo histórico"
+								size="small"
+								color="info"
+								variant="filled"
+								onDelete={() => dispatch(setSelectedHistory(null))}
+							/>
+						)}
 					</Box>
 				}
 				secondary={
@@ -209,19 +253,30 @@ const DashboardAnalytics = () => {
 							</Tooltip>
 						)}
 						{userId && <AnalyticsHistorySelector userId={userId} />}
-						{hasExportReports ? (
-							<Button variant="outlined" startIcon={<Export size={16} />} onClick={() => setExportModalOpen(true)}>
+						<Box sx={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+							<Button
+								variant="outlined"
+								startIcon={<Export size={16} />}
+								onClick={() => (hasExportReports ? setExportModalOpen(true) : setLimitModalOpen(true))}
+							>
 								Exportar Reporte
 							</Button>
-						) : (
-							<Tooltip title="Función disponible en planes superiores">
-								<span>
-									<Button variant="outlined" startIcon={<Lock size={16} />} onClick={() => navigate("/suscripciones/tables")} disabled>
-										Exportar Reporte
-									</Button>
-								</span>
-							</Tooltip>
-						)}
+							{!hasExportReports && (
+								<Chip
+									label="Premium"
+									size="small"
+									color="primary"
+									sx={{
+										position: "absolute",
+										top: -8,
+										right: -8,
+										height: 16,
+										fontSize: "0.6rem",
+										pointerEvents: "none",
+									}}
+								/>
+							)}
+						</Box>
 						<Tooltip title="Ver Guía">
 							<IconButton color="success" onClick={() => setGuideOpen(true)}>
 								<InfoCircle variant="Bulk" />
@@ -249,138 +304,121 @@ const DashboardAnalytics = () => {
 					</Alert>
 				)}
 
-				{/* Contenedor con overlay cuando no tiene permisos */}
+				{/* Contenedor de widgets con degradado de preview para plan free */}
 				<Box sx={{ position: "relative" }}>
-					<Grid container spacing={3}>
-						{/* Row 1 - Key Metrics */}
-						<Grid item xs={12} md={6} lg={3}>
-							<AverageResolutionTime />
-						</Grid>
-						<Grid item xs={12} md={6} lg={3}>
-							<DataQuality />
-						</Grid>
-						<Grid item xs={12} md={6} lg={3}>
-							<TaskCompletionRate />
-						</Grid>
-						<Grid item xs={12} md={6} lg={3}>
-							<TaskDistributionByPriority />
-						</Grid>
-
-						{/* Row 2 - Calculator and Financial */}
-						<Grid item xs={12} md={6} lg={3}>
-							<CalculatorTypeBreakdown />
-						</Grid>
-						<Grid item xs={12} lg={5}>
-							<AmountsByFolderStatus />
-						</Grid>
-						<Grid item xs={12} lg={4}>
-							<NotificationStatus />
-						</Grid>
-
-						{/* Row 3 - Trends and Activity */}
-						<Grid item xs={12} lg={8}>
-							<DailyWeeklyActivity />
-						</Grid>
-						<Grid item xs={12} lg={4}>
-							<RecentActivityFeed />
-						</Grid>
-
-						{/* Row 4 - Matters and Folders */}
-						<Grid item xs={12} lg={6}>
-							<TopMatters />
-						</Grid>
-						<Grid item xs={12} lg={6}>
-							<FoldersByMatter />
-						</Grid>
-
-						{/* Row 5 - Projections and Trends */}
-						<Grid item xs={12} lg={6}>
-							<DeadlineProjections />
-						</Grid>
-						<Grid item xs={12} lg={6}>
-							<FolderClosingTrends />
-						</Grid>
-
-						{/* Row 6 - Historical Trends */}
-						<Grid item xs={12}>
-							<HistoricalTrends />
-						</Grid>
-					</Grid>
-
-					{/* Overlay de bloqueo cuando no tiene permisos */}
+					{/* Banner de upgrade sticky — visible solo en plan free, encima del grid degradado */}
 					{!hasAdvancedAnalytics && (
 						<Box
 							sx={{
-								position: "absolute",
-								top: 0,
-								left: 0,
-								right: 0,
-								bottom: 0,
-								backgroundColor: theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)",
-								backdropFilter: "blur(3px)",
-								zIndex: 1,
+								position: "sticky",
+								top: theme.spacing(2),
+								zIndex: 2,
 								display: "flex",
-								alignItems: "flex-start",
 								justifyContent: "center",
-								borderRadius: 1,
-								pt: 8,
+								mb: 2,
+								pointerEvents: "auto",
 							}}
 						>
 							<Paper
-								elevation={3}
+								elevation={6}
 								sx={{
-									p: 3,
+									px: 3,
+									py: 2,
 									textAlign: "center",
-									maxWidth: 450,
+									maxWidth: { xs: "100%", sm: 520 },
+									width: "100%",
 									backgroundColor: "background.paper",
+									border: `1px solid ${theme.palette.primary.light}`,
 								}}
 							>
-								<Stack direction="row" alignItems="center" justifyContent="center" spacing={2} sx={{ mb: 2 }}>
-									<Lock variant="Bulk" size={48} color={theme.palette.primary.main} />
-									<Typography variant="h5">Contenido Bloqueado</Typography>
+								<Stack direction={{ xs: "column", sm: "row" }} alignItems="center" justifyContent="center" spacing={2}>
+									<Stack spacing={0.25} sx={{ textAlign: { xs: "center", sm: "left" } }}>
+										<Typography variant="subtitle1" fontWeight={600}>
+											Vista previa
+										</Typography>
+										<Typography variant="body2" color="text.secondary">
+											Actualizá tu plan para desbloquear analytics completas
+										</Typography>
+									</Stack>
+									<Button
+										variant="contained"
+										color="primary"
+										size="small"
+										startIcon={<Crown size={16} />}
+										onClick={() => navigate("/suscripciones/tables")}
+										sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
+									>
+										Ver planes
+									</Button>
 								</Stack>
-								<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-									Las analíticas avanzadas están disponibles en planes Standard y Premium.
-								</Typography>
-								<Grid container spacing={1} sx={{ mb: 2, textAlign: "left" }}>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Métricas detalladas</Typography>
-										</Box>
-									</Grid>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Análisis de tendencias</Typography>
-										</Box>
-									</Grid>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Exportar reportes</Typography>
-										</Box>
-									</Grid>
-									<Grid item xs={6}>
-										<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Crown size={14} color={theme.palette.primary.main} />
-											<Typography variant="caption">Dashboards personalizados</Typography>
-										</Box>
-									</Grid>
-								</Grid>
-								<Button
-									variant="contained"
-									color="primary"
-									size="medium"
-									startIcon={<Crown size={18} />}
-									onClick={() => navigate("/suscripciones/tables")}
-									fullWidth
-								>
-									Actualizar Plan
-								</Button>
 							</Paper>
 						</Box>
 					)}
+
+					{/* Grid de widgets — opacity reducida + sin interacción en plan free */}
+					<Box
+						sx={
+							!hasAdvancedAnalytics
+								? { opacity: 0.4, pointerEvents: "none", userSelect: "none" }
+								: undefined
+						}
+					>
+						<Grid container spacing={3}>
+							{/* Row 1 - Key Metrics */}
+							<Grid item xs={12} md={6} lg={3}>
+								<AverageResolutionTime />
+							</Grid>
+							<Grid item xs={12} md={6} lg={3}>
+								<DataQuality />
+							</Grid>
+							<Grid item xs={12} md={6} lg={3}>
+								<TaskCompletionRate />
+							</Grid>
+							<Grid item xs={12} md={6} lg={3}>
+								<TaskDistributionByPriority />
+							</Grid>
+
+							{/* Row 2 - Calculator and Financial */}
+							<Grid item xs={12} md={6} lg={3}>
+								<CalculatorTypeBreakdown />
+							</Grid>
+							<Grid item xs={12} lg={5}>
+								<AmountsByFolderStatus />
+							</Grid>
+							<Grid item xs={12} lg={4}>
+								<NotificationStatus />
+							</Grid>
+
+							{/* Row 3 - Trends and Activity */}
+							<Grid item xs={12} lg={8}>
+								<DailyWeeklyActivity />
+							</Grid>
+							<Grid item xs={12} lg={4}>
+								<RecentActivityFeed />
+							</Grid>
+
+							{/* Row 4 - Matters and Folders */}
+							<Grid item xs={12} lg={6}>
+								<TopMatters />
+							</Grid>
+							<Grid item xs={12} lg={6}>
+								<FoldersByMatter />
+							</Grid>
+
+							{/* Row 5 - Projections and Trends */}
+							<Grid item xs={12} lg={6}>
+								<DeadlineProjections />
+							</Grid>
+							<Grid item xs={12} lg={6}>
+								<FolderClosingTrends />
+							</Grid>
+
+							{/* Row 6 - Historical Trends */}
+							<Grid item xs={12}>
+								<HistoricalTrends />
+							</Grid>
+						</Grid>
+					</Box>
 				</Box>
 			</MainCard>
 

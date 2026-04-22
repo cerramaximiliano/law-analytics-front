@@ -335,6 +335,10 @@ const Availability = () => {
 	useEffect(() => {
 		if (user && user._id) {
 			loadAvailabilitySettings();
+		} else {
+			// user aún no está disponible (auth todavía inicializando):
+			// no disparar el spinner infinito — salir del estado loading.
+			setLoading(false);
 		}
 	}, [user, loadAvailabilitySettings]);
 
@@ -578,7 +582,7 @@ const Availability = () => {
 	};
 
 	return (
-		<MainCard title="Configuración de Citas">
+		<MainCard title={availabilityId ? "Editar configuración de citas" : "Nueva configuración de citas"}>
 			{loading ? (
 				<Box display="flex" justifyContent="center" alignItems="center" sx={{ py: 8 }}>
 					<CircularProgress />

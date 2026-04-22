@@ -879,7 +879,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 	};
 
 	return (
-		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}>
+		<Dialog open={open} onClose={onClose} maxWidth="md" fullWidth sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter", maxHeight: "90vh", overflowY: "auto" } }}>
 			<DialogTitle
 				sx={{
 					bgcolor: theme.palette.primary.lighter,

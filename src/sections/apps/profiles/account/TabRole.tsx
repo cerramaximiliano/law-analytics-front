@@ -16,7 +16,7 @@ import {
   Skeleton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { People, Add, Crown, Logout, UserSquare, Information, InfoCircle } from "iconsax-react";
+import { People, Add, Crown, Logout, Trash, UserSquare, Information, InfoCircle } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
@@ -286,9 +286,11 @@ const TabRole = () => {
                 La funcionalidad de equipos te permite invitar colaboradores a tu cuenta
                 y compartir recursos como causas, contactos, calculadoras y más.
               </Typography>
-              <Alert severity="info" sx={{ maxWidth: 500 }}>
+              <Alert severity="warning" sx={{ maxWidth: 500 }}>
                 Tu plan actual ({planName}) no incluye la gestión de equipos.
                 Actualiza a un plan Estándar o Premium para acceder a esta funcionalidad.
+                <br />
+                <strong>Límites por plan:</strong> Estándar: hasta 5 miembros · Premium: hasta 20 miembros.
               </Alert>
               <Button
                 variant="contained"
@@ -465,7 +467,7 @@ const TabRole = () => {
                 variant="outlined"
                 color="error"
                 size="small"
-                startIcon={<Logout size={16} />}
+                startIcon={isOwner ? <Trash size={16} /> : <Logout size={16} />}
                 onClick={() => setShowLeaveDialog(true)}
                 sx={{ minWidth: 160 }}
               >
