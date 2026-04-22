@@ -32,6 +32,14 @@ export default defineConfig({
 				...devices["Desktop Chrome"],
 			},
 		},
+		{
+			name: "capture-auth-forms",
+			testDir: "./tests/ux-audit",
+			testMatch: "capture-auth-forms.spec.ts",
+			use: {
+				...devices["Desktop Chrome"],
+			},
+		},
 	],
 
 	webServer: {

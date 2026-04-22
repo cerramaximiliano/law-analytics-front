@@ -215,14 +215,23 @@
 					],
 				},
 				{
-					label: "Autenticación",
+					label: "Autenticación — sin state (acceso directo / fallback)",
+					note: "Estas rutas fueron capturadas sin state previo. En reset-password y code-verification el 'antes' mostraba la página de registro (redirect silencioso — bug RS1/CV1). El 'después' muestra el nuevo fallback con CTA explícito.",
 					routes: [
 						{ name: "login", label: "Login", path: "/login" },
 						{ name: "register", label: "Registro", path: "/register" },
 						{ name: "forgot-password", label: "Olvidé contraseña", path: "/forgot-password" },
 						{ name: "check-mail", label: "Revisá tu email", path: "/check-mail" },
-						{ name: "reset-password", label: "Restablecer contraseña", path: "/reset-password" },
-						{ name: "code-verification", label: "Verificación por código", path: "/code-verification" },
+						{ name: "reset-password", label: "Restablecer contraseña (fallback)", path: "/reset-password" },
+						{ name: "code-verification", label: "Verificación por código (fallback)", path: "/code-verification" },
+					],
+				},
+				{
+					label: "Autenticación — con state válido (happy path)",
+					note: "Forms reales del flujo de recuperación, capturados con state inyectado vía sessionStorage (simulando que el usuario llega desde /forgot-password correctamente). Solo mostramos el 'después' porque el 'antes' no es comparable (antes había redirect en lugar del form).",
+					routes: [
+						{ name: "reset-password-form", label: "Restablecer contraseña (form)", path: "/reset-password", afterOnly: true },
+						{ name: "code-verification-form", label: "Verificación por código (form)", path: "/code-verification", afterOnly: true },
 					],
 				},
 			];
@@ -233,8 +242,20 @@
 				const vp = document.querySelector(".tab.active[data-vp]").dataset.vp;
 				routesEl.innerHTML = GROUPS.map((group) => {
 					const groupContent = group.routes
-						.map(
-							(r) => `
+						.map((r) => {
+							if (r.afterOnly) {
+								return `
+          <section class="route">
+            <h2>${r.label}</h2>
+            <p class="path">${r.path}</p>
+            <div class="side" style="max-width: 900px; margin: 0 auto">
+              <div class="label after">Después (form renderizado) · ${vp}</div>
+              <div class="img-wrap"><img loading="lazy" src="after-final/screenshots/${r.name}-${vp}.png" alt="${r.name} ${vp} after" /></div>
+            </div>
+          </section>
+        `;
+							}
+							return `
           <section class="route">
             <h2>${r.label}</h2>
             <p class="path">${r.path}</p>
@@ -249,10 +270,13 @@
               </div>
             </div>
           </section>
-        `,
-						)
+        `;
+						})
 						.join("");
-					return `<div class="group-label">${group.label}</div>${groupContent}`;
+					const noteHtml = group.note
+						? `<div style="color: var(--muted); font-size: 12px; margin: 4px 0 12px 0; font-style: italic">${group.note}</div>`
+						: "";
+					return `<div class="group-label">${group.label}</div>${noteHtml}${groupContent}`;
 				}).join("");
 
 				// rebind lightbox
