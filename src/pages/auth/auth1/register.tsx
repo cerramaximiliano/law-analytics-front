@@ -159,7 +159,12 @@ const Register = () => {
 											<Logo to="/" />
 										</Grid>
 										<Grid item xs={12}>
-											<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
+											<Stack
+												direction={{ xs: "column", sm: "row" }}
+												justifyContent="space-between"
+												alignItems={{ xs: "flex-start", sm: "baseline" }}
+												sx={{ mb: 0.5 }}
+											>
 												<Typography variant="h3">Empezá gratis</Typography>
 												<Typography component={Link} to={"/login"} variant="body1" sx={{ textDecoration: "none" }} color="primary">
 													¿Ya tienes una cuenta?

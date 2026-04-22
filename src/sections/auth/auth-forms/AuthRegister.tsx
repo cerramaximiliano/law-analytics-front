@@ -11,6 +11,7 @@ import {
 	FormControl,
 	FormHelperText,
 	Grid,
+	InputLabel,
 	Link,
 	InputAdornment,
 	OutlinedInput,
@@ -79,7 +80,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 				}}
 				validationSchema={Yup.object().shape({
 					email: Yup.string().email("Debe ser un correo válido").max(255).required("El correo es requerido"),
-					password: Yup.string().min(8, "Mínimo 8 caracteres").max(255).required("El password es requerido"),
+					password: Yup.string().min(8, "Mínimo 8 caracteres").max(255).required("La contraseña es requerida"),
 				})}
 				onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
 					try {
@@ -138,10 +139,11 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 							)}
 							<Grid item xs={12}>
 								<Stack spacing={0.5}>
+									<InputLabel htmlFor="email-signup">Email</InputLabel>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.email && errors.email)}
-										id="email-login"
+										id="email-signup"
 										type="email"
 										value={values.email}
 										name="email"
@@ -158,6 +160,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 											inputMode: "email",
 											autoCapitalize: "off",
 											autoCorrect: "off",
+											autoComplete: "username",
 										}}
 									/>
 									{touched.email && errors.email && (
@@ -169,6 +172,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 							</Grid>
 							<Grid item xs={12}>
 								<Stack spacing={0.5}>
+									<InputLabel htmlFor="password-signup">Contraseña</InputLabel>
 									<OutlinedInput
 										fullWidth
 										error={Boolean(touched.password && errors.password)}
@@ -206,6 +210,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 											autoCapitalize: "off",
 											autoCorrect: "off",
 											spellCheck: "false",
+											autoComplete: "new-password",
 										}}
 									/>
 									<Typography variant="caption" color="text.secondary">
@@ -256,19 +261,19 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 								>
 									<Stack direction="row" alignItems="center" spacing={0.3}>
 										<TickCircle size={10} variant="Bold" color="#4caf50" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
 											Sin tarjeta
 										</Typography>
 									</Stack>
 									<Stack direction="row" alignItems="center" spacing={0.3}>
 										<TickCircle size={10} variant="Bold" color="#4caf50" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
 											Acceso inmediato
 										</Typography>
 									</Stack>
 									<Stack direction="row" alignItems="center" spacing={0.3}>
 										<TickCircle size={10} variant="Bold" color="#4caf50" />
-										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.75rem" }}>
 											Cancelá cuando quieras
 										</Typography>
 									</Stack>
@@ -276,7 +281,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 								<Typography
 									variant="caption"
 									color="text.secondary"
-									sx={{ mt: 2, display: "block", textAlign: "center", fontSize: "0.65rem", lineHeight: 1.6, opacity: 0.7 }}
+									sx={{ mt: 2, display: "block", textAlign: "center", fontSize: "0.75rem", lineHeight: 1.6 }}
 								>
 									Registrándose, está de acuerdo con{" "}
 									<Link
@@ -285,7 +290,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										to="/terms"
 										target="_blank"
 										rel="noopener noreferrer"
-										sx={{ fontSize: "0.65rem" }}
+										sx={{ fontSize: "0.75rem", display: "inline-block", py: 0.5 }}
 									>
 										Términos del Servicio
 									</Link>
@@ -296,7 +301,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										to="/privacy-policy"
 										target="_blank"
 										rel="noopener noreferrer"
-										sx={{ fontSize: "0.65rem" }}
+										sx={{ fontSize: "0.75rem", display: "inline-block", py: 0.5 }}
 									>
 										Política de Privacidad
 									</Link>

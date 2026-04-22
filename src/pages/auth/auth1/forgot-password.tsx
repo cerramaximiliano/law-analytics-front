@@ -19,7 +19,7 @@ const ForgotPassword = () => {
 			<Grid container spacing={3}>
 				<Grid item xs={12}>
 					<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
-						<Typography variant="h3">Olvidé mi Contraseña</Typography>
+						<Typography variant="h3">Olvidé mi contraseña</Typography>
 						<Typography
 							component={Link}
 							to={isLoggedIn ? "/auth/login" : "/login"}
@@ -27,7 +27,7 @@ const ForgotPassword = () => {
 							sx={{ textDecoration: "none" }}
 							color="primary"
 						>
-							Volver al Inicio
+							Volver al inicio
 						</Typography>
 					</Stack>
 				</Grid>

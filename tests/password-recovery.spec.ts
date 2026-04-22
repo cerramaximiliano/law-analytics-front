@@ -104,7 +104,7 @@ async function navigateToStep(page: Page, step: "verify" | "reset", code: string
 	await page.goto("/auth/forgot-password");
 	await expect(page.locator("#email-forgot")).toBeVisible({ timeout: 10_000 });
 	await page.locator("#email-forgot").fill(DEV_EMAIL);
-	await page.getByRole("button", { name: /Enviar Código de Verificación/i }).click();
+	await page.getByRole("button", { name: /Enviar instrucciones/i }).click();
 	await expect(page).toHaveURL(/\/auth\/code-verification/, { timeout: 10_000 });
 
 	if (step === "reset") {
@@ -126,14 +126,14 @@ async function navigateToStep(page: Page, step: "verify" | "reset", code: string
 test("GRUPO 1 — /auth/forgot-password carga y muestra el form", async ({ page }) => {
 	await page.goto("/auth/forgot-password");
 	await expect(page.locator("#email-forgot")).toBeVisible({ timeout: 10_000 });
-	await expect(page.getByRole("button", { name: /Enviar Código de Verificación/i })).toBeVisible();
+	await expect(page.getByRole("button", { name: /Enviar instrucciones/i })).toBeVisible();
 });
 
 test("GRUPO 1 — submit con email vacío → error 'El correo es requerido'", async ({ page }) => {
 	await page.goto("/auth/forgot-password");
 	await expect(page.locator("#email-forgot")).toBeVisible({ timeout: 10_000 });
 
-	await page.getByRole("button", { name: /Enviar Código de Verificación/i }).click();
+	await page.getByRole("button", { name: /Enviar instrucciones/i }).click();
 	await expect(page.getByText("El correo es requerido")).toBeVisible({ timeout: 5_000 });
 });
 
@@ -142,7 +142,7 @@ test("GRUPO 1 — submit con email inválido → error 'Debe ser un formato'", a
 	await expect(page.locator("#email-forgot")).toBeVisible({ timeout: 10_000 });
 
 	await page.locator("#email-forgot").fill("no-es-email");
-	await page.getByRole("button", { name: /Enviar Código de Verificación/i }).click();
+	await page.getByRole("button", { name: /Enviar instrucciones/i }).click();
 	await expect(page.getByText(/Debe ser un formato/i)).toBeVisible({ timeout: 5_000 });
 });
 
@@ -167,7 +167,7 @@ test("GRUPO 1 — email válido → snackbar + navega a /auth/code-verification"
 	await expect(page.locator("#email-forgot")).toBeVisible({ timeout: 10_000 });
 
 	await page.locator("#email-forgot").fill(DEV_EMAIL);
-	await page.getByRole("button", { name: /Enviar Código de Verificación/i }).click();
+	await page.getByRole("button", { name: /Enviar instrucciones/i }).click();
 
 	// Snackbar + navegación
 	await expect(page.getByText(/Revisa tu correo electrónico/i)).toBeVisible({ timeout: 5_000 });
@@ -181,7 +181,7 @@ test("GRUPO 1 — email válido → snackbar + navega a /auth/code-verification"
 test("GRUPO 2 — /auth/code-verification muestra email y 6 inputs de OTP", async ({ page }) => {
 	await navigateToStep(page, "verify");
 
-	await expect(page.getByText("Verificación para reseteo de contraseña")).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText("Verificación para restablecer contraseña")).toBeVisible({ timeout: 10_000 });
 	await expect(page.getByText(DEV_EMAIL)).toBeVisible();
 	const otpInputs = page.getByRole("textbox", { name: /Character \d|verification code/i });
 	await expect(otpInputs).toHaveCount(6, { timeout: 5_000 });
@@ -222,7 +222,7 @@ test("GRUPO 3 — /auth/reset-password carga con campos password + confirm", asy
 
 	await expect(page.locator("#password-reset")).toBeVisible({ timeout: 10_000 });
 	await expect(page.locator("#confirm-password-reset")).toBeVisible();
-	await expect(page.getByRole("button", { name: /Resetear Password/i })).toBeVisible();
+	await expect(page.getByRole("button", { name: /Restablecer contraseña/i })).toBeVisible();
 });
 
 test("GRUPO 3 — confirmPassword distinto → error 'Ambas constraseñas deben ser iguales'", async ({ page }) => {
@@ -230,7 +230,7 @@ test("GRUPO 3 — confirmPassword distinto → error 'Ambas constraseñas deben 
 
 	await page.locator("#password-reset").fill("password-a");
 	await page.locator("#confirm-password-reset").fill("password-b");
-	await page.getByRole("button", { name: /Resetear Password/i }).click();
+	await page.getByRole("button", { name: /Restablecer contraseña/i }).click();
 
 	// Nota: el mensaje tiene un typo 'constraseñas' en el código de producción — respetar.
 	await expect(page.getByText(/Ambas constraseñas deben ser iguales|Ambas contraseñas deben ser iguales/i)).toBeVisible({
@@ -262,7 +262,7 @@ test("GRUPO 4 — flujo completo forgot→code→reset→login + restaura passwo
 		),
 		(async () => {
 			await page.locator("#email-forgot").fill(DEV_EMAIL);
-			await page.getByRole("button", { name: /Enviar Código de Verificación/i }).click();
+			await page.getByRole("button", { name: /Enviar instrucciones/i }).click();
 		})(),
 	]);
 	// Leer body inmediatamente antes que el browser pueda descartarlo
@@ -292,7 +292,7 @@ test("GRUPO 4 — flujo completo forgot→code→reset→login + restaura passwo
 	await page.locator("#confirm-password-reset").fill(TEMP_PASSWORD);
 
 	try {
-		await page.getByRole("button", { name: /Resetear Password/i }).click();
+		await page.getByRole("button", { name: /Restablecer contraseña/i }).click();
 
 		// 6) Snackbar + redirect a login
 		await expect(page.getByText("Contraseña restablecida con éxito.")).toBeVisible({ timeout: 10_000 });
@@ -323,4 +323,84 @@ test("GRUPO 4 — flujo completo forgot→code→reset→login + restaura passwo
 			throw err;
 		}
 	}
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GRUPO 5 — Fallback screens cuando se accede sin state válido
+// (regresión de RS1 y CV1 del audit UX público 2026-04-22)
+//
+// Motivo: antes del fix, acceder directo a /reset-password o /code-verification
+// sin state (bookmark, F5, link desde email expirado) redirigía silenciosamente
+// a /forgot-password o /register, perdiendo contexto. Ahora se muestra una
+// pantalla de fallback explícita con CTAs para recuperar el flujo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test("GRUPO 5 — /auth/reset-password sin state muestra fallback explicativo (RS1)", async ({ page }) => {
+	// Asegurar que no hay state previo en sessionStorage
+	await page.goto("/auth/login"); // página neutral para inicializar contexto
+	await page.evaluate(() => {
+		sessionStorage.removeItem("reset_email");
+		sessionStorage.removeItem("reset_code");
+		sessionStorage.removeItem("reset_verified");
+		sessionStorage.removeItem("reset_in_progress");
+	});
+
+	await page.goto("/auth/reset-password");
+
+	// La pantalla de fallback debe mostrarse
+	await expect(page.getByText(/No podemos restablecer tu contraseña/i)).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText(/enlace puede haber expirado|enlace.*inv.lido/i)).toBeVisible();
+
+	// Debe tener CTA primario al paso previo del flujo
+	const pedirNuevo = page.getByRole("link", { name: /Pedir nuevo enlace/i });
+	await expect(pedirNuevo).toBeVisible();
+	await expect(pedirNuevo).toHaveAttribute("href", /\/forgot-password/);
+
+	// Link secundario al inicio de sesión
+	const volverLogin = page.getByRole("link", { name: /Volver al inicio de sesión/i });
+	await expect(volverLogin).toBeVisible();
+
+	// NO deben renderizar los campos del form
+	await expect(page.locator("#password-reset")).toHaveCount(0);
+	await expect(page.locator("#confirm-password-reset")).toHaveCount(0);
+});
+
+test("GRUPO 5 — /auth/code-verification sin state muestra fallback explicativo (CV1)", async ({ page }) => {
+	// Asegurar que no hay state previo en sessionStorage
+	await page.goto("/auth/login");
+	await page.evaluate(() => {
+		sessionStorage.removeItem("reset_email");
+		sessionStorage.removeItem("reset_code");
+		sessionStorage.removeItem("reset_verified");
+		sessionStorage.removeItem("reset_in_progress");
+	});
+
+	await page.goto("/auth/code-verification");
+
+	// La pantalla de fallback debe mostrarse
+	await expect(page.getByText(/Necesitamos un código válido para verificarte/i)).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText(/enlace puede haber expirado/i)).toBeVisible();
+
+	// Al menos uno de los CTAs contextuales debe aparecer
+	const anyCta = page.getByRole("link", { name: /Recuperar contraseña|Crear cuenta|Volver al inicio de sesión/i });
+	await expect(anyCta.first()).toBeVisible();
+
+	// Los inputs de OTP NO deben estar presentes
+	const otpInputs = page.getByRole("textbox", { name: /Character \d|verification code/i });
+	await expect(otpInputs).toHaveCount(0);
+});
+
+test("GRUPO 5 — CTA 'Pedir nuevo enlace' navega a /forgot-password", async ({ page }) => {
+	await page.goto("/auth/login");
+	await page.evaluate(() => {
+		sessionStorage.clear();
+	});
+
+	await page.goto("/auth/reset-password");
+	await expect(page.getByText(/No podemos restablecer tu contraseña/i)).toBeVisible({ timeout: 10_000 });
+
+	await page.getByRole("link", { name: /Pedir nuevo enlace/i }).click();
+
+	await expect(page).toHaveURL(/\/auth\/forgot-password|\/forgot-password/, { timeout: 5_000 });
+	await expect(page.locator("#email-forgot")).toBeVisible({ timeout: 5_000 });
 });

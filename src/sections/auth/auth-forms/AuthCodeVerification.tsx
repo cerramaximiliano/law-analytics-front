@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@mui/material/styles";
 import { Button, CircularProgress, Grid, Stack, Typography } from "@mui/material";
 import OtpInput from "react18-input-otp";
@@ -48,12 +48,46 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 	const [error, setError] = useState<string | null>(null);
 	const [isResending, setIsResending] = useState<boolean>(false);
 	const [isVerifying, setIsVerifying] = useState<boolean>(false);
+	const [cooldownSeconds, setCooldownSeconds] = useState<number>(60);
+	const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+	// Cooldown inicial al montar el componente (primer envío automático ya ocurrió)
+	useEffect(() => {
+		setCooldownSeconds(60);
+		cooldownRef.current = setInterval(() => {
+			setCooldownSeconds((prev) => {
+				if (prev <= 1) {
+					if (cooldownRef.current) clearInterval(cooldownRef.current);
+					return 0;
+				}
+				return prev - 1;
+			});
+		}, 1000);
+
+		return () => {
+			if (cooldownRef.current) clearInterval(cooldownRef.current);
+		};
+	}, []);
+
+	const startCooldown = () => {
+		if (cooldownRef.current) clearInterval(cooldownRef.current);
+		setCooldownSeconds(60);
+		cooldownRef.current = setInterval(() => {
+			setCooldownSeconds((prev) => {
+				if (prev <= 1) {
+					if (cooldownRef.current) clearInterval(cooldownRef.current);
+					return 0;
+				}
+				return prev - 1;
+			});
+		}, 1000);
+	};
 
 	const borderColor = theme.palette.mode === ThemeMode.DARK ? theme.palette.secondary[200] : theme.palette.secondary.light;
 
 	// Manejador para reenviar el código
 	const handleResendCode = async () => {
-		if (isResending) return;
+		if (isResending || cooldownSeconds > 0) return;
 
 		setIsResending(true);
 		try {
@@ -61,13 +95,14 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 				throw new Error("No se encontró una dirección de correo electrónico válida");
 			}
 
-			let endpoint = mode === "register" ? "/api/auth/resend-code" : "/api/auth/reset-request";
+			const endpoint = mode === "register" ? "/api/auth/resend-code" : "/api/auth/reset-request";
 
 			await axios.post(`${process.env.REACT_APP_BASE_URL}${endpoint}`, {
 				email: emailToUse,
 			});
 
 			setError(null);
+			startCooldown();
 			dispatch(
 				openSnackbar({
 					open: true,
@@ -214,7 +249,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 		<Grid container spacing={3}>
 			<Grid item xs={12}>
 				<Typography variant="h3" textAlign="center" gutterBottom>
-					{mode === "register" ? "Verificación de cuenta" : "Verificación para reseteo de contraseña"}
+					{mode === "register" ? "Verificación de cuenta" : "Verificación para restablecer contraseña"}
 				</Typography>
 				<Typography variant="body1" textAlign="center" sx={{ mb: 3 }}>
 					Hemos enviado un código a <strong>{emailToUse}</strong>
@@ -280,13 +315,13 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 							minWidth: 85,
 							ml: 2,
 							textDecoration: "none",
-							cursor: "pointer",
-							opacity: isResending ? 0.6 : 1,
+							cursor: isResending || cooldownSeconds > 0 ? "not-allowed" : "pointer",
+							opacity: isResending || cooldownSeconds > 0 ? 0.5 : 1,
 						}}
 						color="primary"
 						onClick={handleResendCode}
 					>
-						{isResending ? "Enviando..." : "Reenviar código"}
+						{isResending ? "Enviando..." : cooldownSeconds > 0 ? `Reenviar en ${cooldownSeconds}s` : "Reenviar código"}
 					</Typography>
 				</Stack>
 			</Grid>

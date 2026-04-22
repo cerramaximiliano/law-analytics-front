@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>UX Audit Pasada 1 — Compare Before / After</title>
+		<style>
+			:root {
+				--bg: #0e0f12;
+				--panel: #15171c;
+				--border: #272932;
+				--text: #e6e7eb;
+				--muted: #8b8f9b;
+				--primary: #6366f1;
+				--success: #10b981;
+				--warn: #f59e0b;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				line-height: 1.5;
+			}
+			header {
+				position: sticky;
+				top: 0;
+				background: var(--panel);
+				border-bottom: 1px solid var(--border);
+				padding: 14px 24px;
+				display: flex;
+				align-items: center;
+				gap: 18px;
+				flex-wrap: wrap;
+				z-index: 10;
+			}
+			h1 {
+				font-size: 17px;
+				margin: 0;
+				font-weight: 600;
+			}
+			.meta {
+				color: var(--muted);
+				font-size: 12px;
+			}
+			.spacer {
+				flex: 1;
+			}
+			.controls {
+				display: flex;
+				gap: 6px;
+				align-items: center;
+			}
+			.tab {
+				background: transparent;
+				color: var(--muted);
+				border: 1px solid var(--border);
+				padding: 5px 12px;
+				border-radius: 6px;
+				cursor: pointer;
+				font-size: 12px;
+				font-weight: 500;
+			}
+			.tab:hover {
+				color: var(--text);
+			}
+			.tab.active {
+				background: var(--primary);
+				color: white;
+				border-color: var(--primary);
+			}
+			main {
+				padding: 24px;
+				max-width: 1800px;
+				margin: 0 auto;
+			}
+			.route {
+				background: var(--panel);
+				border: 1px solid var(--border);
+				border-radius: 10px;
+				padding: 20px;
+				margin-bottom: 20px;
+			}
+			.route h2 {
+				font-size: 16px;
+				margin: 0 0 4px 0;
+				font-weight: 600;
+			}
+			.route .path {
+				color: var(--muted);
+				font-size: 13px;
+				margin: 0 0 16px 0;
+				font-family: ui-monospace, monospace;
+			}
+			.pair {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 16px;
+				align-items: flex-start;
+			}
+			.side {
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+			}
+			.label {
+				font-size: 11px;
+				font-weight: 600;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				color: var(--muted);
+			}
+			.label.before {
+				color: var(--warn);
+			}
+			.label.after {
+				color: var(--success);
+			}
+			.img-wrap {
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				background: #000;
+				overflow: hidden;
+				cursor: zoom-in;
+				min-height: 200px;
+			}
+			.img-wrap img {
+				display: block;
+				width: 100%;
+				height: auto;
+			}
+			footer {
+				text-align: center;
+				color: var(--muted);
+				font-size: 12px;
+				padding: 24px;
+			}
+			.lightbox {
+				position: fixed;
+				inset: 0;
+				background: rgba(0, 0, 0, 0.92);
+				display: none;
+				align-items: center;
+				justify-content: center;
+				z-index: 100;
+				padding: 24px;
+				cursor: zoom-out;
+			}
+			.lightbox.open {
+				display: flex;
+			}
+			.lightbox img {
+				max-width: 100%;
+				max-height: 100%;
+			}
+			.group-label {
+				font-size: 11px;
+				font-weight: 600;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				color: var(--muted);
+				padding: 20px 0 8px 0;
+				border-top: 1px solid var(--border);
+				margin-top: 16px;
+			}
+			.group-label:first-child {
+				border-top: 0;
+				margin-top: 0;
+				padding-top: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1>UX Audit Pasada 1 — Compare Before / After</h1>
+				<div class="meta">branch <code>ux/audit-public-2026-04-22</code> · 14 rutas públicas + auth</div>
+			</div>
+			<div class="spacer"></div>
+			<div class="controls">
+				<span class="meta">Viewport:</span>
+				<button class="tab active" data-vp="desktop">Desktop</button>
+				<button class="tab" data-vp="tablet">Tablet</button>
+				<button class="tab" data-vp="mobile">Mobile</button>
+			</div>
+		</header>
+
+		<main id="routes"></main>
+
+		<footer>Click en cualquier imagen para ampliar · ESC para cerrar</footer>
+
+		<div class="lightbox" id="lightbox"><img alt="" /></div>
+
+		<script>
+			const GROUPS = [
+				{
+					label: "Landing / Públicas",
+					routes: [
+						{ name: "landing", label: "Landing", path: "/" },
+						{ name: "plans", label: "Planes", path: "/plans" },
+						{ name: "guides", label: "Guías", path: "/guides" },
+						{ name: "faq", label: "FAQ", path: "/faq" },
+					],
+				},
+				{
+					label: "Legales + Utilitarias",
+					routes: [
+						{ name: "privacy-policy", label: "Política de privacidad", path: "/privacy-policy" },
+						{ name: "cookies-policy", label: "Política de cookies", path: "/cookies-policy" },
+						{ name: "terms", label: "Términos", path: "/terms" },
+						{ name: "unsubscribe", label: "Desuscripción", path: "/unsubscribe" },
+					],
+				},
+				{
+					label: "Autenticación — sin state (acceso directo / fallback)",
+					note: "Estas rutas fueron capturadas sin state previo. En reset-password y code-verification el 'antes' mostraba la página de registro (redirect silencioso — bug RS1/CV1). El 'después' muestra el nuevo fallback con CTA explícito.",
+					routes: [
+						{ name: "login", label: "Login", path: "/login" },
+						{ name: "register", label: "Registro", path: "/register" },
+						{ name: "forgot-password", label: "Olvidé contraseña", path: "/forgot-password" },
+						{ name: "check-mail", label: "Revisá tu email", path: "/check-mail" },
+						{ name: "reset-password", label: "Restablecer contraseña (fallback)", path: "/reset-password" },
+						{ name: "code-verification", label: "Verificación por código (fallback)", path: "/code-verification" },
+					],
+				},
+				{
+					label: "Autenticación — con state válido (happy path)",
+					note: "Forms reales del flujo de recuperación, capturados con state inyectado vía sessionStorage (simulando que el usuario llega desde /forgot-password correctamente). Solo mostramos el 'después' porque el 'antes' no es comparable (antes había redirect en lugar del form).",
+					routes: [
+						{ name: "reset-password-form", label: "Restablecer contraseña (form)", path: "/reset-password", afterOnly: true },
+						{ name: "code-verification-form", label: "Verificación por código (form)", path: "/code-verification", afterOnly: true },
+					],
+				},
+			];
+
+			const routesEl = document.getElementById("routes");
+
+			function render() {
+				const vp = document.querySelector(".tab.active[data-vp]").dataset.vp;
+				routesEl.innerHTML = GROUPS.map((group) => {
+					const groupContent = group.routes
+						.map((r) => {
+							if (r.afterOnly) {
+								return `
+          <section class="route">
+            <h2>${r.label}</h2>
+            <p class="path">${r.path}</p>
+            <div class="side" style="max-width: 900px; margin: 0 auto">
+              <div class="label after">Después (form renderizado) · ${vp}</div>
+              <div class="img-wrap"><img loading="lazy" src="after-final/screenshots/${r.name}-${vp}.png" alt="${r.name} ${vp} after" /></div>
+            </div>
+          </section>
+        `;
+							}
+							return `
+          <section class="route">
+            <h2>${r.label}</h2>
+            <p class="path">${r.path}</p>
+            <div class="pair">
+              <div class="side">
+                <div class="label before">Antes · ${vp}</div>
+                <div class="img-wrap"><img loading="lazy" src="screenshots/${r.name}-${vp}.png" alt="${r.name} ${vp} before" /></div>
+              </div>
+              <div class="side">
+                <div class="label after">Después · ${vp}</div>
+                <div class="img-wrap"><img loading="lazy" src="after-final/screenshots/${r.name}-${vp}.png" alt="${r.name} ${vp} after" /></div>
+              </div>
+            </div>
+          </section>
+        `;
+						})
+						.join("");
+					const noteHtml = group.note
+						? `<div style="color: var(--muted); font-size: 12px; margin: 4px 0 12px 0; font-style: italic">${group.note}</div>`
+						: "";
+					return `<div class="group-label">${group.label}</div>${noteHtml}${groupContent}`;
+				}).join("");
+
+				// rebind lightbox
+				document.querySelectorAll(".img-wrap img").forEach((img) => {
+					img.addEventListener("click", (e) => {
+						lbImg.src = e.target.src;
+						lb.classList.add("open");
+					});
+				});
+			}
+
+			document.querySelectorAll(".tab[data-vp]").forEach((btn) => {
+				btn.addEventListener("click", () => {
+					document.querySelectorAll(".tab[data-vp]").forEach((b) => b.classList.remove("active"));
+					btn.classList.add("active");
+					render();
+				});
+			});
+
+			const lb = document.getElementById("lightbox");
+			const lbImg = lb.querySelector("img");
+			lb.addEventListener("click", () => lb.classList.remove("open"));
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "Escape") lb.classList.remove("open");
+			});
+
+			render();
+		</script>
+	</body>
+</html>

@@ -106,7 +106,7 @@ const Login = () => {
 					</Grid>
 					<Grid item xs={12}>
 						<Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: { xs: -0.5, sm: 0.5 } }}>
-							<Typography variant="h3">Inicio</Typography>
+							<Typography variant="h3">Iniciar sesión</Typography>
 							<Typography
 								component={isAnyLoading ? Box : Link}
 								to={isAnyLoading ? undefined : "/register"}

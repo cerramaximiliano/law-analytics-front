@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // material-ui
 import { useTheme, styled, alpha } from "@mui/material/styles";
@@ -27,7 +27,7 @@ import PageBackground from "components/PageBackground";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // icons
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21, Cloud, People } from "iconsax-react";
+import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21, Cloud, People, TickCircle } from "iconsax-react";
 
 // ==============================|| GUIDES PAGE - HEADER ||============================== //
 
@@ -39,10 +39,47 @@ const Header = styled(Box)(({ theme }) => ({
 	marginBottom: 40,
 }));
 
+const GUIDES_COMPLETED_KEY = "guides.completed";
+
+function loadCompletedGuides(): Set<number> {
+	try {
+		const raw = localStorage.getItem(GUIDES_COMPLETED_KEY);
+		if (!raw) return new Set();
+		const parsed = JSON.parse(raw);
+		if (Array.isArray(parsed)) return new Set(parsed as number[]);
+	} catch {
+		// ignore
+	}
+	return new Set();
+}
+
+function saveCompletedGuides(set: Set<number>): void {
+	try {
+		localStorage.setItem(GUIDES_COMPLETED_KEY, JSON.stringify(Array.from(set)));
+	} catch {
+		// ignore
+	}
+}
+
 // ==============================|| GUIDES PAGE ||============================== //
 
 const GuidesPage = () => {
 	const theme = useTheme();
+
+	// GU2 — track visited guides
+	const [completedGuides, setCompletedGuides] = useState<Set<number>>(() => loadCompletedGuides());
+
+	useEffect(() => {
+		saveCompletedGuides(completedGuides);
+	}, [completedGuides]);
+
+	const markGuideVisited = (index: number) => {
+		setCompletedGuides((prev) => {
+			const next = new Set(prev);
+			next.add(index);
+			return next;
+		});
+	};
 
 	// Modal states
 	const [laboral, setLaboral] = useState(false);
@@ -158,13 +195,14 @@ const GuidesPage = () => {
 												</Typography>
 											</motion.div>
 										</Grid>
-										<Grid item xs={12} md={6} sx={{ display: { xs: "none", md: "block" } }}>
+										{/* GU1 — show decorative block from sm upward, scaled down on sm */}
+										<Grid item xs={12} md={6} sx={{ display: { xs: "none", sm: "block" } }}>
 											<Box
 												sx={{
 													width: "100%",
 													height: "100%",
 													display: "flex",
-													justifyContent: "flex-end",
+													justifyContent: { sm: "center", md: "flex-end" },
 													"& > *": {
 														transition: "all 0.2s ease-in-out",
 														"&:hover": { transform: "translateY(-5px)" },
@@ -186,7 +224,7 @@ const GuidesPage = () => {
 													>
 														<Box
 															sx={{
-																p: 1,
+																p: { sm: 0.75, md: 1 },
 																bgcolor: alpha(
 																	item.color === "primary.main"
 																		? theme.palette.primary.main
@@ -210,6 +248,7 @@ const GuidesPage = () => {
 																			: item.color === "secondary.main"
 																			? theme.palette.secondary.main
 																			: theme.palette.warning.main,
+																	display: "block",
 																}}
 															/>
 														</Box>
@@ -226,12 +265,15 @@ const GuidesPage = () => {
 							<Grid container spacing={3} alignItems="stretch">
 								{guideData.map((guide, index) => {
 									const IconComponent = guide.icon;
+									const isCompleted = completedGuides.has(index);
 									return (
-										<Grid item xs={12} sm={6} md={4} key={index} sx={{ display: "flex" }}>
+										// GU4 — xs=6 for 2-col mobile layout
+										<Grid item xs={6} sm={6} md={4} key={index} sx={{ display: "flex" }}>
+											{/* GU4 — delay capped at 0.3s to avoid cumulative animation lag */}
 											<motion.div
 												initial={{ opacity: 0, translateY: 20 }}
 												animate={{ opacity: 1, translateY: 0 }}
-												transition={{ duration: 0.3, delay: index * 0.1 }}
+												transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
 												style={{ width: "100%", display: "flex" }}
 											>
 												<Card
@@ -241,14 +283,36 @@ const GuidesPage = () => {
 														display: "flex",
 														flexDirection: "column",
 														transition: "all 0.3s ease",
+														position: "relative",
 														"&:hover": {
 															boxShadow: theme.shadows[10],
 															transform: "translateY(-8px)",
 														},
 													}}
 												>
+													{/* GU2 — visited badge */}
+													{isCompleted && (
+														<Box
+															sx={{
+																position: "absolute",
+																top: 8,
+																right: 8,
+																zIndex: 1,
+																lineHeight: 0,
+															}}
+														>
+															<TickCircle
+																size={22}
+																variant="Bold"
+																style={{ color: alpha(theme.palette.success.main, 0.8) }}
+															/>
+														</Box>
+													)}
 													<CardActionArea
-														onClick={guide.openModal}
+														onClick={() => {
+															markGuideVisited(index);
+															guide.openModal();
+														}}
 														sx={{
 															height: "100%",
 															display: "flex",
@@ -257,11 +321,11 @@ const GuidesPage = () => {
 															p: 2,
 														}}
 													>
-														<CardContent sx={{ flexGrow: 1, textAlign: "center", p: 3 }}>
+														<CardContent sx={{ flexGrow: 1, textAlign: "center", p: { xs: 1.5, md: 3 } }}>
 															<Box
 																sx={{
-																	width: 80,
-																	height: 80,
+																	width: { xs: 56, md: 80 },
+																	height: { xs: 56, md: 80 },
 																	borderRadius: "50%",
 																	display: "flex",
 																	justifyContent: "center",
@@ -306,14 +370,15 @@ const GuidesPage = () => {
 															<Typography variant="h4" component="div" gutterBottom>
 																{guide.title}
 															</Typography>
-															<Typography variant="body1" color="text.secondary">
+															<Typography variant="body1" color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }}>
 																{guide.description}
 															</Typography>
 														</CardContent>
 														<Divider sx={{ mt: "auto" }} />
 														<Box sx={{ p: 2, textAlign: "center" }}>
-															<Button
-																variant="text"
+															{/* GU3 — Typography instead of nested <button> inside CardActionArea */}
+															<Typography
+																variant="button"
 																color={
 																	guide.color === "primary"
 																		? "primary"
@@ -325,12 +390,12 @@ const GuidesPage = () => {
 																		? "warning"
 																		: guide.color === "info"
 																		? "info"
-																		: "success"
+																		: "success.main"
 																}
-																size="small"
+																sx={{ fontSize: "0.8125rem" }}
 															>
 																Ver Guía
-															</Button>
+															</Typography>
 														</Box>
 													</CardActionArea>
 												</Card>

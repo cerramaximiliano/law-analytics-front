@@ -1,9 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
 import { useTheme, Theme } from "@mui/material/styles";
-import { Box, Button, Chip, Container, Grid, Rating, Typography, Link, Tooltip, useMediaQuery } from "@mui/material";
+import { Box, Button, Chip, Container, Grid, Typography, Link, Tooltip, useMediaQuery } from "@mui/material";
 
 // project imports
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
@@ -75,7 +75,7 @@ const HeaderPage = () => {
 											<Box
 												component="span"
 												sx={{
-													background: "linear-gradient(90deg, #3A7BFF, #8A5CFF, #3A7BFF) 0 0 / 400% 100%",
+													background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main}, ${theme.palette.primary.main}) 0 0 / 400% 100%`,
 													color: "transparent",
 													WebkitBackgroundClip: "text",
 													backgroundClip: "text",
@@ -145,13 +145,26 @@ const HeaderPage = () => {
 													</Button>
 												</AnimateButton>
 											</Grid>
+											<Grid item>
+												<AnimateButton>
+													<Button
+														component={RouterLink}
+														to="/plans"
+														size="large"
+														color="primary"
+														variant="outlined"
+													>
+														Ver planes
+													</Button>
+												</AnimateButton>
+											</Grid>
 										</Grid>
 										<Typography
 											variant="body2"
 											sx={{
 												mt: 0.75,
 												fontSize: "0.8125rem",
-												color: "#6E6E6E",
+												color: theme.palette.text.secondary,
 												letterSpacing: "0.02em",
 											}}
 										>
@@ -241,54 +254,16 @@ const HeaderPage = () => {
 											delay: 0.6,
 										}}
 									>
-										<Grid container spacing={{ xs: 1.5, sm: 2.5, md: 3 }} justifyContent="center">
-											<Grid
-												item
-												sx={{
-													position: "relative",
-													"&:after": {
-														content: '""',
-														position: "absolute",
-														height: 30,
-														bottom: 10,
-														left: "auto",
-														right: "-12px",
-														width: "1px",
-														background: theme.palette.divider,
-														display: { xs: "none", sm: "block" },
-													},
-												}}
-											>
-												<Rating name="read-only" value={4.5} size="small" readOnly />
-												<Typography variant="h4">
-													4.7/5
-													<span
-														style={{
-															fontSize: "75%",
-															fontWeight: 400,
-															margin: 5,
-															color: theme.palette.text.secondary,
-														}}
-													>
-														Ratings
-													</span>
-												</Typography>
-											</Grid>
-											<Grid item>
-												<Typography variant="h5">
-													<span
-														style={{
-															fontSize: "75%",
-															fontWeight: 400,
-															color: theme.palette.text.secondary,
-														}}
-													>
-														Usuarios
-													</span>
-												</Typography>
-												<Typography variant="h4">500+</Typography>
-											</Grid>
-										</Grid>
+										<Typography
+											variant="body2"
+											sx={{
+												color: theme.palette.text.secondary,
+												fontSize: { xs: "0.8rem", sm: "0.875rem" },
+												lineHeight: 1.5,
+											}}
+										>
+											Usado por estudios jurídicos en CABA, PBA y fuero nacional
+										</Typography>
 									</motion.div>
 								</Grid>
 							</Grid>
@@ -577,6 +552,9 @@ const HeaderPage = () => {
 															component="img"
 															src={logoPJCABA}
 															alt="Poder Judicial de la Ciudad de Buenos Aires"
+															onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+																e.currentTarget.style.display = "none";
+															}}
 															sx={{
 																width: "100%",
 																height: "100%",
@@ -664,6 +642,9 @@ const HeaderPage = () => {
 															component="img"
 															src="https://res.cloudinary.com/dqyoeolib/image/upload/q_auto/f_auto/v1776203385/seclo-removebg-preview_rxcvzm.png"
 															alt="SECLO"
+															onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+																e.currentTarget.style.display = "none";
+															}}
 															sx={{
 																width: "100%",
 																height: "100%",
@@ -720,7 +701,7 @@ const HeaderPage = () => {
 										variant="body2"
 										sx={{
 											mt: 2.5,
-											color: "#6E6E6E",
+											color: theme.palette.text.secondary,
 											fontSize: "0.875rem",
 											maxWidth: { xs: 300, sm: "none" },
 											mx: "auto",
