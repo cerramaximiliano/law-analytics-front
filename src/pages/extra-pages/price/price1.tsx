@@ -545,11 +545,12 @@ const Pricing = () => {
 			} else {
 				throw new Error(response.message || "Error al procesar la solicitud");
 			}
-		} catch (error) {
+		} catch (error: any) {
+			const backendMsg = error?.message && !/^Error al procesar/i.test(error.message) ? error.message : null;
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al procesar la solicitud. Por favor, intenta nuevamente.",
+					message: backendMsg || "Error al procesar la solicitud. Por favor, intenta nuevamente.",
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -904,7 +905,7 @@ const Pricing = () => {
 							: pricing.basePrice;
 
 					return (
-						<Grid item xs={12} sm={6} md={4} key={plan.planId}>
+						<Grid item xs={12} sm={6} md={4} key={plan.planId} data-testid={`sub-plan-card-${plan.planId}`}>
 							<MainCard sx={{ position: "relative", overflow: "hidden" }}>
 								<Grid container spacing={3}>
 									<Grid item xs={12}>
@@ -1018,6 +1019,7 @@ const Pricing = () => {
 												</Grid>
 												<Grid item xs={12}>
 													<Button
+														data-testid={`sub-action-btn-${plan.planId}`}
 														color={
 															isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free"
 																? "success"
@@ -1297,7 +1299,7 @@ const Pricing = () => {
 					<Button onClick={() => setOptionsDialogOpen(false)} color="error" variant="outlined" disabled={loading}>
 						Cancelar
 					</Button>
-					<Button onClick={handleOptionConfirm} color="primary" variant="contained" disabled={!selectedOption || loading}>
+					<Button onClick={handleOptionConfirm} color="primary" variant="contained" disabled={!selectedOption || loading} data-testid="sub-options-confirm-btn">
 						{loading ? (
 							<>
 								<CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
@@ -1385,7 +1387,7 @@ const Pricing = () => {
 					</Alert>
 				</DialogContent>
 				<DialogActions sx={{ px: 3, pb: 3 }}>
-					<Button onClick={() => setCancelDialogOpen(false)} disabled={cancelLoading}>
+					<Button onClick={() => setCancelDialogOpen(false)} disabled={cancelLoading} data-testid="sub-cancel-dialog-keep-btn">
 						Mantener mi plan actual
 					</Button>
 					<Button
@@ -1394,6 +1396,7 @@ const Pricing = () => {
 						variant="contained"
 						disabled={cancelLoading}
 						startIcon={cancelLoading ? <CircularProgress size={20} /> : undefined}
+						data-testid="sub-cancel-dialog-confirm-btn"
 					>
 						{cancelLoading ? "Procesando..." : "Confirmar cancelación"}
 					</Button>

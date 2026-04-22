@@ -40,12 +40,14 @@ import {
   reactivatePostalTracking,
 } from "store/reducers/postalTracking";
 import { openSnackbar } from "store/reducers/snackbar";
+import ApiService from "store/reducers/ApiService";
 import { PostalTrackingType } from "types/postal-tracking";
 
 import AlertPostalTrackingDelete from "sections/apps/postal-tracking/AlertPostalTrackingDelete";
 import PostalTrackingModal from "sections/apps/postal-tracking/PostalTrackingModal";
 import PostalTrackingDetail from "sections/apps/postal-tracking/PostalTrackingDetail";
 import LinkPostalTrackingToFolder from "sections/apps/postal-tracking/LinkPostalTrackingToFolder";
+import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 
 const CORREO_LOGO = "https://res.cloudinary.com/dqyoeolib/image/upload/v1773403406/logo-correo_lxrcmr.png";
 
@@ -95,7 +97,7 @@ const EmptyState = ({ onAdd }: { onAdd: () => void }) => {
           Te avisaremos cada vez que cambie el estado.
         </Typography>
       </Stack>
-      <Button variant="contained" startIcon={<Add />} onClick={onAdd}>
+      <Button variant="contained" startIcon={<Add />} onClick={onAdd} data-testid="postal-empty-add-btn">
         Crear primer seguimiento
       </Button>
     </Stack>
@@ -124,6 +126,16 @@ const PostalTrackingPage = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [linkTracking, setLinkTracking] = useState<PostalTrackingType | null>(null);
+
+  // Límite del plan (Capa 1 — check antes de abrir el modal de creación)
+  const [isCheckingLimit, setIsCheckingLimit] = useState(false);
+  const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+  const [limitErrorInfo, setLimitErrorInfo] = useState<{
+    resourceType: string;
+    plan: string;
+    currentCount: string;
+    limit: number;
+  } | null>(null);
 
   // Selección múltiple
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -201,6 +213,34 @@ const PostalTrackingPage = () => {
     setOpenCreate(false);
     setTrackingToEdit(undefined);
     loadData();
+  };
+
+  /**
+   * Capa 1: verifica el límite del plan antes de abrir el modal de creación.
+   * Si `hasReachedLimit: true`, abre LimitErrorModal en lugar del formulario.
+   */
+  const handleOpenCreate = async () => {
+    setIsCheckingLimit(true);
+    try {
+      const response = await ApiService.checkResourceLimit("postalTrackings");
+      if (response.success && response.data?.hasReachedLimit) {
+        setLimitErrorInfo({
+          resourceType: "Seguimientos postales",
+          plan: response.data.currentPlan || response.data.planId || "free",
+          currentCount: String(response.data.currentCount),
+          limit: response.data.limit,
+        });
+        setLimitErrorOpen(true);
+        return;
+      }
+      setOpenCreate(true);
+    } catch (error) {
+      // Si falla el check, permitir continuar: el backend hará enforcement
+      console.error("Error al verificar el límite de seguimientos postales:", error);
+      setOpenCreate(true);
+    } finally {
+      setIsCheckingLimit(false);
+    }
   };
 
   const handleDeleteConfirm = async (confirmed: boolean) => {
@@ -312,7 +352,7 @@ const PostalTrackingPage = () => {
         </Stack>
       }
       secondary={
-        <Button variant="contained" startIcon={<Add />} onClick={() => setOpenCreate(true)} size="small">
+        <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate} size="small" disabled={isCheckingLimit} data-testid="postal-add-btn">
           Nuevo seguimiento
         </Button>
       }
@@ -407,7 +447,7 @@ const PostalTrackingPage = () => {
           </Grid>
         </>
       ) : trackings.length === 0 && !search ? (
-        <EmptyState onAdd={() => setOpenCreate(true)} />
+        <EmptyState onAdd={handleOpenCreate} />
       ) : (
         <>
           {selectedIds.size > 0 && (
@@ -544,14 +584,14 @@ const PostalTrackingPage = () => {
 
                           {/* Ver detalle — siempre habilitado */}
                           <Tooltip title="Ver detalle">
-                            <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="primary">
+                            <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="primary" data-testid="postal-view-btn">
                               <Eye size={16} />
                             </IconButton>
                           </Tooltip>
 
                           {/* Editar — siempre habilitado */}
                           <Tooltip title="Editar">
-                            <IconButton size="small" onClick={() => handleOpenEdit(row)} color="info">
+                            <IconButton size="small" onClick={() => handleOpenEdit(row)} color="info" data-testid="postal-edit-btn">
                               <Edit2 size={16} />
                             </IconButton>
                           </Tooltip>
@@ -560,14 +600,14 @@ const PostalTrackingPage = () => {
                           {row.processingStatus === "not_found" && !row.folderId ? (
                             <Tooltip title="No se puede vincular una causa a un seguimiento no encontrado">
                               <span style={{ display: "inline-flex" }}>
-                                <IconButton size="small" disabled>
+                                <IconButton size="small" disabled data-testid="postal-link-btn">
                                   <Link1 size={16} />
                                 </IconButton>
                               </span>
                             </Tooltip>
                           ) : (
                             <Tooltip title={row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}>
-                              <IconButton size="small" onClick={() => setLinkTracking(row)} color={row.folderId ? "success" : "default"}>
+                              <IconButton size="small" onClick={() => setLinkTracking(row)} color={row.folderId ? "success" : "default"} data-testid="postal-link-btn">
                                 <Link1 size={16} />
                               </IconButton>
                             </Tooltip>
@@ -577,14 +617,14 @@ const PostalTrackingPage = () => {
                           {row.processingStatus === "not_found" ? (
                             <Tooltip title="No se puede adjuntar archivos a un seguimiento no encontrado">
                               <span style={{ display: "inline-flex" }}>
-                                <IconButton size="small" disabled>
+                                <IconButton size="small" disabled data-testid="postal-attachment-btn">
                                   <DocumentUpload size={16} />
                                 </IconButton>
                               </span>
                             </Tooltip>
                           ) : (
                             <Tooltip title={row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}>
-                              <IconButton size="small" onClick={() => handleAttachmentClick(row._id)} color={row.attachmentKey ? "success" : "default"}>
+                              <IconButton size="small" onClick={() => handleAttachmentClick(row._id)} color={row.attachmentKey ? "success" : "default"} data-testid="postal-attachment-btn">
                                 <DocumentUpload size={16} />
                               </IconButton>
                             </Tooltip>
@@ -593,7 +633,7 @@ const PostalTrackingPage = () => {
                           {/* Marcar como completado — solo para estados en curso */}
                           {["pending", "active", "paused", "error"].includes(row.processingStatus) && (
                             <Tooltip title="Marcar como completado">
-                              <IconButton size="small" onClick={() => handleMarkAsCompleted(row._id)} color="success">
+                              <IconButton size="small" onClick={() => handleMarkAsCompleted(row._id)} color="success" data-testid="postal-complete-btn">
                                 <TickCircle size={16} />
                               </IconButton>
                             </Tooltip>
@@ -610,14 +650,14 @@ const PostalTrackingPage = () => {
                               : "No se puede reactivar un seguimiento con estado final determinado por el sistema";
                             return canReactivate ? (
                               <Tooltip title="Reactivar seguimiento">
-                                <IconButton size="small" onClick={() => handleReactivate(row._id)} color="warning">
+                                <IconButton size="small" onClick={() => handleReactivate(row._id)} color="warning" data-testid="postal-reactivate-btn">
                                   <Refresh2 size={16} />
                                 </IconButton>
                               </Tooltip>
                             ) : (
                               <Tooltip title={reactivateTooltip}>
                                 <span style={{ display: "inline-flex" }}>
-                                  <IconButton size="small" disabled>
+                                  <IconButton size="small" disabled data-testid="postal-reactivate-btn">
                                     <Refresh2 size={16} />
                                   </IconButton>
                                 </span>
@@ -627,7 +667,7 @@ const PostalTrackingPage = () => {
 
                           {/* Eliminar — siempre habilitado */}
                           <Tooltip title="Eliminar">
-                            <IconButton size="small" onClick={() => setTrackingToDelete(row)} color="error">
+                            <IconButton size="small" onClick={() => setTrackingToDelete(row)} color="error" data-testid="postal-delete-btn">
                               <Trash size={16} />
                             </IconButton>
                           </Tooltip>
@@ -730,6 +770,15 @@ const PostalTrackingPage = () => {
         numberId={`${selectedIds.size} seguimiento${selectedIds.size !== 1 ? "s" : ""} seleccionado${selectedIds.size !== 1 ? "s" : ""}`}
         open={bulkDeleteOpen}
         handleClose={handleBulkDeleteConfirm}
+      />
+
+      {/* Capa 1: modal de límite del plan — se abre cuando check-resource reporta hasReachedLimit antes de crear */}
+      <LimitErrorModal
+        open={limitErrorOpen}
+        onClose={() => setLimitErrorOpen(false)}
+        message="Has alcanzado el límite de seguimientos postales disponibles en tu plan actual."
+        limitInfo={limitErrorInfo ?? undefined}
+        upgradeRequired={true}
       />
     </MainCard>
   );

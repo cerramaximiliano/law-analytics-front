@@ -416,6 +416,7 @@ const SubscriptionSuccess = () => {
 													size="large"
 													fullWidth={matchDownSM}
 													endIcon={<ArrowRight2 />}
+													data-testid="sub-success-dashboard-btn"
 													sx={{
 														background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
 														boxShadow: `0 4px 14px ${alpha(theme.palette.success.main, 0.4)}`,

@@ -27,7 +27,7 @@ import AutomaticStep from "./step-components/automaticStep";
 import FirstStep from "./step-components/firstStep";
 import SecondStep from "./step-components/secondStep";
 import JudicialPowerSelection from "./step-components/judicialPowerSelection";
-import { useSelector, dispatch } from "store";
+import { dispatch } from "store";
 import { addFolder, updateFolderById } from "store/reducers/folder";
 import { enqueueSnackbar } from "notistack";
 import AlertFolderDelete from "./AlertFolderDelete";
@@ -121,7 +121,6 @@ function getStepContent(step: number, values: any) {
 }
 
 const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, initialFormValues }: PropsAddFolder) => {
-	const auth = useSelector((state) => state.auth);
 	const { isTeamMode, activeTeam, getUserIdForResource, getTeamIdForResource, getRequestHeaders } = useTeam();
 	const isCreating = mode === "add";
 
@@ -275,12 +274,7 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 	useEffect(() => {
 		const handlePlanRestriction = (event: Event) => {
 			const customEvent = event as CustomEvent;
-			console.log(
-				"Restricción de plan detectada, cerrando modal de nueva carpeta",
-				customEvent.detail ? `(Modales activos: ${customEvent.detail.openDialogsCount || 0})` : "",
-			);
-
-			// Cerrar el modal inmediatamente
+				// Cerrar el modal inmediatamente
 			onCancel();
 		};
 
@@ -450,10 +444,8 @@ const AddFolder = ({ folder, onCancel, open, onAddFolder, mode, initialStep, ini
 					TransitionComponent: Zoom,
 					autoHideDuration: 3000,
 				});
-				// Pequeño delay para que el usuario vea el mensaje de éxito
 				setTimeout(() => {
 					setIsProcessing(false);
-					onAddFolder(values);
 				}, 500);
 			} else {
 				// Usar el mensaje específico del servidor si está disponible

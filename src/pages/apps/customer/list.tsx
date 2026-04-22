@@ -307,7 +307,7 @@ function ReactTable({
 					{/* Botones principales (derecha) */}
 					<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
 						{handleAdd && (
-							<Button variant="contained" size="small" startIcon={<UserAdd />} onClick={handleAdd} fullWidth={matchDownSM}>
+							<Button variant="contained" size="small" startIcon={<UserAdd />} onClick={handleAdd} fullWidth={matchDownSM} data-testid="contacts-add-btn">
 								Agregar Contacto
 							</Button>
 						)}
@@ -965,7 +965,7 @@ const CustomerListPage = () => {
 							)}
 							{canUpdate && (
 								<Tooltip title="Editar">
-									<IconButton color="primary" onClick={(e) => handleRowAction(e, () => handleEditContact(original))}>
+									<IconButton color="primary" data-testid="contact-edit-btn" onClick={(e) => handleRowAction(e, () => handleEditContact(original))}>
 										<Edit2 variant="Bulk" />
 									</IconButton>
 								</Tooltip>
@@ -974,6 +974,7 @@ const CustomerListPage = () => {
 								<Tooltip title="Eliminar">
 									<IconButton
 										color="error"
+										data-testid="contact-delete-btn"
 										onClick={(e) =>
 											handleRowAction(e, () => {
 												handleClose();

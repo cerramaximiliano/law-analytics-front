@@ -346,14 +346,14 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 					<Grid item>
 						{canDelete && (
 							<Tooltip title="Eliminar Evento" placement="top">
-								<IconButton onClick={onDelete} size="large" color="error">
+								<IconButton onClick={onDelete} size="large" color="error" data-testid="calendar-delete-btn">
 									<Trash variant="Bold" />
 								</IconButton>
 							</Tooltip>
 						)}
 						{canUpdate && (
 							<Tooltip title="Vincular Evento" placement="top">
-								<IconButton onClick={onLink} size="large" color="primary" sx={{ ml: canDelete ? 1 : 0 }}>
+								<IconButton onClick={onLink} size="large" color="primary" sx={{ ml: canDelete ? 1 : 0 }} data-testid="calendar-link-btn">
 									<Link1 variant="Bold" />
 								</IconButton>
 							</Tooltip>
@@ -1117,20 +1117,21 @@ const Calendar = () => {
 					>
 						{/* Navegación y fecha */}
 						<Stack direction="row" alignItems="center" spacing={0.5}>
-							<IconButton onClick={handleDatePrev} size="small">
+							<IconButton onClick={handleDatePrev} size="small" data-testid="calendar-prev-btn">
 								<ArrowLeft2 size={matchDownSM ? 16 : 18} />
 							</IconButton>
-							<IconButton onClick={handleDateNext} size="small">
+							<IconButton onClick={handleDateNext} size="small" data-testid="calendar-next-btn">
 								<ArrowRight2 size={matchDownSM ? 16 : 18} />
 							</IconButton>
 							<Tooltip title="Ir a hoy">
-								<IconButton color="primary" onClick={handleDateToday} size="small">
+								<IconButton color="primary" onClick={handleDateToday} size="small" data-testid="calendar-today-btn">
 									<Calendar1 size={matchDownSM ? 16 : 18} variant="Bulk" />
 								</IconButton>
 							</Tooltip>
 							<Typography
 								variant={matchDownSM ? "body1" : "h6"}
 								color="textPrimary"
+								data-testid="calendar-month-title"
 								sx={{
 									fontWeight: 600,
 									ml: { xs: 1, sm: 2 },
@@ -1161,6 +1162,7 @@ const Calendar = () => {
 														color={isActive ? "primary" : "default"}
 														size="small"
 														onClick={() => handleViewChange(viewOption.value)}
+														data-testid={`calendar-view-${viewOption.value}`}
 													>
 														<Icon size={18} variant={isActive ? "Bulk" : "Linear"} />
 													</IconButton>
@@ -1175,13 +1177,13 @@ const Calendar = () => {
 							{/* Botones de acción */}
 							{canCreate && (
 								<Tooltip title="Agregar Nuevo Evento">
-									<IconButton color="primary" onClick={handleAddEventClick} size={matchDownSM ? "small" : "medium"}>
+									<IconButton color="primary" onClick={handleAddEventClick} size={matchDownSM ? "small" : "medium"} data-testid="calendar-add-btn">
 										<Add variant="Bulk" size={matchDownSM ? 20 : 24} />
 									</IconButton>
 								</Tooltip>
 							)}
 							<Tooltip title="Ver Guía">
-								<IconButton color="success" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"}>
+								<IconButton color="success" onClick={() => setGuideOpen(true)} size={matchDownSM ? "small" : "medium"} data-testid="calendar-guide-btn">
 									<InfoCircle variant="Bulk" size={matchDownSM ? 20 : 24} />
 								</IconButton>
 							</Tooltip>

@@ -923,7 +923,9 @@ class ApiService {
 		} catch (error: any) {
 			return {
 				success: false,
+				code: error.response?.data?.code,
 				message: error.response?.data?.message || "Error al cambiar el plan",
+				teamCheck: error.response?.data?.teamCheck,
 			};
 		}
 	}
@@ -940,7 +942,9 @@ class ApiService {
 		} catch (error: any) {
 			return {
 				success: false,
+				code: error.response?.data?.code,
 				message: error.response?.data?.message || "Error al programar el cambio de plan",
+				teamCheck: error.response?.data?.teamCheck,
 			};
 		}
 	}

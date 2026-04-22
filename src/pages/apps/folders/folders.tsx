@@ -480,6 +480,7 @@ function ReactTable({
 								onClick={handleAdd}
 								fullWidth={matchDownSM}
 								sx={{ textTransform: "none" }}
+								data-testid="folder-add-btn"
 							>
 								{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
 							</Button>
@@ -2140,6 +2141,7 @@ const FoldersLayout = () => {
 											color="primary"
 											disabled={disableMainActions}
 											onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}
+											data-testid="folder-edit-btn"
 										>
 											<Edit variant="Bulk" />
 										</IconButton>
@@ -2159,6 +2161,7 @@ const FoldersLayout = () => {
 													setFolderId(row.values._id);
 												})
 											}
+											data-testid="folder-delete-btn"
 										>
 											<Trash variant="Bulk" />
 										</IconButton>
@@ -2479,6 +2482,7 @@ const FoldersLayout = () => {
 						keepMounted
 						fullWidth
 						open={add}
+						onClose={handleCloseDialog}
 						sx={{
 							"& .MuiDialog-paper": {
 								p: 0,

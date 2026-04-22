@@ -226,7 +226,7 @@ function ReactTable({
 
 						{/* Botón principal (derecha) */}
 						{handleAdd && (
-							<Button variant="contained" size="small" startIcon={<Add />} onClick={handleAdd} fullWidth={matchDownSM}>
+							<Button variant="contained" size="small" startIcon={<Add />} onClick={handleAdd} fullWidth={matchDownSM} data-testid="tasks-add-btn">
 								Nueva Tarea
 							</Button>
 						)}
@@ -630,6 +630,7 @@ const Tasks = () => {
 								<Tooltip title="Editar">
 									<IconButton
 										color="primary"
+										data-testid="task-edit-btn"
 										onClick={(e: MouseEvent<HTMLButtonElement>) => {
 											e.stopPropagation();
 											handleEditTask(row.original);
@@ -643,6 +644,7 @@ const Tasks = () => {
 								<Tooltip title="Eliminar">
 									<IconButton
 										color="error"
+										data-testid="task-delete-btn"
 										onClick={(e: MouseEvent<HTMLButtonElement>) => {
 											e.stopPropagation();
 											handleDeleteClick(row.original._id, row.original.name);

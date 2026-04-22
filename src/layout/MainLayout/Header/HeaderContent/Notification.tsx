@@ -466,6 +466,7 @@ const NotificationPage = () => {
 												<IconButton
 													shape="rounded"
 													color="success"
+													data-testid="notification-mark-read-btn"
 													onClick={(e) => {
 														e.stopPropagation();
 														handleMarkAlertAsRead(notification._id);
@@ -486,6 +487,7 @@ const NotificationPage = () => {
 											<IconButton
 												shape="rounded"
 												color={notification.read ? "secondary" : "error"}
+												data-testid="notification-delete-btn"
 												onClick={(e) => {
 													e.stopPropagation(); // Evitar que el clic se propague al ListItemButton
 													handleDeleteAlert(notification._id);
@@ -581,6 +583,7 @@ const NotificationPage = () => {
 												<IconButton
 													shape="rounded"
 													color="success"
+													data-testid="notification-mark-read-btn"
 													onClick={(e) => {
 														e.stopPropagation();
 														handleMarkAlertAsRead(notification._id);
@@ -601,6 +604,7 @@ const NotificationPage = () => {
 											<IconButton
 												shape="rounded"
 												color={notification.read ? "secondary" : "error"}
+												data-testid="notification-delete-btn"
 												onClick={(e) => {
 													e.stopPropagation(); // Evitar que el clic se propague al ListItemButton
 													handleDeleteAlert(notification._id);

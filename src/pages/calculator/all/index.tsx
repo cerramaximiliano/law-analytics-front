@@ -419,7 +419,7 @@ function ReactTable({
 	const filterTypes = useMemo(() => renderFilterTypes, []);
 	const sortBy = { id: "date", desc: true };
 
-	const defaultHiddenColumns = useMemo(() => ["_id", "variables", "folderId"], []);
+	const defaultHiddenColumns = useMemo(() => ["_id", "folderId"], []);
 
 	const {
 		getTableProps,
@@ -580,6 +580,7 @@ function ReactTable({
 							startIcon={<Archive />}
 							onClick={() => onOpenArchivedModal()}
 							fullWidth={matchDownSM}
+							data-testid="calculator-archived-btn"
 						>
 							Archivados
 						</Button>
@@ -1363,6 +1364,7 @@ const AllCalculators = () => {
 											handleArchiveCalculators([row.original._id]);
 										}}
 										size="small"
+										data-testid="calculator-archive-btn"
 									>
 										<Archive variant="Bulk" />
 									</IconButton>
@@ -1377,6 +1379,7 @@ const AllCalculators = () => {
 											handleDeleteCalculator(row.original._id, row.original.folderName || "Cálculo");
 										}}
 										size="small"
+										data-testid="calculator-delete-btn"
 									>
 										<Trash variant="Bulk" />
 									</IconButton>

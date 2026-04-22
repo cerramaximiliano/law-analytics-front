@@ -104,6 +104,7 @@ const SubscriptionError = () => {
 								size={matchDownSM ? "medium" : "large"}
 								fullWidth={matchDownSM}
 								startIcon={<RefreshSquare size={20} />}
+								data-testid="sub-error-retry-btn"
 							>
 								Intentar Nuevamente
 							</Button>

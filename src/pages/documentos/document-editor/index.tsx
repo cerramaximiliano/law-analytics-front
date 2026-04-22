@@ -838,11 +838,11 @@ const DocumentEditorPage = () => {
 										onBlur={() => setEditingTitle(false)}
 										onKeyDown={(e) => e.key === "Enter" && setEditingTitle(false)}
 										autoFocus
-										inputProps={{ maxLength: 160 }}
+										inputProps={{ maxLength: 160, "data-testid": "editor-title-input" }}
 										sx={{ minWidth: 220 }}
 									/>
 								) : (
-									<Typography variant="body2" fontWeight={600} noWrap onClick={() => setEditingTitle(true)}
+									<Typography variant="body2" fontWeight={600} noWrap onClick={() => setEditingTitle(true)} data-testid="editor-title-text"
 										sx={{
 											cursor: "text",
 											minWidth: 0,
@@ -888,6 +888,7 @@ const DocumentEditorPage = () => {
 										onClick={handleSave}
 										disabled={saving}
 										startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <Save2 size={15} />}
+										data-testid="editor-save-btn"
 									>
 										{saving ? "Guardando..." : "Guardar"}
 									</Button>

@@ -342,14 +342,14 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 			</DialogContent>
 
 			<DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
-				<Button variant="text" color="secondary" onClick={handleBlank}>
+				<Button variant="text" color="secondary" onClick={handleBlank} data-testid="picker-blank-btn">
 					Continuar sin modelo
 				</Button>
 				<Stack direction="row" spacing={1}>
 					<Button variant="outlined" onClick={onClose}>
 						Cancelar
 					</Button>
-					<Button variant="contained" onClick={handleContinue} disabled={!selected}>
+					<Button variant="contained" onClick={handleContinue} disabled={!selected} data-testid="picker-continue-btn">
 						Crear documento
 					</Button>
 				</Stack>
@@ -1028,6 +1028,7 @@ const EscritosPage = () => {
 							startIcon={<Add size={16} />}
 							endIcon={<ArrowDown2 size={14} />}
 							onClick={(e) => setNewDocMenuAnchor(e.currentTarget)}
+							data-testid="escritos-new-btn"
 						>
 							Nuevo documento
 						</Button>
@@ -1039,6 +1040,7 @@ const EscritosPage = () => {
 									setOpenCreatePostal(true);
 								}}
 								sx={{ py: 1.5 }}
+								data-testid="escritos-new-postal"
 							>
 								<Stack spacing={0.25}>
 									<Typography variant="body2" fontWeight={500}>
@@ -1057,6 +1059,7 @@ const EscritosPage = () => {
 									setOpenTemplatePicker(true);
 								}}
 								sx={{ py: 1.5 }}
+								data-testid="escritos-new-richtext"
 							>
 								<Stack spacing={0.25}>
 									<Typography variant="body2" fontWeight={500}>
@@ -1225,7 +1228,7 @@ const EscritosPage = () => {
 														</>
 													) : (
 														<Tooltip title="Ver / Editar documento">
-															<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}>
+															<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
 																<Eye size={15} />
 															</IconButton>
 														</Tooltip>
@@ -1244,6 +1247,7 @@ const EscritosPage = () => {
 															size="small"
 															color="error"
 															onClick={() => setDeleteTarget({ kind: row.kind, id: row.id, title: row.title })}
+															data-testid="escritos-delete-btn"
 														>
 															<Trash size={15} />
 														</IconButton>

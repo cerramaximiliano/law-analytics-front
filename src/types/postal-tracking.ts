@@ -63,6 +63,8 @@ export interface PostalTrackingFilters {
   search?: string;
   sortBy?: "label" | "createdAt";
   sortOrder?: "asc" | "desc";
+  /** Filtra trackings del team indicado (team mode) */
+  groupId?: string;
 }
 
 export interface CreatePostalTrackingData {
@@ -75,6 +77,8 @@ export interface CreatePostalTrackingData {
   notificationId?: string;
   documentId?: string;
   screenshotEnabled?: boolean;
+  /** Cuando se crea en team mode, el backend asigna userId=ownerEffective, createdBy=caller */
+  groupId?: string;
 }
 
 export interface UpdatePostalTrackingData {

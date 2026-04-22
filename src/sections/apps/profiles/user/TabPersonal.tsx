@@ -32,6 +32,7 @@ import MainCard from "components/MainCard";
 import countries from "data/countries";
 import { dispatch, useSelector } from "store";
 import { updateUserProfile } from "store/reducers/auth"; // Importamos la acción
+import ResourceUsageWidget from "sections/widget/chart/ResourceUsageWidget";
 
 // assets
 import dayjs from "utils/dayjs-config";
@@ -535,6 +536,10 @@ const TabPersonal = () => {
 					</form>
 				)}
 			</Formik>
+			<Divider />
+			<Box sx={{ p: 2.5 }} data-testid="profile-personal-usage">
+				<ResourceUsageWidget title="Uso de Recursos" />
+			</Box>
 		</MainCard>
 	);
 };

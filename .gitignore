@@ -130,3 +130,7 @@ tests/playwright-report/
 tests/test-results/
 test-results/
 playwright-report/
+
+# UX audit — commit audit.md, ignore heavy artifacts
+ux-reports/**/screenshots/
+ux-reports/**/.playwright-output/

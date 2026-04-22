@@ -66,7 +66,18 @@ const AddEditPostalTracking = ({ tracking, onCancel, showSnackbar }: Props) => {
     }
   }, [folders.length, user?._id]);
 
+  // Capa 3: si el backend responde 403 + limitInfo, ServerContext dispara este evento.
+  // Cerramos el modal para que el LimitErrorModal global tome el control.
+  useEffect(() => {
+    const handlePlanRestriction = () => {
+      onCancel();
+    };
+    window.addEventListener("planRestrictionError", handlePlanRestriction);
+    return () => window.removeEventListener("planRestrictionError", handlePlanRestriction);
+  }, [onCancel]);
+
   const formik = useFormik({
+    enableReinitialize: true,
     initialValues: {
       codeId: tracking?.codeId || "CD",
       numberId: tracking?.numberId || "",

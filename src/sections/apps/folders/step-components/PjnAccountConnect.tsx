@@ -831,6 +831,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
                     onClick={handleResync}
                     title="Re-sincronizar"
                     disabled={!credentialsStatus.enabled || isCredentialError}
+                    data-testid="pjn-resync-btn"
                   >
                     <Refresh2 size={18} />
                   </IconButton>
@@ -876,6 +877,7 @@ const PjnAccountConnect = forwardRef<PjnAccountConnectRef, PjnAccountConnectProp
                   startIcon={<Refresh2 size={16} />}
                   onClick={handleResync}
                   disabled={!credentialsStatus.enabled}
+                  data-testid="pjn-resync-retry-btn"
                 >
                   Reintentar sincronización
                 </Button>
