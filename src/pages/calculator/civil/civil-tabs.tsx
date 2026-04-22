@@ -160,7 +160,7 @@ export default function CivilTabs() {
 							</Typography>
 						</Box>
 						<Divider />
-						<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+						<ResarcimientoWizard method="vuoto" folder={currentFolder} onFolderChange={handleFolderChange} />
 					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={3}>
@@ -174,7 +174,7 @@ export default function CivilTabs() {
 							</Typography>
 						</Box>
 						<Divider />
-						<ResarcimientoWizard folder={currentFolder} onFolderChange={handleFolderChange} />
+						<ResarcimientoWizard method="mendez" folder={currentFolder} onFolderChange={handleFolderChange} />
 					</Stack>
 				</TabPanel>
 				<TabPanel value={value} index={4}>

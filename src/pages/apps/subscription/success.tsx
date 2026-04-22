@@ -21,6 +21,7 @@ import {
 	ListItem,
 	ListItemIcon,
 	ListItemText,
+	Skeleton,
 	alpha,
 } from "@mui/material";
 
@@ -32,7 +33,6 @@ import { openSnackbar } from "store/reducers/snackbar";
 import { fetchUserStats } from "store/reducers/userStats";
 import { updateUser } from "store/reducers/auth";
 import ApiService from "store/reducers/ApiService";
-import { cleanPlanDisplayName } from "utils/planPricingUtils";
 
 // assets
 import {
@@ -80,6 +80,9 @@ const SubscriptionSuccess = () => {
 	const [redirectCountdown, setRedirectCountdown] = useState(10);
 	const [planDetails, setPlanDetails] = useState<any>(null);
 	const [loadingPlanDetails, setLoadingPlanDetails] = useState(true);
+	const [redirectCancelled, setRedirectCancelled] = useState(false);
+	const redirectTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+	const redirectIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
 	const user = useSelector((state) => state.auth.user);
 	const userStats = useSelector((state) => state.userStats.data);
@@ -167,18 +170,26 @@ const SubscriptionSuccess = () => {
 		setTimeout(() => setShowFeatures(true), 800);
 
 		// Countdown para redirección automática
-		const timer = setInterval(() => {
+		const interval = setInterval(() => {
 			setRedirectCountdown((prev) => {
 				if (prev <= 1) {
-					clearInterval(timer);
-					navigate("/dashboard/default");
+					clearInterval(interval);
 					return 0;
 				}
 				return prev - 1;
 			});
 		}, 1000);
+		redirectIntervalRef.current = interval;
 
-		return () => clearInterval(timer);
+		const redirectTimer = setTimeout(() => {
+			navigate("/dashboard/default");
+		}, 10000);
+		redirectTimerRef.current = redirectTimer;
+
+		return () => {
+			clearInterval(interval);
+			clearTimeout(redirectTimer);
+		};
 	}, [navigate, planId]);
 
 	// Características del plan - usar datos dinámicos o fallback
@@ -194,11 +205,8 @@ const SubscriptionSuccess = () => {
 			});
 		}
 
-		// Fallback: características genéricas mientras carga
-		return [
-			{ icon: <Crown />, text: "Cargando características del plan..." },
-			{ icon: <Flash />, text: "Un momento por favor" },
-		];
+		// Sin fallback: se muestran Skeletons en el JSX mientras carga
+		return [];
 	}, [planDetails]);
 
 	return (
@@ -284,14 +292,16 @@ const SubscriptionSuccess = () => {
 											<Typography variant="body1" color="success.dark" sx={{ mt: 1 }}>
 												{user?.firstName} {user?.lastName}
 											</Typography>
-											{(planDetails?.name || userStats?.planInfo?.planName) && (
+											{loadingPlanDetails ? (
+												<Skeleton variant="rounded" width={100} height={28} sx={{ mt: 2, mx: "auto" }} />
+											) : planDetails ? (
 												<Chip
-													label={planDetails?.name || cleanPlanDisplayName(userStats?.planInfo?.planName || "")}
+													label={planDetails.name}
 													color="success"
 													sx={{ mt: 2, fontWeight: 600 }}
 													icon={<Crown size={16} />}
 												/>
-											)}
+											) : null}
 										</Box>
 									</Zoom>
 								</Grid>
@@ -342,71 +352,97 @@ const SubscriptionSuccess = () => {
 													Lo que incluye tu plan:
 												</Typography>
 												<List sx={{ p: 0 }}>
-													{planFeatures.map((feature: any, index: number) => (
-														<Zoom
-															in={showFeatures}
-															timeout={1500 + index * 200}
-															key={index}
-															style={{ transitionDelay: `${index * 100}ms` }}
-														>
-															<ListItem
-																sx={{
-																	p: 1,
-																	mb: 1,
-																	borderRadius: 2,
-																	transition: "all 0.3s",
-																	"&:hover": {
-																		bgcolor: alpha(theme.palette.success.lighter, 0.2),
-																		transform: "translateX(8px)",
-																	},
-																}}
-															>
+													{loadingPlanDetails
+														? [70, 55, 65].map((w, i) => (
+															<ListItem key={i} sx={{ p: 1, mb: 1 }}>
 																<ListItemIcon sx={{ minWidth: 40 }}>
-																	<Avatar
-																		size="sm"
-																		sx={{
-																			bgcolor: alpha(theme.palette.success.main, 0.1),
-																			color: theme.palette.success.main,
-																		}}
-																	>
-																		{React.cloneElement(feature.icon, { size: 18 })}
-																	</Avatar>
+																	<Skeleton variant="circular" width={32} height={32} />
 																</ListItemIcon>
-																<ListItemText
-																	primary={feature.text}
-																	primaryTypographyProps={{
-																		variant: "body2",
-																		sx: { fontWeight: 500 },
-																	}}
-																/>
+																<ListItemText primary={<Skeleton variant="text" width={`${w}%`} height={24} />} />
 															</ListItem>
-														</Zoom>
-													))}
+														))
+														: planFeatures.map((feature: any, index: number) => (
+															<Zoom
+																in={showFeatures}
+																timeout={1500 + index * 200}
+																key={index}
+																style={{ transitionDelay: `${index * 100}ms` }}
+															>
+																<ListItem
+																	sx={{
+																		p: 1,
+																		mb: 1,
+																		borderRadius: 2,
+																		transition: "all 0.3s",
+																		"&:hover": {
+																			bgcolor: alpha(theme.palette.success.lighter, 0.2),
+																			transform: "translateX(8px)",
+																		},
+																	}}
+																>
+																	<ListItemIcon sx={{ minWidth: 40 }}>
+																		<Avatar
+																			size="sm"
+																			sx={{
+																				bgcolor: alpha(theme.palette.success.main, 0.1),
+																				color: theme.palette.success.main,
+																			}}
+																		>
+																			{React.cloneElement(feature.icon, { size: 18 })}
+																		</Avatar>
+																	</ListItemIcon>
+																	<ListItemText
+																		primary={feature.text}
+																		primaryTypographyProps={{
+																			variant: "body2",
+																			sx: { fontWeight: 500 },
+																		}}
+																	/>
+																</ListItem>
+															</Zoom>
+														))
+													}
 												</List>
 											</Box>
 										</Fade>
 
 										{/* Barra de progreso y botones */}
 										<Box sx={{ width: "100%", mt: 3 }}>
-											<Box sx={{ mb: 2 }}>
-												<Typography variant="caption" color="textSecondary">
-													Redirigiendo al dashboard en {redirectCountdown} segundos...
-												</Typography>
-												<LinearProgress
-													variant="determinate"
-													value={100 - redirectCountdown * 10}
-													sx={{
-														mt: 1,
-														height: 6,
-														borderRadius: 3,
-														bgcolor: alpha(theme.palette.success.main, 0.1),
-														"& .MuiLinearProgress-bar": {
+											{!redirectCancelled && (
+												<Box sx={{ mb: 2 }}>
+													<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+														<Typography variant="caption" color="textSecondary">
+															Redirigiendo en {redirectCountdown}s
+														</Typography>
+														<Button
+															size="small"
+															variant="text"
+															color="inherit"
+															sx={{ fontSize: "0.7rem", p: 0, minWidth: "auto", color: "text.secondary" }}
+															onClick={() => {
+																if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+																if (redirectIntervalRef.current) clearInterval(redirectIntervalRef.current);
+																setRedirectCancelled(true);
+															}}
+														>
+															Cancelar
+														</Button>
+													</Stack>
+													<LinearProgress
+														variant="determinate"
+														value={100 - redirectCountdown * 10}
+														sx={{
+															height: 6,
 															borderRadius: 3,
-															background: `linear-gradient(90deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
-														},
-													}}
-												/>
-											</Box>
+															bgcolor: alpha(theme.palette.success.main, 0.1),
+															"& .MuiLinearProgress-bar": {
+																borderRadius: 3,
+																background: `linear-gradient(90deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
+															},
+														}}
+													/>
+												</Box>
+											)}
 
 											<Stack direction={matchDownSM ? "column" : "row"} spacing={2} sx={{ width: matchDownSM ? "100%" : "auto" }}>
 												<Button

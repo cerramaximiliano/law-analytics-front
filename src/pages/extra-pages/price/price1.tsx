@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect } from "react";
 
 // material-ui
 import { useTheme } from "@mui/material/styles";
@@ -13,7 +13,6 @@ import {
 	ListItemText,
 	Divider,
 	Stack,
-	Switch,
 	Typography,
 	CircularProgress,
 	Alert,
@@ -26,6 +25,12 @@ import {
 	RadioGroup,
 	FormControl,
 	Paper,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
 } from "@mui/material";
 
 // icons
@@ -93,11 +98,6 @@ const Pricing = () => {
 			currentPeriodEnd: subscriptionData?.currentPeriodEnd ?? prev?.currentPeriodEnd,
 		}));
 
-		console.log("📋 Suscripción actualizada:", {
-			plan: newPlanId,
-			cancelAtPeriodEnd: subscriptionData?.cancelAtPeriodEnd,
-			currentPeriodEnd: subscriptionData?.currentPeriodEnd,
-		});
 	};
 
 	// Obtener los planes al cargar el componente
@@ -131,11 +131,6 @@ const Pricing = () => {
 						// El planId está en el campo "plan" de la suscripción
 						setCurrentPlanId(responseData.subscription.plan);
 
-						console.log("📋 Suscripción actual:", {
-							plan: responseData.subscription.plan,
-							cancelAtPeriodEnd: responseData.subscription.cancelAtPeriodEnd,
-							currentPeriodEnd: responseData.subscription.currentPeriodEnd,
-						});
 					}
 				} catch (err) {
 					// No mostramos error si falla esto, solo para el listado de planes
@@ -840,25 +835,76 @@ const Pricing = () => {
 		<Grid container spacing={3}>
 			{!isDevelopment && (
 				<Grid item xs={12}>
-					<Stack spacing={2} direction={{ xs: "column", md: "row" }} justifyContent="space-between">
-						<Stack spacing={0}></Stack>
-						<Stack direction="row" spacing={1.5} alignItems="center">
-							<Typography variant="subtitle1" color={timePeriod ? "textSecondary" : "textPrimary"}>
-								Cobro Anual
-							</Typography>
-							<Switch
-								checked={timePeriod}
-								onChange={() => setTimePeriod(!timePeriod)}
-								inputProps={{ "aria-label": "container" }}
-								disabled
-							/>
-							<Typography variant="subtitle1" color={timePeriod ? "textPrimary" : "textSecondary"}>
-								Cobro Mensual
-							</Typography>
-						</Stack>
+					<Stack direction="row" justifyContent="flex-end">
+						<Chip
+							label="Facturación anual — próximamente"
+							color="info"
+							size="small"
+							variant="outlined"
+						/>
 					</Stack>
 				</Grid>
 			)}
+			{/* Tabla resumen para mobile — evita ~2800px de scroll vertical */}
+			{plans.length > 0 && (
+				<Grid item xs={12} sx={{ display: { xs: "block", md: "none" } }}>
+					<TableContainer component={Paper} variant="outlined" sx={{ overflowX: "auto", mb: 1 }}>
+						<Table size="small">
+							<TableHead>
+								<TableRow>
+									<TableCell sx={{ fontWeight: 700 }}>Recurso</TableCell>
+									{plans.map((p) => (
+										<TableCell key={p.planId} align="center" sx={{ fontWeight: 700 }}>
+											{cleanPlanDisplayName(p.displayName)}
+											{currentPlanId === p.planId && (
+												<Chip label="Actual" color="primary" size="small" sx={{ ml: 0.5, height: 16, fontSize: "0.6rem" }} />
+											)}
+										</TableCell>
+									))}
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{(() => {
+									// Recolectar los primeros 5 recursos visibles del plan más completo
+									const currentEnv = import.meta.env.PROD ? "production" : "development";
+									const isVisibleInCurrentEnv = (visibility: string | undefined) => {
+										if (!visibility || visibility === "all") return true;
+										if (visibility === "none") return false;
+										return visibility === currentEnv;
+									};
+									const allResourceNames = Array.from(
+										new Set(
+											plans.flatMap((p) =>
+												p.resourceLimits
+													.filter((r) => isVisibleInCurrentEnv(r.visibility))
+													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+													.slice(0, 5)
+													.map((r) => r.name),
+											),
+										),
+									).slice(0, 5);
+									return allResourceNames.map((resourceName) => (
+										<TableRow key={resourceName}>
+											<TableCell>
+												{plans[0]?.resourceLimits.find((r) => r.name === resourceName)?.displayName ?? resourceName}
+											</TableCell>
+											{plans.map((p) => {
+												const resource = p.resourceLimits.find((r) => r.name === resourceName);
+												return (
+													<TableCell key={p.planId} align="center">
+														{resource ? resource.limit : "—"}
+													</TableCell>
+												);
+											})}
+										</TableRow>
+									));
+								})()}
+							</TableBody>
+						</Table>
+					</TableContainer>
+				</Grid>
+			)}
+
 			<Grid item container spacing={3} xs={12} alignItems="center">
 				{plans.map((plan) => {
 					// Determinar si este es el plan activo del usuario
@@ -876,23 +922,6 @@ const Pricing = () => {
 						currentPlanId !== "free" &&
 						(currentPlanId === "standard" || currentPlanId === "premium") &&
 						!isAlreadyCanceled;
-
-					// Debug: mostrar información del plan y validación
-					if (plan.planId === "free") {
-						console.log("🔍 Plan Free - Validación de cancelación:", {
-							currentPlanId,
-							isAlreadyCanceled,
-							isDowngradeToFree,
-							currentPeriodEnd: currentSubscription?.currentPeriodEnd,
-							validations: {
-								isPlanFree: plan.planId === "free",
-								hasCurrentPlan: !!currentPlanId,
-								isNotFreePlan: currentPlanId !== "free",
-								isPaidPlan: currentPlanId === "standard" || currentPlanId === "premium",
-								notCanceled: !isAlreadyCanceled,
-							},
-						});
-					}
 
 					// Obtener la información de precios según el entorno
 					const pricing = getPlanPricing(plan);
@@ -1027,7 +1056,7 @@ const Pricing = () => {
 																? "error"
 																: getButtonColor(plan.planId, isCurrentPlan)
 														}
-														variant={isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined"}
+														variant={!isCurrentPlan && (plan.planId === "standard" || plan.planId === "premium") ? "contained" : "outlined"}
 														fullWidth
 														disabled={
 															!plan.isActive ||

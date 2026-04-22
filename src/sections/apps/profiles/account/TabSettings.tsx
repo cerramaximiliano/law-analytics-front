@@ -31,7 +31,11 @@ import {
 	TableRow,
 } from "@mui/material";
 
+// assets
+import { ReceiptItem, Calendar, Timer1 } from "iconsax-react";
+
 // project-imports
+import { useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import ApiService from "store/reducers/ApiService";
 import { Payment } from "store/reducers/ApiService";
@@ -74,6 +78,7 @@ const getStripeValue = (value: any): string => {
 };
 
 const TabSubscription = () => {
+	const theme = useTheme();
 	const dispatch = useDispatch<AppDispatch>();
 	const navigate = useNavigate();
 
@@ -1410,9 +1415,7 @@ const TabSubscription = () => {
 															mb: 0.5,
 														}}
 													>
-														<Typography variant="h5" color="primary.dark">
-															P
-														</Typography>
+														<ReceiptItem aria-hidden="true" size={24} color={theme.palette.primary.dark} />
 													</Box>
 													<Typography color="text.secondary" variant="body2" fontWeight={500}>
 														Plan anterior
@@ -1447,9 +1450,7 @@ const TabSubscription = () => {
 															mb: 0.5,
 														}}
 													>
-														<Typography variant="h5" color="error.dark">
-															F
-														</Typography>
+														<Calendar aria-hidden="true" size={24} color={theme.palette.error.dark} />
 													</Box>
 													<Typography color="text.secondary" variant="body2" fontWeight={500}>
 														Fecha límite
@@ -1484,9 +1485,7 @@ const TabSubscription = () => {
 															mb: 0.5,
 														}}
 													>
-														<Typography variant="h5" color={getGracePeriodInfo()?.isExpiringSoon ? "error.dark" : "text.primary"}>
-															D
-														</Typography>
+														<Timer1 aria-hidden="true" size={24} color={getGracePeriodInfo()?.isExpiringSoon ? theme.palette.error.dark : theme.palette.text.primary} />
 													</Box>
 													<Typography color="text.secondary" variant="body2" fontWeight={500}>
 														Días restantes
@@ -2244,7 +2243,23 @@ const TabSubscription = () => {
 							</Box>
 						) : (
 							<>
-								<Box sx={{ overflowX: "auto" }}>
+								<Box
+									sx={{
+										overflowX: "auto",
+										position: "relative",
+										"&::after": {
+											content: '""',
+											position: "absolute",
+											top: 0,
+											right: 0,
+											bottom: 0,
+											width: 40,
+											pointerEvents: "none",
+											background: "linear-gradient(to left, rgba(0,0,0,0.08), transparent)",
+											display: { xs: "block", md: "none" },
+										},
+									}}
+								>
 									<TableContainer
 										sx={{
 											borderRadius: 2,

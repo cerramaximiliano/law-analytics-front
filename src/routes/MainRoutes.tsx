@@ -269,8 +269,12 @@ const MainRoutes = {
 											element: <AccountTabRole />,
 										},
 										{
-											path: "settings",
+											path: "subscription",
 											element: <AccountTabSettings />,
+										},
+										{
+											path: "settings",
+											element: <Navigate to="/apps/profiles/account/subscription" replace />,
 										},
 										{
 											path: "pjn",

@@ -152,7 +152,7 @@ export default function LaborTabs() {
 						value={value}
 						onChange={handleChange}
 						variant="scrollable"
-						scrollButtons="auto"
+						scrollButtons={true}
 						aria-label="basic tabs example"
 						sx={{ flex: 1 }}
 					>

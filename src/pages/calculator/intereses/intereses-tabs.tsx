@@ -157,7 +157,7 @@ export default function InteresesTabs() {
 						aria-label="basic tabs example"
 						sx={{ flex: 1 }}
 					>
-						<Tab label="Cáculo Intereses" icon={<Calculator />} iconPosition="start" {...a11yProps(0)} />
+						<Tab label="Cálculo de intereses" icon={<Calculator />} iconPosition="start" {...a11yProps(0)} />
 						<Tab label="Guardados" icon={<DocumentCloud />} iconPosition="start" {...a11yProps(1)} />
 					</Tabs>
 					{shouldShowFolderName && (
