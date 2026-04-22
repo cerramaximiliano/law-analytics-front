@@ -138,3 +138,7 @@ ux-reports/**/.playwright-output/
 # Overflow detection — resultados temporales del test, reporte agregado (el test lo regenera)
 tests/.overflow-results/
 tests/ux-overflow-report.json
+
+# Layout detection — resultados temporales del test, reporte agregado
+tests/.layout-results/
+tests/ux-layout-report.json

@@ -361,7 +361,7 @@ const ModelosPage = () => {
 
   return (
     <MainCard title="Modelos">
-      <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+      <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
         <Tab
           label={
             <Stack direction="row" alignItems="center" spacing={1}>

@@ -377,9 +377,15 @@ const PostalTrackingPage = () => {
         </Stack>
       }
       secondary={
-        <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate} size="small" disabled={isCheckingLimit} data-testid="postal-add-btn">
-          Nuevo seguimiento
-        </Button>
+        isMobile ? (
+          <IconButton color="primary" onClick={handleOpenCreate} disabled={isCheckingLimit} data-testid="postal-add-btn" aria-label="Nuevo seguimiento" sx={{ border: 1, borderColor: "primary.main" }}>
+            <Add size={18} />
+          </IconButton>
+        ) : (
+          <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate} size="small" disabled={isCheckingLimit} data-testid="postal-add-btn">
+            Nuevo seguimiento
+          </Button>
+        )
       }
     >
       {/* Barra de búsqueda — solo si hay datos o se está buscando */}
@@ -550,7 +556,7 @@ const PostalTrackingPage = () => {
                     </Stack>
 
                     {/* Estados: proceso + envío */}
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pb: 1 }} flexWrap="wrap">
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pb: 1 }} useFlexGap flexWrap="wrap" rowGap={1}>
                       <Chip
                         size="small"
                         label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}

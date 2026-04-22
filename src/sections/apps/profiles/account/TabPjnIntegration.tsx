@@ -79,7 +79,7 @@ const TabPjnIntegration = () => {
 			<Grid item xs={12} md={6}>
 				<MainCard
 					title={
-						<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+						<Stack direction="row" alignItems="center" spacing={1} useFlexGap flexWrap="wrap" rowGap={1}>
 							<Link1 size={22} color={theme.palette.primary.main} />
 							<Typography variant="h5">Integración PJN</Typography>
 							{isConnected !== null && (
