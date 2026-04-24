@@ -1904,8 +1904,17 @@ const FoldersLayout = () => {
 						);
 					}
 
-					// Si la causa no fue encontrada en el portal PJN en el último sync
-					if (folder.pjn === true && folder.pjnNotFound === true) {
+					// La causa fue removida del listado del portal origen.
+					// Soporta el flag nuevo (listRemoved + listRemovedSource) y el legacy
+					// (pjnNotFound) durante la transición.
+					const isListRemoved =
+						folder.listRemoved === true ||
+						(folder.pjn === true && folder.pjnNotFound === true);
+					if (isListRemoved) {
+						const source = folder.listRemovedSource
+							? folder.listRemovedSource.toUpperCase()
+							: "PJN";
+						const tooltipCopy = `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Tooltip title={value || ""}>
@@ -1922,7 +1931,7 @@ const FoldersLayout = () => {
 										{formatFolderName(value, 50)}
 									</span>
 								</Tooltip>
-								<Tooltip title="Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.">
+								<Tooltip title={tooltipCopy}>
 									<IconButton
 										size="small"
 										onClick={(e) => e.stopPropagation()}

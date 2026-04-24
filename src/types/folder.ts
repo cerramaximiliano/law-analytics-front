@@ -92,7 +92,12 @@ export type FolderData = {
 	causaIsValid?: boolean; // Indica si la causa es válida
 	causaUpdateEnabled?: boolean; // Indica si las actualizaciones están habilitadas
 	causaAssociationStatus?: string; // Estado de asociación (success, pending, pending_selection, failed)
-	pjnNotFound?: boolean; // Indica si la causa no fue encontrada en el último sync del portal PJN
+	/** @deprecated usar listRemoved + listRemovedSource='pjn'. Se mantiene temporalmente por compat. */
+	pjnNotFound?: boolean;
+	/** La causa ya no aparece en el listado del portal origen. Generalizado para PJN/SCBA/MEV/EJE. */
+	listRemoved?: boolean;
+	listRemovedAt?: string;
+	listRemovedSource?: "pjn" | "scba" | "mev" | "eje";
 	causaLastSyncDate?: string; // Fecha de última sincronización
 	lastMovementDate?: string; // Fecha del último movimiento
 	// Campos para selección múltiple de causas (EJE/MEV)

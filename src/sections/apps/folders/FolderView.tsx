@@ -29,6 +29,14 @@ const FolderView = memo(({ data }: any) => {
 	// Detectar si hay selección pendiente de causas (múltiples resultados)
 	const hasPendingSelection = data.causaAssociationStatus === "pending_selection";
 
+	// La causa fue removida del listado del portal origen.
+	// Soporta el flag nuevo (listRemoved + listRemovedSource) y el legacy
+	// (pjnNotFound) para compat durante el período de transición.
+	const isListRemovedPjn = (data.listRemoved === true && data.listRemovedSource === "pjn") || data.pjnNotFound === true;
+	const isListRemovedScba = data.listRemoved === true && data.listRemovedSource === "scba";
+	const listRemovedCopyPjn = "Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.";
+	const listRemovedCopyScba = 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.';
+
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
 
@@ -163,23 +171,23 @@ const FolderView = memo(({ data }: any) => {
 											display: "flex",
 											alignItems: "center",
 											gap: 0.75,
-											bgcolor: data.pjnNotFound
+											bgcolor: isListRemovedPjn
 												? alpha(theme.palette.warning.main, 0.1)
 												: alpha(theme.palette.success.main, 0.1),
-											border: `1px solid ${data.pjnNotFound ? theme.palette.warning.main : theme.palette.success.main}`,
+											border: `1px solid ${isListRemovedPjn ? theme.palette.warning.main : theme.palette.success.main}`,
 											borderRadius: 0.5,
 										}}
 									>
 										<ExportSquare
 											size={16}
 											variant="Bold"
-											color={data.pjnNotFound ? theme.palette.warning.main : theme.palette.success.main}
+											color={isListRemovedPjn ? theme.palette.warning.main : theme.palette.success.main}
 										/>
 										<Typography
 											variant="body2"
 											sx={{
 												fontWeight: 500,
-												color: data.pjnNotFound ? theme.palette.warning.dark : theme.palette.success.dark,
+												color: isListRemovedPjn ? theme.palette.warning.dark : theme.palette.success.dark,
 												fontSize: "0.8125rem",
 											}}
 										>
@@ -187,10 +195,10 @@ const FolderView = memo(({ data }: any) => {
 										</Typography>
 									</Box>
 									{/* Ícono de estado de verificación */}
-									{(data.pjnNotFound || data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
+									{(isListRemovedPjn || data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
 										<Tooltip
 											title={
-												data.pjnNotFound
+												isListRemovedPjn
 													? "Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
 													: data.causaVerified === false
 													? "Pendiente de verificación"
@@ -214,7 +222,7 @@ const FolderView = memo(({ data }: any) => {
 													boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 												}}
 											>
-												{data.pjnNotFound ? (
+												{isListRemovedPjn ? (
 													<Warning2 size={18} variant="Bold" color={theme.palette.warning.main} />
 												) : data.causaVerified === false ? (
 													<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
