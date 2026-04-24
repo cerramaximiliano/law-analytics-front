@@ -7,6 +7,7 @@ import { openSnackbar } from "store/reducers/snackbar";
 // Importamos correctamente las acciones
 import { ADD_MULTIPLE_ALERTS, ADD_ALERT } from "store/reducers/alerts";
 import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from "store/reducers/pjnSync";
+import { scbaSyncStarted, scbaSyncProgress, scbaSyncCompleted, scbaSyncError } from "store/reducers/scbaSync";
 import { movementsSyncStarted, movementsSyncCompleted } from "store/reducers/movementsSync";
 import { getFoldersByUserId } from "store/reducers/folder";
 import { Alert } from "types/alert";
@@ -87,19 +88,52 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 			if (message.type === "FOLDER_UPDATE") {
 				if (message.payload?.newFolders && Array.isArray(message.payload.newFolders)) {
 					const newFolders = message.payload.newFolders as FolderData[];
+					const source: "pjn" | "scba" = message.payload?.source ?? "pjn";
+					const label = source === "scba" ? "SCBA" : "PJN";
 					newFolders.forEach((folder) => {
 						dispatch({ type: "UPSERT_FOLDER", payload: folder });
 					});
 					if (newFolders.length === 1) {
-						showNotification(`Carpeta PJN agregada: ${newFolders[0].folderName || "Nueva carpeta"}`, "info");
+						showNotification(`Carpeta ${label} agregada: ${newFolders[0].folderName || "Nueva carpeta"}`, "info");
 					} else {
-						showNotification(`${newFolders.length} carpetas PJN agregadas`, "info");
+						showNotification(`${newFolders.length} carpetas ${label} agregadas`, "info");
 					}
 				}
 			}
 
 			if (message.type === "SYNC_PROGRESS") {
 				const p = message.payload as any;
+				const source: "pjn" | "scba" = p?.source ?? "pjn";
+				const label = source === "scba" ? "SCBA" : "PJN";
+
+				if (source === "scba") {
+					if (p?.phase === "started") {
+						dispatch(scbaSyncStarted({ progress: p.progress, message: p.message, force: true }));
+					} else if (p?.phase === "completed") {
+						dispatch(scbaSyncCompleted({ foldersCreated: p.newFolders ?? 0, newCausas: p.newCausas ?? 0 }));
+						if (userId) {
+							dispatch(getFoldersByUserId(userId, true) as any);
+						}
+						showNotification(`Sincronización ${label} completada: ${p.newCausas ?? 0} causas procesadas`, "success");
+					} else if (p?.phase === "error") {
+						dispatch(scbaSyncError({ message: p.message ?? "Error en sincronización SCBA" }));
+						showNotification(`Error en sincronización ${label}: ${p.message ?? "Error desconocido"}`, "error");
+					} else if (p?.phase) {
+						dispatch(scbaSyncProgress({
+							progress: p.progress ?? 0,
+							message: p.message ?? "",
+							phase: p.phase,
+							currentPage: p.currentPage,
+							totalPages: p.totalPages,
+							causasProcessed: p.causasProcessed,
+							totalExpected: p.totalExpected,
+							causasFound: p.causasFound,
+						}));
+					}
+					return;
+				}
+
+				// source === 'pjn' (comportamiento existente, sin cambios)
 				if (p?.phase === "started") {
 					dispatch(pjnSyncStarted({ progress: p.progress, message: p.message, force: true }));
 				} else if (p?.phase === "completed") {

@@ -379,20 +379,33 @@ class WebSocketService {
 			});
 		});
 
-		// Escuchar folders creados desde workers PJN
-		this.socket.on("folders_created", (folders: any[]) => {
-			if (!Array.isArray(folders) || folders.length === 0) return;
-			this.log(`${folders.length} folder(s) PJN recibido(s) via WS`);
+		// Escuchar folders creados desde workers (PJN o SCBA).
+		// Retrocompat: la forma previa era un array directo de folders; la nueva
+		// es { folders, source } para discriminar origen. Soportamos ambas.
+		this.socket.on("folders_created", (data: any) => {
+			let folders: any[];
+			let source: "pjn" | "scba" = "pjn";
+			if (Array.isArray(data)) {
+				folders = data;
+			} else {
+				folders = data?.folders ?? [];
+				source = data?.source ?? "pjn";
+			}
+			if (folders.length === 0) return;
+			this.log(`${folders.length} folder(s) ${source.toUpperCase()} recibido(s) via WS`);
 			this.handleMessage({
 				type: "FOLDER_UPDATE",
-				payload: { newFolders: folders },
+				payload: { newFolders: folders, source },
 				timestamp: new Date().toISOString(),
 			});
 		});
 
-		// Escuchar progreso de sincronización PJN desde workers
+		// Escuchar progreso de sincronización (PJN o SCBA) desde workers.
+		// El campo `source` viene dentro del payload (agregado por la-notification)
+		// para que el WebSocketContext despache al reducer correcto.
 		this.socket.on("sync_progress", (progress: any) => {
-			this.log("Progreso de sincronización PJN recibido");
+			const source = progress?.source ?? "pjn";
+			this.log(`Progreso de sincronización ${source.toUpperCase()} recibido`);
 			this.handleMessage({
 				type: "SYNC_PROGRESS",
 				payload: progress,

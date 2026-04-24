@@ -1273,8 +1273,9 @@ const FoldersLayout = () => {
 
 	// Separar folders en categorías
 	const { pendingOrInvalidFolders, verifiedFolders, pendingCount, invalidCount } = useMemo(() => {
-		// Helper para determinar si una carpeta es automática (PJN, MEV o EJE)
-		const isAutoFolder = (folder: any) => folder.source === "auto" || folder.pjn === true || folder.mev === true || folder.eje === true;
+		// Helper para determinar si una carpeta es automática (PJN, MEV, EJE o SCBA)
+		const isAutoFolder = (folder: any) =>
+			folder.source === "auto" || folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
 
 		// Filtrar folders que necesitan verificación o son inválidos
 		// Para carpetas automáticas (source "auto", PJN, MEV o EJE)
@@ -1881,8 +1882,9 @@ const FoldersLayout = () => {
 					const folder = row.original;
 					const value = folder.folderName;
 
-					// Solo mostrar indicadores visuales si pjn === true, mev === true o eje === true
-					const showStatusIndicators = folder.pjn === true || folder.mev === true || folder.eje === true;
+					// Solo mostrar indicadores visuales si es una causa sincronizada automáticamente
+					const showStatusIndicators =
+						folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return (
@@ -2000,7 +2002,7 @@ const FoldersLayout = () => {
 					}
 
 					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
-					if (folder.causaVerified === false || (folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje))) {
+					if (folder.causaVerified === false || (folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba))) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
@@ -2136,7 +2138,17 @@ const FoldersLayout = () => {
 									</span>
 								</Tooltip>
 								<Tooltip
-									title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : folder.eje === true ? "Causa vinculada a EJE" : "Causa vinculada"}
+									title={
+										folder.pjn === true
+											? "Causa vinculada a PJN"
+											: folder.mev === true
+												? "Causa vinculada a MEV"
+												: folder.eje === true
+													? "Causa vinculada a EJE"
+													: folder.scba === true
+														? "Causa vinculada a SCBA"
+														: "Causa vinculada"
+									}
 								>
 									<Box
 										sx={{
@@ -2373,7 +2385,7 @@ const FoldersLayout = () => {
 				disableSortBy: true,
 				Cell: ({ row }: any) => {
 					const folder = row.original;
-					const isAutoFolder = folder.pjn || folder.mev || folder.eje;
+					const isAutoFolder = folder.pjn || folder.mev || folder.eje || folder.scba;
 
 					// Folders con error: asociación fallida o causa inválida
 					const isErrorFolder =

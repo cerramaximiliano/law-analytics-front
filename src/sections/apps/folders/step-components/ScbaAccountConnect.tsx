@@ -6,7 +6,9 @@
  * Muestra progreso de sincronización en tiempo real.
  */
 
-import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { scbaSyncReset, ScbaSyncState } from "store/reducers/scbaSync";
 import {
 	Box,
 	Stack,
@@ -78,6 +80,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		// Polling cleanup
 		const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
+		// Estado real-time del worker SCBA (eventos WS → reducer scbaSync).
+		// Tiene prioridad sobre el polling: cuando hay eventos WS activos,
+		// la UI refleja el progreso enviado por el worker en tiempo real.
+		const dispatch = useDispatch();
+		const scbaSync = useSelector((state: any) => state.scbaSync as ScbaSyncState);
+		const lastWsCompletedAtRef = useRef<string | null>(null);
+
 		// Cargar estado al montar
 		useEffect(() => {
 			loadCredentialsStatus();
@@ -113,6 +122,47 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 				setIsLoadingStatus(false);
 			}
 		};
+
+		// Puente WS → estado local: si llegan eventos WebSocket, éstos ganan
+		// sobre el polling. Los textos por fase son más informativos que los
+		// que produce el loop de polling (que sólo ve el snapshot de DB).
+		useEffect(() => {
+			if (scbaSync.isActive) {
+				setIsSyncing(true);
+				setSyncProgress(scbaSync.progress);
+				setSyncMessage(scbaSync.message);
+				return;
+			}
+			// Fin de sync vía WS: refrescar estado y disparar callback una sola vez.
+			if (
+				scbaSync.phase === "completed" &&
+				scbaSync.completedAt &&
+				scbaSync.completedAt !== lastWsCompletedAtRef.current
+			) {
+				lastWsCompletedAtRef.current = scbaSync.completedAt;
+				setIsSyncing(false);
+				setSyncProgress(100);
+				setSyncMessage("Sincronización completada");
+				if (stopPolling) {
+					stopPolling();
+					setStopPolling(null);
+				}
+				loadCredentialsStatus();
+				if (onSyncComplete) onSyncComplete();
+			}
+			if (scbaSync.hasError && scbaSync.errorMessage) {
+				setIsSyncing(false);
+				setSyncMessage("");
+				enqueueSnackbar(`Error en sincronización: ${scbaSync.errorMessage}`, {
+					variant: "error",
+					anchorOrigin: { vertical: "bottom", horizontal: "right" },
+					TransitionComponent: Zoom,
+					autoHideDuration: 5000,
+				});
+				dispatch(scbaSyncReset());
+			}
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+		}, [scbaSync.isActive, scbaSync.progress, scbaSync.message, scbaSync.phase, scbaSync.completedAt, scbaSync.hasError, scbaSync.errorMessage]);
 
 		const startPolling = useCallback(() => {
 			setIsSyncing(true);

@@ -100,6 +100,7 @@ export type FolderData = {
 	pendingCausaType?: string; // Tipo de causas pendientes ('CausasEje' | 'MEV')
 	searchTerm?: string; // Término de búsqueda original
 	eje?: boolean; // Indica si es una causa EJE (CABA)
+	scba?: boolean; // Indica si es una causa SCBA (Provincia de Buenos Aires)
 };
 
 // Interfaz para una causa pendiente de selección

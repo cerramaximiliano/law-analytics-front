@@ -9,6 +9,7 @@ import { fetchUserStats } from "store/reducers/userStats";
 import { cleanPlanDisplayName } from "utils/planPricingUtils";
 import { useNavigate } from "react-router-dom";
 import pjnCredentialsService from "api/pjnCredentials";
+import scbaCredentialsService from "api/scbaCredentials";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
 // ==============================|| CONSTANTS ||============================== //
@@ -130,6 +131,7 @@ const JudicialBadge = ({ logoSrc, alt, bgColor, label, tooltip, synced = null, o
 export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: () => void; onBaClick?: () => void } = {}) => {
 	const navigate = useNavigate();
 	const [pjnSynced, setPjnSynced] = useState<boolean | null>(null);
+	const [scbaSynced, setScbaSynced] = useState<boolean | null>(null);
 
 	useEffect(() => {
 		pjnCredentialsService
@@ -140,6 +142,29 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 			.catch(() => {
 				setPjnSynced(false);
 			});
+
+		scbaCredentialsService
+			.getCredentialsStatus()
+			.then((response) => {
+				// Sincronizada + válida + vigente:
+				// enabled (el usuario no la deshabilitó), no expirada, verified
+				// (worker pudo loguear al menos una vez) y última sync completada.
+				const data = response.data;
+				setScbaSynced(
+					!!(
+						response.success &&
+						response.hasCredentials &&
+						data &&
+						data.enabled === true &&
+						data.isExpired === false &&
+						data.verified === true &&
+						data.syncStatus === "completed"
+					),
+				);
+			})
+			.catch(() => {
+				setScbaSynced(false);
+			});
 	}, []);
 
 	const pjnTooltip =
@@ -148,6 +173,15 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 			: pjnSynced
 				? "PJN - Poder Judicial de la Nación — Sincronizado"
 				: "PJN - Poder Judicial de la Nación — No sincronizado. Click para conectar";
+
+	const scbaTooltip =
+		scbaSynced === null
+			? "BA - Buenos Aires — Cargando estado..."
+			: scbaSynced
+				? "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — Sincronizado"
+				: onBaClick
+					? "BA - Buenos Aires — No sincronizado. Click para agregar causa del Poder Judicial de la Provincia"
+					: "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — No sincronizado";
 
 	return (
 		<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
@@ -165,11 +199,8 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 				alt="PJ Buenos Aires"
 				bgColor="#f8f8f8"
 				label="BA"
-				tooltip={
-					onBaClick
-						? "BA - Buenos Aires — Click para agregar causa del Poder Judicial de la Provincia"
-						: "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires"
-				}
+				tooltip={scbaTooltip}
+				synced={scbaSynced}
 				onClick={onBaClick}
 			/>
 			<JudicialBadge
