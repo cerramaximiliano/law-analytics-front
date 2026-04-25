@@ -1907,9 +1907,63 @@ const FoldersLayout = () => {
 					// La causa fue removida del listado del portal origen.
 					// Soporta el flag nuevo (listRemoved + listRemovedSource) y el legacy
 					// (pjnNotFound) durante la transición.
+					// IMPORTANTE: el tracking de "Mis Causas" sólo aplica a causas
+					// agregadas por los workers de login (source = *-login). Las causas
+					// individuales (manual / agregadas vía pjn-workers, etc.) no
+					// participan del listado y nunca deben mostrar este aviso aunque
+					// el flag esté seteado.
+					const isFromMisCausas =
+						(folder.pjn === true && folder.source === "pjn-login") ||
+						(folder.scba === true && folder.source === "scba-login") ||
+						(folder.mev === true && folder.source === "mev-login");
 					const isListRemoved =
-						folder.listRemoved === true ||
-						(folder.pjn === true && folder.pjnNotFound === true);
+						isFromMisCausas &&
+						(folder.listRemoved === true ||
+							(folder.pjn === true && folder.pjnNotFound === true));
+					// Causa PJN reservada: solo aplica a causas individuales (no
+					// pjn-login). El privacy-checker la marcó tras N fallos consecutivos
+					// del scrape público. listRemoved e isPjnPrivateRestricted son
+					// mutuamente excluyentes por construcción (uno requiere pjn-login,
+					// el otro lo excluye), pero por las dudas evaluamos primero la
+					// privada por ser más severa.
+					const isPjnPrivateRestricted =
+						folder.pjn === true &&
+						folder.causaIsPrivate === true &&
+						folder.source !== "pjn-login";
+					if (isPjnPrivateRestricted) {
+						return (
+							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
+								<Tooltip title={value || ""}>
+									<span
+										style={{
+											display: "-webkit-box",
+											WebkitLineClamp: 2,
+											WebkitBoxOrient: "vertical",
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											flex: 1,
+										}}
+									>
+										{formatFolderName(value, 50)}
+									</span>
+								</Tooltip>
+								<Tooltip title="Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.">
+									<IconButton
+										size="small"
+										onClick={(e) => e.stopPropagation()}
+										sx={{
+											padding: 0.5,
+											"&:hover": {
+												backgroundColor: "error.lighter",
+											},
+										}}
+									>
+										<Warning2 size={16} variant="Bold" color="#EF4444" />
+									</IconButton>
+								</Tooltip>
+							</Stack>
+						);
+					}
 					if (isListRemoved) {
 						const source = folder.listRemovedSource
 							? folder.listRemovedSource.toUpperCase()

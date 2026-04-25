@@ -32,10 +32,22 @@ const FolderView = memo(({ data }: any) => {
 	// La causa fue removida del listado del portal origen.
 	// Soporta el flag nuevo (listRemoved + listRemovedSource) y el legacy
 	// (pjnNotFound) para compat durante el período de transición.
-	const isListRemovedPjn = (data.listRemoved === true && data.listRemovedSource === "pjn") || data.pjnNotFound === true;
-	const isListRemovedScba = data.listRemoved === true && data.listRemovedSource === "scba";
+	// IMPORTANTE: el tracking de "Mis Causas" sólo aplica a causas agregadas
+	// por los workers de login (pjn-mis-causas / scba-workers). Las causas
+	// individuales (source distinto de *-login) no participan del listado y
+	// nunca deben mostrar este aviso aunque el flag esté seteado.
+	const isPjnFromMisCausas = data.pjn === true && data.source === "pjn-login";
+	const isScbaFromMisCausas = data.scba === true && data.source === "scba-login";
+	const isListRemovedPjn = isPjnFromMisCausas && ((data.listRemoved === true && data.listRemovedSource === "pjn") || data.pjnNotFound === true);
+	const isListRemovedScba = isScbaFromMisCausas && data.listRemoved === true && data.listRemovedSource === "scba";
 	const listRemovedCopyPjn = "Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.";
 	const listRemovedCopyScba = 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.';
+
+	// Causa PJN reservada: solo aplica a causas individuales (source !== 'pjn-login').
+	// El privacy-checker la marcó tras N fallos consecutivos de la consulta pública.
+	// Mutuamente excluyente con isListRemovedPjn por la regla de source.
+	const isPjnPrivateRestricted = data.pjn === true && data.causaIsPrivate === true && data.source !== "pjn-login";
+	const privateRestrictedCopyPjn = "Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.";
 
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
@@ -171,35 +183,59 @@ const FolderView = memo(({ data }: any) => {
 											display: "flex",
 											alignItems: "center",
 											gap: 0.75,
-											bgcolor: isListRemovedPjn
+											bgcolor: isPjnPrivateRestricted
+												? alpha(theme.palette.error.main, 0.1)
+												: isListRemovedPjn
 												? alpha(theme.palette.warning.main, 0.1)
 												: alpha(theme.palette.success.main, 0.1),
-											border: `1px solid ${isListRemovedPjn ? theme.palette.warning.main : theme.palette.success.main}`,
+											border: `1px solid ${
+												isPjnPrivateRestricted
+													? theme.palette.error.main
+													: isListRemovedPjn
+													? theme.palette.warning.main
+													: theme.palette.success.main
+											}`,
 											borderRadius: 0.5,
 										}}
 									>
 										<ExportSquare
 											size={16}
 											variant="Bold"
-											color={isListRemovedPjn ? theme.palette.warning.main : theme.palette.success.main}
+											color={
+												isPjnPrivateRestricted
+													? theme.palette.error.main
+													: isListRemovedPjn
+													? theme.palette.warning.main
+													: theme.palette.success.main
+											}
 										/>
 										<Typography
 											variant="body2"
 											sx={{
 												fontWeight: 500,
-												color: isListRemovedPjn ? theme.palette.warning.dark : theme.palette.success.dark,
+												color: isPjnPrivateRestricted
+													? theme.palette.error.dark
+													: isListRemovedPjn
+													? theme.palette.warning.dark
+													: theme.palette.success.dark,
 												fontSize: "0.8125rem",
 											}}
 										>
-											Vinculado con PJN
+											{isPjnPrivateRestricted
+												? "PJN — Causa reservada"
+												: isListRemovedPjn
+												? "PJN — Ya no en la lista"
+												: "Vinculado con PJN"}
 										</Typography>
 									</Box>
 									{/* Ícono de estado de verificación */}
-									{(isListRemovedPjn || data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
+									{(isPjnPrivateRestricted || isListRemovedPjn || data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
 										<Tooltip
 											title={
-												isListRemovedPjn
-													? "Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
+												isPjnPrivateRestricted
+													? privateRestrictedCopyPjn
+													: isListRemovedPjn
+													? listRemovedCopyPjn
 													: data.causaVerified === false
 													? "Pendiente de verificación"
 													: data.causaIsValid
@@ -222,7 +258,9 @@ const FolderView = memo(({ data }: any) => {
 													boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
 												}}
 											>
-												{isListRemovedPjn ? (
+												{isPjnPrivateRestricted ? (
+													<Warning2 size={18} variant="Bold" color={theme.palette.error.main} />
+												) : isListRemovedPjn ? (
 													<Warning2 size={18} variant="Bold" color={theme.palette.warning.main} />
 												) : data.causaVerified === false ? (
 													<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />

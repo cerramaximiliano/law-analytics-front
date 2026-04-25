@@ -106,6 +106,15 @@ export type FolderData = {
 	searchTerm?: string; // Término de búsqueda original
 	eje?: boolean; // Indica si es una causa EJE (CABA)
 	scba?: boolean; // Indica si es una causa SCBA (Provincia de Buenos Aires)
+	/**
+	 * Para causas PJN agregadas individualmente (source !== 'pjn-login'):
+	 * la causa fue marcada como privada/reservada por el privacy-checker
+	 * tras N fallos consecutivos al consultarla públicamente. Las causas
+	 * pjn-login tienen otra ruta de acceso (Mis Causas autenticado) y NO
+	 * usan este flag — el frontend lo ignora cuando source==='pjn-login'.
+	 */
+	causaIsPrivate?: boolean;
+	causaPrivateDetectedAt?: string;
 };
 
 // Interfaz para una causa pendiente de selección

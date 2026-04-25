@@ -28,6 +28,7 @@ import {
 	TickCircle,
 	CloseCircle,
 	Clock,
+	Warning2,
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useBreadcrumb } from "contexts/BreadcrumbContext";
@@ -303,6 +304,30 @@ const Details = () => {
 		[],
 	);
 
+	// Flags de causa removida del listado origen (afectan el styling del chip).
+	// Soporta listRemoved + listRemovedSource (nuevo) y pjnNotFound (legacy).
+	// El tracking de "Mis Causas" sólo aplica a causas agregadas por los workers
+	// de login (source = *-login). Las causas individuales (agregadas vía
+	// pjn-workers / mev-workers / manual) no participan del listado y no deben
+	// mostrar este aviso aunque el flag esté seteado por error.
+	const isPjnFromMisCausas = folder?.pjn === true && folder?.source === "pjn-login";
+	const isMevFromMisCausas = folder?.mev === true && folder?.source === "mev-login";
+	const isScbaFromMisCausas = folder?.scba === true && folder?.source === "scba-login";
+	const isListRemovedPjn =
+		isPjnFromMisCausas &&
+		((folder?.listRemoved === true && folder?.listRemovedSource === "pjn") || folder?.pjnNotFound === true);
+	const isListRemovedMev =
+		isMevFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "mev";
+	const isListRemovedScba =
+		isScbaFromMisCausas && folder?.listRemoved === true && folder?.listRemovedSource === "scba";
+
+	// Causa PJN reservada (privacy-checker): solo aplica a causas individuales
+	// (source !== 'pjn-login'). Las pjn-login mantienen su ruta de acceso vía
+	// Mis Causas autenticado y no se les muestra este aviso aunque la causa
+	// figure como privada en el modelo.
+	const isPjnPrivateRestricted =
+		folder?.pjn === true && folder?.causaIsPrivate === true && folder?.source !== "pjn-login";
+
 	// Memoized judicial link button
 	const renderJudicialLink = useMemo(
 		() =>
@@ -313,6 +338,16 @@ const Details = () => {
 					{folder?.pjn ? (
 						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
 							<Box sx={{ position: "relative", display: "inline-flex" }}>
+								<Tooltip
+									title={
+										isPjnPrivateRestricted
+											? "Esta causa fue marcada como reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible."
+											: isListRemovedPjn
+												? "Esta causa ya no aparece en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal."
+												: ""
+									}
+									disableHoverListener={!isPjnPrivateRestricted && !isListRemovedPjn}
+								>
 								<Box
 									sx={{
 										px: 2,
@@ -321,23 +356,48 @@ const Details = () => {
 										display: "flex",
 										alignItems: "center",
 										gap: 0.75,
-										bgcolor: alpha(theme.palette.success.main, 0.1),
-										border: `1px solid ${theme.palette.success.main}`,
+										bgcolor: isPjnPrivateRestricted
+											? alpha(theme.palette.error.main, 0.1)
+											: isListRemovedPjn
+												? alpha(theme.palette.warning.main, 0.1)
+												: alpha(theme.palette.success.main, 0.1),
+										border: `1px solid ${
+											isPjnPrivateRestricted
+												? theme.palette.error.main
+												: isListRemovedPjn
+													? theme.palette.warning.main
+													: theme.palette.success.main
+										}`,
 										borderRadius: 0.5,
 									}}
 								>
+								{isPjnPrivateRestricted ? (
+									<Warning2 size={16} variant="Bold" color={theme.palette.error.main} />
+								) : isListRemovedPjn ? (
+									<Warning2 size={16} variant="Bold" color={theme.palette.warning.main} />
+								) : (
 									<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
-									<Typography
-										variant="body2"
-										sx={{
-											fontWeight: 500,
-											color: theme.palette.success.dark,
-											fontSize: "0.8125rem",
-										}}
-									>
-										Vinculado con PJN
-									</Typography>
+								)}
+								<Typography
+									variant="body2"
+									sx={{
+										fontWeight: 500,
+										color: isPjnPrivateRestricted
+											? theme.palette.error.dark
+											: isListRemovedPjn
+												? theme.palette.warning.dark
+												: theme.palette.success.dark,
+										fontSize: "0.8125rem",
+									}}
+								>
+									{isPjnPrivateRestricted
+										? "PJN — Causa reservada"
+										: isListRemovedPjn
+											? "PJN — Ya no en la lista"
+											: "Vinculado con PJN"}
+								</Typography>
 								</Box>
+								</Tooltip>
 								{/* Ícono de estado de verificación */}
 								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
 									<Tooltip
@@ -379,6 +439,14 @@ const Details = () => {
 					) : folder?.mev ? (
 						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
 							<Box sx={{ position: "relative", display: "inline-flex" }}>
+								<Tooltip
+									title={
+										isListRemovedMev
+											? "Esta causa ya no aparece en tu lista de Mis Causas del portal MEV. Puede haber sido archivada o desvinculada por el tribunal."
+											: ""
+									}
+									disableHoverListener={!isListRemovedMev}
+								>
 								<Box
 									sx={{
 										px: 2,
@@ -387,23 +455,34 @@ const Details = () => {
 										display: "flex",
 										alignItems: "center",
 										gap: 0.75,
-										bgcolor: alpha(theme.palette.success.main, 0.1),
-										border: `1px solid ${theme.palette.success.main}`,
+										bgcolor: isListRemovedMev
+											? alpha(theme.palette.warning.main, 0.1)
+											: alpha(theme.palette.success.main, 0.1),
+										border: `1px solid ${
+											isListRemovedMev ? theme.palette.warning.main : theme.palette.success.main
+										}`,
 										borderRadius: 0.5,
 									}}
 								>
+								{isListRemovedMev ? (
+									<Warning2 size={16} variant="Bold" color={theme.palette.warning.main} />
+								) : (
 									<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
-									<Typography
-										variant="body2"
-										sx={{
-											fontWeight: 500,
-											color: theme.palette.success.dark,
-											fontSize: "0.8125rem",
-										}}
-									>
-										Vinculado con MEV
-									</Typography>
+								)}
+								<Typography
+									variant="body2"
+									sx={{
+										fontWeight: 500,
+										color: isListRemovedMev
+											? theme.palette.warning.dark
+											: theme.palette.success.dark,
+										fontSize: "0.8125rem",
+									}}
+								>
+									{isListRemovedMev ? "MEV — Ya no en la lista" : "Vinculado con MEV"}
+								</Typography>
 								</Box>
+								</Tooltip>
 								{/* Ícono de estado de verificación */}
 								{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
 									<Tooltip
@@ -442,6 +521,91 @@ const Details = () => {
 								)}
 							</Box>
 						</Box>
+						) : folder?.scba ? (
+							<Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+								<Box sx={{ position: "relative", display: "inline-flex" }}>
+									<Tooltip
+										title={
+											isListRemovedScba
+												? 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.'
+												: ""
+										}
+										disableHoverListener={!isListRemovedScba}
+									>
+										<Box
+											sx={{
+												px: 2,
+												py: 0.75,
+												height: 36,
+												display: "flex",
+												alignItems: "center",
+												gap: 0.75,
+												bgcolor: isListRemovedScba
+													? alpha(theme.palette.warning.main, 0.1)
+													: alpha(theme.palette.success.main, 0.1),
+												border: `1px solid ${
+													isListRemovedScba ? theme.palette.warning.main : theme.palette.success.main
+												}`,
+												borderRadius: 0.5,
+											}}
+										>
+											{isListRemovedScba ? (
+												<Warning2 size={16} variant="Bold" color={theme.palette.warning.main} />
+											) : (
+												<ExportSquare size={16} variant="Bold" color={theme.palette.success.main} />
+											)}
+											<Typography
+												variant="body2"
+												sx={{
+													fontWeight: 500,
+													color: isListRemovedScba
+														? theme.palette.warning.dark
+														: theme.palette.success.dark,
+													fontSize: "0.8125rem",
+												}}
+											>
+												{isListRemovedScba ? "SCBA — Ya no en la lista" : "Vinculado con SCBA"}
+											</Typography>
+										</Box>
+									</Tooltip>
+									{/* Ícono de estado de verificación */}
+									{(folder?.causaVerified === false || (folder?.causaVerified === true && folder?.causaIsValid !== undefined)) && (
+										<Tooltip
+											title={
+												folder?.causaVerified === false
+													? "Pendiente de verificación"
+													: folder.causaIsValid
+														? "Causa válida"
+														: "Causa inválida"
+											}
+										>
+											<Box
+												sx={{
+													position: "absolute",
+													bottom: -8,
+													right: -8,
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													width: 20,
+													height: 20,
+													bgcolor: theme.palette.background.paper,
+													borderRadius: "50%",
+													boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+												}}
+											>
+												{folder?.causaVerified === false ? (
+													<InfoCircle size={18} variant="Bold" color={theme.palette.warning.main} />
+												) : folder.causaIsValid ? (
+													<TickCircle size={18} variant="Bold" color={theme.palette.success.main} />
+												) : (
+													<CloseCircle size={18} variant="Bold" color={theme.palette.error.main} />
+												)}
+											</Box>
+										</Tooltip>
+									)}
+								</Box>
+							</Box>
 					) : (
 						<Box
 							onClick={handleOpenLinkJudicial}
@@ -478,7 +642,7 @@ const Details = () => {
 					)}
 				</Box>
 			),
-		[folder?.pjn, folder?.causaVerified, folder?.causaIsValid, handleOpenLinkJudicial, isLoader, theme],
+		[folder?.pjn, folder?.mev, folder?.scba, isListRemovedPjn, isListRemovedMev, isListRemovedScba, isPjnPrivateRestricted, folder?.causaVerified, folder?.causaIsValid, handleOpenLinkJudicial, isLoader, theme],
 	);
 
 	// Memoized components - switch between compact and improved based on isDetailedView

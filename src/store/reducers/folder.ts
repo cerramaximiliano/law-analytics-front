@@ -92,8 +92,13 @@ const folder = (state = initialFolderState, action: any) => {
 			return {
 				...state,
 				folder: action.payload,
-				// También actualizar el folder en la lista si existe
-				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+				// Mergear en la lista en lugar de reemplazar: si el detalle no trae
+				// algún campo (p.ej. scba/eje por proyección distinta), preservamos
+				// lo que ya teníamos desde getFoldersByUserId. Evita que el tilde
+				// de "Causa vinculada" desaparezca al navegar entre vistas.
+				folders: state.folders.map((folder: FolderData) =>
+					folder._id === action.payload._id ? { ...folder, ...action.payload } : folder
+				),
 				isLoader: false,
 			};
 		case DELETE_FOLDER:
@@ -143,7 +148,11 @@ const folder = (state = initialFolderState, action: any) => {
 			return {
 				...state,
 				folder: action.payload,
-				folders: state.folders.map((folder: FolderData) => (folder._id === action.payload._id ? action.payload : folder)),
+				// Merge igual que GET_FOLDER_BY_ID — el endpoint de update puede
+				// devolver un subset de campos; preservar el resto.
+				folders: state.folders.map((folder: FolderData) =>
+					folder._id === action.payload._id ? { ...folder, ...action.payload } : folder
+				),
 				isLoader: false,
 			};
 		case SET_FOLDER_ERROR:
@@ -239,7 +248,7 @@ export const getFoldersByUserId =
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación y timestamps
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,createdAt,updatedAt,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,createdAt,updatedAt,lastMovementDate";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/user/${userId}`, {
 				params: { fields },
 			});
@@ -266,7 +275,7 @@ export const getFoldersByGroupId = (groupId: string) => async (dispatch: Dispatc
 		dispatch({ type: SET_FOLDER_LOADING });
 		// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 		const fields =
-			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
+			"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/group/${groupId}`, {
 			params: { fields },
 		});
@@ -485,7 +494,7 @@ export const getArchivedFoldersByUserId =
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
 
 			const params: Record<string, any> = {
 				archived: true,
@@ -530,7 +539,7 @@ export const getArchivedFoldersByGroupId =
 			dispatch({ type: SET_FOLDER_LOADING });
 			// Campos optimizados para listas y vistas resumidas, incluyendo campos de verificación
 			const fields =
-				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
+				"_id,folderName,status,materia,orderStatus,initialDateFolder,finalDateFolder,folderJuris,folderFuero,description,customerName,pjn,mev,eje,scba,source,listRemoved,listRemovedSource,pjnNotFound,causaIsPrivate,causaPrivateDetectedAt,causaVerified,causaIsValid,causaAssociationStatus,judFolder,lastMovementDate";
 
 			const params: Record<string, any> = {
 				archived: true,
