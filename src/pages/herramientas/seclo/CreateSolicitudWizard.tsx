@@ -30,6 +30,7 @@ import { Add, DocumentText, Trash } from "iconsax-react";
 import { dispatch, useSelector } from "store";
 import { createSolicitud, uploadDocumento } from "store/reducers/seclo";
 import { getContactsByUserId } from "store/reducers/contacts";
+import { getFoldersByUserId } from "store/reducers/folder";
 import {
 	OBJETO_RECLAMO_OPTIONS,
 	type SecloCaracter,
@@ -65,6 +66,13 @@ interface ContactOption {
 	folderIds?: string[];
 }
 
+interface FolderOption {
+	_id: string;
+	folderName: string;
+	materia?: string;
+	status?: string;
+}
+
 export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const auth = useSelector((s: any) => s.auth);
 	const userId = auth?.user?._id || auth?.user?.id;
@@ -77,7 +85,11 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const [contacts, setContacts] = useState<ContactOption[]>([]);
 	const [contactsLoading, setContactsLoading] = useState(false);
 
+	// Carpetas del usuario (para filtrar contactos)
+	const [folders, setFolders] = useState<FolderOption[]>([]);
+
 	// Step 1 — Partes
+	const [selectedFolder, setSelectedFolder] = useState<FolderOption | null>(null);
 	const [requirente, setRequirente] = useState<ContactOption | null>(null);
 	const [datosLab, setDatosLab] = useState<SecloDatosLaborales>({ estadoTrabajador: "regular", sexo: "M" });
 	const [requerido, setRequerido] = useState<ContactOption | null>(null);
@@ -97,12 +109,18 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const [documentos, setDocumentos] = useState<SecloDocumento[]>([]);
 	const [uploadingDoc, setUploadingDoc] = useState<SecloDocTipo | null>(null);
 
-	// Cargar contactos al abrir
+	// Cargar contactos + carpetas al abrir
 	useEffect(() => {
 		if (!open || !userId) return;
 		setContactsLoading(true);
-		dispatch<any>(getContactsByUserId(userId))
-			.then((res: any) => setContacts(res?.contacts || []))
+		Promise.all([
+			dispatch<any>(getContactsByUserId(userId)),
+			dispatch<any>(getFoldersByUserId(userId)),
+		])
+			.then(([contactsRes, foldersRes]: [any, any]) => {
+				setContacts(contactsRes?.contacts || []);
+				setFolders(foldersRes?.folders || []);
+			})
 			.finally(() => setContactsLoading(false));
 	}, [open, userId]);
 
@@ -110,6 +128,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const reset = () => {
 		setStep(0);
 		setError(null);
+		setSelectedFolder(null);
 		setRequirente(null);
 		setDatosLab({ estadoTrabajador: "regular", sexo: "M" });
 		setRequerido(null);
@@ -161,6 +180,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 					iniciadoPor,
 					datosAbogado: { tomo: abogado.tomo, folio: abogado.folio, caracter: abogado.caracter, domicilio: { cpa: abogado.cpa } },
 					documentos,
+					folderId: selectedFolder?._id ?? undefined,
 				}),
 			);
 			handleClose();
@@ -176,22 +196,90 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const contactLabel = (c: ContactOption) =>
 		`${c.name} ${c.lastName || ""}${c.cuit ? ` — ${c.cuit}` : ""}${c.company ? ` (${c.company})` : ""}`.trim();
 
+	// ── Filtrado de contactos en cascada ──────────────────────────────────
+	// 1) Si hay carpeta seleccionada → solo los contactos vinculados a esa carpeta.
+	// 2) Sin carpeta → todos los contactos.
+	const contactsForRequirente = selectedFolder
+		? contacts.filter((c) => c.folderIds?.includes(selectedFolder._id))
+		: contacts;
+
+	// Para el empleador:
+	// 1) Si hay carpeta seleccionada → solo contactos de esa carpeta (excluyendo el requirente).
+	// 2) Sin carpeta + requirente con carpetas → solo los que comparten al menos una carpeta con el requirente.
+	// 3) Si el filtro estricto deja sin opciones → modo permisivo (todos los contactos).
+	const _baseRequerido = contacts.filter((c) => c._id !== requirente?._id);
+	const contactsForRequeridoStrict = (() => {
+		if (selectedFolder) return _baseRequerido.filter((c) => c.folderIds?.includes(selectedFolder._id));
+		if (requirente?.folderIds?.length) {
+			const reqSet = new Set(requirente.folderIds);
+			return _baseRequerido.filter((c) => c.folderIds?.some((id) => reqSet.has(id)));
+		}
+		return _baseRequerido;
+	})();
+	const requeridoPermissive = !selectedFolder && !!requirente?.folderIds?.length && contactsForRequeridoStrict.length === 0;
+	const contactsForRequerido = requeridoPermissive ? _baseRequerido : contactsForRequeridoStrict;
+
+	// Carpetas en las que aparece el requirente — info útil al usuario
+	const requirenteFolderNames = requirente?.folderIds?.length
+		? folders.filter((f) => requirente.folderIds!.includes(f._id)).map((f) => f.folderName)
+		: [];
+
 	const renderStep = () => {
 		switch (step) {
 			case 0:
 				return (
 					<Grid container spacing={2}>
+						{/* Selector de carpeta (opcional) */}
+						{folders.length > 0 && (
+							<Grid item xs={12}>
+								<Autocomplete
+									options={folders}
+									value={selectedFolder}
+									onChange={(_, v) => {
+										setSelectedFolder(v);
+										// Reset selecciones que pueden quedar fuera del filtro
+										setRequirente(null);
+										setRequerido(null);
+									}}
+									getOptionLabel={(f) => `${f.folderName}${f.materia ? ` — ${f.materia}` : ""}`}
+									isOptionEqualToValue={(a, b) => a._id === b._id}
+									renderInput={(params) => (
+										<TextField {...params} label="Vincular a carpeta (opcional)" placeholder="Sin carpeta" />
+									)}
+								/>
+								<Typography variant="caption" color="text.secondary" mt={0.5} component="div">
+									{selectedFolder
+										? `Solo verás los contactos vinculados a "${selectedFolder.folderName}".`
+										: "Si elegís una carpeta, los selectores de trabajador y empleador van a mostrar solo los contactos vinculados a ella."}
+								</Typography>
+							</Grid>
+						)}
+
 						<Grid item xs={12}>
 							<Typography variant="subtitle2" mb={1}>Trabajador (requirente)</Typography>
 							<Autocomplete
-								options={contacts}
+								options={contactsForRequirente}
 								loading={contactsLoading}
 								value={requirente}
-								onChange={(_, v) => setRequirente(v)}
+								onChange={(_, v) => {
+									setRequirente(v);
+									// Si cambió el requirente, resetear el requerido (su filtro depende de él)
+									setRequerido(null);
+								}}
 								getOptionLabel={contactLabel}
 								isOptionEqualToValue={(a, b) => a._id === b._id}
+								noOptionsText={
+									selectedFolder
+										? `No hay contactos en "${selectedFolder.folderName}"`
+										: contactsLoading ? "Cargando…" : "Sin contactos"
+								}
 								renderInput={(params) => <TextField {...params} placeholder="Buscar contacto…" />}
 							/>
+							{requirenteFolderNames.length > 0 && !selectedFolder && (
+								<Typography variant="caption" color="text.secondary" mt={0.5} component="div">
+									Pertenece a: {requirenteFolderNames.join(", ")}
+								</Typography>
+							)}
 						</Grid>
 
 						{requirente && (
@@ -267,14 +355,24 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 						<Grid item xs={12} sx={{ mt: 1 }}>
 							<Typography variant="subtitle2" mb={1}>Empleador (requerido)</Typography>
 							<Autocomplete
-								options={contacts.filter((c) => c._id !== requirente?._id)}
+								options={contactsForRequerido}
 								loading={contactsLoading}
 								value={requerido}
 								onChange={(_, v) => setRequerido(v)}
 								getOptionLabel={contactLabel}
 								isOptionEqualToValue={(a, b) => a._id === b._id}
+								noOptionsText={
+									selectedFolder
+										? `No hay otros contactos en "${selectedFolder.folderName}"`
+										: contactsLoading ? "Cargando…" : "Sin contactos"
+								}
 								renderInput={(params) => <TextField {...params} placeholder="Buscar contacto…" />}
 							/>
+							{requeridoPermissive && (
+								<Typography variant="caption" color="warning.dark" mt={0.5} component="div">
+									El trabajador no comparte carpeta con ningún otro contacto — se muestran todos los contactos.
+								</Typography>
+							)}
 						</Grid>
 					</Grid>
 				);
