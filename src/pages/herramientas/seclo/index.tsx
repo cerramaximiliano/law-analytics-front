@@ -44,7 +44,7 @@ export default function SecloPage() {
 			</Tabs>
 
 			<Box sx={{ p: { xs: 2, sm: 3 } }}>
-				{tab === 0 && <SolicitudesTab />}
+				{tab === 0 && <SolicitudesTab onGoToCredenciales={() => setTab(1)} />}
 				{tab === 1 && <CredencialesTab />}
 			</Box>
 		</MainCard>

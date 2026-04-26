@@ -27,8 +27,9 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import { Add, Eye, RefreshCircle, Trash } from "iconsax-react";
+import { Add, Briefcase, Eye, Key, RefreshCircle, Trash } from "iconsax-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
 
 import { dispatch, useSelector } from "store";
 import {
@@ -65,7 +66,56 @@ function getParticipantName(p: SecloSolicitud["requirentes"][0]): string {
 	return p?.snapshot?.name || "—";
 }
 
-export default function SolicitudesTab() {
+// ── Empty state genérico ──────────────────────────────────────────────────────
+//
+// Mismo diseño que /herramientas/seguimiento-postal: círculo con icono +
+// título + descripción + botón principal.
+
+function EmptyState({
+	icon,
+	title,
+	description,
+	ctaLabel,
+	ctaIcon,
+	onCta,
+	ctaColor = "primary",
+}: {
+	icon: React.ReactNode;
+	title: string;
+	description: string;
+	ctaLabel: string;
+	ctaIcon?: React.ReactNode;
+	onCta: () => void;
+	ctaColor?: "primary" | "warning" | "info";
+}) {
+	const theme = useTheme();
+	const bgcolor = ctaColor === "warning" ? "warning.lighter" : ctaColor === "info" ? "info.lighter" : "primary.lighter";
+	const iconColor = ctaColor === "warning" ? theme.palette.warning.main : ctaColor === "info" ? theme.palette.info.main : theme.palette.primary.main;
+
+	return (
+		<Stack alignItems="center" justifyContent="center" spacing={2.5} sx={{ py: 8 }}>
+			<Box sx={{ p: 2.5, bgcolor, borderRadius: "50%", color: iconColor }}>
+				{icon}
+			</Box>
+			<Stack alignItems="center" spacing={1}>
+				<Typography variant="h5" color="textSecondary">{title}</Typography>
+				<Typography variant="body2" color="textSecondary" align="center" sx={{ maxWidth: 420 }}>
+					{description}
+				</Typography>
+			</Stack>
+			<Button variant="contained" color={ctaColor} startIcon={ctaIcon} onClick={onCta}>
+				{ctaLabel}
+			</Button>
+		</Stack>
+	);
+}
+
+interface Props {
+	/** Callback para cambiar a la tab "Credenciales" del page padre */
+	onGoToCredenciales?: () => void;
+}
+
+export default function SolicitudesTab({ onGoToCredenciales }: Props) {
 	const navigate = useNavigate();
 	const solicitudes = useSelector((s: any) => s.seclo.solicitudes as SecloSolicitud[]);
 	const total = useSelector((s: any) => s.seclo.solicitudesTotal as number);
@@ -111,16 +161,15 @@ export default function SolicitudesTab() {
 		await dispatch(reactivarSolicitud(sol._id));
 	};
 
-	// Mensajes de bloqueo según estado de la credencial
-	const credentialBlocker = (() => {
-		if (!credential) {
-			return { severity: "warning" as const, msg: "Cargá tus credenciales en la pestaña 'Credenciales' antes de crear solicitudes." };
-		}
+	// Estados que NO son "sin credencial" pero igual bloquean creación —
+	// se muestran como banner Alert (no como empty state full):
+	const credentialAlert = (() => {
+		if (!credential) return null; // sin credencial → empty state, no alert
 		if (!credential.enabled) {
-			return { severity: "error" as const, msg: "Tu credencial está deshabilitada. Activala antes de crear solicitudes." };
+			return { severity: "error" as const, msg: "Tu credencial está deshabilitada. Activala desde la pestaña 'Credenciales' para crear solicitudes." };
 		}
 		if (credential.credentialInvalid) {
-			return { severity: "error" as const, msg: "Tu credencial está marcada como inválida. Actualizala para reanudar." };
+			return { severity: "error" as const, msg: "Tu credencial está marcada como inválida. Actualizá la contraseña desde 'Credenciales' para reanudar." };
 		}
 		if (!credential.credentialsValidated) {
 			return { severity: "info" as const, msg: "Estamos validando tu credencial. Vas a poder crear solicitudes apenas se confirme (≤ 5 min)." };
@@ -128,13 +177,38 @@ export default function SolicitudesTab() {
 		return null;
 	})();
 
-	const canCreate = !credentialBlocker;
+	const canCreate = !!credential && credential.enabled && credential.credentialsValidated && !credential.credentialInvalid;
+	const noCredential = !credential;
+	const hasNoSolicitudes = !loading && solicitudes.length === 0 && !statusFilter && !dateFrom && !dateTo;
+
+	// ── Empty state principal: el usuario aún no cargó su credencial ───────
+	if (noCredential) {
+		return (
+			<EmptyState
+				icon={<Key size={40} variant="Bulk" />}
+				title="Cargá tus credenciales SECLO"
+				description="Para enviar solicitudes de audiencia al portal del Ministerio de Trabajo necesitamos tu CUIL y contraseña. La validación es automática y demora unos segundos."
+				ctaLabel="Cargar credenciales"
+				ctaIcon={<Key size={18} />}
+				onCta={() => onGoToCredenciales?.()}
+			/>
+		);
+	}
 
 	return (
 		<Stack spacing={2}>
-			{/* Banner de estado de credencial */}
-			{credentialBlocker && (
-				<Alert severity={credentialBlocker.severity}>{credentialBlocker.msg}</Alert>
+			{/* Banner de estado de credencial (cuando hay credencial pero no operativa) */}
+			{credentialAlert && (
+				<Alert
+					severity={credentialAlert.severity}
+					action={
+						<Button color="inherit" size="small" onClick={() => onGoToCredenciales?.()}>
+							Ir a Credenciales
+						</Button>
+					}
+				>
+					{credentialAlert.msg}
+				</Alert>
 			)}
 
 			{/* Toolbar */}
@@ -194,7 +268,18 @@ export default function SolicitudesTab() {
 				</Tooltip>
 			</Stack>
 
-			{/* Tabla */}
+			{/* Empty state cuando hay credencial OK pero ninguna solicitud (y sin filtros activos) */}
+			{hasNoSolicitudes && canCreate ? (
+				<EmptyState
+					icon={<Briefcase size={40} variant="Bulk" />}
+					title="Todavía no creaste solicitudes"
+					description="Generá tu primera solicitud de audiencia SECLO. Te avisaremos por email cuando se asigne fecha y conciliador."
+					ctaLabel="Nueva solicitud"
+					ctaIcon={<Add size={18} />}
+					onCta={() => setOpenCreate(true)}
+				/>
+			) : (
+			/* Tabla */
 			<TableContainer>
 				<Table size="small">
 					<TableHead>
@@ -219,7 +304,7 @@ export default function SolicitudesTab() {
 							<TableRow>
 								<TableCell colSpan={7} align="center">
 									<Typography variant="body2" color="text.secondary">
-										Sin solicitudes
+										Sin resultados para los filtros aplicados
 									</Typography>
 								</TableCell>
 							</TableRow>
@@ -279,15 +364,18 @@ export default function SolicitudesTab() {
 					</TableBody>
 				</Table>
 			</TableContainer>
+			)}
 
-			<TablePagination
-				component="div"
-				count={total}
-				page={page}
-				onPageChange={(_, p) => setPage(p)}
-				rowsPerPage={rowsPerPage}
-				rowsPerPageOptions={[15]}
-			/>
+			{!hasNoSolicitudes && (
+				<TablePagination
+					component="div"
+					count={total}
+					page={page}
+					onPageChange={(_, p) => setPage(p)}
+					rowsPerPage={rowsPerPage}
+					rowsPerPageOptions={[15]}
+				/>
+			)}
 
 			{/* Wizard de creación */}
 			<CreateSolicitudWizard
