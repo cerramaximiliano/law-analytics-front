@@ -5,6 +5,11 @@ import {
 	Button,
 	Chip,
 	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
 	FormControl,
 	IconButton,
 	InputLabel,
@@ -293,30 +298,25 @@ export default function SolicitudesTab() {
 				}}
 			/>
 
-			{/* Confirmar eliminación */}
-			{deleteTarget && (
-				<Box
-					sx={{
-						position: "fixed", inset: 0, bgcolor: "rgba(0,0,0,0.4)",
-						display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300,
-					}}
-					onClick={() => setDeleteTarget(null)}
-				>
-					<Box
-						sx={{ bgcolor: "background.paper", p: 3, borderRadius: 1, maxWidth: 400 }}
-						onClick={(e) => e.stopPropagation()}
-					>
-						<Typography variant="h6" mb={1}>Eliminar solicitud</Typography>
-						<Typography variant="body2" mb={2}>
-							¿Eliminar la solicitud de <strong>{getParticipantName(deleteTarget.requirentes[0])}</strong>?
-						</Typography>
-						<Stack direction="row" spacing={1} justifyContent="flex-end">
-							<Button onClick={() => setDeleteTarget(null)}>Cancelar</Button>
-							<Button variant="contained" color="error" onClick={handleDelete}>Eliminar</Button>
-						</Stack>
-					</Box>
-				</Box>
-			)}
+			{/* Confirmación de eliminación */}
+			<Dialog
+				open={!!deleteTarget}
+				onClose={() => setDeleteTarget(null)}
+				maxWidth="xs"
+				fullWidth
+			>
+				<DialogTitle>Eliminar solicitud</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						¿Querés eliminar la solicitud de <strong>{deleteTarget ? getParticipantName(deleteTarget.requirentes[0]) : ""}</strong>?
+						Esta acción también borra los archivos adjuntos.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setDeleteTarget(null)}>Cancelar</Button>
+					<Button variant="contained" color="error" onClick={handleDelete}>Eliminar</Button>
+				</DialogActions>
+			</Dialog>
 		</Stack>
 	);
 }

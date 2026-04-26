@@ -5,6 +5,11 @@ import {
 	Button,
 	Chip,
 	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
 	Divider,
 	IconButton,
 	InputAdornment,
@@ -46,8 +51,15 @@ export default function CredencialesTab() {
 	const [submitting, setSubmitting] = useState(false);
 	const [validating, setValidating] = useState(false);
 	const [deleting, setDeleting] = useState(false);
+	const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
 	const hasCredential = !!credential;
+	// Mostrar el botón "Validar ahora" sólo cuando aporta valor:
+	// - Pendiente (recién cargada, esperando al worker)
+	// - Inválida (revalidación tras corregir contraseña)
+	// Si está validada, el chip 🟢 ya da la info y el botón sólo confunde.
+	const showValidateButton =
+		hasCredential && (credential.credentialInvalid || !credential.credentialsValidated);
 
 	// ── Crear ───────────────────────────────────────────────────────────────
 	const handleCreate = async () => {
@@ -92,10 +104,10 @@ export default function CredencialesTab() {
 
 	// ── Eliminar ───────────────────────────────────────────────────────────
 	const handleDelete = async () => {
-		if (!window.confirm("¿Eliminar tu credencial SECLO? Las solicitudes activas vinculadas la bloquean.")) return;
 		setDeleting(true);
 		try {
 			await dispatch(deleteMyCredential());
+			setConfirmDeleteOpen(false);
 		} finally {
 			setDeleting(false);
 		}
@@ -305,15 +317,17 @@ export default function CredencialesTab() {
 			<Divider />
 
 			<Stack direction="row" spacing={1} flexWrap="wrap">
-				<Button
-					variant="contained"
-					color="info"
-					startIcon={validating ? <CircularProgress size={14} /> : <FlashCircle size={16} />}
-					onClick={handleValidate}
-					disabled={validating}
-				>
-					{validating ? "Validando…" : "Validar ahora"}
-				</Button>
+				{showValidateButton && (
+					<Button
+						variant="contained"
+						color="info"
+						startIcon={validating ? <CircularProgress size={14} /> : <FlashCircle size={16} />}
+						onClick={handleValidate}
+						disabled={validating}
+					>
+						{validating ? "Validando…" : "Validar ahora"}
+					</Button>
+				)}
 				{!editing && (
 					<Button
 						variant="outlined"
@@ -327,13 +341,43 @@ export default function CredencialesTab() {
 				<Button
 					variant="outlined"
 					color="error"
-					startIcon={deleting ? <CircularProgress size={14} /> : <Trash size={16} />}
-					onClick={handleDelete}
+					startIcon={<Trash size={16} />}
+					onClick={() => setConfirmDeleteOpen(true)}
 					disabled={deleting}
 				>
 					Eliminar
 				</Button>
 			</Stack>
+
+			{/* Confirmación de eliminación */}
+			<Dialog
+				open={confirmDeleteOpen}
+				onClose={() => !deleting && setConfirmDeleteOpen(false)}
+				maxWidth="xs"
+				fullWidth
+			>
+				<DialogTitle>Eliminar credencial SECLO</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						¿Querés eliminar tus credenciales SECLO? Mientras tengas solicitudes activas vinculadas a esta credencial, la
+						eliminación queda bloqueada en el servidor.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>
+						Cancelar
+					</Button>
+					<Button
+						color="error"
+						variant="contained"
+						onClick={handleDelete}
+						disabled={deleting}
+						startIcon={deleting ? <CircularProgress size={14} /> : null}
+					>
+						{deleting ? "Eliminando…" : "Eliminar"}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Stack>
 	);
 }
