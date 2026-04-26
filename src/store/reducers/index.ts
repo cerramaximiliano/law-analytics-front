@@ -39,6 +39,7 @@ import movementsSync from "./movementsSync";
 import postalTrackingReducer from "./postalTracking";
 import postalDocumentsReducer from "./postalDocuments";
 import richTextDocumentsReducer from "./richTextDocuments";
+import seclo from "./seclo";
 
 // ==============================|| COMBINE REDUCERS ||============================== //
 
@@ -85,6 +86,7 @@ const reducers = combineReducers({
 	postalTrackingReducer,
 	postalDocumentsReducer,
 	richTextDocumentsReducer,
+	seclo,
 });
 
 export default reducers;

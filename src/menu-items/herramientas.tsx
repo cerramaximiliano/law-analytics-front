@@ -1,11 +1,12 @@
 import React from "react";
 import { FormattedMessage } from "react-intl";
-import { Box, Setting2 } from "iconsax-react";
+import { Box, Briefcase, Setting2 } from "iconsax-react";
 import { NavItemType } from "types/menu";
 
 const icons = {
   herramientas: Setting2,
   postalTracking: Box,
+  seclo: Briefcase,
 };
 
 const herramientas: NavItemType = {
@@ -20,6 +21,13 @@ const herramientas: NavItemType = {
       type: "item",
       icon: icons.postalTracking,
       url: "/herramientas/seguimiento-postal",
+    },
+    {
+      id: "seclo",
+      title: <FormattedMessage id="Audiencias SECLO" />,
+      type: "item",
+      icon: icons.seclo,
+      url: "/herramientas/seclo",
     },
   ],
 };

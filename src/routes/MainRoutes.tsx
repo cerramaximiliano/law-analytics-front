@@ -91,6 +91,8 @@ const TasksPage = Loadable(lazyRetry(() => import("pages/tasks")));
 
 // render - herramientas
 const PostalTrackingPage = Loadable(lazyRetry(() => import("pages/herramientas/postal-tracking"), "PostalTrackingPage"));
+const SecloPage         = Loadable(lazyRetry(() => import("pages/herramientas/seclo"), "SecloPage"));
+const SecloDetailPage   = Loadable(lazyRetry(() => import("pages/herramientas/seclo/SolicitudDetail"), "SecloDetailPage"));
 
 // render - documentos
 const ModelosPage = Loadable(lazyRetry(() => import("pages/herramientas/plantillas"), "ModelosPage"));
@@ -345,6 +347,14 @@ const MainRoutes = {
 						{
 							path: "seguimiento-postal",
 							element: <PostalTrackingPage />,
+						},
+						{
+							path: "seclo",
+							element: <SecloPage />,
+						},
+						{
+							path: "seclo/solicitudes/:id",
+							element: <SecloDetailPage />,
 						},
 						{
 							/* legacy — kept for bookmarks */
