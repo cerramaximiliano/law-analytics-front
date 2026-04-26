@@ -12,7 +12,7 @@ export type Movement = {
 	description?: string;
 	link?: string;
 	texto?: string; // Contenido de texto del escrito (MEV únicamente)
-	source?: "pjn" | "mev"; // Campo para identificar movimientos sincronizados (PJN o MEV)
+	source?: "pjn" | "mev" | "scba"; // Origen del movimiento sincronizado
 	completed?: boolean; // Nueva propiedad para indicar si el movimiento está completado
 	attachments?: Array<{
 		// Arreglo de adjuntos para movimientos de MEV
@@ -45,6 +45,18 @@ export interface PjnAccess {
 	previewCount?: number; // Cantidad de movimientos de preview mostrados (para usuarios free)
 }
 
+// Mismo shape que PjnAccess — el server devuelve idéntico contrato para SCBA.
+export interface ScbaAccess {
+	hasAccess: boolean;
+	message: string | null;
+	requiresUpgrade: boolean;
+	currentPlan?: string;
+	requiredPlans?: string[];
+	availableMovements?: number;
+	totalMovements?: number;
+	previewCount?: number;
+}
+
 export interface ScrapingProgress {
 	status: string;
 	isComplete: boolean;
@@ -60,6 +72,7 @@ export interface PaginatedMovementsResponse {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	scbaAccess?: ScbaAccess;
 	scrapingProgress?: ScrapingProgress;
 }
 
@@ -70,6 +83,7 @@ export interface MovementState {
 	documentsBeforeThisPage?: number;
 	documentsInThisPage?: number;
 	pjnAccess?: PjnAccess;
+	scbaAccess?: ScbaAccess;
 	scrapingProgress?: ScrapingProgress;
 	causaLastSyncDate?: string | null;
 	isLoading: boolean;

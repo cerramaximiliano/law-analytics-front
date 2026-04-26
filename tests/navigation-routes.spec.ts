@@ -75,7 +75,7 @@ const ALL_PROTECTED_ROUTES: { path: string; label: string }[] = [
 	// Profiles — account
 	{ path: "/apps/profiles/account",                label: "account profile" },
 	{ path: "/apps/profiles/account/my-account",     label: "account my-account" },
-	{ path: "/apps/profiles/account/password",       label: "account password" },
+	// Nota: /apps/profiles/account/password NO existe como ruta propia. Password está en /apps/profiles/user/password.
 	{ path: "/apps/profiles/account/role",           label: "account role" },
 	{ path: "/apps/profiles/account/settings",       label: "account settings" },
 

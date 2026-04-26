@@ -196,11 +196,11 @@ test("GRUPO 2 — Modo Normal → widget 'Tareas Pendientes' visible", async ({ 
 	await expect(page.getByText("Tareas Pendientes")).toBeVisible({ timeout: 10_000 });
 });
 
-test("GRUPO 2 — Modo Normal → widget 'Vencimientos Proximos' visible", async ({ page }) => {
+test("GRUPO 2 — Modo Normal → widget 'Vencimientos Próximos' visible", async ({ page }) => {
 	await mockNormalMode(page);
 	await gotoDashboard(page);
 
-	await expect(page.getByText("Vencimientos Proximos")).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByText("Vencimientos Próximos")).toBeVisible({ timeout: 10_000 });
 });
 
 test("GRUPO 2 — Modo Normal → widget 'Distribución de Carpetas' visible", async ({ page }) => {

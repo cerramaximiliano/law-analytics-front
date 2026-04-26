@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Dispatch } from "redux";
-import { Movement, MovementState, PaginationInfo, PjnAccess, ScrapingProgress } from "types/movements";
+import { Movement, MovementState, PaginationInfo, PjnAccess, ScbaAccess, ScrapingProgress } from "types/movements";
 import { UPDATE_ACTIVITY } from "./activities";
 
 export const GET_MOVEMENTS_BY_FOLDER = "movements/GET_MOVEMENTS_BY_FOLDER";
@@ -48,6 +48,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 				documentsBeforeThisPage: action.payload.documentsBeforeThisPage || undefined,
 				documentsInThisPage: action.payload.documentsInThisPage || undefined,
 				pjnAccess: action.payload.pjnAccess || undefined,
+				scbaAccess: action.payload.scbaAccess || undefined,
 				scrapingProgress: action.payload.scrapingProgress || undefined,
 				causaLastSyncDate: action.payload.causaLastSyncDate !== undefined ? action.payload.causaLastSyncDate : undefined,
 				isLoading: false,
@@ -274,6 +275,7 @@ interface PaginatedSuccessResponse {
 		documentsBeforeThisPage?: number;
 		documentsInThisPage?: number;
 		pjnAccess?: PjnAccess;
+		scbaAccess?: ScbaAccess;
 		scrapingProgress?: ScrapingProgress;
 		causaLastSyncDate?: string | null;
 	};
@@ -346,6 +348,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 						documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 						documentsInThisPage: paginatedData.data.documentsInThisPage,
 						pjnAccess: paginatedData.data.pjnAccess,
+						scbaAccess: paginatedData.data.scbaAccess,
 						scrapingProgress: paginatedData.data.scrapingProgress,
 						causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 					},
@@ -359,6 +362,7 @@ export const getMovementsByFolderId = (folderId: string, params?: MovementQueryP
 					documentsBeforeThisPage: paginatedData.data.documentsBeforeThisPage,
 					documentsInThisPage: paginatedData.data.documentsInThisPage,
 					pjnAccess: paginatedData.data.pjnAccess,
+					scbaAccess: paginatedData.data.scbaAccess,
 					scrapingProgress: paginatedData.data.scrapingProgress,
 					causaLastSyncDate: paginatedData.data.causaLastSyncDate,
 				};

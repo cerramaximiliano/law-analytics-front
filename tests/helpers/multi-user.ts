@@ -178,11 +178,52 @@ export async function refreshSession(role: UserRole): Promise<string> {
 // ─── API helpers con sesión del user ─────────────────────────────────────────
 
 /**
+ * Decodifica un JWT y retorna la fecha de expiración (ms epoch) o 0 si inválido.
+ */
+function jwtExpiresAtMs(token: string): number {
+	if (!token || typeof token !== "string") return 0;
+	try {
+		const [, payloadB64] = token.split(".");
+		if (!payloadB64) return 0;
+		const payload = JSON.parse(
+			Buffer.from(payloadB64.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(),
+		);
+		return payload?.exp ? payload.exp * 1000 : 0;
+	} catch {
+		return 0;
+	}
+}
+
+/**
+ * Retorna true si el storageState del role tiene un token válido con >60s de vida restante.
+ * Si expiró o está por expirar, retorna false para forzar un refresh.
+ */
+function isStorageStateFresh(role: UserRole): boolean {
+	const p = storageStateFor(role);
+	if (!fs.existsSync(p)) return false;
+	try {
+		const raw = JSON.parse(fs.readFileSync(p, "utf-8"));
+		const token = raw?.origins?.[0]?.localStorage?.find((e: any) => e.name === "token")?.value ?? "";
+		const exp = jwtExpiresAtMs(token);
+		return exp - Date.now() > 60_000; // ≥ 60s de vida restante
+	} catch {
+		return false;
+	}
+}
+
+/**
  * Crea un ApiRequestContext con las cookies del user indicado.
  * Útil para acciones puras de backend (setup/teardown de teams, etc.).
+ *
+ * Auto-refresh: si el storageState no existe, o si el JWT almacenado expira en < 60s,
+ * se regenera el storage via login REST antes de crear el contexto. Evita 401 masivos
+ * en suites largas (>30min) donde el token TTL caduca a la mitad del run.
  */
 export async function apiAsUser(role: UserRole) {
-	const statePath = fs.existsSync(storageStateFor(role)) ? storageStateFor(role) : await createStorageStateFor(role);
+	let statePath = storageStateFor(role);
+	if (!isStorageStateFresh(role)) {
+		statePath = await createStorageStateFor(role);
+	}
 	return playwrightRequest.newContext({ storageState: statePath });
 }
 

@@ -219,8 +219,8 @@ test.beforeAll(async () => {
 test("GRUPO 1 — navega a /herramientas/seguimiento-postal y renderiza la página", async ({ page }) => {
 	await gotoPostal(page);
 	await expect(page).toHaveURL(/\/herramientas\/seguimiento-postal/);
-	// h5 dentro del MainCard (h2 = título global de la página, breadcrumb = h6)
-	await expect(page.locator("h5").filter({ hasText: "Seguimiento de envíos" })).toBeVisible({ timeout: 5_000 });
+	// h5 del card: "Seguimientos" o "Seguimientos · N" (depende del estado vacío/con-datos)
+	await expect(page.locator("h5").filter({ hasText: /^Seguimientos( ·|$)/ })).toBeVisible({ timeout: 5_000 });
 });
 
 test("GRUPO 1 — botón 'Nuevo seguimiento' visible en el header (o empty state)", async ({ page }) => {

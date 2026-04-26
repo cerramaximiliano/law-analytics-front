@@ -1,6 +1,32 @@
 # Reporte Completo de Tests E2E — Law Analytics Front
 
 **51 archivos `.spec.ts`** | **543 tests individuales** (+ 1 setup de autenticación)
+
+## Tests pendientes (priorizados)
+
+**Alta prioridad — gaps team system:**
+- Team ownership transfer (`POST /groups/:id/transfer-ownership`)
+- Group archive/restore (`POST /groups/:id/restore`)
+- Folder archive + restore + bulk ops (`DELETE /folders/bulk/delete`)
+
+**Media — flow de cuenta del usuario:**
+- User profile update + password change + delete account
+- Skill management (matrícula del abogado — usado en resolveFields de escritos)
+- User preferences/settings
+
+**Integraciones externas:**
+- Stripe checkout flow completo (Stripe CLI + webhook)
+- MEV credentials (agregar, validar, sync causas CABA)
+- Realtime notifications Socket.io (complemento de polling en notifications.spec.ts)
+- Discount codes (`/api/discounts`)
+
+**Hardening / calidad:**
+- Cross-browser smoke (Firefox/WebKit)
+- Mobile viewport (375x667)
+- Rate limit enforcement (bypass en dev, test sin bypass)
+- Error boundaries (respuestas 5xx)
+- i18n smoke
+
 **Estado global:**
 - ✅ Tests nuevos (#1-#5: bookings, causa, movements, activity-log, bookings-advanced): **53/53 passing** corridas aisladas
 - ✅ Team suite (17 files, BLOQUES 1-23): **117 passing** (última corrida 116+1 flaky, 12.1min)

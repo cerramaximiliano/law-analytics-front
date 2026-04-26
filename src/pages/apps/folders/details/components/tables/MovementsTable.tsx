@@ -467,6 +467,18 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																	Sincronizado • MEV
 																</Typography>
 															)}
+															{movement.source === "scba" && (
+																<Typography
+																	variant="caption"
+																	color="text.secondary"
+																	sx={{
+																		fontStyle: "italic",
+																		fontSize: "0.7rem",
+																	}}
+																>
+																	Sincronizado • SCBA
+																</Typography>
+															)}
 															{movement.attachments && movement.attachments.length > 0 && (
 																<Tooltip title="Ver archivos adjuntos">
 																	<Chip
@@ -612,7 +624,7 @@ const MovementsTable: React.FC<MovementsTableProps> = ({
 																<Eye size={18} />
 															</IconButton>
 														</Tooltip>
-														{movement.source !== "pjn" && movement.source !== "mev" && (
+														{movement.source !== "pjn" && movement.source !== "mev" && movement.source !== "scba" && (
 															<>
 																{canUpdate && (
 																	<Tooltip title="Editar">

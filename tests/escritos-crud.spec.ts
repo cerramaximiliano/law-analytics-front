@@ -357,24 +357,52 @@ test("GRUPO 8 — editar escrito existente → PATCH + snackbar 'actualizado'", 
 // ─────────────────────────────────────────────────────────────────────────────
 
 test("GRUPO 9 — click 'Eliminar' → confirm dialog + DELETE + fila desaparece", async ({ page }) => {
-	test.setTimeout(60_000);
+	test.setTimeout(90_000);
 	const title = makeTitle();
 	const id = await createRichTextDocViaAPI(title);
 	expect(id).toBeTruthy();
 
-	await gotoEscritos(page);
-	const row = page.getByRole("row").filter({ hasText: title });
-	await expect(row).toBeVisible({ timeout: 10_000 });
+	try {
+		await gotoEscritos(page);
+		await page
+			.waitForResponse((r) => r.url().includes("/api/rich-text-documents") && r.request().method() === "GET", {
+				timeout: 10_000,
+			})
+			.catch(() => {});
 
-	await row.locator('[data-testid="escritos-delete-btn"]').click();
-	await expect(page.getByRole("heading", { name: "Eliminar documento" })).toBeVisible({ timeout: 5_000 });
+		// El user de tests (free plan) puede tener docs residuales acumulados; usar el buscador
+		// para filtrar por el título único garantiza que la row aparezca en la primera página.
+		const searchBox = page.getByPlaceholder(/buscar|search/i).first();
+		if (await searchBox.isVisible({ timeout: 2_000 }).catch(() => false)) {
+			await searchBox.fill(title);
+			await page.waitForTimeout(600); // debounce
+		}
 
-	await Promise.all([
-		page.waitForResponse((r) => r.url().includes(`/api/rich-text-documents/${id}`) && r.request().method() === "DELETE"),
-		page.getByRole("dialog").getByRole("button", { name: "Eliminar" }).click(),
-	]);
+		const row = page.getByRole("row").filter({ hasText: title });
+		await expect(row).toBeVisible({ timeout: 15_000 });
 
-	await expect(page.getByRole("row").filter({ hasText: title })).toHaveCount(0, { timeout: 5_000 });
+		// Desktop: las acciones están en un overflow menu (3-dots). El botón abre el menú
+		// y el item "Eliminar" dispara el dialog. Mobile (cards) tiene el botón directo.
+		const rowMenuBtn = row.locator('[data-testid="escritos-row-menu-btn"]');
+		if (await rowMenuBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+			await rowMenuBtn.click();
+			await page.getByRole("menuitem", { name: "Eliminar" }).click();
+		} else {
+			await row.locator('[data-testid="escritos-delete-btn"]').click();
+		}
+		await expect(page.getByRole("heading", { name: "Eliminar documento" })).toBeVisible({ timeout: 5_000 });
+
+		await Promise.all([
+			page.waitForResponse((r) => r.url().includes(`/api/rich-text-documents/${id}`) && r.request().method() === "DELETE"),
+			page.getByRole("dialog").getByRole("button", { name: "Eliminar" }).click(),
+		]);
+
+		await expect(page.getByRole("row").filter({ hasText: title })).toHaveCount(0, { timeout: 5_000 });
+	} catch (err) {
+		// Cleanup defensivo si el test falló antes del delete
+		await deleteRichTextDocById(id).catch(() => {});
+		throw err;
+	}
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

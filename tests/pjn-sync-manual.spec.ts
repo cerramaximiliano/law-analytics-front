@@ -193,8 +193,8 @@ test("GRUPO 2 — sin credenciales PJN → formulario de CUIL + contraseña visi
 
 	// El formulario debe mostrar campos CUIL y contraseña (no hay card "Cuenta conectada")
 	await expect(page.getByText(/Cuenta conectada|Cuenta vinculada/i)).not.toBeVisible({ timeout: 3_000 });
-	// Campo CUIL por placeholder específico "XX-XXXXXXXX-X"
-	const cuilInput = page.getByPlaceholder("XX-XXXXXXXX-X");
+	// Campo CUIL por placeholder "Ej: 20-12345678-9"
+	const cuilInput = page.getByPlaceholder(/20-12345678-9|XX-XXXXXXXX-X/);
 	await expect(cuilInput).toBeVisible({ timeout: 5_000 });
 });
 

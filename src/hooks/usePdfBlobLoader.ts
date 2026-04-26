@@ -71,7 +71,10 @@ const usePdfBlobLoader = ({ url, enabled }: UsePdfBlobLoaderOptions): UsePdfBlob
 						responseType: "blob",
 						withCredentials: true,
 						headers: {
-							Accept: "application/pdf",
+							// Aceptamos PDF y HTML (SCBA renderea el texto del trámite como
+							// HTML; PJN/MEV pueden devolver PDF). q-values dejan al server
+							// elegir su mejor opción.
+							Accept: "application/pdf, text/html;q=0.9, */*;q=0.5",
 						},
 						onDownloadProgress: (progressEvent) => {
 							if (progressEvent.total) {
@@ -81,7 +84,13 @@ const usePdfBlobLoader = ({ url, enabled }: UsePdfBlobLoaderOptions): UsePdfBlob
 						},
 					});
 
-					const blob = new Blob([response.data], { type: "application/pdf" });
+					// Respetar el Content-Type real de la respuesta (HTML para detalle
+					// SCBA, PDF para PJN/MEV). Forzar application/pdf rompía el render
+					// del iframe cuando el server devuelve HTML.
+					const contentType =
+						(response.headers["content-type"] as string | undefined) ||
+						"application/pdf";
+					const blob = new Blob([response.data], { type: contentType });
 					const objectUrl = URL.createObjectURL(blob);
 					currentBlobUrl = objectUrl;
 					setBlobUrl(objectUrl);

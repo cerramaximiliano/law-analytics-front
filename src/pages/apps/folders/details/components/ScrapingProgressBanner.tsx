@@ -5,7 +5,7 @@ import { ScrapingProgress } from "types/movements";
 
 interface ScrapingProgressBannerProps {
 	scrapingProgress?: ScrapingProgress;
-	source?: "mev" | "pjn";
+	source?: "mev" | "pjn" | "scba";
 	onRefresh: () => void;
 	onClose?: () => void;
 }
@@ -34,7 +34,9 @@ const ScrapingProgressBanner: React.FC<ScrapingProgressBannerProps> = ({ scrapin
 
 	// Obtener texto de la fuente
 	const getSourceText = () => {
-		return source === "pjn" ? "PJN" : "MEV";
+		if (source === "pjn") return "PJN";
+		if (source === "scba") return "SCBA";
+		return "MEV";
 	};
 
 	// Determinar el tipo de alerta y mensaje según el estado

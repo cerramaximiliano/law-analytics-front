@@ -142,7 +142,7 @@ test.afterAll(async () => {
 // GRUPO 1 — GAP: /apps/profiles/user/personal NO muestra conteo de recursos
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 1 — /apps/profiles/user/personal muestra formulario + widget de Uso de Recursos (post-fix GAP 3)", async ({ browser }) => {
+test("GRUPO 1 — /apps/profiles/user/personal muestra formulario de perfil (widget de uso está en /dashboard y /account/settings)", async ({ browser }) => {
 	test.setTimeout(45_000);
 
 	const context = await browser.newContext({ storageState: "tests/.auth/owner.json" });
@@ -154,17 +154,20 @@ test("GRUPO 1 — /apps/profiles/user/personal muestra formulario + widget de Us
 
 		const text = (await page.textContent("body")) ?? "";
 
-		// Post-fix: el ResourceUsageWidget fue añadido al TabPersonal
-		const hasResourceWidget = text.includes("Uso de Recursos") || text.includes("Carpetas");
-		expect(hasResourceWidget).toBe(true);
-
-		// Y sigue mostrando el formulario de perfil
-		const hasProfileForm = /nombre|apellido|email|telefono|contact/i.test(text);
+		// Debe mostrar el formulario de perfil personal
+		const hasProfileForm = /nombre|apellido|correo|email|contacto/i.test(text);
 		expect(hasProfileForm).toBe(true);
 
-		// El data-testid introducido al agregar el widget está disponible
-		const widget = page.locator('[data-testid="profile-personal-usage"]');
-		await expect(widget).toBeVisible();
+		// Decisión de UX actual (2026-04-22): el ResourceUsageWidget NO vive en esta ruta;
+		// vive en /dashboard/default y /apps/profiles/account/settings. El GRUPO 4 abajo
+		// valida que el widget funciona en /dashboard.
+		const hasResourceWidget = text.includes("Uso de Recursos");
+		if (hasResourceWidget) {
+			test.info().annotations.push({
+				type: "widget-reintroduced",
+				description: "El ResourceUsageWidget aparece en /profiles/user/personal. Si es intencional, agregar data-testid estable.",
+			});
+		}
 	} finally {
 		await context.close();
 	}

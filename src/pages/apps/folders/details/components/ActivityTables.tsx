@@ -166,8 +166,13 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 	// Hook personalizado para gestionar scrapingProgress con transición suave (MEV)
 	const { scrapingProgress } = useScrapingProgress(movementsData.scrapingProgress, id);
 
-	// Detectar si es PJN o MEV basado en la presencia de pjnAccess
-	const scrapingSource: "mev" | "pjn" = movementsData.pjnAccess ? "pjn" : "mev";
+	// Detectar origen del scraping por la presencia del *Access correspondiente
+	// (el server solo devuelve scbaAccess/pjnAccess cuando el folder es de ese tipo).
+	const scrapingSource: "mev" | "pjn" | "scba" = movementsData.scbaAccess
+		? "scba"
+		: movementsData.pjnAccess
+			? "pjn"
+			: "mev";
 
 	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
@@ -1066,7 +1071,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && movementsData.pjnAccess && (
+												{!scrapingProgress && (movementsData.pjnAccess || movementsData.scbaAccess) && (
 													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
@@ -1086,7 +1091,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													totalWithLinks={movementsData.totalWithLinks}
 													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 													documentsInThisPage={movementsData.documentsInThisPage}
-													pjnAccess={movementsData.pjnAccess}
+													pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
 												/>
 											)}
 											{activeTab === "notifications" && (
@@ -1431,7 +1436,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 														/>
 													</Box>
 												)}
-												{!scrapingProgress && movementsData.pjnAccess && (
+												{!scrapingProgress && (movementsData.pjnAccess || movementsData.scbaAccess) && (
 													<PjnSyncStatus causaLastSyncDate={movementsData.causaLastSyncDate} />
 												)}
 											</>
@@ -1452,7 +1457,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													totalWithLinks={movementsData.totalWithLinks}
 													documentsBeforeThisPage={movementsData.documentsBeforeThisPage}
 													documentsInThisPage={movementsData.documentsInThisPage}
-													pjnAccess={movementsData.pjnAccess}
+													pjnAccess={movementsData.pjnAccess ?? movementsData.scbaAccess}
 												/>
 											)}
 											{activeTab === "notifications" && (
