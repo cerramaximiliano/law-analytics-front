@@ -55,6 +55,9 @@ class WebSocketService {
 	private stateListeners: Set<StateChangeListener> = new Set();
 	private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
 	private userId: string | null = null;
+	// Evita loop infinito: solo intentamos un refresh por sesión de conexión.
+	// Se resetea al reconectar manualmente o tras un disconnect explícito.
+	private refreshAttempted: boolean = false;
 
 	private options: WebSocketOptions = {
 		autoReconnect: true,
@@ -146,8 +149,29 @@ class WebSocketService {
 		});
 
 		// Manejar error de autenticación
-		this.socket.once("authentication_error", (errorMsg) => {
+		this.socket.once("authentication_error", async (errorMsg: string) => {
 			this.log(`Error de autenticación: ${errorMsg}`, "error");
+
+			// Si el server detectó token expirado, intentar refrescar una vez y
+			// reconectar — la cookie auth_token_temp se rotará en el response.
+			const isExpired = typeof errorMsg === "string" && errorMsg.toLowerCase().includes("expirado");
+			if (isExpired && !this.refreshAttempted) {
+				this.refreshAttempted = true;
+				try {
+					this.log("Token expirado — solicitando refresh-token al server", "info");
+					await axios.post(`${API_BASE_URL}/api/auth/refresh-token`, undefined, { withCredentials: true });
+					this.log("Refresh exitoso — reintentando conexión WS", "info");
+					// Pequeño delay para que el navegador procese la cookie nueva
+					setTimeout(() => {
+						this.disconnect();
+						if (this.userId) this.connect(this.userId);
+					}, 250);
+					return;
+				} catch (e) {
+					this.logError("Refresh del token falló — el usuario debe re-loguearse:", e);
+				}
+			}
+
 			this.updateConnectionState(ConnectionState.ERROR);
 		});
 	}
@@ -216,6 +240,7 @@ class WebSocketService {
 			this.socket.disconnect();
 			this.socket = null;
 			this.updateConnectionState(ConnectionState.DISCONNECTED);
+			this.refreshAttempted = false;
 		}
 	}
 
