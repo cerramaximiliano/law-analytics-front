@@ -52,6 +52,7 @@ export interface SecloDatosLaborales {
 	fechaNacimiento?: string | null;
 	fechaIngreso?: string | null;
 	fechaEgreso?: string | null;
+	fechaAccidente?: string | null;
 	remuneracion?: number | null;
 	importeReclamo?: number | null;
 	cct?: string;

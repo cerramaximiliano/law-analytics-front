@@ -154,7 +154,13 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	// Validación por step
 	const canAdvance = () => {
 		if (step === 0) return !!requirente && !!requerido && requirente._id !== requerido._id;
-		if (step === 1) return objetoReclamo.length > 0 && !!abogado.tomo && !!abogado.folio;
+		if (step === 1) {
+			if (objetoReclamo.length === 0) return false;
+			if (!abogado.tomo || !abogado.folio) return false;
+			// Si el reclamo es por accidente o enfermedad, fechaAccidente es requerida
+			if (objetoReclamo.some((o) => /accidente|enfermedad/i.test(o)) && !datosLab.fechaAccidente) return false;
+			return true;
+		}
 		if (step === 2) return REQUIRED_DOCS.every((t) => documentos.some((d) => d.tipo === t));
 		return false;
 	};
@@ -339,6 +345,20 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 										InputLabelProps={{ shrink: true }}
 									/>
 								</Grid>
+								{/* Fecha del accidente — visible siempre acá como opcional. Si en el step
+								    siguiente el objetoReclamo lo requiere, lo volvemos a mostrar inline
+								    con asterisco rojo y se bloquea el avance. */}
+								<Grid item xs={12} sm={6}>
+									<TextField
+										label="Fecha del accidente (si aplica)"
+										type="date"
+										value={datosLab.fechaAccidente || ""}
+										onChange={(e) => setDatosLab((d) => ({ ...d, fechaAccidente: e.target.value }))}
+										fullWidth
+										InputLabelProps={{ shrink: true }}
+										helperText="Requerido si el reclamo es por accidente o enfermedad"
+									/>
+								</Grid>
 								<Grid item xs={12} sm={6}>
 									<TextField
 										label="Última remuneración"
@@ -449,6 +469,27 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 								</FormGroup>
 							</Box>
 						</Grid>
+
+						{/* Si el objeto del reclamo incluye accidente o enfermedad, el portal SECLO
+						    requiere "Fecha del Accidente" — sincronizado con datosLab del step Partes. */}
+						{objetoReclamo.some((o) => /accidente|enfermedad/i.test(o)) && (
+							<Grid item xs={12}>
+								<Alert severity={datosLab.fechaAccidente ? "success" : "warning"} sx={{ mb: 1.5 }}>
+									{datosLab.fechaAccidente
+										? "Fecha del accidente cargada — el portal la va a aceptar."
+										: "El reclamo elegido requiere Fecha del Accidente. Completala acá o volvé al step Partes."}
+								</Alert>
+								<TextField
+									label="Fecha del accidente *"
+									type="date"
+									value={datosLab.fechaAccidente || ""}
+									onChange={(e) => setDatosLab((d) => ({ ...d, fechaAccidente: e.target.value }))}
+									fullWidth
+									InputLabelProps={{ shrink: true }}
+									error={!datosLab.fechaAccidente}
+								/>
+							</Grid>
+						)}
 
 						<Grid item xs={12}>
 							<TextField
