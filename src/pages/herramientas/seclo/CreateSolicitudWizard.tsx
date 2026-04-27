@@ -33,6 +33,7 @@ import { createSolicitud, uploadDocumento } from "store/reducers/seclo";
 import { getContactsByUserId } from "store/reducers/contacts";
 import { getFoldersByUserId } from "store/reducers/folder";
 import AddCustomer from "sections/apps/customer/AddCustomer";
+import { PopupTransition } from "components/@extended/Transitions";
 import {
 	OBJETO_RECLAMO_OPTIONS,
 	type SecloCaracter,
@@ -617,16 +618,38 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		</Dialog>
 
 		{/* Modal de creación rápida de contacto desde el step Partes.
-		    Si hay carpeta seleccionada, el contacto queda automáticamente
-		    vinculado a ella vía folderId. */}
+		    AddCustomer es un componente "in-flow" (no Dialog interno) que
+		    se monta dentro de un <Dialog> propio. Si hay carpeta seleccionada,
+		    el contacto queda automáticamente vinculado a ella vía folderId.
+		    El zIndex superior asegura que se renderice arriba del Dialog del wizard. */}
 		{addCustomerFor && (
-			<AddCustomer
+			<Dialog
 				open={!!addCustomerFor}
-				mode="add"
-				folderId={selectedFolder?._id}
-				onCancel={() => setAddCustomerFor(null)}
-				onAddMember={handleContactCreated}
-			/>
+				onClose={() => setAddCustomerFor(null)}
+				maxWidth="sm"
+				fullWidth
+				TransitionComponent={PopupTransition}
+				keepMounted
+				sx={{
+					zIndex: (t) => t.zIndex.modal + 1,
+					"& .MuiDialog-paper": {
+						p: 0,
+						display: "flex",
+						flexDirection: "column",
+						height: { xs: "90vh", sm: "85vh", md: "80vh" },
+						maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+						overflow: "hidden",
+					},
+				}}
+			>
+				<AddCustomer
+					open={!!addCustomerFor}
+					mode="add"
+					folderId={selectedFolder?._id}
+					onCancel={() => setAddCustomerFor(null)}
+					onAddMember={handleContactCreated}
+				/>
+			</Dialog>
 		)}
 		</>
 	);
