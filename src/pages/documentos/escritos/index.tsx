@@ -170,6 +170,44 @@ const RowSkeleton = () => (
 	</TableRow>
 );
 
+// ── Empty state ───────────────────────────────────────────────────────────────
+//
+// Mismo diseño que /herramientas/seguimiento-postal y /herramientas/seclo:
+// círculo con ícono Bulk + título + descripción + botón principal.
+// Cuando hay búsqueda activa, muestra una variante reducida (sin CTA).
+
+const EscritosEmptyState = ({ hasSearch, onCreate }: { hasSearch: boolean; onCreate: () => void }) => {
+	const theme = useTheme();
+	if (hasSearch) {
+		return (
+			<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
+				<DocumentText size={32} variant="Bulk" style={{ color: theme.palette.text.disabled }} />
+				<Typography variant="body2" color="text.secondary" textAlign="center">
+					No se encontraron documentos con esa búsqueda.
+				</Typography>
+			</Stack>
+		);
+	}
+	return (
+		<Stack alignItems="center" justifyContent="center" spacing={2.5} sx={{ py: 8 }}>
+			<Box sx={{ p: 2.5, bgcolor: "primary.lighter", borderRadius: "50%", color: theme.palette.primary.main }}>
+				<DocumentText size={40} variant="Bulk" />
+			</Box>
+			<Stack alignItems="center" spacing={1}>
+				<Typography variant="h5" color="textSecondary">
+					Todavía no creaste escritos
+				</Typography>
+				<Typography variant="body2" color="textSecondary" align="center" sx={{ maxWidth: 420 }}>
+					Generá tu primer escrito desde cero o partí de una plantilla. Vas a poder vincularlo a una carpeta y descargarlo cuando lo necesites.
+				</Typography>
+			</Stack>
+			<Button variant="contained" startIcon={<Add size={18} />} onClick={onCreate}>
+				Nuevo escrito
+			</Button>
+		</Stack>
+	);
+};
+
 // ── TemplatePickerDialog ───────────────────────────────────────────────────────
 
 const CATEGORY_LABELS: Record<RichTextTemplateCategory, string> = {
@@ -1147,12 +1185,13 @@ const EscritosPage = () => {
 									</Paper>
 								))
 						) : rows.length === 0 ? (
-							<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
-								<DocumentText size={40} style={{ opacity: 0.3 }} />
-								<Typography variant="body2" color="text.secondary" textAlign="center">
-									{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
-								</Typography>
-							</Stack>
+							<EscritosEmptyState
+								hasSearch={!!search}
+								onCreate={async () => {
+									if (!(await checkMainLimit())) return;
+									setOpenTemplatePicker(true);
+								}}
+							/>
 						) : (
 							rows.map((row) => {
 								const isPostal = row.kind === "postal";
@@ -1311,13 +1350,14 @@ const EscritosPage = () => {
 										.map((_, i) => <RowSkeleton key={i} />)
 								) : rows.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={6}>
-											<Stack alignItems="center" justifyContent="center" spacing={1.5} py={6}>
-												<DocumentText size={40} style={{ opacity: 0.3 }} />
-												<Typography variant="body2" color="text.secondary">
-													{search ? "No se encontraron documentos con esa búsqueda." : "Todavía no creaste ningún documento."}
-												</Typography>
-											</Stack>
+										<TableCell colSpan={6} sx={{ borderBottom: 0 }}>
+											<EscritosEmptyState
+												hasSearch={!!search}
+												onCreate={async () => {
+													if (!(await checkMainLimit())) return;
+													setOpenTemplatePicker(true);
+												}}
+											/>
 										</TableCell>
 									</TableRow>
 								) : (
