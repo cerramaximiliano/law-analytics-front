@@ -19,6 +19,7 @@ import {
 	InputLabel,
 	MenuItem,
 	Select,
+	Stack,
 	Step,
 	StepLabel,
 	Stepper,
@@ -31,6 +32,7 @@ import { dispatch, useSelector } from "store";
 import { createSolicitud, uploadDocumento } from "store/reducers/seclo";
 import { getContactsByUserId } from "store/reducers/contacts";
 import { getFoldersByUserId } from "store/reducers/folder";
+import AddCustomer from "sections/apps/customer/AddCustomer";
 import {
 	OBJETO_RECLAMO_OPTIONS,
 	type SecloCaracter,
@@ -109,6 +111,10 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const [documentos, setDocumentos] = useState<SecloDocumento[]>([]);
 	const [uploadingDoc, setUploadingDoc] = useState<SecloDocTipo | null>(null);
 
+	// Modal "Nuevo contacto" — abierto desde el step Partes para crear
+	// trabajador o empleador sin salir del wizard.
+	const [addCustomerFor, setAddCustomerFor] = useState<"requirente" | "requerido" | null>(null);
+
 	// Cargar contactos + carpetas al abrir
 	useEffect(() => {
 		if (!open || !userId) return;
@@ -150,6 +156,24 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		if (step === 1) return objetoReclamo.length > 0 && !!abogado.tomo && !!abogado.folio;
 		if (step === 2) return REQUIRED_DOCS.every((t) => documentos.some((d) => d.tipo === t));
 		return false;
+	};
+
+	// Tras crear un contacto desde el wizard: recargar la lista forzando
+	// refresh y auto-seleccionar el contacto recién creado (el _id que
+	// no estaba antes en el set local).
+	const handleContactCreated = async () => {
+		const target = addCustomerFor;
+		setAddCustomerFor(null);
+		if (!userId) return;
+		const before = new Set(contacts.map((c) => c._id));
+		const res = await dispatch<any>(getContactsByUserId(userId, true));
+		const updated = (res?.contacts || []) as ContactOption[];
+		setContacts(updated);
+		const newOne = updated.find((c) => !before.has(c._id));
+		if (newOne) {
+			if (target === "requirente") setRequirente(newOne);
+			else if (target === "requerido") setRequerido(newOne);
+		}
 	};
 
 	// Upload de un documento
@@ -256,7 +280,17 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 						)}
 
 						<Grid item xs={12}>
-							<Typography variant="subtitle2" mb={1}>Trabajador (requirente)</Typography>
+							<Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+								<Typography variant="subtitle2">Trabajador (requirente)</Typography>
+								<Button
+									size="small"
+									startIcon={<Add size={14} />}
+									onClick={() => setAddCustomerFor("requirente")}
+									disabled={!userId}
+								>
+									Nuevo contacto
+								</Button>
+							</Stack>
 							<Autocomplete
 								options={contactsForRequirente}
 								loading={contactsLoading}
@@ -270,8 +304,8 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 								isOptionEqualToValue={(a, b) => a._id === b._id}
 								noOptionsText={
 									selectedFolder
-										? `No hay contactos en "${selectedFolder.folderName}"`
-										: contactsLoading ? "Cargando…" : "Sin contactos"
+										? `No hay contactos en "${selectedFolder.folderName}". Creá uno con "Nuevo contacto".`
+										: contactsLoading ? "Cargando…" : 'Sin contactos. Creá uno con "Nuevo contacto".'
 								}
 								renderInput={(params) => <TextField {...params} placeholder="Buscar contacto…" />}
 							/>
@@ -353,7 +387,17 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 						)}
 
 						<Grid item xs={12} sx={{ mt: 1 }}>
-							<Typography variant="subtitle2" mb={1}>Empleador (requerido)</Typography>
+							<Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+								<Typography variant="subtitle2">Empleador (requerido)</Typography>
+								<Button
+									size="small"
+									startIcon={<Add size={14} />}
+									onClick={() => setAddCustomerFor("requerido")}
+									disabled={!userId}
+								>
+									Nuevo contacto
+								</Button>
+							</Stack>
 							<Autocomplete
 								options={contactsForRequerido}
 								loading={contactsLoading}
@@ -363,8 +407,8 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 								isOptionEqualToValue={(a, b) => a._id === b._id}
 								noOptionsText={
 									selectedFolder
-										? `No hay otros contactos en "${selectedFolder.folderName}"`
-										: contactsLoading ? "Cargando…" : "Sin contactos"
+										? `No hay otros contactos en "${selectedFolder.folderName}". Creá uno con "Nuevo contacto".`
+										: contactsLoading ? "Cargando…" : 'Sin contactos. Creá uno con "Nuevo contacto".'
 								}
 								renderInput={(params) => <TextField {...params} placeholder="Buscar contacto…" />}
 							/>
@@ -541,6 +585,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	};
 
 	return (
+		<>
 		<Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
 			<DialogTitle>Nueva solicitud de audiencia SECLO</DialogTitle>
 			<DialogContent>
@@ -570,5 +615,19 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 				)}
 			</DialogActions>
 		</Dialog>
+
+		{/* Modal de creación rápida de contacto desde el step Partes.
+		    Si hay carpeta seleccionada, el contacto queda automáticamente
+		    vinculado a ella vía folderId. */}
+		{addCustomerFor && (
+			<AddCustomer
+				open={!!addCustomerFor}
+				mode="add"
+				folderId={selectedFolder?._id}
+				onCancel={() => setAddCustomerFor(null)}
+				onAddMember={handleContactCreated}
+			/>
+		)}
+		</>
 	);
 }
