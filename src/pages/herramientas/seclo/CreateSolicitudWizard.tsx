@@ -170,6 +170,15 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const isDevMode = import.meta.env.MODE === "development";
 	const [dryRunMode, setDryRunMode] = useState<boolean>(isDevMode);
 
+	// Reclamantes adicionales — sólo válidos cuando iniciadoPor === 'trabajador'.
+	// El portal SECLO permite agregar varios al paso 5 (grilla); el worker
+	// itera presionando ctl03_btnSeguir y luego btnSeguirTrabajador. Mientras
+	// la feature se valida, el worker fuerza dryRun cuando hay >1 requirente.
+	const [extraRequirentes, setExtraRequirentes] = useState<Array<{ contact: ContactOption; datosLaborales: SecloDatosLaborales }>>([]);
+	const [extraDialog, setExtraDialog] = useState<{ open: boolean; editIndex: number | null; contact: ContactOption | null; datosLab: SecloDatosLaborales }>({
+		open: false, editIndex: null, contact: null, datosLab: { estadoTrabajador: "regular", sexo: "M" },
+	});
+
 	// Modal "Nuevo contacto" — abierto desde el step Partes para crear
 	// trabajador o empleador sin salir del wizard.
 	const [addCustomerFor, setAddCustomerFor] = useState<"requirente" | "requerido" | null>(null);
@@ -204,6 +213,8 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		setAbogado({ tomo: "", folio: "", caracter: "apoderado", cpa: "" });
 		setDocumentos([]);
 		setDryRunMode(isDevMode);
+		setExtraRequirentes([]);
+		setExtraDialog({ open: false, editIndex: null, contact: null, datosLab: { estadoTrabajador: "regular", sexo: "M" } });
 	};
 
 	const handleClose = () => {
@@ -289,10 +300,15 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		setSubmitting(true);
 		setError(null);
 		try {
+			const allRequirentes = [
+				{ contactId: requirente!._id, datosLaborales: datosLab },
+				...extraRequirentes.map((r) => ({ contactId: r.contact._id, datosLaborales: r.datosLaborales })),
+			];
 			await dispatch<any>(
 				createSolicitud({
-					requirenteId: requirente!._id,
-					requirenteDatosLaborales: datosLab,
+					...(allRequirentes.length > 1
+						? { requirentes: allRequirentes }
+						: { requirenteId: requirente!._id, requirenteDatosLaborales: datosLab }),
 					requeridoId: requerido!._id,
 					objetoReclamo,
 					comentarioReclamo: comentario,
@@ -525,6 +541,57 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 									</FormControl>
 								</Grid>
 							</>
+						)}
+
+						{/* Reclamantes adicionales — sólo cuando iniciadoPor === 'trabajador'.
+						    El portal SECLO permite agregar varios al paso 5 (grilla); el worker
+						    presiona ctl03_btnSeguir por cada uno y luego btnSeguirTrabajador. */}
+						{iniciadoPor === "trabajador" && requirente && (
+							<Grid item xs={12} sx={{ mt: 1 }}>
+								<Box sx={{ borderTop: 1, borderColor: "divider", pt: 2 }}>
+									<Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+										<Typography variant="subtitle2">
+											Reclamantes adicionales {extraRequirentes.length > 0 && <Chip size="small" label={extraRequirentes.length} sx={{ ml: 1 }} />}
+										</Typography>
+										<Button
+											size="small"
+											variant="outlined"
+											onClick={() => setExtraDialog({ open: true, editIndex: null, contact: null, datosLab: { estadoTrabajador: "regular", sexo: "M" } })}
+										>
+											+ Agregar reclamante
+										</Button>
+									</Stack>
+									<Alert severity="warning" sx={{ mb: 1 }}>
+										Cuando hay más de un reclamante, la solicitud corre <strong>siempre en modo prueba</strong> hasta validar el flujo end-to-end con el portal.
+									</Alert>
+									{extraRequirentes.length === 0 ? (
+										<Typography variant="caption" color="text.secondary">
+											Sólo el trabajador principal de arriba. Agregá más reclamantes si el trámite los requiere.
+										</Typography>
+									) : (
+										<Stack spacing={0.5}>
+											{extraRequirentes.map((r, i) => (
+												<Box key={i} sx={{ display: "flex", alignItems: "center", gap: 1, border: 1, borderColor: "divider", borderRadius: 1, p: 1 }}>
+													<Box flexGrow={1}>
+														<Typography variant="body2" fontWeight={600}>
+															#{i + 2} · {r.contact.name} {r.contact.lastName || ""}
+														</Typography>
+														<Typography variant="caption" color="text.secondary">
+															{r.contact.cuit || "—"} · Ingreso: {r.datosLaborales.fechaIngreso?.toString().slice(0, 10) || "—"} · Egreso: {r.datosLaborales.fechaEgreso?.toString().slice(0, 10) || "—"}
+														</Typography>
+													</Box>
+													<Button size="small" onClick={() => setExtraDialog({ open: true, editIndex: i, contact: r.contact, datosLab: r.datosLaborales })}>
+														Editar
+													</Button>
+													<Button size="small" color="error" onClick={() => setExtraRequirentes((prev) => prev.filter((_, j) => j !== i))}>
+														Quitar
+													</Button>
+												</Box>
+											))}
+										</Stack>
+									)}
+								</Box>
+							</Grid>
 						)}
 
 						<Grid item xs={12} sx={{ mt: 1 }}>
@@ -839,6 +906,24 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 					)}
 				</ReviewSection>
 
+				{extraRequirentes.length > 0 && (
+					<ReviewSection title={`Reclamantes adicionales (${extraRequirentes.length})`} onEdit={() => setStep(0)}>
+						{extraRequirentes.map((r, i) => (
+							<Box key={i} sx={{ mb: 0.5 }}>
+								<Typography variant="body2" fontWeight={600}>
+									#{i + 2} · {r.contact.name} {r.contact.lastName || ""} {r.contact.cuit && `— ${r.contact.cuit}`}
+								</Typography>
+								<Typography variant="caption" color="text.secondary">
+									Domicilio: {formatDomicilio(r.contact)} · Ingreso: {r.datosLaborales.fechaIngreso?.toString().slice(0, 10) || "—"} · Egreso: {r.datosLaborales.fechaEgreso?.toString().slice(0, 10) || "—"}
+								</Typography>
+							</Box>
+						))}
+						<Alert severity="warning" sx={{ mt: 1 }}>
+							Con múltiples reclamantes la solicitud corre forzada en <strong>modo prueba</strong>.
+						</Alert>
+					</ReviewSection>
+				)}
+
 				<ReviewSection title="Datos laborales" onEdit={() => setStep(0)}>
 					<ReviewRow label="Fecha de ingreso" value={datosLab.fechaIngreso || "—"} />
 					<ReviewRow label="Fecha de egreso" value={datosLab.fechaEgreso || "—"} />
@@ -910,7 +995,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	return (
 		<>
 		<Dialog
-			open={open && !addCustomerFor && !editCustomerFor}
+			open={open && !addCustomerFor && !editCustomerFor && !extraDialog.open}
 			onClose={handleClose}
 			maxWidth="md"
 			fullWidth
@@ -1018,6 +1103,112 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 				/>
 			</Dialog>
 		)}
+
+		{/* Diálogo para agregar/editar un reclamante adicional. La feature
+		    de múltiples reclamantes sólo aplica cuando iniciadoPor === 'trabajador'
+		    y el worker fuerza dryRun mientras se valida el flujo. */}
+		<Dialog open={extraDialog.open} onClose={() => setExtraDialog((s) => ({ ...s, open: false }))} maxWidth="sm" fullWidth>
+			<DialogTitle>{extraDialog.editIndex !== null ? "Editar reclamante" : "Agregar reclamante"}</DialogTitle>
+			<DialogContent dividers>
+				<Stack spacing={2}>
+					<Autocomplete
+						options={contacts.filter((c) =>
+							c._id !== requirente?._id && c._id !== requerido?._id &&
+							!extraRequirentes.some((r, i) => r.contact._id === c._id && i !== extraDialog.editIndex)
+						)}
+						getOptionLabel={contactLabel}
+						value={extraDialog.contact}
+						onChange={(_, v) => setExtraDialog((s) => ({ ...s, contact: v }))}
+						isOptionEqualToValue={(a, b) => a._id === b._id}
+						renderInput={(params) => <TextField {...params} label="Contacto reclamante *" />}
+						noOptionsText="No hay otros contactos disponibles"
+					/>
+					{extraDialog.contact && !extraDialog.contact.phoneCelular && (
+						<Alert severity="warning">Falta <strong>celular</strong> en este contacto. SECLO lo exige.</Alert>
+					)}
+					{extraDialog.contact && !hasStructuredAddress(extraDialog.contact) && (
+						<Alert severity="warning">Faltan <strong>calle</strong> y/o <strong>número</strong>. SECLO los exige separados.</Alert>
+					)}
+					<Grid container spacing={2}>
+						<Grid item xs={6}>
+							<TextField fullWidth type="date" label="Fecha de ingreso" InputLabelProps={{ shrink: true }}
+								value={extraDialog.datosLab.fechaIngreso?.toString().slice(0, 10) || ""}
+								onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, fechaIngreso: e.target.value || null } }))}
+							/>
+						</Grid>
+						<Grid item xs={6}>
+							<TextField fullWidth type="date" label="Fecha de egreso" InputLabelProps={{ shrink: true }}
+								value={extraDialog.datosLab.fechaEgreso?.toString().slice(0, 10) || ""}
+								onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, fechaEgreso: e.target.value || null } }))}
+							/>
+						</Grid>
+						<Grid item xs={6}>
+							<TextField fullWidth type="date" label="Fecha del accidente (si aplica)" InputLabelProps={{ shrink: true }}
+								value={extraDialog.datosLab.fechaAccidente?.toString().slice(0, 10) || ""}
+								onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, fechaAccidente: e.target.value || null } }))}
+							/>
+						</Grid>
+						<Grid item xs={6}>
+							<TextField fullWidth type="number" label="Última remuneración"
+								value={extraDialog.datosLab.remuneracion ?? ""}
+								onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, remuneracion: e.target.value ? Number(e.target.value) : null } }))}
+							/>
+						</Grid>
+						<Grid item xs={6}>
+							<TextField fullWidth type="number" label="Importe del reclamo"
+								value={extraDialog.datosLab.importeReclamo ?? ""}
+								onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, importeReclamo: e.target.value ? Number(e.target.value) : null } }))}
+							/>
+						</Grid>
+						<Grid item xs={6}>
+							<FormControl fullWidth>
+								<InputLabel>Estado</InputLabel>
+								<Select value={extraDialog.datosLab.estadoTrabajador || "regular"} label="Estado"
+									onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, estadoTrabajador: e.target.value as any } }))}
+								>
+									<MenuItem value="regular">Regular</MenuItem>
+									<MenuItem value="irregular">Irregular</MenuItem>
+									<MenuItem value="no_registrado">No registrado</MenuItem>
+								</Select>
+							</FormControl>
+						</Grid>
+						<Grid item xs={6}>
+							<FormControl fullWidth>
+								<InputLabel>Sexo</InputLabel>
+								<Select value={extraDialog.datosLab.sexo || "M"} label="Sexo"
+									onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, sexo: e.target.value as any } }))}
+								>
+									<MenuItem value="M">Masculino</MenuItem>
+									<MenuItem value="F">Femenino</MenuItem>
+								</Select>
+							</FormControl>
+						</Grid>
+					</Grid>
+				</Stack>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={() => setExtraDialog((s) => ({ ...s, open: false }))}>Cancelar</Button>
+				<Button
+					variant="contained"
+					disabled={!extraDialog.contact || !extraDialog.contact.phoneCelular || !hasStructuredAddress(extraDialog.contact)}
+					onClick={() => {
+						if (!extraDialog.contact) return;
+						const entry = { contact: extraDialog.contact, datosLaborales: extraDialog.datosLab };
+						setExtraRequirentes((prev) => {
+							if (extraDialog.editIndex !== null) {
+								const copy = [...prev];
+								copy[extraDialog.editIndex] = entry;
+								return copy;
+							}
+							return [...prev, entry];
+						});
+						setExtraDialog({ open: false, editIndex: null, contact: null, datosLab: { estadoTrabajador: "regular", sexo: "M" } });
+					}}
+				>
+					{extraDialog.editIndex !== null ? "Guardar cambios" : "Agregar a la lista"}
+				</Button>
+			</DialogActions>
+		</Dialog>
 		</>
 	);
 }
