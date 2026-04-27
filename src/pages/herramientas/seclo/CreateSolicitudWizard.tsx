@@ -587,7 +587,12 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 
 	return (
 		<>
-		<Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+		<Dialog
+			open={open && !addCustomerFor}
+			onClose={handleClose}
+			maxWidth="md"
+			fullWidth
+		>
 			<DialogTitle>Nueva solicitud de audiencia SECLO</DialogTitle>
 			<DialogContent>
 				<Stepper activeStep={step} alternativeLabel sx={{ mb: 3, mt: 1 }}>
@@ -618,10 +623,13 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		</Dialog>
 
 		{/* Modal de creación rápida de contacto desde el step Partes.
-		    AddCustomer es un componente "in-flow" (no Dialog interno) que
-		    se monta dentro de un <Dialog> propio. Si hay carpeta seleccionada,
-		    el contacto queda automáticamente vinculado a ella vía folderId.
-		    El zIndex superior asegura que se renderice arriba del Dialog del wizard. */}
+		    AddCustomer no es un Dialog auto-contenido — es un componente
+		    "in-flow" que necesita ser envuelto en un <Dialog>. Para evitar
+		    issues de z-index con los Select internos (que abren Popover en
+		    theme.zIndex.modal y se ocultarían bajo un Dialog padre), el
+		    Dialog del wizard se oculta vía `open={open && !addCustomerFor}`
+		    mientras este modal está abierto. El componente padre sigue
+		    montado, así que el state del wizard se preserva intacto. */}
 		{addCustomerFor && (
 			<Dialog
 				open={!!addCustomerFor}
@@ -631,7 +639,6 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 				TransitionComponent={PopupTransition}
 				keepMounted
 				sx={{
-					zIndex: (t) => t.zIndex.modal + 1,
 					"& .MuiDialog-paper": {
 						p: 0,
 						display: "flex",
