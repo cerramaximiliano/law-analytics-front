@@ -24,6 +24,7 @@ import {
 	Step,
 	StepLabel,
 	Stepper,
+	Switch,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -162,6 +163,13 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const [documentos, setDocumentos] = useState<SecloDocumento[]>([]);
 	const [uploadingDoc, setUploadingDoc] = useState<SecloDocTipo | null>(null);
 
+	// Modo prueba (dry-run): el worker llena el form pero NO confirma. Sólo
+	// disponible cuando MODE='development'. En producción la opción está
+	// oculta y el backend ignora la bandera. Default: ON en dev para que las
+	// pruebas no terminen presentando expedientes reales por accidente.
+	const isDevMode = import.meta.env.MODE === "development";
+	const [dryRunMode, setDryRunMode] = useState<boolean>(isDevMode);
+
 	// Modal "Nuevo contacto" — abierto desde el step Partes para crear
 	// trabajador o empleador sin salir del wizard.
 	const [addCustomerFor, setAddCustomerFor] = useState<"requirente" | "requerido" | null>(null);
@@ -195,6 +203,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		setIniciadoPor("trabajador");
 		setAbogado({ tomo: "", folio: "", caracter: "apoderado", cpa: "" });
 		setDocumentos([]);
+		setDryRunMode(isDevMode);
 	};
 
 	const handleClose = () => {
@@ -291,6 +300,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 					datosAbogado: { tomo: abogado.tomo, folio: abogado.folio, caracter: abogado.caracter, domicilio: { cpa: abogado.cpa } },
 					documentos,
 					folderId: selectedFolder?._id ?? undefined,
+					...(isDevMode && dryRunMode && { dryRun: true }),
 				}),
 			);
 			handleClose();
@@ -790,10 +800,29 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		const reclamoRequiereFecha = objetoReclamo.some((o) => /accidente|enfermedad/i.test(o));
 		return (
 			<Stack spacing={2}>
-				<Alert severity="info">
-					Revisá todos los datos antes de enviar la solicitud al portal SECLO. Una vez creada,
-					el worker la procesará automáticamente.
+				<Alert severity={dryRunMode ? "warning" : "info"}>
+					{dryRunMode
+						? "Modo PRUEBA activo: el worker llenará el formulario pero NO lo enviará al portal. Sólo se guardarán screenshots y artefactos para inspección."
+						: "Revisá todos los datos antes de enviar la solicitud al portal SECLO. Una vez creada, el worker la procesará automáticamente."}
 				</Alert>
+
+				{isDevMode && (
+					<Box sx={{ border: 1, borderColor: dryRunMode ? "warning.main" : "divider", borderRadius: 1, p: 1.5, bgcolor: dryRunMode ? "warning.lighter" : "background.default" }}>
+						<FormControlLabel
+							control={<Switch checked={dryRunMode} onChange={(e) => setDryRunMode(e.target.checked)} color="warning" />}
+							label={
+								<Box>
+									<Typography variant="body2" fontWeight={dryRunMode ? 600 : 400}>
+										Modo prueba (dry-run)
+									</Typography>
+									<Typography variant="caption" color="text.secondary">
+										Sólo visible en desarrollo. No envía la solicitud al portal SECLO; el worker corre el formulario y se detiene antes de confirmar.
+									</Typography>
+								</Box>
+							}
+						/>
+					</Box>
+				)}
 
 				<ReviewSection title="Trabajador (requirente)" onEdit={() => setStep(0)}>
 					<ReviewRow label="Nombre" value={requirente ? `${requirente.name} ${requirente.lastName || ""}`.trim() : "—"} />
@@ -908,8 +937,13 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 						Siguiente
 					</Button>
 				) : (
-					<Button variant="contained" color="success" onClick={handleSubmit} disabled={submitting || !canAdvance()}>
-						{submitting ? "Creando…" : "Crear solicitud"}
+					<Button
+						variant="contained"
+						color={isDevMode && dryRunMode ? "warning" : "success"}
+						onClick={handleSubmit}
+						disabled={submitting || !canAdvance()}
+					>
+						{submitting ? "Creando…" : isDevMode && dryRunMode ? "Crear en modo prueba" : "Crear solicitud"}
 					</Button>
 				)}
 			</DialogActions>
