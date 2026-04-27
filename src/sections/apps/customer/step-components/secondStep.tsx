@@ -55,13 +55,13 @@ const SecondStep = () => {
 					</Grid>
 					<Grid item xs={6}>
 						<Stack spacing={1}>
-							<InputLabel htmlFor="floor">Piso</InputLabel>
+							<InputLabel htmlFor="floor">Piso (opcional)</InputLabel>
 							<InputField fullWidth sx={customInputStyles} id="floor" name="floor" placeholder="4" />
 						</Stack>
 					</Grid>
 					<Grid item xs={6}>
 						<Stack spacing={1}>
-							<InputLabel htmlFor="apartment">Departamento</InputLabel>
+							<InputLabel htmlFor="apartment">Departamento (opcional)</InputLabel>
 							<InputField fullWidth sx={customInputStyles} id="apartment" name="apartment" placeholder="B" />
 						</Stack>
 					</Grid>

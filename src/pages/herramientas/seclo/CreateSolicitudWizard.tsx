@@ -17,6 +17,7 @@ import {
 	Grid,
 	IconButton,
 	InputLabel,
+	Link as MuiLink,
 	MenuItem,
 	Select,
 	Stack,
@@ -373,6 +374,20 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 									El trabajador no tiene <strong>calle</strong> o <strong>número</strong> cargados. SECLO los exige como campos separados.
 								</Alert>
 							)}
+							{requirente && hasStructuredAddress(requirente) && !requirente.floor && !requirente.apartment && (
+								<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+									El trabajador no tiene piso ni departamento. Si el domicilio lo requiere, podés{" "}
+									<MuiLink
+										component="button"
+										type="button"
+										onClick={() => setEditCustomerFor({ target: "requirente", contact: requirente })}
+										sx={{ verticalAlign: "baseline" }}
+									>
+										agregarlos
+									</MuiLink>
+									{" "}(son opcionales).
+								</Typography>
+							)}
 						</Grid>
 
 						{requirente && (
@@ -506,6 +521,20 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 								>
 									El empleador no tiene <strong>calle</strong> o <strong>número</strong> cargados. SECLO los exige como campos separados.
 								</Alert>
+							)}
+							{requerido && hasStructuredAddress(requerido) && !requerido.floor && !requerido.apartment && (
+								<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+									El empleador no tiene piso ni departamento. Si el domicilio lo requiere, podés{" "}
+									<MuiLink
+										component="button"
+										type="button"
+										onClick={() => setEditCustomerFor({ target: "requerido", contact: requerido })}
+										sx={{ verticalAlign: "baseline" }}
+									>
+										agregarlos
+									</MuiLink>
+									{" "}(son opcionales).
+								</Typography>
 							)}
 						</Grid>
 					</Grid>
