@@ -32,10 +32,37 @@ const SecondStep = () => {
 		<Grid container spacing={2} justifyContent="center">
 			<Grid item xs={12} md={8}>
 				<Grid container spacing={2}>
-					<Grid item xs={12}>
+					{/* Domicilio estructurado — reemplaza el campo libre "address".
+					    El portal SECLO y otros servicios externos exigen calle/número
+					    como campos separados. Piso/depto opcionales. La forma legacy
+					    queda sólo como fallback en parseLegacyAddress al editar
+					    contactos antiguos. */}
+					<Grid item xs={8}>
 						<Stack spacing={1}>
-							<InputLabel htmlFor="address">Domicilio</InputLabel>
-							<InputField fullWidth sx={customInputStyles} id="address" name="address" placeholder="Ingrese un domicilio" />
+							<InputLabel htmlFor="street" required>
+								Calle
+							</InputLabel>
+							<InputField fullWidth sx={customInputStyles} id="street" name="street" placeholder="Av. Corrientes" required />
+						</Stack>
+					</Grid>
+					<Grid item xs={4}>
+						<Stack spacing={1}>
+							<InputLabel htmlFor="streetNumber" required>
+								Número
+							</InputLabel>
+							<InputField fullWidth sx={customInputStyles} id="streetNumber" name="streetNumber" placeholder="1234" required />
+						</Stack>
+					</Grid>
+					<Grid item xs={6}>
+						<Stack spacing={1}>
+							<InputLabel htmlFor="floor">Piso</InputLabel>
+							<InputField fullWidth sx={customInputStyles} id="floor" name="floor" placeholder="4" />
+						</Stack>
+					</Grid>
+					<Grid item xs={6}>
+						<Stack spacing={1}>
+							<InputLabel htmlFor="apartment">Departamento</InputLabel>
+							<InputField fullWidth sx={customInputStyles} id="apartment" name="apartment" placeholder="B" />
 						</Stack>
 					</Grid>
 

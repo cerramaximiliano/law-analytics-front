@@ -37,6 +37,10 @@ interface CustomerFormValues {
 	role: string | string[];
 	type: string;
 	address: string;
+	street: string;
+	streetNumber: string;
+	floor: string;
+	apartment: string;
 	state: string;
 	city: string;
 	zipCode: string;
@@ -54,6 +58,19 @@ interface CustomerFormValues {
 	_id?: string;
 }
 
+/**
+ * Parsea el legacy `address` (free-form) al shape estructurado calle+número.
+ * Misma heurística que el worker SECLO. Sólo se usa para prepoblar contactos
+ * antiguos en modo edit cuando todavía no tienen `street`/`streetNumber`.
+ */
+function parseLegacyAddress(address: string | undefined): { street: string; streetNumber: string } {
+	if (!address) return { street: "", streetNumber: "" };
+	const cleaned = address.replace(/\s+[Nn][ºª°]\s*/g, " ");
+	const m = cleaned.match(/^(.+?)\s+(\d+)\s*$/);
+	if (m) return { street: m[1].trim(), streetNumber: m[2].trim() };
+	return { street: address.trim(), streetNumber: "" };
+}
+
 const getInitialValues = (customer: FormikValues | null) => {
 	const newCustomer = {
 		name: "",
@@ -64,6 +81,10 @@ const getInitialValues = (customer: FormikValues | null) => {
 		tipoRepresentacion: "",
 		representanteLegal: { nombre: "", dni: "" },
 		address: "",
+		street: "",
+		streetNumber: "",
+		floor: "",
+		apartment: "",
 		state: "",
 		city: "",
 		zipCode: "",
@@ -85,6 +106,13 @@ const getInitialValues = (customer: FormikValues | null) => {
 	const isJuridica = merged.type?.toLowerCase().includes("jurídica");
 	if (!isJuridica && merged.lastName === "-") {
 		merged.lastName = "";
+	}
+	// Legacy backfill: contactos viejos solo tienen `address`. Parseamos al
+	// shape estructurado para que el formulario abra con los campos prepoblados.
+	if (!merged.street && !merged.streetNumber && merged.address) {
+		const parsed = parseLegacyAddress(merged.address);
+		merged.street = parsed.street;
+		merged.streetNumber = parsed.streetNumber;
 	}
 	return merged;
 };
@@ -202,6 +230,10 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 		}),
 		// Step 2 — Datos de Contacto
 		Yup.object().shape({
+			street: Yup.string().required("La calle es requerida"),
+			streetNumber: Yup.string().required("El número es requerido"),
+			floor: Yup.string(),
+			apartment: Yup.string(),
 			state: Yup.string().required("La provincia/estado es requerida"),
 			city: Yup.string().required("La ciudad es requerida"),
 			zipCode: Yup.string(),
@@ -386,8 +418,17 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 				...(isJuridica && { representanteLegal: { nombre: values.representanteLegal?.nombre?.trim() || "", dni: values.representanteLegal?.dni?.trim() || "" } }),
 				state: values.state?.trim() || "",
 				city: values.city?.trim() || "",
-				// Campos opcionales - solo incluir si tienen valor
-				...(values.address?.trim() && { address: values.address.trim() }),
+				// Domicilio estructurado: persistimos los 4 explícitos y
+				// reconstruimos `address = "${street} ${streetNumber}"` para
+				// retrocompat con flujos no migrados (facturas, exports PDF).
+				...(values.street?.trim() && { street: values.street.trim() }),
+				...(values.streetNumber?.trim() && { streetNumber: values.streetNumber.trim() }),
+				...(values.floor?.trim() && { floor: values.floor.trim() }),
+				...(values.apartment?.trim() && { apartment: values.apartment.trim() }),
+				...((values.street?.trim() || values.streetNumber?.trim()) && {
+					address: [values.street?.trim() || "", values.streetNumber?.trim() || ""]
+						.filter(Boolean).join(" "),
+				}),
 				...(values.zipCode?.trim() && { zipCode: values.zipCode.trim() }),
 				...(values.email?.trim() && { email: values.email.trim() }),
 				...(values.nationality?.trim() && { nationality: values.nationality.trim() }),

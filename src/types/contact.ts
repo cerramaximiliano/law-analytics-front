@@ -35,7 +35,13 @@ export type Contact = {
 	lastName: string;
 	role: string | string[];  // Puede ser string o array de roles
 	type?: "Humana" | "Jurídica" | "";
+	/** Domicilio en formato libre (legacy). Reconstruido desde
+	 *  street + streetNumber al guardar desde formularios actualizados. */
 	address: string;
+	street?: string;
+	streetNumber?: string;
+	floor?: string;
+	apartment?: string;
 	state: string;
 	city: string;
 	zipCode: string;
