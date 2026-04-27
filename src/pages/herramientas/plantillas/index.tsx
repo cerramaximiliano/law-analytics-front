@@ -488,19 +488,35 @@ const ModelosPage = () => {
           {rtLoading ? (
             <CardsSkeleton count={3} />
           ) : filteredRtTemplates.length === 0 ? (
-            <Stack alignItems="center" justifyContent="center" spacing={2} sx={{ py: 6 }}>
-              <Box sx={{ p: 2, bgcolor: "grey.100", borderRadius: "50%" }}>
-                <ClipboardText size={32} style={{ color: theme.palette.text.secondary }} />
-              </Box>
-              <Typography color="textSecondary">
-                {rtSearch.trim() ? `Sin resultados para "${rtSearch}"` : "Todavía no creaste ningún modelo propio."}
-              </Typography>
-              {!rtSearch.trim() && (
-                <Button variant="outlined" size="small" startIcon={<Add size={16} />} onClick={() => navigate("/documentos/modelos/nuevo")}>
-                  Crear mi primer modelo
+            rtSearch.trim() ? (
+              // Variante reducida cuando hay búsqueda activa — no es un estado vacío real,
+              // es ausencia de resultados para el filtro aplicado.
+              <Stack alignItems="center" justifyContent="center" spacing={1.5} sx={{ py: 6 }}>
+                <ClipboardText size={32} variant="Bulk" style={{ color: theme.palette.text.disabled }} />
+                <Typography variant="body2" color="textSecondary" textAlign="center">
+                  Sin resultados para &quot;{rtSearch}&quot;
+                </Typography>
+              </Stack>
+            ) : (
+              // Empty state completo — mismo patrón que /herramientas/seguimiento-postal,
+              // /herramientas/seclo y /documentos/escritos.
+              <Stack alignItems="center" justifyContent="center" spacing={2.5} sx={{ py: 8 }}>
+                <Box sx={{ p: 2.5, bgcolor: "primary.lighter", borderRadius: "50%", color: theme.palette.primary.main }}>
+                  <ClipboardText size={40} variant="Bulk" />
+                </Box>
+                <Stack alignItems="center" spacing={1}>
+                  <Typography variant="h5" color="textSecondary">
+                    Todavía no creaste modelos propios
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" align="center" sx={{ maxWidth: 420 }}>
+                    Generá tu primer modelo de texto enriquecido con campos dinámicos vinculables a expedientes y contactos.
+                  </Typography>
+                </Stack>
+                <Button variant="contained" startIcon={<Add size={18} />} onClick={() => navigate("/documentos/modelos/nuevo")}>
+                  Crear modelo
                 </Button>
-              )}
-            </Stack>
+              </Stack>
+            )
           ) : (
             <Grid container spacing={2.5}>
               {filteredRtTemplates.map((tpl) => (
