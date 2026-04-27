@@ -67,6 +67,13 @@ interface ContactOption {
 	company?: string;
 	type?: string;
 	folderIds?: string[];
+	// Domicilio estructurado — exigido por SECLO en campos separados.
+	street?: string;
+	streetNumber?: string;
+	floor?: string;
+	apartment?: string;
+	address?: string;
+	phoneCelular?: string;
 }
 
 interface FolderOption {
@@ -115,6 +122,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	// Modal "Nuevo contacto" — abierto desde el step Partes para crear
 	// trabajador o empleador sin salir del wizard.
 	const [addCustomerFor, setAddCustomerFor] = useState<"requirente" | "requerido" | null>(null);
+	const [editCustomerFor, setEditCustomerFor] = useState<{ target: "requirente" | "requerido"; contact: ContactOption } | null>(null);
 
 	// Cargar contactos + carpetas al abrir
 	useEffect(() => {
@@ -152,8 +160,18 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	};
 
 	// Validación por step
+	// SECLO carga calle y número en campos separados — sin esos datos
+	// estructurados el portal rechaza el formulario. Bloqueamos el avance
+	// hasta que ambos contactos tengan calle+número.
+	const hasStructuredAddress = (c: ContactOption | null) =>
+		!!(c?.street?.trim() && c?.streetNumber?.trim());
+
 	const canAdvance = () => {
-		if (step === 0) return !!requirente && !!requerido && requirente._id !== requerido._id;
+		if (step === 0)
+			return (
+				!!requirente && !!requerido && requirente._id !== requerido._id &&
+				hasStructuredAddress(requirente) && hasStructuredAddress(requerido)
+			);
 		if (step === 1) {
 			if (objetoReclamo.length === 0) return false;
 			if (!abogado.tomo || !abogado.folio) return false;
@@ -180,6 +198,23 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		if (newOne) {
 			if (target === "requirente") setRequirente(newOne);
 			else if (target === "requerido") setRequerido(newOne);
+		}
+	};
+
+	// Tras editar un contacto desde el wizard (típicamente para completar
+	// calle+número faltantes): recargar y re-seleccionar el contacto editado.
+	const handleContactEdited = async () => {
+		const target = editCustomerFor?.target;
+		const editedId = editCustomerFor?.contact._id;
+		setEditCustomerFor(null);
+		if (!userId || !editedId) return;
+		const res = await dispatch<any>(getContactsByUserId(userId, true));
+		const updated = (res?.contacts || []) as ContactOption[];
+		setContacts(updated);
+		const refreshed = updated.find((c) => c._id === editedId);
+		if (refreshed) {
+			if (target === "requirente") setRequirente(refreshed);
+			else if (target === "requerido") setRequerido(refreshed);
 		}
 	};
 
@@ -321,6 +356,23 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 									Pertenece a: {requirenteFolderNames.join(", ")}
 								</Typography>
 							)}
+							{requirente && !hasStructuredAddress(requirente) && (
+								<Alert
+									severity="warning"
+									sx={{ mt: 1 }}
+									action={
+										<Button
+											color="inherit"
+											size="small"
+											onClick={() => setEditCustomerFor({ target: "requirente", contact: requirente })}
+										>
+											Completar
+										</Button>
+									}
+								>
+									El trabajador no tiene <strong>calle</strong> o <strong>número</strong> cargados. SECLO los exige como campos separados.
+								</Alert>
+							)}
 						</Grid>
 
 						{requirente && (
@@ -437,6 +489,23 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 								<Typography variant="caption" color="warning.dark" mt={0.5} component="div">
 									El trabajador no comparte carpeta con ningún otro contacto — se muestran todos los contactos.
 								</Typography>
+							)}
+							{requerido && !hasStructuredAddress(requerido) && (
+								<Alert
+									severity="warning"
+									sx={{ mt: 1 }}
+									action={
+										<Button
+											color="inherit"
+											size="small"
+											onClick={() => setEditCustomerFor({ target: "requerido", contact: requerido })}
+										>
+											Completar
+										</Button>
+									}
+								>
+									El empleador no tiene <strong>calle</strong> o <strong>número</strong> cargados. SECLO los exige como campos separados.
+								</Alert>
 							)}
 						</Grid>
 					</Grid>
@@ -629,7 +698,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	return (
 		<>
 		<Dialog
-			open={open && !addCustomerFor}
+			open={open && !addCustomerFor && !editCustomerFor}
 			onClose={handleClose}
 			maxWidth="md"
 			fullWidth
@@ -696,6 +765,39 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 					folderId={selectedFolder?._id}
 					onCancel={() => setAddCustomerFor(null)}
 					onAddMember={handleContactCreated}
+				/>
+			</Dialog>
+		)}
+
+		{/* Edición rápida de contacto desde el step Partes — típicamente
+		    para completar calle+número cuando el contacto no los tiene
+		    cargados en formato estructurado. Mismo wrapping que el modal
+		    de creación: el wizard padre se oculta vía editCustomerFor. */}
+		{editCustomerFor && (
+			<Dialog
+				open={!!editCustomerFor}
+				onClose={() => setEditCustomerFor(null)}
+				maxWidth="sm"
+				fullWidth
+				TransitionComponent={PopupTransition}
+				keepMounted
+				sx={{
+					"& .MuiDialog-paper": {
+						p: 0,
+						display: "flex",
+						flexDirection: "column",
+						height: { xs: "90vh", sm: "85vh", md: "80vh" },
+						maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+						overflow: "hidden",
+					},
+				}}
+			>
+				<AddCustomer
+					open={!!editCustomerFor}
+					mode="edit"
+					customer={editCustomerFor.contact}
+					onCancel={() => setEditCustomerFor(null)}
+					onAddMember={handleContactEdited}
 				/>
 			</Dialog>
 		)}
