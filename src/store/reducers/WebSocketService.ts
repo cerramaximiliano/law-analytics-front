@@ -5,7 +5,15 @@ import { Alert } from "types/alert";
 import secureStorage from "../../services/secureStorage";
 
 // Tipos para los eventos y mensajes
-export type WSMessageType = "NOTIFICATION" | "FOLDER_UPDATE" | "TASK_UPDATE" | "USER_ACTIVITY" | "CONNECTION_STATE" | "SYNC_PROGRESS";
+export type WSMessageType =
+	| "NOTIFICATION"
+	| "FOLDER_UPDATE"
+	| "TASK_UPDATE"
+	| "USER_ACTIVITY"
+	| "CONNECTION_STATE"
+	| "SYNC_PROGRESS"
+	| "SECLO_CREDENTIAL_UPDATE"
+	| "SECLO_SOLICITUD_UPDATE";
 
 export interface WSMessage<T = any> {
 	type: WSMessageType;
@@ -409,6 +417,30 @@ class WebSocketService {
 			this.handleMessage({
 				type: "SYNC_PROGRESS",
 				payload: progress,
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// SECLO — actualización de credencial (checking/validated/invalid).
+		// Disparado por trabajo-worker via la-notification cuando el
+		// credentials-checker procesa una credencial del usuario.
+		this.socket.on("seclo_credential_update", (data: any) => {
+			this.log(`SECLO credential update: ${data?.status}`);
+			this.handleMessage({
+				type: "SECLO_CREDENTIAL_UPDATE",
+				payload: data,
+				timestamp: new Date().toISOString(),
+			});
+		});
+
+		// SECLO — actualización de solicitud (processing/submitted/completed/error).
+		// Disparado por trabajo-worker en cada transición de estado o cuando
+		// se obtiene el conciliador post-audiencia.
+		this.socket.on("seclo_solicitud_update", (data: any) => {
+			this.log(`SECLO solicitud ${data?.solicitudId} → ${data?.status}`);
+			this.handleMessage({
+				type: "SECLO_SOLICITUD_UPDATE",
+				payload: data,
 				timestamp: new Date().toISOString(),
 			});
 		});

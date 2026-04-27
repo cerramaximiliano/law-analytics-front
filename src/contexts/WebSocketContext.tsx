@@ -10,6 +10,10 @@ import { pjnSyncStarted, pjnSyncProgress, pjnSyncCompleted, pjnSyncError } from 
 import { scbaSyncStarted, scbaSyncProgress, scbaSyncCompleted, scbaSyncError } from "store/reducers/scbaSync";
 import { movementsSyncStarted, movementsSyncCompleted } from "store/reducers/movementsSync";
 import { getFoldersByUserId } from "store/reducers/folder";
+import {
+	SET_CREDENTIAL as SECLO_SET_CREDENTIAL,
+	UPDATE_SOLICITUD as SECLO_UPDATE_SOLICITUD,
+} from "store/reducers/seclo";
 import { Alert } from "types/alert";
 import { FolderData } from "types/folder";
 
@@ -163,6 +167,50 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 						totalBatches: p.totalBatches,
 					}));
 				}
+			}
+
+			// SECLO — actualización de credencial en tiempo real (checking/validated/invalid).
+			// El payload trae el credential público completo, lo despachamos como
+			// SET_CREDENTIAL para que CredencialesTab refleje el estado al instante.
+			if (message.type === "SECLO_CREDENTIAL_UPDATE") {
+				const p = message.payload as any;
+				if (p?.credential) {
+					dispatch({ type: SECLO_SET_CREDENTIAL, payload: p.credential });
+				}
+				if (p?.status === "validated") {
+					showNotification("Credenciales SECLO validadas", "success");
+				} else if (p?.status === "invalid") {
+					showNotification(`Credenciales SECLO inválidas: ${p.reason || "verificá tu contraseña"}`, "error");
+				}
+				return;
+			}
+
+			// SECLO — actualización de solicitud en tiempo real.
+			// El payload viene parcial (solo campos cambiados); UPDATE_SOLICITUD
+			// del reducer hace merge respetando los campos que ya estaban.
+			if (message.type === "SECLO_SOLICITUD_UPDATE") {
+				const p = message.payload as any;
+				if (!p?.solicitudId) return;
+				// Construir un patch que el reducer pueda mergear vía map _id===solicitudId.
+				// El reducer reemplaza la solicitud entera, así que pasamos un objeto
+				// parcial — el componente que pinte el detalle hará un merge propio si
+				// quiere mantener los campos previos. El listado refresca al recibir.
+				dispatch({
+					type: SECLO_UPDATE_SOLICITUD,
+					payload: {
+						_id: p.solicitudId,
+						status: p.status,
+						...(p.numeroExpediente !== undefined && { resultado: { numeroExpediente: p.numeroExpediente, numeroTramite: p.numeroTramite, audiencias: p.audiencia ? [p.audiencia] : undefined } }),
+						...(p.error && { errorInfo: { message: p.error.message, code: p.error.code, timestamp: new Date().toISOString() } }),
+					},
+				});
+
+				if (p.status === "completed") {
+					showNotification(`Solicitud SECLO completada${p.numeroExpediente ? ` — ${p.numeroExpediente}` : ""}`, "success");
+				} else if (p.status === "error") {
+					showNotification(`Error en solicitud SECLO: ${p.error?.message || "Error desconocido"}`, "error");
+				}
+				return;
 			}
 
 			if (message.type === "NOTIFICATION") {

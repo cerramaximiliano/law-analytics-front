@@ -17,15 +17,17 @@ const BASE_CRED = `${import.meta.env.VITE_BASE_URL}/api/seclo-credentials`;
 const BASE_SOL  = `${import.meta.env.VITE_BASE_URL}/api/seclo-solicitudes`;
 
 // ─── Action types ─────────────────────────────────────────────────────────────
+// Exportadas para que WebSocketContext pueda despachar transiciones recibidas
+// vía socket.io desde el trabajo-worker.
 
-const SET_LOADING       = "@seclo/SET_LOADING";
-const SET_ERROR         = "@seclo/SET_ERROR";
-const SET_CREDENTIAL    = "@seclo/SET_CREDENTIAL";
-const SET_SOLICITUDES   = "@seclo/SET_SOLICITUDES";
-const ADD_SOLICITUD     = "@seclo/ADD_SOLICITUD";
-const UPDATE_SOLICITUD  = "@seclo/UPDATE_SOLICITUD";
-const REMOVE_SOLICITUD  = "@seclo/REMOVE_SOLICITUD";
-const SET_TOTAL         = "@seclo/SET_TOTAL";
+export const SET_LOADING       = "@seclo/SET_LOADING";
+export const SET_ERROR         = "@seclo/SET_ERROR";
+export const SET_CREDENTIAL    = "@seclo/SET_CREDENTIAL";
+export const SET_SOLICITUDES   = "@seclo/SET_SOLICITUDES";
+export const ADD_SOLICITUD     = "@seclo/ADD_SOLICITUD";
+export const UPDATE_SOLICITUD  = "@seclo/UPDATE_SOLICITUD";
+export const REMOVE_SOLICITUD  = "@seclo/REMOVE_SOLICITUD";
+export const SET_TOTAL         = "@seclo/SET_TOTAL";
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -63,9 +65,15 @@ export default function secloReducer(state = initial, action: any): SecloState {
 				solicitudesTotal: state.solicitudesTotal + 1,
 			};
 		case UPDATE_SOLICITUD:
+			// Merge en lugar de replace — los updates por WS llegan parciales
+			// (sólo los campos que cambiaron) y no queremos perder los demás.
 			return {
 				...state,
-				solicitudes: state.solicitudes.map((s) => (s._id === action.payload._id ? action.payload : s)),
+				solicitudes: state.solicitudes.map((s) =>
+					s._id === action.payload._id
+						? { ...s, ...action.payload, resultado: { ...(s.resultado || {}), ...(action.payload.resultado || {}) } }
+						: s,
+				),
 			};
 		case REMOVE_SOLICITUD:
 			return {

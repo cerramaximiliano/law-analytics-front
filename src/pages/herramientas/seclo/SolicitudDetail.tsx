@@ -15,14 +15,14 @@ import {
 import { ArrowLeft, DocumentDownload, RefreshCircle } from "iconsax-react";
 
 import MainCard from "components/MainCard";
-import { dispatch } from "store";
+import { dispatch, useSelector } from "store";
 import {
 	fetchSolicitudById,
-	fetchSolicitudStatus,
 	getSecloDownloadUrl,
 	reactivarSolicitud,
+	UPDATE_SOLICITUD,
 } from "store/reducers/seclo";
-import type { SecloSolicitud, SecloSolicitudStatus, SecloStatus } from "types/seclo";
+import type { SecloSolicitud, SecloStatus } from "types/seclo";
 
 const STATUS_COLORS: Record<SecloStatus, "default" | "warning" | "info" | "success" | "error"> = {
 	pending:           "warning",
@@ -42,9 +42,9 @@ const STATUS_LABELS: Record<SecloStatus, string> = {
 	dry_run_completed: "Prueba completada",
 };
 
-// Polling cuando el estado todavía es "vivo"
+// Estados "vivos" (mostrar chip "actualizando…"). Las transiciones llegan via
+// WebSocket (seclo_solicitud_update); el polling local fue eliminado.
 const LIVE_STATUSES: SecloStatus[] = ["pending", "processing", "submitted"];
-const POLL_INTERVAL_MS = 15000;
 
 function getParticipantName(p: any): string {
 	if (p?.contactId && typeof p.contactId === "object") {
@@ -57,40 +57,39 @@ export default function SolicitudDetail() {
 	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
 
-	const [sol, setSol] = useState<SecloSolicitud | null>(null);
-	const [status, setStatus] = useState<SecloSolicitudStatus | null>(null);
-	const [loading, setLoading] = useState(true);
+	// Leer del store — el WebSocketContext despacha UPDATE_SOLICITUD cada vez
+	// que llega un seclo_solicitud_update, así que el detalle se actualiza en
+	// tiempo real sin necesidad de polling.
+	const solFromStore = useSelector((s: any) =>
+		(s.seclo.solicitudes as SecloSolicitud[]).find((x) => x._id === id),
+	);
+
+	const [sol, setSol] = useState<SecloSolicitud | null>(solFromStore || null);
+	const [loading, setLoading] = useState(!solFromStore);
 	const [reactivating, setReactivating] = useState(false);
+
+	// Mantener sol sincronizado con el store (cuando llega WS update)
+	useEffect(() => {
+		if (solFromStore) setSol(solFromStore);
+	}, [solFromStore]);
 
 	const load = async () => {
 		if (!id) return;
 		const fetched = await dispatch<any>(fetchSolicitudById(id));
-		setSol(fetched);
+		if (fetched) {
+			setSol(fetched);
+			// Sembrar el store para que el WebSocketContext pueda mergear updates
+			dispatch({ type: UPDATE_SOLICITUD, payload: fetched });
+		}
 		setLoading(false);
 	};
 
 	useEffect(() => {
-		load();
+		// Carga inicial — el WS toma el relevo después
+		if (!solFromStore) load();
+		else setLoading(false);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [id]);
-
-	// Polling de status si está vivo
-	useEffect(() => {
-		if (!sol || !id) return;
-		if (!LIVE_STATUSES.includes(sol.status)) return;
-
-		const tick = async () => {
-			const s = await dispatch<any>(fetchSolicitudStatus(id));
-			if (s) {
-				setStatus(s);
-				// Si cambió de estado, refrescar el doc completo
-				if (s.status !== sol.status) load();
-			}
-		};
-		const intv = setInterval(tick, POLL_INTERVAL_MS);
-		return () => clearInterval(intv);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [sol?.status, id]);
 
 	const handleReactivar = async () => {
 		if (!id) return;
@@ -134,8 +133,8 @@ export default function SolicitudDetail() {
 	}
 
 	const audiencias = sol.resultado?.audiencias || [];
-	const numeroExpediente = sol.resultado?.numeroExpediente || status?.numeroExpediente;
-	const numeroTramite    = sol.resultado?.numeroTramite    || status?.numeroTramite;
+	const numeroExpediente = sol.resultado?.numeroExpediente;
+	const numeroTramite    = sol.resultado?.numeroTramite;
 	const errorMsg         = sol.errorInfo?.message;
 
 	return (

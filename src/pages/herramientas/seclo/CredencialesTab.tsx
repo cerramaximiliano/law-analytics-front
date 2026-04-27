@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Alert,
 	Box,
@@ -53,6 +53,20 @@ export default function CredencialesTab() {
 	const [deleting, setDeleting] = useState(false);
 	const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+	// Si el WS confirma un resultado (validated/invalid), apagamos el spinner
+	// y cancelamos el timer de fallback.
+	const validateFallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => {
+		if (!validating || !credential) return;
+		if (credential.credentialsValidated || credential.credentialInvalid) {
+			setValidating(false);
+			if (validateFallbackTimer.current) {
+				clearTimeout(validateFallbackTimer.current);
+				validateFallbackTimer.current = null;
+			}
+		}
+	}, [credential, validating]);
+
 	const hasCredential = !!credential;
 	// Mostrar el botón "Validar ahora" sólo cuando aporta valor:
 	// - Pendiente (recién cargada, esperando al worker)
@@ -88,15 +102,18 @@ export default function CredencialesTab() {
 	};
 
 	// ── Validar ────────────────────────────────────────────────────────────
+	// El WebSocketContext recibe `seclo_credential_update` y actualiza el
+	// chip al instante. Mantenemos un setTimeout de fallback por si el WS
+	// no está conectado: refrescamos a los 30s y soltamos el spinner.
 	const handleValidate = async () => {
 		setValidating(true);
 		try {
 			await dispatch(validateMyCredential());
-			// Refrescar la credencial tras unos segundos para ver el resultado
-			setTimeout(() => {
+			validateFallbackTimer.current = setTimeout(() => {
 				dispatch(fetchMyCredential());
 				setValidating(false);
-			}, 25000);
+				validateFallbackTimer.current = null;
+			}, 30000);
 		} catch {
 			setValidating(false);
 		}
