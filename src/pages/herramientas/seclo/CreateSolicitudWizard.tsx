@@ -61,6 +61,21 @@ const DOC_TIPO_LABEL: Record<SecloDocTipo, string> = {
 
 const REQUIRED_DOCS: SecloDocTipo[] = ["dni", "credencial"];
 
+interface DatosLaboralesEntry {
+	source?: string;
+	empleadorName?: string;
+	fechaNacimiento?: string | null;
+	fechaIngreso?: string | null;
+	fechaEgreso?: string | null;
+	fechaAccidente?: string | null;
+	remuneracion?: number | null;
+	importeReclamo?: number | null;
+	cct?: string;
+	categoria?: string;
+	estadoTrabajador?: "regular" | "irregular" | "no_registrado" | null;
+	sexo?: "M" | "F" | null;
+}
+
 interface ContactOption {
 	_id: string;
 	name: string;
@@ -78,6 +93,7 @@ interface ContactOption {
 	city?: string;
 	phoneCelular?: string;
 	tipoSociedad?: string;
+	datosLaboralesHistorial?: DatosLaboralesEntry[];
 }
 
 interface FolderOption {
@@ -536,6 +552,39 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 
 						{requirente && (
 							<>
+								{(requirente.datosLaboralesHistorial?.length ?? 0) > 0 && (
+									<Grid item xs={12}>
+										<FormControl fullWidth size="small">
+											<InputLabel>Reutilizar datos laborales del historial ({requirente.datosLaboralesHistorial!.length})</InputLabel>
+											<Select
+												label={`Reutilizar datos laborales del historial (${requirente.datosLaboralesHistorial!.length})`}
+												value=""
+												onChange={(e) => {
+													const idx = Number(e.target.value);
+													const entry = requirente.datosLaboralesHistorial![idx];
+													if (!entry) return;
+													setDatosLab({
+														fechaNacimiento: entry.fechaNacimiento ? entry.fechaNacimiento.slice(0, 10) : null,
+														fechaIngreso:    entry.fechaIngreso ? entry.fechaIngreso.slice(0, 10) : null,
+														fechaEgreso:     entry.fechaEgreso ? entry.fechaEgreso.slice(0, 10) : null,
+														fechaAccidente:  entry.fechaAccidente ? entry.fechaAccidente.slice(0, 10) : null,
+														remuneracion:    entry.remuneracion ?? null,
+														importeReclamo:  entry.importeReclamo ?? null,
+														cct:             entry.cct || "",
+														categoria:       entry.categoria || "",
+														estadoTrabajador: entry.estadoTrabajador || "regular",
+														sexo:            entry.sexo || "M",
+													});
+												}}
+											>
+												{requirente.datosLaboralesHistorial!.map((e, i) => {
+													const lab = `${e.empleadorName || "Sin empleador"} · ${e.fechaIngreso?.slice(0, 10) || "—"} → ${e.fechaEgreso?.slice(0, 10) || "—"} · $${e.remuneracion ?? "—"} · src=${e.source || "—"}`;
+													return <MenuItem key={i} value={i}>{lab}</MenuItem>;
+												})}
+											</Select>
+										</FormControl>
+									</Grid>
+								)}
 								<Grid item xs={12} sm={6}>
 									<TextField
 										label="Fecha de ingreso"
@@ -1316,6 +1365,40 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 						>
 							Faltan <strong>calle</strong> y/o <strong>número</strong> en este contacto. SECLO los exige separados.
 						</Alert>
+					)}
+					{extraDialog.contact && (extraDialog.contact.datosLaboralesHistorial?.length ?? 0) > 0 && (
+						<FormControl fullWidth size="small">
+							<InputLabel>Reutilizar datos del historial ({extraDialog.contact.datosLaboralesHistorial!.length})</InputLabel>
+							<Select
+								label={`Reutilizar datos del historial (${extraDialog.contact.datosLaboralesHistorial!.length})`}
+								value=""
+								onChange={(e) => {
+									const idx = Number(e.target.value);
+									const entry = extraDialog.contact!.datosLaboralesHistorial![idx];
+									if (!entry) return;
+									setExtraDialog((s) => ({
+										...s,
+										datosLab: {
+											fechaNacimiento: entry.fechaNacimiento ? entry.fechaNacimiento.slice(0, 10) : null,
+											fechaIngreso:    entry.fechaIngreso ? entry.fechaIngreso.slice(0, 10) : null,
+											fechaEgreso:     entry.fechaEgreso ? entry.fechaEgreso.slice(0, 10) : null,
+											fechaAccidente:  entry.fechaAccidente ? entry.fechaAccidente.slice(0, 10) : null,
+											remuneracion:    entry.remuneracion ?? null,
+											importeReclamo:  entry.importeReclamo ?? null,
+											cct:             entry.cct || "",
+											categoria:       entry.categoria || "",
+											estadoTrabajador: entry.estadoTrabajador || "regular",
+											sexo:            entry.sexo || "M",
+										},
+									}));
+								}}
+							>
+								{extraDialog.contact.datosLaboralesHistorial!.map((e, i) => {
+									const lab = `${e.empleadorName || "Sin empleador"} · ${e.fechaIngreso?.slice(0, 10) || "—"} → ${e.fechaEgreso?.slice(0, 10) || "—"} · $${e.remuneracion ?? "—"} · src=${e.source || "—"}`;
+									return <MenuItem key={i} value={i}>{lab}</MenuItem>;
+								})}
+							</Select>
+						</FormControl>
 					)}
 					<Grid container spacing={2}>
 						<Grid item xs={6}>

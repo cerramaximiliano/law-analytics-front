@@ -321,7 +321,7 @@ export const getContactsByUserId =
 
 			dispatch({ type: SET_CONTACT_LOADING });
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,phoneCelular,phoneCodArea,role,type,tipoSociedad,address,street,streetNumber,floor,apartment,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+			const fields = "_id,name,lastName,email,phone,phoneCelular,phoneCodArea,role,type,tipoSociedad,address,street,streetNumber,floor,apartment,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef,datosLaboralesHistorial,datosEmpleadorHistorial";
 			const params: Record<string, string> = { fields };
 
 			// Si se solicita count de archivados por folder, agregarlo
@@ -361,7 +361,7 @@ export const getContactsByGroupId =
 			dispatch({ type: SET_CONTACT_LOADING });
 
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,phoneCelular,phoneCodArea,role,type,tipoSociedad,address,street,streetNumber,floor,apartment,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+			const fields = "_id,name,lastName,email,phone,phoneCelular,phoneCodArea,role,type,tipoSociedad,address,street,streetNumber,floor,apartment,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef,datosLaboralesHistorial,datosEmpleadorHistorial";
 
 			const params: Record<string, any> = {
 				archived,
@@ -638,7 +638,7 @@ export const getArchivedContactsByUserId =
 		try {
 			dispatch({ type: SET_CONTACT_LOADING });
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,phoneCelular,phoneCodArea,role,type,tipoSociedad,address,street,streetNumber,floor,apartment,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+			const fields = "_id,name,lastName,email,phone,phoneCelular,phoneCodArea,role,type,tipoSociedad,address,street,streetNumber,floor,apartment,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef,datosLaboralesHistorial,datosEmpleadorHistorial";
 
 			const params: Record<string, any> = {
 				archived: true,
