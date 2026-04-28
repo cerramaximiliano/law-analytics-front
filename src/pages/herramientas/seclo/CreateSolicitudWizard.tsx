@@ -961,10 +961,13 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 
 	const renderReview = () => {
 		const reclamoRequiereFecha = objetoReclamo.some((o) => /accidente|enfermedad/i.test(o));
+		const empleadorIniciadoForzado = iniciadoPor === "empleador";
 		return (
 			<Stack spacing={2}>
-				<Alert severity={dryRunMode ? "warning" : "info"}>
-					{dryRunMode
+				<Alert severity={dryRunMode || empleadorIniciadoForzado ? "warning" : "info"}>
+					{empleadorIniciadoForzado
+						? "Trámite iniciado por el empleador: el worker corre en modo PRUEBA forzado hasta validar el flujo end-to-end. Cargará empleador y trabajador en el portal y se detendrá ANTES de hacer click en \"Generar Reclamo y Especificar Fecha\"."
+						: dryRunMode
 						? "Modo PRUEBA activo: el worker llenará el formulario pero NO lo enviará al portal. Sólo se guardarán screenshots y artefactos para inspección."
 						: "Revisá todos los datos antes de enviar la solicitud al portal SECLO. Una vez creada, el worker la procesará automáticamente."}
 				</Alert>
@@ -1138,11 +1141,17 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 				) : (
 					<Button
 						variant="contained"
-						color={isDevMode && dryRunMode ? "warning" : "success"}
+						color={(isDevMode && dryRunMode) || iniciadoPor === "empleador" ? "warning" : "success"}
 						onClick={handleSubmit}
 						disabled={submitting || !canAdvance()}
 					>
-						{submitting ? "Creando…" : isDevMode && dryRunMode ? "Crear en modo prueba" : "Crear solicitud"}
+						{submitting
+							? "Creando…"
+							: iniciadoPor === "empleador"
+							? "Crear en modo prueba (empleador inicia)"
+							: isDevMode && dryRunMode
+							? "Crear en modo prueba"
+							: "Crear solicitud"}
 					</Button>
 				)}
 			</DialogActions>
