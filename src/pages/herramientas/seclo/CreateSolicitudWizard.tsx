@@ -188,6 +188,15 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		open: false, editIndex: null, contact: null,
 	});
 
+	// Cuando el usuario abre AddCustomer (edit) desde un extra-diálogo,
+	// guardamos el contexto para poder volver al extra-diálogo con el
+	// contacto fresco al guardar — sin perder los datos laborales tipeados.
+	const [extraReopen, setExtraReopen] = useState<{
+		kind: "trabajador" | "empleador";
+		editIndex: number | null;
+		datosLab?: SecloDatosLaborales;
+	} | null>(null);
+
 	// Modal "Nuevo contacto" — abierto desde el step Partes para crear
 	// trabajador o empleador sin salir del wizard.
 	const [addCustomerFor, setAddCustomerFor] = useState<"requirente" | "requerido" | null>(null);
@@ -298,9 +307,47 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 		const updated = (res?.contacts || []) as ContactOption[];
 		setContacts(updated);
 		const refreshed = updated.find((c) => c._id === editedId);
-		if (refreshed) {
-			if (target === "requirente") setRequirente(refreshed);
-			else if (target === "requerido") setRequerido(refreshed);
+		if (!refreshed) return;
+
+		// Si veníamos desde un extra-diálogo, volvemos ahí con el contacto
+		// actualizado en vez de tocar requirente/requerido principales.
+		if (extraReopen) {
+			if (extraReopen.kind === "trabajador") {
+				setExtraDialog({
+					open: true,
+					editIndex: extraReopen.editIndex,
+					contact: refreshed,
+					datosLab: extraReopen.datosLab || { estadoTrabajador: "regular", sexo: "M" },
+				});
+			} else {
+				setExtraRequeridoDialog({
+					open: true,
+					editIndex: extraReopen.editIndex,
+					contact: refreshed,
+				});
+			}
+			setExtraReopen(null);
+			return;
+		}
+
+		if (target === "requirente") setRequirente(refreshed);
+		else if (target === "requerido") setRequerido(refreshed);
+	};
+
+	// Abre AddCustomer en modo edit para completar campos faltantes del
+	// contacto seleccionado en un extra-diálogo. Cierra el extra-diálogo y
+	// vuelve a abrirlo con el contacto refrescado al guardar.
+	const completarDesdeExtra = (kind: "trabajador" | "empleador") => {
+		if (kind === "trabajador") {
+			if (!extraDialog.contact) return;
+			setExtraReopen({ kind, editIndex: extraDialog.editIndex, datosLab: extraDialog.datosLab });
+			setExtraDialog((s) => ({ ...s, open: false }));
+			setEditCustomerFor({ target: "requirente", contact: extraDialog.contact });
+		} else {
+			if (!extraRequeridoDialog.contact) return;
+			setExtraReopen({ kind, editIndex: extraRequeridoDialog.editIndex });
+			setExtraRequeridoDialog((s) => ({ ...s, open: false }));
+			setEditCustomerFor({ target: "requerido", contact: extraRequeridoDialog.contact });
 		}
 	};
 
@@ -1247,10 +1294,28 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 						noOptionsText="No hay otros contactos disponibles"
 					/>
 					{extraDialog.contact && !extraDialog.contact.phoneCelular && (
-						<Alert severity="warning">Falta <strong>celular</strong> en este contacto. SECLO lo exige.</Alert>
+						<Alert
+							severity="warning"
+							action={
+								<Button color="inherit" size="small" onClick={() => completarDesdeExtra("trabajador")}>
+									Editar contacto
+								</Button>
+							}
+						>
+							Falta <strong>celular</strong> en este contacto. SECLO lo exige.
+						</Alert>
 					)}
 					{extraDialog.contact && !hasStructuredAddress(extraDialog.contact) && (
-						<Alert severity="warning">Faltan <strong>calle</strong> y/o <strong>número</strong>. SECLO los exige separados.</Alert>
+						<Alert
+							severity="warning"
+							action={
+								<Button color="inherit" size="small" onClick={() => completarDesdeExtra("trabajador")}>
+									Editar contacto
+								</Button>
+							}
+						>
+							Faltan <strong>calle</strong> y/o <strong>número</strong> en este contacto. SECLO los exige separados.
+						</Alert>
 					)}
 					<Grid container spacing={2}>
 						<Grid item xs={6}>
@@ -1356,22 +1421,23 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 						noOptionsText="No hay otros contactos disponibles"
 					/>
 					{extraRequeridoDialog.contact && !hasStructuredAddress(extraRequeridoDialog.contact) && (
-						<Alert severity="warning">Faltan <strong>calle</strong> y/o <strong>número</strong>. SECLO los exige separados.</Alert>
+						<Alert
+							severity="warning"
+							action={
+								<Button color="inherit" size="small" onClick={() => completarDesdeExtra("empleador")}>
+									Editar contacto
+								</Button>
+							}
+						>
+							Faltan <strong>calle</strong> y/o <strong>número</strong> en este contacto. SECLO los exige separados.
+						</Alert>
 					)}
 					{extraRequeridoDialog.contact && !hasValidTipoSociedad(extraRequeridoDialog.contact) && (
 						<Alert
 							severity="warning"
 							action={
-								<Button
-									color="inherit"
-									size="small"
-									onClick={() => {
-										const c = extraRequeridoDialog.contact!;
-										setExtraRequeridoDialog((s) => ({ ...s, open: false }));
-										setEditCustomerFor({ target: "requerido", contact: c });
-									}}
-								>
-									Completar
+								<Button color="inherit" size="small" onClick={() => completarDesdeExtra("empleador")}>
+									Editar contacto
 								</Button>
 							}
 						>
