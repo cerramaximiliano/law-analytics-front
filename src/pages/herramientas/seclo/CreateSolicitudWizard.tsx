@@ -587,6 +587,16 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 								)}
 								<Grid item xs={12} sm={6}>
 									<TextField
+										label="Fecha de nacimiento"
+										type="date"
+										value={(datosLab.fechaNacimiento || "").toString().slice(0, 10)}
+										onChange={(e) => setDatosLab((d) => ({ ...d, fechaNacimiento: e.target.value || null }))}
+										fullWidth
+										InputLabelProps={{ shrink: true }}
+									/>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<TextField
 										label="Fecha de ingreso"
 										type="date"
 										value={datosLab.fechaIngreso || ""}
@@ -663,6 +673,25 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 											<MenuItem value="F">Femenino</MenuItem>
 										</Select>
 									</FormControl>
+								</Grid>
+								{/* CCT y categoría — el portal exige formato NUMERO-AAAA para CCT
+								    (el worker normaliza a 5 dígitos y dispara blur). Categoría es libre. */}
+								<Grid item xs={12} sm={6}>
+									<TextField
+										label="CCT (ej. 130-1975)"
+										value={datosLab.cct ?? ""}
+										onChange={(e) => setDatosLab((d) => ({ ...d, cct: e.target.value || undefined }))}
+										fullWidth
+										helperText="Convenio colectivo de trabajo. Formato NUMERO-AAAA"
+									/>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<TextField
+										label="Categoría"
+										value={datosLab.categoria ?? ""}
+										onChange={(e) => setDatosLab((d) => ({ ...d, categoria: e.target.value || undefined }))}
+										fullWidth
+									/>
 								</Grid>
 							</>
 						)}
@@ -901,17 +930,6 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 							</Grid>
 						)}
 
-						<Grid item xs={12}>
-							<TextField
-								label="Comentario adicional (opcional)"
-								value={comentario}
-								onChange={(e) => setComentario(e.target.value)}
-								multiline
-								rows={2}
-								fullWidth
-							/>
-						</Grid>
-
 						<Grid item xs={12} sm={6}>
 							<FormControl fullWidth>
 								<InputLabel>Iniciado por</InputLabel>
@@ -1120,6 +1138,7 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 				)}
 
 				<ReviewSection title="Datos laborales" onEdit={() => setStep(0)}>
+					<ReviewRow label="Fecha de nacimiento" value={(datosLab.fechaNacimiento || "").toString().slice(0, 10) || "—"} />
 					<ReviewRow label="Fecha de ingreso" value={datosLab.fechaIngreso || "—"} />
 					<ReviewRow label="Fecha de egreso" value={datosLab.fechaEgreso || "—"} />
 					{(reclamoRequiereFecha || datosLab.fechaAccidente) && (
@@ -1127,6 +1146,8 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 					)}
 					<ReviewRow label="Última remuneración" value={datosLab.remuneracion ? `$${datosLab.remuneracion}` : "—"} />
 					<ReviewRow label="Importe del reclamo" value={datosLab.importeReclamo ? `$${datosLab.importeReclamo}` : "—"} />
+					<ReviewRow label="CCT" value={datosLab.cct || "—"} />
+					<ReviewRow label="Categoría" value={datosLab.categoria || "—"} />
 					<ReviewRow label="Estado" value={datosLab.estadoTrabajador || "regular"} />
 					<ReviewRow label="Sexo" value={datosLab.sexo === "F" ? "Femenino" : "Masculino"} />
 				</ReviewSection>
@@ -1166,18 +1187,6 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 				<ReviewSection title="Reclamo" onEdit={() => setStep(1)}>
 					<ReviewRow label="Iniciado por" value={iniciadoPor === "trabajador" ? "Trabajador" : "Empleador"} />
 					<ReviewRow label="Objeto/s del reclamo" value={objetoReclamo.length ? objetoReclamo.join(", ") : "—"} />
-					<ReviewRow
-						label="Comentario"
-						value={comentario}
-						emptyHint={
-							<>
-								Sin comentario.{" "}
-								<MuiLink component="button" type="button" onClick={() => setStep(1)} sx={{ verticalAlign: "baseline" }}>
-									Agregar
-								</MuiLink>{" "}(opcional).
-							</>
-						}
-					/>
 				</ReviewSection>
 
 				<ReviewSection title="Abogado" onEdit={() => setStep(1)}>
@@ -1453,6 +1462,18 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 									<MenuItem value="F">Femenino</MenuItem>
 								</Select>
 							</FormControl>
+						</Grid>
+						<Grid item xs={6}>
+							<TextField fullWidth label="CCT (ej. 130-1975)"
+								value={extraDialog.datosLab.cct ?? ""}
+								onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, cct: e.target.value || undefined } }))}
+							/>
+						</Grid>
+						<Grid item xs={6}>
+							<TextField fullWidth label="Categoría"
+								value={extraDialog.datosLab.categoria ?? ""}
+								onChange={(e) => setExtraDialog((s) => ({ ...s, datosLab: { ...s.datosLab, categoria: e.target.value || undefined } }))}
+							/>
 						</Grid>
 					</Grid>
 				</Stack>
