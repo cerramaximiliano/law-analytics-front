@@ -35,6 +35,9 @@ export type Contact = {
 	lastName: string;
 	role: string | string[];  // Puede ser string o array de roles
 	type?: "Humana" | "Jurídica" | "";
+	/** Subtipo de persona jurídica del portal SECLO (cmbTipoSociedad).
+	 *  Vacío para físicas y para contactos legacy aún sin completar. */
+	tipoSociedad?: string;
 	/** Domicilio en formato libre (legacy). Reconstruido desde
 	 *  street + streetNumber al guardar desde formularios actualizados. */
 	address: string;

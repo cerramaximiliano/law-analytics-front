@@ -77,6 +77,7 @@ interface ContactOption {
 	address?: string;
 	city?: string;
 	phoneCelular?: string;
+	tipoSociedad?: string;
 }
 
 interface FolderOption {
@@ -239,11 +240,22 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 	const hasStructuredAddress = (c: ContactOption | null) =>
 		!!(c?.street?.trim() && c?.streetNumber?.trim());
 
+	// Para personas jurídicas el portal exige el subtipo concreto (cmbTipoSociedad).
+	// Para físicas se asume "Persona Física" automáticamente.
+	const hasValidTipoSociedad = (c: ContactOption | null) => {
+		if (!c) return false;
+		// type puede venir como "Jurídica", "Persona Jurídica" — tolerante.
+		const isJur = (c.type || "").toLowerCase().includes("jur");
+		if (isJur) return !!c.tipoSociedad?.trim();
+		return true;
+	};
+
 	const canAdvance = () => {
 		if (step === 0)
 			return (
 				!!requirente && !!requerido && requirente._id !== requerido._id &&
-				hasStructuredAddress(requirente) && hasStructuredAddress(requerido)
+				hasStructuredAddress(requirente) && hasStructuredAddress(requerido) &&
+				hasValidTipoSociedad(requerido)
 			);
 		if (step === 1) {
 			if (objetoReclamo.length === 0) return false;
@@ -656,6 +668,23 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 									}
 								>
 									El empleador no tiene <strong>calle</strong> o <strong>número</strong> cargados. SECLO los exige como campos separados.
+								</Alert>
+							)}
+							{requerido && !hasValidTipoSociedad(requerido) && (
+								<Alert
+									severity="warning"
+									sx={{ mt: 1 }}
+									action={
+										<Button
+											color="inherit"
+											size="small"
+											onClick={() => setEditCustomerFor({ target: "requerido", contact: requerido })}
+										>
+											Completar
+										</Button>
+									}
+								>
+									El empleador es persona jurídica pero falta el <strong>tipo</strong> (S.A., S.R.L., Cooperativa, etc.). SECLO lo exige.
 								</Alert>
 							)}
 							{requerido && hasStructuredAddress(requerido) && !requerido.floor && !requerido.apartment && (
@@ -1320,6 +1349,26 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 					{extraRequeridoDialog.contact && !hasStructuredAddress(extraRequeridoDialog.contact) && (
 						<Alert severity="warning">Faltan <strong>calle</strong> y/o <strong>número</strong>. SECLO los exige separados.</Alert>
 					)}
+					{extraRequeridoDialog.contact && !hasValidTipoSociedad(extraRequeridoDialog.contact) && (
+						<Alert
+							severity="warning"
+							action={
+								<Button
+									color="inherit"
+									size="small"
+									onClick={() => {
+										const c = extraRequeridoDialog.contact!;
+										setExtraRequeridoDialog((s) => ({ ...s, open: false }));
+										setEditCustomerFor({ target: "requerido", contact: c });
+									}}
+								>
+									Completar
+								</Button>
+							}
+						>
+							Falta el <strong>tipo</strong> de persona jurídica. SECLO lo exige.
+						</Alert>
+					)}
 					{extraRequeridoDialog.contact && (
 						<Alert severity="info" icon={false}>
 							<Typography variant="body2"><strong>CUIT:</strong> {extraRequeridoDialog.contact.cuit || "—"}</Typography>
@@ -1335,7 +1384,11 @@ export default function CreateSolicitudWizard({ open, onClose }: Props) {
 				<Button onClick={() => setExtraRequeridoDialog((s) => ({ ...s, open: false }))}>Cancelar</Button>
 				<Button
 					variant="contained"
-					disabled={!extraRequeridoDialog.contact || !hasStructuredAddress(extraRequeridoDialog.contact)}
+					disabled={
+						!extraRequeridoDialog.contact ||
+						!hasStructuredAddress(extraRequeridoDialog.contact) ||
+						!hasValidTipoSociedad(extraRequeridoDialog.contact)
+					}
 					onClick={() => {
 						if (!extraRequeridoDialog.contact) return;
 						const c = extraRequeridoDialog.contact;

@@ -32,6 +32,30 @@ export const OBJETO_RECLAMO_OPTIONS = [
 	"Seguro de Vida",
 ] as const;
 
+// Tipos de persona jurídica del portal SECLO (cmbTipoSociedad). Sólo
+// se exponen cuando type === "Persona Jurídica"; para físicas el sistema
+// asume "Persona Física" automáticamente.
+export const TIPO_SOCIEDAD_OPTIONS = [
+	"Persona Física",
+	"Sociedades de Hecho",
+	"Sociedad Colectiva",
+	"Sociedad en Comandita Simple",
+	"Sociedad de Capital e Industria",
+	"Sociedad de Responsabilidad Limitada",
+	"Sociedad Anónima",
+	"Sociedad Anónima con Part. Estatal",
+	"Sociedad Comandita por Acciones",
+	"Sociedad Accidental o en Participación",
+	"Asociación Civil",
+	"Sociedades Civiles",
+	"Fundaciones",
+	"O.N.G.",
+	"Cooperativas",
+	"Cooperativas de trabajo",
+	"Otro",
+] as const;
+export type SecloTipoSociedad = typeof TIPO_SOCIEDAD_OPTIONS[number];
+
 export interface SecloCredential {
 	_id: string;
 	enabled: boolean;

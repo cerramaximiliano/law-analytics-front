@@ -55,6 +55,8 @@ interface CustomerFormValues {
 	activity: string;
 	company: string;
 	fiscal: string;
+	/** Subtipo SECLO cuando type === "Jurídica". Vacío para físicas. */
+	tipoSociedad: string;
 	_id?: string;
 }
 
@@ -99,6 +101,7 @@ const getInitialValues = (customer: FormikValues | null) => {
 		activity: "",
 		company: "",
 		fiscal: "",
+		tipoSociedad: "",
 	};
 	if (!customer) return newCustomer;
 	const merged = merge({}, newCustomer, customer);
@@ -225,6 +228,12 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 			company: Yup.string().when("type", {
 				is: (type: string) => type?.toLowerCase().includes("jurídica"),
 				then: (s) => s.required("La razón social es requerida"),
+				otherwise: (s) => s,
+			}),
+			// Tipo específico de persona jurídica — exigido por SECLO en cmbTipoSociedad
+			tipoSociedad: Yup.string().when("type", {
+				is: (type: string) => type?.toLowerCase().includes("jurídica"),
+				then: (s) => s.required("Indicá el tipo de persona jurídica"),
 				otherwise: (s) => s,
 			}),
 		}),
@@ -438,6 +447,9 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 				...(values.activity?.trim() && { activity: values.activity.trim() }),
 				...(values.company?.trim() && { company: values.company.trim() }),
 				...(values.fiscal?.trim() && { fiscal: values.fiscal.trim() }),
+				// Subtipo SECLO: para personas físicas siempre "Persona Física";
+				// para jurídicas usamos lo que el usuario eligió en el Select.
+				tipoSociedad: isJuridica ? (values.tipoSociedad?.trim() || "") : "Persona Física",
 			};
 
 			// Remover campos vacíos para los opcionales

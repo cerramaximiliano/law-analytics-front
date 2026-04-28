@@ -2,6 +2,8 @@ import React from "react";
 import { Grid, Stack, InputLabel, Typography } from "@mui/material";
 import { useFormikContext } from "formik";
 import InputField from "components/UI/InputField";
+import SelectField from "components/UI/SelectField";
+import { TIPO_SOCIEDAD_OPTIONS } from "types/seclo";
 
 const customInputStyles = {
 	"& .MuiInputBase-root": {
@@ -37,6 +39,24 @@ const FirstStep = () => {
 										id="company"
 										name="company"
 										placeholder="Ingrese la razón social"
+										required
+									/>
+								</Stack>
+							</Grid>
+
+							{/* Tipo específico de persona jurídica — exigido por SECLO
+							    cuando el contacto figura como empleador. Para físicas
+							    el sistema asume "Persona Física" automáticamente. */}
+							<Grid item xs={12}>
+								<Stack spacing={1}>
+									<InputLabel htmlFor="tipoSociedad" required>
+										Tipo de persona jurídica
+									</InputLabel>
+									<SelectField
+										label="Seleccione el tipo"
+										name="tipoSociedad"
+										data={TIPO_SOCIEDAD_OPTIONS.filter((o) => o !== "Persona Física") as unknown as string[]}
+										style={{ maxHeight: "39.91px" }}
 										required
 									/>
 								</Stack>
