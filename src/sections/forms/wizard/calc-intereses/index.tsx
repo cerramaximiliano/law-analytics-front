@@ -119,7 +119,7 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 				const campo = values.tasa;
 				const calcular = true;
 
-				const url = `${process.env.REACT_APP_BASE_URL}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&calcular=${calcular}`;
+				const url = `${import.meta.env.VITE_BASE_URL || ""}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&calcular=${calcular}`;
 
 				const response = await axios.get(url, {
 					withCredentials: true,
