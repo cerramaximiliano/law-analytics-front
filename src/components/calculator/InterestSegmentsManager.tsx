@@ -448,6 +448,18 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			return;
 		}
 
+		// Validar que la fecha inicial no sea anterior a la fecha base
+		// (ej. fecha de egreso del cómputo del capital). Solo aplica cuando se
+		// pasa initialDate al componente.
+		if (initialDate) {
+			const baseDate = dayjs(initialDate, "DD/MM/YYYY");
+			const newStartDate = dayjs(newSegment.startDate, "DD/MM/YYYY");
+			if (newStartDate.isBefore(baseDate)) {
+				setError(`La fecha inicial no puede ser anterior a ${initialDate} (fecha base del cómputo)`);
+				return;
+			}
+		}
+
 		// Validar que no haya superposición con el tramo anterior
 		if (segments.length > 0) {
 			const lastSegment = segments[segments.length - 1];
@@ -574,6 +586,16 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 		if (dayjs(editingSegment.endDate, "DD/MM/YYYY").isBefore(dayjs(editingSegment.startDate, "DD/MM/YYYY"))) {
 			setError("La fecha final debe ser posterior a la fecha inicial");
 			return;
+		}
+
+		// Validar que la fecha inicial no sea anterior a la fecha base
+		if (initialDate) {
+			const baseDate = dayjs(initialDate, "DD/MM/YYYY");
+			const editStartDate = dayjs(editingSegment.startDate, "DD/MM/YYYY");
+			if (editStartDate.isBefore(baseDate)) {
+				setError(`La fecha inicial no puede ser anterior a ${initialDate} (fecha base del cómputo)`);
+				return;
+			}
 		}
 
 		const segmentIndex = segments.findIndex((s) => s.id === editingSegmentId);
@@ -785,6 +807,17 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 	const finalAmount = capitalizeInterest
 		? (segments[segments.length - 1]?.capital || capital) + (segments[segments.length - 1]?.interest || 0)
 		: capital + totalInterest;
+
+	// Fecha mínima permitida para el inicio de un nuevo tramo:
+	//   - si hay tramos previos: día siguiente al fin del último
+	//   - sino, si hay initialDate (ej. fecha de egreso): esa fecha
+	//   - sino: sin restricción
+	const segmentMinDate: Dayjs | undefined =
+		segments.length > 0
+			? dayjs(segments[segments.length - 1].endDate, "DD/MM/YYYY").add(1, "day")
+			: initialDate
+				? dayjs(initialDate, "DD/MM/YYYY")
+				: undefined;
 
 	return (
 		<Box>
@@ -1126,6 +1159,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 										})
 									}
 									format="DD/MM/YYYY"
+									minDate={segmentMinDate}
 									slotProps={{
 										textField: { size: "small", fullWidth: true },
 									}}
@@ -1144,6 +1178,9 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 										})
 									}
 									format="DD/MM/YYYY"
+									minDate={
+										newSegment.startDate ? dayjs(newSegment.startDate, "DD/MM/YYYY") : segmentMinDate
+									}
 									slotProps={{
 										textField: { size: "small", fullWidth: true },
 									}}
@@ -1252,7 +1289,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 											onClick={handleSaveNewSegment}
 											startIcon={<Calculator size={16} />}
 										>
-											Calcular
+											Agregar
 										</Button>
 										<Button type="button" variant="outlined" size="small" color="error" onClick={handleCancelNew}>
 											Cancelar
