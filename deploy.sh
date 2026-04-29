@@ -86,8 +86,32 @@ if [ "$SKIP_CHECKS" = false ]; then
     echo -e "${CYAN}🔍 VERIFICACIONES PREVIAS${NC}"
     echo -e "${CYAN}=========================================${NC}"
 
-    # 2.1 Type checking
-    echo -e "${YELLOW}2.1. Verificando tipos TypeScript...${NC}"
+    # 2.1 Sincronizar dependencias (debe correr ANTES de type-check para evitar
+    # falsos errores TS2307 cuando package.json tiene deps nuevas no instaladas)
+    echo -e "${YELLOW}2.1. Sincronizando dependencias...${NC}"
+    if [ "$IS_SERVER" = true ]; then
+        # En server: siempre npm ci para garantizar que coincida con package-lock.json
+        npm ci
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}✗ Error al instalar dependencias${NC}"
+            echo -e "${YELLOW}Tip: verificá que .npmrc tenga el token de TipTap Pro${NC}"
+            exit 1
+        fi
+    else
+        # En local: solo si falta node_modules (no romper el flujo del dev)
+        if [ ! -d "node_modules" ]; then
+            echo -e "${YELLOW}⚠ node_modules no encontrado, instalando dependencias...${NC}"
+            npm ci
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}✗ Error al instalar dependencias${NC}"
+                exit 1
+            fi
+        fi
+    fi
+    echo -e "${GREEN}✓ Dependencias OK${NC}"
+
+    # 2.2 Type checking
+    echo -e "${YELLOW}2.2. Verificando tipos TypeScript...${NC}"
     npm run type-check
     if [ $? -ne 0 ]; then
         echo -e "${RED}✗ Errores de TypeScript encontrados${NC}"
@@ -96,8 +120,8 @@ if [ "$SKIP_CHECKS" = false ]; then
     fi
     echo -e "${GREEN}✓ Types verificados${NC}"
 
-    # 2.2 Linting
-    echo -e "${YELLOW}2.2. Verificando código con ESLint...${NC}"
+    # 2.3 Linting
+    echo -e "${YELLOW}2.3. Verificando código con ESLint...${NC}"
     npm run lint > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo -e "${YELLOW}⚠ Warnings de ESLint encontrados (no crítico)${NC}"
@@ -105,18 +129,6 @@ if [ "$SKIP_CHECKS" = false ]; then
     else
         echo -e "${GREEN}✓ Lint OK${NC}"
     fi
-
-    # 2.3 Verificar node_modules
-    echo -e "${YELLOW}2.3. Verificando dependencias...${NC}"
-    if [ ! -d "node_modules" ]; then
-        echo -e "${YELLOW}⚠ node_modules no encontrado, instalando dependencias...${NC}"
-        npm ci
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}✗ Error al instalar dependencias${NC}"
-            exit 1
-        fi
-    fi
-    echo -e "${GREEN}✓ Dependencias OK${NC}"
 
     echo -e "${GREEN}=========================================${NC}"
     echo -e "${GREEN}✅ VERIFICACIONES COMPLETADAS${NC}"
