@@ -865,32 +865,35 @@ const TabSubscription = () => {
 							>
 								{subscription?.limitsWithDescriptions ? (
 									// Usar limitsWithDescriptions si está disponible
-									[...subscription.limitsWithDescriptions].filter((item: any) => {
-										const currentEnv = import.meta.env.PROD ? "production" : "development";
-										if (!item.visibility || item.visibility === "all") return true;
-										if (item.visibility === "none") return false;
-										return item.visibility === currentEnv;
-									}).sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99)).map((item: any) => (
-										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
-											<ListItemText
-												primary={
-													<Typography color="text.secondary" variant="subtitle2">
-														{item.displayName || item.description || item.name}
-													</Typography>
-												}
-												secondary={
-													<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-														{(() => {
-															if (item.limit === undefined) return "No disponible";
-															if (item.limit === 999999) return "Ilimitado";
-															if (item.name === "storage") return `${item.limit} MB`;
-															return item.limit;
-														})()}
-													</Typography>
-												}
-											/>
-										</ListItem>
-									))
+									[...subscription.limitsWithDescriptions]
+										.filter((item: any) => {
+											const currentEnv = import.meta.env.PROD ? "production" : "development";
+											if (!item.visibility || item.visibility === "all") return true;
+											if (item.visibility === "none") return false;
+											return item.visibility === currentEnv;
+										})
+										.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
+										.map((item: any) => (
+											<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
+												<ListItemText
+													primary={
+														<Typography color="text.secondary" variant="subtitle2">
+															{item.displayName || item.description || item.name}
+														</Typography>
+													}
+													secondary={
+														<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
+															{(() => {
+																if (item.limit === undefined) return "No disponible";
+																if (item.limit === 999999) return "Ilimitado";
+																if (item.name === "storage") return `${item.limit} MB`;
+																return item.limit;
+															})()}
+														</Typography>
+													}
+												/>
+											</ListItem>
+										))
 								) : subscription?.limitDetails ? (
 									// Fallback a limitDetails si limitsWithDescriptions no está disponible
 									Object.entries(subscription.limitDetails).map(([key, value]: [string, any]) => (
@@ -988,7 +991,7 @@ const TabSubscription = () => {
 											if (feature.visibility === "none") return false;
 											return feature.visibility === currentEnv;
 										})
-											.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
+										.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
 										.map((feature: any) => (
 											<ListItem key={feature.name} sx={{ px: 1, py: 1.25 }}>
 												<ListItemText

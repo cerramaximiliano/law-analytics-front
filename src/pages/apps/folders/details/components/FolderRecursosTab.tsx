@@ -1,17 +1,5 @@
 import React, { useState } from "react";
-import {
-	Box,
-	Drawer,
-	IconButton,
-	Paper,
-	Stack,
-	Tab,
-	Tabs,
-	Typography,
-	alpha,
-	useMediaQuery,
-	useTheme,
-} from "@mui/material";
+import { Box, Drawer, IconButton, Paper, Stack, Tab, Tabs, Typography, alpha, useMediaQuery, useTheme } from "@mui/material";
 import { DocumentText, Menu } from "iconsax-react";
 import MainCard from "components/MainCard";
 import FolderDocumentsTab from "./FolderDocumentsTab";
@@ -66,13 +54,13 @@ const FolderRecursosTab = ({ folderId, folderName }: Props) => {
 				display: "flex",
 				flexDirection: "column",
 				height: "100%",
-				bgcolor: theme.palette.mode === "dark"
-					? alpha(theme.palette.background.paper, 0.8)
-					: theme.palette.grey[50],
+				bgcolor: theme.palette.mode === "dark" ? alpha(theme.palette.background.paper, 0.8) : theme.palette.grey[50],
 			}}
 		>
 			<Box sx={{ p: 2.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
-				<Typography variant="h6" fontWeight={600}>Recursos</Typography>
+				<Typography variant="h6" fontWeight={600}>
+					Recursos
+				</Typography>
 				<Typography variant="caption" color="text.secondary">
 					{folderName ?? "Este expediente"}
 				</Typography>

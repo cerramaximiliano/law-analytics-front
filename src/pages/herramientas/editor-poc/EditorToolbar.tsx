@@ -57,10 +57,22 @@ const LINE_HEIGHTS = [
 ];
 
 const PRESET_COLORS = [
-	"#000000", "#1a1a2e", "#16213e", "#0f3460",
-	"#1565c0", "#0288d1", "#00695c", "#2e7d32",
-	"#c62828", "#ad1457", "#6a1b9a", "#f57f17",
-	"#546e7a", "#795548", "#616161", "#ffffff",
+	"#000000",
+	"#1a1a2e",
+	"#16213e",
+	"#0f3460",
+	"#1565c0",
+	"#0288d1",
+	"#00695c",
+	"#2e7d32",
+	"#c62828",
+	"#ad1457",
+	"#6a1b9a",
+	"#f57f17",
+	"#546e7a",
+	"#795548",
+	"#616161",
+	"#ffffff",
 ];
 
 const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
@@ -195,7 +207,11 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 					</ToggleButton>
 				</Tooltip>
 				<Tooltip title="Subrayado (Ctrl+U)">
-					<ToggleButton value="underline" selected={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
+					<ToggleButton
+						value="underline"
+						selected={editor.isActive("underline")}
+						onClick={() => editor.chain().focus().toggleUnderline().run()}
+					>
 						<TextUnderline size={16} />
 					</ToggleButton>
 				</Tooltip>
@@ -210,11 +226,7 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 
 			{/* Color de texto */}
 			<Tooltip title="Color de texto">
-				<IconButton
-					size="small"
-					onClick={(e) => setColorAnchor(e.currentTarget)}
-					sx={{ position: "relative" }}
-				>
+				<IconButton size="small" onClick={(e) => setColorAnchor(e.currentTarget)} sx={{ position: "relative" }}>
 					<Box sx={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
 						<Colorfilter size={16} />
 						<Box
@@ -268,7 +280,9 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 				</Box>
 				{/* Color personalizado */}
 				<Stack direction="row" alignItems="center" spacing={1}>
-					<Typography variant="caption" color="text.secondary">Personalizado:</Typography>
+					<Typography variant="caption" color="text.secondary">
+						Personalizado:
+					</Typography>
 					<input
 						ref={colorInputRef}
 						type="color"
@@ -278,7 +292,10 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 					/>
 					<Box
 						sx={{ fontSize: "0.7rem", color: "text.secondary", cursor: "pointer", "&:hover": { color: "text.primary" } }}
-						onClick={() => { editor.chain().focus().unsetColor().run(); setColorAnchor(null); }}
+						onClick={() => {
+							editor.chain().focus().unsetColor().run();
+							setColorAnchor(null);
+						}}
 					>
 						Limpiar
 					</Box>
@@ -296,16 +313,24 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 				sx={{ "& .MuiToggleButton-root": { border: "none", borderRadius: 1, p: 0.5 } }}
 			>
 				<Tooltip title="Alinear izquierda">
-					<ToggleButton value="left"><TextalignLeft size={16} /></ToggleButton>
+					<ToggleButton value="left">
+						<TextalignLeft size={16} />
+					</ToggleButton>
 				</Tooltip>
 				<Tooltip title="Centrar">
-					<ToggleButton value="center"><TextalignCenter size={16} /></ToggleButton>
+					<ToggleButton value="center">
+						<TextalignCenter size={16} />
+					</ToggleButton>
 				</Tooltip>
 				<Tooltip title="Alinear derecha">
-					<ToggleButton value="right"><TextalignRight size={16} /></ToggleButton>
+					<ToggleButton value="right">
+						<TextalignRight size={16} />
+					</ToggleButton>
 				</Tooltip>
 				<Tooltip title="Justificar">
-					<ToggleButton value="justify"><TextalignJustifycenter size={16} /></ToggleButton>
+					<ToggleButton value="justify">
+						<TextalignJustifycenter size={16} />
+					</ToggleButton>
 				</Tooltip>
 			</ToggleButtonGroup>
 
@@ -333,7 +358,9 @@ const EditorToolbar = ({ editor, onExportPdf }: EditorToolbarProps) => {
 					)}
 					sx={{ height: 28, minWidth: 74, "& .MuiSelect-select": { display: "flex", alignItems: "center", fontSize: "0.75rem" } }}
 				>
-					<MenuItem value="" sx={{ fontSize: "0.75rem" }}>Por defecto</MenuItem>
+					<MenuItem value="" sx={{ fontSize: "0.75rem" }}>
+						Por defecto
+					</MenuItem>
 					{LINE_HEIGHTS.map((lh) => (
 						<MenuItem key={lh.value} value={lh.value} sx={{ fontSize: "0.75rem" }}>
 							{lh.label}

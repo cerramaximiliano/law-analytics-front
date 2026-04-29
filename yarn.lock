@@ -2462,15 +2462,7 @@
     "@testing-library/dom" "^9.0.0"
     "@types/react-dom" "^18.0.0"
 
-"@tiptap-pro/extension-ai@^3.6.1":
-  version "3.6.1"
-  resolved "https://registry.tiptap.dev/@tiptap-pro%2fextension-ai/-/extension-ai-3.6.1.tgz"
-  integrity sha512-2CVKMMExv3y1lDtKrhWu+kHEeFGRJs9MPhrGyl2JJXDi5u6vAdFlD0n7PcMWS53I3UELnXGns8LYP7nGxE/yhg==
-  dependencies:
-    memoize-one "^6.0.0"
-    tiny-invariant "^1.3.3"
-
-"@tiptap/core@^2.0.0 || ^3.0.0", "@tiptap/core@^3.15.0", "@tiptap/core@^3.20.4":
+"@tiptap/core@^2.0.0 || ^3.0.0", "@tiptap/core@^3.20.4":
   version "3.20.4"
   resolved "https://registry.npmjs.org/@tiptap/core/-/core-3.20.4.tgz"
   integrity sha512-3i/DG89TFY/b34T5P+j35UcjYuB5d3+9K8u6qID+iUqNPiza015HPIZLuPfE5elNwVdV3EXIoPo0LLeBLgXXAg==
@@ -2569,11 +2561,6 @@
   resolved "https://registry.npmjs.org/@tiptap/extension-horizontal-rule/-/extension-horizontal-rule-3.20.4.tgz"
   integrity sha512-y6joCi49haAA0bo3EGUY+dWUMHH1GPUc84hxrBY/0pMs+Bn+kQ1+DQJErZDTWGJrlHPWU/yekBZT72SNdp0DNA==
 
-"@tiptap/extension-image@^3.15.0":
-  version "3.20.4"
-  resolved "https://registry.npmjs.org/@tiptap/extension-image/-/extension-image-3.20.4.tgz"
-  integrity sha512-57w2TevHQljTh6Xiry9duIm7NNOQAUSTwtwRn4GGLoKwHR8qXTxzp513ASrFOgR2kgs2TP471Au6RHf947P+jg==
-
 "@tiptap/extension-italic@^3.20.4":
   version "3.20.4"
   resolved "https://registry.npmjs.org/@tiptap/extension-italic/-/extension-italic-3.20.4.tgz"
@@ -2663,7 +2650,7 @@
   resolved "https://registry.npmjs.org/@tiptap/extensions/-/extensions-3.20.4.tgz"
   integrity sha512-8p6hVT65DjuQjtEdlH6ewX9SOJHlVQAOee3sWIJQmeJNRnZNvqPIBLleebUqDiljNTpxBv6s6QWkSTKgf3btwg==
 
-"@tiptap/pm@^2.0.0 || ^3.0.0", "@tiptap/pm@^3.15.0", "@tiptap/pm@^3.20.4":
+"@tiptap/pm@^2.0.0 || ^3.0.0", "@tiptap/pm@^3.20.4":
   version "3.20.4"
   resolved "https://registry.npmjs.org/@tiptap/pm/-/pm-3.20.4.tgz"
   integrity sha512-rCHYSBToilBEuI6PtjziHDdRkABH/XqwJ7dG4Amn/SD3yGiZKYCiEApQlTUS2zZeo8DsLeuqqqB4vEOeD4OEPg==

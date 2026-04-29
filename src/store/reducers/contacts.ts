@@ -310,7 +310,8 @@ export const getContactsByUserId =
 			}
 
 			dispatch({ type: SET_CONTACT_LOADING });
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
+			const fields =
+				"_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
 				params: { fields },
 			});
@@ -338,7 +339,8 @@ export const getContactsByGroupId =
 		try {
 			dispatch({ type: SET_CONTACT_LOADING });
 
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
+			const fields =
+				"_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
 
 			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/group/${groupId}`, {
 				params: {
@@ -582,7 +584,8 @@ export const archiveContacts = (userId: string, contactIds: string[]) => async (
 export const getArchivedContactsByUserId = (userId: string) => async (dispatch: Dispatch) => {
 	try {
 		dispatch({ type: SET_CONTACT_LOADING });
-		const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
+		const fields =
+			"_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,nationality,document,cuit,activity,fiscal";
 		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/contacts/user/${userId}`, {
 			params: {
 				archived: true,

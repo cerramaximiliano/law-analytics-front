@@ -95,7 +95,17 @@ import {
 import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
-import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument, Calendar, DocumentText1, NoteText } from "iconsax-react";
+import {
+	Calculator as CalculatorIcon,
+	TaskSquare,
+	Moneys,
+	DocumentText,
+	Profile2User,
+	TableDocument,
+	Calendar,
+	DocumentText1,
+	NoteText,
+} from "iconsax-react";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
 import PickModelDialog from "sections/apps/rich-text-documents/PickModelDialog";
 import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
@@ -603,7 +613,14 @@ function ReactTable({
 										Las carpetas representan expedientes, causas o clientes. Podes empezar con una y completarla luego.
 									</Typography>
 								</Stack>
-								<Button variant="contained" color="primary" size="large" startIcon={<Add />} onClick={handleAdd} sx={{ mt: 1, textTransform: "none" }}>
+								<Button
+									variant="contained"
+									color="primary"
+									size="large"
+									startIcon={<Add />}
+									onClick={handleAdd}
+									sx={{ mt: 1, textTransform: "none" }}
+								>
 									Crear mi primera carpeta
 								</Button>
 							</Stack>
@@ -625,9 +642,7 @@ function ReactTable({
 										: "No hay causas disponibles en este equipo."}
 								</Typography>
 								<Typography variant="body2" color="textSecondary" align="center">
-									{handleAdd
-										? "Las causas que guardes aparecerán aquí"
-										: "Las causas del equipo aparecerán aquí cuando estén disponibles"}
+									{handleAdd ? "Las causas que guardes aparecerán aquí" : "Las causas del equipo aparecerán aquí cuando estén disponibles"}
 								</Typography>
 							</>
 						)
@@ -736,20 +751,22 @@ const FoldersLayout = () => {
 
 		// Contar pendientes e inválidas por separado
 		const pendingVerification = folders.filter(
-			(folder: any) => isAutoFolder(folder) && folder.causaVerified === false &&
-				folder.causaAssociationStatus !== "failed" && folder.causaAssociationStatus !== "pending_selection"
+			(folder: any) =>
+				isAutoFolder(folder) &&
+				folder.causaVerified === false &&
+				folder.causaAssociationStatus !== "failed" &&
+				folder.causaAssociationStatus !== "pending_selection",
 		).length;
 
 		// Contar folders con selección pendiente
 		const pendingSelection = folders.filter(
-			(folder: any) => isAutoFolder(folder) && folder.causaAssociationStatus === "pending_selection"
+			(folder: any) => isAutoFolder(folder) && folder.causaAssociationStatus === "pending_selection",
 		).length;
 
 		const invalid = folders.filter(
-			(folder: any) => isAutoFolder(folder) && (
-				(folder.causaVerified === true && folder.causaIsValid === false) ||
-				folder.causaAssociationStatus === "failed"
-			),
+			(folder: any) =>
+				isAutoFolder(folder) &&
+				((folder.causaVerified === true && folder.causaIsValid === false) || folder.causaAssociationStatus === "failed"),
 		).length;
 
 		// Folders verificados y válidos (incluye todos los que NO están en pending)
@@ -758,8 +775,11 @@ const FoldersLayout = () => {
 				// Carpetas que NO son automáticas (siempre van a la tabla principal)
 				!isAutoFolder(folder) ||
 				// O carpetas automáticas que están verificadas y válidas (y no tienen selección pendiente)
-				(isAutoFolder(folder) && folder.causaVerified === true && folder.causaIsValid === true &&
-					folder.causaAssociationStatus !== "failed" && folder.causaAssociationStatus !== "pending_selection"),
+				(isAutoFolder(folder) &&
+					folder.causaVerified === true &&
+					folder.causaIsValid === true &&
+					folder.causaAssociationStatus !== "failed" &&
+					folder.causaAssociationStatus !== "pending_selection"),
 		);
 
 		return {
@@ -1298,7 +1318,15 @@ const FoldersLayout = () => {
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<span>{formatFolderName(value, 50)}</span>
 								<Tooltip
-									title={folder.pjn === true ? "Causa vinculada a PJN" : folder.mev === true ? "Causa vinculada a MEV" : folder.eje === true ? "Causa vinculada a EJE" : "Causa vinculada"}
+									title={
+										folder.pjn === true
+											? "Causa vinculada a PJN"
+											: folder.mev === true
+											? "Causa vinculada a MEV"
+											: folder.eje === true
+											? "Causa vinculada a EJE"
+											: "Causa vinculada"
+									}
 								>
 									<Box
 										sx={{
@@ -1996,7 +2024,9 @@ const FoldersLayout = () => {
 						<Stack spacing={1}>
 							<Stack direction="row" alignItems="center" spacing={1}>
 								<DocumentText1 size={24} color={theme.palette.primary.main} variant="Bold" />
-								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>Crear Documento</Typography>
+								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+									Crear Documento
+								</Typography>
 							</Stack>
 							<Typography variant="body2" color="textSecondary">
 								{selectedFolderForDoc?.name ?? ""}
@@ -2008,7 +2038,11 @@ const FoldersLayout = () => {
 						<Stack spacing={1.5}>
 							<Card
 								variant="outlined"
-								sx={{ cursor: "pointer", "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" }, transition: "border-color 0.15s" }}
+								sx={{
+									cursor: "pointer",
+									"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+									transition: "border-color 0.15s",
+								}}
 							>
 								<CardActionArea
 									onClick={() => {
@@ -2020,8 +2054,12 @@ const FoldersLayout = () => {
 										<Stack direction="row" spacing={1.5} alignItems="center">
 											<NoteText size={28} variant="Bulk" />
 											<Stack spacing={0.25}>
-												<Typography variant="body2" fontWeight={600}>Modelo del Sistema</Typography>
-												<Typography variant="caption" color="text.secondary">Telegramas, cartas documento y más</Typography>
+												<Typography variant="body2" fontWeight={600}>
+													Modelo del Sistema
+												</Typography>
+												<Typography variant="caption" color="text.secondary">
+													Telegramas, cartas documento y más
+												</Typography>
 											</Stack>
 										</Stack>
 									</CardContent>
@@ -2029,12 +2067,18 @@ const FoldersLayout = () => {
 							</Card>
 
 							<Divider>
-								<Typography variant="caption" color="text.secondary">o</Typography>
+								<Typography variant="caption" color="text.secondary">
+									o
+								</Typography>
 							</Divider>
 
 							<Card
 								variant="outlined"
-								sx={{ cursor: "pointer", "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" }, transition: "border-color 0.15s" }}
+								sx={{
+									cursor: "pointer",
+									"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+									transition: "border-color 0.15s",
+								}}
 							>
 								<CardActionArea
 									onClick={() => {
@@ -2046,8 +2090,12 @@ const FoldersLayout = () => {
 										<Stack direction="row" spacing={1.5} alignItems="center">
 											<DocumentText size={28} variant="Bulk" />
 											<Stack spacing={0.25}>
-												<Typography variant="body2" fontWeight={600}>Mis Modelos</Typography>
-												<Typography variant="caption" color="text.secondary">Escritos personalizados con editor de texto</Typography>
+												<Typography variant="body2" fontWeight={600}>
+													Mis Modelos
+												</Typography>
+												<Typography variant="caption" color="text.secondary">
+													Escritos personalizados con editor de texto
+												</Typography>
 											</Stack>
 										</Stack>
 									</CardContent>
@@ -2072,11 +2120,7 @@ const FoldersLayout = () => {
 				)}
 
 				{/* Modal mis modelos */}
-				<PickModelDialog
-					open={pickModelOpen}
-					onClose={() => setPickModelOpen(false)}
-					folderId={selectedFolderForDoc?.id ?? null}
-				/>
+				<PickModelDialog open={pickModelOpen} onClose={() => setPickModelOpen(false)} folderId={selectedFolderForDoc?.id ?? null} />
 
 				{/* Modal de límite de recursos */}
 				<LimitErrorModal

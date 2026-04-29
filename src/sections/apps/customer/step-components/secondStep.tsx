@@ -92,9 +92,7 @@ const SecondStep = () => {
 
 					<Grid item xs={4}>
 						<Stack spacing={1}>
-							<InputLabel htmlFor="phoneCodArea">
-								Cód. área celular
-							</InputLabel>
+							<InputLabel htmlFor="phoneCodArea">Cód. área celular</InputLabel>
 							<InputField
 								fullWidth
 								sx={customInputStyles}
@@ -107,9 +105,7 @@ const SecondStep = () => {
 					</Grid>
 					<Grid item xs={8}>
 						<Stack spacing={1}>
-							<InputLabel htmlFor="phoneCelular">
-								Celular (sin 15)
-							</InputLabel>
+							<InputLabel htmlFor="phoneCelular">Celular (sin 15)</InputLabel>
 							<InputField
 								fullWidth
 								sx={customInputStyles}

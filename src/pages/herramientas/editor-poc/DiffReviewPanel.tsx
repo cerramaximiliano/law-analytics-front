@@ -27,9 +27,7 @@ interface DiffReviewPanelProps {
 }
 
 function countWords(segments: Array<DiffSegment>, type: "added" | "removed"): number {
-	return segments
-		.filter((s) => s.type === type)
-		.reduce((sum, s) => sum + s.text.trim().split(/\s+/).filter(Boolean).length, 0);
+	return segments.filter((s) => s.type === type).reduce((sum, s) => sum + s.text.trim().split(/\s+/).filter(Boolean).length, 0);
 }
 
 const DiffReviewPanel = ({
@@ -85,9 +83,7 @@ const DiffReviewPanel = ({
 				{/* Icon + label */}
 				<AiSparklesIcon size={14} sx={{ flexShrink: 0 }} />
 				<Typography variant="body2" fontWeight={700} sx={{ fontSize: "0.78rem", color: "text.primary" }}>
-					{loading || refining
-						? `${refining ? "Refinando" : loadingLabel}...`
-						: diff?.actionLabel ?? ""}
+					{loading || refining ? `${refining ? "Refinando" : loadingLabel}...` : diff?.actionLabel ?? ""}
 				</Typography>
 
 				{/* Loading dots */}

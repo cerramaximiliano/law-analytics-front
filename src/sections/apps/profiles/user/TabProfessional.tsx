@@ -516,7 +516,11 @@ const TabProfessional = () => {
 																<InputLabel htmlFor={`college-${index}-physicalAddress`}>Domicilio físico constituido</InputLabel>
 																{!!college._id && !editingSkills.has(index) ? (
 																	<Typography variant="body2" sx={{ py: 1 }}>
-																		{college.physicalAddress || <Typography component="span" variant="caption" color="text.disabled">No cargado</Typography>}
+																		{college.physicalAddress || (
+																			<Typography component="span" variant="caption" color="text.disabled">
+																				No cargado
+																			</Typography>
+																		)}
 																	</Typography>
 																) : (
 																	<TextField
@@ -531,7 +535,6 @@ const TabProfessional = () => {
 																)}
 															</Stack>
 														</Grid>
-
 													</Grid>
 												</Box>
 											))}

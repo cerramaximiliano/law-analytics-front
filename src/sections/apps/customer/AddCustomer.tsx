@@ -354,36 +354,35 @@ const AddCustomer = ({ open, customer, onCancel, onAddMember, mode, folderId }: 
 			const cleanedPhone = values.phone ? cleanArgentinePhoneNumber(values.phone) : "";
 
 			// Limpiar campos celular SECLO: código de área sin 0 inicial, número sin 15
-			const cleanedCodArea = values.phoneCodArea
-				? values.phoneCodArea.replace(/\D/g, "").replace(/^0+/, "")
-				: "";
-			const cleanedCelular = values.phoneCelular
-				? values.phoneCelular.replace(/\D/g, "").replace(/^15/, "")
-				: "";
+			const cleanedCodArea = values.phoneCodArea ? values.phoneCodArea.replace(/\D/g, "").replace(/^0+/, "") : "";
+			const cleanedCelular = values.phoneCelular ? values.phoneCelular.replace(/\D/g, "").replace(/^15/, "") : "";
 
 			// Preparar los datos asegurando que los campos requeridos estén presentes
 			// Normalizar role: si es array, mantenerlo; si es string, hacer trim
-			const normalizedRole = Array.isArray(values.role)
-				? values.role
-				: (values.role?.trim() || "");
+			const normalizedRole = Array.isArray(values.role) ? values.role : values.role?.trim() || "";
 
 			const isJuridica = values.type?.toLowerCase().includes("jurídica");
-		const razonSocial = values.company?.trim() || "";
+			const razonSocial = values.company?.trim() || "";
 
-		const cleanedValues = {
+			const cleanedValues = {
 				...values,
 				phone: cleanedPhone,
 				phoneCodArea: cleanedCodArea,
 				phoneCelular: cleanedCelular,
 				// Para jurídicas: usar razón social como nombre principal (backward compat)
-				name: isJuridica ? razonSocial : (values.name?.trim() || ""),
-				lastName: isJuridica ? "-" : (values.lastName?.trim() || ""),
-				company: razonSocial || (values.company?.trim() || ""),
+				name: isJuridica ? razonSocial : values.name?.trim() || "",
+				lastName: isJuridica ? "-" : values.lastName?.trim() || "",
+				company: razonSocial || values.company?.trim() || "",
 				role: normalizedRole,
 				type: values.type?.trim() || "",
 				representado: values.representado === true,
 				tipoRepresentacion: values.representado && values.tipoRepresentacion ? values.tipoRepresentacion : null,
-				...(isJuridica && { representanteLegal: { nombre: values.representanteLegal?.nombre?.trim() || "", dni: values.representanteLegal?.dni?.trim() || "" } }),
+				...(isJuridica && {
+					representanteLegal: {
+						nombre: values.representanteLegal?.nombre?.trim() || "",
+						dni: values.representanteLegal?.dni?.trim() || "",
+					},
+				}),
 				state: values.state?.trim() || "",
 				city: values.city?.trim() || "",
 				// Campos opcionales - solo incluir si tienen valor

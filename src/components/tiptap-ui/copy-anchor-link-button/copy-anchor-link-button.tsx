@@ -1,42 +1,34 @@
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from "react";
 
 // --- Lib ---
-import { parseShortcutKeys } from "@/lib/tiptap-utils"
+import { parseShortcutKeys } from "@/lib/tiptap-utils";
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor";
 
 // --- Tiptap UI ---
-import type { UseCopyAnchorLinkConfig } from "@/components/tiptap-ui/copy-anchor-link-button"
-import {
-  COPY_ANCHOR_LINK_SHORTCUT_KEY,
-  useCopyAnchorLink,
-} from "@/components/tiptap-ui/copy-anchor-link-button"
+import type { UseCopyAnchorLinkConfig } from "@/components/tiptap-ui/copy-anchor-link-button";
+import { COPY_ANCHOR_LINK_SHORTCUT_KEY, useCopyAnchorLink } from "@/components/tiptap-ui/copy-anchor-link-button";
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/components/tiptap-ui-primitive/button"
-import { Button } from "@/components/tiptap-ui-primitive/button"
-import { Badge } from "@/components/tiptap-ui-primitive/badge"
+import type { ButtonProps } from "@/components/tiptap-ui-primitive/button";
+import { Button } from "@/components/tiptap-ui-primitive/button";
+import { Badge } from "@/components/tiptap-ui-primitive/badge";
 
-export interface CopyAnchorLinkButtonProps
-  extends Omit<ButtonProps, "type">, UseCopyAnchorLinkConfig {
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string
-  /**
-   * Optional show shortcut keys in the button.
-   * @default false
-   */
-  showShortcut?: boolean
+export interface CopyAnchorLinkButtonProps extends Omit<ButtonProps, "type">, UseCopyAnchorLinkConfig {
+	/**
+	 * Optional text to display alongside the icon.
+	 */
+	text?: string;
+	/**
+	 * Optional show shortcut keys in the button.
+	 * @default false
+	 */
+	showShortcut?: boolean;
 }
 
-export function CopyAnchorLinkShortcutBadge({
-  shortcutKeys = COPY_ANCHOR_LINK_SHORTCUT_KEY,
-}: {
-  shortcutKeys?: string
-}) {
-  return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>
+export function CopyAnchorLinkShortcutBadge({ shortcutKeys = COPY_ANCHOR_LINK_SHORTCUT_KEY }: { shortcutKeys?: string }) {
+	return <Badge>{parseShortcutKeys({ shortcutKeys })}</Badge>;
 }
 
 /**
@@ -44,72 +36,66 @@ export function CopyAnchorLinkShortcutBadge({
  *
  * For custom button implementations, use the `useCopyAnchorLink` hook instead.
  */
-export const CopyAnchorLinkButton = forwardRef<
-  HTMLButtonElement,
-  CopyAnchorLinkButtonProps
->(
-  (
-    {
-      editor: providedEditor,
-      text,
-      hideWhenUnavailable = false,
-      onNodeIdNotFound,
-      onExtractedNodeId,
-      onCopied,
-      showShortcut = false,
-      onClick,
-      children,
-      ...buttonProps
-    },
-    ref
-  ) => {
-    const { editor } = useTiptapEditor(providedEditor)
-    const { isVisible, handleCopyAnchorLink, label, shortcutKeys, Icon } =
-      useCopyAnchorLink({
-        editor,
-        hideWhenUnavailable,
-        onNodeIdNotFound,
-        onExtractedNodeId,
-        onCopied,
-      })
+export const CopyAnchorLinkButton = forwardRef<HTMLButtonElement, CopyAnchorLinkButtonProps>(
+	(
+		{
+			editor: providedEditor,
+			text,
+			hideWhenUnavailable = false,
+			onNodeIdNotFound,
+			onExtractedNodeId,
+			onCopied,
+			showShortcut = false,
+			onClick,
+			children,
+			...buttonProps
+		},
+		ref,
+	) => {
+		const { editor } = useTiptapEditor(providedEditor);
+		const { isVisible, handleCopyAnchorLink, label, shortcutKeys, Icon } = useCopyAnchorLink({
+			editor,
+			hideWhenUnavailable,
+			onNodeIdNotFound,
+			onExtractedNodeId,
+			onCopied,
+		});
 
-    const handleClick = useCallback(
-      (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleCopyAnchorLink()
-      },
-      [handleCopyAnchorLink, onClick]
-    )
+		const handleClick = useCallback(
+			(event: React.MouseEvent<HTMLButtonElement>) => {
+				onClick?.(event);
+				if (event.defaultPrevented) return;
+				handleCopyAnchorLink();
+			},
+			[handleCopyAnchorLink, onClick],
+		);
 
-    if (!isVisible) {
-      return null
-    }
+		if (!isVisible) {
+			return null;
+		}
 
-    return (
-      <Button
-        type="button"
-        variant="ghost"
-        role="button"
-        tabIndex={-1}
-        aria-label={label}
-        tooltip="Copy anchor link"
-        onClick={handleClick}
-        {...buttonProps}
-        ref={ref}
-      >
-        {children ?? (
-          <>
-            <Icon className="tiptap-button-icon" />
-            {text && <span className="tiptap-button-text">{text}</span>}
-            {showShortcut && (
-              <CopyAnchorLinkShortcutBadge shortcutKeys={shortcutKeys} />
-            )}
-          </>
-        )}
-      </Button>
-    )
-  }
-)
+		return (
+			<Button
+				type="button"
+				variant="ghost"
+				role="button"
+				tabIndex={-1}
+				aria-label={label}
+				tooltip="Copy anchor link"
+				onClick={handleClick}
+				{...buttonProps}
+				ref={ref}
+			>
+				{children ?? (
+					<>
+						<Icon className="tiptap-button-icon" />
+						{text && <span className="tiptap-button-text">{text}</span>}
+						{showShortcut && <CopyAnchorLinkShortcutBadge shortcutKeys={shortcutKeys} />}
+					</>
+				)}
+			</Button>
+		);
+	},
+);
 
-CopyAnchorLinkButton.displayName = "CopyAnchorLinkButton"
+CopyAnchorLinkButton.displayName = "CopyAnchorLinkButton";

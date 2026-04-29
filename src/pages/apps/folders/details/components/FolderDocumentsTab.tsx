@@ -27,14 +27,8 @@ import { useTheme } from "@mui/material/styles";
 import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
 import { Add, ArrowDown2, DocumentDownload, DocumentText, Eye, Printer, Trash } from "iconsax-react";
 import { useDispatch, useSelector } from "store";
-import {
-	fetchPostalDocumentsByFolder,
-	deletePostalFolderDocument,
-} from "store/reducers/postalDocuments";
-import {
-	fetchRichTextDocumentsByFolder,
-	deleteRichTextFolderDocument,
-} from "store/reducers/richTextDocuments";
+import { fetchPostalDocumentsByFolder, deletePostalFolderDocument } from "store/reducers/postalDocuments";
+import { fetchRichTextDocumentsByFolder, deleteRichTextFolderDocument } from "store/reducers/richTextDocuments";
 import { openSnackbar } from "store/reducers/snackbar";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import ApiService from "store/reducers/ApiService";
@@ -64,9 +58,10 @@ const toRow = (doc: PostalDocumentType | RichTextDocument, kind: DocKind): DocRo
 	_id: doc._id,
 	kind,
 	title: doc.title,
-	category: kind === "postal"
-		? (doc as PostalDocumentType).templateCategory ?? (doc as PostalDocumentType).templateName ?? "—"
-		: (doc as RichTextDocument).templateCategory ?? "—",
+	category:
+		kind === "postal"
+			? (doc as PostalDocumentType).templateCategory ?? (doc as PostalDocumentType).templateName ?? "—"
+			: (doc as RichTextDocument).templateCategory ?? "—",
 	status: doc.status ?? "—",
 	createdAt: doc.createdAt,
 	documentUrl: kind === "postal" ? (doc as PostalDocumentType).documentUrl : undefined,
@@ -102,15 +97,9 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 	const dispatch = useDispatch();
 	const theme = useTheme();
 
-	const postalDocs: PostalDocumentType[] = useSelector(
-		(state: any) => state.postalDocumentsReducer?.folderDocuments ?? []
-	);
-	const rtDocs: RichTextDocument[] = useSelector(
-		(state: any) => state.richTextDocumentsReducer?.folderDocuments ?? []
-	);
-	const postalLoading: boolean = useSelector(
-		(state: any) => state.postalDocumentsReducer?.folderDocumentsLoading ?? false
-	);
+	const postalDocs: PostalDocumentType[] = useSelector((state: any) => state.postalDocumentsReducer?.folderDocuments ?? []);
+	const rtDocs: RichTextDocument[] = useSelector((state: any) => state.richTextDocumentsReducer?.folderDocuments ?? []);
+	const postalLoading: boolean = useSelector((state: any) => state.postalDocumentsReducer?.folderDocumentsLoading ?? false);
 
 	const [newDocAnchor, setNewDocAnchor] = useState<null | HTMLElement>(null);
 	const [openCreatePostal, setOpenCreatePostal] = useState(false);
@@ -120,7 +109,10 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 	const [printLoading, setPrintLoading] = useState<string | null>(null);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
 	const [limitErrorData, setLimitErrorData] = useState<{
-		resourceType: string; plan: string; currentCount: string; limit: number;
+		resourceType: string;
+		plan: string;
+		currentCount: string;
+		limit: number;
 	} | null>(null);
 
 	// Load on mount / folderId change
@@ -131,13 +123,8 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 	}, [folderId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const rows = useMemo((): DocRow[] => {
-		const result: DocRow[] = [
-			...postalDocs.map((d) => toRow(d, "postal")),
-			...rtDocs.map((d) => toRow(d, "richtext")),
-		];
-		return result.sort((a, b) =>
-			new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
-		);
+		const result: DocRow[] = [...postalDocs.map((d) => toRow(d, "postal")), ...rtDocs.map((d) => toRow(d, "richtext"))];
+		return result.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
 	}, [postalDocs, rtDocs]);
 
 	const isLoading = postalLoading;
@@ -159,7 +146,9 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 				setLimitErrorOpen(true);
 				return false;
 			}
-		} catch { /* permitir ante error de red */ }
+		} catch {
+			/* permitir ante error de red */
+		}
 		return true;
 	};
 
@@ -183,23 +172,26 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 		}
 	};
 
-	const handleDownloadOrPrint = useCallback(async (row: DocRow) => {
-		if (row.kind === "postal" && row.documentUrl) {
-			window.open(row.documentUrl, "_blank");
-		} else if (row.kind === "richtext") {
-			setPrintLoading(row._id);
-			try {
-				await printRichTextDocument(row._id);
-			} catch {
-				showSnackbar("No se pudo abrir la vista de impresión", "error");
-			} finally {
-				setPrintLoading(null);
+	const handleDownloadOrPrint = useCallback(
+		async (row: DocRow) => {
+			if (row.kind === "postal" && row.documentUrl) {
+				window.open(row.documentUrl, "_blank");
+			} else if (row.kind === "richtext") {
+				setPrintLoading(row._id);
+				try {
+					await printRichTextDocument(row._id);
+				} catch {
+					showSnackbar("No se pudo abrir la vista de impresión", "error");
+				} finally {
+					setPrintLoading(null);
+				}
+			} else {
+				navigate(`/documentos/escritos`);
 			}
-		} else {
-			navigate(`/documentos/escritos`);
-		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [navigate]);
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+		},
+		[navigate],
+	);
 
 	const handleDelete = async () => {
 		if (!deleteTarget) return;
@@ -226,14 +218,12 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 
 	// Dropdown menu compartido (se reutiliza en header y empty state)
 	const newDocMenu = (
-		<Menu
-			anchorEl={newDocAnchor}
-			open={Boolean(newDocAnchor)}
-			onClose={() => setNewDocAnchor(null)}
-		>
+		<Menu anchorEl={newDocAnchor} open={Boolean(newDocAnchor)} onClose={() => setNewDocAnchor(null)}>
 			<MenuItem onClick={handleNewPostal} sx={{ py: 1.5 }}>
 				<Stack spacing={0.25}>
-					<Typography variant="body2" fontWeight={500}>Modelo del Sistema</Typography>
+					<Typography variant="body2" fontWeight={500}>
+						Modelo del Sistema
+					</Typography>
 					<Typography variant="caption" color="text.secondary">
 						Telegramas, cartas documento y más
 					</Typography>
@@ -242,7 +232,9 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 			<Divider />
 			<MenuItem onClick={handleNewRichText} sx={{ py: 1.5 }}>
 				<Stack spacing={0.25}>
-					<Typography variant="body2" fontWeight={500}>Mis Modelos</Typography>
+					<Typography variant="body2" fontWeight={500}>
+						Mis Modelos
+					</Typography>
 					<Typography variant="caption" color="text.secondary">
 						Escritos personalizados con editor de texto
 					</Typography>
@@ -282,113 +274,104 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 				</Stack>
 			) : (
 				<>
-				{/* Header con botón cuando hay documentos */}
-				<Stack direction="row" justifyContent="flex-end" mb={1.5}>
-					<Button
-						variant="outlined"
-						size="small"
-						startIcon={<Add size={16} />}
-						endIcon={<ArrowDown2 size={14} />}
-						onClick={(e) => setNewDocAnchor(e.currentTarget)}
-					>
-						Nuevo documento
-					</Button>
-					{newDocMenu}
-				</Stack>
-				<TableContainer>
-					<Table size="small">
-						<TableHead>
-							<TableRow>
-								<TableCell>Tipo</TableCell>
-								<TableCell>Título</TableCell>
-								<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Categoría</TableCell>
-								<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Estado</TableCell>
-								<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Fecha</TableCell>
-								<TableCell align="right">Acciones</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{rows.map((row) => (
-								<TableRow key={row._id} hover>
-									<TableCell>
-										<Chip
-											label={KIND_LABEL[row.kind]}
-											size="small"
-											color={KIND_COLOR[row.kind]}
-											variant="outlined"
-											sx={{ fontSize: "0.65rem", height: 20 }}
-										/>
-									</TableCell>
-									<TableCell>
-										<Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
-											{row.title}
-										</Typography>
-									</TableCell>
-									<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-										<Typography variant="caption" color="text.secondary" noWrap>
-											{row.category}
-										</Typography>
-									</TableCell>
-									<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
-										<Typography variant="caption">
-											{STATUS_LABEL[row.status] ?? row.status}
-										</Typography>
-									</TableCell>
-									<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
-										<Typography variant="caption" color="text.secondary">
-											{row.createdAt
-												? new Date(row.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })
-												: "—"}
-										</Typography>
-									</TableCell>
-									<TableCell align="right">
-										<Stack direction="row" spacing={0.5} justifyContent="flex-end">
-											<Tooltip title={row.kind === "richtext" ? "Ver / Editar" : "Ver en Escritos"}>
-												<IconButton size="small" onClick={() => handleView(row)}>
-													<Eye size={16} />
-												</IconButton>
-											</Tooltip>
-											<Tooltip title={row.documentUrl ? "Descargar PDF" : "Imprimir"}>
-												<span>
+					{/* Header con botón cuando hay documentos */}
+					<Stack direction="row" justifyContent="flex-end" mb={1.5}>
+						<Button
+							variant="outlined"
+							size="small"
+							startIcon={<Add size={16} />}
+							endIcon={<ArrowDown2 size={14} />}
+							onClick={(e) => setNewDocAnchor(e.currentTarget)}
+						>
+							Nuevo documento
+						</Button>
+						{newDocMenu}
+					</Stack>
+					<TableContainer>
+						<Table size="small">
+							<TableHead>
+								<TableRow>
+									<TableCell>Tipo</TableCell>
+									<TableCell>Título</TableCell>
+									<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>Categoría</TableCell>
+									<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Estado</TableCell>
+									<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>Fecha</TableCell>
+									<TableCell align="right">Acciones</TableCell>
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{rows.map((row) => (
+									<TableRow key={row._id} hover>
+										<TableCell>
+											<Chip
+												label={KIND_LABEL[row.kind]}
+												size="small"
+												color={KIND_COLOR[row.kind]}
+												variant="outlined"
+												sx={{ fontSize: "0.65rem", height: 20 }}
+											/>
+										</TableCell>
+										<TableCell>
+											<Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
+												{row.title}
+											</Typography>
+										</TableCell>
+										<TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+											<Typography variant="caption" color="text.secondary" noWrap>
+												{row.category}
+											</Typography>
+										</TableCell>
+										<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+											<Typography variant="caption">{STATUS_LABEL[row.status] ?? row.status}</Typography>
+										</TableCell>
+										<TableCell sx={{ display: { xs: "none", md: "table-cell" } }}>
+											<Typography variant="caption" color="text.secondary">
+												{row.createdAt
+													? new Date(row.createdAt).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })
+													: "—"}
+											</Typography>
+										</TableCell>
+										<TableCell align="right">
+											<Stack direction="row" spacing={0.5} justifyContent="flex-end">
+												<Tooltip title={row.kind === "richtext" ? "Ver / Editar" : "Ver en Escritos"}>
+													<IconButton size="small" onClick={() => handleView(row)}>
+														<Eye size={16} />
+													</IconButton>
+												</Tooltip>
+												<Tooltip title={row.documentUrl ? "Descargar PDF" : "Imprimir"}>
+													<span>
+														<IconButton size="small" disabled={printLoading === row._id} onClick={() => handleDownloadOrPrint(row)}>
+															{printLoading === row._id ? (
+																<CircularProgress size={14} />
+															) : row.documentUrl ? (
+																<DocumentDownload size={16} />
+															) : (
+																<Printer size={16} />
+															)}
+														</IconButton>
+													</span>
+												</Tooltip>
+												<Tooltip title="Eliminar">
 													<IconButton
 														size="small"
-														disabled={printLoading === row._id}
-														onClick={() => handleDownloadOrPrint(row)}
+														color="error"
+														onClick={() => setDeleteTarget({ _id: row._id, kind: row.kind, title: row.title })}
 													>
-														{printLoading === row._id
-															? <CircularProgress size={14} />
-															: row.documentUrl
-																? <DocumentDownload size={16} />
-																: <Printer size={16} />
-														}
+														<Trash size={16} />
 													</IconButton>
-												</span>
-											</Tooltip>
-											<Tooltip title="Eliminar">
-												<IconButton
-													size="small"
-													color="error"
-													onClick={() => setDeleteTarget({ _id: row._id, kind: row.kind, title: row.title })}
-												>
-													<Trash size={16} />
-												</IconButton>
-											</Tooltip>
-										</Stack>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</TableContainer>
+												</Tooltip>
+											</Stack>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</TableContainer>
 				</>
 			)}
 
 			{/* Modals */}
-			<PickModelDialog
-				open={openPickModel}
-				onClose={() => setOpenPickModel(false)}
-				folderId={folderId}
-			/>
+			<PickModelDialog open={openPickModel} onClose={() => setOpenPickModel(false)} folderId={folderId} />
 
 			<CreatePostalDocumentModal
 				open={openCreatePostal}
@@ -418,7 +401,9 @@ const FolderDocumentsTab = ({ folderId, folderName }: Props) => {
 					<Stack spacing={1}>
 						<Stack direction="row" alignItems="center" spacing={1}>
 							<Trash size={24} color={theme.palette.error.main} variant="Bold" />
-							<Typography variant="h5" color="error" sx={{ fontWeight: 600 }}>Eliminar documento</Typography>
+							<Typography variant="h5" color="error" sx={{ fontWeight: 600 }}>
+								Eliminar documento
+							</Typography>
 						</Stack>
 					</Stack>
 				</DialogTitle>

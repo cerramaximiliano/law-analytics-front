@@ -80,7 +80,9 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 				</AlertTitle>
 				<Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
 					{pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
-						? `Disponible con plan ${pjnAccess.requiredPlans.map((plan) => (plan === "standard" ? "Estándar" : plan.charAt(0).toUpperCase() + plan.slice(1))).join(" o ")}`
+						? `Disponible con plan ${pjnAccess.requiredPlans
+								.map((plan) => (plan === "standard" ? "Estándar" : plan.charAt(0).toUpperCase() + plan.slice(1)))
+								.join(" o ")}`
 						: pjnAccess.message}
 				</Typography>
 			</Alert>

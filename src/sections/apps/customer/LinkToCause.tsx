@@ -81,15 +81,9 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 		});
 	};
 
-	const toLink = useMemo(
-		() => [...selectedFolderIds].filter((id) => !originalFolderIds.has(id)),
-		[selectedFolderIds, originalFolderIds],
-	);
+	const toLink = useMemo(() => [...selectedFolderIds].filter((id) => !originalFolderIds.has(id)), [selectedFolderIds, originalFolderIds]);
 
-	const toUnlink = useMemo(
-		() => [...originalFolderIds].filter((id) => !selectedFolderIds.has(id)),
-		[selectedFolderIds, originalFolderIds],
-	);
+	const toUnlink = useMemo(() => [...originalFolderIds].filter((id) => !selectedFolderIds.has(id)), [selectedFolderIds, originalFolderIds]);
 
 	const hasChanges = toLink.length > 0 || toUnlink.length > 0;
 
@@ -134,9 +128,7 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 		}
 	};
 
-	const filteredFolders = folders.filter((folder: Folder) =>
-		folder.folderName.toLowerCase().includes(searchTerm.toLowerCase()),
-	);
+	const filteredFolders = folders.filter((folder: Folder) => folder.folderName.toLowerCase().includes(searchTerm.toLowerCase()));
 
 	const linkedCount = selectedFolderIds.size;
 
@@ -167,12 +159,8 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 						Gestionar Carpetas
 					</Typography>
 					<Stack direction="row" spacing={1.5} alignItems="center">
-						{toUnlink.length > 0 && (
-							<Chip label={`-${toUnlink.length} a desvincular`} size="small" color="error" variant="outlined" />
-						)}
-						{toLink.length > 0 && (
-							<Chip label={`+${toLink.length} a vincular`} size="small" color="success" variant="outlined" />
-						)}
+						{toUnlink.length > 0 && <Chip label={`-${toUnlink.length} a desvincular`} size="small" color="error" variant="outlined" />}
+						{toLink.length > 0 && <Chip label={`+${toLink.length} a vincular`} size="small" color="success" variant="outlined" />}
 						<Typography color="textSecondary" variant="subtitle2">
 							{linkedCount} vinculada{linkedCount !== 1 ? "s" : ""}
 						</Typography>
@@ -260,8 +248,8 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 													borderColor: willUnlink
 														? theme.palette.error.dark
 														: isSelected
-															? theme.palette.primary.main
-															: theme.palette.primary.light,
+														? theme.palette.primary.main
+														: theme.palette.primary.light,
 												},
 												position: "relative",
 											}}
@@ -282,8 +270,12 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 													{willUnlink && (
 														<MinusCirlce variant="Bold" size={22} style={{ color: theme.palette.error.main, flexShrink: 0 }} />
 													)}
-													{(isSelected && !willUnlink) && (
-														<TickCircle variant="Bold" size={22} style={{ color: willLink ? theme.palette.success.main : theme.palette.primary.main, flexShrink: 0 }} />
+													{isSelected && !willUnlink && (
+														<TickCircle
+															variant="Bold"
+															size={22}
+															style={{ color: willLink ? theme.palette.success.main : theme.palette.primary.main, flexShrink: 0 }}
+														/>
 													)}
 												</Stack>
 												<Stack direction="row" spacing={2} sx={{ color: "text.secondary" }}>
@@ -311,9 +303,7 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 										borderColor: theme.palette.divider,
 									}}
 								>
-									<Typography color="textSecondary">
-										{searchTerm ? "No se encontraron carpetas" : "No hay carpetas disponibles"}
-									</Typography>
+									<Typography color="textSecondary">{searchTerm ? "No se encontraron carpetas" : "No hay carpetas disponibles"}</Typography>
 								</Box>
 							)}
 						</Stack>
@@ -330,12 +320,7 @@ const LinkToCause = ({ openLink, onCancelLink, contactId, folderIds }: LinkToCau
 					borderTop: `1px solid ${theme.palette.divider}`,
 				}}
 			>
-				<Button
-					color="inherit"
-					onClick={onCancelLink}
-					disabled={isSaving}
-					sx={{ color: theme.palette.text.secondary }}
-				>
+				<Button color="inherit" onClick={onCancelLink} disabled={isSaving} sx={{ color: theme.palette.text.secondary }}>
 					Cancelar
 				</Button>
 				<Button

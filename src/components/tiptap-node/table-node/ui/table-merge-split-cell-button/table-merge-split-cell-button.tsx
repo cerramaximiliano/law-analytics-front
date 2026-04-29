@@ -1,24 +1,23 @@
-"use client"
+"use client";
 
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from "react";
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor";
 
 // --- Tiptap UI ---
-import type { UseTableMergeSplitCellConfig } from "@/components/tiptap-node/table-node/ui/table-merge-split-cell-button"
-import { useTableMergeSplitCell } from "@/components/tiptap-node/table-node/ui/table-merge-split-cell-button"
+import type { UseTableMergeSplitCellConfig } from "@/components/tiptap-node/table-node/ui/table-merge-split-cell-button";
+import { useTableMergeSplitCell } from "@/components/tiptap-node/table-node/ui/table-merge-split-cell-button";
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/components/tiptap-ui-primitive/button"
-import { Button } from "@/components/tiptap-ui-primitive/button"
+import type { ButtonProps } from "@/components/tiptap-ui-primitive/button";
+import { Button } from "@/components/tiptap-ui-primitive/button";
 
-export interface TableMergeSplitCellButtonProps
-  extends Omit<ButtonProps, "type">, UseTableMergeSplitCellConfig {
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string
+export interface TableMergeSplitCellButtonProps extends Omit<ButtonProps, "type">, UseTableMergeSplitCellConfig {
+	/**
+	 * Optional text to display alongside the icon.
+	 */
+	text?: string;
 }
 
 /**
@@ -55,70 +54,54 @@ export interface TableMergeSplitCellButtonProps
  * />
  * ```
  */
-export const TableMergeSplitCellButton = forwardRef<
-  HTMLButtonElement,
-  TableMergeSplitCellButtonProps
->(
-  (
-    {
-      editor: providedEditor,
-      action,
-      hideWhenUnavailable = false,
-      onExecuted,
-      text,
-      onClick,
-      children,
-      ...buttonProps
-    },
-    ref
-  ) => {
-    const { editor } = useTiptapEditor(providedEditor)
-    const { isVisible, handleExecute, label, canExecute, Icon } =
-      useTableMergeSplitCell({
-        editor,
-        action,
-        hideWhenUnavailable,
-        onExecuted,
-      })
+export const TableMergeSplitCellButton = forwardRef<HTMLButtonElement, TableMergeSplitCellButtonProps>(
+	({ editor: providedEditor, action, hideWhenUnavailable = false, onExecuted, text, onClick, children, ...buttonProps }, ref) => {
+		const { editor } = useTiptapEditor(providedEditor);
+		const { isVisible, handleExecute, label, canExecute, Icon } = useTableMergeSplitCell({
+			editor,
+			action,
+			hideWhenUnavailable,
+			onExecuted,
+		});
 
-    const handleClick = useCallback(
-      (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleExecute()
-      },
-      [handleExecute, onClick]
-    )
+		const handleClick = useCallback(
+			(event: React.MouseEvent<HTMLButtonElement>) => {
+				onClick?.(event);
+				if (event.defaultPrevented) return;
+				handleExecute();
+			},
+			[handleExecute, onClick],
+		);
 
-    if (!isVisible) {
-      return null
-    }
+		if (!isVisible) {
+			return null;
+		}
 
-    return (
-      <Button
-        type="button"
-        disabled={!canExecute}
-        variant="ghost"
-        data-active-state="off"
-        data-disabled={!canExecute}
-        role="button"
-        tabIndex={-1}
-        aria-label={label}
-        aria-pressed={false}
-        tooltip={label}
-        onClick={handleClick}
-        {...buttonProps}
-        ref={ref}
-      >
-        {children ?? (
-          <>
-            <Icon className="tiptap-button-icon" />
-            {text && <span className="tiptap-button-text">{text}</span>}
-          </>
-        )}
-      </Button>
-    )
-  }
-)
+		return (
+			<Button
+				type="button"
+				disabled={!canExecute}
+				variant="ghost"
+				data-active-state="off"
+				data-disabled={!canExecute}
+				role="button"
+				tabIndex={-1}
+				aria-label={label}
+				aria-pressed={false}
+				tooltip={label}
+				onClick={handleClick}
+				{...buttonProps}
+				ref={ref}
+			>
+				{children ?? (
+					<>
+						<Icon className="tiptap-button-icon" />
+						{text && <span className="tiptap-button-text">{text}</span>}
+					</>
+				)}
+			</Button>
+		);
+	},
+);
 
-TableMergeSplitCellButton.displayName = "TableMergeSplitCellButton"
+TableMergeSplitCellButton.displayName = "TableMergeSplitCellButton";

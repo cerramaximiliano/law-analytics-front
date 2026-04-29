@@ -355,10 +355,12 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			if (visibility === "none") return false;
 			return visibility === currentEnv;
 		};
-		const sortedFeatures = [...plan.features].filter((f) => isVisibleInCurrentEnv(f.visibility)).sort((a, b) => {
-			if (a.enabled === b.enabled) return 0;
-			return a.enabled ? -1 : 1;
-		});
+		const sortedFeatures = [...plan.features]
+			.filter((f) => isVisibleInCurrentEnv(f.visibility))
+			.sort((a, b) => {
+				if (a.enabled === b.enabled) return 0;
+				return a.enabled ? -1 : 1;
+			});
 
 		return (
 			<MainCard
@@ -411,12 +413,7 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 								<Box sx={{ textAlign: "center", mt: 0.5 }}>
 									<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
 										<DiscountShape size={14} color="var(--mui-palette-success-main)" />
-										<Chip
-											label={discount.badge}
-											size="small"
-											color="success"
-											sx={{ fontWeight: 700, fontSize: "0.7rem" }}
-										/>
+										<Chip label={discount.badge} size="small" color="success" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
 									</Stack>
 									<Typography variant="caption" color="success.dark" sx={{ display: "block", mt: 0.5, fontWeight: 600 }}>
 										{discount.promotionalMessage}
@@ -464,22 +461,24 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				<Box sx={{ p: 2 }}>
 					{/* Recursos en una fila */}
 					<Grid container spacing={1} sx={{ mb: 2 }}>
-						{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => (
-							<Grid item xs={6} sm={3} key={`resource-${i}`}>
-								<Box
-									sx={{
-										textAlign: "center",
-										p: 1,
-										bgcolor: theme.palette.background.default,
-										borderRadius: 1,
-									}}
-								>
-									<Typography variant="body2" fontWeight="medium">
-										{formatResourceDescription(resource)}
-									</Typography>
-								</Box>
-							</Grid>
-						))}
+						{plan.resourceLimits
+							.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
+							.map((resource, i) => (
+								<Grid item xs={6} sm={3} key={`resource-${i}`}>
+									<Box
+										sx={{
+											textAlign: "center",
+											p: 1,
+											bgcolor: theme.palette.background.default,
+											borderRadius: 1,
+										}}
+									>
+										<Typography variant="body2" fontWeight="medium">
+											{formatResourceDescription(resource)}
+										</Typography>
+									</Box>
+								</Grid>
+							))}
 					</Grid>
 
 					<Divider sx={{ my: 1.5 }} />
@@ -531,10 +530,12 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 						if (visibility === "none") return false;
 						return visibility === currentEnv;
 					};
-					const sortedFeatures = [...plan.features].filter((f) => isVisibleInCurrentEnv(f.visibility)).sort((a, b) => {
-						if (a.enabled === b.enabled) return 0;
-						return a.enabled ? -1 : 1;
-					});
+					const sortedFeatures = [...plan.features]
+						.filter((f) => isVisibleInCurrentEnv(f.visibility))
+						.sort((a, b) => {
+							if (a.enabled === b.enabled) return 0;
+							return a.enabled ? -1 : 1;
+						});
 
 					return (
 						<Grid item xs={12} sm={6} key={plan.planId}>
@@ -594,7 +595,11 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 															sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
 														/>
 													</Stack>
-													<Typography variant="caption" color="success.dark" sx={{ display: "block", mt: 0.25, fontWeight: 600, fontSize: "0.65rem" }}>
+													<Typography
+														variant="caption"
+														color="success.dark"
+														sx={{ display: "block", mt: 0.25, fontWeight: 600, fontSize: "0.65rem" }}
+													>
 														{discount.promotionalMessage}
 													</Typography>
 													{discount.durationInMonths && (
@@ -638,23 +643,25 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 								<Box sx={{ p: 1.5 }}>
 									{/* Recursos en grid 2x2 */}
 									<Grid container spacing={0.5} sx={{ mb: 1 }}>
-										{plan.resourceLimits.filter((resource) => isVisibleInCurrentEnv(resource.visibility)).map((resource, i) => (
-											<Grid item xs={6} key={`resource-${i}`}>
-												<Box
-													sx={{
-														textAlign: "center",
-														py: 0.5,
-														px: 0.5,
-														bgcolor: theme.palette.background.default,
-														borderRadius: 0.5,
-													}}
-												>
-													<Typography variant="caption" fontWeight="medium">
-														{formatResourceDescription(resource)}
-													</Typography>
-												</Box>
-											</Grid>
-										))}
+										{plan.resourceLimits
+											.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
+											.map((resource, i) => (
+												<Grid item xs={6} key={`resource-${i}`}>
+													<Box
+														sx={{
+															textAlign: "center",
+															py: 0.5,
+															px: 0.5,
+															bgcolor: theme.palette.background.default,
+															borderRadius: 0.5,
+														}}
+													>
+														<Typography variant="caption" fontWeight="medium">
+															{formatResourceDescription(resource)}
+														</Typography>
+													</Box>
+												</Grid>
+											))}
 									</Grid>
 
 									<Divider sx={{ my: 1 }} />
@@ -852,13 +859,24 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 															.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
 															.map((feature, i) => (
 																<Grid item xs={12} sm={6} key={`feature-${i}`}>
-																	<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																	<Box
+																		sx={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 1,
+																			py: 0.5,
+																			...(feature.enabled ? {} : priceListDisable),
+																		}}
+																	>
 																		{feature.enabled ? (
 																			<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
 																		) : (
 																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
 																		)}
-																		<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																		<Typography
+																			variant="body2"
+																			sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}
+																		>
 																			{feature.displayName || feature.description}
 																		</Typography>
 																	</Box>

@@ -31,14 +31,7 @@ const FirstStep = () => {
 									<InputLabel htmlFor="company" required>
 										Razón Social
 									</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="company"
-										name="company"
-										placeholder="Ingrese la razón social"
-										required
-									/>
+									<InputField fullWidth sx={customInputStyles} id="company" name="company" placeholder="Ingrese la razón social" required />
 								</Stack>
 							</Grid>
 
@@ -85,14 +78,7 @@ const FirstStep = () => {
 									<InputLabel htmlFor="name" required>
 										Nombre
 									</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="name"
-										name="name"
-										placeholder="Ingrese un nombre"
-										required
-									/>
+									<InputField fullWidth sx={customInputStyles} id="name" name="name" placeholder="Ingrese un nombre" required />
 								</Stack>
 							</Grid>
 
@@ -101,14 +87,7 @@ const FirstStep = () => {
 									<InputLabel htmlFor="lastName" required>
 										Apellido
 									</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="lastName"
-										name="lastName"
-										placeholder="Ingrese un apellido"
-										required
-									/>
+									<InputField fullWidth sx={customInputStyles} id="lastName" name="lastName" placeholder="Ingrese un apellido" required />
 								</Stack>
 							</Grid>
 						</>

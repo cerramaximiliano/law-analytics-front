@@ -275,7 +275,13 @@ const Members: React.FC<MembersProps> = ({ title, membersData, isLoader, folderI
 									>
 										<Stack direction="row" alignItems="center" spacing={2} sx={{ width: "100%" }}>
 											<ListItemAvatar sx={{ minWidth: "auto" }}>
-												<Avatar alt={member.name} src={member.avatar} variant="rounded" size="lg" color={getColorByRole(Array.isArray(member.role) ? member.role[0] : member.role)} />
+												<Avatar
+													alt={member.name}
+													src={member.avatar}
+													variant="rounded"
+													size="lg"
+													color={getColorByRole(Array.isArray(member.role) ? member.role[0] : member.role)}
+												/>
 											</ListItemAvatar>
 											<ListItemText
 												primary={

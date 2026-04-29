@@ -96,7 +96,7 @@ const Plans = () => {
 		// Para características booleanas
 		const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
 		if (feature) {
-			return feature.enabled ? (feature.displayName || feature.description) : null;
+			return feature.enabled ? feature.displayName || feature.description : null;
 		}
 
 		return null;
@@ -390,13 +390,24 @@ const Plans = () => {
 																<Grid container spacing={1}>
 																	{visibleFeatures.map((feature, i) => (
 																		<Grid item xs={12} sm={6} key={`feature-${i}`}>
-																			<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																			<Box
+																				sx={{
+																					display: "flex",
+																					alignItems: "center",
+																					gap: 1,
+																					py: 0.5,
+																					...(feature.enabled ? {} : priceListDisable),
+																				}}
+																			>
 																				{feature.enabled ? (
 																					<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
 																				) : (
 																					<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
 																				)}
-																				<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																				<Typography
+																					variant="body2"
+																					sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}
+																				>
 																					{feature.displayName || feature.description}
 																				</Typography>
 																			</Box>
