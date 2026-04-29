@@ -3,7 +3,7 @@ import axios from "axios";
 import { AxiosError } from "axios";
 import { PdfTemplate, PostalDocumentType } from "types/postal-document";
 
-const BASE_URL = "/api/postal-documents";
+const BASE_URL = `${import.meta.env.VITE_BASE_URL || ""}/api/postal-documents`;
 
 // Action types
 const SET_LOADING = "postalDocuments/SET_LOADING";

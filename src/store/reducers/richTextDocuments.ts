@@ -14,8 +14,8 @@ import {
 	ResolvedFields,
 } from "types/rich-text-document";
 
-const TEMPLATES_URL = "/api/rich-text-templates";
-const DOCUMENTS_URL = "/api/rich-text-documents";
+const TEMPLATES_URL = `${import.meta.env.VITE_BASE_URL || ""}/api/rich-text-templates`;
+const DOCUMENTS_URL = `${import.meta.env.VITE_BASE_URL || ""}/api/rich-text-documents`;
 
 // ── Action types ────────────────────────────────────────────────────────────────
 
