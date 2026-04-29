@@ -68,7 +68,12 @@ const richTextDocumentsReducer = (state = initialState, action: any): State => {
 		case SET_LOADING:
 			return { ...state, isLoader: true };
 		case SET_TEMPLATES:
-			return { ...state, templates: action.payload.templates, templatesTotal: action.payload.total, isLoader: false };
+			return {
+				...state,
+				templates: Array.isArray(action.payload.templates) ? action.payload.templates : [],
+				templatesTotal: action.payload.total ?? 0,
+				isLoader: false,
+			};
 		case SET_TEMPLATE:
 			return { ...state, template: action.payload, isLoader: false };
 		case ADD_TEMPLATE:

@@ -248,7 +248,8 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 		dispatch(fetchRichTextTemplates({ source: "user", limit: 100 }));
 	}, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	const filtered = (templates as RichTextTemplate[]).filter((t) => {
+	const templatesList: RichTextTemplate[] = Array.isArray(templates) ? templates : [];
+	const filtered = templatesList.filter((t) => {
 		const matchSearch =
 			!search || t.name.toLowerCase().includes(search.toLowerCase()) || (t.description ?? "").toLowerCase().includes(search.toLowerCase());
 		const matchCat = !categoryFilter || t.category === categoryFilter;
