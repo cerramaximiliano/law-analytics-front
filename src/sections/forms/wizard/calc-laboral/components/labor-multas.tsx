@@ -128,7 +128,7 @@ const LaborMultas: React.FC<Props> = (props) => {
 			{/* Selector de porcentaje cuando se aplica Art. 245 bis */}
 			{field.value.includes("multaArt245bis") && nameMulta245bisPorcentaje && (
 				<Grid container spacing={3} justifyContent="center" item xs={12} sx={{ marginTop: "10px", marginBottom: "10px" }}>
-					<FormControl sx={{ minWidth: 250 }}>
+					<FormControl sx={{ width: 250 }}>
 						<InputLabel id="multa-245bis-porcentaje-label">Porcentaje del agravamiento</InputLabel>
 						<Select
 							labelId="multa-245bis-porcentaje-label"
@@ -146,7 +146,7 @@ const LaborMultas: React.FC<Props> = (props) => {
 			)}
 
 			<Grid container spacing={3} justifyContent="center" item xs={12} sx={{ marginTop: "10px", marginBottom: "10px" }}>
-				<FormControl sx={{ minWidth: 250 }} error={isErrorMultas}>
+				<FormControl sx={{ width: 250 }} error={isErrorMultas}>
 					<InputLabel id="demo-simple-select-label">Multas Ley 24.013</InputLabel>
 					<Select
 						{...fieldMultas}
