@@ -282,20 +282,17 @@ export default function FirstForm(props: FirstFormProps) {
 													Ley 27.742 (DNU 70/2023 ratificado)
 												</Typography>
 												<Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
-													Modifica el cálculo de la indemnización por antigüedad (art. 245 LCT):
+													Amplía el período de prueba a 6 meses. Cómputo de antigüedad:
 												</Typography>
 												<Box component="ul" sx={{ m: 0, pl: 2 }}>
 													<Typography variant="caption" component="li">
-														Solo años completos (no suma fracción &gt; 3 meses).
+														Menos de 6 meses: sin indemnización (período de prueba).
 													</Typography>
 													<Typography variant="caption" component="li">
-														Antigüedad &lt; 6 meses: sin indemnización (período de prueba ampliado).
+														De 6 meses a 1 año: 1 período.
 													</Typography>
 													<Typography variant="caption" component="li">
-														6 meses a 1 año: cuenta como 1 año mínimo.
-													</Typography>
-													<Typography variant="caption" component="li">
-														Período de prueba: &lt; 6 meses (en lugar de 3).
+														Más de 1 año: regla tradicional (fracción &gt; 3 meses suma 1 año).
 													</Typography>
 												</Box>
 												<Typography variant="caption" component="div" sx={{ mt: 0.5, fontStyle: "italic" }}>
