@@ -35,21 +35,15 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import {
-	Add,
-	ArrowDown2,
-	DocumentDownload,
-	DocumentText,
-	Edit2,
-	Eye,
-	FolderOpen,
-	Routing,
-	SearchNormal1,
-	Trash,
-} from "iconsax-react";
+import { Add, ArrowDown2, DocumentDownload, DocumentText, Edit2, Eye, FolderOpen, Routing, SearchNormal1, Trash } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useDispatch, useSelector } from "store";
-import { fetchRichTextDocuments, fetchRichTextTemplates, deleteRichTextDocument, updateRichTextDocument } from "store/reducers/richTextDocuments";
+import {
+	fetchRichTextDocuments,
+	fetchRichTextTemplates,
+	deleteRichTextDocument,
+	updateRichTextDocument,
+} from "store/reducers/richTextDocuments";
 import { fetchPostalDocuments, deletePostalDocument, updatePostalDocument, getPostalDocumentById } from "store/reducers/postalDocuments";
 import { createPostalTracking, fetchAllTrackings, updatePostalTracking } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
@@ -65,11 +59,59 @@ import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePost
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const VALID_CODE_IDS = [
-	"CC", "CD", "CL", "CM", "CO", "CP", "DE", "DI", "EC", "EE", "EO", "EP",
-	"GC", "GD", "GE", "GF", "GO", "GR", "GS", "HC", "HD", "HE", "HO", "HU",
-	"HX", "IN", "IS", "JP", "LC", "LS", "ND", "MD", "ME", "MC", "MS", "MU",
-	"MX", "OL", "PC", "PP", "RD", "RE", "RP", "RR", "SD", "SL", "SP", "SR",
-	"ST", "TC", "TD", "TL", "UP",
+	"CC",
+	"CD",
+	"CL",
+	"CM",
+	"CO",
+	"CP",
+	"DE",
+	"DI",
+	"EC",
+	"EE",
+	"EO",
+	"EP",
+	"GC",
+	"GD",
+	"GE",
+	"GF",
+	"GO",
+	"GR",
+	"GS",
+	"HC",
+	"HD",
+	"HE",
+	"HO",
+	"HU",
+	"HX",
+	"IN",
+	"IS",
+	"JP",
+	"LC",
+	"LS",
+	"ND",
+	"MD",
+	"ME",
+	"MC",
+	"MS",
+	"MU",
+	"MX",
+	"OL",
+	"PC",
+	"PP",
+	"RD",
+	"RE",
+	"RP",
+	"RR",
+	"SD",
+	"SL",
+	"SP",
+	"SR",
+	"ST",
+	"TC",
+	"TD",
+	"TL",
+	"UP",
 ];
 
 const TRACKING_SLUGS = ["telegrama_laboral"];
@@ -208,9 +250,7 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 
 	const filtered = (templates as RichTextTemplate[]).filter((t) => {
 		const matchSearch =
-			!search ||
-			t.name.toLowerCase().includes(search.toLowerCase()) ||
-			(t.description ?? "").toLowerCase().includes(search.toLowerCase());
+			!search || t.name.toLowerCase().includes(search.toLowerCase()) || (t.description ?? "").toLowerCase().includes(search.toLowerCase());
 		const matchCat = !categoryFilter || t.category === categoryFilter;
 		return matchSearch && matchCat;
 	});
@@ -453,7 +493,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 					label,
 					documentId: docRow.id,
 					...(docRow.linkedFolderId ? { folderId: docRow.linkedFolderId as any } : {}),
-				}) as any
+				}) as any,
 			);
 			if (result?.success !== false) {
 				if (result?.id) {
@@ -491,13 +531,13 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 					updatePostalTracking(selectedTracking._id, {
 						documentId: docRow.id,
 						...(!trackingFolder && resolvedFolder ? { folderId: resolvedFolder as any } : {}),
-					}) as any
+					}) as any,
 				),
 				(dispatch as any)(
 					updatePostalDocument(docRow.id, {
 						linkedTrackingId: selectedTracking._id,
 						...(resolvedFolder && resolvedFolder !== documentFolder ? { linkedFolderId: resolvedFolder as any } : {}),
-					})
+					}),
 				),
 			]);
 			showSnackbar("Documento vinculado al seguimiento exitosamente", "success");
@@ -522,11 +562,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 				</Stack>
 			</DialogTitle>
 
-			<Tabs
-				value={tab}
-				onChange={(_, v) => setTab(v)}
-				sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}
-			>
+			<Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}>
 				<Tab label="Carpeta" />
 				{supportsTracking && <Tab label="Seguimiento postal" />}
 			</Tabs>
@@ -616,13 +652,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 											inputProps={{ inputMode: "numeric" }}
 										/>
 									</Stack>
-									<TextField
-										size="small"
-										label="Etiqueta (opcional)"
-										fullWidth
-										value={label}
-										onChange={(e) => setLabel(e.target.value)}
-									/>
+									<TextField size="small" label="Etiqueta (opcional)" fullWidth value={label} onChange={(e) => setLabel(e.target.value)} />
 									{docRow.linkedFolderId && (
 										<Typography variant="caption" color="text.secondary">
 											El seguimiento también se vinculará a la carpeta asociada al documento.
@@ -645,9 +675,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 											size="small"
 											options={trackings}
 											value={selectedTracking}
-											getOptionLabel={(t: PostalTrackingType) =>
-												`${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`
-											}
+											getOptionLabel={(t: PostalTrackingType) => `${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`}
 											isOptionEqualToValue={(opt, val) => opt._id === val._id}
 											onChange={(_e, val) => setSelectedTracking(val)}
 											renderOption={(props, t: PostalTrackingType) => (
@@ -796,11 +824,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 								<CircularProgress size={28} />
 							</Stack>
 						) : freshUrl ? (
-							<iframe
-								src={freshUrl}
-								title={doc.title}
-								style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-							/>
+							<iframe src={freshUrl} title={doc.title} style={{ width: "100%", height: "100%", border: "none", display: "block" }} />
 						) : (
 							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
 								<Typography color="text.secondary">El PDF no está disponible.</Typography>
@@ -883,12 +907,8 @@ const EscritosPage = () => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
 
-	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector(
-		(state: any) => state.richTextDocumentsReducer
-	);
-	const { documents: postalDocs, total: postalTotal, isLoader: postalLoading } = useSelector(
-		(state: any) => state.postalDocumentsReducer
-	);
+	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector((state: any) => state.richTextDocumentsReducer);
+	const { documents: postalDocs, total: postalTotal, isLoader: postalLoading } = useSelector((state: any) => state.postalDocumentsReducer);
 	const folders = useSelector((state: any) => state.folder?.folders || []);
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 
@@ -904,7 +924,12 @@ const EscritosPage = () => {
 	const [deleteTarget, setDeleteTarget] = useState<{ kind: "postal" | "richtext"; id: string; title: string } | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [mainLimitErrorOpen, setMainLimitErrorOpen] = useState(false);
-	const [mainLimitErrorData, setMainLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(null);
+	const [mainLimitErrorData, setMainLimitErrorData] = useState<{
+		resourceType: string;
+		plan: string;
+		currentCount: string;
+		limit: number;
+	} | null>(null);
 
 	// Load folders if needed
 	useEffect(() => {
@@ -926,12 +951,14 @@ const EscritosPage = () => {
 
 	// Merged & sorted rows
 	const rows = useMemo((): DocRow[] => {
+		const postalArr: PostalDocumentType[] = Array.isArray(postalDocs) ? postalDocs : [];
+		const rtArr: RichTextDocument[] = Array.isArray(rtDocs) ? rtDocs : [];
 		let result: DocRow[] = [];
 		if (typeFilter !== "richtext") {
-			result.push(...(postalDocs as PostalDocumentType[]).map((d) => toDocRow(d, "postal")));
+			result.push(...postalArr.map((d) => toDocRow(d, "postal")));
 		}
 		if (typeFilter !== "postal") {
-			result.push(...(rtDocs as RichTextDocument[]).map((d) => toDocRow(d, "richtext")));
+			result.push(...rtArr.map((d) => toDocRow(d, "richtext")));
 		}
 		if (typeFilter === "all") {
 			result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
@@ -1091,12 +1118,7 @@ const EscritosPage = () => {
 							),
 						}}
 					/>
-					<Select
-						size="small"
-						value={typeFilter}
-						onChange={(e) => handleTypeChange(e.target.value as TypeFilter)}
-						sx={{ minWidth: 160 }}
-					>
+					<Select size="small" value={typeFilter} onChange={(e) => handleTypeChange(e.target.value as TypeFilter)} sx={{ minWidth: 160 }}>
 						<MuiMenuItem value="all">Todos los tipos</MuiMenuItem>
 						<MuiMenuItem value="postal">Del Sistema</MuiMenuItem>
 						<MuiMenuItem value="richtext">Mis Modelos</MuiMenuItem>
@@ -1113,7 +1135,7 @@ const EscritosPage = () => {
 					<Table size="small">
 						<TableHead>
 							<TableRow>
-									<TableCell>Título</TableCell>
+								<TableCell>Título</TableCell>
 								<TableCell>Modelo</TableCell>
 								<TableCell>Estado</TableCell>
 								<TableCell>Carpeta</TableCell>
@@ -1213,11 +1235,7 @@ const EscritosPage = () => {
 															</Tooltip>
 															{row.documentUrl && (
 																<Tooltip title="Descargar PDF">
-																	<IconButton
-																		size="small"
-																		color="info"
-																		onClick={() => window.open(row.documentUrl, "_blank")}
-																	>
+																	<IconButton size="small" color="info" onClick={() => window.open(row.documentUrl, "_blank")}>
 																		<DocumentDownload size={15} />
 																	</IconButton>
 																</Tooltip>
@@ -1231,11 +1249,7 @@ const EscritosPage = () => {
 														</Tooltip>
 													)}
 													<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
-														<IconButton
-															size="small"
-															color={row.linkedFolderId ? "success" : "default"}
-															onClick={() => setVincularRow(row)}
-														>
+														<IconButton size="small" color={row.linkedFolderId ? "success" : "default"} onClick={() => setVincularRow(row)}>
 															<Routing size={15} />
 														</IconButton>
 													</Tooltip>
