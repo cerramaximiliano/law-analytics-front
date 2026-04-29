@@ -665,7 +665,7 @@ const BookingsManagement = () => {
 			if (isSpecificAvailability) {
 				// Cargar disponibilidad - include team headers
 				const availabilityResponse = await axios.get(
-					`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`,
+					`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`,
 					{ headers: requestHeaders }
 				);
 
@@ -673,7 +673,7 @@ const BookingsManagement = () => {
 
 				// Cargar reservas para esta disponibilidad específica - include team headers
 				const bookingsResponse = await axios.get(
-					`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}/bookings`,
+					`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}/bookings`,
 					{ headers: requestHeaders }
 				);
 
@@ -683,7 +683,7 @@ const BookingsManagement = () => {
 			} else {
 				// Cargar todas las reservas del usuario - include team headers
 				const bookingsResponse = await axios.get(
-					`${process.env.REACT_APP_BASE_URL}/api/booking/bookings`,
+					`${import.meta.env.VITE_BASE_URL}/api/booking/bookings`,
 					{ headers: requestHeaders }
 				);
 
@@ -693,7 +693,7 @@ const BookingsManagement = () => {
 
 				// Cargar todas las disponibilidades cuando estamos en la vista general - include team headers
 				const availabilitiesResponse = await axios.get(
-					`${process.env.REACT_APP_BASE_URL}/api/booking/availability`,
+					`${import.meta.env.VITE_BASE_URL}/api/booking/availability`,
 					{ headers: requestHeaders }
 				);
 
@@ -796,7 +796,7 @@ const BookingsManagement = () => {
 			}
 
 			const response = await axios.patch(
-				`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${bookingId}/status`,
+				`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${bookingId}/status`,
 				payload,
 				{ headers: requestHeaders }
 			);
@@ -859,7 +859,7 @@ const BookingsManagement = () => {
 				};
 
 				const response = await axios.patch(
-					`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
+					`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
 					payload,
 					{ headers: requestHeaders }
 				);
@@ -913,7 +913,7 @@ const BookingsManagement = () => {
 				};
 
 				const response = await axios.patch(
-					`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
+					`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
 					payload,
 					{ headers: requestHeaders }
 				);
@@ -967,7 +967,7 @@ const BookingsManagement = () => {
 			if (!selectedBooking) return;
 
 			await axios.delete(
-				`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}`,
+				`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}`,
 				{ headers: requestHeaders }
 			);
 
@@ -1015,7 +1015,7 @@ const BookingsManagement = () => {
 			if (!selectedAvailabilityId) return;
 
 			await axios.delete(
-				`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`,
+				`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`,
 				{ headers: requestHeaders }
 			);
 

@@ -97,7 +97,7 @@ const AuthCodeVerification = ({ mode = "register", email: propEmail, onVerificat
 
 			const endpoint = mode === "register" ? "/api/auth/resend-code" : "/api/auth/reset-request";
 
-			await axios.post(`${process.env.REACT_APP_BASE_URL}${endpoint}`, {
+			await axios.post(`${import.meta.env.VITE_BASE_URL}${endpoint}`, {
 				email: emailToUse,
 			});
 

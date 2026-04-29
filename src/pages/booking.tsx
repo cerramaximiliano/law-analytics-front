@@ -213,7 +213,7 @@ const BookingPage = () => {
 
 			try {
 				// Obtener datos de disponibilidad del backend usando el slug
-				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/public/availability/${slug}`);
+				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/public/availability/${slug}`);
 
 				if (response.status !== 200) {
 					throw new Error("No se pudo encontrar la configuración de disponibilidad");
@@ -240,7 +240,7 @@ const BookingPage = () => {
 		const fetchPublicAvailabilities = async () => {
 			setLoadingPublicList(true);
 			try {
-				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/public/availability/list`);
+				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/public/availability/list`);
 				if (response.status === 200) {
 					setPublicAvailabilities(response.data);
 				}
@@ -790,7 +790,7 @@ const BookingPage = () => {
 			};
 
 			// Enviar solicitud al backend
-			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/booking/public/bookings`, appointmentData);
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/booking/public/bookings`, appointmentData);
 
 			if (response.status !== 201) {
 				throw new Error("Error al crear la cita");

@@ -194,7 +194,7 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 			}
 
 			const response = await axios.post(
-				`${import.meta.env.VITE_BASE_URL || process.env.REACT_APP_BASE_URL}/api/support-contacts`,
+				`${import.meta.env.VITE_BASE_URL || ""}/api/support-contacts`,
 				payload,
 				{ withCredentials: true },
 			);
@@ -210,7 +210,10 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 					}),
 				);
 				setSubmitted(true);
-				setTimeout(() => { onClose(); resetForm(); }, 2000);
+				setTimeout(() => {
+					onClose();
+					resetForm();
+				}, 2000);
 			}
 		} catch (error) {
 			let errorMessage = "Error al enviar la consulta. Por favor, intenta más tarde.";
@@ -233,7 +236,10 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 	};
 
 	const handleClose = () => {
-		if (!submitting) { onClose(); setTimeout(resetForm, 300); }
+		if (!submitting) {
+			onClose();
+			setTimeout(resetForm, 300);
+		}
 	};
 
 	const isTemplateRequest = formData.subject === SUBJECT_TEMPLATE_REQUEST;
@@ -282,7 +288,8 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 						<Stack spacing={2.5}>
 							{isTemplateRequest ? (
 								<Alert severity="info" sx={{ mb: 0 }}>
-									Adjuntá el PDF, DOC o DOCX que querés que integremos como modelo autocompletable. Indicá también qué campos deberían ser completables y a qué tipo de expediente corresponde.
+									Adjuntá el PDF, DOC o DOCX que querés que integremos como modelo autocompletable. Indicá también qué campos deberían ser
+									completables y a qué tipo de expediente corresponde.
 								</Alert>
 							) : (
 								<Alert severity="info" sx={{ mb: 0 }}>
@@ -352,7 +359,10 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 							{isTemplateRequest && (
 								<Box>
 									<Typography variant="subtitle2" sx={{ mb: 1 }}>
-										Documento de referencia <Typography component="span" variant="caption" color="textSecondary">(PDF, DOC o DOCX — máx. {MAX_FILE_SIZE_MB} MB)</Typography>
+										Documento de referencia{" "}
+										<Typography component="span" variant="caption" color="textSecondary">
+											(PDF, DOC o DOCX — máx. {MAX_FILE_SIZE_MB} MB)
+										</Typography>
 									</Typography>
 									{attachmentFile ? (
 										<Stack
@@ -373,7 +383,14 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 											<Typography variant="caption" color="textSecondary" sx={{ flexShrink: 0 }}>
 												{(attachmentFile.size / 1024 / 1024).toFixed(1)} MB
 											</Typography>
-											<IconButton size="small" onClick={() => { setAttachmentFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} disabled={submitting}>
+											<IconButton
+												size="small"
+												onClick={() => {
+													setAttachmentFile(null);
+													if (fileInputRef.current) fileInputRef.current.value = "";
+												}}
+												disabled={submitting}
+											>
 												<CloseCircle size={18} />
 											</IconButton>
 										</Stack>
