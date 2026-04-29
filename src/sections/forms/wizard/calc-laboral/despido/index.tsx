@@ -159,6 +159,12 @@ function calculateBaseAmount(values: any): number {
 			const mesesTrabajados = fechaEgreso.diff(fechaIngreso, "months", true);
 			total += mesesTrabajados * remuneracionBase * 0.25;
 		}
+		if (values.multas.includes("multaArt245bis")) {
+			// Agravamiento art. 245 bis Ley 27.742: 50% (mínimo) o 100% (máximo
+			// según gravedad de los hechos) sobre la indemnización por antigüedad.
+			const porcentaje = Number(values.multa245bisPorcentaje) || 50;
+			total += indemnizacion * (porcentaje / 100);
+		}
 	}
 
 	// 4. Otras sumas adeudadas
@@ -584,6 +590,10 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 			if (values.multas.includes("multaArt15")) {
 				resultado["Multa Art. 15 Ley 24.013"] = calcularMultaArt15Ley24013(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
 			}
+			if (values.multas.includes("multaArt245bis")) {
+				const porcentaje = Number(values.multa245bisPorcentaje) || 50;
+				resultado[`Multa Art. 245 bis Ley 27.742 (${porcentaje}%)`] = parseFloat((indemnizacion * (porcentaje / 100)).toFixed(2));
+			}
 		}
 
 		if (values.multaLE === 1) {
@@ -623,6 +633,9 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				if (resultado["Multa Art. 8 Ley 24.013"]) capitalBase += resultado["Multa Art. 8 Ley 24.013"];
 				if (resultado["Multa Art. 9 Ley 24.013"]) capitalBase += resultado["Multa Art. 9 Ley 24.013"];
 				if (resultado["Multa Art. 10 Ley 24.013"]) capitalBase += resultado["Multa Art. 10 Ley 24.013"];
+				// La key del Art. 245 bis incluye el porcentaje aplicado, así que se busca por prefijo.
+				const m245bisKey = Object.keys(resultado).find((k) => k.startsWith("Multa Art. 245 bis"));
+				if (m245bisKey && resultado[m245bisKey]) capitalBase += resultado[m245bisKey] as number;
 
 				// Sumar otras sumas
 				if (values.otrasSumas) capitalBase += parseFloat(values.otrasSumas) || 0;

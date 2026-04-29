@@ -7,7 +7,19 @@ import { useField } from "formik";
 
 export default function SecondForm(props: any) {
 	const {
-		formField: { liquidacion, isLiquidacion, topes, isTopes, remuneracionTopes, isMultas, multas, multaLE, fechaFalsa, salarioFalso },
+		formField: {
+			liquidacion,
+			isLiquidacion,
+			topes,
+			isTopes,
+			remuneracionTopes,
+			isMultas,
+			multas,
+			multaLE,
+			fechaFalsa,
+			salarioFalso,
+			multa245bisPorcentaje,
+		},
 	} = props;
 	const fieldIsLiquidacion = useField(isLiquidacion.name)[0];
 	const helperIsLiquidacion = useField(isLiquidacion.name)[2];
@@ -34,6 +46,7 @@ export default function SecondForm(props: any) {
 		{ value: "multaArt2", label: "Multa Ley 25.323 art. 2" },
 		{ value: "multaArt15", label: "Art. 15 Ley 24.013" },
 		{ value: "multaArt80", label: "Multa art. 80 LCT" },
+		{ value: "multaArt245bis", label: "Art. 245 bis (Ley 27.742)" },
 	];
 	return (
 		<>
@@ -101,6 +114,7 @@ export default function SecondForm(props: any) {
 						options={optionsMultas}
 						nameFechaFalsa={fechaFalsa.name}
 						nameSalarioFalso={salarioFalso.name}
+						nameMulta245bisPorcentaje={multa245bisPorcentaje.name}
 					/>
 				)}
 			</Grid>

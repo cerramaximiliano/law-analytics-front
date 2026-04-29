@@ -31,6 +31,7 @@ interface FormModel {
 		multaLE: FormField;
 		fechaFalsa: FormField;
 		salarioFalso: FormField;
+		multa245bisPorcentaje: FormField;
 
 		// Paso 3: Actualización por intereses
 		aplicarIntereses: FormField;
@@ -161,6 +162,11 @@ const despidoFormModel: FormModel = {
 			name: "salarioFalso",
 			label: "Salario Falso",
 			requiredErrorMsg: "Debe consignar un salario",
+			type: "multas",
+		},
+		multa245bisPorcentaje: {
+			name: "multa245bisPorcentaje",
+			label: "Porcentaje agravamiento (Art. 245 bis)",
 			type: "multas",
 		},
 
