@@ -1,11 +1,11 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { Box, Checkbox, Grid, InputLabel, Typography } from "@mui/material";
+import { Box, Checkbox, Grid, IconButton, InputLabel, Stack, Tooltip, Typography } from "@mui/material";
 import DateInputField from "components/UI/DateInputField";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import { useFormikContext, useField } from "formik";
-import { UserSquare, Calendar2, DocumentText } from "iconsax-react";
+import { UserSquare, Calendar2, DocumentText, InfoCircle } from "iconsax-react";
 import LinkCauseSelector from "./components/LinkCauseSelector";
 import { Folder } from "types/folders";
 
@@ -271,7 +271,44 @@ export default function FirstForm(props: FirstFormProps) {
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
 							<Grid item xs={12} lg={3}>
-								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Aplicar Ley 27.742:</InputLabel>
+								<Stack direction="row" alignItems="center" justifyContent={{ xs: "flex-start", sm: "flex-end" }} spacing={0.5}>
+									<InputLabel sx={{ m: 0 }}>Aplicar Ley 27.742:</InputLabel>
+									<Tooltip
+										arrow
+										placement="top"
+										title={
+											<Box sx={{ p: 0.5 }}>
+												<Typography variant="caption" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
+													Ley 27.742 (DNU 70/2023 ratificado)
+												</Typography>
+												<Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
+													Modifica el cálculo de la indemnización por antigüedad (art. 245 LCT):
+												</Typography>
+												<Box component="ul" sx={{ m: 0, pl: 2 }}>
+													<Typography variant="caption" component="li">
+														Solo años completos (no suma fracción &gt; 3 meses).
+													</Typography>
+													<Typography variant="caption" component="li">
+														Antigüedad &lt; 6 meses: sin indemnización (período de prueba ampliado).
+													</Typography>
+													<Typography variant="caption" component="li">
+														6 meses a 1 año: cuenta como 1 año mínimo.
+													</Typography>
+													<Typography variant="caption" component="li">
+														Período de prueba: &lt; 6 meses (en lugar de 3).
+													</Typography>
+												</Box>
+												<Typography variant="caption" component="div" sx={{ mt: 0.5, fontStyle: "italic" }}>
+													Vacaciones proporcionales: se mantiene el criterio tradicional.
+												</Typography>
+											</Box>
+										}
+									>
+										<IconButton size="small" sx={{ p: 0.25 }} aria-label="Información sobre Ley 27.742">
+											<InfoCircle size={16} variant="Linear" />
+										</IconButton>
+									</Tooltip>
+								</Stack>
 							</Grid>
 							<Grid item xs={12} lg={9}>
 								<Checkbox
