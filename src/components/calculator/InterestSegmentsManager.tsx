@@ -203,6 +203,13 @@ const getRateName = (rateValue: string, rates: InterestRate[]): string => {
 	return rate?.label || rateValue;
 };
 
+// localeText para los DatePickers — placeholder en español (AAAA para Año
+// en lugar de YYYY). El parsing sigue usando el adapter dayjs con format
+// DD/MM/YYYY: solo cambia el texto del hint visible.
+const datePickerLocaleText = {
+	fieldYearPlaceholder: (params: { digitAmount: number }) => "A".repeat(params.digitAmount),
+};
+
 // Helper para validar fecha dentro del rango de la tasa
 const isDateInRateRange = (date: string, rate: string, rates: InterestRate[]): boolean => {
 	const rateConfig = rates.find((r) => r.value === rate);
@@ -899,7 +906,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 												</Stack>
 											</TableCell>
 											<TableCell>
-												<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+												<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es" localeText={datePickerLocaleText}>
 													<DatePicker
 														value={editingSegment?.startDate ? dayjs(editingSegment.startDate, "DD/MM/YYYY") : null}
 														onChange={(date: Dayjs | null) =>
@@ -916,7 +923,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 												</LocalizationProvider>
 											</TableCell>
 											<TableCell>
-												<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+												<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es" localeText={datePickerLocaleText}>
 													<DatePicker
 														value={editingSegment?.endDate ? dayjs(editingSegment.endDate, "DD/MM/YYYY") : null}
 														onChange={(date: Dayjs | null) =>
@@ -1148,7 +1155,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 
 					<Grid container spacing={1} alignItems="center">
 						<Grid item xs={6} sm={2}>
-							<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+							<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es" localeText={datePickerLocaleText}>
 								<DatePicker
 									label="Fecha Inicio"
 									value={newSegment.startDate ? dayjs(newSegment.startDate, "DD/MM/YYYY") : null}
@@ -1167,7 +1174,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 							</LocalizationProvider>
 						</Grid>
 						<Grid item xs={6} sm={2}>
-							<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+							<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es" localeText={datePickerLocaleText}>
 								<DatePicker
 									label="Fecha Fin"
 									value={newSegment.endDate ? dayjs(newSegment.endDate, "DD/MM/YYYY") : null}
