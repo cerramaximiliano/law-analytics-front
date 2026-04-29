@@ -271,7 +271,7 @@ const Availability = () => {
 
 			// Si hay un ID específico en la URL, cargar esa configuración
 			if (availabilityId) {
-				response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`);
+				response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`);
 
 				// Verificar respuesta exitosa
 				if (response.status !== 200) {
@@ -288,7 +288,7 @@ const Availability = () => {
 				applyConfigData(activeConfig);
 			} else {
 				// Cargar todas las configuraciones disponibles
-				response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
+				response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`);
 
 				// Verificar respuesta exitosa
 				if (response.status !== 200) {
@@ -515,10 +515,10 @@ const Availability = () => {
 
 			if (availabilityId) {
 				// Actualizar configuración existente
-				response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`, availabilityData);
+				response = await axios.put(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`, availabilityData);
 			} else {
 				// Crear nueva configuración
-				response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`, availabilityData);
+				response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`, availabilityData);
 			}
 
 			// Verificar respuesta exitosa

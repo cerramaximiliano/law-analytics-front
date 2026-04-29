@@ -249,7 +249,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 
 			setIsSendingEmail(true);
 
-			await axios.post(`${process.env.REACT_APP_BASE_URL}/api/email/send-email`, {
+			await axios.post(`${import.meta.env.VITE_BASE_URL}/api/email/send-email`, {
 				to: allEmails,
 				subject,
 				textBody,

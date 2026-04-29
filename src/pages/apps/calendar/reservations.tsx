@@ -677,26 +677,26 @@ const BookingsManagement = () => {
 			// Si estamos viendo una disponibilidad específica
 			if (isSpecificAvailability) {
 				// Cargar disponibilidad
-				const availabilityResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}`);
+				const availabilityResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`);
 
 				setAvailability(availabilityResponse.data);
 
 				// Cargar reservas para esta disponibilidad específica
-				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${availabilityId}/bookings`);
+				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}/bookings`);
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 			} else {
 				// Cargar todas las reservas del usuario
-				const bookingsResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings`);
+				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings`);
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 
 				// Cargar todas las disponibilidades cuando estamos en la vista general
-				const availabilitiesResponse = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/availability`);
+				const availabilitiesResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`);
 
 				// Asegurar que siempre sea un array
 				const availabilitiesData = Array.isArray(availabilitiesResponse.data) ? availabilitiesResponse.data : [];
@@ -796,7 +796,7 @@ const BookingsManagement = () => {
 				payload.cancellationReason = rejectReason;
 			}
 
-			const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${bookingId}/status`, payload);
+			const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${bookingId}/status`, payload);
 
 			const updatedBooking = response.data;
 
@@ -855,7 +855,7 @@ const BookingsManagement = () => {
 					cancellationReason: rejectReason || undefined,
 				};
 
-				const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
+				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
 
 				const updatedBooking = response.data;
 
@@ -905,7 +905,7 @@ const BookingsManagement = () => {
 					cancelledBy: "host",
 				};
 
-				const response = await axios.patch(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
+				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload);
 
 				const updatedBooking = response.data;
 
@@ -955,7 +955,7 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedBooking) return;
 
-			await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/booking/bookings/${selectedBooking._id}`);
+			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}`);
 
 			setBookings(bookings.filter((b) => b._id !== selectedBooking._id));
 
@@ -1000,7 +1000,7 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedAvailabilityId) return;
 
-			await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`);
+			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`);
 
 			// Actualizar la lista de disponibilidades
 			setAvailabilities(Array.isArray(availabilities) ? availabilities.filter((a) => a._id !== selectedAvailabilityId) : []);
