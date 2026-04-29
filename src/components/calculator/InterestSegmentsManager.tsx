@@ -323,7 +323,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			}
 
 			try {
-				const baseURL = process.env.REACT_APP_BASE_URL || "";
+				const baseURL = import.meta.env.VITE_BASE_URL || "";
 				const url = `${baseURL}/api/tasas/consulta?fechaDesde=${segment.startDate}&fechaHasta=${segment.endDate}&campo=${segment.rate}&calcular=true`;
 
 				const response = await axios.get(url, { withCredentials: true });
@@ -813,8 +813,10 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				</Tooltip>
 			</Stack>
 
-			{/* Mensaje de error */}
-			{error && (
+			{/* Mensaje de error (solo cuando el form de nuevo tramo está cerrado;
+			    si está abierto, el error se muestra dentro del Card para que sea visible
+			    sin que el usuario tenga que scrollear) */}
+			{error && !isAddingNew && (
 				<Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
 					{error}
 				</Alert>
@@ -1088,6 +1090,13 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 			{/* Formulario para agregar nuevo tramo */}
 			<Collapse in={isAddingNew}>
 				<Card sx={{ mb: 2, p: 2, bgcolor: "background.default" }}>
+					{/* Error visible dentro del card para que el usuario lo vea
+					    sin scrollear cuando el form está abierto */}
+					{error && (
+						<Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+							{error}
+						</Alert>
+					)}
 					<Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
 						<Typography variant="subtitle2">Nuevo Tramo</Typography>
 						<ToggleButtonGroup
@@ -1246,10 +1255,16 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 									<CircularProgress size={24} />
 								) : (
 									<>
-										<Button variant="contained" size="small" onClick={handleSaveNewSegment} startIcon={<Calculator size={16} />}>
+										<Button
+											type="button"
+											variant="contained"
+											size="small"
+											onClick={handleSaveNewSegment}
+											startIcon={<Calculator size={16} />}
+										>
 											Calcular
 										</Button>
-										<Button variant="outlined" size="small" color="error" onClick={handleCancelNew}>
+										<Button type="button" variant="outlined" size="small" color="error" onClick={handleCancelNew}>
 											Cancelar
 										</Button>
 									</>

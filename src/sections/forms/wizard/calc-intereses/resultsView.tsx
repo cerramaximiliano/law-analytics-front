@@ -109,7 +109,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			if (showTasasModal && segments.length > 0 && !tasasDataLoaded && !tasasDataLoading) {
 				setTasasDataLoading(true);
 				try {
-					const baseURL = process.env.REACT_APP_BASE_URL || "";
+					const baseURL = import.meta.env.VITE_BASE_URL || "";
 					const dataBySegment: Record<string, any> = {};
 
 					// Cargar datos solo para segmentos que NO son de interés simple
