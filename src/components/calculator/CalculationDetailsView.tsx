@@ -84,6 +84,13 @@ interface CalculationDetailsViewProps {
 				interest?: number;
 				coefficient?: number;
 				isExtension?: boolean;
+				cerComparisonEnabled?: boolean;
+				cerComparison?: {
+					disponible: boolean;
+					techo?: { factor: number; monto: number };
+					piso?: { factor: number; monto: number };
+					componentes?: any;
+				};
 			}>;
 		};
 	};
@@ -108,6 +115,17 @@ interface CalculationDetailsViewProps {
 	triggerPrint?: boolean;
 	onPrintComplete?: () => void;
 }
+
+// Helper: aplica clamp [piso, techo] de la comparativa CER si está disponible.
+// Si no hay comparativa, devuelve el interés crudo. Las sumatorias y los renders
+// de tramos deben usar esto, no segment.interest, para que el resultado refleje
+// el clamp aplicado en la vista previa de tramos.
+const getEffectiveInterest = (segment: any): number => {
+	const cmp = segment?.cerComparison;
+	const interest = segment?.interest || 0;
+	if (!cmp || !cmp.disponible || !cmp.techo || !cmp.piso) return interest;
+	return Math.max(cmp.piso.monto, Math.min(cmp.techo.monto, interest));
+};
 
 // Iconos para cada sección
 const SectionIcons: Record<string, React.ElementType> = {
@@ -873,9 +891,98 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 												Interés generado:
 											</Typography>
 											<Typography variant="caption" fontWeight={500} color="success.main">
-												{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest || 0)}
+												{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(getEffectiveInterest(segment))}
 											</Typography>
 										</Box>
+										{segment.cerComparison?.disponible &&
+											(() => {
+												const eff = getEffectiveInterest(segment);
+												const techo = segment.cerComparison.techo?.monto || 0;
+												const piso = segment.cerComparison.piso?.monto || 0;
+												const fmt = (v: number) =>
+													new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(v);
+												const aplicado =
+													eff === techo ? "(techo)" : eff === piso ? "(piso)" : "(dentro del rango)";
+												return (
+													<Box
+														sx={{
+															mt: 0.5,
+															p: 0.75,
+															bgcolor: alpha(theme.palette.info.main, 0.08),
+															borderRadius: 1,
+															border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+														}}
+													>
+														<Typography variant="caption" fontWeight={600} color="info.main" sx={{ display: "block" }}>
+															Comparativa CER (Ley 27.802):
+														</Typography>
+														<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
+															<Typography
+																variant="caption"
+																color="text.secondary"
+																sx={{ textDecoration: eff !== (segment.interest || 0) ? "line-through" : "none" }}
+															>
+																Calculado:
+															</Typography>
+															<Typography
+																variant="caption"
+																color="text.secondary"
+																sx={{ textDecoration: eff !== (segment.interest || 0) ? "line-through" : "none" }}
+															>
+																{fmt(segment.interest || 0)}
+															</Typography>
+														</Box>
+														<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
+															<Typography
+																variant="caption"
+																color={eff === piso ? "success.main" : "text.secondary"}
+																fontWeight={eff === piso ? 700 : 400}
+															>
+																{eff === piso && "▸ "}Piso (67% × CER+3%):
+															</Typography>
+															<Typography
+																variant="caption"
+																color={eff === piso ? "success.main" : "text.secondary"}
+																fontWeight={eff === piso ? 700 : 400}
+															>
+																{fmt(piso)}
+															</Typography>
+														</Box>
+														<Box sx={{ display: "flex", justifyContent: "space-between", py: 0.15 }}>
+															<Typography
+																variant="caption"
+																color={eff === techo ? "warning.main" : "text.secondary"}
+																fontWeight={eff === techo ? 700 : 400}
+															>
+																{eff === techo && "▸ "}Techo (CER+3%):
+															</Typography>
+															<Typography
+																variant="caption"
+																color={eff === techo ? "warning.main" : "text.secondary"}
+																fontWeight={eff === techo ? 700 : 400}
+															>
+																{fmt(techo)}
+															</Typography>
+														</Box>
+														<Box
+															sx={{
+																display: "flex",
+																justifyContent: "space-between",
+																py: 0.25,
+																mt: 0.25,
+																borderTop: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+															}}
+														>
+															<Typography variant="caption" fontWeight={700} color="success.main">
+																Aplicado {aplicado}:
+															</Typography>
+															<Typography variant="caption" fontWeight={700} color="success.main">
+																{fmt(eff)}
+															</Typography>
+														</Box>
+													</Box>
+												);
+											})()}
 									</Box>
 								</Box>
 							))}
@@ -933,7 +1040,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 											fontWeight={500}
 											sx={{ ml: 2, color: segment.isExtension ? "primary.main" : "text.primary" }}
 										>
-											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest || 0)}
+											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(getEffectiveInterest(segment))}
 										</Typography>
 									</Box>
 								))}
@@ -962,7 +1069,7 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 											)}
 										</Box>
 										<Typography variant="body2" fontWeight={500} sx={{ ml: 2 }}>
-											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(segment.interest || 0)}
+											{new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(getEffectiveInterest(segment))}
 										</Typography>
 									</Box>
 								))}
@@ -1002,15 +1109,15 @@ export const CalculationDetailsView: React.FC<CalculationDetailsViewProps> = ({
 
 						// Si es sección de intereses con segments de lastUpdate, sumar los intereses de los tramos
 						if (sectionKey === "intereses" && hasSegments) {
-							subtotal = data.lastUpdate!.segments!.reduce((sum, seg) => sum + (seg.interest || 0), 0);
+							subtotal = data.lastUpdate!.segments!.reduce((sum, seg) => sum + getEffectiveInterest(seg), 0);
 						} else if (sectionKey === "intereses" && hasSavedSegments) {
 							// Si hay segmentos guardados pero no hay keepUpdated
-							subtotal = savedSegments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+							subtotal = savedSegments.reduce((sum: number, seg: any) => sum + getEffectiveInterest(seg), 0);
 						}
 
 						// Si es sección de cálculos con segmentos guardados, calcular el subtotal de los intereses
 						if (sectionKey === "calculos" && hasSavedSegments) {
-							subtotal = savedSegments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+							subtotal = savedSegments.reduce((sum: number, seg: any) => sum + getEffectiveInterest(seg), 0);
 						}
 
 						if (subtotal <= 0) return null;
