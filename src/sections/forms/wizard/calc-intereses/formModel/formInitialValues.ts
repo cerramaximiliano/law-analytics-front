@@ -1,7 +1,7 @@
 import interesesFormModel from "./interesesFormModel";
 
 const {
-	formField: { reclamante, reclamado, tasa, capital, fechaInicial, fechaFinal, folderId, folderName, segments, capitalizeInterest, includeCERComparison },
+	formField: { reclamante, reclamado, tasa, capital, fechaInicial, fechaFinal, folderId, folderName, segments, capitalizeInterest },
 } = interesesFormModel;
 
 const initialValues = {
@@ -15,6 +15,5 @@ const initialValues = {
 	[folderName.name]: "",
 	[segments.name]: [],
 	[capitalizeInterest.name]: false,
-	[includeCERComparison.name]: false,
 };
 export default initialValues;

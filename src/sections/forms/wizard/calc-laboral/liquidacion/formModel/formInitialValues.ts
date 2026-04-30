@@ -17,7 +17,6 @@ const {
 		tasaIntereses,
 		segmentsIntereses,
 		capitalizeInterest,
-		includeCERComparison,
 		folderId,
 		folderName,
 	},
@@ -39,7 +38,6 @@ const initialValues = {
 	[tasaIntereses.name]: "",
 	[segmentsIntereses.name]: [],
 	[capitalizeInterest.name]: false,
-	[includeCERComparison.name]: false,
 	[folderId.name]: "",
 	[folderName.name]: "",
 };

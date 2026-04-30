@@ -29,9 +29,6 @@ interface FormField {
 	capitalizeInterest: {
 		name: string;
 	};
-	includeCERComparison?: {
-		name: string;
-	};
 }
 
 interface ThirdFormProps {
@@ -49,7 +46,6 @@ export default function ThirdForm(props: ThirdFormProps) {
 			fechaEgreso,
 			segmentsIntereses,
 			capitalizeInterest,
-			includeCERComparison,
 		},
 		calculatedAmount = 0,
 	} = props;
@@ -121,16 +117,7 @@ export default function ThirdForm(props: ThirdFormProps) {
 		[setFieldValue, capitalizeInterest.name],
 	);
 
-	const handleCERComparisonChange = useCallback(
-		(include: boolean) => {
-			if (includeCERComparison) {
-				setFieldValue(includeCERComparison.name, include);
-			}
-		},
-		[setFieldValue, includeCERComparison],
-	);
-
-	const handleTotalChange = useCallback(
+const handleTotalChange = useCallback(
 		(total: { interest: number; amount: number }) => {
 			// Guardar los totales calculados para usarlos en el submit
 			setFieldValue("calculatedInterest", total.interest);
@@ -216,8 +203,6 @@ export default function ThirdForm(props: ThirdFormProps) {
 						disabled={cargandoTasas || calculatedAmount <= 0}
 						capitalizeInterest={values[capitalizeInterest.name] || false}
 						onCapitalizeChange={handleCapitalizeChange}
-						includeCERComparison={includeCERComparison ? values[includeCERComparison.name] || false : false}
-						onCERComparisonChange={includeCERComparison ? handleCERComparisonChange : undefined}
 						onTotalChange={handleTotalChange}
 					/>
 				</Box>

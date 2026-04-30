@@ -58,6 +58,12 @@ export interface CERComparison {
 	};
 }
 
+// Constante exportada: tasas para las cuales aplica la comparativa CER (Ley 27.802 art.55(a)).
+// Por ahora solo tasaPasivaBCRA27802 según las Notas BCRA.
+export const RATES_WITH_CER_COMPARISON = ["tasaPasivaBCRA27802"] as const;
+export const supportsCERComparison = (rate?: string): boolean =>
+	!!rate && (RATES_WITH_CER_COMPARISON as readonly string[]).includes(rate);
+
 export interface InterestSegment {
 	id: string;
 	startDate: string;
@@ -74,8 +80,11 @@ export interface InterestSegment {
 	simpleRate?: number;
 	ratePeriod?: RatePeriod;
 	capitalizationFrequency?: CapitalizationFrequency;
-	// Comparativa CER opcional (techo/piso). Cuando está disponible, el interés
-	// efectivo del tramo queda acotado a [piso.monto, techo.monto].
+	// Activa la comparativa CER (techo/piso Ley 27.802) para este tramo.
+	// Solo tiene efecto cuando rate ∈ RATES_WITH_CER_COMPARISON.
+	cerComparisonEnabled?: boolean;
+	// Resultado de la comparativa CER si se calculó. Cuando está disponible,
+	// el interés efectivo del tramo queda acotado a [piso.monto, techo.monto].
 	cerComparison?: CERComparison;
 }
 
@@ -103,8 +112,6 @@ interface InterestSegmentsManagerProps {
 	disabled?: boolean;
 	capitalizeInterest: boolean;
 	onCapitalizeChange: (capitalize: boolean) => void;
-	includeCERComparison?: boolean;
-	onCERComparisonChange?: (include: boolean) => void;
 	onTotalChange?: (total: { interest: number; amount: number }) => void;
 }
 
@@ -262,8 +269,6 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 	disabled = false,
 	capitalizeInterest,
 	onCapitalizeChange,
-	includeCERComparison = false,
-	onCERComparisonChange,
 	onTotalChange,
 }) => {
 	const theme = useTheme();
@@ -376,7 +381,8 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 					campo: segment.rate,
 					calcular: "true",
 				});
-				if (includeCERComparison) {
+				// Comparativa CER: solo si está activada y la tasa la soporta
+				if (segment.cerComparisonEnabled && supportsCERComparison(segment.rate)) {
 					params.set("cerComparison", "true");
 					params.set("capital", String(segmentCapital));
 				}
@@ -410,7 +416,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				return null;
 			}
 		},
-		[includeCERComparison],
+		[],
 	);
 
 	// Obtener el capital para un segmento según si hay capitalización
@@ -583,6 +589,7 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 				simpleRate: isSimpleInterest ? newSegment.simpleRate : undefined,
 				ratePeriod: isSimpleInterest ? newSegment.ratePeriod : undefined,
 				capitalizationFrequency: isSimpleInterest ? newSegment.capitalizationFrequency : undefined,
+				cerComparisonEnabled: !isSimpleInterest && supportsCERComparison(newSegment.rate) ? !!newSegment.cerComparisonEnabled : undefined,
 				cerComparison: "cerComparison" in result ? result.cerComparison : undefined,
 			};
 
@@ -715,11 +722,16 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 
 			const updatedSegments = segments.map((seg) => {
 				if (seg.id === editingSegmentId) {
+					const newRate = isSimpleInterest ? "simple" : editingSegment.rate!;
+					const cerEnabled =
+						!isSimpleInterest && supportsCERComparison(editingSegment.rate)
+							? !!editingSegment.cerComparisonEnabled
+							: undefined;
 					return {
 						...seg,
 						startDate: editingSegment.startDate!,
 						endDate: editingSegment.endDate!,
-						rate: isSimpleInterest ? "simple" : editingSegment.rate!,
+						rate: newRate,
 						rateName: isSimpleInterest ? rateNameParts.join(" ") : getRateName(editingSegment.rate!, availableRates),
 						capital: segmentCapital,
 						interest: result!.interest,
@@ -729,7 +741,9 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 						simpleRate: isSimpleInterest ? editingSegment.simpleRate : undefined,
 						ratePeriod: isSimpleInterest ? editingSegment.ratePeriod : undefined,
 						capitalizationFrequency: isSimpleInterest ? editingSegment.capitalizationFrequency : undefined,
-						cerComparison: result!.cerComparison ?? (isSimpleInterest ? undefined : seg.cerComparison),
+						cerComparisonEnabled: cerEnabled,
+						// Si la tasa cambió y no soporta comparativa, limpiar el resultado.
+						cerComparison: cerEnabled === undefined ? undefined : result!.cerComparison ?? seg.cerComparison,
 					};
 				}
 				return seg;
@@ -885,35 +899,19 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 
 	return (
 		<Box>
-			{/* Header con opciones */}
+			{/* Header */}
 			<Stack direction="row" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
 				<Typography variant="h6">Tramos de Intereses</Typography>
-				<Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-					{onCERComparisonChange && (
-						<Tooltip title="Compara cada tramo contra CER+3% (techo) y 67% × (CER+3%) (piso). Si el cálculo cae fuera del rango, las sumatorias usan el borde más cercano. Notas BCRA — Ley 27.802 art.55(a).">
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={includeCERComparison}
-										onChange={(e) => onCERComparisonChange?.(e.target.checked)}
-										disabled={disabled}
-									/>
-								}
-								label="Comparativa CER"
-							/>
-						</Tooltip>
-					)}
-					<FormControlLabel
-						control={
-							<Checkbox
-								checked={capitalizeInterest}
-								onChange={(e) => handleCapitalizeChange(e.target.checked)}
-								disabled={disabled || segments.length === 0}
-							/>
-						}
-						label="Capitalizar intereses"
-					/>
-				</Stack>
+				<FormControlLabel
+					control={
+						<Checkbox
+							checked={capitalizeInterest}
+							onChange={(e) => handleCapitalizeChange(e.target.checked)}
+							disabled={disabled || segments.length === 0}
+						/>
+					}
+					label="Capitalizar intereses"
+				/>
 			</Stack>
 
 			{/* Mensaje de error (solo cuando el form de nuevo tramo está cerrado;
@@ -1081,24 +1079,53 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 														</TextField>
 													</Stack>
 												) : (
-													<TextField
-														select
-														size="small"
-														value={editingSegment?.rate || ""}
-														onChange={(e) =>
-															setEditingSegment({
-																...editingSegment,
-																rate: e.target.value,
-															})
-														}
-														sx={{ minWidth: 180 }}
-													>
-														{availableRates.map((rate) => (
-															<MenuItem key={rate.value} value={rate.value}>
-																{rate.label}
-															</MenuItem>
-														))}
-													</TextField>
+													<Stack spacing={0.5}>
+														<TextField
+															select
+															size="small"
+															value={editingSegment?.rate || ""}
+															onChange={(e) =>
+																setEditingSegment({
+																	...editingSegment,
+																	rate: e.target.value,
+																	// si cambia a una tasa que no soporta CER, limpiar el flag
+																	cerComparisonEnabled: supportsCERComparison(e.target.value)
+																		? editingSegment?.cerComparisonEnabled
+																		: false,
+																})
+															}
+															sx={{ minWidth: 180 }}
+														>
+															{availableRates.map((rate) => (
+																<MenuItem key={rate.value} value={rate.value}>
+																	{rate.label}
+																</MenuItem>
+															))}
+														</TextField>
+														{supportsCERComparison(editingSegment?.rate) && (
+															<FormControlLabel
+																sx={{ m: 0 }}
+																control={
+																	<Checkbox
+																		size="small"
+																		checked={!!editingSegment?.cerComparisonEnabled}
+																		onChange={(e) =>
+																			setEditingSegment({
+																				...editingSegment,
+																				cerComparisonEnabled: e.target.checked,
+																			})
+																		}
+																		color="info"
+																	/>
+																}
+																label={
+																	<Typography variant="caption" color="info.main" fontWeight={500}>
+																		Comparativa CER (Ley 27.802)
+																	</Typography>
+																}
+															/>
+														)}
+													</Stack>
 												)}
 											</TableCell>
 											<TableCell align="right">-</TableCell>
@@ -1134,12 +1161,40 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 											<TableCell align="right">{formatCurrency(segment.capital)}</TableCell>
 											<TableCell align="right">{(segment.coefficient * 100).toFixed(4)}%</TableCell>
 											<TableCell align="right" sx={{ color: "success.main", fontWeight: 500 }}>
-												{isClamped ? (
+												{cmp?.disponible ? (
 													<Stack alignItems="flex-end" spacing={0.25}>
-														<Typography variant="body2" sx={{ textDecoration: "line-through", color: "text.disabled", fontSize: 11 }}>
-															{formatCurrency(segment.interest)}
+														<Typography
+															variant="caption"
+															sx={{
+																color: "text.secondary",
+																textDecoration: isClamped ? "line-through" : "none",
+																fontSize: 12,
+																fontWeight: 500,
+															}}
+														>
+															Calc: {formatCurrency(segment.interest)}
 														</Typography>
-														<Typography variant="body2" sx={{ color: "success.main", fontWeight: 500 }}>
+														<Typography
+															variant="caption"
+															sx={{
+																color: effective === cmp.piso?.monto ? "success.main" : "text.secondary",
+																fontWeight: effective === cmp.piso?.monto ? 700 : 500,
+																fontSize: 12,
+															}}
+														>
+															{effective === cmp.piso?.monto && "▸ "}Piso: {formatCurrency(cmp.piso?.monto || 0)}
+														</Typography>
+														<Typography
+															variant="caption"
+															sx={{
+																color: effective === cmp.techo?.monto ? "warning.main" : "text.secondary",
+																fontWeight: effective === cmp.techo?.monto ? 700 : 500,
+																fontSize: 12,
+															}}
+														>
+															{effective === cmp.techo?.monto && "▸ "}Techo: {formatCurrency(cmp.techo?.monto || 0)}
+														</Typography>
+														<Typography variant="body2" sx={{ color: "success.main", fontWeight: 700, mt: 0.25 }}>
 															{formatCurrency(effective)}
 														</Typography>
 													</Stack>
@@ -1177,35 +1232,38 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 								{cmp?.disponible && (
 									<TableRow sx={{ bgcolor: theme.palette.mode === "dark" ? "grey.900" : "grey.50" }}>
 										<TableCell />
-										<TableCell colSpan={5}>
-											<Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-												<Chip size="small" label="Comparativa CER (Ley 27.802)" color="info" variant="outlined" />
-												<Typography variant="caption" color="text.secondary">
-													Piso (67% × CER+3%): <strong>{formatCurrency(cmp.piso?.monto || 0)}</strong>
-												</Typography>
-												<Typography variant="caption" color="text.secondary">
-													Techo (CER+3%): <strong>{formatCurrency(cmp.techo?.monto || 0)}</strong>
-												</Typography>
+										<TableCell colSpan={6}>
+											<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+												<Chip size="small" label="Comparativa CER · Ley 27.802" color="info" variant="light" sx={{ borderRadius: 1 }} />
 												{clampLabel ? (
-													<Chip size="small" label={clampLabel} color={effective === cmp.techo?.monto ? "warning" : "success"} />
+													<Chip
+														size="small"
+														label={clampLabel}
+														color={effective === cmp.techo?.monto ? "warning" : "success"}
+														variant="light"
+														sx={{ borderRadius: 1 }}
+													/>
 												) : (
-													<Chip size="small" label="Dentro del rango" variant="outlined" />
+													<Chip
+														size="small"
+														label="Dentro del rango"
+														color="success"
+														variant="light"
+														sx={{ borderRadius: 1 }}
+													/>
+												)}
+												{cmp.componentes && (
+													<Tooltip
+														title={`CER ${dayjs(cmp.componentes.fechaCerInicial).format("DD/MM/YYYY")}: ${cmp.componentes.cerInicial} | CER ${dayjs(cmp.componentes.fechaCerFinal).format("DD/MM/YYYY")}: ${cmp.componentes.cerFinal} | ${cmp.componentes.diasCorridos} días | tasa pura ${(cmp.componentes.tasaPura * 100).toFixed(0)}%`}
+													>
+														<Typography variant="caption" color="text.secondary" sx={{ cursor: "help" }}>
+															ⓘ Detalle del cálculo
+														</Typography>
+													</Tooltip>
 												)}
 											</Stack>
 										</TableCell>
-										<TableCell align="right" colSpan={2}>
-											<Tooltip
-												title={
-													cmp.componentes
-														? `CER ${dayjs(cmp.componentes.fechaCerInicial).format("DD/MM/YYYY")}: ${cmp.componentes.cerInicial} | CER ${dayjs(cmp.componentes.fechaCerFinal).format("DD/MM/YYYY")}: ${cmp.componentes.cerFinal} | ${cmp.componentes.diasCorridos} días | tasa pura ${(cmp.componentes.tasaPura * 100).toFixed(0)}%`
-														: ""
-												}
-											>
-												<Typography variant="caption" color="text.secondary" sx={{ cursor: "help" }}>
-													ⓘ Detalle del cálculo
-												</Typography>
-											</Tooltip>
-										</TableCell>
+										<TableCell />
 									</TableRow>
 								)}
 								{cmp && !cmp.disponible && cmp.motivo && (
@@ -1410,6 +1468,10 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 										setNewSegment({
 											...newSegment,
 											rate: e.target.value,
+											// si cambia a una tasa que no soporta CER, limpiar el flag
+											cerComparisonEnabled: supportsCERComparison(e.target.value)
+												? newSegment.cerComparisonEnabled
+												: false,
 										})
 									}
 								>
@@ -1445,6 +1507,45 @@ const InterestSegmentsManager: React.FC<InterestSegmentsManagerProps> = ({
 							</Stack>
 						</Grid>
 					</Grid>
+
+					{/* Comparativa CER: solo aparece cuando la tasa elegida es la pasiva BCRA Ley 27.802 */}
+					{newSegment.interestType !== "simple" && supportsCERComparison(newSegment.rate) && (
+						<Box
+							sx={{
+								mt: 1.5,
+								p: 1.5,
+								border: 1,
+								borderColor: newSegment.cerComparisonEnabled ? "info.main" : "divider",
+								borderRadius: 1,
+								bgcolor: newSegment.cerComparisonEnabled
+									? theme.palette.mode === "dark"
+										? "info.darker"
+										: "info.lighter"
+									: "transparent",
+								transition: "all 0.2s",
+							}}
+						>
+							<FormControlLabel
+								control={
+									<Checkbox
+										checked={!!newSegment.cerComparisonEnabled}
+										onChange={(e) => setNewSegment({ ...newSegment, cerComparisonEnabled: e.target.checked })}
+										color="info"
+									/>
+								}
+								label={
+									<Stack>
+										<Typography variant="body2" fontWeight={600} color="info.main">
+											Aplicar comparativa CER (Ley 27.802 art.55(a))
+										</Typography>
+										<Typography variant="caption" color="text.secondary">
+											Calcula techo (CER+3%) y piso (67% × CER+3%). El interés efectivo del tramo se acota al rango.
+										</Typography>
+									</Stack>
+								}
+							/>
+						</Box>
+					)}
 
 					{/* Mostrar información adicional del capital */}
 					{(newSegment.rate || newSegment.interestType === "simple") && (

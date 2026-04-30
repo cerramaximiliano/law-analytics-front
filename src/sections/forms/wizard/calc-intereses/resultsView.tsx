@@ -24,6 +24,7 @@ import { dispatch, useSelector, RootState } from "store";
 import { addCalculator } from "store/reducers/calculator";
 import { CalculatorType } from "types/calculator";
 import { CalculationDetailsView } from "components/calculator/CalculationDetailsView";
+import { getEffectiveInterest } from "components/calculator/InterestSegmentsManager";
 
 //third party
 import dayjs from "utils/dayjs-config";
@@ -64,11 +65,16 @@ const formatTipoIndice = (tipoIndice: string): string => {
 	const tiposIndiceMap: Record<string, string> = {
 		interesDiario: "Interés diario",
 		indexado: "Indexado",
+		porcentajeAcumulado: "Porcentaje acumulado",
 		multipleSegments: "Múltiples tramos",
 	};
 
 	return tiposIndiceMap[tipoIndice] || tipoIndice;
 };
+
+// Tipos de índice que devuelven datos { inicio, fin } en lugar de un array diario.
+const ES_INDICE_PUNTUAL = (tipoIndice?: string): boolean =>
+	tipoIndice === "indexado" || tipoIndice === "porcentajeAcumulado";
 
 // Tipo para los segmentos de intereses
 interface InterestSegment {
@@ -86,6 +92,15 @@ interface InterestSegment {
 	simpleRate?: number;
 	ratePeriod?: "daily" | "monthly" | "annual";
 	capitalizationFrequency?: "none" | "monthly" | "quarterly" | "semiannual" | "annual";
+	// Comparativa CER (Ley 27.802): el efectivo del tramo se acota a [piso.monto, techo.monto]
+	cerComparisonEnabled?: boolean;
+	cerComparison?: {
+		disponible: boolean;
+		motivo?: string;
+		techo?: { factor: number; monto: number };
+		piso?: { factor: number; monto: number };
+		componentes?: any;
+	};
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, onSave, currentUser, folderId, folderName, groupId }) => {
@@ -214,6 +229,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 			tasaActivaCNAT2601: "Tasa Activa Banco Nación - Acta 2601",
 			tasaActivaCNAT2658: "Tasa Activa Banco Nación - Acta 2658",
 			tasaActivaCNAT2764: "Tasa Activa Banco Nación - Acta 2764",
+			tasaPasivaBCRA27802: "Tasa Pasiva BCRA Ley 27.802 art.55(a)",
 		};
 
 		return tasasMapping[tasaValue] || tasaValue;
@@ -323,14 +339,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				});
 				groups.calculos.push({
 					key: `tramoInteres_${index}`,
-					value: segment.interest,
+					value: getEffectiveInterest(segment),
 					customLabel: `  Interés Generado`,
 				});
 			});
 
-			// Agregar resultados finales
+			// Agregar resultados finales (usar interés efectivo: aplica clamp por comparativa CER si corresponde)
 			const capitalBase = typeof inputValues.capital === "number" ? inputValues.capital : parseFloat(inputValues.capital || "0");
-			const interesTotal = inputValues.interesTotal || segments.reduce((sum: number, seg: InterestSegment) => sum + seg.interest, 0);
+			const interesTotal =
+				inputValues.interesTotal || segments.reduce((sum: number, seg: InterestSegment) => sum + getEffectiveInterest(seg), 0);
 			const capitalActualizado = inputValues.capitalActualizado || capitalBase + interesTotal;
 
 			groups.intereses.push({
@@ -589,7 +606,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				text += `  Tasa: ${segment.rateName || getTasaLabel(segment.rate)}\n`;
 				text += `  Capital del tramo: ${formatValue("capital", segment.capital)}\n`;
 				text += `  Coeficiente: ${((segment.coefficient || 0) * 100).toFixed(4)}%\n`;
-				text += `  Interés generado: ${formatValue("interest", segment.interest)}\n`;
+				text += `  Interés generado: ${formatValue("interest", getEffectiveInterest(segment))}\n`;
+				if (segment.cerComparison?.disponible) {
+					const eff = getEffectiveInterest(segment);
+					text += `  Comparativa CER (Ley 27.802):\n`;
+					text += `    Calculado: ${formatValue("interest", segment.interest)}\n`;
+					text += `    Piso (67% × CER+3%): ${formatValue("interest", segment.cerComparison.piso?.monto || 0)}\n`;
+					text += `    Techo (CER+3%): ${formatValue("interest", segment.cerComparison.techo?.monto || 0)}\n`;
+					text += `    Aplicado: ${formatValue("interest", eff)}${eff === segment.cerComparison.techo?.monto ? " (techo)" : eff === segment.cerComparison.piso?.monto ? " (piso)" : " (dentro del rango)"}\n`;
+				}
 			});
 			if (values.capitalizeInterest) {
 				text += "\n  ℹ Capitalización de intereses activada\n";
@@ -607,7 +632,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		text += `Capital Inicial: ${formatValue("capital", capitalBase)}\n`;
 
 		if (hasMultipleSegments) {
-			const totalIntereses = segments.reduce((sum, seg) => sum + (seg.interest || 0), 0);
+			const totalIntereses = segments.reduce((sum, seg) => sum + getEffectiveInterest(seg), 0);
 			text += `Total de Intereses: ${formatValue("interest", totalIntereses)}\n\n`;
 			segments.forEach((segment, index) => {
 				text += `Tramo ${index + 1} (${segment.startDate} - ${segment.endDate}):\n`;
@@ -681,10 +706,22 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 				html += `<tr><td style="padding: 6px 12px; color: #666; text-align: left;">Coeficiente:</td><td style="padding: 6px 12px; font-weight: 500; text-align: right;">${(
 					(segment.coefficient || 0) * 100
 				).toFixed(4)}%</td></tr>`;
+				const eff = getEffectiveInterest(segment);
 				html += `<tr><td style="padding: 6px 12px 12px; color: #666; text-align: left;">Interés generado:</td><td style="padding: 6px 12px 12px; font-weight: 500; color: #2e7d32; text-align: right;">${formatValue(
 					"interest",
-					segment.interest,
+					eff,
 				)}</td></tr>`;
+				if (segment.cerComparison?.disponible) {
+					const piso = segment.cerComparison.piso?.monto || 0;
+					const techo = segment.cerComparison.techo?.monto || 0;
+					const aplicado = eff === techo ? "(techo)" : eff === piso ? "(piso)" : "(dentro del rango)";
+					html += `<tr><td colspan="2" style="padding: 6px 12px; background: #e3f2fd; color: #1565c0; font-size: 12px;">
+						<strong>Comparativa CER (Ley 27.802):</strong> Calculado: ${formatValue("interest", segment.interest)} ·
+						Piso: ${formatValue("interest", piso)} ·
+						Techo: ${formatValue("interest", techo)} ·
+						<strong>Aplicado: ${formatValue("interest", eff)} ${aplicado}</strong>
+					</td></tr>`;
+				}
 				html += `</table></div>`;
 			});
 			if (values.capitalizeInterest) {
@@ -706,7 +743,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		html += createRow("Capital Inicial:", formatValue("capital", capitalBase));
 
 		if (hasMultipleSegments) {
-			const totalIntereses = segments.reduce((sum, seg) => sum + (seg.interest || 0), 0);
+			const totalIntereses = segments.reduce((sum, seg) => sum + getEffectiveInterest(seg), 0);
 			html += createRow("Total de Intereses:", formatValue("interest", totalIntereses));
 			segments.forEach((segment, index) => {
 				html += `<tr>
@@ -716,7 +753,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 					</td>
 					<td style="padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 500; text-align: right; vertical-align: top;">${formatValue(
 						"interest",
-						segment.interest,
+						getEffectiveInterest(segment),
 					)}</td>
 				</tr>`;
 			});
@@ -822,6 +859,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 									simpleRate: seg.simpleRate,
 									ratePeriod: seg.ratePeriod,
 									capitalizationFrequency: seg.capitalizationFrequency,
+									// Comparativa CER (Ley 27.802) — se persiste para que al releer
+									// el cómputo, getEffectiveInterest() pueda recalcular el clamp.
+									cerComparisonEnabled: seg.cerComparisonEnabled,
+									cerComparison: seg.cerComparison,
 								})),
 								capitalizeInterest: values.capitalizeInterest || false,
 						  }
@@ -916,6 +957,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 								simpleRate: seg.simpleRate,
 								ratePeriod: seg.ratePeriod,
 								capitalizationFrequency: seg.capitalizationFrequency,
+								// Comparativa CER (Ley 27.802)
+								cerComparisonEnabled: seg.cerComparisonEnabled,
+								cerComparison: seg.cerComparison,
 							})),
 							capitalizeInterest: values.capitalizeInterest || false,
 					  }
@@ -971,7 +1015,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 						const tasaData = segmentsTasasData[segment.id];
 						const isSimpleInterest = segment.interestType === "simple" || segment.rate === "simple" || tasaData?.isSimpleInterest;
 						const tipoIndice = tasaData?.configTasa?.tipoIndice;
-						const isIndexado = tipoIndice === "indexado";
+						const isIndexado = ES_INDICE_PUNTUAL(tipoIndice);
 
 						// Helper para obtener el nombre del período
 						const getPeriodLabel = (period?: string) => {
@@ -1123,8 +1167,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({ values, formField, onReset, o
 		const tipoIndice = values.tasasResult.detalleCalculo?.tipoIndice;
 		const tipoIndiceFormateado = formatTipoIndice(tipoIndice);
 
-		// Verificar si estamos en modo "indexado"
-		const isIndexado = tipoIndice === "indexado";
+		// Modo "índice puntual": indexado (CER/ICL) o porcentajeAcumulado (BCRA pasiva).
+		// Ambos devuelven { inicio, fin } y el detalle se renderiza igual.
+		const isIndexado = ES_INDICE_PUNTUAL(tipoIndice);
 
 		// Título descriptivo para la tabla
 		const tableTitle = (
