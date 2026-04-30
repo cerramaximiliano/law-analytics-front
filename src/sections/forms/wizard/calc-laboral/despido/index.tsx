@@ -58,10 +58,12 @@ function calculateBaseAmount(values: any): number {
 	const finCopia = fechaEgreso.clone();
 	const mesesRestantes = finCopia.subtract(años, "years").diff(fechaIngreso, "months");
 
+	// Cómputo de períodos para indemnización por antigüedad.
+	// La Ley 27.742 solo modifica el piso (período de prueba ampliado a 6 meses).
+	// Pasado ese piso, la regla "fracción > 3 meses suma 1 año" sigue valiendo.
 	let periodos: number;
-	if (values.aplicarLey27742) {
-		const totalMeses = fechaEgreso.diff(fechaIngreso, "months");
-		periodos = totalMeses < 6 ? 0 : años >= 1 ? años : 1;
+	if (values.aplicarLey27742 && fechaEgreso.diff(fechaIngreso, "months") < 6) {
+		periodos = 0;
 	} else {
 		periodos = mesesRestantes > 3 ? años + 1 : años;
 	}
@@ -156,6 +158,12 @@ function calculateBaseAmount(values: any): number {
 		if (values.multas.includes("multaArt15")) {
 			const mesesTrabajados = fechaEgreso.diff(fechaIngreso, "months", true);
 			total += mesesTrabajados * remuneracionBase * 0.25;
+		}
+		if (values.multas.includes("multaArt245bis")) {
+			// Agravamiento art. 245 bis Ley 27.742: 50% (mínimo) o 100% (máximo
+			// según gravedad de los hechos) sobre la indemnización por antigüedad.
+			const porcentaje = Number(values.multa245bisPorcentaje) || 50;
+			total += indemnizacion * (porcentaje / 100);
 		}
 	}
 
@@ -467,18 +475,17 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 			const finCopia = fin.clone(); // Crear copia para evitar modificar el original
 			const mesesRestantes = finCopia.subtract(años, "years").diff(inicio, "months");
 
-			if (aplicarLey27742) {
-				// Ley 27.742: Solo años completos (sin sumar fracción mayor a 3 meses)
-				// Requiere mínimo 6 meses de antigüedad (período de prueba)
-				const totalMeses = fin.diff(inicio, "months");
-				if (totalMeses < 6) {
-					return 0; // Menos de 6 meses = sin indemnización
-				}
-				return años >= 1 ? años : 1; // A partir de 6 meses ya cuenta como 1 año mínimo
-			} else {
-				// Criterio tradicional: fracción mayor a 3 meses cuenta como año adicional
-				return mesesRestantes > 3 ? años + 1 : años;
+			// Ley 27.742: solo modifica el piso de antigüedad (período de prueba
+			// ampliado a 6 meses). Una vez superado, sigue valiendo la regla
+			// tradicional de fracción > 3 meses → 1 año adicional.
+			//   < 6 meses             → 0 (período de prueba)
+			//   6 m - <12 m           → 1 año
+			//   1 año + ≤3 m          → 1 año
+			//   1 año + >3 m          → 2 años, y así sucesivamente.
+			if (aplicarLey27742 && fin.diff(inicio, "months") < 6) {
+				return 0;
 			}
+			return mesesRestantes > 3 ? años + 1 : años;
 		};
 
 		const periodos = calcularPeriodos(values.fechaIngreso, values.fechaEgreso, values.aplicarLey27742);
@@ -583,6 +590,10 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 			if (values.multas.includes("multaArt15")) {
 				resultado["Multa Art. 15 Ley 24.013"] = calcularMultaArt15Ley24013(values.fechaIngreso, values.fechaEgreso, remuneracionBase);
 			}
+			if (values.multas.includes("multaArt245bis")) {
+				const porcentaje = Number(values.multa245bisPorcentaje) || 50;
+				resultado[`Multa Art. 245 bis Ley 27.742 (${porcentaje}%)`] = parseFloat((indemnizacion * (porcentaje / 100)).toFixed(2));
+			}
 		}
 
 		if (values.multaLE === 1) {
@@ -622,6 +633,9 @@ const BasicWizard: React.FC<WizardProps> = ({ folder, onFolderChange }) => {
 				if (resultado["Multa Art. 8 Ley 24.013"]) capitalBase += resultado["Multa Art. 8 Ley 24.013"];
 				if (resultado["Multa Art. 9 Ley 24.013"]) capitalBase += resultado["Multa Art. 9 Ley 24.013"];
 				if (resultado["Multa Art. 10 Ley 24.013"]) capitalBase += resultado["Multa Art. 10 Ley 24.013"];
+				// La key del Art. 245 bis incluye el porcentaje aplicado, así que se busca por prefijo.
+				const m245bisKey = Object.keys(resultado).find((k) => k.startsWith("Multa Art. 245 bis"));
+				if (m245bisKey && resultado[m245bisKey]) capitalBase += resultado[m245bisKey] as number;
 
 				// Sumar otras sumas
 				if (values.otrasSumas) capitalBase += parseFloat(values.otrasSumas) || 0;

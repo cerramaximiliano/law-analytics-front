@@ -150,7 +150,7 @@ export default function FirstForm(props: FirstFormProps) {
 		[setFieldValue, capitalizeInterest.name],
 	);
 
-	const handleTotalChange = useCallback(
+const handleTotalChange = useCallback(
 		(total: { interest: number; amount: number }) => {
 			// Guardar los totales calculados para usarlos en el submit
 			setFieldValue("calculatedInterest", total.interest);

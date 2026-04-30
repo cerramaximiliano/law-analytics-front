@@ -89,7 +89,7 @@ const DashboardDefault = () => {
 				}
 
 				// Primera vez en esta sesion, llamar al backend (esto incrementa el contador)
-				const response = await ApiService.getOnboardingStatus() as any;
+				const response = (await ApiService.getOnboardingStatus()) as any;
 				if (response.success && response.onboarding) {
 					setOnboardingStatus(response.onboarding);
 					// Guardar en sessionStorage para evitar multiples llamadas
@@ -138,7 +138,7 @@ const DashboardDefault = () => {
 	const handleDismissOnboarding = useCallback(async () => {
 		try {
 			setIsDismissing(true);
-			const response = await ApiService.dismissOnboarding() as any;
+			const response = (await ApiService.dismissOnboarding()) as any;
 			if (response.success && response.onboarding) {
 				// Actualizar estado local
 				setOnboardingStatus(response.onboarding);

@@ -25,8 +25,25 @@ ragAxios.interceptors.response.use(
 	(response) => response,
 	async (error) => {
 		const originalRequest = error.config as any;
+		const status = error.response?.status;
+		const responseData = error.response?.data as any;
 
-		if (error.response?.status !== 401 || originalRequest?._retried) {
+		// Manejar 429 (límite mensual IA) y 403 (feature no disponible) con upgradeRequired
+		if ((status === 429 || status === 403) && (responseData?.upgradeRequired || responseData?.upgrade)) {
+			window.dispatchEvent(
+				new CustomEvent("ragPlanLimitReached", {
+					detail: {
+						message: responseData.message || responseData.error || "Límite de consultas IA alcanzado",
+						limitInfo: responseData.limitInfo ?? null,
+						featureInfo: responseData.featureInfo ?? null,
+						upgradeRequired: true,
+					},
+				}),
+			);
+			return Promise.reject(error);
+		}
+
+		if (status !== 401 || originalRequest?._retried) {
 			return Promise.reject(error);
 		}
 

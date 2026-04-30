@@ -32,9 +32,11 @@ axiosInstance.interceptors.response.use(
 	(response) => response,
 	(error) => {
 		if (error.response?.status === 401) {
-			// Token expirado o inválido
+			// Token expirado o inválido — no redirigir aquí.
+			// El ServerContext maneja los 401 globalmente via su propio interceptor
+			// y muestra el UnauthorizedModal en lugar de hacer una navegación dura
+			// que pierde el estado de React Router (location.state.from).
 			localStorage.removeItem("token");
-			window.location.href = "/login";
 		}
 		return Promise.reject(error);
 	},

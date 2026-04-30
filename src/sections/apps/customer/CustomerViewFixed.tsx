@@ -129,7 +129,7 @@ const CustomerViewFixed: React.FC<ContactViewProps> = ({ data }) => {
 
 					try {
 						const directResponse = await axios.post(
-							`${process.env.REACT_APP_BASE_URL}/api/folders/batch`,
+							`${import.meta.env.VITE_BASE_URL}/api/folders/batch`,
 							{ folderIds: data.folderIds },
 							{
 								timeout: 5000,

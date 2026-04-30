@@ -1,5 +1,17 @@
 import React from "react";
-import { Grid, Stack, InputLabel, Alert, TextField, Typography, FormControlLabel, Switch, RadioGroup, FormControl, Radio } from "@mui/material";
+import {
+	Grid,
+	Stack,
+	InputLabel,
+	Alert,
+	TextField,
+	Typography,
+	FormControlLabel,
+	Switch,
+	RadioGroup,
+	FormControl,
+	Radio,
+} from "@mui/material";
 import { useFormikContext } from "formik";
 import data from "data/folder.json";
 import SelectField from "components/UI/SelectField";
@@ -39,13 +51,7 @@ const TypeStep = ({ isImportedFromPjn = false }: TypeStepProps) => {
 							<InputLabel htmlFor="type" required>
 								Tipo
 							</InputLabel>
-							<SelectField
-								label="Seleccione un tipo"
-								data={data.tipos}
-								name="type"
-								style={{ maxHeight: "39.91px" }}
-								required
-							/>
+							<SelectField label="Seleccione un tipo" data={data.tipos} name="type" style={{ maxHeight: "39.91px" }} required />
 						</Stack>
 					</Grid>
 
@@ -68,9 +74,7 @@ const TypeStep = ({ isImportedFromPjn = false }: TypeStepProps) => {
 										}}
 									/>
 									<Alert severity="info" sx={{ mt: 1, py: 0.5 }}>
-										<Typography variant="caption">
-											El rol de este contacto fue importado desde PJN y no puede modificarse.
-										</Typography>
+										<Typography variant="caption">El rol de este contacto fue importado desde PJN y no puede modificarse.</Typography>
 									</Alert>
 								</>
 							) : (
@@ -121,8 +125,16 @@ const TypeStep = ({ isImportedFromPjn = false }: TypeStepProps) => {
 												value={values.tipoRepresentacion || ""}
 												onChange={(e) => setFieldValue("tipoRepresentacion", e.target.value)}
 											>
-												<FormControlLabel value="Patrocinante" control={<Radio size="small" />} label={<Typography variant="body2">Patrocinante</Typography>} />
-												<FormControlLabel value="Apoderado" control={<Radio size="small" />} label={<Typography variant="body2">Apoderado</Typography>} />
+												<FormControlLabel
+													value="Patrocinante"
+													control={<Radio size="small" />}
+													label={<Typography variant="body2">Patrocinante</Typography>}
+												/>
+												<FormControlLabel
+													value="Apoderado"
+													control={<Radio size="small" />}
+													label={<Typography variant="body2">Apoderado</Typography>}
+												/>
 											</RadioGroup>
 										</FormControl>
 									</Stack>

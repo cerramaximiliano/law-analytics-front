@@ -36,7 +36,7 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 	useEffect(() => {
 		const fetchUsageStats = async () => {
 			try {
-				const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/user/usage-stats`);
+				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/user/usage-stats`);
 				if (response.data && response.data.success) {
 					setUsageStats(response.data.data);
 				}

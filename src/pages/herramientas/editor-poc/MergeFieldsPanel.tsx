@@ -89,24 +89,24 @@ const MergeFieldsPanel = ({ editor, embedded }: MergeFieldsPanelProps) => {
 								{group.fields.map((field) => {
 									const c = GROUP_COLORS[group.id] ?? { bg: "#f5f5f5", color: "#333", border: "#ccc" };
 									return (
-									<Chip
-										key={field.key}
-										label={field.label}
-										size="small"
-										variant="outlined"
-										onClick={() => handleInsert(field)}
-										sx={{
-											justifyContent: "flex-start",
-											fontFamily: "monospace",
-											fontSize: "0.7rem",
-											height: 24,
-											cursor: "pointer",
-											borderColor: c.border,
-											color: c.color,
-											bgcolor: c.bg,
-											"&:hover": { filter: "brightness(0.95)" },
-										}}
-									/>
+										<Chip
+											key={field.key}
+											label={field.label}
+											size="small"
+											variant="outlined"
+											onClick={() => handleInsert(field)}
+											sx={{
+												justifyContent: "flex-start",
+												fontFamily: "monospace",
+												fontSize: "0.7rem",
+												height: 24,
+												cursor: "pointer",
+												borderColor: c.border,
+												color: c.color,
+												bgcolor: c.bg,
+												"&:hover": { filter: "brightness(0.95)" },
+											}}
+										/>
 									);
 								})}
 							</Stack>

@@ -247,13 +247,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										{isSubmitting ? "Creando..." : "Empezar gratis ahora"}
 									</Button>
 								</AnimateButton>
-								<Stack
-									direction="row"
-									spacing={1}
-									justifyContent="center"
-									alignItems="center"
-									sx={{ mt: 1.5 }}
-								>
+								<Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ mt: 1.5 }}>
 									<Stack direction="row" alignItems="center" spacing={0.3}>
 										<TickCircle size={10} variant="Bold" color="#4caf50" />
 										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
@@ -288,8 +282,8 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										sx={{ fontSize: "0.65rem" }}
 									>
 										Términos del Servicio
-									</Link>
-									{" "}y{" "}
+									</Link>{" "}
+									y{" "}
 									<Link
 										variant="caption"
 										component={RouterLink}

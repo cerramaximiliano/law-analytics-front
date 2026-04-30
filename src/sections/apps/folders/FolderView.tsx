@@ -137,12 +137,7 @@ const FolderView = memo(({ data }: any) => {
 											Se encontraron múltiples expedientes para esta carpeta. Haz clic aquí para seleccionar el correcto.
 										</Typography>
 									</Box>
-									<Chip
-										label="Seleccionar"
-										color="warning"
-										size="small"
-										sx={{ fontWeight: 500 }}
-									/>
+									<Chip label="Seleccionar" color="warning" size="small" sx={{ fontWeight: 500 }} />
 								</Stack>
 							</Paper>
 						)}

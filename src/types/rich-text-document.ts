@@ -14,7 +14,7 @@ export interface RichTextTemplate {
 	description: string;
 	category: RichTextTemplateCategory;
 	content: Record<string, unknown>; // TipTap JSON
-	mergeFields: string[];            // keys used: ['cliente.nombre', ...]
+	mergeFields: string[]; // keys used: ['cliente.nombre', ...]
 	isPublic: boolean;
 	isActive: boolean;
 	source: RichTextTemplateSource;
@@ -80,13 +80,14 @@ export interface RichTextDocumentsQueryParams {
 	search?: string;
 	status?: RichTextDocumentStatus;
 	templateId?: string;
+	folderId?: string;
 }
 
 // ── Merge field resolution ────────────────────────────────────────────────────
 
 export interface ResolveFieldsPayload {
 	folderId?: string;
-	contactId?: string;    // cliente
+	contactId?: string; // cliente
 	contraparteId?: string;
 }
 

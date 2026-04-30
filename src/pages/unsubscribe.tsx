@@ -35,7 +35,9 @@ const UnsubscribePage = () => {
 			if (template) params.append("template", template);
 			if (campaign) params.append("campaign", campaign);
 
-			const url = `${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}${params.toString() ? `?${params.toString()}` : ""}`;
+			const url = `${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}${
+				params.toString() ? `?${params.toString()}` : ""
+			}`;
 			const response = await axios.delete(url, {
 				withCredentials: true,
 			});

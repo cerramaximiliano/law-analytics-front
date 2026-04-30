@@ -82,7 +82,7 @@ const ManageBookingPage = () => {
 		setBooking(null);
 
 		try {
-			const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/booking/public/bookings/${tokenToFetch}`);
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/public/bookings/${tokenToFetch}`);
 
 			if (response.status === 200) {
 				// Guardar todos los datos de la reserva, incluyendo publicUrl si existe
@@ -115,7 +115,7 @@ const ManageBookingPage = () => {
 		setLoadingCancel(true);
 
 		try {
-			const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/booking/public/bookings/${bookingToken}/cancel`);
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/booking/public/bookings/${bookingToken}/cancel`);
 
 			if (response.status === 200) {
 				setCancelSuccess(true);

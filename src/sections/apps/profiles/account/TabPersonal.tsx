@@ -63,7 +63,7 @@ const TabPersonal = () => {
 
 			try {
 				// Enviar la imagen al backend
-				const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/cloudinary/upload-avatar`, formData, {
+				const response = await axios.post(`${import.meta.env.VITE_BASE_URL || ""}/cloudinary/upload-avatar`, formData, {
 					headers: {
 						"Content-Type": "multipart/form-data",
 					},

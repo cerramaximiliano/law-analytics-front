@@ -15,18 +15,18 @@ export interface GroupColor {
 	border: string;
 }
 
-const VAR_COLOR:    GroupColor = { bg: "#f1f5f9", color: "#1f2937", border: "#7f8fa6" };
+const VAR_COLOR: GroupColor = { bg: "#f1f5f9", color: "#1f2937", border: "#7f8fa6" };
 const BLOQUE_COLOR: GroupColor = { bg: "#d0d9e6", color: "#1e293b", border: "#4a6380" };
 
 export const GROUP_COLORS: Record<string, GroupColor> = {
 	expediente: VAR_COLOR,
-	actor:      VAR_COLOR,
-	demandado:  VAR_COLOR,
-	letrado:    VAR_COLOR,
-	fecha:      VAR_COLOR,
-	calculo:    VAR_COLOR,
+	actor: VAR_COLOR,
+	demandado: VAR_COLOR,
+	letrado: VAR_COLOR,
+	fecha: VAR_COLOR,
+	calculo: VAR_COLOR,
 	movimiento: VAR_COLOR,
-	bloque:     BLOQUE_COLOR,
+	bloque: BLOQUE_COLOR,
 };
 
 /** Devuelve los colores del grupo a partir de una key de merge field (ej: "expediente.numero") */

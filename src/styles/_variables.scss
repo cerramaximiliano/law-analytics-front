@@ -1,13 +1,23 @@
-:root {
-  /****************** 
-  Basics
-  ******************/
-
+// Scoped to the editor wrapper to avoid affecting MUI inputs on other pages.
+// The tiptap editor pages add className="tiptap-root" to their outermost container.
+.tiptap-root {
   overflow-wrap: break-word;
   text-size-adjust: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+}
+
+:root {
+  /******************
+  Basics (CSS variables only — no layout-affecting properties)
+  ******************/
 
   /****************** 
   Colors variables
@@ -161,12 +171,6 @@
   --tt-destructive-contrast: 8%;
   --tt-foreground-contrast: 8%;
 
-  &,
-  *,
-  ::before,
-  ::after {
-    box-sizing: border-box;
-  }
 }
 
 :root {

@@ -367,7 +367,7 @@ export const archiveFolders =
 					resourceType: "folders",
 					itemIds: folderIds,
 				},
-				{ headers: options?.headers }
+				{ headers: options?.headers },
 			);
 
 			if (response.data.success) {
@@ -495,7 +495,9 @@ export const getArchivedFoldersByGroupId =
 		} catch (error) {
 			dispatch({
 				type: SET_FOLDER_ERROR,
-				payload: axios.isAxiosError(error) ? error.response?.data?.message || "Error al obtener folders archivados del grupo" : "Error desconocido",
+				payload: axios.isAxiosError(error)
+					? error.response?.data?.message || "Error al obtener folders archivados del grupo"
+					: "Error desconocido",
 			});
 			return { success: false };
 		}
@@ -512,7 +514,7 @@ export const unarchiveFolders =
 					resourceType: "folders",
 					itemIds: folderIds,
 				},
-				{ headers: options?.headers }
+				{ headers: options?.headers },
 			);
 
 			if (response.data.success) {
@@ -873,43 +875,45 @@ export interface SelectCausaResponse {
 /**
  * Obtener las causas pendientes de selección para un folder
  */
-export const getPendingCausas = (folderId: string) => async (dispatch: Dispatch): Promise<PendingCausasResponse> => {
-	try {
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/pending-causas/${folderId}`);
+export const getPendingCausas =
+	(folderId: string) =>
+	async (dispatch: Dispatch): Promise<PendingCausasResponse> => {
+		try {
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/folders/pending-causas/${folderId}`);
 
-		if (response.data.success) {
+			if (response.data.success) {
+				return {
+					success: true,
+					causas: response.data.data.causas,
+					causaType: response.data.data.causaType,
+					searchTerm: response.data.data.searchTerm,
+					count: response.data.data.count,
+				};
+			}
+
 			return {
-				success: true,
-				causas: response.data.data.causas,
-				causaType: response.data.data.causaType,
-				searchTerm: response.data.data.searchTerm,
-				count: response.data.data.count,
+				success: false,
+				causas: [],
+				causaType: null,
+				searchTerm: null,
+				count: 0,
+				error: response.data.message || "Error al obtener causas pendientes",
+			};
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al obtener causas pendientes"
+				: "Error desconocido";
+
+			return {
+				success: false,
+				causas: [],
+				causaType: null,
+				searchTerm: null,
+				count: 0,
+				error: errorMessage,
 			};
 		}
-
-		return {
-			success: false,
-			causas: [],
-			causaType: null,
-			searchTerm: null,
-			count: 0,
-			error: response.data.message || "Error al obtener causas pendientes",
-		};
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al obtener causas pendientes"
-			: "Error desconocido";
-
-		return {
-			success: false,
-			causas: [],
-			causaType: null,
-			searchTerm: null,
-			count: 0,
-			error: errorMessage,
-		};
-	}
-};
+	};
 
 /**
  * Seleccionar una causa de las pendientes y completar la vinculación
@@ -969,46 +973,48 @@ export const selectPendingCausa =
 /**
  * Limpiar las causas pendientes sin seleccionar ninguna (cancelar selección)
  */
-export const clearPendingCausas = (folderId: string) => async (dispatch: Dispatch): Promise<{ success: boolean; error?: string }> => {
-	try {
-		dispatch({ type: SET_FOLDER_LOADING });
+export const clearPendingCausas =
+	(folderId: string) =>
+	async (dispatch: Dispatch): Promise<{ success: boolean; error?: string }> => {
+		try {
+			dispatch({ type: SET_FOLDER_LOADING });
 
-		const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/folders/pending-causas/${folderId}`);
+			const response = await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/folders/pending-causas/${folderId}`);
 
-		if (response.data.success) {
-			// Actualizar el folder en el store
+			if (response.data.success) {
+				// Actualizar el folder en el store
+				dispatch({
+					type: UPDATE_FOLDER,
+					payload: response.data.data.folder,
+				});
+
+				return { success: true };
+			}
+
 			dispatch({
-				type: UPDATE_FOLDER,
-				payload: response.data.data.folder,
+				type: SET_FOLDER_ERROR,
+				payload: response.data.message || "Error al cancelar la selección",
 			});
 
-			return { success: true };
+			return {
+				success: false,
+				error: response.data.message || "Error al cancelar la selección",
+			};
+		} catch (error) {
+			const errorMessage = axios.isAxiosError(error)
+				? error.response?.data?.message || "Error al cancelar la selección"
+				: "Error desconocido";
+
+			dispatch({
+				type: SET_FOLDER_ERROR,
+				payload: errorMessage,
+			});
+
+			return {
+				success: false,
+				error: errorMessage,
+			};
 		}
-
-		dispatch({
-			type: SET_FOLDER_ERROR,
-			payload: response.data.message || "Error al cancelar la selección",
-		});
-
-		return {
-			success: false,
-			error: response.data.message || "Error al cancelar la selección",
-		};
-	} catch (error) {
-		const errorMessage = axios.isAxiosError(error)
-			? error.response?.data?.message || "Error al cancelar la selección"
-			: "Error desconocido";
-
-		dispatch({
-			type: SET_FOLDER_ERROR,
-			payload: errorMessage,
-		});
-
-		return {
-			success: false,
-			error: errorMessage,
-		};
-	}
-};
+	};
 
 export default folder;

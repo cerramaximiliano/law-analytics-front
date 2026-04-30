@@ -23,7 +23,9 @@ const GuestGuard = ({ children }: GuardProps) => {
 
 		// De lo contrario, redirigir a la ruta por defecto si está autenticado
 		if (isLoggedIn) {
-			navigate(location?.state?.from ? location?.state?.from : APP_DEFAULT_PATH, {
+			const from = location?.state?.from;
+			const destination = from && from !== "/login" && from !== "/register" ? from : APP_DEFAULT_PATH;
+			navigate(destination, {
 				state: {
 					from: "",
 				},

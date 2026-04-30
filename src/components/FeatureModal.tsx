@@ -28,11 +28,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 	[FeatureNames.CARPETAS]: {
 		title: "Expedientes organizados, sin esfuerzo",
 		description: "Todo tu estudio en un solo lugar, sincronizado con el Poder Judicial.",
-		benefits: [
-			"Vista unificada",
-			"Integración con PJN y MEV",
-			"Alertas de movimientos",
-		],
+		benefits: ["Vista unificada", "Integración con PJN y MEV", "Alertas de movimientos"],
 		cta: "Probar con mis expedientes",
 		iconComponent: FolderOpen,
 		colorKey: "warning",
@@ -51,11 +47,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		title: "Agenda Inteligente",
 		description:
 			"No te olvides nunca más de un vencimiento. Agenda integrada con alertas automáticas y sincronización con Google Calendar.",
-		benefits: [
-			"Alertas automáticas de vencimientos",
-			"Sincronización con Google Calendar",
-			"Recordatorios por email",
-		],
+		benefits: ["Alertas automáticas de vencimientos", "Sincronización con Google Calendar", "Recordatorios por email"],
 		cta: "Probar Agenda Gratis",
 		iconComponent: Calendar,
 		colorKey: "info",
@@ -64,11 +56,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 		title: "Calculadora Laboral Precisa",
 		description:
 			"Calculá indemnizaciones, despidos, SAC y liquidaciones con precisión legal. Siempre actualizado con los últimos topes y valores.",
-		benefits: [
-			"Cálculo de indemnizaciones por despido",
-			"Liquidaciones finales completas",
-			"Topes legales siempre actualizados",
-		],
+		benefits: ["Cálculo de indemnizaciones por despido", "Liquidaciones finales completas", "Topes legales siempre actualizados"],
 		cta: "Probar Calculadora Gratis",
 		iconComponent: Calculator,
 		colorKey: "primary",
@@ -76,11 +64,7 @@ export const FeatureModalData: Record<string, FeatureModalContent> = {
 	[FeatureNames.INTERESES]: {
 		title: "Actualización de Montos",
 		description: "Actualizá montos en segundos con tasas BCRA, actas y criterios judiciales. Cálculo automático con diferentes métodos.",
-		benefits: [
-			"Tasas BCRA y BNA actualizadas diariamente",
-			"Múltiples métodos de cálculo",
-			"Exportación de liquidaciones",
-		],
+		benefits: ["Tasas BCRA y BNA actualizadas diariamente", "Múltiples métodos de cálculo", "Exportación de liquidaciones"],
 		cta: "Probar Actualización Gratis",
 		iconComponent: Chart,
 		colorKey: "success",
@@ -276,116 +260,115 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 
 						{/* Content */}
 						<Box sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2, sm: 3 } }}>
-
-						{/* Imagen + Bullets lado a lado (mobile: vertical) */}
-						<Box
-							sx={{
-								display: "flex",
-								flexDirection: { xs: "column", sm: "row" },
-								gap: 2.5,
-								mb: 2.5,
-								alignItems: { xs: "stretch", sm: "flex-start" },
-							}}
-						>
-							{/* Mockup Image */}
-							{featureData.mockupImage && (
-								<Box
-									sx={{
-										width: { xs: "100%", sm: "65%" },
-										flexShrink: 0,
-										borderRadius: "14px",
-										overflow: "hidden",
-										boxShadow: "0 20px 50px rgba(0, 0, 0, 0.15)",
-										border: "1px solid #E5E7EB",
-									}}
-								>
-									<CardMedia
-										component="img"
-										image={featureData.mockupImage}
-										alt={featureData.title}
-										sx={{
-											width: "100%",
-											height: "auto",
-											display: "block",
-										}}
-									/>
-								</Box>
-							)}
-
-							{/* Benefits - 35% */}
+							{/* Imagen + Bullets lado a lado (mobile: vertical) */}
 							<Box
 								sx={{
-									flex: 1,
-									px: "12px",
-									py: "8px",
-									borderRadius: "10px",
-									bgcolor: "#F8FAFC",
-									userSelect: "none",
+									display: "flex",
+									flexDirection: { xs: "column", sm: "row" },
+									gap: 2.5,
+									mb: 2.5,
+									alignItems: { xs: "stretch", sm: "flex-start" },
 								}}
 							>
-								{featureData.benefits.map((benefit, index) => (
+								{/* Mockup Image */}
+								{featureData.mockupImage && (
 									<Box
-										key={index}
 										sx={{
-											display: "flex",
-											alignItems: "center",
-											gap: 0.75,
-											mb: index < featureData.benefits.length - 1 ? 0.5 : 0,
+											width: { xs: "100%", sm: "65%" },
+											flexShrink: 0,
+											borderRadius: "14px",
+											overflow: "hidden",
+											boxShadow: "0 20px 50px rgba(0, 0, 0, 0.15)",
+											border: "1px solid #E5E7EB",
 										}}
 									>
-										<TickCircle size={16} variant="Bold" style={{ color: theme.palette.success.main, flexShrink: 0 }} />
-										<Typography variant="body2" color="text.primary" sx={{ fontSize: "0.75rem", lineHeight: 1.35 }}>
-											{benefit}
-										</Typography>
+										<CardMedia
+											component="img"
+											image={featureData.mockupImage}
+											alt={featureData.title}
+											sx={{
+												width: "100%",
+												height: "auto",
+												display: "block",
+											}}
+										/>
 									</Box>
-								))}
-							</Box>
-						</Box>
+								)}
 
-						{/* CTA Button - Full width */}
-						<Box sx={{ mt: 1, mb: 2 }}>
-							<Button
-								component={RouterLink}
-								to={`/register?source=modal&feature=${featureKey}`}
-								variant="contained"
-								color={featureData.colorKey}
-								size="large"
-								fullWidth
-								onClick={handleCTAClick}
-								sx={{
-									height: { xs: "46px", sm: "56px" },
-									fontSize: { xs: "0.95rem", sm: "1.1rem" },
-									fontWeight: 600,
-									borderRadius: 2,
-									boxShadow: "0 6px 20px rgba(0, 0, 0, 0.18)",
-									"&:hover": {
-										boxShadow: "0 8px 25px rgba(0, 0, 0, 0.22)",
-									},
-								}}
-							>
-								{featureData.cta}
-							</Button>
-
-							{/* Microcopy */}
-							<Box
-								sx={{
-									mt: 1.5,
-									display: "flex",
-									justifyContent: "center",
-									alignItems: "center",
-									gap: 2,
-								}}
-							>
-								{["Sin tarjeta", "Registro en 1 minuto"].map((text, index) => (
-									<Box key={index} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-										<TickCircle size={16} variant="Bold" color="#66bb6a" />
-										<Typography variant="caption" color="text.secondary">
-											{text}
-										</Typography>
-									</Box>
-								))}
+								{/* Benefits - 35% */}
+								<Box
+									sx={{
+										flex: 1,
+										px: "12px",
+										py: "8px",
+										borderRadius: "10px",
+										bgcolor: "#F8FAFC",
+										userSelect: "none",
+									}}
+								>
+									{featureData.benefits.map((benefit, index) => (
+										<Box
+											key={index}
+											sx={{
+												display: "flex",
+												alignItems: "center",
+												gap: 0.75,
+												mb: index < featureData.benefits.length - 1 ? 0.5 : 0,
+											}}
+										>
+											<TickCircle size={16} variant="Bold" style={{ color: theme.palette.success.main, flexShrink: 0 }} />
+											<Typography variant="body2" color="text.primary" sx={{ fontSize: "0.75rem", lineHeight: 1.35 }}>
+												{benefit}
+											</Typography>
+										</Box>
+									))}
+								</Box>
 							</Box>
-						</Box>
+
+							{/* CTA Button - Full width */}
+							<Box sx={{ mt: 1, mb: 2 }}>
+								<Button
+									component={RouterLink}
+									to={`/register?source=modal&feature=${featureKey}`}
+									variant="contained"
+									color={featureData.colorKey}
+									size="large"
+									fullWidth
+									onClick={handleCTAClick}
+									sx={{
+										height: { xs: "46px", sm: "56px" },
+										fontSize: { xs: "0.95rem", sm: "1.1rem" },
+										fontWeight: 600,
+										borderRadius: 2,
+										boxShadow: "0 6px 20px rgba(0, 0, 0, 0.18)",
+										"&:hover": {
+											boxShadow: "0 8px 25px rgba(0, 0, 0, 0.22)",
+										},
+									}}
+								>
+									{featureData.cta}
+								</Button>
+
+								{/* Microcopy */}
+								<Box
+									sx={{
+										mt: 1.5,
+										display: "flex",
+										justifyContent: "center",
+										alignItems: "center",
+										gap: 2,
+									}}
+								>
+									{["Sin tarjeta", "Registro en 1 minuto"].map((text, index) => (
+										<Box key={index} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+											<TickCircle size={16} variant="Bold" color="#66bb6a" />
+											<Typography variant="caption" color="text.secondary">
+												{text}
+											</Typography>
+										</Box>
+									))}
+								</Box>
+							</Box>
 						</Box>
 					</Box>
 				</Dialog>

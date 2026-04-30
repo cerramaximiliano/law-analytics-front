@@ -22,6 +22,7 @@ import {
 	Briefcase,
 	Category,
 	TableDocument,
+	DocumentText,
 	FolderCross,
 	ArrowLeft,
 	TickCircle,
@@ -51,6 +52,7 @@ import { dispatch } from "store";
 import { getFolderById } from "store/reducers/folder";
 import { filterContactsByFolder, getContactsByUserId } from "store/reducers/contacts";
 import GestionTabImproved from "./alternatives/GestionTabImproved";
+import FolderRecursosTab from "./components/FolderRecursosTab";
 
 interface StateType {
 	folder: {
@@ -82,7 +84,7 @@ function TabPanel(props: TabPanelProps) {
 
 	return (
 		<div role="tabpanel" hidden={value !== index} id={`folder-tabpanel-${index}`} aria-labelledby={`folder-tab-${index}`} {...other}>
-			{value === index && <Box sx={{ pt: 2, px: 2 }}>{children}</Box>}
+			{value === index && <Box sx={{ pt: 2, px: 2, pb: 2 }}>{children}</Box>}
 		</div>
 	);
 }
@@ -280,6 +282,13 @@ const Details = () => {
 				icon: <Briefcase size="20" />,
 				shortLabel: "Gestión",
 				ariaLabel: "Gestión",
+			},
+			{
+				value: 3,
+				label: "Recursos",
+				icon: <DocumentText size="20" />,
+				shortLabel: "Recursos",
+				ariaLabel: "Recursos",
 			},
 		],
 		[],
@@ -807,6 +816,11 @@ const Details = () => {
 					{/* Tab 3: Gestión */}
 					<TabPanel value={tabValue} index={2}>
 						{folder && <GestionTabImproved folder={folder} isDetailedView={isDetailedView} />}
+					</TabPanel>
+
+					{/* Tab 4: Recursos */}
+					<TabPanel value={tabValue} index={3}>
+						{id && <FolderRecursosTab folderId={id} folderName={folder?.folderName} />}
 					</TabPanel>
 				</Box>
 

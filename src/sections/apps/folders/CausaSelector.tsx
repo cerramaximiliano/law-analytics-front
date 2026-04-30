@@ -36,14 +36,7 @@ interface CausaSelectorProps {
 	onSelectionCancelled?: () => void;
 }
 
-const CausaSelector: React.FC<CausaSelectorProps> = ({
-	open,
-	onClose,
-	folderId,
-	folderName,
-	onCausaSelected,
-	onSelectionCancelled,
-}) => {
+const CausaSelector: React.FC<CausaSelectorProps> = ({ open, onClose, folderId, folderName, onCausaSelected, onSelectionCancelled }) => {
 	const theme = useTheme();
 	const [loading, setLoading] = useState(true);
 	const [selecting, setSelecting] = useState(false);
@@ -168,12 +161,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 						<DocumentText size={24} color={theme.palette.primary.main} />
 						<Typography variant="h5">Seleccionar Expediente</Typography>
 					</Stack>
-					<IconButton
-						onClick={() => !selecting && onClose()}
-						disabled={selecting}
-						size="small"
-						sx={{ color: theme.palette.grey[500] }}
-					>
+					<IconButton onClick={() => !selecting && onClose()} disabled={selecting} size="small" sx={{ color: theme.palette.grey[500] }}>
 						<CloseCircle size={20} />
 					</IconButton>
 				</Stack>
@@ -222,12 +210,8 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 									key={causa._id}
 									variant="outlined"
 									sx={{
-										borderColor: causa.isPrivate
-											? alpha(theme.palette.warning.main, 0.5)
-											: theme.palette.divider,
-										backgroundColor: causa.isPrivate
-											? alpha(theme.palette.warning.light, 0.05)
-											: "transparent",
+										borderColor: causa.isPrivate ? alpha(theme.palette.warning.main, 0.5) : theme.palette.divider,
+										backgroundColor: causa.isPrivate ? alpha(theme.palette.warning.light, 0.05) : "transparent",
 										transition: "all 0.2s ease",
 										"&:hover": {
 											borderColor: theme.palette.primary.main,
@@ -235,38 +219,18 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 										},
 									}}
 								>
-									<CardActionArea
-										onClick={() => handleSelectCausa(causa._id)}
-										disabled={selecting}
-									>
+									<CardActionArea onClick={() => handleSelectCausa(causa._id)} disabled={selecting}>
 										<CardContent sx={{ p: 2.5 }}>
 											<Stack spacing={1.5}>
 												{/* Header con CUIJ y badges */}
-												<Stack
-													direction="row"
-													justifyContent="space-between"
-													alignItems="flex-start"
-													flexWrap="wrap"
-													gap={1}
-												>
-													<Typography
-														variant="subtitle1"
-														fontWeight={600}
-														color="primary.main"
-														sx={{ fontFamily: "monospace" }}
-													>
+												<Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={1}>
+													<Typography variant="subtitle1" fontWeight={600} color="primary.main" sx={{ fontFamily: "monospace" }}>
 														{causa.cuij || `EXP ${causa.numero}/${causa.anio}`}
 													</Typography>
 													<Stack direction="row" spacing={1}>
 														{causa.isPrivate && (
 															<Tooltip title="Este expediente tiene acceso restringido">
-																<Chip
-																	icon={<Lock1 size={14} />}
-																	label="Privado"
-																	size="small"
-																	color="warning"
-																	variant="outlined"
-																/>
+																<Chip icon={<Lock1 size={14} />} label="Privado" size="small" color="warning" variant="outlined" />
 															</Tooltip>
 														)}
 														{causa.estado && (
@@ -274,13 +238,7 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 																label={causa.estado}
 																size="small"
 																variant="outlined"
-																color={
-																	causa.estado === "ARCHIVADO"
-																		? "default"
-																		: causa.estado === "EN TRAMITE"
-																		? "success"
-																		: "primary"
-																}
+																color={causa.estado === "ARCHIVADO" ? "default" : causa.estado === "EN TRAMITE" ? "success" : "primary"}
 															/>
 														)}
 													</Stack>
@@ -344,8 +302,8 @@ const CausaSelector: React.FC<CausaSelectorProps> = ({
 						{causas.some((c) => c.isPrivate) && (
 							<Alert severity="warning" variant="outlined">
 								<Typography variant="body2">
-									Los expedientes marcados como "Privado" pueden tener restricciones de acceso.
-									Es posible que no se puedan obtener todos los datos del expediente.
+									Los expedientes marcados como "Privado" pueden tener restricciones de acceso. Es posible que no se puedan obtener todos
+									los datos del expediente.
 								</Typography>
 							</Alert>
 						)}

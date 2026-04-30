@@ -327,7 +327,17 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				fullWidth
 				onClose={handleAdd}
 				open={add}
-				sx={{ "& .MuiDialog-paper": { p: 0, height: { xs: "90vh", sm: "85vh", md: "80vh" }, maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" }, display: "flex", flexDirection: "column", overflow: "hidden" }, transition: "transform 225ms" }}
+				sx={{
+					"& .MuiDialog-paper": {
+						p: 0,
+						height: { xs: "90vh", sm: "85vh", md: "80vh" },
+						maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+						display: "flex",
+						flexDirection: "column",
+						overflow: "hidden",
+					},
+					transition: "transform 225ms",
+				}}
 				aria-describedby="alert-dialog-slide-description"
 			>
 				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" folderId={folderId} />
@@ -443,14 +453,14 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 															src={member.avatar}
 															variant="rounded"
 															size="md"
-															color={getColorByRole(member.role)}
+															color={getColorByRole(Array.isArray(member.role) ? member.role[0] : member.role)}
 															sx={{
 																width: 48,
 																height: 48,
 																fontSize: "1.5rem",
 															}}
 														>
-															{!member.avatar && getRoleIcon(member.role)}
+															{!member.avatar && getRoleIcon(Array.isArray(member.role) ? member.role[0] : member.role)}
 														</Avatar>
 														<Box flex={1} minWidth={0}>
 															<Typography variant="subtitle1" fontWeight={600} noWrap>
@@ -460,12 +470,12 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 																<Chip
 																	label={member.role}
 																	size="small"
-																	color={getColorByRole(member.role)}
+																	color={getColorByRole(Array.isArray(member.role) ? member.role[0] : member.role)}
 																	sx={{
 																		height: 24,
 																		fontSize: "0.75rem",
 																		fontWeight: 500,
-																		...(getColorByRole(member.role) === "warning" && {
+																		...(getColorByRole(Array.isArray(member.role) ? member.role[0] : member.role) === "warning" && {
 																			color: "black",
 																			"& .MuiChip-label": {
 																				color: "black",

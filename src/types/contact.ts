@@ -1,12 +1,12 @@
 // Parte representada por un letrado (o por sí mismo en caso de auto-representación)
 export type ParteRepresentada = {
 	intervinienteId?: string;
-	contactId?: string;              // Puede ser el mismo contact (auto-referencia)
-	tipo: string;                    // ACTOR, DEMANDADO, TERCERO, etc.
+	contactId?: string; // Puede ser el mismo contact (auto-referencia)
+	tipo: string; // ACTOR, DEMANDADO, TERCERO, etc.
 	nombre: string;
 	causaId?: string;
-	role?: string;                   // Rol del letrado en esta causa (LETRADO APODERADO, etc.)
-	isSelfRepresented?: boolean;     // True cuando se representa a sí mismo
+	role?: string; // Rol del letrado en esta causa (LETRADO APODERADO, etc.)
+	isSelfRepresented?: boolean; // True cuando se representa a sí mismo
 };
 
 // Referencia a interviniente (para contactos importados de PJN)
@@ -16,8 +16,8 @@ export type IntervinienteRef = {
 	intervinienteIds?: string[];
 	// tipoInterviniente ahora puede ser un array cuando la persona es PARTE y LETRADO a la vez
 	tipoInterviniente?: "PARTE" | "LETRADO" | ("PARTE" | "LETRADO")[];
-	tipoParte?: string;              // ACTOR, DEMANDADO, TERCERO, PERITO, etc.
-	tipoLetrado?: string;            // LETRADO APODERADO, LETRADO PATROCINANTE, etc.
+	tipoParte?: string; // ACTOR, DEMANDADO, TERCERO, PERITO, etc.
+	tipoLetrado?: string; // LETRADO APODERADO, LETRADO PATROCINANTE, etc.
 	matricula?: string;
 	estadoIej?: string;
 	iej?: string;
@@ -33,7 +33,7 @@ export type Contact = {
 	avatar?: string;
 	name: string;
 	lastName: string;
-	role: string | string[];  // Puede ser string o array de roles
+	role: string | string[]; // Puede ser string o array de roles
 	type?: "Humana" | "Jurídica" | "";
 	address: string;
 	state: string;

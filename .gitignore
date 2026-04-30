@@ -123,3 +123,16 @@ bundle-stats.html
 
 # TipTap Pro credentials
 .npmrc
+
+# Playwright test results (artefactos generados)
+test-results/
+playwright-report/
+
+# Playwright auth state (contiene JWT tokens)
+tests/.auth/
+
+# UX / layout test artifacts y reports
+tests/.layout-results/
+tests/.overflow-results/
+tests/ux-*-report.json
+ux-reports/

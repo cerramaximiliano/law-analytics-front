@@ -118,7 +118,14 @@ const OnboardingEducationalBlock = () => {
 				</Stack>
 
 				{/* CTA */}
-				<Button variant="contained" color="primary" size="large" startIcon={<Add />} onClick={handleCreateFolder} sx={{ textTransform: "none" }}>
+				<Button
+					variant="contained"
+					color="primary"
+					size="large"
+					startIcon={<Add />}
+					onClick={handleCreateFolder}
+					sx={{ textTransform: "none" }}
+				>
 					Crear mi primera carpeta
 				</Button>
 			</Stack>

@@ -383,7 +383,7 @@ const Calendar = () => {
 	const [loadingFolders, setLoadingFolders] = useState<boolean>(false);
 
 	const { calendarView, selectedRange } = useSelector((state) => state.calendar);
-	const { events } = useSelector((state) => state.events);
+	const { events, error: eventsError } = useSelector((state) => state.events);
 	const { isConnected: isGoogleConnected } = useSelector((state) => state.googleCalendar);
 	const { drawerOpen } = useSelector((state) => state.menu);
 
@@ -407,12 +407,28 @@ const Calendar = () => {
 				setLoading(true);
 				try {
 					await dispatch(getEventsByUserId(id));
+				} finally {
 					setLoading(false);
-				} catch (error) {}
+				}
 			};
 			fetchData();
 		}
 	}, [id, dispatch]);
+
+	// Mostrar snackbar cuando la carga de eventos falla
+	useEffect(() => {
+		if (eventsError) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al cargar los eventos. Intentá de nuevo.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		}
+	}, [eventsError, dispatch]);
 
 	// Recargar eventos cuando cambie el estado de conexión de Google Calendar
 	useEffect(() => {
@@ -575,7 +591,17 @@ const Calendar = () => {
 					end: event.end ? new Date(event.end) : undefined,
 				}),
 			);
-		} catch (error) {}
+		} catch (error) {
+			dispatch(
+				openSnackbar({
+					open: true,
+					message: "Error al actualizar el evento. Intentá de nuevo.",
+					variant: "alert",
+					alert: { color: "error" },
+					close: true,
+				}),
+			);
+		}
 	};
 
 	const handleModalClose = () => {

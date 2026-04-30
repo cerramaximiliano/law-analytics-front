@@ -1,11 +1,11 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { Box, Checkbox, Grid, InputLabel, Typography } from "@mui/material";
+import { Box, Checkbox, Grid, IconButton, InputLabel, Stack, Tooltip, Typography } from "@mui/material";
 import DateInputField from "components/UI/DateInputField";
 import InputField from "components/UI/InputField";
 import NumberField from "components/UI/NumberField";
 import { useFormikContext, useField } from "formik";
-import { UserSquare, Calendar2, DocumentText } from "iconsax-react";
+import { UserSquare, Calendar2, DocumentText, InfoCircle } from "iconsax-react";
 import LinkCauseSelector from "./components/LinkCauseSelector";
 import { Folder } from "types/folders";
 
@@ -271,7 +271,41 @@ export default function FirstForm(props: FirstFormProps) {
 					<Grid item xs={12} lg={6}>
 						<Grid container spacing={2} alignItems="center">
 							<Grid item xs={12} lg={3}>
-								<InputLabel sx={{ textAlign: { xs: "left", sm: "right" } }}>Aplicar Ley 27.742:</InputLabel>
+								<Stack direction="row" alignItems="center" justifyContent={{ xs: "flex-start", sm: "flex-end" }} spacing={0.5}>
+									<InputLabel sx={{ m: 0 }}>Aplicar Ley 27.742:</InputLabel>
+									<Tooltip
+										arrow
+										placement="top"
+										title={
+											<Box sx={{ p: 0.5 }}>
+												<Typography variant="caption" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
+													Ley 27.742 (DNU 70/2023 ratificado)
+												</Typography>
+												<Typography variant="caption" component="div" sx={{ mb: 0.5 }}>
+													Amplía el período de prueba a 6 meses. Cómputo de antigüedad:
+												</Typography>
+												<Box component="ul" sx={{ m: 0, pl: 2 }}>
+													<Typography variant="caption" component="li">
+														Menos de 6 meses: sin indemnización (período de prueba).
+													</Typography>
+													<Typography variant="caption" component="li">
+														De 6 meses a 1 año: 1 período.
+													</Typography>
+													<Typography variant="caption" component="li">
+														Más de 1 año: regla tradicional (fracción &gt; 3 meses suma 1 año).
+													</Typography>
+												</Box>
+												<Typography variant="caption" component="div" sx={{ mt: 0.5, fontStyle: "italic" }}>
+													Vacaciones proporcionales: se mantiene el criterio tradicional.
+												</Typography>
+											</Box>
+										}
+									>
+										<IconButton size="small" sx={{ p: 0.25 }} aria-label="Información sobre Ley 27.742">
+											<InfoCircle size={16} variant="Linear" />
+										</IconButton>
+									</Tooltip>
+								</Stack>
 							</Grid>
 							<Grid item xs={12} lg={9}>
 								<Checkbox

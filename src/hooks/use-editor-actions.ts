@@ -72,7 +72,9 @@ export function useEditorActions({ scope }: UseEditorActionsOptions = {}): UseEd
 		};
 
 		fetchActions();
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+		};
 	}, [scope]);
 
 	return { actions, loading };
