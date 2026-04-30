@@ -28,6 +28,7 @@ interface FormModel {
 		tasaIntereses: FormField;
 		segmentsIntereses: FormField;
 		capitalizeInterest: FormField;
+		includeCERComparison: FormField;
 
 		// Campos de datos vinculados
 		folderId: FormField;
@@ -125,6 +126,11 @@ const liquidacionFormModel: FormModel = {
 		capitalizeInterest: {
 			name: "capitalizeInterest",
 			label: "Capitalizar intereses",
+			type: "intereses",
+		},
+		includeCERComparison: {
+			name: "includeCERComparison",
+			label: "Comparativa CER (Ley 27.802)",
 			type: "intereses",
 		},
 

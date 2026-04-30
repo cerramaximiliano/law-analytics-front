@@ -18,6 +18,7 @@ interface FormModel {
 		folderName: FormField;
 		segments: FormField;
 		capitalizeInterest: FormField;
+		includeCERComparison: FormField;
 	};
 }
 
@@ -79,6 +80,11 @@ const compensacionFormModel: FormModel = {
 		capitalizeInterest: {
 			name: "capitalizeInterest",
 			label: "Capitalizar intereses",
+			type: "reclamo",
+		},
+		includeCERComparison: {
+			name: "includeCERComparison",
+			label: "Comparativa CER (Ley 27.802)",
 			type: "reclamo",
 		},
 	},

@@ -37,6 +37,9 @@ interface FormField {
 	capitalizeInterest: {
 		name: string;
 	};
+	includeCERComparison?: {
+		name: string;
+	};
 }
 
 interface FirstFormProps {
@@ -47,7 +50,7 @@ interface FirstFormProps {
 
 export default function FirstForm(props: FirstFormProps) {
 	const {
-		formField: { reclamante, reclamado, capital, segments, capitalizeInterest },
+		formField: { reclamante, reclamado, capital, segments, capitalizeInterest, includeCERComparison },
 		folder,
 		onFolderChange,
 	} = props;
@@ -148,6 +151,15 @@ export default function FirstForm(props: FirstFormProps) {
 			setFieldValue(capitalizeInterest.name, capitalize);
 		},
 		[setFieldValue, capitalizeInterest.name],
+	);
+
+	const handleCERComparisonChange = useCallback(
+		(include: boolean) => {
+			if (includeCERComparison) {
+				setFieldValue(includeCERComparison.name, include);
+			}
+		},
+		[setFieldValue, includeCERComparison],
 	);
 
 	const handleTotalChange = useCallback(
@@ -286,6 +298,8 @@ export default function FirstForm(props: FirstFormProps) {
 				disabled={cargandoTasas || capitalValue <= 0}
 				capitalizeInterest={values[capitalizeInterest.name] || false}
 				onCapitalizeChange={handleCapitalizeChange}
+				includeCERComparison={includeCERComparison ? values[includeCERComparison.name] || false : false}
+				onCERComparisonChange={includeCERComparison ? handleCERComparisonChange : undefined}
 				onTotalChange={handleTotalChange}
 			/>
 
