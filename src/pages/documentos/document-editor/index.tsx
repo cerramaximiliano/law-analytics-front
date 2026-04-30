@@ -118,14 +118,12 @@ const PRINT_CSS = `
 `;
 
 const normalizeHtmlForPrint = (html: string) =>
-	html
-		.replace(/<p><\/p>/g, "<p><br></p>")
-		.replace(/\t/g, '<span style="display:inline-block;width:2cm"></span>');
+	html.replace(/<p><\/p>/g, "<p><br></p>").replace(/\t/g, '<span style="display:inline-block;width:2cm"></span>');
 
 /** Reemplaza nodos mergeField con texto resuelto. Si la clave no está en el mapa, conserva el nodo mergeField intacto. */
 function resolveMergeFieldsInJson(
 	node: Record<string, unknown>,
-	resolved: Record<string, string>
+	resolved: Record<string, string>,
 ): Record<string, unknown> | Record<string, unknown>[] {
 	if (node.type === "mergeField") {
 		const key = (node.attrs as Record<string, string>)?.key ?? "";
@@ -160,10 +158,7 @@ function resolveMergeFieldsInJson(
 function countPendingFields(node: Record<string, unknown>): number {
 	if (node.type === "mergeField") return 1;
 	if (Array.isArray(node.content)) {
-		return (node.content as Record<string, unknown>[]).reduce(
-			(acc, child) => acc + countPendingFields(child),
-			0
-		);
+		return (node.content as Record<string, unknown>[]).reduce((acc, child) => acc + countPendingFields(child), 0);
 	}
 	return 0;
 }
@@ -171,7 +166,7 @@ function countPendingFields(node: Record<string, unknown>): number {
 // Ícono para merge fields en el slash menu
 const MergeFieldIcon = ({ className }: { className?: string }) => (
 	<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
-		<path d="M8 3C6.34315 3 5 4.34315 5 6V9C5 10.1046 4.10457 11 3 11V13C4.10457 13 5 13.8954 5 15V18C5 19.6569 6.34315 21 8 21V19C7.44772 19 7 18.5523 7 18V15C7 13.8954 6.10457 13 5.76 12.5L5.5 12L5.76 11.5C6.10457 11 7 10.1046 7 9V6C7 5.44772 7.44772 5 8 5V3Z M16 3V5C16.5523 5 17 5.44772 17 6V9C17 10.1046 17.8954 11 18.24 11.5L18.5 12L18.24 12.5C17.8954 13 17 13.8954 17 15V18C17 18.5523 16.5523 19 16 19V21C17.6569 21 19 19.6569 19 18V15C19 13.8954 19.8954 13 21 13V11C19.8954 11 19 10.1046 19 9V6C19 4.34315 17.6569 3 16 3Z"/>
+		<path d="M8 3C6.34315 3 5 4.34315 5 6V9C5 10.1046 4.10457 11 3 11V13C4.10457 13 5 13.8954 5 15V18C5 19.6569 6.34315 21 8 21V19C7.44772 19 7 18.5523 7 18V15C7 13.8954 6.10457 13 5.76 12.5L5.5 12L5.76 11.5C6.10457 11 7 10.1046 7 9V6C7 5.44772 7.44772 5 8 5V3Z M16 3V5C16.5523 5 17 5.44772 17 6V9C17 10.1046 17.8954 11 18.24 11.5L18.5 12L18.24 12.5C17.8954 13 17 13.8954 17 15V18C17 18.5523 16.5523 19 16 19V21C17.6569 21 19 19.6569 19 18V15C19 13.8954 19.8954 13 21 13V11C19.8954 11 19 10.1046 19 9V6C19 4.34315 17.6569 3 16 3Z" />
 	</svg>
 );
 
@@ -188,7 +183,7 @@ const SLASH_MENU_CONFIG: SlashMenuConfig = {
 			onSelect: ({ editor }: { editor: any }) => {
 				editor.commands.insertMergeField(field.key, field.label);
 			},
-		}))
+		})),
 	),
 };
 
@@ -229,7 +224,9 @@ const DocumentEditorPage = () => {
 	const [resolvedCount, setResolvedCount] = useState(0);
 	const [saving, setSaving] = useState(false);
 	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
-	const [limitErrorData, setLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(null);
+	const [limitErrorData, setLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(
+		null,
+	);
 	const [templateName, setTemplateName] = useState("");
 	const [templateCategory, setTemplateCategory] = useState("");
 	const [contentLoaded, setContentLoaded] = useState(false);
@@ -291,7 +288,9 @@ const DocumentEditorPage = () => {
 		};
 		editor.on("update", update);
 		update(); // calcular estado inicial
-		return () => { editor.off("update", update); };
+		return () => {
+			editor.off("update", update);
+		};
 	}, [editor]);
 
 	// Auto-seleccionar el primer skill si el usuario tiene exactamente uno
@@ -306,13 +305,16 @@ const DocumentEditorPage = () => {
 			dispatch(getContactsByUserId(userId) as any);
 			dispatch(getCalculatorsByUserId(userId) as any);
 		}
-		axios.get("/api/colleges/?fields=name,province").then((res) => {
-			if (res.data.success) {
-				const map = new Map<string, string>();
-				for (const c of res.data.data) map.set(c.name, c.province);
-				setCollegeProvinceMap(map);
-			}
-		}).catch(() => {});
+		axios
+			.get("/api/colleges/?fields=name,province")
+			.then((res) => {
+				if (res.data.success) {
+					const map = new Map<string, string>();
+					for (const c of res.data.data) map.set(c.name, c.province);
+					setCollegeProvinceMap(map);
+				}
+			})
+			.catch(() => {});
 	}, [userId, dispatch]);
 
 	// Modo edición: cargar documento existente (solo una vez, sin depender de allFolders/allContacts)
@@ -333,9 +335,7 @@ const DocumentEditorPage = () => {
 					// Load without adding to history so Ctrl+Z doesn't wipe the document
 					const parsedDoc = editor.schema.nodeFromJSON(doc.content as Parameters<typeof editor.commands.setContent>[0]);
 					editor.view.dispatch(
-						editor.state.tr
-							.replaceWith(0, editor.state.doc.content.size, parsedDoc.content)
-							.setMeta("addToHistory", false)
+						editor.state.tr.replaceWith(0, editor.state.doc.content.size, parsedDoc.content).setMeta("addToHistory", false),
 					);
 				}
 				setContentLoaded(true);
@@ -373,9 +373,7 @@ const DocumentEditorPage = () => {
 				if (tpl.content && Object.keys(tpl.content).length > 0) {
 					const parsedTpl = editor.schema.nodeFromJSON(tpl.content as Parameters<typeof editor.commands.setContent>[0]);
 					editor.view.dispatch(
-						editor.state.tr
-							.replaceWith(0, editor.state.doc.content.size, parsedTpl.content)
-							.setMeta("addToHistory", false)
+						editor.state.tr.replaceWith(0, editor.state.doc.content.size, parsedTpl.content).setMeta("addToHistory", false),
 					);
 				}
 				setTemplateLoaded(true);
@@ -389,11 +387,11 @@ const DocumentEditorPage = () => {
 		if (!autoResolveParam || autoResolveFired.current) return;
 		if (!editor || !selectedFolder) return;
 		// Esperar a que el contenido esté en el editor antes de resolver
-		const contentReady = isEdit ? contentLoaded : (!templateId || templateLoaded);
+		const contentReady = isEdit ? contentLoaded : !templateId || templateLoaded;
 		if (!contentReady) return;
 		autoResolveFired.current = true;
 		handleResolve();
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [autoResolveParam, editor, selectedFolder, contentLoaded, templateLoaded, isEdit, templateId]);
 
 	const handleResolve = async () => {
@@ -406,8 +404,15 @@ const DocumentEditorPage = () => {
 			contraparteId: selectedContraparte?._id,
 			calculoId: selectedCalculator?._id,
 			movimientoId: selectedMovement?._id,
-			movimientoData: selectedMovement?._id ? undefined : selectedMovement
-				? { time: selectedMovement.time, movement: selectedMovement.movement, title: selectedMovement.title, description: selectedMovement.description }
+			movimientoData: selectedMovement?._id
+				? undefined
+				: selectedMovement
+				? {
+						time: selectedMovement.time,
+						movement: selectedMovement.movement,
+						title: selectedMovement.title,
+						description: selectedMovement.description,
+				  }
 				: undefined,
 			skillId: selectedSkill?._id,
 		};
@@ -422,7 +427,7 @@ const DocumentEditorPage = () => {
 					message: "Error al resolver campos. Intentá de nuevo.",
 					variant: "alert",
 					alert: { color: "error" },
-				})
+				}),
 			);
 			return;
 		}
@@ -444,7 +449,7 @@ const DocumentEditorPage = () => {
 					message: `${count} campo${count !== 1 ? "s" : ""} resuelto${count !== 1 ? "s" : ""} correctamente.`,
 					variant: "alert",
 					alert: { color: "success" },
-				})
+				}),
 			);
 		} else {
 			dispatch(
@@ -453,7 +458,7 @@ const DocumentEditorPage = () => {
 					message: "No se encontraron campos para resolver. Verificá la selección.",
 					variant: "alert",
 					alert: { color: "warning" },
-				})
+				}),
 			);
 		}
 	};
@@ -466,12 +471,10 @@ const DocumentEditorPage = () => {
 			if (!editor) return;
 			const schema = editor.schema;
 			const fragment = text.length > 0 ? Fragment.from(schema.text(text)) : Fragment.empty;
-			const tr = editor.state.tr
-				.replaceWith(from, to, fragment)
-				.setMeta("addToHistory", addToHistory);
+			const tr = editor.state.tr.replaceWith(from, to, fragment).setMeta("addToHistory", addToHistory);
 			editor.view.dispatch(tr);
 		},
-		[editor]
+		[editor],
 	);
 
 	const handleAcceptAll = useCallback(() => {
@@ -536,7 +539,7 @@ const DocumentEditorPage = () => {
 								}
 							}
 						},
-					}
+					},
 				);
 
 				const result = accumulated.trim();
@@ -570,7 +573,7 @@ const DocumentEditorPage = () => {
 				setDiffRefining(false);
 			}
 		},
-		[editor, pendingDiff]
+		[editor, pendingDiff],
 	);
 
 	// ── End diff handlers ───────────────────────────────────────────────────
@@ -633,7 +636,7 @@ const DocumentEditorPage = () => {
 					message: "El título del documento es requerido.",
 					variant: "alert",
 					alert: { color: "warning" },
-				})
+				}),
 			);
 			return;
 		}
@@ -643,10 +646,12 @@ const DocumentEditorPage = () => {
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: `Hay ${pendingCount} campo${pendingCount !== 1 ? "s" : ""} dinámico${pendingCount !== 1 ? "s" : ""} sin resolver. Seleccioná un expediente y hacé clic en "Resolver campos".`,
+					message: `Hay ${pendingCount} campo${pendingCount !== 1 ? "s" : ""} dinámico${
+						pendingCount !== 1 ? "s" : ""
+					} sin resolver. Seleccioná un expediente y hacé clic en "Resolver campos".`,
 					variant: "alert",
 					alert: { color: "warning" },
-				})
+				}),
 			);
 			return;
 		}
@@ -665,9 +670,7 @@ const DocumentEditorPage = () => {
 		if (isEdit && documentId) {
 			result = await dispatch(updateRichTextDocument(documentId, payload));
 		} else {
-			result = await dispatch(
-				createRichTextDocument({ ...payload, templateId: templateId ?? undefined })
-			);
+			result = await dispatch(createRichTextDocument({ ...payload, templateId: templateId ?? undefined }));
 		}
 		setSaving(false);
 
@@ -678,7 +681,7 @@ const DocumentEditorPage = () => {
 					message: isEdit ? "Documento actualizado." : "Documento guardado correctamente.",
 					variant: "alert",
 					alert: { color: "success" },
-				})
+				}),
 			);
 			navigate("/documentos/escritos");
 		} else {
@@ -688,7 +691,7 @@ const DocumentEditorPage = () => {
 					message: result?.error ?? "Error al guardar el documento.",
 					variant: "alert",
 					alert: { color: "error" },
-				})
+				}),
 			);
 		}
 	};
@@ -703,7 +706,7 @@ const DocumentEditorPage = () => {
 	}, [allCalculators, selectedFolder]);
 
 	const MOVEMENTS_PAGE_SIZE = 20;
-	const LOAD_MORE_ID = '__load_more__';
+	const LOAD_MORE_ID = "__load_more__";
 
 	// Carga de movimientos con paginación
 	const loadMovements = async (folderId: string, page: number, append: boolean) => {
@@ -714,7 +717,7 @@ const DocumentEditorPage = () => {
 			const newMovements: Movement[] = res.movements ?? [];
 			const total: number = res.pagination?.total ?? newMovements.length;
 			const availableMovements: number = res.pjnAccess?.availableMovements ?? 0;
-			setFolderMovements((prev) => append ? [...prev, ...newMovements] : newMovements);
+			setFolderMovements((prev) => (append ? [...prev, ...newMovements] : newMovements));
 			setMovementsTotal(total);
 			setMovementsPage(page);
 			setMovementsLimited(availableMovements > 0);
@@ -730,7 +733,7 @@ const DocumentEditorPage = () => {
 		setMovementsTotal(0);
 		setMovementsLimited(false);
 		if (selectedFolder?._id) loadMovements(selectedFolder._id, 1, false);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedFolder?._id, allContacts, collegeProvinceMap]);
 
 	// Auto-seleccionar actor y demandado al cambiar el expediente o cuando cargan los contactos
@@ -749,16 +752,15 @@ const DocumentEditorPage = () => {
 		const demandado = linked.find((c) => hasRole(c.role, "demandado"));
 		if (actor) setSelectedContact(actor);
 		if (demandado) setSelectedContraparte(demandado);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedFolder?._id, allContacts]);
 
 	// Auto-seleccionar matrícula al cambiar el expediente o cuando carga el mapa de colegios
 	useEffect(() => {
 		if (!selectedFolder || userSkills.length <= 1 || collegeProvinceMap.size === 0) return;
 
-		const jurisLabel = typeof selectedFolder.folderJuris === "string"
-			? selectedFolder.folderJuris
-			: (selectedFolder.folderJuris as any)?.label ?? "";
+		const jurisLabel =
+			typeof selectedFolder.folderJuris === "string" ? selectedFolder.folderJuris : (selectedFolder.folderJuris as any)?.label ?? "";
 		const jurisItem: string = (selectedFolder.folderJuris as any)?.item ?? "";
 
 		// CPACF para: PJN explícito, label Nacional, label CABA (todos los fueros CABA),
@@ -770,11 +772,7 @@ const DocumentEditorPage = () => {
 			jurisLabel === "Ciudad Autónoma de Buenos Aires" ||
 			jurisItem.includes("Justicia Nacional");
 
-		const targetProvince = isCpacf
-			? null
-			: selectedFolder.mev === true || jurisLabel === "Buenos Aires"
-				? "Buenos Aires"
-				: jurisLabel;
+		const targetProvince = isCpacf ? null : selectedFolder.mev === true || jurisLabel === "Buenos Aires" ? "Buenos Aires" : jurisLabel;
 
 		if (isCpacf) {
 			const match = userSkills.find((s: any) => s.name === "Colegio Público de Abogados de la Capital Federal");
@@ -783,22 +781,25 @@ const DocumentEditorPage = () => {
 			const match = userSkills.find((s: any) => collegeProvinceMap.get(s.name) === targetProvince);
 			if (match) setSelectedSkill(match);
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedFolder?._id, collegeProvinceMap]);
 
-	const caseContext = useMemo((): CaseContext => ({
-		representedParty: (representedParty as CaseContext["representedParty"]) || null,
-		representationType: (representationType as CaseContext["representationType"]) || null,
-		folderName: selectedFolder?.folderName || null,
-		actorName: selectedContact ? getContactDisplayName(selectedContact) : null,
-		demandadoName: selectedContraparte ? getContactDisplayName(selectedContraparte) : null,
-		folderFuero: selectedFolder?.folderFuero || null,
-		folderJuris: selectedFolder?.folderJuris
-			? typeof selectedFolder.folderJuris === "string"
-				? selectedFolder.folderJuris
-				: (selectedFolder.folderJuris as { label?: string }).label || null
-			: null,
-	}), [representedParty, representationType, selectedFolder, selectedContact, selectedContraparte]);
+	const caseContext = useMemo(
+		(): CaseContext => ({
+			representedParty: (representedParty as CaseContext["representedParty"]) || null,
+			representationType: (representationType as CaseContext["representationType"]) || null,
+			folderName: selectedFolder?.folderName || null,
+			actorName: selectedContact ? getContactDisplayName(selectedContact) : null,
+			demandadoName: selectedContraparte ? getContactDisplayName(selectedContraparte) : null,
+			folderFuero: selectedFolder?.folderFuero || null,
+			folderJuris: selectedFolder?.folderJuris
+				? typeof selectedFolder.folderJuris === "string"
+					? selectedFolder.folderJuris
+					: (selectedFolder.folderJuris as { label?: string }).label || null
+				: null,
+		}),
+		[representedParty, representationType, selectedFolder, selectedContact, selectedContraparte],
+	);
 
 	const sortedContacts = useMemo(() => {
 		if (!selectedFolder) return allContacts;
@@ -818,14 +819,23 @@ const DocumentEditorPage = () => {
 				<Stack direction="row" alignItems="flex-start" gap={1.5}>
 					{/* Botón volver — fuera de la columna para no romper alineación entre filas */}
 					<Tooltip title="Volver">
-						<IconButton onClick={() => navigate("/documentos/escritos")} sx={{ mt: 0.25, flexShrink: 0, p: 1, borderRadius: 1.5, "&:hover": { bgcolor: "action.hover", transform: "translateX(-1px)" }, transition: "transform 0.15s" }}>
+						<IconButton
+							onClick={() => navigate("/documentos/escritos")}
+							sx={{
+								mt: 0.25,
+								flexShrink: 0,
+								p: 1,
+								borderRadius: 1.5,
+								"&:hover": { bgcolor: "action.hover", transform: "translateX(-1px)" },
+								transition: "transform 0.15s",
+							}}
+						>
 							<ArrowLeft2 size={18} />
 						</IconButton>
 					</Tooltip>
 
 					{/* Columna de contenido: ambas filas con el mismo punto de inicio */}
 					<Stack spacing={1} flex={1} minWidth={0}>
-
 						{/* Fila 1: identidad del documento + acciones principales */}
 						<Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
 							{/* Título inline editable + modelo */}
@@ -842,7 +852,12 @@ const DocumentEditorPage = () => {
 										sx={{ minWidth: 220 }}
 									/>
 								) : (
-									<Typography variant="body2" fontWeight={600} noWrap onClick={() => setEditingTitle(true)} data-testid="editor-title-text"
+									<Typography
+										variant="body2"
+										fontWeight={600}
+										noWrap
+										onClick={() => setEditingTitle(true)}
+										data-testid="editor-title-text"
 										sx={{
 											cursor: "text",
 											minWidth: 0,
@@ -858,7 +873,9 @@ const DocumentEditorPage = () => {
 								)}
 								{templateName && (
 									<>
-										<Typography variant="body2" color="text.disabled" sx={{ flexShrink: 0, userSelect: "none", mx: 0.5, opacity: 0.35 }}>—</Typography>
+										<Typography variant="body2" color="text.disabled" sx={{ flexShrink: 0, userSelect: "none", mx: 0.5, opacity: 0.35 }}>
+											—
+										</Typography>
 										<Typography variant="caption" color="text.secondary" noWrap sx={{ flexShrink: 0, maxWidth: 220 }}>
 											Modelo: {templateName}
 										</Typography>
@@ -870,11 +887,7 @@ const DocumentEditorPage = () => {
 
 							<FormControl size="small" sx={{ minWidth: 120 }}>
 								<InputLabel>Estado</InputLabel>
-								<Select
-									label="Estado"
-									value={status}
-									onChange={(e) => setStatus(e.target.value as RichTextDocumentStatus)}
-								>
+								<Select label="Estado" value={status} onChange={(e) => setStatus(e.target.value as RichTextDocumentStatus)}>
 									<MenuItem value="draft">Borrador</MenuItem>
 									<MenuItem value="final">Final</MenuItem>
 								</Select>
@@ -905,7 +918,6 @@ const DocumentEditorPage = () => {
 								</IconButton>
 							</Tooltip>
 						</Stack>
-
 					</Stack>
 				</Stack>
 			</MainCard>
@@ -945,15 +957,20 @@ const DocumentEditorPage = () => {
 						{editor && editorViewReady && (
 							<SelectionBubble
 								editor={editor}
-								onLoadingStart={(label) => { setDiffLoadingLabel(label); setDiffLoading(true); }}
-								onDiffReady={(diff) => { setPendingDiff(diff); setDiffLoading(false); }}
+								onLoadingStart={(label) => {
+									setDiffLoadingLabel(label);
+									setDiffLoading(true);
+								}}
+								onDiffReady={(diff) => {
+									setPendingDiff(diff);
+									setDiffLoading(false);
+								}}
 								hasPendingDiff={!!pendingDiff}
 								caseContext={caseContext}
 							/>
 						)}
 						<EditorContent editor={editor} className="tiptap-editor-content" />
 						{editor && editorViewReady && <SlashDropdownMenu editor={editor} config={SLASH_MENU_CONFIG} />}
-
 					</Box>
 
 					{editor && (
@@ -978,143 +995,236 @@ const DocumentEditorPage = () => {
 									flexShrink: 0,
 									borderBottom: "1px solid",
 									borderColor: "divider",
-									"& .MuiTab-root": { minHeight: 52, fontSize: "0.7rem", textTransform: "none", py: 0.5, opacity: 0.5, transition: "all 0.15s" },
+									"& .MuiTab-root": {
+										minHeight: 52,
+										fontSize: "0.7rem",
+										textTransform: "none",
+										py: 0.5,
+										opacity: 0.5,
+										transition: "all 0.15s",
+									},
 									"& .MuiTab-root.Mui-selected": { opacity: 1, fontWeight: 700 },
 								}}
 								TabIndicatorProps={{ style: { height: 3 } }}
-					>
-						<Tab value="fields"
-							icon={<DocumentText size={18} />}
-							iconPosition="top"
-							label={
-								<Stack direction="row" alignItems="center" spacing={0.5}>
-									<span>Variables</span>
-									<Box component="span" sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: pendingFields > 0 ? "warning.main" : "grey.400", display: "inline-block", flexShrink: 0 }} />
-								</Stack>
-							}
-						/>
-						<Tab value="data"
-							icon={<Setting4 size={18} />}
-							iconPosition="top"
-							label={
-								<Stack direction="row" alignItems="center" spacing={0.5}>
-									<span>Datos</span>
-									<Box component="span" sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: pendingFields > 0 ? "warning.main" : "grey.400", display: "inline-block", flexShrink: 0 }} />
-								</Stack>
-							}
-						/>
-					</Tabs>
-						{/* Siempre montados para preservar estado; visibilidad por display */}
-						<Box sx={{ display: rightTab === "fields" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
-							<MergeFieldsPanel editor={editor} embedded />
-						</Box>
-						<Box sx={{ display: rightTab === "data" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
-							<Box sx={{ flex: 1, overflowY: "auto", p: 1.5 }}>
-								<Stack spacing={1.5}>
-									<Autocomplete
-										options={allFolders}
-										getOptionLabel={(f) => f.folderName ?? ""}
-										value={selectedFolder}
-										onChange={(_e, val) => setSelectedFolder(val)}
-										size="small"
-										fullWidth
-										renderInput={(params) => <TextField {...params} label="Expediente" placeholder="Buscar..." />}
-										renderOption={(props, option) => (
-											<li {...props} key={option._id}>
-												<Stack>
-													<Typography variant="body2">{option.folderName}</Typography>
-													{option.judFolder?.numberJudFolder && <Typography variant="caption" color="text.secondary">{option.judFolder.numberJudFolder}</Typography>}
-												</Stack>
-											</li>
-										)}
-									/>
-									<Autocomplete
-										options={sortedContacts}
-										groupBy={selectedFolder ? (c) => (c.folderIds?.includes(selectedFolder._id) ? "Vinculados al expediente" : "Otros contactos") : undefined}
-										getOptionLabel={getContactDisplayName}
-										value={selectedContact}
-										onChange={(_e, val) => setSelectedContact(val)}
-										size="small"
-										fullWidth
-										renderInput={(params) => <TextField {...params} label="Actor" placeholder="Buscar..." />}
-										renderOption={(props, option) => (
-											<li {...props} key={option._id}>
-												<Stack spacing={0}>
-													<Typography variant="body2">{getContactDisplayName(option)}</Typography>
-												</Stack>
-											</li>
-										)}
-									/>
-									<Autocomplete
-										options={sortedContacts}
-										groupBy={selectedFolder ? (c) => (c.folderIds?.includes(selectedFolder._id) ? "Vinculados al expediente" : "Otros contactos") : undefined}
-										getOptionLabel={getContactDisplayName}
-										value={selectedContraparte}
-										onChange={(_e, val) => setSelectedContraparte(val)}
-										size="small"
-										fullWidth
-										renderInput={(params) => <TextField {...params} label="Demandado" placeholder="Buscar..." />}
-										renderOption={(props, option) => (
-											<li {...props} key={option._id}>
-												<Stack spacing={0}>
-													<Typography variant="body2">{getContactDisplayName(option)}</Typography>
-												</Stack>
-											</li>
-										)}
-									/>
-									<Autocomplete
-										options={folderCalculators}
-										getOptionLabel={(c) => c.description || `${c.classType ?? ""} ${c.subClassType ?? ""}`.trim() || "Cálculo"}
-										value={selectedCalculator}
-										onChange={(_e, val) => setSelectedCalculator(val)}
-										size="small"
-										fullWidth
-										noOptionsText={selectedFolder ? "Sin cálculos para este expediente" : "Seleccioná un expediente primero"}
-										disabled={!selectedFolder}
-										renderInput={(params) => <TextField {...params} label="Cálculo" placeholder="Buscar..." />}
-										renderOption={(props, option) => (
-											<li {...props} key={option._id}>
-												<Stack spacing={0}>
-													<Typography variant="body2">{option.description || "Sin descripción"}</Typography>
-													<Typography variant="caption" color="text.secondary">
-															{[option.classType, option.subClassType].filter(Boolean).join(" — ")} · {option.amount != null ? new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(option.amount) : ""}
-													</Typography>
-												</Stack>
-											</li>
-										)}
-									/>
-									<Autocomplete
-										options={[...folderMovements, ...(folderMovements.length < movementsTotal ? [{ _id: LOAD_MORE_ID, title: movementsLoading ? "Cargando..." : `Cargar más (${folderMovements.length} de ${movementsTotal})`, movement: "", folderId: "", userId: "", time: "" } as Movement] : [])]}
-										getOptionLabel={(m) => m._id === LOAD_MORE_ID ? "" : (m.title || m.movement || "Movimiento")}
-										value={selectedMovement}
-										onChange={(_e, val) => {
-											if (val?._id === LOAD_MORE_ID) {
-												if (!movementsLoading && selectedFolder?._id) loadMovements(selectedFolder._id, movementsPage + 1, true);
-												return;
-											}
-											setSelectedMovement(val);
-										}}
-										size="small"
-										fullWidth
-										noOptionsText={selectedFolder ? "Sin movimientos para este expediente" : "Seleccioná un expediente primero"}
-										disabled={!selectedFolder}
-										renderInput={(params) => (
-											<TextField
-												{...params}
-												label="Movimiento"
-												placeholder="Buscar..."
-												InputProps={{
-													...params.InputProps,
-													...(movementsLimited ? { endAdornment: (<><Tooltip title="Plan gratuito: se muestran solo los últimos movimientos." placement="top" arrow><Warning2 size={14} style={{ color: "var(--mui-palette-warning-main, #ed6c02)", cursor: "help", flexShrink: 0 }} /></Tooltip>{params.InputProps.endAdornment}</>) } : {}),
+							>
+								<Tab
+									value="fields"
+									icon={<DocumentText size={18} />}
+									iconPosition="top"
+									label={
+										<Stack direction="row" alignItems="center" spacing={0.5}>
+											<span>Variables</span>
+											<Box
+												component="span"
+												sx={{
+													width: 6,
+													height: 6,
+													borderRadius: "50%",
+													bgcolor: pendingFields > 0 ? "warning.main" : "grey.400",
+													display: "inline-block",
+													flexShrink: 0,
 												}}
 											/>
-										)}
-										renderOption={(props, option) => {
-											if (option._id === LOAD_MORE_ID) return (<li {...props} key="load-more" style={{ justifyContent: "center" }}><Typography variant="caption" color="primary.main" sx={{ fontStyle: "italic", py: 0.5 }}>{movementsLoading ? "Cargando..." : `Cargar más (${folderMovements.length} de ${movementsTotal})`}</Typography></li>);
-											return (<li {...props} key={option._id}><Stack spacing={0}><Typography variant="body2" noWrap>{option.title}</Typography><Typography variant="caption" color="text.secondary">{option.movement}{option.time ? ` · ${new Date(option.time).toLocaleDateString("es-AR")}` : ""}</Typography></Stack></li>);
-										}}
-									/>
-									<Autocomplete
+										</Stack>
+									}
+								/>
+								<Tab
+									value="data"
+									icon={<Setting4 size={18} />}
+									iconPosition="top"
+									label={
+										<Stack direction="row" alignItems="center" spacing={0.5}>
+											<span>Datos</span>
+											<Box
+												component="span"
+												sx={{
+													width: 6,
+													height: 6,
+													borderRadius: "50%",
+													bgcolor: pendingFields > 0 ? "warning.main" : "grey.400",
+													display: "inline-block",
+													flexShrink: 0,
+												}}
+											/>
+										</Stack>
+									}
+								/>
+							</Tabs>
+							{/* Siempre montados para preservar estado; visibilidad por display */}
+							<Box sx={{ display: rightTab === "fields" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
+								<MergeFieldsPanel editor={editor} embedded />
+							</Box>
+							<Box sx={{ display: rightTab === "data" ? "flex" : "none", flex: 1, flexDirection: "column", overflow: "hidden" }}>
+								<Box sx={{ flex: 1, overflowY: "auto", p: 1.5 }}>
+									<Stack spacing={1.5}>
+										<Autocomplete
+											options={allFolders}
+											getOptionLabel={(f) => f.folderName ?? ""}
+											value={selectedFolder}
+											onChange={(_e, val) => setSelectedFolder(val)}
+											size="small"
+											fullWidth
+											renderInput={(params) => <TextField {...params} label="Expediente" placeholder="Buscar..." />}
+											renderOption={(props, option) => (
+												<li {...props} key={option._id}>
+													<Stack>
+														<Typography variant="body2">{option.folderName}</Typography>
+														{option.judFolder?.numberJudFolder && (
+															<Typography variant="caption" color="text.secondary">
+																{option.judFolder.numberJudFolder}
+															</Typography>
+														)}
+													</Stack>
+												</li>
+											)}
+										/>
+										<Autocomplete
+											options={sortedContacts}
+											groupBy={
+												selectedFolder
+													? (c) => (c.folderIds?.includes(selectedFolder._id) ? "Vinculados al expediente" : "Otros contactos")
+													: undefined
+											}
+											getOptionLabel={getContactDisplayName}
+											value={selectedContact}
+											onChange={(_e, val) => setSelectedContact(val)}
+											size="small"
+											fullWidth
+											renderInput={(params) => <TextField {...params} label="Actor" placeholder="Buscar..." />}
+											renderOption={(props, option) => (
+												<li {...props} key={option._id}>
+													<Stack spacing={0}>
+														<Typography variant="body2">{getContactDisplayName(option)}</Typography>
+													</Stack>
+												</li>
+											)}
+										/>
+										<Autocomplete
+											options={sortedContacts}
+											groupBy={
+												selectedFolder
+													? (c) => (c.folderIds?.includes(selectedFolder._id) ? "Vinculados al expediente" : "Otros contactos")
+													: undefined
+											}
+											getOptionLabel={getContactDisplayName}
+											value={selectedContraparte}
+											onChange={(_e, val) => setSelectedContraparte(val)}
+											size="small"
+											fullWidth
+											renderInput={(params) => <TextField {...params} label="Demandado" placeholder="Buscar..." />}
+											renderOption={(props, option) => (
+												<li {...props} key={option._id}>
+													<Stack spacing={0}>
+														<Typography variant="body2">{getContactDisplayName(option)}</Typography>
+													</Stack>
+												</li>
+											)}
+										/>
+										<Autocomplete
+											options={folderCalculators}
+											getOptionLabel={(c) => c.description || `${c.classType ?? ""} ${c.subClassType ?? ""}`.trim() || "Cálculo"}
+											value={selectedCalculator}
+											onChange={(_e, val) => setSelectedCalculator(val)}
+											size="small"
+											fullWidth
+											noOptionsText={selectedFolder ? "Sin cálculos para este expediente" : "Seleccioná un expediente primero"}
+											disabled={!selectedFolder}
+											renderInput={(params) => <TextField {...params} label="Cálculo" placeholder="Buscar..." />}
+											renderOption={(props, option) => (
+												<li {...props} key={option._id}>
+													<Stack spacing={0}>
+														<Typography variant="body2">{option.description || "Sin descripción"}</Typography>
+														<Typography variant="caption" color="text.secondary">
+															{[option.classType, option.subClassType].filter(Boolean).join(" — ")} ·{" "}
+															{option.amount != null
+																? new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(
+																		option.amount,
+																  )
+																: ""}
+														</Typography>
+													</Stack>
+												</li>
+											)}
+										/>
+										<Autocomplete
+											options={[
+												...folderMovements,
+												...(folderMovements.length < movementsTotal
+													? [
+															{
+																_id: LOAD_MORE_ID,
+																title: movementsLoading ? "Cargando..." : `Cargar más (${folderMovements.length} de ${movementsTotal})`,
+																movement: "",
+																folderId: "",
+																userId: "",
+																time: "",
+															} as Movement,
+													  ]
+													: []),
+											]}
+											getOptionLabel={(m) => (m._id === LOAD_MORE_ID ? "" : m.title || m.movement || "Movimiento")}
+											value={selectedMovement}
+											onChange={(_e, val) => {
+												if (val?._id === LOAD_MORE_ID) {
+													if (!movementsLoading && selectedFolder?._id) loadMovements(selectedFolder._id, movementsPage + 1, true);
+													return;
+												}
+												setSelectedMovement(val);
+											}}
+											size="small"
+											fullWidth
+											noOptionsText={selectedFolder ? "Sin movimientos para este expediente" : "Seleccioná un expediente primero"}
+											disabled={!selectedFolder}
+											renderInput={(params) => (
+												<TextField
+													{...params}
+													label="Movimiento"
+													placeholder="Buscar..."
+													InputProps={{
+														...params.InputProps,
+														...(movementsLimited
+															? {
+																	endAdornment: (
+																		<>
+																			<Tooltip title="Plan gratuito: se muestran solo los últimos movimientos." placement="top" arrow>
+																				<Warning2
+																					size={14}
+																					style={{ color: "var(--mui-palette-warning-main, #ed6c02)", cursor: "help", flexShrink: 0 }}
+																				/>
+																			</Tooltip>
+																			{params.InputProps.endAdornment}
+																		</>
+																	),
+															  }
+															: {}),
+													}}
+												/>
+											)}
+											renderOption={(props, option) => {
+												if (option._id === LOAD_MORE_ID)
+													return (
+														<li {...props} key="load-more" style={{ justifyContent: "center" }}>
+															<Typography variant="caption" color="primary.main" sx={{ fontStyle: "italic", py: 0.5 }}>
+																{movementsLoading ? "Cargando..." : `Cargar más (${folderMovements.length} de ${movementsTotal})`}
+															</Typography>
+														</li>
+													);
+												return (
+													<li {...props} key={option._id}>
+														<Stack spacing={0}>
+															<Typography variant="body2" noWrap>
+																{option.title}
+															</Typography>
+															<Typography variant="caption" color="text.secondary">
+																{option.movement}
+																{option.time ? ` · ${new Date(option.time).toLocaleDateString("es-AR")}` : ""}
+															</Typography>
+														</Stack>
+													</li>
+												);
+											}}
+										/>
+										<Autocomplete
 											options={userSkills}
 											getOptionLabel={(s) => s.name || ""}
 											value={selectedSkill}
@@ -1136,15 +1246,39 @@ const DocumentEditorPage = () => {
 													placeholder="Seleccionar..."
 													InputProps={{
 														...params.InputProps,
-														...(userSkills.length === 0 ? { endAdornment: (<><Tooltip title="No hay matrículas cargadas. Hacé clic en el selector para ver cómo agregarlas." placement="top" arrow><Warning2 size={14} style={{ color: "var(--mui-palette-warning-main, #ed6c02)", cursor: "help", flexShrink: 0 }} /></Tooltip>{params.InputProps.endAdornment}</>) } : {}),
+														...(userSkills.length === 0
+															? {
+																	endAdornment: (
+																		<>
+																			<Tooltip
+																				title="No hay matrículas cargadas. Hacé clic en el selector para ver cómo agregarlas."
+																				placement="top"
+																				arrow
+																			>
+																				<Warning2
+																					size={14}
+																					style={{ color: "var(--mui-palette-warning-main, #ed6c02)", cursor: "help", flexShrink: 0 }}
+																				/>
+																			</Tooltip>
+																			{params.InputProps.endAdornment}
+																		</>
+																	),
+															  }
+															: {}),
 													}}
 												/>
 											)}
 											renderOption={(props, option) => (
 												<li {...props} key={option._id || option.name}>
 													<Stack spacing={0}>
-														<Typography variant="body2" noWrap>{option.name}</Typography>
-														{option.registrationNumber && <Typography variant="caption" color="text.secondary">Mat. {option.registrationNumber}</Typography>}
+														<Typography variant="body2" noWrap>
+															{option.name}
+														</Typography>
+														{option.registrationNumber && (
+															<Typography variant="caption" color="text.secondary">
+																Mat. {option.registrationNumber}
+															</Typography>
+														)}
 													</Stack>
 												</li>
 											)}
@@ -1152,7 +1286,12 @@ const DocumentEditorPage = () => {
 										<Divider />
 										{/* Contexto de representación para el asistente IA */}
 										<Stack spacing={1}>
-											<Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.65rem" }}>
+											<Typography
+												variant="caption"
+												color="text.secondary"
+												fontWeight={600}
+												sx={{ textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.65rem" }}
+											>
 												Asistente IA
 											</Typography>
 											<FormControl size="small" fullWidth>
@@ -1163,7 +1302,9 @@ const DocumentEditorPage = () => {
 													onChange={(e) => setRepresentedParty(e.target.value as typeof representedParty)}
 													sx={{ fontSize: "0.78rem" }}
 												>
-													<MenuItem value=""><em>Sin especificar</em></MenuItem>
+													<MenuItem value="">
+														<em>Sin especificar</em>
+													</MenuItem>
 													<MenuItem value="actor">Actor / Demandante</MenuItem>
 													<MenuItem value="demandado">Demandado</MenuItem>
 												</Select>
@@ -1176,73 +1317,126 @@ const DocumentEditorPage = () => {
 													onChange={(e) => setRepresentationType(e.target.value as typeof representationType)}
 													sx={{ fontSize: "0.78rem" }}
 												>
-													<MenuItem value=""><em>Sin especificar</em></MenuItem>
+													<MenuItem value="">
+														<em>Sin especificar</em>
+													</MenuItem>
 													<MenuItem value="patrocinio">Patrocinio (1ª persona)</MenuItem>
 													<MenuItem value="apoderado">Apoderado (3ª persona)</MenuItem>
 												</Select>
 											</FormControl>
 										</Stack>
 										<Divider />
-									<Tooltip title={pendingFields === 0 ? "No hay campos dinámicos en el documento" : `Resolver ${pendingFields} campo${pendingFields !== 1 ? "s" : ""}`}>
-										<span>
-											<Button variant="contained" size="small" color="secondary" fullWidth onClick={handleResolve} disabled={!canResolve || resolving}
-												startIcon={resolving ? <CircularProgress size={14} color="inherit" /> : resolvedCount > 0 ? <Refresh size={14} /> : <MagicStar size={14} />}
-											>
-												{resolving ? "Resolviendo..." : resolvedCount > 0 ? "Resolver de nuevo" : "Resolver campos"}
-											</Button>
-										</span>
-									</Tooltip>
-									{pendingFields > 0 && <Chip label={`${pendingFields} campo${pendingFields !== 1 ? "s" : ""} sin resolver`} size="small" color="warning" variant="outlined" />}
-									{resolvedCount > 0 && pendingFields === 0 && <Chip label={`${resolvedCount} campo${resolvedCount !== 1 ? "s" : ""} resuelto${resolvedCount !== 1 ? "s" : ""}`} size="small" color="success" variant="outlined" />}
-								</Stack>
+										<Tooltip
+											title={
+												pendingFields === 0
+													? "No hay campos dinámicos en el documento"
+													: `Resolver ${pendingFields} campo${pendingFields !== 1 ? "s" : ""}`
+											}
+										>
+											<span>
+												<Button
+													variant="contained"
+													size="small"
+													color="secondary"
+													fullWidth
+													onClick={handleResolve}
+													disabled={!canResolve || resolving}
+													startIcon={
+														resolving ? (
+															<CircularProgress size={14} color="inherit" />
+														) : resolvedCount > 0 ? (
+															<Refresh size={14} />
+														) : (
+															<MagicStar size={14} />
+														)
+													}
+												>
+													{resolving ? "Resolviendo..." : resolvedCount > 0 ? "Resolver de nuevo" : "Resolver campos"}
+												</Button>
+											</span>
+										</Tooltip>
+										{pendingFields > 0 && (
+											<Chip
+												label={`${pendingFields} campo${pendingFields !== 1 ? "s" : ""} sin resolver`}
+												size="small"
+												color="warning"
+												variant="outlined"
+											/>
+										)}
+										{resolvedCount > 0 && pendingFields === 0 && (
+											<Chip
+												label={`${resolvedCount} campo${resolvedCount !== 1 ? "s" : ""} resuelto${resolvedCount !== 1 ? "s" : ""}`}
+												size="small"
+												color="success"
+												variant="outlined"
+											/>
+										)}
+									</Stack>
+								</Box>
 							</Box>
-						</Box>
 						</Box>
 					)}
 				</Box>
-
 			</Box>
 
-		{editor && (
-			<DiffReviewPanel
-				editor={editor}
-				diff={pendingDiff}
-				loading={diffLoading}
-				loadingLabel={diffLoadingLabel}
-				onAcceptAll={handleAcceptAll}
-				onRejectAll={handleRejectAll}
-				onRefine={handleRefine}
-				onClose={handleRejectAll}
-				refining={diffRefining}
-			/>
-		)}
+			{editor && (
+				<DiffReviewPanel
+					editor={editor}
+					diff={pendingDiff}
+					loading={diffLoading}
+					loadingLabel={diffLoadingLabel}
+					onAcceptAll={handleAcceptAll}
+					onRejectAll={handleRejectAll}
+					onRefine={handleRefine}
+					onClose={handleRejectAll}
+					refining={diffRefining}
+				/>
+			)}
 
-		<Drawer
-			anchor="right"
-			open={aiDrawerOpen}
-			onClose={() => setAiDrawerOpen(false)}
-			PaperProps={{ sx: { width: 440, display: "flex", flexDirection: "column" } }}
-		>
-			<Stack direction="row" alignItems="center" justifyContent="space-between" px={2} py={1.25} sx={{ borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}>
-				<Stack direction="row" alignItems="center" spacing={1}>
-					<AiSparklesIcon size={16} />
-					<Typography variant="subtitle2" fontWeight={600}>Asistente IA</Typography>
+			<Drawer
+				anchor="right"
+				open={aiDrawerOpen}
+				onClose={() => setAiDrawerOpen(false)}
+				PaperProps={{ sx: { width: 440, display: "flex", flexDirection: "column" } }}
+			>
+				<Stack
+					direction="row"
+					alignItems="center"
+					justifyContent="space-between"
+					px={2}
+					py={1.25}
+					sx={{ borderBottom: "1px solid", borderColor: "divider", flexShrink: 0 }}
+				>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<AiSparklesIcon size={16} />
+						<Typography variant="subtitle2" fontWeight={600}>
+							Asistente IA
+						</Typography>
+					</Stack>
+					<IconButton size="small" onClick={() => setAiDrawerOpen(false)}>
+						<CloseCircle size={18} />
+					</IconButton>
 				</Stack>
-				<IconButton size="small" onClick={() => setAiDrawerOpen(false)}>
-					<CloseCircle size={18} />
-				</IconButton>
-			</Stack>
-			<Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-				{editor && <AiChatPanel editor={editor} embedded movements={folderMovements} movementsLimited={movementsLimited} caseContext={caseContext} initialMessage={aiDrawerInitialMessage} />}
-			</Box>
-		</Drawer>
+				<Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+					{editor && (
+						<AiChatPanel
+							editor={editor}
+							embedded
+							movements={folderMovements}
+							movementsLimited={movementsLimited}
+							caseContext={caseContext}
+							initialMessage={aiDrawerInitialMessage}
+						/>
+					)}
+				</Box>
+			</Drawer>
 
-		<LimitErrorModal
-			open={limitErrorOpen}
-			onClose={() => setLimitErrorOpen(false)}
-			message="Has alcanzado el límite de documentos para tu plan actual."
-			limitInfo={limitErrorData ?? undefined}
-		/>
+			<LimitErrorModal
+				open={limitErrorOpen}
+				onClose={() => setLimitErrorOpen(false)}
+				message="Has alcanzado el límite de documentos para tu plan actual."
+				limitInfo={limitErrorData ?? undefined}
+			/>
 		</Stack>
 	);
 };

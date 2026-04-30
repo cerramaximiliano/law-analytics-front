@@ -180,92 +180,96 @@ export const getTasksByUserId =
 		}
 	};
 
-export const getTasksByGroupId = (groupId: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
-	try {
-		const state = getState();
-		const { isInitialized, tasks } = state.tasksReducer;
+export const getTasksByGroupId =
+	(groupId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			const state = getState();
+			const { isInitialized, tasks } = state.tasksReducer;
 
-		// Cache validation: si ya tenemos datos y no forzamos refresh, retornar del cache
-		if (!forceRefresh && isInitialized && tasks.length > 0) {
-			return { success: true, tasks, fromCache: true };
-		}
+			// Cache validation: si ya tenemos datos y no forzamos refresh, retornar del cache
+			if (!forceRefresh && isInitialized && tasks.length > 0) {
+				return { success: true, tasks, fromCache: true };
+			}
 
-		dispatch({ type: SET_LOADING });
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/group/${groupId}`);
-		dispatch({
-			type: SET_TASKS,
-			payload: response.data,
-			groupId: groupId,
-		});
-		return { success: true, tasks: response.data };
-	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
-
-export const getTasksByFolderId = (folderId: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
-	try {
-		const state = getState();
-		const teamsState = state.teams;
-		const activeTeam = teamsState?.activeTeam;
-		const { selectedFolderId, selectedTasks } = state.tasksReducer;
-
-		// Cache validation: si ya tenemos datos de esta carpeta y no forzamos refresh, retornar del cache
-		if (!forceRefresh && selectedFolderId === folderId && selectedTasks.length >= 0) {
-			return { success: true, tasks: selectedTasks, fromCache: true };
-		}
-
-		dispatch({ type: SET_LOADING });
-
-		// Si hay un equipo activo, obtener tareas directamente del backend por folderId
-		// Esto es necesario para que viewers y otros miembros del equipo vean las tareas
-		if (activeTeam) {
-			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/folder/${folderId}`, {
-				headers: { "X-Group-Id": activeTeam._id },
-			});
+			dispatch({ type: SET_LOADING });
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/group/${groupId}`);
 			dispatch({
-				type: SET_SELECTED_TASKS,
+				type: SET_TASKS,
 				payload: response.data,
-				folderId: folderId,
+				groupId: groupId,
 			});
 			return { success: true, tasks: response.data };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
 		}
+	};
 
-		// Sin equipo activo: comportamiento original - filtrar localmente
-		const { tasks, isInitialized } = state.tasksReducer;
-		const auth = state.auth;
-		const userId = auth.user?._id;
+export const getTasksByFolderId =
+	(folderId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			const state = getState();
+			const teamsState = state.teams;
+			const activeTeam = teamsState?.activeTeam;
+			const { selectedFolderId, selectedTasks } = state.tasksReducer;
 
-		// Si tenemos userId y no hay datos en cache, descargar todos primero
-		if (userId && !isInitialized) {
-			// Descargar todas las tareas del usuario
-			const result = await dispatch(getTasksByUserId(userId) as any);
-			if (!result.success) {
-				return result;
+			// Cache validation: si ya tenemos datos de esta carpeta y no forzamos refresh, retornar del cache
+			if (!forceRefresh && selectedFolderId === folderId && selectedTasks.length >= 0) {
+				return { success: true, tasks: selectedTasks, fromCache: true };
 			}
+
+			dispatch({ type: SET_LOADING });
+
+			// Si hay un equipo activo, obtener tareas directamente del backend por folderId
+			// Esto es necesario para que viewers y otros miembros del equipo vean las tareas
+			if (activeTeam) {
+				const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/tasks/folder/${folderId}`, {
+					headers: { "X-Group-Id": activeTeam._id },
+				});
+				dispatch({
+					type: SET_SELECTED_TASKS,
+					payload: response.data,
+					folderId: folderId,
+				});
+				return { success: true, tasks: response.data };
+			}
+
+			// Sin equipo activo: comportamiento original - filtrar localmente
+			const { tasks, isInitialized } = state.tasksReducer;
+			const auth = state.auth;
+			const userId = auth.user?._id;
+
+			// Si tenemos userId y no hay datos en cache, descargar todos primero
+			if (userId && !isInitialized) {
+				// Descargar todas las tareas del usuario
+				const result = await dispatch(getTasksByUserId(userId) as any);
+				if (!result.success) {
+					return result;
+				}
+			}
+
+			// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
+			const currentTasks = isInitialized ? tasks : getState().tasksReducer.tasks;
+			const filteredTasks = currentTasks.filter((task: TaskType) => task.folderId === folderId);
+
+			dispatch({
+				type: SET_SELECTED_TASKS,
+				payload: filteredTasks,
+				folderId: folderId,
+			});
+
+			return { success: true, tasks: filteredTasks };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
 		}
-
-		// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
-		const currentTasks = isInitialized ? tasks : getState().tasksReducer.tasks;
-		const filteredTasks = currentTasks.filter((task: TaskType) => task.folderId === folderId);
-
-		dispatch({
-			type: SET_SELECTED_TASKS,
-			payload: filteredTasks,
-			folderId: folderId,
-		});
-
-		return { success: true, tasks: filteredTasks };
-	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener las tareas" : "Error al obtener las tareas";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
+	};
 
 export const updateTask = (id: string, data: Partial<TaskType>) => async (dispatch: Dispatch) => {
 	try {

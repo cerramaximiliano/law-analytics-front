@@ -149,9 +149,7 @@ test("GRUPO 2 — owner invita mismo email 2 veces → segunda falla o es dedupe
 			const body = await res2.json();
 			// El backend puede reportar "failed" o "alreadyMember" o simplemente sobrescribir
 			const totalProcessed =
-				(body.results?.sent?.length ?? 0) +
-				(body.results?.failed?.length ?? 0) +
-				(body.results?.alreadyMember?.length ?? 0);
+				(body.results?.sent?.length ?? 0) + (body.results?.failed?.length ?? 0) + (body.results?.alreadyMember?.length ?? 0);
 			expect(totalProcessed).toBeGreaterThanOrEqual(1);
 		} else {
 			expect([400, 409]).toContain(res2.status());

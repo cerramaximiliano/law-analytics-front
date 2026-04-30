@@ -137,9 +137,7 @@ test.describe("Sesión expira con tab abierta (UnauthorizedModal)", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe("Sesión expira al recargar (init() → 401)", () => {
-	test("recarga en /documentos/escritos con cookie expirada → /login → re-login → vuelve a /documentos/escritos", async ({
-		page,
-	}) => {
+	test("recarga en /documentos/escritos con cookie expirada → /login → re-login → vuelve a /documentos/escritos", async ({ page }) => {
 		await loginViaForm(page);
 		await page.goto("/documentos/escritos");
 
@@ -164,9 +162,7 @@ test.describe("Sesión expira al recargar (init() → 401)", () => {
 		await expect(page).not.toHaveURL(/\/dashboard\/default/);
 	});
 
-	test("recarga en /documentos/modelos con cookie expirada → /login → re-login → vuelve a /documentos/modelos", async ({
-		page,
-	}) => {
+	test("recarga en /documentos/modelos con cookie expirada → /login → re-login → vuelve a /documentos/modelos", async ({ page }) => {
 		await loginViaForm(page);
 		await page.goto("/documentos/modelos");
 

@@ -56,9 +56,7 @@ async function inviteAndAccept(
 		const teamRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const teamBody = await teamRes.json();
 		const group = teamBody.group ?? teamBody.data ?? teamBody;
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending");
 		if (!invitation?.token) throw new Error(`Token not found for ${inviteeRole}`);
 
 		const invitee = await apiAsUser(inviteeRole);
@@ -86,9 +84,7 @@ async function inviteAndAccept(
 		const detailRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const detail = await detailRes.json();
 		const g = detail.group ?? detail.data ?? detail;
-		const member = (g.members ?? []).find(
-			(m: any) => m.userId?.email === TEST_USERS[inviteeRole].email,
-		);
+		const member = (g.members ?? []).find((m: any) => m.userId?.email === TEST_USERS[inviteeRole].email);
 		const userId = member?.userId?._id ?? "";
 		if (!userId) throw new Error(`User id not found for ${inviteeRole}`);
 		return userId;

@@ -58,12 +58,7 @@ export async function interceptApiWith401(page: Page): Promise<() => Promise<voi
 	// falle el refresh y muestre el UnauthorizedModal (dev branch tiene auto-refresh).
 	// /api/auth/me tampoco se excluye aquí (se mantiene fuera del intercept de forma
 	// implícita porque page.route solo intercepta llamadas del browser a ${API_BASE}).
-	const AUTH_PATHS = [
-		"/api/auth/login",
-		"/api/auth/google",
-		"/api/auth/logout",
-		"/api/auth/me",
-	];
+	const AUTH_PATHS = ["/api/auth/login", "/api/auth/google", "/api/auth/logout", "/api/auth/me"];
 
 	await page.route(`${API_BASE}/api/**`, async (route: Route) => {
 		const url = route.request().url();

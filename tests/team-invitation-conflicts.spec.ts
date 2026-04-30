@@ -54,9 +54,7 @@ async function sendInvitation(
 		const teamRes = await ctx.get(`${API}/api/groups/${teamId}`);
 		const teamBody = await teamRes.json();
 		const group = teamBody.group ?? teamBody.data ?? teamBody;
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === email && i.status === "pending");
 		if (!invitation?.token) throw new Error(`Token not found for ${email}`);
 		return invitation.token;
 	} finally {
@@ -64,10 +62,7 @@ async function sendInvitation(
 	}
 }
 
-async function acceptInvitation(
-	inviteeRole: "memberExtra" | "ownerSecondary",
-	token: string,
-): Promise<{ status: number; body: any }> {
+async function acceptInvitation(inviteeRole: "memberExtra" | "ownerSecondary", token: string): Promise<{ status: number; body: any }> {
 	const ctx = await apiAsUser(inviteeRole);
 	try {
 		const res = await ctx.post(`${API}/api/groups/invitations/accept/${token}`, {

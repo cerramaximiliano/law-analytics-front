@@ -1,6 +1,7 @@
 # Asistente IA — Editor de Documentos
 
 ## Índice
+
 1. [Visión general](#visión-general)
 2. [Bubble de selección (SelectionBubble)](#bubble-de-selección-selectionbubble)
 3. [Panel de chat (AiChatPanel)](#panel-de-chat-aichatpanel)
@@ -19,10 +20,10 @@
 
 El asistente IA del editor opera a través de **dos puntos de entrada** complementarios:
 
-| Componente | Cuándo aparece | Qué hace |
-|---|---|---|
-| **SelectionBubble** | Al seleccionar texto en el editor | Acciones rápidas inline, directamente sobre la selección |
-| **AiChatPanel** | Tab "IA" del panel derecho | Chat completo + acciones rápidas con contexto del documento |
+| Componente          | Cuándo aparece                    | Qué hace                                                    |
+| ------------------- | --------------------------------- | ----------------------------------------------------------- |
+| **SelectionBubble** | Al seleccionar texto en el editor | Acciones rápidas inline, directamente sobre la selección    |
+| **AiChatPanel**     | Tab "IA" del panel derecho        | Chat completo + acciones rápidas con contexto del documento |
 
 Ambos se comunican con el backend a través de `ragAxios` (`/rag/editor/chat`), que devuelve respuestas en formato **SSE (Server-Sent Events)**.
 
@@ -58,24 +59,24 @@ Aparece flotando **sobre el texto seleccionado** cada vez que el usuario hace un
 
 ```ts
 export interface CaseContext {
-  representedParty?: "actor" | "demandado" | null;
-  representationType?: "patrocinio" | "apoderado" | null;
-  folderName?: string | null;
-  actorName?: string | null;
-  demandadoName?: string | null;
-  folderFuero?: string | null;    // nombre del fuero: "Civil", "Laboral"...
-  folderJuris?: string | null;    // jurisdicción: "CABA", "PBA"...
+	representedParty?: "actor" | "demandado" | null;
+	representationType?: "patrocinio" | "apoderado" | null;
+	folderName?: string | null;
+	actorName?: string | null;
+	demandadoName?: string | null;
+	folderFuero?: string | null; // nombre del fuero: "Civil", "Laboral"...
+	folderJuris?: string | null; // jurisdicción: "CABA", "PBA"...
 }
 ```
 
 ### Acciones disponibles
 
-| Acción | Scope | Descripción |
-|---|---|---|
-| **Mejorar** | bubble | Mejora la redacción del texto seleccionado |
-| **Corregir** | bubble | Corrige ortografía, gramática y estilo |
+| Acción         | Scope  | Descripción                                                        |
+| -------------- | ------ | ------------------------------------------------------------------ |
+| **Mejorar**    | bubble | Mejora la redacción del texto seleccionado                         |
+| **Corregir**   | bubble | Corrige ortografía, gramática y estilo                             |
 | **Formalizar** | bubble | Reformula con estilo jurídico formal argentino, calibrado al fuero |
-| **Resumir** | bubble | Resume el texto de forma concisa |
+| **Resumir**    | bubble | Resume el texto de forma concisa                                   |
 
 > Las acciones son data-driven: se cargan desde `GET /rag/editor/actions` al montar el componente. Se pueden agregar, modificar o desactivar desde el admin sin tocar código.
 
@@ -121,12 +122,12 @@ Panel lateral con tres zonas funcionales, de arriba hacia abajo:
 
 ```ts
 interface AiChatPanelProps {
-  editor: Editor;
-  onClose?: () => void;
-  movements?: Movement[];
-  movementsLimited?: boolean;
-  embedded?: boolean;
-  caseContext?: CaseContext | null;   // activa vocabulario + corpus de estilo
+	editor: Editor;
+	onClose?: () => void;
+	movements?: Movement[];
+	movementsLimited?: boolean;
+	embedded?: boolean;
+	caseContext?: CaseContext | null; // activa vocabulario + corpus de estilo
 }
 ```
 
@@ -138,10 +139,10 @@ El `caseContext` se pasa desde `document-editor/index.tsx` y contiene los metada
 
 El modo **no es un toggle manual** — se deriva automáticamente del estado de la selección:
 
-| Estado | Modo activo | Indicador | Comportamiento |
-|---|---|---|---|
-| Hay texto seleccionado | **✏ Editar** | chip primary relleno | Las acciones rápidas reemplazan el texto directamente |
-| Sin selección | **💬 Sugerir** | chip secondary relleno | Las acciones rápidas generan ediciones pendientes para confirmar |
+| Estado                 | Modo activo    | Indicador              | Comportamiento                                                   |
+| ---------------------- | -------------- | ---------------------- | ---------------------------------------------------------------- |
+| Hay texto seleccionado | **✏ Editar**   | chip primary relleno   | Las acciones rápidas reemplazan el texto directamente            |
+| Sin selección          | **💬 Sugerir** | chip secondary relleno | Las acciones rápidas generan ediciones pendientes para confirmar |
 
 El chip es un indicador de solo lectura — muestra el modo vigente con un tooltip explicativo al hovear.
 
@@ -156,12 +157,12 @@ El chip es un indicador de solo lectura — muestra el modo vigente con un toolt
 
 Definidas en `QUICK_ACTIONS` dentro de `AiChatPanel.tsx`:
 
-| Acción | Prompt enviado |
-|---|---|
-| Mejorar redacción | "Mejorá la redacción del documento actual" |
-| Introducción | "Escribí una introducción formal para este escrito" |
-| Cierre | "Sugerí un cierre con petitorio" |
-| Corregir estilo | "Corregí el estilo jurídico" |
+| Acción            | Prompt enviado                                      |
+| ----------------- | --------------------------------------------------- |
+| Mejorar redacción | "Mejorá la redacción del documento actual"          |
+| Introducción      | "Escribí una introducción formal para este escrito" |
+| Cierre            | "Sugerí un cierre con petitorio"                    |
+| Corregir estilo   | "Corregí el estilo jurídico"                        |
 
 ### Flujo con selección activa
 
@@ -196,10 +197,10 @@ El panel muestra indicadores visuales (estilo radio button) sobre qué contexto 
 
 Permite adjuntar un movimiento judicial como contexto adicional. Fuentes disponibles:
 
-| Tipo | Fuente |
-|---|---|
-| PDF | URL del documento (`mov.link` en PJN, `att.url` en MEV) |
-| Texto | Texto del movimiento (`mov.texto` en MEV) |
+| Tipo  | Fuente                                                  |
+| ----- | ------------------------------------------------------- |
+| PDF   | URL del documento (`mov.link` en PJN, `att.url` en MEV) |
+| Texto | Texto del movimiento (`mov.texto` en MEV)               |
 
 Si el plan del usuario es limitado, se muestra un aviso "Solo últimos movimientos · Plan gratuito".
 
@@ -214,30 +215,33 @@ Si hay texto seleccionado en el editor, se muestra un indicador con una preview 
 El `caseContext` es la clave que desbloquea las capacidades jurídicas avanzadas del asistente. Se construye en `document-editor/index.tsx` a partir del expediente seleccionado:
 
 ```tsx
-const caseContext = useMemo((): CaseContext => ({
-  representedParty: representedParty || null,
-  representationType: representationType || null,
-  folderName: selectedFolder?.folderName || null,
-  actorName: selectedContact ? getContactDisplayName(selectedContact) : null,
-  demandadoName: selectedContraparte ? getContactDisplayName(selectedContraparte) : null,
-  folderFuero: selectedFolder?.folderFuero || null,
-  folderJuris: selectedFolder?.folderJuris
-    ? typeof selectedFolder.folderJuris === "string"
-      ? selectedFolder.folderJuris
-      : (selectedFolder.folderJuris as { label?: string }).label || null
-    : null,
-}), [representedParty, representationType, selectedFolder, selectedContact, selectedContraparte]);
+const caseContext = useMemo(
+	(): CaseContext => ({
+		representedParty: representedParty || null,
+		representationType: representationType || null,
+		folderName: selectedFolder?.folderName || null,
+		actorName: selectedContact ? getContactDisplayName(selectedContact) : null,
+		demandadoName: selectedContraparte ? getContactDisplayName(selectedContraparte) : null,
+		folderFuero: selectedFolder?.folderFuero || null,
+		folderJuris: selectedFolder?.folderJuris
+			? typeof selectedFolder.folderJuris === "string"
+				? selectedFolder.folderJuris
+				: (selectedFolder.folderJuris as { label?: string }).label || null
+			: null,
+	}),
+	[representedParty, representationType, selectedFolder, selectedContact, selectedContraparte],
+);
 ```
 
 ### Qué activa cada campo en el backend
 
-| Campo | Efecto en la API |
-|-------|-----------------|
-| `representedParty` + `representationType` | Instrucción de persona gramatical (primera/tercera) |
-| `folderFuero` | Vocabulario específico del fuero + **inyección del corpus de estilo semántico** |
-| `folderJuris` | Mención de la jurisdicción en el contexto |
-| `folderName` | Mención del expediente en el contexto |
-| `actorName` / `demandadoName` | Nombres reales en el contexto |
+| Campo                                     | Efecto en la API                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| `representedParty` + `representationType` | Instrucción de persona gramatical (primera/tercera)                             |
+| `folderFuero`                             | Vocabulario específico del fuero + **inyección del corpus de estilo semántico** |
+| `folderJuris`                             | Mención de la jurisdicción en el contexto                                       |
+| `folderName`                              | Mención del expediente en el contexto                                           |
+| `actorName` / `demandadoName`             | Nombres reales en el contexto                                                   |
 
 ### El corpus de estilo
 
@@ -265,11 +269,11 @@ Cuando la IA necesita modificar el documento, genera un bloque estructurado en l
 
 ### Operaciones disponibles
 
-| `op` | Descripción | Campos requeridos |
-|---|---|---|
-| `replace` | Reemplaza el contenido del nodo en posición `idx` | `idx`, `new` |
-| `insert_after` | Inserta un nuevo párrafo después de `idx` | `idx`, `new` |
-| `delete` | Elimina el nodo en posición `idx` | `idx` |
+| `op`           | Descripción                                       | Campos requeridos |
+| -------------- | ------------------------------------------------- | ----------------- |
+| `replace`      | Reemplaza el contenido del nodo en posición `idx` | `idx`, `new`      |
+| `insert_after` | Inserta un nuevo párrafo después de `idx`         | `idx`, `new`      |
+| `delete`       | Elimina el nodo en posición `idx`                 | `idx`             |
 
 ### Numeración del documento
 
@@ -334,12 +338,12 @@ data: {"type": "done", "metadata": {"model": "gpt-4o", "tokensUsed": 342}}
 
 ## Archivos involucrados
 
-| Archivo | Rol |
-|---|---|
-| `src/pages/herramientas/editor-poc/AiChatPanel.tsx` | Panel de chat + acciones rápidas + contexto |
+| Archivo                                                 | Rol                                                           |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
+| `src/pages/herramientas/editor-poc/AiChatPanel.tsx`     | Panel de chat + acciones rápidas + contexto                   |
 | `src/pages/herramientas/editor-poc/SelectionBubble.tsx` | Bubble inline sobre selección de texto + interfaz CaseContext |
-| `src/pages/documentos/document-editor/index.tsx` | Integra ambos componentes; construye y pasa `caseContext` |
-| `src/utils/ragAxios.ts` | Instancia de axios preconfigurada para el backend RAG |
+| `src/pages/documentos/document-editor/index.tsx`        | Integra ambos componentes; construye y pasa `caseContext`     |
+| `src/utils/ragAxios.ts`                                 | Instancia de axios preconfigurada para el backend RAG         |
 
 ### Endpoint backend
 
@@ -349,21 +353,21 @@ data: {"type": "done", "metadata": {"model": "gpt-4o", "tokensUsed": 342}}
 
 ```json
 {
-  "messages": [{ "role": "user", "content": "..." }],
-  "documentText": "...",
-  "pdfUrl": "https://...",
-  "movementText": "...",
-  "systemPromptOverride": "...",
-  "caseContext": {
-    "representedParty": "actor",
-    "representationType": "apoderado",
-    "folderFuero": "Civil",
-    "folderJuris": "CABA",
-    "folderName": "Gómez c/ López s/ Daños",
-    "actorName": "María Gómez",
-    "demandadoName": "Carlos López"
-  },
-  "stream": true
+	"messages": [{ "role": "user", "content": "..." }],
+	"documentText": "...",
+	"pdfUrl": "https://...",
+	"movementText": "...",
+	"systemPromptOverride": "...",
+	"caseContext": {
+		"representedParty": "actor",
+		"representationType": "apoderado",
+		"folderFuero": "Civil",
+		"folderJuris": "CABA",
+		"folderName": "Gómez c/ López s/ Daños",
+		"actorName": "María Gómez",
+		"demandadoName": "Carlos López"
+	},
+	"stream": true
 }
 ```
 
@@ -371,4 +375,4 @@ Ver documentación completa de la API en `pjn-rag-api/docs/editor-ai.md`.
 
 ---
 
-*Última actualización: 2026-03-23*
+_Última actualización: 2026-03-23_

@@ -72,12 +72,9 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 	// isInitialized eliminado de los deps: solo estaba en código comentado.
 	// Mantenerlo causaba que handleConnectionStateChange cambiara al conectar,
 	// re-ejecutando el efecto de suscripción innecesariamente.
-	const handleConnectionStateChange = useCallback(
-		(state: ConnectionState) => {
-			setConnectionState(state);
-		},
-		[],
-	);
+	const handleConnectionStateChange = useCallback((state: ConnectionState) => {
+		setConnectionState(state);
+	}, []);
 
 	// Manejar mensajes recibidos
 	const handleMessage = useCallback(
@@ -119,16 +116,18 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 						dispatch(scbaSyncError({ message: p.message ?? "Error en sincronización SCBA" }));
 						showNotification(`Error en sincronización ${label}: ${p.message ?? "Error desconocido"}`, "error");
 					} else if (p?.phase) {
-						dispatch(scbaSyncProgress({
-							progress: p.progress ?? 0,
-							message: p.message ?? "",
-							phase: p.phase,
-							currentPage: p.currentPage,
-							totalPages: p.totalPages,
-							causasProcessed: p.causasProcessed,
-							totalExpected: p.totalExpected,
-							causasFound: p.causasFound,
-						}));
+						dispatch(
+							scbaSyncProgress({
+								progress: p.progress ?? 0,
+								message: p.message ?? "",
+								phase: p.phase,
+								currentPage: p.currentPage,
+								totalPages: p.totalPages,
+								causasProcessed: p.causasProcessed,
+								totalExpected: p.totalExpected,
+								causasFound: p.causasFound,
+							}),
+						);
 					}
 					return;
 				}
@@ -148,20 +147,24 @@ export const WebSocketProvider = ({ children, autoConnect = true }: WebSocketPro
 				} else if (p?.phase === "movements_started") {
 					dispatch(movementsSyncStarted({ totalCausas: p.totalCausas, isInitialSync: p.isInitialSync }));
 				} else if (p?.phase === "movements_completed") {
-					dispatch(movementsSyncCompleted({ newMovimientos: p.newMovimientos, totalCausas: p.totalCausas, isInitialSync: p.isInitialSync }));
+					dispatch(
+						movementsSyncCompleted({ newMovimientos: p.newMovimientos, totalCausas: p.totalCausas, isInitialSync: p.isInitialSync }),
+					);
 					showNotification(`Movimientos sincronizados: ${p.newMovimientos ?? 0} nuevos`, "success");
 				} else if (p?.phase) {
-					dispatch(pjnSyncProgress({
-						progress: p.progress ?? 0,
-						message: p.message ?? "",
-						phase: p.phase,
-						currentPage: p.currentPage,
-						totalPages: p.totalPages,
-						causasProcessed: p.causasProcessed,
-						totalExpected: p.totalExpected,
-						batchNum: p.batchNum,
-						totalBatches: p.totalBatches,
-					}));
+					dispatch(
+						pjnSyncProgress({
+							progress: p.progress ?? 0,
+							message: p.message ?? "",
+							phase: p.phase,
+							currentPage: p.currentPage,
+							totalPages: p.totalPages,
+							causasProcessed: p.causasProcessed,
+							totalExpected: p.totalExpected,
+							batchNum: p.batchNum,
+							totalBatches: p.totalBatches,
+						}),
+					);
 				}
 			}
 

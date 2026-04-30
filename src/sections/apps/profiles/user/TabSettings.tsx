@@ -651,8 +651,8 @@ const TabSettings = () => {
 			{/* Alerta para miembros del equipo sin permisos de edición */}
 			{isTeamMode && !canEditSettings && (
 				<Alert severity="info" sx={{ mb: 2 }}>
-					Estás en modo equipo ({activeTeam?.name}). Solo el propietario o administradores pueden modificar estas configuraciones.
-					Tu rol actual: <strong>{userRole ? ROLE_CONFIG[userRole]?.label : "Desconocido"}</strong>
+					Estás en modo equipo ({activeTeam?.name}). Solo el propietario o administradores pueden modificar estas configuraciones. Tu rol
+					actual: <strong>{userRole ? ROLE_CONFIG[userRole]?.label : "Desconocido"}</strong>
 				</Alert>
 			)}
 
@@ -1087,7 +1087,12 @@ const TabSettings = () => {
 					>
 						Cancelar
 					</Button>
-					<Button variant="contained" onClick={savePreferences} disabled={saving} startIcon={saving ? <CircularProgress size={20} /> : null}>
+					<Button
+						variant="contained"
+						onClick={savePreferences}
+						disabled={saving}
+						startIcon={saving ? <CircularProgress size={20} /> : null}
+					>
 						{saving ? "Guardando..." : "Guardar"}
 					</Button>
 				</Stack>

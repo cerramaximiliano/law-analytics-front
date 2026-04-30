@@ -222,12 +222,7 @@ const Chat = () => {
 			<ChatDrawer openChatDrawer={openChatDrawer} handleDrawerOpen={handleDrawerOpen} setUser={setUser} />
 			<Main theme={theme} open={openChatDrawer}>
 				{matchDownMD && !user.name && (
-					<Stack
-						alignItems="center"
-						justifyContent="center"
-						spacing={2}
-						sx={{ height: "calc(100vh - 120px)", px: 3 }}
-					>
+					<Stack alignItems="center" justifyContent="center" spacing={2} sx={{ height: "calc(100vh - 120px)", px: 3 }}>
 						<Box
 							sx={{
 								width: 72,
@@ -246,9 +241,8 @@ const Chat = () => {
 								Tus mensajes
 							</Typography>
 							<Typography variant="body2" color="textSecondary" align="center">
-								Tocá el ícono{" "}
-								<HambergerMenu size={14} style={{ verticalAlign: "middle" }} />{" "}
-								para ver tus conversaciones y elegir un contacto.
+								Tocá el ícono <HambergerMenu size={14} style={{ verticalAlign: "middle" }} /> para ver tus conversaciones y elegir un
+								contacto.
 							</Typography>
 						</Stack>
 					</Stack>
@@ -319,7 +313,12 @@ const Chat = () => {
 												<IconButton size="large" color="secondary" aria-label="Video">
 													<Camera />
 												</IconButton>
-												<IconButton onClick={handleUserChange} size="large" color={emailDetails ? "error" : "secondary"} aria-label="Información del contacto">
+												<IconButton
+													onClick={handleUserChange}
+													size="large"
+													color={emailDetails ? "error" : "secondary"}
+													aria-label="Información del contacto"
+												>
 													{emailDetails ? <Add style={{ transform: "rotate(45deg)" }} /> : <InfoCircle />}
 												</IconButton>
 												<IconButton onClick={handleClickSort} size="large" color="secondary" aria-label="Más opciones">
@@ -367,12 +366,7 @@ const Chat = () => {
 									>
 										<Box sx={{ pl: 1, pr: 3, height: "100%" }}>
 											{data.length === 0 ? (
-												<Stack
-													alignItems="center"
-													justifyContent="center"
-													spacing={2}
-													sx={{ height: "100%", minHeight: 380, py: 6 }}
-												>
+												<Stack alignItems="center" justifyContent="center" spacing={2} sx={{ height: "100%", minHeight: 380, py: 6 }}>
 													<Box
 														sx={{
 															width: 72,
@@ -384,11 +378,7 @@ const Chat = () => {
 															justifyContent: "center",
 														}}
 													>
-														<MessageText1
-															size={36}
-															color={theme.palette.secondary.main}
-															variant="Bulk"
-														/>
+														<MessageText1 size={36} color={theme.palette.secondary.main} variant="Bulk" />
 													</Box>
 													<Stack spacing={0.5} alignItems="center">
 														<Typography variant="h5" color="textPrimary">

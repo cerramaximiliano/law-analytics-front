@@ -32,13 +32,7 @@ const ThirdStep = () => {
 							<Grid item xs={12}>
 								<Stack spacing={1}>
 									<InputLabel htmlFor="nationality">Nacionalidad</InputLabel>
-									<InputField
-										fullWidth
-										sx={customInputStyles}
-										id="nationality"
-										name="nationality"
-										placeholder="Ingrese una Nacionalidad"
-									/>
+									<InputField fullWidth sx={customInputStyles} id="nationality" name="nationality" placeholder="Ingrese una Nacionalidad" />
 								</Stack>
 							</Grid>
 
@@ -60,12 +54,7 @@ const ThirdStep = () => {
 							<Grid item xs={12}>
 								<Stack spacing={1}>
 									<InputLabel htmlFor="status">Estado Civil</InputLabel>
-									<SelectField
-										label="Seleccione el estado civil"
-										data={data.estadoCivil}
-										name="status"
-										style={{ maxHeight: "39.91px" }}
-									/>
+									<SelectField label="Seleccione el estado civil" data={data.estadoCivil} name="status" style={{ maxHeight: "39.91px" }} />
 								</Stack>
 							</Grid>
 						</>
@@ -90,13 +79,7 @@ const ThirdStep = () => {
 						<Grid item xs={12}>
 							<Stack spacing={1}>
 								<InputLabel htmlFor="activity">Profesión/Oficio</InputLabel>
-								<InputField
-									fullWidth
-									sx={customInputStyles}
-									id="activity"
-									name="activity"
-									placeholder="Ingrese una profesión"
-								/>
+								<InputField fullWidth sx={customInputStyles} id="activity" name="activity" placeholder="Ingrese una profesión" />
 							</Stack>
 						</Grid>
 					)}
@@ -105,13 +88,7 @@ const ThirdStep = () => {
 						<Grid item xs={12}>
 							<Stack spacing={1}>
 								<InputLabel htmlFor="activity">Actividad / Rubro</InputLabel>
-								<InputField
-									fullWidth
-									sx={customInputStyles}
-									id="activity"
-									name="activity"
-									placeholder="Ingrese la actividad o rubro"
-								/>
+								<InputField fullWidth sx={customInputStyles} id="activity" name="activity" placeholder="Ingrese la actividad o rubro" />
 							</Stack>
 						</Grid>
 					)}

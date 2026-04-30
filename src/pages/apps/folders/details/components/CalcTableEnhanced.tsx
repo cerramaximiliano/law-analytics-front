@@ -168,7 +168,13 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, icon, color 
 	);
 };
 
-const CalcTableEnhanced = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number; groupId?: string } }) => {
+const CalcTableEnhanced = ({
+	title,
+	folderData,
+}: {
+	title: string;
+	folderData: { folderName: string; monto: number; groupId?: string };
+}) => {
 	const theme = useTheme();
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);

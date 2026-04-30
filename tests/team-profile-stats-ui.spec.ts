@@ -59,9 +59,7 @@ async function inviteEditor(teamId: string) {
 		});
 		const teamRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const group = (await teamRes.json()).group ?? {};
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === TEST_USERS.memberEditor.email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === TEST_USERS.memberEditor.email && i.status === "pending");
 		const invitee = await apiAsUser("memberEditor");
 		try {
 			const acceptRes = await invitee.post(`${API}/api/groups/invitations/accept/${invitation.token}`, {
@@ -113,10 +111,9 @@ async function ownerCleansFolder(teamId: string, folderId: string) {
 async function waitForWidget(page: Page, timeout = 10_000): Promise<void> {
 	await page.waitForLoadState("domcontentloaded");
 	// El widget renderiza el label "Uso de Recursos" y las etiquetas de cada resource
-	await page.waitForFunction(
-		() => document.body.innerText.includes("Uso de Recursos") || document.body.innerText.includes("Carpetas"),
-		{ timeout },
-	);
+	await page.waitForFunction(() => document.body.innerText.includes("Uso de Recursos") || document.body.innerText.includes("Carpetas"), {
+		timeout,
+	});
 }
 
 function extractFolderCountFromWidget(text: string): number | null {
@@ -142,7 +139,9 @@ test.afterAll(async () => {
 // GRUPO 1 — GAP: /apps/profiles/user/personal NO muestra conteo de recursos
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 1 — /apps/profiles/user/personal muestra formulario de perfil (widget de uso está en /dashboard y /account/settings)", async ({ browser }) => {
+test("GRUPO 1 — /apps/profiles/user/personal muestra formulario de perfil (widget de uso está en /dashboard y /account/settings)", async ({
+	browser,
+}) => {
 	test.setTimeout(45_000);
 
 	const context = await browser.newContext({ storageState: "tests/.auth/owner.json" });
@@ -177,7 +176,9 @@ test("GRUPO 1 — /apps/profiles/user/personal muestra formulario de perfil (wid
 // GRUPO 2 — Owner: widget en /apps/profiles/account/settings refleja /user-stats
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 2 — owner en /apps/profiles/account/settings: widget muestra conteo de folders que coincide con /user-stats/user", async ({ browser }) => {
+test("GRUPO 2 — owner en /apps/profiles/account/settings: widget muestra conteo de folders que coincide con /user-stats/user", async ({
+	browser,
+}) => {
 	test.setTimeout(60_000);
 
 	const apiCount = await getApiFolderCount("owner");

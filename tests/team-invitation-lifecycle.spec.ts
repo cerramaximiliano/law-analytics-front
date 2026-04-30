@@ -70,9 +70,7 @@ async function sendInvite(
 		const teamRes = await ctx.get(`${API}/api/groups/${teamId}`);
 		const teamBody = await teamRes.json();
 		const group = teamBody.group ?? teamBody.data ?? teamBody;
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === email && i.status === "pending");
 		if (!invitation) throw new Error("Invitation not found");
 		return { token: invitation.token, invitationId: invitation._id, expiresAt: invitation.expiresAt };
 	} finally {
@@ -206,9 +204,7 @@ test("GRUPO 4 — owner cancela invitación pendiente → ya no aparece en group
 		// Verificar que no quedan invitaciones pending para ese email
 		const detailRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const group = (await detailRes.json()).group ?? {};
-		const stillPending = (group.invitations ?? []).filter(
-			(i: any) => i.email === TEST_USERS.memberExtra.email && i.status === "pending",
-		);
+		const stillPending = (group.invitations ?? []).filter((i: any) => i.email === TEST_USERS.memberExtra.email && i.status === "pending");
 		expect(stillPending.length).toBe(0);
 	} finally {
 		await owner.dispose();
@@ -222,11 +218,7 @@ test("GRUPO 4 — owner cancela invitación pendiente → ya no aparece en group
 test("GRUPO 5 — owner reenvía invitación pendiente → expiresAt se actualiza", async () => {
 	test.setTimeout(30_000);
 	const teamId = await createTeamAsOwner(makeTeamName());
-	const { invitationId, expiresAt: originalExpiresAt } = await sendInvite(
-		teamId,
-		TEST_USERS.memberExtra.email,
-		"viewer",
-	);
+	const { invitationId, expiresAt: originalExpiresAt } = await sendInvite(teamId, TEST_USERS.memberExtra.email, "viewer");
 
 	// Pausa mínima para que cualquier refresh de expiresAt se vea
 	await new Promise((r) => setTimeout(r, 1500));
@@ -243,9 +235,7 @@ test("GRUPO 5 — owner reenvía invitación pendiente → expiresAt se actualiz
 		expect(invitation).toBeTruthy();
 		expect(invitation.status).toBe("pending");
 		// El nuevo expiresAt debe ser >= al original (generalmente mayor porque se extendió)
-		expect(new Date(invitation.expiresAt).getTime()).toBeGreaterThanOrEqual(
-			new Date(originalExpiresAt).getTime(),
-		);
+		expect(new Date(invitation.expiresAt).getTime()).toBeGreaterThanOrEqual(new Date(originalExpiresAt).getTime());
 	} finally {
 		await owner.dispose();
 	}

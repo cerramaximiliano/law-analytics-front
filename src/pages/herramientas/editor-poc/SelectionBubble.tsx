@@ -126,9 +126,7 @@ const SelectionBubble = ({ editor, onLoadingStart, onDiffReady, hasPendingDiff, 
 			onLoadingStart(action.label);
 
 			// ── Step 1: clear selection from editor (no history) so we can stream into it ──
-			editor.view.dispatch(
-				editor.state.tr.insertText("", from, to).setMeta("addToHistory", false)
-			);
+			editor.view.dispatch(editor.state.tr.insertText("", from, to).setMeta("addToHistory", false));
 			let streamedTo = from;
 
 			try {
@@ -151,43 +149,37 @@ Devolvé SOLO el texto resultante, sin explicaciones, aclaraciones ni comillas.`
 					stream: true,
 				};
 				if (action.systemPromptOverride) body.systemPromptOverride = action.systemPromptOverride;
-			if (action.useStyleCorpus) body.useStyleCorpus = true;
-			if (caseContext && Object.values(caseContext).some(Boolean)) body.caseContext = caseContext;
+				if (action.useStyleCorpus) body.useStyleCorpus = true;
+				if (caseContext && Object.values(caseContext).some(Boolean)) body.caseContext = caseContext;
 
-				await ragAxios.post(
-					"/rag/editor/chat",
-					body,
-					{
-						responseType: "text",
-						onDownloadProgress: (progressEvent) => {
-							const fullText = (progressEvent.event?.target as XMLHttpRequest)?.response ?? "";
-							const newText = fullText.slice(lastLength);
-							lastLength = fullText.length;
-							sseBuffer += newText;
-							const lines = sseBuffer.split("\n");
-							sseBuffer = lines.pop() ?? "";
-							for (const line of lines) {
-								if (!line.startsWith("data: ")) continue;
-								const raw = line.slice(6).trim();
-								if (!raw) continue;
-								try {
-									const evt = JSON.parse(raw);
-									if (evt.type === "chunk") {
-										accumulated += evt.text;
-										// ── Step 2: stream each chunk into the editor (typewriter effect) ──
-										const tr = editor.state.tr
-											.insertText(evt.text, streamedTo)
-											.setMeta("addToHistory", false);
-										editor.view.dispatch(tr);
-										streamedTo += evt.text.length;
-									}
-								} catch {
-									// ignore malformed SSE
+				await ragAxios.post("/rag/editor/chat", body, {
+					responseType: "text",
+					onDownloadProgress: (progressEvent) => {
+						const fullText = (progressEvent.event?.target as XMLHttpRequest)?.response ?? "";
+						const newText = fullText.slice(lastLength);
+						lastLength = fullText.length;
+						sseBuffer += newText;
+						const lines = sseBuffer.split("\n");
+						sseBuffer = lines.pop() ?? "";
+						for (const line of lines) {
+							if (!line.startsWith("data: ")) continue;
+							const raw = line.slice(6).trim();
+							if (!raw) continue;
+							try {
+								const evt = JSON.parse(raw);
+								if (evt.type === "chunk") {
+									accumulated += evt.text;
+									// ── Step 2: stream each chunk into the editor (typewriter effect) ──
+									const tr = editor.state.tr.insertText(evt.text, streamedTo).setMeta("addToHistory", false);
+									editor.view.dispatch(tr);
+									streamedTo += evt.text.length;
 								}
+							} catch {
+								// ignore malformed SSE
 							}
-						},
+						}
 					},
-				);
+				});
 
 				const result = accumulated.trim();
 				if (!result || !selectionRef.current) return;
@@ -216,9 +208,7 @@ Devolvé SOLO el texto resultante, sin explicaciones, aclaraciones ni comillas.`
 					// On error: restore original text
 					if (selectionRef.current) {
 						editor.view.dispatch(
-							editor.state.tr
-								.insertText(selectedText, selectionRef.current.from, streamedTo)
-								.setMeta("addToHistory", false)
+							editor.state.tr.insertText(selectedText, selectionRef.current.from, streamedTo).setMeta("addToHistory", false),
 						);
 					}
 				}

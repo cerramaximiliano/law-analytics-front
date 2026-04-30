@@ -356,13 +356,7 @@ const DashboardAnalytics = () => {
 					)}
 
 					{/* Grid de widgets — opacity reducida + sin interacción en plan free */}
-					<Box
-						sx={
-							!hasAdvancedAnalytics
-								? { opacity: 0.4, pointerEvents: "none", userSelect: "none" }
-								: undefined
-						}
-					>
+					<Box sx={!hasAdvancedAnalytics ? { opacity: 0.4, pointerEvents: "none", userSelect: "none" } : undefined}>
 						<Grid container spacing={3}>
 							{/* Row 1 - Key Metrics */}
 							<Grid item xs={12} md={6} lg={3}>

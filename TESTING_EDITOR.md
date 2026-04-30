@@ -97,6 +97,7 @@
 **Estado actual:** el historial se mantiene en memoria del componente mientras el panel esté abierto. Al cerrarlo y reabrirlo, o al navegar a otra ruta, el historial se pierde.
 
 **Mejora propuesta:** persistir el historial en MongoDB asociado al `documentId` y `userId`.
+
 - Backend (`law-analytics-server`): nuevo endpoint + modelo `DocumentChatHistory` con `[{role, content}]`, TTL configurable y límite de mensajes
 - Frontend: cargar historial al abrir el panel, guardar en cada intercambio
 - Decisiones de diseño a confirmar: ¿historial por documento o por usuario?, ¿cuántos mensajes conservar?, ¿guardar chip de ediciones aplicadas?

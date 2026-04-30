@@ -26,16 +26,7 @@ import {
 	Chip,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import {
-	Link1,
-	Eye,
-	EyeSlash,
-	TickCircle,
-	CloseCircle,
-	Refresh2,
-	InfoCircle,
-	DocumentText,
-} from "iconsax-react";
+import { Link1, Eye, EyeSlash, TickCircle, CloseCircle, Refresh2, InfoCircle, DocumentText } from "iconsax-react";
 import { enqueueSnackbar } from "notistack";
 import { Zoom } from "@mui/material";
 import scbaCredentialsService, { ScbaCredentialsData } from "api/scbaCredentials";
@@ -134,11 +125,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 				return;
 			}
 			// Fin de sync vía WS: refrescar estado y disparar callback una sola vez.
-			if (
-				scbaSync.phase === "completed" &&
-				scbaSync.completedAt &&
-				scbaSync.completedAt !== lastWsCompletedAtRef.current
-			) {
+			if (scbaSync.phase === "completed" && scbaSync.completedAt && scbaSync.completedAt !== lastWsCompletedAtRef.current) {
 				lastWsCompletedAtRef.current = scbaSync.completedAt;
 				setIsSyncing(false);
 				setSyncProgress(100);
@@ -162,7 +149,15 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 				dispatch(scbaSyncReset());
 			}
 			// eslint-disable-next-line react-hooks/exhaustive-deps
-		}, [scbaSync.isActive, scbaSync.progress, scbaSync.message, scbaSync.phase, scbaSync.completedAt, scbaSync.hasError, scbaSync.errorMessage]);
+		}, [
+			scbaSync.isActive,
+			scbaSync.progress,
+			scbaSync.message,
+			scbaSync.phase,
+			scbaSync.completedAt,
+			scbaSync.hasError,
+			scbaSync.errorMessage,
+		]);
 
 		const startPolling = useCallback(() => {
 			setIsSyncing(true);
@@ -404,11 +399,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 		// Servicio no disponible
 		if (!serviceAvailable) {
 			return (
-				<Alert
-					severity="info"
-					icon={<InfoCircle size={18} />}
-					sx={{ "& .MuiAlert-message": { fontSize: "0.8rem" } }}
-				>
+				<Alert severity="info" icon={<InfoCircle size={18} />} sx={{ "& .MuiAlert-message": { fontSize: "0.8rem" } }}>
 					{serviceMessage || "La integración con el Poder Judicial de la Provincia de Buenos Aires no está disponible en este momento."}
 				</Alert>
 			);
@@ -428,19 +419,15 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							</Stack>
 
 							<Box>
-								<LinearProgress
-									variant="determinate"
-									value={syncProgress}
-									sx={{ height: 8, borderRadius: 4 }}
-								/>
+								<LinearProgress variant="determinate" value={syncProgress} sx={{ height: 8, borderRadius: 4 }} />
 								<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
 									{syncMessage || `${syncProgress.toFixed(0)}% completado`}
 								</Typography>
 							</Box>
 
 							<Alert severity="info" icon={<InfoCircle size={20} />}>
-								El proceso puede tomar varios minutos dependiendo de la cantidad de causas. Puede continuar trabajando
-								con normalidad, las carpetas se crearán automáticamente.
+								El proceso puede tomar varios minutos dependiendo de la cantidad de causas. Puede continuar trabajando con normalidad, las
+								carpetas se crearán automáticamente.
 							</Alert>
 
 							{credentialsStatus?.currentSyncProgress && (
@@ -476,7 +463,9 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 			return (
 				<Card
 					variant="outlined"
-					sx={{ borderColor: isComplete ? theme.palette.success.light : hasError ? theme.palette.error.light : theme.palette.warning.light }}
+					sx={{
+						borderColor: isComplete ? theme.palette.success.light : hasError ? theme.palette.error.light : theme.palette.warning.light,
+					}}
 				>
 					<CardContent>
 						<Stack spacing={2}>
@@ -495,12 +484,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 								</Stack>
 
 								<Stack direction="row" spacing={1}>
-									<IconButton
-										size="small"
-										onClick={handleResync}
-										title="Re-sincronizar"
-										disabled={!credentialsStatus.enabled}
-									>
+									<IconButton size="small" onClick={handleResync} title="Re-sincronizar" disabled={!credentialsStatus.enabled}>
 										<Refresh2 size={18} />
 									</IconButton>
 								</Stack>
@@ -508,15 +492,13 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 							{isComplete && (
 								<Alert severity="success" icon={<TickCircle size={20} />}>
-									Tus causas del Poder Judicial de la Provincia de Buenos Aires están sincronizadas.
-									Se encontraron {credentialsStatus.stats?.totalCausasFound || 0} causas
-									({credentialsStatus.stats?.causasCreated || 0} nuevas, {credentialsStatus.stats?.causasLinked || 0} vinculadas).
+									Tus causas del Poder Judicial de la Provincia de Buenos Aires están sincronizadas. Se encontraron{" "}
+									{credentialsStatus.stats?.totalCausasFound || 0} causas ({credentialsStatus.stats?.causasCreated || 0} nuevas,{" "}
+									{credentialsStatus.stats?.causasLinked || 0} vinculadas).
 								</Alert>
 							)}
 
-							{hasError && credentialsStatus.lastError && (
-								<Alert severity="error">{credentialsStatus.lastError.message}</Alert>
-							)}
+							{hasError && credentialsStatus.lastError && <Alert severity="error">{credentialsStatus.lastError.message}</Alert>}
 
 							{!isComplete && !hasError && credentialsStatus.syncStatus === "never_synced" && (
 								<Alert severity="info">
@@ -550,13 +532,7 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 
 							<Divider />
 
-							<Button
-								variant="text"
-								color="error"
-								size="small"
-								onClick={handleUnlink}
-								startIcon={<CloseCircle size={16} />}
-							>
+							<Button variant="text" color="error" size="small" onClick={handleUnlink} startIcon={<CloseCircle size={16} />}>
 								Desvincular cuenta
 							</Button>
 						</Stack>
@@ -577,13 +553,8 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							</Typography>
 						</Stack>
 
-						<Alert
-							severity="info"
-							icon={<InfoCircle size={14} />}
-							sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}
-						>
-							Vincula tu cuenta del Portal de Notificaciones SCBA para importar y sincronizar tus causas de la Provincia de
-							Buenos Aires.
+						<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
+							Vincula tu cuenta del Portal de Notificaciones SCBA para importar y sincronizar tus causas de la Provincia de Buenos Aires.
 						</Alert>
 
 						<TextField
@@ -627,13 +598,8 @@ const ScbaAccountConnect = forwardRef<ScbaAccountConnectRef, ScbaAccountConnectP
 							}}
 						/>
 
-						<Alert
-							severity="info"
-							icon={<InfoCircle size={14} />}
-							sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}
-						>
-							<strong>Seguridad:</strong> Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus
-							causas.
+						<Alert severity="info" icon={<InfoCircle size={14} />} sx={{ py: 0.25, "& .MuiAlert-message": { fontSize: "0.75rem" } }}>
+							<strong>Seguridad:</strong> Tu contraseña se almacena encriptada (AES-256) y solo se usa para sincronizar tus causas.
 						</Alert>
 
 						<Button

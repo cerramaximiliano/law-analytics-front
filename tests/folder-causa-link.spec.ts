@@ -57,7 +57,10 @@ async function createTeamWithFolder(): Promise<{ teamId: string; folderId: strin
 	}
 
 	// Invite editor + viewer
-	for (const [role, assigned] of [["memberEditor", "editor"], ["memberViewer", "viewer"]] as const) {
+	for (const [role, assigned] of [
+		["memberEditor", "editor"],
+		["memberViewer", "viewer"],
+	] as const) {
 		const owner = await apiAsUser("owner");
 		try {
 			await owner.post(`${API}/api/groups/${teamId}/invitations`, {

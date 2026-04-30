@@ -43,7 +43,7 @@ const activitiesReducer = (state = initialState, action: any): CombinedActivitie
 			return {
 				...state,
 				activities: state.activities.map((activity) =>
-					activity._id === action.payload._id ? { ...activity, ...action.payload } : activity
+					activity._id === action.payload._id ? { ...activity, ...action.payload } : activity,
 				),
 			};
 
@@ -172,12 +172,25 @@ export const clearActivities = () => (dispatch: Dispatch) => {
 };
 
 // Actualizar una actividad individual (para sincronizar con ediciones de movements/notifications/events)
-export const updateActivity = (activityData: Partial<{ _id: string; title: string; description?: string; date?: string; movement?: string; dateExpiration?: string; link?: string; completed?: boolean }>) => (dispatch: Dispatch) => {
-	if (!activityData._id) return;
-	dispatch({
-		type: UPDATE_ACTIVITY,
-		payload: activityData,
-	});
-};
+export const updateActivity =
+	(
+		activityData: Partial<{
+			_id: string;
+			title: string;
+			description?: string;
+			date?: string;
+			movement?: string;
+			dateExpiration?: string;
+			link?: string;
+			completed?: boolean;
+		}>,
+	) =>
+	(dispatch: Dispatch) => {
+		if (!activityData._id) return;
+		dispatch({
+			type: UPDATE_ACTIVITY,
+			payload: activityData,
+		});
+	};
 
 export default activitiesReducer;

@@ -273,7 +273,7 @@ export const deleteEvent = (eventId: string) => async (dispatch: Dispatch) => {
 		return {
 			success: false,
 			error: errorMessage,
-			statusCode
+			statusCode,
 		};
 	}
 };

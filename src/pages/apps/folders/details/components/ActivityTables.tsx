@@ -168,11 +168,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 
 	// Detectar origen del scraping por la presencia del *Access correspondiente
 	// (el server solo devuelve scbaAccess/pjnAccess cuando el folder es de ese tipo).
-	const scrapingSource: "mev" | "pjn" | "scba" = movementsData.scbaAccess
-		? "scba"
-		: movementsData.pjnAccess
-			? "pjn"
-			: "mev";
+	const scrapingSource: "mev" | "pjn" | "scba" = movementsData.scbaAccess ? "scba" : movementsData.pjnAccess ? "pjn" : "mev";
 
 	// Load data on mount y cuando cambien los filtros
 	useEffect(() => {
@@ -526,13 +522,12 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 							color: "success",
 						},
 						close: true,
-					})
+					}),
 				);
 			} else {
 				// Mostrar mensaje de error apropiado según el código de estado
-				const errorMessage = result?.statusCode === 403
-					? "No tienes permisos para eliminar este evento"
-					: result?.error || "Error al eliminar el evento";
+				const errorMessage =
+					result?.statusCode === 403 ? "No tienes permisos para eliminar este evento" : result?.error || "Error al eliminar el evento";
 				dispatch(
 					openSnackbar({
 						open: true,
@@ -542,7 +537,7 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 							color: "error",
 						},
 						close: true,
-					})
+					}),
 				);
 			}
 		}

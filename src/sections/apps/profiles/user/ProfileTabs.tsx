@@ -96,15 +96,9 @@ const ProfileTabs = ({ focusInput }: Props) => {
 	const shouldUseTeamStats = isTeamMode && !isOwner && activeTeam?.ownerStats;
 	const teamStats = activeTeam?.ownerStats;
 
-	const causasCount = shouldUseTeamStats
-		? (teamStats?.counts?.folders || 0)
-		: (userStats?.counts?.folders || 0);
-	const clientesCount = shouldUseTeamStats
-		? (teamStats?.counts?.contacts || 0)
-		: (userStats?.counts?.contacts || 0);
-	const calculosCount = shouldUseTeamStats
-		? (teamStats?.counts?.calculators || 0)
-		: (userStats?.counts?.calculators || 0);
+	const causasCount = shouldUseTeamStats ? teamStats?.counts?.folders || 0 : userStats?.counts?.folders || 0;
+	const clientesCount = shouldUseTeamStats ? teamStats?.counts?.contacts || 0 : userStats?.counts?.contacts || 0;
+	const calculosCount = shouldUseTeamStats ? teamStats?.counts?.calculators || 0 : userStats?.counts?.calculators || 0;
 
 	// Funciones helper para formatear bytes
 	const formatBytes = (bytes: number): string => {
@@ -116,26 +110,20 @@ const ProfileTabs = ({ focusInput }: Props) => {
 	};
 
 	// Usar los valores según el contexto
-	const storageUsed = shouldUseTeamStats
-		? (teamStats?.storage?.total || 0)
-		: (userStats?.storage?.total || 0);
-	const storageLimit = shouldUseTeamStats
-		? (teamStats?.storage?.limit || 52428800)
-		: (userStats?.storage?.limit || 52428800); // Default 50MB si no viene de la API
+	const storageUsed = shouldUseTeamStats ? teamStats?.storage?.total || 0 : userStats?.storage?.total || 0;
+	const storageLimit = shouldUseTeamStats ? teamStats?.storage?.limit || 52428800 : userStats?.storage?.limit || 52428800; // Default 50MB si no viene de la API
 
 	// Calcular porcentaje
 	const storagePercentage = shouldUseTeamStats
-		? (teamStats?.storage?.usedPercentage || 0)
-		: (userStats?.storage?.usedPercentage !== undefined
-			? userStats.storage.usedPercentage
-			: storageLimit > 0
-			? Math.min((storageUsed / storageLimit) * 100, 100)
-			: 0);
+		? teamStats?.storage?.usedPercentage || 0
+		: userStats?.storage?.usedPercentage !== undefined
+		? userStats.storage.usedPercentage
+		: storageLimit > 0
+		? Math.min((storageUsed / storageLimit) * 100, 100)
+		: 0;
 
 	// Storage breakdown según contexto
-	const storageBreakdown = shouldUseTeamStats
-		? teamStats?.storage
-		: userStats?.storage;
+	const storageBreakdown = shouldUseTeamStats ? teamStats?.storage : userStats?.storage;
 
 	// Determinar color de la barra según el uso
 	const getStorageColor = (percentage: number) => {

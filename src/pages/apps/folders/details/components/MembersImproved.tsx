@@ -208,7 +208,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 			// Buscar en letrados "puros" (solo LETRADO)
 			for (const letrado of letrados) {
 				const parteRep = letrado.intervinienteRef?.partesRepresentadas?.find(
-					(pr) => pr.nombre === parteNombre || (pr.contactId && parteContactId && pr.contactId === parteContactId)
+					(pr) => pr.nombre === parteNombre || (pr.contactId && parteContactId && pr.contactId === parteContactId),
 				);
 				if (parteRep) {
 					result.push({ contact: letrado, parteRep, isSelf: false });
@@ -219,7 +219,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 			const parteContact = partes.find((p) => p.name === parteNombre || p._id === parteContactId);
 			if (parteContact && contactHasTipo(parteContact, "LETRADO")) {
 				const selfRep = parteContact.intervinienteRef?.partesRepresentadas?.find(
-					(pr) => pr.isSelfRepresented || pr.contactId === parteContact._id
+					(pr) => pr.isSelfRepresented || pr.contactId === parteContact._id,
 				);
 				if (selfRep) {
 					result.push({ contact: parteContact, parteRep: selfRep, isSelf: true });
@@ -228,7 +228,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 
 			return result;
 		},
-		[letrados, partes]
+		[letrados, partes],
 	);
 
 	// Letrados sin parte asignada o cuyas partes ya no existen
@@ -557,7 +557,17 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 				fullWidth
 				onClose={handleAdd}
 				open={add}
-				sx={{ "& .MuiDialog-paper": { p: 0, height: { xs: "90vh", sm: "85vh", md: "80vh" }, maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" }, display: "flex", flexDirection: "column", overflow: "hidden" }, transition: "transform 225ms" }}
+				sx={{
+					"& .MuiDialog-paper": {
+						p: 0,
+						height: { xs: "90vh", sm: "85vh", md: "80vh" },
+						maxHeight: { xs: "90vh", sm: "85vh", md: "80vh" },
+						display: "flex",
+						flexDirection: "column",
+						overflow: "hidden",
+					},
+					transition: "transform 225ms",
+				}}
 				aria-describedby="alert-dialog-slide-description"
 			>
 				<AddCustomer open={add} onCancel={handleAdd} onAddMember={handlerAddress} mode="add" folderId={folderId} />
@@ -653,7 +663,14 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 								>
 									Nuevo Interviniente
 								</Button>
-								<Button variant="outlined" fullWidth color="primary" startIcon={<Link1 size={18} />} onClick={handleOpen} disabled={isLoader}>
+								<Button
+									variant="outlined"
+									fullWidth
+									color="primary"
+									startIcon={<Link1 size={18} />}
+									onClick={handleOpen}
+									disabled={isLoader}
+								>
 									Vincular Existente
 								</Button>
 							</Stack>
@@ -669,20 +686,8 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 									onChange={(_, newValue) => setViewMode(newValue)}
 									sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}
 								>
-									<Tab
-										value="accordion"
-										label="Vista por Partes"
-										icon={<User size={16} />}
-										iconPosition="start"
-										sx={{ minHeight: 48 }}
-									/>
-									<Tab
-										value="list"
-										label="Lista Completa"
-										icon={<Briefcase size={16} />}
-										iconPosition="start"
-										sx={{ minHeight: 48 }}
-									/>
+									<Tab value="accordion" label="Vista por Partes" icon={<User size={16} />} iconPosition="start" sx={{ minHeight: 48 }} />
+									<Tab value="list" label="Lista Completa" icon={<Briefcase size={16} />} iconPosition="start" sx={{ minHeight: 48 }} />
 								</Tabs>
 							)}
 
@@ -716,12 +721,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 																>
 																	{!parte.avatar && <User size={16} />}
 																</Avatar>
-																<Chip
-																	label={tipoParte}
-																	color={getParteChipColor(tipoParte)}
-																	size="small"
-																	sx={{ fontWeight: 500 }}
-																/>
+																<Chip label={tipoParte} color={getParteChipColor(tipoParte)} size="small" sx={{ fontWeight: 500 }} />
 																{contactHasTipo(parte, "LETRADO") && (
 																	<Chip
 																		label="También Letrado"
@@ -916,11 +916,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 																			)}
 																		</TableCell>
 																		<TableCell align="right">
-																			<IconButton
-																				size="small"
-																				onClick={(e) => handleMenuOpen(e, letrado)}
-																				sx={{ color: "text.secondary" }}
-																			>
+																			<IconButton size="small" onClick={(e) => handleMenuOpen(e, letrado)} sx={{ color: "text.secondary" }}>
 																				<More size={16} />
 																			</IconButton>
 																		</TableCell>
@@ -982,11 +978,7 @@ const MembersImproved: React.FC<MembersProps> = ({ title, membersData, isLoader,
 																				sx={{ height: 20, fontSize: "0.7rem" }}
 																			/>
 																		</Box>
-																		<IconButton
-																			size="small"
-																			onClick={(e) => handleMenuOpen(e, member)}
-																			sx={{ color: "text.secondary" }}
-																		>
+																		<IconButton size="small" onClick={(e) => handleMenuOpen(e, member)} sx={{ color: "text.secondary" }}>
 																			<More size={16} />
 																		</IconButton>
 																	</Stack>

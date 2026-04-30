@@ -19,7 +19,16 @@ import { PopupTransition } from "components/@extended/Transitions";
 // types
 import { NoteModalType, NoteFormValues } from "types/note";
 
-const ModalNotes = ({ open, setOpen, handlerAddress, folderId, folderName, note, initialValues: externalInitialValues, dialogSx }: NoteModalType) => {
+const ModalNotes = ({
+	open,
+	setOpen,
+	handlerAddress,
+	folderId,
+	folderName,
+	note,
+	initialValues: externalInitialValues,
+	dialogSx,
+}: NoteModalType) => {
 	const theme = useTheme();
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	const { getRequestHeaders } = useTeam();

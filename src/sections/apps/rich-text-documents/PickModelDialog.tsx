@@ -40,10 +40,7 @@ const CATEGORY_LABELS: Record<RichTextTemplateCategory, string> = {
 	otro: "Otro",
 };
 
-const CATEGORY_COLORS: Record<
-	RichTextTemplateCategory,
-	"default" | "primary" | "secondary" | "info" | "success" | "warning" | "error"
-> = {
+const CATEGORY_COLORS: Record<RichTextTemplateCategory, "default" | "primary" | "secondary" | "info" | "success" | "warning" | "error"> = {
 	civil: "info",
 	laboral: "warning",
 	penal: "error",
@@ -79,7 +76,15 @@ const PickModelDialog = ({ open, onClose, folderId }: Props) => {
 	// Fetch cuando cambian filtros o página
 	useEffect(() => {
 		if (!open) return;
-		dispatch(fetchRichTextTemplates({ source: "user", search: search || undefined, category: category || undefined, page, limit: PAGE_SIZE }) as any);
+		dispatch(
+			fetchRichTextTemplates({
+				source: "user",
+				search: search || undefined,
+				category: category || undefined,
+				page,
+				limit: PAGE_SIZE,
+			}) as any,
+		);
 	}, [open, search, category, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Reset al abrir
@@ -131,7 +136,9 @@ const PickModelDialog = ({ open, onClose, folderId }: Props) => {
 				<Stack spacing={1}>
 					<Stack direction="row" alignItems="center" spacing={1}>
 						<DocumentText size={24} color={theme.palette.primary.main} variant="Bold" />
-						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>Elegir Modelo</Typography>
+						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+							Elegir Modelo
+						</Typography>
 					</Stack>
 					<Typography variant="body2" color="textSecondary">
 						Seleccioná un modelo para pre-cargar su contenido y campos dinámicos.
@@ -160,13 +167,18 @@ const PickModelDialog = ({ open, onClose, folderId }: Props) => {
 					<Select
 						size="small"
 						value={category}
-						onChange={(e) => { setCategory(e.target.value as RichTextTemplateCategory | ""); setPage(1); }}
+						onChange={(e) => {
+							setCategory(e.target.value as RichTextTemplateCategory | "");
+							setPage(1);
+						}}
 						displayEmpty
 						sx={{ minWidth: 180 }}
 					>
 						<MenuItem value="">Todas las categorías</MenuItem>
 						{(Object.keys(CATEGORY_LABELS) as RichTextTemplateCategory[]).map((cat) => (
-							<MenuItem key={cat} value={cat}>{CATEGORY_LABELS[cat]}</MenuItem>
+							<MenuItem key={cat} value={cat}>
+								{CATEGORY_LABELS[cat]}
+							</MenuItem>
 						))}
 					</Select>
 				</Stack>
@@ -176,7 +188,7 @@ const PickModelDialog = ({ open, onClose, folderId }: Props) => {
 					<Stack alignItems="center" justifyContent="center" py={6}>
 						<CircularProgress size={32} />
 					</Stack>
-				) : (templates as RichTextTemplate[]).length === 0 ? (
+				) : !Array.isArray(templates) || templates.length === 0 ? (
 					<Stack alignItems="center" justifyContent="center" spacing={1} py={6}>
 						<Typography variant="body2" color="text.secondary">
 							{search || category
@@ -209,7 +221,9 @@ const PickModelDialog = ({ open, onClose, folderId }: Props) => {
 									<Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
 										<Stack spacing={0.5} flex={1} minWidth={0}>
 											<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" gap={0.5}>
-												<Typography variant="body2" fontWeight={600}>{tpl.name}</Typography>
+												<Typography variant="body2" fontWeight={600}>
+													{tpl.name}
+												</Typography>
 												<Chip
 													label={CATEGORY_LABELS[tpl.category]}
 													size="small"
@@ -243,27 +257,14 @@ const PickModelDialog = ({ open, onClose, folderId }: Props) => {
 				{/* Paginación */}
 				{totalPages > 1 && (
 					<Box sx={{ display: "flex", justifyContent: "center", pt: 2 }}>
-						<Pagination
-							count={totalPages}
-							page={page}
-							onChange={(_e, v) => setPage(v)}
-							size="small"
-							color="primary"
-						/>
+						<Pagination count={totalPages} page={page} onChange={(_e, v) => setPage(v)} size="small" color="primary" />
 					</Box>
 				)}
 			</DialogContent>
 			<Divider />
 			<DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
 				<FormControlLabel
-					control={
-						<Switch
-							checked={autoResolve}
-							onChange={(e) => setAutoResolve(e.target.checked)}
-							size="small"
-							color="primary"
-						/>
-					}
+					control={<Switch checked={autoResolve} onChange={(e) => setAutoResolve(e.target.checked)} size="small" color="primary" />}
 					label={
 						<Typography variant="body2" color="text.secondary">
 							Autocompletar automáticamente

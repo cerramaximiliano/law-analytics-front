@@ -93,7 +93,15 @@ const CodeVerification = () => {
 						<>
 							<Grid item xs={12}>
 								<AnimateButton>
-									<Button component={Link} to="/forgot-password" disableElevation fullWidth size="large" variant="contained" color="primary">
+									<Button
+										component={Link}
+										to="/forgot-password"
+										disableElevation
+										fullWidth
+										size="large"
+										variant="contained"
+										color="primary"
+									>
 										Recuperar contraseña
 									</Button>
 								</AnimateButton>

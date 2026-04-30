@@ -116,15 +116,7 @@ const AuthResetPassword = () => {
 				</Grid>
 				<Grid item xs={12}>
 					<AnimateButton>
-						<Button
-							component={Link}
-							to="/forgot-password"
-							disableElevation
-							fullWidth
-							size="large"
-							variant="contained"
-							color="primary"
-						>
+						<Button component={Link} to="/forgot-password" disableElevation fullWidth size="large" variant="contained" color="primary">
 							Pedir nuevo enlace
 						</Button>
 					</AnimateButton>
@@ -239,7 +231,7 @@ const AuthResetPassword = () => {
 											</InputAdornment>
 										}
 										autoComplete="new-password"
-									placeholder="Ingresá tu nueva contraseña"
+										placeholder="Ingresá tu nueva contraseña"
 									/>
 									{touched.password && errors.password && (
 										<FormHelperText error id="helper-text-password-reset">

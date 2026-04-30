@@ -32,7 +32,18 @@ import { PopupTransition } from "components/@extended/Transitions";
 // types
 import { TaskModalType, TaskFormValues } from "types/task";
 
-const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName, editMode, taskToEdit, onClose, initialValues: externalInitialValues, dialogSx }: TaskModalType) => {
+const ModalTasks = ({
+	open,
+	setOpen,
+	handlerAddress,
+	folderId,
+	folderName,
+	editMode,
+	taskToEdit,
+	onClose,
+	initialValues: externalInitialValues,
+	dialogSx,
+}: TaskModalType) => {
 	const theme = useTheme();
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 	const { getRequestHeaders } = useTeam();
@@ -277,13 +288,7 @@ const ModalTasks = ({ open, setOpen, handlerAddress, folderId, folderName, editM
 									disabled={isSubmitting}
 									startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
 								>
-									{isSubmitting
-										? isEditMode
-											? "Guardando..."
-											: "Creando..."
-										: isEditMode
-										? "Guardar cambios"
-										: "Crear tarea"}
+									{isSubmitting ? (isEditMode ? "Guardando..." : "Creando...") : isEditMode ? "Guardar cambios" : "Crear tarea"}
 								</Button>
 							</DialogActions>
 						</Form>

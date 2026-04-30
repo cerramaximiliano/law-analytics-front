@@ -1,19 +1,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import ragAxios from "utils/ragAxios";
-import {
-	Alert,
-	Box,
-	Chip,
-	CircularProgress,
-	Collapse,
-	Divider,
-	IconButton,
-	Stack,
-	TextField,
-	Tooltip,
-	Typography,
-} from "@mui/material";
+import { Alert, Box, Chip, CircularProgress, Collapse, Divider, IconButton, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { type Editor } from "@tiptap/react";
 import { CloseCircle, Copy, DirectboxSend, DocumentText, Edit2, MagicStar, Paperclip, Send2, TextBlock } from "iconsax-react";
 import { Movement } from "types/movements";
@@ -50,7 +38,7 @@ interface ChatMessage {
 	pending?: boolean;
 	editsApplied?: number;
 	hadDocContext?: boolean; // si se envió documento como contexto
-	hadEditBlock?: boolean;  // si la IA generó bloque [EDICION]
+	hadEditBlock?: boolean; // si la IA generó bloque [EDICION]
 }
 
 interface EditOp {
@@ -76,12 +64,7 @@ function buildNumberedContext(editor: Editor): { context: string; indexMap: numb
 	nodes.forEach((node: any, docIdx: number) => {
 		const text = extractNodeText(node).trim();
 		if (!text) return;
-		const typeHint =
-			node.type === "heading"
-				? `(título N${node.attrs?.level ?? 1}) `
-				: node.type !== "paragraph"
-					? `(${node.type}) `
-					: "";
+		const typeHint = node.type === "heading" ? `(título N${node.attrs?.level ?? 1}) ` : node.type !== "paragraph" ? `(${node.type}) ` : "";
 		lines.push(`[${indexMap.length}] ${typeHint}${text}`);
 		indexMap.push(docIdx);
 	});
@@ -111,8 +94,7 @@ function applyEdits(editor: Editor, edits: EditOp[], indexMap: number[]): number
 	const clone: any = JSON.parse(JSON.stringify(doc));
 	const content: any[] = clone.content || [];
 
-	const toDocIdx = (ctxIdx: number): number =>
-		ctxIdx >= 0 && ctxIdx < indexMap.length ? indexMap[ctxIdx] : ctxIdx;
+	const toDocIdx = (ctxIdx: number): number => (ctxIdx >= 0 && ctxIdx < indexMap.length ? indexMap[ctxIdx] : ctxIdx);
 
 	const sorted = [...edits].sort((a, b) => toDocIdx(b.idx) - toDocIdx(a.idx));
 
@@ -166,7 +148,15 @@ function parseBlocks(text: string): { type: "text" | "code"; content: string }[]
 	return parts;
 }
 
-const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false, embedded, caseContext, initialMessage }: AiChatPanelProps) => {
+const AiChatPanel = ({
+	editor,
+	onClose,
+	movements = [],
+	movementsLimited = false,
+	embedded,
+	caseContext,
+	initialMessage,
+}: AiChatPanelProps) => {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
 	const [includeDoc, setIncludeDoc] = useState(false);
@@ -280,7 +270,14 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 
 				await ragAxios.post(
 					"/rag/editor/chat",
-					{ messages: history, documentText, pdfUrl: attachedPdfUrl, movementText: attachedMovementText, stream: true, ...(caseContext ? { caseContext } : {}) },
+					{
+						messages: history,
+						documentText,
+						pdfUrl: attachedPdfUrl,
+						movementText: attachedMovementText,
+						stream: true,
+						...(caseContext ? { caseContext } : {}),
+					},
 					{
 						responseType: "text",
 						signal: controller.signal,
@@ -301,11 +298,7 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 									const sseEvent = JSON.parse(raw);
 									if (sseEvent.type === "chunk") {
 										accumulated += sseEvent.text;
-										setMessages((prev) =>
-											prev.map((m) =>
-												m.id === assistantId ? { ...m, content: accumulated } : m
-											)
-										);
+										setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: accumulated } : m)));
 									}
 								} catch {
 									// ignore malformed SSE event
@@ -332,24 +325,25 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 				setMessages((prev) =>
 					prev.map((m) =>
 						m.id === assistantId
-							? { ...m, content: displayContent, editsApplied, pending: false, hadDocContext: effectiveIncludeDoc, hadEditBlock: hasEditBlock }
-							: m
-					)
+							? {
+									...m,
+									content: displayContent,
+									editsApplied,
+									pending: false,
+									hadDocContext: effectiveIncludeDoc,
+									hadEditBlock: hasEditBlock,
+							  }
+							: m,
+					),
 				);
 			} catch (err: any) {
 				if (!axios.isCancel(err)) {
 					const status = err?.response?.status;
 					const isLimit = status === 429 || (status === 403 && err?.response?.data?.upgradeRequired);
 					const errorContent = isLimit
-						? (err?.response?.data?.message || "Alcanzaste el límite mensual de consultas al Asistente IA. Actualizá tu plan para continuar.")
+						? err?.response?.data?.message || "Alcanzaste el límite mensual de consultas al Asistente IA. Actualizá tu plan para continuar."
 						: "Error al conectar con el asistente. Intentá de nuevo.";
-					setMessages((prev) =>
-						prev.map((m) =>
-							m.id === assistantId
-								? { ...m, content: errorContent, pending: false }
-								: m
-						)
-					);
+					setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: errorContent, pending: false } : m)));
 				}
 			} finally {
 				abortControllerRef.current = null;
@@ -360,7 +354,7 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 		[messages, streaming, includeDoc, attachedContext, editor, selectedText],
 	);
 
-			// Quick actions: con selección → reemplazo directo + mensaje en chat; sin selección → chat con doc context
+	// Quick actions: con selección → reemplazo directo + mensaje en chat; sin selección → chat con doc context
 	const handleQuickAction = useCallback(
 		async (action: EditorActionDef) => {
 			const range = selectionRangeRef.current;
@@ -370,7 +364,11 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 			if (sel && range) {
 				// Con selección: llamada directa → reemplaza en editor + muestra en chat
 				if (streaming) return;
-				const userMsg: ChatMessage = { id: nextId(), role: "user", content: `${action.label}\n\n_Selección:_ "${sel.length > 80 ? sel.slice(0, 80) + "…" : sel}"` };
+				const userMsg: ChatMessage = {
+					id: nextId(),
+					role: "user",
+					content: `${action.label}\n\n_Selección:_ "${sel.length > 80 ? sel.slice(0, 80) + "…" : sel}"`,
+				};
 				const assistantId = nextId();
 				const assistantMsg: ChatMessage = { id: assistantId, role: "assistant", content: "", pending: true };
 				setMessages((prev) => [...prev, userMsg, assistantMsg]);
@@ -381,52 +379,67 @@ const AiChatPanel = ({ editor, onClose, movements = [], movementsLimited = false
 				if (action.useStyleCorpus) body.useStyleCorpus = true;
 				if (caseContext) body.caseContext = caseContext;
 				try {
-					let sseBuffer = ""; let lastLength = 0; let accumulated = "";
-					await ragAxios.post(
-						"/rag/editor/chat",
-						body,
-						{
-							responseType: "text",
-							onDownloadProgress: (progressEvent) => {
-								const fullText = (progressEvent.event?.target as XMLHttpRequest)?.response ?? "";
-								const newText = fullText.slice(lastLength); lastLength = fullText.length;
-								sseBuffer += newText;
-								const lines = sseBuffer.split("\n"); sseBuffer = lines.pop() ?? "";
-								for (const line of lines) {
-									if (!line.startsWith("data: ")) continue;
-									const raw = line.slice(6).trim(); if (!raw) continue;
-									try { const evt = JSON.parse(raw); if (evt.type === "chunk") { accumulated += evt.text; setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: accumulated } : m)); } } catch {}
-								}
-							},
+					let sseBuffer = "";
+					let lastLength = 0;
+					let accumulated = "";
+					await ragAxios.post("/rag/editor/chat", body, {
+						responseType: "text",
+						onDownloadProgress: (progressEvent) => {
+							const fullText = (progressEvent.event?.target as XMLHttpRequest)?.response ?? "";
+							const newText = fullText.slice(lastLength);
+							lastLength = fullText.length;
+							sseBuffer += newText;
+							const lines = sseBuffer.split("\n");
+							sseBuffer = lines.pop() ?? "";
+							for (const line of lines) {
+								if (!line.startsWith("data: ")) continue;
+								const raw = line.slice(6).trim();
+								if (!raw) continue;
+								try {
+									const evt = JSON.parse(raw);
+									if (evt.type === "chunk") {
+										accumulated += evt.text;
+										setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: accumulated } : m)));
+									}
+								} catch {}
+							}
 						},
-					);
+					});
 					const result = accumulated.trim();
 					if (result) {
 						editor.chain().focus().insertContentAt({ from: range.from, to: range.to }, result).run();
 						const newTo = range.from + result.length;
 						editor.commands.setTextSelection({ from: range.from, to: newTo });
 						setTimeout(() => editor.commands.setTextSelection(newTo), 1500);
-						setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: result, pending: false, editsApplied: 1 } : m));
+						setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: result, pending: false, editsApplied: 1 } : m)));
 					} else {
-						setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: "No se pudo generar el texto. Intentá de nuevo.", pending: false } : m));
+						setMessages((prev) =>
+							prev.map((m) =>
+								m.id === assistantId ? { ...m, content: "No se pudo generar el texto. Intentá de nuevo.", pending: false } : m,
+							),
+						);
 					}
 				} catch (err: any) {
 					if (!axios.isCancel(err)) {
 						const status = err?.response?.status;
 						const isLimit = status === 429 || (status === 403 && err?.response?.data?.upgradeRequired);
 						const errorContent = isLimit
-							? (err?.response?.data?.message || "Alcanzaste el límite mensual de consultas al Asistente IA. Actualizá tu plan para continuar.")
+							? err?.response?.data?.message ||
+							  "Alcanzaste el límite mensual de consultas al Asistente IA. Actualizá tu plan para continuar."
 							: "Error al conectar con el asistente.";
-						setMessages((prev) => prev.map((m) => m.id === assistantId ? { ...m, content: errorContent, pending: false } : m));
+						setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: errorContent, pending: false } : m)));
 					}
 				} finally {
 					setStreaming(false);
 				}
 			} else {
 				// Sin selección: al chat con contexto completo + instrucción explícita de formato edición
-				sendMessage(`${resolvedPrompt}
+				sendMessage(
+					`${resolvedPrompt}
 
-Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/EDICION].`, action.context.includeDocument);
+Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/EDICION].`,
+					action.context.includeDocument,
+				);
 			}
 		},
 		[selectedText, streaming, editor, sendMessage],
@@ -502,11 +515,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 
 				{messages.map((msg) => (
 					<Box key={msg.id} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-						<Typography
-							variant="caption"
-							fontWeight={600}
-							color={msg.role === "user" ? "primary.main" : "secondary.main"}
-						>
+						<Typography variant="caption" fontWeight={600} color={msg.role === "user" ? "primary.main" : "secondary.main"}>
 							{msg.role === "user" ? "Vos" : "Asistente"}
 						</Typography>
 
@@ -585,12 +594,14 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 												>
 													{block.content}
 												</Typography>
-											)
+											),
 										)}
 										{msg.editsApplied != null && msg.editsApplied > 0 && (
 											<Chip
 												icon={<Edit2 size={12} />}
-												label={`${msg.editsApplied} cambio${msg.editsApplied !== 1 ? "s" : ""} aplicado${msg.editsApplied !== 1 ? "s" : ""} en el documento`}
+												label={`${msg.editsApplied} cambio${msg.editsApplied !== 1 ? "s" : ""} aplicado${
+													msg.editsApplied !== 1 ? "s" : ""
+												} en el documento`}
 												size="small"
 												color="success"
 												variant="outlined"
@@ -598,14 +609,19 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 											/>
 										)}
 										{!msg.pending && msg.hadDocContext && !msg.hadEditBlock && (msg.editsApplied === 0 || msg.editsApplied == null) && (
-											<Alert severity="warning" sx={{ mt: 0.5, py: 0.25, px: 1, fontSize: "0.75rem", "& .MuiAlert-icon": { fontSize: 16, mr: 0.75 } }}>
+											<Alert
+												severity="warning"
+												sx={{ mt: 0.5, py: 0.25, px: 1, fontSize: "0.75rem", "& .MuiAlert-icon": { fontSize: 16, mr: 0.75 } }}
+											>
 												La IA respondió sin generar ediciones directas. Intentá ser más específico.
 											</Alert>
 										)}
 										{msg.editsApplied != null && msg.editsApplied < 0 && pendingEdits?.messageId === msg.id && (
 											<Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5} sx={{ mt: 0.25 }}>
 												<Chip
-													label={`${Math.abs(msg.editsApplied)} cambio${Math.abs(msg.editsApplied) !== 1 ? "s" : ""} pendiente${Math.abs(msg.editsApplied) !== 1 ? "s" : ""} — sin aplicar`}
+													label={`${Math.abs(msg.editsApplied)} cambio${Math.abs(msg.editsApplied) !== 1 ? "s" : ""} pendiente${
+														Math.abs(msg.editsApplied) !== 1 ? "s" : ""
+													} — sin aplicar`}
 													size="small"
 													color="warning"
 													variant="outlined"
@@ -619,7 +635,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 														const count = pendingEdits.edits.length;
 														applyEdits(editor, pendingEdits.edits, pendingEdits.indexMap);
 														setPendingEdits(null);
-														setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, editsApplied: count } : m));
+														setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, editsApplied: count } : m)));
 													}}
 													sx={{ fontSize: "0.68rem", height: 22, cursor: "pointer" }}
 												/>
@@ -628,7 +644,7 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 													size="small"
 													onClick={() => {
 														setPendingEdits(null);
-														setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, editsApplied: 0 } : m));
+														setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, editsApplied: 0 } : m)));
 													}}
 													sx={{ fontSize: "0.68rem", height: 22, cursor: "pointer" }}
 												/>
@@ -648,8 +664,16 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 				<Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.75 }}>
 					<Typography sx={{ ...sectionLabel, color: "text.secondary", fontSize: "0.68rem" }}>Acciones rápidas</Typography>
 					<Stack direction="row" spacing={0.25}>
-						<Tooltip title={effectiveMode === "auto" ? "Con selección: edita directamente" : "Sin selección: muestra cambios para confirmar"}>
-							<Chip label={effectiveMode === "auto" ? "✏ Editar" : "💬 Sugerir"} size="small" color={effectiveMode === "auto" ? "primary" : "secondary"} variant="filled" sx={{ fontSize: "0.62rem", height: 20 }} />
+						<Tooltip
+							title={effectiveMode === "auto" ? "Con selección: edita directamente" : "Sin selección: muestra cambios para confirmar"}
+						>
+							<Chip
+								label={effectiveMode === "auto" ? "✏ Editar" : "💬 Sugerir"}
+								size="small"
+								color={effectiveMode === "auto" ? "primary" : "secondary"}
+								variant="filled"
+								sx={{ fontSize: "0.62rem", height: 20 }}
+							/>
 						</Tooltip>
 					</Stack>
 				</Stack>
@@ -693,18 +717,23 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 							size="small"
 							color="info"
 							variant="filled"
-							onDelete={() => { setAttachedContext(null); setPickerOpen(false); }}
+							onDelete={() => {
+								setAttachedContext(null);
+								setPickerOpen(false);
+							}}
 							sx={{ fontSize: "0.7rem", height: 24, maxWidth: 180 }}
 						/>
-					) : movementsWithContent.length > 0 && (
-						<Chip
-							icon={<Paperclip size={12} />}
-							label="Agregar Movimiento"
-							size="small"
-							variant="outlined"
-							onClick={() => setPickerOpen((v) => !v)}
-							sx={{ fontSize: "0.7rem", height: 24, cursor: "pointer" }}
-						/>
+					) : (
+						movementsWithContent.length > 0 && (
+							<Chip
+								icon={<Paperclip size={12} />}
+								label="Agregar Movimiento"
+								size="small"
+								variant="outlined"
+								onClick={() => setPickerOpen((v) => !v)}
+								sx={{ fontSize: "0.7rem", height: 24, cursor: "pointer" }}
+							/>
+						)
 					)}
 
 					{/* Selección activa */}
@@ -736,7 +765,10 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 							{movementsWithContent.map((item, idx) => (
 								<Box
 									key={idx}
-									onClick={() => { setAttachedContext(item); setPickerOpen(false); }}
+									onClick={() => {
+										setAttachedContext(item);
+										setPickerOpen(false);
+									}}
 									sx={{
 										px: 1,
 										py: 0.5,
@@ -749,14 +781,29 @@ Aplicá los cambios directamente en el documento usando el bloque [EDICION]...[/
 										borderColor: "divider",
 									}}
 								>
-									{item.type === "pdf"
-										? <Paperclip size={11} style={{ flexShrink: 0, color: "#666" }} />
-										: <DocumentText size={11} style={{ flexShrink: 0, color: "#666" }} />}
-									<Typography variant="caption" noWrap sx={{ fontSize: "0.7rem" }}>{item.label}</Typography>
+									{item.type === "pdf" ? (
+										<Paperclip size={11} style={{ flexShrink: 0, color: "#666" }} />
+									) : (
+										<DocumentText size={11} style={{ flexShrink: 0, color: "#666" }} />
+									)}
+									<Typography variant="caption" noWrap sx={{ fontSize: "0.7rem" }}>
+										{item.label}
+									</Typography>
 								</Box>
 							))}
 							{movementsLimited && (
-								<Typography variant="caption" sx={{ display: "block", px: 1, py: 0.4, fontSize: "0.62rem", color: "text.secondary", borderTop: "1px solid", borderColor: "divider" }}>
+								<Typography
+									variant="caption"
+									sx={{
+										display: "block",
+										px: 1,
+										py: 0.4,
+										fontSize: "0.62rem",
+										color: "text.secondary",
+										borderTop: "1px solid",
+										borderColor: "divider",
+									}}
+								>
 									Solo últimos movimientos · Plan gratuito
 								</Typography>
 							)}

@@ -106,7 +106,17 @@ import { fetchUserStats } from "store/reducers/userStats";
 import { useTeam } from "contexts/TeamContext";
 import { Folder, Props } from "types/folders";
 import dayjs from "utils/dayjs-config";
-import { Calculator as CalculatorIcon, TaskSquare, Moneys, DocumentText, Profile2User, TableDocument, Calendar, DocumentText1, NoteText } from "iconsax-react";
+import {
+	Calculator as CalculatorIcon,
+	TaskSquare,
+	Moneys,
+	DocumentText,
+	Profile2User,
+	TableDocument,
+	Calendar,
+	DocumentText1,
+	NoteText,
+} from "iconsax-react";
 import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePostalDocumentModal";
 import PickModelDialog from "sections/apps/rich-text-documents/PickModelDialog";
 import { ResponsiveDialog } from "components/@extended/ResponsiveDialog";
@@ -136,14 +146,14 @@ interface ReactTableProps extends Props {
 	/** If true, shows onboarding-specific UI (special empty state, muted controls) */
 	isOnboarding?: boolean;
 	/** Filtros */
-	folderTypeFilter?: 'all' | 'manual' | 'pjn' | 'eje' | 'mev';
-	onFolderTypeFilterChange?: (event: SelectChangeEvent<'all' | 'manual' | 'pjn' | 'eje' | 'mev'>) => void;
-	statusFilter?: 'all' | 'Nueva' | 'En Proceso' | 'Pendiente' | 'Cerrada';
+	folderTypeFilter?: "all" | "manual" | "pjn" | "eje" | "mev";
+	onFolderTypeFilterChange?: (event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev">) => void;
+	statusFilter?: "all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada";
 	onStatusFilterChange?: (event: SelectChangeEvent<string>) => void;
 	parteFilter?: string;
 	onParteFilterChange?: (event: SelectChangeEvent<string>) => void;
 	uniquePartes?: string[];
-	movimientosFilter?: 'all' | 'today' | 'week' | 'month' | 'none';
+	movimientosFilter?: "all" | "today" | "week" | "month" | "none";
 	onMovimientosFilterChange?: (event: SelectChangeEvent<string>) => void;
 	jurisdiccionFilter?: string;
 	onJurisdiccionFilterChange?: (event: SelectChangeEvent<string>) => void;
@@ -176,16 +186,16 @@ function ReactTable({
 	handleMenuOpen,
 	handleMenuClose,
 	isOnboarding = false,
-	folderTypeFilter = 'all',
+	folderTypeFilter = "all",
 	onFolderTypeFilterChange,
-	statusFilter = 'all',
+	statusFilter = "all",
 	onStatusFilterChange,
-	parteFilter = 'all',
+	parteFilter = "all",
 	onParteFilterChange,
 	uniquePartes = [],
-	movimientosFilter = 'all',
+	movimientosFilter = "all",
 	onMovimientosFilterChange,
-	jurisdiccionFilter = 'all',
+	jurisdiccionFilter = "all",
 	onJurisdiccionFilterChange,
 	uniqueJurisdicciones = [],
 	onBarWidthMeasured,
@@ -223,11 +233,11 @@ function ReactTable({
 	// Contar filtros activos
 	const activeFiltersCount = useMemo(() => {
 		let count = 0;
-		if (folderTypeFilter !== 'all') count++;
-		if (statusFilter !== 'all') count++;
-		if (parteFilter !== 'all') count++;
-		if (movimientosFilter !== 'all') count++;
-		if (jurisdiccionFilter !== 'all') count++;
+		if (folderTypeFilter !== "all") count++;
+		if (statusFilter !== "all") count++;
+		if (parteFilter !== "all") count++;
+		if (movimientosFilter !== "all") count++;
+		if (jurisdiccionFilter !== "all") count++;
 		return count;
 	}, [folderTypeFilter, statusFilter, parteFilter, movimientosFilter, jurisdiccionFilter]);
 
@@ -521,25 +531,33 @@ function ReactTable({
 								>
 									{/* Archivados */}
 									<MenuItem
-										onClick={() => { handleMobileMenuClose(); handleOpenArchivedModal?.(); }}
+										onClick={() => {
+											handleMobileMenuClose();
+											handleOpenArchivedModal?.();
+										}}
 										sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
 									>
-										<ListItemIcon><Box1 size={18} /></ListItemIcon>
+										<ListItemIcon>
+											<Box1 size={18} />
+										</ListItemIcon>
 										<ListItemText>Archivados</ListItemText>
 									</MenuItem>
 
 									{/* Archivar seleccionados */}
 									{handleArchiveSelected && (
 										<MenuItem
-											onClick={() => { handleMobileMenuClose(); handleArchiveSelected(selectedFlatRows); }}
+											onClick={() => {
+												handleMobileMenuClose();
+												handleArchiveSelected(selectedFlatRows);
+											}}
 											disabled={Object.keys(selectedRowIds).length === 0}
 											sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
 										>
-											<ListItemIcon><Archive size={18} /></ListItemIcon>
+											<ListItemIcon>
+												<Archive size={18} />
+											</ListItemIcon>
 											<ListItemText>
-												{Object.keys(selectedRowIds).length > 0
-													? `Archivar (${selectedFlatRows.length})`
-													: "Archivar seleccionados"}
+												{Object.keys(selectedRowIds).length > 0 ? `Archivar (${selectedFlatRows.length})` : "Archivar seleccionados"}
 											</ListItemText>
 										</MenuItem>
 									)}
@@ -547,10 +565,15 @@ function ReactTable({
 									{/* Filtros toggle */}
 									{onFolderTypeFilterChange && (
 										<MenuItem
-											onClick={() => { handleMobileMenuClose(); setShowFilters((prev) => !prev); }}
+											onClick={() => {
+												handleMobileMenuClose();
+												setShowFilters((prev) => !prev);
+											}}
 											sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
 										>
-											<ListItemIcon><Filter size={18} /></ListItemIcon>
+											<ListItemIcon>
+												<Filter size={18} />
+											</ListItemIcon>
 											<ListItemText>
 												{activeFiltersCount > 0 ? `Filtros (${activeFiltersCount})` : showFilters ? "Ocultar filtros" : "Filtros"}
 											</ListItemText>
@@ -560,27 +583,44 @@ function ReactTable({
 									{/* Eliminar seleccionados */}
 									{handleDeleteSelected && (
 										<MenuItem
-											onClick={() => { handleMobileMenuClose(); handleDeleteSelected(selectedFlatRows); }}
+											onClick={() => {
+												handleMobileMenuClose();
+												handleDeleteSelected(selectedFlatRows);
+											}}
 											disabled={Object.keys(selectedRowIds).length === 0}
 										>
-											<ListItemIcon><Trash variant="Bulk" size={18} /></ListItemIcon>
+											<ListItemIcon>
+												<Trash variant="Bulk" size={18} />
+											</ListItemIcon>
 											<ListItemText>
-												{Object.keys(selectedRowIds).length > 0
-													? `Eliminar (${selectedFlatRows.length})`
-													: "Eliminar seleccionados"}
+												{Object.keys(selectedRowIds).length > 0 ? `Eliminar (${selectedFlatRows.length})` : "Eliminar seleccionados"}
 											</ListItemText>
 										</MenuItem>
 									)}
 
 									{/* Exportar CSV */}
-									<MenuItem onClick={() => { handleMobileMenuClose(); csvLinkRef.current?.link?.click(); }}>
-										<ListItemIcon><DocumentDownload variant="Bulk" size={18} /></ListItemIcon>
+									<MenuItem
+										onClick={() => {
+											handleMobileMenuClose();
+											csvLinkRef.current?.link?.click();
+										}}
+									>
+										<ListItemIcon>
+											<DocumentDownload variant="Bulk" size={18} />
+										</ListItemIcon>
 										<ListItemText>Exportar CSV</ListItemText>
 									</MenuItem>
 
 									{/* Guía */}
-									<MenuItem onClick={() => { handleMobileMenuClose(); handleOpenGuide?.(); }}>
-										<ListItemIcon><InfoCircle variant="Bulk" size={18} /></ListItemIcon>
+									<MenuItem
+										onClick={() => {
+											handleMobileMenuClose();
+											handleOpenGuide?.();
+										}}
+									>
+										<ListItemIcon>
+											<InfoCircle variant="Bulk" size={18} />
+										</ListItemIcon>
 										<ListItemText>Ver Guía</ListItemText>
 									</MenuItem>
 								</Menu>
@@ -589,14 +629,7 @@ function ReactTable({
 						</Stack>
 					) : (
 						/* ── DESKTOP TOOLBAR ── */
-						<Stack
-							ref={g2StackRef}
-							direction="row"
-							spacing={2}
-							alignItems="center"
-							flexWrap="wrap"
-							useFlexGap
-						>
+						<Stack ref={g2StackRef} direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
 							{/* Grupo 1: Acción principal */}
 							{handleAdd && (
 								<Button
@@ -613,16 +646,10 @@ function ReactTable({
 							)}
 
 							{/* Separador */}
-							{handleAdd && (
-								<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-							)}
+							{handleAdd && <Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />}
 
 							{/* Grupo 2: Gestión de archivados */}
-							<Stack
-								direction="row"
-								spacing={1}
-								sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}
-							>
+							<Stack direction="row" spacing={1} sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}>
 								<Button
 									variant="outlined"
 									color="secondary"
@@ -653,9 +680,7 @@ function ReactTable({
 														: `Archivar ${selectedFlatRows.length} carpeta${selectedFlatRows.length > 1 ? "s" : ""}`
 												}
 											>
-												{Object.keys(selectedRowIds).length > 0
-													? `Archivar (${selectedFlatRows.length})`
-													: "Archivar"}
+												{Object.keys(selectedRowIds).length > 0 ? `Archivar (${selectedFlatRows.length})` : "Archivar"}
 											</Button>
 										</span>
 									</Tooltip>
@@ -684,7 +709,9 @@ function ReactTable({
 										aria-label={
 											activeFiltersCount > 0
 												? `Mostrar filtros — ${activeFiltersCount} activo${activeFiltersCount > 1 ? "s" : ""}`
-												: showFilters ? "Ocultar filtros" : "Mostrar filtros"
+												: showFilters
+												? "Ocultar filtros"
+												: "Mostrar filtros"
 										}
 										aria-expanded={showFilters}
 									>
@@ -719,12 +746,7 @@ function ReactTable({
 									/>
 								</Box>
 								<Tooltip title="Exportar a CSV">
-									<IconButton
-										color="primary"
-										size="small"
-										onClick={() => csvLinkRef.current?.link?.click()}
-										aria-label="Descargar CSV"
-									>
+									<IconButton color="primary" size="small" onClick={() => csvLinkRef.current?.link?.click()} aria-label="Descargar CSV">
 										<DocumentDownload variant="Bulk" size={20} />
 									</IconButton>
 								</Tooltip>
@@ -799,11 +821,21 @@ function ReactTable({
 											onChange={onFolderTypeFilterChange}
 											sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 										>
-											<MenuItem value="all"><Typography variant="body2">Tipo: Todos</Typography></MenuItem>
-											<MenuItem value="manual"><Typography variant="body2">Manual</Typography></MenuItem>
-											<MenuItem value="pjn"><Typography variant="body2">PJN</Typography></MenuItem>
-											<MenuItem value="eje"><Typography variant="body2">EJE</Typography></MenuItem>
-											<MenuItem value="mev"><Typography variant="body2">MEV</Typography></MenuItem>
+											<MenuItem value="all">
+												<Typography variant="body2">Tipo: Todos</Typography>
+											</MenuItem>
+											<MenuItem value="manual">
+												<Typography variant="body2">Manual</Typography>
+											</MenuItem>
+											<MenuItem value="pjn">
+												<Typography variant="body2">PJN</Typography>
+											</MenuItem>
+											<MenuItem value="eje">
+												<Typography variant="body2">EJE</Typography>
+											</MenuItem>
+											<MenuItem value="mev">
+												<Typography variant="body2">MEV</Typography>
+											</MenuItem>
 										</Select>
 									</FormControl>
 									{/* Filtro por Estado */}
@@ -816,11 +848,21 @@ function ReactTable({
 												onChange={onStatusFilterChange}
 												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
-												<MenuItem value="all"><Typography variant="body2">Estado: Todos</Typography></MenuItem>
-												<MenuItem value="Nueva"><Typography variant="body2">Nueva</Typography></MenuItem>
-												<MenuItem value="En Proceso"><Typography variant="body2">En Proceso</Typography></MenuItem>
-												<MenuItem value="Pendiente"><Typography variant="body2">Pendiente</Typography></MenuItem>
-												<MenuItem value="Cerrada"><Typography variant="body2">Cerrada</Typography></MenuItem>
+												<MenuItem value="all">
+													<Typography variant="body2">Estado: Todos</Typography>
+												</MenuItem>
+												<MenuItem value="Nueva">
+													<Typography variant="body2">Nueva</Typography>
+												</MenuItem>
+												<MenuItem value="En Proceso">
+													<Typography variant="body2">En Proceso</Typography>
+												</MenuItem>
+												<MenuItem value="Pendiente">
+													<Typography variant="body2">Pendiente</Typography>
+												</MenuItem>
+												<MenuItem value="Cerrada">
+													<Typography variant="body2">Cerrada</Typography>
+												</MenuItem>
 											</Select>
 										</FormControl>
 									)}
@@ -834,9 +876,13 @@ function ReactTable({
 												onChange={onParteFilterChange}
 												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
-												<MenuItem value="all"><Typography variant="body2">Parte: Todas</Typography></MenuItem>
+												<MenuItem value="all">
+													<Typography variant="body2">Parte: Todas</Typography>
+												</MenuItem>
 												{uniquePartes.map((parte) => (
-													<MenuItem key={parte} value={parte}><Typography variant="body2">{parte}</Typography></MenuItem>
+													<MenuItem key={parte} value={parte}>
+														<Typography variant="body2">{parte}</Typography>
+													</MenuItem>
 												))}
 											</Select>
 										</FormControl>
@@ -851,11 +897,21 @@ function ReactTable({
 												onChange={onMovimientosFilterChange}
 												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
-												<MenuItem value="all"><Typography variant="body2">Movimientos: Todos</Typography></MenuItem>
-												<MenuItem value="today"><Typography variant="body2">Hoy</Typography></MenuItem>
-												<MenuItem value="week"><Typography variant="body2">Última semana</Typography></MenuItem>
-												<MenuItem value="month"><Typography variant="body2">Último mes</Typography></MenuItem>
-												<MenuItem value="none"><Typography variant="body2">Sin movimientos</Typography></MenuItem>
+												<MenuItem value="all">
+													<Typography variant="body2">Movimientos: Todos</Typography>
+												</MenuItem>
+												<MenuItem value="today">
+													<Typography variant="body2">Hoy</Typography>
+												</MenuItem>
+												<MenuItem value="week">
+													<Typography variant="body2">Última semana</Typography>
+												</MenuItem>
+												<MenuItem value="month">
+													<Typography variant="body2">Último mes</Typography>
+												</MenuItem>
+												<MenuItem value="none">
+													<Typography variant="body2">Sin movimientos</Typography>
+												</MenuItem>
 											</Select>
 										</FormControl>
 									)}
@@ -869,9 +925,13 @@ function ReactTable({
 												onChange={onJurisdiccionFilterChange}
 												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
 											>
-												<MenuItem value="all"><Typography variant="body2">Jurisdicción: Todas</Typography></MenuItem>
+												<MenuItem value="all">
+													<Typography variant="body2">Jurisdicción: Todas</Typography>
+												</MenuItem>
 												{uniqueJurisdicciones.map((juris) => (
-													<MenuItem key={juris} value={juris}><Typography variant="body2">{juris}</Typography></MenuItem>
+													<MenuItem key={juris} value={juris}>
+														<Typography variant="body2">{juris}</Typography>
+													</MenuItem>
 												))}
 											</Select>
 										</FormControl>
@@ -931,37 +991,48 @@ function ReactTable({
 						// Chip de estado
 						const statusChip = (() => {
 							switch (folder.status) {
-								case "Cerrada": return <Chip color="error" label="Cerrada" size="small" variant="light" />;
-								case "Nueva": return <Chip color="success" label="Nueva" size="small" variant="light" />;
-								case "En Proceso": return <Chip color="info" label="En Proceso" size="small" variant="light" />;
-								case "Pendiente": return <Chip color="warning" label="Pendiente" size="small" variant="light" />;
-								default: return folder.status ? <Chip color="default" label={folder.status} size="small" variant="light" /> : null;
+								case "Cerrada":
+									return <Chip color="error" label="Cerrada" size="small" variant="light" />;
+								case "Nueva":
+									return <Chip color="success" label="Nueva" size="small" variant="light" />;
+								case "En Proceso":
+									return <Chip color="info" label="En Proceso" size="small" variant="light" />;
+								case "Pendiente":
+									return <Chip color="warning" label="Pendiente" size="small" variant="light" />;
+								default:
+									return folder.status ? <Chip color="default" label={folder.status} size="small" variant="light" /> : null;
 							}
 						})();
 
 						// Badge de fuente (PJN / MEV / EJE)
-						const sourceBadge = folder.pjn
-							? <Chip label="PJN" size="small" color="primary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
-							: folder.mev
-							? <Chip label="MEV" size="small" color="secondary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
-							: folder.eje
-							? <Chip label="EJE" size="small" color="info" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
-							: null;
+						const sourceBadge = folder.pjn ? (
+							<Chip label="PJN" size="small" color="primary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
+						) : folder.mev ? (
+							<Chip label="MEV" size="small" color="secondary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
+						) : folder.eje ? (
+							<Chip label="EJE" size="small" color="info" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
+						) : null;
 
 						// Último movimiento formateado
 						const lastMovStr = folder.lastMovementDate
 							? (() => {
-								try { return dayjs.utc(folder.lastMovementDate).format("DD/MM/YYYY"); }
-								catch { return null; }
-							})()
+									try {
+										return dayjs.utc(folder.lastMovementDate).format("DD/MM/YYYY");
+									} catch {
+										return null;
+									}
+							  })()
 							: null;
 
 						// Fecha inicio formateada
 						const initDateStr = folder.initialDateFolder
 							? (() => {
-								try { return dayjs.utc(folder.initialDateFolder).format("DD/MM/YYYY"); }
-								catch { return null; }
-							})()
+									try {
+										return dayjs.utc(folder.initialDateFolder).format("DD/MM/YYYY");
+									} catch {
+										return null;
+									}
+							  })()
 							: null;
 
 						return (
@@ -985,7 +1056,10 @@ function ReactTable({
 												variant="subtitle2"
 												fontWeight={600}
 												sx={{ flex: 1, lineHeight: 1.3, wordBreak: "break-word" }}
-												onClick={(e) => { e.stopPropagation(); navigate(`../details/${folder._id}`); }}
+												onClick={(e) => {
+													e.stopPropagation();
+													navigate(`../details/${folder._id}`);
+												}}
 											>
 												{folder.folderName ? formatFolderName(folder.folderName, 60) : "Sin nombre"}
 											</Typography>
@@ -1004,7 +1078,9 @@ function ReactTable({
 													</Typography>
 												)}
 												{folder.folderFuero && folder.folderJuris?.label && (
-													<Typography variant="caption" color="text.secondary">·</Typography>
+													<Typography variant="caption" color="text.secondary">
+														·
+													</Typography>
 												)}
 												{folder.folderJuris?.label && (
 													<Typography variant="caption" color="text.secondary">
@@ -1143,7 +1219,14 @@ function ReactTable({
 										Las carpetas representan expedientes, causas o clientes. Podes empezar con una y completarla luego.
 									</Typography>
 								</Stack>
-								<Button variant="contained" color="primary" size="large" startIcon={<Add />} onClick={handleAdd} sx={{ mt: 1, textTransform: "none" }}>
+								<Button
+									variant="contained"
+									color="primary"
+									size="large"
+									startIcon={<Add />}
+									onClick={handleAdd}
+									sx={{ mt: 1, textTransform: "none" }}
+								>
 									Crear mi primera carpeta
 								</Button>
 							</Stack>
@@ -1165,9 +1248,7 @@ function ReactTable({
 										: "No hay causas disponibles en este equipo."}
 								</Typography>
 								<Typography variant="body2" color="textSecondary" align="center">
-									{handleAdd
-										? "Las causas que guardes aparecerán aquí"
-										: "Las causas del equipo aparecerán aquí cuando estén disponibles"}
+									{handleAdd ? "Las causas que guardes aparecerán aquí" : "Las causas del equipo aparecerán aquí cuando estén disponibles"}
 								</Typography>
 							</>
 						)
@@ -1246,17 +1327,19 @@ const FoldersLayout = () => {
 	const [causaSelectorFolder, setCausaSelectorFolder] = useState<{ id: string; name: string }>({ id: "", name: "" });
 
 	// Estados para filtros de carpetas
-	const [folderTypeFilter, setFolderTypeFilter] = useState<'all' | 'manual' | 'pjn' | 'eje' | 'mev'>('all');
-	const [statusFilter, setStatusFilter] = useState<'all' | 'Nueva' | 'En Proceso' | 'Pendiente' | 'Cerrada'>('all');
-	const [parteFilter, setParteFilter] = useState<string>('all');
-	const [movimientosFilter, setMovimientosFilter] = useState<'all' | 'today' | 'week' | 'month' | 'none'>('all');
-	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>('all');
+	const [folderTypeFilter, setFolderTypeFilter] = useState<"all" | "manual" | "pjn" | "eje" | "mev">("all");
+	const [statusFilter, setStatusFilter] = useState<"all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada">("all");
+	const [parteFilter, setParteFilter] = useState<string>("all");
+	const [movimientosFilter, setMovimientosFilter] = useState<"all" | "today" | "week" | "month" | "none">("all");
+	const [jurisdiccionFilter, setJurisdiccionFilter] = useState<string>("all");
 
 	// Estado para alinear la barra de carpetas con los botones de la toolbar
 	const [barWidth, setBarWidth] = useState<number | undefined>(undefined);
 	// Estado para pre-seleccionar paso y valores al abrir AddFolder desde los badges
 	const [addFolderInitialStep, setAddFolderInitialStep] = useState<number | undefined>(undefined);
-	const [addFolderInitialFormValues, setAddFolderInitialFormValues] = useState<{ entryMethod?: string; judicialPower?: string } | undefined>(undefined);
+	const [addFolderInitialFormValues, setAddFolderInitialFormValues] = useState<
+		{ entryMethod?: string; judicialPower?: string } | undefined
+	>(undefined);
 
 	// Referencias
 	const mountedRef = useRef(false);
@@ -1294,20 +1377,22 @@ const FoldersLayout = () => {
 
 		// Contar pendientes e inválidas por separado
 		const pendingVerification = folders.filter(
-			(folder: any) => isAutoFolder(folder) && folder.causaVerified === false &&
-				folder.causaAssociationStatus !== "failed" && folder.causaAssociationStatus !== "pending_selection"
+			(folder: any) =>
+				isAutoFolder(folder) &&
+				folder.causaVerified === false &&
+				folder.causaAssociationStatus !== "failed" &&
+				folder.causaAssociationStatus !== "pending_selection",
 		).length;
 
 		// Contar folders con selección pendiente
 		const pendingSelection = folders.filter(
-			(folder: any) => isAutoFolder(folder) && folder.causaAssociationStatus === "pending_selection"
+			(folder: any) => isAutoFolder(folder) && folder.causaAssociationStatus === "pending_selection",
 		).length;
 
 		const invalid = folders.filter(
-			(folder: any) => isAutoFolder(folder) && (
-				(folder.causaVerified === true && folder.causaIsValid === false) ||
-				folder.causaAssociationStatus === "failed"
-			),
+			(folder: any) =>
+				isAutoFolder(folder) &&
+				((folder.causaVerified === true && folder.causaIsValid === false) || folder.causaAssociationStatus === "failed"),
 		).length;
 
 		// Folders verificados y válidos (incluye todos los que NO están en pending)
@@ -1316,8 +1401,11 @@ const FoldersLayout = () => {
 				// Carpetas que NO son automáticas (siempre van a la tabla principal)
 				!isAutoFolder(folder) ||
 				// O carpetas automáticas que están verificadas y válidas (y no tienen selección pendiente)
-				(isAutoFolder(folder) && folder.causaVerified === true && folder.causaIsValid === true &&
-					folder.causaAssociationStatus !== "failed" && folder.causaAssociationStatus !== "pending_selection"),
+				(isAutoFolder(folder) &&
+					folder.causaVerified === true &&
+					folder.causaIsValid === true &&
+					folder.causaAssociationStatus !== "failed" &&
+					folder.causaAssociationStatus !== "pending_selection"),
 		);
 
 		return {
@@ -1354,54 +1442,54 @@ const FoldersLayout = () => {
 	const filteredVerifiedFolders = useMemo(() => {
 		return verifiedFolders.filter((folder: any) => {
 			// Filtro por tipo de carpeta
-			if (folderTypeFilter !== 'all') {
+			if (folderTypeFilter !== "all") {
 				switch (folderTypeFilter) {
-					case 'manual':
-						if (!(folder.source === 'manual' || (!folder.pjn && !folder.mev && !folder.eje))) return false;
+					case "manual":
+						if (!(folder.source === "manual" || (!folder.pjn && !folder.mev && !folder.eje))) return false;
 						break;
-					case 'pjn':
+					case "pjn":
 						if (folder.pjn !== true) return false;
 						break;
-					case 'mev':
+					case "mev":
 						if (folder.mev !== true) return false;
 						break;
-					case 'eje':
+					case "eje":
 						if (folder.eje !== true) return false;
 						break;
 				}
 			}
 
 			// Filtro por estado
-			if (statusFilter !== 'all' && folder.status !== statusFilter) {
+			if (statusFilter !== "all" && folder.status !== statusFilter) {
 				return false;
 			}
 
 			// Filtro por parte
-			if (parteFilter !== 'all' && folder.orderStatus !== parteFilter) {
+			if (parteFilter !== "all" && folder.orderStatus !== parteFilter) {
 				return false;
 			}
 
 			// Filtro por jurisdicción
-			if (jurisdiccionFilter !== 'all' && folder.folderJuris?.label !== jurisdiccionFilter) {
+			if (jurisdiccionFilter !== "all" && folder.folderJuris?.label !== jurisdiccionFilter) {
 				return false;
 			}
 
 			// Filtro por movimientos recientes
-			if (movimientosFilter !== 'all') {
+			if (movimientosFilter !== "all") {
 				const lastMovement = folder.lastMovementDate ? dayjs(folder.lastMovementDate) : null;
-				const today = dayjs().startOf('day');
+				const today = dayjs().startOf("day");
 
 				switch (movimientosFilter) {
-					case 'today':
-						if (!lastMovement || !lastMovement.isSame(today, 'day')) return false;
+					case "today":
+						if (!lastMovement || !lastMovement.isSame(today, "day")) return false;
 						break;
-					case 'week':
-						if (!lastMovement || !lastMovement.isAfter(today.subtract(7, 'day'))) return false;
+					case "week":
+						if (!lastMovement || !lastMovement.isAfter(today.subtract(7, "day"))) return false;
 						break;
-					case 'month':
-						if (!lastMovement || !lastMovement.isAfter(today.subtract(30, 'day'))) return false;
+					case "month":
+						if (!lastMovement || !lastMovement.isAfter(today.subtract(30, "day"))) return false;
 						break;
-					case 'none':
+					case "none":
 						if (lastMovement) return false;
 						break;
 				}
@@ -1601,7 +1689,7 @@ const FoldersLayout = () => {
 
 			if (result.success) {
 				setSnackbarMessage(
-					`${result.deletedCount} ${result.deletedCount === 1 ? "carpeta eliminada" : "carpetas eliminadas"} correctamente`
+					`${result.deletedCount} ${result.deletedCount === 1 ? "carpeta eliminada" : "carpetas eliminadas"} correctamente`,
 				);
 				setSnackbarSeverity("success");
 			} else {
@@ -1706,12 +1794,12 @@ const FoldersLayout = () => {
 	}, []);
 
 	// Handler para el filtro de tipo de carpeta
-	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<'all' | 'manual' | 'pjn' | 'eje' | 'mev'>) => {
-		setFolderTypeFilter(event.target.value as 'all' | 'manual' | 'pjn' | 'eje' | 'mev');
+	const handleFolderTypeFilterChange = useCallback((event: SelectChangeEvent<"all" | "manual" | "pjn" | "eje" | "mev">) => {
+		setFolderTypeFilter(event.target.value as "all" | "manual" | "pjn" | "eje" | "mev");
 	}, []);
 
 	const handleStatusFilterChange = useCallback((event: SelectChangeEvent<string>) => {
-		setStatusFilter(event.target.value as 'all' | 'Nueva' | 'En Proceso' | 'Pendiente' | 'Cerrada');
+		setStatusFilter(event.target.value as "all" | "Nueva" | "En Proceso" | "Pendiente" | "Cerrada");
 	}, []);
 
 	const handleParteFilterChange = useCallback((event: SelectChangeEvent<string>) => {
@@ -1719,7 +1807,7 @@ const FoldersLayout = () => {
 	}, []);
 
 	const handleMovimientosFilterChange = useCallback((event: SelectChangeEvent<string>) => {
-		setMovimientosFilter(event.target.value as 'all' | 'today' | 'week' | 'month' | 'none');
+		setMovimientosFilter(event.target.value as "all" | "today" | "week" | "month" | "none");
 	}, []);
 
 	const handleJurisdiccionFilterChange = useCallback((event: SelectChangeEvent<string>) => {
@@ -1883,8 +1971,7 @@ const FoldersLayout = () => {
 					const value = folder.folderName;
 
 					// Solo mostrar indicadores visuales si es una causa sincronizada automáticamente
-					const showStatusIndicators =
-						folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
+					const showStatusIndicators = folder.pjn === true || folder.mev === true || folder.eje === true || folder.scba === true;
 					// Si no se deben mostrar indicadores, solo mostrar el nombre
 					if (!showStatusIndicators) {
 						return (
@@ -1916,20 +2003,14 @@ const FoldersLayout = () => {
 						(folder.pjn === true && folder.source === "pjn-login") ||
 						(folder.scba === true && folder.source === "scba-login") ||
 						(folder.mev === true && folder.source === "mev-login");
-					const isListRemoved =
-						isFromMisCausas &&
-						(folder.listRemoved === true ||
-							(folder.pjn === true && folder.pjnNotFound === true));
+					const isListRemoved = isFromMisCausas && (folder.listRemoved === true || (folder.pjn === true && folder.pjnNotFound === true));
 					// Causa PJN reservada: solo aplica a causas individuales (no
 					// pjn-login). El privacy-checker la marcó tras N fallos consecutivos
 					// del scrape público. listRemoved e isPjnPrivateRestricted son
 					// mutuamente excluyentes por construcción (uno requiere pjn-login,
 					// el otro lo excluye), pero por las dudas evaluamos primero la
 					// privada por ser más severa.
-					const isPjnPrivateRestricted =
-						folder.pjn === true &&
-						folder.causaIsPrivate === true &&
-						folder.source !== "pjn-login";
+					const isPjnPrivateRestricted = folder.pjn === true && folder.causaIsPrivate === true && folder.source !== "pjn-login";
 					if (isPjnPrivateRestricted) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -1965,9 +2046,7 @@ const FoldersLayout = () => {
 						);
 					}
 					if (isListRemoved) {
-						const source = folder.listRemovedSource
-							? folder.listRemovedSource.toUpperCase()
-							: "PJN";
+						const source = folder.listRemovedSource ? folder.listRemovedSource.toUpperCase() : "PJN";
 						const tooltipCopy = `Esta causa ya no aparece en tu lista de Mis Causas del portal ${source}. Puede haber sido archivada o desvinculada por el tribunal.`;
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
@@ -2065,7 +2144,10 @@ const FoldersLayout = () => {
 					}
 
 					// Si causaVerified es false o no está verificado (pendiente), mostrar chip de pendiente con botón de actualización
-					if (folder.causaVerified === false || (folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba))) {
+					if (
+						folder.causaVerified === false ||
+						(folder.causaVerified !== true && (folder.pjn || folder.mev || folder.eje || folder.scba))
+					) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
 								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
@@ -2205,12 +2287,12 @@ const FoldersLayout = () => {
 										folder.pjn === true
 											? "Causa vinculada a PJN"
 											: folder.mev === true
-												? "Causa vinculada a MEV"
-												: folder.eje === true
-													? "Causa vinculada a EJE"
-													: folder.scba === true
-														? "Causa vinculada a SCBA"
-														: "Causa vinculada"
+											? "Causa vinculada a MEV"
+											: folder.eje === true
+											? "Causa vinculada a EJE"
+											: folder.scba === true
+											? "Causa vinculada a SCBA"
+											: "Causa vinculada"
 									}
 								>
 									<Box
@@ -2457,9 +2539,7 @@ const FoldersLayout = () => {
 
 					// Folders pendientes de verificación (sin error, esperando al worker)
 					const isPendingVerification =
-						isAutoFolder &&
-						!isErrorFolder &&
-						(folder.causaVerified !== true || folder.causaAssociationStatus === "pending_selection");
+						isAutoFolder && !isErrorFolder && (folder.causaVerified !== true || folder.causaAssociationStatus === "pending_selection");
 
 					// Deshabilitar acciones principales para pendientes y errores
 					const disableMainActions = isPendingVerification || isErrorFolder;
@@ -2561,7 +2641,13 @@ const FoldersLayout = () => {
 			<SEO path="/apps/folders" />
 			<MainCard content={false}>
 				<DowngradeGracePeriodAlert />
-				<ResourceUsageBar resourceType="folders" compact barWidth={barWidth} onCabaClick={canCreate ? handleOpenCabaFolder : undefined} onBaClick={canCreate ? handleOpenBaFolder : undefined} />
+				<ResourceUsageBar
+					resourceType="folders"
+					compact
+					barWidth={barWidth}
+					onCabaClick={canCreate ? handleOpenCabaFolder : undefined}
+					onBaClick={canCreate ? handleOpenBaFolder : undefined}
+				/>
 
 				{/* Microhint de onboarding */}
 				{isOnboarding && verifiedFolders.length === 0 && (
@@ -2615,7 +2701,7 @@ const FoldersLayout = () => {
 							jurisdiccionFilter={jurisdiccionFilter}
 							onJurisdiccionFilterChange={handleJurisdiccionFilterChange}
 							uniqueJurisdicciones={uniqueJurisdicciones}
-						onBarWidthMeasured={setBarWidth}
+							onBarWidthMeasured={setBarWidth}
 						/>
 					</ScrollX>
 				</Box>
@@ -2844,7 +2930,15 @@ const FoldersLayout = () => {
 							},
 						}}
 					>
-						<AddFolder open={add} folder={folder} mode={addFolderMode} onCancel={handleCloseDialog} onAddFolder={handleCloseDialog} initialStep={addFolderInitialStep} initialFormValues={addFolderInitialFormValues} />
+						<AddFolder
+							open={add}
+							folder={folder}
+							mode={addFolderMode}
+							onCancel={handleCloseDialog}
+							onAddFolder={handleCloseDialog}
+							initialStep={addFolderInitialStep}
+							initialFormValues={addFolderInitialFormValues}
+						/>
 					</Dialog>
 				)}
 
@@ -3004,7 +3098,9 @@ const FoldersLayout = () => {
 						<Stack spacing={1}>
 							<Stack direction="row" alignItems="center" spacing={1}>
 								<DocumentText1 size={24} color={theme.palette.primary.main} variant="Bold" />
-								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>Crear Documento</Typography>
+								<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+									Crear Documento
+								</Typography>
 							</Stack>
 							<Typography variant="body2" color="textSecondary">
 								{selectedFolderForDoc?.name ?? ""}
@@ -3016,32 +3112,62 @@ const FoldersLayout = () => {
 						<Stack spacing={1.5}>
 							<Card
 								variant="outlined"
-								sx={{ cursor: "pointer", "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" }, transition: "border-color 0.15s" }}
+								sx={{
+									cursor: "pointer",
+									"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+									transition: "border-color 0.15s",
+								}}
 							>
-								<CardActionArea onClick={() => { setDocChooserOpen(false); setCreatePostalOpen(true); }}>
+								<CardActionArea
+									onClick={() => {
+										setDocChooserOpen(false);
+										setCreatePostalOpen(true);
+									}}
+								>
 									<CardContent>
 										<Stack direction="row" spacing={1.5} alignItems="center">
 											<NoteText size={28} variant="Bulk" />
 											<Stack spacing={0.25}>
-												<Typography variant="body2" fontWeight={600}>Modelo del Sistema</Typography>
-												<Typography variant="caption" color="text.secondary">Telegramas, cartas documento y más</Typography>
+												<Typography variant="body2" fontWeight={600}>
+													Modelo del Sistema
+												</Typography>
+												<Typography variant="caption" color="text.secondary">
+													Telegramas, cartas documento y más
+												</Typography>
 											</Stack>
 										</Stack>
 									</CardContent>
 								</CardActionArea>
 							</Card>
-							<Divider><Typography variant="caption" color="text.secondary">o</Typography></Divider>
+							<Divider>
+								<Typography variant="caption" color="text.secondary">
+									o
+								</Typography>
+							</Divider>
 							<Card
 								variant="outlined"
-								sx={{ cursor: "pointer", "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" }, transition: "border-color 0.15s" }}
+								sx={{
+									cursor: "pointer",
+									"&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+									transition: "border-color 0.15s",
+								}}
 							>
-								<CardActionArea onClick={() => { setDocChooserOpen(false); setPickModelOpen(true); }}>
+								<CardActionArea
+									onClick={() => {
+										setDocChooserOpen(false);
+										setPickModelOpen(true);
+									}}
+								>
 									<CardContent>
 										<Stack direction="row" spacing={1.5} alignItems="center">
 											<DocumentText size={28} variant="Bulk" />
 											<Stack spacing={0.25}>
-												<Typography variant="body2" fontWeight={600}>Mis Modelos</Typography>
-												<Typography variant="caption" color="text.secondary">Escritos personalizados con editor de texto</Typography>
+												<Typography variant="body2" fontWeight={600}>
+													Mis Modelos
+												</Typography>
+												<Typography variant="caption" color="text.secondary">
+													Escritos personalizados con editor de texto
+												</Typography>
 											</Stack>
 										</Stack>
 									</CardContent>
@@ -3066,11 +3192,7 @@ const FoldersLayout = () => {
 				)}
 
 				{/* Modal mis modelos */}
-				<PickModelDialog
-					open={pickModelOpen}
-					onClose={() => setPickModelOpen(false)}
-					folderId={selectedFolderForDoc?.id ?? null}
-				/>
+				<PickModelDialog open={pickModelOpen} onClose={() => setPickModelOpen(false)} folderId={selectedFolderForDoc?.id ?? null} />
 
 				{/* Modal de límite de recursos */}
 				<LimitErrorModal

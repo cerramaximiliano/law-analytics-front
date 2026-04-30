@@ -58,9 +58,7 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 			setLoading(actionLabel);
 
 			// Step 1: clear selection from editor (no history) so we can stream into it
-			editor.view.dispatch(
-				editor.state.tr.insertText("", selRange.from, selRange.to).setMeta("addToHistory", false)
-			);
+			editor.view.dispatch(editor.state.tr.insertText("", selRange.from, selRange.to).setMeta("addToHistory", false));
 			let streamedTo = selRange.from;
 
 			try {
@@ -68,40 +66,34 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 				let lastLength = 0;
 				let accumulated = "";
 
-				await ragAxios.post(
-					"/rag/editor/chat",
-					body,
-					{
-						responseType: "text",
-						onDownloadProgress: (progressEvent) => {
-							const fullText = (progressEvent.event?.target as XMLHttpRequest)?.response ?? "";
-							const newText = fullText.slice(lastLength);
-							lastLength = fullText.length;
-							sseBuffer += newText;
-							const lines = sseBuffer.split("\n");
-							sseBuffer = lines.pop() ?? "";
-							for (const line of lines) {
-								if (!line.startsWith("data: ")) continue;
-								const raw = line.slice(6).trim();
-								if (!raw) continue;
-								try {
-									const evt = JSON.parse(raw);
-									if (evt.type === "chunk") {
-										accumulated += evt.text;
-										// Step 2: stream each chunk into the editor (typewriter effect)
-										const tr = editor.state.tr
-											.insertText(evt.text, streamedTo)
-											.setMeta("addToHistory", false);
-										editor.view.dispatch(tr);
-										streamedTo += evt.text.length;
-									}
-								} catch {
-									// ignore malformed SSE
+				await ragAxios.post("/rag/editor/chat", body, {
+					responseType: "text",
+					onDownloadProgress: (progressEvent) => {
+						const fullText = (progressEvent.event?.target as XMLHttpRequest)?.response ?? "";
+						const newText = fullText.slice(lastLength);
+						lastLength = fullText.length;
+						sseBuffer += newText;
+						const lines = sseBuffer.split("\n");
+						sseBuffer = lines.pop() ?? "";
+						for (const line of lines) {
+							if (!line.startsWith("data: ")) continue;
+							const raw = line.slice(6).trim();
+							if (!raw) continue;
+							try {
+								const evt = JSON.parse(raw);
+								if (evt.type === "chunk") {
+									accumulated += evt.text;
+									// Step 2: stream each chunk into the editor (typewriter effect)
+									const tr = editor.state.tr.insertText(evt.text, streamedTo).setMeta("addToHistory", false);
+									editor.view.dispatch(tr);
+									streamedTo += evt.text.length;
 								}
+							} catch {
+								// ignore malformed SSE
 							}
-						},
+						}
 					},
-				);
+				});
 
 				const result = accumulated.trim();
 				if (!result) return;
@@ -122,16 +114,12 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 				});
 			} catch (_err: any) {
 				// On error: restore original text
-				editor.view.dispatch(
-					editor.state.tr
-						.insertText(selText, selRange.from, streamedTo)
-						.setMeta("addToHistory", false)
-				);
+				editor.view.dispatch(editor.state.tr.insertText(selText, selRange.from, streamedTo).setMeta("addToHistory", false));
 			} finally {
 				setLoading(null);
 			}
 		},
-		[editor, onLoadingStart, onDiffReady]
+		[editor, onLoadingStart, onDiffReady],
 	);
 
 	const handleActionChip = useCallback(
@@ -141,9 +129,7 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 			if (!sel || !range || loading) return;
 
 			const resolvedPrompt = buildPrompt(action.prompt, sel);
-			const promptWithText = action.prompt.includes("{{text}}")
-				? resolvedPrompt
-				: `${resolvedPrompt}\n\nTexto a trabajar:\n"${sel}"`;
+			const promptWithText = action.prompt.includes("{{text}}") ? resolvedPrompt : `${resolvedPrompt}\n\nTexto a trabajar:\n"${sel}"`;
 			const prompt = `${promptWithText}\n\nDevolvé SOLO el texto resultante, sin explicaciones, aclaraciones ni comillas.`;
 
 			const body: Record<string, unknown> = {
@@ -156,7 +142,7 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 
 			await streamDiff(prompt, action.label, sel, range, body);
 		},
-		[selectedText, loading, caseContext, streamDiff]
+		[selectedText, loading, caseContext, streamDiff],
 	);
 
 	const handleSubmit = useCallback(async () => {
@@ -192,9 +178,7 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 
 	const hasSelection = Boolean(selectedText);
 	const isLoading = loading !== null;
-	const placeholder = hasSelection
-		? "Instrucción sobre el texto seleccionado..."
-		: "Instrucción para el asistente IA...";
+	const placeholder = hasSelection ? "Instrucción sobre el texto seleccionado..." : "Instrucción para el asistente IA...";
 
 	return (
 		<Box
@@ -233,9 +217,7 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 			{isLoading && (
 				<Stack direction="row" alignItems="center" spacing={0.75} flexShrink={0}>
 					<CircularProgress size={12} />
-					<Box sx={{ fontSize: "0.72rem", color: "text.secondary", whiteSpace: "nowrap" }}>
-						{loading}...
-					</Box>
+					<Box sx={{ fontSize: "0.72rem", color: "text.secondary", whiteSpace: "nowrap" }}>{loading}...</Box>
 				</Stack>
 			)}
 
@@ -254,12 +236,7 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 			{/* Send button */}
 			<Tooltip title={hasSelection ? "Aplicar instrucción al texto seleccionado" : "Enviar al asistente IA"}>
 				<span>
-					<IconButton
-						size="small"
-						color="primary"
-						onClick={handleSubmit}
-						disabled={!instruction.trim() || isLoading}
-					>
+					<IconButton size="small" color="primary" onClick={handleSubmit} disabled={!instruction.trim() || isLoading}>
 						<Send2 size={16} />
 					</IconButton>
 				</span>
@@ -267,11 +244,7 @@ const BottomActionBar = ({ editor, onDiffReady, onLoadingStart, hasPendingDiff, 
 
 			{/* Open AI drawer button */}
 			<Tooltip title="Abrir asistente IA">
-				<IconButton
-					size="small"
-					color="secondary"
-					onClick={() => onOpenAiDrawer()}
-				>
+				<IconButton size="small" color="secondary" onClick={() => onOpenAiDrawer()}>
 					<AiSparklesIcon size={16} />
 				</IconButton>
 			</Tooltip>

@@ -256,10 +256,7 @@ test("GRUPO 4 — flujo completo forgot→code→reset→login + restaura passwo
 	await expect(page.locator("#email-forgot")).toBeVisible({ timeout: 10_000 });
 
 	const [resetResponse] = await Promise.all([
-		page.waitForResponse(
-			(r) => r.url().endsWith("/api/auth/reset-request") && r.request().method() === "POST",
-			{ timeout: 10_000 },
-		),
+		page.waitForResponse((r) => r.url().endsWith("/api/auth/reset-request") && r.request().method() === "POST", { timeout: 10_000 }),
 		(async () => {
 			await page.locator("#email-forgot").fill(DEV_EMAIL);
 			await page.getByRole("button", { name: /Enviar instrucciones/i }).click();

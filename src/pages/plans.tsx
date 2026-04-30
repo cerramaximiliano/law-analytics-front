@@ -96,7 +96,7 @@ const Plans = () => {
 		// Para características booleanas
 		const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
 		if (feature) {
-			return feature.enabled ? (feature.displayName || feature.description) : null;
+			return feature.enabled ? feature.displayName || feature.description : null;
 		}
 
 		return null;
@@ -289,10 +289,7 @@ const Plans = () => {
 								const annualPrice = Math.round(pricing.basePrice * 12 * 0.75); // Descuento anual del 25%
 								const annualFullPrice = pricing.basePrice * 12;
 								const monthlyEquivalent = Math.round(annualPrice / 12);
-								const displayPrice =
-									isAnnual && pricing.billingPeriod === "monthly"
-										? annualPrice
-										: pricing.basePrice;
+								const displayPrice = isAnnual && pricing.billingPeriod === "monthly" ? annualPrice : pricing.basePrice;
 
 								return (
 									<Grid item xs={12} sm={6} md={4} key={plan.planId}>
@@ -315,17 +312,8 @@ const Plans = () => {
 																<Stack spacing={0.5} alignItems="center">
 																	{isAnnual && pricing.billingPeriod === "monthly" ? (
 																		<>
-																			<Chip
-																				color="success"
-																				size="small"
-																				label="Ahorrá 25%"
-																				sx={{ mb: 0.5 }}
-																			/>
-																			<Typography
-																				variant="h6"
-																				color="text.secondary"
-																				sx={{ textDecoration: "line-through" }}
-																			>
+																			<Chip color="success" size="small" label="Ahorrá 25%" sx={{ mb: 0.5 }} />
+																			<Typography variant="h6" color="text.secondary" sx={{ textDecoration: "line-through" }}>
 																				{formatPrice(annualFullPrice, pricing.currency)}
 																			</Typography>
 																			<Typography variant="h2" sx={price}>
@@ -420,13 +408,24 @@ const Plans = () => {
 
 															const renderFeatureItem = (feature: PlanFeature, i: number) => (
 																<Grid item xs={12} sm={6} key={`feature-${i}`}>
-																	<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																	<Box
+																		sx={{
+																			display: "flex",
+																			alignItems: "center",
+																			gap: 1,
+																			py: 0.5,
+																			...(feature.enabled ? {} : priceListDisable),
+																		}}
+																	>
 																		{feature.enabled ? (
 																			<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
 																		) : (
 																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
 																		)}
-																		<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																		<Typography
+																			variant="body2"
+																			sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}
+																		>
 																			{feature.displayName || feature.description}
 																		</Typography>
 																	</Box>
@@ -502,7 +501,9 @@ const Plans = () => {
 																variant="contained"
 																size="small"
 																color="warning"
-																href={`mailto:soporte@lawanalytics.app?subject=${encodeURIComponent("Interesado en plan " + cleanPlanDisplayName(plan.displayName))}`}
+																href={`mailto:soporte@lawanalytics.app?subject=${encodeURIComponent(
+																	"Interesado en plan " + cleanPlanDisplayName(plan.displayName),
+																)}`}
 															>
 																Avisame cuando esté disponible
 															</Button>

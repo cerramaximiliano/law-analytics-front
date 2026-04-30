@@ -82,7 +82,8 @@ test.beforeAll(async () => {
 
 		// 1. Eliminar contactos E2E de corridas anteriores
 		const e2eContacts = contacts.filter(
-			(c: any) => String(c.name ?? "").startsWith("E2EContact") || String(c.name ?? "").startsWith("E2EFiller") || c.lastName === "E2EApellido",
+			(c: any) =>
+				String(c.name ?? "").startsWith("E2EContact") || String(c.name ?? "").startsWith("E2EFiller") || c.lastName === "E2EApellido",
 		);
 		for (const c of e2eContacts) {
 			await ctx.delete(`${API_BASE}/api/contacts/${c._id}`, {
@@ -113,15 +114,17 @@ async function getAuthToken(page: Page): Promise<string> {
 }
 
 async function getUserId(page: Page): Promise<string> {
-	return (await page.evaluate(() => {
-		const token = localStorage.getItem("token") ?? "";
-		try {
-			const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-			return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
-		} catch {
-			return "";
-		}
-	})) ?? "";
+	return (
+		(await page.evaluate(() => {
+			const token = localStorage.getItem("token") ?? "";
+			try {
+				const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+				return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
+			} catch {
+				return "";
+			}
+		})) ?? ""
+	);
 }
 
 async function deleteContactById(page: Page, contactId: string): Promise<void> {
@@ -160,7 +163,15 @@ async function createFillerContacts(token: string, userId: string, count: number
 		for (let i = 0; i < count; i++) {
 			const res = await ctx.post(`${API_BASE}/api/contacts/create`, {
 				headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-				data: { name: `E2EFiller-${i}-${Date.now()}`, lastName: "E2EApellido", type: "Humana", role: "Cliente", state: "Buenos Aires", city: "La Plata", userId },
+				data: {
+					name: `E2EFiller-${i}-${Date.now()}`,
+					lastName: "E2EApellido",
+					type: "Humana",
+					role: "Cliente",
+					state: "Buenos Aires",
+					city: "La Plata",
+					userId,
+				},
 			});
 			const id = (await res.json()).contact?._id ?? "";
 			if (id) ids.push(id);
@@ -196,9 +207,15 @@ async function createContactViaUI(page: Page, firstName: string, lastName: strin
 	await expect(page.getByRole("heading", { name: "Agregar Nuevo Contacto", exact: true })).toBeVisible({ timeout: 10_000 });
 
 	// Paso 1: Tipo y Categoría
-	await page.locator(".MuiSelect-select").filter({ hasText: /Seleccione un tipo/ }).click();
+	await page
+		.locator(".MuiSelect-select")
+		.filter({ hasText: /Seleccione un tipo/ })
+		.click();
 	await page.getByRole("option", { name: "Humana" }).click();
-	await page.locator(".MuiSelect-select").filter({ hasText: /Seleccione una categoría/ }).click();
+	await page
+		.locator(".MuiSelect-select")
+		.filter({ hasText: /Seleccione una categoría/ })
+		.click();
 	await page.getByRole("option", { name: "Cliente" }).click();
 	await page.getByRole("button", { name: "Siguiente" }).click();
 
@@ -210,7 +227,10 @@ async function createContactViaUI(page: Page, firstName: string, lastName: strin
 
 	// Paso 3: Datos de Contacto
 	await expect(page.locator("text=Paso 3 de 4")).toBeVisible({ timeout: 5_000 });
-	await page.locator(".MuiSelect-select").filter({ hasText: /Seleccione una provincia/ }).click();
+	await page
+		.locator(".MuiSelect-select")
+		.filter({ hasText: /Seleccione una provincia/ })
+		.click();
 	await page.getByRole("option", { name: "Buenos Aires" }).click();
 	await page.locator("#city").fill("La Plata");
 	await page.getByRole("button", { name: "Siguiente" }).click();
@@ -527,7 +547,10 @@ test("GRUPO 7 — desarchivar contacto via UI → snackbar '1 contacto desarchiv
 
 	await Promise.all([
 		page.waitForResponse((r) => r.url().includes("/api/subscriptions/unarchive-items") && r.request().method() === "POST"),
-		page.getByRole("dialog").getByRole("button", { name: /Desarchivar/i }).click(),
+		page
+			.getByRole("dialog")
+			.getByRole("button", { name: /Desarchivar/i })
+			.click(),
 	]);
 
 	await expect(page.getByText(/contacto desarchivado correctamente/)).toBeVisible({ timeout: 10_000 });
@@ -563,7 +586,15 @@ test("GRUPO 8 — backend rechaza creación al superar el límite del plan", asy
 	const ctx = await request.newContext();
 	const overRes = await ctx.post(`${API_BASE}/api/contacts/create`, {
 		headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-		data: { name: `E2EOver-${Date.now()}`, lastName: "E2EApellido", type: "Humana", role: "Cliente", state: "Buenos Aires", city: "La Plata", userId },
+		data: {
+			name: `E2EOver-${Date.now()}`,
+			lastName: "E2EApellido",
+			type: "Humana",
+			role: "Cliente",
+			state: "Buenos Aires",
+			city: "La Plata",
+			userId,
+		},
 	});
 	const overData = await overRes.json();
 	await ctx.dispose();

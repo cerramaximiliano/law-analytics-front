@@ -225,16 +225,16 @@ const LegalDocumentViewerAllPlans = ({ documentType, title }: LegalDocumentViewe
 									planId === "free"
 										? alpha(theme.palette.grey[500], 0.08)
 										: planId === "standard"
-											? alpha(theme.palette.primary.main, 0.08)
-											: alpha(theme.palette.secondary.main, 0.08),
+										? alpha(theme.palette.primary.main, 0.08)
+										: alpha(theme.palette.secondary.main, 0.08),
 								borderRadius: expanded[planId] ? "8px 8px 0 0" : 2,
 								"&:hover": {
 									bgcolor:
 										planId === "free"
 											? alpha(theme.palette.grey[500], 0.12)
 											: planId === "standard"
-												? alpha(theme.palette.primary.main, 0.12)
-												: alpha(theme.palette.secondary.main, 0.12),
+											? alpha(theme.palette.primary.main, 0.12)
+											: alpha(theme.palette.secondary.main, 0.12),
 								},
 							}}
 						>

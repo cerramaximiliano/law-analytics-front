@@ -540,7 +540,10 @@ test("GRUPO 7 — crear evento desde celda → fecha de inicio corresponde al d�
 	await expect(page.getByText("Agregar Evento")).toBeVisible({ timeout: 5_000 });
 
 	// El input de "Fecha Inicio" debe contener el día 5
-	const startInput = page.locator("input").filter({ hasValue: new RegExp(`^${String(targetDay)}/`) }).first();
+	const startInput = page
+		.locator("input")
+		.filter({ hasValue: new RegExp(`^${String(targetDay)}/`) })
+		.first();
 	await expect(startInput).toBeVisible({ timeout: 3_000 });
 
 	await page.getByRole("button", { name: "Cancelar" }).click();
@@ -853,9 +856,7 @@ test("GRUPO 11 — evento ya vinculado → modal pre-selecciona la carpeta actua
 // GRUPO 12 — Drag & drop habilitado + API de actualización de fecha
 // ─────────────────────────────────────────────────────────────────────────────
 
-test("GRUPO 12 — evento muestra clase fc-event-draggable (drag habilitado) y PUT /api/events/:id acepta nueva fecha", async ({
-	page,
-}) => {
+test("GRUPO 12 — evento muestra clase fc-event-draggable (drag habilitado) y PUT /api/events/:id acepta nueva fecha", async ({ page }) => {
 	test.setTimeout(60_000);
 	await gotoCalendar(page);
 
@@ -909,7 +910,10 @@ test("GRUPO 13 — componente GoogleCalendarSync es visible en el calendario", a
 	// Cuando conectado: muestra perfil + botones de sync.
 	// Usamos .first() para evitar strict-mode violation si hay múltiples elementos.
 	await expect(
-		page.getByRole("button", { name: /Conectar|Reconectar|Sincronizar/i }).or(page.getByText("Google Calendar")).first(),
+		page
+			.getByRole("button", { name: /Conectar|Reconectar|Sincronizar/i })
+			.or(page.getByText("Google Calendar"))
+			.first(),
 	).toBeVisible({ timeout: 10_000 });
 });
 
@@ -1018,9 +1022,7 @@ test("GRUPO 15 — drag evento a otro día → disparará PUT /api/events/:id (v
 	// El evento puede estar hidden en vista mes por overflow — el drag sólo funciona
 	// si está visible. Si hidden, skippeamos con annotation (cubierto en GRUPO 12 vía PUT directo).
 	const eventEl = page.locator(".fc-event-draggable").filter({ hasText: title }).first();
-	const isVisible = await eventEl
-		.isVisible({ timeout: 3_000 })
-		.catch(() => false);
+	const isVisible = await eventEl.isVisible({ timeout: 3_000 }).catch(() => false);
 
 	if (!isVisible) {
 		test.info().annotations.push({
@@ -1038,10 +1040,7 @@ test("GRUPO 15 — drag evento a otro día → disparará PUT /api/events/:id (v
 	await expect(targetDay).toBeVisible({ timeout: 5_000 });
 
 	const putPromise = page
-		.waitForResponse(
-			(r) => r.url().includes(`/api/events/${eventId}`) && r.request().method() === "PUT",
-			{ timeout: 10_000 },
-		)
+		.waitForResponse((r) => r.url().includes(`/api/events/${eventId}`) && r.request().method() === "PUT", { timeout: 10_000 })
 		.catch(() => null);
 
 	await eventEl.dragTo(targetDay, { timeout: 10_000, force: true });

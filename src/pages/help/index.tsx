@@ -1224,12 +1224,7 @@ const ResourcesSection = () => {
 							<Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
 								¿Encontraste un problema o necesitás asistencia? Contactanos directamente por email.
 							</Typography>
-							<Button
-								variant="outlined"
-								size="small"
-								href="mailto:soporte@lawanalytics.app"
-								component="a"
-							>
+							<Button variant="outlined" size="small" href="mailto:soporte@lawanalytics.app" component="a">
 								soporte@lawanalytics.app
 							</Button>
 						</CardContent>

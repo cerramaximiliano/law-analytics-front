@@ -28,11 +28,7 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Placeholder from "@tiptap/extension-placeholder";
 import { PaginationPlus } from "tiptap-pagination-plus";
 import { useDispatch, useSelector } from "store";
-import {
-	getRichTextTemplate,
-	createRichTextTemplate,
-	updateRichTextTemplate,
-} from "store/reducers/richTextDocuments";
+import { getRichTextTemplate, createRichTextTemplate, updateRichTextTemplate } from "store/reducers/richTextDocuments";
 import { openSnackbar } from "store/reducers/snackbar";
 import MainCard from "components/MainCard";
 import EditorToolbar from "pages/herramientas/editor-poc/EditorToolbar";
@@ -87,9 +83,7 @@ const CATEGORIES: { value: RichTextTemplateCategory; label: string }[] = [
 ];
 
 const normalizeHtmlForPrint = (html: string) =>
-	html
-		.replace(/<p><\/p>/g, "<p><br></p>")
-		.replace(/\t/g, '<span style="display:inline-block;width:2cm"></span>');
+	html.replace(/<p><\/p>/g, "<p><br></p>").replace(/\t/g, '<span style="display:inline-block;width:2cm"></span>');
 
 /** Recursively collect all mergeField node keys from TipTap JSON */
 function extractMergeFields(node: Record<string, unknown>): string[] {
@@ -157,9 +151,7 @@ const TemplateEditorPage = () => {
 			if (tpl.content && Object.keys(tpl.content).length > 0) {
 				const parsedTpl = editor.schema.nodeFromJSON(tpl.content as Parameters<typeof editor.commands.setContent>[0]);
 				editor.view.dispatch(
-					editor.state.tr
-						.replaceWith(0, editor.state.doc.content.size, parsedTpl.content)
-						.setMeta("addToHistory", false)
+					editor.state.tr.replaceWith(0, editor.state.doc.content.size, parsedTpl.content).setMeta("addToHistory", false),
 				);
 			}
 			setContentLoaded(true);
@@ -199,7 +191,7 @@ const TemplateEditorPage = () => {
 					message: "El nombre del modelo es requerido.",
 					variant: "alert",
 					alert: { color: "warning" },
-				})
+				}),
 			);
 			return;
 		}
@@ -224,7 +216,7 @@ const TemplateEditorPage = () => {
 					message: isEdit ? "Modelo actualizado correctamente." : "Modelo creado correctamente.",
 					variant: "alert",
 					alert: { color: "success" },
-				})
+				}),
 			);
 			navigate("/documentos/modelos?tab=1");
 		} else {
@@ -234,7 +226,7 @@ const TemplateEditorPage = () => {
 					message: result?.error ?? "Error al guardar el modelo.",
 					variant: "alert",
 					alert: { color: "error" },
-				})
+				}),
 			);
 		}
 	};
@@ -274,11 +266,7 @@ const TemplateEditorPage = () => {
 
 						<FormControl size="small" sx={{ minWidth: 140, "& .MuiInputBase-root": { height: 36 } }}>
 							<InputLabel>Categoría</InputLabel>
-							<Select
-								label="Categoría"
-								value={category}
-								onChange={(e) => setCategory(e.target.value as RichTextTemplateCategory)}
-							>
+							<Select label="Categoría" value={category} onChange={(e) => setCategory(e.target.value as RichTextTemplateCategory)}>
 								{CATEGORIES.map((c) => (
 									<MenuItem key={c.value} value={c.value}>
 										{c.label}
@@ -300,12 +288,7 @@ const TemplateEditorPage = () => {
 					{/* Right: status + actions */}
 					<Stack direction="row" spacing={1} alignItems="center" flexShrink={0}>
 						{isEdit && (
-							<Chip
-								label={isLoader && !contentLoaded ? "Cargando..." : "Borrador"}
-								size="small"
-								color="default"
-								variant="outlined"
-							/>
+							<Chip label={isLoader && !contentLoaded ? "Cargando..." : "Borrador"} size="small" color="default" variant="outlined" />
 						)}
 						<Button variant="outlined" size="small" sx={{ height: 36 }} onClick={handleExportPdf}>
 							Vista previa PDF

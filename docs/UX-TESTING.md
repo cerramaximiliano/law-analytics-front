@@ -11,8 +11,8 @@ Documentación completa del sistema de auditoría y testing de UX/UI en law-anal
 1. [Visión general](#visión-general)
 2. [Auditorías con agentes IA](#auditorías-con-agentes-ia)
 3. [Tests automatizados](#tests-automatizados)
-    - [Overflow detection](#overflow-detection)
-    - [Layout detection](#layout-detection)
+   - [Overflow detection](#overflow-detection)
+   - [Layout detection](#layout-detection)
 4. [Cómo correr los tests](#cómo-correr-los-tests)
 5. [Cómo extender](#cómo-extender)
 6. [Interpretación de resultados](#interpretación-de-resultados)
@@ -25,11 +25,11 @@ Documentación completa del sistema de auditoría y testing de UX/UI en law-anal
 
 La app tiene **tres capas complementarias** de testing UX, cada una detecta un tipo distinto de problema:
 
-| Capa | Detecta | Tiempo | Uso típico |
-|---|---|---|---|
-| **Auditorías con agents** | Issues conceptuales (consistencia, jerarquía, copy, i18n, accesibilidad semántica, flujos rotos) | 10-30 min | Al hacer un sweep manual del producto |
-| **Overflow detection** (`test:ux-overflow`) | `scrollWidth > clientWidth` en elementos interactivos — texto desbordado dentro del propio elemento | ~4 min | En CI, y como guardrail contra regresiones |
-| **Layout detection** (`test:ux-layout`) | Elementos fuera del viewport (`rect.right > innerWidth`) + flex-wrap sin row-gap (líneas pegadas) | ~3.5 min | En CI, y después de cambios de layout |
+| Capa                                        | Detecta                                                                                             | Tiempo    | Uso típico                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------ |
+| **Auditorías con agents**                   | Issues conceptuales (consistencia, jerarquía, copy, i18n, accesibilidad semántica, flujos rotos)    | 10-30 min | Al hacer un sweep manual del producto      |
+| **Overflow detection** (`test:ux-overflow`) | `scrollWidth > clientWidth` en elementos interactivos — texto desbordado dentro del propio elemento | ~4 min    | En CI, y como guardrail contra regresiones |
+| **Layout detection** (`test:ux-layout`)     | Elementos fuera del viewport (`rect.right > innerWidth`) + flex-wrap sin row-gap (líneas pegadas)   | ~3.5 min  | En CI, y después de cambios de layout      |
 
 Son complementarias. **Ninguna por sí sola captura todo el espectro** — cada una tiene fortalezas distintas.
 
@@ -39,14 +39,15 @@ Son complementarias. **Ninguna por sí sola captura todo el espectro** — cada 
 
 Tres auditorías históricas quedaron documentadas en `ux-reports/`:
 
-| Audit | Rutas | Issues | Estado | Report |
-|---|---|---|---|---|
-| Inicial (5 rutas logueadas) | 5 | 36 + 5 sistémicos | ✅ Implementado | `ux-reports/2026-04-21-2127/audit.md` |
-| Pasada 1 (públicas + auth) | 14 | 53 | ✅ Implementado | `ux-reports/2026-04-22-public/audit.md` |
-| Pasada 2 (app auth top-level) | 26 | 93 | ✅ Implementado | `ux-reports/2026-04-22-app/audit.md` |
-| **Total** | **45** | **182** | **✅ Todos cerrados** | |
+| Audit                         | Rutas  | Issues            | Estado                | Report                                  |
+| ----------------------------- | ------ | ----------------- | --------------------- | --------------------------------------- |
+| Inicial (5 rutas logueadas)   | 5      | 36 + 5 sistémicos | ✅ Implementado       | `ux-reports/2026-04-21-2127/audit.md`   |
+| Pasada 1 (públicas + auth)    | 14     | 53                | ✅ Implementado       | `ux-reports/2026-04-22-public/audit.md` |
+| Pasada 2 (app auth top-level) | 26     | 93                | ✅ Implementado       | `ux-reports/2026-04-22-app/audit.md`    |
+| **Total**                     | **45** | **182**           | **✅ Todos cerrados** |                                         |
 
 Cada audit tiene:
+
 - `audit.md` — reporte con issues marcables por prioridad + patrones sistémicos
 - `screenshots/` (gitignored) — capturas "antes" por viewport
 - `after-final/screenshots/` o `after-batchN/screenshots/` (gitignored) — capturas "después"
@@ -55,25 +56,26 @@ Cada audit tiene:
 ### Cómo correr una nueva auditoría
 
 1. **Prepará la ruta list** en `tests/ux-audit/`:
-    - `routes.ts` — rutas logueadas estándar
-    - `routes-public.ts` — públicas + auth (sin login)
-    - `routes-app.ts` — rutas de la app
+
+   - `routes.ts` — rutas logueadas estándar
+   - `routes-public.ts` — públicas + auth (sin login)
+   - `routes-app.ts` — rutas de la app
 
 2. **Capturá screenshots** con la config correspondiente:
 
-    ```bash
-    # Públicas (sin auth)
-    UX_AUDIT_DIR="$(pwd)/ux-reports/YYYY-MM-DD-public" \
-      npx playwright test --config=playwright.ux-audit-public.config.ts
+   ```bash
+   # Públicas (sin auth)
+   UX_AUDIT_DIR="$(pwd)/ux-reports/YYYY-MM-DD-public" \
+     npx playwright test --config=playwright.ux-audit-public.config.ts
 
-    # App autenticada
-    UX_AUDIT_DIR="$(pwd)/ux-reports/YYYY-MM-DD-app" \
-      npx playwright test --config=playwright.ux-audit-app.config.ts
+   # App autenticada
+   UX_AUDIT_DIR="$(pwd)/ux-reports/YYYY-MM-DD-app" \
+     npx playwright test --config=playwright.ux-audit-app.config.ts
 
-    # Audit inicial (5 rutas)
-    UX_AUDIT_DIR="$(pwd)/ux-reports/YYYY-MM-DD-XXXX" \
-      npx playwright test --config=playwright.ux-audit.config.ts
-    ```
+   # Audit inicial (5 rutas)
+   UX_AUDIT_DIR="$(pwd)/ux-reports/YYYY-MM-DD-XXXX" \
+     npx playwright test --config=playwright.ux-audit.config.ts
+   ```
 
 3. **Invocá agentes** sobre cada ruta con las heurísticas documentadas en `audit.md` de audits anteriores.
 
@@ -100,6 +102,7 @@ Cada audit tiene:
 - MenuItems con texto truncado sin ellipsis intencional.
 
 Distingue entre:
+
 - **`overflowing[]`** — bugs reales (sin `text-overflow: ellipsis`)
 - **`ellipsisButTruncated[]`** — con ellipsis intencional (puede ser OK o UX issue)
 
@@ -112,6 +115,7 @@ h1-h6, .MuiTypography-subtitle1, .MuiTypography-subtitle2
 ```
 
 **Archivos:**
+
 - `tests/ux-overflow.spec.ts` — el test
 - `playwright.ux-overflow.config.ts` — config Playwright
 - `scripts/aggregate-overflow-report.js` — agrega resultados individuales
@@ -134,6 +138,7 @@ h1-h6, .MuiTypography-subtitle1, .MuiTypography-subtitle2
 - Solo analiza contenedores con al menos 1 chip/button entre sus hijos (filtra layouts estructurales)
 
 **Archivos:**
+
 - `tests/ux-layout.spec.ts` — el test
 - `playwright.ux-layout.config.ts` — config Playwright
 - `scripts/aggregate-layout-report.js` — agrega resultados individuales
@@ -147,44 +152,51 @@ h1-h6, .MuiTypography-subtitle1, .MuiTypography-subtitle2
 ### Pre-requisitos
 
 1. **Dev server corriendo** en `localhost:3000`:
-    ```bash
-    npm run start
-    ```
+
+   ```bash
+   npm run start
+   ```
 
 2. **Auth state** generado (si no existe, se crea automáticamente con el global-setup). Requiere `VITE_DEV_EMAIL` y `VITE_DEV_PASSWORD` en `.env`.
 
 ### Comandos
 
 **Overflow detection:**
+
 ```bash
 npm run test:ux-overflow
 ```
 
 Output:
+
 - Tiempo: ~4 min
 - Exit code 0 si todo OK, 1 si hay bugs
 - Reporte: `tests/ux-overflow-report.json`
 - Resumen en consola con la lista de bugs
 
 **Layout detection:**
+
 ```bash
 npm run test:ux-layout
 ```
 
 Output:
+
 - Tiempo: ~3.5 min
 - Exit code 0 si todo OK, 1 si hay bugs
 - Reporte: `tests/ux-layout-report.json`
 - Resumen en consola con:
-    - Lista de viewport overflows (elementos fuera del viewport con cuántos px se salen)
-    - Lista de wrapped flex sin gap (contenedor, cantidad de líneas, gap medido)
+  - Lista de viewport overflows (elementos fuera del viewport con cuántos px se salen)
+  - Lista de wrapped flex sin gap (contenedor, cantidad de líneas, gap medido)
 
 **Ambos juntos:**
+
 ```bash
 npm run test:ux-overflow && npm run test:ux-layout
 ```
 
 **Captura visual (compare.html):**
+
 ```bash
 # Para cada audit folder, correr su config correspondiente. Ver sección
 # "Auditorías con agentes IA" arriba.
@@ -202,15 +214,15 @@ Editá el array de rutas al inicio del spec:
 
 ```typescript
 const PUBLIC_ROUTES = [
-  { path: "/", name: "landing" },
-  { path: "/nueva-ruta", name: "nueva-ruta" }, // ← agregar acá
-  // ...
+	{ path: "/", name: "landing" },
+	{ path: "/nueva-ruta", name: "nueva-ruta" }, // ← agregar acá
+	// ...
 ];
 
 const AUTH_ROUTES = [
-  { path: "/dashboard/default", name: "dashboard" },
-  { path: "/apps/nueva-ruta", name: "nueva-ruta-auth" }, // ← o acá
-  // ...
+	{ path: "/dashboard/default", name: "dashboard" },
+	{ path: "/apps/nueva-ruta", name: "nueva-ruta-auth" }, // ← o acá
+	// ...
 ];
 ```
 
@@ -220,10 +232,10 @@ Editá `INTERACTIVE_SELECTORS` en `tests/ux-overflow.spec.ts`:
 
 ```typescript
 const INTERACTIVE_SELECTORS = [
-  ".MuiButton-root",
-  ".MuiChip-root",
-  // ... existentes
-  ".MiNuevaClase",  // ← agregar acá
+	".MuiButton-root",
+	".MuiChip-root",
+	// ... existentes
+	".MiNuevaClase", // ← agregar acá
 ].join(", ");
 ```
 
@@ -244,58 +256,60 @@ Reemplazá `expect.soft` por `expect` en el spec correspondiente. Actualmente so
 El reporte JSON es un array de objetos `RouteResult`:
 
 **Overflow:**
+
 ```json
 [
-  {
-    "route": "modelos",
-    "path": "/documentos/modelos",
-    "viewport": "mobile",
-    "overflowing": [
-      {
-        "tag": "button",
-        "text": "Solicitar modelo",
-        "selector": ".MuiButton-root",
-        "scrollWidth": 157,
-        "clientWidth": 152,
-        "overflow": 5,
-        "hasEllipsis": false
-      }
-    ],
-    "ellipsisButTruncated": []
-  }
+	{
+		"route": "modelos",
+		"path": "/documentos/modelos",
+		"viewport": "mobile",
+		"overflowing": [
+			{
+				"tag": "button",
+				"text": "Solicitar modelo",
+				"selector": ".MuiButton-root",
+				"scrollWidth": 157,
+				"clientWidth": 152,
+				"overflow": 5,
+				"hasEllipsis": false
+			}
+		],
+		"ellipsisButTruncated": []
+	}
 ]
 ```
 
 **Layout:**
+
 ```json
 [
-  {
-    "route": "postal",
-    "path": "/herramientas/seguimiento-postal",
-    "viewport": "mobile",
-    "viewportOverflows": [
-      {
-        "tag": "button",
-        "text": "Nuevo seguimiento",
-        "selector": ".MuiButton-root",
-        "rect": { "top": 89, "left": 265, "right": 435, "bottom": 120, "width": 170, "height": 31 },
-        "overflowPx": 45,
-        "viewportWidth": 390
-      }
-    ],
-    "wrappedNoGap": [
-      {
-        "containerTag": "div",
-        "containerSelector": ".MuiStack-root",
-        "lineCount": 2,
-        "minRowGap": 0,
-        "sampleChildren": [
-          { "tag": "div", "text": "Completado" },
-          { "tag": "div", "text": "INTENTO DE ENTREGA" }
-        ]
-      }
-    ]
-  }
+	{
+		"route": "postal",
+		"path": "/herramientas/seguimiento-postal",
+		"viewport": "mobile",
+		"viewportOverflows": [
+			{
+				"tag": "button",
+				"text": "Nuevo seguimiento",
+				"selector": ".MuiButton-root",
+				"rect": { "top": 89, "left": 265, "right": 435, "bottom": 120, "width": 170, "height": 31 },
+				"overflowPx": 45,
+				"viewportWidth": 390
+			}
+		],
+		"wrappedNoGap": [
+			{
+				"containerTag": "div",
+				"containerSelector": ".MuiStack-root",
+				"lineCount": 2,
+				"minRowGap": 0,
+				"sampleChildren": [
+					{ "tag": "div", "text": "Completado" },
+					{ "tag": "div", "text": "INTENTO DE ENTREGA" }
+				]
+			}
+		]
+	}
 ]
 ```
 
@@ -304,9 +318,9 @@ El reporte JSON es un array de objetos `RouteResult`:
 1. **Reproducí** manualmente en browser (los datos del reporte te dicen route + viewport exactos).
 2. **Inspeccioná** con DevTools el elemento reportado (usar el selector + text).
 3. **Fix típico según patrón:**
-    - **Overflow (scrollWidth)**: reducir texto, agregar `text-overflow: ellipsis`, o hacer el contenedor responsivo.
-    - **Viewport overflow (rect)**: hacer el elemento responsivo en mobile (usar `IconButton` en lugar de `Button`, o `flex-wrap`, o `width: 100%`).
-    - **Wrapped flex sin gap**: agregar `useFlexGap + rowGap={1}` al Stack (o `gap={1}` al Box flex).
+   - **Overflow (scrollWidth)**: reducir texto, agregar `text-overflow: ellipsis`, o hacer el contenedor responsivo.
+   - **Viewport overflow (rect)**: hacer el elemento responsivo en mobile (usar `IconButton` en lugar de `Button`, o `flex-wrap`, o `width: 100%`).
+   - **Wrapped flex sin gap**: agregar `useFlexGap + rowGap={1}` al Stack (o `gap={1}` al Box flex).
 4. **Re-corré el test** para confirmar.
 
 ### Falsos positivos conocidos
@@ -411,10 +425,11 @@ npm run test:e2e:headed         # e2e viendo el browser
 Mejoras que complementarían la cobertura actual:
 
 1. **Accesibilidad automática** — integrar `@axe-core/playwright` para detectar:
-    - Contraste WCAG AA
-    - ARIA attributes faltantes
-    - Heading hierarchy incorrecta
-    - Landmarks faltantes
+
+   - Contraste WCAG AA
+   - ARIA attributes faltantes
+   - Heading hierarchy incorrecta
+   - Landmarks faltantes
 
 2. **Visual regression con baseline** — `playwright.visual.config.ts` ya existe; expandirlo con snapshots de las 45 rutas para que cualquier cambio visual quede detectado automáticamente.
 
@@ -435,4 +450,4 @@ Mejoras que complementarían la cobertura actual:
 
 ---
 
-*Si agregás un nuevo test UX o extendés uno existente, actualizá este documento.*
+_Si agregás un nuevo test UX o extendés uno existente, actualizá este documento._

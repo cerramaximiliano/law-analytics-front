@@ -110,7 +110,12 @@ class EJEWorkersService {
 	/**
 	 * Busca una causa EJE por CUIJ o número/año
 	 */
-	async searchCausa(params: { searchType: "cuij" | "expediente"; cuij?: string; numero?: string; anio?: string }): Promise<EjeCausaResponse> {
+	async searchCausa(params: {
+		searchType: "cuij" | "expediente";
+		cuij?: string;
+		numero?: string;
+		anio?: string;
+	}): Promise<EjeCausaResponse> {
 		try {
 			const response = await ejeAxios.get("/api/causas-eje/search", {
 				params: {

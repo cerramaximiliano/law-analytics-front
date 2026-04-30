@@ -126,12 +126,7 @@ const Register = () => {
 	return (
 		<Box sx={{ minHeight: "100vh" }}>
 			<AuthBackground />
-			<Grid
-				container
-				direction="column"
-				justifyContent="center"
-				sx={{ minHeight: "100vh" }}
-			>
+			<Grid container direction="column" justifyContent="center" sx={{ minHeight: "100vh" }}>
 				<Grid item xs={12}>
 					<Box
 						sx={{
@@ -179,15 +174,21 @@ const Register = () => {
 												<Stack spacing={0.3}>
 													<Stack direction="row" alignItems="center" spacing={0.75}>
 														<TickCircle size={14} variant="Bold" color="#4caf50" />
-														<Typography variant="caption" color="text.secondary">Estados y movimientos automáticos</Typography>
+														<Typography variant="caption" color="text.secondary">
+															Estados y movimientos automáticos
+														</Typography>
 													</Stack>
 													<Stack direction="row" alignItems="center" spacing={0.75}>
 														<TickCircle size={14} variant="Bold" color="#4caf50" />
-														<Typography variant="caption" color="text.secondary">Alertas de vencimientos</Typography>
+														<Typography variant="caption" color="text.secondary">
+															Alertas de vencimientos
+														</Typography>
 													</Stack>
 													<Stack direction="row" alignItems="center" spacing={0.75}>
 														<TickCircle size={14} variant="Bold" color="#4caf50" />
-														<Typography variant="caption" color="text.secondary">Centralizá agenda y cálculos</Typography>
+														<Typography variant="caption" color="text.secondary">
+															Centralizá agenda y cálculos
+														</Typography>
 													</Stack>
 												</Stack>
 											</Box>
@@ -217,7 +218,7 @@ const Register = () => {
 										</Grid>
 									</Grid>
 								</Box>
-								</MainCard>
+							</MainCard>
 						</Box>
 						<Box
 							component="img"

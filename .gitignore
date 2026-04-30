@@ -124,21 +124,15 @@ bundle-stats.html
 # TipTap Pro credentials
 .npmrc
 
-# Playwright
-tests/.auth/
-tests/playwright-report/
-tests/test-results/
+# Playwright test results (artefactos generados)
 test-results/
 playwright-report/
 
-# UX audit — commit audit.md, ignore heavy artifacts
-ux-reports/**/screenshots/
-ux-reports/**/.playwright-output/
+# Playwright auth state (contiene JWT tokens)
+tests/.auth/
 
-# Overflow detection — resultados temporales del test, reporte agregado (el test lo regenera)
-tests/.overflow-results/
-tests/ux-overflow-report.json
-
-# Layout detection — resultados temporales del test, reporte agregado
+# UX / layout test artifacts y reports
 tests/.layout-results/
-tests/ux-layout-report.json
+tests/.overflow-results/
+tests/ux-*-report.json
+ux-reports/

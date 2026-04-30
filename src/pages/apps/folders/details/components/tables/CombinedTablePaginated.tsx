@@ -534,15 +534,16 @@ const CombinedTablePaginated: React.FC<CombinedTablePaginatedProps> = ({
 														right: 0,
 														bottom: 0,
 														backdropFilter: "blur(2px)",
-														backgroundColor:
-															theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.2)",
+														backgroundColor: theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.2)",
 														pointerEvents: "none",
 														zIndex: 1,
 													},
 												}}
 											>
 												<TableCell sx={{ color: "text.disabled" }}>
-													{`${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")}/${String(Math.floor(Math.random() * 12) + 1).padStart(2, "0")}/2024`}
+													{`${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")}/${String(
+														Math.floor(Math.random() * 12) + 1,
+													).padStart(2, "0")}/2024`}
 												</TableCell>
 												<TableCell>
 													<Stack direction="row" spacing={1} alignItems="center">

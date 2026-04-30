@@ -8,6 +8,7 @@
 ## Contexto
 
 El requerimiento es un editor WYSIWYG que:
+
 - Muestre el documento dividido en páginas A4 visibles (como Google Docs / Word)
 - Soporte campos dinámicos (merge fields) para documentos tipo plantilla
 - Exporte a PDF y Word
@@ -21,9 +22,10 @@ El requerimiento es un editor WYSIWYG que:
 ### Paginación — ⚠️ Limitada
 
 **La paginación de CKEditor 5 NO replica la experiencia de Google Docs.**
-No muestra páginas físicas blancas separadas — muestra *líneas divisorias* dentro de un flujo continuo que indican dónde se cortará al exportar.
+No muestra páginas físicas blancas separadas — muestra _líneas divisorias_ dentro de un flujo continuo que indican dónde se cortará al exportar.
 
 Restricciones críticas:
+
 - Solo funciona en **Chrome/Chromium** (no Firefox, no Safari)
 - Solo disponible con **Decoupled Editor** (no con el Classic Editor)
 - **Paginación es un add-on del plan Custom** (precio negociado) — no disponible en planes Essential ni Professional
@@ -31,12 +33,12 @@ Restricciones críticas:
 
 ### Precios
 
-| Plan | Precio | Editor loads/mes | Notas |
-|------|--------|-----------------|-------|
-| Free | $0 | 1,000 | Con marca de agua. Si excede sin pago → editor en solo-lectura |
-| Essential | $144/mes | 5,000 | Merge fields, templates, export PDF/Word, footnotes |
-| Professional | $405/mes | 20,000 | + Track Changes, Comments, Import from Word, colaboración |
-| Custom | A negociar | Ilimitado | + Paginación visual, soporte enterprise |
+| Plan         | Precio     | Editor loads/mes | Notas                                                          |
+| ------------ | ---------- | ---------------- | -------------------------------------------------------------- |
+| Free         | $0         | 1,000            | Con marca de agua. Si excede sin pago → editor en solo-lectura |
+| Essential    | $144/mes   | 5,000            | Merge fields, templates, export PDF/Word, footnotes            |
+| Professional | $405/mes   | 20,000           | + Track Changes, Comments, Import from Word, colaboración      |
+| Custom       | A negociar | Ilimitado        | + Paginación visual, soporte enterprise                        |
 
 > Los exports a PDF/Word son un **servicio cloud** (documentos enviados a servidores de CKEditor). No es self-hosted en planes bajos.
 
@@ -51,7 +53,7 @@ El punto más fuerte para documentos legales:
 - Tres modos de preview: labels / valores por defecto / dataset real
 - Obtener HTML con valores reemplazados:
   ```js
-  editor.getData({ mergeFieldsData: { nombre: "Juan Pérez", fecha: "16/03/2026" } })
+  editor.getData({ mergeFieldsData: { nombre: "Juan Pérez", fecha: "16/03/2026" } });
   ```
 - **Export a Word**: genera `.docx` con merge fields nativos de Word (compatible con Mail Merge)
 - **Import from Word**: reconoce merge fields de documentos `.docx` importados
@@ -59,8 +61,9 @@ El punto más fuerte para documentos legales:
 ### Español — ✅
 
 Traducción profesional completa (menús, tooltips, diálogos):
+
 ```ts
-import translations from 'ckeditor5/translations/es.js';
+import translations from "ckeditor5/translations/es.js";
 // config: { translations: [translations] }
 ```
 
@@ -72,22 +75,22 @@ import translations from 'ckeditor5/translations/es.js';
 
 ### Funcionalidades relevantes para documentos legales
 
-| Feature | Plan mínimo |
-|---------|-------------|
-| Merge Fields + Templates | Essential ($144/mes) |
-| Export a PDF y Word (cloud) | Essential ($144/mes) |
-| Footnotes (notas al pie) | Essential ($144/mes) |
-| Table of Contents automático | Essential ($144/mes) |
-| Document Outline (panel lateral) | Essential ($144/mes) |
-| Find & Replace avanzado | Essential ($144/mes) |
-| Import desde Word (.docx) | Professional ($405/mes) |
-| Track Changes | Professional ($405/mes) |
-| Comments (comentarios inline) | Professional ($405/mes) |
-| Revision History | Professional ($405/mes) |
-| Colaboración en tiempo real | Professional ($405/mes) |
-| Restricted Editing (zonas protegidas) | Gratuito (GPL) |
-| Paginación visual | Custom (add-on) |
-| Spell & Grammar Checker | Add-on separado |
+| Feature                               | Plan mínimo             |
+| ------------------------------------- | ----------------------- |
+| Merge Fields + Templates              | Essential ($144/mes)    |
+| Export a PDF y Word (cloud)           | Essential ($144/mes)    |
+| Footnotes (notas al pie)              | Essential ($144/mes)    |
+| Table of Contents automático          | Essential ($144/mes)    |
+| Document Outline (panel lateral)      | Essential ($144/mes)    |
+| Find & Replace avanzado               | Essential ($144/mes)    |
+| Import desde Word (.docx)             | Professional ($405/mes) |
+| Track Changes                         | Professional ($405/mes) |
+| Comments (comentarios inline)         | Professional ($405/mes) |
+| Revision History                      | Professional ($405/mes) |
+| Colaboración en tiempo real           | Professional ($405/mes) |
+| Restricted Editing (zonas protegidas) | Gratuito (GPL)          |
+| Paginación visual                     | Custom (add-on)         |
+| Spell & Grammar Checker               | Add-on separado         |
 
 ---
 
@@ -114,45 +117,49 @@ import translations from 'ckeditor5/translations/es.js';
 
 ### Otras opciones (sin paginación nativa)
 
-| Editor | Paginación | Licencia | Notas |
-|--------|-----------|----------|-------|
-| ProseMirror | ❌ Manual/complejo | MIT | Base de TipTap y Plate — demasiado bajo nivel |
-| Plate.js | ❌ No | MIT | Orientado a Notion, no a documentos A4 |
-| Lexical (Meta) | ❌ No | MIT | Excelente React-first pero sin páginas |
-| Quill | ❌ No | BSD-3 | Menos mantenido activamente |
-| BlockNote | ❌ No | MPL-2.0 | Estilo Notion, sin páginas físicas |
+| Editor         | Paginación         | Licencia | Notas                                         |
+| -------------- | ------------------ | -------- | --------------------------------------------- |
+| ProseMirror    | ❌ Manual/complejo | MIT      | Base de TipTap y Plate — demasiado bajo nivel |
+| Plate.js       | ❌ No              | MIT      | Orientado a Notion, no a documentos A4        |
+| Lexical (Meta) | ❌ No              | MIT      | Excelente React-first pero sin páginas        |
+| Quill          | ❌ No              | BSD-3    | Menos mantenido activamente                   |
+| BlockNote      | ❌ No              | MPL-2.0  | Estilo Notion, sin páginas físicas            |
 
 ---
 
 ## Comparativa final
 
-| | CKEditor 5 | Syncfusion | TipTap Pages |
-|--|--|--|--|
-| **Páginas físicas A4** | ❌ Solo líneas divisorias | ✅ Real | ✅ Real (Alpha) |
-| **Merge Fields** | ✅ Excelente | ⚠️ Básico | ✅ Bueno |
-| **Export PDF/Word** | ✅ Cloud (Essential+) | ✅ Local | ⚠️ Premium |
-| **Import from Word** | ✅ Professional+ | ✅ Incluido | ⚠️ Premium |
-| **Track Changes** | ✅ Professional+ | ✅ Incluido | ⚠️ Premium |
-| **Español** | ✅ | ✅ | ✅ |
-| **React / TypeScript** | ✅ Oficial | ✅ Oficial | ✅ Oficial |
-| **Precio mínimo útil** | $144/mes (sin paginación) | Gratis hasta $1M ARR | Custom |
-| **Listo para producción** | ✅ | ✅ | ❌ Alpha |
+|                           | CKEditor 5                | Syncfusion           | TipTap Pages    |
+| ------------------------- | ------------------------- | -------------------- | --------------- |
+| **Páginas físicas A4**    | ❌ Solo líneas divisorias | ✅ Real              | ✅ Real (Alpha) |
+| **Merge Fields**          | ✅ Excelente              | ⚠️ Básico            | ✅ Bueno        |
+| **Export PDF/Word**       | ✅ Cloud (Essential+)     | ✅ Local             | ⚠️ Premium      |
+| **Import from Word**      | ✅ Professional+          | ✅ Incluido          | ⚠️ Premium      |
+| **Track Changes**         | ✅ Professional+          | ✅ Incluido          | ⚠️ Premium      |
+| **Español**               | ✅                        | ✅                   | ✅              |
+| **React / TypeScript**    | ✅ Oficial                | ✅ Oficial           | ✅ Oficial      |
+| **Precio mínimo útil**    | $144/mes (sin paginación) | Gratis hasta $1M ARR | Custom          |
+| **Listo para producción** | ✅                        | ✅                   | ❌ Alpha        |
 
 ---
 
 ## Recomendación
 
 ### Si la paginación tipo Word es el requisito principal
+
 → **Syncfusion Document Editor** es la opción más pragmática hoy:
+
 - Gratis para la escala actual de Law Analytics
 - Paginación real con páginas físicas (la experiencia más cercana a Word en el browser)
 - Import/Export DOCX sin depender de servicios cloud externos
 - Track Changes y Comments incluidos sin costo adicional
 
 ### Si priorizás Merge Fields avanzados y Templates
+
 → **CKEditor 5 Essential ($144/mes)** cubre bien el caso de uso de plantillas con campos dinámicos, con la salvedad de que la "paginación" es solo indicativa (líneas) y exclusiva de Chrome.
 
 ### A futuro
+
 → **TipTap Pages** cuando salga de Alpha podría ser la mejor combinación de ambos mundos (paginación real + merge fields + open source en core).
 
 ---
@@ -170,6 +177,7 @@ import translations from 'ckeditor5/translations/es.js';
 ### Concepto general
 
 La idea es tener un asistente de IA dentro del editor que:
+
 - Genere o complete texto legalmente adecuado según el tipo de documento
 - Use documentos propios del usuario como contexto (RAG sobre expedientes y contratos previos)
 - Rellene merge fields automáticamente desde los datos del caso
@@ -190,12 +198,12 @@ La idea es tener un asistente de IA dentro del editor que:
 ```js
 // Override para inyectar contexto RAG
 class LegalAIAdapter extends OpenAITextAdapter {
-  async prepareMessages(query, context, actionId) {
-    const messages = await super.prepareMessages(query, context, actionId);
-    const ragContext = await fetch('/api/rag?query=' + query).then(r => r.json());
-    messages[0].content += '\n\nDocumentos relevantes:\n' + ragContext.documents;
-    return messages;
-  }
+	async prepareMessages(query, context, actionId) {
+		const messages = await super.prepareMessages(query, context, actionId);
+		const ragContext = await fetch("/api/rag?query=" + query).then((r) => r.json());
+		messages[0].content += "\n\nDocumentos relevantes:\n" + ragContext.documents;
+		return messages;
+	}
 }
 ```
 
@@ -244,6 +252,7 @@ Pinecone (documentos indexados)           OpenAI / Anthropic
 ```
 
 **Payload al backend (ejemplo):**
+
 ```typescript
 {
   query: "Redactar cláusula de confidencialidad",
@@ -261,16 +270,16 @@ Pinecone (documentos indexados)           OpenAI / Anthropic
 
 ### Casos de uso concretos para documentos legales
 
-| Caso de uso | Trigger en el editor | Backend |
-|-------------|---------------------|---------|
-| **Generar cláusula** | `/clausula [tipo]` o selección + "Generar" | RAG sobre contratos similares + LLM |
-| **Autocompletar** | Tab al final de una oración | RAG con documentos del usuario |
-| **Rellenar merge fields** | Botón "Completar con IA" | Datos del caso → LLM mapea a campos |
-| **Revisión legal** | Botón en toolbar | Documento completo → LLM analiza + destaca issues |
-| **Mejorar redacción** | Selección + "Mejorar" | Selección + contexto de tipo de doc → LLM |
-| **Resumir sección** | Selección + "Resumir" | Solo la selección → LLM |
-| **Traducir** | Selección + "Traducir" | Selección → LLM |
-| **Generar petitorio** | `/petitorio` | Hechos del documento + RAG → LLM genera sección |
+| Caso de uso               | Trigger en el editor                       | Backend                                           |
+| ------------------------- | ------------------------------------------ | ------------------------------------------------- |
+| **Generar cláusula**      | `/clausula [tipo]` o selección + "Generar" | RAG sobre contratos similares + LLM               |
+| **Autocompletar**         | Tab al final de una oración                | RAG con documentos del usuario                    |
+| **Rellenar merge fields** | Botón "Completar con IA"                   | Datos del caso → LLM mapea a campos               |
+| **Revisión legal**        | Botón en toolbar                           | Documento completo → LLM analiza + destaca issues |
+| **Mejorar redacción**     | Selección + "Mejorar"                      | Selección + contexto de tipo de doc → LLM         |
+| **Resumir sección**       | Selección + "Resumir"                      | Solo la selección → LLM                           |
+| **Traducir**              | Selección + "Traducir"                     | Selección → LLM                                   |
+| **Generar petitorio**     | `/petitorio`                               | Hechos del documento + RAG → LLM genera sección   |
 
 ### Seguridad (importante para documentos legales)
 
@@ -283,22 +292,23 @@ Pinecone (documentos indexados)           OpenAI / Anthropic
 
 ### Comparativa de enfoques de integración IA
 
-| Aspecto | CKEditor AI Plugin | TipTap AI Toolkit | Custom (Novel.sh pattern) |
-|---------|-------------------|-------------------|--------------------------|
-| Setup | Bajo | Medio | Alto |
-| UI incluida | ✅ Pulida | ❌ Construir | ❌ Construir |
-| RAG custom | ⚠️ Via override | ✅ Total control | ✅ Total control |
-| Streaming | ✅ Nativo | ✅ Nativo | ✅ Con SSE/Vercel AI SDK |
-| Flexibilidad | Media | Alta | Máxima |
-| Control de datos | Medio | Total (custom backend) | Total |
-| Costo | $$$ (plan premium) | $$ (add-on) | $ (solo LLM) |
-| Mantenimiento | Bajo | Medio | Alto |
+| Aspecto          | CKEditor AI Plugin | TipTap AI Toolkit      | Custom (Novel.sh pattern) |
+| ---------------- | ------------------ | ---------------------- | ------------------------- |
+| Setup            | Bajo               | Medio                  | Alto                      |
+| UI incluida      | ✅ Pulida          | ❌ Construir           | ❌ Construir              |
+| RAG custom       | ⚠️ Via override    | ✅ Total control       | ✅ Total control          |
+| Streaming        | ✅ Nativo          | ✅ Nativo              | ✅ Con SSE/Vercel AI SDK  |
+| Flexibilidad     | Media              | Alta                   | Máxima                    |
+| Control de datos | Medio              | Total (custom backend) | Total                     |
+| Costo            | $$$ (plan premium) | $$ (add-on)            | $ (solo LLM)              |
+| Mantenimiento    | Bajo               | Medio                  | Alto                      |
 
 ### Recomendación para Law Analytics
 
 Dado que ya existe `pjn-rag-api` con Pinecone y el stack completo:
 
 **Opción preferida: TipTap + backend RAG propio**
+
 - Conecta directamente a `law-analytics-server` como proxy de IA
 - Reutiliza la infraestructura RAG de `pjn-rag-api`
 - Control total sobre qué datos se envían al LLM
@@ -306,6 +316,7 @@ Dado que ya existe `pjn-rag-api` con Pinecone y el stack completo:
 - Patrón de referencia open source: [Novel.sh](https://github.com/steven-tey/novel)
 
 **Opción alternativa si se elige CKEditor 5:**
+
 - Usar el AI Assistant oficial con proxy endpoint propio
 - Inyectar contexto RAG via `prepareMessages()` override
 - Menor trabajo de UI pero menos flexibilidad y más costoso

@@ -35,11 +35,7 @@ export const movementsSyncStarted = (payload: { totalCausas: number; isInitialSy
 	payload,
 });
 
-export const movementsSyncCompleted = (payload: {
-	newMovimientos: number;
-	totalCausas: number;
-	isInitialSync: boolean;
-}) => ({
+export const movementsSyncCompleted = (payload: { newMovimientos: number; totalCausas: number; isInitialSync: boolean }) => ({
 	type: MOVEMENTS_SYNC_COMPLETED as typeof MOVEMENTS_SYNC_COMPLETED,
 	payload,
 });

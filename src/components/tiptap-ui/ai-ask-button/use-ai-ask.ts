@@ -1,83 +1,73 @@
-import { useCallback, useEffect, useState } from "react"
-import { isNodeSelection, type Editor } from "@tiptap/react"
-import { useHotkeys } from "react-hotkeys-hook"
+import { useCallback, useEffect, useState } from "react";
+import { isNodeSelection, type Editor } from "@tiptap/react";
+import { useHotkeys } from "react-hotkeys-hook";
 
 // --- Lib ---
-import {
-  isExtensionAvailable,
-  isNodeTypeSelected,
-} from "@/lib/tiptap-utils"
+import { isExtensionAvailable, isNodeTypeSelected } from "@/lib/tiptap-utils";
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
-import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor";
+import { useIsBreakpoint } from "@/hooks/use-is-breakpoint";
 
 // --- Icons ---
-import { AiSparklesIcon } from "@/components/tiptap-icons/ai-sparkles-icon"
+import { AiSparklesIcon } from "@/components/tiptap-icons/ai-sparkles-icon";
 
 export interface UseAiAskConfig {
-  /**
-   * The Tiptap editor instance.
-   */
-  editor?: Editor | null
-  /**
-   * Whether the button should hide when blockquote is not available.
-   * @default false
-   */
-  hideWhenUnavailable?: boolean
-  /**
-   * Callback function called after AI ask is successfully triggered
-   */
-  onAiAsked?: () => void
+	/**
+	 * The Tiptap editor instance.
+	 */
+	editor?: Editor | null;
+	/**
+	 * Whether the button should hide when blockquote is not available.
+	 * @default false
+	 */
+	hideWhenUnavailable?: boolean;
+	/**
+	 * Callback function called after AI ask is successfully triggered
+	 */
+	onAiAsked?: () => void;
 }
 
-export const AI_ASK_SHORTCUT_KEY = "mod+j"
-export const AI_EXTENSIONS = ["aiGeneration", "ai"]
-export const EXCLUDED_SELECTION_TYPES = ["codeBlock", "image", "imageUpload"]
+export const AI_ASK_SHORTCUT_KEY = "mod+j";
+export const AI_EXTENSIONS = ["aiGeneration", "ai"];
+export const EXCLUDED_SELECTION_TYPES = ["codeBlock", "image", "imageUpload"];
 
 export const canPerformAiAsk = (editor: Editor | null): boolean => {
-  if (!editor || !editor.isEditable) return false
-  // TODO: Wait until AI extensions support for image
-  if (
-    !isExtensionAvailable(editor, AI_EXTENSIONS) ||
-    isNodeTypeSelected(editor, ["image", "horizontalRule", "tocNode"])
-  )
-    return false
+	if (!editor || !editor.isEditable) return false;
+	// TODO: Wait until AI extensions support for image
+	if (!isExtensionAvailable(editor, AI_EXTENSIONS) || isNodeTypeSelected(editor, ["image", "horizontalRule", "tocNode"])) return false;
 
-  const { selection } = editor.state
-  if (!selection || selection.empty) return false
+	const { selection } = editor.state;
+	if (!selection || selection.empty) return false;
 
-  if (isNodeSelection(selection)) {
-    const selectedNode = selection.node
-    if (EXCLUDED_SELECTION_TYPES.includes(selectedNode.type.name)) {
-      return false
-    }
-  }
+	if (isNodeSelection(selection)) {
+		const selectedNode = selection.node;
+		if (EXCLUDED_SELECTION_TYPES.includes(selectedNode.type.name)) {
+			return false;
+		}
+	}
 
-  return true
-}
+	return true;
+};
 
-export function shouldShowButton(props: {
-  editor: Editor | null
-  hideWhenUnavailable: boolean
-}): boolean {
-  const { editor, hideWhenUnavailable } = props
+export function shouldShowButton(props: { editor: Editor | null; hideWhenUnavailable: boolean }): boolean {
+	const { editor, hideWhenUnavailable } = props;
 
-  if (!editor) return false
+	if (!editor) return false;
 
-  if (!hideWhenUnavailable) {
-    return true
-  }
+	if (!hideWhenUnavailable) {
+		return true;
+	}
 
-  if (!editor.isEditable) return false
+	if (!editor.isEditable) return false;
 
-  if (!isExtensionAvailable(editor, AI_EXTENSIONS)) return false
+	if (!isExtensionAvailable(editor, AI_EXTENSIONS)) return false;
 
-  if (!editor.isActive("code")) {
-    return canPerformAiAsk(editor)
-  }
+	if (!editor.isActive("code")) {
+		return canPerformAiAsk(editor);
+	}
 
-  return true
+	return true;
 }
 
 /**
@@ -109,65 +99,61 @@ export function shouldShowButton(props: {
  * ```
  */
 export function useAiAsk(config: UseAiAskConfig = {}) {
-  const {
-    editor: providedEditor,
-    hideWhenUnavailable = false,
-    onAiAsked,
-  } = config
+	const { editor: providedEditor, hideWhenUnavailable = false, onAiAsked } = config;
 
-  const { editor } = useTiptapEditor(providedEditor)
-  const isMobile = useIsBreakpoint()
-  const [isVisible, setIsVisible] = useState<boolean>(true)
-  const canAiAsk = canPerformAiAsk(editor)
+	const { editor } = useTiptapEditor(providedEditor);
+	const isMobile = useIsBreakpoint();
+	const [isVisible, setIsVisible] = useState<boolean>(true);
+	const canAiAsk = canPerformAiAsk(editor);
 
-  const handleAiAsk = useCallback((): boolean => {
-    if (!editor || !canAiAsk) return false
+	const handleAiAsk = useCallback((): boolean => {
+		if (!editor || !canAiAsk) return false;
 
-    const success = editor.chain().focus().aiGenerationShow().run()
-    if (success) {
-      onAiAsked?.()
-    }
-    return success
-  }, [canAiAsk, editor, onAiAsked])
+		const success = editor.chain().focus().aiGenerationShow().run();
+		if (success) {
+			onAiAsked?.();
+		}
+		return success;
+	}, [canAiAsk, editor, onAiAsked]);
 
-  useEffect(() => {
-    if (!editor) {
-      setIsVisible(false)
-      return
-    }
+	useEffect(() => {
+		if (!editor) {
+			setIsVisible(false);
+			return;
+		}
 
-    const updateVisibility = () => {
-      setIsVisible(shouldShowButton({ editor, hideWhenUnavailable }))
-    }
+		const updateVisibility = () => {
+			setIsVisible(shouldShowButton({ editor, hideWhenUnavailable }));
+		};
 
-    updateVisibility()
+		updateVisibility();
 
-    editor.on("selectionUpdate", updateVisibility)
+		editor.on("selectionUpdate", updateVisibility);
 
-    return () => {
-      editor.off("selectionUpdate", updateVisibility)
-    }
-  }, [editor, hideWhenUnavailable])
+		return () => {
+			editor.off("selectionUpdate", updateVisibility);
+		};
+	}, [editor, hideWhenUnavailable]);
 
-  useHotkeys(
-    AI_ASK_SHORTCUT_KEY,
-    (event) => {
-      event.preventDefault()
-      handleAiAsk()
-    },
-    {
-      enabled: isVisible && canAiAsk,
-      enableOnContentEditable: !isMobile,
-      enableOnFormTags: true,
-    }
-  )
+	useHotkeys(
+		AI_ASK_SHORTCUT_KEY,
+		(event) => {
+			event.preventDefault();
+			handleAiAsk();
+		},
+		{
+			enabled: isVisible && canAiAsk,
+			enableOnContentEditable: !isMobile,
+			enableOnFormTags: true,
+		},
+	);
 
-  return {
-    isVisible,
-    handleAiAsk,
-    canAiAsk,
-    label: "Ask AI Assistant",
-    shortcutKeys: AI_ASK_SHORTCUT_KEY,
-    Icon: AiSparklesIcon,
-  }
+	return {
+		isVisible,
+		handleAiAsk,
+		canAiAsk,
+		label: "Ask AI Assistant",
+		shortcutKeys: AI_ASK_SHORTCUT_KEY,
+		Icon: AiSparklesIcon,
+	};
 }

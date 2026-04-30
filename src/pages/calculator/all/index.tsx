@@ -822,7 +822,7 @@ const AllCalculators = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
 	const { calculators, archivedCalculators, archivedPagination, isLoader, isInitialized, lastFetchedUserId } = useSelector(
-		(state: any) => state.calculator
+		(state: any) => state.calculator,
 	);
 	const auth = useSelector((state: any) => state.auth);
 	const userId = auth.user?._id;

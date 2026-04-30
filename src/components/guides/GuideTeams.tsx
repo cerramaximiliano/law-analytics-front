@@ -61,8 +61,8 @@ const IntroductionContent = () => {
 	return (
 		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
 			<Typography paragraph>
-				El sistema de equipos te permite invitar colaboradores para trabajar juntos en tus causas, contactos, calculadoras y demás recursos de
-				Law||Analytics. Todo el equipo comparte los recursos del propietario.
+				El sistema de equipos te permite invitar colaboradores para trabajar juntos en tus causas, contactos, calculadoras y demás recursos
+				de Law||Analytics. Todo el equipo comparte los recursos del propietario.
 			</Typography>
 			<Alert severity="info">
 				<AlertTitle>Aprenderás a:</AlertTitle>
@@ -93,7 +93,9 @@ const RequirementsContent = () => {
 	const theme = useTheme();
 	return (
 		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>Para crear un equipo necesitas un plan Estándar o Premium. Los usuarios con plan Gratuito no pueden crear equipos.</Typography>
+			<Typography paragraph>
+				Para crear un equipo necesitas un plan Estándar o Premium. Los usuarios con plan Gratuito no pueden crear equipos.
+			</Typography>
 
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -294,8 +296,8 @@ const RolesContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Es el creador y dueño del equipo y de todos los recursos. Los límites de su plan definen la capacidad del equipo. Es el
-							único que puede eliminar el equipo e invitar miembros. No puede ser removido ni degradado.
+							Es el creador y dueño del equipo y de todos los recursos. Los límites de su plan definen la capacidad del equipo. Es el único
+							que puede eliminar el equipo e invitar miembros. No puede ser removido ni degradado.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -308,8 +310,8 @@ const RolesContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Puede crear y editar recursos (causas, contactos, notas, etc.). No puede eliminar recursos ni gestionar miembros. Rol
-							ideal para abogados y colaboradores que necesitan contribuir activamente.
+							Puede crear y editar recursos (causas, contactos, notas, etc.). No puede eliminar recursos ni gestionar miembros. Rol ideal
+							para abogados y colaboradores que necesitan contribuir activamente.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -322,8 +324,8 @@ const RolesContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Solo puede ver recursos, sin crear, editar ni eliminar. No puede gestionar miembros. Rol ideal para supervisores,
-							pasantes o clientes con acceso de consulta.
+							Solo puede ver recursos, sin crear, editar ni eliminar. No puede gestionar miembros. Rol ideal para supervisores, pasantes o
+							clientes con acceso de consulta.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -522,8 +524,8 @@ const ManagementContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Busca al miembro en la configuración del equipo, haz clic en el menú de opciones y selecciona "Cambiar rol" para asignar
-							un nuevo rol.
+							Busca al miembro en la configuración del equipo, haz clic en el menú de opciones y selecciona "Cambiar rol" para asignar un
+							nuevo rol.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -536,8 +538,8 @@ const ManagementContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Busca al miembro, haz clic en "Remover" y confirma. El miembro pierde acceso inmediato. Los recursos que creó permanecen
-							en el equipo.
+							Busca al miembro, haz clic en "Remover" y confirma. El miembro pierde acceso inmediato. Los recursos que creó permanecen en el
+							equipo.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -550,8 +552,8 @@ const ManagementContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Envía invitaciones por email con un rol preseleccionado. Las invitaciones son válidas por 7 días y pueden revocarse antes
-							de ser aceptadas.
+							Envía invitaciones por email con un rol preseleccionado. Las invitaciones son válidas por 7 días y pueden revocarse antes de
+							ser aceptadas.
 						</Typography>
 					</Paper>
 				</Grid>
@@ -583,7 +585,9 @@ const RestrictionsContent = () => {
 	const theme = useTheme();
 	return (
 		<Stack spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-			<Typography paragraph>Cada usuario solo puede pertenecer a un equipo a la vez. Esto aplica tanto a propietarios como a miembros.</Typography>
+			<Typography paragraph>
+				Cada usuario solo puede pertenecer a un equipo a la vez. Esto aplica tanto a propietarios como a miembros.
+			</Typography>
 
 			<StyledPaper>
 				<Box sx={{ p: 2, bgcolor: alpha(theme.palette.warning.lighter, 0.2), borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -678,8 +682,8 @@ const TipsContent = () => {
 							</Typography>
 						</Box>
 						<Typography variant="body2">
-							Antes de invitar miembros, organiza tus causas y recursos. Un equipo bien organizado facilita el trabajo colaborativo
-							desde el primer día.
+							Antes de invitar miembros, organiza tus causas y recursos. Un equipo bien organizado facilita el trabajo colaborativo desde el
+							primer día.
 						</Typography>
 					</Paper>
 				</Grid>

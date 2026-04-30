@@ -87,9 +87,7 @@ const usePdfBlobLoader = ({ url, enabled }: UsePdfBlobLoaderOptions): UsePdfBlob
 					// Respetar el Content-Type real de la respuesta (HTML para detalle
 					// SCBA, PDF para PJN/MEV). Forzar application/pdf rompía el render
 					// del iframe cuando el server devuelve HTML.
-					const contentType =
-						(response.headers["content-type"] as string | undefined) ||
-						"application/pdf";
+					const contentType = (response.headers["content-type"] as string | undefined) || "application/pdf";
 					const blob = new Blob([response.data], { type: contentType });
 					const objectUrl = URL.createObjectURL(blob);
 					currentBlobUrl = objectUrl;

@@ -114,14 +114,10 @@ test("GRUPO 1 — header muestra el botón 'open notifications'", async ({ page 
 test("GRUPO 1 — Badge muestra el contador de no leídas según mock", async ({ page }) => {
 	await setAlertsMock(
 		page,
-		mockAlertsResponse(
-			[
-				buildAlert(1, { read: false }),
-				buildAlert(2, { read: false }),
-				buildAlert(3, { read: false }),
-			],
-			{ unread: 3, totalAlerts: 3 },
-		),
+		mockAlertsResponse([buildAlert(1, { read: false }), buildAlert(2, { read: false }), buildAlert(3, { read: false })], {
+			unread: 3,
+			totalAlerts: 3,
+		}),
 	);
 
 	await gotoDashboard(page);

@@ -264,7 +264,13 @@ const TabPayment = () => {
 										</Grid>
 										<Grid item xs={12}>
 											<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
-												<Button color="error" onClick={() => { resetForm(); setMethod("card"); }}>
+												<Button
+													color="error"
+													onClick={() => {
+														resetForm();
+														setMethod("card");
+													}}
+												>
 													Cancel
 												</Button>
 												<Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">
@@ -424,7 +430,14 @@ const TabPayment = () => {
 										</Grid>
 										<Grid item xs={12}>
 											<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
-												<Button variant="outlined" color="secondary" onClick={() => { resetForm(); setMethod("card"); }}>
+												<Button
+													variant="outlined"
+													color="secondary"
+													onClick={() => {
+														resetForm();
+														setMethod("card");
+													}}
+												>
 													Cancel
 												</Button>
 												<Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">

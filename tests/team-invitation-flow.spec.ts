@@ -44,11 +44,7 @@ async function createTeamAsOwner(name: string): Promise<string> {
 }
 
 /** Envía invitación y devuelve el token de la invitación creada */
-async function sendInvitation(
-	teamId: string,
-	email: string,
-	role: "admin" | "editor" | "viewer",
-): Promise<string> {
+async function sendInvitation(teamId: string, email: string, role: "admin" | "editor" | "viewer"): Promise<string> {
 	const ctx = await apiAsUser("owner");
 	try {
 		const res = await ctx.post(`${API}/api/groups/${teamId}/invitations`, {
@@ -76,7 +72,7 @@ async function getTeamMembers(teamId: string): Promise<Array<{ userId: string; e
 		const body = await res.json();
 		const group = body.group ?? body.data ?? body;
 		return (group.members ?? []).map((m: any) => ({
-			userId: typeof m.userId === "string" ? m.userId : (m.userId?._id ?? m.user?._id ?? m.user ?? ""),
+			userId: typeof m.userId === "string" ? m.userId : m.userId?._id ?? m.user?._id ?? m.user ?? "",
 			email: m.email ?? (typeof m.userId === "object" ? m.userId?.email : "") ?? "",
 			role: m.role,
 			status: m.status,
@@ -155,10 +151,9 @@ test("GRUPO 1 — owner invita soporte (sin recursos) + accept via UI → se une
 		await expect(acceptBtn).toBeVisible({ timeout: 10_000 });
 
 		const [acceptResponse] = await Promise.all([
-			inviteePage.waitForResponse(
-				(r) => r.url().includes(`/api/groups/invitations/accept/${token}`) && r.request().method() === "POST",
-				{ timeout: 15_000 },
-			),
+			inviteePage.waitForResponse((r) => r.url().includes(`/api/groups/invitations/accept/${token}`) && r.request().method() === "POST", {
+				timeout: 15_000,
+			}),
 			acceptBtn.click(),
 		]);
 		expect(acceptResponse.ok()).toBe(true);
@@ -250,9 +245,7 @@ test("GRUPO 2 — invitee con recursos → UI muestra flujo de migración de rec
 		await acceptBtn.click();
 
 		// La UI debe mostrar opciones de qué hacer con los recursos
-		await expect(
-			inviteePage.getByText(/recursos|folders|carpetas|calculadoras|migrar|eliminar/i).first(),
-		).toBeVisible({ timeout: 10_000 });
+		await expect(inviteePage.getByText(/recursos|folders|carpetas|calculadoras|migrar|eliminar/i).first()).toBeVisible({ timeout: 10_000 });
 	} finally {
 		await inviteeContext.close();
 	}
@@ -273,9 +266,7 @@ test("GRUPO 3 — token inválido → página muestra error", async ({ browser }
 	try {
 		await inviteePage.goto(`/teams/invitation/token-invalido-12345`);
 		// La página debe mostrar un estado de error (el texto exacto depende del UI)
-		await expect(
-			inviteePage.getByText(/inválid|expirad|no válid|no encontrad|error/i).first(),
-		).toBeVisible({ timeout: 15_000 });
+		await expect(inviteePage.getByText(/inválid|expirad|no válid|no encontrad|error/i).first()).toBeVisible({ timeout: 15_000 });
 	} finally {
 		await inviteeContext.close();
 	}

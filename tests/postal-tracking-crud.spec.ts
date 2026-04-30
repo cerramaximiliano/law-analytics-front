@@ -56,9 +56,7 @@ function readTokenFromStorage(): string {
 
 function decodeUserId(token: string): string {
 	try {
-		const payload = JSON.parse(
-			Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(),
-		);
+		const payload = JSON.parse(Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
 		return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
 	} catch {
 		return "";
@@ -79,9 +77,7 @@ async function deleteTrackingById(page: Page, trackingId: string): Promise<void>
 
 async function gotoPostal(page: Page): Promise<void> {
 	await page.goto("/herramientas/seguimiento-postal");
-	await expect(
-		page.locator('table, [data-testid="postal-empty-add-btn"]').first(),
-	).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator('table, [data-testid="postal-empty-add-btn"]').first()).toBeVisible({ timeout: 15_000 });
 }
 
 async function openAddModal(page: Page): Promise<void> {
@@ -168,11 +164,7 @@ async function deleteTrackingsByIds(ids: string[]): Promise<void> {
 /**
  * Crea un seguimiento vía UI y devuelve el _id del backend.
  */
-async function createTrackingViaUI(
-	page: Page,
-	label: string,
-	numberId?: string,
-): Promise<{ id: string; numberId: string }> {
+async function createTrackingViaUI(page: Page, label: string, numberId?: string): Promise<{ id: string; numberId: string }> {
 	const number = numberId ?? makeNumber();
 	await openAddModal(page);
 	await expect(page.getByRole("dialog").getByText("Nuevo seguimiento")).toBeVisible({ timeout: 3_000 });

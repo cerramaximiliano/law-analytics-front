@@ -499,9 +499,7 @@ const Movements = ({ title, folderName = "" }: MovementsProps) => {
 			/>
 			<AlertMemberDelete
 				title={
-					selectedMovementId
-						? movementsData.movements.find((m: Movement) => m._id === selectedMovementId)?.title || "este movimiento"
-						: ""
+					selectedMovementId ? movementsData.movements.find((m: Movement) => m._id === selectedMovementId)?.title || "este movimiento" : ""
 				}
 				open={openModal}
 				handleClose={handleClose}

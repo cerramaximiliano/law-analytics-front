@@ -1,24 +1,23 @@
-"use client"
+"use client";
 
-import { forwardRef, useCallback } from "react"
+import { forwardRef, useCallback } from "react";
 
 // --- Hooks ---
-import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor";
 
 // --- Tiptap UI ---
-import type { UseTableHeaderRowColumnConfig } from "@/components/tiptap-node/table-node/ui/table-header-row-column-button"
-import { useTableHeaderRowColumn } from "@/components/tiptap-node/table-node/ui/table-header-row-column-button"
+import type { UseTableHeaderRowColumnConfig } from "@/components/tiptap-node/table-node/ui/table-header-row-column-button";
+import { useTableHeaderRowColumn } from "@/components/tiptap-node/table-node/ui/table-header-row-column-button";
 
 // --- UI Primitives ---
-import type { ButtonProps } from "@/components/tiptap-ui-primitive/button"
-import { Button } from "@/components/tiptap-ui-primitive/button"
+import type { ButtonProps } from "@/components/tiptap-ui-primitive/button";
+import { Button } from "@/components/tiptap-ui-primitive/button";
 
-export interface TableHeaderRowColumnButtonProps
-  extends Omit<ButtonProps, "type">, UseTableHeaderRowColumnConfig {
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string
+export interface TableHeaderRowColumnButtonProps extends Omit<ButtonProps, "type">, UseTableHeaderRowColumnConfig {
+	/**
+	 * Optional text to display alongside the icon.
+	 */
+	text?: string;
 }
 
 /**
@@ -27,72 +26,58 @@ export interface TableHeaderRowColumnButtonProps
  *
  * For custom button implementations, use the `useTableHeaderRowColumn` hook instead.
  */
-export const TableHeaderRowColumnButton = forwardRef<
-  HTMLButtonElement,
-  TableHeaderRowColumnButtonProps
->(
-  (
-    {
-      editor: providedEditor,
-      index,
-      orientation,
-      hideWhenUnavailable = false,
-      onToggled,
-      text,
-      onClick,
-      children,
-      ...buttonProps
-    },
-    ref
-  ) => {
-    const { editor } = useTiptapEditor(providedEditor)
-    const { isVisible, handleToggle, label, canToggleHeader, Icon, isActive } =
-      useTableHeaderRowColumn({
-        editor,
-        index,
-        orientation,
-        hideWhenUnavailable,
-        onToggled,
-      })
+export const TableHeaderRowColumnButton = forwardRef<HTMLButtonElement, TableHeaderRowColumnButtonProps>(
+	(
+		{ editor: providedEditor, index, orientation, hideWhenUnavailable = false, onToggled, text, onClick, children, ...buttonProps },
+		ref,
+	) => {
+		const { editor } = useTiptapEditor(providedEditor);
+		const { isVisible, handleToggle, label, canToggleHeader, Icon, isActive } = useTableHeaderRowColumn({
+			editor,
+			index,
+			orientation,
+			hideWhenUnavailable,
+			onToggled,
+		});
 
-    const handleClick = useCallback(
-      (event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        handleToggle()
-      },
-      [handleToggle, onClick]
-    )
+		const handleClick = useCallback(
+			(event: React.MouseEvent<HTMLButtonElement>) => {
+				onClick?.(event);
+				if (event.defaultPrevented) return;
+				handleToggle();
+			},
+			[handleToggle, onClick],
+		);
 
-    if (!isVisible) {
-      return null
-    }
+		if (!isVisible) {
+			return null;
+		}
 
-    return (
-      <Button
-        type="button"
-        disabled={!canToggleHeader}
-        variant="ghost"
-        data-active-state={isActive ? "on" : "off"}
-        data-disabled={!canToggleHeader}
-        role="button"
-        tabIndex={-1}
-        aria-label={label}
-        aria-pressed={isActive}
-        tooltip={label}
-        onClick={handleClick}
-        {...buttonProps}
-        ref={ref}
-      >
-        {children ?? (
-          <>
-            <Icon className="tiptap-button-icon" />
-            {text && <span className="tiptap-button-text">{text}</span>}
-          </>
-        )}
-      </Button>
-    )
-  }
-)
+		return (
+			<Button
+				type="button"
+				disabled={!canToggleHeader}
+				variant="ghost"
+				data-active-state={isActive ? "on" : "off"}
+				data-disabled={!canToggleHeader}
+				role="button"
+				tabIndex={-1}
+				aria-label={label}
+				aria-pressed={isActive}
+				tooltip={label}
+				onClick={handleClick}
+				{...buttonProps}
+				ref={ref}
+			>
+				{children ?? (
+					<>
+						<Icon className="tiptap-button-icon" />
+						{text && <span className="tiptap-button-text">{text}</span>}
+					</>
+				)}
+			</Button>
+		);
+	},
+);
 
-TableHeaderRowColumnButton.displayName = "TableHeaderRowColumnButton"
+TableHeaderRowColumnButton.displayName = "TableHeaderRowColumnButton";

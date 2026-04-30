@@ -23,62 +23,55 @@ import { useTeam } from "../contexts/TeamContext";
  * }, [effectiveUserId, isReady]);
  */
 export function useEffectiveUser() {
-  const { user } = useAuth();
-  const {
-    getUserIdForResource,
-    getRequestHeaders,
-    isTeamMode,
-    activeTeam,
-    isReady,
-    isOwner
-  } = useTeam();
+	const { user } = useAuth();
+	const { getUserIdForResource, getRequestHeaders, isTeamMode, activeTeam, isReady, isOwner } = useTeam();
 
-  // userId personal del usuario actual
-  const personalUserId = useMemo(() => {
-    return user?._id || user?.id || "";
-  }, [user]);
+	// userId personal del usuario actual
+	const personalUserId = useMemo(() => {
+		return user?._id || user?.id || "";
+	}, [user]);
 
-  // userId efectivo para fetching de datos
-  // En modo equipo (para no-owners), usa el userId del owner
-  const effectiveUserId = useMemo(() => {
-    if (isTeamMode && activeTeam && !isOwner) {
-      return getUserIdForResource();
-    }
-    return personalUserId;
-  }, [isTeamMode, activeTeam, isOwner, getUserIdForResource, personalUserId]);
+	// userId efectivo para fetching de datos
+	// En modo equipo (para no-owners), usa el userId del owner
+	const effectiveUserId = useMemo(() => {
+		if (isTeamMode && activeTeam && !isOwner) {
+			return getUserIdForResource();
+		}
+		return personalUserId;
+	}, [isTeamMode, activeTeam, isOwner, getUserIdForResource, personalUserId]);
 
-  // Headers para incluir en requests axios
-  // Incluye X-Group-Id cuando está en modo equipo
-  const requestHeaders = useMemo(() => {
-    return getRequestHeaders();
-  }, [getRequestHeaders]);
+	// Headers para incluir en requests axios
+	// Incluye X-Group-Id cuando está en modo equipo
+	const requestHeaders = useMemo(() => {
+		return getRequestHeaders();
+	}, [getRequestHeaders]);
 
-  return {
-    // userId para usar en fetching de datos
-    effectiveUserId,
+	return {
+		// userId para usar en fetching de datos
+		effectiveUserId,
 
-    // userId personal del miembro (siempre el usuario actual)
-    personalUserId,
+		// userId personal del miembro (siempre el usuario actual)
+		personalUserId,
 
-    // Si el usuario está en modo equipo
-    isTeamMode,
+		// Si el usuario está en modo equipo
+		isTeamMode,
 
-    // Si el usuario es el owner del equipo activo
-    isOwner,
+		// Si el usuario es el owner del equipo activo
+		isOwner,
 
-    // ID del equipo activo (si existe)
-    teamId: activeTeam?._id,
+		// ID del equipo activo (si existe)
+		teamId: activeTeam?._id,
 
-    // Headers para requests (incluye X-Group-Id en modo equipo)
-    requestHeaders,
+		// Headers para requests (incluye X-Group-Id en modo equipo)
+		requestHeaders,
 
-    // Si el contexto está listo para hacer fetching
-    // Esperar hasta que isReady sea true antes de hacer requests
-    isReady,
+		// Si el contexto está listo para hacer fetching
+		// Esperar hasta que isReady sea true antes de hacer requests
+		isReady,
 
-    // Helper: retorna true si deberíamos mostrar datos del equipo
-    isViewingTeamData: isTeamMode && !isOwner,
-  };
+		// Helper: retorna true si deberíamos mostrar datos del equipo
+		isViewingTeamData: isTeamMode && !isOwner,
+	};
 }
 
 export default useEffectiveUser;

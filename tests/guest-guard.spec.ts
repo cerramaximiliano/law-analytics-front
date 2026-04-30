@@ -13,11 +13,11 @@ import { loginViaForm } from "./helpers/auth";
 
 // Rutas protegidas por GuestGuard
 const GUEST_ROUTES = [
-	{ path: "/login",            label: "login" },
-	{ path: "/register",         label: "register" },
-	{ path: "/forgot-password",  label: "forgot-password" },
-	{ path: "/check-mail",       label: "check-mail" },
-	{ path: "/reset-password",   label: "reset-password" },
+	{ path: "/login", label: "login" },
+	{ path: "/register", label: "register" },
+	{ path: "/forgot-password", label: "forgot-password" },
+	{ path: "/check-mail", label: "check-mail" },
+	{ path: "/reset-password", label: "reset-password" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

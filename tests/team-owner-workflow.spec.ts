@@ -110,7 +110,10 @@ test("GRUPO 2 — crear team real → POST /api/groups + team aparece en la UI",
 
 	const [postResponse] = await Promise.all([
 		page.waitForResponse((r) => r.url().endsWith("/api/groups") && r.request().method() === "POST"),
-		page.getByRole("dialog").getByRole("button", { name: /Crear Equipo/i }).click(),
+		page
+			.getByRole("dialog")
+			.getByRole("button", { name: /Crear Equipo/i })
+			.click(),
 	]);
 	expect(postResponse.ok()).toBe(true);
 
@@ -150,10 +153,9 @@ test("GRUPO 3 — invitar member via UI → POST /api/groups/:id/invitations + a
 
 	// Enviar invitación
 	const [postResponse] = await Promise.all([
-		page.waitForResponse(
-			(r) => r.url().includes(`/api/groups/${teamId}/invitations`) && r.request().method() === "POST",
-			{ timeout: 15_000 },
-		),
+		page.waitForResponse((r) => r.url().includes(`/api/groups/${teamId}/invitations`) && r.request().method() === "POST", {
+			timeout: 15_000,
+		}),
 		page.getByRole("button", { name: /Enviar Invitaciones/i }).click(),
 	]);
 	expect(postResponse.ok()).toBe(true);

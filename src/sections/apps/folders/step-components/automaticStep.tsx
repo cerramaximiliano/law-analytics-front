@@ -648,15 +648,11 @@ const AutomaticStep = () => {
 				}
 
 				// Descripción automática
-				const searchInfo = values.ejeSearchType === "cuij"
-					? `CUIJ: ${values.ejeCuij}`
-					: `Expediente: ${values.expedientNumber}/${values.expedientYear}`;
+				const searchInfo =
+					values.ejeSearchType === "cuij" ? `CUIJ: ${values.ejeCuij}` : `Expediente: ${values.expedientNumber}/${values.expedientYear}`;
 
 				if (!values.description || values.description === "") {
-					setFieldValue(
-						"description",
-						`Expediente importado desde EJE - Poder Judicial de la Ciudad de Buenos Aires (${searchInfo})`,
-					);
+					setFieldValue("description", `Expediente importado desde EJE - Poder Judicial de la Ciudad de Buenos Aires (${searchInfo})`);
 				}
 
 				setSuccess(true);
@@ -791,16 +787,17 @@ const AutomaticStep = () => {
 						expedientYear: true,
 					};
 				} else if (values.judicialPower === "caba") {
-					touchedFields = values.ejeSearchType === "cuij"
-						? {
-								...touched,
-								ejeCuij: true,
-						  }
-						: {
-								...touched,
-								expedientNumber: true,
-								expedientYear: true,
-						  };
+					touchedFields =
+						values.ejeSearchType === "cuij"
+							? {
+									...touched,
+									ejeCuij: true,
+							  }
+							: {
+									...touched,
+									expedientNumber: true,
+									expedientYear: true,
+							  };
 				} else {
 					touchedFields = {
 						...touched,
@@ -819,7 +816,18 @@ const AutomaticStep = () => {
 				nextButton.removeEventListener("click", handleNextClick);
 			};
 		}
-	}, [values.folderJuris, values.jurisdictionBA, values.organismoBA, values.expedientNumber, values.expedientYear, values.judicialPower, values.ejeSearchType, values.ejeCuij, pjnImportMode, baImportMode]);
+	}, [
+		values.folderJuris,
+		values.jurisdictionBA,
+		values.organismoBA,
+		values.expedientNumber,
+		values.expedientYear,
+		values.judicialPower,
+		values.ejeSearchType,
+		values.ejeCuij,
+		pjnImportMode,
+		baImportMode,
+	]);
 
 	// Manejar cambio en el campo de año
 	const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1205,7 +1213,9 @@ const AutomaticStep = () => {
 															disabled={!values.jurisdictionBA}
 															renderValue={(selected) => {
 																if (!selected) {
-																	return <em>{values.jurisdictionBA ? "Seleccione un organismo" : "Seleccione primero una jurisdicción"}</em>;
+																	return (
+																		<em>{values.jurisdictionBA ? "Seleccione un organismo" : "Seleccione primero una jurisdicción"}</em>
+																	);
 																}
 																const selectedOrganismo = navigationCodes.find((c) => c._id === selected);
 																return selectedOrganismo ? selectedOrganismo.organismo.nombre : "";
@@ -1269,20 +1279,12 @@ const AutomaticStep = () => {
 															<FormControlLabel
 																value="expediente"
 																control={<Radio size="small" />}
-																label={
-																	<Typography variant="body2">
-																		Por Número y Año
-																	</Typography>
-																}
+																label={<Typography variant="body2">Por Número y Año</Typography>}
 															/>
 															<FormControlLabel
 																value="cuij"
 																control={<Radio size="small" />}
-																label={
-																	<Typography variant="body2">
-																		Por CUIJ
-																	</Typography>
-																}
+																label={<Typography variant="body2">Por CUIJ</Typography>}
 															/>
 														</RadioGroup>
 													</FormControl>
@@ -1307,7 +1309,9 @@ const AutomaticStep = () => {
 																	}
 																}}
 																error={Boolean(cuijError && touched.ejeCuij)}
-																helperText={touched.ejeCuij && cuijError ? cuijError : "Formato: J-XX-XXXXXXXX-X/AAAA-X (ej: J-01-00053687-9/2020-0)"}
+																helperText={
+																	touched.ejeCuij && cuijError ? cuijError : "Formato: J-XX-XXXXXXXX-X/AAAA-X (ej: J-01-00053687-9/2020-0)"
+																}
 															/>
 														</Stack>
 													) : (

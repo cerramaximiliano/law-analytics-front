@@ -226,7 +226,14 @@ function ReactTable({
 
 						{/* Botón principal (derecha) */}
 						{handleAdd && (
-							<Button variant="contained" size="small" startIcon={<Add />} onClick={handleAdd} fullWidth={matchDownSM} data-testid="tasks-add-btn">
+							<Button
+								variant="contained"
+								size="small"
+								startIcon={<Add />}
+								onClick={handleAdd}
+								fullWidth={matchDownSM}
+								data-testid="tasks-add-btn"
+							>
 								Nueva Tarea
 							</Button>
 						)}

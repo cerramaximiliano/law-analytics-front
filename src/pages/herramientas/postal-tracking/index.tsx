@@ -1,50 +1,50 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
-  Box,
-  Button,
-  CardActions,
-  Checkbox,
-  Chip,
-  Divider,
-  FormControl,
-  Grid,
-  IconButton,
-  InputAdornment,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Pagination,
-  Paper,
-  Select,
-  Skeleton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Tooltip,
-  Typography,
-  useMediaQuery,
-  useTheme,
+	Box,
+	Button,
+	CardActions,
+	Checkbox,
+	Chip,
+	Divider,
+	FormControl,
+	Grid,
+	IconButton,
+	InputAdornment,
+	ListItemIcon,
+	ListItemText,
+	Menu,
+	MenuItem,
+	Pagination,
+	Paper,
+	Select,
+	Skeleton,
+	Stack,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	TableSortLabel,
+	TextField,
+	Tooltip,
+	Typography,
+	useMediaQuery,
+	useTheme,
 } from "@mui/material";
 import { Add, Box as BoxIcon, DocumentUpload, Edit2, Eye, Link1, More, Refresh2, SearchNormal1, TickCircle, Trash } from "iconsax-react";
 
 import MainCard from "components/MainCard";
 import { dispatch, useSelector } from "store";
 import {
-  fetchPostalTrackings,
-  deletePostalTracking,
-  bulkDeletePostalTrackings,
-  getPostalTrackingById,
-  clearPostalTrackingDetail,
-  uploadAttachment,
-  markPostalTrackingAsCompleted,
-  reactivatePostalTracking,
+	fetchPostalTrackings,
+	deletePostalTracking,
+	bulkDeletePostalTrackings,
+	getPostalTrackingById,
+	clearPostalTrackingDetail,
+	uploadAttachment,
+	markPostalTrackingAsCompleted,
+	reactivatePostalTracking,
 } from "store/reducers/postalTracking";
 import { openSnackbar } from "store/reducers/snackbar";
 import ApiService from "store/reducers/ApiService";
@@ -59,1041 +59,1161 @@ import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 const CORREO_LOGO = "https://res.cloudinary.com/dqyoeolib/image/upload/v1773403406/logo-correo_lxrcmr.png";
 
 const STATUS_COLORS: Record<string, "default" | "warning" | "info" | "success" | "error"> = {
-  pending: "warning",
-  active: "info",
-  completed: "success",
-  paused: "default",
-  error: "error",
+	pending: "warning",
+	active: "info",
+	completed: "success",
+	paused: "default",
+	error: "error",
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "Pendiente",
-  active: "Activo",
-  completed: "Completado",
-  paused: "Pausado",
-  error: "Error",
-  not_found: "No encontrado",
+	pending: "Pendiente",
+	active: "Activo",
+	completed: "Completado",
+	paused: "Pausado",
+	error: "Error",
+	not_found: "No encontrado",
 };
 
 function formatDate(date?: string | null) {
-  if (!date) return "—";
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
+	if (!date) return "—";
+	return new Intl.DateTimeFormat("es-AR", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	}).format(new Date(date));
 }
 
 // ── Empty state ────────────────────────────────────────────────────────────────
 
 const EmptyState = ({ onAdd }: { onAdd: () => void }) => {
-  const theme = useTheme();
-  return (
-    <Stack alignItems="center" justifyContent="center" spacing={2.5} sx={{ py: 8 }}>
-      <Box sx={{ p: 2.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
-        <BoxIcon size={40} variant="Bulk" style={{ color: theme.palette.primary.main }} />
-      </Box>
-      <Stack alignItems="center" spacing={1}>
-        <Typography variant="h5" color="textSecondary">
-          Todavía no tenés seguimientos
-        </Typography>
-        <Typography variant="body2" color="textSecondary" align="center" sx={{ maxWidth: 380 }}>
-          Agregá el código y número de tu envío postal para hacer el seguimiento automático.
-          Te avisaremos cada vez que cambie el estado.
-        </Typography>
-      </Stack>
-      <Button variant="contained" startIcon={<Add />} onClick={onAdd} data-testid="postal-empty-add-btn">
-        Crear primer seguimiento
-      </Button>
-    </Stack>
-  );
+	const theme = useTheme();
+	return (
+		<Stack alignItems="center" justifyContent="center" spacing={2.5} sx={{ py: 8 }}>
+			<Box sx={{ p: 2.5, bgcolor: "primary.lighter", borderRadius: "50%" }}>
+				<BoxIcon size={40} variant="Bulk" style={{ color: theme.palette.primary.main }} />
+			</Box>
+			<Stack alignItems="center" spacing={1}>
+				<Typography variant="h5" color="textSecondary">
+					Todavía no tenés seguimientos
+				</Typography>
+				<Typography variant="body2" color="textSecondary" align="center" sx={{ maxWidth: 380 }}>
+					Agregá el código y número de tu envío postal para hacer el seguimiento automático. Te avisaremos cada vez que cambie el estado.
+				</Typography>
+			</Stack>
+			<Button variant="contained" startIcon={<Add />} onClick={onAdd} data-testid="postal-empty-add-btn">
+				Crear primer seguimiento
+			</Button>
+		</Stack>
+	);
 };
 
 // ── Página principal ───────────────────────────────────────────────────────────
 
 const PostalTrackingPage = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isMd = useMediaQuery(theme.breakpoints.down("md"));
-  const { trackings, isLoader, total } = useSelector((state: any) => state.postalTrackingReducer);
-  const { tracking: trackingDetail } = useSelector((state: any) => state.postalTrackingReducer);
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const isMd = useMediaQuery(theme.breakpoints.down("md"));
+	const { trackings, isLoader, total } = useSelector((state: any) => state.postalTrackingReducer);
+	const { tracking: trackingDetail } = useSelector((state: any) => state.postalTrackingReducer);
 
-  // Paginación y filtros
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [sortBy, setSortBy] = useState<"label" | "createdAt" | "lastCheckedAt">("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+	// Paginación y filtros
+	const [page, setPage] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(10);
+	const [search, setSearch] = useState("");
+	const [searchInput, setSearchInput] = useState("");
+	const [sortBy, setSortBy] = useState<"label" | "createdAt" | "lastCheckedAt">("createdAt");
+	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Menú contextual de acciones secundarias (mobile/tablet)
-  const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
-  const [actionMenuRow, setActionMenuRow] = useState<PostalTrackingType | null>(null);
+	// Menú contextual de acciones secundarias (mobile/tablet)
+	const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
+	const [actionMenuRow, setActionMenuRow] = useState<PostalTrackingType | null>(null);
 
-  // Modales
-  const [openCreate, setOpenCreate] = useState(false);
-  const [trackingToEdit, setTrackingToEdit] = useState<PostalTrackingType | undefined>(undefined);
-  const [trackingToDelete, setTrackingToDelete] = useState<PostalTrackingType | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [linkTracking, setLinkTracking] = useState<PostalTrackingType | null>(null);
+	// Modales
+	const [openCreate, setOpenCreate] = useState(false);
+	const [trackingToEdit, setTrackingToEdit] = useState<PostalTrackingType | undefined>(undefined);
+	const [trackingToDelete, setTrackingToDelete] = useState<PostalTrackingType | null>(null);
+	const [detailOpen, setDetailOpen] = useState(false);
+	const [detailLoading, setDetailLoading] = useState(false);
+	const [linkTracking, setLinkTracking] = useState<PostalTrackingType | null>(null);
 
-  // Límite del plan (Capa 1 — check antes de abrir el modal de creación)
-  const [isCheckingLimit, setIsCheckingLimit] = useState(false);
-  const [limitErrorOpen, setLimitErrorOpen] = useState(false);
-  const [limitErrorInfo, setLimitErrorInfo] = useState<{
-    resourceType: string;
-    plan: string;
-    currentCount: string;
-    limit: number;
-  } | null>(null);
+	// Límite del plan (Capa 1 — check antes de abrir el modal de creación)
+	const [isCheckingLimit, setIsCheckingLimit] = useState(false);
+	const [limitErrorOpen, setLimitErrorOpen] = useState(false);
+	const [limitErrorInfo, setLimitErrorInfo] = useState<{
+		resourceType: string;
+		plan: string;
+		currentCount: string;
+		limit: number;
+	} | null>(null);
 
-  // Selección múltiple
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	// Selección múltiple
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Adjunto
-  const attachmentInputRef = useRef<HTMLInputElement>(null);
-  const [attachmentTargetId, setAttachmentTargetId] = useState<string | null>(null);
+	// Adjunto
+	const attachmentInputRef = useRef<HTMLInputElement>(null);
+	const [attachmentTargetId, setAttachmentTargetId] = useState<string | null>(null);
 
-  const loadData = useCallback(() => {
-    setSelectedIds(new Set());
-    dispatch(
-      fetchPostalTrackings({
-        page: page + 1,
-        limit: rowsPerPage,
-        search: search || undefined,
-        sortBy,
-        sortOrder,
-      })
-    );
-  }, [page, rowsPerPage, search, sortBy, sortOrder]);
+	const loadData = useCallback(() => {
+		setSelectedIds(new Set());
+		dispatch(
+			fetchPostalTrackings({
+				page: page + 1,
+				limit: rowsPerPage,
+				search: search || undefined,
+				sortBy,
+				sortOrder,
+			}),
+		);
+	}, [page, rowsPerPage, search, sortBy, sortOrder]);
 
-  const handleLabelSort = () => {
-    if (sortBy === "label") {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy("label");
-      setSortOrder("asc");
-      setPage(0);
-    }
-  };
+	const handleLabelSort = () => {
+		if (sortBy === "label") {
+			setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+		} else {
+			setSortBy("label");
+			setSortOrder("asc");
+			setPage(0);
+		}
+	};
 
-  const handleLastCheckedSort = () => {
-    if (sortBy === "lastCheckedAt") {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy("lastCheckedAt");
-      setSortOrder("desc");
-      setPage(0);
-    }
-  };
+	const handleLastCheckedSort = () => {
+		if (sortBy === "lastCheckedAt") {
+			setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+		} else {
+			setSortBy("lastCheckedAt");
+			setSortOrder("desc");
+			setPage(0);
+		}
+	};
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+	useEffect(() => {
+		loadData();
+	}, [loadData]);
 
-  // Búsqueda con debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPage(0);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+	// Búsqueda con debounce
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setSearch(searchInput);
+			setPage(0);
+		}, 400);
+		return () => clearTimeout(timer);
+	}, [searchInput]);
 
-  const showSnackbar = (message: string, severity: "success" | "error") => {
-    dispatch(
-      openSnackbar({
-        open: true,
-        message,
-        variant: "alert",
-        alert: { color: severity },
-        close: true,
-      })
-    );
-  };
+	const showSnackbar = (message: string, severity: "success" | "error") => {
+		dispatch(
+			openSnackbar({
+				open: true,
+				message,
+				variant: "alert",
+				alert: { color: severity },
+				close: true,
+			}),
+		);
+	};
 
-  const handleViewDetail = async (id: string) => {
-    setDetailOpen(true);
-    setDetailLoading(true);
-    await dispatch(getPostalTrackingById(id));
-    setDetailLoading(false);
-  };
+	const handleViewDetail = async (id: string) => {
+		setDetailOpen(true);
+		setDetailLoading(true);
+		await dispatch(getPostalTrackingById(id));
+		setDetailLoading(false);
+	};
 
-  const handleCloseDetail = () => {
-    setDetailOpen(false);
-    dispatch(clearPostalTrackingDetail());
-  };
+	const handleCloseDetail = () => {
+		setDetailOpen(false);
+		dispatch(clearPostalTrackingDetail());
+	};
 
-  const handleOpenEdit = (tracking: PostalTrackingType) => {
-    setTrackingToEdit(tracking);
-    setOpenCreate(true);
-  };
+	const handleOpenEdit = (tracking: PostalTrackingType) => {
+		setTrackingToEdit(tracking);
+		setOpenCreate(true);
+	};
 
-  const handleCloseModal = () => {
-    setOpenCreate(false);
-    setTrackingToEdit(undefined);
-    loadData();
-  };
+	const handleCloseModal = () => {
+		setOpenCreate(false);
+		setTrackingToEdit(undefined);
+		loadData();
+	};
 
-  /**
-   * Capa 1: verifica el límite del plan antes de abrir el modal de creación.
-   * Si `hasReachedLimit: true`, abre LimitErrorModal en lugar del formulario.
-   */
-  const handleOpenCreate = async () => {
-    setIsCheckingLimit(true);
-    try {
-      const response = await ApiService.checkResourceLimit("postalTrackings");
-      if (response.success && response.data?.hasReachedLimit) {
-        setLimitErrorInfo({
-          resourceType: "Seguimientos postales",
-          plan: response.data.currentPlan || response.data.planId || "free",
-          currentCount: String(response.data.currentCount),
-          limit: response.data.limit,
-        });
-        setLimitErrorOpen(true);
-        return;
-      }
-      setOpenCreate(true);
-    } catch (error) {
-      // Si falla el check, permitir continuar: el backend hará enforcement
-      console.error("Error al verificar el límite de seguimientos postales:", error);
-      setOpenCreate(true);
-    } finally {
-      setIsCheckingLimit(false);
-    }
-  };
+	/**
+	 * Capa 1: verifica el límite del plan antes de abrir el modal de creación.
+	 * Si `hasReachedLimit: true`, abre LimitErrorModal en lugar del formulario.
+	 */
+	const handleOpenCreate = async () => {
+		setIsCheckingLimit(true);
+		try {
+			const response = await ApiService.checkResourceLimit("postalTrackings");
+			if (response.success && response.data?.hasReachedLimit) {
+				setLimitErrorInfo({
+					resourceType: "Seguimientos postales",
+					plan: response.data.currentPlan || response.data.planId || "free",
+					currentCount: String(response.data.currentCount),
+					limit: response.data.limit,
+				});
+				setLimitErrorOpen(true);
+				return;
+			}
+			setOpenCreate(true);
+		} catch (error) {
+			// Si falla el check, permitir continuar: el backend hará enforcement
+			console.error("Error al verificar el límite de seguimientos postales:", error);
+			setOpenCreate(true);
+		} finally {
+			setIsCheckingLimit(false);
+		}
+	};
 
-  const handleDeleteConfirm = async (confirmed: boolean) => {
-    if (confirmed && trackingToDelete) {
-      const result = await dispatch(deletePostalTracking(trackingToDelete._id));
-      if (result.success) {
-        showSnackbar("Seguimiento eliminado", "success");
-        loadData();
-      } else {
-        showSnackbar(result.error || "Error al eliminar", "error");
-      }
-    }
-    setTrackingToDelete(null);
-  };
+	const handleDeleteConfirm = async (confirmed: boolean) => {
+		if (confirmed && trackingToDelete) {
+			const result = await dispatch(deletePostalTracking(trackingToDelete._id));
+			if (result.success) {
+				showSnackbar("Seguimiento eliminado", "success");
+				loadData();
+			} else {
+				showSnackbar(result.error || "Error al eliminar", "error");
+			}
+		}
+		setTrackingToDelete(null);
+	};
 
-  const handleCloseLinkModal = () => {
-    setLinkTracking(null);
-    loadData();
-  };
+	const handleCloseLinkModal = () => {
+		setLinkTracking(null);
+		loadData();
+	};
 
-  const handleToggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+	const handleToggleSelect = (id: string) => {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			next.has(id) ? next.delete(id) : next.add(id);
+			return next;
+		});
+	};
 
-  const allCurrentSelected = trackings.length > 0 && trackings.every((t: PostalTrackingType) => selectedIds.has(t._id));
-  const someCurrentSelected = trackings.some((t: PostalTrackingType) => selectedIds.has(t._id));
+	const allCurrentSelected = trackings.length > 0 && trackings.every((t: PostalTrackingType) => selectedIds.has(t._id));
+	const someCurrentSelected = trackings.some((t: PostalTrackingType) => selectedIds.has(t._id));
 
-  const handleToggleAll = () => {
-    if (allCurrentSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(trackings.map((t: PostalTrackingType) => t._id)));
-    }
-  };
+	const handleToggleAll = () => {
+		if (allCurrentSelected) {
+			setSelectedIds(new Set());
+		} else {
+			setSelectedIds(new Set(trackings.map((t: PostalTrackingType) => t._id)));
+		}
+	};
 
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-  const handleBulkDeleteConfirm = async (confirmed: boolean) => {
-    setBulkDeleteOpen(false);
-    if (!confirmed) return;
-    const ids = Array.from(selectedIds);
-    const result = await dispatch(bulkDeletePostalTrackings(ids));
-    if (result.success) {
-      showSnackbar(`${result.deleted} seguimiento${result.deleted !== 1 ? "s" : ""} eliminado${result.deleted !== 1 ? "s" : ""}`, "success");
-      setSelectedIds(new Set());
-      loadData();
-    } else {
-      showSnackbar(result.error || "Error al eliminar", "error");
-    }
-  };
+	const handleBulkDeleteConfirm = async (confirmed: boolean) => {
+		setBulkDeleteOpen(false);
+		if (!confirmed) return;
+		const ids = Array.from(selectedIds);
+		const result = await dispatch(bulkDeletePostalTrackings(ids));
+		if (result.success) {
+			showSnackbar(
+				`${result.deleted} seguimiento${result.deleted !== 1 ? "s" : ""} eliminado${result.deleted !== 1 ? "s" : ""}`,
+				"success",
+			);
+			setSelectedIds(new Set());
+			loadData();
+		} else {
+			showSnackbar(result.error || "Error al eliminar", "error");
+		}
+	};
 
-  const handleReactivate = async (id: string) => {
-    const result = await dispatch(reactivatePostalTracking(id));
-    if (result.success) {
-      showSnackbar("Seguimiento reactivado", "success");
-    } else {
-      showSnackbar(result.error || "Error al reactivar el seguimiento", "error");
-    }
-  };
+	const handleReactivate = async (id: string) => {
+		const result = await dispatch(reactivatePostalTracking(id));
+		if (result.success) {
+			showSnackbar("Seguimiento reactivado", "success");
+		} else {
+			showSnackbar(result.error || "Error al reactivar el seguimiento", "error");
+		}
+	};
 
-  const handleMarkAsCompleted = async (id: string) => {
-    const result = await dispatch(markPostalTrackingAsCompleted(id));
-    if (result.success) {
-      showSnackbar("Seguimiento marcado como completado", "success");
-    } else {
-      showSnackbar(result.error || "Error al completar el seguimiento", "error");
-    }
-  };
+	const handleMarkAsCompleted = async (id: string) => {
+		const result = await dispatch(markPostalTrackingAsCompleted(id));
+		if (result.success) {
+			showSnackbar("Seguimiento marcado como completado", "success");
+		} else {
+			showSnackbar(result.error || "Error al completar el seguimiento", "error");
+		}
+	};
 
-  const handleAttachmentClick = (id: string) => {
-    setAttachmentTargetId(id);
-    attachmentInputRef.current?.click();
-  };
+	const handleAttachmentClick = (id: string) => {
+		setAttachmentTargetId(id);
+		attachmentInputRef.current?.click();
+	};
 
-  const handleAttachmentChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !attachmentTargetId) return;
-    const result = await dispatch(uploadAttachment(attachmentTargetId, file));
-    setAttachmentTargetId(null);
-    if (result.success) {
-      showSnackbar("Adjunto guardado exitosamente", "success");
-    } else {
-      showSnackbar(result.error || "Error al subir el adjunto", "error");
-    }
-  };
+	const handleAttachmentChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		e.target.value = "";
+		if (!file || !attachmentTargetId) return;
+		const result = await dispatch(uploadAttachment(attachmentTargetId, file));
+		setAttachmentTargetId(null);
+		if (result.success) {
+			showSnackbar("Adjunto guardado exitosamente", "success");
+		} else {
+			showSnackbar(result.error || "Error al subir el adjunto", "error");
+		}
+	};
 
-  return (
-    <MainCard
-      title={
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Typography variant="h5">
-            {total > 0 ? `Seguimientos · ${total}` : "Seguimientos"}
-          </Typography>
-          <Box
-            sx={{
-              bgcolor: "#FFCE00",
-              borderRadius: 1,
-              px: 1,
-              py: 0.5,
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 24, width: "auto" }} />
-          </Box>
-        </Stack>
-      }
-      secondary={
-        isMobile ? (
-          <IconButton color="primary" onClick={handleOpenCreate} disabled={isCheckingLimit} data-testid="postal-add-btn" aria-label="Nuevo seguimiento" sx={{ border: 1, borderColor: "primary.main" }}>
-            <Add size={18} />
-          </IconButton>
-        ) : (
-          <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreate} size="small" disabled={isCheckingLimit} data-testid="postal-add-btn">
-            Nuevo seguimiento
-          </Button>
-        )
-      }
-    >
-      {/* Barra de búsqueda — solo si hay datos o se está buscando */}
-      {(trackings.length > 0 || search) && (
-        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-          <TextField
-            size="small"
-            placeholder="Buscar por número, etiqueta o estado..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            sx={{ width: 340 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchNormal1 size={16} color={theme.palette.text.secondary} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Stack>
-      )}
+	return (
+		<MainCard
+			title={
+				<Stack direction="row" alignItems="center" spacing={2}>
+					<Typography variant="h5">{total > 0 ? `Seguimientos · ${total}` : "Seguimientos"}</Typography>
+					<Box
+						sx={{
+							bgcolor: "#FFCE00",
+							borderRadius: 1,
+							px: 1,
+							py: 0.5,
+							display: "flex",
+							alignItems: "center",
+						}}
+					>
+						<Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 24, width: "auto" }} />
+					</Box>
+				</Stack>
+			}
+			secondary={
+				isMobile ? (
+					<IconButton
+						color="primary"
+						onClick={handleOpenCreate}
+						disabled={isCheckingLimit}
+						data-testid="postal-add-btn"
+						aria-label="Nuevo seguimiento"
+						sx={{ border: 1, borderColor: "primary.main" }}
+					>
+						<Add size={18} />
+					</IconButton>
+				) : (
+					<Button
+						variant="contained"
+						startIcon={<Add />}
+						onClick={handleOpenCreate}
+						size="small"
+						disabled={isCheckingLimit}
+						data-testid="postal-add-btn"
+					>
+						Nuevo seguimiento
+					</Button>
+				)
+			}
+		>
+			{/* Barra de búsqueda — solo si hay datos o se está buscando */}
+			{(trackings.length > 0 || search) && (
+				<Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+					<TextField
+						size="small"
+						placeholder="Buscar por número, etiqueta o estado..."
+						value={searchInput}
+						onChange={(e) => setSearchInput(e.target.value)}
+						sx={{ width: 340 }}
+						InputProps={{
+							startAdornment: (
+								<InputAdornment position="start">
+									<SearchNormal1 size={16} color={theme.palette.text.secondary} />
+								</InputAdornment>
+							),
+						}}
+					/>
+				</Stack>
+			)}
 
-      {/* Tabla */}
-      {isLoader ? (
-        <>
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Skeleton variant="rounded" width={18} height={18} />
-                  </TableCell>
-                  <TableCell sx={{ width: 60 }}><Skeleton variant="rounded" width={50} height={24} /></TableCell>
-                  <TableCell><Skeleton variant="rounded" width={120} height={24} /></TableCell>
-                  <TableCell><Skeleton variant="rounded" width={100} height={24} /></TableCell>
-                  <TableCell><Skeleton variant="rounded" width={100} height={24} /></TableCell>
-                  <TableCell><Skeleton variant="rounded" width={150} height={24} /></TableCell>
-                  <TableCell><Skeleton variant="rounded" width={110} height={24} /></TableCell>
-                  <TableCell align="center"><Skeleton variant="rounded" width={80} height={24} sx={{ mx: "auto" }} /></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {Array(Math.min(rowsPerPage, 10)).fill(0).map((_, i) => (
-                  <TableRow key={i} sx={{ height: 53 }}>
-                    <TableCell padding="checkbox">
-                      <Skeleton variant="rounded" width={18} height={18} />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton variant="rounded" width={44} height={28} />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton variant="rounded" width={130} height={20} />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton variant="rounded" width={90} height={20} />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton variant="rounded" width={72} height={22} sx={{ borderRadius: 4 }} />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton variant="rounded" width={150} height={20} />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton variant="rounded" width={110} height={20} />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Stack direction="row" spacing={0.5} justifyContent="center">
-                        {Array(5).fill(0).map((_, j) => (
-                          <Skeleton key={j} variant="circular" width={28} height={28} />
-                        ))}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <Grid container alignItems="center" justifyContent="space-between" sx={{ px: 1, pt: 2 }}>
-            <Grid item>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Skeleton variant="rounded" width={110} height={32} />
-                <Skeleton variant="rounded" width={60} height={32} />
-                <Skeleton variant="rounded" width={40} height={32} />
-                <Skeleton variant="rounded" width={52} height={32} />
-              </Stack>
-            </Grid>
-            <Grid item>
-              <Skeleton variant="rounded" width={300} height={32} />
-            </Grid>
-          </Grid>
-        </>
-      ) : trackings.length === 0 && !search ? (
-        <EmptyState onAdd={handleOpenCreate} />
-      ) : (
-        <>
-          {selectedIds.size > 0 && (
-            <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1.5, px: 0.5 }}>
-              <Typography variant="body2" color="textSecondary">
-                {selectedIds.size} seleccionado{selectedIds.size !== 1 ? "s" : ""}
-              </Typography>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<Trash size={15} />}
-                onClick={() => setBulkDeleteOpen(true)}
-              >
-                Eliminar seleccionados
-              </Button>
-              <Button size="small" color="secondary" onClick={() => setSelectedIds(new Set())}>
-                Cancelar selección
-              </Button>
-            </Stack>
-          )}
+			{/* Tabla */}
+			{isLoader ? (
+				<>
+					<TableContainer>
+						<Table size="small">
+							<TableHead>
+								<TableRow>
+									<TableCell padding="checkbox">
+										<Skeleton variant="rounded" width={18} height={18} />
+									</TableCell>
+									<TableCell sx={{ width: 60 }}>
+										<Skeleton variant="rounded" width={50} height={24} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="rounded" width={120} height={24} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="rounded" width={100} height={24} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="rounded" width={100} height={24} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="rounded" width={150} height={24} />
+									</TableCell>
+									<TableCell>
+										<Skeleton variant="rounded" width={110} height={24} />
+									</TableCell>
+									<TableCell align="center">
+										<Skeleton variant="rounded" width={80} height={24} sx={{ mx: "auto" }} />
+									</TableCell>
+								</TableRow>
+							</TableHead>
+							<TableBody>
+								{Array(Math.min(rowsPerPage, 10))
+									.fill(0)
+									.map((_, i) => (
+										<TableRow key={i} sx={{ height: 53 }}>
+											<TableCell padding="checkbox">
+												<Skeleton variant="rounded" width={18} height={18} />
+											</TableCell>
+											<TableCell>
+												<Skeleton variant="rounded" width={44} height={28} />
+											</TableCell>
+											<TableCell>
+												<Skeleton variant="rounded" width={130} height={20} />
+											</TableCell>
+											<TableCell>
+												<Skeleton variant="rounded" width={90} height={20} />
+											</TableCell>
+											<TableCell>
+												<Skeleton variant="rounded" width={72} height={22} sx={{ borderRadius: 4 }} />
+											</TableCell>
+											<TableCell>
+												<Skeleton variant="rounded" width={150} height={20} />
+											</TableCell>
+											<TableCell>
+												<Skeleton variant="rounded" width={110} height={20} />
+											</TableCell>
+											<TableCell align="center">
+												<Stack direction="row" spacing={0.5} justifyContent="center">
+													{Array(5)
+														.fill(0)
+														.map((_, j) => (
+															<Skeleton key={j} variant="circular" width={28} height={28} />
+														))}
+												</Stack>
+											</TableCell>
+										</TableRow>
+									))}
+							</TableBody>
+						</Table>
+					</TableContainer>
+					<Grid container alignItems="center" justifyContent="space-between" sx={{ px: 1, pt: 2 }}>
+						<Grid item>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Skeleton variant="rounded" width={110} height={32} />
+								<Skeleton variant="rounded" width={60} height={32} />
+								<Skeleton variant="rounded" width={40} height={32} />
+								<Skeleton variant="rounded" width={52} height={32} />
+							</Stack>
+						</Grid>
+						<Grid item>
+							<Skeleton variant="rounded" width={300} height={32} />
+						</Grid>
+					</Grid>
+				</>
+			) : trackings.length === 0 && !search ? (
+				<EmptyState onAdd={handleOpenCreate} />
+			) : (
+				<>
+					{selectedIds.size > 0 && (
+						<Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1.5, px: 0.5 }}>
+							<Typography variant="body2" color="textSecondary">
+								{selectedIds.size} seleccionado{selectedIds.size !== 1 ? "s" : ""}
+							</Typography>
+							<Button
+								size="small"
+								variant="contained"
+								color="error"
+								startIcon={<Trash size={15} />}
+								onClick={() => setBulkDeleteOpen(true)}
+							>
+								Eliminar seleccionados
+							</Button>
+							<Button size="small" color="secondary" onClick={() => setSelectedIds(new Set())}>
+								Cancelar selección
+							</Button>
+						</Stack>
+					)}
 
-          {/* ── Mobile card list (xs) ── */}
-          {isMobile ? (
-            <Stack spacing={1.5}>
-              {trackings.length === 0 ? (
-                <Typography color="textSecondary" align="center" sx={{ py: 4 }}>
-                  Sin resultados para la búsqueda
-                </Typography>
-              ) : (
-                trackings.map((row: PostalTrackingType) => (
-                  <Paper
-                    key={row._id}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      borderColor: selectedIds.has(row._id) ? "primary.main" : "divider",
-                      bgcolor: selectedIds.has(row._id) ? "primary.lighter" : "background.paper",
-                    }}
-                  >
-                    {/* Header: logo + código + more-menu */}
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
-                      <Checkbox
-                        size="small"
-                        checked={selectedIds.has(row._id)}
-                        onChange={() => handleToggleSelect(row._id)}
-                        sx={{ flexShrink: 0 }}
-                      />
-                      <Box
-                        sx={{
-                          bgcolor: "#FFCE00",
-                          borderRadius: 1,
-                          px: 0.75,
-                          py: 0.5,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 18, width: "auto" }} />
-                      </Box>
-                      <Typography variant="body2" fontFamily="monospace" fontWeight={600} sx={{ flex: 1 }}>
-                        {row.codeId} {row.numberId}
-                      </Typography>
-                      <Tooltip title="Más acciones">
-                        <IconButton
-                          size="small"
-                          onClick={(e) => { setActionMenuAnchor(e.currentTarget); setActionMenuRow(row); }}
-                          aria-label="Más acciones"
-                        >
-                          <More size={18} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+					{/* ── Mobile card list (xs) ── */}
+					{isMobile ? (
+						<Stack spacing={1.5}>
+							{trackings.length === 0 ? (
+								<Typography color="textSecondary" align="center" sx={{ py: 4 }}>
+									Sin resultados para la búsqueda
+								</Typography>
+							) : (
+								trackings.map((row: PostalTrackingType) => (
+									<Paper
+										key={row._id}
+										variant="outlined"
+										sx={{
+											borderRadius: 2,
+											overflow: "hidden",
+											borderColor: selectedIds.has(row._id) ? "primary.main" : "divider",
+											bgcolor: selectedIds.has(row._id) ? "primary.lighter" : "background.paper",
+										}}
+									>
+										{/* Header: logo + código + more-menu */}
+										<Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
+											<Checkbox
+												size="small"
+												checked={selectedIds.has(row._id)}
+												onChange={() => handleToggleSelect(row._id)}
+												sx={{ flexShrink: 0 }}
+											/>
+											<Box
+												sx={{
+													bgcolor: "#FFCE00",
+													borderRadius: 1,
+													px: 0.75,
+													py: 0.5,
+													display: "inline-flex",
+													alignItems: "center",
+													flexShrink: 0,
+												}}
+											>
+												<Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 18, width: "auto" }} />
+											</Box>
+											<Typography variant="body2" fontFamily="monospace" fontWeight={600} sx={{ flex: 1 }}>
+												{row.codeId} {row.numberId}
+											</Typography>
+											<Tooltip title="Más acciones">
+												<IconButton
+													size="small"
+													onClick={(e) => {
+														setActionMenuAnchor(e.currentTarget);
+														setActionMenuRow(row);
+													}}
+													aria-label="Más acciones"
+												>
+													<More size={18} />
+												</IconButton>
+											</Tooltip>
+										</Stack>
 
-                    {/* Estados: proceso + envío */}
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pb: 1 }} useFlexGap flexWrap="wrap" rowGap={1}>
-                      <Chip
-                        size="small"
-                        label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
-                        color={STATUS_COLORS[row.processingStatus] ?? "default"}
-                        sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
-                      />
-                      {row.trackingStatus && (
-                        <Chip
-                          size="small"
-                          label={row.trackingStatus}
-                          variant="outlined"
-                          color="default"
-                          sx={{ maxWidth: 200, "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis" } }}
-                        />
-                      )}
-                    </Stack>
+										{/* Estados: proceso + envío */}
+										<Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, pb: 1 }} useFlexGap flexWrap="wrap" rowGap={1}>
+											<Chip
+												size="small"
+												label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
+												color={STATUS_COLORS[row.processingStatus] ?? "default"}
+												sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
+											/>
+											{row.trackingStatus && (
+												<Chip
+													size="small"
+													label={row.trackingStatus}
+													variant="outlined"
+													color="default"
+													sx={{ maxWidth: 200, "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis" } }}
+												/>
+											)}
+										</Stack>
 
-                    {/* Metadata: etiqueta + último chequeo */}
-                    <Stack spacing={0.25} sx={{ px: 1.5, pb: 1 }}>
-                      {row.label && (
-                        <Typography variant="caption" color="textPrimary">
-                          {row.label}
-                        </Typography>
-                      )}
-                      <Typography variant="caption" color="textSecondary">
-                        Último chequeo: {formatDate(row.lastCheckedAt)}
-                      </Typography>
-                    </Stack>
+										{/* Metadata: etiqueta + último chequeo */}
+										<Stack spacing={0.25} sx={{ px: 1.5, pb: 1 }}>
+											{row.label && (
+												<Typography variant="caption" color="textPrimary">
+													{row.label}
+												</Typography>
+											)}
+											<Typography variant="caption" color="textSecondary">
+												Último chequeo: {formatDate(row.lastCheckedAt)}
+											</Typography>
+										</Stack>
 
-                    <Divider />
+										<Divider />
 
-                    {/* Footer: acciones críticas */}
-                    <CardActions sx={{ px: 1, py: 0.5, justifyContent: "flex-end" }}>
-                      <Tooltip title="Ver detalle">
-                        <IconButton size="small" onClick={() => handleViewDetail(row._id)} color="primary" aria-label="Ver detalle" data-testid="postal-view-btn">
-                          <Eye size={18} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Editar">
-                        <IconButton size="small" onClick={() => handleOpenEdit(row)} color="info" aria-label="Editar" data-testid="postal-edit-btn">
-                          <Edit2 size={18} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Eliminar">
-                        <IconButton size="small" onClick={() => setTrackingToDelete(row)} color="error" aria-label="Eliminar" data-testid="postal-delete-btn">
-                          <Trash size={18} />
-                        </IconButton>
-                      </Tooltip>
-                    </CardActions>
-                  </Paper>
-                ))
-              )}
+										{/* Footer: acciones críticas */}
+										<CardActions sx={{ px: 1, py: 0.5, justifyContent: "flex-end" }}>
+											<Tooltip title="Ver detalle">
+												<IconButton
+													size="small"
+													onClick={() => handleViewDetail(row._id)}
+													color="primary"
+													aria-label="Ver detalle"
+													data-testid="postal-view-btn"
+												>
+													<Eye size={18} />
+												</IconButton>
+											</Tooltip>
+											<Tooltip title="Editar">
+												<IconButton
+													size="small"
+													onClick={() => handleOpenEdit(row)}
+													color="info"
+													aria-label="Editar"
+													data-testid="postal-edit-btn"
+												>
+													<Edit2 size={18} />
+												</IconButton>
+											</Tooltip>
+											<Tooltip title="Eliminar">
+												<IconButton
+													size="small"
+													onClick={() => setTrackingToDelete(row)}
+													color="error"
+													aria-label="Eliminar"
+													data-testid="postal-delete-btn"
+												>
+													<Trash size={18} />
+												</IconButton>
+											</Tooltip>
+										</CardActions>
+									</Paper>
+								))
+							)}
 
-              {/* Menú contextual de acciones secundarias en mobile */}
-              <Menu
-                anchorEl={actionMenuAnchor}
-                open={Boolean(actionMenuAnchor) && Boolean(actionMenuRow)}
-                onClose={() => { setActionMenuAnchor(null); setActionMenuRow(null); }}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-              >
-                {actionMenuRow && (() => {
-                  const row = actionMenuRow;
-                  const canLink = !(row.processingStatus === "not_found" && !row.folderId);
-                  const canAttach = row.processingStatus !== "not_found";
-                  const canComplete = ["pending", "active", "paused", "error"].includes(row.processingStatus);
-                  const canReactivate =
-                    ["completed", "not_found", "error", "paused"].includes(row.processingStatus) &&
-                    (row.processingStatus === "paused" ||
-                      row.processingStatus === "error" ||
-                      (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected")));
-                  return [
-                    <MenuItem
-                      key="link"
-                      disabled={!canLink}
-                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canLink) setLinkTracking(row); }}
-                      data-testid="postal-link-btn"
-                    >
-                      <ListItemIcon><Link1 size={16} /></ListItemIcon>
-                      <ListItemText>{row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}</ListItemText>
-                    </MenuItem>,
-                    <MenuItem
-                      key="attach"
-                      disabled={!canAttach}
-                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canAttach) handleAttachmentClick(row._id); }}
-                      data-testid="postal-attachment-btn"
-                    >
-                      <ListItemIcon><DocumentUpload size={16} /></ListItemIcon>
-                      <ListItemText>{row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}</ListItemText>
-                    </MenuItem>,
-                    canComplete && (
-                      <MenuItem
-                        key="complete"
-                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleMarkAsCompleted(row._id); }}
-                        data-testid="postal-complete-btn"
-                      >
-                        <ListItemIcon><TickCircle size={16} /></ListItemIcon>
-                        <ListItemText>Marcar como completado</ListItemText>
-                      </MenuItem>
-                    ),
-                    canReactivate && (
-                      <MenuItem
-                        key="reactivate"
-                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleReactivate(row._id); }}
-                        data-testid="postal-reactivate-btn"
-                      >
-                        <ListItemIcon><Refresh2 size={16} /></ListItemIcon>
-                        <ListItemText>Reactivar seguimiento</ListItemText>
-                      </MenuItem>
-                    ),
-                  ].filter(Boolean);
-                })()}
-              </Menu>
-            </Stack>
-          ) : (
-            /* ── Desktop / tablet table (sm+) ── */
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        size="small"
-                        checked={allCurrentSelected}
-                        indeterminate={!allCurrentSelected && someCurrentSelected}
-                        onChange={handleToggleAll}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ width: 60 }}>Proveedor</TableCell>
-                    <TableCell>Código / Número</TableCell>
-                    <TableCell sortDirection={sortBy === "label" ? sortOrder : false}>
-                      <TableSortLabel
-                        active={sortBy === "label"}
-                        direction={sortBy === "label" ? sortOrder : "asc"}
-                        onClick={handleLabelSort}
-                      >
-                        Etiqueta
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell>Estado proceso</TableCell>
-                    <TableCell>Estado envío / Entrega</TableCell>
-                    <TableCell sortDirection={sortBy === "lastCheckedAt" ? sortOrder : false}>
-                      <TableSortLabel
-                        active={sortBy === "lastCheckedAt"}
-                        direction={sortBy === "lastCheckedAt" ? sortOrder : "desc"}
-                        onClick={handleLastCheckedSort}
-                      >
-                        Último chequeo
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell align="center">Acciones</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {trackings.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                        <Typography color="textSecondary">Sin resultados para la búsqueda</Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    trackings.map((row: PostalTrackingType) => (
-                      <TableRow key={row._id} hover selected={selectedIds.has(row._id)}>
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            size="small"
-                            checked={selectedIds.has(row._id)}
-                            onChange={() => handleToggleSelect(row._id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{
-                              bgcolor: "#FFCE00",
-                              borderRadius: 1,
-                              px: 0.75,
-                              py: 0.5,
-                              display: "inline-flex",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Box
-                              component="img"
-                              src={CORREO_LOGO}
-                              alt="Correo Argentino"
-                              sx={{ height: 20, width: "auto" }}
-                            />
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontFamily="monospace" fontWeight={600}>
-                            {row.codeId} {row.numberId}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography
-                            variant="body2"
-                            color={row.label ? "textPrimary" : "textSecondary"}
-                          >
-                            {row.label || "—"}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            size="small"
-                            label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
-                            color={STATUS_COLORS[row.processingStatus] ?? "default"}
-                            sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Stack spacing={0.25}>
-                            <Typography
-                              variant="body2"
-                              color={row.trackingStatus ? "textPrimary" : "textSecondary"}
-                              sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                            >
-                              {row.trackingStatus || "—"}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color={row.deliveryStatus ? "textSecondary" : "text.disabled"}
-                              sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                            >
-                              {row.deliveryStatus || "—"}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="textSecondary">
-                            {formatDate(row.lastCheckedAt)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Stack direction="row" spacing={0.5} justifyContent="center">
+							{/* Menú contextual de acciones secundarias en mobile */}
+							<Menu
+								anchorEl={actionMenuAnchor}
+								open={Boolean(actionMenuAnchor) && Boolean(actionMenuRow)}
+								onClose={() => {
+									setActionMenuAnchor(null);
+									setActionMenuRow(null);
+								}}
+								anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+								transformOrigin={{ vertical: "top", horizontal: "right" }}
+							>
+								{actionMenuRow &&
+									(() => {
+										const row = actionMenuRow;
+										const canLink = !(row.processingStatus === "not_found" && !row.folderId);
+										const canAttach = row.processingStatus !== "not_found";
+										const canComplete = ["pending", "active", "paused", "error"].includes(row.processingStatus);
+										const canReactivate =
+											["completed", "not_found", "error", "paused"].includes(row.processingStatus) &&
+											(row.processingStatus === "paused" ||
+												row.processingStatus === "error" ||
+												(row.processingStatus === "completed" &&
+													(row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected")));
+										return [
+											<MenuItem
+												key="link"
+												disabled={!canLink}
+												onClick={() => {
+													setActionMenuAnchor(null);
+													setActionMenuRow(null);
+													if (canLink) setLinkTracking(row);
+												}}
+												data-testid="postal-link-btn"
+											>
+												<ListItemIcon>
+													<Link1 size={16} />
+												</ListItemIcon>
+												<ListItemText>{row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}</ListItemText>
+											</MenuItem>,
+											<MenuItem
+												key="attach"
+												disabled={!canAttach}
+												onClick={() => {
+													setActionMenuAnchor(null);
+													setActionMenuRow(null);
+													if (canAttach) handleAttachmentClick(row._id);
+												}}
+												data-testid="postal-attachment-btn"
+											>
+												<ListItemIcon>
+													<DocumentUpload size={16} />
+												</ListItemIcon>
+												<ListItemText>{row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}</ListItemText>
+											</MenuItem>,
+											canComplete && (
+												<MenuItem
+													key="complete"
+													onClick={() => {
+														setActionMenuAnchor(null);
+														setActionMenuRow(null);
+														handleMarkAsCompleted(row._id);
+													}}
+													data-testid="postal-complete-btn"
+												>
+													<ListItemIcon>
+														<TickCircle size={16} />
+													</ListItemIcon>
+													<ListItemText>Marcar como completado</ListItemText>
+												</MenuItem>
+											),
+											canReactivate && (
+												<MenuItem
+													key="reactivate"
+													onClick={() => {
+														setActionMenuAnchor(null);
+														setActionMenuRow(null);
+														handleReactivate(row._id);
+													}}
+													data-testid="postal-reactivate-btn"
+												>
+													<ListItemIcon>
+														<Refresh2 size={16} />
+													</ListItemIcon>
+													<ListItemText>Reactivar seguimiento</ListItemText>
+												</MenuItem>
+											),
+										].filter(Boolean);
+									})()}
+							</Menu>
+						</Stack>
+					) : (
+						/* ── Desktop / tablet table (sm+) ── */
+						<TableContainer>
+							<Table size="small">
+								<TableHead>
+									<TableRow>
+										<TableCell padding="checkbox">
+											<Checkbox
+												size="small"
+												checked={allCurrentSelected}
+												indeterminate={!allCurrentSelected && someCurrentSelected}
+												onChange={handleToggleAll}
+											/>
+										</TableCell>
+										<TableCell sx={{ width: 60 }}>Proveedor</TableCell>
+										<TableCell>Código / Número</TableCell>
+										<TableCell sortDirection={sortBy === "label" ? sortOrder : false}>
+											<TableSortLabel
+												active={sortBy === "label"}
+												direction={sortBy === "label" ? sortOrder : "asc"}
+												onClick={handleLabelSort}
+											>
+												Etiqueta
+											</TableSortLabel>
+										</TableCell>
+										<TableCell>Estado proceso</TableCell>
+										<TableCell>Estado envío / Entrega</TableCell>
+										<TableCell sortDirection={sortBy === "lastCheckedAt" ? sortOrder : false}>
+											<TableSortLabel
+												active={sortBy === "lastCheckedAt"}
+												direction={sortBy === "lastCheckedAt" ? sortOrder : "desc"}
+												onClick={handleLastCheckedSort}
+											>
+												Último chequeo
+											</TableSortLabel>
+										</TableCell>
+										<TableCell align="center">Acciones</TableCell>
+									</TableRow>
+								</TableHead>
+								<TableBody>
+									{trackings.length === 0 ? (
+										<TableRow>
+											<TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+												<Typography color="textSecondary">Sin resultados para la búsqueda</Typography>
+											</TableCell>
+										</TableRow>
+									) : (
+										trackings.map((row: PostalTrackingType) => (
+											<TableRow key={row._id} hover selected={selectedIds.has(row._id)}>
+												<TableCell padding="checkbox">
+													<Checkbox size="small" checked={selectedIds.has(row._id)} onChange={() => handleToggleSelect(row._id)} />
+												</TableCell>
+												<TableCell>
+													<Box
+														sx={{
+															bgcolor: "#FFCE00",
+															borderRadius: 1,
+															px: 0.75,
+															py: 0.5,
+															display: "inline-flex",
+															alignItems: "center",
+														}}
+													>
+														<Box component="img" src={CORREO_LOGO} alt="Correo Argentino" sx={{ height: 20, width: "auto" }} />
+													</Box>
+												</TableCell>
+												<TableCell>
+													<Typography variant="body2" fontFamily="monospace" fontWeight={600}>
+														{row.codeId} {row.numberId}
+													</Typography>
+												</TableCell>
+												<TableCell>
+													<Typography variant="body2" color={row.label ? "textPrimary" : "textSecondary"}>
+														{row.label || "—"}
+													</Typography>
+												</TableCell>
+												<TableCell>
+													<Chip
+														size="small"
+														label={STATUS_LABELS[row.processingStatus] ?? row.processingStatus}
+														color={STATUS_COLORS[row.processingStatus] ?? "default"}
+														sx={row.processingStatus === "pending" ? { color: "text.primary", fontWeight: 500 } : undefined}
+													/>
+												</TableCell>
+												<TableCell>
+													<Stack spacing={0.25}>
+														<Typography
+															variant="body2"
+															color={row.trackingStatus ? "textPrimary" : "textSecondary"}
+															sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+														>
+															{row.trackingStatus || "—"}
+														</Typography>
+														<Typography
+															variant="caption"
+															color={row.deliveryStatus ? "textSecondary" : "text.disabled"}
+															sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+														>
+															{row.deliveryStatus || "—"}
+														</Typography>
+													</Stack>
+												</TableCell>
+												<TableCell>
+													<Typography variant="body2" color="textSecondary">
+														{formatDate(row.lastCheckedAt)}
+													</Typography>
+												</TableCell>
+												<TableCell align="center">
+													<Stack direction="row" spacing={0.5} justifyContent="center">
+														{/* Ver detalle — siempre habilitado */}
+														<Tooltip title="Ver detalle">
+															<IconButton
+																size={isMd ? "medium" : "small"}
+																onClick={() => handleViewDetail(row._id)}
+																color="primary"
+																data-testid="postal-view-btn"
+															>
+																<Eye size={isMd ? 18 : 16} />
+															</IconButton>
+														</Tooltip>
 
-                            {/* Ver detalle — siempre habilitado */}
-                            <Tooltip title="Ver detalle">
-                              <IconButton
-                                size={isMd ? "medium" : "small"}
-                                onClick={() => handleViewDetail(row._id)}
-                                color="primary"
-                                data-testid="postal-view-btn"
-                              >
-                                <Eye size={isMd ? 18 : 16} />
-                              </IconButton>
-                            </Tooltip>
+														{/* Editar — siempre habilitado */}
+														<Tooltip title="Editar">
+															<IconButton
+																size={isMd ? "medium" : "small"}
+																onClick={() => handleOpenEdit(row)}
+																color="info"
+																data-testid="postal-edit-btn"
+															>
+																<Edit2 size={isMd ? 18 : 16} />
+															</IconButton>
+														</Tooltip>
 
-                            {/* Editar — siempre habilitado */}
-                            <Tooltip title="Editar">
-                              <IconButton
-                                size={isMd ? "medium" : "small"}
-                                onClick={() => handleOpenEdit(row)}
-                                color="info"
-                                data-testid="postal-edit-btn"
-                              >
-                                <Edit2 size={isMd ? 18 : 16} />
-                              </IconButton>
-                            </Tooltip>
+														{/* Acciones secundarias: colapsadas en tablet (< md), expandidas en desktop */}
+														{isMd ? (
+															<>
+																<Tooltip title="Más acciones">
+																	<IconButton
+																		size="medium"
+																		onClick={(e) => {
+																			setActionMenuAnchor(e.currentTarget);
+																			setActionMenuRow(row);
+																		}}
+																		aria-label="Más acciones"
+																	>
+																		<More size={18} />
+																	</IconButton>
+																</Tooltip>
+															</>
+														) : (
+															<>
+																{/* Vincular a causa */}
+																{row.processingStatus === "not_found" && !row.folderId ? (
+																	<Tooltip title="No se puede vincular una causa a un seguimiento no encontrado">
+																		<span style={{ display: "inline-flex" }}>
+																			<IconButton size="small" disabled data-testid="postal-link-btn">
+																				<Link1 size={16} />
+																			</IconButton>
+																		</span>
+																	</Tooltip>
+																) : (
+																	<Tooltip title={row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}>
+																		<IconButton
+																			size="small"
+																			onClick={() => setLinkTracking(row)}
+																			color={row.folderId ? "success" : "default"}
+																			data-testid="postal-link-btn"
+																		>
+																			<Link1 size={16} />
+																		</IconButton>
+																	</Tooltip>
+																)}
 
-                            {/* Acciones secundarias: colapsadas en tablet (< md), expandidas en desktop */}
-                            {isMd ? (
-                              <>
-                                <Tooltip title="Más acciones">
-                                  <IconButton
-                                    size="medium"
-                                    onClick={(e) => { setActionMenuAnchor(e.currentTarget); setActionMenuRow(row); }}
-                                    aria-label="Más acciones"
-                                  >
-                                    <More size={18} />
-                                  </IconButton>
-                                </Tooltip>
-                              </>
-                            ) : (
-                              <>
-                                {/* Vincular a causa */}
-                                {row.processingStatus === "not_found" && !row.folderId ? (
-                                  <Tooltip title="No se puede vincular una causa a un seguimiento no encontrado">
-                                    <span style={{ display: "inline-flex" }}>
-                                      <IconButton size="small" disabled data-testid="postal-link-btn">
-                                        <Link1 size={16} />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                ) : (
-                                  <Tooltip title={row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}>
-                                    <IconButton size="small" onClick={() => setLinkTracking(row)} color={row.folderId ? "success" : "default"} data-testid="postal-link-btn">
-                                      <Link1 size={16} />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
+																{/* Adjuntar */}
+																{row.processingStatus === "not_found" ? (
+																	<Tooltip title="No se puede adjuntar archivos a un seguimiento no encontrado">
+																		<span style={{ display: "inline-flex" }}>
+																			<IconButton size="small" disabled data-testid="postal-attachment-btn">
+																				<DocumentUpload size={16} />
+																			</IconButton>
+																		</span>
+																	</Tooltip>
+																) : (
+																	<Tooltip title={row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}>
+																		<IconButton
+																			size="small"
+																			onClick={() => handleAttachmentClick(row._id)}
+																			color={row.attachmentKey ? "success" : "default"}
+																			data-testid="postal-attachment-btn"
+																		>
+																			<DocumentUpload size={16} />
+																		</IconButton>
+																	</Tooltip>
+																)}
 
-                                {/* Adjuntar */}
-                                {row.processingStatus === "not_found" ? (
-                                  <Tooltip title="No se puede adjuntar archivos a un seguimiento no encontrado">
-                                    <span style={{ display: "inline-flex" }}>
-                                      <IconButton size="small" disabled data-testid="postal-attachment-btn">
-                                        <DocumentUpload size={16} />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                ) : (
-                                  <Tooltip title={row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}>
-                                    <IconButton size="small" onClick={() => handleAttachmentClick(row._id)} color={row.attachmentKey ? "success" : "default"} data-testid="postal-attachment-btn">
-                                      <DocumentUpload size={16} />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
+																{/* Marcar como completado */}
+																{["pending", "active", "paused", "error"].includes(row.processingStatus) && (
+																	<Tooltip title="Marcar como completado">
+																		<IconButton
+																			size="small"
+																			onClick={() => handleMarkAsCompleted(row._id)}
+																			color="success"
+																			data-testid="postal-complete-btn"
+																		>
+																			<TickCircle size={16} />
+																		</IconButton>
+																	</Tooltip>
+																)}
 
-                                {/* Marcar como completado */}
-                                {["pending", "active", "paused", "error"].includes(row.processingStatus) && (
-                                  <Tooltip title="Marcar como completado">
-                                    <IconButton size="small" onClick={() => handleMarkAsCompleted(row._id)} color="success" data-testid="postal-complete-btn">
-                                      <TickCircle size={16} />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
+																{/* Reactivar */}
+																{["completed", "not_found", "error", "paused"].includes(row.processingStatus) &&
+																	(() => {
+																		const canReactivate =
+																			row.processingStatus === "paused" ||
+																			row.processingStatus === "error" ||
+																			(row.processingStatus === "completed" &&
+																				(row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected"));
+																		const reactivateTooltip =
+																			row.processingStatus === "not_found"
+																				? "No se puede reactivar un seguimiento no encontrado por el sitio"
+																				: "No se puede reactivar un seguimiento con estado final determinado por el sistema";
+																		return canReactivate ? (
+																			<Tooltip title="Reactivar seguimiento">
+																				<IconButton
+																					size="small"
+																					onClick={() => handleReactivate(row._id)}
+																					color="warning"
+																					data-testid="postal-reactivate-btn"
+																				>
+																					<Refresh2 size={16} />
+																				</IconButton>
+																			</Tooltip>
+																		) : (
+																			<Tooltip title={reactivateTooltip}>
+																				<span style={{ display: "inline-flex" }}>
+																					<IconButton size="small" disabled data-testid="postal-reactivate-btn">
+																						<Refresh2 size={16} />
+																					</IconButton>
+																				</span>
+																			</Tooltip>
+																		);
+																	})()}
+															</>
+														)}
 
-                                {/* Reactivar */}
-                                {["completed", "not_found", "error", "paused"].includes(row.processingStatus) && (() => {
-                                  const canReactivate =
-                                    row.processingStatus === "paused" ||
-                                    row.processingStatus === "error" ||
-                                    (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected"));
-                                  const reactivateTooltip = row.processingStatus === "not_found"
-                                    ? "No se puede reactivar un seguimiento no encontrado por el sitio"
-                                    : "No se puede reactivar un seguimiento con estado final determinado por el sistema";
-                                  return canReactivate ? (
-                                    <Tooltip title="Reactivar seguimiento">
-                                      <IconButton size="small" onClick={() => handleReactivate(row._id)} color="warning" data-testid="postal-reactivate-btn">
-                                        <Refresh2 size={16} />
-                                      </IconButton>
-                                    </Tooltip>
-                                  ) : (
-                                    <Tooltip title={reactivateTooltip}>
-                                      <span style={{ display: "inline-flex" }}>
-                                        <IconButton size="small" disabled data-testid="postal-reactivate-btn">
-                                          <Refresh2 size={16} />
-                                        </IconButton>
-                                      </span>
-                                    </Tooltip>
-                                  );
-                                })()}
-                              </>
-                            )}
+														{/* Eliminar — siempre habilitado */}
+														<Tooltip title="Eliminar">
+															<IconButton
+																size={isMd ? "medium" : "small"}
+																onClick={() => setTrackingToDelete(row)}
+																color="error"
+																data-testid="postal-delete-btn"
+															>
+																<Trash size={isMd ? 18 : 16} />
+															</IconButton>
+														</Tooltip>
+													</Stack>
+												</TableCell>
+											</TableRow>
+										))
+									)}
+								</TableBody>
+							</Table>
 
-                            {/* Eliminar — siempre habilitado */}
-                            <Tooltip title="Eliminar">
-                              <IconButton
-                                size={isMd ? "medium" : "small"}
-                                onClick={() => setTrackingToDelete(row)}
-                                color="error"
-                                data-testid="postal-delete-btn"
-                              >
-                                <Trash size={isMd ? 18 : 16} />
-                              </IconButton>
-                            </Tooltip>
+							{/* Menú contextual de acciones secundarias — tablet (sm < md) */}
+							<Menu
+								anchorEl={actionMenuAnchor}
+								open={Boolean(actionMenuAnchor) && Boolean(actionMenuRow)}
+								onClose={() => {
+									setActionMenuAnchor(null);
+									setActionMenuRow(null);
+								}}
+								anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+								transformOrigin={{ vertical: "top", horizontal: "right" }}
+							>
+								{actionMenuRow &&
+									(() => {
+										const row = actionMenuRow;
+										const canLink = !(row.processingStatus === "not_found" && !row.folderId);
+										const canAttach = row.processingStatus !== "not_found";
+										const canComplete = ["pending", "active", "paused", "error"].includes(row.processingStatus);
+										const canReactivate =
+											["completed", "not_found", "error", "paused"].includes(row.processingStatus) &&
+											(row.processingStatus === "paused" ||
+												row.processingStatus === "error" ||
+												(row.processingStatus === "completed" &&
+													(row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected")));
+										return [
+											<MenuItem
+												key="link"
+												disabled={!canLink}
+												onClick={() => {
+													setActionMenuAnchor(null);
+													setActionMenuRow(null);
+													if (canLink) setLinkTracking(row);
+												}}
+												data-testid="postal-link-btn"
+											>
+												<ListItemIcon>
+													<Link1 size={16} />
+												</ListItemIcon>
+												<ListItemText>{row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}</ListItemText>
+											</MenuItem>,
+											<MenuItem
+												key="attach"
+												disabled={!canAttach}
+												onClick={() => {
+													setActionMenuAnchor(null);
+													setActionMenuRow(null);
+													if (canAttach) handleAttachmentClick(row._id);
+												}}
+												data-testid="postal-attachment-btn"
+											>
+												<ListItemIcon>
+													<DocumentUpload size={16} />
+												</ListItemIcon>
+												<ListItemText>{row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}</ListItemText>
+											</MenuItem>,
+											canComplete && (
+												<MenuItem
+													key="complete"
+													onClick={() => {
+														setActionMenuAnchor(null);
+														setActionMenuRow(null);
+														handleMarkAsCompleted(row._id);
+													}}
+													data-testid="postal-complete-btn"
+												>
+													<ListItemIcon>
+														<TickCircle size={16} />
+													</ListItemIcon>
+													<ListItemText>Marcar como completado</ListItemText>
+												</MenuItem>
+											),
+											canReactivate && (
+												<MenuItem
+													key="reactivate"
+													onClick={() => {
+														setActionMenuAnchor(null);
+														setActionMenuRow(null);
+														handleReactivate(row._id);
+													}}
+													data-testid="postal-reactivate-btn"
+												>
+													<ListItemIcon>
+														<Refresh2 size={16} />
+													</ListItemIcon>
+													<ListItemText>Reactivar seguimiento</ListItemText>
+												</MenuItem>
+											),
+										].filter(Boolean);
+									})()}
+							</Menu>
+						</TableContainer>
+					)}
 
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+					<Grid
+						container
+						alignItems="center"
+						justifyContent="space-between"
+						sx={{ px: 1, pt: 2, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1.5, sm: 0 } }}
+					>
+						<Grid item>
+							<Stack direction="row" spacing={1} alignItems="center">
+								<Typography variant="caption" color="secondary">
+									Filas por Páginas
+								</Typography>
+								<FormControl>
+									<Select
+										value={rowsPerPage}
+										onChange={(e) => {
+											setRowsPerPage(Number(e.target.value));
+											setPage(0);
+										}}
+										size="small"
+										sx={{ "& .MuiSelect-select": { py: 0.75, px: 1.25 } }}
+									>
+										{[10, 25, 50, 100].map((opt) => (
+											<MenuItem key={opt} value={opt}>
+												{opt}
+											</MenuItem>
+										))}
+									</Select>
+								</FormControl>
+								<Typography variant="caption" color="secondary" sx={{ display: { xs: "none", sm: "inline" } }}>
+									Ir a
+								</Typography>
+								<TextField
+									size="small"
+									type="number"
+									value={page + 1}
+									onChange={(e) => {
+										const p = Math.max(1, Math.min(Number(e.target.value), Math.ceil(total / rowsPerPage)));
+										setPage(p - 1);
+									}}
+									sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 }, display: { xs: "none", sm: "flex" } }}
+								/>
+							</Stack>
+						</Grid>
+						<Grid item>
+							<Pagination
+								count={Math.ceil(total / rowsPerPage)}
+								page={page + 1}
+								onChange={(_, value) => setPage(value - 1)}
+								color="primary"
+								variant="combined"
+								showFirstButton
+								showLastButton
+							/>
+						</Grid>
+					</Grid>
+				</>
+			)}
 
-              {/* Menú contextual de acciones secundarias — tablet (sm < md) */}
-              <Menu
-                anchorEl={actionMenuAnchor}
-                open={Boolean(actionMenuAnchor) && Boolean(actionMenuRow)}
-                onClose={() => { setActionMenuAnchor(null); setActionMenuRow(null); }}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-              >
-                {actionMenuRow && (() => {
-                  const row = actionMenuRow;
-                  const canLink = !(row.processingStatus === "not_found" && !row.folderId);
-                  const canAttach = row.processingStatus !== "not_found";
-                  const canComplete = ["pending", "active", "paused", "error"].includes(row.processingStatus);
-                  const canReactivate =
-                    ["completed", "not_found", "error", "paused"].includes(row.processingStatus) &&
-                    (row.processingStatus === "paused" ||
-                      row.processingStatus === "error" ||
-                      (row.processingStatus === "completed" && (row.manuallyCompleted || row.autoCompletedReason === "code_reuse_detected")));
-                  return [
-                    <MenuItem
-                      key="link"
-                      disabled={!canLink}
-                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canLink) setLinkTracking(row); }}
-                      data-testid="postal-link-btn"
-                    >
-                      <ListItemIcon><Link1 size={16} /></ListItemIcon>
-                      <ListItemText>{row.folderId ? "Cambiar causa vinculada" : "Vincular a causa"}</ListItemText>
-                    </MenuItem>,
-                    <MenuItem
-                      key="attach"
-                      disabled={!canAttach}
-                      onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); if (canAttach) handleAttachmentClick(row._id); }}
-                      data-testid="postal-attachment-btn"
-                    >
-                      <ListItemIcon><DocumentUpload size={16} /></ListItemIcon>
-                      <ListItemText>{row.attachmentKey ? "Reemplazar adjunto" : "Adjuntar imagen o PDF"}</ListItemText>
-                    </MenuItem>,
-                    canComplete && (
-                      <MenuItem
-                        key="complete"
-                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleMarkAsCompleted(row._id); }}
-                        data-testid="postal-complete-btn"
-                      >
-                        <ListItemIcon><TickCircle size={16} /></ListItemIcon>
-                        <ListItemText>Marcar como completado</ListItemText>
-                      </MenuItem>
-                    ),
-                    canReactivate && (
-                      <MenuItem
-                        key="reactivate"
-                        onClick={() => { setActionMenuAnchor(null); setActionMenuRow(null); handleReactivate(row._id); }}
-                        data-testid="postal-reactivate-btn"
-                      >
-                        <ListItemIcon><Refresh2 size={16} /></ListItemIcon>
-                        <ListItemText>Reactivar seguimiento</ListItemText>
-                      </MenuItem>
-                    ),
-                  ].filter(Boolean);
-                })()}
-              </Menu>
-            </TableContainer>
-          )}
+			{/* Input oculto para adjuntos */}
+			<input
+				ref={attachmentInputRef}
+				type="file"
+				accept="image/jpeg,image/png,image/webp,application/pdf"
+				style={{ display: "none" }}
+				onChange={handleAttachmentChange}
+			/>
 
-          <Grid
-            container
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{ px: 1, pt: 2, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1.5, sm: 0 } }}
-          >
-            <Grid item>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="caption" color="secondary">Filas por Páginas</Typography>
-                <FormControl>
-                  <Select
-                    value={rowsPerPage}
-                    onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-                    size="small"
-                    sx={{ "& .MuiSelect-select": { py: 0.75, px: 1.25 } }}
-                  >
-                    {[10, 25, 50, 100].map((opt) => (
-                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <Typography variant="caption" color="secondary" sx={{ display: { xs: "none", sm: "inline" } }}>
-                  Ir a
-                </Typography>
-                <TextField
-                  size="small"
-                  type="number"
-                  value={page + 1}
-                  onChange={(e) => {
-                    const p = Math.max(1, Math.min(Number(e.target.value), Math.ceil(total / rowsPerPage)));
-                    setPage(p - 1);
-                  }}
-                  sx={{ "& .MuiOutlinedInput-input": { py: 0.75, px: 1.25, width: 36 }, display: { xs: "none", sm: "flex" } }}
-                />
-              </Stack>
-            </Grid>
-            <Grid item>
-              <Pagination
-                count={Math.ceil(total / rowsPerPage)}
-                page={page + 1}
-                onChange={(_, value) => setPage(value - 1)}
-                color="primary"
-                variant="combined"
-                showFirstButton
-                showLastButton
-              />
-            </Grid>
-          </Grid>
-        </>
-      )}
+			{/* Modales */}
+			<PostalTrackingModal open={openCreate} handleClose={handleCloseModal} tracking={trackingToEdit} showSnackbar={showSnackbar} />
 
-      {/* Input oculto para adjuntos */}
-      <input
-        ref={attachmentInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        style={{ display: "none" }}
-        onChange={handleAttachmentChange}
-      />
+			<PostalTrackingDetail open={detailOpen} tracking={trackingDetail} loading={detailLoading} handleClose={handleCloseDetail} />
 
-      {/* Modales */}
-      <PostalTrackingModal
-        open={openCreate}
-        handleClose={handleCloseModal}
-        tracking={trackingToEdit}
-        showSnackbar={showSnackbar}
-      />
+			{linkTracking && (
+				<LinkPostalTrackingToFolder
+					open={Boolean(linkTracking)}
+					onClose={handleCloseLinkModal}
+					trackingId={linkTracking._id}
+					currentFolderId={linkTracking.folderId}
+				/>
+			)}
 
-      <PostalTrackingDetail
-        open={detailOpen}
-        tracking={trackingDetail}
-        loading={detailLoading}
-        handleClose={handleCloseDetail}
-      />
+			{trackingToDelete && (
+				<AlertPostalTrackingDelete
+					numberId={`${trackingToDelete.codeId} ${trackingToDelete.numberId}`}
+					open={Boolean(trackingToDelete)}
+					handleClose={handleDeleteConfirm}
+				/>
+			)}
 
-      {linkTracking && (
-        <LinkPostalTrackingToFolder
-          open={Boolean(linkTracking)}
-          onClose={handleCloseLinkModal}
-          trackingId={linkTracking._id}
-          currentFolderId={linkTracking.folderId}
-        />
-      )}
+			<AlertPostalTrackingDelete
+				numberId={`${selectedIds.size} seguimiento${selectedIds.size !== 1 ? "s" : ""} seleccionado${selectedIds.size !== 1 ? "s" : ""}`}
+				open={bulkDeleteOpen}
+				handleClose={handleBulkDeleteConfirm}
+			/>
 
-      {trackingToDelete && (
-        <AlertPostalTrackingDelete
-          numberId={`${trackingToDelete.codeId} ${trackingToDelete.numberId}`}
-          open={Boolean(trackingToDelete)}
-          handleClose={handleDeleteConfirm}
-        />
-      )}
-
-      <AlertPostalTrackingDelete
-        numberId={`${selectedIds.size} seguimiento${selectedIds.size !== 1 ? "s" : ""} seleccionado${selectedIds.size !== 1 ? "s" : ""}`}
-        open={bulkDeleteOpen}
-        handleClose={handleBulkDeleteConfirm}
-      />
-
-      {/* Capa 1: modal de límite del plan — se abre cuando check-resource reporta hasReachedLimit antes de crear */}
-      <LimitErrorModal
-        open={limitErrorOpen}
-        onClose={() => setLimitErrorOpen(false)}
-        message="Has alcanzado el límite de seguimientos postales disponibles en tu plan actual."
-        limitInfo={limitErrorInfo ?? undefined}
-        upgradeRequired={true}
-      />
-    </MainCard>
-  );
+			{/* Capa 1: modal de límite del plan — se abre cuando check-resource reporta hasReachedLimit antes de crear */}
+			<LimitErrorModal
+				open={limitErrorOpen}
+				onClose={() => setLimitErrorOpen(false)}
+				message="Has alcanzado el límite de seguimientos postales disponibles en tu plan actual."
+				limitInfo={limitErrorInfo ?? undefined}
+				upgradeRequired={true}
+			/>
+		</MainCard>
+	);
 };
 
 export default PostalTrackingPage;

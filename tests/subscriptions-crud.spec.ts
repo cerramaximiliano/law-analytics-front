@@ -57,14 +57,7 @@ const API = "http://localhost:5000";
 
 // ─── Types & State helpers ────────────────────────────────────────────────────
 
-type SubState =
-	| "free"
-	| "standard-active"
-	| "standard-canceled"
-	| "standard-reactivated"
-	| "premium-active"
-	| "premium-grace"
-	| "past-due";
+type SubState = "free" | "standard-active" | "standard-canceled" | "standard-reactivated" | "premium-active" | "premium-grace" | "past-due";
 
 function buildSubscription(state: SubState) {
 	const base = {
@@ -183,9 +176,7 @@ test("GRUPO 2 — click 'Suscribirme' en Standard → POST /api/subscriptions/ch
 	await gotoSubscriptions(page);
 
 	// Interceptar request body para validar planId
-	const requestPromise = page.waitForRequest(
-		(req) => req.url().endsWith("/api/subscriptions/checkout") && req.method() === "POST",
-	);
+	const requestPromise = page.waitForRequest((req) => req.url().endsWith("/api/subscriptions/checkout") && req.method() === "POST");
 
 	await page.locator('[data-testid="sub-action-btn-standard"]').click();
 	const request = await requestPromise;
@@ -213,9 +204,7 @@ test("GRUPO 2 — click 'Suscribirme' en Premium → POST con planId=premium", a
 	);
 
 	await gotoSubscriptions(page);
-	const requestPromise = page.waitForRequest(
-		(req) => req.url().endsWith("/api/subscriptions/checkout") && req.method() === "POST",
-	);
+	const requestPromise = page.waitForRequest((req) => req.url().endsWith("/api/subscriptions/checkout") && req.method() === "POST");
 
 	await page.locator('[data-testid="sub-action-btn-premium"]').click();
 	const request = await requestPromise;
@@ -262,9 +251,7 @@ test("GRUPO 3 — confirm cancelación → POST /api/subscriptions/cancel con at
 	await page.locator('[data-testid="sub-action-btn-free"]').click();
 	await expect(page.locator('[data-testid="sub-cancel-dialog-confirm-btn"]')).toBeVisible({ timeout: 5_000 });
 
-	const requestPromise = page.waitForRequest(
-		(req) => req.url().endsWith("/api/subscriptions/cancel") && req.method() === "POST",
-	);
+	const requestPromise = page.waitForRequest((req) => req.url().endsWith("/api/subscriptions/cancel") && req.method() === "POST");
 	await page.locator('[data-testid="sub-cancel-dialog-confirm-btn"]').click();
 	const request = await requestPromise;
 
@@ -289,7 +276,9 @@ test("GRUPO 3 — 'Mantener mi plan actual' cierra el dialog sin POST", async ({
 	await expect(page.locator('[data-testid="sub-cancel-dialog-keep-btn"]')).toBeVisible({ timeout: 5_000 });
 	await page.locator('[data-testid="sub-cancel-dialog-keep-btn"]').click();
 
-	await expect(page.getByRole("heading", { name: /¿Cancelar suscripción y volver al Plan Gratuito\?/i })).not.toBeVisible({ timeout: 5_000 });
+	await expect(page.getByRole("heading", { name: /¿Cancelar suscripción y volver al Plan Gratuito\?/i })).not.toBeVisible({
+		timeout: 5_000,
+	});
 	expect(postCalled).toBe(false);
 });
 
@@ -324,9 +313,7 @@ test("GRUPO 4 — click 'Reactivar' → POST /api/subscriptions/cancel-downgrade
 	);
 
 	await gotoSubscriptions(page);
-	const requestPromise = page.waitForRequest(
-		(req) => req.url().endsWith("/api/subscriptions/cancel-downgrade") && req.method() === "POST",
-	);
+	const requestPromise = page.waitForRequest((req) => req.url().endsWith("/api/subscriptions/cancel-downgrade") && req.method() === "POST");
 
 	await page.locator('[data-testid="sub-action-btn-standard"]').click();
 	await requestPromise;
@@ -370,9 +357,7 @@ test("GRUPO 5 — standard activo → click 'Suscribirme' en Premium → POST /c
 
 	await gotoSubscriptions(page);
 
-	const requestPromise = page.waitForRequest(
-		(req) => req.url().endsWith("/api/subscriptions/checkout") && req.method() === "POST",
-	);
+	const requestPromise = page.waitForRequest((req) => req.url().endsWith("/api/subscriptions/checkout") && req.method() === "POST");
 	await page.locator('[data-testid="sub-action-btn-premium"]').click();
 	const request = await requestPromise;
 

@@ -70,7 +70,13 @@ const JudicialBadge = ({ logoSrc, alt, bgColor, label, tooltip, synced = null, o
 				aria-label={tooltip}
 				role={onClick ? "button" : undefined}
 				tabIndex={onClick ? 0 : undefined}
-				onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") onClick(); } : undefined}
+				onKeyDown={
+					onClick
+						? (e) => {
+								if (e.key === "Enter" || e.key === " ") onClick();
+						  }
+						: undefined
+				}
 				sx={{ cursor: onClick ? "pointer" : "default", flexShrink: 0 }}
 			>
 				<Box sx={{ position: "relative" }}>
@@ -171,17 +177,17 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 		pjnSynced === null
 			? "PJN - Poder Judicial de la Nación — Cargando estado..."
 			: pjnSynced
-				? "PJN - Poder Judicial de la Nación — Sincronizado"
-				: "PJN - Poder Judicial de la Nación — No sincronizado. Click para conectar";
+			? "PJN - Poder Judicial de la Nación — Sincronizado"
+			: "PJN - Poder Judicial de la Nación — No sincronizado. Click para conectar";
 
 	const scbaTooltip =
 		scbaSynced === null
 			? "BA - Buenos Aires — Cargando estado..."
 			: scbaSynced
-				? "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — Sincronizado"
-				: onBaClick
-					? "BA - Buenos Aires — No sincronizado. Click para agregar causa del Poder Judicial de la Provincia"
-					: "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — No sincronizado";
+			? "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — Sincronizado"
+			: onBaClick
+			? "BA - Buenos Aires — No sincronizado. Click para agregar causa del Poder Judicial de la Provincia"
+			: "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — No sincronizado";
 
 	return (
 		<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
@@ -261,9 +267,7 @@ export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCa
 	return (
 		<Box sx={{ px: compact ? { xs: 2, sm: 3 } : 0, py: compact ? 1 : 0 }}>
 			<Stack direction="row" alignItems="center" spacing={1.5}>
-				<Box sx={{ color: isUnlimited ? theme.palette.text.secondary : theme.palette[color].main, display: "flex" }}>
-					{config.icon}
-				</Box>
+				<Box sx={{ color: isUnlimited ? theme.palette.text.secondary : theme.palette[color].main, display: "flex" }}>{config.icon}</Box>
 				<Typography variant="caption" sx={{ fontWeight: 500, minWidth: 85 }}>
 					{config.label}
 				</Typography>

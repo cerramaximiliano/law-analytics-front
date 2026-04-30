@@ -119,12 +119,12 @@ const ContactProfileModal: React.FC<ContactProfileModalProps> = ({ open, onClose
 						</Typography>
 					</Stack>
 					<Chip
-						label={Array.isArray(contact?.role) ? contact.role[0] : (contact?.role || "")}
-						color={getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : (contact?.role || ""))}
+						label={Array.isArray(contact?.role) ? contact.role[0] : contact?.role || ""}
+						color={getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : contact?.role || "")}
 						size="small"
 						sx={{
 							fontWeight: 600,
-							...(getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : (contact?.role || "")) === "warning" && {
+							...(getColorByRole(Array.isArray(contact?.role) ? contact.role[0] : contact?.role || "") === "warning" && {
 								color: "black",
 								"& .MuiChip-label": {
 									color: "black",

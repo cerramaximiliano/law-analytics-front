@@ -94,71 +94,73 @@ const buildQueryParams = (params?: ActivityLogQueryParams): Record<string, any> 
 };
 
 // Get folder activity log
-export const getFolderActivityLog = (folderId: string, params?: ActivityLogQueryParams, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
-	try {
-		// Build params key for cache comparison
-		const paramsKey = JSON.stringify(params || {});
+export const getFolderActivityLog =
+	(folderId: string, params?: ActivityLogQueryParams, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			// Build params key for cache comparison
+			const paramsKey = JSON.stringify(params || {});
 
-		// Cache validation: if we already have data for this folder with same params, return from cache
-		const state = getState();
-		const { lastFetchedFolderId, lastFetchParams, logs, pagination } = state.activityLog;
+			// Cache validation: if we already have data for this folder with same params, return from cache
+			const state = getState();
+			const { lastFetchedFolderId, lastFetchParams, logs, pagination } = state.activityLog;
 
-		if (!forceRefresh && lastFetchedFolderId === folderId && lastFetchParams === paramsKey && logs.length >= 0) {
-			return {
-				success: true,
-				activity: logs,
-				pagination,
-				fromCache: true,
-			};
-		}
+			if (!forceRefresh && lastFetchedFolderId === folderId && lastFetchParams === paramsKey && logs.length >= 0) {
+				return {
+					success: true,
+					activity: logs,
+					pagination,
+					fromCache: true,
+				};
+			}
 
-		dispatch({ type: SET_ACTIVITY_LOADING });
+			dispatch({ type: SET_ACTIVITY_LOADING });
 
-		const queryParams = buildQueryParams(params);
+			const queryParams = buildQueryParams(params);
 
-		const response = await axios.get<ActivityLogResponse>(`${import.meta.env.VITE_BASE_URL}/api/activity-log/folder/${folderId}`, {
-			params: queryParams,
-		});
+			const response = await axios.get<ActivityLogResponse>(`${import.meta.env.VITE_BASE_URL}/api/activity-log/folder/${folderId}`, {
+				params: queryParams,
+			});
 
-		if (response.data.success) {
-			dispatch({
-				type: GET_FOLDER_ACTIVITY,
-				payload: {
-					activity: response.data.activity || [],
+			if (response.data.success) {
+				dispatch({
+					type: GET_FOLDER_ACTIVITY,
+					payload: {
+						activity: response.data.activity || [],
+						pagination: response.data.pagination,
+					},
+					folderId,
+					paramsKey,
+				});
+
+				return {
+					success: true,
+					activity: response.data.activity,
 					pagination: response.data.pagination,
-				},
-				folderId,
-				paramsKey,
+				};
+			}
+
+			throw new Error(response.data.message || "Error al obtener historial de actividad");
+		} catch (error) {
+			let errorMessage = "Error al obtener historial de actividad";
+
+			if (axios.isAxiosError(error) && error.response?.data) {
+				errorMessage = error.response.data.message || errorMessage;
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+
+			dispatch({
+				type: SET_ACTIVITY_ERROR,
+				payload: errorMessage,
 			});
 
 			return {
-				success: true,
-				activity: response.data.activity,
-				pagination: response.data.pagination,
+				success: false,
+				error: errorMessage,
 			};
 		}
-
-		throw new Error(response.data.message || "Error al obtener historial de actividad");
-	} catch (error) {
-		let errorMessage = "Error al obtener historial de actividad";
-
-		if (axios.isAxiosError(error) && error.response?.data) {
-			errorMessage = error.response.data.message || errorMessage;
-		} else if (error instanceof Error) {
-			errorMessage = error.message;
-		}
-
-		dispatch({
-			type: SET_ACTIVITY_ERROR,
-			payload: errorMessage,
-		});
-
-		return {
-			success: false,
-			error: errorMessage,
-		};
-	}
-};
+	};
 
 // Get group activity log
 export const getGroupActivityLog = (groupId: string, params?: ActivityLogQueryParams) => async (dispatch: Dispatch) => {

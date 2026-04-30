@@ -295,12 +295,7 @@ const SubscriptionSuccess = () => {
 											{loadingPlanDetails ? (
 												<Skeleton variant="rounded" width={100} height={28} sx={{ mt: 2, mx: "auto" }} />
 											) : planDetails ? (
-												<Chip
-													label={planDetails.name}
-													color="success"
-													sx={{ mt: 2, fontWeight: 600 }}
-													icon={<Crown size={16} />}
-												/>
+												<Chip label={planDetails.name} color="success" sx={{ mt: 2, fontWeight: 600 }} icon={<Crown size={16} />} />
 											) : null}
 										</Box>
 									</Zoom>
@@ -354,54 +349,53 @@ const SubscriptionSuccess = () => {
 												<List sx={{ p: 0 }}>
 													{loadingPlanDetails
 														? [70, 55, 65].map((w, i) => (
-															<ListItem key={i} sx={{ p: 1, mb: 1 }}>
-																<ListItemIcon sx={{ minWidth: 40 }}>
-																	<Skeleton variant="circular" width={32} height={32} />
-																</ListItemIcon>
-																<ListItemText primary={<Skeleton variant="text" width={`${w}%`} height={24} />} />
-															</ListItem>
-														))
-														: planFeatures.map((feature: any, index: number) => (
-															<Zoom
-																in={showFeatures}
-																timeout={1500 + index * 200}
-																key={index}
-																style={{ transitionDelay: `${index * 100}ms` }}
-															>
-																<ListItem
-																	sx={{
-																		p: 1,
-																		mb: 1,
-																		borderRadius: 2,
-																		transition: "all 0.3s",
-																		"&:hover": {
-																			bgcolor: alpha(theme.palette.success.lighter, 0.2),
-																			transform: "translateX(8px)",
-																		},
-																	}}
-																>
+																<ListItem key={i} sx={{ p: 1, mb: 1 }}>
 																	<ListItemIcon sx={{ minWidth: 40 }}>
-																		<Avatar
-																			size="sm"
-																			sx={{
-																				bgcolor: alpha(theme.palette.success.main, 0.1),
-																				color: theme.palette.success.main,
-																			}}
-																		>
-																			{React.cloneElement(feature.icon, { size: 18 })}
-																		</Avatar>
+																		<Skeleton variant="circular" width={32} height={32} />
 																	</ListItemIcon>
-																	<ListItemText
-																		primary={feature.text}
-																		primaryTypographyProps={{
-																			variant: "body2",
-																			sx: { fontWeight: 500 },
-																		}}
-																	/>
+																	<ListItemText primary={<Skeleton variant="text" width={`${w}%`} height={24} />} />
 																</ListItem>
-															</Zoom>
-														))
-													}
+														  ))
+														: planFeatures.map((feature: any, index: number) => (
+																<Zoom
+																	in={showFeatures}
+																	timeout={1500 + index * 200}
+																	key={index}
+																	style={{ transitionDelay: `${index * 100}ms` }}
+																>
+																	<ListItem
+																		sx={{
+																			p: 1,
+																			mb: 1,
+																			borderRadius: 2,
+																			transition: "all 0.3s",
+																			"&:hover": {
+																				bgcolor: alpha(theme.palette.success.lighter, 0.2),
+																				transform: "translateX(8px)",
+																			},
+																		}}
+																	>
+																		<ListItemIcon sx={{ minWidth: 40 }}>
+																			<Avatar
+																				size="sm"
+																				sx={{
+																					bgcolor: alpha(theme.palette.success.main, 0.1),
+																					color: theme.palette.success.main,
+																				}}
+																			>
+																				{React.cloneElement(feature.icon, { size: 18 })}
+																			</Avatar>
+																		</ListItemIcon>
+																		<ListItemText
+																			primary={feature.text}
+																			primaryTypographyProps={{
+																				variant: "body2",
+																				sx: { fontWeight: 500 },
+																			}}
+																		/>
+																	</ListItem>
+																</Zoom>
+														  ))}
 												</List>
 											</Box>
 										</Fade>

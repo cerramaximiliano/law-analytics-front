@@ -28,7 +28,16 @@ import { useTeam } from "contexts/TeamContext";
 // types
 import { MovementsModalType } from "types/movements";
 
-const ModalMovements = ({ open, setOpen, folderId, folderName = "", editMode = false, movementData = null, onSuccess, dialogSx }: MovementsModalType) => {
+const ModalMovements = ({
+	open,
+	setOpen,
+	folderId,
+	folderName = "",
+	editMode = false,
+	movementData = null,
+	onSuccess,
+	dialogSx,
+}: MovementsModalType) => {
 	const theme = useTheme();
 	const auth = useSelector((state) => state.auth);
 	const userId = auth.user?._id;

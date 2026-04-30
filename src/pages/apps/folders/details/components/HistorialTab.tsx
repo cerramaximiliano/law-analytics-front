@@ -625,9 +625,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 					<Typography variant="h5" sx={{ fontWeight: 600 }}>
 						Historial de Actividad
 					</Typography>
-					{pagination && (
-						<Chip label={`${pagination.total} registros`} size="small" variant="outlined" sx={{ ml: 1 }} />
-					)}
+					{pagination && <Chip label={`${pagination.total} registros`} size="small" variant="outlined" sx={{ ml: 1 }} />}
 				</Box>
 
 				<Stack direction="row" spacing={1}>
@@ -637,11 +635,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 						</IconButton>
 					</Tooltip>
 					<Tooltip title={showFilters ? "Ocultar filtros" : "Mostrar filtros"}>
-						<IconButton
-							onClick={() => setShowFilters(!showFilters)}
-							size="small"
-							color={showFilters ? "primary" : "default"}
-						>
+						<IconButton onClick={() => setShowFilters(!showFilters)} size="small" color={showFilters ? "primary" : "default"}>
 							<Filter size={20} />
 						</IconButton>
 					</Tooltip>
@@ -737,12 +731,7 @@ const HistorialTab: React.FC<HistorialTabProps> = ({ folderId }) => {
 			{/* Pagination */}
 			{pagination && pagination.pages > 1 && (
 				<Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-					<PaginationWithJump
-						page={page - 1}
-						totalPages={pagination.pages}
-						onPageChange={handlePageChange}
-						disabled={isLoading}
-					/>
+					<PaginationWithJump page={page - 1} totalPages={pagination.pages} onPageChange={handlePageChange} disabled={isLoading} />
 				</Box>
 			)}
 		</Box>

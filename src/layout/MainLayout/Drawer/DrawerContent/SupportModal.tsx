@@ -125,7 +125,7 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 			priority: "medium",
 			message: "",
 		});
-		setErrors({ subject: false, message: false });
+		setErrors({ name: false, email: false, subject: false, message: false });
 		setAttachmentFile(null);
 		setAttachmentError("");
 		setSubmitted(false);
@@ -193,11 +193,7 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 				payload.append("attachment", attachmentFile);
 			}
 
-			const response = await axios.post(
-				`${import.meta.env.VITE_BASE_URL || ""}/api/support-contacts`,
-				payload,
-				{ withCredentials: true },
-			);
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL || ""}/api/support-contacts`, payload, { withCredentials: true });
 
 			if (response.data.success) {
 				dispatch(

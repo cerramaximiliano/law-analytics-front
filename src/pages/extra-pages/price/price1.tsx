@@ -97,7 +97,6 @@ const Pricing = () => {
 			cancelAtPeriodEnd: subscriptionData?.cancelAtPeriodEnd ?? prev?.cancelAtPeriodEnd ?? false,
 			currentPeriodEnd: subscriptionData?.currentPeriodEnd ?? prev?.currentPeriodEnd,
 		}));
-
 	};
 
 	// Obtener los planes al cargar el componente
@@ -130,7 +129,6 @@ const Pricing = () => {
 						setCurrentSubscription(responseData.subscription);
 						// El planId está en el campo "plan" de la suscripción
 						setCurrentPlanId(responseData.subscription.plan);
-
 					}
 				} catch (err) {
 					// No mostramos error si falla esto, solo para el listado de planes
@@ -579,7 +577,7 @@ const Pricing = () => {
 		// Para características booleanas
 		const feature = plan.features.find((f: PlanFeature) => f.name === featureType);
 		if (feature) {
-			return feature.enabled ? (feature.displayName || feature.description) : null;
+			return feature.enabled ? feature.displayName || feature.description : null;
 		}
 
 		return null;
@@ -783,14 +781,7 @@ const Pricing = () => {
 								<Typography variant="h4" color="primary">
 									{activeTeam.name}
 								</Typography>
-								{roleConfig && (
-									<Chip
-										label={roleConfig.label}
-										color={roleConfig.color}
-										size="medium"
-										sx={{ fontWeight: 600, px: 2 }}
-									/>
-								)}
+								{roleConfig && <Chip label={roleConfig.label} color={roleConfig.color} size="medium" sx={{ fontWeight: 600, px: 2 }} />}
 							</Stack>
 
 							{/* Plan del equipo */}
@@ -815,8 +806,8 @@ const Pricing = () => {
 							{/* Mensaje informativo */}
 							<Alert severity="info" sx={{ borderRadius: 2, textAlign: "left" }}>
 								<Typography variant="body2">
-									Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>.
-									La gestión del plan y la facturación son responsabilidad del propietario del equipo.
+									Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>. La gestión del
+									plan y la facturación son responsabilidad del propietario del equipo.
 								</Typography>
 							</Alert>
 
@@ -836,12 +827,7 @@ const Pricing = () => {
 			{!isDevelopment && (
 				<Grid item xs={12}>
 					<Stack direction="row" justifyContent="flex-end">
-						<Chip
-							label="Facturación anual — próximamente"
-							color="info"
-							size="small"
-							variant="outlined"
-						/>
+						<Chip label="Facturación anual — próximamente" color="info" size="small" variant="outlined" />
 					</Stack>
 				</Grid>
 			)}
@@ -885,9 +871,7 @@ const Pricing = () => {
 									).slice(0, 5);
 									return allResourceNames.map((resourceName) => (
 										<TableRow key={resourceName}>
-											<TableCell>
-												{plans[0]?.resourceLimits.find((r) => r.name === resourceName)?.displayName ?? resourceName}
-											</TableCell>
+											<TableCell>{plans[0]?.resourceLimits.find((r) => r.name === resourceName)?.displayName ?? resourceName}</TableCell>
 											{plans.map((p) => {
 												const resource = p.resourceLimits.find((r) => r.name === resourceName);
 												return (
@@ -1155,13 +1139,24 @@ const Pricing = () => {
 													<Grid container spacing={1}>
 														{visibleFeatures.map((feature, i) => (
 															<Grid item xs={12} sm={6} key={`feature-${i}`}>
-																<Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5, ...(feature.enabled ? {} : priceListDisable) }}>
+																<Box
+																	sx={{
+																		display: "flex",
+																		alignItems: "center",
+																		gap: 1,
+																		py: 0.5,
+																		...(feature.enabled ? {} : priceListDisable),
+																	}}
+																>
 																	{feature.enabled ? (
 																		<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
 																	) : (
 																		<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
 																	)}
-																	<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}>
+																	<Typography
+																		variant="body2"
+																		sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}
+																	>
 																		{feature.displayName || feature.description}
 																	</Typography>
 																</Box>
@@ -1328,7 +1323,13 @@ const Pricing = () => {
 					<Button onClick={() => setOptionsDialogOpen(false)} color="error" variant="outlined" disabled={loading}>
 						Cancelar
 					</Button>
-					<Button onClick={handleOptionConfirm} color="primary" variant="contained" disabled={!selectedOption || loading} data-testid="sub-options-confirm-btn">
+					<Button
+						onClick={handleOptionConfirm}
+						color="primary"
+						variant="contained"
+						disabled={!selectedOption || loading}
+						data-testid="sub-options-confirm-btn"
+					>
 						{loading ? (
 							<>
 								<CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />

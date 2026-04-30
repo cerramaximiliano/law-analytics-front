@@ -263,7 +263,13 @@ const Notes: React.FC<NotesProps> = ({ title, folderId, folderName }) => {
 											<Stack direction="row" spacing={0.5}>
 												{canUpdate && (
 													<Tooltip title="Editar">
-														<IconButton size="small" aria-label="edit" onClick={() => handleEditClick(note)} color="primary" sx={{ mt: 0.5 }}>
+														<IconButton
+															size="small"
+															aria-label="edit"
+															onClick={() => handleEditClick(note)}
+															color="primary"
+															sx={{ mt: 0.5 }}
+														>
 															<Edit2 variant="Bulk" />
 														</IconButton>
 													</Tooltip>

@@ -149,9 +149,7 @@ async function analyzeLayout(page: Page): Promise<{ viewportOverflows: ViewportO
 			if (children.length < 2) continue;
 
 			// Agrupar children por "línea" (mismo top ± 2px)
-			const rects = children
-				.map((c) => ({ el: c, rect: c.getBoundingClientRect() }))
-				.filter((x) => x.rect.width > 0 && x.rect.height > 0);
+			const rects = children.map((c) => ({ el: c, rect: c.getBoundingClientRect() })).filter((x) => x.rect.width > 0 && x.rect.height > 0);
 			if (rects.length < 2) continue;
 
 			const lines: { top: number; bottom: number; items: typeof rects }[] = [];

@@ -257,7 +257,13 @@ const MobileCalcCard: React.FC<MobileCalcCardProps> = ({ row, index, onDelete, p
 	);
 };
 
-const CalcTableResponsive = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number; groupId?: string } }) => {
+const CalcTableResponsive = ({
+	title,
+	folderData,
+}: {
+	title: string;
+	folderData: { folderName: string; monto: number; groupId?: string };
+}) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 	const isTablet = useMediaQuery(theme.breakpoints.down("md"));

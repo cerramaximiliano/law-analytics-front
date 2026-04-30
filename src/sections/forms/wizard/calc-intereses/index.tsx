@@ -8,6 +8,7 @@ import { Button, Stack, Box, Typography, Zoom } from "@mui/material";
 import AnimateButton from "components/@extended/AnimateButton";
 import FirstForm from "./first";
 import ResultsView from "./resultsView";
+import { getEffectiveInterest } from "components/calculator/InterestSegmentsManager";
 
 import interesesFormModel from "./formModel/interesesFormModel";
 
@@ -78,14 +79,17 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 
 			// Si hay tramos calculados por el InterestSegmentsManager
 			if (segments.length > 0) {
-				// Los tramos ya están calculados, solo necesitamos preparar el resultado
-				const interesTotal = segments.reduce((sum: number, seg: any) => sum + (seg.interest || 0), 0);
+				// Usar el interés efectivo de cada tramo: aplica clamp por comparativa CER
+				// (techo/piso Ley 27.802) si está activa. Sin comparativa, devuelve el crudo.
+				const interesTotal = segments.reduce((sum: number, seg: any) => sum + getEffectiveInterest(seg), 0);
 				const capitalBase = parseFloat(values.capital || 0);
+				const lastSeg = segments[segments.length - 1];
+				const lastEffective = lastSeg ? getEffectiveInterest(lastSeg) : 0;
 
-				// Si hay capitalización, el monto final es el capital del último tramo + su interés
-				// Si no hay capitalización, es el capital original + todos los intereses
+				// Si hay capitalización, el monto final es el capital del último tramo + su interés efectivo
+				// Si no hay capitalización, es el capital original + todos los intereses efectivos
 				const capitalActualizado = values.capitalizeInterest
-					? (segments[segments.length - 1]?.capital || capitalBase) + (segments[segments.length - 1]?.interest || 0)
+					? (lastSeg?.capital || capitalBase) + lastEffective
 					: capitalBase + interesTotal;
 
 				await _sleep(500);
@@ -119,7 +123,9 @@ const CompensacionWizard = ({ folder, onFolderChange }: CompensacionWizardProps)
 				const campo = values.tasa;
 				const calcular = true;
 
-				const url = `${import.meta.env.VITE_BASE_URL || ""}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&calcular=${calcular}`;
+				const url = `${
+					import.meta.env.VITE_BASE_URL || ""
+				}/api/tasas/consulta?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}&campo=${campo}&calcular=${calcular}`;
 
 				const response = await axios.get(url, {
 					withCredentials: true,

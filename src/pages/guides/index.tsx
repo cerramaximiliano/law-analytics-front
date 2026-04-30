@@ -27,7 +27,19 @@ import PageBackground from "components/PageBackground";
 import SupportModal from "layout/MainLayout/Drawer/DrawerContent/SupportModal";
 
 // icons
-import { Calculator, Coin, FolderOpen, ProfileCircle, Calendar, CalendarTick, Task, Chart21, Cloud, People, TickCircle } from "iconsax-react";
+import {
+	Calculator,
+	Coin,
+	FolderOpen,
+	ProfileCircle,
+	Calendar,
+	CalendarTick,
+	Task,
+	Chart21,
+	Cloud,
+	People,
+	TickCircle,
+} from "iconsax-react";
 
 // ==============================|| GUIDES PAGE - HEADER ||============================== //
 
@@ -301,11 +313,7 @@ const GuidesPage = () => {
 																lineHeight: 0,
 															}}
 														>
-															<TickCircle
-																size={22}
-																variant="Bold"
-																style={{ color: alpha(theme.palette.success.main, 0.8) }}
-															/>
+															<TickCircle size={22} variant="Bold" style={{ color: alpha(theme.palette.success.main, 0.8) }} />
 														</Box>
 													)}
 													<CardActionArea

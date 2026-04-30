@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
@@ -283,10 +283,18 @@
         <h2>${r.label}</h2>
         <p class="path">${r.path}</p>
         <div class="badges">
-          <span class="badge ${r.touchedBatches["after-batch1"] ? "touched" : "unchanged"}">B1: ${r.touchedBatches["after-batch1"] ? "✓" : "—"}</span>
-          <span class="badge ${r.touchedBatches["after-batch2"] ? "touched" : "unchanged"}">B2: ${r.touchedBatches["after-batch2"] ? "✓" : "—"}</span>
-          <span class="badge ${r.touchedBatches["after-batch3"] ? "touched" : "unchanged"}">B3: ${r.touchedBatches["after-batch3"] ? "✓" : "—"}</span>
-          <span class="badge ${r.touchedBatches["after-batch4"] ? "touched" : "unchanged"}">B4: ${r.touchedBatches["after-batch4"] ? "✓" : "—"}</span>
+          <span class="badge ${r.touchedBatches["after-batch1"] ? "touched" : "unchanged"}">B1: ${
+						r.touchedBatches["after-batch1"] ? "✓" : "—"
+					}</span>
+          <span class="badge ${r.touchedBatches["after-batch2"] ? "touched" : "unchanged"}">B2: ${
+						r.touchedBatches["after-batch2"] ? "✓" : "—"
+					}</span>
+          <span class="badge ${r.touchedBatches["after-batch3"] ? "touched" : "unchanged"}">B3: ${
+						r.touchedBatches["after-batch3"] ? "✓" : "—"
+					}</span>
+          <span class="badge ${r.touchedBatches["after-batch4"] ? "touched" : "unchanged"}">B4: ${
+						r.touchedBatches["after-batch4"] ? "✓" : "—"
+					}</span>
         </div>
         <div class="pair" data-vp="${vp}">
           <div class="side">
@@ -295,7 +303,9 @@
           </div>
           <div class="side">
             <div class="label after">Después · ${batchLabel} · ${vp}</div>
-            <div class="img-wrap"><img loading="lazy" src="${batch}/screenshots/${r.name}-${vp}.png" alt="${r.name} ${vp} after ${batchLabel}" /></div>
+            <div class="img-wrap"><img loading="lazy" src="${batch}/screenshots/${r.name}-${vp}.png" alt="${
+						r.name
+					} ${vp} after ${batchLabel}" /></div>
           </div>
         </div>
       </section>

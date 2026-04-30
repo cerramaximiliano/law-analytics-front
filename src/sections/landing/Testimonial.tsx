@@ -26,25 +26,29 @@ const USE_CASES: UseCaseItem[] = [
 		icon: Judge,
 		color: "primary",
 		title: "Fueros PJN y MEV",
-		description: "Seguimiento automático de expedientes en Civil, Trabajo y Seguridad Social del Poder Judicial de la Nación y del fuero CABA.",
+		description:
+			"Seguimiento automático de expedientes en Civil, Trabajo y Seguridad Social del Poder Judicial de la Nación y del fuero CABA.",
 	},
 	{
 		icon: Calculator,
 		color: "info",
 		title: "Liquidaciones precisas",
-		description: "Calculadoras laborales e intereses actualizadas con índices oficiales. Resultados listos para copiar a escritos judiciales.",
+		description:
+			"Calculadoras laborales e intereses actualizadas con índices oficiales. Resultados listos para copiar a escritos judiciales.",
 	},
 	{
 		icon: Calendar,
 		color: "warning",
 		title: "Cero vencimientos perdidos",
-		description: "Vencimientos extraídos automáticamente de los expedientes y sincronizados con tu calendario. Alertas configurables por caso.",
+		description:
+			"Vencimientos extraídos automáticamente de los expedientes y sincronizados con tu calendario. Alertas configurables por caso.",
 	},
 	{
 		icon: Timer1,
 		color: "success",
 		title: "Menos tiempo administrativo",
-		description: "Centralización de causas, clientes y agenda en un solo sistema. Menos tiempo buscando información, más tiempo ejerciendo.",
+		description:
+			"Centralización de causas, clientes y agenda en un solo sistema. Menos tiempo buscando información, más tiempo ejerciendo.",
 	},
 ];
 

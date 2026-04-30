@@ -121,13 +121,17 @@ const SubscriptionInfo: React.FC<{ showUpgradeButton?: boolean }> = ({ showUpgra
 							<Typography variant="body2" color="textSecondary">
 								Start Date:
 							</Typography>
-							<Typography variant="body1">{subscription.currentPeriodStart ? new Date(subscription.currentPeriodStart as unknown as string).toLocaleDateString() : ""}</Typography>
+							<Typography variant="body1">
+								{subscription.currentPeriodStart ? new Date(subscription.currentPeriodStart as unknown as string).toLocaleDateString() : ""}
+							</Typography>
 						</Grid>
 						<Grid item xs={6} sm={3}>
 							<Typography variant="body2" color="textSecondary">
 								End Date:
 							</Typography>
-							<Typography variant="body1">{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd as unknown as string).toLocaleDateString() : ""}</Typography>
+							<Typography variant="body1">
+								{subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd as unknown as string).toLocaleDateString() : ""}
+							</Typography>
 						</Grid>
 						<Grid item xs={6} sm={3}>
 							<Typography variant="body2" color="textSecondary">

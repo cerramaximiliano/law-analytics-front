@@ -63,10 +63,7 @@ export function insertDiffWithoutHistory(editor: Editor, from: number, to: numbe
 			return schema.text(seg.text);
 		}
 		if (seg.type === "removed") {
-			return schema.text(seg.text, [
-				schema.marks.strike.create(),
-				schema.marks.textStyle.create({ color: "#b91c1c" }),
-			]);
+			return schema.text(seg.text, [schema.marks.strike.create(), schema.marks.textStyle.create({ color: "#b91c1c" })]);
 		}
 		// added
 		return schema.text(seg.text, [
@@ -89,10 +86,7 @@ export function buildDiffContent(segments: DiffSegment[]): object[] {
 			return {
 				type: "text",
 				text: seg.text,
-				marks: [
-					{ type: "strike" },
-					{ type: "textStyle", attrs: { color: "#b91c1c" } },
-				],
+				marks: [{ type: "strike" }, { type: "textStyle", attrs: { color: "#b91c1c" } }],
 			};
 		}
 		// added

@@ -64,14 +64,7 @@ const CheckMail = () => {
 					</AnimateButton>
 				</Grid>
 				<Grid item xs={12}>
-					<Button
-						component={Link}
-						to={isLoggedIn ? "/auth/login" : "/login"}
-						fullWidth
-						size="large"
-						variant="text"
-						color="secondary"
-					>
+					<Button component={Link} to={isLoggedIn ? "/auth/login" : "/login"} fullWidth size="large" variant="text" color="secondary">
 						Iniciar sesión
 					</Button>
 				</Grid>

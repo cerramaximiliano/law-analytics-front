@@ -55,7 +55,12 @@ import {
 } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { useDispatch, useSelector } from "store";
-import { fetchRichTextDocuments, fetchRichTextTemplates, deleteRichTextDocument, updateRichTextDocument } from "store/reducers/richTextDocuments";
+import {
+	fetchRichTextDocuments,
+	fetchRichTextTemplates,
+	deleteRichTextDocument,
+	updateRichTextDocument,
+} from "store/reducers/richTextDocuments";
 import { fetchPostalDocuments, deletePostalDocument, updatePostalDocument, getPostalDocumentById } from "store/reducers/postalDocuments";
 import { createPostalTracking, fetchAllTrackings, updatePostalTracking } from "store/reducers/postalTracking";
 import { getFoldersByUserId } from "store/reducers/folder";
@@ -71,11 +76,59 @@ import CreatePostalDocumentModal from "sections/apps/postal-documents/CreatePost
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const VALID_CODE_IDS = [
-	"CC", "CD", "CL", "CM", "CO", "CP", "DE", "DI", "EC", "EE", "EO", "EP",
-	"GC", "GD", "GE", "GF", "GO", "GR", "GS", "HC", "HD", "HE", "HO", "HU",
-	"HX", "IN", "IS", "JP", "LC", "LS", "ND", "MD", "ME", "MC", "MS", "MU",
-	"MX", "OL", "PC", "PP", "RD", "RE", "RP", "RR", "SD", "SL", "SP", "SR",
-	"ST", "TC", "TD", "TL", "UP",
+	"CC",
+	"CD",
+	"CL",
+	"CM",
+	"CO",
+	"CP",
+	"DE",
+	"DI",
+	"EC",
+	"EE",
+	"EO",
+	"EP",
+	"GC",
+	"GD",
+	"GE",
+	"GF",
+	"GO",
+	"GR",
+	"GS",
+	"HC",
+	"HD",
+	"HE",
+	"HO",
+	"HU",
+	"HX",
+	"IN",
+	"IS",
+	"JP",
+	"LC",
+	"LS",
+	"ND",
+	"MD",
+	"ME",
+	"MC",
+	"MS",
+	"MU",
+	"MX",
+	"OL",
+	"PC",
+	"PP",
+	"RD",
+	"RE",
+	"RP",
+	"RR",
+	"SD",
+	"SL",
+	"SP",
+	"SR",
+	"ST",
+	"TC",
+	"TD",
+	"TL",
+	"UP",
 ];
 
 const TRACKING_SLUGS = ["telegrama_laboral"];
@@ -214,9 +267,7 @@ const TemplatePickerDialog = ({ open, onClose }: TemplatePickerDialogProps) => {
 
 	const filtered = (templates as RichTextTemplate[]).filter((t) => {
 		const matchSearch =
-			!search ||
-			t.name.toLowerCase().includes(search.toLowerCase()) ||
-			(t.description ?? "").toLowerCase().includes(search.toLowerCase());
+			!search || t.name.toLowerCase().includes(search.toLowerCase()) || (t.description ?? "").toLowerCase().includes(search.toLowerCase());
 		const matchCat = !categoryFilter || t.category === categoryFilter;
 		return matchSearch && matchCat;
 	});
@@ -459,7 +510,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 					label,
 					documentId: docRow.id,
 					...(docRow.linkedFolderId ? { folderId: docRow.linkedFolderId as any } : {}),
-				}) as any
+				}) as any,
 			);
 			if (result?.success !== false) {
 				if (result?.id) {
@@ -497,13 +548,13 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 					updatePostalTracking(selectedTracking._id, {
 						documentId: docRow.id,
 						...(!trackingFolder && resolvedFolder ? { folderId: resolvedFolder as any } : {}),
-					}) as any
+					}) as any,
 				),
 				(dispatch as any)(
 					updatePostalDocument(docRow.id, {
 						linkedTrackingId: selectedTracking._id,
 						...(resolvedFolder && resolvedFolder !== documentFolder ? { linkedFolderId: resolvedFolder as any } : {}),
-					})
+					}),
 				),
 			]);
 			showSnackbar("Documento vinculado al seguimiento exitosamente", "success");
@@ -528,11 +579,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 				</Stack>
 			</DialogTitle>
 
-			<Tabs
-				value={tab}
-				onChange={(_, v) => setTab(v)}
-				sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}
-			>
+			<Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3, borderBottom: 1, borderColor: "divider" }}>
 				<Tab label="Carpeta" />
 				{supportsTracking && <Tab label="Seguimiento postal" />}
 			</Tabs>
@@ -622,13 +669,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 											inputProps={{ inputMode: "numeric" }}
 										/>
 									</Stack>
-									<TextField
-										size="small"
-										label="Etiqueta (opcional)"
-										fullWidth
-										value={label}
-										onChange={(e) => setLabel(e.target.value)}
-									/>
+									<TextField size="small" label="Etiqueta (opcional)" fullWidth value={label} onChange={(e) => setLabel(e.target.value)} />
 									{docRow.linkedFolderId && (
 										<Typography variant="caption" color="text.secondary">
 											El seguimiento también se vinculará a la carpeta asociada al documento.
@@ -651,9 +692,7 @@ const VincularDialog = ({ open, docRow, onClose, onSuccess, showSnackbar }: Vinc
 											size="small"
 											options={trackings}
 											value={selectedTracking}
-											getOptionLabel={(t: PostalTrackingType) =>
-												`${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`
-											}
+											getOptionLabel={(t: PostalTrackingType) => `${t.codeId} ${t.numberId}${t.label ? ` — ${t.label}` : ""}`}
 											isOptionEqualToValue={(opt, val) => opt._id === val._id}
 											onChange={(_e, val) => setSelectedTracking(val)}
 											renderOption={(props, t: PostalTrackingType) => (
@@ -802,11 +841,7 @@ const PostalDetailDialog = ({ open, doc, onClose }: PostalDetailDialogProps) => 
 								<CircularProgress size={28} />
 							</Stack>
 						) : freshUrl ? (
-							<iframe
-								src={freshUrl}
-								title={doc.title}
-								style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-							/>
+							<iframe src={freshUrl} title={doc.title} style={{ width: "100%", height: "100%", border: "none", display: "block" }} />
 						) : (
 							<Stack alignItems="center" justifyContent="center" sx={{ height: "100%" }}>
 								<Typography color="text.secondary">El PDF no está disponible.</Typography>
@@ -891,12 +926,8 @@ const EscritosPage = () => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector(
-		(state: any) => state.richTextDocumentsReducer
-	);
-	const { documents: postalDocs, total: postalTotal, isLoader: postalLoading } = useSelector(
-		(state: any) => state.postalDocumentsReducer
-	);
+	const { documents: rtDocs, documentsTotal: rtTotal, isLoader: rtLoading } = useSelector((state: any) => state.richTextDocumentsReducer);
+	const { documents: postalDocs, total: postalTotal, isLoader: postalLoading } = useSelector((state: any) => state.postalDocumentsReducer);
 	const folders = useSelector((state: any) => state.folder?.folders || []);
 	const userId = useSelector((state: any) => state.auth?.user?._id);
 
@@ -912,7 +943,12 @@ const EscritosPage = () => {
 	const [deleteTarget, setDeleteTarget] = useState<{ kind: "postal" | "richtext"; id: string; title: string } | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [mainLimitErrorOpen, setMainLimitErrorOpen] = useState(false);
-	const [mainLimitErrorData, setMainLimitErrorData] = useState<{ resourceType: string; plan: string; currentCount: string; limit: number } | null>(null);
+	const [mainLimitErrorData, setMainLimitErrorData] = useState<{
+		resourceType: string;
+		plan: string;
+		currentCount: string;
+		limit: number;
+	} | null>(null);
 	const [rowMenuAnchor, setRowMenuAnchor] = useState<{ el: HTMLElement; row: DocRow } | null>(null);
 
 	// Load folders if needed
@@ -1196,20 +1232,20 @@ const EscritosPage = () => {
 													/>
 												)}
 												{hasTracking && (
-													<Chip
-														size="small"
-														label="Seguimiento"
-														color="info"
-														variant="outlined"
-														sx={{ height: 18, fontSize: "0.65rem" }}
-													/>
+													<Chip size="small" label="Seguimiento" color="info" variant="outlined" sx={{ height: 18, fontSize: "0.65rem" }} />
 												)}
 											</Stack>
 
 											{/* Metadata row: carpeta + fecha */}
 											<Stack direction="row" spacing={2} flexWrap="wrap">
 												<Stack spacing={0.1}>
-													<Typography variant="caption" color="text.disabled" fontWeight={600} textTransform="uppercase" letterSpacing={0.4}>
+													<Typography
+														variant="caption"
+														color="text.disabled"
+														fontWeight={600}
+														textTransform="uppercase"
+														letterSpacing={0.4}
+													>
 														Carpeta
 													</Typography>
 													{linkedFolder ? (
@@ -1227,7 +1263,13 @@ const EscritosPage = () => {
 													)}
 												</Stack>
 												<Stack spacing={0.1}>
-													<Typography variant="caption" color="text.disabled" fontWeight={600} textTransform="uppercase" letterSpacing={0.4}>
+													<Typography
+														variant="caption"
+														color="text.disabled"
+														fontWeight={600}
+														textTransform="uppercase"
+														letterSpacing={0.4}
+													>
 														Fecha
 													</Typography>
 													<Typography variant="caption" color="text.secondary">
@@ -1259,17 +1301,17 @@ const EscritosPage = () => {
 													</>
 												) : (
 													<Tooltip title="Ver / Editar documento">
-														<IconButton size="small" onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)} data-testid="escritos-edit-btn">
+														<IconButton
+															size="small"
+															onClick={() => navigate(`/documentos/escritos/${row.id}/editar`)}
+															data-testid="escritos-edit-btn"
+														>
 															<Eye size={15} />
 														</IconButton>
 													</Tooltip>
 												)}
 												<Tooltip title={row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}>
-													<IconButton
-														size="small"
-														color={row.linkedFolderId ? "success" : "default"}
-														onClick={() => setVincularRow(row)}
-													>
+													<IconButton size="small" color={row.linkedFolderId ? "success" : "default"} onClick={() => setVincularRow(row)}>
 														<Routing size={15} />
 													</IconButton>
 												</Tooltip>
@@ -1413,90 +1455,88 @@ const EscritosPage = () => {
 					transformOrigin={{ horizontal: "right", vertical: "top" }}
 					anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
 				>
-					{rowMenuAnchor?.row.kind === "postal" ? (
-						[
-							<MuiMenuItem
-								key="ver"
-								onClick={() => {
-									setPostalDetail(rowMenuAnchor.row.rawPostal!);
-									setRowMenuAnchor(null);
-								}}
-							>
-								<Eye size={16} style={{ marginRight: 8 }} />
-								Ver documento
-							</MuiMenuItem>,
-							rowMenuAnchor.row.documentUrl ? (
+					{rowMenuAnchor?.row.kind === "postal"
+						? [
 								<MuiMenuItem
-									key="descargar"
+									key="ver"
 									onClick={() => {
-										window.open(rowMenuAnchor.row.documentUrl, "_blank");
+										setPostalDetail(rowMenuAnchor.row.rawPostal!);
 										setRowMenuAnchor(null);
 									}}
 								>
-									<DocumentDownload size={16} style={{ marginRight: 8 }} />
-									Descargar PDF
-								</MuiMenuItem>
-							) : null,
-							<MuiMenuItem
-								key="vincular"
-								onClick={() => {
-									setVincularRow(rowMenuAnchor.row);
-									setRowMenuAnchor(null);
-								}}
-							>
-								<Routing size={16} style={{ marginRight: 8 }} />
-								{rowMenuAnchor.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
-							</MuiMenuItem>,
-							<Divider key="divider" />,
-							<MuiMenuItem
-								key="eliminar"
-								onClick={() => {
-									setDeleteTarget({ kind: rowMenuAnchor.row.kind, id: rowMenuAnchor.row.id, title: rowMenuAnchor.row.title });
-									setRowMenuAnchor(null);
-								}}
-								sx={{ color: "error.main" }}
-							>
-								<Trash size={16} style={{ marginRight: 8 }} />
-								Eliminar
-							</MuiMenuItem>,
-						]
-					) : (
-						[
-							<MuiMenuItem
-								key="editar"
-								onClick={() => {
-									navigate(`/documentos/escritos/${rowMenuAnchor?.row.id}/editar`);
-									setRowMenuAnchor(null);
-								}}
-								data-testid="escritos-edit-btn"
-							>
-								<Eye size={16} style={{ marginRight: 8 }} />
-								Ver / Editar
-							</MuiMenuItem>,
-							<MuiMenuItem
-								key="vincular"
-								onClick={() => {
-									setVincularRow(rowMenuAnchor!.row);
-									setRowMenuAnchor(null);
-								}}
-							>
-								<Routing size={16} style={{ marginRight: 8 }} />
-								{rowMenuAnchor?.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
-							</MuiMenuItem>,
-							<Divider key="divider" />,
-							<MuiMenuItem
-								key="eliminar"
-								onClick={() => {
-									setDeleteTarget({ kind: rowMenuAnchor!.row.kind, id: rowMenuAnchor!.row.id, title: rowMenuAnchor!.row.title });
-									setRowMenuAnchor(null);
-								}}
-								sx={{ color: "error.main" }}
-							>
-								<Trash size={16} style={{ marginRight: 8 }} />
-								Eliminar
-							</MuiMenuItem>,
-						]
-					)}
+									<Eye size={16} style={{ marginRight: 8 }} />
+									Ver documento
+								</MuiMenuItem>,
+								rowMenuAnchor.row.documentUrl ? (
+									<MuiMenuItem
+										key="descargar"
+										onClick={() => {
+											window.open(rowMenuAnchor.row.documentUrl, "_blank");
+											setRowMenuAnchor(null);
+										}}
+									>
+										<DocumentDownload size={16} style={{ marginRight: 8 }} />
+										Descargar PDF
+									</MuiMenuItem>
+								) : null,
+								<MuiMenuItem
+									key="vincular"
+									onClick={() => {
+										setVincularRow(rowMenuAnchor.row);
+										setRowMenuAnchor(null);
+									}}
+								>
+									<Routing size={16} style={{ marginRight: 8 }} />
+									{rowMenuAnchor.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
+								</MuiMenuItem>,
+								<Divider key="divider" />,
+								<MuiMenuItem
+									key="eliminar"
+									onClick={() => {
+										setDeleteTarget({ kind: rowMenuAnchor.row.kind, id: rowMenuAnchor.row.id, title: rowMenuAnchor.row.title });
+										setRowMenuAnchor(null);
+									}}
+									sx={{ color: "error.main" }}
+								>
+									<Trash size={16} style={{ marginRight: 8 }} />
+									Eliminar
+								</MuiMenuItem>,
+						  ]
+						: [
+								<MuiMenuItem
+									key="editar"
+									onClick={() => {
+										navigate(`/documentos/escritos/${rowMenuAnchor?.row.id}/editar`);
+										setRowMenuAnchor(null);
+									}}
+									data-testid="escritos-edit-btn"
+								>
+									<Eye size={16} style={{ marginRight: 8 }} />
+									Ver / Editar
+								</MuiMenuItem>,
+								<MuiMenuItem
+									key="vincular"
+									onClick={() => {
+										setVincularRow(rowMenuAnchor!.row);
+										setRowMenuAnchor(null);
+									}}
+								>
+									<Routing size={16} style={{ marginRight: 8 }} />
+									{rowMenuAnchor?.row.linkedFolderId ? "Cambiar vinculación" : "Vincular a carpeta"}
+								</MuiMenuItem>,
+								<Divider key="divider" />,
+								<MuiMenuItem
+									key="eliminar"
+									onClick={() => {
+										setDeleteTarget({ kind: rowMenuAnchor!.row.kind, id: rowMenuAnchor!.row.id, title: rowMenuAnchor!.row.title });
+										setRowMenuAnchor(null);
+									}}
+									sx={{ color: "error.main" }}
+								>
+									<Trash size={16} style={{ marginRight: 8 }} />
+									Eliminar
+								</MuiMenuItem>,
+						  ]}
 				</Menu>
 
 				{/* Pagination — only in type-specific mode */}
@@ -1511,8 +1551,12 @@ const EscritosPage = () => {
 						sx={{ mt: 1.5 }}
 						action={
 							<Stack direction="row" spacing={1}>
-								<Button size="small" onClick={() => handleTypeChange("richtext")}>Ver escritos</Button>
-								<Button size="small" onClick={() => handleTypeChange("postal")}>Ver postales</Button>
+								<Button size="small" onClick={() => handleTypeChange("richtext")}>
+									Ver escritos
+								</Button>
+								<Button size="small" onClick={() => handleTypeChange("postal")}>
+									Ver postales
+								</Button>
 							</Stack>
 						}
 					>

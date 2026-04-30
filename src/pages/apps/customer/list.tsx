@@ -65,7 +65,14 @@ import { Add, UserAdd, Edit2, Eye, Trash, Link1, Archive, Box1, InfoCircle, Docu
 
 // types
 import { dispatch, useSelector } from "store";
-import { getContactsByUserId, getContactsByGroupId, archiveContacts, getArchivedContactsByUserId, getArchivedContactsByGroupId, unarchiveContacts } from "store/reducers/contacts";
+import {
+	getContactsByUserId,
+	getContactsByGroupId,
+	archiveContacts,
+	getArchivedContactsByUserId,
+	getArchivedContactsByGroupId,
+	unarchiveContacts,
+} from "store/reducers/contacts";
 import { useTeam } from "contexts/TeamContext";
 import { Contact } from "types/contact";
 import { GuideContacts } from "components/guides";
@@ -307,7 +314,14 @@ function ReactTable({
 					{/* Botones principales (derecha) */}
 					<Stack direction={matchDownSM ? "column" : "row"} spacing={1} sx={{ width: matchDownSM ? "100%" : "auto" }}>
 						{handleAdd && (
-							<Button variant="contained" size="small" startIcon={<UserAdd />} onClick={handleAdd} fullWidth={matchDownSM} data-testid="contacts-add-btn">
+							<Button
+								variant="contained"
+								size="small"
+								startIcon={<UserAdd />}
+								onClick={handleAdd}
+								fullWidth={matchDownSM}
+								data-testid="contacts-add-btn"
+							>
 								Agregar Contacto
 							</Button>
 						)}
@@ -359,21 +373,11 @@ function ReactTable({
 					{/* Botones secundarios (derecha) */}
 					<Stack direction="row" spacing={1} alignItems="center" justifyContent={matchDownSM ? "flex-start" : "flex-end"}>
 						<Tooltip title="Exportar a CSV">
-							<IconButton
-								color="primary"
-								size="medium"
-								onClick={() => csvLinkRef.current?.link?.click()}
-							>
+							<IconButton color="primary" size="medium" onClick={() => csvLinkRef.current?.link?.click()}>
 								<DocumentDownload variant="Bulk" size={22} />
 							</IconButton>
 						</Tooltip>
-						<CSVLink
-							ref={csvLinkRef}
-							data={csvData}
-							headers={csvHeaders}
-							filename={"contactos.csv"}
-							style={{ display: "none" }}
-						/>
+						<CSVLink ref={csvLinkRef} data={csvData} headers={csvHeaders} filename={"contactos.csv"} style={{ display: "none" }} />
 						<Tooltip title="Ver Guía">
 							<IconButton color="success" onClick={handleOpenGuide}>
 								<InfoCircle variant="Bulk" />
@@ -712,7 +716,7 @@ const CustomerListPage = () => {
 				loadingRef.current = false;
 			}
 		},
-		[user?._id, isTeamMode, activeTeam?._id]
+		[user?._id, isTeamMode, activeTeam?._id],
 	);
 
 	// Manejadores para elementos archivados
@@ -733,7 +737,7 @@ const CustomerListPage = () => {
 			setArchivedPage(page);
 			loadArchivedContacts(page, archivedPageSize);
 		},
-		[loadArchivedContacts, archivedPageSize]
+		[loadArchivedContacts, archivedPageSize],
 	);
 
 	// Handler para cambio de tamaño de página en archivados
@@ -743,7 +747,7 @@ const CustomerListPage = () => {
 			setArchivedPage(1);
 			loadArchivedContacts(1, pageSize);
 		},
-		[loadArchivedContacts]
+		[loadArchivedContacts],
 	);
 
 	const handleOpenGuide = useCallback(() => {
@@ -965,7 +969,11 @@ const CustomerListPage = () => {
 							)}
 							{canUpdate && (
 								<Tooltip title="Editar">
-									<IconButton color="primary" data-testid="contact-edit-btn" onClick={(e) => handleRowAction(e, () => handleEditContact(original))}>
+									<IconButton
+										color="primary"
+										data-testid="contact-edit-btn"
+										onClick={(e) => handleRowAction(e, () => handleEditContact(original))}
+									>
 										<Edit2 variant="Bulk" />
 									</IconButton>
 								</Tooltip>
@@ -994,7 +1002,18 @@ const CustomerListPage = () => {
 				disableSortBy: true,
 			},
 		],
-		[theme, mode, handleEditContact, handleClose, handleOpenLink, handleRowAction, expandedRowId, handleToggleExpanded, canUpdate, canDelete],
+		[
+			theme,
+			mode,
+			handleEditContact,
+			handleClose,
+			handleOpenLink,
+			handleRowAction,
+			expandedRowId,
+			handleToggleExpanded,
+			canUpdate,
+			canDelete,
+		],
 	);
 
 	// Row sub component memoizado

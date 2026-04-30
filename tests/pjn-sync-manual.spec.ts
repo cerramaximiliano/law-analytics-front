@@ -242,10 +242,7 @@ test("GRUPO 4 — click 'Re-sincronizar' → POST /api/pjn-credentials/sync + sn
 
 	// Capturar el POST cuando se dispara
 	const [postRequest] = await Promise.all([
-		page.waitForRequest(
-			(req) => req.url().endsWith("/api/pjn-credentials/sync") && req.method() === "POST",
-			{ timeout: 10_000 },
-		),
+		page.waitForRequest((req) => req.url().endsWith("/api/pjn-credentials/sync") && req.method() === "POST", { timeout: 10_000 }),
 		resyncBtn.click(),
 	]);
 

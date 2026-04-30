@@ -25,7 +25,18 @@ import { useTheme, alpha } from "@mui/material/styles";
 import { motion } from "framer-motion";
 
 // Icons
-import { ArrowRight2, ArrowUp2, Calculator, Calendar, CalendarTick, Folder, InfoCircle, MessageQuestion, Profile2User, SearchNormal1 } from "iconsax-react";
+import {
+	ArrowRight2,
+	ArrowUp2,
+	Calculator,
+	Calendar,
+	CalendarTick,
+	Folder,
+	InfoCircle,
+	MessageQuestion,
+	Profile2User,
+	SearchNormal1,
+} from "iconsax-react";
 
 // ==============================|| FAQ PAGE ||============================== //
 

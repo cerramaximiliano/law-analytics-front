@@ -15,11 +15,11 @@ import { test, expect } from "@playwright/test";
 import { loginViaForm } from "./helpers/auth";
 
 const PUBLIC_ROUTES = [
-	{ path: "/booking",                      label: "booking (sin slug)" },
-	{ path: "/booking/test-slug",            label: "booking/:slug" },
-	{ path: "/manage-booking",               label: "manage-booking (sin token)" },
-	{ path: "/manage-booking/test-token",    label: "manage-booking/:token" },
-	{ path: "/maintenance/404",              label: "página 404" },
+	{ path: "/booking", label: "booking (sin slug)" },
+	{ path: "/booking/test-slug", label: "booking/:slug" },
+	{ path: "/manage-booking", label: "manage-booking (sin token)" },
+	{ path: "/manage-booking/test-token", label: "manage-booking/:token" },
+	{ path: "/maintenance/404", label: "página 404" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

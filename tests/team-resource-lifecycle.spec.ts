@@ -34,10 +34,7 @@ async function createTeamAsOwner(name: string): Promise<string> {
 	}
 }
 
-async function inviteAndAcceptGetUserId(
-	teamId: string,
-	inviteeRole: "memberEditor" | "memberExtra",
-): Promise<string> {
+async function inviteAndAcceptGetUserId(teamId: string, inviteeRole: "memberEditor" | "memberExtra"): Promise<string> {
 	const owner = await apiAsUser("owner");
 	try {
 		const invRes = await owner.post(`${API}/api/groups/${teamId}/invitations`, {
@@ -46,9 +43,7 @@ async function inviteAndAcceptGetUserId(
 		if (!invRes.ok()) throw new Error(`Invite failed: ${invRes.status()}`);
 		const teamRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const group = (await teamRes.json()).group ?? {};
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending");
 		const invitee = await apiAsUser(inviteeRole);
 		try {
 			const acceptRes = await invitee.post(`${API}/api/groups/invitations/accept/${invitation.token}`, {

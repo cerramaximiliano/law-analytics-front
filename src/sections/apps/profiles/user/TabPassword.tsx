@@ -250,7 +250,9 @@ const TabPassword = () => {
 							</Grid>
 							<Grid item xs={12}>
 								<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2}>
-									<Button color="error" onClick={() => resetForm()}>Cancelar</Button>
+									<Button color="error" onClick={() => resetForm()}>
+										Cancelar
+									</Button>
 									<Button
 										disabled={isSubmitting || Object.keys(errors).length !== 0}
 										type="submit"

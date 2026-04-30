@@ -38,7 +38,7 @@ const usePdfTextDetection = ({ blobUrl, movementId, enabled }: UsePdfTextDetecti
 			setIsChecking(true);
 			try {
 				// @ts-ignore
-			const pdfjsLib = await import("pdfjs-dist");
+				const pdfjsLib = await import("pdfjs-dist");
 
 				// Configure worker using CDN that matches the installed version
 				const version = pdfjsLib.version;

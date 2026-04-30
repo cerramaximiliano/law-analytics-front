@@ -18,7 +18,16 @@ interface NumberFieldProps {
 }
 
 export default function NumberField(props: NumberFieldProps) {
-	const { allowNegative, allowLeadingZeros, thousandSeparator, decimalScale, inputMode, inputProps, helperText: staticHelperText, ...rest } = props;
+	const {
+		allowNegative,
+		allowLeadingZeros,
+		thousandSeparator,
+		decimalScale,
+		inputMode,
+		inputProps,
+		helperText: staticHelperText,
+		...rest
+	} = props;
 	const [field, meta, helpers] = useField(props);
 	const { setValue } = helpers;
 	function _renderHelperText() {

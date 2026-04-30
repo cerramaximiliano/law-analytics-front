@@ -123,15 +123,17 @@ async function getAuthToken(page: Page): Promise<string> {
 }
 
 async function getUserId(page: Page): Promise<string> {
-	return (await page.evaluate(() => {
-		const token = localStorage.getItem("token") ?? "";
-		try {
-			const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-			return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
-		} catch {
-			return "";
-		}
-	})) ?? "";
+	return (
+		(await page.evaluate(() => {
+			const token = localStorage.getItem("token") ?? "";
+			try {
+				const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+				return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
+			} catch {
+				return "";
+			}
+		})) ?? ""
+	);
 }
 
 async function deleteFolderById(page: Page, folderId: string): Promise<void> {
@@ -202,9 +204,7 @@ async function deleteFoldersByIds(token: string, ids: string[]): Promise<void> {
 	try {
 		for (let i = 0; i < ids.length; i += BATCH) {
 			const batch = ids.slice(i, i + BATCH);
-			await Promise.all(
-				batch.map((id) => ctx.delete(`${API_BASE}/api/folders/${id}`, { headers: { Authorization: `Bearer ${token}` } })),
-			);
+			await Promise.all(batch.map((id) => ctx.delete(`${API_BASE}/api/folders/${id}`, { headers: { Authorization: `Bearer ${token}` } })));
 		}
 	} finally {
 		await ctx.dispose();
@@ -220,7 +220,6 @@ async function archiveFoldersByIds(page: Page, userId: string, ids: string[]): P
 		data: { resourceType: "folders", itemIds: ids },
 	});
 }
-
 
 async function gotoCarpetas(page: Page): Promise<void> {
 	await page.goto("/apps/folders/list");
@@ -244,10 +243,16 @@ async function createFolderViaUI(page: Page, folderName: string): Promise<string
 	await expect(page.getByText("Paso 2 de 3: Datos requeridos")).toBeVisible({ timeout: 5_000 });
 	await page.locator("#customer-folderName").fill(folderName);
 
-	await page.locator(".MuiSelect-select").filter({ hasText: /Seleccione una parte/ }).click();
+	await page
+		.locator(".MuiSelect-select")
+		.filter({ hasText: /Seleccione una parte/ })
+		.click();
 	await page.getByRole("option", { name: "Actor" }).click();
 
-	await page.locator(".MuiSelect-select").filter({ hasText: /Seleccione un estado/ }).click();
+	await page
+		.locator(".MuiSelect-select")
+		.filter({ hasText: /Seleccione un estado/ })
+		.click();
 	await page.getByRole("option", { name: "Nueva" }).click();
 
 	// Materia: MUI Autocomplete con opciones del folder.json local
@@ -421,10 +426,9 @@ test("GRUPO 4 — editar carátula → PUT /api/folders/:id → snackbar 'Éxito
 	await page.locator("#customer-folderName").clear();
 	await page.locator("#customer-folderName").fill(newName);
 
-	const responsePromise = page.waitForResponse(
-		(r) => r.url().includes(`/api/folders/${folderId}`) && r.request().method() === "PUT",
-		{ timeout: 30_000 },
-	);
+	const responsePromise = page.waitForResponse((r) => r.url().includes(`/api/folders/${folderId}`) && r.request().method() === "PUT", {
+		timeout: 30_000,
+	});
 
 	await page.locator("#customer-folderName").press("Enter");
 	await expect(page.getByText("Paso 2 de 2: Datos opcionales")).toBeVisible({ timeout: 5_000 });
@@ -573,7 +577,10 @@ test("GRUPO 7 — desarchivar carpeta via UI → snackbar '1 causa desarchivada 
 
 	await Promise.all([
 		page.waitForResponse((r) => r.url().includes("/api/subscriptions/unarchive-items") && r.request().method() === "POST"),
-		page.getByRole("dialog").getByRole("button", { name: /Desarchivar/i }).click(),
+		page
+			.getByRole("dialog")
+			.getByRole("button", { name: /Desarchivar/i })
+			.click(),
 	]);
 
 	await expect(page.getByText(/causa desarchivada correctamente/)).toBeVisible({ timeout: 10_000 });

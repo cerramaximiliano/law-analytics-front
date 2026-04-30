@@ -58,7 +58,7 @@ const AddEditTask = ({ task, onCancel, showSnackbar }: Props) => {
 			status: task?.status || "pendiente",
 			folderId: task?.folderId || "",
 		}),
-		[task?._id] // Solo dependemos del ID, no del objeto completo
+		[task?._id], // Solo dependemos del ID, no del objeto completo
 	);
 
 	const formik = useFormik({

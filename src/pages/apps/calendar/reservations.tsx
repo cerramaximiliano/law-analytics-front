@@ -349,7 +349,15 @@ const BookingCard: React.FC<{
 					<Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 500 }}>
 						{booking.clientName}
 					</Typography>
-					<Tooltip title={!hasBookingFeature ? "Función no disponible en tu plan" : (!canUpdate && !canDelete) ? "No tienes permisos para realizar acciones" : "Acciones"}>
+					<Tooltip
+						title={
+							!hasBookingFeature
+								? "Función no disponible en tu plan"
+								: !canUpdate && !canDelete
+								? "No tienes permisos para realizar acciones"
+								: "Acciones"
+						}
+					>
 						<span>
 							<IconButton
 								size="small"
@@ -664,38 +672,32 @@ const BookingsManagement = () => {
 			// Si estamos viendo una disponibilidad específica
 			if (isSpecificAvailability) {
 				// Cargar disponibilidad - include team headers
-				const availabilityResponse = await axios.get(
-					`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`,
-					{ headers: requestHeaders }
-				);
+				const availabilityResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}`, {
+					headers: requestHeaders,
+				});
 
 				setAvailability(availabilityResponse.data);
 
 				// Cargar reservas para esta disponibilidad específica - include team headers
-				const bookingsResponse = await axios.get(
-					`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}/bookings`,
-					{ headers: requestHeaders }
-				);
+				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${availabilityId}/bookings`, {
+					headers: requestHeaders,
+				});
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 			} else {
 				// Cargar todas las reservas del usuario - include team headers
-				const bookingsResponse = await axios.get(
-					`${import.meta.env.VITE_BASE_URL}/api/booking/bookings`,
-					{ headers: requestHeaders }
-				);
+				const bookingsResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings`, { headers: requestHeaders });
 
 				// Asegurar que siempre sea un array
 				const bookingsData = Array.isArray(bookingsResponse.data) ? bookingsResponse.data : [];
 				setBookings(bookingsData);
 
 				// Cargar todas las disponibilidades cuando estamos en la vista general - include team headers
-				const availabilitiesResponse = await axios.get(
-					`${import.meta.env.VITE_BASE_URL}/api/booking/availability`,
-					{ headers: requestHeaders }
-				);
+				const availabilitiesResponse = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/booking/availability`, {
+					headers: requestHeaders,
+				});
 
 				// Asegurar que siempre sea un array
 				const availabilitiesData = Array.isArray(availabilitiesResponse.data) ? availabilitiesResponse.data : [];
@@ -795,11 +797,9 @@ const BookingsManagement = () => {
 				payload.cancellationReason = rejectReason;
 			}
 
-			const response = await axios.patch(
-				`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${bookingId}/status`,
-				payload,
-				{ headers: requestHeaders }
-			);
+			const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${bookingId}/status`, payload, {
+				headers: requestHeaders,
+			});
 
 			const updatedBooking = response.data;
 
@@ -858,11 +858,9 @@ const BookingsManagement = () => {
 					cancellationReason: rejectReason || undefined,
 				};
 
-				const response = await axios.patch(
-					`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
-					payload,
-					{ headers: requestHeaders }
-				);
+				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload, {
+					headers: requestHeaders,
+				});
 
 				const updatedBooking = response.data;
 
@@ -912,11 +910,9 @@ const BookingsManagement = () => {
 					cancelledBy: "host",
 				};
 
-				const response = await axios.patch(
-					`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`,
-					payload,
-					{ headers: requestHeaders }
-				);
+				const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}/status`, payload, {
+					headers: requestHeaders,
+				});
 
 				const updatedBooking = response.data;
 
@@ -966,10 +962,7 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedBooking) return;
 
-			await axios.delete(
-				`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}`,
-				{ headers: requestHeaders }
-			);
+			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/bookings/${selectedBooking._id}`, { headers: requestHeaders });
 
 			setBookings(bookings.filter((b) => b._id !== selectedBooking._id));
 
@@ -1014,10 +1007,9 @@ const BookingsManagement = () => {
 		try {
 			if (!selectedAvailabilityId) return;
 
-			await axios.delete(
-				`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`,
-				{ headers: requestHeaders }
-			);
+			await axios.delete(`${import.meta.env.VITE_BASE_URL}/api/booking/availability/${selectedAvailabilityId}`, {
+				headers: requestHeaders,
+			});
 
 			// Actualizar la lista de disponibilidades
 			setAvailabilities(Array.isArray(availabilities) ? availabilities.filter((a) => a._id !== selectedAvailabilityId) : []);
@@ -1242,7 +1234,9 @@ const BookingsManagement = () => {
 								+ Nueva Disponibilidad
 							</Button>
 						) : (
-							<Tooltip title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}>
+							<Tooltip
+								title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}
+							>
 								<span>
 									<Button
 										variant="contained"
@@ -1275,12 +1269,9 @@ const BookingsManagement = () => {
 
 				{/* Alert for viewers in team mode - read-only access */}
 				{hasBookingFeature && isTeamMode && !canCreate && (
-					<Alert
-						severity="info"
-						icon={<InfoCircle variant="Bulk" size={24} color={theme.palette.info.main} />}
-						sx={{ mb: 3, mt: 1 }}
-					>
-						Estás viendo las reservas del equipo en modo lectura. Contacta al administrador si necesitas permisos para crear o modificar disponibilidades.
+					<Alert severity="info" icon={<InfoCircle variant="Bulk" size={24} color={theme.palette.info.main} />} sx={{ mb: 3, mt: 1 }}>
+						Estás viendo las reservas del equipo en modo lectura. Contacta al administrador si necesitas permisos para crear o modificar
+						disponibilidades.
 					</Alert>
 				)}
 
@@ -1379,7 +1370,11 @@ const BookingsManagement = () => {
 												Crear Nueva Disponibilidad
 											</Button>
 										) : (
-											<Tooltip title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}>
+											<Tooltip
+												title={
+													!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"
+												}
+											>
 												<span>
 													<Button
 														variant="contained"
@@ -1433,11 +1428,7 @@ const BookingsManagement = () => {
 				{(filter !== "all" || statusFilter !== "all") && (
 					<Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}>
 						{filter !== "all" && (
-							<Chip
-								label={filter === "upcoming" ? "Próximas" : "Pasadas"}
-								size="small"
-								onDelete={() => setFilter("all")}
-							/>
+							<Chip label={filter === "upcoming" ? "Próximas" : "Pasadas"} size="small" onDelete={() => setFilter("all")} />
 						)}
 						{statusFilter !== "all" && (
 							<Chip
@@ -1495,7 +1486,9 @@ const BookingsManagement = () => {
 									Crear Nueva Disponibilidad
 								</Button>
 							) : (
-								<Tooltip title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}>
+								<Tooltip
+									title={!hasBookingFeature ? "Función disponible en planes superiores" : "No tienes permisos para crear disponibilidades"}
+								>
 									<span>
 										<Button
 											variant="contained"

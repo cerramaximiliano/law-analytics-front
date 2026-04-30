@@ -132,7 +132,13 @@ const CompactStatsCard: React.FC<CompactStatsCardProps> = ({ title, value, trend
 	);
 };
 
-const CalcTableCompact = ({ title, folderData }: { title: string; folderData: { folderName: string; monto: number; groupId?: string } }) => {
+const CalcTableCompact = ({
+	title,
+	folderData,
+}: {
+	title: string;
+	folderData: { folderName: string; monto: number; groupId?: string };
+}) => {
 	const theme = useTheme();
 	const [open, setOpen] = useState(false);
 	const [openItemModal, setOpenItemModal] = useState(false);

@@ -56,9 +56,7 @@ const movementReducer = (state = initialMovementState, action: any): MovementSta
 		case UPDATE_MOVEMENT:
 			return {
 				...state,
-				movements: state.movements.map((movement) =>
-					String(movement._id) === String(action.payload._id) ? action.payload : movement
-				),
+				movements: state.movements.map((movement) => (String(movement._id) === String(action.payload._id) ? action.payload : movement)),
 				isLoading: false,
 			};
 		case DELETE_MOVEMENT:
@@ -217,47 +215,48 @@ export const deleteMovement = (movementId: string) => async (dispatch: Dispatch)
 	}
 };
 
-export const addMovement = (movementData: Omit<Movement, "_id">, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
+export const addMovement =
+	(movementData: Omit<Movement, "_id">, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_LOADING });
 
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/movements`, movementData, {
-			headers: options?.headers,
-		});
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/movements`, movementData, {
+				headers: options?.headers,
+			});
 
-		if (response.data.success && response.data.movement) {
+			if (response.data.success && response.data.movement) {
+				dispatch({
+					type: ADD_MOVEMENT,
+					payload: response.data.movement,
+				});
+
+				return {
+					success: true,
+					movement: response.data.movement,
+				};
+			}
+
+			throw new Error(response.data.message || "Error al crear el movimiento");
+		} catch (error) {
+			let errorMessage = "Error al crear el movimiento";
+
+			if (axios.isAxiosError(error) && error.response) {
+				errorMessage = error.response.data?.message || errorMessage;
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+
 			dispatch({
-				type: ADD_MOVEMENT,
-				payload: response.data.movement,
+				type: SET_MOVEMENT_ERROR,
+				payload: errorMessage,
 			});
 
 			return {
-				success: true,
-				movement: response.data.movement,
+				success: false,
+				error: errorMessage,
 			};
 		}
-
-		throw new Error(response.data.message || "Error al crear el movimiento");
-	} catch (error) {
-		let errorMessage = "Error al crear el movimiento";
-
-		if (axios.isAxiosError(error) && error.response) {
-			errorMessage = error.response.data?.message || errorMessage;
-		} else if (error instanceof Error) {
-			errorMessage = error.message;
-		}
-
-		dispatch({
-			type: SET_MOVEMENT_ERROR,
-			payload: errorMessage,
-		});
-
-		return {
-			success: false,
-			error: errorMessage,
-		};
-	}
-};
+	};
 
 interface SuccessResponse {
 	success: true;

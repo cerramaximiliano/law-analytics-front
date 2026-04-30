@@ -127,9 +127,9 @@ const CookiesPolicy = () => {
 										<Typography variant="h5">Cookies de rendimiento y analíticas</Typography>
 									</Box>
 									<Typography variant="body1">
-										Estas cookies recopilan información sobre cómo los visitantes utilizan nuestro sitio web, por ejemplo, qué páginas visitan
-										con más frecuencia y si reciben mensajes de error. Estas cookies no recopilan información que identifique a un visitante.
-										Toda la información que recopilan estas cookies es agregada y, por lo tanto, anónima.
+										Estas cookies recopilan información sobre cómo los visitantes utilizan nuestro sitio web, por ejemplo, qué páginas
+										visitan con más frecuencia y si reciben mensajes de error. Estas cookies no recopilan información que identifique a un
+										visitante. Toda la información que recopilan estas cookies es agregada y, por lo tanto, anónima.
 									</Typography>
 								</Paper>
 

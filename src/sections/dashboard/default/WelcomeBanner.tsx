@@ -69,8 +69,8 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss, sessionCou
 								{userName ? `Bienvenido, ${userName}` : "Bienvenido a Law||Analytics"}
 							</Typography>
 							<Typography variant="h6" color={theme.palette.background.paper} sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-								Comienza creando tu primera carpeta. Es el corazon de Law||Analytics: desde ahi gestionas documentos,
-								calculos y vencimientos.
+								Comienza creando tu primera carpeta. Es el corazon de Law||Analytics: desde ahi gestionas documentos, calculos y
+								vencimientos.
 							</Typography>
 							<Box sx={{ pt: { xs: 1, sm: 1.5 } }}>
 								<Button

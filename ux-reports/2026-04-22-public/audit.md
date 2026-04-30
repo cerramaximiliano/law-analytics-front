@@ -122,7 +122,7 @@ La **landing se ve polished pero con bloques vacíos** entre secciones (posible 
 - [ ] **[P-PUB-1]** **Mezcla ES/EN en auth**: auditar y traducir a español todos los strings user-visible del flujo de auth (login, register, forgot, check-mail, reset, code-verification). Cubre LG2, CM1, RS2, FP1 parcial, y varios otros.
 - [ ] **[P-PUB-2]** **Capitalización oracional en español**: reemplazar Title Case ("Volver al Inicio", "Enlaces a Terceros") por oracional ("Volver al inicio", "Enlaces a terceros"). Pasada única global.
 - [ ] **[P-PUB-3]** **Estados fallback en rutas de flujo**: pantalla propia cuando `/reset-password` o `/code-verification` acceden sin state — no redirect silencioso. Cubre RS1 + CV1.
-- [ ] **[P-PUB-4]** **TOC reusable en páginas legales**: componente `<LegalPageLayout>` con TOC lateral sticky (desktop) / colapsable (mobile) + IDs automáticos en cada `<h3>`. Cubre PR1, CK3, TR* parcial.
+- [ ] **[P-PUB-4]** **TOC reusable en páginas legales**: componente `<LegalPageLayout>` con TOC lateral sticky (desktop) / colapsable (mobile) + IDs automáticos en cada `<h3>`. Cubre PR1, CK3, TR\* parcial.
 - [ ] **[P-PUB-5]** **Autocomplete attrs en forms auth**: pasada para agregar `autocomplete="username"` en login, `"email"` en forgot, `"new-password"` / `"current-password"` donde corresponda. Cubre LG4, FP2, RG1 parcial.
 - [ ] **[P-PUB-6]** **Fechas de última actualización**: unificar formato y valor entre privacy, cookies, terms (ver PR3). Mover a un constant compartido.
 
@@ -133,62 +133,78 @@ La **landing se ve polished pero con bloques vacíos** entre secciones (posible 
 > Los detalles completos de cada issue (file, viewport, descripción, propuesta) están en las secciones de agente producidas por el audit. Los incluyo referenciados aquí para que puedas saltar al issue marcado.
 
 ### `/` — Landing
+
 Screenshots: `landing-{desktop,tablet,mobile}.png`
 Issues: 🔴 [LD1] bloques vacíos · 🔴 [LD2] social proof dudosa · 🟡 [LD3] hex hardcoded · 🟡 [LD4] CTA único en hero · 🟡 [LD5] logos Cloudinary sin fallback
 
 ### `/plans` — Planes
+
 Screenshots: `plans-{desktop,tablet,mobile}.png`
 Issues: 🔴 [PL1] toggle anual sin descuento · 🟡 [PL2] Premium bloqueado sin lead capture · 🟡 [PL3] features wall-of-text mobile · 🟢 [PL4] breadcrumb redundante
 
 ### `/guides` — Guías
+
 Screenshots: `guides-{desktop,tablet,mobile}.png`
 Issues: 🟡 [GU1] header oculto · 🟡 [GU2] sin estado leído · 🟡 [GU3] Button anidado en CardActionArea · 🟡 [GU4] grid 1 col mobile + animación acumulada
 
 ### `/faq` — FAQ
+
 Screenshots: `faq-{desktop,tablet,mobile}.png`
 Issues: 🔴 [FQ1] sin búsqueda · 🟡 [FQ2] hex concatenado · 🟡 [FQ3] sin back-to-top · 🟡 [FQ4] ícono categoría oculto mobile
 
 ### `/privacy-policy` — Política de privacidad
+
 Screenshots: `privacy-policy-{desktop,tablet,mobile}.png`
 Issues: 🔴 [PR3] fecha inconsistente · 🟡 [PR1] sin TOC · 🟡 [PR2] Title Case · 🟡 [PR4] IMPORTANTE: bloque bold · 🟢 [PR5] justify ríos
 
 ### `/cookies-policy` — Política de cookies
+
 Screenshots: `cookies-policy-{desktop,tablet,mobile}.png`
 Issues: 🟡 [CK1] wall-of-text · 🟡 [CK2] ul nativo · 🟡 [CK3] sin TOC · 🟢 [CK4] IE desactualizado
 
 ### `/terms` — Términos
+
 Screenshots: `terms-{desktop,tablet,mobile}.png`
 Issues: 🟡 [TR1] tabs con fetch independiente · 🟡 [TR3] acordeón solo-uno · 🟢 [TR2] título no refleja tab
 
 ### `/unsubscribe` — Desuscripción
+
 Screenshots: `unsubscribe-{desktop,tablet,mobile}.png`
 Issues: 🔴 [UN1] pantalla vacía con error rojo · 🟡 [UN2] logo duplicado · 🟡 [UN3] sin categoría en éxito · 🟢 [UN4] mailto: no linkado
 
 ### `/login` — Login
+
 Screenshots: `login-{desktop,tablet,mobile}.png`
 Issues: 🔴 [LG1] Enter deshabilitado · 🟡 [LG2] "Password" mezcla idioma · 🟡 [LG3] título "Inicio" ambiguo · 🟡 [LG4] autocomplete email→username
 
 ### `/register` — Registro
+
 Screenshots: `register-{desktop,tablet,mobile}.png`
 Issues: 🔴 [RG1] sin InputLabel visible · 🟡 [RG2] título wrap mobile · 🟡 [RG3] texto legal ilegible
 
 ### `/forgot-password` — Olvidé contraseña
+
 Screenshots: `forgot-password-{desktop,tablet,mobile}.png`
 Issues: 🔴 [FP2] sin autocomplete · 🟡 [FP1] CTA revela impl · 🟡 [FP3] "Volver al Inicio"
 
 ### `/check-mail` — Revisá tu email
+
 Screenshots: `check-mail-{desktop,tablet,mobile}.png`
 Issues: 🔴 [CM1] CTA "Sign In" · 🔴 [CM2] sin email destinatario · 🟡 [CM3] ruta huérfana del flujo
 
 ### `/reset-password` — Restablecer contraseña
+
 Screenshots: `reset-password-{desktop,tablet,mobile}.png`
+
 > ⚠ Los screenshots muestran pantalla de registro por redirect silencioso (ver RS1).
-Issues: 🔴 [RS1] redirect sin estado · 🟡 [RS2] labels en inglés · 🟡 [RS3] strength un solo bloque · 🟡 [RS4] confirm sin toggle show
+> Issues: 🔴 [RS1] redirect sin estado · 🟡 [RS2] labels en inglés · 🟡 [RS3] strength un solo bloque · 🟡 [RS4] confirm sin toggle show
 
 ### `/code-verification` — Verificación por código
+
 Screenshots: `code-verification-{desktop,tablet,mobile}.png`
+
 > ⚠ Los screenshots muestran pantalla de registro por redirect silencioso (ver CV1).
-Issues: 🔴 [CV1] redirect sin estado · 🟡 [CV2] reenviar sin cooldown · 🟡 [CV3] título largo + sin stepper
+> Issues: 🔴 [CV1] redirect sin estado · 🟡 [CV2] reenviar sin cooldown · 🟡 [CV3] título largo + sin stepper
 
 ---
 
@@ -198,6 +214,7 @@ Revisá el reporte y marcá los `[x]` que querés implementar. Luego:
 
 1. **Decidí estrategia de branch**: ¿aplicamos sobre la misma `ux/audit-2026-04-21` (queda todo junto), o creamos `ux/audit-public-2026-04-22` separada?
 2. **Batching**: recomiendo 3 batches sistémicos que resuelven mucho de un saque:
+
    - Batch A: P-PUB-1 (ES/EN) + P-PUB-2 (capitalización) + P-PUB-5 (autocomplete) — 1 pasada de strings y attrs
    - Batch B: P-PUB-3 (estados fallback en recovery) + P-PUB-6 (fechas unificadas) — infraestructura de flujo
    - Batch C: P-PUB-4 (TOC legal) + issues específicos alta prioridad restantes
@@ -206,4 +223,4 @@ Revisá el reporte y marcá los `[x]` que querés implementar. Luego:
 
 ---
 
-*Reporte generado por `/ux-audit` — Pasada 1 (públicas + auth) · Screenshots en `screenshots/` (no versionados).*
+_Reporte generado por `/ux-audit` — Pasada 1 (públicas + auth) · Screenshots en `screenshots/` (no versionados)._

@@ -25,13 +25,13 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 		}
 	};
 
-	const label = pjnAccess.availableMovements && pjnAccess.availableMovements > 0
-		? `+${pjnAccess.availableMovements} movimientos`
-		: "Acceso limitado";
+	const label =
+		pjnAccess.availableMovements && pjnAccess.availableMovements > 0 ? `+${pjnAccess.availableMovements} movimientos` : "Acceso limitado";
 
-	const planText = pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
-		? pjnAccess.requiredPlans.map((p) => (p === "standard" ? "Estándar" : p.charAt(0).toUpperCase() + p.slice(1))).join(" o ")
-		: null;
+	const planText =
+		pjnAccess.requiredPlans && pjnAccess.requiredPlans.length > 0
+			? pjnAccess.requiredPlans.map((p) => (p === "standard" ? "Estándar" : p.charAt(0).toUpperCase() + p.slice(1))).join(" o ")
+			: null;
 
 	return (
 		<Collapse in={open} timeout={300}>
@@ -51,7 +51,8 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 			>
 				<Crown size={14} color="var(--mui-palette-warning-main, #ed6c02)" />
 				<Typography variant="caption" color="text.primary" sx={{ flexGrow: 1 }}>
-					{label}{planText ? ` · Plan ${planText}` : ""}
+					{label}
+					{planText ? ` · Plan ${planText}` : ""}
 				</Typography>
 				{pjnAccess.requiresUpgrade && (
 					<Button
@@ -71,11 +72,7 @@ const PjnAccessAlert: React.FC<PjnAccessAlertProps> = ({ pjnAccess, onUpgrade })
 						Mejorar
 					</Button>
 				)}
-				<IconButton
-					size="small"
-					onClick={() => setOpen(false)}
-					sx={{ color: "text.secondary", p: 0.25 }}
-				>
+				<IconButton size="small" onClick={() => setOpen(false)} sx={{ color: "text.secondary", p: 0.25 }}>
 					<Add size={14} style={{ transform: "rotate(45deg)" }} />
 				</IconButton>
 			</Box>

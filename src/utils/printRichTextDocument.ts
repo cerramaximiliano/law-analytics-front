@@ -30,9 +30,7 @@ const EXTENSIONS = [
 ];
 
 const normalizeHtmlForPrint = (html: string) =>
-	html
-		.replace(/<p><\/p>/g, "<p><br></p>")
-		.replace(/\t/g, '<span style="display:inline-block;width:2cm"></span>');
+	html.replace(/<p><\/p>/g, "<p><br></p>").replace(/\t/g, '<span style="display:inline-block;width:2cm"></span>');
 
 export const printRichTextDocument = async (documentId: string): Promise<void> => {
 	const res = await axios.get(`/api/rich-text-documents/${documentId}`);
@@ -59,9 +57,7 @@ export const printRichTextDocument = async (documentId: string): Promise<void> =
 
 	const iframeDoc = iframe.contentWindow!.document;
 	iframeDoc.open();
-	iframeDoc.write(
-		`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>${PRINT_CSS}</style></head><body>${normalized}</body></html>`
-	);
+	iframeDoc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>${PRINT_CSS}</style></head><body>${normalized}</body></html>`);
 	iframeDoc.close();
 
 	setTimeout(() => {

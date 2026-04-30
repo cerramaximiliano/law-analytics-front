@@ -47,9 +47,7 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 
 	const toggleSelection = (address: Contact) => {
 		setSelectedAddresses((prev) =>
-			prev.some((selected) => selected._id === address._id)
-				? prev.filter((selected) => selected._id !== address._id)
-				: [...prev, address],
+			prev.some((selected) => selected._id === address._id) ? prev.filter((selected) => selected._id !== address._id) : [...prev, address],
 		);
 	};
 
@@ -316,7 +314,6 @@ const ModalMembers = ({ open, setOpen, handlerAddress, folderId, membersData }: 
 													transform: "translateY(-2px)",
 													boxShadow: `0 4px 8px ${theme.palette.primary.lighter}`,
 													zIndex: 10,
-	
 												},
 											}}
 										>

@@ -50,9 +50,7 @@ async function inviteAndAccept(
 
 		const teamRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const group = (await teamRes.json()).group ?? {};
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending");
 		if (!invitation?.token) throw new Error("Token not found");
 
 		const invitee = await apiAsUser(inviteeRole);

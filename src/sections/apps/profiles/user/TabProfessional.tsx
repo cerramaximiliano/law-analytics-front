@@ -238,383 +238,409 @@ const TabProfessional = () => {
 				})}
 				onSubmit={handleSubmit}
 			>
-				{({ errors, handleBlur, handleChange, handleSubmit: formikHandleSubmit, isSubmitting, setFieldValue, touched, values, resetForm }) => {
+				{({
+					errors,
+					handleBlur,
+					handleChange,
+					handleSubmit: formikHandleSubmit,
+					isSubmitting,
+					setFieldValue,
+					touched,
+					values,
+					resetForm,
+				}) => {
 					// Keep refs updated for use inside useFormWithSnackbar closures
 					setFieldValueRef.current = setFieldValue;
 					setEditingSkillsRef.current = setEditingSkills;
 					return (
-					<form noValidate onSubmit={formikHandleSubmit}>
-						<Box sx={{ p: 2.5 }}>
-							<Grid container spacing={3}>
-								<Grid item xs={12} sm={6}>
-									<Stack spacing={1.25}>
-										<InputLabel htmlFor="professional-designation">Cargo</InputLabel>
-										<TextField
-											fullWidth
-											id="professional-designation"
-											value={values.designation}
-											name="designation"
-											onBlur={handleBlur}
-											onChange={handleChange}
-											placeholder="Cargo profesional"
-											autoFocus
-											inputRef={inputRef}
-											error={Boolean(touched.designation && errors.designation)}
-										/>
-										{touched.designation && errors.designation && (
-											<FormHelperText error id="professional-designation-helper">
-												{typeof errors.designation === "string" ? errors.designation : "Error en el campo"}
-											</FormHelperText>
-										)}
-									</Stack>
+						<form noValidate onSubmit={formikHandleSubmit}>
+							<Box sx={{ p: 2.5 }}>
+								<Grid container spacing={3}>
+									<Grid item xs={12} sm={6}>
+										<Stack spacing={1.25}>
+											<InputLabel htmlFor="professional-designation">Cargo</InputLabel>
+											<TextField
+												fullWidth
+												id="professional-designation"
+												value={values.designation}
+												name="designation"
+												onBlur={handleBlur}
+												onChange={handleChange}
+												placeholder="Cargo profesional"
+												autoFocus
+												inputRef={inputRef}
+												error={Boolean(touched.designation && errors.designation)}
+											/>
+											{touched.designation && errors.designation && (
+												<FormHelperText error id="professional-designation-helper">
+													{typeof errors.designation === "string" ? errors.designation : "Error en el campo"}
+												</FormHelperText>
+											)}
+										</Stack>
+									</Grid>
 								</Grid>
-							</Grid>
-						</Box>
-						<CardHeader title="Colegios de Abogados" />
-						<Divider />
-						<Box sx={{ p: 2.5 }}>
-							{collegesLoading ? (
-								<Box
-									sx={{
-										display: "flex",
-										justifyContent: "center",
-										alignItems: "center",
-										minHeight: 200, // Altura mínima para dar espacio visual
-										width: "100%",
-									}}
-								>
-									<CircularProgress size={40} /> {/* Tamaño un poco más grande para mejor visibilidad */}
-								</Box>
-							) : (
-								<>
-									<InputLabel htmlFor="add-college">Colegio de abogados</InputLabel>
-									<Autocomplete
-										fullWidth
-										id="add-college"
-										options={collegesList.filter((c) => !values.colleges.some((college) => college.name === c.name))}
-										getOptionLabel={(option) => option.name}
-										groupBy={(option) => option.province}
-										renderInput={(params) => <TextField {...params} placeholder="Agregar colegio de abogados" sx={{ mt: 1, mb: 2 }} />}
-										onChange={(_event, newValue) => {
-											if (newValue) {
-												setFieldValue("colleges", [
-													...values.colleges,
-													{
-														name: newValue.name,
-														registrationNumber: "",
-														taxCondition: "" as const,
-														taxCode: "",
-														electronicAddress: "",
-													},
-												]);
-											}
+							</Box>
+							<CardHeader title="Colegios de Abogados" />
+							<Divider />
+							<Box sx={{ p: 2.5 }}>
+								{collegesLoading ? (
+									<Box
+										sx={{
+											display: "flex",
+											justifyContent: "center",
+											alignItems: "center",
+											minHeight: 200, // Altura mínima para dar espacio visual
+											width: "100%",
 										}}
-									/>
+									>
+										<CircularProgress size={40} /> {/* Tamaño un poco más grande para mejor visibilidad */}
+									</Box>
+								) : (
+									<>
+										<InputLabel htmlFor="add-college">Colegio de abogados</InputLabel>
+										<Autocomplete
+											fullWidth
+											id="add-college"
+											options={collegesList.filter((c) => !values.colleges.some((college) => college.name === c.name))}
+											getOptionLabel={(option) => option.name}
+											groupBy={(option) => option.province}
+											renderInput={(params) => <TextField {...params} placeholder="Agregar colegio de abogados" sx={{ mt: 1, mb: 2 }} />}
+											onChange={(_event, newValue) => {
+												if (newValue) {
+													setFieldValue("colleges", [
+														...values.colleges,
+														{
+															name: newValue.name,
+															registrationNumber: "",
+															taxCondition: "" as const,
+															taxCode: "",
+															electronicAddress: "",
+														},
+													]);
+												}
+											}}
+										/>
 
-									{values.colleges.length > 0 ? (
-										<Stack spacing={3} sx={{ mt: 2 }}>
-											<Typography variant="subtitle2">Matrículas en Colegios Profesionales</Typography>
+										{values.colleges.length > 0 ? (
+											<Stack spacing={3} sx={{ mt: 2 }}>
+												<Typography variant="subtitle2">Matrículas en Colegios Profesionales</Typography>
 
-											{values.colleges.map((college, index) => (
-												<Box
-													key={index}
-													sx={{
-														p: 3,
-														borderRadius: 1,
-														border: "1px solid",
-														borderColor: "divider",
-														position: "relative",
-													}}
-												>
-													<Grid container spacing={2}>
-														{/* Nombre del colegio y botones de acción */}
-														<Grid item xs={12}>
-															<Stack direction="row" justifyContent="space-between" alignItems="center">
-																<Typography variant="subtitle2" sx={{ mb: 1 }}>
-																	{college.name}
-																</Typography>
-																<Stack direction="row" spacing={1}>
-																	{/* Show edit button only for saved skills */}
-																	{!!college._id && (
-																		<Tooltip title={editingSkills.has(index) ? "Guardar cambios" : "Editar"}>
-																			<IconButton
-																				size="small"
-																				aria-label="edit"
-																				onClick={async () => {
-																					if (editingSkills.has(index)) {
-																						// Save changes
-																						try {
-																							await formikHandleSubmit();
-																							const newEditingSkills = new Set(editingSkills);
-																							newEditingSkills.delete(index);
-																							setEditingSkills(newEditingSkills);
-																						} catch (error) {
-																							console.error("Error saving skill:", error);
-																						}
-																					} else {
-																						// Enter edit mode
-																						const newEditingSkills = new Set(editingSkills);
-																						newEditingSkills.add(index);
-																						setEditingSkills(newEditingSkills);
-																					}
-																				}}
-																				color="primary"
-																			>
-																				<Edit2 variant="Bulk" />
-																			</IconButton>
-																		</Tooltip>
-																	)}
-																	{/* Show delete button only for saved skills or new unsaved skills */}
-																	{(college._id || !college._id) && (
-																		<Tooltip title="Eliminar">
-																			<IconButton
-																				size="small"
-																				aria-label="delete"
-																				onClick={async () => {
-																					try {
-																						// If the college has an _id, it exists in the database and needs to be deleted via API
-																						if (college._id) {
-																							const result = await dispatch(deleteUserSkill(college._id));
-																							// Update the form with the remaining skills from the server
-																							if (result && result.skills) {
-																								// Format CUIT when updating from server response
-																								const formattedSkills = result.skills.map((skill: any) => ({
-																									...skill,
-																									taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : "",
-																								}));
-																								setFieldValue("colleges", formattedSkills);
+												{values.colleges.map((college, index) => (
+													<Box
+														key={index}
+														sx={{
+															p: 3,
+															borderRadius: 1,
+															border: "1px solid",
+															borderColor: "divider",
+															position: "relative",
+														}}
+													>
+														<Grid container spacing={2}>
+															{/* Nombre del colegio y botones de acción */}
+															<Grid item xs={12}>
+																<Stack direction="row" justifyContent="space-between" alignItems="center">
+																	<Typography variant="subtitle2" sx={{ mb: 1 }}>
+																		{college.name}
+																	</Typography>
+																	<Stack direction="row" spacing={1}>
+																		{/* Show edit button only for saved skills */}
+																		{!!college._id && (
+																			<Tooltip title={editingSkills.has(index) ? "Guardar cambios" : "Editar"}>
+																				<IconButton
+																					size="small"
+																					aria-label="edit"
+																					onClick={async () => {
+																						if (editingSkills.has(index)) {
+																							// Save changes
+																							try {
+																								await formikHandleSubmit();
+																								const newEditingSkills = new Set(editingSkills);
+																								newEditingSkills.delete(index);
+																								setEditingSkills(newEditingSkills);
+																							} catch (error) {
+																								console.error("Error saving skill:", error);
 																							}
 																						} else {
-																							// Otherwise, it's a new entry that hasn't been saved yet, just remove from form
-																							const updatedColleges = [...values.colleges];
-																							updatedColleges.splice(index, 1);
-																							setFieldValue("colleges", updatedColleges);
+																							// Enter edit mode
+																							const newEditingSkills = new Set(editingSkills);
+																							newEditingSkills.add(index);
+																							setEditingSkills(newEditingSkills);
 																						}
-																					} catch (error) {
-																						console.error("Error deleting skill:", error);
-																					}
-																				}}
-																				color="error"
-																				disabled={!!college._id && editingSkills.has(index)}
-																			>
-																				<Trash variant="Bulk" />
-																			</IconButton>
-																		</Tooltip>
+																					}}
+																					color="primary"
+																				>
+																					<Edit2 variant="Bulk" />
+																				</IconButton>
+																			</Tooltip>
+																		)}
+																		{/* Show delete button only for saved skills or new unsaved skills */}
+																		{(college._id || !college._id) && (
+																			<Tooltip title="Eliminar">
+																				<IconButton
+																					size="small"
+																					aria-label="delete"
+																					onClick={async () => {
+																						try {
+																							// If the college has an _id, it exists in the database and needs to be deleted via API
+																							if (college._id) {
+																								const result = await dispatch(deleteUserSkill(college._id));
+																								// Update the form with the remaining skills from the server
+																								if (result && result.skills) {
+																									// Format CUIT when updating from server response
+																									const formattedSkills = result.skills.map((skill: any) => ({
+																										...skill,
+																										taxCode: skill.taxCode ? formatCUIT(skill.taxCode.toString()) : "",
+																									}));
+																									setFieldValue("colleges", formattedSkills);
+																								}
+																							} else {
+																								// Otherwise, it's a new entry that hasn't been saved yet, just remove from form
+																								const updatedColleges = [...values.colleges];
+																								updatedColleges.splice(index, 1);
+																								setFieldValue("colleges", updatedColleges);
+																							}
+																						} catch (error) {
+																							console.error("Error deleting skill:", error);
+																						}
+																					}}
+																					color="error"
+																					disabled={!!college._id && editingSkills.has(index)}
+																				>
+																					<Trash variant="Bulk" />
+																				</IconButton>
+																			</Tooltip>
+																		)}
+																	</Stack>
+																</Stack>
+															</Grid>
+
+															{/* Número de matrícula */}
+															<Grid item xs={12} sm={6}>
+																<Stack spacing={1}>
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="caption" color="text.secondary">
+																			Número de matrícula
+																		</Typography>
+																	) : (
+																		<InputLabel htmlFor={`college-${index}-registration`}>Número de matrícula</InputLabel>
+																	)}
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="body2" sx={{ py: 1 }}>
+																			{college.registrationNumber}
+																		</Typography>
+																	) : (
+																		<TextField
+																			fullWidth
+																			id={`college-${index}-registration`}
+																			value={college.registrationNumber}
+																			name={`colleges[${index}].registrationNumber`}
+																			onBlur={handleBlur}
+																			onChange={handleChange}
+																			placeholder="Ej: 12345"
+																			error={Boolean(getFieldError(errors, touched, `colleges[${index}].registrationNumber`))}
+																			helperText={getFieldError(errors, touched, `colleges[${index}].registrationNumber`)}
+																		/>
 																	)}
 																</Stack>
-															</Stack>
-														</Grid>
+															</Grid>
 
-														{/* Número de matrícula */}
-														<Grid item xs={12} sm={6}>
-															<Stack spacing={1}>
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="caption" color="text.secondary">Número de matrícula</Typography>
-																) : (
-																	<InputLabel htmlFor={`college-${index}-registration`}>Número de matrícula</InputLabel>
-																)}
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="body2" sx={{ py: 1 }}>
-																		{college.registrationNumber}
-																	</Typography>
-																) : (
-																	<TextField
-																		fullWidth
-																		id={`college-${index}-registration`}
-																		value={college.registrationNumber}
-																		name={`colleges[${index}].registrationNumber`}
-																		onBlur={handleBlur}
-																		onChange={handleChange}
-																		placeholder="Ej: 12345"
-																		error={Boolean(getFieldError(errors, touched, `colleges[${index}].registrationNumber`))}
-																		helperText={getFieldError(errors, touched, `colleges[${index}].registrationNumber`)}
-																	/>
-																)}
-															</Stack>
-														</Grid>
+															{/* Condición fiscal */}
+															<Grid item xs={12} sm={6}>
+																<Stack spacing={1}>
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="caption" color="text.secondary">
+																			Condición fiscal
+																		</Typography>
+																	) : (
+																		<InputLabel htmlFor={`college-${index}-taxCondition`}>Condición fiscal</InputLabel>
+																	)}
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="body2" sx={{ py: 1, textTransform: "capitalize" }}>
+																			{college.taxCondition === "autonomo" ? "Autónomo" : "Monotributo"}
+																		</Typography>
+																	) : (
+																		<FormControl fullWidth>
+																			<Select
+																				id={`college-${index}-taxCondition`}
+																				value={college.taxCondition}
+																				name={`colleges[${index}].taxCondition`}
+																				onChange={handleChange}
+																				onBlur={handleBlur}
+																				error={Boolean(getFieldError(errors, touched, `colleges[${index}].taxCondition`))}
+																			>
+																				<MenuItem value="">Seleccione una opción</MenuItem>
+																				<MenuItem value="autonomo">Autónomo</MenuItem>
+																				<MenuItem value="monotributo">Monotributo</MenuItem>
+																			</Select>
+																			{getFieldError(errors, touched, `colleges[${index}].taxCondition`) && (
+																				<FormHelperText error>
+																					{getFieldError(errors, touched, `colleges[${index}].taxCondition`)}
+																				</FormHelperText>
+																			)}
+																		</FormControl>
+																	)}
+																</Stack>
+															</Grid>
 
-														{/* Condición fiscal */}
-														<Grid item xs={12} sm={6}>
-															<Stack spacing={1}>
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="caption" color="text.secondary">Condición fiscal</Typography>
-																) : (
-																	<InputLabel htmlFor={`college-${index}-taxCondition`}>Condición fiscal</InputLabel>
-																)}
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="body2" sx={{ py: 1, textTransform: "capitalize" }}>
-																		{college.taxCondition === "autonomo" ? "Autónomo" : "Monotributo"}
-																	</Typography>
-																) : (
-																	<FormControl fullWidth>
-																		<Select
-																			id={`college-${index}-taxCondition`}
-																			value={college.taxCondition}
-																			name={`colleges[${index}].taxCondition`}
-																			onChange={handleChange}
+															{/* CUIT */}
+															<Grid item xs={12} sm={6}>
+																<Stack spacing={1}>
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="caption" color="text.secondary">
+																			CUIT
+																		</Typography>
+																	) : (
+																		<InputLabel htmlFor={`college-${index}-taxCode`}>CUIT</InputLabel>
+																	)}
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="body2" sx={{ py: 1 }}>
+																			{college.taxCode}
+																		</Typography>
+																	) : (
+																		<TextField
+																			fullWidth
+																			id={`college-${index}-taxCode`}
+																			value={college.taxCode}
+																			name={`colleges[${index}].taxCode`}
 																			onBlur={handleBlur}
-																			error={Boolean(getFieldError(errors, touched, `colleges[${index}].taxCondition`))}
-																		>
-																			<MenuItem value="">Seleccione una opción</MenuItem>
-																			<MenuItem value="autonomo">Autónomo</MenuItem>
-																			<MenuItem value="monotributo">Monotributo</MenuItem>
-																		</Select>
-																		{getFieldError(errors, touched, `colleges[${index}].taxCondition`) && (
-																			<FormHelperText error>
-																				{getFieldError(errors, touched, `colleges[${index}].taxCondition`)}
-																			</FormHelperText>
-																		)}
-																	</FormControl>
-																)}
-															</Stack>
-														</Grid>
+																			onChange={(e) => {
+																				const formattedValue = formatCUIT(e.target.value);
+																				setFieldValue(`colleges[${index}].taxCode`, formattedValue);
+																			}}
+																			placeholder="XX-XXXXXXXX-X"
+																			inputProps={{ maxLength: 13 }}
+																			error={Boolean(getFieldError(errors, touched, `colleges[${index}].taxCode`))}
+																			helperText={getFieldError(errors, touched, `colleges[${index}].taxCode`)}
+																		/>
+																	)}
+																</Stack>
+															</Grid>
 
-														{/* CUIT */}
-														<Grid item xs={12} sm={6}>
-															<Stack spacing={1}>
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="caption" color="text.secondary">CUIT</Typography>
-																) : (
-																	<InputLabel htmlFor={`college-${index}-taxCode`}>CUIT</InputLabel>
-																)}
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="body2" sx={{ py: 1 }}>
-																		{college.taxCode}
-																	</Typography>
-																) : (
-																	<TextField
-																		fullWidth
-																		id={`college-${index}-taxCode`}
-																		value={college.taxCode}
-																		name={`colleges[${index}].taxCode`}
-																		onBlur={handleBlur}
-																		onChange={(e) => {
-																			const formattedValue = formatCUIT(e.target.value);
-																			setFieldValue(`colleges[${index}].taxCode`, formattedValue);
-																		}}
-																		placeholder="XX-XXXXXXXX-X"
-																		inputProps={{ maxLength: 13 }}
-																		error={Boolean(getFieldError(errors, touched, `colleges[${index}].taxCode`))}
-																		helperText={getFieldError(errors, touched, `colleges[${index}].taxCode`)}
-																	/>
-																)}
-															</Stack>
-														</Grid>
+															{/* Domicilio electrónico */}
+															<Grid item xs={12} sm={6}>
+																<Stack spacing={1}>
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="caption" color="text.secondary">
+																			Domicilio electrónico
+																		</Typography>
+																	) : (
+																		<InputLabel htmlFor={`college-${index}-electronicAddress`}>Domicilio electrónico</InputLabel>
+																	)}
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="body2" sx={{ py: 1 }}>
+																			{college.electronicAddress}
+																		</Typography>
+																	) : (
+																		<TextField
+																			fullWidth
+																			id={`college-${index}-electronicAddress`}
+																			value={college.electronicAddress}
+																			name={`colleges[${index}].electronicAddress`}
+																			onBlur={handleBlur}
+																			onChange={handleChange}
+																			placeholder="ejemplo@domicilio.com o 20123456789"
+																			error={Boolean(getFieldError(errors, touched, `colleges[${index}].electronicAddress`))}
+																			helperText={getFieldError(errors, touched, `colleges[${index}].electronicAddress`)}
+																		/>
+																	)}
+																</Stack>
+															</Grid>
 
-														{/* Domicilio electrónico */}
-														<Grid item xs={12} sm={6}>
-															<Stack spacing={1}>
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="caption" color="text.secondary">Domicilio electrónico</Typography>
-																) : (
-																	<InputLabel htmlFor={`college-${index}-electronicAddress`}>Domicilio electrónico</InputLabel>
-																)}
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="body2" sx={{ py: 1 }}>
-																		{college.electronicAddress}
-																	</Typography>
-																) : (
-																	<TextField
-																		fullWidth
-																		id={`college-${index}-electronicAddress`}
-																		value={college.electronicAddress}
-																		name={`colleges[${index}].electronicAddress`}
-																		onBlur={handleBlur}
-																		onChange={handleChange}
-																		placeholder="ejemplo@domicilio.com o 20123456789"
-																		error={Boolean(getFieldError(errors, touched, `colleges[${index}].electronicAddress`))}
-																		helperText={getFieldError(errors, touched, `colleges[${index}].electronicAddress`)}
-																	/>
-																)}
-															</Stack>
+															{/* Domicilio físico */}
+															<Grid item xs={12} sm={6}>
+																<Stack spacing={1}>
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="caption" color="text.secondary">
+																			Domicilio físico constituido
+																		</Typography>
+																	) : (
+																		<InputLabel htmlFor={`college-${index}-physicalAddress`}>Domicilio físico constituido</InputLabel>
+																	)}
+																	{!!college._id && !editingSkills.has(index) ? (
+																		<Typography variant="body2" sx={{ py: 1 }}>
+																			{college.physicalAddress || (
+																				<Typography component="span" variant="caption" color="text.disabled">
+																					No cargado
+																				</Typography>
+																			)}
+																		</Typography>
+																	) : (
+																		<TextField
+																			fullWidth
+																			id={`college-${index}-physicalAddress`}
+																			value={college.physicalAddress || ""}
+																			name={`colleges[${index}].physicalAddress`}
+																			onBlur={handleBlur}
+																			onChange={handleChange}
+																			placeholder="Ej: Av. Corrientes 1234, CABA"
+																		/>
+																	)}
+																</Stack>
+															</Grid>
 														</Grid>
-
-														{/* Domicilio físico */}
-														<Grid item xs={12} sm={6}>
-															<Stack spacing={1}>
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="caption" color="text.secondary">Domicilio físico constituido</Typography>
-																) : (
-																	<InputLabel htmlFor={`college-${index}-physicalAddress`}>Domicilio físico constituido</InputLabel>
-																)}
-																{!!college._id && !editingSkills.has(index) ? (
-																	<Typography variant="body2" sx={{ py: 1 }}>
-																		{college.physicalAddress || <Typography component="span" variant="caption" color="text.disabled">No cargado</Typography>}
-																	</Typography>
-																) : (
-																	<TextField
-																		fullWidth
-																		id={`college-${index}-physicalAddress`}
-																		value={college.physicalAddress || ""}
-																		name={`colleges[${index}].physicalAddress`}
-																		onBlur={handleBlur}
-																		onChange={handleChange}
-																		placeholder="Ej: Av. Corrientes 1234, CABA"
-																	/>
-																)}
-															</Stack>
-														</Grid>
-
-													</Grid>
-												</Box>
-											))}
-										</Stack>
-									) : (
-										<Box
-											sx={{
-												my: 3,
-												p: 2.5,
-												textAlign: "center",
-												borderRadius: 1.5,
-												border: "2px dashed",
-												borderColor: "warning.main",
-												bgcolor: "warning.lighter",
-												backgroundColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 193, 7, 0.08)" : "rgba(255, 193, 7, 0.08)"),
-											}}
-										>
-											<Stack spacing={1.5} alignItems="center">
-												<Stack direction="row" spacing={1} alignItems="center">
-													<InfoCircle size={24} color="#f59e0b" variant="Bold" />
-													<Typography variant="subtitle1" color="warning.dark" fontWeight="bold">
-														Información Profesional Requerida
+													</Box>
+												))}
+											</Stack>
+										) : (
+											<Box
+												sx={{
+													my: 3,
+													p: 2.5,
+													textAlign: "center",
+													borderRadius: 1.5,
+													border: "2px dashed",
+													borderColor: "warning.main",
+													bgcolor: "warning.lighter",
+													backgroundColor: (theme) =>
+														theme.palette.mode === "dark" ? "rgba(255, 193, 7, 0.08)" : "rgba(255, 193, 7, 0.08)",
+												}}
+											>
+												<Stack spacing={1.5} alignItems="center">
+													<Stack direction="row" spacing={1} alignItems="center">
+														<InfoCircle size={24} color="#f59e0b" variant="Bold" />
+														<Typography variant="subtitle1" color="warning.dark" fontWeight="bold">
+															Información Profesional Requerida
+														</Typography>
+													</Stack>
+													<Typography variant="body2" color="text.primary" sx={{ maxWidth: 500 }}>
+														No hay colegios de abogados registrados. Esta información es <strong>necesaria</strong> para generar
+														automáticamente escritos judiciales y documentos legales.
+													</Typography>
+													<Typography variant="caption" color="warning.dark" sx={{ fontStyle: "italic" }}>
+														Agregue al menos un colegio profesional con su matrícula correspondiente.
 													</Typography>
 												</Stack>
-												<Typography variant="body2" color="text.primary" sx={{ maxWidth: 500 }}>
-													No hay colegios de abogados registrados. Esta información es <strong>necesaria</strong> para generar
-													automáticamente escritos judiciales y documentos legales.
-												</Typography>
-												<Typography variant="caption" color="warning.dark" sx={{ fontStyle: "italic" }}>
-													Agregue al menos un colegio profesional con su matrícula correspondiente.
-												</Typography>
-											</Stack>
-										</Box>
-									)}
-								</>
-							)}
+											</Box>
+										)}
+									</>
+								)}
 
-							{errors.submit && (
-								<Box sx={{ mt: 2 }}>
-									<FormHelperText error>{typeof errors.submit === "string" ? errors.submit : "Error al guardar"}</FormHelperText>
-								</Box>
-							)}
+								{errors.submit && (
+									<Box sx={{ mt: 2 }}>
+										<FormHelperText error>{typeof errors.submit === "string" ? errors.submit : "Error al guardar"}</FormHelperText>
+									</Box>
+								)}
 
-							<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 3 }}>
-								<Button color="error" onClick={() => resetForm()}>Cancelar</Button>
-								<Tooltip title={values.colleges.length === 0 ? "Debe agregar al menos un colegio profesional para guardar" : ""} arrow>
-									<span>
-										<Button
-											disabled={isSubmitting || loading || values.colleges.length === 0}
-											type="submit"
-											variant="contained"
-											startIcon={(isSubmitting || loading) ? <CircularProgress size={20} color="inherit" /> : null}
-										>
-											{(isSubmitting || loading) ? "Guardando..." : "Guardar"}
-										</Button>
-									</span>
-								</Tooltip>
-							</Stack>
-						</Box>
-					</form>
+								<Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mt: 3 }}>
+									<Button color="error" onClick={() => resetForm()}>
+										Cancelar
+									</Button>
+									<Tooltip title={values.colleges.length === 0 ? "Debe agregar al menos un colegio profesional para guardar" : ""} arrow>
+										<span>
+											<Button
+												disabled={isSubmitting || loading || values.colleges.length === 0}
+												type="submit"
+												variant="contained"
+												startIcon={isSubmitting || loading ? <CircularProgress size={20} color="inherit" /> : null}
+											>
+												{isSubmitting || loading ? "Guardando..." : "Guardar"}
+											</Button>
+										</span>
+									</Tooltip>
+								</Stack>
+							</Box>
+						</form>
 					);
 				}}
 			</Formik>

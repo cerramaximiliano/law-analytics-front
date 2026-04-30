@@ -308,7 +308,10 @@ export const updateMultipleContacts = (contacts: { id: string; updateData: Parti
 // Obtener contactos por userId
 export const getContactsByUserId =
 	(userId: string, forceRefresh: boolean = false, countArchivedByFolderId?: string) =>
-	async (dispatch: Dispatch, getState: any): Promise<{ success: boolean; contacts?: any; message?: string; archivedByFolderCount?: number }> => {
+	async (
+		dispatch: Dispatch,
+		getState: any,
+	): Promise<{ success: boolean; contacts?: any; message?: string; archivedByFolderCount?: number }> => {
 		try {
 			// Obtener el estado actual del store
 			const state = getState();
@@ -321,7 +324,8 @@ export const getContactsByUserId =
 
 			dispatch({ type: SET_CONTACT_LOADING });
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+			const fields =
+				"_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
 			const params: Record<string, string> = { fields };
 
 			// Si se solicita count de archivados por folder, agregarlo
@@ -361,7 +365,8 @@ export const getContactsByGroupId =
 			dispatch({ type: SET_CONTACT_LOADING });
 
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+			const fields =
+				"_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
 
 			const params: Record<string, any> = {
 				archived,
@@ -603,7 +608,7 @@ export const archiveContacts =
 					resourceType: "contacts",
 					itemIds: contactIds,
 				},
-				{ headers: options?.headers }
+				{ headers: options?.headers },
 			);
 
 			if (response.data.success) {
@@ -638,7 +643,8 @@ export const getArchivedContactsByUserId =
 		try {
 			dispatch({ type: SET_CONTACT_LOADING });
 			// Campos optimizados para listas y vistas resumidas
-			const fields = "_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
+			const fields =
+				"_id,name,lastName,email,phone,role,type,address,city,state,zipCode,company,status,folderIds,importSource,intervinienteRef";
 
 			const params: Record<string, any> = {
 				archived: true,
@@ -679,7 +685,7 @@ export const unarchiveContacts =
 					resourceType: "contacts",
 					itemIds: contactIds,
 				},
-				{ headers: options?.headers }
+				{ headers: options?.headers },
 			);
 
 			if (response.data.success) {

@@ -47,11 +47,11 @@ Para crear un equipo necesitas:
 
 ### Limites de miembros por plan:
 
-| Plan | Miembros Maximos | Equipos |
-|------|-----------------|---------|
-| **Free** | - | No disponible |
-| **Standard** | 5 miembros | 1 equipo |
-| **Premium** | 10 miembros | 1 equipo |
+| Plan         | Miembros Maximos | Equipos       |
+| ------------ | ---------------- | ------------- |
+| **Free**     | -                | No disponible |
+| **Standard** | 5 miembros       | 1 equipo      |
+| **Premium**  | 10 miembros      | 1 equipo      |
 
 > **💡 Nota**: El limite de miembros se refiere a los invitados. El propietario no cuenta dentro de ese limite.
 
@@ -143,17 +143,17 @@ El sistema de equipos tiene cuatro roles con diferentes niveles de acceso:
 
 ### Matriz de permisos:
 
-| Accion | Propietario | Administrador | Editor | Visor |
-|--------|:-----------:|:-------------:|:------:|:-----:|
-| **Ver recursos** | ✅ | ✅ | ✅ | ✅ |
-| **Crear recursos** | ✅ | ✅ | ✅ | ❌ |
-| **Editar recursos** | ✅ | ✅ | ✅ | ❌ |
-| **Eliminar recursos** | ✅ | ✅ | ❌ | ❌ |
-| **Invitar miembros** | ✅ | ✅ | ❌ | ❌ |
-| **Cambiar roles** | ✅ | ✅ | ❌ | ❌ |
-| **Remover miembros** | ✅ | ✅ | ❌ | ❌ |
-| **Configurar equipo** | ✅ | ✅ | ❌ | ❌ |
-| **Eliminar equipo** | ✅ | ❌ | ❌ | ❌ |
+| Accion                | Propietario | Administrador | Editor | Visor |
+| --------------------- | :---------: | :-----------: | :----: | :---: |
+| **Ver recursos**      |     ✅      |      ✅       |   ✅   |  ✅   |
+| **Crear recursos**    |     ✅      |      ✅       |   ✅   |  ❌   |
+| **Editar recursos**   |     ✅      |      ✅       |   ✅   |  ❌   |
+| **Eliminar recursos** |     ✅      |      ✅       |   ❌   |  ❌   |
+| **Invitar miembros**  |     ✅      |      ✅       |   ❌   |  ❌   |
+| **Cambiar roles**     |     ✅      |      ✅       |   ❌   |  ❌   |
+| **Remover miembros**  |     ✅      |      ✅       |   ❌   |  ❌   |
+| **Configurar equipo** |     ✅      |      ✅       |   ❌   |  ❌   |
+| **Eliminar equipo**   |     ✅      |      ❌       |   ❌   |  ❌   |
 
 ### Descripcion de cada rol:
 
@@ -267,6 +267,7 @@ Una vez dentro del equipo, trabajas directamente con los recursos compartidos:
 ### Creacion de recursos:
 
 Cuando creas una causa, contacto, nota o cualquier otro recurso:
+
 - El recurso se crea dentro del equipo automaticamente
 - Cuenta contra los limites del plan del **propietario**
 - Todos los miembros pueden acceder segun su rol
@@ -276,18 +277,19 @@ Cuando creas una causa, contacto, nota o cualquier otro recurso:
 
 Los limites de recursos son los del plan del propietario:
 
-| Recurso | Standard | Premium |
-|---------|----------|---------|
-| **Causas** | 50 | 500 |
-| **Calculadoras** | 20 | 200 |
-| **Contactos** | 100 | 1.000 |
-| **Almacenamiento** | 1 GB | 10 GB |
+| Recurso            | Standard | Premium |
+| ------------------ | -------- | ------- |
+| **Causas**         | 50       | 500     |
+| **Calculadoras**   | 20       | 200     |
+| **Contactos**      | 100      | 1.000   |
+| **Almacenamiento** | 1 GB     | 10 GB   |
 
 > **💡 Nota**: Todos los recursos creados por cualquier miembro cuentan contra estos limites. Si el equipo alcanza el limite de causas, ningun miembro podra crear causas nuevas hasta que se archiven/eliminen existentes o el propietario mejore su plan.
 
 ### Historial de actividad:
 
 El sistema registra automaticamente todas las acciones del equipo:
+
 - Quien creo, edito o elimino cada recurso
 - Fecha y hora de cada accion
 - Detalle de los cambios realizados
@@ -425,16 +427,16 @@ Como propietario o administrador, revisa periodicamente el historial de activida
 
 ## Resumen de Caracteristicas Clave
 
-| Caracteristica | Descripcion |
-|----------------|-------------|
-| **Creacion de equipos** | Disponible para planes Standard y Premium |
-| **Roles diferenciados** | Propietario, Administrador, Editor y Visor |
-| **Invitaciones por email** | Con link valido por 7 dias |
-| **Pool compartido** | Todos los recursos comparten los limites del propietario |
-| **Migracion de recursos** | Los miembros con recursos existentes pueden migrarlos al equipo |
-| **Historial de actividad** | Registro detallado de todas las acciones del equipo |
-| **Proteccion de plan** | Bloqueo de downgrades incompatibles con equipos activos |
-| **Un equipo por usuario** | Restriccion actual para simplicidad y claridad |
+| Caracteristica             | Descripcion                                                     |
+| -------------------------- | --------------------------------------------------------------- |
+| **Creacion de equipos**    | Disponible para planes Standard y Premium                       |
+| **Roles diferenciados**    | Propietario, Administrador, Editor y Visor                      |
+| **Invitaciones por email** | Con link valido por 7 dias                                      |
+| **Pool compartido**        | Todos los recursos comparten los limites del propietario        |
+| **Migracion de recursos**  | Los miembros con recursos existentes pueden migrarlos al equipo |
+| **Historial de actividad** | Registro detallado de todas las acciones del equipo             |
+| **Proteccion de plan**     | Bloqueo de downgrades incompatibles con equipos activos         |
+| **Un equipo por usuario**  | Restriccion actual para simplicidad y claridad                  |
 
 ---
 

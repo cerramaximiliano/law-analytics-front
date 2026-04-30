@@ -51,38 +51,38 @@ const MainLayout = () => {
 
 	return (
 		<TeamProvider>
-		<Box sx={{ display: "flex", width: "100%" }}>
-			<Header />
-			{!isHorizontal ? <Drawer /> : <HorizontalBar />}
+			<Box sx={{ display: "flex", width: "100%" }}>
+				<Header />
+				{!isHorizontal ? <Drawer /> : <HorizontalBar />}
 
-			<Box component="main" sx={{ width: `calc(100% - ${DRAWER_WIDTH}px)`, flexGrow: 1, p: { xs: 2, md: 3 } }}>
-				<Toolbar sx={{ mt: isHorizontal ? 8 : "inherit", mb: isHorizontal ? 2 : "inherit" }} />
-				<BreadcrumbProvider>
-					<Container
-						maxWidth={container ? "xl" : false}
-						sx={{
-							xs: 0,
-							...(container && { px: { xs: 0, md: 2 } }),
-							position: "relative",
-							minHeight: "calc(100vh - 110px)",
-							display: "flex",
-							flexDirection: "column",
-						}}
-					>
-						<Box
+				<Box component="main" sx={{ width: `calc(100% - ${DRAWER_WIDTH}px)`, flexGrow: 1, p: { xs: 2, md: 3 } }}>
+					<Toolbar sx={{ mt: isHorizontal ? 8 : "inherit", mb: isHorizontal ? 2 : "inherit" }} />
+					<BreadcrumbProvider>
+						<Container
+							maxWidth={container ? "xl" : false}
 							sx={{
+								xs: 0,
+								...(container && { px: { xs: 0, md: 2 } }),
 								position: "relative",
-								paddingRight: isDetailPage ? { xs: "200px", sm: "250px", md: "350px" } : 0,
+								minHeight: "calc(100vh - 110px)",
+								display: "flex",
+								flexDirection: "column",
 							}}
 						>
-							<Breadcrumbs navigation={navigation} title titleBottom card={false} divider={false} />
-						</Box>
-						<Outlet />
-						<Footer />
-					</Container>
-				</BreadcrumbProvider>
+							<Box
+								sx={{
+									position: "relative",
+									paddingRight: isDetailPage ? { xs: "200px", sm: "250px", md: "350px" } : 0,
+								}}
+							>
+								<Breadcrumbs navigation={navigation} title titleBottom card={false} divider={false} />
+							</Box>
+							<Outlet />
+							<Footer />
+						</Container>
+					</BreadcrumbProvider>
+				</Box>
 			</Box>
-		</Box>
 		</TeamProvider>
 	);
 };

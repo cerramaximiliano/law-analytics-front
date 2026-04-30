@@ -128,56 +128,58 @@ const calculatorsReducer = (state = initialState, action: any) => {
 };
 
 // Actions
-export const addCalculator = (data: Omit<CalculatorType, "_id" | "isLoader" | "error">, options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch) => {
-	try {
-		dispatch({ type: SET_LOADING });
+export const addCalculator =
+	(data: Omit<CalculatorType, "_id" | "isLoader" | "error">, options?: { headers?: Record<string, string> }) =>
+	async (dispatch: Dispatch) => {
+		try {
+			dispatch({ type: SET_LOADING });
 
-		// 🔍 LOG: Data que se está enviando
-		console.log("🔵 [addCalculator] Enviando datos al backend:", {
-			url: `${import.meta.env.VITE_BASE_URL}/api/calculators`,
-			method: "POST",
-			data: data,
-		});
-
-		const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/calculators`, data, {
-			headers: options?.headers,
-		});
-
-		// 🔍 LOG: Respuesta exitosa del backend
-		console.log("✅ [addCalculator] Respuesta exitosa del backend:", {
-			status: response.status,
-			data: response.data,
-		});
-
-		dispatch({
-			type: ADD_CALCULATOR,
-			payload: response.data.calculator,
-		});
-		// Solo incrementar contador si es tipo "Calculado" (match con lógica del backend)
-		if (data.type === "Calculado") {
-			dispatch(incrementUserStat("calculators", 1));
-		}
-		return { success: true, calculator: response.data.calculator };
-	} catch (error: unknown) {
-		// 🔍 LOG: Error del backend
-		if (error instanceof AxiosError) {
-			console.error("❌ [addCalculator] Error del backend:", {
-				status: error.response?.status,
-				statusText: error.response?.statusText,
-				data: error.response?.data,
-				headers: error.response?.headers,
-				message: error.message,
+			// 🔍 LOG: Data que se está enviando
+			console.log("🔵 [addCalculator] Enviando datos al backend:", {
+				url: `${import.meta.env.VITE_BASE_URL}/api/calculators`,
+				method: "POST",
+				data: data,
 			});
-		} else {
-			console.error("❌ [addCalculator] Error desconocido:", error);
-		}
 
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al crear el cálculo" : "Error al crear el cálculo";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
+			const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/calculators`, data, {
+				headers: options?.headers,
+			});
+
+			// 🔍 LOG: Respuesta exitosa del backend
+			console.log("✅ [addCalculator] Respuesta exitosa del backend:", {
+				status: response.status,
+				data: response.data,
+			});
+
+			dispatch({
+				type: ADD_CALCULATOR,
+				payload: response.data.calculator,
+			});
+			// Solo incrementar contador si es tipo "Calculado" (match con lógica del backend)
+			if (data.type === "Calculado") {
+				dispatch(incrementUserStat("calculators", 1));
+			}
+			return { success: true, calculator: response.data.calculator };
+		} catch (error: unknown) {
+			// 🔍 LOG: Error del backend
+			if (error instanceof AxiosError) {
+				console.error("❌ [addCalculator] Error del backend:", {
+					status: error.response?.status,
+					statusText: error.response?.statusText,
+					data: error.response?.data,
+					headers: error.response?.headers,
+					message: error.message,
+				});
+			} else {
+				console.error("❌ [addCalculator] Error desconocido:", error);
+			}
+
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al crear el cálculo" : "Error al crear el cálculo";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
+		}
+	};
 
 export const getCalculatorsByUserId =
 	(userId: string, forceRefresh: boolean = false) =>
@@ -211,85 +213,89 @@ export const getCalculatorsByUserId =
 		}
 	};
 
-export const getCalculatorsByGroupId = (groupId: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
-	try {
-		const state = getState();
-		const { isInitialized, calculators } = state.calculator;
+export const getCalculatorsByGroupId =
+	(groupId: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			const state = getState();
+			const { isInitialized, calculators } = state.calculator;
 
-		// Cache validation: si ya tenemos datos y no forzamos refresh, retornar del cache
-		if (!forceRefresh && isInitialized && calculators.length > 0) {
-			return { success: true, calculators, fromCache: true };
+			// Cache validation: si ya tenemos datos y no forzamos refresh, retornar del cache
+			if (!forceRefresh && isInitialized && calculators.length > 0) {
+				return { success: true, calculators, fromCache: true };
+			}
+
+			dispatch({ type: SET_LOADING });
+			// Campos optimizados para listas
+			const fields =
+				"_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
+			const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/group/${groupId}`, {
+				params: { fields },
+			});
+			dispatch({
+				type: SET_CALCULATORS,
+				payload: response.data.calculators,
+				groupId: groupId,
+			});
+			return { success: true, calculators: response.data.calculators };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
 		}
+	};
 
-		dispatch({ type: SET_LOADING });
-		// Campos optimizados para listas
-		const fields =
-			"_id,date,folderId,folderName,type,classType,subClassType,capital,interest,amount,variables,result,description,user,keepUpdated,originalData,lastUpdate";
-		const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/calculators/group/${groupId}`, {
-			params: { fields },
-		});
-		dispatch({
-			type: SET_CALCULATORS,
-			payload: response.data.calculators,
-			groupId: groupId,
-		});
-		return { success: true, calculators: response.data.calculators };
-	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
+export const getCalculatorsByFolderId =
+	(folderId: string, groupId?: string, forceRefresh: boolean = false) =>
+	async (dispatch: Dispatch, getState: any) => {
+		try {
+			const state = getState();
+			const { calculators, isInitialized, selectedFolderId, selectedCalculators } = state.calculator;
+			const auth = state.auth;
+			const userId = auth.user?._id;
 
-export const getCalculatorsByFolderId = (folderId: string, groupId?: string, forceRefresh: boolean = false) => async (dispatch: Dispatch, getState: any) => {
-	try {
-		const state = getState();
-		const { calculators, isInitialized, selectedFolderId, selectedCalculators } = state.calculator;
-		const auth = state.auth;
-		const userId = auth.user?._id;
+			// Cache validation: si ya tenemos datos de esta carpeta y no forzamos refresh, retornar del cache
+			if (!forceRefresh && selectedFolderId === folderId && isInitialized) {
+				return { success: true, calculators: selectedCalculators, fromCache: true };
+			}
 
-		// Cache validation: si ya tenemos datos de esta carpeta y no forzamos refresh, retornar del cache
-		if (!forceRefresh && selectedFolderId === folderId && isInitialized) {
-			return { success: true, calculators: selectedCalculators, fromCache: true };
-		}
-
-		// Si tenemos groupId, obtener datos del equipo
-		// Si no, obtener datos del usuario individual
-		if (groupId) {
-			// Modo equipo: descargar calculadores del grupo si no están en cache
-			if (!isInitialized) {
-				const result = await dispatch(getCalculatorsByGroupId(groupId) as any);
+			// Si tenemos groupId, obtener datos del equipo
+			// Si no, obtener datos del usuario individual
+			if (groupId) {
+				// Modo equipo: descargar calculadores del grupo si no están en cache
+				if (!isInitialized) {
+					const result = await dispatch(getCalculatorsByGroupId(groupId) as any);
+					if (!result.success) {
+						return result;
+					}
+				}
+			} else if (userId && !isInitialized) {
+				// Modo individual: descargar todos los calculadores del usuario
+				const result = await dispatch(getCalculatorsByUserId(userId) as any);
 				if (!result.success) {
 					return result;
 				}
 			}
-		} else if (userId && !isInitialized) {
-			// Modo individual: descargar todos los calculadores del usuario
-			const result = await dispatch(getCalculatorsByUserId(userId) as any);
-			if (!result.success) {
-				return result;
-			}
+
+			// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
+			const currentCalculators = isInitialized ? calculators : getState().calculator.calculators;
+			const filteredCalculators = currentCalculators.filter((calc: CalculatorType) => calc.folderId === folderId);
+
+			dispatch({
+				type: SET_SELECTED_CALCULATORS,
+				payload: filteredCalculators,
+				folderId: folderId,
+			});
+
+			return { success: true, calculators: filteredCalculators };
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
+			dispatch({ type: SET_ERROR, payload: errorMessage });
+			return { success: false, error: errorMessage };
 		}
-
-		// Ahora filtrar localmente (ya sea de los datos existentes o recién descargados)
-		const currentCalculators = isInitialized ? calculators : getState().calculator.calculators;
-		const filteredCalculators = currentCalculators.filter((calc: CalculatorType) => calc.folderId === folderId);
-
-		dispatch({
-			type: SET_SELECTED_CALCULATORS,
-			payload: filteredCalculators,
-			folderId: folderId,
-		});
-
-		return { success: true, calculators: filteredCalculators };
-	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof AxiosError ? error.response?.data?.message || "Error al obtener los cálculos" : "Error al obtener los cálculos";
-		dispatch({ type: SET_ERROR, payload: errorMessage });
-		return { success: false, error: errorMessage };
-	}
-};
+	};
 
 export const getCalculatorsByFilter = (params: FilterParams) => async (dispatch: Dispatch, getState: any) => {
 	try {
@@ -441,7 +447,8 @@ export const deleteCalculator = (id: string) => async (dispatch: Dispatch, getSt
 };
 
 export const archiveCalculators =
-	(userId: string, calculatorIds: string[], options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch, getState: any) => {
+	(userId: string, calculatorIds: string[], options?: { headers?: Record<string, string> }) =>
+	async (dispatch: Dispatch, getState: any) => {
 		try {
 			// Contar cuántos son tipo "Calculado" antes de archivar
 			const calculators = getState().calculator.calculators;
@@ -457,7 +464,7 @@ export const archiveCalculators =
 					resourceType: "calculators",
 					itemIds: calculatorIds,
 				},
-				{ headers: options?.headers }
+				{ headers: options?.headers },
 			);
 
 			if (response.data.success) {
@@ -489,7 +496,8 @@ export const archiveCalculators =
 	};
 
 export const unarchiveCalculators =
-	(userId: string, calculatorIds: string[], options?: { headers?: Record<string, string> }) => async (dispatch: Dispatch, getState: any) => {
+	(userId: string, calculatorIds: string[], options?: { headers?: Record<string, string> }) =>
+	async (dispatch: Dispatch, getState: any) => {
 		try {
 			dispatch({ type: SET_LOADING });
 			const response = await axios.post(
@@ -498,7 +506,7 @@ export const unarchiveCalculators =
 					resourceType: "calculators",
 					itemIds: calculatorIds,
 				},
-				{ headers: options?.headers }
+				{ headers: options?.headers },
 			);
 
 			if (response.data.success) {

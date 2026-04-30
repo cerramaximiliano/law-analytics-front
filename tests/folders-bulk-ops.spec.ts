@@ -28,9 +28,7 @@ function getOwnerUserId(): string {
 	const raw = JSON.parse(fs.readFileSync(path.join(AUTH_DIR, "owner.json"), "utf-8"));
 	const token = raw?.origins?.[0]?.localStorage?.find((e: any) => e.name === "token")?.value ?? "";
 	try {
-		const payload = JSON.parse(
-			Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(),
-		);
+		const payload = JSON.parse(Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
 		return payload.id ?? payload._id ?? payload.userId ?? "";
 	} catch {
 		return "";
@@ -142,9 +140,7 @@ test("GRUPO 2 — bulk delete con ids=[] → 400", async () => {
 
 test("GRUPO 3 — bulk delete con 51 IDs → 400 (límite del endpoint)", async () => {
 	test.setTimeout(15_000);
-	const bogusIds = Array.from({ length: 51 }, (_, i) =>
-		`65000000${String(i).padStart(16, "0")}`.slice(0, 24),
-	);
+	const bogusIds = Array.from({ length: 51 }, (_, i) => `65000000${String(i).padStart(16, "0")}`.slice(0, 24));
 	const ctx = await apiAsUser("owner");
 	try {
 		const res = await ctx.delete(`${API}/api/folders/bulk/delete`, { data: { ids: bogusIds } });

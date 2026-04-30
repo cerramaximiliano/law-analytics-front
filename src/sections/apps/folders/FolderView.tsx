@@ -38,16 +38,20 @@ const FolderView = memo(({ data }: any) => {
 	// nunca deben mostrar este aviso aunque el flag esté seteado.
 	const isPjnFromMisCausas = data.pjn === true && data.source === "pjn-login";
 	const isScbaFromMisCausas = data.scba === true && data.source === "scba-login";
-	const isListRemovedPjn = isPjnFromMisCausas && ((data.listRemoved === true && data.listRemovedSource === "pjn") || data.pjnNotFound === true);
+	const isListRemovedPjn =
+		isPjnFromMisCausas && ((data.listRemoved === true && data.listRemovedSource === "pjn") || data.pjnNotFound === true);
 	const isListRemovedScba = isScbaFromMisCausas && data.listRemoved === true && data.listRemovedSource === "scba";
-	const listRemovedCopyPjn = "Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.";
-	const listRemovedCopyScba = 'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.';
+	const listRemovedCopyPjn =
+		"Esta causa no fue encontrada en tu lista de Mis Causas del portal PJN. Puede haber sido archivada o desvinculada por el tribunal.";
+	const listRemovedCopyScba =
+		'Esta causa ya no aparece en "Mis Causas" del portal SCBA. Puede haber sido archivada o desvinculada por el tribunal.';
 
 	// Causa PJN reservada: solo aplica a causas individuales (source !== 'pjn-login').
 	// El privacy-checker la marcó tras N fallos consecutivos de la consulta pública.
 	// Mutuamente excluyente con isListRemovedPjn por la regla de source.
 	const isPjnPrivateRestricted = data.pjn === true && data.causaIsPrivate === true && data.source !== "pjn-login";
-	const privateRestrictedCopyPjn = "Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.";
+	const privateRestrictedCopyPjn =
+		"Causa reservada — el tribunal restringió la consulta web pública. El sistema sigue verificando si vuelve a estar accesible.";
 
 	// Usar el hook de suscripción para verificar características
 	const { canVinculateFolders } = useSubscription();
@@ -157,12 +161,7 @@ const FolderView = memo(({ data }: any) => {
 											Se encontraron múltiples expedientes para esta carpeta. Haz clic aquí para seleccionar el correcto.
 										</Typography>
 									</Box>
-									<Chip
-										label="Seleccionar"
-										color="warning"
-										size="small"
-										sx={{ fontWeight: 500 }}
-									/>
+									<Chip label="Seleccionar" color="warning" size="small" sx={{ fontWeight: 500 }} />
 								</Stack>
 							</Paper>
 						)}
@@ -229,7 +228,10 @@ const FolderView = memo(({ data }: any) => {
 										</Typography>
 									</Box>
 									{/* Ícono de estado de verificación */}
-									{(isPjnPrivateRestricted || isListRemovedPjn || data.causaVerified === false || (data.causaVerified === true && data.causaIsValid !== undefined)) && (
+									{(isPjnPrivateRestricted ||
+										isListRemovedPjn ||
+										data.causaVerified === false ||
+										(data.causaVerified === true && data.causaIsValid !== undefined)) && (
 										<Tooltip
 											title={
 												isPjnPrivateRestricted

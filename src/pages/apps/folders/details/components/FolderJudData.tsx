@@ -600,20 +600,20 @@ const FolderJudData = ({ folder, isLoader, type }: { folder: any; isLoader: bool
 									)}
 
 									{canUpdate && (
-									<Stack direction="row" spacing={2}>
-										<Grid>
-											{isEditing ? (
-												<Button type="submit" variant="contained" disabled={isLoader}>
-													Aplicar
-												</Button>
-											) : (
-												<Button type="button" onClick={handleEdit} disabled={isLoader}>
-													Editar
-												</Button>
-											)}
-										</Grid>
-									</Stack>
-								)}
+										<Stack direction="row" spacing={2}>
+											<Grid>
+												{isEditing ? (
+													<Button type="submit" variant="contained" disabled={isLoader}>
+														Aplicar
+													</Button>
+												) : (
+													<Button type="button" onClick={handleEdit} disabled={isLoader}>
+														Editar
+													</Button>
+												)}
+											</Grid>
+										</Stack>
+									)}
 								</Stack>
 							</Grid>
 						</Grid>

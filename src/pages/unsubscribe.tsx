@@ -41,7 +41,9 @@ const UnsubscribePage = () => {
 			if (campaign) params.append("campaign", campaign);
 			if (category) params.append("category", category);
 
-			const url = `${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}${params.toString() ? `?${params.toString()}` : ""}`;
+			const url = `${import.meta.env.VITE_BASE_URL}/api/newsletter/${encodeURIComponent(email)}${
+				params.toString() ? `?${params.toString()}` : ""
+			}`;
 			const response = await axios.delete(url, {
 				withCredentials: true,
 			});
@@ -125,8 +127,8 @@ const UnsubscribePage = () => {
 						</Typography>
 
 						<Typography variant="body1" align="center" color="text.secondary">
-							Necesitamos un enlace válido para identificar qué suscripción querés cancelar. Revisá el email que te enviamos y
-							usá el link desde ahí, o contactanos si tenés problemas.
+							Necesitamos un enlace válido para identificar qué suscripción querés cancelar. Revisá el email que te enviamos y usá el link
+							desde ahí, o contactanos si tenés problemas.
 						</Typography>
 
 						<Stack direction={matchDownSM ? "column" : "row"} spacing={2} justifyContent="center" sx={{ width: "100%" }}>

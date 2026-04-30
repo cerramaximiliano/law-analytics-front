@@ -120,8 +120,8 @@ export const TeamsContent = () => {
 					</Paper>
 					<Alert severity="info">
 						<Typography>
-							El límite de miembros incluye al propietario. Por ejemplo, en el plan Estándar con límite de 5, el propietario ocupa 1
-							lugar y puede invitar hasta 4 colaboradores. Un usuario solo puede pertenecer a un equipo a la vez.
+							El límite de miembros incluye al propietario. Por ejemplo, en el plan Estándar con límite de 5, el propietario ocupa 1 lugar y
+							puede invitar hasta 4 colaboradores. Un usuario solo puede pertenecer a un equipo a la vez.
 						</Typography>
 					</Alert>
 				</>
@@ -183,7 +183,9 @@ export const TeamsContent = () => {
 									<Crown1 size={20} style={{ color: theme.palette.warning.main, marginRight: "8px" }} />
 									<Typography fontWeight="bold">Propietario</Typography>
 								</Box>
-								<Typography variant="body2">Control total. Dueño de recursos. Único que puede eliminar el equipo e invitar miembros.</Typography>
+								<Typography variant="body2">
+									Control total. Dueño de recursos. Único que puede eliminar el equipo e invitar miembros.
+								</Typography>
 							</Paper>
 						</Grid>
 						<Grid item xs={12} sm={4}>
@@ -192,9 +194,7 @@ export const TeamsContent = () => {
 									<Edit size={20} style={{ color: theme.palette.success.main, marginRight: "8px" }} />
 									<Typography fontWeight="bold">Editor</Typography>
 								</Box>
-								<Typography variant="body2">
-									Crea y edita recursos. No puede eliminar ni gestionar miembros.
-								</Typography>
+								<Typography variant="body2">Crea y edita recursos. No puede eliminar ni gestionar miembros.</Typography>
 							</Paper>
 						</Grid>
 						<Grid item xs={12} sm={4}>
@@ -203,9 +203,7 @@ export const TeamsContent = () => {
 									<Eye size={20} style={{ color: theme.palette.info.main, marginRight: "8px" }} />
 									<Typography fontWeight="bold">Visor</Typography>
 								</Box>
-								<Typography variant="body2">
-									Solo lectura. Ideal para supervisores, pasantes o clientes.
-								</Typography>
+								<Typography variant="body2">Solo lectura. Ideal para supervisores, pasantes o clientes.</Typography>
 							</Paper>
 						</Grid>
 					</Grid>
@@ -230,17 +228,15 @@ export const TeamsContent = () => {
 							<Typography fontWeight="bold" gutterBottom>
 								Usuario existente sin recursos
 							</Typography>
-							<Typography variant="body2">
-								Haz clic en el link, inicia sesión y acepta la invitación directamente.
-							</Typography>
+							<Typography variant="body2">Haz clic en el link, inicia sesión y acepta la invitación directamente.</Typography>
 						</Paper>
 						<Paper variant="outlined" sx={{ p: 2 }}>
 							<Typography fontWeight="bold" gutterBottom>
 								Usuario existente con recursos
 							</Typography>
 							<Typography variant="body2">
-								Deberás elegir qué hacer con tus recursos: migrarlos al equipo (recomendado) o eliminarlos. Si la migración excedería
-								los límites del plan, se te notificará.
+								Deberás elegir qué hacer con tus recursos: migrarlos al equipo (recomendado) o eliminarlos. Si la migración excedería los
+								límites del plan, se te notificará.
 							</Typography>
 						</Paper>
 					</Stack>

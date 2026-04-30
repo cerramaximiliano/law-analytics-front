@@ -763,9 +763,7 @@ const TabSubscription = () => {
 										<Typography variant="body1" color="text.secondary">
 											Tu rol:
 										</Typography>
-										{roleConfig && (
-											<Chip label={roleConfig.label} color={roleConfig.color} size="small" sx={{ fontWeight: 600 }} />
-										)}
+										{roleConfig && <Chip label={roleConfig.label} color={roleConfig.color} size="small" sx={{ fontWeight: 600 }} />}
 									</Stack>
 								</Stack>
 							</Grid>
@@ -788,8 +786,8 @@ const TabSubscription = () => {
 
 						<Alert severity="info" sx={{ borderRadius: 1.5 }}>
 							<Typography variant="body2">
-								Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>.
-								Los límites de recursos y facturación son gestionados por el propietario del equipo.
+								Como miembro del equipo, tienes acceso a las funcionalidades del plan <strong>{ownerPlanName}</strong>. Los límites de
+								recursos y facturación son gestionados por el propietario del equipo.
 							</Typography>
 						</Alert>
 					</MainCard>
@@ -809,32 +807,32 @@ const TabSubscription = () => {
 							<List disablePadding>
 								{(() => {
 									// Determinar el ambiente actual y filtrar según visibility
-									const currentEnv = import.meta.env.PROD ? 'production' : 'development';
+									const currentEnv = import.meta.env.PROD ? "production" : "development";
 									const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-										if (!visibility || visibility === 'all') return true;
-										if (visibility === 'none') return false;
+										if (!visibility || visibility === "all") return true;
+										if (visibility === "none") return false;
 										return visibility === currentEnv;
 									};
 									return [...ownerSubscription.featuresWithDescriptions]
 										.filter((feature: any) => isVisibleInCurrentEnv(feature.visibility))
 										.sort((a, b) => (b.enabled ? 1 : 0) - (a.enabled ? 1 : 0));
 								})().map((feature, index, arr) => (
-										<React.Fragment key={feature.name}>
-											<ListItem sx={{ py: 1.5 }}>
-												<ListItemText
-													primary={feature.displayName || feature.description || feature.name}
-													secondary={feature.enabled ? "Disponible en tu equipo" : "No incluido en el plan"}
-												/>
-												<Chip
-													label={feature.enabled ? "Habilitado" : "No disponible"}
-													color={feature.enabled ? "success" : "default"}
-													size="small"
-													variant={feature.enabled ? "filled" : "outlined"}
-												/>
-											</ListItem>
-											{index < arr.length - 1 && <Divider />}
-										</React.Fragment>
-									))}
+									<React.Fragment key={feature.name}>
+										<ListItem sx={{ py: 1.5 }}>
+											<ListItemText
+												primary={feature.displayName || feature.description || feature.name}
+												secondary={feature.enabled ? "Disponible en tu equipo" : "No incluido en el plan"}
+											/>
+											<Chip
+												label={feature.enabled ? "Habilitado" : "No disponible"}
+												color={feature.enabled ? "success" : "default"}
+												size="small"
+												variant={feature.enabled ? "filled" : "outlined"}
+											/>
+										</ListItem>
+										{index < arr.length - 1 && <Divider />}
+									</React.Fragment>
+								))}
 							</List>
 						) : ownerSubscription?.features ? (
 							// Fallback a features sin displayName (compatibilidad con versiones anteriores)
@@ -885,8 +883,8 @@ const TabSubscription = () => {
 				<Grid item xs={12}>
 					<Alert severity="warning" sx={{ borderRadius: 1.5 }}>
 						<Typography variant="body2">
-							<strong>Nota:</strong> La facturación, métodos de pago y cambios de plan son gestionados exclusivamente
-							por el propietario del equipo. Si necesitas cambios en tu acceso o permisos, contacta al administrador de tu equipo.
+							<strong>Nota:</strong> La facturación, métodos de pago y cambios de plan son gestionados exclusivamente por el propietario del
+							equipo. Si necesitas cambios en tu acceso o permisos, contacta al administrador de tu equipo.
 						</Typography>
 					</Alert>
 				</Grid>
@@ -1047,32 +1045,35 @@ const TabSubscription = () => {
 							>
 								{subscription?.limitsWithDescriptions ? (
 									// Usar limitsWithDescriptions si está disponible
-									[...subscription.limitsWithDescriptions].filter((item: any) => {
-										const currentEnv = import.meta.env.PROD ? "production" : "development";
-										if (!item.visibility || item.visibility === "all") return true;
-										if (item.visibility === "none") return false;
-										return item.visibility === currentEnv;
-									}).sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99)).map((item: any) => (
-										<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
-											<ListItemText
-												primary={
-													<Typography color="text.secondary" variant="subtitle2">
-														{item.displayName || item.description || item.name}
-													</Typography>
-												}
-												secondary={
-													<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
-														{(() => {
-															if (item.limit === undefined) return "No disponible";
-															if (item.limit === 999999) return "Ilimitado";
-															if (item.name === "storage") return `${item.limit} MB`;
-															return item.limit;
-														})()}
-													</Typography>
-												}
-											/>
-										</ListItem>
-									))
+									[...subscription.limitsWithDescriptions]
+										.filter((item: any) => {
+											const currentEnv = import.meta.env.PROD ? "production" : "development";
+											if (!item.visibility || item.visibility === "all") return true;
+											if (item.visibility === "none") return false;
+											return item.visibility === currentEnv;
+										})
+										.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
+										.map((item: any) => (
+											<ListItem key={item.name} sx={{ px: 1, py: 1 }}>
+												<ListItemText
+													primary={
+														<Typography color="text.secondary" variant="subtitle2">
+															{item.displayName || item.description || item.name}
+														</Typography>
+													}
+													secondary={
+														<Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5 }}>
+															{(() => {
+																if (item.limit === undefined) return "No disponible";
+																if (item.limit === 999999) return "Ilimitado";
+																if (item.name === "storage") return `${item.limit} MB`;
+																return item.limit;
+															})()}
+														</Typography>
+													}
+												/>
+											</ListItem>
+										))
 								) : subscription?.limitDetails ? (
 									// Fallback a limitDetails si limitsWithDescriptions no está disponible
 									Object.entries(subscription.limitDetails).map(([key, value]: [string, any]) => (
@@ -1170,7 +1171,7 @@ const TabSubscription = () => {
 											if (feature.visibility === "none") return false;
 											return feature.visibility === currentEnv;
 										})
-											.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
+										.sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
 										.map((feature: any) => (
 											<ListItem key={feature.name} sx={{ px: 1, py: 1.25 }}>
 												<ListItemText
@@ -1485,7 +1486,11 @@ const TabSubscription = () => {
 															mb: 0.5,
 														}}
 													>
-														<Timer1 aria-hidden="true" size={24} color={getGracePeriodInfo()?.isExpiringSoon ? theme.palette.error.dark : theme.palette.text.primary} />
+														<Timer1
+															aria-hidden="true"
+															size={24}
+															color={getGracePeriodInfo()?.isExpiringSoon ? theme.palette.error.dark : theme.palette.text.primary}
+														/>
 													</Box>
 													<Typography color="text.secondary" variant="body2" fontWeight={500}>
 														Días restantes

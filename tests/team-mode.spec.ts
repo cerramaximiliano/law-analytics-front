@@ -36,9 +36,7 @@ function getUserIdFromStorage(): string {
 		const entries: any[] = JSON.parse(raw)?.origins?.[0]?.localStorage ?? [];
 		const token = entries.find((e) => e.name === "token")?.value ?? "";
 		if (!token) return "";
-		const payload = JSON.parse(
-			Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(),
-		);
+		const payload = JSON.parse(Buffer.from(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
 		return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
 	} catch {
 		return "";
@@ -154,9 +152,9 @@ async function mockTeams(page: Page, teams: unknown[]) {
 async function gotoTeamsTab(page: Page) {
 	await page.goto("/apps/profiles/account/role");
 	// Esperar a que cargue — skeleton tiene width fijo, heading visible cuando carga
-	await expect(
-		page.locator('text=/Gestión de Equipos|Crear tu Primer Equipo|Eres Miembro|Miembros del Equipo/i').first(),
-	).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator("text=/Gestión de Equipos|Crear tu Primer Equipo|Eres Miembro|Miembros del Equipo/i").first()).toBeVisible({
+		timeout: 15_000,
+	});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

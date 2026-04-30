@@ -40,73 +40,73 @@ function pathRegex(path: string): RegExp {
  */
 const ALL_PROTECTED_ROUTES: { path: string; label: string }[] = [
 	// Dashboard
-	{ path: "/dashboard/default",                    label: "dashboard default" },
-	{ path: "/dashboard/analytics",                  label: "dashboard analytics" },
+	{ path: "/dashboard/default", label: "dashboard default" },
+	{ path: "/dashboard/analytics", label: "dashboard analytics" },
 
 	// Folders
-	{ path: "/apps/folders/list",                    label: "folders list" },
+	{ path: "/apps/folders/list", label: "folders list" },
 
 	// Chat
-	{ path: "/apps/chat",                            label: "chat" },
+	{ path: "/apps/chat", label: "chat" },
 
 	// Calculator
-	{ path: "/apps/calc",                            label: "calc (all)" },
-	{ path: "/apps/calc/labor",                      label: "calc laboral" },
-	{ path: "/apps/calc/civil",                      label: "calc civil" },
-	{ path: "/apps/calc/intereses",                  label: "calc intereses" },
+	{ path: "/apps/calc", label: "calc (all)" },
+	{ path: "/apps/calc/labor", label: "calc laboral" },
+	{ path: "/apps/calc/civil", label: "calc civil" },
+	{ path: "/apps/calc/intereses", label: "calc intereses" },
 
 	// Documents (template legacy)
-	{ path: "/apps/documents",                       label: "documents" },
+	{ path: "/apps/documents", label: "documents" },
 
 	// Calendar
-	{ path: "/apps/calendar",                        label: "calendar" },
-	{ path: "/apps/calendar/availability",           label: "calendar availability" },
-	{ path: "/apps/calendar/reservations",           label: "calendar reservations" },
-	{ path: "/apps/calendar/booking-config",         label: "calendar booking-config" },
+	{ path: "/apps/calendar", label: "calendar" },
+	{ path: "/apps/calendar/availability", label: "calendar availability" },
+	{ path: "/apps/calendar/reservations", label: "calendar reservations" },
+	{ path: "/apps/calendar/booking-config", label: "calendar booking-config" },
 
 	// Customer
-	{ path: "/apps/customer/customer-list",          label: "customer list" },
+	{ path: "/apps/customer/customer-list", label: "customer list" },
 
 	// Invoice
-	{ path: "/apps/invoice/dashboard",               label: "invoice dashboard" },
-	{ path: "/apps/invoice/create",                  label: "invoice create" },
-	{ path: "/apps/invoice/list",                    label: "invoice list" },
+	{ path: "/apps/invoice/dashboard", label: "invoice dashboard" },
+	{ path: "/apps/invoice/create", label: "invoice create" },
+	{ path: "/apps/invoice/list", label: "invoice list" },
 
 	// Profiles — account
-	{ path: "/apps/profiles/account",                label: "account profile" },
-	{ path: "/apps/profiles/account/my-account",     label: "account my-account" },
+	{ path: "/apps/profiles/account", label: "account profile" },
+	{ path: "/apps/profiles/account/my-account", label: "account my-account" },
 	// Nota: /apps/profiles/account/password NO existe como ruta propia. Password está en /apps/profiles/user/password.
-	{ path: "/apps/profiles/account/role",           label: "account role" },
-	{ path: "/apps/profiles/account/settings",       label: "account settings" },
+	{ path: "/apps/profiles/account/role", label: "account role" },
+	{ path: "/apps/profiles/account/settings", label: "account settings" },
 
 	// Profiles — user
-	{ path: "/apps/profiles/user",                   label: "user profile" },
-	{ path: "/apps/profiles/user/personal",          label: "user personal" },
-	{ path: "/apps/profiles/user/payment",           label: "user payment" },
-	{ path: "/apps/profiles/user/password",          label: "user password" },
-	{ path: "/apps/profiles/user/professional",      label: "user professional" },
-	{ path: "/apps/profiles/user/settings",          label: "user settings" },
+	{ path: "/apps/profiles/user", label: "user profile" },
+	{ path: "/apps/profiles/user/personal", label: "user personal" },
+	{ path: "/apps/profiles/user/payment", label: "user payment" },
+	{ path: "/apps/profiles/user/password", label: "user password" },
+	{ path: "/apps/profiles/user/professional", label: "user professional" },
+	{ path: "/apps/profiles/user/settings", label: "user settings" },
 
 	// Subscriptions
-	{ path: "/apps/subscription/success",            label: "subscription success" },
-	{ path: "/apps/subscription/error",              label: "subscription error" },
-	{ path: "/suscripciones/tables",                 label: "suscripciones tables" },
+	{ path: "/apps/subscription/success", label: "subscription success" },
+	{ path: "/apps/subscription/error", label: "subscription error" },
+	{ path: "/suscripciones/tables", label: "suscripciones tables" },
 
 	// Tasks
-	{ path: "/tareas",                               label: "tareas" },
+	{ path: "/tareas", label: "tareas" },
 
 	// Herramientas
-	{ path: "/herramientas/seguimiento-postal",      label: "seguimiento postal" },
-	{ path: "/herramientas/plantillas",              label: "herramientas plantillas" },
+	{ path: "/herramientas/seguimiento-postal", label: "seguimiento postal" },
+	{ path: "/herramientas/plantillas", label: "herramientas plantillas" },
 
 	// Documentos
-	{ path: "/documentos/escritos",                  label: "escritos" },
-	{ path: "/documentos/escritos/nuevo",            label: "escritos nuevo" },
-	{ path: "/documentos/modelos",                   label: "modelos" },
-	{ path: "/documentos/modelos/nuevo",             label: "modelos nuevo" },
+	{ path: "/documentos/escritos", label: "escritos" },
+	{ path: "/documentos/escritos/nuevo", label: "escritos nuevo" },
+	{ path: "/documentos/modelos", label: "modelos" },
+	{ path: "/documentos/modelos/nuevo", label: "modelos nuevo" },
 
 	// Help
-	{ path: "/ayuda",                                label: "ayuda" },
+	{ path: "/ayuda", label: "ayuda" },
 ];
 
 /**
@@ -119,12 +119,12 @@ const ALL_PROTECTED_ROUTES: { path: string; label: string }[] = [
  *   - /apps/profiles/user (puede no disparar calls sin estado previo)
  */
 const API_ROUTES = [
-	{ path: "/apps/calendar",                   label: "calendar (calendar.ts)" },
-	{ path: "/tareas",                          label: "tareas" },
+	{ path: "/apps/calendar", label: "calendar (calendar.ts)" },
+	{ path: "/tareas", label: "tareas" },
 	{ path: "/herramientas/seguimiento-postal", label: "seguimiento postal (postalDocuments.ts)" },
-	{ path: "/documentos/escritos",             label: "escritos (richTextDocuments.ts)" },
-	{ path: "/documentos/modelos",              label: "modelos (richTextDocuments.ts)" },
-	{ path: "/dashboard/default",               label: "dashboard default" },
+	{ path: "/documentos/escritos", label: "escritos (richTextDocuments.ts)" },
+	{ path: "/documentos/modelos", label: "modelos (richTextDocuments.ts)" },
+	{ path: "/dashboard/default", label: "dashboard default" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

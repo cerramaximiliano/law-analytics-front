@@ -103,7 +103,9 @@ test.beforeAll(async () => {
 		const calcs: any[] = data.data ?? data.calculators ?? [];
 
 		// 1. Eliminar calculadoras E2E de corridas anteriores
-		const e2eCalcs = calcs.filter((c: any) => String(c.folderName ?? "").startsWith("E2ECalc") || String(c.folderName ?? "").startsWith("E2EFill"));
+		const e2eCalcs = calcs.filter(
+			(c: any) => String(c.folderName ?? "").startsWith("E2ECalc") || String(c.folderName ?? "").startsWith("E2EFill"),
+		);
 		for (const c of e2eCalcs) {
 			await ctx.delete(`${API_BASE}/api/calculators/${c._id}`, {
 				headers: { Authorization: `Bearer ${token}` },
@@ -133,15 +135,17 @@ async function getAuthToken(page: Page): Promise<string> {
 }
 
 async function getUserId(page: Page): Promise<string> {
-	return (await page.evaluate(() => {
-		const token = localStorage.getItem("token") ?? "";
-		try {
-			const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-			return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
-		} catch {
-			return "";
-		}
-	})) ?? "";
+	return (
+		(await page.evaluate(() => {
+			const token = localStorage.getItem("token") ?? "";
+			try {
+				const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+				return payload.id ?? payload._id ?? payload.userId ?? payload.sub ?? "";
+			} catch {
+				return "";
+			}
+		})) ?? ""
+	);
 }
 
 async function getPlanInfo(token: string): Promise<{ limit: number; currentCount: number }> {

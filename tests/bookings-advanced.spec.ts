@@ -80,7 +80,11 @@ async function publicCtx() {
 	return await request.newContext({ baseURL: API });
 }
 
-async function createPublicBooking(availabilityId: string, startTime: Date, suffix = ""): Promise<{ status: number; bookingId: string; clientToken: string; body: any }> {
+async function createPublicBooking(
+	availabilityId: string,
+	startTime: Date,
+	suffix = "",
+): Promise<{ status: number; bookingId: string; clientToken: string; body: any }> {
 	const pub = await publicCtx();
 	try {
 		const res = await pub.post(`${API}/api/booking/public/bookings`, {

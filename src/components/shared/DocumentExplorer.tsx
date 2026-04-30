@@ -457,7 +457,13 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 										</Stack>
 									) : hasText !== null ? (
 										hasText ? (
-											<Chip label="Texto disponible" size="small" color="success" variant="outlined" sx={{ height: 22, fontSize: "0.7rem" }} />
+											<Chip
+												label="Texto disponible"
+												size="small"
+												color="success"
+												variant="outlined"
+												sx={{ height: 22, fontSize: "0.7rem" }}
+											/>
 										) : (
 											<Chip
 												label="Documento escaneado"
@@ -593,9 +599,7 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 																borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
 																transition: "all 0.15s ease",
 																"&:hover": {
-																	bgcolor: isActive
-																		? alpha(theme.palette.primary.main, 0.2)
-																		: alpha(theme.palette.action.hover, 0.5),
+																	bgcolor: isActive ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.action.hover, 0.5),
 																},
 																minWidth: 0,
 															}}
@@ -633,9 +637,7 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 																<Typography variant="caption" color="text.secondary" fontSize="0.7rem">
 																	{formatDate(movement.time)}
 																</Typography>
-																{movement.completed && (
-																	<TickCircle size={12} color={theme.palette.success.main} variant="Bold" />
-																)}
+																{movement.completed && <TickCircle size={12} color={theme.palette.success.main} variant="Bold" />}
 																{movExpInfo?.expired && (
 																	<Chip
 																		label="Vencido"
@@ -647,11 +649,7 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 																)}
 																{movExpInfo?.nearExp && !movExpInfo.expired && (
 																	<Chip
-																		label={
-																			movExpInfo.daysLeft === 0
-																				? "Hoy"
-																				: `${movExpInfo.daysLeft}d`
-																		}
+																		label={movExpInfo.daysLeft === 0 ? "Hoy" : `${movExpInfo.daysLeft}d`}
 																		size="small"
 																		color="warning"
 																		variant="outlined"
@@ -937,7 +935,12 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 																InputLabelProps={{ style: { fontSize: "0.8rem" } }}
 															/>
 															<Stack direction="row" spacing={1} justifyContent="flex-end">
-																<Button size="small" onClick={handleCancelInline} disabled={inlineSubmitting} sx={{ textTransform: "none", fontSize: "0.75rem" }}>
+																<Button
+																	size="small"
+																	onClick={handleCancelInline}
+																	disabled={inlineSubmitting}
+																	sx={{ textTransform: "none", fontSize: "0.75rem" }}
+																>
 																	Cancelar
 																</Button>
 																<Button
@@ -1018,7 +1021,12 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 																InputLabelProps={{ style: { fontSize: "0.8rem" } }}
 															/>
 															<Stack direction="row" spacing={1} justifyContent="flex-end">
-																<Button size="small" onClick={handleCancelInline} disabled={inlineSubmitting} sx={{ textTransform: "none", fontSize: "0.75rem" }}>
+																<Button
+																	size="small"
+																	onClick={handleCancelInline}
+																	disabled={inlineSubmitting}
+																	sx={{ textTransform: "none", fontSize: "0.75rem" }}
+																>
 																	Cancelar
 																</Button>
 																<Button
@@ -1055,9 +1063,7 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 												variant={syncedActiveMovement.completed ? "contained" : "outlined"}
 												size="small"
 												color={syncedActiveMovement.completed ? "success" : "inherit"}
-												startIcon={
-													<TickCircle size={16} variant={syncedActiveMovement.completed ? "Bold" : "Linear"} />
-												}
+												startIcon={<TickCircle size={16} variant={syncedActiveMovement.completed ? "Bold" : "Linear"} />}
 												onClick={() => syncedActiveMovement._id && onToggleComplete(syncedActiveMovement._id)}
 												sx={{ textTransform: "none", justifyContent: "flex-start", fontSize: "0.8rem" }}
 											>
@@ -1120,9 +1126,7 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 													) : expirationInfo.isNearExpiration ? (
 														<Chip
 															label={
-																expirationInfo.daysUntilExpiration === 0
-																	? "Vence hoy"
-																	: `Vence en ${expirationInfo.daysUntilExpiration}d`
+																expirationInfo.daysUntilExpiration === 0 ? "Vence hoy" : `Vence en ${expirationInfo.daysUntilExpiration}d`
 															}
 															size="small"
 															color="warning"
@@ -1227,20 +1231,14 @@ const DocumentExplorer: React.FC<DocumentExplorerProps> = ({
 															<Stack direction="row" spacing={0.5} alignItems="center">
 																<Task
 																	size={12}
-																	color={
-																		task.checked
-																			? theme.palette.success.main
-																			: theme.palette.text.secondary
-																	}
+																	color={task.checked ? theme.palette.success.main : theme.palette.text.secondary}
 																	variant={task.checked ? "Bold" : "Linear"}
 																/>
 																<Typography
 																	variant="caption"
 																	fontWeight={500}
 																	sx={{
-																		textDecoration: task.checked
-																			? "line-through"
-																			: "none",
+																		textDecoration: task.checked ? "line-through" : "none",
 																		overflow: "hidden",
 																		textOverflow: "ellipsis",
 																		whiteSpace: "nowrap",

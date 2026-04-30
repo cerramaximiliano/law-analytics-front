@@ -47,9 +47,7 @@ async function inviteAndAccept(teamId: string, role: "memberEditor" | "memberVie
 		});
 		const teamRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const group = (await teamRes.json()).group ?? {};
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === TEST_USERS[role].email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === TEST_USERS[role].email && i.status === "pending");
 		const invitee = await apiAsUser(role);
 		try {
 			const acc = await invitee.post(`${API}/api/groups/invitations/accept/${invitation.token}`, {

@@ -19,8 +19,7 @@ function FadeInWhenVisible({ children }: { children: ReactElement }) {
 	const hasAnimated = useRef(false);
 
 	// Respect prefers-reduced-motion: skip animation entirely.
-	const prefersReducedMotion =
-		typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 	useEffect(() => {
 		if (prefersReducedMotion) {

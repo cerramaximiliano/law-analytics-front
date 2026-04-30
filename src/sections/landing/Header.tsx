@@ -147,13 +147,7 @@ const HeaderPage = () => {
 											</Grid>
 											<Grid item>
 												<AnimateButton>
-													<Button
-														component={RouterLink}
-														to="/plans"
-														size="large"
-														color="primary"
-														variant="outlined"
-													>
+													<Button component={RouterLink} to="/plans" size="large" color="primary" variant="outlined">
 														Ver planes
 													</Button>
 												</AnimateButton>
@@ -443,7 +437,12 @@ const HeaderPage = () => {
 
 										{/* MEV - Poder Judicial de la Provincia de Buenos Aires */}
 										<Grid item xs={4} sm="auto">
-											<Tooltip title="Poder Judicial de la Provincia de Buenos Aires (MEV)" arrow placement="top" disableHoverListener={!isMobile}>
+											<Tooltip
+												title="Poder Judicial de la Provincia de Buenos Aires (MEV)"
+												arrow
+												placement="top"
+												disableHoverListener={!isMobile}
+											>
 												<Box
 													sx={{
 														display: "flex",
@@ -521,7 +520,12 @@ const HeaderPage = () => {
 
 										{/* EJE - Poder Judicial de la Ciudad de Buenos Aires */}
 										<Grid item xs={4} sm="auto">
-											<Tooltip title="Poder Judicial de la Ciudad de Buenos Aires (EJE) - Próximamente" arrow placement="top" disableHoverListener={!isMobile}>
+											<Tooltip
+												title="Poder Judicial de la Ciudad de Buenos Aires (EJE) - Próximamente"
+												arrow
+												placement="top"
+												disableHoverListener={!isMobile}
+											>
 												<Box
 													sx={{
 														display: "flex",
@@ -749,11 +753,7 @@ const HeaderPage = () => {
 			</Container>
 
 			{/* Modal de soporte para solicitar nueva jurisdicción */}
-			<SupportModal
-				open={supportModalOpen}
-				onClose={() => setSupportModalOpen(false)}
-				defaultSubject="Solicitud de nueva jurisdicción"
-			/>
+			<SupportModal open={supportModalOpen} onClose={() => setSupportModalOpen(false)} defaultSubject="Solicitud de nueva jurisdicción" />
 		</Box>
 	);
 };

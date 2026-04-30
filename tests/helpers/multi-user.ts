@@ -153,9 +153,7 @@ export async function loginAs(browser: Browser, role: UserRole): Promise<UserSes
 		userId = payload.id ?? payload._id ?? payload.userId ?? "";
 	} catch {}
 
-	const cookieHeader = (raw?.cookies ?? [])
-		.map((c: any) => `${c.name}=${c.value}`)
-		.join("; ");
+	const cookieHeader = (raw?.cookies ?? []).map((c: any) => `${c.name}=${c.value}`).join("; ");
 
 	return {
 		role,
@@ -185,9 +183,7 @@ function jwtExpiresAtMs(token: string): number {
 	try {
 		const [, payloadB64] = token.split(".");
 		if (!payloadB64) return 0;
-		const payload = JSON.parse(
-			Buffer.from(payloadB64.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(),
-		);
+		const payload = JSON.parse(Buffer.from(payloadB64.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
 		return payload?.exp ? payload.exp * 1000 : 0;
 	} catch {
 		return 0;

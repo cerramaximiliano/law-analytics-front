@@ -131,7 +131,8 @@ test("GRUPO 2 — visitante consulta slots libres para una fecha específica", a
 			if (slots.length === 0) {
 				test.info().annotations.push({
 					type: "empty-slots",
-					description: "generateAvailableSlots devolvió 0 slots para la fecha solicitada. Posiblemente por cómputo de timezone/buffer interno — endpoint responde bien estructuralmente.",
+					description:
+						"generateAvailableSlots devolvió 0 slots para la fecha solicitada. Posiblemente por cómputo de timezone/buffer interno — endpoint responde bien estructuralmente.",
 				});
 			}
 			expect(body.date).toBeTruthy();
@@ -170,7 +171,9 @@ test("GRUPO 3 — visitante POST booking + owner confirma + visitante verifica s
 				const body = await create.json();
 				test.info().annotations.push({
 					type: "slot-rejected",
-					description: `POST booking devolvió ${create.status()}: ${body.error}. Posible que el algoritmo de slots genere diferentes inicios.`,
+					description: `POST booking devolvió ${create.status()}: ${
+						body.error
+					}. Posible que el algoritmo de slots genere diferentes inicios.`,
 				});
 				return; // test tolerante si la generación de slots difiere
 			}

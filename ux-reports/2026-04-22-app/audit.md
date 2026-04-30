@@ -17,18 +17,21 @@ Fixes pendientes de aprobación y estrategia de branch.
 Pasada 2 descubrió **casi el doble de issues** que el audit inicial de las 5 rutas principales. Tres macro-problemas:
 
 ### 1. Los "tabs hermanos" del perfil están en estado inconsistente
+
 - `account/password` está **100% en inglés**, usa `autoComplete` no estándar, y su `onSubmit` no llama a ningún servicio real (muestra "éxito" siempre). Es una cáscara vacía.
 - `account/role` se llama "Roles" pero su contenido es 100% gestión de equipos — mismatch semántico grave.
 - `account/settings` es en realidad "Suscripción" (path + label + componente divergen).
 - `user/password`, `user/professional`, `user/settings`, `user/payment`: ninguno usa `useFormWithSnackbar` aún (P-S4 solo se aplicó en Personal), y **todos los botones "Cancelar" están sin `onClick`**. El patrón de snackbar del hook Batch 1 está a medio distribuir.
 
 ### 2. Pantallas que no deberían renderizar / renderizan mal
+
 - `/apps/calendar/booking-config` → **pantalla en blanco total** en todos los viewports (BC1, posible crash o loading infinito).
 - `/apps/calendar/availability` → screenshots muestran estado 404 porque el componente comparte archivo con reservations y el query `?id=` inválido dispara el branch de error.
 - `/apps/calc` (índice) → siempre en skeleton, nunca con datos (CA1, sugiere bug de fetch o config de test).
 - `/dashboard/analytics` → modal + overlay bloquean todo el contenido en plan free (DA1) — el usuario no puede siquiera ver el preview de la feature antes de decidir pagar.
 
 ### 3. Timezone y datos hardcodeados críticos
+
 - `/apps/calendar/availability`: **timezone fijo en `America/Mexico_City`** (AV1). La app es argentina — slots calculados con offset de −1 h incorrecto.
 - `/apps/profiles/user/payment`: nombres "Selena Litten", "Stebin Ben" y números de tarjeta ficticios visibles en producción (UP1).
 - `/suscripciones/tables`: `console.log` de datos de suscripción activos en producción (ST4).
@@ -93,6 +96,7 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 ### 🟡 Media prioridad (56)
 
 **Dashboard analytics + Chat + Ayuda + Documents:**
+
 - [ ] **[DA3]** Exportar reporte en free — disabled sin feedback, ícono Lock rompe jerarquía
 - [ ] **[DA4]** Chip "Viendo histórico" sin onDelete ni contraste suficiente
 - [ ] **[CH3]** Chat — textos en inglés (Archive/Muted/Delete, Messages, Search, Active ago)
@@ -102,6 +106,7 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - [ ] **[DX3]** Documents — paginación mobile desborda en una sola línea
 
 **Calculators:**
+
 - [ ] **[CA1]** Calc all — captura siempre muestra skeleton (sin datos)
 - [ ] **[CA2]** Calc all — scroll horizontal mobile sin indicador visual
 - [ ] **[CA3]** Calc all — ícono `Archive` para dos acciones distintas
@@ -115,6 +120,7 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - [ ] **[CI3]** Calc intereses — checkbox "Capitalizar" sin contexto legal (art. 770 CCyCN)
 
 **Calendar variants + Subscription states:**
+
 - [ ] **[AV3]** Calendar availability — link de citas solo visible si `availabilityId`; redirect auto oculta
 - [ ] **[AV4]** Calendar availability — checkboxes disabled mezclan semántica editable/no editable
 - [ ] **[RE2]** Calendar reservations — doble superficie de acción (botones inline + menú)
@@ -126,9 +132,10 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - [ ] **[SE2]** Subscription error — snackbar se superpone con CTA en mobile
 
 **Profile user tabs:**
+
 - [ ] **[UP1]** User/payment — datos hardcodeados "Selena Litten"/"Stebin Ben"
 - [ ] **[UP2]** User/payment — sin validación Luhn ni detección de red
-- [ ] **[UP3]** User/payment — sin autocomplete cc-* ni useFormWithSnackbar
+- [ ] **[UP3]** User/payment — sin autocomplete cc-\* ni useFormWithSnackbar
 - [ ] **[UW2]** User/password — strength indicator estático sin barra de progreso
 - [ ] **[UW3]** User/password — botón Cancelar sin onClick
 - [ ] **[UR1]** User/professional — submit sin snackbar (no usa useFormWithSnackbar)
@@ -137,6 +144,7 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - [ ] **[UT2]** User/settings — botón Cancelar sin onClick
 
 **Profile account tabs:**
+
 - [ ] **[AM3]** Account/my-account — sesiones activas con botón cerrar sin variant (poco distinguible)
 - [ ] **[AM4]** Account/my-account — formulario desactivar cuenta sin autoComplete="current-password"
 - [ ] **[AP3]** Account/password — duplicidad funcional con user/TabPassword
@@ -151,6 +159,7 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - [ ] **[AJ3]** Account/pjn — toggle sync intervinientes sin explicar impacto (deduplicación, volumen)
 
 **Tools + Modelos + Suscripciones:**
+
 - [ ] **[HP2]** Seguimiento postal — "Último chequeo" no ordenable
 - [ ] **[HP3]** Seguimiento postal — stack de 7 IconButtons en tablet <44px touch
 - [ ] **[HL2]** Plantillas — botón "Solicitar Modelo" cortado en mobile
@@ -187,7 +196,7 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - [ ] **[P-APP-3]** **Consolidar duplicidades**: redirect `/herramientas/plantillas` → `/documentos/modelos`; eliminar `account/TabPassword` o redirect a `user/TabPassword`. Cubre HL1, AP3.
 - [ ] **[P-APP-4]** **Traducir strings al español**: chat (Your Message, Archive/Muted/Delete, Messages, Search, Active ago), account/password (todo). Cubre CH3, CH2 parcial, AP1.
 - [ ] **[P-APP-5]** **Aplicar ResponsiveTable (del Batch 1 P-S1)** a documents y seguimiento-postal. Cubre DX1, HP1.
-- [ ] **[P-APP-6]** **Corregir autocomplete attrs** en forms de perfil: cc-* en payment, current-password/new-password donde aplique. Cubre UP3, AM4, AP4.
+- [ ] **[P-APP-6]** **Corregir autocomplete attrs** en forms de perfil: cc-\* en payment, current-password/new-password donde aplique. Cubre UP3, AM4, AP4.
 - [ ] **[P-APP-7]** **Timezone correcto en availability**: usar `dayjs.tz.guess()` o `America/Argentina/Buenos_Aires` como fallback. Corrige AV1.
 - [ ] **[P-APP-8]** **NumberField con inputMode**: aplicar `inputMode="decimal"` global al componente `NumberField`. Cubre CI4 + todos los futuros campos numéricos del ecosistema.
 
@@ -198,18 +207,21 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 > Los detalles completos (file, viewport, descripción, propuesta) están en los reportes por grupo del audit.
 
 ### Dashboard + Chat + Ayuda + Docs (14)
+
 - `/dashboard/analytics`: 🔴 DA1 modal blocks · 🔴 DA2 skeleton · 🟡 DA3 export disabled · 🟡 DA4 chip histórico
 - `/apps/chat`: 🔴 CH1 sin sidebar mobile · 🔴 CH2 empty state + "Your Message" · 🟡 CH3 textos inglés · 🟢 CH4 aria-labels
 - `/ayuda`: 🟡 AY1 menú mobile · 🟡 AY2 placeholder sección · 🟢 AY3 cards sin estado activo
 - `/apps/documents`: 🔴 DX1 tabla mobile · 🟡 DX2 colores · 🟡 DX3 paginación
 
 ### Calculadoras (16)
+
 - `/apps/calc`: 🟡 CA1 siempre skeleton · 🟡 CA2 scroll sin indicador · 🟡 CA3 Archive duplicado · 🟢 CA4 civil sidebar
 - `/apps/calc/labor`: 🔴 CL1 labels truncados · 🟡 CL2 tab Guardados mobile · 🟡 CL3 checkboxes touch · 🟡 CL4 stepper custom
 - `/apps/calc/civil`: 🔴 CC1 labels truncados · 🟡 CC2 InfoCircle inoperativo · 🟡 CC3 Vuoto/Mendez igual · 🟢 CC4 rango %
 - `/apps/calc/intereses`: 🟡 CI1 typo Cáculo · 🟡 CI2 capital disabled · 🟡 CI3 capitalizar sin contexto · 🟢 CI4 inputMode
 
 ### Calendar variants + Subscription (17)
+
 - `/apps/calendar/availability`: 🔴 AV1 tz México · 🔴 AV2 sliders sin input · 🟡 AV3 link oculto · 🟡 AV4 checkboxes
 - `/apps/calendar/reservations`: 🔴 RE1 modal blocks · 🟡 RE2 doble acción · 🟡 RE3 sin chips filtros · 🟢 RE4 hora 12h/24h
 - `/apps/calendar/booking-config`: 🔴 BC1 pantalla blanco · 🔴 BC2 título genérico · 🟡 BC3 redirect sin confirm
@@ -217,12 +229,14 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - `/apps/subscription/error`: 🟡 SE1 ícono sin Avatar · 🟡 SE2 snackbar superpone CTA · 🟢 SE3 grey literales
 
 ### Profile user tabs (14)
+
 - `/apps/profiles/user/payment`: 🟡 UP1 datos mock · 🟡 UP2 sin Luhn · 🟡 UP3 sin autocomplete/snackbar · 🟢 UP4 cancel sin onClick
 - `/apps/profiles/user/password`: 🔴 UW1 sin feedback · 🟡 UW2 strength estático · 🟡 UW3 cancel sin onClick
 - `/apps/profiles/user/professional`: 🟡 UR1 sin snackbar · 🟡 UR2 autocomplete sin label · 🟢 UR3 cancel · 🟢 UR4 labels color primary
 - `/apps/profiles/user/settings`: 🟡 UT1 acordeón colapsado · 🟡 UT2 cancel sin onClick · 🟢 UT3 snackbar dead code
 
 ### Profile account tabs (19)
+
 - `/apps/profiles/account/my-account`: 🔴 AM1 ruta fantasma · 🔴 AM2 HTTPS fantasma · 🟡 AM3 sesiones · 🟡 AM4 autocomplete · 🟢 AM5 timezones
 - `/apps/profiles/account/password`: 🔴 AP1 todo inglés · 🔴 AP2 onSubmit fake · 🟡 AP3 duplicidad · 🟡 AP4 autocomplete
 - `/apps/profiles/account/role`: 🟡 AR1 mismatch nombre · 🟡 AR2 severity=info · 🟢 AR3 ícono Logout
@@ -230,6 +244,7 @@ Muchos issues se agrupan en patrones que, si se resuelven sistémicamente, cubre
 - `/apps/profiles/account/pjn`: 🟡 AJ1 estado oculto · 🟡 AJ2 CUIL sin masks · 🟡 AJ3 toggle sin contexto · 🟢 AJ4 servicio vs no-conectado
 
 ### Tools + Modelos + Suscripciones (13)
+
 - `/herramientas/seguimiento-postal`: 🔴 HP1 mobile cortado · 🟡 HP2 ordenar · 🟡 HP3 touch targets · 🟢 HP4 título duplicado
 - `/herramientas/plantillas` (legacy): 🔴 HL1 duplicidad · 🟡 HL2 botón cortado
 - `/documentos/modelos`: 🟡 DM1 h1 duplicado · 🟡 DM2 sin badge · 🟢 DM3 card sin role
@@ -258,4 +273,4 @@ Mi recomendación:
 
 ---
 
-*Reporte generado por `/ux-audit` — Pasada 2 (app auth top-level, sin template, sin admin, sin dinámicas) · Screenshots en `screenshots/` (no versionados).*
+_Reporte generado por `/ux-audit` — Pasada 2 (app auth top-level, sin template, sin admin, sin dinámicas) · Screenshots en `screenshots/` (no versionados)._

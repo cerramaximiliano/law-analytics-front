@@ -29,10 +29,7 @@ test.describe.configure({ retries: 2 });
 async function getOwnerPlanInfo(): Promise<{ limit: number; currentFolders: number }> {
 	const ctx = await apiAsUser("owner");
 	try {
-		const [subRes, statsRes] = await Promise.all([
-			ctx.get(`${API}/api/subscriptions/current`),
-			ctx.get(`${API}/api/user-stats/user`),
-		]);
+		const [subRes, statsRes] = await Promise.all([ctx.get(`${API}/api/subscriptions/current`), ctx.get(`${API}/api/user-stats/user`)]);
 		const sub = await subRes.json();
 		const stats = await statsRes.json();
 		return {
@@ -64,9 +61,7 @@ async function inviteEditor(teamId: string) {
 		});
 		const teamRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const group = (await teamRes.json()).group ?? {};
-		const invitation = (group.invitations ?? []).find(
-			(i: any) => i.email === TEST_USERS.memberEditor.email && i.status === "pending",
-		);
+		const invitation = (group.invitations ?? []).find((i: any) => i.email === TEST_USERS.memberEditor.email && i.status === "pending");
 		const invitee = await apiAsUser("memberEditor");
 		try {
 			const acceptRes = await invitee.post(`${API}/api/groups/invitations/accept/${invitation.token}`, {
@@ -135,11 +130,7 @@ async function deleteFolders(role: "owner", teamId: string, ids: string[]) {
 	try {
 		for (let i = 0; i < ids.length; i += BATCH) {
 			const slice = ids.slice(i, i + BATCH);
-			await Promise.all(
-				slice.map((id) =>
-					ctx.delete(`${API}/api/folders/${id}`, { headers: { "x-group-id": teamId } }).catch(() => {}),
-				),
-			);
+			await Promise.all(slice.map((id) => ctx.delete(`${API}/api/folders/${id}`, { headers: { "x-group-id": teamId } }).catch(() => {})));
 		}
 	} finally {
 		await ctx.dispose();
@@ -281,10 +272,7 @@ test("GRUPO 2 — editor sin groupId → usa SU propio plan (free), no el del te
 async function getOwnerDocsInfo(): Promise<{ limit: number; currentDocs: number }> {
 	const ctx = await apiAsUser("owner");
 	try {
-		const [subRes, statsRes] = await Promise.all([
-			ctx.get(`${API}/api/subscriptions/current`),
-			ctx.get(`${API}/api/user-stats/user`),
-		]);
+		const [subRes, statsRes] = await Promise.all([ctx.get(`${API}/api/subscriptions/current`), ctx.get(`${API}/api/user-stats/user`)]);
 		const sub = await subRes.json();
 		const stats = await statsRes.json();
 		return {
@@ -339,9 +327,7 @@ async function deleteDocs(ids: string[]) {
 	try {
 		for (let i = 0; i < ids.length; i += BATCH) {
 			const slice = ids.slice(i, i + BATCH);
-			await Promise.all(
-				slice.map((id) => ctx.delete(`${API}/api/rich-text-documents/${id}`).catch(() => {})),
-			);
+			await Promise.all(slice.map((id) => ctx.delete(`${API}/api/rich-text-documents/${id}`).catch(() => {})));
 		}
 	} finally {
 		await ctx.dispose();
@@ -443,16 +429,10 @@ test("GRUPO 4 — escritos: owner solo (sin team) al cap del plan; último OK, e
 // Helpers genéricos para otros recursos (postal, calcs, contacts)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function getOwnerLimitInfo(
-	resourceKey: string,
-	statsKey: string,
-): Promise<{ limit: number; current: number }> {
+async function getOwnerLimitInfo(resourceKey: string, statsKey: string): Promise<{ limit: number; current: number }> {
 	const ctx = await apiAsUser("owner");
 	try {
-		const [subRes, statsRes] = await Promise.all([
-			ctx.get(`${API}/api/subscriptions/current`),
-			ctx.get(`${API}/api/user-stats/user`),
-		]);
+		const [subRes, statsRes] = await Promise.all([ctx.get(`${API}/api/subscriptions/current`), ctx.get(`${API}/api/user-stats/user`)]);
 		const sub = await subRes.json();
 		const stats = await statsRes.json();
 		return {
@@ -529,10 +509,10 @@ test("GRUPO 6 — postal-tracking: editor al cap del owner vía team → último
 
 	// Fase A: fillers = limit-1, editor crea el último → OK
 	const fillersA: string[] = JSON.parse(
-		execSync(
-			`node ${backendDir}/scripts/createPostalFillers.js ${ownerId} ${limit - current - 1} ${teamId}`,
-			{ cwd: backendDir, encoding: "utf-8" },
-		).trim(),
+		execSync(`node ${backendDir}/scripts/createPostalFillers.js ${ownerId} ${limit - current - 1} ${teamId}`, {
+			cwd: backendDir,
+			encoding: "utf-8",
+		}).trim(),
 	);
 	expect(fillersA.length).toBe(limit - current - 1);
 
@@ -570,16 +550,19 @@ test("GRUPO 6 — postal-tracking: editor al cap del owner vía team → último
 
 	// Si aún hay residuales tras el cleanup del API (bulk delete async), purgarlos vía DB directa
 	if (currentB > 0) {
-		execSync(`node -e "require('dotenv').config();const m=require('mongoose');(async()=>{await m.connect(process.env.URLDB);await m.connection.db.collection('postal-trackings').deleteMany({userId:new m.Types.ObjectId('${ownerId}')});await m.disconnect();})();"`, { cwd: backendDir });
+		execSync(
+			`node -e "require('dotenv').config();const m=require('mongoose');(async()=>{await m.connect(process.env.URLDB);await m.connection.db.collection('postal-trackings').deleteMany({userId:new m.Types.ObjectId('${ownerId}')});await m.disconnect();})();"`,
+			{ cwd: backendDir },
+		);
 		await new Promise((r) => setTimeout(r, 500));
 		currentB = countActive();
 	}
 
 	const fillersB: string[] = JSON.parse(
-		execSync(
-			`node ${backendDir}/scripts/createPostalFillers.js ${ownerId} ${limit - currentB} ${teamId}`,
-			{ cwd: backendDir, encoding: "utf-8" },
-		).trim(),
+		execSync(`node ${backendDir}/scripts/createPostalFillers.js ${ownerId} ${limit - currentB} ${teamId}`, {
+			cwd: backendDir,
+			encoding: "utf-8",
+		}).trim(),
 	);
 	expect(fillersB.length).toBe(limit - currentB);
 
@@ -592,9 +575,7 @@ test("GRUPO 6 — postal-tracking: editor al cap del owner vía team → último
 		const verifyCtx = await apiAsUser("owner");
 		const verifyList = await verifyCtx.get(`${API}/api/postal-tracking?limit=200`);
 		const verifyBody = await verifyList.json();
-		const activeCount = (verifyBody.data ?? []).filter((t: any) =>
-			["pending", "active"].includes(t.processingStatus),
-		).length;
+		const activeCount = (verifyBody.data ?? []).filter((t: any) => ["pending", "active"].includes(t.processingStatus)).length;
 		await verifyCtx.dispose();
 
 		if (activeCount < limit) {

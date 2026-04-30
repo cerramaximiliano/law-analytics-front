@@ -74,9 +74,7 @@ async function inviteAndAccept(
 		const teamRes = await owner.get(`${API}/api/groups/${teamId}`);
 		const teamBody = await teamRes.json();
 		const group = teamBody.group ?? teamBody.data ?? teamBody;
-		const invitation = group.invitations?.find(
-			(i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending",
-		);
+		const invitation = group.invitations?.find((i: any) => i.email === TEST_USERS[inviteeRole].email && i.status === "pending");
 		if (!invitation?.token) throw new Error(`Token not found for ${inviteeRole}`);
 
 		// Accept como el invitee
@@ -90,10 +88,9 @@ async function inviteAndAccept(
 				const body = await acceptRes.json();
 				if (body.code === "USER_HAS_RESOURCES") {
 					await invitee.delete(`${API}/api/groups/delete-my-resources`);
-					const retry = await invitee.post(
-						`${API}/api/groups/invitations/accept/${invitation.token}`,
-						{ data: { skipResourceCheck: true } },
-					);
+					const retry = await invitee.post(`${API}/api/groups/invitations/accept/${invitation.token}`, {
+						data: { skipResourceCheck: true },
+					});
 					if (!retry.ok()) throw new Error(`Retry accept failed for ${inviteeRole}: ${retry.status()}`);
 				} else {
 					throw new Error(`Accept failed for ${inviteeRole}: ${acceptRes.status()} ${JSON.stringify(body)}`);
@@ -314,9 +311,7 @@ test("GRUPO 4 — admin intenta enviar invitaciones (canManageMembers)", async (
 			try {
 				const teamRes = await owner.get(`${API}/api/groups/${sharedTeamId}`);
 				const group = (await teamRes.json()).group ?? {};
-				const pending = (group.invitations ?? []).find(
-					(i: any) => i.email === TEST_USERS.memberExtra.email && i.status === "pending",
-				);
+				const pending = (group.invitations ?? []).find((i: any) => i.email === TEST_USERS.memberExtra.email && i.status === "pending");
 				if (pending?._id) {
 					await owner.delete(`${API}/api/groups/${sharedTeamId}/invitations/${pending._id}`);
 				}
@@ -355,7 +350,7 @@ test("GRUPO 5 — UI viewer en /apps/folders/list → botón 'Agregar carpeta' N
 
 		// El botón de agregar NO debe estar accionable (el TeamContext.canCreate retorna false para viewer)
 		const addBtn = page.locator('[data-testid="folder-add-btn"]');
-		if (await addBtn.count() > 0) {
+		if ((await addBtn.count()) > 0) {
 			// Si existe, debe estar deshabilitado u oculto
 			const isDisabled = await addBtn.isDisabled().catch(() => true);
 			const isVisible = await addBtn.isVisible().catch(() => false);
