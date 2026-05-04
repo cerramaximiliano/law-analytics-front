@@ -19,16 +19,26 @@ import {
 import { InfoCircle } from "iconsax-react";
 import axios from "axios";
 import AnimateButton from "components/@extended/AnimateButton";
-import dayjs from "dayjs";
-import "dayjs/locale/es";
-
-dayjs.locale("es");
+import dayjs from "utils/dayjs-config";
 
 interface FilaHaber {
 	fecha: string;
 	movilidadGeneral: number | null;
 	haberCaja: number;
+	haberReclamado: number;
 	sinDato: boolean;
+	aplicaReajuste?: boolean;
+	suplementoMovilidad?: number | null;
+	prorateo?: number;
+	diferenciaImporte?: number;
+	diferenciaPorcentaje?: number;
+	hac?: number;
+	descObraSocial?: number;
+}
+
+interface CriterioMovilidad {
+	indiceMovilidad: string;
+	fechaDesde: string;
 }
 
 interface ResultadoCalculoProps {
@@ -36,7 +46,13 @@ interface ResultadoCalculoProps {
 	calculoParams: {
 		haberPagadoAnses: number;
 		haberPagadoAl: string;
+		haberReclamado: number;
+		fechaDesdeReclamado: string;
 		fechaHastaReclamado: string;
+		tieneReajuste: boolean;
+		fechaAltaReajuste: string;
+		importeReajuste: number | null;
+		criteriosMovilidad: CriterioMovilidad[];
 	};
 	onNuevoCalculo: () => void;
 }
@@ -51,7 +67,7 @@ const formatMovilidad = (value: number | null) => {
 	return `${sign}${pct.toFixed(2)}%`;
 };
 
-const formatMes = (fecha: string) => dayjs(fecha).format("MMMM YYYY");
+const formatMes = (fecha: string) => dayjs.utc(fecha).format("MMMM YYYY");
 
 const ROWS_PER_PAGE_OPTIONS = [12, 24, 60];
 
@@ -72,7 +88,13 @@ export default function ResultadoCalculo({ savedCalculator, calculoParams, onNue
 					{
 						haberPagadoAnses: calculoParams.haberPagadoAnses,
 						haberPagadoAl: calculoParams.haberPagadoAl,
+						haberReclamado: calculoParams.haberReclamado,
+						fechaDesdeReclamado: calculoParams.fechaDesdeReclamado,
 						fechaHastaReclamado: calculoParams.fechaHastaReclamado,
+						tieneReajuste: calculoParams.tieneReajuste,
+						fechaAltaReajuste: calculoParams.fechaAltaReajuste,
+						importeReajuste: calculoParams.importeReajuste,
+						criteriosMovilidad: calculoParams.criteriosMovilidad,
 					},
 					{ withCredentials: true },
 				);
@@ -118,8 +140,9 @@ export default function ResultadoCalculo({ savedCalculator, calculoParams, onNue
 			{/* Parámetros de referencia */}
 			<Stack direction="row" spacing={2} flexWrap="wrap" sx={{ mb: 3, gap: 1 }}>
 				<Chip label={`Haber ANSES: ${formatCurrency(calculoParams.haberPagadoAnses)}`} variant="outlined" size="small" />
+				<Chip label={`Haber reclamado: ${formatCurrency(calculoParams.haberReclamado)}`} variant="outlined" size="small" />
 				<Chip label={`Pagado al: ${calculoParams.haberPagadoAl}`} variant="outlined" size="small" />
-				<Chip label={`Hasta: ${calculoParams.fechaHastaReclamado}`} variant="outlined" size="small" />
+				<Chip label={`Reclamado: ${calculoParams.fechaDesdeReclamado} → ${calculoParams.fechaHastaReclamado}`} variant="outlined" size="small" />
 				{!isLoading && <Chip label={`${filas.length} períodos`} color="primary" size="small" />}
 			</Stack>
 
@@ -153,6 +176,18 @@ export default function ResultadoCalculo({ savedCalculator, calculoParams, onNue
 									<TableCell align="right" sx={{ fontWeight: 600 }}>
 										Haber de caja
 									</TableCell>
+									<TableCell align="right" sx={{ fontWeight: 600 }}>
+										Haber reclamado
+									</TableCell>
+									<TableCell align="right" sx={{ fontWeight: 600 }}>
+										Diferencia
+									</TableCell>
+									<TableCell align="right" sx={{ fontWeight: 600 }}>
+										HAC
+									</TableCell>
+									<TableCell align="right" sx={{ fontWeight: 600 }}>
+										Desc. O.S.
+									</TableCell>
 								</TableRow>
 							</TableHead>
 							<TableBody>
@@ -163,7 +198,12 @@ export default function ResultadoCalculo({ savedCalculator, calculoParams, onNue
 											bgcolor: fila.sinDato ? "warning.lighter" : idx % 2 === 0 ? "transparent" : "action.hover",
 										}}
 									>
-										<TableCell sx={{ textTransform: "capitalize" }}>{formatMes(fila.fecha)}</TableCell>
+										<TableCell sx={{ textTransform: "capitalize" }}>
+											<Stack direction="row" spacing={0.5} alignItems="center">
+												<span>{formatMes(fila.fecha)}</span>
+												{fila.aplicaReajuste && <Chip label="Reajuste" size="small" color="info" variant="outlined" />}
+											</Stack>
+										</TableCell>
 										<TableCell align="right">
 											{fila.sinDato ? (
 												<Chip label="Sin dato" size="small" color="warning" variant="outlined" />
@@ -179,6 +219,29 @@ export default function ResultadoCalculo({ savedCalculator, calculoParams, onNue
 										<TableCell align="right">
 											<Typography variant="body2" fontWeight={500}>
 												{formatCurrency(fila.haberCaja)}
+											</Typography>
+										</TableCell>
+										<TableCell align="right">
+											<Typography variant="body2" fontWeight={500}>
+												{formatCurrency(fila.haberReclamado)}
+											</Typography>
+										</TableCell>
+										<TableCell align="right">
+											<Typography variant="body2" fontWeight={500}>
+												{formatCurrency(fila.diferenciaImporte ?? 0)}
+											</Typography>
+											<Typography variant="caption" color="text.secondary">
+												{(fila.diferenciaPorcentaje ?? 0).toFixed(2)}%
+											</Typography>
+										</TableCell>
+										<TableCell align="right">
+											<Typography variant="body2" color={fila.hac ? "text.primary" : "text.disabled"}>
+												{fila.hac ? formatCurrency(fila.hac) : "—"}
+											</Typography>
+										</TableCell>
+										<TableCell align="right">
+											<Typography variant="body2" color="error.main">
+												{fila.descObraSocial ? `−${formatCurrency(fila.descObraSocial)}` : "—"}
 											</Typography>
 										</TableCell>
 									</TableRow>

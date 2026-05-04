@@ -40,6 +40,13 @@ const validationSchema = [
 				const desde = dayjs(value, "DD/MM/YYYY");
 				const alta = dayjs(fechaAlta, "MM/YYYY").startOf("month");
 				return desde.isAfter(alta);
+			})
+			.test("desde-no-anterior-a-pagado", "No puede ser anterior al mes del haber pagado ANSES", function (value) {
+				const { haberPagadoAl } = this.parent;
+				if (!value || !haberPagadoAl) return true;
+				const desde = dayjs(value, "DD/MM/YYYY").startOf("month");
+				const pagado = dayjs(haberPagadoAl, "DD/MM/YYYY").startOf("month");
+				return !desde.isBefore(pagado);
 			}),
 		fechaHastaReclamado: Yup.string()
 			.required("Ingrese la fecha de fin del período reclamado")

@@ -591,6 +591,7 @@ export default function SavedPrevisional() {
 			},
 			{
 				Header: "Tasa sentencia",
+				id: "tasaSentencia",
 				accessor: "subClassType",
 				Cell: ({ row }: { row: Row<any> }) => {
 					const tasaValue = row.original.variables?.tasaInteresSentencia || row.original.subClassType;
