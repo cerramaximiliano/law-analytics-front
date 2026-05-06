@@ -88,6 +88,9 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 
 	const [viewerOpen, setViewerOpen] = useState(false);
 	const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+	// Cuando navegamos cross-page (prev/next cruza límite), marcamos qué hacer
+	// al cargar la nueva página: saltar al primero o al último mov con PDF.
+	const [pendingNavOnLoad, setPendingNavOnLoad] = useState<"first" | "last" | null>(null);
 
 	const fetchData = useCallback(async () => {
 		setLoading(true);
@@ -136,8 +139,10 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 		setViewerOpen(true);
 	};
 
-	// Prev/next solo navegan entre movimientos con PDF descargado.
-	// Movs sin PDF (not_applicable/expired/pending/failed) no son útiles para el viewer.
+	// Prev/next navegan entre movimientos con PDF descargado.
+	// Si llegan al límite de la página actual, saltan a la página
+	// anterior/siguiente y se posicionan automáticamente en el primer/último
+	// mov con PDF (vía pendingNavOnLoad + useEffect).
 	const handlePrev = () => {
 		if (selectedIdx === null) return;
 		for (let i = selectedIdx - 1; i >= 0; i--) {
@@ -145,6 +150,11 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 				setSelectedIdx(i);
 				return;
 			}
+		}
+		// Sin más en esta página → ir a página anterior
+		if (data?.pagination?.hasPrevPage) {
+			setPendingNavOnLoad("last");
+			setPage((p) => p - 1);
 		}
 	};
 
@@ -156,14 +166,40 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 				return;
 			}
 		}
+		// Sin más en esta página → ir a página siguiente
+		if (data?.pagination?.hasNextPage) {
+			setPendingNavOnLoad("first");
+			setPage((p) => p + 1);
+		}
 	};
 
-	const selected = selectedIdx !== null ? movements[selectedIdx] : null;
-	// hasPrev/hasNext: ¿existe algún mov anterior/posterior con PDF?
+	// Cuando llega data nueva tras un cross-page, posicionar el viewer.
+	useEffect(() => {
+		if (pendingNavOnLoad === null || movements.length === 0) return;
+		if (pendingNavOnLoad === "first") {
+			const idx = movements.findIndex((m) => m.hasPdf);
+			if (idx >= 0) setSelectedIdx(idx);
+		} else {
+			for (let i = movements.length - 1; i >= 0; i--) {
+				if (movements[i].hasPdf) {
+					setSelectedIdx(i);
+					break;
+				}
+			}
+		}
+		setPendingNavOnLoad(null);
+	}, [data, movements, pendingNavOnLoad]);
+
+	const selected = selectedIdx !== null ? movements[selectedIdx] ?? null : null;
+	// hasPrev/hasNext consideran cross-page también.
 	const hasPrev =
-		selectedIdx !== null && movements.slice(0, selectedIdx).some((m) => m.hasPdf);
+		selectedIdx !== null &&
+		(movements.slice(0, selectedIdx).some((m) => m.hasPdf) ||
+			Boolean(data?.pagination?.hasPrevPage));
 	const hasNext =
-		selectedIdx !== null && movements.slice(selectedIdx + 1).some((m) => m.hasPdf);
+		selectedIdx !== null &&
+		(movements.slice(selectedIdx + 1).some((m) => m.hasPdf) ||
+			Boolean(data?.pagination?.hasNextPage));
 
 	return (
 		<Card>
