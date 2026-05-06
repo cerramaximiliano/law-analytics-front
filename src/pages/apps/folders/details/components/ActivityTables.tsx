@@ -49,6 +49,7 @@ import { getNotificationsByFolderId } from "store/reducers/notifications";
 import { getEventsById } from "store/reducers/events";
 import { getCombinedActivities } from "store/reducers/activities";
 import MovementsTable from "./tables/MovementsTable";
+import PjnMovementsViewerSection from "./PjnMovementsViewerSection";
 import NotificationsTable from "./tables/NotificationsTable";
 import CalendarTable from "./tables/CalendarTable";
 import CombinedTablePaginated from "./tables/CombinedTablePaginated";
@@ -982,6 +983,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													pjnAccess={movementsData.pjnAccess}
 												/>
 											)}
+											{activeTab === "movements" && id && (
+												<Box sx={{ mt: 2 }}>
+													<PjnMovementsViewerSection folderId={id} />
+												</Box>
+											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
 													notifications={notificationsData.notifications}
@@ -1352,6 +1358,11 @@ const ActivityTables: React.FC<ActivityTablesProps> = ({ folderName }) => {
 													documentsInThisPage={movementsData.documentsInThisPage}
 													pjnAccess={movementsData.pjnAccess}
 												/>
+											)}
+											{activeTab === "movements" && id && (
+												<Box sx={{ mt: 2 }}>
+													<PjnMovementsViewerSection folderId={id} />
+												</Box>
 											)}
 											{activeTab === "notifications" && (
 												<NotificationsTable
