@@ -17,6 +17,7 @@ import {
 	Button,
 	CircularProgress,
 	Alert,
+	Tooltip,
 } from "@mui/material";
 import { CloseCircle, DocumentDownload, ExportSquare, ArrowLeft, ArrowRight } from "iconsax-react";
 import { getPjnMovementPdfUrl } from "services/pjnMovementsService";
@@ -107,43 +108,58 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 		}
 
 		let cancelled = false;
-		setState({ ...initialState, loading: true });
+		let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-		getPjnMovementPdfUrl(folderId, movement._id)
-			.then((res) => {
-				if (cancelled) return;
-				if (res.success && res.pdfUrl) {
-					setState({
-						loading: false,
-						pdfUrl: res.pdfUrl,
-						fallbackUrl: null,
-						pdfStatus: "downloaded",
-						errorMsg: null,
-						bytes: res.bytes,
-					});
-				} else {
+		// Fetch (re)usable: pide la presigned URL al backend.
+		// onRefresh=true se usa para refrescos automáticos (silencioso, no
+		// muestra loading spinner para evitar parpadeo).
+		const fetchPdf = (onRefresh = false) => {
+			if (!onRefresh) setState({ ...initialState, loading: true });
+			getPjnMovementPdfUrl(folderId, movement._id)
+				.then((res) => {
+					if (cancelled) return;
+					if (res.success && res.pdfUrl) {
+						setState({
+							loading: false,
+							pdfUrl: res.pdfUrl,
+							fallbackUrl: null,
+							pdfStatus: "downloaded",
+							errorMsg: null,
+							bytes: res.bytes,
+						});
+						// La presigned URL dura 5 min; programar refresh
+						// silencioso a los 4 min para evitar que expire mientras
+						// el user lee el PDF (no recarga el iframe — solo deja
+						// la nueva URL lista por si el browser refetch).
+						if (refreshTimer) clearTimeout(refreshTimer);
+						refreshTimer = setTimeout(() => fetchPdf(true), 4 * 60 * 1000);
+					} else {
+						setState({
+							loading: false,
+							pdfUrl: null,
+							fallbackUrl: res.fallbackUrl ?? movement.url ?? null,
+							pdfStatus: res.pdfStatus ?? movement.pdfStatus,
+							errorMsg: res.message ?? null,
+						});
+					}
+				})
+				.catch((err) => {
+					if (cancelled) return;
 					setState({
 						loading: false,
 						pdfUrl: null,
-						fallbackUrl: res.fallbackUrl ?? movement.url ?? null,
-						pdfStatus: res.pdfStatus ?? movement.pdfStatus,
-						errorMsg: res.message ?? null,
+						fallbackUrl: movement.url,
+						pdfStatus: movement.pdfStatus,
+						errorMsg: err?.message ?? "Error al obtener PDF",
 					});
-				}
-			})
-			.catch((err) => {
-				if (cancelled) return;
-				setState({
-					loading: false,
-					pdfUrl: null,
-					fallbackUrl: movement.url,
-					pdfStatus: movement.pdfStatus,
-					errorMsg: err?.message ?? "Error al obtener PDF",
 				});
-			});
+		};
+
+		fetchPdf();
 
 		return () => {
 			cancelled = true;
+			if (refreshTimer) clearTimeout(refreshTimer);
 		};
 	}, [open, movement, folderId]);
 
@@ -294,28 +310,41 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 					<Stack
 						direction="row"
 						spacing={1}
-						justifyContent="flex-end"
+						alignItems="center"
+						justifyContent="space-between"
 						sx={{ p: 1.5, borderTop: `1px solid ${theme.palette.divider}` }}
 					>
-						<Button
-							size="small"
-							startIcon={<DocumentDownload size="18" />}
-							href={state.pdfUrl}
-							download={`${movement?.tipo || "documento"}.pdf`}
-						>
-							Descargar
-						</Button>
-						{movement?.url && (
+						{/* Hint sutil de fallback manual a la izquierda */}
+						{movement?.url ? (
+							<Typography variant="caption" color="text.secondary">
+								¿No carga el PDF? Probá abrirlo en PJN →
+							</Typography>
+						) : (
+							<span />
+						)}
+						<Stack direction="row" spacing={1}>
 							<Button
 								size="small"
-								startIcon={<ExportSquare size="18" />}
-								href={movement.url}
-								target="_blank"
-								rel="noopener noreferrer"
+								startIcon={<DocumentDownload size="18" />}
+								href={state.pdfUrl}
+								download={`${movement?.tipo || "documento"}.pdf`}
 							>
-								Original PJN
+								Descargar
 							</Button>
-						)}
+							{movement?.url && (
+								<Tooltip title="Abrir el documento original en el portal del PJN (útil si el PDF embebido no carga)">
+									<Button
+										size="small"
+										startIcon={<ExportSquare size="18" />}
+										href={movement.url}
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										Original PJN
+									</Button>
+								</Tooltip>
+							)}
+						</Stack>
 					</Stack>
 				)}
 			</Stack>
