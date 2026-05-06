@@ -136,15 +136,34 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 		setViewerOpen(true);
 	};
 
+	// Prev/next solo navegan entre movimientos con PDF descargado.
+	// Movs sin PDF (not_applicable/expired/pending/failed) no son útiles para el viewer.
 	const handlePrev = () => {
-		if (selectedIdx !== null && selectedIdx > 0) setSelectedIdx(selectedIdx - 1);
+		if (selectedIdx === null) return;
+		for (let i = selectedIdx - 1; i >= 0; i--) {
+			if (movements[i].hasPdf) {
+				setSelectedIdx(i);
+				return;
+			}
+		}
 	};
 
 	const handleNext = () => {
-		if (selectedIdx !== null && selectedIdx < movements.length - 1) setSelectedIdx(selectedIdx + 1);
+		if (selectedIdx === null) return;
+		for (let i = selectedIdx + 1; i < movements.length; i++) {
+			if (movements[i].hasPdf) {
+				setSelectedIdx(i);
+				return;
+			}
+		}
 	};
 
 	const selected = selectedIdx !== null ? movements[selectedIdx] : null;
+	// hasPrev/hasNext: ¿existe algún mov anterior/posterior con PDF?
+	const hasPrev =
+		selectedIdx !== null && movements.slice(0, selectedIdx).some((m) => m.hasPdf);
+	const hasNext =
+		selectedIdx !== null && movements.slice(selectedIdx + 1).some((m) => m.hasPdf);
 
 	return (
 		<Card>
@@ -315,8 +334,8 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 				movement={selected}
 				onPrev={handlePrev}
 				onNext={handleNext}
-				hasPrev={selectedIdx !== null && selectedIdx > 0}
-				hasNext={selectedIdx !== null && selectedIdx < movements.length - 1}
+				hasPrev={hasPrev}
+				hasNext={hasNext}
 			/>
 		</Card>
 	);

@@ -148,7 +148,31 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 	}, [open, movement, folderId]);
 
 	const status = statusLabel(movement?.pdfStatus ?? state.pdfStatus);
-	const drawerWidth = isMobile ? "100vw" : "min(900px, 70vw)";
+	// Drawer ancho: en mobile fullscreen, en desktop ~92vw (deja una franja
+	// del listado a la izquierda para mantener contexto visual sin perder
+	// área del PDF).
+	const drawerWidth = isMobile ? "100vw" : "min(1400px, 92vw)";
+
+	// Navegación por teclado: ArrowLeft/ArrowRight cuando el viewer está
+	// abierto. Ignorar si el foco está en un input/textarea (para no
+	// interferir con escritura).
+	useEffect(() => {
+		if (!open) return;
+		const handler = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const tag = target?.tagName?.toLowerCase();
+			if (tag === "input" || tag === "textarea" || target?.isContentEditable) return;
+			if (e.key === "ArrowLeft" && hasPrev && onPrev) {
+				e.preventDefault();
+				onPrev();
+			} else if (e.key === "ArrowRight" && hasNext && onNext) {
+				e.preventDefault();
+				onNext();
+			}
+		};
+		window.addEventListener("keydown", handler);
+		return () => window.removeEventListener("keydown", handler);
+	}, [open, hasPrev, hasNext, onPrev, onNext]);
 
 	return (
 		<Drawer
