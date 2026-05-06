@@ -29,11 +29,11 @@ import {
 	useTheme,
 	Alert,
 } from "@mui/material";
-import { DocumentText, Eye, ExportSquare, SearchNormal1 } from "iconsax-react";
+import { DocumentText, ExportSquare, SearchNormal1, Star1, Note1, TickCircle } from "iconsax-react";
 import PjnPdfViewer from "components/PjnPdfViewer";
 import { getPjnMovementsByFolder } from "services/pjnMovementsService";
+import { useAnnotations } from "hooks/useAnnotations";
 import type {
-	PjnMovement,
 	PjnMovementPdfStatus,
 	PjnMovementsListResponse,
 } from "types/pjnMovement";
@@ -48,6 +48,13 @@ const PDF_STATUS_OPTIONS: { value: PjnMovementPdfStatus | "all"; label: string }
 	{ value: "pending", label: "PDF pendiente" },
 	{ value: "expired", label: "PDF expirado" },
 	{ value: "not_applicable", label: "Sin PDF" },
+];
+
+const ANNOTATION_OPTIONS: { value: "all" | "unread" | "important" | "with_notes"; label: string }[] = [
+	{ value: "all", label: "Todos" },
+	{ value: "unread", label: "Sin leer" },
+	{ value: "important", label: "Importantes" },
+	{ value: "with_notes", label: "Con notas" },
 ];
 
 function formatDate(iso: string | null): string {
@@ -81,6 +88,8 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 	const [search, setSearch] = useState("");
 	const [searchInput, setSearchInput] = useState("");
 	const [pdfStatusFilter, setPdfStatusFilter] = useState<PjnMovementPdfStatus | "all">("all");
+	// Filtro client-side por estado de anotación (los datos están en el hook).
+	const [annotationFilter, setAnnotationFilter] = useState<"all" | "unread" | "important" | "with_notes">("all");
 
 	const [data, setData] = useState<PjnMovementsListResponse | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -91,6 +100,9 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 	// Cuando navegamos cross-page (prev/next cruza límite), marcamos qué hacer
 	// al cargar la nueva página: saltar al primero o al último mov con PDF.
 	const [pendingNavOnLoad, setPendingNavOnLoad] = useState<"first" | "last" | null>(null);
+
+	// Hook de anotaciones — carga 1 vez por folder y mantiene Map en memoria.
+	const annotationsApi = useAnnotations(folderId);
 
 	const fetchData = useCallback(async () => {
 		setLoading(true);
@@ -190,6 +202,24 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 		setPendingNavOnLoad(null);
 	}, [data, movements, pendingNavOnLoad]);
 
+	// Filtro client-side por anotación (los datos vienen del hook).
+	const filteredMovements =
+		annotationFilter === "all"
+			? movements
+			: movements.filter((m) => {
+					const ann = annotationsApi.annotations.get(m._id);
+					if (annotationFilter === "unread") return !ann || !ann.isRead;
+					if (annotationFilter === "important") return ann?.isImportant === true;
+					if (annotationFilter === "with_notes") return Boolean(ann?.notes && ann.notes.trim());
+					return true;
+				});
+
+	// Para que la navegación prev/next siga funcionando con el listado filtrado,
+	// `selected` apunta al index dentro de `filteredMovements`.
+	// Mantenemos selectedIdx referenciando movements (el index global) por simplicidad,
+	// pero el viewer usa el mov directo. Re-mapping si hay filtro activo:
+	const visibleMovs = filteredMovements;
+
 	const selected = selectedIdx !== null ? movements[selectedIdx] ?? null : null;
 	// hasPrev/hasNext consideran cross-page también.
 	const hasPrev =
@@ -200,6 +230,14 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 		selectedIdx !== null &&
 		(movements.slice(selectedIdx + 1).some((m) => m.hasPdf) ||
 			Boolean(data?.pagination?.hasNextPage));
+
+	const handleMarkAllRead = async () => {
+		try {
+			await annotationsApi.markAllRead();
+		} catch {
+			// el hook maneja el revert/refetch
+		}
+	};
 
 	return (
 		<Card>
@@ -215,7 +253,7 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 			/>
 			<CardContent>
 				{/* Filtros */}
-				<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
+				<Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }} alignItems={{ sm: "center" }}>
 					<TextField
 						size="small"
 						placeholder="Buscar en tipo o detalle..."
@@ -228,7 +266,7 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 								</InputAdornment>
 							),
 						}}
-						sx={{ flex: 1, maxWidth: 360 }}
+						sx={{ flex: 1, maxWidth: 320 }}
 					/>
 					<TextField
 						select
@@ -239,7 +277,7 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 							setPage(1);
 							setPdfStatusFilter(e.target.value as PjnMovementPdfStatus | "all");
 						}}
-						sx={{ minWidth: 180 }}
+						sx={{ minWidth: 160 }}
 					>
 						{PDF_STATUS_OPTIONS.map((opt) => (
 							<MenuItem key={opt.value} value={opt.value}>
@@ -247,6 +285,33 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 							</MenuItem>
 						))}
 					</TextField>
+					<TextField
+						select
+						size="small"
+						label="Anotación"
+						value={annotationFilter}
+						onChange={(e) => setAnnotationFilter(e.target.value as typeof annotationFilter)}
+						sx={{ minWidth: 140 }}
+					>
+						{ANNOTATION_OPTIONS.map((opt) => (
+							<MenuItem key={opt.value} value={opt.value}>
+								{opt.label}
+							</MenuItem>
+						))}
+					</TextField>
+					<Tooltip title="Marca como leídos todos los movimientos del expediente">
+						<Box sx={{ ml: { sm: "auto" } }}>
+							<IconButton
+								size="small"
+								onClick={handleMarkAllRead}
+								disabled={annotationsApi.loading}
+								color="primary"
+								aria-label="Marcar todos como leídos"
+							>
+								<TickCircle size={20} />
+							</IconButton>
+						</Box>
+					</Tooltip>
 				</Stack>
 
 				{error && (
@@ -283,18 +348,51 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 									</TableRow>
 								</TableHead>
 								<TableBody>
-									{movements.map((m, idx) => (
+									{visibleMovs.map((m) => {
+										// El idx para handleOpenViewer es el del array global `movements`,
+										// no del filtrado, para que la nav prev/next opere sobre el orden real.
+										const idx = movements.indexOf(m);
+										const ann = annotationsApi.annotations.get(m._id);
+										const isUnread = !ann || !ann.isRead;
+										const isImportant = ann?.isImportant === true;
+										const hasNotes = Boolean(ann?.notes && ann.notes.trim());
+										return (
 										<TableRow
 											key={m._id}
 											hover
-											sx={{ cursor: m.hasPdf ? "pointer" : "default" }}
+											sx={{
+												cursor: m.hasPdf ? "pointer" : "default",
+												// Borde izquierdo dorado si importante (precedencia)
+												// o azul sutil si no leído.
+												borderLeft: isImportant
+													? `3px solid ${theme.palette.warning.main}`
+													: isUnread
+														? `3px solid ${theme.palette.info.light}`
+														: "3px solid transparent",
+											}}
 											onClick={() => m.hasPdf && handleOpenViewer(idx)}
 										>
 											<TableCell>{formatDate(m.fecha)}</TableCell>
 											<TableCell>
-												<Typography variant="body2" sx={{ fontWeight: 500 }}>
-													{m.tipo || "—"}
-												</Typography>
+												<Stack direction="row" spacing={0.5} alignItems="center">
+													<Typography variant="body2" sx={{ fontWeight: isUnread ? 600 : 500 }}>
+														{m.tipo || "—"}
+													</Typography>
+													{isImportant && (
+														<Tooltip title="Importante">
+															<Box component="span" sx={{ display: "inline-flex", color: "warning.main" }}>
+																<Star1 size={14} variant="Bold" />
+															</Box>
+														</Tooltip>
+													)}
+													{hasNotes && (
+														<Tooltip title={ann?.notes ?? ""}>
+															<Box component="span" sx={{ display: "inline-flex", color: "info.main" }}>
+																<Note1 size={14} />
+															</Box>
+														</Tooltip>
+													)}
+												</Stack>
 											</TableCell>
 											<TableCell>
 												<Typography
@@ -343,7 +441,8 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 												</Stack>
 											</TableCell>
 										</TableRow>
-									))}
+									);
+									})}
 								</TableBody>
 							</Table>
 						</TableContainer>
@@ -372,6 +471,8 @@ const PjnMovementsViewerSection = ({ folderId }: Props) => {
 				onNext={handleNext}
 				hasPrev={hasPrev}
 				hasNext={hasNext}
+				annotation={selected ? annotationsApi.getAnnotation(selected._id) : undefined}
+				onUpdateAnnotation={annotationsApi.upsert}
 			/>
 		</Card>
 	);

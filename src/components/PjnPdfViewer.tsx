@@ -18,10 +18,16 @@ import {
 	CircularProgress,
 	Alert,
 	Tooltip,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	TextField,
 } from "@mui/material";
-import { CloseCircle, DocumentDownload, ExportSquare, ArrowLeft, ArrowRight } from "iconsax-react";
+import { CloseCircle, DocumentDownload, ExportSquare, ArrowLeft, ArrowRight, Star1, Note1, TickCircle } from "iconsax-react";
 import { getPjnMovementPdfUrl } from "services/pjnMovementsService";
 import type { PjnMovement, PjnMovementPdfStatus } from "types/pjnMovement";
+import type { MovementAnnotation, AnnotationUpdate } from "types/annotation";
 
 interface PjnPdfViewerProps {
 	open: boolean;
@@ -33,6 +39,10 @@ interface PjnPdfViewerProps {
 	onNext?: () => void;
 	hasPrev?: boolean;
 	hasNext?: boolean;
+	// Anotación del movimiento actual + callback de actualización (Item 6).
+	// Si no se pasan, las acciones de anotación no se renderizan.
+	annotation?: MovementAnnotation;
+	onUpdateAnnotation?: (movementId: string, updates: AnnotationUpdate) => Promise<void>;
 }
 
 interface State {
@@ -86,10 +96,25 @@ function formatBytes(n?: number): string {
 	return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
-const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPrev, hasNext }: PjnPdfViewerProps) => {
+const PjnPdfViewer = ({
+	open,
+	onClose,
+	folderId,
+	movement,
+	onPrev,
+	onNext,
+	hasPrev,
+	hasNext,
+	annotation,
+	onUpdateAnnotation,
+}: PjnPdfViewerProps) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [state, setState] = useState<State>(initialState);
+	const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+	const [notesDraft, setNotesDraft] = useState("");
+	const [tagsDraft, setTagsDraft] = useState("");
+	const [savingAnnotation, setSavingAnnotation] = useState(false);
 
 	useEffect(() => {
 		if (!open || !movement) {
@@ -190,7 +215,65 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 		return () => window.removeEventListener("keydown", handler);
 	}, [open, hasPrev, hasNext, onPrev, onNext]);
 
+	// Auto-marcar como leído al abrir el viewer (si hay handler y aún no está leído).
+	// Silencioso: si falla, lo ignoramos (revert lo maneja el hook).
+	useEffect(() => {
+		if (!open || !movement || !onUpdateAnnotation) return;
+		const isRead = annotation?.isRead === true;
+		if (isRead) return;
+		onUpdateAnnotation(movement._id, { isRead: true }).catch(() => {});
+		// Solo dispara cuando cambia el movimiento abierto.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [open, movement?._id]);
+
+	// Sincronizar drafts del dialog cuando cambia el movimiento o se abre el dialog.
+	useEffect(() => {
+		if (!notesDialogOpen) return;
+		setNotesDraft(annotation?.notes ?? "");
+		setTagsDraft((annotation?.tags ?? []).join(", "));
+	}, [notesDialogOpen, annotation?.movementId]);
+
+	const isImportant = annotation?.isImportant === true;
+	const isRead = annotation?.isRead === true;
+	const hasNotes = !!(annotation?.notes && annotation.notes.trim().length > 0);
+	const tagsCount = annotation?.tags?.length ?? 0;
+
+	const toggleImportant = () => {
+		if (!movement || !onUpdateAnnotation) return;
+		onUpdateAnnotation(movement._id, { isImportant: !isImportant }).catch(() => {});
+	};
+
+	const toggleRead = () => {
+		if (!movement || !onUpdateAnnotation) return;
+		onUpdateAnnotation(movement._id, { isRead: !isRead }).catch(() => {});
+	};
+
+	const openNotesDialog = () => setNotesDialogOpen(true);
+	const closeNotesDialog = () => {
+		if (savingAnnotation) return;
+		setNotesDialogOpen(false);
+	};
+
+	const saveNotes = async () => {
+		if (!movement || !onUpdateAnnotation) return;
+		const tags = tagsDraft
+			.split(",")
+			.map((t) => t.trim())
+			.filter((t) => t.length > 0)
+			.slice(0, 20);
+		setSavingAnnotation(true);
+		try {
+			await onUpdateAnnotation(movement._id, { notes: notesDraft.trim(), tags });
+			setNotesDialogOpen(false);
+		} catch {
+			// El hook hace revert; dejamos el dialog abierto para reintento.
+		} finally {
+			setSavingAnnotation(false);
+		}
+	};
+
 	return (
+		<>
 		<Drawer
 			anchor="right"
 			open={open}
@@ -237,8 +320,67 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 								{movement.detalle}
 							</Typography>
 						) : null}
+						{(hasNotes || tagsCount > 0) && (
+							<Box
+								sx={{
+									mt: 1,
+									p: 1,
+									borderRadius: 1,
+									bgcolor: theme.palette.action.hover,
+									borderLeft: `3px solid ${theme.palette.primary.main}`,
+								}}
+							>
+								{hasNotes && (
+									<Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+										{annotation?.notes}
+									</Typography>
+								)}
+								{tagsCount > 0 && (
+									<Stack direction="row" spacing={0.5} sx={{ mt: hasNotes ? 0.75 : 0, flexWrap: "wrap", gap: 0.5 }}>
+										{annotation!.tags.map((t) => (
+											<Chip key={t} label={t} size="small" variant="outlined" />
+										))}
+									</Stack>
+								)}
+							</Box>
+						)}
 					</Box>
-					<Stack direction="row" spacing={0.5}>
+					<Stack direction="row" spacing={0.5} alignItems="center">
+						{onUpdateAnnotation && movement && (
+							<>
+								<Tooltip title={isImportant ? "Quitar importante" : "Marcar importante"}>
+									<IconButton
+										size="small"
+										onClick={toggleImportant}
+										aria-label={isImportant ? "Quitar importante" : "Marcar importante"}
+										sx={{ color: isImportant ? theme.palette.warning.main : undefined }}
+									>
+										<Star1 size="20" variant={isImportant ? "Bold" : "Linear"} />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title={isRead ? "Marcar como no leído" : "Marcar como leído"}>
+									<IconButton
+										size="small"
+										onClick={toggleRead}
+										aria-label={isRead ? "Marcar como no leído" : "Marcar como leído"}
+										sx={{ color: isRead ? theme.palette.success.main : undefined }}
+									>
+										<TickCircle size="20" variant={isRead ? "Bold" : "Linear"} />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title={hasNotes ? `Editar nota${tagsCount ? ` (${tagsCount} tag${tagsCount === 1 ? "" : "s"})` : ""}` : "Agregar nota"}>
+									<IconButton
+										size="small"
+										onClick={openNotesDialog}
+										aria-label={hasNotes ? "Editar nota" : "Agregar nota"}
+										sx={{ color: hasNotes ? theme.palette.primary.main : undefined }}
+									>
+										<Note1 size="20" variant={hasNotes ? "Bold" : "Linear"} />
+									</IconButton>
+								</Tooltip>
+								<Box sx={{ width: 8 }} />
+							</>
+						)}
 						{(onPrev || onNext) && (
 							<>
 								<IconButton size="small" onClick={onPrev} disabled={!hasPrev} aria-label="Anterior">
@@ -349,6 +491,49 @@ const PjnPdfViewer = ({ open, onClose, folderId, movement, onPrev, onNext, hasPr
 				)}
 			</Stack>
 		</Drawer>
+
+		{/* Dialog para editar nota y tags del movimiento abierto */}
+		<Dialog open={notesDialogOpen} onClose={closeNotesDialog} fullWidth maxWidth="sm">
+			<DialogTitle>{hasNotes ? "Editar nota" : "Agregar nota"}</DialogTitle>
+			<DialogContent>
+				<TextField
+					autoFocus
+					label="Nota"
+					value={notesDraft}
+					onChange={(e) => setNotesDraft(e.target.value.slice(0, 5000))}
+					fullWidth
+					multiline
+					minRows={4}
+					maxRows={12}
+					sx={{ mt: 1 }}
+					helperText={`${notesDraft.length}/5000`}
+					disabled={savingAnnotation}
+				/>
+				<TextField
+					label="Tags (separados por coma)"
+					value={tagsDraft}
+					onChange={(e) => setTagsDraft(e.target.value)}
+					fullWidth
+					sx={{ mt: 2 }}
+					helperText="Hasta 20 tags, máx 50 caracteres c/u"
+					disabled={savingAnnotation}
+				/>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={closeNotesDialog} disabled={savingAnnotation}>
+					Cancelar
+				</Button>
+				<Button
+					onClick={saveNotes}
+					variant="contained"
+					disabled={savingAnnotation}
+					startIcon={savingAnnotation ? <CircularProgress size={16} color="inherit" /> : undefined}
+				>
+					Guardar
+				</Button>
+			</DialogActions>
+		</Dialog>
+		</>
 	);
 };
 
