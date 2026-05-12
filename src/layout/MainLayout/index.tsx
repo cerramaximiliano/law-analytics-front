@@ -12,6 +12,8 @@ import Header from "./Header";
 import Footer from "./Footer";
 import HorizontalBar from "./Drawer/HorizontalBar";
 import Breadcrumbs from "components/@extended/Breadcrumbs";
+import FeedbackWidget from "components/feedback/FeedbackWidget";
+import ActiveSurveyModal from "components/feedback/ActiveSurveyModal";
 import { BreadcrumbProvider } from "contexts/BreadcrumbContext";
 import { TeamProvider } from "contexts/TeamContext";
 
@@ -82,6 +84,8 @@ const MainLayout = () => {
 						</Container>
 					</BreadcrumbProvider>
 				</Box>
+				<FeedbackWidget />
+				<ActiveSurveyModal />
 			</Box>
 		</TeamProvider>
 	);
