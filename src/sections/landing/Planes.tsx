@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
@@ -12,6 +13,8 @@ import { TickCircle, ArrowRight } from "iconsax-react";
 import MainCard from "components/MainCard";
 import FadeInWhenVisible from "./Animation";
 import { pushGTMEvent } from "utils/gtm";
+import ApiService from "store/reducers/ApiService";
+import { getPlanPricing } from "utils/planPricingUtils";
 
 // ============================== TOKENS ============================== //
 const BRAND_BLUE = "#3A7BFF";
@@ -31,13 +34,13 @@ interface Plan {
 	mobileOrder: number; // En xs queremos Standard primero (most relevant), luego Free, Premium.
 }
 
-const PLANS: Plan[] = [
+const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "free",
 		name: "Gratuito",
 		price: "$0",
 		priceSuffix: "Para siempre",
-		features: ["Calculadoras laborales básicas", "Calendario con vencimientos", "Hasta 5 expedientes", "Soporte por email"],
+		features: ["5 causas activas", "3 calculadoras laborales", "50 consultas IA por mes", "Vincular causas con PJN y MEV"],
 		cta: "Empezar gratis",
 		ctaTo: "/register",
 		highlighted: false,
@@ -48,7 +51,12 @@ const PLANS: Plan[] = [
 		name: "Estándar",
 		price: "$19.99",
 		priceSuffix: "/mes",
-		features: ["Todo lo del plan Gratuito", "Expedientes ilimitados", "Integración PJN + MEV", "Asistente IA para escritos"],
+		features: [
+			"Todo lo del plan Gratuito",
+			"50 causas con sincronización automática",
+			"200 consultas IA por mes",
+			"Análisis avanzados y reservas",
+		],
 		cta: "Probar Estándar",
 		ctaTo: "/register?plan=standard",
 		highlighted: true,
@@ -61,9 +69,9 @@ const PLANS: Plan[] = [
 		priceSuffix: "/mes",
 		features: [
 			"Todo lo del plan Estándar",
-			"Tracking postal ilimitado",
-			"Sistema de citas online",
-			"Modo Team multi-usuario",
+			"500 causas y 1000 contactos",
+			"1500 consultas IA por mes",
+			"100 seguimientos postales",
 			"Soporte prioritario",
 		],
 		cta: "Probar Premium",
@@ -72,6 +80,24 @@ const PLANS: Plan[] = [
 		mobileOrder: 3,
 	},
 ];
+
+const billingSuffixShort = (period: string): string => {
+	switch (period) {
+		case "monthly":
+			return "/mes";
+		case "daily":
+			return "/día";
+		case "weekly":
+			return "/semana";
+		case "yearly":
+		case "annual":
+			return "/año";
+		default:
+			return "";
+	}
+};
+
+const formatPriceShort = (price: number): string => (price % 1 === 0 ? `$${price}` : `$${price.toFixed(2)}`);
 
 const trackPlanCTA = (planId: Plan["id"]) => {
 	pushGTMEvent("cta_click_plan_teaser", { plan: planId });
@@ -83,6 +109,38 @@ const Planes = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 	void LIVE_GREEN;
+
+	const [plans, setPlans] = useState<Plan[]>(PLAN_DEFAULTS);
+
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const response = await ApiService.getPublicPlans();
+				if (cancelled || !response?.success || !response.data) return;
+
+				const merged = PLAN_DEFAULTS.map((def) => {
+					const apiPlan = response.data!.find((p) => p.planId === def.id);
+					if (!apiPlan) return def;
+
+					const pricing = getPlanPricing(apiPlan);
+					const isFree = def.id === "free" || pricing.basePrice === 0;
+
+					return {
+						...def,
+						price: formatPriceShort(pricing.basePrice),
+						priceSuffix: isFree ? "Para siempre" : billingSuffixShort(pricing.billingPeriod),
+					};
+				});
+				setPlans(merged);
+			} catch {
+				// silencioso: mantenemos los valores hardcodeados como fallback
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	return (
 		<Box
@@ -160,7 +218,7 @@ const Planes = () => {
 				</Box>
 
 				<Grid container spacing={3} alignItems="stretch" justifyContent="center" sx={{ pt: { xs: 2, md: 2 } }}>
-					{PLANS.map((plan) => {
+					{plans.map((plan) => {
 						const checkColor = plan.id === "free" ? theme.palette.text.secondary : theme.palette.success.main;
 						const isHighlighted = plan.highlighted;
 
