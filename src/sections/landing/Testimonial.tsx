@@ -180,7 +180,7 @@ const TestimonialPage = () => {
 
 	return (
 		<>
-			<Box sx={{ mt: { md: 15, xs: 2.5 } }}>
+			<Box sx={{ mt: 0 }}>
 				<Container>
 					<Grid container spacing={2} justifyContent="center" sx={{ textAlign: "center", marginBottom: 4 }}>
 						<Grid item xs={12}>
@@ -228,7 +228,7 @@ const TestimonialPage = () => {
 					</Grid>
 				</Container>
 			</Box>
-			<Box sx={{ mb: { md: 15, xs: 2.5 } }}>
+			<Box sx={{ mb: { md: 7, xs: 2 } }}>
 				<Grid container spacing={4}>
 					<Grid item xs={12}>
 						<FadeInWhenVisible>

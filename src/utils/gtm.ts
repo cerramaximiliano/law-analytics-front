@@ -48,10 +48,14 @@ export const GTMEvents = {
 // Landing page section names for scroll tracking
 export const LandingSections = {
 	HERO: "hero",
+	COMO_FUNCIONA: "como_funciona",
 	HERRAMIENTAS: "herramientas",
 	INTEGRACIONES: "integraciones",
+	SEGURIDAD: "seguridad",
 	PRUEBA_PAGAR: "prueba_pagar",
 	TESTIMONIOS: "testimonios",
+	PLANES: "planes",
+	FAQ: "faq",
 	CONTACTO: "contacto",
 } as const;
 
@@ -64,6 +68,8 @@ export const FeatureNames = {
 	INTERESES: "intereses",
 	TAREAS: "tareas",
 	SISTEMA_CITAS: "sistema_citas",
+	ESCRITOS: "escritos",
+	POSTAL_TRACKING: "postal_tracking",
 } as const;
 
 // CTA locations

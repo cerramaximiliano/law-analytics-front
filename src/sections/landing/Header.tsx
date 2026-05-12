@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
-import { useTheme, Theme } from "@mui/material/styles";
+import { useTheme, Theme, alpha } from "@mui/material/styles";
 import { Box, Button, Chip, Container, Grid, Rating, Typography, Link, Tooltip, useMediaQuery } from "@mui/material";
 
 // project imports
@@ -25,6 +25,15 @@ import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 // Logos externos (Cloudinary)
 const logoPJCABA = "https://res.cloudinary.com/dqyoeolib/image/upload/v1770081495/ChatGPT_Image_2_feb_2026_09_44_56_p.m._ymi66g.png";
 const logoSECLO = "https://res.cloudinary.com/dqyoeolib/image/upload/q_auto/f_auto/v1776203385/seclo-removebg-preview_rxcvzm.png";
+
+// ============================== TOKENS ============================== //
+// El gradiente sobre "Estudio Jurídico" es el ÚNICO uso intencional de púrpura
+// en el hero — se mantiene tal cual el diseño original.
+const BRAND_BLUE = "#3A7BFF";
+const BRAND_GRADIENT_TEXT = "linear-gradient(90deg, #3A7BFF, #8A5CFF, #3A7BFF) 0 0 / 400% 100%";
+const LIVE_GREEN = "#22C55E";
+
+// ============================== INTEGRACIONES ============================== //
 
 type IntegrationStatus = "available" | "comingSoon";
 
@@ -82,9 +91,9 @@ const INTEGRATIONS: Integration[] = [
 	},
 ];
 
-// ============================== SECCIÓN MÉTRICAS ============================== //
+// ============================== MÉTRICAS MOBILE (TICKER) ============================== //
 // En desktop (sm+) se muestran las 3 métricas en fila. En mobile se rota una sola
-// con fade + desplazamiento vertical sutil cada ~2.8s para reducir densidad visual.
+// con fade + desplazamiento vertical sutil cada ~3.2s para reducir densidad visual.
 
 interface HeroMetric {
 	key: string;
@@ -153,13 +162,188 @@ const MetricsTicker = ({ iconColor }: { iconColor: string }) => {
 	);
 };
 
-// ==============================|| LANDING - HeaderPage ||============================== //
+// ============================== METRIC VALUE (DESKTOP) ============================== //
+
+const MetricValue = ({ children, label }: { children: ReactNode; label: string }) => (
+	<Typography sx={{ fontSize: { xs: "1.125rem", sm: "1.375rem", md: "1.625rem" }, fontWeight: 600, lineHeight: 1.2 }}>
+		{children}
+		<Box
+			component="span"
+			sx={{
+				fontSize: "75%",
+				fontWeight: 400,
+				ml: 0.5,
+				color: "text.secondary",
+			}}
+		>
+			{label}
+		</Box>
+	</Typography>
+);
+
+// ============================== MOCKUP FRAME ============================== //
+// Frame con browser-chrome, glow brand-blue, copia blurreada para profundidad
+// y soft float loop. La variante `compact` se usa en mobile (sin scale, sin copia).
+
+interface MockupFrameProps {
+	paperBg: string;
+	textColor: string;
+	compact?: boolean;
+}
+
+const MockupFrame = ({ paperBg, textColor, compact = false }: MockupFrameProps) => (
+	<Box
+		sx={{
+			position: "relative",
+			width: "100%",
+			...(compact
+				? { maxWidth: 420, mx: "auto" }
+				: { transform: { md: "scale(1.05)" }, transformOrigin: "center center" }),
+		}}
+	>
+		{/* Glow radial brand-blue por debajo del frame */}
+		<Box
+			aria-hidden
+			sx={{
+				position: "absolute",
+				inset: compact ? "6% -6% -6% -6%" : "8% -6% -8% -6%",
+				background: `radial-gradient(ellipse at 50% 60%, ${alpha(BRAND_BLUE, 0.32)} 0%, ${alpha(BRAND_BLUE, 0.14)} 40%, transparent 72%)`,
+				filter: "blur(38px)",
+				zIndex: 0,
+				pointerEvents: "none",
+			}}
+		/>
+
+		{/* Copia blurreada secundaria — efecto profundidad (solo desktop) */}
+		{!compact && (
+			<Box
+				component="img"
+				src={dashboardImage}
+				alt=""
+				aria-hidden
+				sx={{
+					position: "absolute",
+					top: -18,
+					right: -22,
+					width: "92%",
+					height: "auto",
+					borderRadius: "14px",
+					opacity: 0.22,
+					filter: "blur(2px)",
+					zIndex: 1,
+				}}
+			/>
+		)}
+
+		{/* Frame principal — con soft float loop */}
+		<Box
+			component={motion.div}
+			animate={{ y: [0, -6, 0] }}
+			transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+			sx={{ position: "relative", zIndex: 2 }}
+		>
+			<Box
+				sx={{
+					position: "relative",
+					borderRadius: "14px",
+					overflow: "hidden",
+					boxShadow: `0 30px 60px ${alpha("#0F172A", 0.22)}, 0 12px 28px ${alpha("#0F172A", 0.12)}`,
+					border: `1px solid ${alpha(textColor, 0.10)}`,
+					bgcolor: paperBg,
+				}}
+			>
+				{/* Browser chrome */}
+				<Box
+					sx={{
+						height: { xs: 28, md: 34 },
+						bgcolor: alpha(paperBg, 0.72),
+						backdropFilter: "blur(12px)",
+						WebkitBackdropFilter: "blur(12px)",
+						display: "flex",
+						alignItems: "center",
+						px: 1.5,
+						gap: 1.25,
+						borderBottom: `1px solid ${alpha(textColor, 0.10)}`,
+					}}
+				>
+					{/* Traffic lights */}
+					<Box sx={{ display: "flex", gap: 0.625 }}>
+						<Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#FF5F57" }} />
+						<Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#FEBC2E" }} />
+						<Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#28C840" }} />
+					</Box>
+					{/* URL pill */}
+					<Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 0.5,
+								px: 1.25,
+								py: 0.25,
+								borderRadius: 999,
+								bgcolor: alpha(textColor, 0.06),
+								fontSize: { xs: "0.6rem", md: "0.68rem" },
+								color: textColor,
+								fontWeight: 500,
+								letterSpacing: "0.02em",
+							}}
+						>
+							<Box component="svg" viewBox="0 0 24 24" aria-hidden sx={{ width: 10, height: 10, mr: 0.25 }}>
+								<path
+									d="M12 1a4 4 0 0 1 4 4v3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V5a4 4 0 0 1 4-4Zm0 2a2 2 0 0 0-2 2v3h4V5a2 2 0 0 0-2-2Z"
+									fill="currentColor"
+								/>
+							</Box>
+							lawanalytics.app
+						</Box>
+					</Box>
+					<Box sx={{ width: 28 }} />
+				</Box>
+
+				{/* Imagen del dashboard */}
+				<Box
+					component="img"
+					src={dashboardImage}
+					alt="Law Analytics Dashboard"
+					sx={{
+						width: "100%",
+						height: "auto",
+						display: "block",
+						...(compact && {
+							maxHeight: 230,
+							objectFit: "cover",
+							objectPosition: "top left",
+						}),
+					}}
+				/>
+
+				{/* Fade inferior — sugiere continuidad de contenido */}
+				<Box
+					aria-hidden
+					sx={{
+						position: "absolute",
+						bottom: 0,
+						left: 0,
+						right: 0,
+						height: { xs: 50, md: 80 },
+						background: `linear-gradient(to bottom, transparent, ${paperBg})`,
+						pointerEvents: "none",
+					}}
+				/>
+			</Box>
+		</Box>
+	</Box>
+);
+
+// ============================== LANDING - HEADER ============================== //
 
 const HeaderPage = () => {
 	const theme = useTheme();
 	const { trackHeroCTA } = useLandingAnalytics();
 	const [supportModalOpen, setSupportModalOpen] = useState(false);
-	const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
+	const isMobile = useMediaQuery((t: Theme) => t.breakpoints.down("sm"));
+	const isDark = theme.palette.mode === "dark";
 
 	return (
 		<Box
@@ -169,19 +353,67 @@ const HeaderPage = () => {
 				// 100dvh en xs evita que la sección siguiente "asome" en mobiles altos (430x932,
 				// 412x915, etc). dvh respeta la URL bar dinámica del navegador móvil.
 				minHeight: { xs: "100dvh", sm: "100vh" },
-				bgcolor: theme.palette.background.default, // Fondo consistente con otros componentes
-				pt: { xs: 11, sm: 10, md: 12, lg: 10, xl: 9 }, // Padding superior — compensa Toolbar más alto en landing mobile
-				pb: { xs: 5, sm: 5, md: 6, lg: 8, xl: 10 }, // Padding inferior — separación con la sección siguiente
+				bgcolor: theme.palette.background.default,
+				pt: { xs: 11, sm: 10, md: 12, lg: 10, xl: 9 },
+				pb: { xs: 5, sm: 5, md: 6, lg: 8, xl: 10 },
 				display: "flex",
 				flexDirection: "column",
 			}}
 		>
 			<PageBackground variant="default" />
-			<Container sx={{ flex: 1, display: "flex", flexDirection: "column", px: { xs: 2, sm: 3 } }}>
+
+			{/* Atmosphere — blobs brand-blue (sin púrpura) sobre el PageBackground */}
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					top: { xs: "-8%", md: "-12%" },
+					right: { xs: "-20%", md: "-10%" },
+					width: { xs: 380, md: 620 },
+					height: { xs: 380, md: 620 },
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.13)} 0%, transparent 62%)`,
+					filter: "blur(60px)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					bottom: { xs: "-15%", md: "-18%" },
+					left: { xs: "-25%", md: "-12%" },
+					width: { xs: 420, md: 720 },
+					height: { xs: 420, md: 720 },
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.10 : 0.07)} 0%, transparent 62%)`,
+					filter: "blur(80px)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+
+			{/* Dot grid texture — neutral, fade radial hacia los bordes */}
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.06 : 0.045)} 1px, transparent 1px)`,
+					backgroundSize: "26px 26px",
+					maskImage: "radial-gradient(ellipse 70% 60% at center, #000 0%, transparent 75%)",
+					WebkitMaskImage: "radial-gradient(ellipse 70% 60% at center, #000 0%, transparent 75%)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+
+			<Container sx={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", zIndex: 1, px: { xs: 2, sm: 3 } }}>
 				{/* Contenido principal centrado verticalmente */}
 				{/* Centramos verticalmente: con 100dvh + alignItems center el bloque queda balanceado
 				en mobiles altos (430x932, etc.) y el padding-top garantiza que el navbar no tape el título. */}
-			<Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
+				<Box sx={{ flex: 1, display: "flex", alignItems: "center" }}>
 					<Grid container alignItems="center" justifyContent="center" spacing={{ xs: 2, md: 4 }}>
 						{/* Columna izquierda - Contenido textual */}
 						<Grid item xs={12} md={6} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -208,7 +440,7 @@ const HeaderPage = () => {
 											<Box
 												component="span"
 												sx={{
-													background: "linear-gradient(90deg, #3A7BFF, #8A5CFF, #3A7BFF) 0 0 / 400% 100%",
+													background: BRAND_GRADIENT_TEXT,
 													color: "transparent",
 													WebkitBackgroundClip: "text",
 													backgroundClip: "text",
@@ -310,30 +542,7 @@ const HeaderPage = () => {
 											delay: 0.4,
 										}}
 									>
-										<Box
-											sx={{
-												display: "flex",
-												justifyContent: "center",
-												mt: 0,
-												mb: 0.5,
-											}}
-										>
-											<Box
-												component="img"
-												src={dashboardImage}
-												alt="Law Analytics Dashboard"
-												sx={{
-													width: { xs: "90%", sm: "75%" },
-													maxWidth: { xs: 320, sm: 560 },
-													height: "auto",
-													maxHeight: { xs: 180, sm: 340 },
-													objectFit: { xs: "cover", sm: "contain" },
-													objectPosition: "top left",
-													borderRadius: "12px",
-													boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-												}}
-											/>
-										</Box>
+										<MockupFrame paperBg={theme.palette.background.paper} textColor={theme.palette.text.primary} compact />
 									</motion.div>
 								</Grid>
 								<Grid item xs={12}>
@@ -382,72 +591,18 @@ const HeaderPage = () => {
 										}}
 									>
 										<Grid container spacing={{ xs: 1.5, sm: 1.5, md: 1.5 }} justifyContent="center" alignItems="flex-start" wrap="nowrap">
-											<Grid
-												item
-												xs={4}
-												sm="auto"
-												sx={{ textAlign: "center" }}
-											>
+											<Grid item xs={4} sm="auto" sx={{ textAlign: "center" }}>
 												<Rating name="read-only" value={4.5} size="small" readOnly />
-												<Typography sx={{ fontSize: { xs: "1.125rem", sm: "1.375rem", md: "1.625rem" }, fontWeight: 600, lineHeight: 1.2 }}>
-													4.7/5
-													<Box
-														component="span"
-														sx={{
-															fontSize: "75%",
-															fontWeight: 400,
-															ml: 0.5,
-															color: theme.palette.text.secondary,
-														}}
-													>
-														valoración
-													</Box>
-												</Typography>
+												<MetricValue label="valoración">4.7/5</MetricValue>
 											</Grid>
-											<Grid
-												item
-												xs={4}
-												sm="auto"
-												sx={{ textAlign: "center" }}
-											>
+											<Grid item xs={4} sm="auto" sx={{ textAlign: "center" }}>
 												<Profile2User size={18} variant="Bulk" color={theme.palette.primary.main} style={{ marginBottom: 2 }} />
-												<Typography sx={{ fontSize: { xs: "1.125rem", sm: "1.375rem", md: "1.625rem" }, fontWeight: 600, lineHeight: 1.2 }}>
-													500+
-													<Box
-														component="span"
-														sx={{
-															fontSize: "75%",
-															fontWeight: 400,
-															ml: 0.5,
-															color: theme.palette.text.secondary,
-														}}
-													>
-														Usuarios
-													</Box>
-												</Typography>
+												<MetricValue label="usuarios">500+</MetricValue>
 											</Grid>
 											{/* TODO mock — validar valor real con datos de producción */}
-											<Grid
-												item
-												xs={4}
-												sm="auto"
-												sx={{ textAlign: "center" }}
-											>
+											<Grid item xs={4} sm="auto" sx={{ textAlign: "center" }}>
 												<FolderOpen size={18} variant="Bulk" color={theme.palette.primary.main} style={{ marginBottom: 2 }} />
-												<Typography sx={{ fontSize: { xs: "1.125rem", sm: "1.375rem", md: "1.625rem" }, fontWeight: 600, lineHeight: 1.2 }}>
-													+10k
-													<Box
-														component="span"
-														sx={{
-															fontSize: "75%",
-															fontWeight: 400,
-															ml: 0.5,
-															color: theme.palette.text.secondary,
-														}}
-													>
-														Causas
-													</Box>
-												</Typography>
+												<MetricValue label="causas">+10k</MetricValue>
 											</Grid>
 										</Grid>
 									</motion.div>
@@ -455,7 +610,7 @@ const HeaderPage = () => {
 							</Grid>
 						</Grid>
 
-						{/* Columna derecha - Imagen del dashboard */}
+						{/* Columna derecha - Mockup framed (md+) */}
 						<Grid item xs={12} md={6} sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", overflow: "visible" }}>
 							<motion.div
 								initial={{ opacity: 0, translateX: 50 }}
@@ -466,61 +621,9 @@ const HeaderPage = () => {
 									damping: 30,
 									delay: 0.3,
 								}}
+								style={{ width: "100%" }}
 							>
-								<Box
-									sx={{
-										position: "relative",
-										width: "100%",
-										transform: "scale(1.08)",
-										transformOrigin: "center center",
-									}}
-								>
-									{/* Imagen de fondo (segunda capa - efecto profundidad) */}
-									<Box
-										component="img"
-										src={dashboardImage}
-										alt=""
-										sx={{
-											position: "absolute",
-											top: -20,
-											right: -25,
-											width: "90%",
-											height: "auto",
-											borderRadius: "12px",
-											opacity: 0.25,
-											filter: "blur(2px)",
-											boxShadow: theme.shadows[10],
-											zIndex: 0,
-										}}
-									/>
-									{/* Imagen principal */}
-									<Box
-										component="img"
-										src={dashboardImage}
-										alt="Law Analytics Dashboard"
-										sx={{
-											width: "100%",
-											height: "auto",
-											borderRadius: "12px",
-											boxShadow: theme.shadows[20],
-											position: "relative",
-											zIndex: 1,
-										}}
-									/>
-									{/* Fade inferior */}
-									<Box
-										sx={{
-											position: "absolute",
-											bottom: 0,
-											left: 0,
-											right: 0,
-											height: 80,
-											background: `linear-gradient(to bottom, transparent, ${theme.palette.background.default})`,
-											borderRadius: "0 0 12px 12px",
-											zIndex: 2,
-										}}
-									/>
-								</Box>
+								<MockupFrame paperBg={theme.palette.background.paper} textColor={theme.palette.text.primary} />
 							</motion.div>
 						</Grid>
 
@@ -552,11 +655,11 @@ const HeaderPage = () => {
 									<Grid container spacing={{ xs: 1, sm: 3 }} justifyContent="center" alignItems="flex-start">
 										{INTEGRATIONS.map((integration) => {
 											const isAvailable = integration.status === "available";
-											const isDark = !integration.hasBorder;
-											const baseShadow = isDark
+											const isDarkTile = !integration.hasBorder;
+											const baseShadow = isDarkTile
 												? "0 4px 14px rgba(35, 45, 79, 0.4), 0 2px 6px rgba(0, 0, 0, 0.15)"
 												: "0 4px 14px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)";
-											const hoverShadow = isDark
+											const hoverShadow = isDarkTile
 												? "0 6px 20px rgba(35, 45, 79, 0.5), 0 4px 10px rgba(0, 0, 0, 0.2)"
 												: "0 6px 20px rgba(0, 0, 0, 0.18), 0 4px 10px rgba(0, 0, 0, 0.12)";
 											return (
@@ -574,6 +677,7 @@ const HeaderPage = () => {
 														>
 															<Box
 																sx={{
+																	position: "relative",
 																	width: { xs: 40, sm: 64 },
 																	height: { xs: 40, sm: 64 },
 																	borderRadius: 2,
@@ -604,6 +708,35 @@ const HeaderPage = () => {
 																		objectFit: "contain",
 																	}}
 																/>
+																{/* Live pulse dot — sólo disponibles */}
+																{isAvailable && (
+																	<Box
+																		aria-hidden
+																		sx={{
+																			position: "absolute",
+																			top: { xs: -3, sm: -4 },
+																			right: { xs: -3, sm: -4 },
+																			width: { xs: 10, sm: 12 },
+																			height: { xs: 10, sm: 12 },
+																			borderRadius: "50%",
+																			bgcolor: LIVE_GREEN,
+																			border: `2px solid ${theme.palette.background.default}`,
+																			zIndex: 3,
+																			"&::after": {
+																				content: '""',
+																				position: "absolute",
+																				inset: -1,
+																				borderRadius: "50%",
+																				bgcolor: LIVE_GREEN,
+																				animation: "la-live-pulse 2.2s ease-out infinite",
+																			},
+																			"@keyframes la-live-pulse": {
+																				"0%": { transform: "scale(0.9)", opacity: 0.55 },
+																				"80%, 100%": { transform: "scale(2.4)", opacity: 0 },
+																			},
+																		}}
+																	/>
+																)}
 															</Box>
 															{/* Sigla en mobile */}
 															<Typography
@@ -716,4 +849,5 @@ const HeaderPage = () => {
 		</Box>
 	);
 };
+
 export default HeaderPage;

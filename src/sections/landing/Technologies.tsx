@@ -1,12 +1,25 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, ElementType, KeyboardEvent } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+
 // material-ui
-import { Badge, Box, Button, Container, Grid, Link, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { Box, Button, Container, Typography } from "@mui/material";
+import { useTheme, alpha, Theme } from "@mui/material/styles";
 
 // third party
-import { Link as RouterLink } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FolderOpen, Profile2User, Calendar, Calculator, Chart, TaskSquare, CalendarTick, ArrowRight2 } from "iconsax-react";
+import {
+	FolderOpen,
+	Profile2User,
+	Calendar,
+	Calculator,
+	Chart,
+	TaskSquare,
+	CalendarTick,
+	DocumentText,
+	Send2,
+	ArrowRight2,
+	ArrowRight,
+} from "iconsax-react";
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
@@ -15,97 +28,324 @@ import FeatureModal from "components/FeatureModal";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 import { FeatureNames, trackViewFeaturesSection } from "utils/gtm";
 
-interface TechnologyItem {
-	iconComponent: React.ElementType;
+// ============================== TOKENS ============================== //
+// Mismos tokens que el Hero — atmósfera brand-blue + dot verde para nuevos.
+const BRAND_BLUE = "#3A7BFF";
+const LIVE_GREEN = "#22C55E";
+
+// ============================== TIPOS ============================== //
+
+type ColorKey = "primary" | "secondary" | "error" | "warning" | "info" | "success";
+
+interface FeatureRowData {
+	iconComponent: ElementType;
+	title: string;
+	description: string; // short — 1 línea
+	colorKey: ColorKey;
+	featureKey: string;
+	isNew?: boolean;
+}
+
+interface CitasBannerData {
+	iconComponent: ElementType;
 	title: string;
 	description: string;
 	cta: string;
-	colorKey: "primary" | "secondary" | "error" | "warning" | "info" | "success";
-	mobileOrder: number;
+	to: string;
 	featureKey: string;
 }
 
-const TechnologiesList: TechnologyItem[] = [
-	{
-		iconComponent: FolderOpen,
-		title: "Dejá de buscar expedientes en mil lugares",
-		description: "Centralizá causas, movimientos, clientes y estados en un solo panel.",
-		cta: "Organizar mis expedientes",
-		colorKey: "warning",
-		mobileOrder: 1,
-		featureKey: FeatureNames.CARPETAS,
-	},
-	{
-		iconComponent: Profile2User,
-		title: "Tené todos tus clientes ordenados",
-		description: "Datos, causas, historial y seguimiento en un solo lugar.",
-		cta: "Centralizar clientes",
-		colorKey: "secondary",
-		mobileOrder: 6,
-		featureKey: FeatureNames.CONTACTOS,
-	},
-	{
-		iconComponent: Calendar,
-		title: "No te olvides nunca más de un vencimiento",
-		description: "Agenda integrada, alertas automáticas y sincronización con Google Calendar.",
-		cta: "Controlar vencimientos",
-		colorKey: "info",
-		mobileOrder: 2,
-		featureKey: FeatureNames.CALENDARIO,
-	},
-	{
-		iconComponent: Calculator,
-		title: "Calculá indemnizaciones sin errores",
-		description: "Despidos, SAC, intereses y topes legales siempre actualizados.",
-		cta: "Calcular ahora",
-		colorKey: "primary",
-		mobileOrder: 3,
-		featureKey: FeatureNames.CALCULOS,
-	},
-	{
-		iconComponent: Chart,
-		title: "Actualizá montos en segundos",
-		description: "Cálculo automático con tasas BCRA, actas y criterios judiciales.",
-		cta: "Actualizar montos",
-		colorKey: "success",
-		mobileOrder: 4,
-		featureKey: FeatureNames.INTERESES,
-	},
-	{
-		iconComponent: TaskSquare,
-		title: "Organizá el trabajo diario del estudio",
-		description: "Tareas, prioridades, responsables y plazos bien claros.",
-		cta: "Gestionar tareas",
-		colorKey: "error",
-		mobileOrder: 7,
-		featureKey: FeatureNames.TAREAS,
-	},
-];
+interface RowBorders {
+	right: { xs: string; sm: string };
+	bottom: { xs: string; sm: string };
+}
 
-// Card destacada - Sistema de Citas
-const FeaturedCard = {
-	iconComponent: CalendarTick,
-	title: "Dejá que tus clientes agenden solos",
-	description: "Sistema de reservas online con link compartible y agenda sincronizada.",
-	cta: "Activar sistema de citas",
-	colorKey: "primary" as const,
+interface FeatureRowProps {
+	tech: FeatureRowData;
+	theme: Theme;
+	isDark: boolean;
+	onClick: () => void;
+	borders: RowBorders;
+}
+
+// ============================== FEATURE ROW ============================== //
+// Fila compacta horizontal: icono + (título + 1-line desc) + arrow. ~70px de alto.
+// Click → abre el FeatureModal. Hover: bg tinted colorKey + arrow desliza.
+
+const FeatureRow = ({ tech, theme, isDark, onClick, borders }: FeatureRowProps) => {
+	const Icon = tech.iconComponent;
+	const color = theme.palette[tech.colorKey].main;
+
+	const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			onClick();
+		}
+	};
+
+	return (
+		<Box
+			onClick={onClick}
+			onKeyDown={handleKeyDown}
+			role="button"
+			tabIndex={0}
+			aria-label={`${tech.title}: ${tech.description}`}
+			sx={{
+				display: "flex",
+				alignItems: "center",
+				gap: { xs: 1.5, sm: 2 },
+				px: { xs: 2, sm: 2.5 },
+				py: { xs: 1.75, sm: 2 },
+				cursor: "pointer",
+				position: "relative",
+				borderRight: borders.right,
+				borderBottom: borders.bottom,
+				transition: "background-color 0.2s ease",
+				"&:hover": {
+					bgcolor: alpha(color, isDark ? 0.08 : 0.04),
+					"& .row-arrow": { transform: "translateX(4px)", color },
+					"& .row-title": { color },
+				},
+				"&:focus-visible": {
+					outline: `2px solid ${alpha(color, 0.5)}`,
+					outlineOffset: -2,
+				},
+			}}
+		>
+			{/* Icon container + live pulse si es nuevo */}
+			<Box
+				sx={{
+					position: "relative",
+					flexShrink: 0,
+					width: { xs: 40, sm: 44 },
+					height: { xs: 40, sm: 44 },
+					borderRadius: 1.5,
+					bgcolor: alpha(color, isDark ? 0.18 : 0.10),
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+				}}
+			>
+				<Icon size={22} variant="Bulk" color={color} />
+				{tech.isNew && (
+					<Box
+						aria-hidden
+						sx={{
+							position: "absolute",
+							top: -3,
+							right: -3,
+							width: 10,
+							height: 10,
+							borderRadius: "50%",
+							bgcolor: LIVE_GREEN,
+							border: `2px solid ${theme.palette.background.paper}`,
+							zIndex: 2,
+							"&::after": {
+								content: '""',
+								position: "absolute",
+								inset: -1,
+								borderRadius: "50%",
+								bgcolor: LIVE_GREEN,
+								animation: "tech-live-pulse 2.2s ease-out infinite",
+							},
+							"@keyframes tech-live-pulse": {
+								"0%": { transform: "scale(0.9)", opacity: 0.55 },
+								"80%, 100%": { transform: "scale(2.4)", opacity: 0 },
+							},
+						}}
+					/>
+				)}
+			</Box>
+
+			{/* Title + description — ambos 1 línea truncada */}
+			<Box sx={{ flex: 1, minWidth: 0 }}>
+				<Typography
+					className="row-title"
+					sx={{
+						fontWeight: 600,
+						fontSize: "0.95rem",
+						lineHeight: 1.3,
+						color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
+						whiteSpace: "nowrap",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						transition: "color 0.2s ease",
+					}}
+				>
+					{tech.title}
+				</Typography>
+				<Typography
+					sx={{
+						fontSize: "0.78rem",
+						color: theme.palette.text.secondary,
+						lineHeight: 1.4,
+						whiteSpace: "nowrap",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+					}}
+				>
+					{tech.description}
+				</Typography>
+			</Box>
+
+			<Box
+				className="row-arrow"
+				component="span"
+				aria-hidden
+				sx={{
+					display: "inline-flex",
+					flexShrink: 0,
+					color: theme.palette.text.secondary,
+					transition: "transform 0.25s ease, color 0.2s ease",
+				}}
+			>
+				<ArrowRight2 size={18} />
+			</Box>
+		</Box>
+	);
 };
 
-// ==============================|| LANDING - TechnologiesPage ||============================== //
+// ============================== CITAS BANNER ============================== //
+// Banner full-width primary-tinted con CTA explícito. Click navega a /register
+// (banner entero + botón, ambos con stopPropagation para evitar doble tracking).
+
+interface CitasBannerProps {
+	banner: CitasBannerData;
+	theme: Theme;
+	isDark: boolean;
+	onClick: () => void;
+	onCtaTrack: () => void;
+}
+
+const CitasBanner = ({ banner, theme, isDark, onClick, onCtaTrack }: CitasBannerProps) => {
+	const Icon = banner.iconComponent;
+	const primary = theme.palette.primary.main;
+
+	return (
+		<MainCard
+			onClick={onClick}
+			sx={{
+				position: "relative",
+				overflow: "hidden",
+				cursor: "pointer",
+				bgcolor: alpha(primary, isDark ? 0.10 : 0.06),
+				borderColor: alpha(primary, 0.25),
+				transition: "transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
+				"&:hover": {
+					transform: { sm: "translateY(-3px)" },
+					boxShadow: { sm: `0 14px 32px ${alpha(BRAND_BLUE, 0.18)}, 0 6px 14px ${alpha(BRAND_BLUE, 0.10)}` },
+					borderColor: { sm: alpha(primary, 0.45) },
+				},
+			}}
+		>
+			{/* Soft brand-blue blob — echo de la atmósfera de la sección */}
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					top: -50,
+					right: -30,
+					width: 200,
+					height: 200,
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.14)} 0%, transparent 65%)`,
+					filter: "blur(40px)",
+					pointerEvents: "none",
+				}}
+			/>
+
+			<Box
+				sx={{
+					position: "relative",
+					display: "flex",
+					flexDirection: { xs: "column", md: "row" },
+					alignItems: "center",
+					gap: { xs: 2, md: 2.5 },
+					textAlign: { xs: "center", md: "left" },
+				}}
+			>
+				<Box
+					sx={{
+						width: { xs: 56, md: 60 },
+						height: { xs: 56, md: 60 },
+						borderRadius: 1.5,
+						bgcolor: alpha(primary, isDark ? 0.22 : 0.14),
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						flexShrink: 0,
+					}}
+				>
+					<Icon size={30} variant="Bulk" color={primary} />
+				</Box>
+
+				<Box sx={{ flex: 1 }}>
+					<Typography
+						variant="h5"
+						sx={{
+							fontWeight: 600,
+							mb: 0.5,
+							color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
+							lineHeight: 1.25,
+						}}
+					>
+						{banner.title}
+					</Typography>
+					<Typography
+						sx={{
+							fontSize: "0.88rem",
+							color: theme.palette.text.secondary,
+							lineHeight: 1.5,
+						}}
+					>
+						{banner.description}
+					</Typography>
+				</Box>
+
+				<Box sx={{ flexShrink: 0 }}>
+					<Button
+						component={RouterLink}
+						to={banner.to}
+						onClick={(e) => {
+							e.stopPropagation();
+							onCtaTrack();
+						}}
+						variant="contained"
+						color="primary"
+						size="large"
+						endIcon={<ArrowRight size={18} color="#fff" />}
+						sx={{
+							px: 2.5,
+							py: 1.25,
+							fontSize: "0.9rem",
+							fontWeight: 600,
+							textTransform: "none",
+							borderRadius: 2,
+							whiteSpace: "nowrap",
+						}}
+					>
+						{banner.cta}
+					</Button>
+				</Box>
+			</Box>
+		</MainCard>
+	);
+};
+
+// ============================== LANDING - TECHNOLOGIES PAGE ============================== //
 
 const TechnologiesPage = () => {
 	const theme = useTheme();
+	const navigate = useNavigate();
 	const { trackCitasCTA, trackPruebaPagarCTA, trackFeature } = useLandingAnalytics();
+	const isDark = theme.palette.mode === "dark";
 
-	// Ref for section visibility tracking
 	const sectionRef = useRef<HTMLDivElement>(null);
 	const hasTrackedView = useRef(false);
 
-	// Modal state
 	const [selectedFeature, setSelectedFeature] = useState<string | null>(null);
 	const [modalOpen, setModalOpen] = useState(false);
 
-	// Track when features section is 50% visible
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			(entries) => {
@@ -126,282 +366,229 @@ const TechnologiesPage = () => {
 		return () => observer.disconnect();
 	}, []);
 
-	const handleCardClick = useCallback(
-		(featureKey: string) => {
-			trackFeature(featureKey);
-			setSelectedFeature(featureKey);
+	// 8 features → llenan grid 2×4. Citas va aparte como banner.
+	// Orden DOM = orden mobile (single col stack). Fila izq = índice par.
+	const items: FeatureRowData[] = [
+		{
+			iconComponent: FolderOpen,
+			title: "Expedientes",
+			description: "Notificaciones PJN · MEV en vivo",
+			colorKey: "warning",
+			featureKey: FeatureNames.CARPETAS,
+		},
+		{
+			iconComponent: Calendar,
+			title: "Calendario",
+			description: "Sincronizado con Google Calendar",
+			colorKey: "info",
+			featureKey: FeatureNames.CALENDARIO,
+		},
+		{
+			iconComponent: Calculator,
+			title: "Cálculos laborales",
+			description: "Ley 27.742 · topes actualizados",
+			colorKey: "primary",
+			featureKey: FeatureNames.CALCULOS,
+		},
+		{
+			iconComponent: Chart,
+			title: "Intereses",
+			description: "CER per-tramo · Ley 27.802",
+			colorKey: "success",
+			featureKey: FeatureNames.INTERESES,
+		},
+		{
+			iconComponent: DocumentText,
+			title: "Escritos con IA",
+			description: "Templates legales + asistente IA",
+			colorKey: "info",
+			featureKey: FeatureNames.ESCRITOS,
+			isNew: true,
+		},
+		{
+			iconComponent: Send2,
+			title: "Tracking postal",
+			description: "Telegramas y cartas documento",
+			colorKey: "warning",
+			featureKey: FeatureNames.POSTAL_TRACKING,
+			isNew: true,
+		},
+		{
+			iconComponent: TaskSquare,
+			title: "Tareas",
+			description: "Prioridades, plazos y responsables",
+			colorKey: "error",
+			featureKey: FeatureNames.TAREAS,
+		},
+		{
+			iconComponent: Profile2User,
+			title: "Contactos",
+			description: "Datos, causas e historial",
+			colorKey: "secondary",
+			featureKey: FeatureNames.CONTACTOS,
+		},
+	];
+
+	const citasBanner: CitasBannerData = {
+		iconComponent: CalendarTick,
+		title: "Dejá que tus clientes agenden solos",
+		description: "Sistema de reservas online con link compartible y agenda sincronizada.",
+		cta: "Activar sistema de citas",
+		to: "/register",
+		featureKey: FeatureNames.SISTEMA_CITAS,
+	};
+
+	const handleRowClick = useCallback(
+		(tech: FeatureRowData) => {
+			trackFeature(tech.featureKey);
+			setSelectedFeature(tech.featureKey);
 			setModalOpen(true);
 		},
 		[trackFeature],
 	);
 
+	const handleBannerClick = useCallback(() => {
+		trackCitasCTA();
+		navigate(citasBanner.to);
+	}, [navigate, trackCitasCTA, citasBanner.to]);
+
 	const handleModalClose = useCallback(() => {
 		setModalOpen(false);
 	}, []);
 
-	return (
-		<Container ref={sectionRef}>
-			<Grid container spacing={3} alignItems="center" justifyContent="center" sx={{ mt: { md: 15, xs: 2.5 }, mb: { md: 10, xs: 2.5 } }}>
-				{/* Título y subtítulo de la sección */}
-				<Grid item xs={12}>
-					<Grid container spacing={2} sx={{ textAlign: "center", marginBottom: 3 }}>
-						<Grid item xs={12}>
-							<motion.div
-								initial={{ opacity: 0, translateY: 50 }}
-								animate={{ opacity: 1, translateY: 0 }}
-								transition={{
-									type: "spring",
-									stiffness: 150,
-									damping: 30,
-									delay: 0.2,
-								}}
-							>
-								<Typography variant="h2">Todo lo que hoy hacés a mano, en un solo sistema</Typography>
-							</motion.div>
-						</Grid>
-						<Grid item xs={12}>
-							<motion.div
-								initial={{ opacity: 0, translateY: 30 }}
-								animate={{ opacity: 1, translateY: 0 }}
-								transition={{
-									type: "spring",
-									stiffness: 150,
-									damping: 30,
-									delay: 0.4,
-								}}
-							>
-								<Typography variant="h5" color="text.secondary" sx={{ maxWidth: "800px", mx: "auto", mt: 1, mb: 3 }}>
-									Expedientes, clientes, agenda y cálculos legales organizados automáticamente.
-								</Typography>
-							</motion.div>
-						</Grid>
-					</Grid>
-				</Grid>
+	const dividerColor = alpha(theme.palette.divider, 0.6);
 
-				{/* Grid principal de cards */}
-				<Grid item xs={12}>
-					<Grid container spacing={3} justifyContent="center">
-						{TechnologiesList.map((tech, index) => (
-							<Grid
-								item
-								xs={12}
-								sm={6}
-								md={4}
-								key={index}
-								sx={{
-									order: { xs: tech.mobileOrder, sm: 0 },
-								}}
-							>
-								<FadeInWhenVisible>
-									<MainCard
-										onClick={() => handleCardClick(tech.featureKey)}
-										sx={{
-											height: "100%",
-											transition: "all 0.3s ease",
-											cursor: "pointer",
-											"&:hover": {
-												transform: { sm: "translateY(-8px)" },
-												boxShadow: { sm: theme.shadows[8] },
-												"& .cta-link": {
-													textDecoration: "underline",
-												},
+	return (
+		<Box
+			ref={sectionRef}
+			component="section"
+			sx={{
+				position: "relative",
+				overflow: "hidden",
+				pt: { xs: 4, md: 7 },
+				pb: { xs: 3, md: 3 },
+			}}
+		>
+			{/* Atmósfera — blobs brand-blue + dot grid neutral (consistente con Hero) */}
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					top: "8%",
+					right: "-15%",
+					width: { xs: 380, md: 560 },
+					height: { xs: 380, md: 560 },
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.10)} 0%, transparent 62%)`,
+					filter: "blur(70px)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					bottom: "-5%",
+					left: "-15%",
+					width: { xs: 360, md: 520 },
+					height: { xs: 360, md: 520 },
+					borderRadius: "50%",
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.08 : 0.06)} 0%, transparent 65%)`,
+					filter: "blur(80px)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+			<Box
+				aria-hidden
+				sx={{
+					position: "absolute",
+					inset: 0,
+					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.05 : 0.04)} 1px, transparent 1px)`,
+					backgroundSize: "26px 26px",
+					maskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
+					WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
+					pointerEvents: "none",
+					zIndex: 0,
+				}}
+			/>
+
+			<Container sx={{ position: "relative", zIndex: 1 }}>
+				{/* Header de sección */}
+				<Box sx={{ textAlign: "center", mb: { xs: 4, md: 6 } }}>
+					<motion.div
+						initial={{ opacity: 0, translateY: 50 }}
+						whileInView={{ opacity: 1, translateY: 0 }}
+						viewport={{ once: true, margin: "-100px" }}
+						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.05 }}
+					>
+						<Typography variant="h2">Todo lo que hoy hacés a mano, en un solo sistema</Typography>
+					</motion.div>
+					<motion.div
+						initial={{ opacity: 0, translateY: 30 }}
+						whileInView={{ opacity: 1, translateY: 0 }}
+						viewport={{ once: true, margin: "-100px" }}
+						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.15 }}
+					>
+						<Typography variant="h5" color="text.secondary" sx={{ maxWidth: 760, mx: "auto", mt: 1.5 }}>
+							Expedientes, clientes, agenda, cálculos, escritos y envíos — organizados automáticamente.
+						</Typography>
+					</motion.div>
+				</Box>
+
+				{/* Feature list card — 1 MainCard contiene grid 2×4 de filas compactas */}
+				<FadeInWhenVisible>
+					<MainCard content={false} sx={{ overflow: "hidden" }}>
+						<Box
+							sx={{
+								display: "grid",
+								gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+							}}
+						>
+							{items.map((tech, index) => {
+								const isLeft = index % 2 === 0;
+								const isLast = index === items.length - 1;
+								const isLastRowDesktop = index >= items.length - 2;
+								return (
+									<FeatureRow
+										key={tech.featureKey}
+										tech={tech}
+										theme={theme}
+										isDark={isDark}
+										onClick={() => handleRowClick(tech)}
+										borders={{
+											right: {
+												xs: "none",
+												sm: isLeft ? `1px solid ${dividerColor}` : "none",
+											},
+											bottom: {
+												xs: isLast ? "none" : `1px solid ${dividerColor}`,
+												sm: isLastRowDesktop ? "none" : `1px solid ${dividerColor}`,
 											},
 										}}
-									>
-										<Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-											{/* Ícono */}
-											<Box sx={{ mb: 2 }}>
-												<tech.iconComponent
-													size={40}
-													variant="Bulk"
-													style={{
-														color: theme.palette[tech.colorKey].main,
-													}}
-												/>
-											</Box>
+									/>
+								);
+							})}
+						</Box>
+					</MainCard>
+				</FadeInWhenVisible>
 
-											{/* Título (dolor) */}
-											<Typography
-												variant="h4"
-												sx={{
-													mb: 1.5,
-													fontWeight: 600,
-													color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
-												}}
-											>
-												{tech.title}
-											</Typography>
-
-											{/* Descripción (beneficio) */}
-											<Typography
-												variant="body1"
-												color="text.secondary"
-												sx={{
-													mb: 2,
-													minHeight: { xs: "auto", sm: "48px" },
-												}}
-											>
-												{tech.description}
-											</Typography>
-
-											{/* CTA tipo link - siempre visible en mobile */}
-											<Link
-												className="cta-link"
-												sx={{
-													display: "flex",
-													alignItems: "center",
-													gap: 0.5,
-													color: theme.palette[tech.colorKey].main,
-													fontWeight: 500,
-													cursor: "pointer",
-													textDecoration: { xs: "underline", sm: "none" },
-													"&:hover": {
-														textDecoration: "underline",
-													},
-												}}
-											>
-												{tech.cta}
-												<ArrowRight2 size={16} />
-											</Link>
-										</Box>
-									</MainCard>
-								</FadeInWhenVisible>
-							</Grid>
-						))}
-
-						{/* Texto intermedio - solo visible en mobile */}
-						<Grid
-							item
-							xs={12}
-							sx={{
-								order: { xs: 5, sm: 0 },
-								display: { xs: "block", sm: "none" },
-								textAlign: "center",
-								py: 2,
-							}}
-						>
-							<Typography
-								variant="h5"
-								sx={{
-									fontWeight: 500,
-									color: theme.palette.mode === "dark" ? theme.palette.grey[300] : theme.palette.grey[700],
-								}}
-							>
-								Todo esto funciona junto, en un solo sistema.
-							</Typography>
-						</Grid>
-					</Grid>
-				</Grid>
-
-				{/* Card destacada - Sistema de Citas */}
-				<Grid item xs={12} sx={{ mt: 4 }}>
+				{/* Banner Citas — separado abajo, full width, conversión */}
+				<Box sx={{ mt: 3 }}>
 					<FadeInWhenVisible>
-						<MainCard
-							sx={{
-								background:
-									theme.palette.mode === "dark"
-										? `linear-gradient(135deg, ${theme.palette.primary.dark}15 0%, ${theme.palette.primary.main}10 100%)`
-										: `linear-gradient(135deg, ${theme.palette.primary.lighter} 0%, ${theme.palette.grey[50]} 100%)`,
-								border: `1px solid ${theme.palette.primary.main}30`,
-								transition: "all 0.3s ease",
-								cursor: "pointer",
-								"&:hover": {
-									transform: "translateY(-4px)",
-									boxShadow: theme.shadows[8],
-									"& .cta-link": {
-										textDecoration: "underline",
-									},
-								},
-							}}
-						>
-							<Grid container spacing={3} alignItems="center" justifyContent="center">
-								<Grid item xs={12} md={8}>
-									<Box
-										sx={{
-											display: "flex",
-											flexDirection: { xs: "column", sm: "row" },
-											alignItems: "center",
-											gap: 3,
-											textAlign: { xs: "center", sm: "left" },
-										}}
-									>
-										{/* Badge + Ícono */}
-										<Badge
-											badgeContent="NUEVO"
-											color="error"
-											sx={{
-												"& .MuiBadge-badge": {
-													fontSize: "0.7rem",
-													fontWeight: 600,
-												},
-											}}
-										>
-											<Box
-												sx={{
-													p: 1.5,
-													borderRadius: 2,
-													bgcolor: theme.palette.primary.main + "20",
-												}}
-											>
-												<FeaturedCard.iconComponent
-													size={40}
-													variant="Bulk"
-													style={{
-														color: theme.palette.primary.main,
-													}}
-												/>
-											</Box>
-										</Badge>
-
-										{/* Contenido */}
-										<Box sx={{ flex: 1 }}>
-											<Typography
-												variant="h4"
-												sx={{
-													mb: 1,
-													fontWeight: 600,
-													color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
-												}}
-											>
-												{FeaturedCard.title}
-											</Typography>
-											<Typography variant="body1" color="text.secondary">
-												{FeaturedCard.description}
-											</Typography>
-										</Box>
-
-										{/* CTA - siempre visible en mobile */}
-										<Link
-											component={RouterLink}
-											to="/register"
-											className="cta-link"
-											onClick={trackCitasCTA}
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												gap: 0.5,
-												color: theme.palette.primary.main,
-												fontWeight: 600,
-												cursor: "pointer",
-												textDecoration: { xs: "underline", sm: "none" },
-												whiteSpace: "nowrap",
-												"&:hover": {
-													textDecoration: "underline",
-												},
-											}}
-										>
-											{FeaturedCard.cta}
-											<ArrowRight2 size={18} />
-										</Link>
-									</Box>
-								</Grid>
-							</Grid>
-						</MainCard>
+						<CitasBanner
+							banner={citasBanner}
+							theme={theme}
+							isDark={isDark}
+							onClick={handleBannerClick}
+							onCtaTrack={trackCitasCTA}
+						/>
 					</FadeInWhenVisible>
-				</Grid>
+				</Box>
 
 				{/* CTA Final de la sección */}
-				<Grid item xs={12} sx={{ mt: 6 }}>
+				<Box sx={{ mt: { xs: 5, md: 7 } }}>
 					<FadeInWhenVisible>
 						<Box sx={{ textAlign: "center" }}>
 							<Typography
@@ -409,7 +596,7 @@ const TechnologiesPage = () => {
 								sx={{
 									mb: 3,
 									fontWeight: 500,
-									color: theme.palette.mode === "dark" ? theme.palette.grey[100] : theme.palette.grey[900],
+									color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
 								}}
 							>
 								Probá LawAnalytics gratis y dejá de trabajar a mano.
@@ -436,12 +623,11 @@ const TechnologiesPage = () => {
 							</Typography>
 						</Box>
 					</FadeInWhenVisible>
-				</Grid>
-			</Grid>
+				</Box>
+			</Container>
 
-			{/* Feature Modal */}
 			<FeatureModal open={modalOpen} onClose={handleModalClose} featureKey={selectedFeature} />
-		</Container>
+		</Box>
 	);
 };
 
