@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Fab, Dialog, DialogTitle, DialogContent, Tooltip, Zoom, useTheme } from "@mui/material";
+import {
+	Fab,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	Divider,
+	Stack,
+	Typography,
+	Tooltip,
+	Zoom,
+	useTheme,
+} from "@mui/material";
 import { MessageQuestion } from "iconsax-react";
 import { useLocation } from "react-router-dom";
 import { dispatch } from "store";
@@ -85,15 +96,44 @@ const FeedbackWidget: React.FC = () => {
 				</Tooltip>
 			</Zoom>
 
-			<Dialog open={open} onClose={() => !submitting && setOpen(false)} maxWidth="sm" fullWidth>
-				<DialogTitle>Dejanos tu opinión</DialogTitle>
-				<DialogContent dividers>
-					<FeedbackForm
-						helperText="Tu comentario nos ayuda a mejorar. Si te parece, podemos publicarlo como testimonio en la web."
-						submitting={submitting}
-						onSubmit={handleSubmit}
-						onCancel={() => setOpen(false)}
-					/>
+			<Dialog
+				open={open}
+				onClose={() => !submitting && setOpen(false)}
+				maxWidth="sm"
+				fullWidth
+				aria-labelledby="feedback-modal-title"
+				PaperProps={{
+					elevation: 5,
+					sx: {
+						borderRadius: 2,
+						overflow: "hidden",
+					},
+				}}
+			>
+				<DialogTitle
+					id="feedback-modal-title"
+					sx={{
+						bgcolor: theme.palette.primary.lighter,
+						p: 3,
+						borderBottom: `1px solid ${theme.palette.divider}`,
+					}}
+				>
+					<Stack spacing={1}>
+						<Stack direction="row" alignItems="center" spacing={1}>
+							<MessageQuestion size={24} color={theme.palette.primary.main} variant="Bold" />
+							<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+								Dejanos tu opinión
+							</Typography>
+						</Stack>
+						<Typography variant="body2" color="textSecondary">
+							Tu comentario nos ayuda a mejorar. Si nos das permiso, podemos publicarlo como testimonio.
+						</Typography>
+					</Stack>
+				</DialogTitle>
+				<Divider />
+
+				<DialogContent sx={{ p: 3 }}>
+					<FeedbackForm submitting={submitting} onSubmit={handleSubmit} onCancel={() => setOpen(false)} />
 				</DialogContent>
 			</Dialog>
 		</>

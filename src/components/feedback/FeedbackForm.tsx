@@ -13,7 +13,11 @@ import {
 	Select,
 	FormControl,
 	InputLabel,
+	Collapse,
+	Divider,
+	InputAdornment,
 } from "@mui/material";
+import { Edit2 } from "iconsax-react";
 import { FeedbackType } from "api/feedback";
 
 const TYPE_LABEL: Record<FeedbackType, string> = {
@@ -170,7 +174,7 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
 						control={<Checkbox checked={allowPublish} onChange={(e) => setAllowPublish(e.target.checked)} />}
 						label={<Typography variant="body2">Acepto que este comentario pueda ser publicado en la web como testimonio</Typography>}
 					/>
-					{allowPublish && (
+					<Collapse in={allowPublish} timeout={350} unmountOnExit>
 						<TextField
 							label="¿Cómo querés firmar?"
 							value={displayName}
@@ -179,9 +183,16 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
 							size="small"
 							placeholder="Ej: Juan P. — Abogado"
 							helperText="Si lo dejás vacío, usamos tu nombre"
-							sx={{ mt: 1 }}
+							sx={{ mt: 1.5, mb: 0.5 }}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position="start">
+										<Edit2 size={16} />
+									</InputAdornment>
+								),
+							}}
 						/>
-					)}
+					</Collapse>
 					<FormControlLabel
 						control={<Checkbox checked={allowContact} onChange={(e) => setAllowContact(e.target.checked)} />}
 						label={<Typography variant="body2">Pueden contactarme si necesitan más detalle</Typography>}
@@ -191,9 +202,10 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
 
 			{error && <Alert severity="error">{error}</Alert>}
 
-			<Stack direction="row" spacing={1} justifyContent="flex-end">
+			<Divider sx={{ mt: 1 }} />
+			<Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
 				{onCancel && (
-					<Button onClick={onCancel} disabled={submitting}>
+					<Button onClick={onCancel} color="error" disabled={submitting}>
 						Cancelar
 					</Button>
 				)}
