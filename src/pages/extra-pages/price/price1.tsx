@@ -296,10 +296,18 @@ const Pricing = () => {
 				window.location.href = errorUrl;
 			}
 		} catch (error) {
+			// handleAxiosError ya extrae error.response.data.message — preservar
+			// el mensaje específico (ej. "Ya has usado este código..." cuando el
+			// backend rechaza el discountCode con 400) en lugar de mostrar uno
+			// genérico que esconde el motivo del fallo.
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Error al procesar la solicitud de suscripción. Por favor, intenta de nuevo más tarde.";
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al procesar la solicitud de suscripción. Por favor, intenta de nuevo más tarde.",
+					message,
 					variant: "alert",
 					alert: {
 						color: "error",

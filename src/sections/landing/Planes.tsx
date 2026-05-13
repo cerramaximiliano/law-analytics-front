@@ -31,6 +31,14 @@ interface PlanRow {
 	enabled: boolean;
 }
 
+interface PlanDiscount {
+	originalPrice: number;
+	finalPrice: number;
+	badge?: string;
+	promotionalMessage?: string;
+	durationInMonths?: number;
+}
+
 interface Plan {
 	id: "free" | "standard" | "premium";
 	name: string;
@@ -41,6 +49,7 @@ interface Plan {
 	ctaTo: string;
 	highlighted: boolean;
 	mobileOrder: number; // En xs queremos Standard primero (most relevant), luego Free, Premium.
+	discount?: PlanDiscount; // Solo se llena cuando hay un activeDiscount aplicable (showOnLanding)
 }
 
 /**
@@ -206,11 +215,27 @@ const Planes = () => {
 					// hardcodeo del fallback para no romper la simetría del teaser.
 					const apiRows = computeRowsFromApiPlan(apiPlan, currentEnv);
 
+					// Sólo se muestran descuentos del primer item de activeDiscounts.
+					// El backend ya filtra por showOnLanding cuando no hay sesión, así que
+					// si llegó algo acá es seguro mostrarlo en la landing pública.
+					const firstDiscount = !isFree && apiPlan.activeDiscounts && apiPlan.activeDiscounts.length > 0
+						? apiPlan.activeDiscounts[0]
+						: undefined;
+
 					return {
 						...def,
 						price: formatPriceShort(pricing.basePrice),
 						priceSuffix: isFree ? "Para siempre" : billingSuffixShort(pricing.billingPeriod),
 						rows: apiRows ?? def.rows,
+						discount: firstDiscount
+							? {
+									originalPrice: firstDiscount.originalPrice,
+									finalPrice: firstDiscount.finalPrice,
+									badge: firstDiscount.badge,
+									promotionalMessage: firstDiscount.promotionalMessage,
+									durationInMonths: firstDiscount.durationInMonths,
+							  }
+							: undefined,
 					};
 				});
 				setPlans(merged);
@@ -405,7 +430,21 @@ const Planes = () => {
 													{plan.name}
 												</Typography>
 
-												<Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75 }}>
+												<Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, flexWrap: "wrap" }}>
+													{plan.discount && (
+														<Typography
+															sx={{
+																fontSize: "1.1rem",
+																fontWeight: 500,
+																color: theme.palette.text.secondary,
+																textDecoration: "line-through",
+																opacity: 0.7,
+																fontVariantNumeric: "tabular-nums",
+															}}
+														>
+															{formatPriceShort(plan.discount.originalPrice)}
+														</Typography>
+													)}
 													<Typography
 														variant="h2"
 														sx={{
@@ -417,7 +456,7 @@ const Planes = () => {
 															color: isDark ? theme.palette.grey[50] : theme.palette.grey[900],
 														}}
 													>
-														{plan.price}
+														{plan.discount ? formatPriceShort(plan.discount.finalPrice) : plan.price}
 													</Typography>
 													{plan.id !== "free" && (
 														<Typography
@@ -432,21 +471,58 @@ const Planes = () => {
 														</Typography>
 													)}
 												</Box>
-												{/* Caption reservada para los 3 planes — el plan free muestra "Para
-												siempre", los pagos quedan invisibles pero ocupando la misma altura
-												para que las feature-lists arranquen al mismo Y entre las 3 columnas. */}
-												<Typography
-													aria-hidden={plan.id !== "free"}
-													sx={{
-														mt: 0.5,
-														fontSize: "0.78rem",
-														color: theme.palette.text.secondary,
-														letterSpacing: "0.02em",
-														visibility: plan.id === "free" ? "visible" : "hidden",
-													}}
-												>
-													{plan.id === "free" ? plan.priceSuffix : "—"}
-												</Typography>
+												{/* Caption reservada — para plan free muestra "Para siempre".
+												Para planes pagos con descuento, muestra badge + mensaje breve.
+												Para planes pagos sin descuento, queda invisible pero ocupa la misma
+												altura para alinear las feature-lists entre las 3 columnas. */}
+												{plan.discount ? (
+													<Stack
+														direction={{ xs: "column", sm: "row" }}
+														spacing={1}
+														alignItems={{ xs: "flex-start", sm: "center" }}
+														sx={{ mt: 0.75 }}
+													>
+														{plan.discount.badge && (
+															<Chip
+																label={plan.discount.badge}
+																size="small"
+																color="success"
+																sx={{
+																	height: 20,
+																	fontSize: "0.7rem",
+																	fontWeight: 700,
+																	letterSpacing: "0.04em",
+																	"& .MuiChip-label": { px: 0.75 },
+																}}
+															/>
+														)}
+														{plan.discount.promotionalMessage && (
+															<Typography
+																sx={{
+																	fontSize: "0.78rem",
+																	color: theme.palette.text.secondary,
+																	fontWeight: 400,
+																	letterSpacing: "0.01em",
+																}}
+															>
+																{plan.discount.promotionalMessage}
+															</Typography>
+														)}
+													</Stack>
+												) : (
+													<Typography
+														aria-hidden={plan.id !== "free"}
+														sx={{
+															mt: 0.5,
+															fontSize: "0.78rem",
+															color: theme.palette.text.secondary,
+															letterSpacing: "0.02em",
+															visibility: plan.id === "free" ? "visible" : "hidden",
+														}}
+													>
+														{plan.id === "free" ? plan.priceSuffix : "—"}
+													</Typography>
+												)}
 											</Box>
 
 											<Box sx={{ height: 1, bgcolor: alpha(theme.palette.divider, 0.5) }} />
