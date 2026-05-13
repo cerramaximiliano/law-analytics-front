@@ -292,7 +292,7 @@ const GuideContacts: React.FC<GuideContactsProps> = ({ open, onClose }) => {
 			maxWidth="md"
 			fullWidth
 			TransitionComponent={PopupTransition}
-			sx={{ "& .MuiDialog-paper": { borderRadius: "12px" } }}
+			sx={{ "& .MuiDialog-paper": { borderRadius: 2 } }}
 		>
 			<DialogTitle
 				sx={{
@@ -333,7 +333,7 @@ const GuideContacts: React.FC<GuideContactsProps> = ({ open, onClose }) => {
 					Anterior
 				</Button>
 				<Box sx={{ flex: "1 1 auto" }} />
-				<Button color="error" onClick={handleCloseWithReset}>
+				<Button onClick={handleCloseWithReset} sx={{ color: "text.secondary" }}>
 					Cerrar
 				</Button>
 				{activeStep === steps.length - 1 ? (
