@@ -435,7 +435,9 @@ const TechnologiesPage = () => {
 		title: "Dejá que tus clientes agenden solos",
 		description: "Sistema de reservas online con link compartible y agenda sincronizada.",
 		cta: "Activar sistema de citas",
-		to: "/register",
+		// Banner sin modal previo — el query string permite que /register muestre
+		// el panel contextual del feature aunque no haya pasado por FeatureModal.
+		to: `/register?source=banner&feature=${FeatureNames.SISTEMA_CITAS}`,
 		featureKey: FeatureNames.SISTEMA_CITAS,
 	};
 
@@ -614,7 +616,7 @@ const TechnologiesPage = () => {
 							</Typography>
 							<Button
 								component={RouterLink}
-								to="/register"
+								to="/register?source=cta&location=prueba_pagar"
 								variant="contained"
 								color="primary"
 								size="large"

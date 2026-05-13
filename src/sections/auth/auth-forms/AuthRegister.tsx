@@ -249,19 +249,19 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 								</AnimateButton>
 								<Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ mt: 1.5 }}>
 									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#4caf50" />
+										<TickCircle size={10} variant="Bold" color="#22C55E" />
 										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
 											Sin tarjeta
 										</Typography>
 									</Stack>
 									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#4caf50" />
+										<TickCircle size={10} variant="Bold" color="#22C55E" />
 										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
 											Acceso inmediato
 										</Typography>
 									</Stack>
 									<Stack direction="row" alignItems="center" spacing={0.3}>
-										<TickCircle size={10} variant="Bold" color="#4caf50" />
+										<TickCircle size={10} variant="Bold" color="#22C55E" />
 										<Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
 											Cancelá cuando quieras
 										</Typography>
@@ -272,7 +272,7 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 									color="text.secondary"
 									sx={{ mt: 2, display: "block", textAlign: "center", fontSize: "0.65rem", lineHeight: 1.6, opacity: 0.7 }}
 								>
-									Registrándose, está de acuerdo con{" "}
+									Al continuar aceptás los{" "}
 									<Link
 										variant="caption"
 										component={RouterLink}
@@ -281,9 +281,9 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										rel="noopener noreferrer"
 										sx={{ fontSize: "0.65rem" }}
 									>
-										Términos del Servicio
+										términos
 									</Link>{" "}
-									y{" "}
+									y la{" "}
 									<Link
 										variant="caption"
 										component={RouterLink}
@@ -292,8 +292,9 @@ const AuthRegister = ({ source, feature }: AuthRegisterProps) => {
 										rel="noopener noreferrer"
 										sx={{ fontSize: "0.65rem" }}
 									>
-										Política de Privacidad
+										política de privacidad
 									</Link>
+									.
 								</Typography>
 							</Grid>
 						</Grid>
