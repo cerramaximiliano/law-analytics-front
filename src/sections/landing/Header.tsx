@@ -150,7 +150,16 @@ const MetricsTicker = ({ iconColor }: { iconColor: string }) => {
 					style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
 				>
 					{active.renderIcon(iconColor)}
-					<Box component="span" sx={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1.2 }}>
+					<Box
+						component="span"
+						sx={{
+							fontSize: "1.3rem",
+							fontWeight: 600,
+							lineHeight: 1.2,
+							letterSpacing: "-0.02em",
+							fontVariantNumeric: "tabular-nums",
+						}}
+					>
 						{active.value}
 					</Box>
 					<Box component="span" sx={{ fontSize: "0.85rem", fontWeight: 400, color: "text.secondary", lineHeight: 1.2 }}>
@@ -165,7 +174,15 @@ const MetricsTicker = ({ iconColor }: { iconColor: string }) => {
 // ============================== METRIC VALUE (DESKTOP) ============================== //
 
 const MetricValue = ({ children, label }: { children: ReactNode; label: string }) => (
-	<Typography sx={{ fontSize: { xs: "1.125rem", sm: "1.375rem", md: "1.625rem" }, fontWeight: 600, lineHeight: 1.2 }}>
+	<Typography
+		sx={{
+			fontSize: { xs: "1.125rem", sm: "1.375rem", md: "1.625rem" },
+			fontWeight: 600,
+			lineHeight: 1.2,
+			letterSpacing: "-0.015em",
+			fontVariantNumeric: "tabular-nums",
+		}}
+	>
 		{children}
 		<Box
 			component="span"
@@ -431,9 +448,11 @@ const HeaderPage = () => {
 										<Typography
 											variant="h1"
 											sx={{
-												fontSize: { xs: "1.35rem", sm: "2rem", md: "2.25rem", lg: "2.75rem", xl: "3.4375rem" },
-												fontWeight: 700,
-												lineHeight: 1.1,
+												fontSize: { xs: "1.5rem", sm: "2.125rem", md: "2.5rem", lg: "3rem", xl: "3.75rem" },
+												fontWeight: 600,
+												lineHeight: 1.05,
+												letterSpacing: "-0.03em",
+												textWrap: "balance",
 											}}
 										>
 											<span>Automatizá tu </span>
@@ -472,9 +491,12 @@ const HeaderPage = () => {
 											variant="h6"
 											component="div"
 											sx={{
-												fontSize: { xs: "0.875rem", sm: "1.05rem", md: "1rem", lg: "1.0625rem", xl: "1.125rem" },
+												fontSize: { xs: "0.95rem", sm: "1.1rem", md: "1.0625rem", lg: "1.125rem", xl: "1.2rem" },
 												fontWeight: 400,
-												lineHeight: 1.3,
+												lineHeight: 1.45,
+												letterSpacing: "-0.005em",
+												color: "text.secondary",
+												textWrap: "pretty",
 												mb: { xs: 0, md: 1.5 },
 											}}
 										>

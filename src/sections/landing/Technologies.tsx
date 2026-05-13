@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, ElementType, KeyboardEvent } 
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 // material-ui
-import { Box, Button, Container, Typography } from "@mui/material";
+import { Box, Button, Container, Grid, Typography } from "@mui/material";
 import { useTheme, alpha, Theme } from "@mui/material/styles";
 
 // third party
@@ -23,6 +23,7 @@ import {
 
 // project-imports
 import FadeInWhenVisible from "./Animation";
+import SectionEyebrow from "./SectionEyebrow";
 import MainCard from "components/MainCard";
 import FeatureModal from "components/FeatureModal";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
@@ -120,7 +121,7 @@ const FeatureRow = ({ tech, theme, isDark, onClick, borders }: FeatureRowProps) 
 					width: { xs: 40, sm: 44 },
 					height: { xs: 40, sm: 44 },
 					borderRadius: 1.5,
-					bgcolor: alpha(color, isDark ? 0.18 : 0.10),
+					bgcolor: alpha(color, isDark ? 0.18 : 0.1),
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
@@ -228,12 +229,12 @@ const CitasBanner = ({ banner, theme, isDark, onClick, onCtaTrack }: CitasBanner
 				position: "relative",
 				overflow: "hidden",
 				cursor: "pointer",
-				bgcolor: alpha(primary, isDark ? 0.10 : 0.06),
+				bgcolor: alpha(primary, isDark ? 0.1 : 0.06),
 				borderColor: alpha(primary, 0.25),
 				transition: "transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
 				"&:hover": {
 					transform: { sm: "translateY(-3px)" },
-					boxShadow: { sm: `0 14px 32px ${alpha(BRAND_BLUE, 0.18)}, 0 6px 14px ${alpha(BRAND_BLUE, 0.10)}` },
+					boxShadow: { sm: `0 14px 32px ${alpha(BRAND_BLUE, 0.18)}, 0 6px 14px ${alpha(BRAND_BLUE, 0.1)}` },
 					borderColor: { sm: alpha(primary, 0.45) },
 				},
 			}}
@@ -469,32 +470,19 @@ const TechnologiesPage = () => {
 				pb: { xs: 3, md: 3 },
 			}}
 		>
-			{/* Atmósfera — blobs brand-blue + dot grid neutral (consistente con Hero) */}
+			{/* Atmósfera — spotlight centrado detrás del feature grid + líneas verticales
+			    sutiles que ecoan la estructura 2-col de las features. */}
 			<Box
 				aria-hidden
 				sx={{
 					position: "absolute",
-					top: "8%",
-					right: "-15%",
-					width: { xs: 380, md: 560 },
-					height: { xs: 380, md: 560 },
+					top: "30%",
+					left: "50%",
+					transform: "translate(-50%, -25%)",
+					width: { xs: 700, md: 1200 },
+					height: { xs: 500, md: 750 },
 					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.10)} 0%, transparent 62%)`,
-					filter: "blur(70px)",
-					pointerEvents: "none",
-					zIndex: 0,
-				}}
-			/>
-			<Box
-				aria-hidden
-				sx={{
-					position: "absolute",
-					bottom: "-5%",
-					left: "-15%",
-					width: { xs: 360, md: 520 },
-					height: { xs: 360, md: 520 },
-					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.08 : 0.06)} 0%, transparent 65%)`,
+					background: `radial-gradient(ellipse at center, ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.09)} 0%, transparent 60%)`,
 					filter: "blur(80px)",
 					pointerEvents: "none",
 					zIndex: 0,
@@ -505,37 +493,62 @@ const TechnologiesPage = () => {
 				sx={{
 					position: "absolute",
 					inset: 0,
-					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.05 : 0.04)} 1px, transparent 1px)`,
-					backgroundSize: "26px 26px",
-					maskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
-					WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
+					backgroundImage: `linear-gradient(to right, ${alpha(theme.palette.text.primary, isDark ? 0.045 : 0.035)} 1px, transparent 1px)`,
+					backgroundSize: { xs: "40px 100%", md: "60px 100%" },
+					maskImage: "radial-gradient(ellipse 75% 65% at center, #000 0%, transparent 80%)",
+					WebkitMaskImage: "radial-gradient(ellipse 75% 65% at center, #000 0%, transparent 80%)",
 					pointerEvents: "none",
 					zIndex: 0,
 				}}
 			/>
 
 			<Container sx={{ position: "relative", zIndex: 1 }}>
-				{/* Header de sección */}
-				<Box sx={{ textAlign: "center", mb: { xs: 4, md: 6 } }}>
-					<motion.div
-						initial={{ opacity: 0, translateY: 50 }}
-						whileInView={{ opacity: 1, translateY: 0 }}
-						viewport={{ once: true, margin: "-100px" }}
-						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.05 }}
-					>
-						<Typography variant="h2">Todo lo que hoy hacés a mano, en un solo sistema</Typography>
-					</motion.div>
-					<motion.div
-						initial={{ opacity: 0, translateY: 30 }}
-						whileInView={{ opacity: 1, translateY: 0 }}
-						viewport={{ once: true, margin: "-100px" }}
-						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.15 }}
-					>
-						<Typography variant="h5" color="text.secondary" sx={{ maxWidth: 760, mx: "auto", mt: 1.5 }}>
-							Expedientes, clientes, agenda, cálculos, escritos y envíos — organizados automáticamente.
-						</Typography>
-					</motion.div>
-				</Box>
+				{/* Header asimétrico — eyebrow + h2 izquierda (col 7), descripción derecha (col 5).
+				    Rompe la simetría centered del resto del landing para sentir más editorial. */}
+				<Grid container spacing={{ xs: 2, md: 4 }} sx={{ mb: { xs: 4, md: 6 } }} alignItems="flex-end">
+					<Grid item xs={12} md={7}>
+						<motion.div
+							initial={{ opacity: 0, translateY: 50 }}
+							whileInView={{ opacity: 1, translateY: 0 }}
+							viewport={{ once: true, margin: "-100px" }}
+							transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.05 }}
+						>
+							<SectionEyebrow number="02" label="Funcionalidades" align="left" mb={2} />
+							<Typography
+								variant="h2"
+								sx={{
+									fontSize: { xs: "1.875rem", sm: "2.25rem", md: "2.625rem", lg: "2.875rem" },
+									lineHeight: 1.05,
+									letterSpacing: "-0.025em",
+									textWrap: "balance",
+								}}
+							>
+								Todo lo que hoy hacés a mano, en un solo sistema
+							</Typography>
+						</motion.div>
+					</Grid>
+					<Grid item xs={12} md={5}>
+						<motion.div
+							initial={{ opacity: 0, translateY: 30 }}
+							whileInView={{ opacity: 1, translateY: 0 }}
+							viewport={{ once: true, margin: "-100px" }}
+							transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.15 }}
+						>
+							<Typography
+								color="text.secondary"
+								sx={{
+									fontSize: { xs: "1rem", md: "1.0625rem" },
+									fontWeight: 400,
+									lineHeight: 1.55,
+									letterSpacing: "-0.005em",
+									textWrap: "pretty",
+								}}
+							>
+								Expedientes, clientes, agenda, cálculos, escritos y envíos — organizados automáticamente.
+							</Typography>
+						</motion.div>
+					</Grid>
+				</Grid>
 
 				{/* Feature list card — 1 MainCard contiene grid 2×4 de filas compactas */}
 				<FadeInWhenVisible>
@@ -577,13 +590,7 @@ const TechnologiesPage = () => {
 				{/* Banner Citas — separado abajo, full width, conversión */}
 				<Box sx={{ mt: 3 }}>
 					<FadeInWhenVisible>
-						<CitasBanner
-							banner={citasBanner}
-							theme={theme}
-							isDark={isDark}
-							onClick={handleBannerClick}
-							onCtaTrack={trackCitasCTA}
-						/>
+						<CitasBanner banner={citasBanner} theme={theme} isDark={isDark} onClick={handleBannerClick} onCtaTrack={trackCitasCTA} />
 					</FadeInWhenVisible>
 				</Box>
 
@@ -595,7 +602,11 @@ const TechnologiesPage = () => {
 								variant="h4"
 								sx={{
 									mb: 3,
-									fontWeight: 500,
+									fontWeight: 600,
+									fontSize: { xs: "1.375rem", md: "1.625rem" },
+									lineHeight: 1.25,
+									letterSpacing: "-0.02em",
+									textWrap: "balance",
 									color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
 								}}
 							>

@@ -8,6 +8,7 @@ import { UserAdd, LinkSquare, Verify } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
+import SectionEyebrow from "./SectionEyebrow";
 
 // ============================== TOKENS ============================== //
 const BRAND_BLUE = "#3A7BFF";
@@ -67,46 +68,20 @@ const ComoFunciona = () => {
 				py: { xs: 4, md: 7 },
 			}}
 		>
-			{/* Atmósfera — blobs brand-blue + dot grid (consistente con Hero/Technologies) */}
+			{/* Atmósfera — un único blob arriba al centro, sin dot grid.
+			    Variación respecto a Hero/Technologies para romper la repetición. */}
 			<Box
 				aria-hidden
 				sx={{
 					position: "absolute",
-					top: "8%",
-					right: "-15%",
-					width: { xs: 380, md: 560 },
-					height: { xs: 380, md: 560 },
+					top: { xs: "-15%", md: "-25%" },
+					left: "50%",
+					transform: "translateX(-50%)",
+					width: { xs: 600, md: 1100 },
+					height: { xs: 400, md: 650 },
 					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.10)} 0%, transparent 62%)`,
-					filter: "blur(70px)",
-					pointerEvents: "none",
-					zIndex: 0,
-				}}
-			/>
-			<Box
-				aria-hidden
-				sx={{
-					position: "absolute",
-					bottom: "-5%",
-					left: "-15%",
-					width: { xs: 360, md: 520 },
-					height: { xs: 360, md: 520 },
-					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.08 : 0.06)} 0%, transparent 65%)`,
-					filter: "blur(80px)",
-					pointerEvents: "none",
-					zIndex: 0,
-				}}
-			/>
-			<Box
-				aria-hidden
-				sx={{
-					position: "absolute",
-					inset: 0,
-					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.05 : 0.04)} 1px, transparent 1px)`,
-					backgroundSize: "26px 26px",
-					maskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
-					WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
+					background: `radial-gradient(ellipse at center, ${alpha(BRAND_BLUE, isDark ? 0.12 : 0.08)} 0%, transparent 65%)`,
+					filter: "blur(90px)",
 					pointerEvents: "none",
 					zIndex: 0,
 				}}
@@ -120,7 +95,18 @@ const ComoFunciona = () => {
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.05 }}
 					>
-						<Typography variant="h2">Empezá en 3 pasos</Typography>
+						<SectionEyebrow number="01" label="Cómo empezar" align="center" mb={2.5} />
+						<Typography
+							variant="h2"
+							sx={{
+								fontSize: { xs: "1.875rem", sm: "2.25rem", md: "2.75rem" },
+								lineHeight: 1.08,
+								letterSpacing: "-0.025em",
+								textWrap: "balance",
+							}}
+						>
+							Empezá en 3 pasos
+						</Typography>
 					</motion.div>
 					<motion.div
 						initial={{ opacity: 0, translateY: 30 }}
@@ -128,7 +114,20 @@ const ComoFunciona = () => {
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.15 }}
 					>
-						<Typography variant="h5" color="text.secondary" sx={{ maxWidth: 760, mx: "auto", mt: 1.5 }}>
+						<Typography
+							variant="h5"
+							color="text.secondary"
+							sx={{
+								maxWidth: 640,
+								mx: "auto",
+								mt: 1.5,
+								fontSize: { xs: "1rem", md: "1.125rem" },
+								fontWeight: 400,
+								lineHeight: 1.5,
+								letterSpacing: "-0.005em",
+								textWrap: "pretty",
+							}}
+						>
 							Sin instalación, sin migraciones complicadas. En menos de 5 minutos tu estudio está conectado.
 						</Typography>
 					</motion.div>
@@ -266,24 +265,29 @@ const ComoFunciona = () => {
 												borderRadius: 1,
 											},
 											"&::after": {
+												// Animado vía `transform: translateX` (GPU-accelerated) en lugar de `left`.
+												// El track va de -26px (off-screen left) a +56px (off-screen right) =
+												// ancho del container 56 + ancho del elemento 26 = 82px de viaje total.
 												content: '""',
 												position: "absolute",
 												top: "50%",
+												left: 0,
 												width: 26,
 												height: 6,
 												marginTop: "-3px",
 												borderRadius: 4,
 												background: `linear-gradient(90deg, transparent, ${BRAND_BLUE})`,
 												boxShadow: `0 0 12px ${alpha(BRAND_BLUE, 0.75)}, 0 0 22px ${alpha(BRAND_BLUE, 0.4)}`,
-												left: "-26px",
+												transform: "translateX(-26px)",
+												willChange: "transform",
 												animation: "como-funciona-comet 1.8s linear infinite",
 												animationDelay: `${idx * 0.9}s`,
 											},
 											"@keyframes como-funciona-comet": {
-												"0%": { left: "-26px", opacity: 0 },
+												"0%": { transform: "translateX(-26px)", opacity: 0 },
 												"12%": { opacity: 1 },
 												"88%": { opacity: 1 },
-												"100%": { left: "100%", opacity: 0 },
+												"100%": { transform: "translateX(56px)", opacity: 0 },
 											},
 											"@media (prefers-reduced-motion: reduce)": {
 												"&::after": { animation: "none", display: "none" },

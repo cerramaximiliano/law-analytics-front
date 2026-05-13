@@ -11,6 +11,7 @@ import { ArrowDown2, ArrowRight } from "iconsax-react";
 // project-imports
 import MainCard from "components/MainCard";
 import FadeInWhenVisible from "./Animation";
+import SectionEyebrow from "./SectionEyebrow";
 
 // ============================== TOKENS ============================== //
 const BRAND_BLUE = "#3A7BFF";
@@ -71,45 +72,17 @@ const Faq = () => {
 				py: { xs: 4, md: 7 },
 			}}
 		>
-			<Box
-				aria-hidden
-				sx={{
-					position: "absolute",
-					top: "8%",
-					right: "-15%",
-					width: { xs: 380, md: 560 },
-					height: { xs: 380, md: 560 },
-					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.10)} 0%, transparent 62%)`,
-					filter: "blur(70px)",
-					pointerEvents: "none",
-					zIndex: 0,
-				}}
-			/>
-			<Box
-				aria-hidden
-				sx={{
-					position: "absolute",
-					bottom: "-5%",
-					left: "-15%",
-					width: { xs: 360, md: 520 },
-					height: { xs: 360, md: 520 },
-					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.08 : 0.06)} 0%, transparent 65%)`,
-					filter: "blur(80px)",
-					pointerEvents: "none",
-					zIndex: 0,
-				}}
-			/>
+			{/* Atmósfera — solo dot grid muy faded, sin blobs.
+			    El FAQ es sección de texto denso — atmósfera mínima para no competir. */}
 			<Box
 				aria-hidden
 				sx={{
 					position: "absolute",
 					inset: 0,
-					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.05 : 0.04)} 1px, transparent 1px)`,
-					backgroundSize: "26px 26px",
-					maskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
-					WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
+					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.035 : 0.025)} 1px, transparent 1px)`,
+					backgroundSize: "32px 32px",
+					maskImage: "radial-gradient(ellipse 60% 50% at center, #000 0%, transparent 80%)",
+					WebkitMaskImage: "radial-gradient(ellipse 60% 50% at center, #000 0%, transparent 80%)",
 					pointerEvents: "none",
 					zIndex: 0,
 				}}
@@ -123,7 +96,18 @@ const Faq = () => {
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.05 }}
 					>
-						<Typography variant="h2">Preguntas frecuentes</Typography>
+						<SectionEyebrow number="05" label="Preguntas" align="center" mb={2.5} />
+						<Typography
+							variant="h2"
+							sx={{
+								fontSize: { xs: "1.875rem", sm: "2.25rem", md: "2.75rem" },
+								lineHeight: 1.08,
+								letterSpacing: "-0.025em",
+								textWrap: "balance",
+							}}
+						>
+							Preguntas frecuentes
+						</Typography>
 					</motion.div>
 					<motion.div
 						initial={{ opacity: 0, translateY: 30 }}
@@ -131,7 +115,20 @@ const Faq = () => {
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.15 }}
 					>
-						<Typography variant="h5" color="text.secondary" sx={{ maxWidth: 760, mx: "auto", mt: 1.5 }}>
+						<Typography
+							variant="h5"
+							color="text.secondary"
+							sx={{
+								maxWidth: 640,
+								mx: "auto",
+								mt: 1.5,
+								fontSize: { xs: "1rem", md: "1.125rem" },
+								fontWeight: 400,
+								lineHeight: 1.5,
+								letterSpacing: "-0.005em",
+								textWrap: "pretty",
+							}}
+						>
 							Lo esencial. Si querés más detalle, mirá nuestra página de preguntas frecuentes completa.
 						</Typography>
 					</motion.div>

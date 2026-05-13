@@ -2,45 +2,79 @@ import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
 // material-ui
-import { Box, Button, Chip, Container, Grid, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Container, Grid, Link, Stack, Typography } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
 
 // third party
 import { motion } from "framer-motion";
-import { TickCircle, ArrowRight } from "iconsax-react";
+import { TickCircle, CloseCircle, ArrowRight } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
-import FadeInWhenVisible from "./Animation";
+import SectionEyebrow from "./SectionEyebrow";
 import { pushGTMEvent } from "utils/gtm";
-import ApiService from "store/reducers/ApiService";
-import { getPlanPricing } from "utils/planPricingUtils";
+import ApiService, { Plan as ApiPlan, PlanFeature } from "store/reducers/ApiService";
+import { getCurrentEnvironment, getPlanPricing } from "utils/planPricingUtils";
 
 // ============================== TOKENS ============================== //
 const BRAND_BLUE = "#3A7BFF";
+const BRAND_PURPLE = "#8A5CFF";
 const LIVE_GREEN = "#22C55E";
+// Gradient usado en el borde del plan recomendado — mismo eje azul→púrpura→azul
+// que el texto "Estudio Jurídico" del hero (única instancia intencional de púrpura).
+const RECOMMENDED_BORDER_GRADIENT = `linear-gradient(135deg, ${BRAND_BLUE}, ${BRAND_PURPLE}, ${BRAND_BLUE})`;
 
 // ============================== TIPOS ============================== //
+
+interface PlanRow {
+	label: string;
+	enabled: boolean;
+}
 
 interface Plan {
 	id: "free" | "standard" | "premium";
 	name: string;
 	price: string;
 	priceSuffix: string;
-	features: string[];
+	rows: PlanRow[];
 	cta: string;
 	ctaTo: string;
 	highlighted: boolean;
 	mobileOrder: number; // En xs queremos Standard primero (most relevant), luego Free, Premium.
 }
 
+/**
+ * Schema del teaser — 4 filas con el mismo topic across los 3 planes.
+ * Esto mantiene visualmente alineada la comparación (qty progresivas + binarios
+ * de diferenciación). El resto de features y límites quedan implícitos detrás
+ * del link "Ver comparación completa".
+ */
+type TeaserRowDef =
+	| { kind: "resource"; resourceName: string; format: (limit: number) => string }
+	| { kind: "feature"; featureName: string; label: string };
+
+const TEASER_ROWS: TeaserRowDef[] = [
+	{ kind: "resource", resourceName: "folders", format: (n) => `${n} causas activas` },
+	{ kind: "feature", featureName: "movements", label: "Sincronización con PJN y MEV" },
+	{ kind: "resource", resourceName: "aiQueriesPerMonth", format: (n) => `${n} consultas IA/mes` },
+	{ kind: "feature", featureName: "booking", label: "Sistema de reservas online" },
+];
+
+// Fallback estático para mostrar antes de que cargue el API (o si falla).
+// Cada plan tiene 4 rows que matchean el schema TEASER_ROWS — cuando el API
+// responde, estos rows se reemplazan con datos reales (mismo topic, mismos labels).
 const PLAN_DEFAULTS: Plan[] = [
 	{
 		id: "free",
 		name: "Gratuito",
 		price: "$0",
 		priceSuffix: "Para siempre",
-		features: ["5 causas activas", "3 calculadoras laborales", "50 consultas IA por mes", "Vincular causas con PJN y MEV"],
+		rows: [
+			{ label: "5 causas activas", enabled: true },
+			{ label: "Sincronización con PJN y MEV", enabled: false },
+			{ label: "50 consultas IA/mes", enabled: true },
+			{ label: "Sistema de reservas online", enabled: false },
+		],
 		cta: "Empezar gratis",
 		ctaTo: "/register",
 		highlighted: false,
@@ -51,11 +85,11 @@ const PLAN_DEFAULTS: Plan[] = [
 		name: "Estándar",
 		price: "$19.99",
 		priceSuffix: "/mes",
-		features: [
-			"Todo lo del plan Gratuito",
-			"50 causas con sincronización automática",
-			"200 consultas IA por mes",
-			"Análisis avanzados y reservas",
+		rows: [
+			{ label: "50 causas activas", enabled: true },
+			{ label: "Sincronización con PJN y MEV", enabled: true },
+			{ label: "200 consultas IA/mes", enabled: true },
+			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Estándar",
 		ctaTo: "/register?plan=standard",
@@ -67,12 +101,11 @@ const PLAN_DEFAULTS: Plan[] = [
 		name: "Premium",
 		price: "$49.99",
 		priceSuffix: "/mes",
-		features: [
-			"Todo lo del plan Estándar",
-			"500 causas y 1000 contactos",
-			"1500 consultas IA por mes",
-			"100 seguimientos postales",
-			"Soporte prioritario",
+		rows: [
+			{ label: "500 causas activas", enabled: true },
+			{ label: "Sincronización con PJN y MEV", enabled: true },
+			{ label: "1500 consultas IA/mes", enabled: true },
+			{ label: "Sistema de reservas online", enabled: true },
 		],
 		cta: "Probar Premium",
 		ctaTo: "/register?plan=premium",
@@ -103,6 +136,46 @@ const trackPlanCTA = (planId: Plan["id"]) => {
 	pushGTMEvent("cta_click_plan_teaser", { plan: planId });
 };
 
+/**
+ * Filtro de visibility consistente con el usado en /plans (price1.tsx):
+ * "all" → visible siempre, "none" → oculta, valor === env actual → visible.
+ */
+const isVisibleInCurrentEnv = (visibility: string | undefined, currentEnv: string): boolean => {
+	if (!visibility || visibility === "all") return true;
+	if (visibility === "none") return false;
+	return visibility === currentEnv;
+};
+
+/**
+ * Computa las 4 filas del teaser tomando los valores del API plan.
+ * Para resources: usa el `limit` numérico. Para features: usa el flag `enabled`.
+ * Si una fila no encuentra su resource/feature en el API → devuelve `null` para
+ * que el caller pueda hacer fallback al hardcodeo.
+ */
+const computeRowsFromApiPlan = (apiPlan: ApiPlan, currentEnv: string): PlanRow[] | null => {
+	const rows: PlanRow[] = [];
+
+	for (const def of TEASER_ROWS) {
+		if (def.kind === "resource") {
+			const rl = apiPlan.resourceLimits.find((r) => r.name === def.resourceName);
+			if (!rl || !isVisibleInCurrentEnv(rl.visibility, currentEnv)) return null;
+			rows.push({
+				label: def.format(rl.limit),
+				enabled: rl.limit > 0,
+			});
+		} else {
+			const feat = apiPlan.features.find((f: PlanFeature) => f.name === def.featureName);
+			if (!feat || !isVisibleInCurrentEnv(feat.visibility, currentEnv)) return null;
+			rows.push({
+				label: def.label,
+				enabled: Boolean(feat.enabled),
+			});
+		}
+	}
+
+	return rows;
+};
+
 // ============================== LANDING - PLANES ============================== //
 
 const Planes = () => {
@@ -114,6 +187,8 @@ const Planes = () => {
 
 	useEffect(() => {
 		let cancelled = false;
+		const currentEnv = getCurrentEnvironment();
+
 		(async () => {
 			try {
 				const response = await ApiService.getPublicPlans();
@@ -126,10 +201,16 @@ const Planes = () => {
 					const pricing = getPlanPricing(apiPlan);
 					const isFree = def.id === "free" || pricing.basePrice === 0;
 
+					// Si el API tiene los 4 topics del schema, usamos sus valores reales.
+					// Si falta alguno (ej. resource oculto en el env actual), mantenemos el
+					// hardcodeo del fallback para no romper la simetría del teaser.
+					const apiRows = computeRowsFromApiPlan(apiPlan, currentEnv);
+
 					return {
 						...def,
 						price: formatPriceShort(pricing.basePrice),
 						priceSuffix: isFree ? "Para siempre" : billingSuffixShort(pricing.billingPeriod),
+						rows: apiRows ?? def.rows,
 					};
 				});
 				setPlans(merged);
@@ -151,45 +232,23 @@ const Planes = () => {
 				py: { xs: 4, md: 7 },
 			}}
 		>
+			{/* Atmósfera — spotlight único detrás de la card "Recomendado" (centro).
+			    Refuerza la jerarquía visual sin agregar ruido. */}
 			<Box
 				aria-hidden
 				sx={{
 					position: "absolute",
-					top: "8%",
-					right: "-15%",
-					width: { xs: 380, md: 560 },
-					height: { xs: 380, md: 560 },
+					top: "55%",
+					left: "50%",
+					transform: "translate(-50%, -50%)",
+					width: { xs: 520, md: 780 },
+					height: { xs: 520, md: 780 },
 					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.14 : 0.10)} 0%, transparent 62%)`,
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)} 0%, ${alpha(
+						BRAND_BLUE,
+						isDark ? 0.06 : 0.04,
+					)} 40%, transparent 70%)`,
 					filter: "blur(70px)",
-					pointerEvents: "none",
-					zIndex: 0,
-				}}
-			/>
-			<Box
-				aria-hidden
-				sx={{
-					position: "absolute",
-					bottom: "-5%",
-					left: "-15%",
-					width: { xs: 360, md: 520 },
-					height: { xs: 360, md: 520 },
-					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.08 : 0.06)} 0%, transparent 65%)`,
-					filter: "blur(80px)",
-					pointerEvents: "none",
-					zIndex: 0,
-				}}
-			/>
-			<Box
-				aria-hidden
-				sx={{
-					position: "absolute",
-					inset: 0,
-					backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.05 : 0.04)} 1px, transparent 1px)`,
-					backgroundSize: "26px 26px",
-					maskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
-					WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 75%)",
 					pointerEvents: "none",
 					zIndex: 0,
 				}}
@@ -203,7 +262,18 @@ const Planes = () => {
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.05 }}
 					>
-						<Typography variant="h2">Planes para cada tamaño de estudio</Typography>
+						<SectionEyebrow number="04" label="Planes" align="center" mb={2.5} />
+						<Typography
+							variant="h2"
+							sx={{
+								fontSize: { xs: "1.875rem", sm: "2.25rem", md: "2.75rem" },
+								lineHeight: 1.08,
+								letterSpacing: "-0.025em",
+								textWrap: "balance",
+							}}
+						>
+							Planes para cada tamaño de estudio
+						</Typography>
 					</motion.div>
 					<motion.div
 						initial={{ opacity: 0, translateY: 30 }}
@@ -211,15 +281,27 @@ const Planes = () => {
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ type: "spring", stiffness: 150, damping: 30, delay: 0.15 }}
 					>
-						<Typography variant="h5" color="text.secondary" sx={{ maxWidth: 760, mx: "auto", mt: 1.5 }}>
+						<Typography
+							variant="h5"
+							color="text.secondary"
+							sx={{
+								maxWidth: 640,
+								mx: "auto",
+								mt: 1.5,
+								fontSize: { xs: "1rem", md: "1.125rem" },
+								fontWeight: 400,
+								lineHeight: 1.5,
+								letterSpacing: "-0.005em",
+								textWrap: "pretty",
+							}}
+						>
 							Empezá gratis. Cambiá de plan en cualquier momento.
 						</Typography>
 					</motion.div>
 				</Box>
 
 				<Grid container spacing={3} alignItems="stretch" justifyContent="center" sx={{ pt: { xs: 2, md: 2 } }}>
-					{plans.map((plan) => {
-						const checkColor = plan.id === "free" ? theme.palette.text.secondary : theme.palette.success.main;
+					{plans.map((plan, idx) => {
 						const isHighlighted = plan.highlighted;
 
 						return (
@@ -233,44 +315,77 @@ const Planes = () => {
 									order: { xs: plan.mobileOrder, md: 0 },
 								}}
 							>
-								<FadeInWhenVisible>
+								<motion.div
+									initial={{ opacity: 0, y: 24 }}
+									whileInView={{ opacity: 1, y: 0 }}
+									viewport={{ once: true, margin: "-80px" }}
+									transition={{ duration: 0.5, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+									style={{ height: "100%" }}
+								>
 									<MainCard
+										border={!isHighlighted}
 										sx={{
 											height: "100%",
 											position: "relative",
 											overflow: "visible",
+											// Mismo radio para los 3 — la jerarquía viene por color, no por shape.
+											borderRadius: 2,
 											...(isHighlighted && {
-												borderColor: alpha(BRAND_BLUE, 0.35),
-												boxShadow: `0 14px 36px ${alpha(BRAND_BLUE, 0.16)}, 0 6px 14px ${alpha(BRAND_BLUE, 0.08)}`,
-												transform: { md: "translateY(-8px)" },
-											}),
-											transition: "transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
-											"&:hover": {
-												transform: { md: isHighlighted ? "translateY(-10px)" : "translateY(-4px)" },
-												boxShadow: {
-													md: `0 18px 40px ${alpha(BRAND_BLUE, 0.18)}, 0 8px 18px ${alpha(BRAND_BLUE, 0.10)}`,
+												// Fondo tintado brand-blue (sutil) en lugar del lift translateY.
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+												// Borde gradient azul→púrpura mediante ::before + mask composite.
+												"&::before": {
+													content: '""',
+													position: "absolute",
+													inset: 0,
+													borderRadius: "inherit",
+													padding: "1.5px",
+													background: RECOMMENDED_BORDER_GRADIENT,
+													WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+													WebkitMaskComposite: "xor",
+													maskComposite: "exclude",
+													pointerEvents: "none",
+													zIndex: 1,
 												},
-												borderColor: { md: alpha(BRAND_BLUE, isHighlighted ? 0.5 : 0.25) },
+												boxShadow: `0 14px 36px ${alpha(BRAND_BLUE, 0.14)}, 0 6px 14px ${alpha(BRAND_BLUE, 0.08)}`,
+											}),
+											transition: "box-shadow 0.3s ease, border-color 0.3s ease",
+											"&:hover": {
+												boxShadow: {
+													md: isHighlighted
+														? `0 22px 48px ${alpha(BRAND_BLUE, 0.22)}, 0 10px 22px ${alpha(BRAND_BLUE, 0.12)}`
+														: `0 12px 28px ${alpha(theme.palette.common.black, 0.1)}, 0 4px 10px ${alpha(
+																theme.palette.common.black,
+																0.06,
+														  )}`,
+												},
+												borderColor: { md: isHighlighted ? undefined : alpha(BRAND_BLUE, 0.25) },
 											},
 										}}
 									>
 										{isHighlighted && (
 											<Chip
-												label="Recomendado"
+												label="RECOMENDADO"
 												size="small"
 												sx={{
 													position: "absolute",
-													top: -12,
+													top: -11,
 													left: "50%",
 													transform: "translateX(-50%)",
-													bgcolor: BRAND_BLUE,
+													background: RECOMMENDED_BORDER_GRADIENT,
 													color: "#fff",
 													fontWeight: 600,
-													fontSize: "0.7rem",
-													letterSpacing: "0.06em",
-													height: 24,
-													px: 0.5,
-													boxShadow: `0 4px 12px ${alpha(BRAND_BLUE, 0.35)}`,
+													fontSize: "0.65rem",
+													letterSpacing: "0.14em",
+													height: 22,
+													px: 1.25,
+													// borderRadius bajo para sentir menos "pill" y más editorial.
+													borderRadius: 1,
+													boxShadow: `0 6px 14px ${alpha(BRAND_BLUE, 0.32)}`,
+													zIndex: 2,
+													"& .MuiChip-label": {
+														px: 0.5,
+													},
 												}}
 											/>
 										)}
@@ -280,7 +395,9 @@ const Planes = () => {
 												<Typography
 													variant="h4"
 													sx={{
-														fontWeight: 700,
+														fontWeight: 600,
+														fontSize: "1.375rem",
+														letterSpacing: "-0.015em",
 														mb: 1.5,
 														color: isDark ? theme.palette.grey[100] : theme.palette.grey[900],
 													}}
@@ -288,12 +405,15 @@ const Planes = () => {
 													{plan.name}
 												</Typography>
 
-												<Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75, mb: 0.25 }}>
+												<Box sx={{ display: "flex", alignItems: "baseline", gap: 0.75 }}>
 													<Typography
 														variant="h2"
 														sx={{
-															fontWeight: 700,
+															fontWeight: 600,
+															fontSize: { xs: "2.5rem", md: "3rem" },
 															lineHeight: 1,
+															letterSpacing: "-0.03em",
+															fontVariantNumeric: "tabular-nums",
 															color: isDark ? theme.palette.grey[50] : theme.palette.grey[900],
 														}}
 													>
@@ -305,44 +425,82 @@ const Planes = () => {
 																fontSize: "0.95rem",
 																fontWeight: 500,
 																color: theme.palette.text.secondary,
+																fontVariantNumeric: "tabular-nums",
 															}}
 														>
 															{plan.priceSuffix}
 														</Typography>
 													)}
 												</Box>
-												{plan.id === "free" && (
-													<Typography
-														sx={{
-															fontSize: "0.78rem",
-															color: theme.palette.text.secondary,
-															letterSpacing: "0.02em",
-														}}
-													>
-														{plan.priceSuffix}
-													</Typography>
-												)}
+												{/* Caption reservada para los 3 planes — el plan free muestra "Para
+												siempre", los pagos quedan invisibles pero ocupando la misma altura
+												para que las feature-lists arranquen al mismo Y entre las 3 columnas. */}
+												<Typography
+													aria-hidden={plan.id !== "free"}
+													sx={{
+														mt: 0.5,
+														fontSize: "0.78rem",
+														color: theme.palette.text.secondary,
+														letterSpacing: "0.02em",
+														visibility: plan.id === "free" ? "visible" : "hidden",
+													}}
+												>
+													{plan.id === "free" ? plan.priceSuffix : "—"}
+												</Typography>
 											</Box>
 
 											<Box sx={{ height: 1, bgcolor: alpha(theme.palette.divider, 0.5) }} />
 
 											<Stack spacing={1.25} sx={{ flex: 1 }}>
-												{plan.features.map((feature, idx) => (
+												{plan.rows.map((row, idx) => (
 													<Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
 														<Box sx={{ flexShrink: 0, mt: "2px", lineHeight: 0 }}>
-															<TickCircle size={16} variant="Bulk" color={checkColor} />
+															{row.enabled ? (
+																<TickCircle size={16} variant="Bulk" color={theme.palette.success.main} />
+															) : (
+																<CloseCircle size={16} variant="Bulk" color={theme.palette.text.disabled} />
+															)}
 														</Box>
 														<Typography
 															sx={{
 																fontSize: "0.88rem",
-																color: theme.palette.text.primary,
+																color: row.enabled ? theme.palette.text.primary : theme.palette.text.secondary,
 																lineHeight: 1.5,
 															}}
 														>
-															{feature}
+															{row.label}
 														</Typography>
 													</Box>
 												))}
+
+												{/* Link siempre presente — apunta a la comparación full en /plans
+												donde están todas las features, límites y diferencias detalladas. */}
+												<Link
+													component={RouterLink}
+													to="/plans"
+													underline="none"
+													sx={{
+														display: "inline-flex",
+														alignItems: "center",
+														alignSelf: "flex-start",
+														gap: 0.5,
+														mt: 0.25,
+														ml: 3, // alinea con el texto de las features (ancho icono + gap).
+														fontSize: "0.82rem",
+														fontWeight: 500,
+														color: theme.palette.primary.main,
+														transition: "color 0.2s ease",
+														"&:hover": {
+															color: theme.palette.primary.dark,
+															"& .extra-arrow": { transform: "translateX(3px)" },
+														},
+													}}
+												>
+													Ver comparación completa
+													<Box className="extra-arrow" component="span" sx={{ display: "inline-flex", transition: "transform 0.2s ease" }}>
+														<ArrowRight size={14} />
+													</Box>
+												</Link>
 											</Stack>
 
 											<Button
@@ -361,9 +519,9 @@ const Planes = () => {
 													textTransform: "none",
 													borderRadius: 2,
 													...(isHighlighted && {
-														boxShadow: `0 8px 20px ${alpha(BRAND_BLUE, 0.30)}`,
+														boxShadow: `0 8px 20px ${alpha(BRAND_BLUE, 0.3)}`,
 														"&:hover": {
-															boxShadow: `0 12px 26px ${alpha(BRAND_BLUE, 0.40)}`,
+															boxShadow: `0 12px 26px ${alpha(BRAND_BLUE, 0.4)}`,
 															transform: "translateY(-2px)",
 														},
 													}),
@@ -373,7 +531,7 @@ const Planes = () => {
 											</Button>
 										</Box>
 									</MainCard>
-								</FadeInWhenVisible>
+								</motion.div>
 							</Grid>
 						);
 					})}

@@ -232,7 +232,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 							m: { xs: 2, sm: 3 },
 							bgcolor: theme.palette.background.paper,
 							border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-							boxShadow: `0 24px 48px ${alpha("#0F172A", isDark ? 0.5 : 0.20)}`,
+							boxShadow: `0 24px 48px ${alpha("#0F172A", isDark ? 0.5 : 0.2)}`,
 							overflow: "hidden",
 						},
 					}}
@@ -257,7 +257,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 								width: 180,
 								height: 180,
 								borderRadius: "50%",
-								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.10)} 0%, transparent 65%)`,
+								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)} 0%, transparent 65%)`,
 								filter: "blur(40px)",
 								pointerEvents: "none",
 								zIndex: 0,
@@ -332,11 +332,12 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 								</Box>
 								<Typography
 									sx={{
-										fontWeight: 700,
-										fontSize: { xs: "1.1rem", sm: "1.15rem" },
-										letterSpacing: "-0.01em",
+										fontWeight: 600,
+										fontSize: { xs: "1.15rem", sm: "1.3rem" },
+										letterSpacing: "-0.018em",
 										color: theme.palette.text.primary,
-										lineHeight: 1.25,
+										lineHeight: 1.2,
+										textWrap: "balance",
 									}}
 								>
 									{featureData.title}
@@ -389,10 +390,10 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, featureKey }
 									fontWeight: 600,
 									textTransform: "none",
 									borderRadius: 2,
-									boxShadow: `0 8px 20px ${alpha(accent, 0.30)}`,
+									boxShadow: `0 8px 20px ${alpha(accent, 0.3)}`,
 									transition: "transform 0.2s ease, box-shadow 0.2s ease",
 									"&:hover": {
-										boxShadow: `0 12px 26px ${alpha(accent, 0.40)}`,
+										boxShadow: `0 12px 26px ${alpha(accent, 0.4)}`,
 										transform: "translateY(-2px)",
 									},
 								}}
