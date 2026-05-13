@@ -15,10 +15,10 @@ import { Profile2User, FolderOpen, Star1 } from "iconsax-react";
 // project imports
 import AnimateButton from "components/@extended/AnimateButton";
 import PageBackground from "components/PageBackground";
+import MockupFrame from "components/MockupFrame";
 import { useLandingAnalytics } from "hooks/useLandingAnalytics";
 
 // assets
-import dashboardImage from "assets/images/dashboard.png";
 import logoPJNacion from "assets/images/logos/logo_pj_nacion.png";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
 
@@ -198,161 +198,6 @@ const MetricValue = ({ children, label }: { children: ReactNode; label: string }
 	</Typography>
 );
 
-// ============================== MOCKUP FRAME ============================== //
-// Frame con browser-chrome, glow brand-blue, copia blurreada para profundidad
-// y soft float loop. La variante `compact` se usa en mobile (sin scale, sin copia).
-
-interface MockupFrameProps {
-	paperBg: string;
-	textColor: string;
-	compact?: boolean;
-}
-
-const MockupFrame = ({ paperBg, textColor, compact = false }: MockupFrameProps) => (
-	<Box
-		sx={{
-			position: "relative",
-			width: "100%",
-			...(compact
-				? { maxWidth: 420, mx: "auto" }
-				: { transform: { md: "scale(1.05)" }, transformOrigin: "center center" }),
-		}}
-	>
-		{/* Glow radial brand-blue por debajo del frame */}
-		<Box
-			aria-hidden
-			sx={{
-				position: "absolute",
-				inset: compact ? "6% -6% -6% -6%" : "8% -6% -8% -6%",
-				background: `radial-gradient(ellipse at 50% 60%, ${alpha(BRAND_BLUE, 0.32)} 0%, ${alpha(BRAND_BLUE, 0.14)} 40%, transparent 72%)`,
-				filter: "blur(38px)",
-				zIndex: 0,
-				pointerEvents: "none",
-			}}
-		/>
-
-		{/* Copia blurreada secundaria — efecto profundidad (solo desktop) */}
-		{!compact && (
-			<Box
-				component="img"
-				src={dashboardImage}
-				alt=""
-				aria-hidden
-				sx={{
-					position: "absolute",
-					top: -18,
-					right: -22,
-					width: "92%",
-					height: "auto",
-					borderRadius: "14px",
-					opacity: 0.22,
-					filter: "blur(2px)",
-					zIndex: 1,
-				}}
-			/>
-		)}
-
-		{/* Frame principal — con soft float loop */}
-		<Box
-			component={motion.div}
-			animate={{ y: [0, -6, 0] }}
-			transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-			sx={{ position: "relative", zIndex: 2 }}
-		>
-			<Box
-				sx={{
-					position: "relative",
-					borderRadius: "14px",
-					overflow: "hidden",
-					boxShadow: `0 30px 60px ${alpha("#0F172A", 0.22)}, 0 12px 28px ${alpha("#0F172A", 0.12)}`,
-					border: `1px solid ${alpha(textColor, 0.10)}`,
-					bgcolor: paperBg,
-				}}
-			>
-				{/* Browser chrome */}
-				<Box
-					sx={{
-						height: { xs: 28, md: 34 },
-						bgcolor: alpha(paperBg, 0.72),
-						backdropFilter: "blur(12px)",
-						WebkitBackdropFilter: "blur(12px)",
-						display: "flex",
-						alignItems: "center",
-						px: 1.5,
-						gap: 1.25,
-						borderBottom: `1px solid ${alpha(textColor, 0.10)}`,
-					}}
-				>
-					{/* Traffic lights */}
-					<Box sx={{ display: "flex", gap: 0.625 }}>
-						<Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#FF5F57" }} />
-						<Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#FEBC2E" }} />
-						<Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#28C840" }} />
-					</Box>
-					{/* URL pill */}
-					<Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
-						<Box
-							sx={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: 0.5,
-								px: 1.25,
-								py: 0.25,
-								borderRadius: 999,
-								bgcolor: alpha(textColor, 0.06),
-								fontSize: { xs: "0.6rem", md: "0.68rem" },
-								color: textColor,
-								fontWeight: 500,
-								letterSpacing: "0.02em",
-							}}
-						>
-							<Box component="svg" viewBox="0 0 24 24" aria-hidden sx={{ width: 10, height: 10, mr: 0.25 }}>
-								<path
-									d="M12 1a4 4 0 0 1 4 4v3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V5a4 4 0 0 1 4-4Zm0 2a2 2 0 0 0-2 2v3h4V5a2 2 0 0 0-2-2Z"
-									fill="currentColor"
-								/>
-							</Box>
-							lawanalytics.app
-						</Box>
-					</Box>
-					<Box sx={{ width: 28 }} />
-				</Box>
-
-				{/* Imagen del dashboard */}
-				<Box
-					component="img"
-					src={dashboardImage}
-					alt="Law Analytics Dashboard"
-					sx={{
-						width: "100%",
-						height: "auto",
-						display: "block",
-						...(compact && {
-							maxHeight: 230,
-							objectFit: "cover",
-							objectPosition: "top left",
-						}),
-					}}
-				/>
-
-				{/* Fade inferior — sugiere continuidad de contenido */}
-				<Box
-					aria-hidden
-					sx={{
-						position: "absolute",
-						bottom: 0,
-						left: 0,
-						right: 0,
-						height: { xs: 50, md: 80 },
-						background: `linear-gradient(to bottom, transparent, ${paperBg})`,
-						pointerEvents: "none",
-					}}
-				/>
-			</Box>
-		</Box>
-	</Box>
-);
-
 // ============================== LANDING - HEADER ============================== //
 
 const HeaderPage = () => {
@@ -404,7 +249,7 @@ const HeaderPage = () => {
 					width: { xs: 420, md: 720 },
 					height: { xs: 420, md: 720 },
 					borderRadius: "50%",
-					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.10 : 0.07)} 0%, transparent 62%)`,
+					background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.1 : 0.07)} 0%, transparent 62%)`,
 					filter: "blur(80px)",
 					pointerEvents: "none",
 					zIndex: 0,
