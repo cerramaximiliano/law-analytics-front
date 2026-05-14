@@ -10,6 +10,7 @@ import {
 	Dialog,
 	DialogActions,
 	DialogContent,
+	DialogTitle,
 	Divider,
 	FormControl,
 	IconButton,
@@ -34,6 +35,7 @@ import { MessageQuestion, TickCircle, DocumentUpload, CloseCircle } from "iconsa
 // project imports
 import { dispatch, useSelector } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
+import { PopupTransition } from "components/@extended/Transitions";
 
 // ============================== TOKENS ============================== //
 // Mismo brand-blue del landing para mantener atmósfera coherente.
@@ -53,6 +55,12 @@ interface SupportModalProps {
 	open: boolean;
 	onClose: () => void;
 	defaultSubject?: string;
+	// `landing` (default) → motion spring, blur backdrop, blob brand-blue,
+	//   icono en cuadrado tintado + X close. Estética del hero rediseñado.
+	// `dashboard` → look pre-rediseño (commit anterior a `adf7edb`): DialogTitle
+	//   con bgcolor primary.lighter, MessageQuestion plano, PopupTransition,
+	//   sin blur ni blob, footer DialogActions con "Cancelar" + "Enviar consulta".
+	variant?: "landing" | "dashboard";
 }
 
 const subjectOptions = [
@@ -81,9 +89,10 @@ const MAX_FILE_SIZE_MB = 10;
 
 // ============================== SUPPORT MODAL ============================== //
 
-const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps) => {
+const SupportModal = ({ open, onClose, defaultSubject = "", variant = "landing" }: SupportModalProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
+	const isDashboard = variant === "dashboard";
 	const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -248,150 +257,195 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 
 	const isTemplateRequest = formData.subject === SUBJECT_TEMPLATE_REQUEST;
 
-	return (
-		<AnimatePresence>
-			{open && (
-				<Dialog
-					open={open}
-					onClose={handleClose}
-					keepMounted
-					maxWidth="sm"
-					fullWidth
-					fullScreen={fullScreen}
-					aria-labelledby="support-modal-title"
-					PaperProps={{
-						component: motion.div,
-						initial: { opacity: 0, scale: 0.96, y: 12 },
-						animate: { opacity: 1, scale: 1, y: 0 },
-						exit: { opacity: 0, scale: 0.96, y: 12 },
-						transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
-						sx: {
-							borderRadius: fullScreen ? 0 : "16px",
-							bgcolor: theme.palette.background.paper,
-							border: fullScreen ? "none" : `1px solid ${alpha(theme.palette.divider, 0.6)}`,
-							boxShadow: `0 24px 48px ${alpha("#0F172A", isDark ? 0.5 : 0.2)}`,
-							overflow: "hidden",
-						},
-					}}
-					slotProps={{
-						backdrop: {
-							sx: {
-								backgroundColor: alpha("#000", 0.55),
-								backdropFilter: "blur(4px)",
-								WebkitBackdropFilter: "blur(4px)",
-							},
-						},
-					}}
-				>
-					<Box sx={{ position: "relative" }}>
-						{/* Atmósfera — blob brand-blue sutil, coherente con FeatureModal y landing. */}
-						<Box
-							aria-hidden
-							sx={{
-								position: "absolute",
-								top: -60,
-								right: -50,
-								width: 220,
-								height: 220,
-								borderRadius: "50%",
-								background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)} 0%, transparent 65%)`,
-								filter: "blur(50px)",
-								pointerEvents: "none",
-								zIndex: 0,
-							}}
-						/>
+	// Props comunes para el Dialog (open/onClose/sizing); las props específicas de
+	// transición y look van por separado según variant.
+	const commonDialogProps = {
+		open,
+		onClose: handleClose,
+		keepMounted: true,
+		maxWidth: "sm" as const,
+		fullWidth: true,
+		fullScreen,
+		"aria-labelledby": "support-modal-title",
+	};
 
-						{/* Header limpio — sin bgcolor primary block. Icono + título + descripción. */}
-						<Box
-							id="support-modal-title"
-							sx={{
-								position: "relative",
-								zIndex: 1,
-								px: 3,
-								pt: 3,
-								pb: 2,
-							}}
-						>
-							<Box sx={{ display: "flex", alignItems: "center", gap: 1.75, mb: 1, pr: 4 }}>
-								<Box
-									sx={{
-										width: 40,
-										height: 40,
-										borderRadius: 1.5,
-										bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										flexShrink: 0,
-									}}
-								>
-									<MessageQuestion size={22} variant="Bulk" color={BRAND_BLUE} />
+	// Props específicas por variant.
+	const variantDialogProps = isDashboard
+		? {
+				TransitionComponent: PopupTransition,
+				PaperProps: { elevation: 5, sx: { borderRadius: 2, overflow: "hidden" } },
+		  }
+		: {
+				PaperProps: {
+					component: motion.div,
+					initial: { opacity: 0, scale: 0.96, y: 12 },
+					animate: { opacity: 1, scale: 1, y: 0 },
+					exit: { opacity: 0, scale: 0.96, y: 12 },
+					transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+					sx: {
+						borderRadius: fullScreen ? 0 : "16px",
+						bgcolor: theme.palette.background.paper,
+						border: fullScreen ? "none" : `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+						boxShadow: `0 24px 48px ${alpha("#0F172A", isDark ? 0.5 : 0.2)}`,
+						overflow: "hidden",
+					},
+				},
+				slotProps: {
+					backdrop: {
+						sx: {
+							backgroundColor: alpha("#000", 0.55),
+							backdropFilter: "blur(4px)",
+							WebkitBackdropFilter: "blur(4px)",
+						},
+					},
+				},
+		  };
+
+	const dialogJSX = (
+		<Dialog {...commonDialogProps} {...(variantDialogProps as any)}>
+					<Box sx={{ position: "relative" }}>
+						{/* Atmósfera — blob brand-blue sutil, coherente con FeatureModal y landing.
+						    Variant `dashboard` lo omite. */}
+						{!isDashboard && (
+							<Box
+								aria-hidden
+								sx={{
+									position: "absolute",
+									top: -60,
+									right: -50,
+									width: 220,
+									height: 220,
+									borderRadius: "50%",
+									background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)} 0%, transparent 65%)`,
+									filter: "blur(50px)",
+									pointerEvents: "none",
+									zIndex: 0,
+								}}
+							/>
+						)}
+
+						{/* Header — dos versiones:
+						    landing: Box con icono brand-blue en cuadrado tintado + X close arriba.
+						    dashboard: DialogTitle clásico con bgcolor primary.lighter + icono plano color primary (pre-redesign). */}
+						{isDashboard ? (
+							<DialogTitle
+								id="support-modal-title"
+								sx={{ bgcolor: theme.palette.primary.lighter, p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}
+							>
+								<Stack spacing={1}>
+									<Stack direction="row" alignItems="center" spacing={1}>
+										<MessageQuestion size={24} color={theme.palette.primary.main} variant="Bold" />
+										<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+											Contactar a Soporte
+										</Typography>
+									</Stack>
+									<Typography variant="body2" color="textSecondary">
+										Completa el formulario y te responderemos dentro de las próximas 24 horas
+									</Typography>
+								</Stack>
+							</DialogTitle>
+						) : (
+							<Box
+								id="support-modal-title"
+								sx={{
+									position: "relative",
+									zIndex: 1,
+									px: 3,
+									pt: 3,
+									pb: 2,
+								}}
+							>
+								<Box sx={{ display: "flex", alignItems: "center", gap: 1.75, mb: 1, pr: 4 }}>
+									<Box
+										sx={{
+											width: 40,
+											height: 40,
+											borderRadius: 1.5,
+											bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											flexShrink: 0,
+										}}
+									>
+										<MessageQuestion size={22} variant="Bulk" color={BRAND_BLUE} />
+									</Box>
+									<Typography
+										sx={{
+											fontWeight: 600,
+											fontSize: { xs: "1.15rem", sm: "1.3rem" },
+											letterSpacing: "-0.018em",
+											color: theme.palette.text.primary,
+											lineHeight: 1.2,
+										}}
+									>
+										Contactar a soporte
+									</Typography>
 								</Box>
 								<Typography
 									sx={{
-										fontWeight: 600,
-										fontSize: { xs: "1.15rem", sm: "1.3rem" },
-										letterSpacing: "-0.018em",
-										color: theme.palette.text.primary,
-										lineHeight: 1.2,
+										fontSize: "0.875rem",
+										color: theme.palette.text.secondary,
+										lineHeight: 1.5,
 									}}
 								>
-									Contactar a soporte
+									Completá el formulario y te respondemos dentro de las próximas 24 horas.
 								</Typography>
-							</Box>
-							<Typography
-								sx={{
-									fontSize: "0.875rem",
-									color: theme.palette.text.secondary,
-									lineHeight: 1.5,
-								}}
-							>
-								Completá el formulario y te respondemos dentro de las próximas 24 horas.
-							</Typography>
 
-							{/* Close button */}
-							<IconButton
-								onClick={handleClose}
-								aria-label="Cerrar"
-								size="small"
-								sx={{
-									position: "absolute",
-									top: 12,
-									right: 12,
-									zIndex: 2,
-									color: theme.palette.text.secondary,
-									"&:hover": {
-										color: theme.palette.text.primary,
-										bgcolor: alpha(theme.palette.text.primary, 0.06),
-									},
-								}}
-							>
-								<CloseCircle size={20} />
-							</IconButton>
-						</Box>
+								{/* Close button */}
+								<IconButton
+									onClick={handleClose}
+									aria-label="Cerrar"
+									size="small"
+									sx={{
+										position: "absolute",
+										top: 12,
+										right: 12,
+										zIndex: 2,
+										color: theme.palette.text.secondary,
+										"&:hover": {
+											color: theme.palette.text.primary,
+											bgcolor: alpha(theme.palette.text.primary, 0.06),
+										},
+									}}
+								>
+									<CloseCircle size={20} />
+								</IconButton>
+							</Box>
+						)}
 
 						<Divider sx={{ position: "relative", zIndex: 1 }} />
 
 						<DialogContent sx={{ position: "relative", zIndex: 1, p: 3 }}>
 							{submitted ? (
-								<Box sx={{ py: 4, textAlign: "center" }}>
-									<TickCircle size={64} color={theme.palette.success.main} variant="Bulk" />
-									<Typography
-										sx={{
-											mt: 2,
-											mb: 1,
-											fontWeight: 600,
-											fontSize: "1.25rem",
-											letterSpacing: "-0.015em",
-											color: theme.palette.success.main,
-										}}
-									>
-										Consulta enviada
-									</Typography>
-									<Typography sx={{ color: theme.palette.text.secondary, fontSize: "0.9rem" }}>
-										Recibimos tu mensaje. Te respondemos pronto.
-									</Typography>
-								</Box>
+								isDashboard ? (
+									<Box sx={{ py: 4, textAlign: "center" }}>
+										<TickCircle size={64} color={theme.palette.success.main} variant="Bulk" />
+										<Typography variant="h4" color="success.main" sx={{ mt: 2, mb: 1 }}>
+											¡Consulta enviada exitosamente!
+										</Typography>
+										<Typography color="text.secondary">Hemos recibido tu mensaje y te responderemos pronto.</Typography>
+									</Box>
+								) : (
+									<Box sx={{ py: 4, textAlign: "center" }}>
+										<TickCircle size={64} color={theme.palette.success.main} variant="Bulk" />
+										<Typography
+											sx={{
+												mt: 2,
+												mb: 1,
+												fontWeight: 600,
+												fontSize: "1.25rem",
+												letterSpacing: "-0.015em",
+												color: theme.palette.success.main,
+											}}
+										>
+											Consulta enviada
+										</Typography>
+										<Typography sx={{ color: theme.palette.text.secondary, fontSize: "0.9rem" }}>
+											Recibimos tu mensaje. Te respondemos pronto.
+										</Typography>
+									</Box>
+								)
 							) : (
 								<Box component="form" onSubmit={handleSubmit}>
 									<Stack spacing={2.5}>
@@ -551,42 +605,64 @@ const SupportModal = ({ open, onClose, defaultSubject = "" }: SupportModalProps)
 							)}
 						</DialogContent>
 
-						{!submitted && (
-							<>
-								<Divider sx={{ position: "relative", zIndex: 1 }} />
-								<DialogActions sx={{ position: "relative", zIndex: 1, px: 3, py: 2, gap: 1 }}>
-									<Button onClick={handleClose} disabled={submitting} sx={{ textTransform: "none" }}>
-										Cancelar
-									</Button>
-									<Button
-										variant="contained"
-										color="primary"
-										onClick={handleSubmit}
-										disabled={submitting}
-										startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : null}
-										sx={{
-											textTransform: "none",
-											fontWeight: 600,
-											borderRadius: 2,
-											px: 2.5,
-											boxShadow: `0 8px 20px ${alpha(BRAND_BLUE, 0.25)}`,
-											"&:hover": {
-												boxShadow: `0 12px 26px ${alpha(BRAND_BLUE, 0.35)}`,
-												transform: "translateY(-1px)",
-											},
-											transition: "transform 0.2s ease, box-shadow 0.2s ease",
-										}}
-									>
-										{submitting ? "Enviando..." : "Enviar consulta"}
-									</Button>
-								</DialogActions>
-							</>
-						)}
+						{!submitted &&
+							(isDashboard ? (
+								<>
+									<Divider />
+									<DialogActions sx={{ px: 3, py: 2 }}>
+										<Button onClick={handleClose} color="error" disabled={submitting}>
+											Cancelar
+										</Button>
+										<Button
+											variant="contained"
+											onClick={handleSubmit}
+											disabled={submitting}
+											startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : null}
+										>
+											{submitting ? "Enviando..." : "Enviar consulta"}
+										</Button>
+									</DialogActions>
+								</>
+							) : (
+								<>
+									<Divider sx={{ position: "relative", zIndex: 1 }} />
+									<DialogActions sx={{ position: "relative", zIndex: 1, px: 3, py: 2, gap: 1 }}>
+										<Button onClick={handleClose} disabled={submitting} sx={{ textTransform: "none" }}>
+											Cancelar
+										</Button>
+										<Button
+											variant="contained"
+											color="primary"
+											onClick={handleSubmit}
+											disabled={submitting}
+											startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : null}
+											sx={{
+												textTransform: "none",
+												fontWeight: 600,
+												borderRadius: 2,
+												px: 2.5,
+												boxShadow: `0 8px 20px ${alpha(BRAND_BLUE, 0.25)}`,
+												"&:hover": {
+													boxShadow: `0 12px 26px ${alpha(BRAND_BLUE, 0.35)}`,
+													transform: "translateY(-1px)",
+												},
+												transition: "transform 0.2s ease, box-shadow 0.2s ease",
+											}}
+										>
+											{submitting ? "Enviando..." : "Enviar consulta"}
+										</Button>
+									</DialogActions>
+								</>
+							))}
 					</Box>
-				</Dialog>
-			)}
-		</AnimatePresence>
+		</Dialog>
 	);
+
+	// landing usa AnimatePresence porque el motion.div del PaperProps necesita
+	// disparar el exit animation al desmontar. dashboard usa PopupTransition de
+	// MUI internamente — no requiere AnimatePresence.
+	return isDashboard ? dialogJSX : <AnimatePresence>{open && dialogJSX}</AnimatePresence>;
+
 };
 
 export default SupportModal;
