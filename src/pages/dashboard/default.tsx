@@ -1,7 +1,7 @@
 import React from "react";
 // material-ui
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useTheme } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import { Grid, Stack, Typography, Snackbar, Alert, Skeleton, Fade, CircularProgress, Box } from "@mui/material";
 
 // project-imports
@@ -29,7 +29,7 @@ import { DashboardStats } from "types/unified-stats";
 import ApiService, { OnboardingStatus } from "store/reducers/ApiService";
 
 // hooks
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // Limite de sesiones para mostrar onboarding
 const MAX_ONBOARDING_SESSIONS = 5;
@@ -37,11 +37,28 @@ const MAX_ONBOARDING_SESSIONS = 5;
 // Key para sessionStorage (evitar multiples incrementos por sesion)
 const ONBOARDING_SESSION_KEY = "onboarding_session_checked";
 
+// Key para el override de la vista del banner (solo admin, ver useEffect abajo)
+const ONBOARDING_OVERRIDE_KEY = "dashboard_onboarding_override";
+
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 const DashboardDefault = () => {
 	const theme = useTheme();
 	const navigate = useNavigate();
+
+	// Override de la vista del WelcomeBanner para preview/dev. Solo lo usan
+	// usuarios ADMIN_ROLE. Persiste en sessionStorage entre refreshes/navegación
+	// dentro de la sesión del tab.
+	//   ?onboarding=force → fuerza el hero onboarding
+	//   ?onboarding=skip  → fuerza el billboard default
+	//   ?onboarding=clear → limpia el override
+	//   sin param          → usa el override de sessionStorage si existe, o el estado real
+	const [searchParams, setSearchParams] = useSearchParams();
+	const [onboardingOverride, setOnboardingOverride] = useState<"force" | "skip" | null>(() => {
+		if (typeof window === "undefined") return null;
+		const stored = sessionStorage.getItem(ONBOARDING_OVERRIDE_KEY);
+		return stored === "force" || stored === "skip" ? stored : null;
+	});
 
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "error" | "success" }>({
 		open: false,
@@ -59,6 +76,30 @@ const DashboardDefault = () => {
 
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
+	const isAdmin = user?.role === "ADMIN_ROLE";
+
+	// Sync del query param al sessionStorage + state. Solo admin.
+	useEffect(() => {
+		if (!isAdmin) return;
+		const param = searchParams.get("onboarding");
+		if (param === "force" || param === "skip") {
+			sessionStorage.setItem(ONBOARDING_OVERRIDE_KEY, param);
+			setOnboardingOverride(param);
+		} else if (param === "clear") {
+			sessionStorage.removeItem(ONBOARDING_OVERRIDE_KEY);
+			setOnboardingOverride(null);
+			// Limpia el param de la URL así no se re-aplica al refrescar
+			searchParams.delete("onboarding");
+			setSearchParams(searchParams, { replace: true });
+		}
+	}, [searchParams, isAdmin, setSearchParams]);
+
+	const clearOnboardingOverride = () => {
+		sessionStorage.removeItem(ONBOARDING_OVERRIDE_KEY);
+		setOnboardingOverride(null);
+		searchParams.delete("onboarding");
+		setSearchParams(searchParams, { replace: true });
+	};
 
 	// Obtener datos del store unificado
 	const { data: unifiedData, isLoading, error, lastUpdated, isInitialized } = useSelector((state) => state.unifiedStats);
@@ -108,6 +149,12 @@ const DashboardDefault = () => {
 
 	// Determinar si mostrar onboarding
 	const showOnboarding = useMemo(() => {
+		// Override (state hidratado desde sessionStorage + query param) — solo admin.
+		if (isAdmin) {
+			if (onboardingOverride === "force") return true;
+			if (onboardingOverride === "skip") return false;
+		}
+
 		// Si el usuario tiene el onboarding completado o descartado, no mostrar
 		if (onboardingStatus?.onboardingComplete || onboardingStatus?.dismissed) {
 			return false;
@@ -126,7 +173,7 @@ const DashboardDefault = () => {
 		// Mostrar onboarding si no tiene carpetas activas
 		const totalCarpetas = (dashboardData?.folders?.active || 0) + (dashboardData?.folders?.closed || 0);
 		return totalCarpetas === 0;
-	}, [onboardingStatus, dashboardData]);
+	}, [onboardingStatus, dashboardData, onboardingOverride, isAdmin]);
 
 	// Estado combinado de carga (ambos deben estar listos)
 	const isFullyLoading = isLoading || onboardingLoading;
@@ -325,6 +372,64 @@ const DashboardDefault = () => {
 	return (
 		<>
 			<Grid container rowSpacing={4.5} columnSpacing={2.75}>
+				{/* Chip indicador admin — solo visible cuando hay override activo */}
+				{isAdmin && onboardingOverride && (
+					<Grid item xs={12} sx={{ pb: 0 }}>
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 1,
+								px: 1.5,
+								py: 0.5,
+								borderRadius: 1,
+								bgcolor: (t) => alpha(t.palette.warning.main, t.palette.mode === "dark" ? 0.16 : 0.1),
+								border: (t) => `1px solid ${alpha(t.palette.warning.main, t.palette.mode === "dark" ? 0.4 : 0.28)}`,
+							}}
+						>
+							<Box
+								aria-hidden
+								sx={{
+									width: 7,
+									height: 7,
+									borderRadius: "50%",
+									bgcolor: (t) => t.palette.warning.main,
+								}}
+							/>
+							<Typography
+								sx={{
+									fontSize: "0.72rem",
+									fontWeight: 600,
+									letterSpacing: "0.02em",
+									color: (t) => (t.palette.mode === "dark" ? "#FDE68A" : "#92400E"),
+									fontVariantNumeric: "tabular-nums",
+								}}
+							>
+								Vista forzada: onboarding={onboardingOverride}
+							</Typography>
+							<Box
+								component="button"
+								onClick={clearOnboardingOverride}
+								sx={{
+									ml: 0.5,
+									fontSize: "0.7rem",
+									fontWeight: 600,
+									color: (t) => (t.palette.mode === "dark" ? "#FDE68A" : "#92400E"),
+									textDecoration: "underline",
+									textUnderlineOffset: "2px",
+									background: "none",
+									border: "none",
+									cursor: "pointer",
+									p: 0,
+									"&:hover": { opacity: 0.7 },
+								}}
+							>
+								Limpiar
+							</Box>
+						</Box>
+					</Grid>
+				)}
+
 				{/* Banner siempre visible (con skeleton si esta cargando) */}
 				<Grid item xs={12}>
 					{isFullyLoading ? (
