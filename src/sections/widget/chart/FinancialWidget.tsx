@@ -1,9 +1,11 @@
 import React from "react";
 import { Box, Stack, Typography } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
-import Avatar from "components/@extended/Avatar";
 import { Wallet3 } from "iconsax-react";
 import { useSelector } from "store";
+import { BRAND_BLUE } from "themes/dashboardTokens";
+import { ThemeMode } from "types/config";
 
 interface FinancialWidgetProps {
 	foldersTrend?: {
@@ -13,6 +15,9 @@ interface FinancialWidgetProps {
 }
 
 const FinancialWidget = ({ foldersTrend = { direction: "up", percentage: 0 } }: FinancialWidgetProps) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === ThemeMode.DARK;
+
 	// Obtener datos del store unificado
 	const { data: unifiedData } = useSelector((state) => state.unifiedStats);
 	const dashboardData = unifiedData?.dashboard;
@@ -29,25 +34,51 @@ const FinancialWidget = ({ foldersTrend = { direction: "up", percentage: 0 } }: 
 	return (
 		<MainCard>
 			<Stack spacing={2}>
-				{/* Header con ícono y título */}
-				<Stack direction="row" alignItems="center" spacing={2}>
-					<Avatar variant="rounded" color="primary">
-						<Wallet3 />
-					</Avatar>
-					<Typography variant="subtitle1">Monto Activo</Typography>
+				{/* Header con ícono brand-tinted y título */}
+				<Stack direction="row" alignItems="center" spacing={1.5}>
+					<Box
+						sx={{
+							width: 40,
+							height: 40,
+							borderRadius: 1.5,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+							color: BRAND_BLUE,
+						}}
+					>
+						<Wallet3 size={20} variant="Bulk" />
+					</Box>
+					<Typography variant="subtitle1" sx={{ letterSpacing: "-0.005em" }}>
+						Monto activo
+					</Typography>
 				</Stack>
 
-				{/* Contenido principal sin división de columnas */}
-				<MainCard content={false} border={false} sx={{ bgcolor: "background.default" }}>
-					<Box sx={{ p: 3, pb: 1.25 }}>
-						<Stack spacing={1} alignItems="center">
-							<Typography variant="h5">{formatCurrency(dashboardData?.financial?.activeAmount || 0)}</Typography>
-							<Typography variant="caption" color="text.secondary">
-								{dashboardData?.folders?.active || 0} carpetas activas
-							</Typography>
-						</Stack>
-					</Box>
-				</MainCard>
+				{/* Contenido — count grande con tabular-nums */}
+				<Box sx={{ pt: 1, pb: 0.5 }}>
+					<Stack spacing={0.5} alignItems="center">
+						<Typography
+							sx={{
+								fontSize: { xs: "1.4rem", md: "1.625rem" },
+								fontWeight: 600,
+								letterSpacing: "-0.02em",
+								fontVariantNumeric: "tabular-nums",
+								color: "text.primary",
+								lineHeight: 1.15,
+							}}
+						>
+							{formatCurrency(dashboardData?.financial?.activeAmount || 0)}
+						</Typography>
+						<Typography
+							variant="caption"
+							sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.005em" }}
+						>
+							{dashboardData?.folders?.active || 0} carpetas activas
+						</Typography>
+					</Stack>
+				</Box>
 			</Stack>
 		</MainCard>
 	);

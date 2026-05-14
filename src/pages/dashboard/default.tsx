@@ -27,6 +27,7 @@ import { getUnifiedStats } from "store/reducers/unifiedStats";
 import { fetchUserStats } from "store/reducers/userStats";
 import { DashboardStats } from "types/unified-stats";
 import ApiService, { OnboardingStatus } from "store/reducers/ApiService";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // hooks
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -552,20 +553,25 @@ const DashboardDefault = () => {
 
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
-									title="Tareas Pendientes"
+									title="Tareas pendientes"
 									count={(dashboardData?.tasks?.pending || 0).toString()}
 									color="success"
-									iconPrimary={<Calendar color={theme.palette.success.darker} />}
+									iconPrimary={<Calendar size={20} variant="Bulk" />}
 									percentage={
-										<Typography color="success.darker" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Typography variant="caption">
-												{dashboardData?.tasks?.completed || 0} completadas - {dashboardData?.tasks?.overdue || 0} vencidas
-											</Typography>
+										<Typography
+											variant="caption"
+											sx={{
+												color: "text.secondary",
+												fontVariantNumeric: "tabular-nums",
+												letterSpacing: "-0.005em",
+											}}
+										>
+											{dashboardData?.tasks?.completed || 0} completadas · {dashboardData?.tasks?.overdue || 0} vencidas
 										</Typography>
 									}
 								>
 									<BarsDataWidget
-										color={theme.palette.success.darker}
+										color={BRAND_BLUE}
 										data={dashboardData?.trends?.tasks?.map((item) => item.count) || undefined}
 									/>
 								</EcommerceDataCard>
@@ -573,18 +579,21 @@ const DashboardDefault = () => {
 
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
-									title="Vencimientos Proximos"
+									title="Próximos vencimientos"
 									count={(dashboardData?.deadlines?.nextWeek || 0).toString()}
 									color="error"
-									iconPrimary={<CloudChange color={theme.palette.error.dark} />}
+									iconPrimary={<CloudChange size={20} variant="Bulk" />}
 									percentage={
-										<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Typography variant="caption">En los proximos 7 dias</Typography>
+										<Typography
+											variant="caption"
+											sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}
+										>
+											En los próximos 7 días
 										</Typography>
 									}
 								>
 									<BarsDataWidget
-										color={theme.palette.error.dark}
+										color={BRAND_BLUE}
 										data={dashboardData?.trends?.deadlines?.map((item) => item.count) || undefined}
 									/>
 								</EcommerceDataCard>
