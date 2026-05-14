@@ -34,3 +34,13 @@ export const headerShadow = (isDark: boolean) =>
 // Borde más marcado para el rail del drawer — es un divisor estructural y
 // necesita leer como tal (más alpha que `headerBorder`).
 export const railBorder = (isDark: boolean) => alpha(BRAND_BLUE, isDark ? 0.34 : 0.22);
+
+// Animación de pulso reutilizable — misma curva que el landing/Header.tsx
+// usa para los live dots de las integraciones (PJN ●, MEV ●…). Se aplica como
+// `@keyframes la-live-pulse` y se referencia con `animation: "la-live-pulse 2.4s ease-out infinite"`.
+export const LIVE_PULSE_KEYFRAMES = {
+	"@keyframes la-live-pulse": {
+		"0%": { transform: "scale(0.9)", opacity: 0.55 },
+		"80%, 100%": { transform: "scale(2.4)", opacity: 0 },
+	},
+} as const;
