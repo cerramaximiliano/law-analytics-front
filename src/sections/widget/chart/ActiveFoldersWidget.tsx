@@ -6,6 +6,7 @@ import { Box, Grid, Stack, Typography, CircularProgress } from "@mui/material";
 import ReactApexChart from "react-apexcharts";
 import MainCard from "components/MainCard";
 import { Book } from "iconsax-react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import { BRAND_BLUE } from "themes/dashboardTokens";
@@ -14,6 +15,7 @@ import { ThemeMode } from "types/config";
 const ActiveFoldersWidget = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const navigate = useNavigate();
 
 	// Obtener userId del usuario actual
 	const user = useSelector((state) => state.auth.user);
@@ -113,7 +115,18 @@ const ActiveFoldersWidget = () => {
 	};
 
 	return (
-		<MainCard>
+		<MainCard
+			onClick={() => navigate("/apps/folders/list")}
+			sx={{
+				cursor: "pointer",
+				transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+				"&:hover": {
+					transform: "translateY(-2px)",
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+					boxShadow: `0 8px 22px ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				},
+			}}
+		>
 			<Stack spacing={2}>
 				<Stack direction="row" alignItems="center" spacing={1.5}>
 					<Box

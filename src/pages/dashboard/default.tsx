@@ -378,8 +378,8 @@ const DashboardDefault = () => {
 								px: 1.5,
 								py: 0.5,
 								borderRadius: 1,
-								bgcolor: (t) => alpha(t.palette.warning.main, t.palette.mode === "dark" ? 0.16 : 0.1),
-								border: (t) => `1px solid ${alpha(t.palette.warning.main, t.palette.mode === "dark" ? 0.4 : 0.28)}`,
+								bgcolor: (t) => alpha(BRAND_BLUE, t.palette.mode === "dark" ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, 0.32)}`,
 							}}
 						>
 							<Box
@@ -388,7 +388,7 @@ const DashboardDefault = () => {
 									width: 7,
 									height: 7,
 									borderRadius: "50%",
-									bgcolor: (t) => t.palette.warning.main,
+									bgcolor: BRAND_BLUE,
 								}}
 							/>
 							<Typography
@@ -396,7 +396,7 @@ const DashboardDefault = () => {
 									fontSize: "0.72rem",
 									fontWeight: 600,
 									letterSpacing: "0.02em",
-									color: (t) => (t.palette.mode === "dark" ? "#FDE68A" : "#92400E"),
+									color: BRAND_BLUE,
 									fontVariantNumeric: "tabular-nums",
 								}}
 							>
@@ -409,7 +409,7 @@ const DashboardDefault = () => {
 									ml: 0.5,
 									fontSize: "0.7rem",
 									fontWeight: 600,
-									color: (t) => (t.palette.mode === "dark" ? "#FDE68A" : "#92400E"),
+									color: BRAND_BLUE,
 									textDecoration: "underline",
 									textUnderlineOffset: "2px",
 									background: "none",
@@ -551,6 +551,7 @@ const DashboardDefault = () => {
 									count={(dashboardData?.tasks?.pending || 0).toString()}
 									color="success"
 									iconPrimary={<Calendar size={20} variant="Bulk" />}
+									onClick={() => navigate("/tareas")}
 									percentage={
 										<Typography
 											variant="caption"
@@ -577,6 +578,7 @@ const DashboardDefault = () => {
 									count={(dashboardData?.deadlines?.nextWeek || 0).toString()}
 									color="error"
 									iconPrimary={<CloudChange size={20} variant="Bulk" />}
+									onClick={() => navigate("/apps/calendar")}
 									percentage={
 										<Typography
 											variant="caption"

@@ -24,11 +24,13 @@ interface Props {
 	iconPrimary: ReactNode;
 	children: any;
 	color?: ColorProps;
+	/** Si se provee, la card es clickeable y navega/dispara la acción. */
+	onClick?: () => void;
 }
 
 // ==============================|| CHART WIDGET - ECOMMERCE CARD  ||============================== //
 
-const WidgetDataCard = ({ title, count, percentage, color, iconPrimary, children }: Props) => {
+const WidgetDataCard = ({ title, count, percentage, color, iconPrimary, children, onClick }: Props) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -46,7 +48,22 @@ const WidgetDataCard = ({ title, count, percentage, color, iconPrimary, children
 	};
 
 	return (
-		<MainCard>
+		<MainCard
+			onClick={onClick}
+			sx={
+				onClick
+					? {
+							cursor: "pointer",
+							transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+							"&:hover": {
+								transform: "translateY(-2px)",
+								borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+								boxShadow: `0 8px 22px ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+							},
+					  }
+					: undefined
+			}
+		>
 			<Stack spacing={2}>
 				<Stack direction="row" alignItems="center" justifyContent="space-between">
 					<Stack direction="row" alignItems="center" spacing={1.5}>

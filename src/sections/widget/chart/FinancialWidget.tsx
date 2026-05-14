@@ -3,6 +3,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import { Wallet3 } from "iconsax-react";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "store";
 import { BRAND_BLUE } from "themes/dashboardTokens";
 import { ThemeMode } from "types/config";
@@ -17,6 +18,7 @@ interface FinancialWidgetProps {
 const FinancialWidget = ({ foldersTrend = { direction: "up", percentage: 0 } }: FinancialWidgetProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const navigate = useNavigate();
 
 	// Obtener datos del store unificado
 	const { data: unifiedData } = useSelector((state) => state.unifiedStats);
@@ -32,7 +34,18 @@ const FinancialWidget = ({ foldersTrend = { direction: "up", percentage: 0 } }: 
 	};
 
 	return (
-		<MainCard>
+		<MainCard
+			onClick={() => navigate("/apps/folders/list")}
+			sx={{
+				cursor: "pointer",
+				transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+				"&:hover": {
+					transform: "translateY(-2px)",
+					borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+					boxShadow: `0 8px 22px ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+				},
+			}}
+		>
 			<Stack spacing={2}>
 				{/* Header con ícono brand-tinted y título */}
 				<Stack direction="row" alignItems="center" spacing={1.5}>

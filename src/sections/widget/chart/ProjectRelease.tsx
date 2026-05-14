@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { alpha, useTheme } from "@mui/material/styles";
 import { Box, CircularProgress, LinearProgress, Stack, Typography } from "@mui/material";
 import MainCard from "components/MainCard";
+import { useNavigate } from "react-router-dom";
 import { useSelector, dispatch } from "store";
 import { getUnifiedStats } from "store/reducers/unifiedStats";
 import { CalendarRemove, Timer1 } from "iconsax-react";
@@ -12,9 +13,22 @@ import { ThemeMode } from "types/config";
 const ProjectRelease = () => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
+	const navigate = useNavigate();
 
 	const user = useSelector((state) => state.auth.user);
 	const userId = user?._id;
+
+	// Card clickeable — navega al calendar donde se ven los vencimientos.
+	const cardClickableSx = {
+		cursor: "pointer",
+		transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+		"&:hover": {
+			transform: "translateY(-2px)",
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.32 : 0.22),
+			boxShadow: `0 8px 22px ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+		},
+	};
+	const handleClickCard = () => navigate("/apps/calendar");
 
 	const { data: unifiedData, isLoading, isInitialized } = useSelector((state) => state.unifiedStats);
 	const upcomingDeadlines = unifiedData?.folders?.upcomingDeadlines;
@@ -116,10 +130,10 @@ const ProjectRelease = () => {
 		);
 	}
 
-	// Empty state
+	// Empty state — también clickeable para incentivar agregar vencimientos.
 	if (!deadlinesData) {
 		return (
-			<MainCard>
+			<MainCard onClick={handleClickCard} sx={cardClickableSx}>
 				<Stack spacing={2}>
 					{renderHeader(
 						<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
@@ -156,7 +170,7 @@ const ProjectRelease = () => {
 	const next15DaysPercentage = Math.round((deadlinesData.next15Days / total) * 100);
 
 	return (
-		<MainCard>
+		<MainCard onClick={handleClickCard} sx={cardClickableSx}>
 			<Stack spacing={2.5}>
 				{renderHeader(
 					<Typography variant="caption" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
