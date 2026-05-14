@@ -73,8 +73,15 @@ export interface PlanCardProps {
 	animationIdx?: number;
 	/** Para mostrar "RECOMENDADO" / "PRÓXIMAMENTE" / chip custom arriba de la card. */
 	topChip?: "recommended" | "coming-soon" | "current" | "none";
-	/** Variante compacta para usar en modals (sin animación, sin overlay, padding menor). */
+	/** Variante compacta para usar en modals (sin animación, sin overlay, padding menor,
+	 * features ocultas, recursos truncados a maxResourcesCompact). */
 	compact?: boolean;
+	/** En compact, máximo de recursos a mostrar (default 4). El resto se resume como "+N más". */
+	maxResourcesCompact?: number;
+	/** Override completo — ocultar bloque de recursos. */
+	hideResources?: boolean;
+	/** Override completo — ocultar bloque de funcionalidades. Default true en compact. */
+	hideFeatures?: boolean;
 }
 
 // ============================== COMPONENT ============================== //
@@ -89,7 +96,13 @@ const PlanCard: React.FC<PlanCardProps> = ({
 	animationIdx,
 	topChip,
 	compact = false,
+	maxResourcesCompact = 4,
+	hideResources = false,
+	hideFeatures,
 }) => {
+	// Default de hideFeatures: en compact se ocultan (modal no es lugar para
+	// listas largas); en non-compact se muestran.
+	const shouldHideFeatures = hideFeatures ?? compact;
 	const theme = useTheme();
 	const isDark = theme.palette.mode === "dark";
 
@@ -105,12 +118,30 @@ const PlanCard: React.FC<PlanCardProps> = ({
 		return visibility === currentEnv;
 	};
 
-	const visibleResources = plan.resourceLimits
+	const allVisibleResources = plan.resourceLimits
 		.filter((r) => isVisibleInCurrentEnv(r.visibility))
 		.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+	const visibleResources = compact ? allVisibleResources.slice(0, maxResourcesCompact) : allVisibleResources;
+	const truncatedResourcesCount = compact ? allVisibleResources.length - visibleResources.length : 0;
 	const visibleFeatures = plan.features
 		.filter((f) => isVisibleInCurrentEnv(f.visibility))
 		.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+	// En compact, cuando las features están ocultas, contamos las habilitadas
+	// (las que el usuario gana al upgradear) para sumarlas al resumen "+ N más".
+	const enabledFeaturesCount = visibleFeatures.filter((f) => f.enabled).length;
+	const hiddenFeaturesCount = shouldHideFeatures ? enabledFeaturesCount : 0;
+	// Resumen combinado de elementos ocultos para mostrar al final de Recursos.
+	const hiddenSummary: string = (() => {
+		const parts: string[] = [];
+		if (truncatedResourcesCount > 0) {
+			parts.push(`${truncatedResourcesCount} recurso${truncatedResourcesCount === 1 ? "" : "s"}`);
+		}
+		if (hiddenFeaturesCount > 0) {
+			parts.push(`${hiddenFeaturesCount} funcionalidad${hiddenFeaturesCount === 1 ? "" : "es"}`);
+		}
+		if (parts.length === 0) return "";
+		return `+ ${parts.join(" y ")} más en este plan`;
+	})();
 
 	const sectionLabel = (text: string) => (
 		<Typography
@@ -349,32 +380,45 @@ const PlanCard: React.FC<PlanCardProps> = ({
 						)}
 					</Box>
 
-					{/* Badge + mensaje de descuento (alineado al diseño plans.tsx) */}
+					{/* Badge + duración del descuento + mensaje promocional.
+					    `durationInMonths` indica cuánto dura el descuento aplicado a la
+					    suscripción (ej. "6 meses"). `promotionalMessage` suele indicar la
+					    ventana de redención (ej. "Aplica hasta el 17/05/2026"). Mostramos
+					    ambos cuando existen — son conceptos distintos. */}
 					{promoDiscount ? (
-						<Stack
-							direction={{ xs: "column", sm: "row" }}
-							spacing={1}
-							alignItems={{ xs: "flex-start", sm: "center" }}
-							sx={{ mt: 0.75 }}
-						>
-							{promoDiscount.badge && (
-								<Chip
-									label={promoDiscount.badge}
-									size="small"
-									color="success"
-									sx={{
-										height: 20,
-										fontSize: "0.7rem",
-										fontWeight: 700,
-										letterSpacing: "0.04em",
-										"& .MuiChip-label": { px: 0.75 },
-									}}
-								/>
-							)}
+						<Stack spacing={0.5} sx={{ mt: 0.75 }}>
+							<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
+								{promoDiscount.badge && (
+									<Chip
+										label={promoDiscount.badge}
+										size="small"
+										color="success"
+										sx={{
+											height: 20,
+											fontSize: "0.7rem",
+											fontWeight: 700,
+											letterSpacing: "0.04em",
+											"& .MuiChip-label": { px: 0.75 },
+										}}
+									/>
+								)}
+								{promoDiscount.durationInMonths && (
+									<Typography
+										sx={{
+											fontSize: "0.78rem",
+											fontWeight: 600,
+											color: theme.palette.success.dark,
+											letterSpacing: "-0.005em",
+										}}
+									>
+										durante {promoDiscount.durationInMonths} {promoDiscount.durationInMonths === 1 ? "mes" : "meses"}
+									</Typography>
+								)}
+							</Stack>
 							{promoDiscount.promotionalMessage && (
 								<Typography
 									sx={{
-										fontSize: "0.78rem",
+										fontSize: "0.74rem",
 										color: theme.palette.text.secondary,
 										fontWeight: 400,
 										letterSpacing: "0.01em",
@@ -400,19 +444,19 @@ const PlanCard: React.FC<PlanCardProps> = ({
 					)}
 				</Box>
 
-				<Box sx={{ height: 1, bgcolor: alpha(theme.palette.divider, 0.5) }} />
+				{(!hideResources || !shouldHideFeatures) && <Box sx={{ height: 1, bgcolor: alpha(theme.palette.divider, 0.5) }} />}
 
-				<Stack spacing={2.5} sx={{ flex: 1 }}>
-					{visibleResources.length > 0 && (
+				<Stack spacing={compact ? 1.75 : 2.5} sx={{ flex: 1 }}>
+					{!hideResources && visibleResources.length > 0 && (
 						<Box>
-							{sectionLabel("Recursos")}
-							<Stack spacing={1.25}>
+							{sectionLabel(compact ? "Incluye" : "Recursos")}
+							<Stack spacing={compact ? 1 : 1.25}>
 								{visibleResources.map((resource, i) => (
 									<Box key={`r-${i}`} sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
 										<Box sx={{ flexShrink: 0, mt: "2px", lineHeight: 0 }}>
 											<TickCircle size={16} variant="Bulk" color={theme.palette.success.main} />
 										</Box>
-										<Typography sx={{ fontSize: "0.88rem", color: theme.palette.text.primary, lineHeight: 1.5 }}>
+										<Typography sx={{ fontSize: compact ? "0.82rem" : "0.88rem", color: theme.palette.text.primary, lineHeight: 1.5 }}>
 											<Box component="span" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
 												{resource.limit}
 											</Box>{" "}
@@ -420,11 +464,24 @@ const PlanCard: React.FC<PlanCardProps> = ({
 										</Typography>
 									</Box>
 								))}
+								{hiddenSummary && (
+									<Typography
+										sx={{
+											fontSize: "0.78rem",
+											color: theme.palette.text.secondary,
+											letterSpacing: "-0.005em",
+											pl: 3,
+											fontStyle: "italic",
+										}}
+									>
+										{hiddenSummary}
+									</Typography>
+								)}
 							</Stack>
 						</Box>
 					)}
 
-					{visibleFeatures.length > 0 && (
+					{!shouldHideFeatures && visibleFeatures.length > 0 && (
 						<Box>
 							{sectionLabel("Funcionalidades")}
 							<Stack spacing={1.25}>
