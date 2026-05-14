@@ -311,57 +311,51 @@ const DashboardDefault = () => {
 		return "general";
 	};
 
-	// Renderizar contenido de onboarding (cards superiores)
-	// Jerarquia: Carpetas = foco principal, Tareas/Vencimientos = secundarios
+	// Renderizar las 4 OnboardingCards en 2x2 — usadas dentro de la columna
+	// izquierda lg=6 para llenar el espacio debajo del EducationalBlock.
+	// Jerarquía: Carpetas = foco principal, Tareas/Vencimientos = secundarios.
 	const renderOnboardingCards = () => (
 		<>
-			{/* Card informativa - sin CTA, solo explica */}
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
-					title="Monto Activo"
-					description="Visualiza el valor total de tus expedientes activos. Se calcula automaticamente desde tus carpetas."
-					icon={<Moneys size={24} />}
-					color="warning"
+					title="Monto activo"
+					description="Visualizá el valor total de tus expedientes activos. Se calcula automáticamente desde tus carpetas."
+					icon={<Moneys size={20} variant="Bulk" />}
 					variant="informative"
 					muted
 				/>
 			</Grid>
 
-			{/* Card PRINCIPAL - El foco del onboarding */}
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
-					title="Carpetas Activas"
-					description="Las carpetas representan tus expedientes. Organiza causas, clientes y documentos en un solo lugar."
+					title="Carpetas activas"
+					description="Las carpetas representan tus expedientes. Organizá causas, clientes y documentos en un solo lugar."
 					actionLabel="Crear mi primera carpeta"
 					onAction={handleCreateFolder}
-					icon={<FolderAdd size={24} />}
-					color="primary"
+					icon={<FolderAdd size={20} variant="Bulk" />}
 					variant="primary"
 				/>
 			</Grid>
 
-			{/* Cards secundarias - menos prominentes */}
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
-					title="Tareas Pendientes"
-					description="Gestiona tus tareas para no olvidar plazos importantes. Las tareas se vinculan a tus carpetas."
+					title="Tareas pendientes"
+					description="Gestioná tus tareas para no perder plazos importantes. Las tareas se vinculan a tus carpetas."
 					actionLabel="Ver tareas"
 					onAction={handleCreateTask}
-					icon={<Task size={24} />}
-					color="success"
+					icon={<Task size={20} variant="Bulk" />}
 					variant="secondary"
 					muted
 				/>
 			</Grid>
 
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
 					title="Vencimientos"
-					description="Configura alertas para vencimientos judiciales. Recibe notificaciones antes de cada fecha limite."
+					description="Configurá alertas para vencimientos judiciales. Recibí notificaciones antes de cada fecha límite."
 					actionLabel="Ver vencimientos"
 					onAction={handleViewDeadlines}
-					icon={<CloudChange size={24} />}
-					color="error"
+					icon={<CloudChange size={20} variant="Bulk" />}
 					variant="secondary"
 					muted
 				/>
@@ -516,23 +510,23 @@ const DashboardDefault = () => {
 				{!isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
-							{/* Cards superiores con estados educativos */}
-							{renderOnboardingCards()}
-
-							{/* Bloque educativo en lugar del grafico */}
-							<Grid item xs={12} md={6} lg={6}>
-								<OnboardingEducationalBlock />
+							{/* Columna izquierda lg=6: EducationalBlock arriba + 4 OnboardingCards en 2x2 debajo */}
+							<Grid item xs={12} lg={6}>
+								<Grid container spacing={2.75}>
+									<Grid item xs={12}>
+										<OnboardingEducationalBlock />
+									</Grid>
+									{renderOnboardingCards()}
+								</Grid>
 							</Grid>
 
-							{/* Widgets laterales con estado vacio mejorado */}
-							<Grid item xs={12} md={6} lg={3}>
-								<Stack spacing={3}>
+							{/* Columna derecha lg=6: widgets apilados verticalmente (Storage + Task + Release) */}
+							<Grid item xs={12} lg={6}>
+								<Stack spacing={2.75}>
 									<StorageWidget />
 									<AssignUsers />
+									<ProjectRelease />
 								</Stack>
-							</Grid>
-							<Grid item xs={12} md={6} lg={3}>
-								<ProjectRelease />
 							</Grid>
 						</Grid>
 					</Fade>

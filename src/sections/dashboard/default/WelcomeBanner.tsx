@@ -1,7 +1,7 @@
 import React from "react";
 
 // material-ui
-import { Box, Button, Link, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Link, Stack, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 
 // project-imports
@@ -36,6 +36,10 @@ interface WelcomeBannerProps {
 const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeBannerProps) => {
 	const theme = useTheme();
 	const isDark = theme.palette.mode === ThemeMode.DARK;
+	// Adaptación a altura de viewport. Threshold a 980 captura laptops 1080p
+	// (~950-980 disponibles después de barra de URL del navegador).
+	const isShortViewport = useMediaQuery("(max-height: 980px)");
+	const isTightViewport = useMediaQuery("(max-height: 760px)");
 	const navigate = useNavigate();
 
 	const handleCreateFolder = () => navigate("/apps/folders/list?onboarding=true");
@@ -52,6 +56,7 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeB
 	};
 
 	// Botón primario BRAND_BLUE con shadow tintada — patrón landing CTA.
+	// Padding y fontSize responsive: chico en mobile, grande en desktop.
 	const primaryButtonSx = {
 		bgcolor: BRAND_BLUE,
 		color: "#fff",
@@ -59,7 +64,10 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeB
 		textTransform: "none",
 		letterSpacing: "-0.005em",
 		borderRadius: 1.25,
-		px: 2.25,
+		fontSize: { xs: "0.82rem", sm: "0.9rem" },
+		px: { xs: 1.75, sm: 2.25 },
+		py: { xs: 0.75, sm: 1 },
+		whiteSpace: "nowrap",
 		boxShadow: `0 8px 20px ${alpha(BRAND_BLUE, 0.28)}`,
 		transition: "transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
 		"&:hover": {
@@ -105,10 +113,16 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeB
 				/>
 
 				<Stack
-					spacing={{ xs: 1.75, sm: 2.25 }}
+					spacing={{
+						xs: isTightViewport ? 1 : isShortViewport ? 1.25 : 1.75,
+						sm: isTightViewport ? 1.25 : isShortViewport ? 1.5 : 2.25,
+					}}
 					sx={{
 						px: { xs: 2.5, sm: 4 },
-						py: { xs: 3, sm: 4 },
+						py: {
+							xs: isTightViewport ? 1.5 : isShortViewport ? 2 : 3,
+							sm: isTightViewport ? 2 : isShortViewport ? 2.25 : 4,
+						},
 						position: "relative",
 						zIndex: 1,
 						maxWidth: { md: 620 },
@@ -143,7 +157,11 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeB
 					<Typography
 						variant="h2"
 						sx={{
-							fontSize: { xs: "1.5rem", sm: "1.875rem", md: "2.125rem" },
+							fontSize: {
+								xs: isTightViewport ? "1.25rem" : isShortViewport ? "1.35rem" : "1.5rem",
+								sm: isTightViewport ? "1.5rem" : isShortViewport ? "1.625rem" : "1.875rem",
+								md: isTightViewport ? "1.625rem" : isShortViewport ? "1.75rem" : "2.125rem",
+							},
 							fontWeight: 600,
 							letterSpacing: "-0.025em",
 							lineHeight: 1.15,
@@ -167,22 +185,25 @@ const WelcomeBanner = ({ showOnboarding = false, userName, onDismiss }: WelcomeB
 					</Typography>
 
 					<Box sx={{ pt: 0.5 }}>
-						<Button variant="contained" onClick={handleCreateFolder} startIcon={<Add />} size="large" sx={primaryButtonSx}>
+						<Button variant="contained" onClick={handleCreateFolder} startIcon={<Add size={18} />} sx={primaryButtonSx}>
 							Crear mi primera carpeta
 						</Button>
 					</Box>
 
-					<Typography
-						variant="caption"
-						sx={{
-							color: "text.secondary",
-							opacity: 0.75,
-							display: { xs: "none", sm: "block" },
-							mt: -0.5,
-						}}
-					>
-						Organizá un expediente en menos de 1 minuto
-					</Typography>
+					{/* Helper — oculto en viewport corto para ahorrar altura */}
+					{!isShortViewport && (
+						<Typography
+							variant="caption"
+							sx={{
+								color: "text.secondary",
+								opacity: 0.75,
+								display: { xs: "none", sm: "block" },
+								mt: -0.5,
+							}}
+						>
+							Organizá un expediente en menos de 1 minuto
+						</Typography>
+					)}
 				</Stack>
 
 				{/* Dismiss link */}
