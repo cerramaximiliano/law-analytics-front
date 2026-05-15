@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Box, Stack, Typography, LinearProgress, Chip, Skeleton, Tooltip } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import MainCard from "components/MainCard";
 import Avatar from "components/@extended/Avatar";
-import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle } from "iconsax-react";
+import { FolderOpen, Profile2User, Calculator, StatusUp, TickCircle, Add, ArrowRight2 } from "iconsax-react";
 import { useSelector, dispatch } from "store";
 import { fetchUserStats } from "store/reducers/userStats";
 import { cleanPlanDisplayName } from "utils/planPricingUtils";
@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import pjnCredentialsService from "api/pjnCredentials";
 import scbaCredentialsService from "api/scbaCredentials";
 import logoPJBuenosAires from "assets/images/logos/logo_pj_buenos_aires.svg";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // ==============================|| CONSTANTS ||============================== //
 
@@ -27,19 +28,29 @@ interface ResourceUsageBarProps {
 	barWidth?: number;
 	onCabaClick?: () => void;
 	onBaClick?: () => void;
+	/** Deshabilita el padding horizontal interno cuando el contenedor padre ya provee el suyo. */
+	disableContainerPadding?: boolean;
 }
 
 interface ResourceUsageWidgetProps {
 	title?: string;
 }
 
-interface JudicialBadgeProps {
+// Estado funcional de la pill — define la afordancia y el indicador visual.
+//   "connected"    → la cuenta está sincronizada (PJN/SCBA). Check verde.
+//   "disconnected" → la cuenta es conectable pero no está conectada (PJN/SCBA sin login). Dot ámbar.
+//   "shortcut"     → no hay concepto de cuenta para esta jurisdicción (EJE/CABA);
+//                    la pill es un atajo para cargar una causa individual. Ícono "+".
+//   "loading"      → estado de carga inicial de credenciales.
+type JurisdictionState = "connected" | "disconnected" | "shortcut" | "loading";
+
+interface JurisdictionPillProps {
 	logoSrc: string;
 	alt: string;
-	bgColor: string;
+	logoBg: string;
 	label: string;
 	tooltip: string;
-	synced?: boolean | null;
+	state: JurisdictionState;
 	onClick?: () => void;
 }
 
@@ -57,77 +68,148 @@ const getUsageColor = (percentage: number): "primary" | "warning" | "error" => {
 	return "error";
 };
 
-// ==============================|| JUDICIAL BADGE ||============================== //
+// ==============================|| JURISDICTION PILL ||============================== //
+// Pill horizontal con logo + label + indicador de estado. Reemplaza al antiguo
+// JudicialBadge (tile 26x26 con label minúsculo abajo) que se veía amontonado
+// en mobile cuando se acumulan varias jurisdicciones.
+// Pensada para escalar: nuevas jurisdicciones se suman con la misma forma.
 
-const JudicialBadge = ({ logoSrc, alt, bgColor, label, tooltip, synced = null, onClick }: JudicialBadgeProps) => {
+const JurisdictionPill = ({ logoSrc, alt, logoBg, label, tooltip, state, onClick }: JurisdictionPillProps) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const isInteractive = !!onClick;
+	const isConnected = state === "connected";
+
+	// Indicador a la derecha — distingue funcionalmente las pills:
+	//   connected: tilde verde (cuenta sincronizada)
+	//   disconnected: dot ámbar (cuenta conectable, falta login)
+	//   shortcut: ícono "+" brand (no es cuenta, es atajo para agregar causa)
+	//   loading: dot neutro animado
+	const indicator = (() => {
+		if (state === "connected") {
+			return <TickCircle size={14} variant="Bold" color={theme.palette.success.main} />;
+		}
+		if (state === "disconnected") {
+			return (
+				<Box
+					aria-hidden
+					sx={{
+						width: 7,
+						height: 7,
+						borderRadius: "50%",
+						bgcolor: theme.palette.warning.main,
+						opacity: 0.85,
+						flexShrink: 0,
+					}}
+				/>
+			);
+		}
+		if (state === "shortcut") {
+			return (
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						width: 14,
+						height: 14,
+						color: alpha(BRAND_BLUE, isDark ? 0.85 : 0.7),
+					}}
+				>
+					<Add size={14} variant="Bold" />
+				</Box>
+			);
+		}
+		// loading
+		return (
+			<Box
+				aria-hidden
+				sx={{
+					width: 7,
+					height: 7,
+					borderRadius: "50%",
+					bgcolor: alpha(theme.palette.text.primary, 0.2),
+					flexShrink: 0,
+				}}
+			/>
+		);
+	})();
+
 	return (
 		<Tooltip title={tooltip} arrow placement="top">
-			<Stack
-				alignItems="center"
-				spacing={0.25}
+			<Box
+				component={isInteractive ? "button" : "div"}
 				onClick={onClick}
 				aria-label={tooltip}
-				role={onClick ? "button" : undefined}
-				tabIndex={onClick ? 0 : undefined}
-				onKeyDown={
-					onClick
-						? (e) => {
-								if (e.key === "Enter" || e.key === " ") onClick();
+				sx={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 0.875,
+					// minWidth uniforme — todas las pills se ven como mini-cards del
+					// mismo ancho. Se expanden si la sigla es más larga (futuras
+					// jurisdicciones). 100px cubre cómodo "CABA" + logo + estado.
+					minWidth: 100,
+					height: 34,
+					px: 1.125,
+					borderRadius: 1.25,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.24 : 0.16)}`,
+					bgcolor: isConnected
+						? alpha(BRAND_BLUE, isDark ? 0.14 : 0.06)
+						: theme.palette.background.paper,
+					cursor: isInteractive ? "pointer" : "default",
+					transition: "background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease",
+					flexShrink: 0,
+					font: "inherit",
+					textAlign: "left",
+					appearance: "none",
+					"&:hover": isInteractive
+						? {
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.09),
+								borderColor: alpha(BRAND_BLUE, isDark ? 0.42 : 0.28),
 						  }
-						: undefined
-				}
-				sx={{ cursor: onClick ? "pointer" : "default", flexShrink: 0 }}
+						: {},
+					"&:active": isInteractive ? { transform: "scale(0.97)" } : {},
+					"&:focus-visible": {
+						outline: `2px solid ${alpha(BRAND_BLUE, 0.45)}`,
+						outlineOffset: 2,
+					},
+				}}
 			>
-				<Box sx={{ position: "relative" }}>
-					<Box
-						sx={{
-							width: 26,
-							height: 26,
-							borderRadius: 0.75,
-							backgroundColor: bgColor,
-							border: "1px solid",
-							borderColor: "divider",
-							display: "flex",
-							justifyContent: "center",
-							alignItems: "center",
-							p: "3px",
-						}}
-					>
-						<img src={logoSrc} alt={alt} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-					</Box>
-					{synced === true && (
-						<Box
-							sx={{
-								position: "absolute",
-								bottom: -3,
-								right: -3,
-								width: 11,
-								height: 11,
-								borderRadius: "50%",
-								backgroundColor: theme.palette.background.paper,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							}}
-						>
-							<TickCircle size={11} variant="Bold" color={theme.palette.success.main} />
-						</Box>
-					)}
+				{/* Logo (mantiene el bg-color original del organismo para reconocimiento) */}
+				<Box
+					sx={{
+						width: 22,
+						height: 22,
+						borderRadius: 0.625,
+						backgroundColor: logoBg,
+						border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.06)}`,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						p: "2px",
+						flexShrink: 0,
+					}}
+				>
+					<img src={logoSrc} alt={alt} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
 				</Box>
+
 				<Typography
 					sx={{
-						fontSize: "0.55rem",
+						fontSize: "0.78rem",
 						fontWeight: 600,
+						letterSpacing: "0.01em",
+						color: "text.primary",
 						lineHeight: 1,
-						color: theme.palette.text.secondary,
-						letterSpacing: "0.02em",
-						userSelect: "none",
+						fontVariantNumeric: "tabular-nums",
 					}}
 				>
 					{label}
 				</Typography>
-			</Stack>
+
+				{/* Indicador pinneado a la derecha con ml: auto — garantiza que la
+				    pill se vea uniforme aunque la sigla sea más corta. */}
+				<Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>{indicator}</Box>
+			</Box>
 		</Tooltip>
 	);
 };
@@ -175,50 +257,54 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 
 	const pjnTooltip =
 		pjnSynced === null
-			? "PJN - Poder Judicial de la Nación — Cargando estado..."
+			? "PJN · Poder Judicial de la Nación — Cargando estado…"
 			: pjnSynced
-			? "PJN - Poder Judicial de la Nación — Sincronizado"
-			: "PJN - Poder Judicial de la Nación — No sincronizado. Click para conectar";
+			? "PJN · Cuenta conectada — Click para administrar"
+			: "PJN · Cuenta no conectada — Click para conectar y sincronizar tus causas";
 
 	const scbaTooltip =
 		scbaSynced === null
-			? "BA - Buenos Aires — Cargando estado..."
+			? "BA · Buenos Aires — Cargando estado…"
 			: scbaSynced
-			? "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — Sincronizado"
+			? "BA · Cuenta conectada — Click para administrar"
 			: onBaClick
-			? "BA - Buenos Aires — No sincronizado. Click para agregar causa del Poder Judicial de la Provincia"
-			: "BA - Buenos Aires — Poder Judicial de la Provincia de Buenos Aires — No sincronizado";
+			? "BA · Cuenta no conectada — Click para agregar una causa del Poder Judicial de la Provincia"
+			: "BA · Buenos Aires — No conectada";
+
+	const pjnState: JurisdictionState = pjnSynced === null ? "loading" : pjnSynced ? "connected" : "disconnected";
+	const scbaState: JurisdictionState = scbaSynced === null ? "loading" : scbaSynced ? "connected" : "disconnected";
 
 	return (
 		<Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" useFlexGap>
-			<JudicialBadge
+			<JurisdictionPill
 				logoSrc={PJN_LOGO_URL}
 				alt="PJN"
-				bgColor="#222E43"
+				logoBg="#222E43"
 				label="PJN"
 				tooltip={pjnTooltip}
-				synced={pjnSynced}
+				state={pjnState}
 				onClick={() => navigate("/apps/profiles/account/pjn")}
 			/>
-			<JudicialBadge
+			<JurisdictionPill
 				logoSrc={logoPJBuenosAires}
 				alt="PJ Buenos Aires"
-				bgColor="#f8f8f8"
+				logoBg="#f8f8f8"
 				label="BA"
 				tooltip={scbaTooltip}
-				synced={scbaSynced}
+				state={scbaState}
 				onClick={onBaClick}
 			/>
-			<JudicialBadge
+			<JurisdictionPill
 				logoSrc={CABA_LOGO_URL}
 				alt="PJ CABA"
-				bgColor="#f8f8f8"
+				logoBg="#f8f8f8"
 				label="CABA"
 				tooltip={
 					onCabaClick
-						? "CABA - Ciudad de Buenos Aires — Click para agregar causa del Poder Judicial"
-						: "CABA - Ciudad de Buenos Aires — Poder Judicial de la Ciudad de Buenos Aires"
+						? "CABA · Ciudad de Buenos Aires — Click para agregar una causa individual"
+						: "CABA · Ciudad de Buenos Aires"
 				}
+				state="shortcut"
 				onClick={onCabaClick}
 			/>
 		</Stack>
@@ -227,8 +313,18 @@ export const FoldersSyncBadges = ({ onCabaClick, onBaClick }: { onCabaClick?: ()
 
 // ==============================|| RESOURCE USAGE BAR (NAMED EXPORT) ||============================== //
 
-export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCabaClick, onBaClick }: ResourceUsageBarProps) => {
+export const ResourceUsageBar = ({
+	resourceType,
+	compact = false,
+	barWidth,
+	onCabaClick,
+	onBaClick,
+	disableContainerPadding = false,
+}: ResourceUsageBarProps) => {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+	const containerPx = disableContainerPadding ? 0 : compact ? { xs: 2, sm: 3 } : 0;
+	const containerPy = disableContainerPadding ? 0 : compact ? 1 : 0;
 	const userStats = useSelector((state) => state.userStats.data);
 	const loading = useSelector((state) => state.userStats.loading);
 
@@ -250,11 +346,11 @@ export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCa
 	// Skeleton mientras carga
 	if (loading && !userStats?.planInfo) {
 		return (
-			<Box sx={{ px: compact ? { xs: 2, sm: 3 } : 0, py: compact ? 1 : 0 }}>
+			<Box sx={{ px: containerPx, py: containerPy }}>
 				<Stack direction="row" alignItems="center" spacing={1.5}>
 					<Skeleton variant="circular" width={18} height={18} />
 					<Skeleton variant="text" width={70} />
-					<Skeleton variant="rectangular" height={compact ? 6 : 8} sx={{ flex: 1, borderRadius: 1 }} />
+					<Skeleton variant="rectangular" height={compact ? 9 : 10} sx={{ flex: 1, borderRadius: 1.25 }} />
 					<Skeleton variant="text" width={50} />
 				</Stack>
 			</Box>
@@ -265,7 +361,7 @@ export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCa
 	if (!userStats?.planInfo) return null;
 
 	return (
-		<Box sx={{ px: compact ? { xs: 2, sm: 3 } : 0, py: compact ? 1 : 0 }}>
+		<Box sx={{ px: containerPx, py: containerPy }}>
 			<Stack direction="row" alignItems="center" spacing={1.5}>
 				<Box sx={{ color: isUnlimited ? theme.palette.text.secondary : theme.palette[color].main, display: "flex" }}>{config.icon}</Box>
 				<Typography variant="caption" sx={{ fontWeight: 500, minWidth: 85 }}>
@@ -290,31 +386,40 @@ export const ResourceUsageBar = ({ resourceType, compact = false, barWidth, onCa
 								aria-valuemin={0}
 								aria-valuemax={limit}
 								sx={{
-									flex: compact && isFolders && barWidth ? "0 0 auto" : 1,
-									width: compact && isFolders && barWidth ? barWidth : undefined,
-									height: compact ? 6 : 8,
-									borderRadius: 1,
-									backgroundColor: theme.palette.grey[300],
+									flex: 1,
+									// Subimos altura de 6→9 en compact para que tenga más presencia
+									// visual incluso cuando la columna del header queda angosta.
+									height: compact ? 9 : 10,
+									borderRadius: 1.25,
+									minWidth: 80,
+									backgroundColor: alpha(theme.palette.text.primary, isDark ? 0.18 : 0.08),
 									"& .MuiLinearProgress-bar": {
-										borderRadius: 1,
+										borderRadius: 1.25,
 									},
 								}}
 							/>
 						</Tooltip>
 						<Tooltip title={isFolders ? "Carpetas activas del plan" : config.label} placement="top">
-							<Typography variant="caption" color="text.secondary" sx={{ minWidth: 55, textAlign: "right", cursor: "default" }}>
+							<Typography
+								variant="caption"
+								color="text.secondary"
+								sx={{ minWidth: 55, textAlign: "right", cursor: "default", fontVariantNumeric: "tabular-nums" }}
+							>
 								{count} / {limit}
 							</Typography>
 						</Tooltip>
 					</>
 				)}
-				{isFolders && compact && (
-					<>
-						<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-						<FoldersSyncBadges onCabaClick={onCabaClick} onBaClick={onBaClick} />
-					</>
-				)}
 			</Stack>
+
+			{/* Sync pills jurisdiccionales — fila propia debajo de la barra. Mantiene
+			    el agrupamiento visual (mismo card) sin amontonar todo en una sola
+			    línea. Escala bien cuando se sumen más jurisdicciones. */}
+			{isFolders && compact && (
+				<Box sx={{ mt: 1.25, display: "flex", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
+					<FoldersSyncBadges onCabaClick={onCabaClick} onBaClick={onBaClick} />
+				</Box>
+			)}
 		</Box>
 	);
 };

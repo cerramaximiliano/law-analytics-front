@@ -127,6 +127,63 @@ import { GuideFolders } from "components/guides";
 import { LimitErrorModal } from "sections/auth/LimitErrorModal";
 import DowngradeGracePeriodAlert from "components/DowngradeGracePeriodAlert";
 import { ResourceUsageBar } from "sections/widget/chart/ResourceUsageWidget";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER, LIVE_PULSE_KEYFRAMES } from "themes/dashboardTokens";
+
+// ==============================|| STATUS PILL ||============================== //
+// Píldora de estado con dot + label — uniforme para Nueva / En Proceso /
+// Pendiente / Cerrada. Replica el patrón de JurisdictionPill: dot indicador
+// + texto. Cada estado tiene su hue propio (verde / brand / ámbar / neutro)
+// pero la forma y la jerarquía visual son idénticas.
+
+const StatusPill = ({ status }: { status: string }) => {
+	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
+	const config = (() => {
+		switch (status) {
+			case "Nueva":
+				return { dot: LIVE_GREEN, bgAlpha: isDark ? 0.14 : 0.08, borderAlpha: isDark ? 0.36 : 0.22 };
+			case "En Proceso":
+				return { dot: BRAND_BLUE, bgAlpha: isDark ? 0.14 : 0.08, borderAlpha: isDark ? 0.36 : 0.22 };
+			case "Pendiente":
+				return { dot: STALE_AMBER, bgAlpha: isDark ? 0.16 : 0.1, borderAlpha: isDark ? 0.4 : 0.24 };
+			case "Cerrada":
+				return { dot: theme.palette.text.secondary, bgAlpha: isDark ? 0.1 : 0.06, borderAlpha: isDark ? 0.24 : 0.14 };
+			default:
+				return { dot: theme.palette.text.disabled, bgAlpha: 0.04, borderAlpha: 0.12 };
+		}
+	})();
+
+	return (
+		<Box
+			sx={{
+				display: "inline-flex",
+				alignItems: "center",
+				gap: 0.625,
+				px: 0.875,
+				py: 0.375,
+				borderRadius: 0.875,
+				bgcolor: alpha(config.dot, config.bgAlpha),
+				border: `1px solid ${alpha(config.dot, config.borderAlpha)}`,
+			}}
+		>
+			<Box aria-hidden sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: config.dot, flexShrink: 0 }} />
+			<Typography
+				sx={{
+					fontSize: "0.7rem",
+					fontWeight: 600,
+					letterSpacing: "0.01em",
+					color: "text.primary",
+					lineHeight: 1,
+					whiteSpace: "nowrap",
+				}}
+			>
+				{status}
+			</Typography>
+		</Box>
+	);
+};
+
 // ==============================|| REACT TABLE ||============================== //
 
 interface ReactTableProps extends Props {
@@ -201,9 +258,57 @@ function ReactTable({
 	onBarWidthMeasured,
 }: ReactTableProps) {
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
 	const matchDownSM = useMediaQuery(theme.breakpoints.down("sm"));
 	const [isColumnsReady, setIsColumnsReady] = useState(false);
 	const [showFilters, setShowFilters] = useState(false);
+
+	// Estilo brand-aware de la tabla — header tintado, hover/selected brand,
+	// tabular-nums en numeric content. Scoped a esta tabla, no toca el theme
+	// global de MuiTable (que es shared con otras páginas).
+	const tableSx = {
+		"& .MuiTableHead-root .MuiTableCell-head": {
+			fontSize: "0.7rem",
+			fontWeight: 600,
+			letterSpacing: "0.1em",
+			textTransform: "uppercase",
+			color: "text.secondary",
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			py: 1.5,
+			// Override del vertical divider que viene del theme global
+			"&:not(:last-of-type):after": {
+				backgroundColor: alpha(BRAND_BLUE, isDark ? 0.2 : 0.1),
+			},
+		},
+		"& .MuiTableBody-root .MuiTableCell-root": {
+			py: 1.75,
+			fontVariantNumeric: "tabular-nums",
+			letterSpacing: "-0.005em",
+		},
+	} as const;
+
+	// Estilo compartido de los Select del filter panel — borde tintado brand,
+	// hover y focus coherentes con el lenguaje del header/landing.
+	const filterSelectSx = {
+		bgcolor: theme.palette.background.paper,
+		"& .MuiSelect-select": {
+			py: "7px",
+			fontSize: "0.8rem",
+			fontWeight: 500,
+			letterSpacing: "0.005em",
+		},
+		"& .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+			transition: "border-color 0.15s ease",
+		},
+		"&:hover .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+		},
+		"&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+			borderColor: alpha(BRAND_BLUE, 0.55),
+			borderWidth: 1,
+		},
+	} as const;
 	const csvLinkRef = useRef<any>(null);
 	const g1ButtonRef = useRef<HTMLButtonElement>(null);
 	const g2StackRef = useRef<HTMLDivElement>(null);
@@ -212,6 +317,11 @@ function ReactTable({
 	const mobileMenuOpen = Boolean(mobileMenuAnchor);
 	const handleMobileMenuOpen = (e: MouseEvent<HTMLElement>) => setMobileMenuAnchor(e.currentTarget);
 	const handleMobileMenuClose = () => setMobileMenuAnchor(null);
+	// Desktop overflow menu (CSV + Guía)
+	const [desktopMenuAnchor, setDesktopMenuAnchor] = useState<null | HTMLElement>(null);
+	const desktopMenuOpen = Boolean(desktopMenuAnchor);
+	const handleDesktopMenuOpen = (e: MouseEvent<HTMLElement>) => setDesktopMenuAnchor(e.currentTarget);
+	const handleDesktopMenuClose = () => setDesktopMenuAnchor(null);
 
 	// Medir ancho de G1+G2 (botones Agregar carpeta + Archivados + Archivar) para alinear la barra de carpetas
 	useLayoutEffect(() => {
@@ -506,7 +616,21 @@ function ReactTable({
 										size="small"
 										startIcon={<FolderAdd />}
 										onClick={handleAdd}
-										sx={{ textTransform: "none", flex: 1 }}
+										sx={{
+											textTransform: "none",
+											flex: 1,
+											bgcolor: BRAND_BLUE,
+											color: "#fff",
+											fontWeight: 600,
+											letterSpacing: "-0.005em",
+											borderRadius: 1.25,
+											boxShadow: "none",
+											transition: "background-color 0.15s ease",
+											"&:hover": {
+												bgcolor: alpha(BRAND_BLUE, 0.88),
+												boxShadow: "none",
+											},
+										}}
 										data-testid="folder-add-btn"
 									>
 										{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
@@ -638,15 +762,25 @@ function ReactTable({
 									size="small"
 									startIcon={<FolderAdd />}
 									onClick={handleAdd}
-									sx={{ textTransform: "none" }}
+									sx={{
+										textTransform: "none",
+										bgcolor: BRAND_BLUE,
+										color: "#fff",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										borderRadius: 1.25,
+										boxShadow: "none",
+										transition: "background-color 0.15s ease",
+										"&:hover": {
+											bgcolor: alpha(BRAND_BLUE, 0.88),
+											boxShadow: "none",
+										},
+									}}
 									data-testid="folder-add-btn"
 								>
 									{isOnboarding && data.length === 0 ? "Crear mi primera carpeta" : "Agregar carpeta"}
 								</Button>
 							)}
-
-							{/* Separador */}
-							{handleAdd && <Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />}
 
 							{/* Grupo 2: Gestión de archivados */}
 							<Stack direction="row" spacing={1} sx={{ ...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }) }}>
@@ -687,9 +821,6 @@ function ReactTable({
 								)}
 							</Stack>
 
-							{/* Separador */}
-							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
-
 							{/* Grupo 3: Filtros y ordenamiento */}
 							<Stack
 								direction="row"
@@ -718,13 +849,38 @@ function ReactTable({
 										{activeFiltersCount > 0 ? `Filtros (${activeFiltersCount})` : "Filtros"}
 									</Button>
 								)}
-								<Box sx={{ minWidth: 160 }}>
+								<Box
+									sx={{
+										minWidth: 180,
+										// Aplicamos el lenguaje brand vía selectores descendentes —
+										// el SortingSelect es shared, no lo tocamos. Solo overridemos
+										// los bordes y el botón de dirección aquí.
+										"& .MuiOutlinedInput-notchedOutline": {
+											borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+											transition: "border-color 0.15s ease",
+										},
+										"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+											borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+										},
+										"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+											borderColor: alpha(BRAND_BLUE, 0.55),
+											borderWidth: 1,
+										},
+										// IconButton de dirección (ArrowUp/ArrowDown) — borde brand
+										"& .MuiIconButton-root": {
+											borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+											color: BRAND_BLUE,
+											transition: "border-color 0.15s ease, background-color 0.15s ease",
+											"&:hover": {
+												borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.12 : 0.06),
+											},
+										},
+									}}
+								>
 									<SortingSelect sortBy={sortBy.id} setSortBy={setSortBy} allColumns={allColumns as any} />
 								</Box>
 							</Stack>
-
-							{/* Separador */}
-							<Box sx={{ width: "2px", height: "28px", bgcolor: "grey.300", borderRadius: 1 }} />
 
 							{/* Grupo 4: Búsqueda y utilidades — alineado a la derecha */}
 							<Stack
@@ -737,7 +893,24 @@ function ReactTable({
 									...(isOnboarding && data.length === 0 && { opacity: 0.4, pointerEvents: "none" }),
 								}}
 							>
-								<Box sx={{ width: "220px" }}>
+								<Box
+									sx={{
+										width: "220px",
+										// Mismo lenguaje brand para el search input — coherente con
+										// el SortingSelect y los Selects del filter panel.
+										"& .MuiOutlinedInput-notchedOutline": {
+											borderColor: alpha(BRAND_BLUE, isDark ? 0.26 : 0.16),
+											transition: "border-color 0.15s ease",
+										},
+										"& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+											borderColor: alpha(BRAND_BLUE, isDark ? 0.46 : 0.32),
+										},
+										"& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+											borderColor: alpha(BRAND_BLUE, 0.55),
+											borderWidth: 1,
+										},
+									}}
+								>
 									<GlobalFilter
 										preGlobalFilteredRows={preGlobalFilteredRows as any}
 										globalFilter={globalFilter}
@@ -745,11 +918,6 @@ function ReactTable({
 										disabled={data.length === 0}
 									/>
 								</Box>
-								<Tooltip title="Exportar a CSV">
-									<IconButton color="primary" size="small" onClick={() => csvLinkRef.current?.link?.click()} aria-label="Descargar CSV">
-										<DocumentDownload variant="Bulk" size={20} />
-									</IconButton>
-								</Tooltip>
 								<CSVLink ref={csvLinkRef} data={csvData} headers={csvHeaders} filename={"causas.csv"} style={{ display: "none" }} />
 								{handleDeleteSelected && (
 									<Tooltip
@@ -798,29 +966,93 @@ function ReactTable({
 										</span>
 									</Tooltip>
 								)}
-								<Tooltip title="Ver Guía">
-									<IconButton color="success" size="small" onClick={handleOpenGuide} aria-label="Ver Guía de carpetas">
-										<InfoCircle variant="Bulk" size={20} />
+								<Tooltip title="Más opciones">
+									<IconButton color="secondary" size="small" onClick={handleDesktopMenuOpen} aria-label="Más opciones">
+										<More variant="Bulk" size={20} />
 									</IconButton>
 								</Tooltip>
+								<Menu
+									anchorEl={desktopMenuAnchor}
+									open={desktopMenuOpen}
+									onClose={handleDesktopMenuClose}
+									anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+									transformOrigin={{ vertical: "top", horizontal: "right" }}
+									slotProps={{ paper: { sx: { minWidth: 200 } } }}
+								>
+									<MenuItem
+										onClick={() => {
+											handleDesktopMenuClose();
+											csvLinkRef.current?.link?.click();
+										}}
+									>
+										<ListItemIcon>
+											<DocumentDownload variant="Bulk" size={18} />
+										</ListItemIcon>
+										<ListItemText>Exportar CSV</ListItemText>
+									</MenuItem>
+									<MenuItem
+										onClick={() => {
+											handleDesktopMenuClose();
+											handleOpenGuide?.();
+										}}
+									>
+										<ListItemIcon>
+											<InfoCircle variant="Bulk" size={18} />
+										</ListItemIcon>
+										<ListItemText>Ver Guía</ListItemText>
+									</MenuItem>
+								</Menu>
 							</Stack>
 						</Stack>
 					)}
 
-					{/* Panel de filtros colapsable (desktop + mobile) */}
+					{/* Panel de filtros colapsable (desktop + mobile) — wrapper tintado
+					    brand en lugar del action.hover MUI default. */}
 					{onFolderTypeFilterChange && (
 						<Collapse in={showFilters}>
-							<Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 1, border: "1px solid", borderColor: "divider" }}>
-								<Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-									{/* Filtro por Tipo */}
-									<FormControl size="small" sx={{ minWidth: 120 }}>
-										<Select
-											id="folder-type-filter"
-											displayEmpty
-											value={folderTypeFilter}
-											onChange={onFolderTypeFilterChange}
-											sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
+							<Box
+								sx={{
+									p: { xs: 1.5, sm: 1.75 },
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+									borderRadius: 1.5,
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.22 : 0.14)}`,
+								}}
+							>
+								{/* Eyebrow opcional cuando hay filtros activos — refuerza la
+								    afordancia "estás filtrando algo" sin necesidad de un h. */}
+								{activeFiltersCount > 0 && (
+									<Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.25 }}>
+										<Box
+											sx={{
+												display: "inline-flex",
+												alignItems: "center",
+												px: 1,
+												py: 0.3,
+												borderRadius: 0.75,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.34 : 0.22)}`,
+											}}
 										>
+											<Typography
+												sx={{
+													fontSize: "0.62rem",
+													fontWeight: 600,
+													letterSpacing: "0.14em",
+													textTransform: "uppercase",
+													color: BRAND_BLUE,
+													fontVariantNumeric: "tabular-nums",
+												}}
+											>
+												Filtros activos · {activeFiltersCount}
+											</Typography>
+										</Box>
+									</Stack>
+								)}
+
+								<Stack direction="row" spacing={1.25} alignItems="center" flexWrap="wrap" useFlexGap>
+									{/* Filtro por Tipo */}
+									<FormControl size="small" sx={{ minWidth: 130 }}>
+										<Select id="folder-type-filter" displayEmpty value={folderTypeFilter} onChange={onFolderTypeFilterChange} sx={filterSelectSx}>
 											<MenuItem value="all">
 												<Typography variant="body2">Tipo: Todos</Typography>
 											</MenuItem>
@@ -840,14 +1072,8 @@ function ReactTable({
 									</FormControl>
 									{/* Filtro por Estado */}
 									{onStatusFilterChange && (
-										<FormControl size="small" sx={{ minWidth: 130 }}>
-											<Select
-												id="status-filter"
-												displayEmpty
-												value={statusFilter}
-												onChange={onStatusFilterChange}
-												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
-											>
+										<FormControl size="small" sx={{ minWidth: 140 }}>
+											<Select id="status-filter" displayEmpty value={statusFilter} onChange={onStatusFilterChange} sx={filterSelectSx}>
 												<MenuItem value="all">
 													<Typography variant="body2">Estado: Todos</Typography>
 												</MenuItem>
@@ -868,14 +1094,8 @@ function ReactTable({
 									)}
 									{/* Filtro por Parte */}
 									{onParteFilterChange && uniquePartes.length > 0 && (
-										<FormControl size="small" sx={{ minWidth: 120 }}>
-											<Select
-												id="parte-filter"
-												displayEmpty
-												value={parteFilter}
-												onChange={onParteFilterChange}
-												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
-											>
+										<FormControl size="small" sx={{ minWidth: 130 }}>
+											<Select id="parte-filter" displayEmpty value={parteFilter} onChange={onParteFilterChange} sx={filterSelectSx}>
 												<MenuItem value="all">
 													<Typography variant="body2">Parte: Todas</Typography>
 												</MenuItem>
@@ -889,14 +1109,8 @@ function ReactTable({
 									)}
 									{/* Filtro por Movimientos */}
 									{onMovimientosFilterChange && (
-										<FormControl size="small" sx={{ minWidth: 150 }}>
-											<Select
-												id="movimientos-filter"
-												displayEmpty
-												value={movimientosFilter}
-												onChange={onMovimientosFilterChange}
-												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
-											>
+										<FormControl size="small" sx={{ minWidth: 160 }}>
+											<Select id="movimientos-filter" displayEmpty value={movimientosFilter} onChange={onMovimientosFilterChange} sx={filterSelectSx}>
 												<MenuItem value="all">
 													<Typography variant="body2">Movimientos: Todos</Typography>
 												</MenuItem>
@@ -917,14 +1131,8 @@ function ReactTable({
 									)}
 									{/* Filtro por Jurisdicción */}
 									{onJurisdiccionFilterChange && uniqueJurisdicciones.length > 0 && (
-										<FormControl size="small" sx={{ minWidth: 140 }}>
-											<Select
-												id="jurisdiccion-filter"
-												displayEmpty
-												value={jurisdiccionFilter}
-												onChange={onJurisdiccionFilterChange}
-												sx={{ maxHeight: "30.75px", bgcolor: "background.paper", "& .MuiSelect-select": { py: "6px" } }}
-											>
+										<FormControl size="small" sx={{ minWidth: 150 }}>
+											<Select id="jurisdiccion-filter" displayEmpty value={jurisdiccionFilter} onChange={onJurisdiccionFilterChange} sx={filterSelectSx}>
 												<MenuItem value="all">
 													<Typography variant="body2">Jurisdicción: Todas</Typography>
 												</MenuItem>
@@ -988,29 +1196,42 @@ function ReactTable({
 						const folder = row.original as any;
 						const isSelected = row.isSelected;
 
-						// Chip de estado
-						const statusChip = (() => {
-							switch (folder.status) {
-								case "Cerrada":
-									return <Chip color="error" label="Cerrada" size="small" variant="light" />;
-								case "Nueva":
-									return <Chip color="success" label="Nueva" size="small" variant="light" />;
-								case "En Proceso":
-									return <Chip color="info" label="En Proceso" size="small" variant="light" />;
-								case "Pendiente":
-									return <Chip color="warning" label="Pendiente" size="small" variant="light" />;
-								default:
-									return folder.status ? <Chip color="default" label={folder.status} size="small" variant="light" /> : null;
-							}
-						})();
+						// Chip de estado — replica el patrón brand-aware del desktop.
+						const statusChip = folder.status ? <StatusPill status={folder.status} /> : null;
 
-						// Badge de fuente (PJN / MEV / EJE)
-						const sourceBadge = folder.pjn ? (
-							<Chip label="PJN" size="small" color="primary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
-						) : folder.mev ? (
-							<Chip label="MEV" size="small" color="secondary" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
-						) : folder.eje ? (
-							<Chip label="EJE" size="small" color="info" variant="outlined" sx={{ fontSize: "0.65rem", height: 20 }} />
+						// Badge de fuente (PJN / MEV / EJE / SCBA) — patrón monocromo brand
+						// con dot indicador. Replica el live-dot del landing (integraciones).
+						const sourceLabel = folder.pjn ? "PJN" : folder.mev ? "MEV" : folder.eje ? "EJE" : folder.scba ? "SCBA" : null;
+						const sourceBadge = sourceLabel ? (
+							<Box
+								sx={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 0.6,
+									px: 0.75,
+									height: 20,
+									borderRadius: 0.75,
+									bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.14 : 0.08),
+									border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+								}}
+							>
+								<Box
+									aria-hidden
+									sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: BRAND_BLUE, flexShrink: 0 }}
+								/>
+								<Typography
+									sx={{
+										fontSize: "0.62rem",
+										fontWeight: 600,
+										letterSpacing: "0.08em",
+										color: BRAND_BLUE,
+										lineHeight: 1,
+										fontVariantNumeric: "tabular-nums",
+									}}
+								>
+									{sourceLabel}
+								</Typography>
+							</Box>
 						) : null;
 
 						// Último movimiento formateado
@@ -1126,7 +1347,7 @@ function ReactTable({
 			) : (
 				/* ── DESKTOP: Tabla con ScrollX ───────────────────────────────────── */
 				<ScrollX>
-					<Table {...getTableProps()}>
+					<Table {...getTableProps()} sx={tableSx}>
 						<TableHead>
 							{headerGroups.map((headerGroup) => (
 								<TableRow {...headerGroup.getHeaderGroupProps()} sx={{ "& > th:first-of-type": { width: "40px" } }}>
@@ -1154,7 +1375,13 @@ function ReactTable({
 											}}
 											sx={{
 												cursor: "pointer",
-												bgcolor: row.isSelected ? alpha(theme.palette.primary.lighter, 0.35) : "inherit",
+												transition: "background-color 0.15s ease",
+												bgcolor: row.isSelected ? alpha(BRAND_BLUE, isDark ? 0.14 : 0.08) : "inherit",
+												"&:hover": {
+													bgcolor: row.isSelected
+														? alpha(BRAND_BLUE, isDark ? 0.18 : 0.11)
+														: alpha(BRAND_BLUE, isDark ? 0.08 : 0.04),
+												},
 											}}
 										>
 											{row.cells.map((cell) => (
@@ -1184,19 +1411,169 @@ function ReactTable({
 			{page.length === 0 && (
 				<Box
 					sx={{
+						position: "relative",
+						overflow: "hidden",
 						width: "100%",
-						py: { xs: 4, sm: 6 },
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
+						py: { xs: 3.5, sm: 4.5 },
 						px: 2,
 					}}
 				>
+					{/* Atmósfera brand sutil — radial blob centrado + dot grid con mask */}
+					<Box
+						aria-hidden
+						sx={{
+							position: "absolute",
+							inset: 0,
+							background: `radial-gradient(circle at 50% 40%, ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.12 : 0.07)} 0%, transparent 60%)`,
+							pointerEvents: "none",
+							zIndex: 0,
+						}}
+					/>
+					<Box
+						aria-hidden
+						sx={{
+							position: "absolute",
+							inset: 0,
+							backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.06 : 0.04)} 1px, transparent 1px)`,
+							backgroundSize: "22px 22px",
+							maskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 80%)",
+							WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, #000 0%, transparent 80%)",
+							pointerEvents: "none",
+							zIndex: 0,
+						}}
+					/>
+
 					{data.length === 0 ? (
 						isOnboarding && handleAdd ? (
 							// Empty state especial para onboarding (solo si puede crear)
-							<Stack spacing={3} alignItems="center" sx={{ maxWidth: 400, textAlign: "center" }}>
+							<Stack
+								spacing={2.5}
+								alignItems="center"
+								sx={{ position: "relative", zIndex: 1, maxWidth: 480, mx: "auto", textAlign: "center" }}
+							>
+								{/* Eyebrow */}
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										px: 1.25,
+										py: 0.4,
+										borderRadius: 1,
+										bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.08),
+										border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+									}}
+								>
+									<Typography
+										sx={{
+											fontSize: "0.68rem",
+											fontWeight: 600,
+											letterSpacing: "0.14em",
+											textTransform: "uppercase",
+											color: BRAND_BLUE,
+										}}
+									>
+										Primer paso
+									</Typography>
+								</Box>
+
+								{/* Icono en círculo tintado brand */}
+								<Box
+									sx={{
+										width: 88,
+										height: 88,
+										borderRadius: "50%",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.1),
+										color: BRAND_BLUE,
+									}}
+								>
+									<Folder2 size={44} variant="Bulk" />
+								</Box>
+
+								<Stack spacing={1} alignItems="center">
+									<Typography
+										sx={{
+											fontSize: { xs: "1.25rem", sm: "1.375rem" },
+											fontWeight: 600,
+											letterSpacing: "-0.02em",
+											lineHeight: 1.2,
+											color: "text.primary",
+											textWrap: "balance",
+										}}
+									>
+										Vamos a crear tu primera carpeta
+									</Typography>
+									<Typography
+										sx={{
+											fontSize: "0.9rem",
+											color: "text.secondary",
+											lineHeight: 1.55,
+											maxWidth: 380,
+											textWrap: "pretty",
+										}}
+									>
+										Las carpetas representan expedientes, causas o clientes. Podés empezar con una y completarla luego.
+									</Typography>
+								</Stack>
+
+								<Button
+									variant="contained"
+									startIcon={<Add size={18} />}
+									onClick={handleAdd}
+									sx={{
+										mt: 0.5,
+										textTransform: "none",
+										bgcolor: BRAND_BLUE,
+										color: "#fff",
+										fontWeight: 600,
+										letterSpacing: "-0.005em",
+										borderRadius: 1.25,
+										px: 2.25,
+										py: 0.9,
+										boxShadow: `0 4px 12px ${alpha(BRAND_BLUE, 0.22)}`,
+										transition: "background-color 0.15s ease, box-shadow 0.15s ease",
+										"&:hover": {
+											bgcolor: alpha(BRAND_BLUE, 0.88),
+											boxShadow: `0 6px 16px ${alpha(BRAND_BLUE, 0.28)}`,
+										},
+									}}
+								>
+									Crear mi primera carpeta
+								</Button>
+							</Stack>
+						) : (
+							// Empty state normal (sin onboarding)
+							<Stack
+								spacing={2}
+								alignItems="center"
+								sx={{ position: "relative", zIndex: 1, maxWidth: 460, mx: "auto", textAlign: "center" }}
+							>
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										px: 1.25,
+										py: 0.4,
+										borderRadius: 1,
+										bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.16 : 0.08),
+										border: `1px solid ${alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.32 : 0.2)}`,
+									}}
+								>
+									<Typography
+										sx={{
+											fontSize: "0.68rem",
+											fontWeight: 600,
+											letterSpacing: "0.14em",
+											textTransform: "uppercase",
+											color: BRAND_BLUE,
+										}}
+									>
+										{handleAdd ? "Sin carpetas" : "Equipo"}
+									</Typography>
+								</Box>
+
 								<Box
 									sx={{
 										width: 80,
@@ -1205,71 +1582,112 @@ function ReactTable({
 										display: "flex",
 										alignItems: "center",
 										justifyContent: "center",
-										bgcolor: alpha(theme.palette.primary.main, 0.1),
-										color: theme.palette.primary.main,
+										bgcolor: alpha(BRAND_BLUE, theme.palette.mode === "dark" ? 0.14 : 0.08),
+										color: BRAND_BLUE,
 									}}
 								>
-									<Folder2 size={40} variant="Bulk" />
+									<FolderOpen size={40} variant="Bulk" />
 								</Box>
-								<Stack spacing={1} alignItems="center">
-									<Typography variant="h4" color="text.primary">
-										Vamos a crear tu primera carpeta
+
+								<Stack spacing={0.75} alignItems="center">
+									<Typography
+										sx={{
+											fontSize: "1.125rem",
+											fontWeight: 600,
+											letterSpacing: "-0.015em",
+											color: "text.primary",
+											textWrap: "balance",
+										}}
+									>
+										{handleAdd ? "Todavía no hay carpetas creadas" : "Este equipo no tiene carpetas"}
 									</Typography>
-									<Typography variant="body1" color="text.secondary">
-										Las carpetas representan expedientes, causas o clientes. Podes empezar con una y completarla luego.
+									<Typography
+										sx={{
+											fontSize: "0.875rem",
+											color: "text.secondary",
+											lineHeight: 1.55,
+											maxWidth: 360,
+											textWrap: "pretty",
+										}}
+									>
+										{handleAdd
+											? "Creá la primera con el botón Agregar carpeta de arriba."
+											: "Las carpetas del equipo van a aparecer acá cuando estén disponibles."}
 									</Typography>
 								</Stack>
-								<Button
-									variant="contained"
-									color="primary"
-									size="large"
-									startIcon={<Add />}
-									onClick={handleAdd}
-									sx={{ mt: 1, textTransform: "none" }}
-								>
-									Crear mi primera carpeta
-								</Button>
 							</Stack>
-						) : (
-							// Empty state normal
-							<>
-								<FolderOpen
-									variant="Bulk"
-									size={64}
-									style={{
-										marginBottom: "16px",
-										color: theme.palette.primary.main,
-										opacity: 0.7,
-									}}
-								/>
-								<Typography variant="h5" gutterBottom align="center">
-									{handleAdd
-										? "No hay causas creadas. Puedes crear una usando el botón 'Agregar Carpeta'."
-										: "No hay causas disponibles en este equipo."}
-								</Typography>
-								<Typography variant="body2" color="textSecondary" align="center">
-									{handleAdd ? "Las causas que guardes aparecerán aquí" : "Las causas del equipo aparecerán aquí cuando estén disponibles"}
-								</Typography>
-							</>
 						)
 					) : (
-						<>
-							<SearchStatus1
-								variant="Bulk"
-								size={64}
-								style={{
-									marginBottom: "16px",
-									color: theme.palette.warning.main,
-									opacity: 0.7,
+						// Empty state de búsqueda — sin resultados
+						<Stack
+							spacing={2}
+							alignItems="center"
+							sx={{ position: "relative", zIndex: 1, maxWidth: 460, mx: "auto", textAlign: "center" }}
+						>
+							<Box
+								sx={{
+									display: "inline-flex",
+									alignItems: "center",
+									px: 1.25,
+									py: 0.4,
+									borderRadius: 1,
+									bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.1 : 0.06),
+									border: `1px solid ${alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.2 : 0.12)}`,
 								}}
-							/>
-							<Typography variant="h5" gutterBottom align="center">
-								No se encontraron causas para esta busqueda
-							</Typography>
-							<Typography variant="body2" color="textSecondary" align="center">
-								Intenta con otros terminos de busqueda
-							</Typography>
-						</>
+							>
+								<Typography
+									sx={{
+										fontSize: "0.68rem",
+										fontWeight: 600,
+										letterSpacing: "0.14em",
+										textTransform: "uppercase",
+										color: "text.secondary",
+									}}
+								>
+									Sin resultados
+								</Typography>
+							</Box>
+
+							<Box
+								sx={{
+									width: 80,
+									height: 80,
+									borderRadius: "50%",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === "dark" ? 0.08 : 0.05),
+									color: "text.secondary",
+								}}
+							>
+								<SearchStatus1 size={40} variant="Bulk" />
+							</Box>
+
+							<Stack spacing={0.75} alignItems="center">
+								<Typography
+									sx={{
+										fontSize: "1.125rem",
+										fontWeight: 600,
+										letterSpacing: "-0.015em",
+										color: "text.primary",
+										textWrap: "balance",
+									}}
+								>
+									No encontramos carpetas
+								</Typography>
+								<Typography
+									sx={{
+										fontSize: "0.875rem",
+										color: "text.secondary",
+										lineHeight: 1.55,
+										maxWidth: 340,
+										textWrap: "pretty",
+									}}
+								>
+									Probá con otros términos de búsqueda o ajustá los filtros.
+								</Typography>
+							</Stack>
+						</Stack>
 					)}
 				</Box>
 			)}
@@ -2304,7 +2722,7 @@ const FoldersLayout = () => {
 											height: 18,
 										}}
 									>
-										<TickCircle size={16} variant="Bold" color="#22C55E" />
+										<TickCircle size={16} variant="Bold" color={BRAND_BLUE} />
 									</Box>
 								</Tooltip>
 							</Stack>
@@ -2491,20 +2909,7 @@ const FoldersLayout = () => {
 			{
 				Header: "Estado",
 				accessor: "status",
-				Cell: ({ value }: { value: string }) => {
-					switch (value) {
-						case "Cerrada":
-							return <Chip color="error" label="Cerrada" size="small" variant="light" />;
-						case "Nueva":
-							return <Chip color="success" label="Nueva" size="small" variant="light" />;
-						case "En Proceso":
-							return <Chip color="info" label="En Proceso" size="small" variant="light" />;
-						case "Pendiente":
-							return <Chip color="warning" label="Pendiente" size="small" variant="light" />;
-						default:
-							return <Chip color="default" label={value} size="small" variant="light" />;
-					}
-				},
+				Cell: ({ value }: { value: string }) => (value ? <StatusPill status={value} /> : null),
 			},
 			{
 				Header: "Fecha de Creación",
@@ -2551,16 +2956,44 @@ const FoldersLayout = () => {
 						return action;
 					};
 
+					// Acción normal (navegar/editar/más) → hover brand-blue.
+					// Acción destructiva (eliminar) → hover red.
+					// Default state: monocromo text.secondary para que no compita.
+					const isDarkMode = theme.palette.mode === "dark";
+					const actionIconSx = {
+						color: "text.secondary",
+						transition: "background-color 0.15s ease, color 0.15s ease",
+						"&:hover:not(.Mui-disabled)": {
+							bgcolor: alpha(BRAND_BLUE, isDarkMode ? 0.16 : 0.08),
+							color: BRAND_BLUE,
+						},
+						"&.Mui-disabled": {
+							color: alpha(theme.palette.text.disabled, 0.6),
+						},
+					} as const;
+					const destructiveIconSx = {
+						color: "text.secondary",
+						transition: "background-color 0.15s ease, color 0.15s ease",
+						"&:hover:not(.Mui-disabled)": {
+							bgcolor: alpha(theme.palette.error.main, isDarkMode ? 0.18 : 0.1),
+							color: theme.palette.error.main,
+						},
+						"&.Mui-disabled": {
+							color: alpha(theme.palette.text.disabled, 0.6),
+						},
+					} as const;
+
 					return (
-						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0}>
+						<Stack direction="row" alignItems="center" justifyContent="center" spacing={0.25}>
 							<Tooltip title={getTooltipText("Abrir")}>
 								<span>
 									<IconButton
-										color="success"
+										size="small"
+										sx={actionIconSx}
 										disabled={disableMainActions}
 										onClick={(e) => handleRowAction(e, () => navigate(`../details/${row.values._id}`))}
 									>
-										<Maximize variant="Bulk" />
+										<Maximize variant="Bulk" size={18} />
 									</IconButton>
 								</span>
 							</Tooltip>
@@ -2568,12 +3001,13 @@ const FoldersLayout = () => {
 								<Tooltip title={getTooltipText("Editar")}>
 									<span>
 										<IconButton
-											color="primary"
+											size="small"
+											sx={actionIconSx}
 											disabled={disableMainActions}
 											onClick={(e) => handleRowAction(e, () => handleEditContact(row.original))}
 											data-testid="folder-edit-btn"
 										>
-											<Edit variant="Bulk" />
+											<Edit variant="Bulk" size={18} />
 										</IconButton>
 									</span>
 								</Tooltip>
@@ -2582,7 +3016,8 @@ const FoldersLayout = () => {
 								<Tooltip title={getTooltipText("Eliminar")}>
 									<span>
 										<IconButton
-											color="error"
+											size="small"
+											sx={destructiveIconSx}
 											disabled={isPendingVerification}
 											onClick={(e) =>
 												handleRowAction(e, () => {
@@ -2593,15 +3028,20 @@ const FoldersLayout = () => {
 											}
 											data-testid="folder-delete-btn"
 										>
-											<Trash variant="Bulk" />
+											<Trash variant="Bulk" size={18} />
 										</IconButton>
 									</span>
 								</Tooltip>
 							)}
 							<Tooltip title={getTooltipText("Más acciones")}>
 								<span>
-									<IconButton color="secondary" disabled={disableMainActions} onClick={(e) => handleMenuOpen(e, row.id, row.original)}>
-										<More variant="Bulk" />
+									<IconButton
+										size="small"
+										sx={actionIconSx}
+										disabled={disableMainActions}
+										onClick={(e) => handleMenuOpen(e, row.id, row.original)}
+									>
+										<More variant="Bulk" size={18} />
 									</IconButton>
 								</span>
 							</Tooltip>
@@ -2622,34 +3062,195 @@ const FoldersLayout = () => {
 		[folders],
 	);
 
-	// Renderizar un loader o un componente vacío durante la carga inicial
+	const isDark = mode === "dark";
+
+	// Renderizar skeleton durante la carga inicial — mantiene la estructura
+	// visual del page final (header card + table card) para evitar el "salto"
+	// cuando carga.
 	if (isInitialLoad) {
 		return (
-			<MainCard content={false}>
-				<ScrollX>
-					<Stack spacing={3} sx={{ p: 3 }}>
-						<Skeleton variant="rectangular" height={50} />
-						<Skeleton variant="rectangular" height={300} />
-					</Stack>
-				</ScrollX>
-			</MainCard>
+			<>
+				<SEO path="/apps/folders" />
+				<Stack spacing={{ xs: 1, sm: 2.5 }}>
+					{/* Skeleton del header card brand */}
+					<Box
+						sx={{
+							border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+							boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)}`,
+							borderRadius: 1.5,
+							px: { xs: 1.5, sm: 2.5 },
+							py: { xs: 1, sm: 1.75 },
+						}}
+					>
+						<Stack direction={{ xs: "column", md: "row" }} alignItems="center" spacing={{ xs: 1.5, md: 3 }}>
+							<Stack direction="row" alignItems="center" spacing={1.5} sx={{ flex: { md: 1 }, width: "100%" }}>
+								<Skeleton variant="rounded" width={88} height={22} />
+								<Skeleton variant="text" sx={{ flex: 1 }} height={18} />
+							</Stack>
+							<Stack direction="row" alignItems="center" spacing={1} sx={{ width: { xs: "100%", md: "auto" }, minWidth: { md: 380 } }}>
+								<Skeleton variant="circular" width={18} height={18} />
+								<Skeleton variant="text" width={70} height={18} />
+								<Skeleton variant="rectangular" height={9} sx={{ flex: 1, borderRadius: 1.25 }} />
+								<Skeleton variant="text" width={50} height={18} />
+							</Stack>
+						</Stack>
+					</Box>
+
+					{/* Skeleton de la tabla */}
+					<MainCard content={false}>
+						<Stack spacing={2} sx={{ p: { xs: 2, sm: 3 } }}>
+							<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+								<Skeleton variant="rounded" width={140} height={32} />
+								<Skeleton variant="rounded" width={110} height={32} />
+								<Skeleton variant="rounded" width={90} height={32} />
+								<Skeleton variant="rounded" width={180} height={32} />
+								<Box sx={{ flex: 1 }} />
+								<Skeleton variant="rounded" width={220} height={32} />
+								<Skeleton variant="circular" width={32} height={32} />
+							</Stack>
+							<Skeleton variant="rectangular" height={300} sx={{ borderRadius: 1 }} />
+						</Stack>
+					</MainCard>
+				</Stack>
+			</>
 		);
 	}
 
 	return (
 		<>
 			<SEO path="/apps/folders" />
-			<MainCard content={false}>
-				<DowngradeGracePeriodAlert />
-				<ResourceUsageBar
-					resourceType="folders"
-					compact
-					barWidth={barWidth}
-					onCabaClick={canCreate ? handleOpenCabaFolder : undefined}
-					onBaClick={canCreate ? handleOpenBaFolder : undefined}
-				/>
+			<Stack spacing={{ xs: 1, sm: 2.5 }}>
+				{/* ── HEADER DE SECCIÓN ───────────────────────────────────────────
+				    Eyebrow + h2 + descripción con atmósfera tintada brand. Replica
+				    el lenguaje del WelcomeBanner del dashboard, en una variante más
+				    compacta (la página es data-heavy y el banner es solo contexto).
+				─────────────────────────────────────────────────────────────────── */}
+				<Box
+					sx={{
+						position: "relative",
+						overflow: "hidden",
+						bgcolor: theme.palette.background.paper,
+						border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+						boxShadow: `0 4px 18px ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.08)}`,
+						borderRadius: 1.5,
+						px: { xs: 0.5, sm: 2.5 },
+						py: { xs: 0.25, sm: 1.75 },
+					}}
+				>
+					{/* Blob radial brand-blue — sutil, solo desktop (mobile no tiene
+					    eyebrow ni descripción, solo la barra; los efectos sobran). */}
+					<Box
+						aria-hidden
+						sx={{
+							display: { xs: "none", md: "block" },
+							position: "absolute",
+							top: "-80%",
+							right: "-10%",
+							width: 280,
+							height: 280,
+							borderRadius: "50%",
+							background: `radial-gradient(circle, ${alpha(BRAND_BLUE, isDark ? 0.15 : 0.09)} 0%, transparent 65%)`,
+							filter: "blur(50px)",
+							pointerEvents: "none",
+							zIndex: 0,
+						}}
+					/>
+					{/* Dot grid con mask — solo desktop */}
+					<Box
+						aria-hidden
+						sx={{
+							display: { xs: "none", md: "block" },
+							position: "absolute",
+							inset: 0,
+							backgroundImage: `radial-gradient(${alpha(theme.palette.text.primary, isDark ? 0.06 : 0.04)} 1px, transparent 1px)`,
+							backgroundSize: "22px 22px",
+							maskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+							WebkitMaskImage: "radial-gradient(ellipse 50% 100% at 90% 50%, #000 0%, transparent 70%)",
+							pointerEvents: "none",
+							zIndex: 0,
+						}}
+					/>
 
-				{/* Microhint de onboarding */}
+					<Stack
+						direction={{ xs: "column", md: "row" }}
+						alignItems={{ xs: "stretch", md: "center" }}
+						spacing={{ xs: 1.5, md: 3 }}
+						sx={{ position: "relative", zIndex: 1 }}
+					>
+						{/* Columna izquierda: eyebrow + descripción — oculta en mobile/tablet
+						    para que la tabla no se empuje hacia abajo. La identidad la da el
+						    breadcrumb "Mis Carpetas" del layout. */}
+						<Stack
+							direction="row"
+							alignItems="center"
+							spacing={1.5}
+							sx={{ flex: { md: 1 }, minWidth: 0, display: { xs: "none", md: "flex" } }}
+						>
+							<Box
+								sx={{
+									display: "inline-flex",
+									alignItems: "center",
+									px: 1.25,
+									py: 0.4,
+									borderRadius: 1,
+									bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+									border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.2)}`,
+									flexShrink: 0,
+								}}
+							>
+								<Typography
+									sx={{
+										fontSize: "0.68rem",
+										fontWeight: 600,
+										letterSpacing: "0.14em",
+										textTransform: "uppercase",
+										color: BRAND_BLUE,
+										fontVariantNumeric: "tabular-nums",
+									}}
+								>
+									Expedientes
+								</Typography>
+							</Box>
+
+							<Typography
+								sx={{
+									fontSize: "0.875rem",
+									color: "text.secondary",
+									lineHeight: 1.5,
+									textWrap: "pretty",
+								}}
+							>
+								Cada carpeta concentra los documentos, cálculos, tareas y vencimientos de un expediente.
+							</Typography>
+						</Stack>
+
+						{/* Columna derecha: barra de uso del plan + sync badges */}
+						<Box
+							sx={{
+								flexShrink: 0,
+								width: { xs: "100%", md: "auto" },
+								// minWidth subido de 380 → 440 para que la barra de progreso
+								// tenga más ancho real y se lea bien (antes quedaba comprimida).
+								minWidth: { md: 440 },
+								pl: { md: 2 },
+								borderLeft: { md: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.16 : 0.1)}` },
+							}}
+						>
+							<ResourceUsageBar
+								resourceType="folders"
+								compact
+								disableContainerPadding
+								onCabaClick={canCreate ? handleOpenCabaFolder : undefined}
+								onBaClick={canCreate ? handleOpenBaFolder : undefined}
+							/>
+						</Box>
+					</Stack>
+				</Box>
+
+				<MainCard content={false}>
+					<DowngradeGracePeriodAlert />
+
+					{/* Microhint de onboarding */}
 				{isOnboarding && verifiedFolders.length === 0 && (
 					<Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: 0 }}>
 						<Typography
@@ -2708,33 +3309,99 @@ const FoldersLayout = () => {
 
 				{/* Tabla secundaria: causas pendientes o inválidas */}
 				{pendingOrInvalidFolders.length > 0 && (
-					<Box
-						ref={pendingTableRef}
-						sx={{
-							mt: 4,
-							borderTop: 2,
-							borderColor: "divider",
-						}}
-					>
+					<Box ref={pendingTableRef} sx={{ mt: { xs: 3, sm: 4 } }}>
+						{/* Banner atmosférico ámbar con live-dot pulsante — replica el
+						    lenguaje del landing (integraciones live). Reemplaza el bloque
+						    warning.lighter MUI default que rompía la atmósfera brand. */}
 						<Box
 							sx={{
-								px: 3,
-								pt: 3,
-								pb: 1,
-								bgcolor: "warning.lighter",
-								borderBottom: 2,
-								borderColor: "warning.main",
+								mx: { xs: 2, sm: 3 },
+								mb: 2,
+								position: "relative",
+								overflow: "hidden",
+								borderRadius: 1.5,
+								border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+								bgcolor: alpha(STALE_AMBER, isDark ? 0.1 : 0.05),
+								px: { xs: 2, sm: 2.5 },
+								py: { xs: 1.5, sm: 1.75 },
+								...LIVE_PULSE_KEYFRAMES,
 							}}
 						>
-							<Stack direction="row" alignItems="center" spacing={1}>
-								<InfoCircle size={20} variant="Bold" color={theme.palette.warning.main} />
-								<Typography variant="h6" color="warning.dark">
-									Causas Pendientes de Verificación o Inválidas ({pendingOrInvalidFolders.length})
-								</Typography>
+							<Stack direction="row" alignItems="center" spacing={1.75}>
+								{/* Dot ámbar con pulso animado */}
+								<Box sx={{ position: "relative", display: "inline-flex", flexShrink: 0, mt: 0.5, alignSelf: "flex-start" }}>
+									<Box
+										sx={{
+											width: 8,
+											height: 8,
+											borderRadius: "50%",
+											bgcolor: STALE_AMBER,
+											zIndex: 1,
+										}}
+									/>
+									<Box
+										aria-hidden
+										sx={{
+											position: "absolute",
+											inset: 0,
+											borderRadius: "50%",
+											bgcolor: STALE_AMBER,
+											opacity: 0.5,
+											animation: "la-live-pulse 2.4s ease-out infinite",
+										}}
+									/>
+								</Box>
+
+								<Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+									<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+										<Typography
+											sx={{
+												fontSize: { xs: "0.92rem", sm: "1rem" },
+												fontWeight: 600,
+												letterSpacing: "-0.01em",
+												color: "text.primary",
+												lineHeight: 1.25,
+											}}
+										>
+											Carpetas que requieren tu atención
+										</Typography>
+										<Box
+											sx={{
+												display: "inline-flex",
+												alignItems: "center",
+												px: 0.875,
+												py: 0.25,
+												borderRadius: 0.75,
+												bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
+												border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.4 : 0.28)}`,
+											}}
+										>
+											<Typography
+												sx={{
+													fontSize: "0.7rem",
+													fontWeight: 600,
+													letterSpacing: "0.02em",
+													color: STALE_AMBER,
+													fontVariantNumeric: "tabular-nums",
+													lineHeight: 1,
+												}}
+											>
+												{pendingOrInvalidFolders.length}
+											</Typography>
+										</Box>
+									</Stack>
+									<Typography
+										sx={{
+											fontSize: { xs: "0.8rem", sm: "0.85rem" },
+											color: "text.secondary",
+											lineHeight: 1.55,
+											textWrap: "pretty",
+										}}
+									>
+										Estas causas importadas automáticamente esperan verificación del worker o presentan problemas de validación.
+									</Typography>
+								</Stack>
 							</Stack>
-							<Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-								Estas causas importadas automáticamente requieren verificación o presentan problemas de validación
-							</Typography>
 						</Box>
 						<ScrollX>
 							<ReactTable
@@ -3260,7 +3927,8 @@ const FoldersLayout = () => {
 						</Stack>
 					</DialogContent>
 				</Dialog>
-			</MainCard>
+				</MainCard>
+			</Stack>
 		</>
 	);
 };
