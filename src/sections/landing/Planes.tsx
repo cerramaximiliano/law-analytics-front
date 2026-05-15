@@ -202,7 +202,10 @@ const Planes = () => {
 
 		(async () => {
 			try {
-				const response = await ApiService.getPublicPlans();
+				// Landing pública: forzar landingOnly para que el visitante
+				// logueado vea el descuento universal igual que un anónimo.
+				// La personalización (targeted) vive en /plans y checkout.
+				const response = await ApiService.getPublicPlans({ landingOnly: true });
 				if (cancelled || !response?.success || !response.data) return;
 
 				const merged = PLAN_DEFAULTS.map((def) => {

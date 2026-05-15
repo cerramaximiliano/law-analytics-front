@@ -40,7 +40,7 @@ const DiscountBanner = () => {
 		let cancelled = false;
 		(async () => {
 			try {
-				const response = await ApiService.getPublicPlans();
+				const response = await ApiService.getPublicPlans({ landingOnly: true });
 				if (cancelled || !response?.success || !response.data) return;
 				const firstWithDiscount = response.data.find((p) => p.activeDiscounts && p.activeDiscounts.length > 0);
 				if (firstWithDiscount?.activeDiscounts?.[0]) {
