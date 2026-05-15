@@ -14,6 +14,7 @@ import { CloseCircle, Lock, TickCircle } from "iconsax-react";
 import MainCard from "components/MainCard";
 import { Plan } from "store/reducers/ApiService";
 import { cleanPlanDisplayName, getPlanPricing } from "utils/planPricingUtils";
+import dayjs from "utils/dayjs-config";
 
 // ============================== TOKENS ============================== //
 // Mantener en sync con pages/plans.tsx y sections/landing/Planes.tsx.
@@ -380,11 +381,11 @@ const PlanCard: React.FC<PlanCardProps> = ({
 						)}
 					</Box>
 
-					{/* Badge + duración del descuento + mensaje promocional.
+					{/* Badge + duración del descuento + ventana de redención.
 					    `durationInMonths` indica cuánto dura el descuento aplicado a la
-					    suscripción (ej. "6 meses"). `promotionalMessage` suele indicar la
-					    ventana de redención (ej. "Aplica hasta el 17/05/2026"). Mostramos
-					    ambos cuando existen — son conceptos distintos. */}
+					    suscripción (ej. "6 meses"). `validUntil` es la fecha límite para
+					    sumarse a la promo. Si el backend manda un `promotionalMessage`
+					    custom lo respetamos como override de la línea de vencimiento. */}
 					{promoDiscount ? (
 						<Stack spacing={0.5} sx={{ mt: 0.75 }}>
 							<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
@@ -415,7 +416,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
 									</Typography>
 								)}
 							</Stack>
-							{promoDiscount.promotionalMessage && (
+							{(promoDiscount.promotionalMessage || promoDiscount.validUntil) && (
 								<Typography
 									sx={{
 										fontSize: "0.74rem",
@@ -424,7 +425,8 @@ const PlanCard: React.FC<PlanCardProps> = ({
 										letterSpacing: "0.01em",
 									}}
 								>
-									{promoDiscount.promotionalMessage}
+									{promoDiscount.promotionalMessage ||
+										`Promo válida hasta el ${dayjs(promoDiscount.validUntil).format("D [de] MMMM [de] YYYY")}`}
 								</Typography>
 							)}
 						</Stack>

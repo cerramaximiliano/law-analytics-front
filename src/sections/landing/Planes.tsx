@@ -15,6 +15,7 @@ import SectionEyebrow from "./SectionEyebrow";
 import { pushGTMEvent } from "utils/gtm";
 import ApiService, { Plan as ApiPlan, PlanFeature } from "store/reducers/ApiService";
 import { getCurrentEnvironment, getPlanPricing } from "utils/planPricingUtils";
+import dayjs from "utils/dayjs-config";
 
 // ============================== TOKENS ============================== //
 const BRAND_BLUE = "#3A7BFF";
@@ -37,6 +38,7 @@ interface PlanDiscount {
 	badge?: string;
 	promotionalMessage?: string;
 	durationInMonths?: number;
+	validUntil?: string;
 }
 
 interface Plan {
@@ -234,6 +236,7 @@ const Planes = () => {
 									badge: firstDiscount.badge,
 									promotionalMessage: firstDiscount.promotionalMessage,
 									durationInMonths: firstDiscount.durationInMonths,
+									validUntil: firstDiscount.validUntil,
 							  }
 							: undefined,
 					};
@@ -250,11 +253,13 @@ const Planes = () => {
 
 	return (
 		<Box
+			id="planes"
 			component="section"
 			sx={{
 				position: "relative",
 				overflow: "hidden",
 				py: { xs: 4, md: 7 },
+				scrollMarginTop: { xs: 72, md: 80 },
 			}}
 		>
 			{/* Atmósfera — spotlight único detrás de la card "Recomendado" (centro).
@@ -472,40 +477,50 @@ const Planes = () => {
 													)}
 												</Box>
 												{/* Caption reservada — para plan free muestra "Para siempre".
-												Para planes pagos con descuento, muestra badge + mensaje breve.
+												Para planes pagos con descuento, muestra badge + duración + vencimiento.
 												Para planes pagos sin descuento, queda invisible pero ocupa la misma
 												altura para alinear las feature-lists entre las 3 columnas. */}
 												{plan.discount ? (
-													<Stack
-														direction={{ xs: "column", sm: "row" }}
-														spacing={1}
-														alignItems={{ xs: "flex-start", sm: "center" }}
-														sx={{ mt: 0.75 }}
-													>
-														{plan.discount.badge && (
-															<Chip
-																label={plan.discount.badge}
-																size="small"
-																color="success"
-																sx={{
-																	height: 20,
-																	fontSize: "0.7rem",
-																	fontWeight: 700,
-																	letterSpacing: "0.04em",
-																	"& .MuiChip-label": { px: 0.75 },
-																}}
-															/>
-														)}
-														{plan.discount.promotionalMessage && (
+													<Stack spacing={0.4} sx={{ mt: 0.75 }}>
+														<Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 0.75 }}>
+															{plan.discount.badge && (
+																<Chip
+																	label={plan.discount.badge}
+																	size="small"
+																	color="success"
+																	sx={{
+																		height: 20,
+																		fontSize: "0.7rem",
+																		fontWeight: 700,
+																		letterSpacing: "0.04em",
+																		"& .MuiChip-label": { px: 0.75 },
+																	}}
+																/>
+															)}
+															{plan.discount.durationInMonths && (
+																<Typography
+																	sx={{
+																		fontSize: "0.78rem",
+																		fontWeight: 600,
+																		color: theme.palette.success.dark,
+																		letterSpacing: "-0.005em",
+																	}}
+																>
+																	durante {plan.discount.durationInMonths}{" "}
+																	{plan.discount.durationInMonths === 1 ? "mes" : "meses"}
+																</Typography>
+															)}
+														</Stack>
+														{plan.discount.validUntil && (
 															<Typography
 																sx={{
-																	fontSize: "0.78rem",
+																	fontSize: "0.74rem",
 																	color: theme.palette.text.secondary,
 																	fontWeight: 400,
 																	letterSpacing: "0.01em",
 																}}
 															>
-																{plan.discount.promotionalMessage}
+																Promo válida hasta el {dayjs(plan.discount.validUntil).format("D [de] MMMM")}
 															</Typography>
 														)}
 													</Stack>

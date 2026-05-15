@@ -216,7 +216,15 @@ const HeaderPage = () => {
 				// 412x915, etc). dvh respeta la URL bar dinámica del navegador móvil.
 				minHeight: { xs: "100dvh", sm: "100vh" },
 				bgcolor: theme.palette.background.default,
-				pt: { xs: 11, sm: 10, md: 12, lg: 10, xl: 9 },
+				// Offset extra para el strip de descuento cuando está visible
+				// (--discount-banner-h se setea en :root por DiscountBanner.tsx).
+				pt: {
+					xs: "calc(var(--discount-banner-h, 0px) + 88px)",
+					sm: "calc(var(--discount-banner-h, 0px) + 80px)",
+					md: "calc(var(--discount-banner-h, 0px) + 96px)",
+					lg: "calc(var(--discount-banner-h, 0px) + 80px)",
+					xl: "calc(var(--discount-banner-h, 0px) + 72px)",
+				},
 				pb: { xs: 5, sm: 5, md: 6, lg: 8, xl: 10 },
 				display: "flex",
 				flexDirection: "column",

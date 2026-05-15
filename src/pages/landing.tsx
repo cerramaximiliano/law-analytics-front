@@ -7,6 +7,7 @@ import Testimonial from "sections/landing/Testimonial";
 import Planes from "sections/landing/Planes";
 import Faq from "sections/landing/Faq";
 import ContactUs from "sections/landing/ContactUs";
+import DiscountBanner from "sections/landing/DiscountBanner";
 import SEO from "components/SEO/SEO";
 import SectionTracker from "components/analytics/SectionTracker";
 import { LandingSections } from "utils/gtm";
@@ -17,6 +18,7 @@ const Landing = () => {
 	return (
 		<>
 			<SEO path="/" />
+			<DiscountBanner />
 			<SectionTracker sectionName={LandingSections.HERO}>
 				<Hero />
 			</SectionTracker>
