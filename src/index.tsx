@@ -14,6 +14,7 @@ import { PersistGate } from "redux-persist/integration/react";
 
 // fonts
 import "assets/fonts/inter/inter.css";
+import "@fontsource-variable/geist";
 
 // scroll bar
 import "simplebar-react/dist/simplebar.min.css";

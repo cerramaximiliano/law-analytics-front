@@ -582,10 +582,15 @@ class ApiService {
 	 * Obtiene los planes públicos disponibles
 	 */
 
-	static async getPublicPlans(): Promise<ApiResponse<Plan[]>> {
+	static async getPublicPlans(options?: { landingOnly?: boolean }): Promise<ApiResponse<Plan[]>> {
 		try {
+			// landingOnly=true fuerza al backend a devolver solo descuentos con
+			// showOnLanding=true aunque haya sesión. Lo usa la landing pública (`/`)
+			// para mostrar la promesa universal en vez del descuento personalizado.
+			const params = options?.landingOnly ? { landingOnly: "true" } : undefined;
 			const response = await axios.get(`${API_BASE_URL}/api/plan-configs/public`, {
 				withCredentials: true,
+				params,
 			});
 			return response.data;
 		} catch (error) {

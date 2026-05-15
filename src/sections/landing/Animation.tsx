@@ -62,6 +62,10 @@ function FadeInWhenVisible({ children }: { children: ReactElement }) {
 				visible: { opacity: 1, translateY: 0 },
 				hidden: { opacity: 0, translateY: 30 },
 			}}
+			// Propagamos height:100% para que MainCards envueltas con esta animación
+			// puedan estirarse a la altura del Grid item (necesario en Planes para
+			// alinear las 3 columnas cuando alignItems=stretch).
+			style={{ height: "100%" }}
 		>
 			{children}
 		</motion.div>

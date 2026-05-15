@@ -1,27 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
+// material-ui
 import {
+	Alert,
+	Box,
 	Button,
+	Chip,
+	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
-	Box,
-	Typography,
-	Stack,
 	Divider,
-	useTheme,
 	Grid,
-	Chip,
-	CircularProgress,
-	Alert,
+	Stack,
+	Typography,
 } from "@mui/material";
-import { Lock, ArrowRight, TickCircle, CloseCircle, Crown, DiscountShape } from "iconsax-react";
-// Importar MainCard desde el componente personalizado
-import MainCard from "components/MainCard";
-// Importar el servicio API para obtener planes dinámicamente
+import { alpha, useTheme } from "@mui/material/styles";
+
+// icons
+import { ArrowRight, Crown, Lock } from "iconsax-react";
+
+// project-imports
+import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan } from "store/reducers/ApiService";
-import { getPlanPricing, getBillingPeriodText, cleanPlanDisplayName } from "utils/planPricingUtils";
+
+// ============================== TOKENS ============================== //
+const BRAND_BLUE = "#3A7BFF";
 
 interface LimitInfo {
 	resourceType: string;
@@ -45,26 +51,20 @@ interface LimitErrorModalProps {
 	upgradeRequired?: boolean;
 }
 
-export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
-	open,
-	onClose,
-	message,
-	limitInfo,
-	featureInfo,
-	upgradeRequired = false,
-}) => {
+export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({ open, onClose, message, limitInfo, featureInfo }) => {
 	const navigate = useNavigate();
 	const theme = useTheme();
+	const isDark = theme.palette.mode === "dark";
+
 	const [plans, setPlans] = useState<Plan[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null); // Para tracking del plan siendo procesado
+	const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
 
-	// Cargar planes cuando se abra el modal
+	// Cargar planes al abrir
 	useEffect(() => {
 		const fetchPlans = async () => {
 			if (!open) return;
-
 			try {
 				setLoading(true);
 				setError(null);
@@ -74,18 +74,17 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 				} else {
 					setError("No se pudieron cargar los planes");
 				}
-			} catch (err) {
-				setError("Error al cargar los planes. Por favor, intenta más tarde.");
+			} catch {
+				setError("Error al cargar los planes. Por favor, intentá más tarde.");
 			} finally {
 				setLoading(false);
 			}
 		};
-
 		fetchPlans();
 	}, [open]);
 
 	const handleUpgrade = (planId?: string) => {
-		setLoadingPlanId(planId || "default"); // Activar loading
+		setLoadingPlanId(planId || "default");
 		onClose();
 		if (planId) {
 			navigate(`/suscripciones/tables?plan=${planId}`);
@@ -94,164 +93,54 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 		}
 	};
 
-	// Gestor de estado simplificado del modal
-	// No intentamos cerrar otros modales desde aquí - eso lo maneja ServerContext
-	const modalOpenedRef = React.useRef(false);
-
-	// Registrar la apertura y cierre del modal
-	React.useEffect(() => {
-		if (open && !modalOpenedRef.current) {
-			modalOpenedRef.current = true;
-		}
-
-		// Limpiar referencia al cerrar
-		if (!open) {
-			modalOpenedRef.current = false;
-		}
-	}, [open]);
-
 	const isLimitError = !!limitInfo;
 	const isFeatureError = !!featureInfo;
 
 	const getTitle = () => {
-		if (isFeatureError) {
-			return "Función no disponible";
-		}
-		if (isLimitError) {
-			return "Límite alcanzado";
-		}
+		if (isFeatureError) return "Función no disponible";
+		if (isLimitError) return "Límite alcanzado";
 		return "Restricción del plan";
 	};
 
-	// Determinar planes recomendados según el error
-	const getRecommendedPlans = () => {
+	// Planes a sugerir: excluir el plan actual del usuario.
+	const getRecommendedPlans = (): Plan[] => {
 		if (plans.length === 0) return [];
-
 		let currentUserPlan = "free";
-
-		if (isLimitError && limitInfo) {
-			currentUserPlan = limitInfo.plan.toLowerCase();
-		} else if (isFeatureError && featureInfo) {
-			currentUserPlan = featureInfo.plan.toLowerCase();
-		}
-
-		// Filtrar planes según el plan actual del usuario
-		return plans.filter((plan) => plan.planId.toLowerCase() !== currentUserPlan);
+		if (isLimitError && limitInfo) currentUserPlan = limitInfo.plan.toLowerCase();
+		else if (isFeatureError && featureInfo) currentUserPlan = featureInfo.plan.toLowerCase();
+		return plans.filter((plan) => plan.planId.toLowerCase() !== currentUserPlan && plan.isActive);
 	};
 
-	// Función para obtener el color y el estilo según el tipo de plan
-	const getPlanStyle = (planId: string, isCurrentPlan: boolean) => {
-		if (isCurrentPlan) {
-			return {
-				padding: 3,
-				borderRadius: 1,
-				bgcolor: theme.palette.primary.lighter,
-			};
-		}
-
-		switch (planId) {
-			case "free":
-				return {
-					padding: 3,
-					borderRadius: 1,
-					bgcolor: theme.palette.info.lighter,
-				};
-			case "standard":
-				return {
-					padding: 3,
-					borderRadius: 1,
-					bgcolor: theme.palette.success.lighter,
-				};
-			case "premium":
-				return {
-					padding: 3,
-					borderRadius: 1,
-					bgcolor: theme.palette.secondary.lighter,
-				};
-			default:
-				return { padding: 3 };
-		}
-	};
-
-	// Función para obtener el color del botón según el tipo de plan
-	const getButtonColor = (planId: string, isCurrentPlan: boolean) => {
-		if (isCurrentPlan) {
-			return "primary";
-		}
-
-		switch (planId) {
-			case "free":
-				return "info";
-			case "standard":
-				return "success";
-			case "premium":
-				return "secondary";
-			default:
-				return "secondary";
-		}
-	};
-
-	// Función para obtener el chip distintivo según el plan
-	const getPlanChip = (planId: string, isCurrentPlan: boolean, isDefault: boolean) => {
-		if (isCurrentPlan) {
-			return <Chip label="Plan Actual" color="primary" />;
-		}
-
-		switch (planId) {
-			case "standard":
-				return <Chip label="Popular" color="success" />;
-			case "premium":
-				return <Chip label="Recomendado" color="secondary" />;
-			case "free":
-				if (isDefault) {
-					return <Chip label="Básico" color="info" />;
-				}
-				return null;
-			default:
-				if (isDefault) {
-					return <Chip label="Predeterminado" color="default" />;
-				}
-				return null;
-		}
-	};
-
-	// Estilos
-	const priceListDisable = {
-		opacity: 0.4,
-		textDecoration: "line-through",
-	};
-
-	const price = {
-		fontSize: "28px",
-		fontWeight: 700,
-		lineHeight: 1,
-	};
-
+	// Bloque informativo arriba — explica el error con detalle del recurso/feature.
 	const getContentMessage = () => {
+		const baseBoxSx = {
+			mb: 2,
+			p: 2,
+			borderRadius: 1.5,
+			bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.035),
+			border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+			maxWidth: "700px",
+			mx: "auto",
+		};
+
 		if (isLimitError && limitInfo) {
 			return (
-				<Box
-					sx={{
-						mb: 1.5,
-						p: 1.5,
-						borderRadius: 1,
-						maxWidth: "700px",
-						mx: "auto",
-						bgcolor: theme.palette.background.paper,
-					}}
-				>
-					<Typography variant="body1" color="text.primary" sx={{ mb: 1 }}>
-						{message}
-					</Typography>
-					<Stack spacing={1.5}>
-						<Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-							<Typography variant="body2" color="text.secondary">
-								{limitInfo.resourceType} - Uso actual:
-							</Typography>
-							<Typography variant="body2" fontWeight="medium" color="error">
-								{limitInfo.currentCount} / {limitInfo.limit}
-							</Typography>
-						</Box>
+				<Box sx={baseBoxSx}>
+					<Typography sx={{ fontSize: "0.95rem", color: "text.primary", letterSpacing: "-0.005em", mb: 1 }}>{message}</Typography>
+					<Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+						<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
+							{limitInfo.resourceType} — uso actual
+						</Typography>
+						<Typography
+							sx={{
+								fontWeight: 600,
+								color: theme.palette.error.main,
+								fontVariantNumeric: "tabular-nums",
+								letterSpacing: "-0.005em",
+							}}
+						>
+							{limitInfo.currentCount} / {limitInfo.limit}
+						</Typography>
 					</Stack>
 				</Box>
 			);
@@ -259,45 +148,31 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 
 		if (isFeatureError && featureInfo) {
 			return (
-				<Box
-					sx={{
-						mb: 1.5,
-						p: 1.5,
-						borderRadius: 1,
-						maxWidth: "700px",
-						mx: "auto",
-						bgcolor: theme.palette.background.paper,
-					}}
-				>
-					<Typography
-						variant="body1"
-						color="text.primary"
-						sx={{ mb: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-					>
-						{message}
-					</Typography>
-					<Stack spacing={1}>
-						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
-							<Typography variant="body2" color="text.secondary">
-								Función:
+				<Box sx={baseBoxSx}>
+					<Typography sx={{ fontSize: "0.95rem", color: "text.primary", letterSpacing: "-0.005em", mb: 1.25 }}>{message}</Typography>
+					<Stack spacing={0.75}>
+						<Stack direction="row" justifyContent="space-between" alignItems="center">
+							<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
+								Función
 							</Typography>
-							<Typography variant="body2" fontWeight="medium">
+							<Typography variant="body2" sx={{ fontWeight: 600, letterSpacing: "-0.005em" }}>
 								{featureInfo.feature}
 							</Typography>
-						</Box>
-						<Box sx={{ display: "flex", justifyContent: "space-between" }}>
-							<Typography variant="body2" color="text.secondary">
-								Tu plan actual:
+						</Stack>
+						<Stack direction="row" justifyContent="space-between" alignItems="center">
+							<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
+								Tu plan actual
 							</Typography>
-							<Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-								<Crown size={14} variant="Bulk" color={theme.palette.primary.main} />
-								{featureInfo.plan}
-							</Typography>
-						</Box>
-
+							<Stack direction="row" alignItems="center" spacing={0.5}>
+								<Crown size={14} variant="Bulk" color={BRAND_BLUE} />
+								<Typography variant="body2" sx={{ fontWeight: 600, letterSpacing: "-0.005em" }}>
+									{featureInfo.plan}
+								</Typography>
+							</Stack>
+						</Stack>
 						{featureInfo.availableIn.length > 0 && (
-							<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-								<Typography variant="body2" color="text.secondary">
+							<Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+								<Typography variant="body2" sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}>
 									Disponible en:
 								</Typography>
 								<Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ gap: 0.5 }}>
@@ -307,13 +182,19 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 											size="small"
 											label={plan}
 											icon={<Crown size={12} variant="Bulk" />}
-											color="primary"
-											variant="outlined"
-											sx={{ height: 22 }}
+											sx={{
+												height: 22,
+												bgcolor: alpha(BRAND_BLUE, isDark ? 0.16 : 0.08),
+												color: BRAND_BLUE,
+												border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+												fontWeight: 600,
+												letterSpacing: "0.02em",
+												"& .MuiChip-icon": { color: BRAND_BLUE },
+											}}
 										/>
 									))}
 								</Stack>
-							</Box>
+							</Stack>
 						)}
 					</Stack>
 				</Box>
@@ -324,574 +205,50 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			<Alert
 				severity="warning"
 				icon={<Lock variant="Bulk" size={24} color={theme.palette.warning.main} />}
-				sx={{
-					mb: 2,
-					width: "100%",
-					maxWidth: "700px",
-					mx: "auto",
-				}}
+				sx={{ mb: 2, width: "100%", maxWidth: "700px", mx: "auto", borderRadius: 1.5 }}
 			>
-				{message || "Acceso denegado: Esta característica no está disponible en tu plan actual."}
+				{message || "Acceso denegado: esta característica no está disponible en tu plan actual."}
 			</Alert>
 		);
 	};
 
-	// Helper para formatear descripción de recursos
-	const formatResourceDescription = (resource: { name: string; limit: number; displayName?: string }) => {
-		return `${resource.limit} ${resource.displayName || resource.name}`;
-	};
-
-	// Renderizado de un solo plan (formato ancho con grid de features)
-	const renderSinglePlan = (plan: Plan) => {
-		const pricing = getPlanPricing(plan);
-		const displayPrice = pricing.basePrice;
-		const hasDiscount = plan.activeDiscounts && plan.activeDiscounts.length > 0;
-		const discount = hasDiscount ? plan.activeDiscounts![0] : null;
-
-		// Ordenar features: habilitadas primero (filtrando por visibility)
-		const currentEnv = import.meta.env.PROD ? "production" : "development";
-		const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-			if (!visibility || visibility === "all") return true;
-			if (visibility === "none") return false;
-			return visibility === currentEnv;
-		};
-		const sortedFeatures = [...plan.features]
-			.filter((f) => isVisibleInCurrentEnv(f.visibility))
-			.sort((a, b) => {
-				if (a.enabled === b.enabled) return 0;
-				return a.enabled ? -1 : 1;
-			});
-
-		return (
-			<MainCard
-				elevation={0}
-				sx={{
-					width: "100%",
-					maxWidth: "700px",
-					mx: "auto",
-					overflow: "visible",
-					border: `1px solid ${theme.palette.divider}`,
-					transition: "all 0.3s ease-in-out",
-					"&:hover": {
-						boxShadow: theme.shadows[4],
-						borderColor: theme.palette.primary.main,
-					},
-				}}
-			>
-				{/* Header del plan con precio y botón */}
-				<Box
-					sx={{
-						...getPlanStyle(plan.planId, false),
-						pt: 2,
-						pb: 2,
-					}}
-				>
-					<Stack spacing={1.5} alignItems="center">
-						{getPlanChip(plan.planId, false, plan.isDefault)}
-						<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
-						{hasDiscount && discount ? (
-							<>
-								<Stack direction="row" spacing={1.5} alignItems="baseline" justifyContent="center">
-									<Typography
-										variant="h4"
-										sx={{
-											textDecoration: "line-through",
-											color: "text.secondary",
-											fontWeight: 500,
-											opacity: 0.8,
-										}}
-									>
-										${discount.originalPrice}
-									</Typography>
-									<Typography variant="h2" sx={{ ...price, color: "success.main" }}>
-										${discount.finalPrice}
-									</Typography>
-								</Stack>
-								<Typography variant="h6" color="textSecondary">
-									{getBillingPeriodText(pricing.billingPeriod)}
-								</Typography>
-								<Box sx={{ textAlign: "center", mt: 0.5 }}>
-									<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
-										<DiscountShape size={14} color="var(--mui-palette-success-main)" />
-										<Chip label={discount.badge} size="small" color="success" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
-									</Stack>
-									<Typography variant="caption" color="success.dark" sx={{ display: "block", mt: 0.5, fontWeight: 600 }}>
-										{discount.promotionalMessage}
-									</Typography>
-									{discount.durationInMonths && (
-										<Typography variant="caption" color="success.dark" sx={{ display: "block" }}>
-											Válido por {discount.durationInMonths} meses
-										</Typography>
-									)}
-								</Box>
-							</>
-						) : (
-							<Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-								<Typography variant="h2" sx={price}>
-									${displayPrice}
-								</Typography>
-								<Typography variant="h6" color="textSecondary" sx={{ ml: 1 }}>
-									{getBillingPeriodText(pricing.billingPeriod)}
-								</Typography>
-							</Box>
-						)}
-						<Button
-							color={getButtonColor(plan.planId, false)}
-							variant="contained"
-							onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
-							disabled={loadingPlanId !== null}
-							endIcon={loadingPlanId === plan.planId ? <CircularProgress size={16} color="inherit" /> : <ArrowRight size={16} />}
-							size="large"
-							sx={{
-								py: 1.5,
-								px: 4,
-								fontWeight: 600,
-								transition: "all 0.3s ease-in-out",
-								"&:hover": {
-									transform: "scale(1.02)",
-								},
-							}}
-						>
-							{loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme Ahora"}
-						</Button>
-					</Stack>
-				</Box>
-
-				{/* Grid de recursos y features */}
-				<Box sx={{ p: 2 }}>
-					{/* Recursos en una fila */}
-					<Grid container spacing={1} sx={{ mb: 2 }}>
-						{plan.resourceLimits
-							.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
-							.map((resource, i) => (
-								<Grid item xs={6} sm={3} key={`resource-${i}`}>
-									<Box
-										sx={{
-											textAlign: "center",
-											p: 1,
-											bgcolor: theme.palette.background.default,
-											borderRadius: 1,
-										}}
-									>
-										<Typography variant="body2" fontWeight="medium">
-											{formatResourceDescription(resource)}
-										</Typography>
-									</Box>
-								</Grid>
-							))}
-					</Grid>
-
-					<Divider sx={{ my: 1.5 }} />
-
-					{/* Features en grid de 2 columnas */}
-					<Grid container spacing={1}>
-						{sortedFeatures.map((feature, i) => (
-							<Grid item xs={12} sm={6} key={`feature-${i}`}>
-								<Box
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-										py: 0.5,
-										...(feature.enabled ? {} : priceListDisable),
-									}}
-								>
-									{feature.enabled ? (
-										<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
-									) : (
-										<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
-									)}
-									<Typography variant="body2" sx={{ fontWeight: feature.enabled ? "medium" : "normal" }}>
-										{feature.description}
-									</Typography>
-								</Box>
-							</Grid>
-						))}
-					</Grid>
-				</Box>
-			</MainCard>
-		);
-	};
-
-	// Renderizado de múltiples planes (formato compacto con grid de features)
-	const renderMultiplePlans = (activePlans: Plan[]) => {
-		return (
-			<Grid container spacing={2} justifyContent="center">
-				{activePlans.map((plan) => {
-					const pricing = getPlanPricing(plan);
-					const displayPrice = pricing.basePrice;
-					const hasDiscount = plan.activeDiscounts && plan.activeDiscounts.length > 0;
-					const discount = hasDiscount ? plan.activeDiscounts![0] : null;
-
-					// Ordenar features: habilitadas primero (filtrando por visibility)
-					const currentEnv = import.meta.env.PROD ? "production" : "development";
-					const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-						if (!visibility || visibility === "all") return true;
-						if (visibility === "none") return false;
-						return visibility === currentEnv;
-					};
-					const sortedFeatures = [...plan.features]
-						.filter((f) => isVisibleInCurrentEnv(f.visibility))
-						.sort((a, b) => {
-							if (a.enabled === b.enabled) return 0;
-							return a.enabled ? -1 : 1;
-						});
-
-					return (
-						<Grid item xs={12} sm={6} key={plan.planId}>
-							<MainCard
-								elevation={0}
-								sx={{
-									height: "100%",
-									overflow: "visible",
-									border: `1px solid ${theme.palette.divider}`,
-									transition: "all 0.3s ease-in-out",
-									"&:hover": {
-										transform: "translateY(-3px)",
-										boxShadow: theme.shadows[4],
-										borderColor: theme.palette.primary.main,
-									},
-								}}
-							>
-								{/* Header del plan */}
-								<Box
-									sx={{
-										...getPlanStyle(plan.planId, false),
-										pt: 1.5,
-										pb: 1.5,
-									}}
-								>
-									<Stack spacing={1} alignItems="center">
-										{getPlanChip(plan.planId, false, plan.isDefault)}
-										<Typography variant="h5">{cleanPlanDisplayName(plan.displayName)}</Typography>
-										{hasDiscount && discount ? (
-											<>
-												<Stack direction="row" spacing={1} alignItems="baseline">
-													<Typography
-														variant="h5"
-														sx={{
-															textDecoration: "line-through",
-															color: "text.secondary",
-															fontWeight: 500,
-															opacity: 0.8,
-														}}
-													>
-														${discount.originalPrice}
-													</Typography>
-													<Typography variant="h3" sx={{ fontWeight: 700, color: "success.main" }}>
-														${discount.finalPrice}
-													</Typography>
-												</Stack>
-												<Typography variant="caption" color="textSecondary">
-													{getBillingPeriodText(pricing.billingPeriod)}
-												</Typography>
-												<Box sx={{ textAlign: "center" }}>
-													<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
-														<DiscountShape size={12} color="var(--mui-palette-success-main)" />
-														<Chip
-															label={discount.badge}
-															size="small"
-															color="success"
-															sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
-														/>
-													</Stack>
-													<Typography
-														variant="caption"
-														color="success.dark"
-														sx={{ display: "block", mt: 0.25, fontWeight: 600, fontSize: "0.65rem" }}
-													>
-														{discount.promotionalMessage}
-													</Typography>
-													{discount.durationInMonths && (
-														<Typography variant="caption" color="success.dark" sx={{ display: "block", fontSize: "0.65rem" }}>
-															Válido por {discount.durationInMonths} meses
-														</Typography>
-													)}
-												</Box>
-											</>
-										) : (
-											<>
-												<Box sx={{ display: "flex", alignItems: "baseline" }}>
-													<Typography variant="h3" sx={{ fontWeight: 700 }}>
-														${displayPrice}
-													</Typography>
-													<Typography variant="body2" color="textSecondary" sx={{ ml: 0.5 }}>
-														{getBillingPeriodText(pricing.billingPeriod)}
-													</Typography>
-												</Box>
-											</>
-										)}
-										<Button
-											color={getButtonColor(plan.planId, false)}
-											variant="contained"
-											fullWidth
-											onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
-											disabled={loadingPlanId !== null}
-											endIcon={loadingPlanId === plan.planId ? <CircularProgress size={14} color="inherit" /> : <ArrowRight size={14} />}
-											size="small"
-											sx={{
-												py: 0.75,
-												fontWeight: 600,
-											}}
-										>
-											{loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme"}
-										</Button>
-									</Stack>
-								</Box>
-
-								{/* Contenido: recursos y features en grid */}
-								<Box sx={{ p: 1.5 }}>
-									{/* Recursos en grid 2x2 */}
-									<Grid container spacing={0.5} sx={{ mb: 1 }}>
-										{plan.resourceLimits
-											.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
-											.map((resource, i) => (
-												<Grid item xs={6} key={`resource-${i}`}>
-													<Box
-														sx={{
-															textAlign: "center",
-															py: 0.5,
-															px: 0.5,
-															bgcolor: theme.palette.background.default,
-															borderRadius: 0.5,
-														}}
-													>
-														<Typography variant="caption" fontWeight="medium">
-															{formatResourceDescription(resource)}
-														</Typography>
-													</Box>
-												</Grid>
-											))}
-									</Grid>
-
-									<Divider sx={{ my: 1 }} />
-
-									{/* Features en grid 2 columnas */}
-									<Grid container spacing={0.5}>
-										{sortedFeatures.map((feature, i) => (
-											<Grid item xs={6} key={`feature-${i}`}>
-												<Box
-													sx={{
-														display: "flex",
-														alignItems: "center",
-														gap: 0.5,
-														py: 0.25,
-														...(feature.enabled ? {} : priceListDisable),
-													}}
-												>
-													{feature.enabled ? (
-														<TickCircle size={12} variant="Bold" color={theme.palette.success.main} />
-													) : (
-														<CloseCircle size={12} variant="Bold" color={theme.palette.text.disabled} />
-													)}
-													<Typography
-														variant="caption"
-														sx={{
-															fontWeight: feature.enabled ? 500 : "normal",
-															lineHeight: 1.2,
-														}}
-													>
-														{feature.description}
-													</Typography>
-												</Box>
-											</Grid>
-										))}
-									</Grid>
-								</Box>
-							</MainCard>
-						</Grid>
-					);
-				})}
-			</Grid>
-		);
-	};
-
-	// Función principal de renderizado de planes
+	// Render del listado de planes — todos usan PlanCard, consistente con plans.tsx
 	const renderPlansList = () => {
 		if (loading) {
 			return (
 				<Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px" }}>
-					<CircularProgress />
+					<CircularProgress sx={{ color: BRAND_BLUE }} />
 				</Box>
 			);
 		}
 
-		if (error) {
-			return <Alert severity="error">{error}</Alert>;
-		}
-
-		if (plans.length === 0) {
-			return <Alert severity="info">No hay planes disponibles en este momento.</Alert>;
-		}
+		if (error) return <Alert severity="error" sx={{ borderRadius: 1.5 }}>{error}</Alert>;
+		if (plans.length === 0) return <Alert severity="info" sx={{ borderRadius: 1.5 }}>No hay planes disponibles en este momento.</Alert>;
 
 		const recommendedPlans = getRecommendedPlans();
-
-		// Filtrar solo planes activos
-		const activePlans = recommendedPlans.filter((plan) => plan.isActive);
-
-		const currentEnv = import.meta.env.PROD ? "production" : "development";
-		const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-			if (!visibility || visibility === "all") return true;
-			if (visibility === "none") return false;
-			return visibility === currentEnv;
-		};
-
-		// Si no hay planes activos disponibles
-		if (activePlans.length === 0) {
-			return <Alert severity="info">No hay planes disponibles para actualizar en este momento.</Alert>;
-		}
+		if (recommendedPlans.length === 0)
+			return <Alert severity="info" sx={{ borderRadius: 1.5 }}>No hay planes disponibles para actualizar en este momento.</Alert>;
 
 		return (
-			<Grid container spacing={2}>
-				<Box sx={{ width: "100%", display: "flex", justifyContent: "center", mt: 0 }}>
-					<Grid
-						container
-						spacing={2}
-						justifyContent="center"
-						sx={{
-							maxWidth: "100%",
-							margin: "auto",
-						}}
-					>
-						{activePlans.map((plan) => {
-							// Obtener la información de precios según el entorno
-							const pricing = getPlanPricing(plan);
-							const displayPrice = pricing.basePrice;
-
-							return (
-								<Grid item xs={12} sm={6} md={activePlans.length <= 2 ? 5 : 4} key={plan.planId}>
-									<MainCard
-										elevation={0}
-										sx={{
-											height: "100%",
-											minHeight: "380px",
-											overflow: "visible",
-											border: `1px solid ${theme.palette.divider}`,
-											transition: "all 0.3s ease-in-out",
-											"&:hover": {
-												transform: "translateY(-5px)",
-												boxShadow: theme.shadows[4],
-												borderColor: theme.palette.primary.main,
-											},
-										}}
-									>
-										<Grid container spacing={1}>
-											<Grid item xs={12}>
-												<Box
-													sx={{
-														...getPlanStyle(plan.planId, false),
-														pt: 2,
-														pb: 2,
-													}}
-												>
-													<Grid container spacing={1}>
-														{/* Mostramos el chip correspondiente */}
-														<Grid item xs={12} sx={{ textAlign: "center" }}>
-															{getPlanChip(plan.planId, false, plan.isDefault)}
-														</Grid>
-														<Grid item xs={12}>
-															<Stack spacing={0} textAlign="center">
-																<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
-															</Stack>
-														</Grid>
-														<Grid item xs={12}>
-															<Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
-																<Typography variant="h2" sx={price}>
-																	${displayPrice}
-																</Typography>
-																<Typography variant="h6" color="textSecondary" sx={{ ml: 1 }}>
-																	{getBillingPeriodText(pricing.billingPeriod)}
-																</Typography>
-															</Box>
-														</Grid>
-														<Grid item xs={12}>
-															<Button
-																color={getButtonColor(plan.planId, false)}
-																variant={
-																	plan.planId.toLowerCase() === "standard" || plan.planId.toLowerCase() === "premium"
-																		? "contained"
-																		: "outlined"
-																}
-																fullWidth
-																onClick={() => !loadingPlanId && handleUpgrade(plan.planId)}
-																disabled={loadingPlanId !== null}
-																endIcon={
-																	loadingPlanId === plan.planId ? <CircularProgress size={16} color="inherit" /> : <ArrowRight size={16} />
-																}
-																size="medium"
-																sx={{
-																	py: 1,
-																	fontWeight: 600,
-																	transition: "all 0.3s ease-in-out",
-																	"&:hover": {
-																		transform: "scale(1.02)",
-																	},
-																}}
-															>
-																{loadingPlanId === plan.planId ? "Procesando..." : "Suscribirme Ahora"}
-															</Button>
-														</Grid>
-													</Grid>
-												</Box>
-											</Grid>
-											<Grid item xs={12}>
-												<Box sx={{ p: 1 }}>
-													{/* Resources: Grid de cajas */}
-													<Grid container spacing={1} sx={{ mb: 2 }}>
-														{plan.resourceLimits
-															.filter((resource) => isVisibleInCurrentEnv(resource.visibility))
-															.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
-															.map((resource, i) => (
-																<Grid item xs={6} key={`resource-${i}`}>
-																	<Box sx={{ textAlign: "center", p: 1, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
-																		<Typography variant="body2" fontWeight="medium" sx={{ wordBreak: "break-word" }}>
-																			{`${resource.limit} ${resource.displayName}`}
-																		</Typography>
-																	</Box>
-																</Grid>
-															))}
-													</Grid>
-													<Divider sx={{ my: 1.5 }} />
-													{/* Features: grid de 2 columnas con iconos */}
-													<Grid container spacing={1}>
-														{[...plan.features]
-															.filter((feature) => isVisibleInCurrentEnv(feature.visibility))
-															.sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
-															.map((feature, i) => (
-																<Grid item xs={12} sm={6} key={`feature-${i}`}>
-																	<Box
-																		sx={{
-																			display: "flex",
-																			alignItems: "center",
-																			gap: 1,
-																			py: 0.5,
-																			...(feature.enabled ? {} : priceListDisable),
-																		}}
-																	>
-																		{feature.enabled ? (
-																			<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
-																		) : (
-																			<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
-																		)}
-																		<Typography
-																			variant="body2"
-																			sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}
-																		>
-																			{feature.displayName || feature.description}
-																		</Typography>
-																	</Box>
-																</Grid>
-															))}
-													</Grid>
-												</Box>
-											</Grid>
-										</Grid>
-									</MainCard>
-								</Grid>
-							);
-						})}
+			<Grid container spacing={2.5} alignItems="stretch" justifyContent="center">
+				{recommendedPlans.map((plan) => (
+					<Grid item xs={12} sm={recommendedPlans.length === 1 ? 8 : 6} md={recommendedPlans.length === 1 ? 7 : 6} key={plan.planId}>
+						<PlanCard
+							plan={plan}
+							highlighted={plan.planId === "standard"}
+							compact
+							cta={{
+								label: loadingPlanId === plan.planId ? "Procesando…" : "Suscribirme",
+								onClick: () => !loadingPlanId && handleUpgrade(plan.planId),
+								disabled: loadingPlanId !== null,
+								loading: loadingPlanId === plan.planId,
+								variant: plan.planId === "standard" ? "contained" : "outlined",
+								color: "primary",
+								endIcon: loadingPlanId !== plan.planId ? <ArrowRight size={16} /> : undefined,
+							}}
+						/>
 					</Grid>
-				</Box>
+				))}
 			</Grid>
 		);
 	};
@@ -902,58 +259,67 @@ export const LimitErrorModal: React.FC<LimitErrorModalProps> = ({
 			onClose={onClose}
 			maxWidth="md"
 			fullWidth
-			sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter", maxHeight: "90vh", overflowY: "auto" } }}
+			sx={{
+				"& .MuiDialog-paper": {
+					borderRadius: 2,
+					border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.12)}`,
+					overflow: "hidden",
+				},
+			}}
 		>
 			<DialogTitle
 				sx={{
-					bgcolor: theme.palette.primary.lighter,
 					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.18 : 0.1)}`,
+					bgcolor: alpha(BRAND_BLUE, isDark ? 0.06 : 0.025),
 				}}
 			>
 				<Stack spacing={1}>
-					<Stack direction="row" alignItems="center" spacing={1}>
-						<Crown size={24} variant="Bulk" color={theme.palette.primary.main} />
-						<Typography variant="h5" color="primary" sx={{ fontWeight: 600 }}>
+					<Stack direction="row" alignItems="center" spacing={1.25}>
+						<Box
+							sx={{
+								width: 40,
+								height: 40,
+								borderRadius: 1.5,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								bgcolor: alpha(BRAND_BLUE, isDark ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, isDark ? 0.32 : 0.18)}`,
+								color: BRAND_BLUE,
+							}}
+						>
+							<Crown size={22} variant="Bulk" />
+						</Box>
+						<Typography
+							sx={{
+								fontWeight: 600,
+								fontSize: { xs: "1.15rem", sm: "1.3rem" },
+								letterSpacing: "-0.018em",
+								color: "text.primary",
+								lineHeight: 1.2,
+							}}
+						>
 							{getTitle()}
 						</Typography>
 					</Stack>
-					<Typography variant="body2" color="textSecondary">
-						Se requiere actualizar tu plan para continuar
+					<Typography sx={{ fontSize: "0.875rem", color: "text.secondary", letterSpacing: "-0.005em" }}>
+						Actualizá tu plan para continuar
 					</Typography>
 				</Stack>
 			</DialogTitle>
-			<Divider />
 
-			<DialogContent sx={{ p: 2.5 }}>
-				<Box sx={{ mx: "auto" }}>
-					<Box sx={{ maxWidth: "100%", mx: "auto", mb: 1.5 }}>{getContentMessage()}</Box>
-					{renderPlansList()}
-				</Box>
+			<DialogContent sx={{ p: 3 }}>
+				{getContentMessage()}
+				{renderPlansList()}
 			</DialogContent>
 
 			<Divider />
 
-			<DialogActions
-				sx={{
-					p: 2.5,
-					bgcolor: theme.palette.background.default,
-					borderTop: `1px solid ${theme.palette.divider}`,
-				}}
-			>
-				<Grid container justifyContent="flex-end" alignItems="center">
-					<Grid item>
-						<Button
-							onClick={onClose}
-							color="error"
-							sx={{
-								minWidth: 100,
-							}}
-						>
-							Cerrar
-						</Button>
-					</Grid>
-				</Grid>
+			<DialogActions sx={{ p: 2.5, bgcolor: alpha(BRAND_BLUE, isDark ? 0.04 : 0.02) }}>
+				<Button onClick={onClose} sx={{ color: "text.secondary", textTransform: "none", fontWeight: 500 }}>
+					Cerrar
+				</Button>
 			</DialogActions>
 		</Dialog>
 	);

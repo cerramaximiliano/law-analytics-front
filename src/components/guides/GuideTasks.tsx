@@ -367,7 +367,7 @@ const GuideTasks: React.FC<GuideTasksProps> = ({ open, onClose }) => {
 			maxWidth="md"
 			fullWidth
 			TransitionComponent={PopupTransition}
-			sx={{ "& .MuiDialog-paper": { borderRadius: "12px" } }}
+			sx={{ "& .MuiDialog-paper": { borderRadius: 2 } }}
 		>
 			<DialogTitle
 				sx={{
@@ -401,7 +401,7 @@ const GuideTasks: React.FC<GuideTasksProps> = ({ open, onClose }) => {
 					Anterior
 				</Button>
 				<Box sx={{ flex: "1 1 auto" }} />
-				<Button color="error" onClick={handleClose}>
+				<Button onClick={handleClose} sx={{ color: "text.secondary" }}>
 					Cerrar
 				</Button>
 				{activeStep === steps.length - 1 ? (

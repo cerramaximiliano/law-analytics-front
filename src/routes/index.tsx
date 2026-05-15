@@ -18,6 +18,7 @@ const CookiesPolicy = Loadable(lazy(() => import("pages/cookies-policy")));
 const UnsubscribePage = Loadable(lazy(() => import("pages/unsubscribe")));
 const TermsPage = Loadable(lazy(() => import("pages/terms")));
 const Plans = Loadable(lazy(() => import("pages/plans")));
+const FeedbackInvitePage = Loadable(lazy(() => import("pages/feedback-invite")));
 
 // ==============================|| ROUTES RENDER ||============================== //
 
@@ -63,6 +64,10 @@ export default function ThemeRoutes() {
 		},
 		LoginRoutes,
 		MainRoutes,
+		{
+			path: "f/:token",
+			element: <FeedbackInvitePage />,
+		},
 		{
 			path: "*",
 			element: <MaintenanceError />,

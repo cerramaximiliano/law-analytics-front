@@ -1,7 +1,7 @@
 import React from "react";
 // material-ui
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useTheme } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 import { Grid, Stack, Typography, Snackbar, Alert, Skeleton, Fade, CircularProgress, Box } from "@mui/material";
 
 // project-imports
@@ -28,9 +28,10 @@ import { getUnifiedStats } from "store/reducers/unifiedStats";
 import { fetchUserStats } from "store/reducers/userStats";
 import { DashboardStats } from "types/unified-stats";
 import ApiService, { OnboardingStatus } from "store/reducers/ApiService";
+import { BRAND_BLUE } from "themes/dashboardTokens";
 
 // hooks
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffectiveUser } from "hooks/useEffectiveUser";
 
 // Limite de sesiones para mostrar onboarding
@@ -39,11 +40,27 @@ const MAX_ONBOARDING_SESSIONS = 5;
 // Key para sessionStorage (evitar multiples incrementos por sesion)
 const ONBOARDING_SESSION_KEY = "onboarding_session_checked";
 
+// Key para el override de la vista del banner (solo admin, ver useEffect abajo)
+const ONBOARDING_OVERRIDE_KEY = "dashboard_onboarding_override";
+
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 const DashboardDefault = () => {
-	const theme = useTheme();
 	const navigate = useNavigate();
+
+	// Override de la vista del WelcomeBanner para preview/dev. Solo lo usan
+	// usuarios ADMIN_ROLE. Persiste en sessionStorage entre refreshes/navegación
+	// dentro de la sesión del tab.
+	//   ?onboarding=force → fuerza el hero onboarding
+	//   ?onboarding=skip  → fuerza el billboard default
+	//   ?onboarding=clear → limpia el override
+	//   sin param          → usa el override de sessionStorage si existe, o el estado real
+	const [searchParams, setSearchParams] = useSearchParams();
+	const [onboardingOverride, setOnboardingOverride] = useState<"force" | "skip" | null>(() => {
+		if (typeof window === "undefined") return null;
+		const stored = sessionStorage.getItem(ONBOARDING_OVERRIDE_KEY);
+		return stored === "force" || stored === "skip" ? stored : null;
+	});
 
 	const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "error" | "success" }>({
 		open: false,
@@ -61,9 +78,33 @@ const DashboardDefault = () => {
 
 	const user = useSelector((state) => state.auth.user);
 	const personalUserId = user?._id; // For personal features like onboarding
+	const isAdmin = user?.role === "ADMIN_ROLE";
 
 	// Get effective user for team-aware data fetching
-	const { effectiveUserId, isReady: isTeamReady, isViewingTeamData } = useEffectiveUser();
+	const { effectiveUserId, isReady: isTeamReady } = useEffectiveUser();
+
+	// Sync del query param al sessionStorage + state. Solo admin.
+	useEffect(() => {
+		if (!isAdmin) return;
+		const param = searchParams.get("onboarding");
+		if (param === "force" || param === "skip") {
+			sessionStorage.setItem(ONBOARDING_OVERRIDE_KEY, param);
+			setOnboardingOverride(param);
+		} else if (param === "clear") {
+			sessionStorage.removeItem(ONBOARDING_OVERRIDE_KEY);
+			setOnboardingOverride(null);
+			// Limpia el param de la URL así no se re-aplica al refrescar
+			searchParams.delete("onboarding");
+			setSearchParams(searchParams, { replace: true });
+		}
+	}, [searchParams, isAdmin, setSearchParams]);
+
+	const clearOnboardingOverride = () => {
+		sessionStorage.removeItem(ONBOARDING_OVERRIDE_KEY);
+		setOnboardingOverride(null);
+		searchParams.delete("onboarding");
+		setSearchParams(searchParams, { replace: true });
+	};
 
 	// Obtener datos del store unificado
 	const { data: unifiedData, isLoading, error, lastUpdated, isInitialized } = useSelector((state) => state.unifiedStats);
@@ -114,6 +155,12 @@ const DashboardDefault = () => {
 
 	// Determinar si mostrar onboarding
 	const showOnboarding = useMemo(() => {
+		// Override (state hidratado desde sessionStorage + query param) — solo admin.
+		if (isAdmin) {
+			if (onboardingOverride === "force") return true;
+			if (onboardingOverride === "skip") return false;
+		}
+
 		// Si el usuario tiene el onboarding completado o descartado, no mostrar
 		if (onboardingStatus?.onboardingComplete || onboardingStatus?.dismissed) {
 			return false;
@@ -132,7 +179,7 @@ const DashboardDefault = () => {
 		// Mostrar onboarding si no tiene carpetas activas
 		const totalCarpetas = (dashboardData?.folders?.active || 0) + (dashboardData?.folders?.closed || 0);
 		return totalCarpetas === 0;
-	}, [onboardingStatus, dashboardData]);
+	}, [onboardingStatus, dashboardData, onboardingOverride, isAdmin]);
 
 	// Estado combinado de carga (ambos deben estar listos)
 	const isFullyLoading = isLoading || onboardingLoading;
@@ -274,57 +321,51 @@ const DashboardDefault = () => {
 		return "general";
 	};
 
-	// Renderizar contenido de onboarding (cards superiores)
-	// Jerarquia: Carpetas = foco principal, Tareas/Vencimientos = secundarios
+	// Renderizar las 4 OnboardingCards en 2x2 — usadas dentro de la columna
+	// izquierda lg=6 para llenar el espacio debajo del EducationalBlock.
+	// Jerarquía: Carpetas = foco principal, Tareas/Vencimientos = secundarios.
 	const renderOnboardingCards = () => (
 		<>
-			{/* Card informativa - sin CTA, solo explica */}
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
-					title="Monto Activo"
-					description="Visualiza el valor total de tus expedientes activos. Se calcula automaticamente desde tus carpetas."
-					icon={<Moneys size={24} />}
-					color="warning"
+					title="Monto activo"
+					description="Visualizá el valor total de tus expedientes activos. Se calcula automáticamente desde tus carpetas."
+					icon={<Moneys size={20} variant="Bulk" />}
 					variant="informative"
 					muted
 				/>
 			</Grid>
 
-			{/* Card PRINCIPAL - El foco del onboarding */}
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
-					title="Carpetas Activas"
-					description="Las carpetas representan tus expedientes. Organiza causas, clientes y documentos en un solo lugar."
+					title="Carpetas activas"
+					description="Las carpetas representan tus expedientes. Organizá causas, clientes y documentos en un solo lugar."
 					actionLabel="Crear mi primera carpeta"
 					onAction={handleCreateFolder}
-					icon={<FolderAdd size={24} />}
-					color="primary"
+					icon={<FolderAdd size={20} variant="Bulk" />}
 					variant="primary"
 				/>
 			</Grid>
 
-			{/* Cards secundarias - menos prominentes */}
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
-					title="Tareas Pendientes"
-					description="Gestiona tus tareas para no olvidar plazos importantes. Las tareas se vinculan a tus carpetas."
+					title="Tareas pendientes"
+					description="Gestioná tus tareas para no perder plazos importantes. Las tareas se vinculan a tus carpetas."
 					actionLabel="Ver tareas"
 					onAction={handleCreateTask}
-					icon={<Task size={24} />}
-					color="success"
+					icon={<Task size={20} variant="Bulk" />}
 					variant="secondary"
 					muted
 				/>
 			</Grid>
 
-			<Grid item xs={12} sm={6} lg={3}>
+			<Grid item xs={12} sm={6}>
 				<OnboardingCard
 					title="Vencimientos"
-					description="Configura alertas para vencimientos judiciales. Recibe notificaciones antes de cada fecha límite."
+					description="Configurá alertas para vencimientos judiciales. Recibí notificaciones antes de cada fecha límite."
 					actionLabel="Ver vencimientos"
 					onAction={handleViewDeadlines}
-					icon={<CloudChange size={24} />}
-					color="error"
+					icon={<CloudChange size={20} variant="Bulk" />}
 					variant="secondary"
 					muted
 				/>
@@ -336,6 +377,64 @@ const DashboardDefault = () => {
 	return (
 		<>
 			<Grid container rowSpacing={4.5} columnSpacing={2.75}>
+				{/* Chip indicador admin — solo visible cuando hay override activo */}
+				{isAdmin && onboardingOverride && (
+					<Grid item xs={12} sx={{ pb: 0 }}>
+						<Box
+							sx={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: 1,
+								px: 1.5,
+								py: 0.5,
+								borderRadius: 1,
+								bgcolor: (t) => alpha(BRAND_BLUE, t.palette.mode === "dark" ? 0.18 : 0.1),
+								border: `1px solid ${alpha(BRAND_BLUE, 0.32)}`,
+							}}
+						>
+							<Box
+								aria-hidden
+								sx={{
+									width: 7,
+									height: 7,
+									borderRadius: "50%",
+									bgcolor: BRAND_BLUE,
+								}}
+							/>
+							<Typography
+								sx={{
+									fontSize: "0.72rem",
+									fontWeight: 600,
+									letterSpacing: "0.02em",
+									color: BRAND_BLUE,
+									fontVariantNumeric: "tabular-nums",
+								}}
+							>
+								Vista forzada: onboarding={onboardingOverride}
+							</Typography>
+							<Box
+								component="button"
+								onClick={clearOnboardingOverride}
+								sx={{
+									ml: 0.5,
+									fontSize: "0.7rem",
+									fontWeight: 600,
+									color: BRAND_BLUE,
+									textDecoration: "underline",
+									textUnderlineOffset: "2px",
+									background: "none",
+									border: "none",
+									cursor: "pointer",
+									p: 0,
+									"&:hover": { opacity: 0.7 },
+								}}
+							>
+								Limpiar
+							</Box>
+						</Box>
+					</Grid>
+				)}
+
 				{/* Banner siempre visible (con skeleton si esta cargando) */}
 				<Grid item xs={12}>
 					{isFullyLoading ? (
@@ -420,24 +519,23 @@ const DashboardDefault = () => {
 				{!isFullyLoading && !error && dashboardData && showOnboarding && !isDismissing && (
 					<Fade in timeout={400}>
 						<Grid container item spacing={2.75}>
-							{/* Cards superiores con estados educativos */}
-							{renderOnboardingCards()}
-
-							{/* Bloque educativo en lugar del grafico */}
-							<Grid item xs={12} md={6} lg={5}>
-								<OnboardingEducationalBlock />
+							{/* Columna izquierda lg=6: EducationalBlock arriba + 4 OnboardingCards en 2x2 debajo */}
+							<Grid item xs={12} lg={6}>
+								<Grid container spacing={2.75}>
+									<Grid item xs={12}>
+										<OnboardingEducationalBlock />
+									</Grid>
+									{renderOnboardingCards()}
+								</Grid>
 							</Grid>
 
-							{/* Widgets laterales con estado vacio mejorado */}
-							<Grid item xs={12} md={6} lg={3}>
-								<Stack spacing={3}>
-									<ResourceUsageWidget />
+							{/* Columna derecha lg=6: widgets apilados verticalmente (Storage + Task + Release) */}
+							<Grid item xs={12} lg={6}>
+								<Stack spacing={2.75}>
 									<StorageWidget />
 									<AssignUsers />
+									<ProjectRelease />
 								</Stack>
-							</Grid>
-							<Grid item xs={12} md={6} lg={4}>
-								<ProjectRelease />
 							</Grid>
 						</Grid>
 					</Fade>
@@ -458,20 +556,26 @@ const DashboardDefault = () => {
 
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
-									title="Tareas Pendientes"
+									title="Tareas pendientes"
 									count={(dashboardData?.tasks?.pending || 0).toString()}
 									color="success"
-									iconPrimary={<Calendar color={theme.palette.success.darker} />}
+									iconPrimary={<Calendar size={20} variant="Bulk" />}
+									onClick={() => navigate("/tareas")}
 									percentage={
-										<Typography color="success.darker" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Typography variant="caption">
-												{dashboardData?.tasks?.completed || 0} completadas - {dashboardData?.tasks?.overdue || 0} vencidas
-											</Typography>
+										<Typography
+											variant="caption"
+											sx={{
+												color: "text.secondary",
+												fontVariantNumeric: "tabular-nums",
+												letterSpacing: "-0.005em",
+											}}
+										>
+											{dashboardData?.tasks?.completed || 0} completadas · {dashboardData?.tasks?.overdue || 0} vencidas
 										</Typography>
 									}
 								>
 									<BarsDataWidget
-										color={theme.palette.success.darker}
+										color={BRAND_BLUE}
 										data={dashboardData?.trends?.tasks?.map((item) => item.count) || undefined}
 									/>
 								</EcommerceDataCard>
@@ -479,18 +583,22 @@ const DashboardDefault = () => {
 
 							<Grid item xs={12} sm={6} lg={3}>
 								<EcommerceDataCard
-									title="Vencimientos Próximos"
+									title="Próximos vencimientos"
 									count={(dashboardData?.deadlines?.nextWeek || 0).toString()}
 									color="error"
-									iconPrimary={<CloudChange color={theme.palette.error.dark} />}
+									iconPrimary={<CloudChange size={20} variant="Bulk" />}
+									onClick={() => navigate("/apps/calendar")}
 									percentage={
-										<Typography color="error.dark" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-											<Typography variant="caption">En los próximos 7 días</Typography>
+										<Typography
+											variant="caption"
+											sx={{ color: "text.secondary", letterSpacing: "-0.005em" }}
+										>
+											En los próximos 7 días
 										</Typography>
 									}
 								>
 									<BarsDataWidget
-										color={theme.palette.error.dark}
+										color={BRAND_BLUE}
 										data={dashboardData?.trends?.deadlines?.map((item) => item.count) || undefined}
 									/>
 								</EcommerceDataCard>

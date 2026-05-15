@@ -34,10 +34,11 @@ import {
 } from "@mui/material";
 
 // icons
-import { Lock, DiscountShape, TickCircle, CloseCircle } from "iconsax-react";
+import { Lock } from "iconsax-react";
 
 // project-imports
 import MainCard from "components/MainCard";
+import PlanCard from "components/cards/PlanCard";
 import ApiService, { Plan, ResourceLimit, PlanFeature } from "store/reducers/ApiService";
 import { dispatch } from "store";
 import { openSnackbar } from "store/reducers/snackbar";
@@ -289,10 +290,18 @@ const Pricing = () => {
 				window.location.href = errorUrl;
 			}
 		} catch (error) {
+			// handleAxiosError ya extrae error.response.data.message — preservar
+			// el mensaje específico (ej. "Ya has usado este código..." cuando el
+			// backend rechaza el discountCode con 400) en lugar de mostrar uno
+			// genérico que esconde el motivo del fallo.
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Error al procesar la solicitud de suscripción. Por favor, intenta de nuevo más tarde.";
 			dispatch(
 				openSnackbar({
 					open: true,
-					message: "Error al procesar la solicitud de suscripción. Por favor, intenta de nuevo más tarde.",
+					message,
 					variant: "alert",
 					alert: {
 						color: "error",
@@ -611,109 +620,6 @@ const Pricing = () => {
 		);
 	};
 
-	// Función para obtener el color y el estilo según el tipo de plan
-	const getPlanStyle = (planId: string, isCurrentPlan: boolean, isActive: boolean) => {
-		const baseStyle = {
-			padding: 3,
-			borderRadius: 1,
-		};
-
-		// Si no está activo, usar un estilo gris
-		if (!isActive) {
-			return {
-				...baseStyle,
-				bgcolor: theme.palette.grey[200],
-				opacity: 0.8,
-			};
-		}
-
-		if (isCurrentPlan) {
-			return {
-				...baseStyle,
-				bgcolor: theme.palette.primary.lighter,
-			};
-		}
-
-		switch (planId) {
-			case "free":
-				return {
-					...baseStyle,
-					bgcolor: theme.palette.info.lighter,
-				};
-			case "standard":
-				return {
-					...baseStyle,
-					bgcolor: theme.palette.success.lighter,
-				};
-			case "premium":
-				return {
-					padding: 3,
-					borderRadius: 1,
-					bgcolor: theme.palette.secondary.lighter,
-				};
-			default:
-				return { padding: 3 };
-		}
-	};
-
-	// Función para obtener el color del botón según el tipo de plan
-	const getButtonColor = (planId: string, isCurrentPlan: boolean) => {
-		if (isCurrentPlan) {
-			return "primary";
-		}
-
-		switch (planId) {
-			case "free":
-				return "info";
-			case "standard":
-				return "success";
-			case "premium":
-				return "secondary";
-			default:
-				return "secondary";
-		}
-	};
-
-	// Función para obtener el chip distintivo según el plan
-	const getPlanChip = (planId: string, isCurrentPlan: boolean, isDefault: boolean, isActive: boolean) => {
-		// Si el plan no está activo, mostrar chip de próximamente
-		if (!isActive) {
-			return <Chip label="Próximamente" color="warning" variant="filled" />;
-		}
-
-		if (isCurrentPlan) {
-			return <Chip label="Plan Actual" color="primary" />;
-		}
-
-		switch (planId) {
-			case "standard":
-				return <Chip label="Popular" color="success" />;
-			case "premium":
-				return <Chip label="Recomendado" color="secondary" />;
-			case "free":
-				if (isDefault) {
-					return <Chip label="Básico" color="info" />;
-				}
-				return null;
-			default:
-				if (isDefault) {
-					return <Chip label="Predeterminado" color="default" />;
-				}
-				return null;
-		}
-	};
-
-	// Estilos
-	const priceListDisable = {
-		opacity: 0.4,
-		textDecoration: "line-through",
-	};
-
-	const price = {
-		fontSize: "40px",
-		fontWeight: 700,
-		lineHeight: 1,
-	};
 
 	// Si está cargando, mostrar indicador
 	if (loading) {
@@ -917,297 +823,102 @@ const Pricing = () => {
 							? Math.round(pricing.basePrice * 12 * 0.75) // Descuento anual del 25%
 							: pricing.basePrice;
 
+					// Estados derivados para configurar el CTA del PlanCard.
+					const isInactive = !plan.isActive;
+					const isReactivable = isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free";
+					const ctaLabel = isInactive
+						? "No disponible"
+						: reactivating
+						? "Reactivando..."
+						: isReactivable
+						? "Reactivar suscripción"
+						: isCurrentPlan
+						? "Plan actual"
+						: loadingPlanId === plan.planId
+						? "Procesando..."
+						: isDowngradeToFree
+						? "Cancelar suscripción"
+						: "Suscribirme";
+
+					const ctaColor: "primary" | "success" | "error" | "secondary" = isReactivable
+						? "success"
+						: isDowngradeToFree
+						? "error"
+						: isCurrentPlan
+						? "primary"
+						: "primary";
+
+					const ctaDisabled =
+						isInactive ||
+						loadingPlanId !== null ||
+						reactivating ||
+						(isCurrentPlan && !isAlreadyCanceled) ||
+						(plan.planId === "free" &&
+							isAlreadyCanceled &&
+							currentPlanId !== "free" &&
+							(currentPlanId === "standard" || currentPlanId === "premium"));
+
+					const handleCtaClick = () => {
+						if (plan.isActive && !loadingPlanId && !reactivating) {
+							if (isReactivable) {
+								handleReactivateSubscription();
+							} else if (isDowngradeToFree) {
+								setCancelDialogOpen(true);
+							} else if (!isCurrentPlan) {
+								const discountCode =
+									plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
+								handleSubscribe(plan.planId, discountCode);
+							}
+						}
+					};
+
+					// Mensaje contextual (cancelación) que va debajo del título.
+					let contextMessage:
+						| { text: string; tone?: "success" | "error" | "warning" | "info" }
+						| undefined;
+					if (
+						plan.planId === "free" &&
+						isAlreadyCanceled &&
+						currentPlanId !== "free" &&
+						(currentPlanId === "standard" || currentPlanId === "premium") &&
+						currentSubscription?.currentPeriodEnd
+					) {
+						contextMessage = {
+							text: `Tu plan volverá a Free el ${new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR")}`,
+							tone: "error",
+						};
+					} else if (
+						isCurrentPlan &&
+						isAlreadyCanceled &&
+						currentPlanId !== "free" &&
+						currentSubscription?.currentPeriodEnd
+					) {
+						contextMessage = {
+							text: `Cancelado. Activo hasta el ${new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR")}`,
+							tone: "success",
+						};
+					}
+
 					return (
-						<Grid item xs={12} sm={6} md={4} key={plan.planId} data-testid={`sub-plan-card-${plan.planId}`}>
-							<MainCard sx={{ position: "relative", overflow: "hidden" }}>
-								<Grid container spacing={3}>
-									<Grid item xs={12}>
-										<Box sx={getPlanStyle(plan.planId, isCurrentPlan, plan.isActive)}>
-											<Grid container spacing={3}>
-												{/* Mostramos el chip correspondiente */}
-												<Grid item xs={12} sx={{ textAlign: "center" }}>
-													{getPlanChip(plan.planId, isCurrentPlan, plan.isDefault, plan.isActive)}
-												</Grid>
-												<Grid item xs={12}>
-													<Stack spacing={0} textAlign="center">
-														<Typography variant="h4">{cleanPlanDisplayName(plan.displayName)}</Typography>
-														<Typography>{plan.description}</Typography>
-														{/* Mostrar mensaje de cancelación para plan Free SOLO si el plan actual es un plan de pago cancelado */}
-														{plan.planId === "free" &&
-															isAlreadyCanceled &&
-															currentPlanId !== "free" &&
-															(currentPlanId === "standard" || currentPlanId === "premium") &&
-															currentSubscription?.currentPeriodEnd && (
-																<Typography variant="caption" color="error.main" sx={{ mt: 0.5, fontWeight: 600 }}>
-																	Tu plan volverá a Free el{" "}
-																	{new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR", {
-																		day: "2-digit",
-																		month: "2-digit",
-																		year: "numeric",
-																	})}
-																</Typography>
-															)}
-														{/* Mostrar mensaje de cancelación SOLO para el plan de pago actual que está cancelado (no para Free) */}
-														{isCurrentPlan &&
-															isAlreadyCanceled &&
-															currentPlanId !== "free" &&
-															(currentPlanId === "standard" || currentPlanId === "premium") &&
-															currentSubscription?.currentPeriodEnd && (
-																<Typography variant="caption" color="success.main" sx={{ mt: 0.5, fontWeight: 600 }}>
-																	Cancelado. Activo hasta el{" "}
-																	{new Date(currentSubscription.currentPeriodEnd).toLocaleDateString("es-AR", {
-																		day: "2-digit",
-																		month: "2-digit",
-																		year: "numeric",
-																	})}
-																</Typography>
-															)}
-													</Stack>
-												</Grid>
-
-												<Grid item xs={12}>
-													<Stack spacing={0} alignItems="center">
-														{plan.activeDiscounts && plan.activeDiscounts.length > 0 ? (
-															<>
-																<Stack direction="row" spacing={1.5} alignItems="baseline">
-																	<Typography
-																		variant="h4"
-																		sx={{
-																			textDecoration: "line-through",
-																			color: "text.secondary",
-																			fontWeight: 500,
-																			opacity: 0.8,
-																		}}
-																	>
-																		${plan.activeDiscounts[0].originalPrice}
-																	</Typography>
-																	<Typography variant="h2" sx={{ ...price, color: "success.main" }}>
-																		${plan.activeDiscounts[0].finalPrice}
-																	</Typography>
-																</Stack>
-																<Typography variant="h6" color="textSecondary">
-																	{getBillingPeriodText(pricing.billingPeriod)}
-																</Typography>
-																<Box
-																	sx={{
-																		mt: 1.5,
-																		p: 1,
-																		bgcolor: "success.lighter",
-																		borderRadius: 1,
-																		border: "1px solid",
-																		borderColor: "success.light",
-																		textAlign: "center",
-																	}}
-																>
-																	<Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
-																		<DiscountShape size={14} color="var(--mui-palette-success-main)" />
-																		<Chip
-																			label={plan.activeDiscounts[0].badge}
-																			size="small"
-																			color="success"
-																			sx={{ fontWeight: 700, fontSize: "0.7rem" }}
-																		/>
-																	</Stack>
-																	<Typography variant="caption" color="success.dark" sx={{ display: "block", mt: 0.5, fontWeight: 600 }}>
-																		{plan.activeDiscounts[0].promotionalMessage}
-																	</Typography>
-																	{plan.activeDiscounts[0].durationInMonths && (
-																		<Typography variant="caption" color="success.dark" sx={{ display: "block" }}>
-																			Válido por {plan.activeDiscounts[0].durationInMonths} meses
-																		</Typography>
-																	)}
-																</Box>
-															</>
-														) : (
-															<>
-																<Typography variant="h2" sx={price}>
-																	${displayPrice}
-																</Typography>
-																<Typography variant="h6" color="textSecondary">
-																	{getBillingPeriodText(pricing.billingPeriod)}
-																</Typography>
-															</>
-														)}
-													</Stack>
-												</Grid>
-												<Grid item xs={12}>
-													<Button
-														data-testid={`sub-action-btn-${plan.planId}`}
-														color={
-															isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free"
-																? "success"
-																: isDowngradeToFree
-																? "error"
-																: getButtonColor(plan.planId, isCurrentPlan)
-														}
-														variant={!isCurrentPlan && (plan.planId === "standard" || plan.planId === "premium") ? "contained" : "outlined"}
-														fullWidth
-														disabled={
-															!plan.isActive ||
-															loadingPlanId !== null ||
-															reactivating ||
-															(isCurrentPlan && !isAlreadyCanceled) ||
-															// Deshabilitar botón en card Free si hay un plan de pago cancelado (volverá automáticamente a Free)
-															(plan.planId === "free" &&
-																isAlreadyCanceled &&
-																currentPlanId !== "free" &&
-																(currentPlanId === "standard" || currentPlanId === "premium"))
-														}
-														onClick={() => {
-															if (plan.isActive && !loadingPlanId && !reactivating) {
-																// Solo permitir reactivar si es plan de pago (no free) y está cancelado
-																if (isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free") {
-																	handleReactivateSubscription();
-																} else if (isDowngradeToFree) {
-																	// Si es downgrade a free, abrir diálogo de confirmación
-																	setCancelDialogOpen(true);
-																} else {
-																	// Si es suscripción normal, usar flujo normal
-																	// Obtener el código de descuento si existe
-																	const discountCode =
-																		plan.activeDiscounts && plan.activeDiscounts.length > 0 ? plan.activeDiscounts[0].code : undefined;
-																	handleSubscribe(plan.planId, discountCode);
-																}
-															}
-														}}
-														startIcon={
-															!plan.isActive ? (
-																<Lock size={16} />
-															) : loadingPlanId === plan.planId || reactivating ? (
-																<CircularProgress size={16} color="inherit" />
-															) : undefined
-														}
-													>
-														{!plan.isActive
-															? "No disponible"
-															: reactivating
-															? "Reactivando..."
-															: isCurrentPlan && isAlreadyCanceled && currentPlanId !== "free"
-															? "Reactivar Suscripción"
-															: isCurrentPlan
-															? "Plan Actual"
-															: loadingPlanId === plan.planId
-															? "Procesando..."
-															: isDowngradeToFree
-															? "Cancelar Suscripción"
-															: "Suscribirme"}
-													</Button>
-												</Grid>
-											</Grid>
-										</Box>
-									</Grid>
-									<Grid item xs={12}>
-										<Box sx={{ p: 1 }}>
-											{/* Resources: Grid de cajas */}
-											{(() => {
-												const currentEnv = import.meta.env.PROD ? "production" : "development";
-												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-													if (!visibility || visibility === "all") return true;
-													if (visibility === "none") return false;
-													return visibility === currentEnv;
-												};
-												const visibleResources = plan.resourceLimits
-													.filter((r) => isVisibleInCurrentEnv(r.visibility))
-													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-												return (
-													<Grid container spacing={1} sx={{ mb: 2 }}>
-														{visibleResources.map((resource, i) => (
-															<Grid item xs={6} key={`resource-${i}`}>
-																<Box sx={{ textAlign: "center", p: 1, bgcolor: theme.palette.background.default, borderRadius: 1 }}>
-																	<Typography variant="body2" fontWeight="medium" sx={{ wordBreak: "break-word" }}>
-																		{planFeatureValue(plan, resource.name)}
-																	</Typography>
-																</Box>
-															</Grid>
-														))}
-													</Grid>
-												);
-											})()}
-											<Divider sx={{ my: 1.5 }} />
-											{/* Features: grid de 2 columnas con iconos */}
-											{(() => {
-												const currentEnv = import.meta.env.PROD ? "production" : "development";
-												const isVisibleInCurrentEnv = (visibility: string | undefined) => {
-													if (!visibility || visibility === "all") return true;
-													if (visibility === "none") return false;
-													return visibility === currentEnv;
-												};
-												const visibleFeatures = plan.features
-													.filter((f) => isVisibleInCurrentEnv(f.visibility))
-													.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-												return (
-													<Grid container spacing={1}>
-														{visibleFeatures.map((feature, i) => (
-															<Grid item xs={12} sm={6} key={`feature-${i}`}>
-																<Box
-																	sx={{
-																		display: "flex",
-																		alignItems: "center",
-																		gap: 1,
-																		py: 0.5,
-																		...(feature.enabled ? {} : priceListDisable),
-																	}}
-																>
-																	{feature.enabled ? (
-																		<TickCircle size={16} variant="Bold" color={theme.palette.success.main} />
-																	) : (
-																		<CloseCircle size={16} variant="Bold" color={theme.palette.text.disabled} />
-																	)}
-																	<Typography
-																		variant="body2"
-																		sx={{ fontWeight: feature.enabled ? "medium" : "normal", minWidth: 0, wordBreak: "break-word" }}
-																	>
-																		{feature.displayName || feature.description}
-																	</Typography>
-																</Box>
-															</Grid>
-														))}
-													</Grid>
-												);
-											})()}
-										</Box>
-									</Grid>
-								</Grid>
-
-								{/* Overlay para planes no activos */}
-								{!plan.isActive && (
-									<Box
-										sx={{
-											position: "absolute",
-											top: 0,
-											left: 0,
-											right: 0,
-											bottom: 0,
-											backgroundColor: theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.85)" : "rgba(255, 255, 255, 0.85)",
-											backdropFilter: "blur(5px)",
-											WebkitBackdropFilter: "blur(5px)",
-											zIndex: 100,
-											borderRadius: "inherit",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-										}}
-									>
-										<Paper
-											elevation={3}
-											sx={{
-												p: 2,
-												textAlign: "center",
-												backgroundColor: "background.paper",
-												maxWidth: "80%",
-											}}
-										>
-											<Lock variant="Bulk" size={32} color={theme.palette.warning.main} style={{ marginBottom: 8 }} />
-											<Typography variant="h6" gutterBottom color="warning.main">
-												Próximamente
-											</Typography>
-											<Typography variant="caption" color="text.secondary">
-												Este plan estará disponible pronto
-											</Typography>
-										</Paper>
-									</Box>
-								)}
-							</MainCard>
+						<Grid item xs={12} sm={6} md={4} key={plan.planId}>
+							<PlanCard
+								plan={plan}
+								highlighted={plan.planId === "standard" && !isCurrentPlan}
+								isCurrent={isCurrentPlan}
+								contextMessage={contextMessage}
+								showInactiveOverlay={isInactive}
+								dataTestId={`sub-plan-card-${plan.planId}`}
+								cta={{
+									label: ctaLabel,
+									onClick: handleCtaClick,
+									disabled: ctaDisabled,
+									loading: loadingPlanId === plan.planId || reactivating,
+									variant: isInactive ? "outlined" : isCurrentPlan || plan.planId === "standard" || plan.planId === "premium" ? "contained" : "outlined",
+									color: ctaColor,
+									startIcon: isInactive ? <Lock size={16} /> : undefined,
+									dataTestId: `sub-action-btn-${plan.planId}`,
+								}}
+							/>
 						</Grid>
 					);
 				})}

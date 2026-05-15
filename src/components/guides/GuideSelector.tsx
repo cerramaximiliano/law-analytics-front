@@ -83,7 +83,7 @@ const GuideSelector: React.FC<GuideSelectorProps> = ({ open, onClose }) => {
 				maxWidth="lg"
 				fullWidth
 				TransitionComponent={PopupTransition}
-				sx={{ "& .MuiDialog-paper": { borderRadius: "12px" } }}
+				sx={{ "& .MuiDialog-paper": { borderRadius: 2 } }}
 			>
 				<DialogTitle
 					sx={{
