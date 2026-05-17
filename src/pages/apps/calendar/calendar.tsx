@@ -46,7 +46,7 @@ import CalendarStyled from "sections/apps/calendar/CalendarStyled";
 import AddEventForm from "sections/apps/calendar/AddEventForm";
 import GoogleCalendarSync from "sections/apps/calendar/GoogleCalendarSync";
 import { GuideCalendar } from "components/guides";
-import { BRAND_BLUE } from "themes/dashboardTokens";
+import { BRAND_BLUE, LIVE_GREEN, STALE_AMBER } from "themes/dashboardTokens";
 
 import {
 	//getEvents,
@@ -120,13 +120,13 @@ const LinkFoldersModal = ({ open, onClose, event, onLink, availableFolders, load
 			maxWidth="sm"
 			fullWidth
 			TransitionComponent={PopupTransition}
-			sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}
+			sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: alpha(BRAND_BLUE, 0.035) } }}
 		>
 			<DialogTitle
 				sx={{
-					bgcolor: theme.palette.primary.lighter,
+					bgcolor: alpha(BRAND_BLUE, 0.05),
 					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, 0.18)}`,
 				}}
 			>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -236,9 +236,9 @@ const EventDetailsView = ({ event, onClose, onEdit, onLink, onDelete, canUpdate 
 		<>
 			<DialogTitle
 				sx={{
-					bgcolor: theme.palette.primary.lighter,
+					bgcolor: alpha(BRAND_BLUE, 0.05),
 					p: 3,
-					borderBottom: `1px solid ${theme.palette.divider}`,
+					borderBottom: `1px solid ${alpha(BRAND_BLUE, 0.18)}`,
 				}}
 			>
 				<Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -912,7 +912,7 @@ const Calendar = () => {
 												sx={{
 													mb: 0.5,
 													borderRadius: 0.5,
-													bgcolor: "primary.lighter",
+													bgcolor: alpha(BRAND_BLUE, 0.16),
 												}}
 											/>
 										)}
@@ -923,7 +923,7 @@ const Calendar = () => {
 												sx={{
 													mb: 0.5,
 													borderRadius: 0.5,
-													bgcolor: "secondary.lighter",
+													bgcolor: alpha(STALE_AMBER, 0.16),
 												}}
 											/>
 										)}
@@ -933,7 +933,7 @@ const Calendar = () => {
 												height={18}
 												sx={{
 													borderRadius: 0.5,
-													bgcolor: "success.lighter",
+													bgcolor: alpha(LIVE_GREEN, 0.16),
 												}}
 											/>
 										)}
@@ -1503,7 +1503,7 @@ const Calendar = () => {
 				fullWidth
 				onClose={handleModalClose}
 				open={localModalOpen}
-				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: "secondary.lighter" } }}
+				sx={{ "& .MuiDialog-paper": { p: 0, bgcolor: alpha(BRAND_BLUE, 0.035) } }}
 			>
 				{isViewingEvent ? (
 					<EventDetailsView

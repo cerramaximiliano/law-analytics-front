@@ -1167,17 +1167,51 @@ function ReactTable({
 									Tienes causas no sincronizadas:
 								</Typography>
 								{pendingCount > 0 && (
-									<Chip
-										label={`${pendingCount} Pendiente${pendingCount > 1 ? "s" : ""}`}
-										color="warning"
-										size="small"
+									<Box
 										sx={{
-											color: "text.primary",
-											fontWeight: 500,
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											borderRadius: 0.75,
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
 										}}
-									/>
+									>
+										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
+										<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+											{pendingCount} pendiente{pendingCount > 1 ? "s" : ""}
+										</Typography>
+									</Box>
 								)}
-								{invalidCount > 0 && <Chip label={`${invalidCount} Invalida${invalidCount > 1 ? "s" : ""}`} color="error" size="small" />}
+								{invalidCount > 0 && (
+									<Box
+										sx={{
+											display: "inline-flex",
+											alignItems: "center",
+											gap: 0.625,
+											px: 0.875,
+											py: 0.25,
+											borderRadius: 0.75,
+											bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
+											border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
+										}}
+									>
+										<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
+										<Typography
+											sx={{
+												fontSize: "0.68rem",
+												fontWeight: 600,
+												color: theme.palette.error.main,
+												letterSpacing: "0.01em",
+												lineHeight: 1,
+											}}
+										>
+											{invalidCount} inválida{invalidCount > 1 ? "s" : ""}
+										</Typography>
+									</Box>
+								)}
 								<Typography variant="body2" color="text.secondary">
 									(Click para ver)
 								</Typography>
@@ -2504,19 +2538,34 @@ const FoldersLayout = () => {
 					if (folder.causaAssociationStatus === "pending_selection") {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Chip
-									icon={<Warning2 size={14} />}
-									color="warning"
-									label="Seleccionar expediente"
-									size="small"
-									variant="light"
+								<Box
 									onClick={(e) => {
 										e.stopPropagation();
 										setCausaSelectorFolder({ id: folder._id, name: folder.folderName || folder.searchTerm || "" });
 										setCausaSelectorOpen(true);
 									}}
-									sx={{ cursor: "pointer" }}
-								/>
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.625,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+										cursor: "pointer",
+										transition: "background-color 0.15s ease, border-color 0.15s ease",
+										"&:hover": {
+											bgcolor: alpha(STALE_AMBER, isDark ? 0.22 : 0.14),
+											borderColor: alpha(STALE_AMBER, isDark ? 0.42 : 0.32),
+										},
+									}}
+								>
+									<Warning2 size={12} variant="Bulk" color={STALE_AMBER} />
+									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+										Seleccionar expediente
+									</Typography>
+								</Box>
 								<Tooltip title="Se encontraron múltiples expedientes - Haz clic para seleccionar">
 									<IconButton
 										size="small"
@@ -2543,7 +2592,25 @@ const FoldersLayout = () => {
 					if (folder.causaAssociationStatus === "failed") {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Chip color="error" label="Asociación fallida" size="small" variant="light" />
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.625,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
+									}}
+								>
+									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
+									<Typography
+										sx={{ fontSize: "0.68rem", fontWeight: 600, color: theme.palette.error.main, letterSpacing: "0.01em", lineHeight: 1 }}
+									>
+										Asociación fallida
+									</Typography>
+								</Box>
 								<Tooltip title="No se pudo vincular la causa - Verifique los datos ingresados">
 									<Box
 										sx={{
@@ -2568,7 +2635,23 @@ const FoldersLayout = () => {
 					) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.625,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+									}}
+								>
+									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
+									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+										Pendiente de verificación
+									</Typography>
+								</Box>
 								<Tooltip title="Actualizar estado de verificación">
 									<IconButton
 										size="small"
@@ -2616,7 +2699,25 @@ const FoldersLayout = () => {
 					if (folder.causaVerified === true && folder.causaIsValid === false) {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Chip color="error" label="Causa inválida" size="small" variant="light" />
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.625,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(theme.palette.error.main, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(theme.palette.error.main, isDark ? 0.32 : 0.22)}`,
+									}}
+								>
+									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: theme.palette.error.main }} />
+									<Typography
+										sx={{ fontSize: "0.68rem", fontWeight: 600, color: theme.palette.error.main, letterSpacing: "0.01em", lineHeight: 1 }}
+									>
+										Causa inválida
+									</Typography>
+								</Box>
 								<Tooltip title="Causa inválida - No se pudo verificar en el Poder Judicial">
 									<Box
 										sx={{
@@ -2638,7 +2739,23 @@ const FoldersLayout = () => {
 					if (value === "Pendiente") {
 						return (
 							<Stack direction="row" alignItems="center" justifyContent="space-between" width="100%">
-								<Chip color="warning" label="Pendiente de verificación" size="small" variant="light" />
+								<Box
+									sx={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 0.625,
+										px: 0.875,
+										py: 0.25,
+										borderRadius: 0.75,
+										bgcolor: alpha(STALE_AMBER, isDark ? 0.16 : 0.1),
+										border: `1px solid ${alpha(STALE_AMBER, isDark ? 0.32 : 0.22)}`,
+									}}
+								>
+									<Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: STALE_AMBER }} />
+									<Typography sx={{ fontSize: "0.68rem", fontWeight: 600, color: STALE_AMBER, letterSpacing: "0.01em", lineHeight: 1 }}>
+										Pendiente de verificación
+									</Typography>
+								</Box>
 								<Tooltip title="Actualizar estado de verificación">
 									<IconButton
 										size="small"
