@@ -16,6 +16,7 @@ import SEOProvider from "components/SEO/SEOProvider";
 
 import { dispatch } from "store";
 import { fetchMenu } from "store/reducers/menu";
+import { captureAttribution } from "utils/attribution";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
@@ -44,6 +45,7 @@ const App = () => {
 	}
 
 	useEffect(() => {
+		captureAttribution();
 		dispatch(fetchMenu()).then(() => {
 			setLoading(false);
 		});

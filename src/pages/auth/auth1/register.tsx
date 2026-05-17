@@ -402,8 +402,10 @@ const Register = () => {
 				select_by: "user",
 			};
 
-			await loginWithGoogle(credentialResponse);
-			trackSignUp("google", source, feature);
+			const result = await loginWithGoogle(credentialResponse);
+			if (result.isNewUser) {
+				trackSignUp("google", source, feature);
+			}
 		} catch (error) {
 			setError("Error al autenticar con Google. Por favor, intentá nuevamente.");
 		} finally {
